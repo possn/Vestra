@@ -1,0 +1,1661 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#E7795B" />
+  <title>Finva</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="favicon-16.png" sizes="16x16" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="styles.css?v=20260820v1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    // pdf.js — carregado de forma síncrona para estar disponível antes da app
+    window.pdfjsLib = null;
+    (function() {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
+      s.onload = function() {
+        if (typeof pdfjsLib !== "undefined") {
+          pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+        }
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
+  <script defer src="app.js?v=20260820v1" fetchpriority="high"></script>
+</head>
+<body>
+  <!-- App loading overlay — shown during boot, hidden after first render -->
+  <div id="appLoadingOverlay" style="
+    display:flex; position:fixed; inset:0; z-index:9999;
+    background:#F7F2EA; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px;
+  ">
+    <img src="icon192.png" alt="" width="72" height="72" style="border-radius:18px;box-shadow:0 4px 24px rgba(231,121,91,.22)">
+    <div style="font-size:1.15rem;font-weight:600;color:#24211F;letter-spacing:.01em">Finva</div>
+    <div id="appLoadingMsg" style="font-size:.85rem;color:#7D756D;min-height:1.2em">A iniciar…</div>
+    <div style="width:48px;height:4px;border-radius:2px;background:#E9DED2;overflow:hidden;margin-top:4px">
+      <div style="height:100%;width:40%;background:#E7795B;border-radius:2px;animation:pf-loading-bar 1.2s ease-in-out infinite"></div>
+    </div>
+  </div>
+  <style>
+    @keyframes pf-loading-bar {
+      0%   { transform: translateX(-100%); }
+      50%  { transform: translateX(150%); }
+      100% { transform: translateX(150%); }
+    }
+  </style>
+
+<header class="topbar">
+  <button class="btn btn--ghost sidebar-toggle" id="btnSidebarToggle" style="padding:10px 12px;border-radius:14px;font-size:18px" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+  <div class="brand">
+    <img class="brand__icon" src="icon192.png" alt="PF">
+    <div class="brand__txt">
+      <div class="brand__title">Finva</div>
+      <div class="brand__sub">Net worth · Rendimento · Projeção</div>
+    </div>
+  </div>
+  <button class="btn btn--ghost" id="btnSearchToggle" style="padding:10px 14px;border-radius:14px;font-size:18px" aria-label="Pesquisar">🔍</button>
+  <button class="btn btn--ghost" id="btnSettingsNav" onclick="setView('settings')" style="padding:10px 14px;border-radius:14px;font-size:18px" aria-label="Definições">⚙️</button>
+  <button class="fab" id="btnFab" aria-label="Adicionar">+</button>
+</header>
+
+<!-- Sidebar drawer: navegação completa, sempre visível em ecrãs largos -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+<aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+  <div class="sidebar__head">
+    <img class="sidebar__icon" src="icon192.png" alt="PF">
+    <div>
+      <div class="sidebar__title">Finva</div>
+      <div class="sidebar__sub">v64f</div>
+    </div>
+    <button class="sidebar__close" id="btnSidebarClose" aria-label="Fechar menu">✕</button>
+  </div>
+  <nav class="sidebar__nav" aria-label="Separadores">
+    <span class="sidebar__eyebrow">Navegação</span>
+    <button class="sidenavbtn sidenavbtn--active" data-view="dashboard"><span class="navico">▣</span><span>Início</span></button>
+    <button class="sidenavbtn" data-view="assets"><span class="navico">≡</span><span>Ativos</span></button>
+    <button class="sidenavbtn" data-view="dividends"><span class="navico">💰</span><span>Dividendos</span></button>
+    <button class="sidenavbtn" data-view="cashflow"><span class="navico">€</span><span>Balanço</span></button>
+    <button class="sidenavbtn" data-view="analysis"><span class="navico">📈</span><span>Análise</span></button>
+    <div class="sidebar__divider"></div>
+    <button class="sidenavbtn" data-view="settings"><span class="navico">⚙️</span><span>Definições</span></button>
+    <div class="sidebar__divider"></div>
+    <span class="sidebar__eyebrow">Acções rápidas</span>
+    <button class="sidenavbtn" id="sideBtnExportJSON"><span class="navico">📤</span><span>Exportar backup</span></button>
+    <button class="sidenavbtn" id="sideBtnSnapshot"><span class="navico">📸</span><span>Registar snapshot</span></button>
+  </nav>
+</aside>
+
+<!-- Barra de pesquisa global -->
+<div id="searchBar" style="display:none;padding:8px 14px 12px;background:#fff;border-bottom:1px solid var(--line)">
+  <input class="input" id="globalSearch" placeholder="Pesquisar ativos, movimentos, dividendos…" autocomplete="off">
+  <div id="searchResults" class="list" style="margin-top:10px;max-height:260px;overflow-y:auto"></div>
+</div>
+
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <section class="view" data-view="dashboard" id="viewDashboard">
+
+    <!-- Hero: Net Worth + variação -->
+    <div class="card hero">
+      <div class="hero__label">
+        Património líquido
+        <button class="info-btn" onclick="openTip('netWorth')" title="Saber mais">ℹ️</button>
+      </div>
+      <div class="hero__value" id="kpiNet">0 €</div>
+      <div class="hero__sub" id="kpiAP">Ativos 0 € | Passivos 0 €</div>
+      <!-- Variação MoM e YoY -->
+      <div id="kpiChanges" style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap"></div>
+    </div>
+
+    <!-- v64s: lembrete de backup — os dados vivem só neste dispositivo (IndexedDB),
+         sem isto o utilizador só percebe o risco quando já é tarde de mais. -->
+    <div class="card" id="backupReminderCard" style="display:none;border-left:4px solid #a15c2f;background:var(--note-bg)">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:22px">💾</div>
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:700;font-size:14px">Sem backup há um tempo</div>
+          <div class="card__muted" style="font-size:12px" id="backupReminderSub">Os teus dados vivem só neste telemóvel — sem exportar, um telemóvel novo ou uma limpeza do Safari perdem tudo.</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn--primary btn--sm" id="btnBackupReminderExport">📤 Exportar agora</button>
+          <button class="btn btn--ghost btn--sm" id="btnBackupReminderSnooze">Lembrar depois</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- v64n: Primeiro arranque — sem activos ainda. Mostra 3 acções claras
+         em vez de 13 cartões vazios/a zero, que seriam confusos e pouco
+         convidativos para quem abre a app pela primeira vez. -->
+    <div class="card" id="dashboardEmptyState" style="display:none;text-align:center;padding:28px 20px">
+      <div style="font-size:44px;margin-bottom:6px">🌱</div>
+      <div style="font-weight:700;font-size:17px;margin-bottom:6px">Vamos começar</div>
+      <div class="card__muted" style="max-width:340px;margin:0 auto 20px">A app fica muito mais útil assim que tiver os teus activos. Escolhe por onde começar — podes sempre adicionar mais depois.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto">
+        <button class="btn btn--primary" id="btnEmptyAddAsset">➕ Adicionar um activo</button>
+        <button class="btn btn--outline" id="btnEmptyImportBroker">📥 Importar CSV/Excel de corretora</button>
+        <button class="btn btn--outline" id="btnEmptyImportBank">🏦 Importar extracto bancário</button>
+      </div>
+    </div>
+
+    <!-- KPIs secundários: 4 métricas rápidas — layout 2×2 compacto -->
+    <div class="card kpi-quick">
+      <div class="kpi-quick__grid">
+        <div class="kpi-quick__cell kpi-quick__cell--green">
+          <div class="kpi-quick__k">Rend. passivo/mês</div>
+          <div class="kpi-quick__v" id="kpiPassiveMonthly2">—</div>
+          <div class="kpi-quick__s" id="kpiPassiveAnnualSub">0 €/ano</div>
+        </div>
+        <div class="kpi-quick__cell kpi-quick__cell--vio">
+          <div class="kpi-quick__k">Dividendos YTD</div>
+          <div class="kpi-quick__v" id="kpiDivYTD2">—</div>
+          <div class="kpi-quick__s" id="kpiDivCount2"></div>
+        </div>
+        <div class="kpi-quick__cell kpi-quick__cell--amber">
+          <div class="kpi-quick__k">Yield dividendos</div>
+          <div class="kpi-quick__v" id="kpiYield">—</div>
+          <div class="kpi-quick__s">base distribuidores</div>
+        </div>
+        <div class="kpi-quick__cell kpi-quick__cell--purple">
+          <div class="kpi-quick__k">P&amp;L realizado</div>
+          <div class="kpi-quick__v" id="kpiAutonomy">—</div>
+          <div class="kpi-quick__s">mais-valias vendas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="portfolioSourcesCard" style="display:none">
+      <div class="card__head">
+        <div><div class="card__title">Fontes activas da carteira</div><div class="card__muted">Origem dos dados que estão a alimentar os cálculos</div></div>
+      </div>
+      <div id="portfolioSourcesBody"></div>
+    </div>
+
+    <!-- Objetivo de rendimento passivo -->
+    <div class="card" id="goalCard">
+      <div class="card__head">
+        <div>
+          <div class="card__title">Objetivo de rendimento</div>
+          <div class="card__muted" id="goalSubtitle">Define um objetivo mensal</div>
+        </div>
+        <button class="link" id="btnEditGoal">Definir</button>
+      </div>
+      <div id="goalProgressWrap" style="display:none">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="goalProgressFill"></div></div>
+        <div class="row" style="justify-content:space-between;margin-top:6px">
+          <span class="card__muted" id="goalCurrent"></span>
+          <span class="card__muted" id="goalTarget"></span>
+        </div>
+        <div id="goalBreakdown" style="display:none;font-size:11px;color:#64748b;margin-top:8px;line-height:1.6"></div>
+      </div>
+    </div>
+
+    <!-- v63v: "Vencimentos próximos" (30d) merged into "Vencimentos (60 dias)" below —
+         same data (assets with maturityDate), same window logic, shown as two
+         separate cards with different styling. Kept #alertsCard as a hidden
+         no-op host so any leftover DOM lookups don't throw. -->
+    <div id="alertsCard" style="display:none"><div id="alertsList"></div></div>
+
+    <!-- Botões de acção (KPI pills movidos para kpi-quick grid acima) -->
+    <!-- IDs mantidos como elementos hidden para compat com JS -->
+    <span id="kpiPassiveAnnual" style="display:none"></span>
+    <span id="kpiPassiveMonthly" style="display:none"></span>
+    <span id="kpiDivYTD" style="display:none"></span>
+    <span id="kpiDivCount" style="display:none"></span>
+    <div class="card">
+      <div class="row row--wrap" style="gap:8px">
+        <button class="btn btn--primary btn--sm" id="btnSnapshot">📸 Registar snapshot</button>
+        <button class="btn btn--primary btn--sm" id="btnAddDiv">💰 + Dividendo</button>
+        <button class="btn btn--sm" onclick="document.getElementById('navAssets')?.click();setTimeout(()=>document.getElementById('btnRefreshQuotes')?.click(),200)" style="font-size:13px">⟳ Cotações</button>
+        <button class="btn btn--sm" id="btnClearHistory">🗑 Limpar histórico</button>
+        <button class="btn btn--ghost btn--sm" id="btnPrintDashboard" title="Imprimir / PDF">🖨️</button>
+      </div>
+    </div>
+
+    <!-- Top ativos -->
+    <div class="card">
+      <div class="card__head">
+        <div><div class="card__title">Top ativos</div><div class="card__muted">Por valor · clica para editar</div></div>
+        <button class="link" id="btnSummaryAll">Ver tudo</button>
+      </div>
+      <div id="summaryList" class="list"></div>
+      <div class="row row--center" style="margin-top:10px">
+        <button class="btn btn--ghost" id="btnSummaryToggle" style="display:none">Ver o resto</button>
+      </div>
+    </div>
+
+    <!-- Distribuição -->
+    <div class="card">
+      <div class="card__head">
+        <div><div class="card__title">Distribuição</div><div class="card__muted">Por classe (Ativos)</div></div>
+        <button class="link" id="btnDistDetail">Detalhe</button>
+      </div>
+      <div class="chartWrap"><canvas id="distChart" height="220"></canvas></div>
+    </div>
+
+    <!-- Tendência melhorada -->
+    <div class="card">
+      <div class="card__head">
+        <div><div class="card__title">Evolução do Património</div><div class="card__muted" id="trendSubtitle">Histórico de snapshots</div></div>
+        <button class="link" id="btnTrendClear">Limpar</button>
+      </div>
+      <div class="chartWrap"><canvas id="trendChart" height="240"></canvas></div>
+      <div class="hint" id="historyHint" style="display:none">Sem histórico. Usa "📸 Registar mês".</div>
+      <!-- Mini tabela de snapshots recentes -->
+      <div id="snapshotTable" style="margin-top:10px"></div>
+    </div>
+
+    <!-- v15: Metas (milestones) — collapsible, só mostra se há dados -->
+    <!-- v64o: cartões de consulta ocasional (metas, vencimentos, qualidade,
+         saúde financeira, risco, IRS, notificações) atrás de um único toggle —
+         ficam a um toque, mas não competem visualmente com o essencial. -->
+    <button type="button" class="btn btn--outline btn--sm" id="btnToggleDashSecondary" style="width:100%;margin:4px 0 12px">📂 Ver mais detalhes</button>
+
+    <div class="card dash-secondary" id="milestonesCard" style="display:none">
+      <div class="card__head">
+        <div><div class="card__title">🎯 Metas</div><div class="card__muted">Próximo marco de patrimônio</div></div>
+      </div>
+      <div id="milestonesContent"></div>
+    </div>
+
+    <!-- v15: Alertas depósitos a prazo -->
+    <div class="card dash-secondary" id="maturityAlertsCard" style="display:none">
+      <div class="card__head">
+        <div><div class="card__title">⏳ Vencimentos (60 dias)</div><div class="card__muted">Depósitos, PPR e obrigações a vencer</div></div>
+      </div>
+      <div id="maturityAlertsContent"></div>
+    </div>
+
+    <!-- v15: Qualidade do portfólio — inline no dashboard quando há assets -->
+    <div class="card dash-secondary" id="portfolioQualityCard" style="display:none">
+      <div class="card__head">
+        <div><div class="card__title">🏅 Qualidade</div><div class="card__muted">Score de diversificação e cobertura passiva</div></div>
+      </div>
+      <div id="portfolioQualityContent"></div>
+    </div>
+
+    <!-- v15: Rácio de dívida e saúde financeira -->
+    <div class="card dash-secondary" id="debtRatioCard">
+      <div class="card__head">
+        <div><div class="card__title">📊 Saúde Financeira</div><div class="card__muted">Rácios chave do portfólio</div></div>
+      </div>
+      <div id="debtRatioContent"></div>
+    </div>
+
+    <!-- v15: Alertas de concentração de risco -->
+    <div class="card dash-secondary" id="riskAlertCard" style="display:none;border-left:4px solid #ef4444">
+      <div class="card__head">
+        <div><div class="card__title" style="color:#dc2626">⚠️ Concentração de risco</div>
+        <div class="card__muted">Um activo ou classe representa >40% do portfólio</div></div>
+      </div>
+      <div id="riskAlertContent" class="list"></div>
+    </div>
+
+    <!-- v15: Simulador "E se?" (v64m: avançado por defeito) -->
+    <div class="card advanced-only">
+      <div class="card__head">
+        <div><div class="card__title">🎲 Simulador "E se?"</div><div class="card__muted">Choque hipotético (ex: queda de mercado) — não é uma previsão, é um teste de resistência</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end">
+        <div>
+          <label class="lbl">Queda de mercado / ajuste (%)</label>
+          <input class="input" id="whatIfPct" inputmode="decimal" placeholder="ex: -20" value="-20">
+        </div>
+        <button class="btn btn--primary" id="btnWhatIf">Calcular</button>
+      </div>
+      <div id="whatIfResult" style="margin-top:12px;display:none"></div>
+    </div>
+
+    <!-- v16.1: alerta rentabilidade negativa -->
+    <div id="negReturnAlert" style="display:none;padding:10px 14px;background:#fef2f2;border-left:3px solid var(--red);border-radius:var(--r-sm);margin-bottom:12px;font-size:13px;color:#dc2626"></div>
+
+    <!-- IRS estimado — teaser, detalhe em Análise → Fiscal -->
+    <div class="card dash-secondary" id="irsEstCard" style="display:none;border-left:4px solid #f59e0b;background:#fffbeb">
+      <div class="card__head">
+        <div>
+          <div class="card__title" style="color:#92400e">🧾 IRS estimado: <span id="irsEstTotal">—</span></div>
+          <div class="card__muted" style="font-size:12px">Estimativa 28% PT · Dividendos + Mais-valias</div>
+        </div>
+        <button class="btn btn--sm" style="font-size:12px" onclick="document.querySelector('.analysis-tab[data-tab=fiscal]').click();setView('analysis')">Ver detalhe →</button>
+      </div>
+      <!-- Hidden elements for JS compat -->
+      <span id="irsEstDiv" style="display:none"></span>
+      <span id="irsEstRendas" style="display:none"></span>
+      <span id="irsEstGains" style="display:none"></span>
+    </div>
+
+    <!-- v15: Notificações push -->
+    <div class="card dash-secondary">
+      <div class="card__head">
+        <div><div class="card__title">🔔 Alertas de vencimentos</div>
+        <div class="card__muted">Notificação 7 dias antes do vencimento de depósitos, PPR, obrigações</div></div>
+      </div>
+      <button class="btn btn--primary" id="btnEnableNotifications" style="width:100%">🔔 Ativar notificações push</button>
+    </div>
+
+  </section>
+
+  <!-- ASSETS -->
+  <section class="view" data-view="assets" id="viewAssets" hidden>
+    <div class="seg">
+      <button class="seg__btn seg__btn--active" id="segAssets">Ativos</button>
+      <button class="seg__btn" id="segLiabs">Passivos</button>
+    </div>
+    <div class="card">
+      <div class="card__head">
+        <div><div class="card__title" id="itemsTitle">Ativos</div><div class="card__muted" id="itemsSub">Imobiliário, liquidez, ações/ETFs, metais, cripto, fundos, PPR, depósitos…</div></div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn btn--outline" id="btnRefreshQuotes" title="Actualizar cotações de acções e ETFs" style="font-size:14px;padding:9px 14px;font-weight:800">⟳ Cotações</button>
+          <button class="btn btn--outline" id="btnQuoteErrors" type="button" style="display:none;font-size:14px;padding:9px 14px;font-weight:800">⚠️ Erros</button>
+          <button class="btn btn--primary" id="btnAddItem">Adicionar</button>
+        </div>
+      </div>
+      <div class="filters">
+        <input class="input" id="qSearch" placeholder="Pesquisar…" autocomplete="off">
+        <select class="input" id="qClass"><option value="">Todas as classes</option></select>
+        <select class="input" id="qSort">
+          <option value="value_desc">Valor ↓</option>
+          <option value="value_asc">Valor ↑</option>
+          <option value="name_asc">Nome A→Z</option>
+          <option value="gain_pct_desc">Ganho % ↓</option>
+          <option value="gain_pct_asc">Perda % ↓</option>
+          <option value="div_desc">Dividendo ↓</option>
+        </select>
+      </div>
+      <div class="card quote-errors-inline" id="quoteErrorsInline" style="display:none">
+        <div class="quote-errors-inline__head">
+          <div>
+            <div class="card__title">⚠️ Erros de cotação</div>
+            <div class="quote-errors-inline__summary" id="quoteErrorsInlineSummary"></div>
+          </div>
+          <button class="btn btn--ghost btn--sm" id="btnQuoteErrorsInlineClose" type="button">Ocultar</button>
+        </div>
+        <div class="quote-errors-inline__list" id="quoteErrorsInlineList"></div>
+      </div>
+    </div>
+    <div id="itemsList" class="list"></div>
+    <div style="text-align:center;margin-top:10px">
+      <button class="btn btn--ghost btn--sm" id="btnItemsToggle" style="display:none"
+        onclick="itemsExpanded=!itemsExpanded;renderItems()">Ver todos</button>
+    </div>
+
+    <!-- P&L: Portfólio de Acções/ETFs -->
+    <div class="card" id="equityPnLCard" style="margin-top:14px">
+      <div class="card__head">
+        <div>
+          <div class="card__title">📊 P&L — Acções &amp; ETFs</div>
+          <div class="card__muted">Ganho/Perda por posição vs. preço médio de custo</div>
+        </div>
+        <button class="btn btn--ghost btn--sm" onclick="renderEquityPnL()" title="Recalcular">↻</button>
+      </div>
+      <div id="equityPnLContent"></div>
+    </div>
+
+  </section>
+
+  <!-- IMPORT -->
+  <section class="view" data-view="cashflow" id="viewCashflow" hidden>
+    <div class="seg" style="margin-bottom:12px">
+      <button class="seg__btn seg__btn--active" id="segBalanco" onclick="switchCashflowPane('balanco')">€ Balanço</button>
+      <button class="seg__btn" id="segImportar" onclick="switchCashflowPane('importar')">⇅ Importar</button>
+    </div>
+    <div id="paneCashflowBalanco">
+    <div class="card">
+      <div class="card__head">
+        <div><div class="card__title">Balanço</div><div class="card__muted">Entradas, saídas e saldo.</div></div>
+        <button class="btn btn--primary" id="btnAddTx">+ Movimento</button>
+      </div>
+      <div class="filters" style="grid-template-columns:1fr 1fr 1fr">
+        <select class="input" id="cfMonth"></select>
+        <select class="input" id="cfYear"></select>
+        <select class="input" id="cfGranularity">
+          <option value="day">Diário</option>
+          <option value="week">Semanal</option>
+          <option value="month" selected>Mensal</option>
+          <option value="year">Anual</option>
+          <option value="all">Todo o período</option>
+        </select>
+      </div>
+      <div class="kpiRow">
+        <div class="kpi kpi--in"><div class="kpi__k">Entradas</div><div class="kpi__v" id="cfIn">0 €</div></div>
+        <div class="kpi kpi--out"><div class="kpi__k">Saídas</div><div class="kpi__v" id="cfOut">0 €</div></div>
+        <div class="kpi kpi--net"><div class="kpi__k">Saldo</div><div class="kpi__v" id="cfNet">0 €</div><div class="kpi__s" id="cfRate">0%</div></div>
+      </div>
+      <!-- Taxa de poupança -->
+      <div id="savingsRateWrap" style="margin-top:12px;display:none">
+        <div class="row" style="justify-content:space-between;margin-bottom:5px">
+          <span class="card__muted">Taxa de poupança <button class="info-btn" onclick="openTip('savingsRate')" title="Saber mais">ℹ️</button></span>
+          <span style="font-weight:900;color:#059669" id="savingsRatePct">0%</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill progress-bar-fill--green" id="savingsRateFill"></div></div>
+      </div>
+    </div>
+
+    <!-- Categorias de despesa -->
+    <div class="card">
+      <div class="card__head">
+        <div><div class="card__title">Categorias de despesa</div><div class="card__muted" id="catSubtitle">Saídas por categoria</div></div>
+      </div>
+      <div class="chartWrap"><canvas id="catChart" height="180"></canvas></div>
+      <div id="catList" class="list" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><div><div class="card__title">Fluxo</div><div class="card__muted">Entradas vs. Saídas</div></div></div>
+      <div class="chartWrap"><canvas id="cfChart" height="200"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <div><div class="card__title">Movimentos</div><div class="card__muted">Clica para editar ou apagar</div></div>
+        <button class="link" id="btnTxToggle" style="display:none">Ver todos</button>
+      </div>
+      <div id="txList" class="list"></div>
+    </div>
+
+    <!-- v15: Exportar balanço -->
+    <div class="card">
+      <div class="card__head">
+        <div><div class="card__title">📤 Exportar</div><div class="card__muted">Descarrega os teus dados</div></div>
+      </div>
+      <div class="row row--wrap" style="gap:8px">
+        <button class="btn btn--ghost" id="btnExportCashflowCSV">📥 Balanço CSV</button>
+        <button class="btn btn--ghost" id="btnExportPortfolioCSV">📥 Portfólio CSV</button>
+        <button class="btn btn--ghost" id="btnExportPortfolioXLSX">📊 Excel completo</button>
+      </div>
+    </div>
+
+    </div><!-- end paneCashflowBalanco -->
+    <div id="paneCashflowImportar" style="display:none">
+      <div class="card__muted" style="font-size:12px;margin:0 0 10px;padding:0 2px">Extractos de corretoras e bancos. Para <b>backup completo</b> da app (JSON, todos os dados), vai a Definições → Outras acções.</div>
+
+      <!-- CORRETORAS -->
+      <div class="card" style="border:2px solid var(--purple);border-radius:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:28px">📂</span>
+          <div>
+            <div class="card__title" style="margin-bottom:2px">Corretoras</div>
+            <div class="card__muted" style="font-size:12px">Trading 212 · XTB · CSV, Excel, PDF</div>
+          </div>
+        </div>
+        <input id="brokerFiles" type="file" class="input"
+          accept=".csv,.xls,.xlsx,.pdf,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          multiple
+          onchange="document.getElementById('btnImportBrokerFiles').disabled=!this.files.length">
+        <button class="btn btn--primary" id="btnImportBrokerFiles" disabled
+          style="width:100%;margin-top:10px;padding:16px;font-size:17px;font-weight:800;border-radius:14px">
+          Importar ficheiros de corretora
+        </button>
+        <div id="brokerImportDiag" style="display:none;margin-top:8px"></div>
+        <div id="brokerImportResult" style="display:none;margin-top:10px"></div>
+        <div id="brokerImportAudit" style="display:none;margin-top:10px"></div>
+        <div id="brokerImportList" class="list" style="margin-top:10px"></div>
+        <div style="margin-top:10px">
+          <button class="btn btn--outline" id="btnClearBrokerImports">🗑️ Limpar imports de corretoras</button>
+        </div>
+      </div>
+
+      <!-- EXTRACTOS BANCO -->
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:28px">🏦</span>
+          <div>
+            <div class="card__title" style="margin-bottom:2px">Extracto do banco</div>
+            <div class="card__muted" style="font-size:12px">Santander · BPI · Millennium · CGD · PDF ou CSV</div>
+          </div>
+        </div>
+        <input id="bankImportFile" type="file" class="input"
+          accept=".csv,.pdf,text/csv,application/pdf"
+          onchange="document.getElementById('btnImportBankCsv').disabled=!this.files.length">
+        <button class="btn btn--primary" id="btnImportBankCsv" disabled
+          style="width:100%;margin-top:10px;padding:16px;font-size:17px;font-weight:800;border-radius:14px">
+          Importar extracto
+        </button>
+        <div id="bankImportDebug" style="display:none;margin-top:8px"></div>
+        <div id="bankImportResult" style="display:none;margin-top:10px"></div>
+      </div>
+
+      <!-- AVISO DUPLICADOS -->
+      <div class="card" id="dupWarningCard" style="border:2px solid #fbbf24;display:none;margin-top:12px">
+        <div class="card__title" style="margin-bottom:6px">⚠️ Possíveis dados duplicados</div>
+        <div class="card__muted" style="margin-bottom:10px">Detectámos movimentos possivelmente importados mais do que uma vez.</div>
+        <button class="btn btn--outline" id="btnClearTransactions2" style="width:100%;font-weight:700">🗑️ Limpar e reimportar</button>
+      </div>
+
+      <input type="file" id="fileInputJSON" accept=".json" style="display:none">
+</div><!-- end paneCashflowImportar -->
+  </section>
+
+  <!-- DIVIDENDOS -->
+  <section class="view" data-view="dividends" id="viewDividends" hidden>
+
+    <!-- Selector de modo -->
+    <div class="seg" style="display:grid;grid-template-columns:repeat(4,1fr)">
+      <button class="seg__btn seg__btn--active" id="segDivSummary">📊 Resumo</button>
+      <button class="seg__btn" id="segDivMonthly">📅 Mensal</button>
+      <button class="seg__btn" id="segDivDetail">📋 Detalhe</button>
+      <button class="seg__btn" id="segDivCalendar">🗓 Calendário</button>
+    </div>
+
+    <!-- MODO 1: Resumo anual (dados da corretora) -->
+    <div id="paneDivSummary">
+      <!-- KPIs do resumo — agora vêm PRIMEIRO (auto-calculados) -->
+      <div id="divSummaryKPIs"></div>
+
+      <!-- Formulário manual — colapsável, secundário -->
+      <details style="margin-top:8px">
+        <summary style="cursor:pointer;padding:12px 16px;background:var(--card2);border-radius:var(--r-sm);border:1px solid var(--line);font-weight:700;font-size:13px;color:var(--muted);list-style:none;display:flex;justify-content:space-between;align-items:center">
+          <span>✏️ Ajuste manual / entrada de dados da corretora</span>
+          <span style="font-size:11px;font-weight:500">▼ expandir</span>
+        </summary>
+        <div style="border:1px solid var(--line);border-top:none;border-radius:0 0 var(--r-sm) var(--r-sm);padding:0">
+      <div class="card" style="border-radius:0;border:none;border-bottom:1px solid var(--line)">
+        <div class="card__head">
+          <div>
+            <div class="card__title">Ajuste manual de dividendos</div>
+            <div class="card__muted">Usa apenas se a corretora não foi importada ou para corrigir valores</div>
+          </div>
+          <button class="info-btn" onclick="openTip('divSummary')" style="font-size:20px">ℹ️</button>
+        </div>
+
+        <!-- Ano -->
+        <label class="lbl">Ano</label>
+        <select class="input" id="divSummaryYear" style="max-width:140px"></select>
+
+        <!-- Modo de entrada -->
+        <label class="lbl" style="margin-top:14px">O que tens disponível? <span class="card__muted" style="font-weight:600;font-size:12px">(escolhe o que a corretora mostra)</span></label>
+        <div class="div-input-modes">
+          <label class="div-mode-opt">
+            <input type="radio" name="divInputMode" value="gross_tax" checked>
+            <span>💶 Bruto + Retenção</span>
+          </label>
+          <label class="div-mode-opt">
+            <input type="radio" name="divInputMode" value="net_only">
+            <span>✅ Só líquido</span>
+          </label>
+          <label class="div-mode-opt">
+            <input type="radio" name="divInputMode" value="portfolio_yield">
+            <span>📈 Carteira + Yield %</span>
+          </label>
+          <label class="div-mode-opt">
+            <input type="radio" name="divInputMode" value="yield_only">
+            <span>% Só o Yield</span>
+          </label>
+        </div>
+
+        <!-- Campos dinâmicos por modo -->
+        <div id="divInputFields" style="margin-top:10px">
+
+          <!-- MODO: Bruto + Retenção -->
+          <div id="divFields_gross_tax">
+            <div class="filters" style="grid-template-columns:1fr 1fr;margin-top:0">
+              <div>
+                <label class="lbl">Total recebido bruto (€)</label>
+                <input class="input" id="divSummaryGross" inputmode="decimal" placeholder="ex: 4.250,00">
+              </div>
+              <div>
+                <label class="lbl">Retenção na fonte (€)</label>
+                <input class="input" id="divSummaryTax" inputmode="decimal" placeholder="ex: 637,50">
+              </div>
+            </div>
+            <label class="lbl">Yield médio (% — da corretora ou calculado)</label>
+            <input class="input" id="divSummaryYield_gt" inputmode="decimal" placeholder="ex: 3.2">
+          </div>
+
+          <!-- MODO: Só líquido -->
+          <div id="divFields_net_only" style="display:none">
+            <label class="lbl">Total líquido recebido (€)</label>
+            <input class="input" id="divSummaryNet" inputmode="decimal" placeholder="ex: 3.612,50">
+            <label class="lbl">Taxa de retenção aplicada (%)</label>
+            <input class="input" id="divSummaryRetRate" inputmode="decimal" placeholder="ex: 15 (Portugal: 28%)">
+            <label class="lbl">Yield médio (%)</label>
+            <input class="input" id="divSummaryYield_net" inputmode="decimal" placeholder="ex: 3.2">
+          </div>
+
+          <!-- MODO: Carteira + Yield -->
+          <div id="divFields_portfolio_yield" style="display:none">
+            <div class="note" style="margin-bottom:10px">
+              A app calcula automaticamente o bruto estimado com base no valor da tua carteira e o yield da corretora.
+            </div>
+            <div class="filters" style="grid-template-columns:1fr 1fr;margin-top:0">
+              <div>
+                <label class="lbl">Valor da carteira com dividendos (€)</label>
+                <input class="input" id="divSummaryPortfolio" inputmode="decimal" placeholder="ex: 132.000">
+              </div>
+              <div>
+                <label class="lbl">Dividend Yield da corretora (%)</label>
+                <input class="input" id="divSummaryYield_py" inputmode="decimal" placeholder="ex: 3.2">
+              </div>
+            </div>
+            <label class="lbl">Retenção estimada (%)</label>
+            <input class="input" id="divSummaryRetRate_py" inputmode="decimal" placeholder="ex: 15 (Portugal: 28%)" value="28">
+          </div>
+
+          <!-- MODO: Só Yield -->
+          <div id="divFields_yield_only" style="display:none">
+            <div class="note" style="margin-bottom:10px">
+              A app usa o valor total da tua carteira de ativos com dividendos para estimar o rendimento.
+            </div>
+            <label class="lbl">Dividend Yield da corretora (%)</label>
+            <input class="input" id="divSummaryYield_yo" inputmode="decimal" placeholder="ex: 3.2">
+            <label class="lbl">Retenção estimada (%)</label>
+            <input class="input" id="divSummaryRetRate_yo" inputmode="decimal" placeholder="ex: 28" value="28">
+            <div class="note" style="margin-top:8px">
+              Carteira usada: <b id="divYoPortfolioVal">—</b> (todos os ativos com yield configurado)
+            </div>
+          </div>
+        </div>
+
+        <label class="lbl" style="margin-top:10px">Notas (opcional)</label>
+        <input class="input" id="divSummaryNotes" placeholder="ex: DEGIRO 2025 — VWCE + FWRG">
+
+        <!-- Live preview -->
+        <div id="divSummaryLive" class="note" style="margin-top:12px;display:none;background:#f0fdf4;border-color:#86efac">
+          <div style="font-size:13px;color:#166534">
+            💶 Bruto est.: <b id="divSummaryLiveGross">—</b> &nbsp;·&nbsp;
+            ✅ Líquido: <b id="divSummaryLiveNet">—</b> &nbsp;·&nbsp;
+            📅 Mensal: <b id="divSummaryLiveMth">—</b> &nbsp;·&nbsp;
+            🔖 Retenção: <b id="divSummaryLiveRet">—</b>
+          </div>
+        </div>
+
+        <div class="row row--wrap" style="margin-top:12px;gap:8px">
+          <button class="btn btn--primary" id="btnSaveDivSummary" style="flex:1">Guardar resumo anual</button>
+          <button class="btn btn--danger" id="btnDeleteDivSummary" style="display:none">Apagar</button>
+        </div>
+      </div>
+        </div><!-- /.details inner -->
+      </details><!-- /.manual form collapsible -->
+
+      <!-- Histórico de resumos anuais (manual entries) -->
+      <div class="card" id="divSummaryListCard" style="display:none">
+        <div class="card__head">
+          <div><div class="card__title">Resumos manuais</div><div class="card__muted">Clica para editar</div></div>
+        </div>
+        <div id="divSummaryList" class="list"></div>
+      </div>
+
+      <!-- Gráfico evolução anual -->
+      <div class="card">
+        <div class="card__title" style="margin-bottom:10px">Evolução do rendimento anual</div>
+        <div class="chartWrap"><canvas id="divSummaryChart" height="220"></canvas></div>
+      </div>
+
+      <!-- Projeção futura -->
+      <div class="card">
+        <div class="card__head">
+          <div>
+            <div class="card__title">Projeção futura</div>
+            <div class="card__muted">Mantendo o mesmo yield e assumindo crescimento da carteira</div>
+          </div>
+        </div>
+
+        <div class="note" style="margin-bottom:10px">
+          Parte do <b>yield atual</b> da corretora e projeta o que receberás à medida que a carteira cresce — com ou sem contribuições adicionais.
+        </div>
+
+        <div class="filters" style="grid-template-columns:1fr 1fr">
+          <div>
+            <label class="lbl">Yield mantido (%/ano) <button class="info-btn" onclick="openTip('yieldPct')">ℹ️</button></label>
+            <input class="input" id="divProjYield" inputmode="decimal" placeholder="ex: 3.2">
+          </div>
+          <div>
+            <label class="lbl">Crescimento carteira/ano (%)</label>
+            <input class="input" id="divProjGrowth" inputmode="decimal" placeholder="ex: 7" value="7">
+          </div>
+        </div>
+        <div class="filters" style="grid-template-columns:1fr 1fr">
+          <div>
+            <label class="lbl">Contribuição mensal (€)</label>
+            <input class="input" id="divProjContrib" inputmode="decimal" placeholder="ex: 500" value="0">
+          </div>
+          <div>
+            <label class="lbl">Horizonte (anos)</label>
+            <input class="input" id="divProjYears" type="number" min="1" max="40" value="20">
+          </div>
+        </div>
+        <div class="filters" style="grid-template-columns:1fr 1fr">
+          <div>
+            <label class="lbl">Retenção estimada (%)</label>
+            <input class="input" id="divProjRet" inputmode="decimal" placeholder="ex: 28" value="28">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn btn--primary" id="btnDivProject" style="width:100%">Calcular projeção</button>
+          </div>
+        </div>
+
+        <!-- 3 cenários: yield mantido / yield -1% / yield +1% -->
+        <div id="divProjScenarios" style="margin-top:12px;display:none">
+          <div class="kpiRow" id="divProjKPIs"></div>
+        </div>
+        <div class="chartWrap" style="margin-top:12px"><canvas id="divProjChart" height="240"></canvas></div>
+        <div id="divProjMilestones" class="list" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- MODO 2: Por dividendo individual -->
+    <div id="paneDivCalendar" style="display:none">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:22px">📅</span>
+          <div>
+            <div class="card__title" style="margin-bottom:0">Calendário de Dividendos</div>
+            <div class="card__muted" style="font-size:12px">Próximos 12 meses · estimativas baseadas em yields históricos</div>
+          </div>
+        </div>
+        <div id="divCalendarContent"></div>
+      </div>
+    </div>
+    <div id="paneDivDetail" style="display:none">
+      <div class="card">
+        <div class="card__head">
+          <div><div class="card__title">Dividendos individuais</div><div class="card__muted">Registo detalhado por pagamento</div></div>
+          
+        </div>
+      </div>
+      <div id="divKPIs"></div>
+      <div class="card">
+        <div class="card__title" style="margin-bottom:10px">Por mês (últimos 24)</div>
+        <div class="chartWrap"><canvas id="divChart" height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card__head">
+          <div><div class="card__title">Histórico</div><div class="card__muted">Clica para editar</div></div>
+          <button class="link" id="btnDivToggle" style="display:none">Ver todos</button>
+        </div>
+        <div id="divList" class="list"></div>
+      </div>
+    </div>
+
+  
+    <div id="paneDivMonthly" style="display:none">
+      <div id="brokerImportWarning"></div>
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:22px">📅</span>
+            <div class="card__title" style="margin:0">Dividendos mensais</div>
+          </div>
+          <div id="divMonthlyYearBtns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <div style="position:relative;height:240px;width:100%">
+          <canvas id="divMonthlyChart"></canvas>
+        </div>
+        <div id="divMonthlyTotal" style="text-align:center;font-size:13px;font-weight:700;color:var(--muted);margin-top:8px"></div>
+      </div>
+      <div class="card">
+        <div class="card__title" style="margin-bottom:10px">Por ticker</div>
+        <div id="divMonthlyByTicker"></div>
+      </div>
+    </div>
+</section>
+
+  <!-- ANÁLISE -->
+  <section class="view" data-view="analysis" id="viewAnalysis" hidden>
+
+    <!-- Tabs de análise — scroll horizontal -->
+    <div class="analysis-tabs-wrap">
+      <div class="analysis-tabs" id="analysisTabs">
+        <button class="analysis-tab analysis-tab--active" data-tab="portfolio">📊 Portfólio</button>
+        <button class="analysis-tab" data-tab="rankings">🏆 Rankings</button>
+        <button class="analysis-tab" data-tab="fire">🔥 FIRE</button>
+        <button class="analysis-tab" data-tab="forecast">📈 Previsão</button>
+        <button class="analysis-tab advanced-only" data-tab="fiscal">🧾 Fiscal</button>
+        <button class="analysis-tab analysis-tab--ai" data-tab="ai">🤖 IA</button>
+      </div>
+    </div>
+    <!-- v63v: sub-tabs for the "Portfólio" group — it stacks 5 distinct panels
+         (Sector/Geografia, Comparação, Performance, Alocação, Simulação) with no
+         way to jump between them, so it read as one long repetitive scroll.
+         Visible only when the Portfólio top-level tab is active. -->
+    <div class="seg seg--5 seg--sm" id="portfolioSubTabs" style="display:none">
+      <button class="seg__btn seg__btn--active" data-subtab="overview">Visão geral</button>
+      <button class="seg__btn" data-subtab="compare">Comparar</button>
+      <button class="seg__btn" data-subtab="performance">Performance</button>
+      <button class="seg__btn" data-subtab="allocation">Alocação</button>
+      <button class="seg__btn advanced-only" data-subtab="drawdown">Simulação</button>
+    </div>
+    <!-- Hidden select kept for JS compatibility -->
+    <select id="analysisTab" style="display:none">
+      <option value="compound" selected>Juro Composto</option>
+      <option value="forecast">Previsão</option>
+      <option value="compare">Comparação</option>
+      <option value="fire">FIRE</option>
+      <option value="portfolio">Sector</option>
+      <option value="fiscal">Fiscal</option>
+      <option value="performance">Performance</option>
+      <option value="drawdown">Reforma</option>
+      <option value="ai">Análise IA</option>
+      <option value="pricehistory">Cotações</option>
+      <option value="allocation">Alocação</option>
+    </select>
+    <!-- Portfolio Analysis: Sector + Geography charts -->
+    <div class="analysisPanelTab" id="analysisPanelTab_portfolio" style="display:none">
+      <!-- Sector chart -->
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:20px">📊</span>
+          <div style="flex:1">
+            <div class="card__title" style="margin-bottom:0">Distribuição por Sector</div>
+            <div class="card__muted" style="font-size:12px">Ações/ETFs e Cripto · Actualiza com ⟳ Cotações</div>
+          </div>
+          <button class="btn btn--ghost btn--sm" onclick="showSectorChartDiagnostic()" title="Ver reconciliação do total" style="font-size:11px">🔍</button>
+        </div>
+        <div id="sectorNoData" style="display:none;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:20px;text-align:center;color:var(--muted);margin-top:10px">
+          <div style="font-size:28px;margin-bottom:8px">📡</div>
+          <div style="font-weight:600;margin-bottom:4px">Sem dados de sector</div>
+          <div style="font-size:13px">Faz ⟳ Cotações para carregar</div>
+        </div>
+        <div id="sectorChartWrap" style="margin-top:12px"></div>
+      </div>
+      <!-- Geography chart -->
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:20px">🌍</span>
+          <div>
+            <div class="card__title" style="margin-bottom:0">Distribuição Geográfica</div>
+            <div class="card__muted" style="font-size:12px">Baseado no país de cotação e exchange</div>
+          </div>
+        </div>
+        <div id="geoNoData" style="display:none;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:20px;text-align:center;color:var(--muted);margin-top:10px">
+          <div style="font-size:28px;margin-bottom:8px">🌐</div>
+          <div style="font-weight:600;margin-bottom:4px">Sem dados geográficos</div>
+          <div style="font-size:13px">Faz ⟳ Cotações para carregar</div>
+        </div>
+        <div id="geoChartWrap" style="margin-top:12px"></div>
+      </div>
+      <div class="note" style="font-size:12px;text-align:center;color:#94a3b8;padding:8px 16px">
+        Inclui Ações/ETFs e Cripto. ETFs sem sector detalhado agrupados em "ETF / Fundo". Actualiza via ⟳ Cotações.
+      </div>
+    </div>
+
+    
+    <!-- ═══════════════════════════════ RANKINGS ═══════════════════════════════ -->
+    <div class="analysisPanelTab" id="analysisPanelTab_rankings" style="display:none">
+      <div id="rankingsContent"></div>
+    </div>
+
+<div class="analysis-section-divider" style="display:none;margin:16px 0 8px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;padding:0 4px">📐 JURO COMPOSTO</div>
+    <div class="analysisPanelTab" id="analysisPanelTab_compound" style="">
+      <div class="card">
+        <div class="card__title" style="margin-bottom:12px">Simulador de Juro Composto <button class="info-btn" onclick="openTip('compound')" title="O que é o juro composto?">ℹ️</button></div>
+        <label class="lbl">Base de cálculo</label>
+        <select class="input" id="compAsset"><option value="__portfolio__">📊 Carteira completa (automático)</option></select>
+        <!-- Nota automática da carteira -->
+        <div id="compPortfolioNote" class="note" style="display:none;margin-top:10px"></div>
+        <div class="filters" style="margin-top:10px">
+          <div><label class="lbl">Capital (€)</label><input class="input" id="compPrincipal" inputmode="decimal" placeholder="ex: 50000"></div>
+          <div><label class="lbl">Retorno anual total (%/ano)</label><input class="input" id="compRate" inputmode="decimal" placeholder="ex: 6.5"></div>
+          <div><label class="lbl">Anos</label><input class="input" id="compYears" type="number" min="1" max="50" value="20"></div>
+        </div>
+        <div class="filters" style="margin-top:10px">
+          <div><label class="lbl">Capitalização</label>
+            <select class="input" id="compFreq">
+              <option value="1">Anual</option><option value="2">Semestral</option>
+              <option value="4">Trimestral</option><option value="12" selected>Mensal</option><option value="365">Diária</option>
+            </select>
+          </div>
+          <div><label class="lbl">Contribuição mensal (€)</label><input class="input" id="compContrib" inputmode="decimal" value="0"></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn btn--primary" id="btnCalcCompound" style="width:100%">Calcular</button></div>
+        </div>
+        <div class="note" style="margin-top:10px;font-size:13px">
+          💡 Em modo <b>Carteira completa</b> os campos são preenchidos com o capital investido e o retorno total ponderado da carteira.<br>
+          <button class="btn btn--primary btn--sm" onclick="usePnLInCompound()" style="margin-top:8px;width:100%">
+            📊 Usar retorno real (TWR + dividendos)
+          </button>
+        </div>
+        <!-- Breakdown de retorno por classe -->
+        <div id="returnBreakdownContent" style="margin-top:12px"></div>
+        <!-- Projecção DCA + dividendos -->
+        <div id="compoundDCAResult"></div>
+      </div>
+      <div id="compoundTable" class="card" style="padding:16px"></div>
+      <div class="card"><div class="card__title" style="margin-bottom:10px">Evolução do capital</div><div class="chartWrap"><canvas id="compoundChart" height="240"></canvas></div></div>
+      <div class="card"><div class="card__title" style="margin-bottom:10px">Marcos temporais</div><div id="compoundMilestones" class="list"></div></div>
+    </div>
+    <div class="analysisPanelTab" id="analysisPanelTab_forecast" style="display:none">
+      <div class="card">
+        <div class="card__title" style="margin-bottom:12px">Previsão de retorno</div>
+        <div class="card__muted" style="margin-bottom:10px">Assumindo o retorno actual da carteira, sem alterações — "se nada mudar, para onde vai isto"</div>
+        <div id="forecastPortfolioNote" class="note" style="margin-top:12px"></div>
+        <div class="row" style="gap:12px;align-items:center">
+          <label class="lbl" style="margin:0;white-space:nowrap">Horizonte:</label>
+          <select class="input" id="forecastYears" style="max-width:160px">
+            <option value="5">5 anos</option><option value="10" selected>10 anos</option>
+            <option value="15">15 anos</option><option value="20">20 anos</option><option value="30">30 anos</option>
+          </select>
+        </div>
+      </div>
+      <div class="card"><div class="card__title" style="margin-bottom:10px">Por ativo</div><div id="forecastTable" class="list"></div></div>
+      <div class="card"><div class="card__title" style="margin-bottom:10px">Portfólio projetado</div><div class="chartWrap"><canvas id="forecastChart" height="240"></canvas></div></div>
+    </div>
+    <div class="analysis-section-divider" style="display:none;margin:16px 0 8px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;padding:0 4px">📊 COMPARAR ATIVOS</div>
+    <div class="analysisPanelTab" id="analysisPanelTab_compare" style="display:none">
+      <div class="card">
+        <div class="card__title" style="margin-bottom:12px">Comparação YoY / MoM</div>
+        <select class="input" id="compareMode"><option value="mom">Mensal (MoM)</option><option value="yoy">Anual (YoY)</option></select>
+        <div class="note" style="margin-top:10px">Baseado em snapshots. Usa "Registar mês" no Dashboard.</div>
+      </div>
+      <div class="card"><div class="chartWrap"><canvas id="compareChart" height="220"></canvas></div></div>
+      <div class="card"><div id="compareTable" class="list"></div></div>
+    </div>
+    <div class="analysisPanelTab" id="analysisPanelTab_fire" style="display:none">
+      <!-- Inputs -->
+      <div class="card">
+        <div class="card__title" style="margin-bottom:4px">Projeção FIRE <button class="info-btn" onclick="openTip('fire')" title="O que é FIRE?">ℹ️</button></div>
+        <div class="card__muted" style="margin-bottom:14px">Financial Independence, Retire Early · 3 cenários — quando podes deixar de depender de trabalho activo</div>
+
+        <button class="btn btn--outline btn--sm" id="btnToggleFireInputs" style="width:100%;margin-bottom:4px">⚙️ Ajustar pressupostos</button>
+        <div id="fireInputsBody" style="display:none;margin-top:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <label class="lbl">Janela cashflow</label>
+            <select class="input" id="fireWindow">
+              <option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl">Horizonte</label>
+            <select class="input" id="fireHorizon">
+              <option value="20">20 anos</option><option value="30" selected>30 anos</option><option value="40">40 anos</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl">Despesas mensais (€) <span style="font-size:11px;color:#94a3b8">auto</span></label>
+            <input class="input" id="fireExpInput" inputmode="decimal" placeholder="automático do Balanço">
+          </div>
+          <div>
+            <label class="lbl">Poupança mensal (€) <span style="font-size:11px;color:#94a3b8">auto</span></label>
+            <input class="input" id="fireSaveInput" inputmode="decimal" placeholder="automático do Balanço">
+          </div>
+          <div>
+            <label class="lbl">Investimento mensal programado (€) <span style="font-size:11px;color:#94a3b8">ex: DCA</span></label>
+            <input class="input" id="fireMonthlyInvest" inputmode="decimal" placeholder="ex: 500 (adicional à poupança)">
+          </div>
+        </div>
+        <!-- v15: parâmetros custom -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0">
+          <div>
+            <label class="lbl">Retorno custom (%/ano) <span style="font-size:11px;color:#94a3b8">deixa vazio = automático</span></label>
+            <input class="input" id="fireCustomReturn" inputmode="decimal" placeholder="ex: 6">
+          </div>
+          <div>
+            <label class="lbl">Inflação custom (%/ano)</label>
+            <input class="input" id="fireCustomInflation" inputmode="decimal" placeholder="ex: 2.5">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn--primary" id="btnRecalcFire">🔄 Calcular</button>
+          <button class="btn btn--outline" onclick="usePnLInFIRE()" title="Preenche o retorno com o P&L real do portfólio de acções">📊 Usar P&L real</button>
+        </div>
+        </div>
+        <div id="fireEngineNote" class="note" style="margin-top:12px"></div>
+      </div>
+
+      <!-- Estado actual -->
+      <div class="card" id="fireStatusCard">
+        <div class="card__title" style="margin-bottom:12px">Estado actual</div>
+        <div class="kpiRow" style="margin-bottom:8px">
+          <div class="kpi"><div class="kpi__k">Capital investível</div><div class="kpi__v" id="fireCap">—</div></div>
+          <div class="kpi kpi--out"><div class="kpi__k">Despesas/ano</div><div class="kpi__v" id="fireExp">—</div></div>
+        </div>
+        <div class="kpiRow" style="margin-bottom:12px">
+          <div class="kpi kpi--in"><div class="kpi__k">Rendimento passivo/ano</div><div class="kpi__v" id="firePass">—</div></div>
+          <div class="kpi"><div class="kpi__k">Poupança/mês</div><div class="kpi__v" id="fireSave">—</div></div>
+        </div>
+        <!-- Progress bars -->
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+            <span style="font-weight:600">Capital vs FIRE número</span>
+            <span id="fireCapPct" style="color:#6366f1;font-weight:700">—</span>
+          </div>
+          <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+            <div id="fireCapBar" style="height:8px;background:#6366f1;border-radius:4px;width:0%;transition:width .6s"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+            <span style="font-weight:600">Rendimento passivo vs Despesas</span>
+            <span id="firePassPct" style="color:#10b981;font-weight:700">—</span>
+          </div>
+          <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+            <div id="firePassBar" style="height:8px;background:#10b981;border-radius:4px;width:0%;transition:width .6s"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cenários -->
+      <div class="card">
+        <div class="card__title" style="margin-bottom:10px">3 Cenários</div>
+        <div id="fireResults" class="list"></div>
+      </div>
+
+      <!-- Gráfico -->
+      <div class="card">
+        <div class="card__title" style="margin-bottom:4px">Evolução projectada</div>
+        <div class="card__muted" style="margin-bottom:10px;font-size:12px">Cenário base · linha vermelha = FIRE número</div>
+        <div class="chartWrap"><canvas id="fireChart" height="260"></canvas></div>
+      </div>
+
+      <!-- Números FIRE por cenário -->
+      <div class="card">
+        <div class="card__title" style="margin-bottom:10px">FIRE números necessários</div>
+        <div id="fireNumbers" class="list"></div>
+        <div class="note" style="margin-top:10px;font-size:12px">
+          💡 <b>FIRE número</b> = Despesas anuais ÷ SWR. Com SWR 4%: precisas de 25× as tuas despesas anuais investido.
+        </div>
+      </div>
+
+      <!-- Independência parcial -->
+      <div class="card" id="firePartialCard">
+        <div class="card__title" style="margin-bottom:10px">🌤️ Independência parcial actual</div>
+        <div id="firePartial"></div>
+      </div>
+    </div>
+    <!-- v16: Painel Performance (TWR + Benchmark + Rebalancing) -->
+    <div class="analysis-section-divider" style="display:none;margin:16px 0 8px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;padding:0 4px">⚖️ PERFORMANCE &amp; REBALANCING</div>
+    <div class="analysisPanelTab" id="analysisPanelTab_performance" style="display:none">
+      <div class="card advanced-only">
+        <div class="card__head">
+          <div><div class="card__title">📊 Performance do portfólio</div>
+          <div class="card__muted">TWR anualizado vs benchmarks de mercado</div></div>
+        </div>
+        <div id="benchmarkContent"></div>
+      </div>
+      <div class="card">
+        <div class="card__head">
+          <div><div class="card__title">⚖️ Rebalancing</div>
+          <div class="card__muted">Sugestões para atingir a alocação alvo</div></div>
+          <span id="rebalancingTotal" style="font-size:12px;color:#94a3b8"></span>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">🏢 REITs (ex: Realty Income, Gladstone) contam como <b>Imobiliário</b> aqui, mesmo tendo classe "Ações/ETFs" — são exposição imobiliária, não acções de crescimento.</div>
+        <div id="rebalancingContent"></div>
+      </div>
+    </div>
+
+    <!-- v16: Painel Simulação Reforma (Drawdown) -->
+    <div class="analysisPanelTab" id="analysisPanelTab_drawdown" style="display:none">
+      <div class="card">
+        <div class="card__head">
+          <div><div class="card__title">📉 Simulação de reforma</div>
+          <div class="card__muted">Quanto tempo dura o capital se retirares X€/ano?</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <label class="lbl">Levantamento anual (€)</label>
+            <input class="input" id="drawdownWithdrawal" inputmode="decimal" placeholder="ex: 24000">
+          </div>
+          <div>
+            <label class="lbl">Retorno esperado (%/ano)</label>
+            <input class="input" id="drawdownReturn" inputmode="decimal" value="5">
+          </div>
+          <div>
+            <label class="lbl">Inflação (%/ano)</label>
+            <input class="input" id="drawdownInflation" inputmode="decimal" value="2.5">
+          </div>
+          <div>
+            <label class="lbl">Horizonte (anos)</label>
+            <select class="input" id="drawdownYears">
+              <option value="30">30 anos</option>
+              <option value="40" selected>40 anos</option>
+              <option value="50">50 anos</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn--primary" id="btnCalcDrawdown" style="width:100%;margin-bottom:12px" onclick="renderDrawdownPanel()">🔄 Calcular</button>
+        <div id="drawdownContent"></div>
+        <div class="chartWrap" style="margin-top:12px"><canvas id="drawdownChart" height="240"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card__title" style="margin-bottom:8px">💡 Regras de ouro da reforma</div>
+        <div style="font-size:13px;line-height:1.8;color:#475569">
+          <b>Regra dos 4%</b> — Retira até 4% do capital/ano → dura 30+ anos historicamente<br>
+          <b>Regra dos 3%</b> — Mais conservador → dura quase indefinidamente<br>
+          <b>Guarda 1-2 anos</b> em liquidez para não venderes em crash<br>
+          <b>Ajusta levantamentos</b> à inflação para manter o poder de compra
+        </div>
+      </div>
+    </div>
+
+    <!-- v15: Painel Resumo Fiscal -->
+    <div class="analysisPanelTab" id="analysisPanelTab_fiscal" style="display:none">
+      <div class="card">
+        <div class="card__head">
+          <div><div class="card__title">🧾 Resumo Fiscal Estimado</div>
+          <div class="card__muted">28% retenção PT · consulta sempre um TOC</div></div>
+          <button class="btn btn--ghost" id="btnExportFiscal" style="font-size:12px">📥 CSV</button>
+        </div>
+        <div id="fiscalContent"></div>
+      </div>
+    </div>
+
+    <!-- 📉 Histórico de Cotações -->
+    <div class="analysisPanelTab" id="analysisPanelTab_pricehistory" style="display:none">
+      <div class="card">
+        <div class="card__head">
+          <div><div class="card__title">📉 Histórico de Cotações</div>
+          <div class="card__muted">Evolução de preços guardada em cada ⟳ Cotações</div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+          <label class="lbl" style="margin:0;white-space:nowrap">Ticker:</label>
+          <select class="input" id="priceHistoryTicker" style="max-width:200px" onchange="renderPriceHistoryPanel()"></select>
+          <button class="btn btn--ghost btn--sm" onclick="renderPriceHistoryPanel()">↻ Actualizar</button>
+        </div>
+        <div id="priceHistoryContent"></div>
+      </div>
+      <div class="card">
+        <div class="card__head">
+          <div><div class="card__title">💱 Taxas de Câmbio</div>
+          <div class="card__muted">Histórico de FX registado em cada actualização</div></div>
+        </div>
+        <div id="fxHistoryContent"></div>
+      </div>
+    </div>
+
+    <!-- 🎯 Alocação Alvo FIRE -->
+    <div class="analysis-section-divider" style="display:none;margin:16px 0 8px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;padding:0 4px">🎯 ALOCAÇÃO ALVO</div>
+    <div class="analysisPanelTab" id="analysisPanelTab_allocation" style="display:none">
+      <div class="card">
+        <div class="card__head">
+          <div><div class="card__title">🎯 Alocação Alvo</div>
+          <div class="card__muted">Sugestão FIRE · clica para personalizar</div></div>
+          <button class="btn btn--primary btn--sm" id="btnSaveAllocation">Guardar</button>
+        </div>
+        <div id="allocationContent"></div>
+      </div>
+      <div class="card" id="allocationGapCard" style="display:none">
+        <div class="card__head">
+          <div><div class="card__title">📊 Gap vs. Carteira Actual</div>
+          <div class="card__muted">O que comprar / vender para atingir o alvo</div></div>
+        </div>
+        <div id="allocationGapContent"></div>
+      </div>
+    </div>
+
+    <!-- IA: Painel de Análise por Inteligência Artificial -->
+    <div class="analysisPanelTab" id="analysisPanelTab_ai" style="display:none">
+
+      <div class="card ai-intro-card">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div class="ai-avatar">🤖</div>
+          <div>
+            <div class="card__title">Análise por IA</div>
+            <div class="card__muted">Claude analisa o teu portfólio e gera sugestões personalizadas</div>
+          </div>
+        </div>
+
+        <!-- Selector de provider -->
+        <div class="ai-providers">
+          <label class="ai-provider-btn">
+            <input type="radio" name="aiProvider" value="groq" checked>
+            <span>
+              <strong>⚡ Groq</strong>
+              <small>Gratuito · Llama 3.3 70B</small>
+            </span>
+          </label>
+          <label class="ai-provider-btn">
+            <input type="radio" name="aiProvider" value="anthropic">
+            <span>
+              <strong>🤖 Claude</strong>
+              <small>Pago · Mais preciso</small>
+            </span>
+          </label>
+        </div>
+
+        <!-- Selector de modo de análise -->
+        <div class="ai-modes">
+          <label class="ai-mode-btn">
+            <input type="radio" name="aiMode" value="geral" checked>
+            <span>🔍 Geral</span>
+          </label>
+          <label class="ai-mode-btn">
+            <input type="radio" name="aiMode" value="risco">
+            <span>⚠️ Risco</span>
+          </label>
+          <label class="ai-mode-btn">
+            <input type="radio" name="aiMode" value="fiscal">
+            <span>🧾 Fiscal</span>
+          </label>
+          <label class="ai-mode-btn">
+            <input type="radio" name="aiMode" value="fire">
+            <span>🔥 FIRE</span>
+          </label>
+          <label class="ai-mode-btn">
+            <input type="radio" name="aiMode" value="rebalancing">
+            <span>⚖️ Rebalancing</span>
+          </label>
+          <label class="ai-mode-btn">
+            <input type="radio" name="aiMode" value="balance">
+            <span>📈 Equilíbrio</span>
+          </label>
+        </div>
+
+        <!-- Pergunta livre opcional -->
+        <div style="margin-top:12px">
+          <label class="lbl">Pergunta específica (opcional)</label>
+          <textarea class="input" id="aiQuestion" rows="2"
+            placeholder="Ex: Devo aumentar a exposição a acções? Como reduzir o risco de concentração nos depósitos?"></textarea>
+        </div>
+
+        <button class="btn btn--primary" id="btnAiAnalyse" style="width:100%;margin-top:12px;font-size:15px">
+          ✨ Analisar portfólio
+        </button>
+      </div>
+
+      <!-- Resultado da análise -->
+      <div id="aiResultCard" style="display:none">
+        <div class="card">
+          <div class="card__head">
+            <div>
+              <div class="card__title" id="aiResultTitle">Análise</div>
+              <div class="card__muted" id="aiResultMeta"></div>
+            </div>
+            <button class="btn btn--ghost btn--sm" id="btnAiCopy">📋 Copiar</button>
+          </div>
+          <div id="aiResultContent" class="ai-result-body"></div>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="aiLoadingCard" style="display:none">
+        <div class="card" style="text-align:center;padding:32px 16px">
+          <div class="ai-spinner"></div>
+          <div style="margin-top:14px;font-weight:700;color:var(--muted)" id="aiLoadingMsg">A analisar o teu portfólio…</div>
+        </div>
+      </div>
+
+      <!-- Histórico de análises -->
+      <div id="aiHistorySection" style="display:none">
+        <div class="section-label">Análises anteriores</div>
+        <div id="aiHistory" class="list"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" data-view="settings" id="viewSettings" hidden>
+    <div id="paneSettings">
+      <!-- v64j: Modo Simples/Avançado — Parte 1 da simplificação pedida.
+           Esconde painéis com muitos parâmetros técnicos (ex: simulação de
+           reforma com taxa de levantamento/inflação/anos) atrás de um
+           interruptor, sem apagar nada — só deixa de aparecer por defeito. -->
+      <div class="card">
+        <div class="card__title" style="margin-bottom:6px">Modo de visualização</div>
+        <div class="card__muted" style="margin-bottom:12px">No modo Simples, painéis com muitos parâmetros técnicos ficam escondidos por defeito. Nada é apagado — muda para Avançado quando quiseres vê-los.</div>
+        <div class="seg" id="uiModeToggle" role="group" aria-label="Modo de visualização">
+          <button class="seg__btn seg__btn--active" data-mode="simple">🌱 Simples</button>
+          <button class="seg__btn" data-mode="advanced">🔬 Avançado</button>
+        </div>
+      </div>
+      <!-- ACÇÕES (v63o: movido para o sítio certo — estava dentro de Balanço > Importar) -->
+      <div class="card">
+        <div class="card__title" style="margin-bottom:2px">Outras acções</div>
+        <div class="card__muted" style="margin-bottom:10px">Backup completo da app (JSON) e exportações. Para importar extractos de <b>corretora ou banco</b>, vai a Balanço → Importar.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn--outline" id="btnExportJSON" style="font-size:13px">📤 Exportar JSON</button>
+          <button class="btn btn--outline" id="btnDiagnose" style="font-size:13px">🔍 Diagnosticar activo</button>
+          <button class="btn btn--outline" id="btnHardReset" style="font-size:13px">♻️ Reconstruir corretoras</button>
+          <button class="btn btn--outline" id="btnForceUpdate" style="font-size:13px;border-color:#f59e0b;color:#b45309">🔄 Forçar actualização da app</button>
+          <button class="btn btn--outline" id="btnImportJSON" style="font-size:13px">📥 Importar JSON</button>
+          <input type="file" id="jsonInput" accept="application/json,.json" style="display:none">
+          <button class="btn btn--outline" id="btnExportPortfolioCSV2" style="font-size:13px">📊 CSV Portfólio</button>
+          <button class="btn btn--outline" id="btnExportPortfolioXLSX2" style="font-size:13px">📊 Excel completo</button>
+        </div>
+        <div style="margin-top:8px">
+          <button class="btn btn--outline" id="btnClearTransactions" style="width:100%;margin-bottom:6px">🗑️ Limpar movimentos</button>
+          <button class="btn btn--danger" id="btnReset" style="width:100%">🗑️ Reset total</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__title" style="margin-bottom:12px">Preferências</div>
+        <label class="lbl">Moeda base</label>
+        <select class="input" id="baseCurrency">
+          <option value="EUR">EUR — Euro</option>
+          <option value="USD">USD — Dólar</option>
+          <option value="GBP">GBP — Libra</option>
+        </select>
+        <label class="lbl" style="margin-top:14px">Objetivo de rendimento passivo mensal (€)</label>
+        <input class="input" id="settingsGoal" inputmode="decimal" placeholder="ex: 2000">
+        <button class="btn btn--primary" style="margin-top:10px;width:100%" id="btnSaveGoal">Guardar objetivo</button>
+        <label class="lbl" style="margin-top:18px">🔗 Cloudflare Worker URL (cotações em tempo real)</label>
+        <input class="input" id="settingsWorkerUrl" type="url" placeholder="https://patrimonio-quotes.SEU-NOME.workers.dev">
+        <div class="note" style="margin-top:6px;font-size:12px">URL do Worker que proxifica o Yahoo Finance. Ver <b>worker.js</b> incluído na exportação.</div>
+        <button class="btn btn--primary" style="margin-top:8px;width:100%" id="btnSaveWorkerUrl">Guardar URL do Worker</button>
+      </div>
+      <div class="card">
+        <div class="card__title" style="margin-bottom:8px">Metodologia de Rendimento</div>
+        <div class="note">
+          <b>Yield %/ano</b> — Ex: ETF, ação, PPR, depósito.<br><br>
+          <b>€/ano</b> — Montante fixo (ex: obrigação com cupão fixo).<br><br>
+          <b>Renda mensal</b> — Imobiliário; a app anualiza (×12).<br><br>
+          <b>Capitalização</b> — Define a frequência ao editar o ativo.
+        </div>
+      </div>
+      <div class="card">
+        <div id="returnAssumptionsCard"></div>
+      </div>
+      <div class="card">
+        <div class="card__title" style="margin-bottom:8px">Importar / Exportar</div>
+        <button class="btn btn--primary" id="btnGoImport">⇅ Balanço → Importar</button>
+      </div>
+      <div class="card">
+        <div class="card__title" style="margin-bottom:8px">🤖 Análise por IA</div>
+        <div class="card__muted" style="margin-bottom:12px">A API key fica guardada localmente. Nunca sai do dispositivo sem a tua acção.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="btn btn--primary btn--sm" onclick="document.querySelector('.analysis-tab[data-tab=ai]').click(); setView('analysis');">✨ Abrir análise IA</button>
+        </div>
+        <!-- Groq -->
+        <div style="background:var(--card2);border-radius:14px;padding:12px;margin-bottom:8px;border:1px solid var(--line)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:800">⚡ Groq <span style="font-size:11px;background:#d1fae5;color:#065f46;border-radius:999px;padding:2px 8px;font-weight:700">GRATUITO</span></span>
+            <button class="btn btn--ghost btn--sm" onclick="clearAIKey('groq')" style="font-size:11px">🗑</button>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">Llama 3.3 70B · console.groq.com</div>
+          <div id="groqKeyStatus" style="font-size:11px;margin-top:4px;color:var(--green)"></div>
+        </div>
+        <!-- Claude -->
+        <div style="background:var(--card2);border-radius:14px;padding:12px;border:1px solid var(--line)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:800">🤖 Claude <span style="font-size:11px;background:#ede9fe;color:#5b21b6;border-radius:999px;padding:2px 8px;font-weight:700">PAGO</span></span>
+            <button class="btn btn--ghost btn--sm" onclick="clearAIKey('anthropic')" style="font-size:11px">🗑</button>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">Claude Sonnet · console.anthropic.com</div>
+          <div id="anthropicKeyStatus" style="font-size:11px;margin-top:4px;color:var(--green)"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__title" style="margin-bottom:8px">📄 Relatório Anual</div>
+        <div class="card__muted" style="margin-bottom:10px">Exporta um relatório completo do portfólio em texto</div>
+        <button class="btn btn--primary btn--sm" onclick="exportAnnualReport()" style="width:100%">
+          📥 Exportar relatório patrimonial
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card__title" style="margin-bottom:8px">Sobre</div>
+        <div class="card__muted"><span style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px" id="swVersionBadge">a verificar cache activa…</span><br><br>Finva <b>v1.0</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br><br>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br><br><b>Finva nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Nova identidade visual, mesma base sólida por baixo. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Finva começa o seu próprio.
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+<!-- Modal: Dividend Base -->
+<div class="modal" id="modalDividendBase" aria-hidden="true">
+  <div class="modal__bg" data-close="modalDividendBase"></div>
+  <div class="modal__box">
+    <div class="modal__head">
+      <div class="modal__title">📦 Base do yield de dividendos</div>
+      <button class="modal__close" data-close="modalDividendBase">Fechar</button>
+    </div>
+    <div style="padding:0 16px 8px">
+      <div class="card__muted" style="margin-bottom:12px" id="dividendBaseSummary"></div>
+      <div id="dividendBaseList"></div>
+      <div class="note" style="margin-top:12px;font-size:12px">
+        Aqui vês exactamente que activos estão a entrar no denominador do yield de dividendos e quanto cada um pesa.
+      </div>
+    </div>
+    <div style="padding:12px 16px">
+      <button class="btn btn--primary" style="width:100%" data-close="modalDividendBase">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Quote Errors -->
+<div class="modal" id="modalQuoteErrors" aria-hidden="true">
+  <div class="modal__bg" data-close="modalQuoteErrors"></div>
+  <div class="modal__box">
+    <div class="modal__head">
+      <div class="modal__title">⚠️ Erros de cotação</div>
+      <button class="modal__close" data-close="modalQuoteErrors">Fechar</button>
+    </div>
+    <div style="padding:0 16px 8px">
+      <div class="card__muted" style="margin-bottom:12px" id="quoteErrorsSummary"></div>
+      <div id="quoteErrorsList"></div>
+      <div class="note" style="margin-top:12px;font-size:12px">
+        Estes activos mantêm o último valor conhecido.<br>
+        Possíveis causas: ticker não disponível no Yahoo Finance, ETF de nicho, ou ticker inválido.
+      </div>
+    </div>
+    <div style="padding:12px 16px">
+      <button class="btn btn--primary" style="width:100%" data-close="modalQuoteErrors">Fechar</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- PASSIVE BAR -->
+<div class="passivebar" id="passivebar">
+  <div class="passivebar__item">
+    <div class="passivebar__label">Rend. passivo anual <button class="info-btn" onclick="openTip('passiveIncome')">ℹ️</button></div>
+    <div class="passivebar__value passivebar__value--green" id="barPassiveAnnual">0 €</div>
+  </div>
+  <div class="passivebar__sep"></div>
+  <div class="passivebar__item">
+    <div class="passivebar__label">Mensal estimado</div>
+    <div class="passivebar__value" id="barPassiveMonthly">0 €</div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottomnav" aria-label="Navegação">
+  <button class="navbtn navbtn--active" data-view="dashboard" id="navDashboard"><span class="navico">▣</span><span class="navlbl">Início</span></button>
+  <button class="navbtn" data-view="assets" id="navAssets"><span class="navico">≡</span><span class="navlbl">Ativos</span></button>
+  <button class="navbtn" data-view="dividends" id="navDividends"><span class="navico">💰</span><span class="navlbl">Divid.</span></button>
+  <button class="navbtn" data-view="cashflow" id="navCashflow"><span class="navico">€</span><span class="navlbl">Balanço</span></button>
+  <button class="navbtn" data-view="analysis" id="navAnalysis"><span class="navico">📈</span><span class="navlbl">Análise</span></button>
+</nav>
+
+<!-- MODAL: Item -->
+<div class="modal" id="modalItem" aria-hidden="true">
+  <div class="modal__bg" data-close="modalItem"></div>
+  <div class="modal__panel">
+    <div class="modal__head"><div class="modal__title" id="modalItemTitle">Adicionar</div><button class="modal__close" data-close="modalItem">Fechar</button></div>
+    <div class="form">
+      <input type="hidden" id="mId"><input type="hidden" id="mKind">
+      <label class="lbl">Classe</label><select class="input" id="mClass"></select>
+      <label class="lbl">Nome</label><input class="input" id="mName" placeholder="ex: VWCE, Apartamento, Ouro físico">
+      <!-- v21: Ticker + Quantidade para Ações/ETFs, Cripto, Fundos -->
+      <div id="marketRow" style="display:none">
+        <label class="lbl">Ticker / Símbolo <span style="font-size:11px;color:#94a3b8;font-weight:500">— ex: VWCE.DE, BTC, AAPL</span></label>
+        <input class="input" id="mTicker" placeholder="ex: BTC, VWCE.DE, AAPL" autocapitalize="characters">
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:10px;align-items:end">
+          <div>
+            <label class="lbl">Quantidade / unidades</label>
+            <input class="input" id="mQty" inputmode="decimal" placeholder="ex: 0.5 BTC, 100 ações">
+          </div>
+          <button type="button" class="btn" id="btnLookupQuote" style="height:44px;min-width:110px">🔍 Buscar cotação</button>
+        </div>
+        <div id="mLookupStatus" class="note" style="display:none;font-size:11px;margin-top:4px"></div>
+        <button type="button" class="btn btn--outline" id="btnDiagnoseThis" style="font-size:12px;margin-top:8px;width:100%">🔍 Diagnosticar este activo</button>
+      </div>
+      <label class="lbl">Valor atual (€ equivalente)</label><input class="input" id="mValue" inputmode="decimal" placeholder="ex: 12500">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div>
+          <label class="lbl">Moeda do activo</label>
+          <select class="input" id="mCurrency">
+            <option value="EUR">EUR — Euro</option>
+            <option value="USD">USD — Dólar</option>
+            <option value="GBP">GBP — Libra</option>
+            <option value="CHF">CHF — Franco Suíço</option>
+            <option value="CAD">CAD — Dólar Canadiano</option>
+            <option value="AUD">AUD — Dólar Australiano</option>
+            <option value="SEK">SEK — Coroa Sueca</option>
+            <option value="NOK">NOK — Coroa Norueguesa</option>
+            <option value="PLN">PLN — Zloty</option>
+            <option value="JPY">JPY — Iene</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Valor moeda original</label>
+          <input class="input" id="mValueLocal" inputmode="decimal" placeholder="ex: 13500">
+        </div>
+      </div>
+      <div id="mFxNote" class="note" style="display:none;font-size:11px;margin-top:4px"></div>
+      <div id="yieldRow">
+        <label class="lbl">Rendimento passivo</label>
+        <select class="input" id="mYieldType">
+          <option value="none">Sem rendimento</option><option value="yield_pct">Rendimento %/ano</option>
+          <option value="yield_eur_year">€ / ano</option><option value="rent_month">Renda mensal (€)</option>
+        </select>
+        <!-- v64o: campos do rendimento só aparecem depois de escolher um tipo —
+             para a maioria dos primeiros activos (conta à ordem, imóvel próprio
+             sem renda...) isto poupa 4 campos irrelevantes logo de início. -->
+        <div id="yieldDetailFields" style="display:none">
+          <label class="lbl">Valor do rendimento base</label>
+          <input class="input" id="mYieldValue" inputmode="decimal" placeholder="ex: 3.2 (%) ou 700 (renda)">
+          <label class="lbl">Valorização esperada (%/ano) <span style="font-size:11px;color:#94a3b8;font-weight:500">— opcional</span></label>
+          <input class="input" id="mAppreciationPct" inputmode="decimal" placeholder="ex: 6 para crescimento esperado do capital">
+          <label class="lbl">Capitalização</label>
+          <select class="input" id="mCompound">
+            <option value="1">Anual</option><option value="2">Semestral</option>
+            <option value="4">Trimestral</option><option value="12" selected>Mensal</option><option value="365">Diária</option>
+          </select>
+          <label class="lbl">Maturidade / Vencimento</label>
+          <input class="input" id="mMaturity" type="date">
+        </div>
+      </div>
+      <!-- v64o: detalhes secundários escondidos por defeito — não são precisos para guardar um activo -->
+      <button type="button" class="btn btn--outline btn--sm" id="btnToggleItemExtra" style="width:100%;margin-top:12px">➕ Mais detalhes (opcional)</button>
+      <div id="itemExtraFields" style="display:none;margin-top:10px">
+        <!-- v15: custo de aquisição -->
+        <label class="lbl">Custo de aquisição (€) <span style="font-size:11px;color:#94a3b8;font-weight:500">— para calcular mais-valias latentes</span></label>
+        <input class="input" id="mCostBasis" inputmode="decimal" placeholder="opcional · ex: 10000">
+        <label class="lbl">Notas</label><textarea class="input" id="mNotes" rows="2" placeholder="opcional"></textarea>
+      </div>
+      <div class="row row--wrap" style="margin-top:14px">
+        <button class="btn btn--primary" id="btnSaveItem">Guardar</button>
+        <button class="btn btn--danger" id="btnDeleteItem" style="display:none">Apagar</button>
+        <button class="btn" data-close="modalItem">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Movimento -->
+<div class="modal" id="modalTx" aria-hidden="true">
+  <div class="modal__bg" data-close="modalTx"></div>
+  <div class="modal__panel">
+    <div class="modal__head"><div class="modal__title" id="modalTxTitle">Adicionar movimento</div><button class="modal__close" data-close="modalTx">Fechar</button></div>
+    <div class="form">
+      <label class="lbl">Tipo</label>
+      <select class="input" id="tType"><option value="in">Entrada</option><option value="out">Saída</option></select>
+      <label class="lbl">Categoria</label>
+      <input class="input" id="tCat" placeholder="ex: Salário, Supermercado" list="catSuggestions">
+      <datalist id="catSuggestions">
+        <option value="Salário"><option value="Renda"><option value="Dividendos"><option value="Juros">
+        <option value="Supermercado"><option value="Restaurantes"><option value="Transportes">
+        <option value="Habitação"><option value="Saúde"><option value="Educação">
+        <option value="Lazer"><option value="Seguros"><option value="Comunicações"><option value="Poupança">
+      </datalist>
+      <label class="lbl">Valor (€)</label><input class="input" id="tAmt" inputmode="decimal" placeholder="ex: 2000">
+      <label class="lbl">Data</label><input class="input" id="tDate" type="date">
+      <label class="lbl">Recorrente</label>
+      <select class="input" id="tRec"><option value="none">Não</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select>
+      <label class="lbl">Notas</label><input class="input" id="tNotes" placeholder="opcional">
+      <div class="row row--wrap" style="margin-top:14px">
+        <button class="btn btn--primary" id="btnSaveTx">Guardar</button>
+        <button class="btn btn--danger" id="btnDeleteTx" style="display:none">Apagar</button>
+        <button class="btn" data-close="modalTx">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Distribuição -->
+<div class="modal" id="modalDist" aria-hidden="true">
+  <div class="modal__bg" data-close="modalDist"></div>
+  <div class="modal__panel">
+    <div class="modal__head"><div class="modal__title">Distribuição por classe</div><button class="modal__close" data-close="modalDist">Fechar</button></div>
+    <div id="distDetailList" class="list" style="margin-top:0"></div>
+    <div class="row row--wrap" style="margin-top:12px">
+      <button class="btn" id="btnDistToggle" style="display:none">Ver o resto</button>
+      <button class="btn" data-close="modalDist">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Dividendo -->
+<div class="modal" id="modalDiv" aria-hidden="true">
+  <div class="modal__bg" data-close="modalDiv"></div>
+  <div class="modal__panel">
+    <div class="modal__head"><div class="modal__title" id="modalDivTitle">Registar dividendo</div><button class="modal__close" data-close="modalDiv">Fechar</button></div>
+    <div class="form">
+      <label class="lbl">Ativo</label>
+      <select class="input" id="dAsset"><option value="">-- Seleciona ativo (opcional) --</option></select>
+      <label class="lbl">Montante bruto recebido (€)</label>
+      <input class="input" id="dAmount" inputmode="decimal" placeholder="ex: 142.50">
+      <label class="lbl">Retenção na fonte (€)</label>
+      <input class="input" id="dTax" inputmode="decimal" placeholder="ex: 21.37 (deixa vazio se não houve)">
+      <label class="lbl">Data de pagamento</label>
+      <input class="input" id="dDate" type="date">
+      <label class="lbl">Notas</label>
+      <input class="input" id="dNotes" placeholder="ex: Q1 2026, VWCE">
+      <div class="note" style="margin-top:10px">O montante <b>líquido</b> (bruto − retenção) entra no rendimento passivo real.</div>
+      <div class="row row--wrap" style="margin-top:14px">
+        <button class="btn btn--primary" id="btnSaveDiv">Guardar</button>
+        <button class="btn btn--danger" id="btnDeleteDiv" style="display:none">Apagar</button>
+        <button class="btn" data-close="modalDiv">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Objetivo -->
+<div class="modal" id="modalGoal" aria-hidden="true">
+  <div class="modal__bg" data-close="modalGoal"></div>
+  <div class="modal__panel">
+    <div class="modal__head"><div class="modal__title">Objetivo de rendimento passivo</div><button class="modal__close" data-close="modalGoal">Fechar</button></div>
+    <div class="form">
+      <label class="lbl">Objetivo mensal (€)</label>
+      <input class="input" id="goalInput" inputmode="decimal" placeholder="ex: 2000">
+      <div class="note" style="margin-top:10px">O dashboard mostrará o progresso em tempo real.</div>
+      <div class="row row--wrap" style="margin-top:14px">
+        <button class="btn btn--primary" id="btnSaveGoalModal">Guardar</button>
+        <button class="btn" data-close="modalGoal">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Tip / Explicação -->
+<div class="modal" id="tipModal" aria-hidden="true">
+  <div class="modal__bg" data-close="tipModal"></div>
+  <div class="modal__panel">
+    <div class="modal__head">
+      <div class="modal__title" id="tipTitle">Explicação</div>
+      <button class="modal__close" data-close="tipModal">Fechar</button>
+    </div>
+    <div id="tipBody" style="line-height:1.7;font-weight:600;color:#334155;padding-bottom:8px"></div>
+    <button class="btn" data-close="tipModal" style="margin-top:12px;width:100%">Entendi</button>
+  </div>
+</div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return; refreshing = true; location.reload();
+    });
+  }
+</script>
+</body>
+</html>
