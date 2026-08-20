@@ -1,5 +1,5 @@
-/* Finva — Service Worker v1.0 */
-const CACHE_NAME = "finva-cache-v1";
+/* Vestra — Service Worker v1.0 */
+const CACHE_NAME = "vestra-cache-v1";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest",
   "./icon192.png", "./icon512.png",

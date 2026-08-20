@@ -1,10 +1,12 @@
-# Finva
+# Vestra
 
-Net worth, investimentos e — em breve — investigação financeira, num só lugar. PWA offline-first, dados guardados apenas no dispositivo (IndexedDB).
+Personal Finance · Market Screener · Portfolio — tudo num só lugar. PWA offline-first, dados guardados apenas no dispositivo (IndexedDB).
 
-## Estado actual — v1.0 (Fase 1)
+## Estado actual — v1.0
 
-A Finva nasce a partir do [Património Familiar](https://github.com/possn/patrimonio-familiar) (v64za), com toda a base funcional já validada:
+Chamou-se "Finva" nas primeiras horas; o nome e a identidade visual final ficaram definidos como **Vestra** — navy profundo, turquesa e dourado.
+
+Herda toda a base funcional validada do [Património Familiar](https://github.com/possn/patrimonio-familiar) (v64za):
 
 - Multi-classe de activos (acções/ETFs, imobiliário, metais, depósitos, fundos, cripto, obrigações, PPR)
 - Balanço (entradas/saídas, categorização, granularidade diária/semanal/mensal/anual)
@@ -15,11 +17,9 @@ A Finva nasce a partir do [Património Familiar](https://github.com/possn/patrim
 - Modo Simples/Avançado
 - Backup local (export/import JSON)
 
-Identidade visual nova (paleta creme + coral + sálvia, inspirada na app "Lume"), mesma base técnica sólida por baixo.
-
 ## Próximas fases
 
-Este repositório vai integrar progressivamente as funcionalidades de investigação de acções, ETFs e "smart money" (insiders, Congresso dos EUA) de um segundo projecto, mantendo o net worth tracking como base. Cada fase é entregue e testada separadamente.
+Integração progressiva das funcionalidades de investigação de acções, ETFs e "smart money" (insiders, Congresso dos EUA) de um segundo projecto (Finscanner). O objectivo é um "all-in-one" mais enxuto do que a análise extensa do Património Familiar — a decidir, painel a painel, o que faz sentido manter, simplificar ou não trazer.
 
 ## Stack
 

@@ -1,4 +1,4 @@
-/* Finva — v46
+/* Vestra — v46
    Performance: memoização por ciclo de render (elimina cálculos redundantes)
    + Objetivo de rendimento passivo com barra de progresso
    + Alertas de vencimentos próximos (30 dias)
@@ -1892,7 +1892,7 @@ function renderGoal() {
   if (wrap) wrap.style.display = "";
   if (fill) {
     fill.style.width = pct + "%";
-    fill.style.background = done ? "#10b981" : "#E7795B";
+    fill.style.background = done ? "#10b981" : "#20817E";
   }
   if (cur) cur.textContent = `${fmtEUR(monthly)}/mês atual`;
   if (tgt) tgt.textContent = `Objetivo: ${fmtEUR(goal)}/mês`;
@@ -2453,7 +2453,7 @@ function renderSummary() {
   if (dashSub) dashSub.textContent = `Por valor · ${items.length} ativos · clica para editar`;
 }
 
-const PALETTE = ["#E7795B","#3b82f6","#39d6d8","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#06b6d4","#84cc16","#f97316","#64748b"];
+const PALETTE = ["#20817E","#3b82f6","#39d6d8","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#06b6d4","#84cc16","#f97316","#64748b"];
 
 function renderDistChart() {
   const by = {};
@@ -2525,7 +2525,7 @@ function renderTrendChart() {
       data: {
         labels,
         datasets: [
-          { label: "Património líquido", data: netData, tension: .4, pointRadius: h.length <= 12 ? 4 : 2, borderColor: "#E7795B", backgroundColor: "rgba(231,121,91,.08)", fill: true, borderWidth: 2 },
+          { label: "Património líquido", data: netData, tension: .4, pointRadius: h.length <= 12 ? 4 : 2, borderColor: "#20817E", backgroundColor: "rgba(32,129,126,.08)", fill: true, borderWidth: 2 },
           { label: "Total ativos", data: assetData, tension: .4, pointRadius: 0, borderDash: [4,4], borderColor: "#39d6d8", borderWidth: 1.5 },
           { label: "Rend. passivo/ano", data: passData, tension: .4, pointRadius: 0, borderColor: "#10b981", borderWidth: 1.5 }
         ]
@@ -3903,10 +3903,10 @@ function renderDivSummaryChart() {
           data: yieldData,
           type: "line",
           yAxisID: "y2",
-          borderColor: "#E7795B",
+          borderColor: "#20817E",
           backgroundColor: "transparent",
           pointRadius: 5,
-          pointBackgroundColor: "#E7795B",
+          pointBackgroundColor: "#20817E",
           borderWidth: 2,
           tension: 0.3
         }
@@ -3993,7 +3993,7 @@ function renderDivProjection() {
   const scenarios = [
     { name: "Conservador", yield: Math.max(0.1, baseYield - 1), color: "#f59e0b" },
     { name: "Base (yield mantido)", yield: baseYield, color: "#10b981" },
-    { name: "Otimista", yield: baseYield + 1, color: "#E7795B" }
+    { name: "Otimista", yield: baseYield + 1, color: "#20817E" }
   ];
 
   const allData = scenarios.map(sc => {
@@ -6530,8 +6530,8 @@ function calcAndRenderCompound() {
         {
           label: "Juro composto",
           data: data.map(d => d.value),
-          tension: .4, borderColor: "#E7795B",
-          backgroundColor: "rgba(231,121,91,.09)", fill: true,
+          tension: .4, borderColor: "#20817E",
+          backgroundColor: "rgba(32,129,126,.09)", fill: true,
           pointRadius: 0, borderWidth: 2.5
         },
         {
@@ -12387,7 +12387,7 @@ async function refreshLiveQuotes() {
     if (!el) {
       el = document.createElement("div");
       el.id = "quoteRefreshProgress";
-      el.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#E7795B;color:#fff;padding:10px 20px;border-radius:20px;font-weight:700;font-size:14px;z-index:998;max-width:90vw;text-align:center;box-shadow:0 8px 24px rgba(231,121,91,.3)";
+      el.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#20817E;color:#fff;padding:10px 20px;border-radius:20px;font-weight:700;font-size:14px;z-index:998;max-width:90vw;text-align:center;box-shadow:0 8px 24px rgba(32,129,126,.3)";
       document.body.appendChild(el);
     }
     el.textContent = msg;
@@ -13427,7 +13427,7 @@ function checkAndNotifyMaturities() {
   const in7ISO = in7.toISOString().slice(0,10);
   state.assets.filter(a => a.maturityDate && a.maturityDate >= today && a.maturityDate <= in7ISO).forEach(a => {
     const days = Math.round((new Date(a.maturityDate) - new Date()) / 86400000);
-    new Notification("⏰ Vencimento — Finva", { body:`${a.name}: vence em ${days} dia${days!==1?"s":""} (${a.maturityDate}) · ${fmtEUR(parseNum(a.value))}`, icon:"icon192.png", tag:`mat_${a.id}` });
+    new Notification("⏰ Vencimento — Vestra", { body:`${a.name}: vence em ${days} dia${days!==1?"s":""} (${a.maturityDate}) · ${fmtEUR(parseNum(a.value))}`, icon:"icon192.png", tag:`mat_${a.id}` });
   });
 }
 
