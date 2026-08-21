@@ -151,3 +151,16 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Mudança de tab já não força scroll programático.
 - Removida a interceção táctil custom das tabs, agora que a navegação é uma grelha limitada.
 - Fallback seguro quando um instrumento contém dados num formato inesperado.
+
+
+## Vestra v2.8 — Fundamental Coverage
+- Corrige `null`/campo ausente apresentado como zero nas tabs do dossier.
+- Worker Market Proxy v4.1 com fallback Yahoo `fundamentals-timeseries` para empresas com `quoteSummary` incompleto.
+- Enriquecimento de receita, lucro, EPS, margens, OCF, FCF, EBITDA, dívida, equity e caixa quando disponíveis.
+- Valuation usa também os campos do endpoint Yahoo quote quando quoteSummary não fornece P/E/PB.
+- Campos genuinamente indisponíveis passam a aparecer como `—`, nunca como `0` fictício.
+
+
+### v2.8 — Portfolio clarity
+- Carteira: rendimento anual, mensal estimado e yield médio ponderado no resumo.
+- Mais: grupos expansíveis redesenhados como cards premium, mantendo o layout global congelado.

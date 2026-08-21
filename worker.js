@@ -54,7 +54,7 @@ function positiveNumber(...vals) {
 }
 
 async function fetchYahooQuoteCore(ticker, ctx) {
-  const cacheKey = `quote31:${ticker.toUpperCase()}`;
+  const cacheKey = `quote41:${ticker.toUpperCase()}`;
   const cache = caches.default;
   const cacheUrl = `https://cache.internal/${cacheKey}`;
 
@@ -96,6 +96,14 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           country: q.country || "",
           exchange: q.exchange || q.fullExchangeName || "",
           quote_type: q.quoteType || "",
+          market_cap: Number.isFinite(q.marketCap) ? q.marketCap : null,
+          trailing_pe: Number.isFinite(q.trailingPE) ? q.trailingPE : null,
+          forward_pe: Number.isFinite(q.forwardPE) ? q.forwardPE : null,
+          price_to_book: Number.isFinite(q.priceToBook) ? q.priceToBook : null,
+          eps_ttm: Number.isFinite(q.epsTrailingTwelveMonths) ? q.epsTrailingTwelveMonths : null,
+          eps_forward: Number.isFinite(q.epsForward) ? q.epsForward : null,
+          fifty_two_week_high: Number.isFinite(q.fiftyTwoWeekHigh) ? q.fiftyTwoWeekHigh : null,
+          fifty_two_week_low: Number.isFinite(q.fiftyTwoWeekLow) ? q.fiftyTwoWeekLow : null,
           // Dividend data from Yahoo Finance
           div_rate: Number.isFinite(q.trailingAnnualDividendRate) ? q.trailingAnnualDividendRate : 0,
           div_yield: Number.isFinite(q.trailingAnnualDividendYield) ? q.trailingAnnualDividendYield : 0,
@@ -247,10 +255,73 @@ function isoFromUnix(v) {
   return new Date(n * 1000).toISOString().slice(0,10);
 }
 
+
+
+function latestTimeseriesValue(series) {
+  if (!Array.isArray(series) || !series.length) return null;
+  const sorted = [...series].sort((a,b) => Number(a?.asOfDate?.replaceAll?.('-','') || 0) - Number(b?.asOfDate?.replaceAll?.('-','') || 0));
+  for (let i=sorted.length-1; i>=0; i--) {
+    const v = Number(raw(sorted[i]?.reportedValue));
+    if (Number.isFinite(v)) return v;
+  }
+  return null;
+}
+
+function previousTimeseriesValue(series) {
+  if (!Array.isArray(series) || series.length < 2) return null;
+  const vals = [...series].sort((a,b) => String(a?.asOfDate||'').localeCompare(String(b?.asOfDate||'')))
+    .map(x => Number(raw(x?.reportedValue))).filter(Number.isFinite);
+  return vals.length >= 2 ? vals[vals.length-2] : null;
+}
+
+function growthPct(current, previous) {
+  if (!Number.isFinite(current) || !Number.isFinite(previous) || previous === 0) return null;
+  return ((current / Math.abs(previous)) - (previous < 0 ? -1 : 1)) * 100;
+}
+
+async function fetchYahooFundamentalTimeseries(ticker, headers) {
+  // Yahoo quoteSummary is frequently sparse for LSE/Euronext names. The
+  // fundamentals-timeseries endpoint often still exposes the statements.
+  const now = Math.floor(Date.now()/1000);
+  const period1 = now - 60*60*24*365*4;
+  const types = [
+    'annualTotalRevenue','quarterlyTotalRevenue',
+    'annualNetIncome','quarterlyNetIncome',
+    'annualDilutedEPS','quarterlyDilutedEPS',
+    'annualFreeCashFlow','quarterlyFreeCashFlow',
+    'annualOperatingCashFlow','quarterlyOperatingCashFlow',
+    'annualEBITDA','quarterlyEBITDA',
+    'annualTotalDebt','quarterlyTotalDebt',
+    'annualCashCashEquivalentsAndShortTermInvestments','quarterlyCashCashEquivalentsAndShortTermInvestments',
+    'annualStockholdersEquity','quarterlyStockholdersEquity',
+    'annualGrossProfit','quarterlyGrossProfit',
+    'annualOperatingIncome','quarterlyOperatingIncome'
+  ];
+  let json = null;
+  for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
+    try {
+      const u = `https://${host}/ws/fundamentals-timeseries/v1/finance/timeseries/${encodeURIComponent(ticker)}?symbol=${encodeURIComponent(ticker)}&type=${types.join(',')}&period1=${period1}&period2=${now}`;
+      const d = await fetchJsonMaybe(u, { headers });
+      if (Array.isArray(d?.timeseries?.result)) { json=d; break; }
+    } catch (_) {}
+  }
+  const out = {};
+  for (const block of (json?.timeseries?.result || [])) {
+    const key = (block?.meta?.type?.[0] || block?.type || '').toString();
+    if (key) out[key] = block[key] || block.timeseries || [];
+  }
+  return out;
+}
+
+function firstFinite(...vals) {
+  for (const v of vals) if (Number.isFinite(v)) return v;
+  return null;
+}
+
 async function fetchYahooMarketDetail(ticker, ctx) {
   const canonical = normalizeInputTicker(ticker);
   const cache = caches.default;
-  const cacheUrl = `https://cache.internal/market40:${canonical}`;
+  const cacheUrl = `https://cache.internal/market41:${canonical}`;
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
@@ -286,6 +357,24 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const et = Array.isArray(qs?.earningsTrend?.trend) ? qs.earningsTrend.trend : [];
   const nextYear = et.find(x => x.period === '+1y') || et.find(x => x.period === '+1q') || {};
 
+  let ts = {};
+  try { ts = await fetchYahooFundamentalTimeseries(canonical, headers); } catch (_) {}
+
+  const revAnnual = latestTimeseriesValue(ts.annualTotalRevenue);
+  const revPrev = previousTimeseriesValue(ts.annualTotalRevenue);
+  const niAnnual = latestTimeseriesValue(ts.annualNetIncome);
+  const niPrev = previousTimeseriesValue(ts.annualNetIncome);
+  const epsAnnual = latestTimeseriesValue(ts.annualDilutedEPS);
+  const epsPrev = previousTimeseriesValue(ts.annualDilutedEPS);
+  const fcfAnnual = firstFinite(latestTimeseriesValue(ts.annualFreeCashFlow), latestTimeseriesValue(ts.quarterlyFreeCashFlow));
+  const ocfAnnual = firstFinite(latestTimeseriesValue(ts.annualOperatingCashFlow), latestTimeseriesValue(ts.quarterlyOperatingCashFlow));
+  const ebitdaAnnual = firstFinite(latestTimeseriesValue(ts.annualEBITDA), latestTimeseriesValue(ts.quarterlyEBITDA));
+  const debtAnnual = firstFinite(latestTimeseriesValue(ts.annualTotalDebt), latestTimeseriesValue(ts.quarterlyTotalDebt));
+  const equityAnnual = firstFinite(latestTimeseriesValue(ts.annualStockholdersEquity), latestTimeseriesValue(ts.quarterlyStockholdersEquity));
+  const cashAnnual = firstFinite(latestTimeseriesValue(ts.annualCashCashEquivalentsAndShortTermInvestments), latestTimeseriesValue(ts.quarterlyCashCashEquivalentsAndShortTermInvestments));
+  const grossAnnual = firstFinite(latestTimeseriesValue(ts.annualGrossProfit), latestTimeseriesValue(ts.quarterlyGrossProfit));
+  const opIncomeAnnual = firstFinite(latestTimeseriesValue(ts.annualOperatingIncome), latestTimeseriesValue(ts.quarterlyOperatingIncome));
+
   let history = [];
   try {
     const cj = await fetchJsonMaybe(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(canonical)}?interval=1d&range=1y`, { headers });
@@ -310,22 +399,29 @@ async function fetchYahooMarketDetail(ticker, ctx) {
     industry: ap.industry || quote.industry || '',
     country: ap.country || quote.country || '',
     business_summary: ap.longBusinessSummary || '',
-    market_cap: Number.isFinite(marketCap) ? marketCap : null,
-    trailing_pe: Number(raw(sd.trailingPE) ?? raw(ks.trailingPE)),
-    forward_pe: Number(raw(sd.forwardPE) ?? raw(ks.forwardPE)),
-    price_to_book: Number(raw(ks.priceToBook)),
+    market_cap: firstFinite(Number.isFinite(marketCap) ? marketCap : null, Number(quote.market_cap)),
+    trailing_pe: firstFinite(Number(raw(sd.trailingPE)), Number(raw(ks.trailingPE)), Number(quote.trailing_pe)),
+    forward_pe: firstFinite(Number(raw(sd.forwardPE)), Number(raw(ks.forwardPE)), Number(quote.forward_pe)),
+    price_to_book: firstFinite(Number(raw(ks.priceToBook)), Number(quote.price_to_book)),
     enterprise_to_ebitda: Number(raw(ks.enterpriseToEbitda)),
     dividend_yield: pctRaw(sd.dividendYield),
     roe: pctRaw(fd.returnOnEquity),
     roa: pctRaw(fd.returnOnAssets),
-    revenue_growth: pctRaw(fd.revenueGrowth),
-    earnings_growth: pctRaw(fd.earningsGrowth),
-    profit_margin: pctRaw(fd.profitMargins),
-    operating_margin: pctRaw(fd.operatingMargins),
-    gross_margin: pctRaw(fd.grossMargins),
-    free_cash_flow: Number.isFinite(fcf) ? fcf : null,
-    fcf_yield: Number.isFinite(fcf) && Number.isFinite(marketCap) && marketCap > 0 ? (fcf / marketCap) * 100 : null,
-    debt_to_equity: Number(raw(fd.debtToEquity)),
+    revenue_growth: firstFinite(pctRaw(fd.revenueGrowth), growthPct(revAnnual, revPrev)),
+    earnings_growth: firstFinite(pctRaw(fd.earningsGrowth), growthPct(niAnnual, niPrev)),
+    eps_growth: growthPct(epsAnnual, epsPrev),
+    profit_margin: firstFinite(pctRaw(fd.profitMargins), Number.isFinite(niAnnual) && Number.isFinite(revAnnual) && revAnnual !== 0 ? niAnnual/revAnnual*100 : null),
+    operating_margin: firstFinite(pctRaw(fd.operatingMargins), Number.isFinite(opIncomeAnnual) && Number.isFinite(revAnnual) && revAnnual !== 0 ? opIncomeAnnual/revAnnual*100 : null),
+    gross_margin: firstFinite(pctRaw(fd.grossMargins), Number.isFinite(grossAnnual) && Number.isFinite(revAnnual) && revAnnual !== 0 ? grossAnnual/revAnnual*100 : null),
+    operating_cash_flow: firstFinite(Number(raw(fd.operatingCashflow)), ocfAnnual),
+    free_cash_flow: firstFinite(Number.isFinite(fcf) ? fcf : null, fcfAnnual),
+    fcf_yield: Number.isFinite(firstFinite(Number.isFinite(fcf) ? fcf : null, fcfAnnual)) && Number.isFinite(marketCap) && marketCap > 0 ? (firstFinite(Number.isFinite(fcf) ? fcf : null, fcfAnnual) / marketCap) * 100 : null,
+    ebitda: ebitdaAnnual,
+    total_debt: debtAnnual,
+    cash_and_short_term_investments: cashAnnual,
+    net_cash: Number.isFinite(cashAnnual) && Number.isFinite(debtAnnual) ? cashAnnual - debtAnnual : null,
+    stockholders_equity: equityAnnual,
+    debt_to_equity: firstFinite(Number(raw(fd.debtToEquity)), Number.isFinite(debtAnnual) && Number.isFinite(equityAnnual) && equityAnnual !== 0 ? debtAnnual/equityAnnual*100 : null),
     current_ratio: Number(raw(fd.currentRatio)),
     quick_ratio: Number(raw(fd.quickRatio)),
     analyst_price_target_mean: Number.isFinite(target) ? target : null,
@@ -340,9 +436,12 @@ async function fetchYahooMarketDetail(ticker, ctx) {
     fifty_two_week_high: Number(raw(sd.fiftyTwoWeekHigh)),
     fifty_two_week_low: Number(raw(sd.fiftyTwoWeekLow)),
     beta: Number(raw(ks.beta)),
+    revenue_latest: revAnnual,
+    net_income_latest: niAnnual,
+    eps_latest: epsAnnual,
     price_history_1y: history,
     updated: new Date().toISOString(),
-    source: qs ? 'Yahoo Finance quoteSummary + chart' : 'Yahoo Finance quote/chart'
+    source: qs ? 'Yahoo Finance quoteSummary + fundamentals-timeseries + chart' : 'Yahoo Finance fundamentals-timeseries + quote/chart'
   };
   for (const k of Object.keys(result)) if (typeof result[k] === 'number' && !Number.isFinite(result[k])) result[k] = null;
   ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), {
@@ -399,7 +498,7 @@ export default {
 
       if (url.pathname === "/" || url.pathname === "") {
         return new Response(JSON.stringify({
-          service: "Vestra Market Proxy v4.0",
+          service: "Vestra Market Proxy v4.1",
           endpoints: ["/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT"]
         }), { headers: { ...cors, "Content-Type": "application/json" } });
       }
