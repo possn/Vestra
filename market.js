@@ -67,10 +67,13 @@
         const sh=$m('marketSheet');
         if(sh && !sh.hidden && txt(sh.dataset.ticker).toUpperCase()===ticker){
           const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview';
+          const panel=sh.querySelector('.market-sheet__panel');
+          const y=panel?panel.scrollTop:0;
           $m('marketSheetContent').innerHTML=detailBase(s);
           renderDetailTab(s,active);
           const tab=sh.querySelector(`[data-detail-tab="${active}"]`);
-          if(tab){ sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab)); tab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); }
+          if(tab){ sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab)); }
+          requestAnimationFrame(()=>{ if(panel) panel.scrollTop=y; });
         }
       }
     }catch(_){ /* dataset local remains the fallback */ }
@@ -395,13 +398,27 @@
     }catch{ body.innerHTML='<div class="market-empty">Não foi possível carregar notícias.</div>'; }
   }
 
+  function sheetPanel(){ return $m('marketSheet')?.querySelector('.market-sheet__panel')||null; }
+  function scrollDossierTop(){
+    const panel=sheetPanel(); if(!panel) return;
+    panel.scrollTop=0;
+    requestAnimationFrame(()=>{ panel.scrollTop=0; requestAnimationFrame(()=>{ panel.scrollTop=0; }); });
+  }
+  function scrollDossierToTabs(){
+    const panel=sheetPanel(), tabs=$m('marketSheet')?.querySelector('.market-tabs'); if(!panel||!tabs) return;
+    const head=$m('marketSheet')?.querySelector('.market-detail-head');
+    const headH=head?head.getBoundingClientRect().height:0;
+    const target=Math.max(0,tabs.offsetTop-headH-10);
+    panel.scrollTop=target;
+    requestAnimationFrame(()=>{ panel.scrollTop=target; });
+  }
+
   function openTicker(ticker){
     const s=M.byTicker.get(txt(ticker).toUpperCase()); if(!s) return;
     const sh=$m('marketSheet'), content=$m('marketSheetContent'); if(!sh||!content)return;
     content.innerHTML=detailBase(s); sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open');
-    const panel=sh.querySelector('.market-sheet__panel'); if(panel) panel.scrollTop=0;
     sh.dataset.ticker=s.ticker; renderDetailTab(s,'overview');
-    requestAnimationFrame(()=>{ if(panel) panel.scrollTop=0; });
+    scrollDossierTop();
     enrichTickerLive(s);
   }
   function closeSheet(){ const sh=$m('marketSheet'); if(!sh)return; sh.hidden=true; sh.setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
@@ -410,7 +427,7 @@
     ensureLoaded().then(()=>{
       const sh=$m('marketSheet'), c=$m('marketSheetContent'); if(!sh||!c)return;
       sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open'); sh.dataset.ticker='';
-      const panel=sh.querySelector('.market-sheet__panel'); if(panel) panel.scrollTop=0;
+      scrollDossierTop();
       if(tool==='portfolio'){
         const assets=portfolioAssets().slice().sort((a,b)=>portfolioValue(b)-portfolioValue(a));
         const eligible=assets.filter(researchEligibleAsset);
@@ -462,6 +479,30 @@
     out.innerHTML=`<div class="market-detail-card" style="overflow:auto"><table class="market-table"><thead><tr><th>Métrica</th>${ss.map(s=>`<th>${esc(s.ticker)}</th>`).join('')}</tr></thead><tbody>${metrics.map(([l,k,f])=>`<tr><td>${l}</td>${ss.map(s=>`<td>${f(s[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
 
+  function wireHorizontalRail(root){
+    if(!root || root.dataset.railWired==='1') return;
+    root.dataset.railWired='1';
+    let sx=0, sy=0, sl=0, dragging=false, horizontal=false;
+    root.addEventListener('touchstart',e=>{
+      const t=e.touches&&e.touches[0]; if(!t)return;
+      sx=t.clientX; sy=t.clientY; sl=root.scrollLeft; dragging=true; horizontal=false;
+    },{passive:true});
+    root.addEventListener('touchmove',e=>{
+      if(!dragging)return; const t=e.touches&&e.touches[0]; if(!t)return;
+      const dx=t.clientX-sx, dy=t.clientY-sy;
+      if(!horizontal && Math.abs(dx)>8 && Math.abs(dx)>Math.abs(dy)*1.15) horizontal=true;
+      if(horizontal){ root.scrollLeft=sl-dx; if(e.cancelable)e.preventDefault(); }
+    },{passive:false});
+    root.addEventListener('touchend',()=>{dragging=false;horizontal=false},{passive:true});
+    root.addEventListener('touchcancel',()=>{dragging=false;horizontal=false},{passive:true});
+  }
+  function wireVisibleRails(){
+    document.querySelectorAll('.market-chipbar,.market-tabs').forEach(wireHorizontalRail);
+  }
+  const railObserver=new MutationObserver(()=>requestAnimationFrame(wireVisibleRails));
+  railObserver.observe(document.documentElement,{subtree:true,childList:true});
+  document.addEventListener('DOMContentLoaded',wireVisibleRails,{once:true});
+
   document.addEventListener('click', e=>{
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
     const mode=e.target.closest('[data-market-mode]'); if(mode){M.mode=mode.dataset.marketMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary();}
@@ -470,7 +511,7 @@
     const row=e.target.closest('[data-market-ticker]'); if(row){ensureLoaded().then(()=>openTicker(row.dataset.marketTicker));}
     const close=e.target.closest('[data-market-close]'); if(close) closeSheet();
     const sh=$m('marketSheet'); if(sh&&e.target===sh) closeSheet();
-    const tab=e.target.closest('[data-detail-tab]'); if(tab&&sh?.dataset.ticker){document.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab)); const s=M.byTicker.get(sh.dataset.ticker.toUpperCase()); if(s)renderDetailTab(s,tab.dataset.detailTab);}
+    const tab=e.target.closest('[data-detail-tab]'); if(tab&&sh?.dataset.ticker){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab)); const s=M.byTicker.get(sh.dataset.ticker.toUpperCase()); if(s){renderDetailTab(s,tab.dataset.detailTab); scrollDossierToTabs();} }
     const tool=e.target.closest('[data-market-tool]'); if(tool) openTool(tool.dataset.marketTool);
     if(e.target.closest('#marketCompareGo')) compareNow();
     if(e.target.closest('[data-market-retry]')) { M.loaded=false; M.loading=null; ensureLoaded(); }

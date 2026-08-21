@@ -1,3 +1,12 @@
+
+## Vestra v2.4 — iPhone interaction repair
+
+- Dossier de mercado passa a modal determinístico de ecrã inteiro; topbar/bottomnav não competem com o conteúdo.
+- Cada dossier abre sempre no topo. Trocar de tab reposiciona o conteúdo no início da área de detalhe, sem saltos para o meio.
+- Enriquecimento live preserva a posição de scroll em vez de reconstruir e saltar o viewport.
+- Tabs do dossier e setores usam rail horizontal táctil com fallback JS para Safari/iOS.
+- A antiga barra de rendimento passivo fica explicitamente desativada mesmo perante HTML/cache antigo.
+- Cache PWA: vestra-cache-v18.
 ## Vestra v2.3 — Full-screen Dossier Fix
 
 - Dossier de mercado abre sempre no topo; o scroll anterior deixa de ser reutilizado pelo Safari.
