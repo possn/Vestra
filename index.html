@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="styles.css?v=20260820v1">
+  <link rel="stylesheet" href="styles.css?v=20260821v2">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
@@ -33,7 +33,7 @@
       document.head.appendChild(s);
     })();
   </script>
-  <script defer src="app.js?v=20260820v1" fetchpriority="high"></script>
+  <script defer src="app.js?v=20260821v2" fetchpriority="high"></script>
 </head>
 <body>
   <!-- App loading overlay — shown during boot, hidden after first render -->
@@ -84,13 +84,16 @@
   </div>
   <nav class="sidebar__nav" aria-label="Separadores">
     <span class="sidebar__eyebrow">Navegação</span>
-    <button class="sidenavbtn sidenavbtn--active" data-view="dashboard"><span class="navico">▣</span><span>Início</span></button>
-    <button class="sidenavbtn" data-view="assets"><span class="navico">≡</span><span>Ativos</span></button>
+    <button class="sidenavbtn sidenavbtn--active" data-view="dashboard"><span class="navico">▣</span><span>Resumo</span></button>
+    <button class="sidenavbtn" data-view="assets"><span class="navico">≡</span><span>Portfólio</span></button>
+    <button class="sidenavbtn" data-view="market"><span class="navico">🔎</span><span>Mercado</span></button>
+    <button class="sidenavbtn" data-view="cashflow"><span class="navico">€</span><span>Finanças</span></button>
+    <div class="sidebar__divider"></div>
+    <span class="sidebar__eyebrow">Dentro do Portfólio</span>
     <button class="sidenavbtn" data-view="dividends"><span class="navico">💰</span><span>Dividendos</span></button>
-    <button class="sidenavbtn" data-view="cashflow"><span class="navico">€</span><span>Balanço</span></button>
     <button class="sidenavbtn" data-view="analysis"><span class="navico">📈</span><span>Análise</span></button>
     <div class="sidebar__divider"></div>
-    <button class="sidenavbtn" data-view="settings"><span class="navico">⚙️</span><span>Definições</span></button>
+    <button class="sidenavbtn" data-view="settings"><span class="navico">⚙️</span><span>Mais / Definições</span></button>
     <div class="sidebar__divider"></div>
     <span class="sidebar__eyebrow">Acções rápidas</span>
     <button class="sidenavbtn" id="sideBtnExportJSON"><span class="navico">📤</span><span>Exportar backup</span></button>
@@ -350,6 +353,11 @@
 
   <!-- ASSETS -->
   <section class="view" data-view="assets" id="viewAssets" hidden>
+    <!-- v2: Portfólio agora agrupa Ativos + Dividendos + Análise — atalhos directos aqui em cima -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="btn btn--outline" onclick="setView('dividends')" style="font-size:13px">💰 Dividendos</button>
+      <button class="btn btn--outline" onclick="setView('analysis')" style="font-size:13px">📈 Análise</button>
+    </div>
     <div class="seg">
       <button class="seg__btn seg__btn--active" id="segAssets">Ativos</button>
       <button class="seg__btn" id="segLiabs">Passivos</button>
@@ -540,7 +548,36 @@
   </section>
 
   <!-- DIVIDENDOS -->
+  <!-- MERCADO — investigação de acções/ETFs, ainda por trazer do Finscanner -->
+  <section class="view" data-view="market" id="viewMarket" hidden>
+    <div class="card" style="text-align:center;padding:32px 20px">
+      <div style="font-size:40px;margin-bottom:8px">🔎</div>
+      <div style="font-weight:700;font-size:17px;margin-bottom:6px">Mercado — em construção</div>
+      <div class="card__muted" style="max-width:340px;margin:0 auto">
+        Este separador vai trazer investigação de acções e ETFs independente do que já tens: rastreio por filtros (P/E, crescimento, ROE...), fichas detalhadas por empresa, e "Smart Money" (transacções de insiders e do Congresso dos EUA).
+      </div>
+    </div>
+    <div class="card">
+      <div class="card__title" style="margin-bottom:10px">O que vai ter</div>
+      <div class="list">
+        <div class="item" style="cursor:default">
+          <div class="item__l"><div class="item__t">🧭 Screener</div><div class="item__s">Filtrar o universo de acções por métricas fundamentais</div></div>
+        </div>
+        <div class="item" style="cursor:default">
+          <div class="item__l"><div class="item__t">📑 Fichas de empresa</div><div class="item__s">Overview, crescimento, resultados, qualidade</div></div>
+        </div>
+        <div class="item" style="cursor:default">
+          <div class="item__l"><div class="item__t">🕵️ Smart Money</div><div class="item__s">O que insiders e o Congresso dos EUA andam a comprar/vender</div></div>
+        </div>
+        <div class="item" style="cursor:default">
+          <div class="item__l"><div class="item__t">📊 Sobreposição com o teu Portfólio</div><div class="item__s">Ex: "este ETF que estás a ver sobrepõe-se 40% com o que já tens"</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="view" data-view="dividends" id="viewDividends" hidden>
+    <button class="btn btn--ghost btn--sm" onclick="setView('assets')" style="margin-bottom:8px">‹ Portfólio</button>
 
     <!-- Selector de modo -->
     <div class="seg" style="display:grid;grid-template-columns:repeat(4,1fr)">
@@ -805,6 +842,7 @@
 
   <!-- ANÁLISE -->
   <section class="view" data-view="analysis" id="viewAnalysis" hidden>
+    <button class="btn btn--ghost btn--sm" onclick="setView('assets')" style="margin-bottom:8px">‹ Portfólio</button>
 
     <!-- Tabs de análise — scroll horizontal -->
     <div class="analysis-tabs-wrap">
@@ -1289,6 +1327,15 @@
   <!-- SETTINGS -->
   <section class="view" data-view="settings" id="viewSettings" hidden>
     <div id="paneSettings">
+      <!-- v2: "Mais" agrupa FIRE/Fiscal (vivem dentro de Análise) + Definições —
+           atalhos directos aqui em cima, para não ficarem escondidos. -->
+      <div class="card">
+        <div class="card__title" style="margin-bottom:10px">Planeamento</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn--outline" onclick="document.querySelector('.analysis-tab[data-tab=fire]').click();setView('analysis')" style="font-size:13px">🔥 FIRE</button>
+          <button class="btn btn--outline" onclick="document.querySelector('.analysis-tab[data-tab=fiscal]').click();setView('analysis')" style="font-size:13px">🧾 Fiscal / IRS</button>
+        </div>
+      </div>
       <!-- v64j: Modo Simples/Avançado — Parte 1 da simplificação pedida.
            Esconde painéis com muitos parâmetros técnicos (ex: simulação de
            reforma com taxa de levantamento/inflação/anos) atrás de um
@@ -1456,11 +1503,11 @@
 
 <!-- BOTTOM NAV -->
 <nav class="bottomnav" aria-label="Navegação">
-  <button class="navbtn navbtn--active" data-view="dashboard" id="navDashboard"><span class="navico">▣</span><span class="navlbl">Início</span></button>
-  <button class="navbtn" data-view="assets" id="navAssets"><span class="navico">≡</span><span class="navlbl">Ativos</span></button>
-  <button class="navbtn" data-view="dividends" id="navDividends"><span class="navico">💰</span><span class="navlbl">Divid.</span></button>
-  <button class="navbtn" data-view="cashflow" id="navCashflow"><span class="navico">€</span><span class="navlbl">Balanço</span></button>
-  <button class="navbtn" data-view="analysis" id="navAnalysis"><span class="navico">📈</span><span class="navlbl">Análise</span></button>
+  <button class="navbtn navbtn--active" data-view="dashboard" id="navDashboard"><span class="navico">▣</span><span class="navlbl">Resumo</span></button>
+  <button class="navbtn" data-view="assets" id="navAssets"><span class="navico">≡</span><span class="navlbl">Portfólio</span></button>
+  <button class="navbtn" data-view="market" id="navMarket"><span class="navico">🔎</span><span class="navlbl">Mercado</span></button>
+  <button class="navbtn" data-view="cashflow" id="navCashflow"><span class="navico">€</span><span class="navlbl">Finanças</span></button>
+  <button class="navbtn" data-view="settings" id="navMore"><span class="navico">☰</span><span class="navlbl">Mais</span></button>
 </nav>
 
 <!-- MODAL: Item -->

@@ -11826,6 +11826,7 @@ function wire() {
     else if (currentView === "dividends") openDivModal(null);
     else if (currentView === "assets") openItemModal(showingLiabs ? "liab" : "asset");
     else if (currentView === "analysis") openTxModal();
+    else if (currentView === "market") toast("A investigação de mercado ainda está em construção.");
     else openItemModal("asset");
   });
 
