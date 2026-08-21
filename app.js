@@ -11787,6 +11787,8 @@ function wireDashboardEmptyState() {
   if (add) add.addEventListener("click", () => openItemModal("asset"));
   if (broker) broker.addEventListener("click", () => { setView("cashflow"); switchCashflowPane("importar"); });
   if (bank) bank.addEventListener("click", () => { setView("cashflow"); switchCashflowPane("importar"); });
+  const quickAdd = document.getElementById("btnDashQuickAdd");
+  if (quickAdd) quickAdd.addEventListener("click", () => openItemModal("asset"));
 }
 
 // v64o: toggle único para os cartões "de consulta ocasional" do Dashboard
@@ -11796,7 +11798,7 @@ function wireDashSecondaryToggle() {
   if (!btn || !dash) return;
   btn.addEventListener("click", () => {
     const open = dash.classList.toggle("dash-secondary-open");
-    btn.textContent = open ? "📂 Ver menos detalhes" : "📂 Ver mais detalhes";
+    btn.textContent = open ? "Fechar detalhes" : "Explorar património";
   });
 }
 

@@ -15,7 +15,8 @@
   <link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="styles.css?v=20260821v4">
+  <link rel="stylesheet" href="styles.css?v=20260821v5">
+  <link rel="stylesheet" href="market.css?v=20260821v1">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
@@ -33,19 +34,20 @@
       document.head.appendChild(s);
     })();
   </script>
-  <script defer src="app.js?v=20260821v4" fetchpriority="high"></script>
+  <script defer src="app.js?v=20260821v5" fetchpriority="high"></script>
+  <script defer src="market.js?v=20260821v1"></script>
 </head>
 <body>
   <!-- App loading overlay — shown during boot, hidden after first render -->
   <div id="appLoadingOverlay" style="
     display:flex; position:fixed; inset:0; z-index:9999;
-    background:#0F1E2C; flex-direction:column;
+    background:#EEF3F4; flex-direction:column;
     align-items:center; justify-content:center; gap:18px;
   ">
     <img src="icon192.png" alt="" width="72" height="72" style="border-radius:18px;box-shadow:0 4px 24px rgba(32,129,126,.3)">
-    <div style="font-size:1.15rem;font-weight:600;color:#F2F4F8;letter-spacing:.01em;font-family:Georgia,'Times New Roman',serif">Vestra</div>
-    <div id="appLoadingMsg" style="font-size:.85rem;color:#7D8AA3;min-height:1.2em">A iniciar…</div>
-    <div style="width:48px;height:4px;border-radius:2px;background:#284056;overflow:hidden;margin-top:4px">
+    <div style="font-size:1.15rem;font-weight:600;color:#132536;letter-spacing:.01em;font-family:Georgia,'Times New Roman',serif">Vestra</div>
+    <div id="appLoadingMsg" style="font-size:.85rem;color:#728694;min-height:1.2em">A iniciar…</div>
+    <div style="width:48px;height:4px;border-radius:2px;background:#D7E1E3;overflow:hidden;margin-top:4px">
       <div style="height:100%;width:40%;background:#20817E;border-radius:2px;animation:pf-loading-bar 1.2s ease-in-out infinite"></div>
     </div>
   </div>
@@ -60,7 +62,7 @@
 <header class="topbar">
   <button class="btn btn--ghost sidebar-toggle" id="btnSidebarToggle" style="padding:10px 12px;border-radius:14px;font-size:18px" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">☰</button>
   <div class="brand">
-    <img class="brand__icon" src="icon192.png" alt="PF">
+    <img class="brand__icon" src="icon192.png" alt="Vestra">
     <div class="brand__txt">
       <div class="brand__title">Vestra</div>
       <div class="brand__sub">Personal Finance · Market Screener · Portfolio</div>
@@ -75,21 +77,21 @@
 <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
 <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
   <div class="sidebar__head">
-    <img class="sidebar__icon" src="icon192.png" alt="PF">
+    <img class="sidebar__icon" src="icon192.png" alt="Vestra">
     <div>
       <div class="sidebar__title">Vestra</div>
-      <div class="sidebar__sub">v1.0</div>
+      <div class="sidebar__sub">v1.2</div>
     </div>
     <button class="sidebar__close" id="btnSidebarClose" aria-label="Fechar menu">✕</button>
   </div>
   <nav class="sidebar__nav" aria-label="Separadores">
     <span class="sidebar__eyebrow">Navegação</span>
-    <button class="sidenavbtn sidenavbtn--active" data-view="dashboard"><span class="navico">▣</span><span>Resumo</span></button>
-    <button class="sidenavbtn" data-view="assets"><span class="navico">≡</span><span>Portfólio</span></button>
-    <button class="sidenavbtn" data-view="market"><span class="navico">🔎</span><span>Mercado</span></button>
-    <button class="sidenavbtn" data-view="cashflow"><span class="navico">€</span><span>Finanças</span></button>
+    <button class="sidenavbtn sidenavbtn--active" data-view="dashboard"><span class="navico">⌂</span><span>Visão geral</span></button>
+    <button class="sidenavbtn" data-view="assets"><span class="navico">◫</span><span>Carteira</span></button>
+    <button class="sidenavbtn" data-view="market"><span class="navico">⌕</span><span>Mercado</span></button>
+    <button class="sidenavbtn" data-view="cashflow"><span class="navico">↕</span><span>Movimentos</span></button>
     <div class="sidebar__divider"></div>
-    <span class="sidebar__eyebrow">Dentro do Portfólio</span>
+    <span class="sidebar__eyebrow">Ferramentas</span>
     <button class="sidenavbtn" data-view="dividends"><span class="navico">💰</span><span>Dividendos</span></button>
     <button class="sidenavbtn" data-view="analysis"><span class="navico">📈</span><span>Análise</span></button>
     <div class="sidebar__divider"></div>
@@ -111,6 +113,14 @@
 
   <!-- DASHBOARD -->
   <section class="view" data-view="dashboard" id="viewDashboard">
+
+    <div class="dashboard-welcome">
+      <div>
+        <div class="dashboard-welcome__eyebrow">O teu património</div>
+        <h1>Visão geral</h1>
+      </div>
+      <button class="dashboard-welcome__market" onclick="setView('market')">Pesquisar mercado <span>→</span></button>
+    </div>
 
     <!-- Hero: Net Worth + variação -->
     <div class="card hero">
@@ -158,29 +168,29 @@
     <div class="card kpi-quick">
       <div class="kpi-quick__grid">
         <div class="kpi-quick__cell kpi-quick__cell--green">
-          <div class="kpi-quick__k">Rend. passivo/mês</div>
+          <div class="kpi-quick__k">Rendimento / mês</div>
           <div class="kpi-quick__v" id="kpiPassiveMonthly2">—</div>
           <div class="kpi-quick__s" id="kpiPassiveAnnualSub">0 €/ano</div>
         </div>
         <div class="kpi-quick__cell kpi-quick__cell--vio">
-          <div class="kpi-quick__k">Dividendos YTD</div>
+          <div class="kpi-quick__k">Dividendos este ano</div>
           <div class="kpi-quick__v" id="kpiDivYTD2">—</div>
           <div class="kpi-quick__s" id="kpiDivCount2"></div>
         </div>
         <div class="kpi-quick__cell kpi-quick__cell--amber">
-          <div class="kpi-quick__k">Yield dividendos</div>
+          <div class="kpi-quick__k">Yield da carteira</div>
           <div class="kpi-quick__v" id="kpiYield">—</div>
           <div class="kpi-quick__s">base distribuidores</div>
         </div>
         <div class="kpi-quick__cell kpi-quick__cell--purple">
-          <div class="kpi-quick__k">P&amp;L realizado</div>
+          <div class="kpi-quick__k">Resultado realizado</div>
           <div class="kpi-quick__v" id="kpiAutonomy">—</div>
           <div class="kpi-quick__s">mais-valias vendas</div>
         </div>
       </div>
     </div>
 
-    <div class="card" id="portfolioSourcesCard" style="display:none">
+    <div class="card dash-secondary" id="portfolioSourcesCard" style="display:none">
       <div class="card__head">
         <div><div class="card__title">Fontes activas da carteira</div><div class="card__muted">Origem dos dados que estão a alimentar os cálculos</div></div>
       </div>
@@ -188,7 +198,7 @@
     </div>
 
     <!-- Objetivo de rendimento passivo -->
-    <div class="card" id="goalCard">
+    <div class="card dash-secondary" id="goalCard">
       <div class="card__head">
         <div>
           <div class="card__title">Objetivo de rendimento</div>
@@ -218,7 +228,15 @@
     <span id="kpiPassiveMonthly" style="display:none"></span>
     <span id="kpiDivYTD" style="display:none"></span>
     <span id="kpiDivCount" style="display:none"></span>
-    <div class="card">
+
+    <div class="dashboard-shortcuts">
+      <button onclick="setView('assets')"><span class="dashboard-shortcuts__icon">◫</span><span><b>Carteira</b><small>Ver posições</small></span></button>
+      <button onclick="setView('market')"><span class="dashboard-shortcuts__icon">⌕</span><span><b>Mercado</b><small>Pesquisar oportunidades</small></span></button>
+      <button id="btnDashQuickAdd"><span class="dashboard-shortcuts__icon">＋</span><span><b>Adicionar</b><small>Novo ativo</small></span></button>
+    </div>
+
+    <div class="card dash-secondary">
+      <div class="card__head"><div><div class="card__title">Ações e manutenção</div><div class="card__muted">Registos manuais e utilitários da carteira</div></div></div>
       <div class="row row--wrap" style="gap:8px">
         <button class="btn btn--primary btn--sm" id="btnSnapshot">📸 Registar snapshot</button>
         <button class="btn btn--primary btn--sm" id="btnAddDiv">💰 + Dividendo</button>
@@ -265,7 +283,7 @@
     <!-- v64o: cartões de consulta ocasional (metas, vencimentos, qualidade,
          saúde financeira, risco, IRS, notificações) atrás de um único toggle —
          ficam a um toque, mas não competem visualmente com o essencial. -->
-    <button type="button" class="btn btn--outline btn--sm" id="btnToggleDashSecondary" style="width:100%;margin:4px 0 12px">📂 Ver mais detalhes</button>
+    <button type="button" class="btn btn--outline btn--sm" id="btnToggleDashSecondary" style="width:100%;margin:4px 0 12px">Explorar património</button>
 
     <div class="card dash-secondary" id="milestonesCard" style="display:none">
       <div class="card__head">
@@ -550,31 +568,42 @@
   <!-- DIVIDENDOS -->
   <!-- MERCADO — investigação de acções/ETFs, ainda por trazer do Finscanner -->
   <section class="view" data-view="market" id="viewMarket" hidden>
-    <div class="card" style="text-align:center;padding:32px 20px">
-      <div style="font-size:40px;margin-bottom:8px">🔎</div>
-      <div style="font-weight:700;font-size:17px;margin-bottom:6px">Mercado — em construção</div>
-      <div class="card__muted" style="max-width:340px;margin:0 auto">
-        Este separador vai trazer investigação de acções e ETFs independente do que já tens: rastreio por filtros (P/E, crescimento, ROE...), fichas detalhadas por empresa, e "Smart Money" (transacções de insiders e do Congresso dos EUA).
+    <div class="market-shell" id="marketApp">
+      <div class="market-hero-simple">
+        <div class="market-kicker">Vestra Research</div>
+        <h2>Mercado</h2>
+        <p>Pesquisa primeiro. A análise aparece só quando precisas dela.</p>
       </div>
-    </div>
-    <div class="card">
-      <div class="card__title" style="margin-bottom:10px">O que vai ter</div>
-      <div class="list">
-        <div class="item" style="cursor:default">
-          <div class="item__l"><div class="item__t">🧭 Screener</div><div class="item__s">Filtrar o universo de acções por métricas fundamentais</div></div>
-        </div>
-        <div class="item" style="cursor:default">
-          <div class="item__l"><div class="item__t">📑 Fichas de empresa</div><div class="item__s">Overview, crescimento, resultados, qualidade</div></div>
-        </div>
-        <div class="item" style="cursor:default">
-          <div class="item__l"><div class="item__t">🕵️ Smart Money</div><div class="item__s">O que insiders e o Congresso dos EUA andam a comprar/vender</div></div>
-        </div>
-        <div class="item" style="cursor:default">
-          <div class="item__l"><div class="item__t">📊 Sobreposição com o teu Portfólio</div><div class="item__s">Ex: "este ETF que estás a ver sobrepõe-se 40% com o que já tens"</div></div>
-        </div>
+      <div class="market-search">
+        <input id="marketSearch" type="search" placeholder="Empresa, ticker, ETF ou tema…" autocomplete="off" spellcheck="false">
+        <span class="market-search__icon">⌕</span>
       </div>
+      <div class="market-mode-grid" aria-label="Áreas de mercado">
+        <button class="market-mode is-active" data-market-mode="discover"><span class="market-mode__icon">◫</span><strong>Descobrir</strong><small>Empresas com melhor combinação de qualidade e preço</small></button>
+        <button class="market-mode" data-market-mode="funds"><span class="market-mode__icon">◎</span><strong>ETFs</strong><small>Encontrar e comparar fundos</small></button>
+        <button class="market-mode" data-market-mode="smart"><span class="market-mode__icon">↗</span><strong>Smart money</strong><small>Insiders e Congresso</small></button>
+      </div>
+      <div id="marketPrimary"><div class="market-loader"><span></span><div>Mercado carrega apenas quando o abres.</div></div></div>
+      <details class="market-tools">
+        <summary><span>Mais ferramentas</span><span>＋</span></summary>
+        <div class="market-tools__body">
+          <div class="market-tools-grid">
+            <button class="market-tool-btn" data-market-tool="portfolio">As minhas posições<small>Qualidade, tese e riscos</small></button>
+            <button class="market-tool-btn" data-market-tool="theses">Teses<small>A melhorar / a piorar</small></button>
+            <button class="market-tool-btn" data-market-tool="compare">Comparar<small>Até 4 empresas</small></button>
+            <button class="market-tool-btn" data-market-tool="news">Notícias<small>Posições e pesquisa</small></button>
+          </div>
+        </div>
+      </details>
     </div>
   </section>
+
+  <div class="market-sheet" id="marketSheet" hidden aria-hidden="true">
+    <div class="market-sheet__panel">
+      <div class="market-sheet__grab"></div>
+      <div id="marketSheetContent"></div>
+    </div>
+  </div>
 
   <section class="view" data-view="dividends" id="viewDividends" hidden>
     <button class="btn btn--ghost btn--sm" onclick="setView('assets')" style="margin-bottom:8px">‹ Portfólio</button>
@@ -1435,7 +1464,7 @@
 
       <div class="card">
         <div class="card__title" style="margin-bottom:8px">Sobre</div>
-        <div class="card__muted"><span style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px" id="swVersionBadge">a verificar cache activa…</span><br><br>Vestra <b>v1.0</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br><br>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br><br><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
+        <div class="card__muted"><span style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px" id="swVersionBadge">a verificar cache activa…</span><br><br>Vestra <b>v1.2</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br><br>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br><br><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
         </div>
       </div>
     </div>
@@ -1502,10 +1531,10 @@
 
 <!-- BOTTOM NAV -->
 <nav class="bottomnav" aria-label="Navegação">
-  <button class="navbtn navbtn--active" data-view="dashboard" id="navDashboard"><span class="navico">▣</span><span class="navlbl">Resumo</span></button>
-  <button class="navbtn" data-view="assets" id="navAssets"><span class="navico">≡</span><span class="navlbl">Portfólio</span></button>
-  <button class="navbtn" data-view="market" id="navMarket"><span class="navico">🔎</span><span class="navlbl">Mercado</span></button>
-  <button class="navbtn" data-view="cashflow" id="navCashflow"><span class="navico">€</span><span class="navlbl">Finanças</span></button>
+  <button class="navbtn navbtn--active" data-view="dashboard" id="navDashboard"><span class="navico">⌂</span><span class="navlbl">Início</span></button>
+  <button class="navbtn" data-view="assets" id="navAssets"><span class="navico">◫</span><span class="navlbl">Carteira</span></button>
+  <button class="navbtn" data-view="market" id="navMarket"><span class="navico">⌕</span><span class="navlbl">Mercado</span></button>
+  <button class="navbtn" data-view="cashflow" id="navCashflow"><span class="navico">↕</span><span class="navlbl">Fluxos</span></button>
   <button class="navbtn" data-view="settings" id="navSettings"><span class="navico">☰</span><span class="navlbl">Mais</span></button>
 </nav>
 
