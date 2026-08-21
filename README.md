@@ -170,3 +170,14 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Hero variation chips now use theme-safe contrast classes.
 - Dashboard shortcuts are fully contained on iPhone.
 - Settings groups are presented as a 2×2 navigation hub and expand full width.
+
+
+### v3.0 — Congress resilience + splash identity
+- Restores and guarantees visible splash tagline: `Finance, made simple.`
+- Minimum identity splash dwell so the tagline is actually readable on fast devices.
+- Congress pipeline updated to use the current Bargo global `/trades?ticker=` query form, with legacy per-ticker fallback.
+- Removes the old global 403 probe bailout that could disable all Congress data.
+- Worker v4.2 adds `/congress?ticker=` and `/congress?limit=` live endpoints.
+- Smart Money now falls back to the Worker when static Congress data is empty.
+- Company Smart tab fetches recent Congress disclosures live when needed.
+- PWA cache: `vestra-cache-v23`.

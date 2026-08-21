@@ -13351,7 +13351,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const _splash = document.getElementById("appLoadingOverlay");
   const _splashMsg = document.getElementById("appLoadingMsg");
   const _setMsg = m => { if (_splashMsg) _splashMsg.textContent = m; };
-  if (_splash) _splash.style.display = "flex";
+  const _splashStartedAt = performance.now();
+  if (_splash) { _splash.style.display = "flex"; _splash.style.opacity = "1"; }
 
   try { await requestPersistentStorage(); } catch (e) { console.error("Persistent storage init falhou", e); }
   _setMsg("A carregar dados…");
@@ -13408,11 +13409,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { renderStaleXtbImportBanner(); } catch (_) {}
   try { setupFixedBarSpacing(); } catch (_) {}
   try { updateQuoteButtonStaleness(); } catch (_) {} // v64t: mostrar logo se as cotações já estão desactualizadas ao abrir a app
-  // Hide loading overlay with fade
+  // Keep the identity splash visible long enough to actually read the tagline.
+  // Fast devices previously dismissed it before "Finance, made simple." was perceptible.
   if (_splash) {
-    _splash.style.transition = "opacity 0.3s ease";
-    _splash.style.opacity = "0";
-    setTimeout(() => { if (_splash) _splash.style.display = "none"; }, 320);
+    const elapsed = performance.now() - _splashStartedAt;
+    const wait = Math.max(0, 1050 - elapsed);
+    setTimeout(() => {
+      _splash.style.transition = "opacity 0.32s ease";
+      _splash.style.opacity = "0";
+      setTimeout(() => { if (_splash) _splash.style.display = "none"; }, 340);
+    }, wait);
   }
   // Deferred non-critical tasks
   setTimeout(() => {

@@ -450,6 +450,59 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   return result;
 }
 
+
+
+function normalizeCongressTrade(x) {
+  const ticker = String(x?.ticker || x?.symbol || '').toUpperCase();
+  const rawType = String(x?.type || x?.transaction_type || x?.transaction || '').toLowerCase();
+  const type = rawType.includes('sale') || rawType.includes('sell') ? 'sell' : rawType.includes('purchase') || rawType.includes('buy') ? 'buy' : rawType || 'trade';
+  const amount = x?.amount_range || x?.amount || x?.range || '—';
+  return {
+    ticker,
+    representative: x?.member || x?.representative || x?.politician || x?.name || 'Membro do Congresso',
+    chamber: String(x?.chamber || '').toLowerCase(),
+    state: x?.state || '',
+    type,
+    amount,
+    amount_range: amount,
+    transaction_date: x?.transaction_date || x?.date || x?.trade_date || '',
+    disclosure_date: x?.disclosure_date || x?.filed_date || x?.filing_date || '',
+  };
+}
+
+async function fetchCongressTrades(ticker, limit = 100) {
+  const tk = String(ticker || '').trim().toUpperCase().split('.')[0];
+  const lim = Math.max(1, Math.min(100, Number(limit) || 100));
+  const from = new Date(Date.now() - 120 * 86400000).toISOString().slice(0,10);
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 Vestra/3.0',
+    'Accept': 'application/json,text/plain,*/*'
+  };
+  const urls = [];
+  // Current documented endpoint: global feed with ticker query.
+  const q = new URL('https://www.bargo.ai/free-apis/congress/v1/trades');
+  if (tk) q.searchParams.set('ticker', tk);
+  q.searchParams.set('from', from);
+  q.searchParams.set('limit', String(lim));
+  urls.push(q.toString());
+  // Compatibility fallback for the older per-ticker route.
+  if (tk) urls.push(`https://www.bargo.ai/free-apis/congress/v1/trades/${encodeURIComponent(tk)}?from=${from}&limit=${lim}`);
+
+  let lastStatus = null;
+  for (const endpoint of urls) {
+    try {
+      const resp = await fetch(endpoint, { headers, cf: { cacheTtl: 900, cacheEverything: false } });
+      lastStatus = resp.status;
+      if (!resp.ok) continue;
+      const payload = await resp.json();
+      const raw = Array.isArray(payload) ? payload : (Array.isArray(payload?.trades) ? payload.trades : Array.isArray(payload?.data) ? payload.data : []);
+      const trades = raw.map(normalizeCongressTrade).filter(x => x.ticker && (!tk || x.ticker === tk));
+      return { trades: trades.slice(0, lim), source: 'Bargo Congress API', updated: new Date().toISOString() };
+    } catch (_) {}
+  }
+  throw new Error(`Congress feed indisponível${lastStatus ? ` (${lastStatus})` : ''}`);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -481,6 +534,14 @@ export default {
           { headers: { ...cors, "Content-Type": "application/json" } });
       }
 
+      if (url.pathname === "/congress") {
+        const ticker = url.searchParams.get("ticker") || "";
+        const limit = url.searchParams.get("limit") || "100";
+        const data = await fetchCongressTrades(ticker, limit);
+        return new Response(JSON.stringify(data),
+          { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "public, max-age=300" } });
+      }
+
       if (url.pathname === "/quotes") {
         const tickers = (url.searchParams.get("tickers") || "")
           .split(",").map(t => t.trim().toUpperCase()).filter(Boolean).slice(0, 20);
@@ -498,8 +559,8 @@ export default {
 
       if (url.pathname === "/" || url.pathname === "") {
         return new Response(JSON.stringify({
-          service: "Vestra Market Proxy v4.1",
-          endpoints: ["/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT"]
+          service: "Vestra Market Proxy v4.2",
+          endpoints: ["/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT", "/congress?ticker=NVDA", "/congress?limit=100"]
         }), { headers: { ...cors, "Content-Type": "application/json" } });
       }
 

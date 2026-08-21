@@ -16,7 +16,10 @@
     watchlist: new Set(),
     previousSnapshot: null,
     currentSnapshot: null,
-    liveLoading: new Set()
+    liveLoading: new Set(),
+    congressLive: [],
+    congressLoaded: false,
+    congressLoading: null
   };
 
   const $m = id => document.getElementById(id);
@@ -95,6 +98,52 @@
       }
     }catch(_){ /* dataset local remains the fallback */ }
     finally{ M.liveLoading.delete(ticker); }
+  }
+
+
+
+  function normalizeCongressLive(x){
+    return {
+      ticker: txt(x?.ticker).toUpperCase(),
+      representative: txt(x?.representative||x?.member||x?.name)||'Membro do Congresso',
+      chamber: txt(x?.chamber), state: txt(x?.state), type: txt(x?.type||x?.transaction)||'trade',
+      amount: txt(x?.amount||x?.amount_range)||'—',
+      transaction_date: txt(x?.transaction_date||x?.date), disclosure_date: txt(x?.disclosure_date||x?.filed_date)
+    };
+  }
+
+  async function loadCongressLive(ticker=''){
+    const base=workerBase(); if(!base) return [];
+    const tk=txt(ticker).toUpperCase().split('.')[0];
+    if(!tk && M.congressLoaded) return M.congressLive;
+    if(!tk && M.congressLoading) return M.congressLoading;
+    const work=(async()=>{
+      try{
+        const url=`${base}/congress?${tk?`ticker=${encodeURIComponent(tk)}&`:''}limit=100`;
+        const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(`congress ${r.status}`);
+        const d=await r.json();
+        const trades=(Array.isArray(d)?d:(d?.trades||[])).map(normalizeCongressLive).filter(x=>x.ticker);
+        if(tk){
+          const s=M.byTicker.get(txt(ticker).toUpperCase()) || [...M.byTicker.values()].find(x=>txt(x.ticker).toUpperCase().split('.')[0]===tk);
+          if(s && trades.length) s.congress_trades=trades;
+        }else{
+          M.congressLive=trades; M.congressLoaded=true;
+          for(const tr of trades){
+            const stock=M.byTicker.get(tr.ticker) || [...M.byTicker.values()].find(x=>txt(x.ticker).toUpperCase().split('.')[0]===tr.ticker);
+            if(stock){
+              const cur=Array.isArray(stock.congress_trades)?stock.congress_trades:[];
+              const key=x=>`${txt(x.transaction_date||x.date)}|${txt(x.representative||x.member||x.name)}|${txt(x.type)}|${txt(x.amount||x.amount_range)}`;
+              const seen=new Set(cur.map(key));
+              stock.congress_trades=[...cur,...trades.filter(t=>t.ticker===tr.ticker&&!seen.has(key(t)))];
+            }
+          }
+        }
+        return trades;
+      }catch(_){ return []; }
+      finally{ if(!tk) M.congressLoading=null; }
+    })();
+    if(!tk) M.congressLoading=work;
+    return work;
   }
 
   const WATCH_KEY = 'vestra-market-watchlist-v1';
@@ -301,7 +350,8 @@
   function renderSmart(){
     let rows=M.stocks.filter(s=>!isFund(s)&&((n(s.insider_buy_count_30d)||0)>0 || (Array.isArray(s.congress_trades)&&s.congress_trades.length)))
       .sort((a,b)=>smartRank(b)-smartRank(a)).slice(0,20);
-    return `<section class="market-section"><div class="market-section__head"><div><h3>Smart money</h3><p>Compras de insiders e atividade declarada no Congresso dos EUA</p></div><span class="market-data-age">${ageText()}</span></div><div class="market-list">${rows.map(s=>renderRow(s,`${n(s.insider_buy_count_30d)||0} compras insider · ${Array.isArray(s.congress_trades)?s.congress_trades.length:0} trades Congresso`)).join('')||'<div class="market-empty">Sem atividade relevante.</div>'}</div></section>`;
+    const liveCount=M.congressLive.length;
+    return `<section class="market-section"><div class="market-section__head"><div><h3>Smart money</h3><p>Compras de insiders e atividade declarada no Congresso dos EUA</p></div><span class="market-data-age">${liveCount?`Congresso live · ${liveCount}`:ageText()}</span></div><div class="market-list">${rows.map(s=>renderRow(s,`${n(s.insider_buy_count_30d)||0} compras insider · ${Array.isArray(s.congress_trades)?s.congress_trades.length:0} trades Congresso`)).join('')||'<div class="market-empty">A carregar atividade recente…</div>'}</div></section>`;
   }
 
   function renderPrimary(){
@@ -414,7 +464,12 @@
     if(tab==='smart') {
       const ins=Array.isArray(s.insider_transactions)?s.insider_transactions.slice(0,8):[];
       const con=Array.isArray(s.congress_trades)?s.congress_trades.slice(0,8):[];
-      body.innerHTML=`<div class="market-detail-card"><h4>Insiders · 30 dias</h4><p>${n(s.insider_buy_count_30d)||0} compras (${money(s.insider_buy_value_30d,'USD')}) · ${n(s.insider_sell_count_30d)||0} vendas (${money(s.insider_sell_value_30d,'USD')})</p>${ins.length?`<ul>${ins.map(x=>`<li>${esc(x.name||x.insider||'Insider')} · ${esc(x.transaction_type||x.type||'')} · ${money(x.value||x.transaction_value,'USD')}</li>`).join('')}</ul>`:''}</div><div class="market-detail-card"><h4>Congresso</h4>${con.length?`<ul>${con.map(x=>`<li>${esc(x.representative||x.name||'')} · ${esc(x.type||x.transaction||'')} · ${esc(x.amount||'')}</li>`).join('')}</ul>`:'<p>Sem operações recentes registadas.</p>'}</div>`;
+      body.innerHTML=`<div class="market-detail-card"><h4>Insiders · 30 dias</h4><p>${n(s.insider_buy_count_30d)||0} compras (${money(s.insider_buy_value_30d,'USD')}) · ${n(s.insider_sell_count_30d)||0} vendas (${money(s.insider_sell_value_30d,'USD')})</p>${ins.length?`<ul>${ins.map(x=>`<li>${esc(x.name||x.insider||'Insider')} · ${esc(x.transaction_type||x.type||'')} · ${money(x.value||x.transaction_value,'USD')}</li>`).join('')}</ul>`:''}</div><div class="market-detail-card"><h4>Congresso</h4>${con.length?`<ul>${con.map(x=>`<li>${esc(x.representative||x.member||x.name||'')} · ${esc(x.type||x.transaction||'')} · ${esc(x.amount||x.amount_range||'—')}</li>`).join('')}</ul>`:'<p id="marketCongressEmpty">A verificar divulgações recentes…</p>'}</div>`;
+      if(!con.length) loadCongressLive(s.ticker).then(trades=>{
+        if(!$m('marketSheet')?.hidden && txt($m('marketSheet')?.dataset.ticker).toUpperCase()===txt(s.ticker).toUpperCase() && $m('marketCongressEmpty')){
+          if(trades.length) renderDetailTab(s,'smart'); else $m('marketCongressEmpty').textContent='Sem operações recentes registadas.';
+        }
+      });
     }
     if(tab==='news') loadNewsFor(s);
   }
@@ -556,7 +611,7 @@
 
   document.addEventListener('click', e=>{
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
-    const mode=e.target.closest('[data-market-mode]'); if(mode){M.mode=mode.dataset.marketMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary();}
+    const mode=e.target.closest('[data-market-mode]'); if(mode){M.mode=mode.dataset.marketMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}
     const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
     const watch=e.target.closest('[data-market-watch]'); if(watch){e.preventDefault();e.stopPropagation();toggleWatch(watch.dataset.marketWatch);return;}
     const row=e.target.closest('[data-market-ticker]'); if(row){ensureLoaded().then(()=>openTicker(row.dataset.marketTicker));}
