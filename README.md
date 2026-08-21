@@ -1,3 +1,11 @@
+## Vestra v3.2 — Safe Quotes & Settings Cleanup
+- Layout visual mantido/congelado.
+- Remove atalhos legacy sem styling no topo de Mais.
+- Estado/refresh de cotações movido da Carteira para Mais → Preferências.
+- Auto-refresh deixa de inferir tickers a partir da primeira palavra de nomes descritivos (ex.: WTI Crude Oil → WTI; ARK Innovation → ARK).
+- Validação de moeda e saltos de preço; cotações suspeitas são rejeitadas e o último valor é mantido.
+- Snapshot de rollback criado antes de cada refresh futuro.
+
 ## Vestra v2.6 — Mobile containment
 
 - Mercado sem carrosséis infinitos: 8 controlos de setor (Todos + 6 setores + Mais).
@@ -181,3 +189,12 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Smart Money now falls back to the Worker when static Congress data is empty.
 - Company Smart tab fetches recent Congress disclosures live when needed.
 - PWA cache: `vestra-cache-v23`.
+
+
+### v3.1 — Silent Quote Refresh
+- Auto-refresh de cotações continua ativo ao abrir/regressar à app quando os preços têm mais de 30 minutos.
+- Falhas isoladas deixam de abrir automaticamente o modal de erros.
+- Atualização automática corre em background e mantém o último valor conhecido nos ativos que falham.
+- Atualização manual também não bloqueia: mostra apenas um toast; detalhes só abrem por ação explícita do utilizador.
+- Indicador de erros continua disponível na Carteira.
+- PWA cache: `vestra-cache-v24`.

@@ -355,15 +355,7 @@
   <div><small id="portfolioYieldLabel">Yield médio</small><strong id="portfolioYieldValue">—</strong></div>
 </div>
 </div>
-<div class="quote-sync-card" id="quoteSyncCard">
-  <div class="quote-sync-card__icon" aria-hidden="true">↻</div>
-  <div class="quote-sync-card__copy">
-    <small>Cotações de mercado</small>
-    <strong id="quoteSyncStatus">A verificar…</strong>
-    <span id="quoteSyncMeta">Atualização automática ativa</span>
-  </div>
-  <button class="quote-sync-card__btn" id="btnRefreshQuotesQuick" type="button" aria-label="Atualizar cotações agora">Atualizar</button>
-</div>
+
 <div class="portfolio-actions">
 <button onclick="setView('market')"><span>⌕</span><b>Pesquisar mercado</b></button>
 <button onclick="setView('dividends')"><span>↙</span><b>Dividendos</b></button>
@@ -1279,12 +1271,7 @@
 <h2>Mais</h2>
 <p>Planeamento, preferências e ferramentas quando precisares delas.</p>
 </div>
-<div class="more-quick">
-<button onclick="document.querySelector('.analysis-tab[data-tab=fire]')?.click();setView('analysis')"><span>◎</span><b>FIRE</b><small>Independência financeira</small></button>
-<button onclick="document.querySelector('.analysis-tab[data-tab=fiscal]')?.click();setView('analysis')"><span>§</span><b>Fiscal</b><small>IRS e mais-valias</small></button>
-<button id="moreGoImport" onclick="setView('cashflow');switchCashflowPane('importar')"><span>⇅</span><b>Importar</b><small>Banco e corretoras</small></button>
-<button onclick="document.querySelector('.analysis-tab[data-tab=ai]')?.click();setView('analysis')"><span>✦</span><b>Análise IA</b><small>Leitura da carteira</small></button>
-</div>
+
 <div class="more-section-label">Preferências</div>
 <div class="card">
 <div class="card__title" style="margin-bottom:6px">Modo de visualização</div>
@@ -1308,6 +1295,15 @@
 <div class="quote-auto-setting" style="margin-top:18px">
   <div><b>Atualização automática de cotações</b><small>Ao abrir ou regressar à Vestra, atualiza se os preços tiverem mais de 30 minutos.</small></div>
   <label class="switch" aria-label="Atualização automática de cotações"><input id="settingsAutoQuotes" type="checkbox" checked/><span></span></label>
+</div>
+<div class="quote-sync-card" id="quoteSyncCard">
+  <div class="quote-sync-card__icon" aria-hidden="true">↻</div>
+  <div class="quote-sync-card__copy">
+    <small>Cotações de mercado</small>
+    <strong id="quoteSyncStatus">A verificar…</strong>
+    <span id="quoteSyncMeta">Atualização automática ativa</span>
+  </div>
+  <button class="quote-sync-card__btn" id="btnRefreshQuotesQuick" type="button" aria-label="Atualizar cotações agora">Atualizar</button>
 </div>
 <label class="lbl" style="margin-top:18px">🔗 Cloudflare Worker URL (cotações em tempo real)</label>
 <input class="input" id="settingsWorkerUrl" placeholder="https://patrimonio-quotes.SEU-NOME.workers.dev" type="url"/>
@@ -1397,7 +1393,7 @@
 <summary><div class="more-group__lead"><span class="more-group__icon" aria-hidden="true">V</span><div><b>Sobre a Vestra</b><small>Versão, PWA e armazenamento</small></div></div><span class="more-group__chevron">›</span></summary>
 <div class="more-group__body"><div class="card">
 <div class="card__title" style="margin-bottom:8px">Sobre</div>
-<div class="card__muted"><span id="swVersionBadge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px">a verificar cache activa…</span><br/><br/>Vestra <b>v3.0</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br/><br/>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br/><br/><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
+<div class="card__muted"><span id="swVersionBadge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px">a verificar cache activa…</span><br/><br/>Vestra <b>v3.2</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br/><br/>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br/><br/><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
         </div>
 </div></div>
 </details>

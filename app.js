@@ -11915,9 +11915,9 @@ function wire() {
 
   // Quote refresh button
   const btnRefresh = $("btnRefreshQuotes");
-  if (btnRefresh) btnRefresh.addEventListener("click", refreshLiveQuotes);
+  if (btnRefresh) btnRefresh.addEventListener("click", () => refreshLiveQuotes({ manual: true }));
   const btnRefreshQuick = $("btnRefreshQuotesQuick");
-  if (btnRefreshQuick) btnRefreshQuick.addEventListener("click", refreshLiveQuotes);
+  if (btnRefreshQuick) btnRefreshQuick.addEventListener("click", () => refreshLiveQuotes({ manual: true }));
   const btnQuoteErrors = document.getElementById('btnQuoteErrors');
   if (btnQuoteErrors) btnQuoteErrors.addEventListener('click', () => {
     const report = (((state || {}).settings || {}).lastQuoteRefresh) || { updated:0, failed:0, errors:[] };
@@ -12414,7 +12414,53 @@ async function fetchQuote(ticker, workerUrl) {
 }
 
 
-async function refreshLiveQuotes() {
+function quoteSanityCheck(asset, q, priceEur, rawTicker) {
+  if (!asset || !q || !Number.isFinite(priceEur) || priceEur <= 0) return { ok:false, reason:"Cotação inválida" };
+
+  const assetCcy = String(asset.priceCurrency || asset.currency || "").trim().toUpperCase();
+  const quoteCcy = String(q.currency || "").trim().toUpperCase();
+  const explicit = hasStrongQuoteIdentity(asset);
+  // Currency mismatch is a strong collision signal for explicit broker instruments.
+  if (assetCcy && quoteCcy && assetCcy !== quoteCcy && !(assetCcy === "GBX" && quoteCcy === "GBP")) {
+    if (!String(rawTicker || "").includes("=") && !String(rawTicker || "").endsWith("-USD")) {
+      return { ok:false, reason:`Cotação suspeita: moeda ${quoteCcy} não coincide com ${assetCcy}` };
+    }
+  }
+
+  const qty = parseNum(asset.qty || 0);
+  const previousPrice = parseNum(asset.lastPriceEur || 0);
+  const previousValue = parseNum(asset.value || 0);
+  const impliedPreviousPrice = qty > 0 && previousValue > 0 ? previousValue / qty : 0;
+  const baseline = previousPrice > 0 ? previousPrice : impliedPreviousPrice;
+
+  // Compare against the previous-day stored price when available. This allows recovery
+  // from a bad quote already written today while still rejecting a second bad jump.
+  let historical = 0;
+  try {
+    const key = String(rawTicker || asset.ticker || asset.name || "").trim().toUpperCase();
+    const hist = (state.priceHistory && state.priceHistory[key]) || [];
+    const today = new Date().toISOString().slice(0,10);
+    const prev = [...hist].reverse().find(h => h && h.date !== today && Number.isFinite(Number(h.priceEur)) && Number(h.priceEur) > 0);
+    historical = prev ? Number(prev.priceEur) : 0;
+  } catch(_) {}
+  const ref = historical > 0 ? historical : baseline;
+  if (ref > 0) {
+    const ratio = priceEur / ref;
+    if (ratio > 5 || ratio < 0.2) {
+      return { ok:false, reason:`Cotação suspeita rejeitada (${ratio.toFixed(1)}× face ao último preço fiável)` };
+    }
+  }
+
+  // Descriptive broker products must never be refreshed from a guessed first-word ticker.
+  if (asset.generatedFromBroker && !explicit) {
+    return { ok:false, reason:"Sem ticker/ISIN explícito; mantido o último valor para evitar correspondência errada" };
+  }
+  return { ok:true };
+}
+
+async function refreshLiveQuotes(options = {}) {
+  const manual = options && options.manual === true;
+  const silent = !manual;
   const btn = $("btnRefreshQuotes");
   const workerUrl = (state.settings && state.settings.workerUrl) || "";
 
@@ -12428,7 +12474,7 @@ async function refreshLiveQuotes() {
       state.settings.workerUrl = url.trim();
       saveState();
       toast("✅ Worker URL guardado. A tentar actualizar…");
-      return refreshLiveQuotes();
+      return refreshLiveQuotes({ manual: true });
     }
     toast("⚠️ Worker URL não configurado. Ver README para instruções.", 4000);
     return;
@@ -12563,18 +12609,23 @@ async function refreshLiveQuotes() {
   }
 
   function getRawTickerForAsset(asset) {
+    // v3.2: never infer a ticker from the first ordinary word of a descriptive name.
+    // "WTI Crude Oil" -> WTI (W&T Offshore) and "ARK Innovation" -> ARK
+    // were two real collisions that corrupted portfolio values.
     const tk = String(asset.ticker || "").trim();
     if (tk && /^[A-Z0-9.\-]{1,16}$/i.test(tk)) return tk.toUpperCase();
 
-    const cls = String(asset.class || "").trim();
-    const isMarketClass = QUOTE_CLASSES.includes(cls);
-    const nm = String(asset.name || "").trim();
-    if ((asset && asset.generatedFromBroker) || isMarketClass) {
-      if (nm && /^[A-Z0-9.\-]{1,16}$/i.test(nm)) return nm.toUpperCase();
-    }
+    const notes = String(asset.notes || "");
+    const tagged = notes.match(/\b(?:Ticker|Yahoo)=([A-Z0-9.\-=^]{1,24})\b/i);
+    if (tagged) return String(tagged[1] || "").trim().toUpperCase();
 
-    const ext = extractTicker(asset);
-    return ext ? String(ext).trim().toUpperCase() : "";
+    const nm = String(asset.name || "").trim();
+    if (nm && /^[A-Z0-9.\-]{1,16}$/i.test(nm)) return nm.toUpperCase();
+    const bracketed = nm.match(/[\[(]([A-Z0-9.-]{1,16}(?:\.[A-Z]{1,4}|-[A-Z]{3})?)[\])]/i);
+    if (bracketed) return String(bracketed[1] || "").trim().toUpperCase();
+    const venue = nm.match(/^([A-Z0-9.-]{1,16}\.(?:US|DE|FR|PT|LS|MC|PA|AS|L|SW|TO|IR|CO|ST|OL|HE|AX|F|UK))(?:\b|\s|—|-)/i);
+    if (venue) return String(venue[1] || "").trim().toUpperCase();
+    return "";
   }
 
 
@@ -12607,6 +12658,22 @@ async function refreshLiveQuotes() {
   }
 
 
+  function hasStrongQuoteIdentity(asset) {
+    if (!asset) return false;
+    const cls = normalizeTickerLookupKey(asset.class || "");
+    if (cls === "CRIPTO" || cls === "CRYPTO") return true;
+    const isin = String(asset.isin || "").trim().toUpperCase();
+    if (/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(isin)) return true;
+    const tk = String(asset.ticker || "").trim().toUpperCase();
+    if (/^[A-Z0-9.\-=^]{1,24}$/.test(tk)) return true;
+    if (/\b(?:Ticker|Yahoo)=([A-Z0-9.\-=^]{1,24})\b/i.test(String(asset.notes || ""))) return true;
+    const nm = String(asset.name || "").trim();
+    if (/^[A-Z0-9.\-]{1,16}$/i.test(nm)) return true;
+    if (/[\[(][A-Z0-9.-]{1,16}(?:\.[A-Z]{1,4}|-[A-Z]{3})?[\])]/i.test(nm)) return true;
+    if (/^[A-Z0-9.-]{1,16}\.(?:US|DE|FR|PT|LS|MC|PA|AS|L|SW|TO|IR|CO|ST|OL|HE|AX|F|UK)(?:\b|\s|—|-)/i.test(nm)) return true;
+    return false;
+  }
+
   function assetLooksQuoteEligible(asset) {
     if (!asset || isManualNonMarketAsset(asset)) return false;
     const cls = String(asset.class || "").trim();
@@ -12624,9 +12691,11 @@ async function refreshLiveQuotes() {
 
     const isMarketClass = QUOTE_CLASSES.includes(cls);
 
-    if (asset.generatedFromBroker) return !!(raw || storedYahoo || inferredYahoo || isin);
+    // Broker imports are deliberately conservative: a descriptive product name is not a ticker.
+    // Auto-refresh only when the asset has an explicit/structural market identity.
+    if (asset.generatedFromBroker && !hasStrongQuoteIdentity(asset)) return false;
     if (!isMarketClass) return !!(storedYahoo || hasExplicitTickerTag(asset));
-    return !!(isin || storedYahoo || inferredYahoo || isPlausibleMarketTicker(raw, asset));
+    return !!(isin || (hasStrongQuoteIdentity(asset) && (raw || storedYahoo || inferredYahoo || isPlausibleMarketTicker(raw, asset))));
   }
 
 
@@ -12911,6 +12980,13 @@ async function fetchQuoteWithFallback(ref) {
   // files reproduce correct values in testing — so capture the evidence on device.
   const _qtyBefore = new Map();
   (state.assets || []).forEach(a => { if (a && a.id) _qtyBefore.set(a.id, parseNum(a.qty)); });
+  // v3.2: keep a compact pre-refresh rollback snapshot. Quote refresh must be reversible.
+  if (!state.settings) state.settings = {};
+  state.settings.quoteRollback = (state.assets || []).filter(a => a && a.id).map(a => ({
+    id:a.id, value:a.value, valueLocal:a.valueLocal, currency:a.currency, lastPriceEur:a.lastPriceEur,
+    yahooTicker:a.yahooTicker, notes:a.notes, lastUpdated:a.lastUpdated
+  }));
+  state.settings.quoteRollbackTs = Date.now();
 
   const today = new Date().toLocaleDateString("pt-PT");
   for (const [idx, ref] of tickerList.entries()) {
@@ -12947,6 +13023,14 @@ async function fetchQuoteWithFallback(ref) {
     const qtyFromNotes = qtyMatch ? parseFloat(qtyMatch[1].replace(",", ".")) : null;
     const qty = qtyField > 0 ? qtyField : qtyFromNotes;
     const newValue = qty ? qty * priceEur : priceEur;
+
+    const sanity = quoteSanityCheck(asset, q, priceEur, yahoo || raw);
+    if (!sanity.ok) {
+      failed++;
+      errors.push({ raw, yahoo: yahoo || "", assetName: asset.name || raw || "Ativo", reason: sanity.reason });
+      console.warn("[Quote rejected]", asset.name || raw, sanity.reason, q);
+      continue;
+    }
 
     const priceLabel = ccy === "EUR"
       ? fmtEUR2(priceEur)
@@ -13059,27 +13143,38 @@ async function fetchQuoteWithFallback(ref) {
     btn.title = "Cotações actualizadas em " + new Date().toLocaleTimeString("pt-PT", {hour:"2-digit",minute:"2-digit"});
   }
 
+  // Never open an error modal automatically. Quote refreshes are background work:
+  // isolated failures keep the last known value and are surfaced only as a small status.
+  showQuoteErrors(updated, failed, errors, updated, failed);
+  quoteErrorsInlineOpen = false;
+  renderQuoteErrorsInline(false);
+  updateQuoteErrorIndicator();
+
   if (updated > 0 && !failed) {
-    toast(`✅ ${updated} ativo${updated !== 1 ? "s" : ""} actualizado${updated !== 1 ? "s" : ""}`, 3000);
+    if (manual) toast(`✅ ${updated} ativo${updated !== 1 ? "s" : ""} atualizado${updated !== 1 ? "s" : ""}`, 2600);
   } else if (updated > 0) {
-    // Show clickable toast — tapping opens full error list modal
-    showQuoteErrors(updated, failed, errors, updated, failed);
-    quoteErrorsInlineOpen = true;
-    renderQuoteErrorsInline(true);
-    openModal("modalQuoteErrors");
-    toastClickable(
-      `✅ ${updated} actualizado${updated !== 1 ? "s" : ""} · ⚠️ ${failed} erro${failed !== 1 ? "s" : ""} — toca para ver`,
-      () => openModal("modalQuoteErrors"), 8000
-    );
-  } else {
-    showQuoteErrors(0, failed, errors, 0, failed);
-    quoteErrorsInlineOpen = true;
-    renderQuoteErrorsInline(true);
-    openModal("modalQuoteErrors");
-    toastClickable(
-      `⚠️ ${failed} erro${failed !== 1 ? "s" : ""} — toca para ver detalhes`,
-      () => openModal("modalQuoteErrors"), 8000
-    );
+    if (manual) {
+      toastClickable(
+        `✅ ${updated} atualizados · ⚠️ ${failed} com erro — toca para detalhes`,
+        () => {
+          showQuoteErrors(updated, failed, errors, updated, failed);
+          openModal("modalQuoteErrors");
+        }, 6500
+      );
+    }
+  } else if (failed > 0) {
+    // Full failure is still non-blocking. In automatic mode the portfolio remains usable.
+    if (manual) {
+      toastClickable(
+        `⚠️ Não foi possível atualizar ${failed} ativo${failed !== 1 ? "s" : ""} — toca para detalhes`,
+        () => {
+          showQuoteErrors(0, failed, errors, 0, failed);
+          openModal("modalQuoteErrors");
+        }, 6500
+      );
+    } else {
+      console.warn(`[AutoRefresh] ${failed} cotações falharam; mantidos os últimos valores conhecidos.`);
+    }
   }
 }
 
@@ -13331,7 +13426,7 @@ function autoRefreshQuotesIfStale() {
   if (!needsRefresh) return;
 
   console.log("[AutoRefresh] Cotações desactualizadas — a actualizar em background…");
-  refreshLiveQuotes().catch(e => console.warn("[AutoRefresh] Falha:", e));
+  refreshLiveQuotes({ manual: false }).catch(e => console.warn("[AutoRefresh] Falha:", e));
 }
 
 /* ─── GUARD DE PREÇO ANTIGO ──────────────────────────────────────
