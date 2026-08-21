@@ -2626,19 +2626,12 @@ function renderPortfolioGlance() {
   setText("portfolioPositionCount", String(src.length));
   setText("portfolioClassLabel", showingLiabs ? "Principal tipo" : "Maior classe");
   setText("portfolioTopClass", topClass ? topClass[0] : "—");
-  setText("portfolioIncomeLabel", showingLiabs ? "Peso no património" : "Rendimento anual");
-  setText("portfolioMonthlyLabel", showingLiabs ? "Valor médio" : "Mensal estimado");
-  setText("portfolioYieldLabel", showingLiabs ? "Peso médio" : "Yield médio");
+  setText("portfolioIncomeLabel", showingLiabs ? "Peso no património" : "Rendimento/ano");
   if (showingLiabs) {
     const net = Math.max(1, (state.assets || []).reduce((sum,x)=>sum+parseNum(x.value),0));
     setText("portfolioIncomeValue", fmtPct(total / net * 100));
-    setText("portfolioMonthlyValue", src.length ? fmtEUR(total / src.length) : "—");
-    setText("portfolioYieldValue", "—");
   } else {
-    const weightedYield = total > 0 ? annualIncome / total * 100 : 0;
     setText("portfolioIncomeValue", fmtEUR(annualIncome));
-    setText("portfolioMonthlyValue", fmtEUR(annualIncome / 12));
-    setText("portfolioYieldValue", fmtPct(weightedYield));
   }
 }
 
