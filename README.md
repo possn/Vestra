@@ -1,3 +1,25 @@
+# Vestra
+
+## Vestra v2.0 — Warm Dusk / Portfolio Intelligence
+
+- Paleta ajustada para um dusk mais quente: porcelana, slate/teal, coral e dourado suaves.
+- Contraste reforçado em texto secundário e, sobretudo, no hero de património.
+- Removida a barra flutuante de rendimento passivo; o rendimento passa a ter um cartão central no Dashboard e mantém-se no resumo da Carteira.
+- Splash simplificado: símbolo Vestra + `Finance, made simple.`; sem barra de progresso visível.
+- “As minhas posições” em Mercado deixa de ser uma lista indiferenciada: agrega posições por ticker, prioriza as maiores, separa criptoativos e outros ativos e mostra cobertura do research.
+- Criptoativos nunca são tratados como empresas apenas por coincidência de símbolo (ex.: ATOM).
+- Removido um bloco CSS legado da v1.4 que continha `\n` literais e podia causar inconsistências de renderização.
+- Cache PWA: `vestra-cache-v14`.
+
+
+## Vestra v1.9 — Memory Layer
+
+- Watchlist e posições passam a destacar apenas mudanças materiais: score, direção da tese, revisões de EPS, valuation, insiders e earnings próximos.
+- A Vestra guarda snapshots locais por geração do dataset e compara a atualização atual com a anterior.
+- Na primeira utilização, usa os deltas de 7/30 dias já produzidos pelo scanner como referência.
+- Novo bloco **O que mudou** no dossier, antes do Investment Case; quando não há alteração material mostra **Estável**.
+- A comparação temporal é local-first e não cria histórico falso em simples refreshes da página.
+
 
 ## Vestra v1.8 — Decision Bridge
 

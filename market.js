@@ -13,7 +13,9 @@
     query: '',
     sector: 'all',
     region: 'all',
-    watchlist: new Set()
+    watchlist: new Set(),
+    previousSnapshot: null,
+    currentSnapshot: null
   };
 
   const $m = id => document.getElementById(id);
@@ -25,12 +27,23 @@
   const money = (v, c='USD') => n(v) == null ? '—' : new Intl.NumberFormat('pt-PT',{style:'currency',currency:c || 'USD',maximumFractionDigits:2}).format(n(v));
   const compact = v => n(v) == null ? '—' : new Intl.NumberFormat('pt-PT',{notation:'compact',maximumFractionDigits:1}).format(n(v));
 
-  function portfolioTickers(){
-    try {
-      const a = (typeof state !== 'undefined' && state && Array.isArray(state.assets)) ? state.assets : [];
-      return new Set(a.flatMap(x => [x.yahooTicker,x.ticker,x.symbol]).map(txt).map(x=>x.toUpperCase()).filter(Boolean));
-    } catch { return new Set(); }
+  function portfolioAssets(){
+    try { return (typeof state !== 'undefined' && state && Array.isArray(state.assets)) ? state.assets : []; }
+    catch { return []; }
   }
+  function researchEligibleAsset(a){
+    const cls=txt(a?.class).toLowerCase();
+    // Company/fund fundamentals only. Crypto can share symbols with listed companies
+    // (e.g. ATOM), so never infer research eligibility from ticker alone.
+    if(cls.includes('cripto')) return false;
+    return cls.includes('ações') || cls.includes('acoes') || cls.includes('etf') || cls.includes('fund');
+  }
+  function assetTicker(a){ return txt(a?.yahooTicker||a?.ticker||a?.symbol).toUpperCase(); }
+  function portfolioTickers(){
+    return new Set(portfolioAssets().filter(researchEligibleAsset).map(assetTicker).filter(Boolean));
+  }
+  function portfolioValue(a){ return n(a?.value) ?? n(a?.marketValueEUR) ?? 0; }
+  function euro(v){ return n(v)==null ? '—' : new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n(v)); }
 
   const WATCH_KEY = 'vestra-market-watchlist-v1';
   function loadWatchlist(){
@@ -48,11 +61,90 @@
   function toggleWatch(ticker){
     const t=txt(ticker).toUpperCase(); if(!t) return;
     if(M.watchlist.has(t)) M.watchlist.delete(t); else M.watchlist.add(t);
-    saveWatchlist(); renderPrimary();
+    saveWatchlist(); if(M.loaded) syncSnapshots(); renderPrimary();
     const sh=$m('marketSheet');
     if(sh && sh.dataset.ticker && sh.dataset.ticker.toUpperCase()===t){
       const s=M.byTicker.get(t); if(s){ const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview'; $m('marketSheetContent').innerHTML=detailBase(s); renderDetailTab(s,active); const tab=sh.querySelector(`[data-detail-tab="${active}"]`); if(tab){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));} }
     }
+  }
+
+
+  const SNAP_LAST_KEY='vestra-market-snapshot-last-v1';
+  const SNAP_PREV_KEY='vestra-market-snapshot-prev-v1';
+  function snapshotStock(s){
+    return {
+      score:n(s.score), thesis_direction:txt(s.thesis_direction), thesis_type:txt(s.thesis_type),
+      forward_pe_vs_sector_pct:n(s.forward_pe_vs_sector_pct), trailing_pe_vs_sector_pct:n(s.trailing_pe_vs_sector_pct),
+      analyst_eps_revisions_up_30d:n(s.analyst_eps_revisions_up_30d)||0, analyst_eps_revisions_down_30d:n(s.analyst_eps_revisions_down_30d)||0,
+      analyst_price_target_upside_pct:n(s.analyst_price_target_upside_pct), insider_buy_count_30d:n(s.insider_buy_count_30d)||0,
+      insider_sell_count_30d:n(s.insider_sell_count_30d)||0, analyst_next_earnings_date:txt(s.analyst_next_earnings_date), current_price:n(s.current_price)
+    };
+  }
+  function buildSnapshot(){
+    const tracked=new Set([...M.watchlist,...portfolioTickers()]);
+    const stocks={};
+    for(const ticker of tracked){
+      const t=txt(ticker).toUpperCase(); const base=t.replace(/\.[A-Z]+$/,'');
+      const s=M.byTicker.get(t)||M.stocks.find(x=>txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')===base);
+      if(s) stocks[txt(s.ticker).toUpperCase()]=snapshotStock(s);
+    }
+    return {generatedAt:txt(M.data?.generated_at),savedAt:new Date().toISOString(),stocks};
+  }
+  function syncSnapshots(){
+    try{
+      const last=JSON.parse(localStorage.getItem(SNAP_LAST_KEY)||'null');
+      const prev=JSON.parse(localStorage.getItem(SNAP_PREV_KEY)||'null');
+      const current=buildSnapshot();
+      if(last && last.generatedAt && current.generatedAt && last.generatedAt!==current.generatedAt){
+        localStorage.setItem(SNAP_PREV_KEY,JSON.stringify(last));
+        M.previousSnapshot=last;
+        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(current));
+      } else if(!last){
+        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(current));
+        M.previousSnapshot=prev;
+      } else {
+        M.previousSnapshot=prev;
+        // enrich same-generation snapshot with newly watched/held tickers without changing baseline
+        last.stocks={...(last.stocks||{}),...(current.stocks||{})};
+        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(last));
+      }
+      M.currentSnapshot=current;
+    }catch{ M.previousSnapshot=null; M.currentSnapshot=null; }
+  }
+  function previousFor(s){ return M.previousSnapshot?.stocks?.[txt(s.ticker).toUpperCase()]||null; }
+  function daysUntil(v){ if(!v)return null; const d=new Date(v); if(Number.isNaN(d.valueOf()))return null; return Math.ceil((d-Date.now())/86400000); }
+  function changeSignals(s){
+    const out=[]; const prev=previousFor(s);
+    if(prev){
+      const ds=n(s.score)!=null&&n(prev.score)!=null?n(s.score)-n(prev.score):null;
+      if(ds!=null&&Math.abs(ds)>=1) out.push({tone:ds>0?'up':'down',label:`Score ${ds>0?'+':''}${ds.toFixed(1)}`});
+      if(txt(s.thesis_direction)&&txt(prev.thesis_direction)&&txt(s.thesis_direction)!==txt(prev.thesis_direction)) out.push({tone:txt(s.thesis_direction)==='up'?'up':txt(s.thesis_direction)==='down'?'down':'neutral',label:`Tese ${txt(s.thesis_direction_label)||txt(s.thesis_direction)}`});
+      const rev=(n(s.analyst_eps_revisions_up_30d)||0)-(n(s.analyst_eps_revisions_down_30d)||0), prevRev=(n(prev.analyst_eps_revisions_up_30d)||0)-(n(prev.analyst_eps_revisions_down_30d)||0);
+      if(Math.abs(rev-prevRev)>=2) out.push({tone:rev>prevRev?'up':'down',label:`Revisões EPS ${rev>prevRev?'melhoraram':'pioraram'}`});
+      const val=n(s.forward_pe_vs_sector_pct)??n(s.trailing_pe_vs_sector_pct), pval=n(prev.forward_pe_vs_sector_pct)??n(prev.trailing_pe_vs_sector_pct);
+      if(val!=null&&pval!=null&&Math.abs(val-pval)>=10) out.push({tone:val<pval?'up':'down',label:`Valuation ${val<pval?'mais favorável':'mais exigente'}`});
+      if((n(s.insider_buy_count_30d)||0)>(n(prev.insider_buy_count_30d)||0)) out.push({tone:'up',label:'Novas compras insider'});
+      if((n(s.insider_sell_count_30d)||0)>(n(prev.insider_sell_count_30d)||0)) out.push({tone:'down',label:'Novas vendas insider'});
+    } else {
+      const d7=n(s.thesis_score_delta_7d);
+      if(d7!=null&&Math.abs(d7)>=1) out.push({tone:d7>0?'up':'down',label:`Score 7d ${d7>0?'+':''}${d7.toFixed(1)}`});
+      if(txt(s.thesis_direction)==='up') out.push({tone:'up',label:'Tese a melhorar'});
+      if(txt(s.thesis_direction)==='down') out.push({tone:'down',label:'Tese a piorar'});
+      const up=n(s.analyst_eps_revisions_up_30d)||0, down=n(s.analyst_eps_revisions_down_30d)||0;
+      if(up-down>=3) out.push({tone:'up',label:'Revisões EPS positivas'}); else if(down-up>=3) out.push({tone:'down',label:'Revisões EPS negativas'});
+      if(n(s.insider_buy_count_30d)>0) out.push({tone:'up',label:'Insiders a comprar'});
+    }
+    const de=daysUntil(s.analyst_next_earnings_date); if(de!=null&&de>=0&&de<=14) out.push({tone:'event',label:`Resultados em ${de}d`});
+    return out.slice(0,4);
+  }
+  function changeBadge(s){
+    const c=changeSignals(s)[0]; if(!c)return '';
+    return `<span class="market-change market-change--${c.tone}">${c.tone==='up'?'↗':c.tone==='down'?'↘':c.tone==='event'?'◷':'•'} ${esc(c.label)}</span>`;
+  }
+  function changePanel(s){
+    const changes=changeSignals(s); const prev=previousFor(s);
+    const label=prev?`Desde ${shortDate(M.previousSnapshot?.generatedAt||M.previousSnapshot?.savedAt)}`:'Sinais recentes';
+    return `<div class="market-change-panel"><div class="market-change-panel__head"><div><small>O QUE MUDOU</small><h4>${esc(label)}</h4></div><span>${changes.length?`${changes.length} ${changes.length===1?'alteração':'alterações'}`:'Estável'}</span></div>${changes.length?`<div class="market-change-list">${changes.map(c=>`<div class="market-change-item market-change-item--${c.tone}"><b>${c.tone==='up'?'↗':c.tone==='down'?'↘':c.tone==='event'?'◷':'•'}</b><span>${esc(c.label)}</span></div>`).join('')}</div>`:'<p>Sem mudança material identificada desde a referência disponível.</p>'}</div>`;
   }
 
   function isFund(s){
@@ -80,6 +172,7 @@
       M.data = await r.json();
       M.stocks = Array.isArray(M.data.stocks) ? M.data.stocks : [];
       M.byTicker = new Map(M.stocks.map(s=>[txt(s.ticker).toUpperCase(),s]));
+      syncSnapshots();
       M.loaded = true;
       renderPrimary();
     })().catch(err=>{
@@ -101,7 +194,7 @@
     const sub = meta || [txt(s.sector), thesis].filter(Boolean).join(' · ');
     const held=inPortfolio(s.ticker), watched=isWatched(s.ticker);
     return `<div class="market-row" data-market-ticker="${esc(s.ticker)}">
-      <div><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span>${held?'<span class="market-held-badge">Carteira</span>':''}<span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__meta">${esc(sub)}</div></div>
+      <div><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span>${held?'<span class="market-held-badge">Carteira</span>':''}<span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__meta">${esc(sub)}</div>${(held||watched)?changeBadge(s):''}</div>
       <div class="market-row__end"><button class="market-watch ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}" title="${watched?'A acompanhar':'Acompanhar'}">${watched?'★':'☆'}</button><div class="market-score ${scoreClass(s.score)}">${n(s.score)==null?'—':Math.round(n(s.score))}</div></div>
     </div>`;
   }
@@ -238,7 +331,7 @@
 
   function renderDetailTab(s,tab){
     const body=$m('marketDetailBody'); if(!body) return;
-    if(tab==='overview') body.innerHTML=`${investmentCase(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
+    if(tab==='overview') body.innerHTML=`${changePanel(s)}${investmentCase(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
     if(tab==='perspective') {
       const buys=(n(s.analyst_strong_buy)||0)+(n(s.analyst_buy)||0), holds=n(s.analyst_hold)||0, sells=(n(s.analyst_sell)||0)+(n(s.analyst_strong_sell)||0);
       const revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;
@@ -277,8 +370,33 @@
       const sh=$m('marketSheet'), c=$m('marketSheetContent'); if(!sh||!c)return;
       sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open'); sh.dataset.ticker='';
       if(tool==='portfolio'){
-        const p=portfolioTickers(); const rows=[...p].map(t=>M.byTicker.get(t)||M.stocks.find(s=>txt(s.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')===t.replace(/\.[A-Z]+$/,''))).filter(Boolean);
-        c.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">PORTFÓLIO</div><h2>As minhas posições</h2><p>Leitura fundamental das posições que a Vestra reconhece.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-list">${rows.length?rows.map(s=>renderRow(s,`${s.thesis_type||''}${s.thesis_direction_label?' · '+s.thesis_direction_label:''}`)).join(''):'<div class="market-empty">Ainda não encontrei tickers do teu portfólio no universo do scanner.</div>'}</div>`;
+        const assets=portfolioAssets().slice().sort((a,b)=>portfolioValue(b)-portfolioValue(a));
+        const eligible=assets.filter(researchEligibleAsset);
+        const crypto=assets.filter(a=>txt(a?.class).toLowerCase().includes('cripto'));
+        const other=assets.filter(a=>!researchEligibleAsset(a)&&!txt(a?.class).toLowerCase().includes('cripto'));
+        const rowMap=new Map();
+        for(const a of eligible){
+          const t=assetTicker(a); if(!t) continue; const base=t.replace(/\.[A-Z]+$/,'');
+          const stock=M.byTicker.get(t)||M.stocks.find(x=>txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')===base);
+          if(!stock) continue;
+          const key=txt(stock.ticker).toUpperCase();
+          const prev=rowMap.get(key)||{stock,value:0,classes:new Set()};
+          prev.value+=portfolioValue(a); prev.classes.add(txt(a.class)||'Ações/ETFs'); rowMap.set(key,prev);
+        }
+        const rows=[...rowMap.values()].sort((a,b)=>b.value-a.value);
+        const total=assets.reduce((sum,a)=>sum+portfolioValue(a),0);
+        const analysed=rows.reduce((sum,r)=>sum+r.value,0);
+        const first=rows.slice(0,8), rest=rows.slice(8);
+        const researchRows = first.map(r=>renderRow(r.stock,`${[...r.classes].join(' · ')} · ${euro(r.value)}${r.stock.thesis_direction_label?' · '+r.stock.thesis_direction_label:''}`)).join('');
+        const restRows = rest.length?`<details class="market-detail-disclosure"><summary>Ver mais ${rest.length} posições analisáveis</summary><div class="market-list" style="margin-top:7px">${rest.map(r=>renderRow(r.stock,`${[...r.classes].join(' · ')} · ${euro(r.value)}`)).join('')}</div></details>`:'';
+        const aggregateAssets=(list)=>{ const m=new Map(); for(const a of list){ const key=assetTicker(a)||`${txt(a.class)}|${txt(a.name)}`; const prev=m.get(key)||{...a,value:0}; prev.value+=portfolioValue(a); m.set(key,prev); } return [...m.values()].sort((a,b)=>portfolioValue(b)-portfolioValue(a)); };
+        const cryptoGrouped=aggregateAssets(crypto), otherGrouped=aggregateAssets(other);
+        const assetPlainRow=(a,tone='other')=>`<div class="market-asset-row"><div><div class="market-asset-row__title"><strong>${esc(a.name||assetTicker(a)||'Ativo')}</strong><span class="market-class-badge market-class-badge--${tone}">${esc(a.class||'Outro')}</span></div><div class="market-asset-row__meta">${assetTicker(a)?esc(assetTicker(a))+' · ':''}${tone==='crypto'?'Criptoativo — métricas empresariais não se aplicam.':'Gerido na Carteira, fora do scanner fundamental.'}</div></div><div class="market-asset-row__value">${euro(portfolioValue(a))}</div></div>`;
+        c.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">CARTEIRA × MERCADO</div><h2>As minhas posições</h2><p>Primeiro o que é analisável. Cripto e outros ativos ficam separados para não serem confundidos com empresas.</p></div><button class="market-close" data-market-close>×</button></div>
+          <div class="market-portfolio-summary"><div class="market-portfolio-kpi"><small>Posições</small><strong>${assets.length}</strong></div><div class="market-portfolio-kpi"><small>Com research</small><strong>${rows.length}</strong></div><div class="market-portfolio-kpi"><small>Cobertura</small><strong>${total>0?Math.round(analysed/total*100):0}%</strong></div></div>
+          <div class="market-portfolio-section"><div class="market-portfolio-section__head"><h3>Ações, ETFs e fundos</h3><span>${rows.length} reconhecidas</span></div><div class="market-asset-note">Ordenadas pelo valor que tens em carteira. Toca numa posição para abrir o Investment Case e ver o que mudou.</div><div class="market-list">${researchRows||'<div class="market-empty">Ainda não encontrei posições elegíveis no universo do scanner.</div>'}</div>${restRows}</div>
+          ${cryptoGrouped.length?`<div class="market-portfolio-section"><div class="market-portfolio-section__head"><h3>Criptoativos</h3><span>${cryptoGrouped.length}</span></div><div class="market-asset-note">Separados de empresas de propósito. Um símbolo como ATOM não será interpretado como uma ação com o mesmo ticker.</div>${cryptoGrouped.slice(0,6).map(a=>assetPlainRow(a,'crypto')).join('')}${cryptoGrouped.length>6?`<details class="market-detail-disclosure"><summary>Ver mais ${cryptoGrouped.length-6} criptoativos</summary><div style="margin-top:7px">${cryptoGrouped.slice(6).map(a=>assetPlainRow(a,'crypto')).join('')}</div></details>`:''}</div>`:''}
+          ${otherGrouped.length?`<details class="market-detail-disclosure"><summary>Outros ativos da carteira · ${otherGrouped.length}</summary><div class="market-asset-note">Depósitos, imobiliário, metais, liquidez e outros ativos continuam no património, mas não entram no research de empresas.</div>${otherGrouped.slice(0,12).map(a=>assetPlainRow(a,'other')).join('')}${otherGrouped.length>12?`<div class="market-asset-note">+ ${otherGrouped.length-12} ativos adicionais na Carteira.</div>`:''}</details>`:''}`;
       }
       if(tool==='theses'){
         const rows=M.stocks.filter(s=>!isFund(s)&&n(s.score)!=null&&['up','down'].includes(txt(s.thesis_direction))).sort((a,b)=>(txt(a.thesis_direction)==='up'?-1:1)-(txt(b.thesis_direction)==='up'?-1:1)||(n(b.thesis_score_delta_30d)||0)-(n(a.thesis_score_delta_30d)||0)).slice(0,30);

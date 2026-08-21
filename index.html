@@ -35,30 +35,17 @@
       document.head.appendChild(s);
     })();
   </script>
-<script defer="" fetchpriority="high" src="app.js?v=20260821v7"></script>
-<script defer="" src="market.js?v=20260821v4"></script>
+<script defer="" fetchpriority="high" src="app.js?v=20260821v8"></script>
+<script defer="" src="market.js?v=20260821v5"></script>
 </head>
 <body>
-<!-- App loading overlay — shown during boot, hidden after first render -->
-<div id="appLoadingOverlay" style="
-    display:flex; position:fixed; inset:0; z-index:9999;
-    background:#EEF3F4; flex-direction:column;
-    align-items:center; justify-content:center; gap:18px;
-  ">
-<img alt="" height="72" src="icon192.png" style="border-radius:18px;box-shadow:0 4px 24px rgba(32,129,126,.3)" width="72"/>
-<div style="font-size:1.15rem;font-weight:600;color:#132536;letter-spacing:.01em;font-family:Georgia,'Times New Roman',serif">Vestra</div>
-<div id="appLoadingMsg" style="font-size:.85rem;color:#728694;min-height:1.2em">A iniciar…</div>
-<div style="width:48px;height:4px;border-radius:2px;background:#D7E1E3;overflow:hidden;margin-top:4px">
-<div style="height:100%;width:40%;background:#20817E;border-radius:2px;animation:pf-loading-bar 1.2s ease-in-out infinite"></div>
+<!-- Vestra launch mark — identity first, no progress chrome -->
+<div id="appLoadingOverlay" class="vestra-splash">
+  <div class="vestra-splash__mark" aria-hidden="true"><img alt="" height="82" src="icon192.png" width="82"/></div>
+  <div class="vestra-splash__brand">Vestra</div>
+  <div class="vestra-splash__tagline">Finance, made simple.</div>
+  <div id="appLoadingMsg" class="vestra-splash__status" aria-live="polite">A iniciar…</div>
 </div>
-</div>
-<style>
-    @keyframes pf-loading-bar {
-      0%   { transform: translateX(-100%); }
-      50%  { transform: translateX(150%); }
-      100% { transform: translateX(150%); }
-    }
-  </style>
 <header class="topbar">
 <button aria-controls="sidebar" aria-expanded="false" aria-label="Menu" class="btn btn--ghost sidebar-toggle" id="btnSidebarToggle" style="padding:10px 12px;border-radius:14px;font-size:18px">☰</button>
 <div class="brand">
@@ -79,7 +66,7 @@
 <img alt="Vestra" class="sidebar__icon" src="icon192.png"/>
 <div>
 <div class="sidebar__title">Vestra</div>
-<div class="sidebar__sub">v1.8</div>
+<div class="sidebar__sub">v2.0</div>
 </div>
 <button aria-label="Fechar menu" class="sidebar__close" id="btnSidebarClose">✕</button>
 </div>
@@ -158,10 +145,12 @@
 <!-- KPIs secundários: 4 métricas rápidas — layout 2×2 compacto -->
 <div class="card kpi-quick">
 <div class="kpi-quick__grid">
-<div class="kpi-quick__cell kpi-quick__cell--green">
-<div class="kpi-quick__k">Rendimento / mês</div>
-<div class="kpi-quick__v" id="kpiPassiveMonthly2">—</div>
-<div class="kpi-quick__s" id="kpiPassiveAnnualSub">0 €/ano</div>
+<div class="kpi-quick__cell kpi-quick__cell--income">
+  <div class="kpi-income__head"><span>Rendimento passivo</span><button class="info-btn" onclick="openTip('passiveIncome')" title="Saber mais">ℹ️</button></div>
+  <div class="kpi-income__values">
+    <div><small>Mensal estimado</small><strong id="kpiPassiveMonthly2">—</strong></div>
+    <div><small>Anual</small><strong id="kpiPassiveAnnualSub">0 €/ano</strong></div>
+  </div>
 </div>
 <div class="kpi-quick__cell kpi-quick__cell--vio">
 <div class="kpi-quick__k">Dividendos este ano</div>
@@ -1390,7 +1379,7 @@
 <summary><div><b>Sobre a Vestra</b><small>Versão, PWA e armazenamento</small></div><span>›</span></summary>
 <div class="more-group__body"><div class="card">
 <div class="card__title" style="margin-bottom:8px">Sobre</div>
-<div class="card__muted"><span id="swVersionBadge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px">a verificar cache activa…</span><br/><br/>Vestra <b>v1.8</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br/><br/>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br/><br/><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
+<div class="card__muted"><span id="swVersionBadge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px">a verificar cache activa…</span><br/><br/>Vestra <b>v2.0</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br/><br/>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br/><br/><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
         </div>
 </div></div>
 </details>
@@ -1438,18 +1427,6 @@
 </div>
 </div>
 </main>
-<!-- PASSIVE BAR -->
-<div class="passivebar" id="passivebar">
-<div class="passivebar__item">
-<div class="passivebar__label">Rend. passivo anual <button class="info-btn" onclick="openTip('passiveIncome')">ℹ️</button></div>
-<div class="passivebar__value passivebar__value--green" id="barPassiveAnnual">0 €</div>
-</div>
-<div class="passivebar__sep"></div>
-<div class="passivebar__item">
-<div class="passivebar__label">Mensal estimado</div>
-<div class="passivebar__value" id="barPassiveMonthly">0 €</div>
-</div>
-</div>
 <!-- BOTTOM NAV -->
 <nav aria-label="Navegação" class="bottomnav">
 <button class="navbtn navbtn--active" data-view="dashboard" id="navDashboard"><span class="navico">⌂</span><span class="navlbl">Início</span></button>
