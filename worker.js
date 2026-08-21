@@ -1,6 +1,6 @@
 /**
  * Cloudflare Worker — Proxy de Cotações (Yahoo Finance)
- * Versão 3.1 — rollback conservador + aliases mínimos + fallback HTML
+ * Versão 4.0 — quotes + live market detail + chart enrichment
  */
 
 const CACHE_TTL = 300; // 5 minutos
@@ -228,6 +228,129 @@ async function fetchYahooQuote(ticker, ctx) {
   throw lastErr || new Error(`Sem dados para ${canonical || raw}`);
 }
 
+
+function raw(node) {
+  if (node == null) return null;
+  if (typeof node === 'number' || typeof node === 'string') return node;
+  return node.raw ?? node.fmt ?? null;
+}
+
+function pctRaw(node) {
+  const v = Number(raw(node));
+  if (!Number.isFinite(v)) return null;
+  return Math.abs(v) <= 1 ? v * 100 : v;
+}
+
+function isoFromUnix(v) {
+  const n = Number(raw(v));
+  if (!Number.isFinite(n) || n <= 0) return '';
+  return new Date(n * 1000).toISOString().slice(0,10);
+}
+
+async function fetchYahooMarketDetail(ticker, ctx) {
+  const canonical = normalizeInputTicker(ticker);
+  const cache = caches.default;
+  const cacheUrl = `https://cache.internal/market40:${canonical}`;
+  const cached = await cache.match(cacheUrl);
+  if (cached) {
+    const data = await cached.json();
+    data._cached = true;
+    return data;
+  }
+
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    "Accept": "application/json,text/plain,*/*",
+    "Accept-Language": "en-US,en;q=0.9"
+  };
+  const modules = [
+    'price','summaryDetail','defaultKeyStatistics','financialData','assetProfile',
+    'calendarEvents','earningsTrend','recommendationTrend'
+  ].join(',');
+  let qs = null;
+  for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
+    try {
+      const data = await fetchJsonMaybe(`https://${host}/v10/finance/quoteSummary/${encodeURIComponent(canonical)}?modules=${modules}`, { headers });
+      if (data?.quoteSummary?.result?.[0]) { qs = data.quoteSummary.result[0]; break; }
+    } catch (_) {}
+  }
+
+  const quote = await fetchYahooQuote(canonical, ctx);
+  const price = qs?.price || {};
+  const sd = qs?.summaryDetail || {};
+  const ks = qs?.defaultKeyStatistics || {};
+  const fd = qs?.financialData || {};
+  const ap = qs?.assetProfile || {};
+  const ce = qs?.calendarEvents || {};
+  const rt = qs?.recommendationTrend?.trend?.[0] || {};
+  const et = Array.isArray(qs?.earningsTrend?.trend) ? qs.earningsTrend.trend : [];
+  const nextYear = et.find(x => x.period === '+1y') || et.find(x => x.period === '+1q') || {};
+
+  let history = [];
+  try {
+    const cj = await fetchJsonMaybe(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(canonical)}?interval=1d&range=1y`, { headers });
+    const r = cj?.chart?.result?.[0];
+    const ts = r?.timestamp || [];
+    const closes = r?.indicators?.quote?.[0]?.close || [];
+    history = ts.map((t,i)=>({date:new Date(t*1000).toISOString().slice(0,10),close:Number(closes[i])})).filter(x=>Number.isFinite(x.close));
+  } catch (_) {}
+
+  const marketCap = Number(raw(price.marketCap) ?? raw(sd.marketCap));
+  const fcf = Number(raw(fd.freeCashflow));
+  const target = Number(raw(fd.targetMeanPrice));
+  const current = Number(quote.price);
+  const result = {
+    ticker: canonical,
+    name: raw(price.longName) || raw(price.shortName) || quote.name || canonical,
+    current_price: Number.isFinite(current) ? current : null,
+    currency: raw(price.currency) || quote.currency || 'USD',
+    exchange: raw(price.exchangeName) || quote.exchange || '',
+    quote_type: raw(price.quoteType) || quote.quote_type || '',
+    sector: ap.sector || quote.sector || '',
+    industry: ap.industry || quote.industry || '',
+    country: ap.country || quote.country || '',
+    business_summary: ap.longBusinessSummary || '',
+    market_cap: Number.isFinite(marketCap) ? marketCap : null,
+    trailing_pe: Number(raw(sd.trailingPE) ?? raw(ks.trailingPE)),
+    forward_pe: Number(raw(sd.forwardPE) ?? raw(ks.forwardPE)),
+    price_to_book: Number(raw(ks.priceToBook)),
+    enterprise_to_ebitda: Number(raw(ks.enterpriseToEbitda)),
+    dividend_yield: pctRaw(sd.dividendYield),
+    roe: pctRaw(fd.returnOnEquity),
+    roa: pctRaw(fd.returnOnAssets),
+    revenue_growth: pctRaw(fd.revenueGrowth),
+    earnings_growth: pctRaw(fd.earningsGrowth),
+    profit_margin: pctRaw(fd.profitMargins),
+    operating_margin: pctRaw(fd.operatingMargins),
+    gross_margin: pctRaw(fd.grossMargins),
+    free_cash_flow: Number.isFinite(fcf) ? fcf : null,
+    fcf_yield: Number.isFinite(fcf) && Number.isFinite(marketCap) && marketCap > 0 ? (fcf / marketCap) * 100 : null,
+    debt_to_equity: Number(raw(fd.debtToEquity)),
+    current_ratio: Number(raw(fd.currentRatio)),
+    quick_ratio: Number(raw(fd.quickRatio)),
+    analyst_price_target_mean: Number.isFinite(target) ? target : null,
+    analyst_price_target_upside_pct: Number.isFinite(target) && Number.isFinite(current) && current > 0 ? ((target/current)-1)*100 : null,
+    analyst_strong_buy: Number(rt.strongBuy || 0),
+    analyst_buy: Number(rt.buy || 0),
+    analyst_hold: Number(rt.hold || 0),
+    analyst_sell: Number(rt.sell || 0),
+    analyst_strong_sell: Number(rt.strongSell || 0),
+    analyst_eps_next_y_growth: pctRaw(nextYear?.growth),
+    analyst_next_earnings_date: isoFromUnix(ce?.earnings?.earningsDate?.[0]),
+    fifty_two_week_high: Number(raw(sd.fiftyTwoWeekHigh)),
+    fifty_two_week_low: Number(raw(sd.fiftyTwoWeekLow)),
+    beta: Number(raw(ks.beta)),
+    price_history_1y: history,
+    updated: new Date().toISOString(),
+    source: qs ? 'Yahoo Finance quoteSummary + chart' : 'Yahoo Finance quote/chart'
+  };
+  for (const k of Object.keys(result)) if (typeof result[k] === 'number' && !Number.isFinite(result[k])) result[k] = null;
+  ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300" }
+  })));
+  return result;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -250,6 +373,15 @@ export default {
           { headers: { ...cors, "Content-Type": "application/json" } });
       }
 
+      if (url.pathname === "/market") {
+        const ticker = url.searchParams.get("ticker");
+        if (!ticker) return new Response(JSON.stringify({ error: "ticker obrigatório" }),
+          { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+        const data = await fetchYahooMarketDetail(ticker.trim().toUpperCase(), ctx);
+        return new Response(JSON.stringify(data),
+          { headers: { ...cors, "Content-Type": "application/json" } });
+      }
+
       if (url.pathname === "/quotes") {
         const tickers = (url.searchParams.get("tickers") || "")
           .split(",").map(t => t.trim().toUpperCase()).filter(Boolean).slice(0, 20);
@@ -267,8 +399,8 @@ export default {
 
       if (url.pathname === "/" || url.pathname === "") {
         return new Response(JSON.stringify({
-          service: "Património Familiar — Quote Proxy v3.1",
-          endpoints: ["/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L"]
+          service: "Vestra Market Proxy v4.0",
+          endpoints: ["/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT"]
         }), { headers: { ...cors, "Content-Type": "application/json" } });
       }
 

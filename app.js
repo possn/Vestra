@@ -382,7 +382,7 @@ async function storageClear() {
 
 /* ─── STATE ───────────────────────────────────────────────── */
 const DEFAULT_STATE = {
-  settings: { currency: "EUR", goalMonthly: 0, targetAllocation: null },
+  settings: { currency: "EUR", goalMonthly: 0, targetAllocation: null, autoRefreshQuotes: true },
   assets: [],
   liabilities: [],
   transactions: [],
@@ -1640,7 +1640,7 @@ function renderView(view, opts = {}) {
   const force = !!(opts && opts.force);
   if (!force && renderedViews.has(view) && !dirtyViews.has(view)) return;
   if (view === "dashboard") renderDashboard();
-  if (view === "assets") { renderItems(); renderEquityPnL(); updateQuoteErrorIndicator(); }
+  if (view === "assets") { renderItems(); renderEquityPnL(); updateQuoteErrorIndicator(); renderQuoteSyncStatus(); }
   if (view === "cashflow") renderCashflow();
   if (view === "analysis") renderAnalysis();
   if (view === "dividends") renderDividends();
@@ -11910,6 +11910,8 @@ function wire() {
   // Quote refresh button
   const btnRefresh = $("btnRefreshQuotes");
   if (btnRefresh) btnRefresh.addEventListener("click", refreshLiveQuotes);
+  const btnRefreshQuick = $("btnRefreshQuotesQuick");
+  if (btnRefreshQuick) btnRefreshQuick.addEventListener("click", refreshLiveQuotes);
   const btnQuoteErrors = document.getElementById('btnQuoteErrors');
   if (btnQuoteErrors) btnQuoteErrors.addEventListener('click', () => {
     const report = (((state || {}).settings || {}).lastQuoteRefresh) || { updated:0, failed:0, errors:[] };
@@ -12195,6 +12197,17 @@ function wire() {
   // Worker URL para cotações
   const workerInput = document.getElementById("settingsWorkerUrl");
   if (workerInput) workerInput.value = state.settings.workerUrl || "";
+  const autoQuotesInput = document.getElementById("settingsAutoQuotes");
+  if (autoQuotesInput) {
+    autoQuotesInput.checked = state.settings.autoRefreshQuotes !== false;
+    autoQuotesInput.addEventListener("change", () => {
+      if (!state.settings) state.settings = {};
+      state.settings.autoRefreshQuotes = !!autoQuotesInput.checked;
+      saveState();
+      renderQuoteSyncStatus();
+      toast(autoQuotesInput.checked ? "Atualização automática ativa" : "Atualização automática desativada");
+    });
+  }
   const btnSaveWorkerUrl = document.getElementById("btnSaveWorkerUrl");
   if (btnSaveWorkerUrl) btnSaveWorkerUrl.addEventListener("click", () => {
     const val = (document.getElementById("settingsWorkerUrl").value || "").trim();
@@ -12426,6 +12439,12 @@ async function refreshLiveQuotes() {
 
   // UI: spinning button
   if (btn) { btn.disabled = true; btn.textContent = "⟳ A actualizar…"; }
+  const quickBtn = $("btnRefreshQuotesQuick");
+  const syncCard = $("quoteSyncCard");
+  if (quickBtn) { quickBtn.disabled = true; quickBtn.textContent = "…"; }
+  if (syncCard) syncCard.classList.add("is-updating");
+  const syncStatus = $("quoteSyncStatus");
+  if (syncStatus) syncStatus.textContent = "A atualizar cotações…";
 
   let updated = 0, failed = 0;
   const errors = [];
@@ -13024,6 +13043,9 @@ async function fetchQuoteWithFallback(ref) {
   // Disparar evento para outros listeners (P&L, price alerts)
   document.dispatchEvent(new CustomEvent("quotesUpdated"));
   updateQuoteButtonStaleness(); // v64t: nunca era chamada — o aviso de "cotações desactualizadas" existia no código mas nunca se acendia
+  if (syncCard) syncCard.classList.remove("is-updating");
+  if (quickBtn) { quickBtn.disabled = false; quickBtn.textContent = "Atualizar"; }
+  renderQuoteSyncStatus();
 
   if (btn) {
     btn.disabled = false;
@@ -13240,6 +13262,35 @@ function checkDuplicateWarning() {
    - Houver activos com ticker
    - A última actualização foi há mais de 30 minutos OU nunca foi hoje
    ────────────────────────────────────────────────────────────── */
+function formatQuoteRefreshAge(ts) {
+  if (!ts) return "Nunca atualizadas";
+  const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000));
+  if (mins < 1) return "Atualizadas agora";
+  if (mins < 60) return `Atualizadas há ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `Atualizadas há ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return `Atualizadas há ${days} d`;
+}
+
+function renderQuoteSyncStatus() {
+  const card = document.getElementById("quoteSyncCard");
+  const status = document.getElementById("quoteSyncStatus");
+  const meta = document.getElementById("quoteSyncMeta");
+  if (!card || !status || !meta) return;
+  const workerUrl = (state.settings && state.settings.workerUrl) || "";
+  const lastTs = (state.settings && state.settings.lastQuoteRefreshTs) || 0;
+  const report = (state.settings && state.settings.lastQuoteRefresh) || null;
+  const auto = !(state.settings && state.settings.autoRefreshQuotes === false);
+  const ageMs = lastTs ? Date.now() - lastTs : Infinity;
+  card.classList.toggle("is-stale", ageMs > 30 * 60 * 1000);
+  card.classList.toggle("is-error", !!(report && report.failed > 0));
+  status.textContent = workerUrl ? formatQuoteRefreshAge(lastTs) : "Worker por configurar";
+  if (!workerUrl) meta.textContent = "Configura em Mais → Preferências";
+  else if (report && report.failed > 0) meta.textContent = `${report.updated || 0} atualizadas · ${report.failed} com erro`;
+  else meta.textContent = auto ? "Automático · atualiza se >30 min" : "Automático desativado";
+}
+
 function updateQuoteButtonStaleness() {
   const btn = document.getElementById("btnRefreshQuotes");
   if (!btn) return;
@@ -13257,6 +13308,7 @@ function updateQuoteButtonStaleness() {
 }
 
 function autoRefreshQuotesIfStale() {
+  if (state.settings && state.settings.autoRefreshQuotes === false) return;
   const workerUrl = (state.settings && state.settings.workerUrl) || "";
   if (!workerUrl) return; // Worker não configurado — não fazer nada
 
@@ -13375,7 +13427,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Guarantee state is saved when app goes to background or is closed
 // Critical for iOS PWA where the process can be killed without warning
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") saveStateAsync();
+  if (document.visibilityState === "hidden") {
+    saveStateAsync();
+  } else if (document.visibilityState === "visible") {
+    try { renderQuoteSyncStatus(); } catch (_) {}
+    setTimeout(() => { try { autoRefreshQuotesIfStale(); } catch (_) {} }, 250);
+  }
 });
 window.addEventListener("pagehide", () => saveStateAsync());
 window.addEventListener("beforeunload", () => saveStateAsync());

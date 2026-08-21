@@ -15,7 +15,8 @@
     region: 'all',
     watchlist: new Set(),
     previousSnapshot: null,
-    currentSnapshot: null
+    currentSnapshot: null,
+    liveLoading: new Set()
   };
 
   const $m = id => document.getElementById(id);
@@ -44,6 +45,37 @@
   }
   function portfolioValue(a){ return n(a?.value) ?? n(a?.marketValueEUR) ?? 0; }
   function euro(v){ return n(v)==null ? '—' : new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n(v)); }
+
+  function workerBase(){
+    try { return txt(typeof state!=='undefined' && state?.settings?.workerUrl).replace(/\/$/,''); } catch { return ''; }
+  }
+  function compactLiveBadge(s){
+    return s?._liveUpdated ? `<span class="market-live-badge">● Live · ${esc(new Intl.DateTimeFormat('pt-PT',{hour:'2-digit',minute:'2-digit'}).format(new Date(s._liveUpdated)))}</span>` : '';
+  }
+  async function enrichTickerLive(s){
+    const base=workerBase(), ticker=txt(s?.ticker).toUpperCase();
+    if(!base||!ticker||M.liveLoading.has(ticker)) return;
+    M.liveLoading.add(ticker);
+    try{
+      const r=await fetch(`${base}/market?ticker=${encodeURIComponent(ticker)}`,{cache:'no-store'});
+      if(!r.ok) throw new Error(`market ${r.status}`);
+      const live=await r.json();
+      if(live && !live.error){
+        const merge={};
+        for(const [k,v] of Object.entries(live)){ if(v!==null && v!==undefined && v!=='') merge[k]=v; }
+        Object.assign(s,merge,{_liveUpdated:live.updated||new Date().toISOString()});
+        const sh=$m('marketSheet');
+        if(sh && !sh.hidden && txt(sh.dataset.ticker).toUpperCase()===ticker){
+          const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview';
+          $m('marketSheetContent').innerHTML=detailBase(s);
+          renderDetailTab(s,active);
+          const tab=sh.querySelector(`[data-detail-tab="${active}"]`);
+          if(tab){ sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab)); tab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); }
+        }
+      }
+    }catch(_){ /* dataset local remains the fallback */ }
+    finally{ M.liveLoading.delete(ticker); }
+  }
 
   const WATCH_KEY = 'vestra-market-watchlist-v1';
   function loadWatchlist(){
@@ -200,14 +232,20 @@
   }
 
   function renderDiscover(){
-    const sectors = [...new Set(M.stocks.filter(s=>!isFund(s)&&s.sector).map(s=>s.sector))].sort().slice(0,25);
+    const sectors = [...new Set(M.stocks.filter(s=>!isFund(s)&&s.sector).map(s=>s.sector))].sort();
     const qs = M.query.toLowerCase();
-    let rows = qs ? M.stocks.filter(s=>!isFund(s) && `${s.ticker} ${s.name} ${s.sector} ${s.industry}`.toLowerCase().includes(qs)) : bestStocks();
+    let rows = M.stocks.filter(s=>!isFund(s));
+    if(qs) rows=rows.filter(s=>`${s.ticker} ${s.name} ${s.sector} ${s.industry}`.toLowerCase().includes(qs));
+    else rows=rows.filter(s=>n(s.score)!=null && n(s.data_coverage_pct)>=65 && txt(s.zombie)!=='yes');
     if(M.sector!=='all') rows=rows.filter(s=>s.sector===M.sector);
+    if(!qs){
+      const dir=x=>txt(x.thesis_direction)==='up'?5:txt(x.thesis_direction)==='down'?-5:0;
+      rows.sort((a,b)=>(n(b.score)||0)+dir(b)-(n(a.score)||0)-dir(a));
+    } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
     rows=rows.slice(0,20);
-    return `<section class="market-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Ideias com melhor sinal'}</h3><p>${qs?'Pesquisa no universo global':'Qualidade, crescimento, balanço, cash flow e valuation'}</p></div><span class="market-data-age">${ageText()}</span></div>
-      <div class="market-chipbar"><button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>${sectors.slice(0,8).map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}">${esc(x)}</button>`).join('')}</div>
-      <div class="market-list">${rows.length?rows.map(s=>renderRow(s)).join(''):'<div class="market-empty">Sem resultados com estes filtros.</div>'}</div></section>`;
+    return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Ideias com melhor sinal'}</h3><p>${qs?'Pesquisa no universo global':'Qualidade, crescimento, balanço, cash flow e valuation'}</p></div><span class="market-data-age">${ageText()}</span></div>
+      <div class="market-chipwrap"><div class="market-chipbar" role="tablist" aria-label="Setores"><button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>${sectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
+      <div class="market-list">${rows.length?rows.map(s=>renderRow(s)).join(''):'<div class="market-empty market-empty--filters"><strong>Sem resultados neste filtro.</strong><span>Experimenta outro setor ou remove a pesquisa.</span></div>'}</div></section>`;
   }
 
   function renderFunds(){
@@ -322,7 +360,7 @@
 
   function detailBase(s){
     const watched=isWatched(s.ticker), held=inPortfolio(s.ticker);
-    return `<div class="market-detail-head"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h2>${esc(s.ticker)}</h2>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><p>${esc(s.name||'')}</p></div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
+    return `<div class="market-detail-head"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h2>${esc(s.ticker)}</h2>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><p>${esc(s.name||'')}</p>${compactLiveBadge(s)}</div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
       ${sparkSvg(s.price_history_1y)}
       ${vestraRead(s)}
       <div class="market-metrics"><div class="market-metric"><small>Score Vestra</small><strong>${n(s.score)==null?'—':Math.round(s.score)}/100</strong></div><div class="market-metric"><small>Preço</small><strong>${money(s.current_price,s.currency)}</strong></div><div class="market-metric"><small>Forward P/E</small><strong>${num(s.forward_pe)}</strong></div><div class="market-metric"><small>ROE</small><strong>${pct(s.roe)}</strong></div><div class="market-metric"><small>Receita YoY</small><strong>${pct(s.revenue_growth)}</strong></div><div class="market-metric"><small>FCF yield</small><strong>${pct(s.fcf_yield)}</strong></div></div>
@@ -361,7 +399,10 @@
     const s=M.byTicker.get(txt(ticker).toUpperCase()); if(!s) return;
     const sh=$m('marketSheet'), content=$m('marketSheetContent'); if(!sh||!content)return;
     content.innerHTML=detailBase(s); sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open');
+    const panel=sh.querySelector('.market-sheet__panel'); if(panel) panel.scrollTop=0;
     sh.dataset.ticker=s.ticker; renderDetailTab(s,'overview');
+    requestAnimationFrame(()=>{ if(panel) panel.scrollTop=0; });
+    enrichTickerLive(s);
   }
   function closeSheet(){ const sh=$m('marketSheet'); if(!sh)return; sh.hidden=true; sh.setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
 
@@ -369,6 +410,7 @@
     ensureLoaded().then(()=>{
       const sh=$m('marketSheet'), c=$m('marketSheetContent'); if(!sh||!c)return;
       sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open'); sh.dataset.ticker='';
+      const panel=sh.querySelector('.market-sheet__panel'); if(panel) panel.scrollTop=0;
       if(tool==='portfolio'){
         const assets=portfolioAssets().slice().sort((a,b)=>portfolioValue(b)-portfolioValue(a));
         const eligible=assets.filter(researchEligibleAsset);
@@ -423,7 +465,7 @@
   document.addEventListener('click', e=>{
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
     const mode=e.target.closest('[data-market-mode]'); if(mode){M.mode=mode.dataset.marketMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary();}
-    const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
+    const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary(); requestAnimationFrame(()=>document.querySelector('.market-chip.is-active')?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}));}
     const watch=e.target.closest('[data-market-watch]'); if(watch){e.preventDefault();e.stopPropagation();toggleWatch(watch.dataset.marketWatch);return;}
     const row=e.target.closest('[data-market-ticker]'); if(row){ensureLoaded().then(()=>openTicker(row.dataset.marketTicker));}
     const close=e.target.closest('[data-market-close]'); if(close) closeSheet();

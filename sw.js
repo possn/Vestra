@@ -1,5 +1,5 @@
-/* Vestra — Service Worker v2.0 */
-const CACHE_NAME = "vestra-cache-v14";
+/* Vestra — Service Worker v2.3 */
+const CACHE_NAME = "vestra-cache-v17";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./market.js", "./manifest.webmanifest",
   "./icon192.png", "./icon512.png",

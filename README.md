@@ -1,3 +1,28 @@
+## Vestra v2.3 — Full-screen Dossier Fix
+
+- Dossier de mercado abre sempre no topo; o scroll anterior deixa de ser reutilizado pelo Safari.
+- Em iPhone/mobile, o dossier ocupa o viewport completo (`100dvh`) em vez de abrir como bottom sheet a 90%.
+- Header do dossier fica fixo; conteúdo tem scroll próprio e safe-area inferior reforçada.
+- `Ver pilares e detalhe quantitativo` e os últimos controlos deixam de poder ficar escondidos no fundo.
+- Scroll da página por baixo fica bloqueado enquanto o dossier está aberto.
+
+## Vestra v2.2 — Live Market + Sector Fix
+
+- Worker v4.0 passa a expor `/market?ticker=` com detalhe live por ativo: valuation, margens, crescimento, balanço, consenso, earnings e histórico de preço 1 ano quando disponível.
+- Dossiers do Mercado enriquecem silenciosamente os dados do dataset com informação live do Worker configurado; o dataset local continua como fallback.
+- Badge `Live` identifica dossiers enriquecidos pelo Worker.
+- Filtro de setores corrigido: filtra primeiro o universo completo e só depois ordena os melhores sinais.
+- Todos os setores são renderizados, com carrossel horizontal real no iPhone e recentragem automática do setor selecionado.
+- Empty states passam a respeitar a largura do card e deixam de sair da box.
+- Cache PWA: `vestra-cache-v16`.
+
+## Vestra v2.1 — Quote Sync
+
+- Estado das cotações visível na Carteira, com atualização manual num toque.
+- Auto-refresh explícito: ao abrir/regressar à app se os preços tiverem mais de 30 minutos.
+- Preferência para ativar/desativar atualização automática.
+- Estado de última atualização e erros junto das posições.
+
 # Vestra
 
 ## Vestra v2.0 — Warm Dusk / Portfolio Intelligence
