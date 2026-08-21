@@ -236,6 +236,11 @@
 
   function renderDiscover(){
     const sectors = [...new Set(M.stocks.filter(s=>!isFund(s)&&s.sector).map(s=>s.sector))].sort();
+    const preferred = ['Technology','Financial Services','Healthcare','Industrials','Consumer Cyclical','Basic Materials'];
+    const visibleSectors = preferred.filter(x=>sectors.includes(x));
+    for(const x of sectors){ if(visibleSectors.length>=6) break; if(!visibleSectors.includes(x)) visibleSectors.push(x); }
+    const moreSectors = sectors.filter(x=>!visibleSectors.includes(x));
+    const hiddenActive = M.sector!=='all' && !visibleSectors.includes(M.sector);
     const qs = M.query.toLowerCase();
     let rows = M.stocks.filter(s=>!isFund(s));
     if(qs) rows=rows.filter(s=>`${s.ticker} ${s.name} ${s.sector} ${s.industry}`.toLowerCase().includes(qs));
@@ -247,7 +252,11 @@
     } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
     rows=rows.slice(0,20);
     return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Ideias com melhor sinal'}</h3><p>${qs?'Pesquisa no universo global':'Qualidade, crescimento, balanço, cash flow e valuation'}</p></div><span class="market-data-age">${ageText()}</span></div>
-      <div class="market-chipwrap"><div class="market-chipbar" role="tablist" aria-label="Setores"><button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>${sectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
+      <div class="market-sector-grid" role="group" aria-label="Setores">
+        <button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>
+        ${visibleSectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}" title="${esc(x)}">${esc(x)}</button>`).join('')}
+        <label class="market-sector-more ${hiddenActive?'is-active':''}"><span>${hiddenActive?esc(M.sector):'Mais'}</span><select data-market-sector-select aria-label="Mais setores"><option value="">Mais setores</option>${moreSectors.map(x=>`<option value="${esc(x)}" ${M.sector===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+      </div>
       <div class="market-list">${rows.length?rows.map(s=>renderRow(s)).join(''):'<div class="market-empty market-empty--filters"><strong>Sem resultados neste filtro.</strong><span>Experimenta outro setor ou remove a pesquisa.</span></div>'}</div></section>`;
   }
 
@@ -367,7 +376,7 @@
       ${sparkSvg(s.price_history_1y)}
       ${vestraRead(s)}
       <div class="market-metrics"><div class="market-metric"><small>Score Vestra</small><strong>${n(s.score)==null?'—':Math.round(s.score)}/100</strong></div><div class="market-metric"><small>Preço</small><strong>${money(s.current_price,s.currency)}</strong></div><div class="market-metric"><small>Forward P/E</small><strong>${num(s.forward_pe)}</strong></div><div class="market-metric"><small>ROE</small><strong>${pct(s.roe)}</strong></div><div class="market-metric"><small>Receita YoY</small><strong>${pct(s.revenue_growth)}</strong></div><div class="market-metric"><small>FCF yield</small><strong>${pct(s.fcf_yield)}</strong></div></div>
-      <div class="market-tabs"><button class="market-tab is-active" data-detail-tab="overview">Overview</button><button class="market-tab" data-detail-tab="perspective">Perspetiva</button><button class="market-tab" data-detail-tab="growth">Growth</button><button class="market-tab" data-detail-tab="valuation">Valuation</button><button class="market-tab" data-detail-tab="smart">Smart money</button><button class="market-tab" data-detail-tab="news">Notícias</button></div><div id="marketDetailBody"></div>`;
+      <div class="market-tabs" role="tablist" aria-label="Dossier"><button class="market-tab is-active" data-detail-tab="overview">Resumo</button><button class="market-tab" data-detail-tab="perspective">Perspetiva</button><button class="market-tab" data-detail-tab="growth">Growth</button><button class="market-tab" data-detail-tab="valuation">Valuation</button><button class="market-tab" data-detail-tab="earnings">Resultados</button><button class="market-tab" data-detail-tab="financials">Financeiro</button><button class="market-tab" data-detail-tab="smart">Smart</button><button class="market-tab" data-detail-tab="news">Notícias</button></div><div id="marketDetailBody"></div>`;
   }
 
   function renderDetailTab(s,tab){
@@ -380,6 +389,11 @@
     }
     if(tab==='growth') body.innerHTML=`<div class="market-detail-card"><h4>Crescimento e resultados</h4><div class="market-metrics"><div class="market-metric"><small>Receita YoY</small><strong>${pct(s.revenue_yoy_latest??s.revenue_growth)}</strong></div><div class="market-metric"><small>Lucro YoY</small><strong>${pct(s.net_income_yoy_latest??s.earnings_growth)}</strong></div><div class="market-metric"><small>EPS YoY</small><strong>${pct(s.eps_yoy_latest)}</strong></div><div class="market-metric"><small>Margem líquida</small><strong>${pct(s.net_margin_latest??s.profit_margin)}</strong></div><div class="market-metric"><small>ROCE proxy</small><strong>${pct(s.roce_proxy)}</strong></div><div class="market-metric"><small>FCF</small><strong>${compact(s.free_cash_flow)}</strong></div></div></div>`;
     if(tab==='valuation') body.innerHTML=`<div class="market-detail-card"><h4>Valuation</h4><div class="market-metrics"><div class="market-metric"><small>P/E</small><strong>${num(s.trailing_pe)}</strong></div><div class="market-metric"><small>Forward P/E</small><strong>${num(s.forward_pe)}</strong></div><div class="market-metric"><small>P/B</small><strong>${num(s.price_to_book)}</strong></div><div class="market-metric"><small>EV/EBITDA</small><strong>${num(s.enterprise_to_ebitda)}</strong></div><div class="market-metric"><small>vs sector P/E</small><strong>${pct(s.trailing_pe_vs_sector_pct)}</strong></div><div class="market-metric"><small>Dividend yield</small><strong>${pct(s.dividend_yield)}</strong></div></div></div>`;
+    if(tab==='earnings') {
+      const hist=Array.isArray(s.analyst_earnings_history_4q)?s.analyst_earnings_history_4q.slice(0,4):[];
+      body.innerHTML=`<div class="market-detail-card"><h4>Resultados e catalisadores</h4><div class="market-metrics"><div class="market-metric"><small>Próx. resultados</small><strong>${shortDate(s.analyst_next_earnings_date)}</strong></div><div class="market-metric"><small>Dias até earnings</small><strong>${n(s.analyst_days_to_earnings)==null?'—':Math.round(n(s.analyst_days_to_earnings))}</strong></div><div class="market-metric"><small>Última surpresa EPS</small><strong>${pct(s.analyst_latest_eps_surprise_pct)}</strong></div><div class="market-metric"><small>Beats 4T</small><strong>${n(s.analyst_earnings_beats_4q)==null?'—':Math.round(n(s.analyst_earnings_beats_4q))}</strong></div><div class="market-metric"><small>Misses 4T</small><strong>${n(s.analyst_earnings_misses_4q)==null?'—':Math.round(n(s.analyst_earnings_misses_4q))}</strong></div><div class="market-metric"><small>Surpresa média 4T</small><strong>${pct(s.analyst_earnings_avg_surprise_4q)}</strong></div></div>${hist.length?`<div class="market-earnings-list">${hist.map(x=>`<div><span>${shortDate(x.date||x.earnings_date)}</span><strong>${pct(x.surprise_pct??x.eps_surprise_pct)}</strong></div>`).join('')}</div>`:''}</div>`;
+    }
+    if(tab==='financials') body.innerHTML=`<div class="market-detail-card"><h4>Saúde financeira</h4><div class="market-metrics"><div class="market-metric"><small>Margem bruta</small><strong>${pct(s.gross_margin)}</strong></div><div class="market-metric"><small>Margem operacional</small><strong>${pct(s.operating_margin)}</strong></div><div class="market-metric"><small>Margem líquida</small><strong>${pct(s.profit_margin)}</strong></div><div class="market-metric"><small>Debt / Equity</small><strong>${num(s.debt_to_equity)}</strong></div><div class="market-metric"><small>Current ratio</small><strong>${num(s.current_ratio)}</strong></div><div class="market-metric"><small>Quick ratio</small><strong>${num(s.quick_ratio)}</strong></div><div class="market-metric"><small>Cash flow operacional</small><strong>${compact(s.operating_cash_flow)}</strong></div><div class="market-metric"><small>Free cash flow</small><strong>${compact(s.free_cash_flow)}</strong></div><div class="market-metric"><small>Net cash / dívida</small><strong>${compact(s.net_cash)}</strong></div></div></div>`;
     if(tab==='smart') {
       const ins=Array.isArray(s.insider_transactions)?s.insider_transactions.slice(0,8):[];
       const con=Array.isArray(s.congress_trades)?s.congress_trades.slice(0,8):[];
@@ -506,7 +520,7 @@
   document.addEventListener('click', e=>{
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
     const mode=e.target.closest('[data-market-mode]'); if(mode){M.mode=mode.dataset.marketMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary();}
-    const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary(); requestAnimationFrame(()=>document.querySelector('.market-chip.is-active')?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}));}
+    const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
     const watch=e.target.closest('[data-market-watch]'); if(watch){e.preventDefault();e.stopPropagation();toggleWatch(watch.dataset.marketWatch);return;}
     const row=e.target.closest('[data-market-ticker]'); if(row){ensureLoaded().then(()=>openTicker(row.dataset.marketTicker));}
     const close=e.target.closest('[data-market-close]'); if(close) closeSheet();
@@ -525,6 +539,10 @@
         if(exact) openTicker(exact.ticker);
       });
     }
+  });
+
+  document.addEventListener('change', e=>{
+    if(e.target.matches('[data-market-sector-select]') && e.target.value){ M.sector=e.target.value; renderPrimary(); }
   });
 
   document.addEventListener('input', e=>{

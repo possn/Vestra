@@ -1,3 +1,12 @@
+## Vestra v2.5 — Mobile containment
+
+- Mercado sem carrosséis infinitos: 8 controlos de setor (Todos + 6 setores + Mais).
+- Dossier com 8 tabs em grelha: Resumo, Perspetiva, Growth, Valuation, Resultados, Financeiro, Smart e Notícias.
+- Novas vistas Resultados e Financeiro.
+- Correção de overflow de títulos, subtítulos e cards no iPhone.
+- Cards de resultados fecham visualmente dentro das margens.
+- Cache PWA v19.
+
 
 ## Vestra v2.4 — iPhone interaction repair
 
