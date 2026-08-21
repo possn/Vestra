@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="stylesheet" href="styles.css?v=20260821v3">
+  <link rel="stylesheet" href="styles.css?v=20260821v4">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
@@ -33,7 +33,7 @@
       document.head.appendChild(s);
     })();
   </script>
-  <script defer src="app.js?v=20260821v3" fetchpriority="high"></script>
+  <script defer src="app.js?v=20260821v4" fetchpriority="high"></script>
 </head>
 <body>
   <!-- App loading overlay — shown during boot, hidden after first render -->
@@ -848,7 +848,6 @@
     <div class="analysis-tabs-wrap">
       <div class="analysis-tabs" id="analysisTabs">
         <button class="analysis-tab analysis-tab--active" data-tab="portfolio">📊 Portfólio</button>
-        <button class="analysis-tab" data-tab="rankings">🏆 Rankings</button>
         <button class="analysis-tab" data-tab="fire">🔥 FIRE</button>
         <button class="analysis-tab" data-tab="forecast">📈 Previsão</button>
         <button class="analysis-tab advanced-only" data-tab="fiscal">🧾 Fiscal</button>
@@ -864,7 +863,7 @@
       <button class="seg__btn" data-subtab="compare">Comparar</button>
       <button class="seg__btn" data-subtab="performance">Performance</button>
       <button class="seg__btn" data-subtab="allocation">Alocação</button>
-      <button class="seg__btn advanced-only" data-subtab="drawdown">Simulação</button>
+      <button class="seg__btn" data-subtab="rankings">🏆 Rankings</button>
     </div>
     <!-- Hidden select kept for JS compatibility -->
     <select id="analysisTab" style="display:none">

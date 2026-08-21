@@ -5707,11 +5707,13 @@ function renderRankingsDivChart(year) {
 
 /* ─── ANALYSIS VIEW ───────────────────────────────────────── */
 // Tab groups: which panels to show + render for each nav tab
+// v3 (Vestra): simplificação combinada — Simulação de reforma cortada (o FIRE
+// já cobre isto de forma mais simples); Rankings deixa de ser separador
+// próprio e passa a sub-separador dentro de Portfólio (era a mesma pergunta
+// —"quais são os meus melhores/piores activos"— feita em dois sítios).
 const ANALYSIS_TAB_GROUPS = {
-  rankings:  { panels: ["rankings"],
-               render: () => renderRankingsPanel() },
-  portfolio: { panels: ["portfolio","performance","compare","allocation","drawdown"],
-               render: () => { renderPortfolioCharts(); renderRealPerformancePanel(); renderBenchmarkComparison(); renderRebalancing(); renderComparePanel(); renderAllocationPanel(); renderDrawdownPanel(); } },
+  portfolio: { panels: ["portfolio","performance","compare","allocation","rankings"],
+               render: () => { renderPortfolioCharts(); renderRealPerformancePanel(); renderBenchmarkComparison(); renderRebalancing(); renderComparePanel(); renderAllocationPanel(); renderRankingsPanel(); } },
   fire:      { panels: ["fire","compound"],
                render: () => { renderFire(); renderCompoundPanel(); } },
   forecast:  { panels: ["forecast","pricehistory"],
@@ -5720,16 +5722,15 @@ const ANALYSIS_TAB_GROUPS = {
   ai:        { panels: ["ai"],        render: () => renderAIHistory() },
 };
 
-// v63v: the "Portfólio" top-level tab stacks 5 panels (Sector/Geografia,
-// Comparação, Performance, Alocação, Simulação) with no way to jump between
-// them — a long, repetitive-feeling scroll. Sub-tabs let a person see one at
-// a time. Maps a sub-tab id to which of the group's panel ids it shows.
+// v63v: the "Portfólio" top-level tab stacks vários painéis com no way to jump
+// between them — a long, repetitive-feeling scroll. Sub-tabs let a person see
+// one at a time. Maps a sub-tab id to which of the group's panel ids it shows.
 const PORTFOLIO_SUBTABS = {
   overview:    ["portfolio"],
   compare:     ["compare"],
   performance: ["performance"],
   allocation:  ["allocation"],
-  drawdown:    ["drawdown"]
+  rankings:    ["rankings"]
 };
 
 function renderAnalysis() {
