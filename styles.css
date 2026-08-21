@@ -1186,3 +1186,203 @@ body{background:linear-gradient(180deg,#FAFCFC 0,#F3F6F6 260px,var(--bg) 100%)}
 .portfolio-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:18px 4px 8px}.portfolio-hero h2{font-size:30px;letter-spacing:-.04em;line-height:1.05;margin:5px 0 5px}.portfolio-hero p{font-size:13px;color:var(--muted)}.portfolio-add{white-space:nowrap}.portfolio-kind-seg{margin-bottom:10px}.portfolio-glance{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:8px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:10px;box-shadow:var(--shadow)}.portfolio-glance>div{min-width:0;padding:10px}.portfolio-glance__main{border-right:1px solid var(--line)}.portfolio-glance small{display:block;color:var(--muted);font-size:10px;font-weight:750;margin-bottom:4px}.portfolio-glance strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.portfolio-glance__main strong{font-size:24px;letter-spacing:-.04em}.portfolio-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.portfolio-actions button{border:1px solid var(--line);background:rgba(251,252,252,.72);color:var(--text);border-radius:15px;padding:10px 8px;display:flex;align-items:center;justify-content:center;gap:7px;font:inherit;cursor:pointer}.portfolio-actions span{color:var(--vio);font-size:16px}.portfolio-actions b{font-size:11px}.portfolio-list-card{margin-top:0}.portfolio-list-head{margin-bottom:0}.portfolio-filter-toggle{border:0;background:var(--card2);color:var(--text2);font:inherit;font-size:11px;font-weight:800;padding:8px 11px;border-radius:11px;cursor:pointer}.portfolio-filter-panel{padding-top:4px}.portfolio-filter-panel[hidden]{display:none!important}.portfolio-filters{margin-top:8px}.portfolio-maintenance{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 3px}.portfolio-maintenance .btn{font-size:11px;padding:8px 10px}.portfolio-list{margin-top:10px}.portfolio-more{margin-top:12px;border:1px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden}.portfolio-more summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:14px 15px;font-size:12px;font-weight:800;cursor:pointer}.portfolio-more summary::-webkit-details-marker{display:none}.portfolio-more__body{border-top:1px solid var(--line);padding:12px}
 @media(max-width:560px){.portfolio-glance{grid-template-columns:1fr 1fr}.portfolio-glance__main{grid-column:1/-1;border-right:0;border-bottom:1px solid var(--line)}.portfolio-glance__main strong{font-size:27px}.portfolio-actions b{font-size:10px}.portfolio-hero{align-items:center}.portfolio-add{padding:10px 12px;font-size:12px}}
 \n\n/* ═══════════════════════════════════════════════════════\n   VESTRA v1.4 — balanced mist theme + Fluxos/Mais polish\n   ═══════════════════════════════════════════════════════ */\n:root{\n  --bg:#DCE5E7;\n  --card:#F7F9F9;\n  --card2:#E9EFF0;\n  --input-bg:#F4F7F7;\n  --item-bg:#EEF3F3;\n  --seg-bg:#D8E3E5;\n  --pill-bg:#DCECDF;\n  --pill-aqua:#D6E9E8;\n  --note-bg:#EAF0F1;\n  --note-border:#C6D3D6;\n  --line:#C7D3D6;\n  --line2:#D8E1E3;\n  --text:#102837;\n  --text2:#39515F;\n  --muted:#647B86;\n  --topbar-bg:rgba(221,231,233,.88);\n  --nav-bg:rgba(240,245,245,.94);\n  --shadow:0 1px 2px rgba(12,37,51,.04),0 10px 28px rgba(12,37,51,.07);\n  --shadow-md:0 3px 10px rgba(12,37,51,.06),0 18px 40px rgba(12,37,51,.10);\n  --hero-grad:linear-gradient(135deg,#183E4D 0%,#237A76 62%,#A68C59 100%);\n}\nbody{background:radial-gradient(circle at 50% -8%,#EEF3F3 0,#E3EAEB 28%,var(--bg) 62%);color-scheme:light}\n.topbar{border-bottom-color:rgba(167,187,192,.55)}\n.card{background:rgba(247,249,249,.94);border-color:rgba(181,199,203,.82)}\n.dashboard-shortcuts button,.portfolio-actions button{background:rgba(239,244,244,.88)}\n.hero{background:var(--hero-grad);box-shadow:0 18px 48px rgba(17,62,73,.20)}\n.bottomnav{border-top-color:rgba(173,191,196,.72);box-shadow:0 -10px 34px rgba(13,38,51,.10)}\n.navbtn--active .navico{background:#D1E5E4;color:#155F5C}\n.input{background:var(--input-bg)}\n\n/* Fluxos — uma leitura primeiro, ferramentas depois */\n.flow-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:18px 4px 12px}\n.flow-hero h2,.more-hero h2{font-size:30px;letter-spacing:-.04em;line-height:1.05;margin:5px 0 5px}\n.flow-hero p,.more-hero p{font-size:13px;color:var(--muted)}\n.flow-add{white-space:nowrap}\n.flow-seg{max-width:360px}\n#paneCashflowBalanco>.card:first-child{background:linear-gradient(145deg,rgba(247,249,249,.98),rgba(232,239,240,.96));border-color:rgba(159,184,190,.72)}\n#paneCashflowBalanco>.card:first-child .card__head{margin-bottom:12px}\n#paneCashflowBalanco>.card:first-child #btnAddTx{display:none}\n.kpiRow{gap:7px}\n.kpi{border:1px solid rgba(166,187,191,.55);box-shadow:none}\n.flow-more{margin:2px 0 12px;border:1px solid var(--line);border-radius:18px;background:rgba(239,244,244,.72);overflow:hidden}\n.flow-more summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:14px 15px;font-size:12px;font-weight:800;cursor:pointer}\n.flow-more summary::-webkit-details-marker{display:none}.flow-more[open] summary span:last-child{transform:rotate(90deg)}\n.flow-more__body{border-top:1px solid var(--line);padding:12px}\n\n/* Mais — command centre discreto */\n.more-hero{padding:18px 4px 12px}\n.more-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}\n.more-quick button{border:1px solid var(--line);background:rgba(242,246,246,.88);border-radius:18px;padding:13px 11px;text-align:left;color:var(--text);font:inherit;cursor:pointer;min-width:0;box-shadow:var(--shadow)}\n.more-quick button:active{transform:scale(.98)}\n.more-quick span{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:var(--pill-aqua);color:var(--vio);font-weight:900;margin-bottom:9px}\n.more-quick b,.more-quick small{display:block}.more-quick b{font-size:12px}.more-quick small{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3}\n.more-section-label{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:850;margin:4px 4px 8px}\n.more-group{margin:0 0 10px;border:1px solid var(--line);border-radius:20px;background:rgba(242,246,246,.82);overflow:hidden;box-shadow:0 1px 2px rgba(12,37,51,.025)}\n.more-group>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px 16px;cursor:pointer}\n.more-group>summary::-webkit-details-marker{display:none}.more-group>summary b,.more-group>summary small{display:block}.more-group>summary b{font-size:13px}.more-group>summary small{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}\n.more-group>summary>span{font-size:19px;color:var(--muted);transition:transform .15s}.more-group[open]>summary>span{transform:rotate(90deg)}\n.more-group__body{border-top:1px solid var(--line);padding:10px}\n.more-group__body>.card{margin-bottom:9px;box-shadow:none}.more-group__body>.card:last-child{margin-bottom:0}\n.more-group--about{margin-bottom:20px}\n#viewSettings>#paneSettings>.card{box-shadow:var(--shadow)}\n\n/* Mobile finish — thumb reach, spacing, safe areas */\n@media(max-width:560px){\n  .main{padding-left:11px;padding-right:11px;padding-top:12px}\n  .card{border-radius:19px;padding:15px 14px;margin-bottom:10px}\n  .flow-hero,.portfolio-hero{padding-top:12px}.flow-hero h2,.more-hero h2,.portfolio-hero h2,.market-hero-simple h2{font-size:27px}\n  .flow-add{padding:10px 12px;font-size:12px}\n  .more-quick{grid-template-columns:1fr 1fr;gap:7px}.more-quick button{padding:12px}\n  .flow-seg{max-width:none}.seg__btn{padding:10px 8px;font-size:13px}\n  .kpiRow{grid-template-columns:repeat(3,1fr)}.kpi{padding:11px 8px}.kpi__v{font-size:17px}\n  .bottomnav{padding-top:5px}.navbtn{min-height:56px;padding:8px 2px 7px}.navico{font-size:20px}.navlbl{font-size:10px}\n  .modal__box,.modal__panel{width:calc(100% - 12px);top:max(8px,calc(env(safe-area-inset-top) + 4px));bottom:max(8px,calc(env(safe-area-inset-bottom) + 8px));border-radius:24px}\n}\n
+
+/* ═══════════════════════════════════════════════════════
+   v1.5 — Product finish / iPhone polish
+   Menos chrome persistente, estados mais claros e controlos consistentes.
+   ═══════════════════════════════════════════════════════ */
+.global-searchbar{
+  padding:10px 14px 12px;
+  background:rgba(225,234,236,.93);
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(18px) saturate(150%);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+}
+.global-searchbar .input{background:rgba(251,252,252,.92)}
+
+/* Toast com comportamento de snackbar e safe-area. */
+#toastEl{
+  opacity:0;
+  transform:translate(-50%,8px) scale(.98);
+  bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom,0px) + 14px);
+  background:rgba(19,37,54,.94);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(16px) saturate(130%);
+  -webkit-backdrop-filter:blur(16px) saturate(130%);
+  box-shadow:0 14px 42px rgba(19,37,54,.24);
+  transition:opacity .2s ease,transform .2s cubic-bezier(.16,1,.3,1);
+}
+#toastEl.toast--show{opacity:1;transform:translate(-50%,0) scale(1)}
+
+/* Foco acessível sem transformar a interface num formulário web genérico. */
+button:focus-visible,.btn:focus-visible,.navbtn:focus-visible,.sidenavbtn:focus-visible,
+input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{
+  outline:3px solid rgba(32,129,126,.24);outline-offset:2px;
+}
+
+/* Pequena coerência visual para áreas expansíveis. */
+details>summary{user-select:none;-webkit-user-select:none}
+details[open]>summary>span:last-child{transform:rotate(45deg)}
+.more-group[open]>summary>span:last-child{transform:rotate(90deg)}
+.more-group summary>span:last-child,.market-tools summary>span:last-child{transition:transform .18s ease}
+
+/* Em Mercado/Fluxos/Mais a barra de rendimento deixa de roubar altura ao conteúdo. */
+body[data-view="market"] .passivebar,
+body[data-view="cashflow"] .passivebar,
+body[data-view="settings"] .passivebar,
+body[data-view="analysis"] .passivebar,
+body[data-view="dividends"] .passivebar{display:none!important}
+
+@media(max-width:560px){
+  /* A bottom bar já contém Mais; esconder definições redundantes no topo liberta espaço. */
+  #btnSettingsNav{display:none}
+  .topbar{padding:9px 11px;gap:7px}
+  .brand{gap:8px;min-width:0;flex:1}
+  .brand__icon{width:38px;height:38px;border-radius:12px}
+  .brand__title{font-size:19px}
+  .brand__sub{display:none}
+  #btnSearchToggle{padding:9px 11px!important;border-radius:13px!important}
+  .sidebar-toggle{padding:9px 10px!important}
+  .fab{width:42px;height:42px;border-radius:14px;font-size:23px}
+  .passivebar{border-radius:18px;padding:9px 13px}
+  .passivebar__label{font-size:9px}.passivebar__value{font-size:14px}
+  .market-sheet__panel{max-height:92dvh}
+  .market-sheet__grab{position:sticky;top:0;z-index:2}
+}
+@media(prefers-reduced-motion:reduce){
+  #toastEl,.more-group summary>span:last-child,.market-tools summary>span:last-child{transition:none}
+}
+
+/* ═══════════════════════════════════════════════════════
+   VESTRA v1.6 — dusk mist + youthful premium
+   Mais profundidade, menos branco, energia subtil sem perder sobriedade.
+   ═══════════════════════════════════════════════════════ */
+:root{
+  --bg:#C8D5D8;
+  --card:#EEF3F3;
+  --card2:#DFE8E9;
+  --input-bg:#E9EFF0;
+  --item-bg:#E5EDEE;
+  --seg-bg:#CFDCDE;
+  --pill-bg:#D3E6D8;
+  --pill-aqua:#CBE2E1;
+  --note-bg:#DEE8E9;
+  --note-border:#B6C8CC;
+  --line:#B8C8CC;
+  --line2:#CBD7D9;
+  --text:#0D2533;
+  --text2:#334D5A;
+  --muted:#5F7680;
+  --topbar-bg:rgba(200,213,216,.90);
+  --nav-bg:rgba(226,235,236,.94);
+  --vio:#177B78;
+  --vio2:#2A9B94;
+  --vio-glow:rgba(23,123,120,.22);
+  --gold:#B89C62;
+  --amber:#B89C62;
+  --coral:#DD765F;
+  --shadow:0 1px 2px rgba(7,31,43,.05),0 11px 30px rgba(7,31,43,.09);
+  --shadow-md:0 4px 12px rgba(7,31,43,.08),0 20px 46px rgba(7,31,43,.13);
+  --shadow-lg:0 20px 60px rgba(7,31,43,.18);
+  --hero-grad:linear-gradient(135deg,#123847 0%,#1E716F 58%,#9C8050 100%);
+}
+body{
+  background:
+    radial-gradient(circle at 84% -4%,rgba(221,118,95,.10) 0,transparent 28%),
+    radial-gradient(circle at 8% 12%,rgba(23,123,120,.10) 0,transparent 32%),
+    linear-gradient(180deg,#DDE6E8 0,#D2DEE0 240px,var(--bg) 100%);
+}
+.topbar{background:var(--topbar-bg);border-bottom-color:rgba(132,157,163,.58)}
+.global-searchbar{background:rgba(205,218,221,.94);border-bottom-color:rgba(136,159,165,.55)}
+.global-searchbar .input{background:rgba(235,241,241,.92)}
+.card{background:rgba(238,243,243,.95);border-color:rgba(162,183,188,.86);box-shadow:var(--shadow)}
+.hero{background:var(--hero-grad);box-shadow:0 20px 54px rgba(12,52,64,.24)}
+.hero::before{background:radial-gradient(ellipse at 78% 12%,rgba(255,255,255,.16),transparent 55%)}
+.hero::after{content:"✦";color:rgba(255,222,177,.68);font-size:24px}
+.kpi-quick__cell{background:rgba(231,238,239,.92);border:1px solid rgba(173,191,195,.74)}
+.dashboard-shortcuts button,.portfolio-actions button,.more-quick button{background:rgba(224,233,234,.91);border-color:rgba(157,180,185,.78)}
+.dashboard-shortcuts button:hover,.portfolio-actions button:hover,.more-quick button:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(13,48,60,.10)}
+.dashboard-shortcuts__icon,.more-quick span{background:linear-gradient(145deg,#C5E0DE,#D5E8E6);box-shadow:inset 0 1px rgba(255,255,255,.7)}
+.dashboard-shortcuts button:nth-child(3) .dashboard-shortcuts__icon,.more-quick button:nth-child(2) span{background:linear-gradient(145deg,#F0D8CF,#E7C3B7);color:#A85643}
+.portfolio-glance{background:rgba(233,239,240,.95);border-color:rgba(155,178,183,.82)}
+.portfolio-actions span{color:var(--vio)}
+.portfolio-actions button:nth-child(2) span{color:var(--coral)}
+.more-group,.flow-more,.portfolio-more,.market-tools{background:rgba(220,230,231,.84);border-color:rgba(152,176,181,.8)}
+#paneCashflowBalanco>.card:first-child{background:linear-gradient(145deg,rgba(236,242,242,.98),rgba(214,226,228,.97));border-color:rgba(145,171,177,.78)}
+.input,.filters select,.market-filters select{background:var(--input-bg);border-color:var(--line)}
+.btn--primary{background:linear-gradient(135deg,#166F6C,#258E88);box-shadow:0 8px 20px rgba(16,95,92,.22)}
+.btn--primary:hover{background:linear-gradient(135deg,#1A7B77,#31A29A);box-shadow:0 10px 26px rgba(16,95,92,.27)}
+.fab{background:linear-gradient(135deg,#166F6C 0%,#2A9B94 72%,#C39F62 145%);box-shadow:0 12px 28px rgba(19,100,96,.31)}
+.bottomnav{background:rgba(225,234,235,.95);border-top-color:rgba(143,166,172,.72);box-shadow:0 -12px 36px rgba(8,39,51,.13)}
+.navbtn{transition:transform .16s ease,color .16s ease}
+.navbtn--active{color:#126B68;font-weight:750}
+.navbtn--active .navico{background:linear-gradient(145deg,#C2DEDC,#D2E7E5);color:#115F5C;box-shadow:inset 0 1px rgba(255,255,255,.72),0 4px 12px rgba(18,95,92,.10)}
+.navbtn--active .navlbl{letter-spacing:.01em}
+.market-kicker,.dashboard-welcome__eyebrow{color:#126F6C}
+.market-search input{background:rgba(231,238,239,.94)!important;border-color:rgba(154,178,183,.9)!important;box-shadow:0 12px 30px rgba(8,39,51,.10)!important}
+.market-mode{background:rgba(217,227,228,.94)!important;border-color:rgba(151,175,181,.78)!important}
+.market-mode.is-active{background:linear-gradient(135deg,#102E3C,#1A625F)!important;color:#F6FAFA!important;border-color:#1A625F!important;box-shadow:0 8px 20px rgba(12,51,63,.20)!important}
+.market-section{background:rgba(235,241,241,.96)!important;border-color:rgba(158,181,186,.84)!important}
+.market-row{background:rgba(224,233,234,.91)!important;border-color:rgba(178,195,199,.82)!important;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.market-row:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(8,39,51,.09);border-color:rgba(86,139,142,.48)!important}
+.market-score{background:#CBE3DE!important;color:#0E5D59!important}.market-score--soft{background:#E8DEC8!important;color:#745C2D!important}.market-score--risk{background:#EFD4CE!important;color:#9B4D3F!important}
+.market-chip{background:rgba(216,227,228,.96)!important;border-color:rgba(155,178,183,.72)!important}.market-chip.is-active{background:#102E3C!important;color:#F5FAFA!important;border-color:#102E3C!important}
+.market-sheet{background:rgba(9,28,39,.42)!important;backdrop-filter:blur(12px) saturate(115%)}
+.market-sheet__panel{background:linear-gradient(180deg,#D9E3E5,#C7D5D8)!important;border-color:rgba(153,176,181,.82)!important;box-shadow:0 -26px 76px rgba(7,28,40,.28)!important}
+.market-metric,.market-detail-card{background:rgba(232,239,239,.96)!important;border-color:rgba(159,181,186,.8)!important}
+.market-tab{background:rgba(210,223,225,.95)!important}.market-tab.is-active{background:#102E3C!important;color:#F5FAFA!important}
+
+/* Jovialidade controlada: brilho, ritmo e microfeedback. */
+@keyframes vestraPulse{0%,100%{box-shadow:0 0 0 0 rgba(23,123,120,0)}50%{box-shadow:0 0 0 5px rgba(23,123,120,.08)}}
+.fab:focus-visible{animation:vestraPulse 1.8s ease-in-out infinite}
+.card,.market-section,.portfolio-glance,.more-group{transition:transform .18s cubic-bezier(.16,1,.3,1),box-shadow .18s ease,border-color .18s ease}
+@media(hover:hover){.card:hover{border-color:rgba(116,158,164,.72);box-shadow:var(--shadow-md)}}
+
+/* Leitura Vestra — decisão primeiro, métricas depois. */
+.market-verdict{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;margin:8px 0 12px;padding:14px;border-radius:20px;background:linear-gradient(145deg,rgba(218,231,231,.98),rgba(230,237,237,.98));border:1px solid rgba(146,173,178,.82)}
+.market-verdict__score{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(145deg,#123847,#1C706D);color:#fff;font-size:19px;font-weight:900;box-shadow:0 10px 24px rgba(13,57,68,.20)}
+.market-verdict__score.is-watch{background:linear-gradient(145deg,#8A7447,#B0965D)}
+.market-verdict__score.is-risk{background:linear-gradient(145deg,#9D5043,#D0715C)}
+.market-verdict__copy small{display:block;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.market-verdict__copy strong{display:block;font-size:16px;letter-spacing:-.02em;margin:2px 0}.market-verdict__copy p{font-size:11px;line-height:1.42;color:var(--text2)}
+.market-signal-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.market-signal{padding:5px 8px;border-radius:999px;background:rgba(201,225,221,.82);color:#125D59;font-size:10px;font-weight:800}.market-signal--warn{background:rgba(235,211,202,.9);color:#934F41}.market-signal--gold{background:rgba(231,220,194,.92);color:#725B2D}
+
+@media(max-width:560px){
+  .main{padding-top:10px}
+  .dashboard-welcome h1,.portfolio-hero h2,.flow-hero h2,.more-hero h2,.market-hero-simple h2{letter-spacing:-.045em}
+  .dashboard-shortcuts button{border-radius:17px}
+  .market-verdict{grid-template-columns:52px 1fr;padding:12px;gap:10px}.market-verdict__score{width:52px;height:52px;border-radius:16px;font-size:17px}
+  .bottomnav{backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%)}
+}
+@media(prefers-reduced-motion:reduce){.card,.market-section,.portfolio-glance,.more-group,.market-row,.navbtn{transition:none}.fab:focus-visible{animation:none}}
+
+/* ═══════════════════════════════════════════════════════
+   VESTRA v1.7 — dusk balance II
+   Um passo abaixo em luminosidade, sem regressar ao dark terminal.
+   ═══════════════════════════════════════════════════════ */
+:root{
+  --bg:#C1CFD2;
+  --card:#E8EEEE;
+  --card2:#D9E3E4;
+  --input-bg:#E1E9EA;
+  --item-bg:#DDE7E8;
+  --seg-bg:#C8D6D8;
+  --line:#AFC1C5;
+  --line2:#C3D0D3;
+  --topbar-bg:rgba(190,205,209,.92);
+  --nav-bg:rgba(216,227,229,.96);
+}
+body{
+  background:
+    radial-gradient(circle at 84% -4%,rgba(221,118,95,.11) 0,transparent 27%),
+    radial-gradient(circle at 8% 12%,rgba(23,123,120,.11) 0,transparent 31%),
+    linear-gradient(180deg,#D4E0E2 0,#CBD9DC 240px,var(--bg) 100%);
+}
+.topbar{box-shadow:0 8px 28px rgba(8,39,51,.06)}
+.bottomnav{background:rgba(211,224,226,.96);box-shadow:0 -14px 38px rgba(8,39,51,.15)}
+.card{background:rgba(232,238,238,.96)}
+.dashboard-shortcuts button,.portfolio-actions button,.more-quick button{background:rgba(214,225,227,.94)}
+.market-section{background:rgba(227,235,236,.97)!important}
+.market-row{background:rgba(215,226,228,.94)!important}
+.market-metric,.market-detail-card{background:rgba(225,234,235,.97)!important}
+.market-verdict{background:linear-gradient(145deg,rgba(207,223,224,.99),rgba(221,231,232,.99))}

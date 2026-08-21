@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<meta content="#20817E" name="theme-color"/>
+<meta content="#177B78" name="theme-color"/>
 <title>Vestra</title>
 <link href="manifest.webmanifest" rel="manifest"/>
 <link href="icon192.png" rel="icon" sizes="192x192" type="image/png"/>
@@ -16,8 +16,8 @@
 <link href="apple-touch-icon-167.png" rel="apple-touch-icon" sizes="167x167"/>
 <link crossorigin="" href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <link href="https://cdn.jsdelivr.net" rel="dns-prefetch"/>
-<link href="styles.css?v=20260821v6" rel="stylesheet"/>
-<link href="market.css?v=20260821v2" rel="stylesheet"/>
+<link href="styles.css?v=20260821v7" rel="stylesheet"/>
+<link href="market.css?v=20260821v4" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
@@ -35,8 +35,8 @@
       document.head.appendChild(s);
     })();
   </script>
-<script defer="" fetchpriority="high" src="app.js?v=20260821v6"></script>
-<script defer="" src="market.js?v=20260821v2"></script>
+<script defer="" fetchpriority="high" src="app.js?v=20260821v7"></script>
+<script defer="" src="market.js?v=20260821v4"></script>
 </head>
 <body>
 <!-- App loading overlay — shown during boot, hidden after first render -->
@@ -79,7 +79,7 @@
 <img alt="Vestra" class="sidebar__icon" src="icon192.png"/>
 <div>
 <div class="sidebar__title">Vestra</div>
-<div class="sidebar__sub">v1.2</div>
+<div class="sidebar__sub">v1.8</div>
 </div>
 <button aria-label="Fechar menu" class="sidebar__close" id="btnSidebarClose">✕</button>
 </div>
@@ -102,7 +102,7 @@
 </nav>
 </aside>
 <!-- Barra de pesquisa global -->
-<div id="searchBar" style="display:none;padding:8px 14px 12px;background:#fff;border-bottom:1px solid var(--line)">
+<div id="searchBar" class="global-searchbar" style="display:none">
 <input autocomplete="off" class="input" id="globalSearch" placeholder="Pesquisar ativos, movimentos, dividendos…"/>
 <div class="list" id="searchResults" style="margin-top:10px;max-height:260px;overflow-y:auto"></div>
 </div>
@@ -534,7 +534,7 @@
 </div><!-- end paneCashflowImportar -->
 </section>
 <!-- DIVIDENDOS -->
-<!-- MERCADO — investigação de acções/ETFs, ainda por trazer do Finscanner -->
+<!-- MERCADO — investigação integrada a partir do Finscanner -->
 <section class="view" data-view="market" hidden="" id="viewMarket">
 <div class="market-shell" id="marketApp">
 <div class="market-hero-simple">
@@ -550,6 +550,7 @@
 <button class="market-mode is-active" data-market-mode="discover"><span class="market-mode__icon">◫</span><strong>Ideias</strong></button>
 <button class="market-mode" data-market-mode="funds"><span class="market-mode__icon">◎</span><strong>ETFs</strong></button>
 <button class="market-mode" data-market-mode="smart"><span class="market-mode__icon">↗</span><strong>Smart money</strong></button>
+<button class="market-mode" data-market-mode="watch"><span class="market-mode__icon">☆</span><strong>A acompanhar</strong></button>
 </div>
 <div id="marketPrimary"><div class="market-loader"><span></span><div>Mercado carrega apenas quando o abres.</div></div></div>
 <details class="market-tools">
@@ -1389,7 +1390,7 @@
 <summary><div><b>Sobre a Vestra</b><small>Versão, PWA e armazenamento</small></div><span>›</span></summary>
 <div class="more-group__body"><div class="card">
 <div class="card__title" style="margin-bottom:8px">Sobre</div>
-<div class="card__muted"><span id="swVersionBadge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px">a verificar cache activa…</span><br/><br/>Vestra <b>v1.4</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br/><br/>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br/><br/><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
+<div class="card__muted"><span id="swVersionBadge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px">a verificar cache activa…</span><br/><br/>Vestra <b>v1.8</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br/><br/>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br/><br/><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
         </div>
 </div></div>
 </details>

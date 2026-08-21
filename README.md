@@ -1,3 +1,13 @@
+
+## Vestra v1.8 — Decision Bridge
+
+- Tema global ligeiramente mais escuro, entre o visual original e o mist claro da v1.5.
+- Superfícies slate/teal, barras translúcidas mais profundas e menos branco puro.
+- Acentos coral/dourado usados apenas como energia visual pontual.
+- Microinterações e estados ativos mais expressivos, mantendo linguagem premium.
+- Dossier de Mercado passa a abrir com “Leitura Vestra”: score, sinal, forças, alertas, direção da tese e smart-money relevante.
+- Cache PWA atualizado para `vestra-cache-v11`.
+
 # Vestra
 
 **Gestão de património + pesquisa de mercado numa única PWA.**
@@ -34,7 +44,7 @@ O sistema visual foi clareado para um **mist/light premium**: superfícies clara
 
 Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelines Python/GitHub Actions para dados de mercado.
 
-## Vestra v1.2 — Progressive disclosure
+## Vestra v1.5 — Product finish
 
 - Dashboard reorganizado em torno de património líquido, sinais rápidos, carteira, distribuição e evolução.
 - Atalhos principais: Carteira, Mercado e Adicionar ativo.
@@ -49,3 +59,21 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Pesquisa, filtros, cotações e P&L movidos para disclosure progressivo.
 - Mercado com pesquisa como ação dominante e modos compactos: Ideias, ETFs e Smart Money.
 - Funcionalidades avançadas preservadas em Explorar mercado.
+
+
+### v1.5 — Product finish
+- Chrome móvel reduzido: `Mais` deixa de ser duplicado no topo do iPhone.
+- Barra de rendimento persistente apenas em Início e Carteira.
+- Pesquisa global alinhada com o tema balanced mist.
+- Mercado com retry explícito em falha de dados, `Esc` para fechar dossiers e Enter em ticker exato.
+- FAB em Mercado passa a focar a pesquisa em vez de mostrar texto legado.
+- Toasts/snackbars acessíveis (`aria-live`) e compatíveis com safe areas.
+- Diagnóstico de cache atualizado de `pf-cache-*` para `vestra-cache-*`.
+
+
+### v1.8 — Decision bridge
+- Watchlist local persistente, separada da carteira.
+- Badges “Carteira” nos ativos já detidos.
+- Nova aba Perspetiva com consenso, price targets, revisões de EPS e earnings.
+- Dossier e listas permitem guardar/remover ativos com ☆/★.
+- Mercado aproxima pesquisa, acompanhamento e património sem expor complexidade no primeiro nível.

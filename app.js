@@ -287,13 +287,15 @@ function toast(msg, duration = 3000) {
   if (!el) {
     el = document.createElement("div");
     el.id = "toastEl";
-    el.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 20px;border-radius:20px;font-weight:700;font-size:14px;z-index:999;max-width:90vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.2);transition:opacity .3s";
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.setAttribute("aria-atomic", "true");
     document.body.appendChild(el);
   }
   el.textContent = msg;
-  el.style.opacity = "1";
+  el.classList.add("toast--show");
   clearTimeout(el._t);
-  el._t = setTimeout(() => { el.style.opacity = "0"; }, duration);
+  el._t = setTimeout(() => el.classList.remove("toast--show"), duration);
 }
 
 /* ─── PERSISTENCE (IndexedDB + localStorage fallback) ─────── */
@@ -1687,6 +1689,10 @@ function switchCashflowPane(pane) {
 function setView(view) {
   const prevView = currentView;
   currentView = view;
+  document.body.dataset.view = view;
+  const passive = document.getElementById("passivebar");
+  if (passive) passive.style.display = ["dashboard", "assets"].includes(view) ? "" : "none";
+  requestAnimationFrame(() => { try { syncFixedBarHeights(); } catch (_) {} });
   if (view === "dashboard" && prevView !== "dashboard") summaryExpanded = false;
   if (view === "assets" && prevView !== "assets") {
     itemsExpanded = false;
@@ -11238,10 +11244,10 @@ async function reportActiveSwVersion() {
     const reg = await navigator.serviceWorker.getRegistration();
     if (!reg || !reg.active) { el.textContent = "Sem Service Worker activo — a app corre sem cache"; return; }
     const keys = ("caches" in window) ? await caches.keys() : [];
-    const mine = keys.filter(k => k.startsWith("pf-cache-"));
+    const mine = keys.filter(k => k.startsWith("vestra-cache-"));
     el.textContent = mine.length
       ? "Cache activa: " + mine.join(", ")
-      : "Service Worker activo, mas sem cache pf- reconhecida";
+      : "Service Worker activo, mas sem cache Vestra reconhecida";
   } catch (e) {
     el.textContent = "Não foi possível verificar (" + (e && e.message || "erro") + ")";
   }
@@ -11856,7 +11862,10 @@ function wire() {
     else if (currentView === "dividends") openDivModal(null);
     else if (currentView === "assets") openItemModal(showingLiabs ? "liab" : "asset");
     else if (currentView === "analysis") openTxModal();
-    else if (currentView === "market") toast("A investigação de mercado ainda está em construção.");
+    else if (currentView === "market") {
+      const q = document.getElementById("marketSearch");
+      if (q) { q.focus({ preventScroll: false }); q.select?.(); }
+    }
     else openItemModal("asset");
   });
 

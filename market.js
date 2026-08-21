@@ -12,7 +12,8 @@
     mode: 'discover',
     query: '',
     sector: 'all',
-    region: 'all'
+    region: 'all',
+    watchlist: new Set()
   };
 
   const $m = id => document.getElementById(id);
@@ -29,6 +30,29 @@
       const a = (typeof state !== 'undefined' && state && Array.isArray(state.assets)) ? state.assets : [];
       return new Set(a.flatMap(x => [x.yahooTicker,x.ticker,x.symbol]).map(txt).map(x=>x.toUpperCase()).filter(Boolean));
     } catch { return new Set(); }
+  }
+
+  const WATCH_KEY = 'vestra-market-watchlist-v1';
+  function loadWatchlist(){
+    try { M.watchlist = new Set(JSON.parse(localStorage.getItem(WATCH_KEY)||'[]').map(x=>txt(x).toUpperCase()).filter(Boolean)); }
+    catch { M.watchlist = new Set(); }
+  }
+  function saveWatchlist(){
+    try { localStorage.setItem(WATCH_KEY, JSON.stringify([...M.watchlist])); } catch {}
+  }
+  function isWatched(ticker){ return M.watchlist.has(txt(ticker).toUpperCase()); }
+  function inPortfolio(ticker){
+    const t=txt(ticker).toUpperCase(); const base=t.replace(/\.[A-Z]+$/,'');
+    return [...portfolioTickers()].some(x=>x===t || x.replace(/\.[A-Z]+$/,'')===base);
+  }
+  function toggleWatch(ticker){
+    const t=txt(ticker).toUpperCase(); if(!t) return;
+    if(M.watchlist.has(t)) M.watchlist.delete(t); else M.watchlist.add(t);
+    saveWatchlist(); renderPrimary();
+    const sh=$m('marketSheet');
+    if(sh && sh.dataset.ticker && sh.dataset.ticker.toUpperCase()===t){
+      const s=M.byTicker.get(t); if(s){ const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview'; $m('marketSheetContent').innerHTML=detailBase(s); renderDetailTab(s,active); const tab=sh.querySelector(`[data-detail-tab="${active}"]`); if(tab){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));} }
+    }
   }
 
   function isFund(s){
@@ -59,7 +83,7 @@
       M.loaded = true;
       renderPrimary();
     })().catch(err=>{
-      const el=$m('marketPrimary'); if(el) el.innerHTML=`<div class="market-empty">Não foi possível carregar os dados de mercado.<br><small>${esc(err.message)}</small></div>`;
+      const el=$m('marketPrimary'); if(el) el.innerHTML=`<div class="market-empty market-empty--error"><strong>Mercado indisponível</strong><br><span>Não foi possível carregar os dados agora.</span><br><button class="btn btn--outline btn--sm" data-market-retry style="margin-top:12px">Tentar novamente</button><small class="market-error-detail">${esc(err.message)}</small></div>`;
     }).finally(()=>{M.loading=null});
     return M.loading;
   }
@@ -75,9 +99,10 @@
   function renderRow(s, meta=''){
     const thesis = txt(s.thesis_type) || txt(s.sector) || 'Sem classificação';
     const sub = meta || [txt(s.sector), thesis].filter(Boolean).join(' · ');
+    const held=inPortfolio(s.ticker), watched=isWatched(s.ticker);
     return `<div class="market-row" data-market-ticker="${esc(s.ticker)}">
-      <div><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__meta">${esc(sub)}</div></div>
-      <div class="market-score ${scoreClass(s.score)}">${n(s.score)==null?'—':Math.round(n(s.score))}</div>
+      <div><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span>${held?'<span class="market-held-badge">Carteira</span>':''}<span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__meta">${esc(sub)}</div></div>
+      <div class="market-row__end"><button class="market-watch ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}" title="${watched?'A acompanhar':'Acompanhar'}">${watched?'★':'☆'}</button><div class="market-score ${scoreClass(s.score)}">${n(s.score)==null?'—':Math.round(n(s.score))}</div></div>
     </div>`;
   }
 
@@ -107,6 +132,12 @@
     return (buys-sells)/100000 + count*3 + congress;
   }
 
+  function renderWatch(){
+    const rows=[...M.watchlist].map(t=>M.byTicker.get(t)).filter(Boolean)
+      .sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
+    return `<section class="market-section"><div class="market-section__head"><div><h3>A acompanhar</h3><p>Empresas e ETFs guardados neste dispositivo. A carteira mantém-se separada.</p></div><span class="market-data-age">${rows.length} ${rows.length===1?'ativo':'ativos'}</span></div><div class="market-list">${rows.length?rows.map(s=>renderRow(s,[txt(s.thesis_direction_label),n(s.analyst_price_target_upside_pct)!=null?`Target ${pct(s.analyst_price_target_upside_pct)}`:''].filter(Boolean).join(' · '))).join(''):'<div class="market-empty"><strong>A tua lista está vazia.</strong><br>Usa ☆ numa ideia ou num dossier para a guardar aqui.</div>'}</div></section>`;
+  }
+
   function renderSmart(){
     let rows=M.stocks.filter(s=>!isFund(s)&&((n(s.insider_buy_count_30d)||0)>0 || (Array.isArray(s.congress_trades)&&s.congress_trades.length)))
       .sort((a,b)=>smartRank(b)-smartRank(a)).slice(0,20);
@@ -115,7 +146,7 @@
 
   function renderPrimary(){
     const root=$m('marketPrimary'); if(!root || !M.loaded) return;
-    root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():renderDiscover();
+    root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():renderDiscover();
   }
 
   function sparkSvg(history){
@@ -131,16 +162,88 @@
     return dims.map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${k}</span><strong>${n(v)==null?'—':Math.round(v)}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
   }
 
+  function vestraRead(s){
+    const score=n(s.score);
+    const dims=[['Qualidade',s.quality_pct],['Crescimento',s.growth_pct],['Balanço',s.balance_pct],['Cash flow',s.cashflow_pct],['Valuation',s.value_pct],['Estabilidade',s.stability_pct]];
+    const strengths=dims.filter(([,v])=>n(v)!=null&&n(v)>=68).sort((a,b)=>n(b[1])-n(a[1])).slice(0,2).map(([k])=>k);
+    const cautions=dims.filter(([,v])=>n(v)!=null&&n(v)<48).sort((a,b)=>n(a[1])-n(b[1])).slice(0,2).map(([k])=>k);
+    const direction=txt(s.thesis_direction);
+    let label='Acompanhar', cls='is-watch', copy='Perfil intermédio: vale a pena abrir os pilares antes de tirar conclusões.';
+    if(score!=null&&score>=72){label='Sinal forte';cls='';copy='Conjunto de métricas acima da média no universo Vestra, sujeito à qualidade e atualidade dos dados.';}
+    else if(score!=null&&score<52){label='Mais exigente';cls='is-risk';copy='Há fragilidades relevantes nas métricas; o score pede análise adicional antes de qualquer decisão.';}
+    if(isFund(s)) copy='Leitura agregada do fundo com foco em custo, qualidade e encaixe — não substitui análise da composição.';
+    const signals=[];
+    strengths.forEach(x=>signals.push(`<span class="market-signal">↑ ${esc(x)}</span>`));
+    cautions.forEach(x=>signals.push(`<span class="market-signal market-signal--warn">! ${esc(x)}</span>`));
+    if(direction==='up') signals.push('<span class="market-signal">↗ Tese a melhorar</span>');
+    if(direction==='down') signals.push('<span class="market-signal market-signal--warn">↘ Tese a piorar</span>');
+    if(n(s.insider_buy_count_30d)>0) signals.push('<span class="market-signal market-signal--gold">Insiders a comprar</span>');
+    return `<div class="market-verdict"><div class="market-verdict__score ${cls}">${score==null?'—':Math.round(score)}</div><div class="market-verdict__copy"><small>Leitura Vestra</small><strong>${label}</strong><p>${copy}</p>${signals.length?`<div class="market-signal-row">${signals.slice(0,4).join('')}</div>`:''}</div></div>`;
+  }
+
+  function shortDate(v){
+    if(!v) return '—'; const d=new Date(v); if(Number.isNaN(d.valueOf())) return esc(v);
+    return new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short',year:'numeric'}).format(d);
+  }
+
+
+
+  function investmentCase(s){
+    const evidence=Array.isArray(s.thesis_evidence)?s.thesis_evidence.filter(Boolean):[];
+    const drivers=Array.isArray(s.thesis_evolution_drivers)?s.thesis_evolution_drivers.filter(Boolean):[];
+    const risks=Array.isArray(s.thesis_risks)?s.thesis_risks.filter(Boolean):[];
+    const dims=[['Qualidade',s.quality_pct],['Crescimento',s.growth_pct],['Balanço',s.balance_pct],['Cash flow',s.cashflow_pct],['Valuation',s.value_pct],['Estabilidade',s.stability_pct]];
+    const weak=dims.filter(([,v])=>n(v)!=null&&n(v)<48).sort((a,b)=>n(a[1])-n(b[1])).map(([k,v])=>`${k} ${Math.round(n(v))}/100`);
+    const fwdVs=n(s.forward_pe_vs_sector_pct), trailVs=n(s.trailing_pe_vs_sector_pct), evVs=n(s.ev_ebitda_vs_sector_pct);
+    const valuationDelta=fwdVs??trailVs??evVs;
+    let valuation='Sem leitura relativa suficiente', valuationClass='';
+    if(valuationDelta!=null){
+      if(valuationDelta<=-15){valuation=`Desconto de ${Math.abs(valuationDelta).toFixed(0)}% vs setor`;valuationClass='is-positive';}
+      else if(valuationDelta>=20){valuation=`Prémio de ${valuationDelta.toFixed(0)}% vs setor`;valuationClass='is-caution';}
+      else {valuation=`Próximo do setor (${valuationDelta>0?'+':''}${valuationDelta.toFixed(0)}%)`;}
+    }
+    const upside=n(s.analyst_price_target_upside_pct), revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;
+    const watch=[];
+    if(s.analyst_next_earnings_date) watch.push(`Resultados · ${shortDate(s.analyst_next_earnings_date)}`);
+    if(revUp||revDown) watch.push(`Revisões EPS · ${revUp} ↑ / ${revDown} ↓`);
+    if(upside!=null) watch.push(`Target consenso · ${pct(upside)}`);
+    if(n(s.insider_buy_count_30d)>0||n(s.insider_sell_count_30d)>0) watch.push(`Insiders 30d · ${n(s.insider_buy_count_30d)||0} compras / ${n(s.insider_sell_count_30d)||0} vendas`);
+    if(txt(s.thesis_direction)==='up') watch.push('Tese quantitativa a melhorar');
+    if(txt(s.thesis_direction)==='down') watch.push('Tese quantitativa a piorar');
+    const why=evidence.length?evidence.slice(0,3):[s.thesis_summary||s.business_summary||'Ainda não existe evidência suficiente para resumir a tese.'];
+    const catalysts=drivers.length?drivers.slice(0,3):[txt(s.thesis_evolution_summary)||'Sem catalisador quantitativo claro identificado nos dados atuais.'];
+    const riskItems=[...risks.slice(0,3),...weak.slice(0,Math.max(0,3-risks.length))].slice(0,3);
+    if(!riskItems.length) riskItems.push('Sem risco específico suficientemente forte identificado pelo modelo; rever métricas e negócio antes de decidir.');
+    const list=arr=>`<ul class="market-case-list">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+    return `<div class="market-case">
+      <div class="market-case__top"><div><small>INVESTMENT CASE</small><h4>${esc(s.thesis_type||'Leitura do ativo')}</h4><p>${esc(s.thesis_summary||s.business_summary||'Síntese ainda limitada pelos dados disponíveis.')}</p></div><span class="market-case__confidence">Confiança ${esc(txt(s.thesis_confidence)||'—')}</span></div>
+      <div class="market-case-grid">
+        <section><div class="market-case-label"><span>01</span> Porque interessa</div>${list(why)}</section>
+        <section><div class="market-case-label"><span>02</span> O que pode correr bem</div>${list(catalysts)}</section>
+        <section><div class="market-case-label"><span>03</span> O que pode quebrar a tese</div>${list(riskItems)}</section>
+        <section><div class="market-case-label"><span>04</span> Está caro ou barato?</div><div class="market-value-call ${valuationClass}">${esc(valuation)}</div><p class="market-case-note">Leitura relativa; não é um valor intrínseco.</p></section>
+      </div>
+      <div class="market-watchpoints"><div class="market-case-label"><span>05</span> O que vigiar</div>${watch.length?watch.slice(0,4).map(x=>`<span>${esc(x)}</span>`).join(''):'<p class="market-case-note">Sem evento ou alteração quantitativa relevante identificada.</p>'}</div>
+    </div>`;
+  }
+
   function detailBase(s){
-    return `<div class="market-detail-head"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><h2>${esc(s.ticker)}</h2><p>${esc(s.name||'')}</p></div><button class="market-close" data-market-close>×</button></div>
+    const watched=isWatched(s.ticker), held=inPortfolio(s.ticker);
+    return `<div class="market-detail-head"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h2>${esc(s.ticker)}</h2>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><p>${esc(s.name||'')}</p></div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
       ${sparkSvg(s.price_history_1y)}
+      ${vestraRead(s)}
       <div class="market-metrics"><div class="market-metric"><small>Score Vestra</small><strong>${n(s.score)==null?'—':Math.round(s.score)}/100</strong></div><div class="market-metric"><small>Preço</small><strong>${money(s.current_price,s.currency)}</strong></div><div class="market-metric"><small>Forward P/E</small><strong>${num(s.forward_pe)}</strong></div><div class="market-metric"><small>ROE</small><strong>${pct(s.roe)}</strong></div><div class="market-metric"><small>Receita YoY</small><strong>${pct(s.revenue_growth)}</strong></div><div class="market-metric"><small>FCF yield</small><strong>${pct(s.fcf_yield)}</strong></div></div>
-      <div class="market-tabs"><button class="market-tab is-active" data-detail-tab="overview">Overview</button><button class="market-tab" data-detail-tab="growth">Growth</button><button class="market-tab" data-detail-tab="valuation">Valuation</button><button class="market-tab" data-detail-tab="smart">Smart money</button><button class="market-tab" data-detail-tab="news">Notícias</button></div><div id="marketDetailBody"></div>`;
+      <div class="market-tabs"><button class="market-tab is-active" data-detail-tab="overview">Overview</button><button class="market-tab" data-detail-tab="perspective">Perspetiva</button><button class="market-tab" data-detail-tab="growth">Growth</button><button class="market-tab" data-detail-tab="valuation">Valuation</button><button class="market-tab" data-detail-tab="smart">Smart money</button><button class="market-tab" data-detail-tab="news">Notícias</button></div><div id="marketDetailBody"></div>`;
   }
 
   function renderDetailTab(s,tab){
     const body=$m('marketDetailBody'); if(!body) return;
-    if(tab==='overview') body.innerHTML=`<div class="market-detail-card"><h4>${esc(s.thesis_type||'Tese')}</h4><p>${esc(s.thesis_summary||s.business_summary||'Sem síntese disponível.')}</p></div><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}`;
+    if(tab==='overview') body.innerHTML=`${investmentCase(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
+    if(tab==='perspective') {
+      const buys=(n(s.analyst_strong_buy)||0)+(n(s.analyst_buy)||0), holds=n(s.analyst_hold)||0, sells=(n(s.analyst_sell)||0)+(n(s.analyst_strong_sell)||0);
+      const revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;
+      body.innerHTML=`<div class="market-detail-card market-perspective-card"><div class="market-perspective-head"><div><small>CONSENSO</small><h4>O que o mercado espera</h4></div><span class="market-consensus ${buys>sells?'is-positive':sells>buys?'is-negative':''}">${buys>sells?'Viés positivo':sells>buys?'Viés cauteloso':'Neutro'}</span></div><div class="market-metrics"><div class="market-metric"><small>Target médio</small><strong>${money(s.analyst_price_target_mean,s.currency)}</strong></div><div class="market-metric"><small>Upside target</small><strong>${pct(s.analyst_price_target_upside_pct)}</strong></div><div class="market-metric"><small>Próx. earnings</small><strong>${shortDate(s.analyst_next_earnings_date)}</strong></div><div class="market-metric"><small>EPS próximo ano</small><strong>${pct(s.analyst_eps_next_y_growth)}</strong></div><div class="market-metric"><small>Rev. EPS 30d</small><strong>${revUp} ↑ · ${revDown} ↓</strong></div><div class="market-metric"><small>Última surpresa</small><strong>${pct(s.analyst_latest_eps_surprise_pct)}</strong></div></div></div><div class="market-detail-card"><h4>Analistas</h4><div class="market-consensus-bar"><span class="is-buy" style="flex:${Math.max(0,buys)}"></span><span class="is-hold" style="flex:${Math.max(0,holds)}"></span><span class="is-sell" style="flex:${Math.max(0,sells)}"></span></div><div class="market-consensus-legend"><span>${buys} Comprar</span><span>${holds} Manter</span><span>${sells} Vender</span></div><p style="margin-top:10px">Estimativas são contexto, não recomendação. Dá mais peso à direção das revisões e à execução real do negócio do que ao target isolado.</p></div>`;
+    }
     if(tab==='growth') body.innerHTML=`<div class="market-detail-card"><h4>Crescimento e resultados</h4><div class="market-metrics"><div class="market-metric"><small>Receita YoY</small><strong>${pct(s.revenue_yoy_latest??s.revenue_growth)}</strong></div><div class="market-metric"><small>Lucro YoY</small><strong>${pct(s.net_income_yoy_latest??s.earnings_growth)}</strong></div><div class="market-metric"><small>EPS YoY</small><strong>${pct(s.eps_yoy_latest)}</strong></div><div class="market-metric"><small>Margem líquida</small><strong>${pct(s.net_margin_latest??s.profit_margin)}</strong></div><div class="market-metric"><small>ROCE proxy</small><strong>${pct(s.roce_proxy)}</strong></div><div class="market-metric"><small>FCF</small><strong>${compact(s.free_cash_flow)}</strong></div></div></div>`;
     if(tab==='valuation') body.innerHTML=`<div class="market-detail-card"><h4>Valuation</h4><div class="market-metrics"><div class="market-metric"><small>P/E</small><strong>${num(s.trailing_pe)}</strong></div><div class="market-metric"><small>Forward P/E</small><strong>${num(s.forward_pe)}</strong></div><div class="market-metric"><small>P/B</small><strong>${num(s.price_to_book)}</strong></div><div class="market-metric"><small>EV/EBITDA</small><strong>${num(s.enterprise_to_ebitda)}</strong></div><div class="market-metric"><small>vs sector P/E</small><strong>${pct(s.trailing_pe_vs_sector_pct)}</strong></div><div class="market-metric"><small>Dividend yield</small><strong>${pct(s.dividend_yield)}</strong></div></div></div>`;
     if(tab==='smart') {
@@ -203,12 +306,24 @@
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
     const mode=e.target.closest('[data-market-mode]'); if(mode){M.mode=mode.dataset.marketMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary();}
     const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
+    const watch=e.target.closest('[data-market-watch]'); if(watch){e.preventDefault();e.stopPropagation();toggleWatch(watch.dataset.marketWatch);return;}
     const row=e.target.closest('[data-market-ticker]'); if(row){ensureLoaded().then(()=>openTicker(row.dataset.marketTicker));}
     const close=e.target.closest('[data-market-close]'); if(close) closeSheet();
     const sh=$m('marketSheet'); if(sh&&e.target===sh) closeSheet();
     const tab=e.target.closest('[data-detail-tab]'); if(tab&&sh?.dataset.ticker){document.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab)); const s=M.byTicker.get(sh.dataset.ticker.toUpperCase()); if(s)renderDetailTab(s,tab.dataset.detailTab);}
     const tool=e.target.closest('[data-market-tool]'); if(tool) openTool(tool.dataset.marketTool);
     if(e.target.closest('#marketCompareGo')) compareNow();
+    if(e.target.closest('[data-market-retry]')) { M.loaded=false; M.loading=null; ensureLoaded(); }
+  });
+
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape') closeSheet();
+    if(e.key==='Enter' && e.target?.id==='marketSearch' && M.query){
+      ensureLoaded().then(()=>{
+        const exact=M.byTicker.get(M.query.toUpperCase());
+        if(exact) openTicker(exact.ticker);
+      });
+    }
   });
 
   document.addEventListener('input', e=>{
@@ -217,5 +332,6 @@
     }
   });
 
-  window.VestraMarket={ensureLoaded,openTicker};
+  loadWatchlist();
+  window.VestraMarket={ensureLoaded,openTicker,toggleWatch};
 })();
