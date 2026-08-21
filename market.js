@@ -64,16 +64,27 @@
         const merge={};
         for(const [k,v] of Object.entries(live)){ if(v!==null && v!==undefined && v!=='') merge[k]=v; }
         Object.assign(s,merge,{_liveUpdated:live.updated||new Date().toISOString()});
+        // v2.6 — never rebuild an open dossier when live data arrives.
+        // Safari can lose the modal scroll/height when its whole DOM is replaced
+        // asynchronously. Keep the open UI frozen; fresh data is used on the next
+        // tab interaction or next opening. Only refresh the small Live badge.
         const sh=$m('marketSheet');
         if(sh && !sh.hidden && txt(sh.dataset.ticker).toUpperCase()===ticker){
-          const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview';
-          const panel=sh.querySelector('.market-sheet__panel');
-          const y=panel?panel.scrollTop:0;
-          $m('marketSheetContent').innerHTML=detailBase(s);
-          renderDetailTab(s,active);
-          const tab=sh.querySelector(`[data-detail-tab="${active}"]`);
-          if(tab){ sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab)); }
-          requestAnimationFrame(()=>{ if(panel) panel.scrollTop=y; });
+          const head=sh.querySelector('.market-detail-head');
+          let badge=head?.querySelector('.market-live-badge');
+          if(!badge && head){
+            const info=head.querySelector('.market-detail-head > div:first-child');
+            if(info){
+              const holder=document.createElement('span');
+              holder.innerHTML=compactLiveBadge(s);
+              badge=holder.firstElementChild;
+              if(badge) info.appendChild(badge);
+            }
+          } else if(badge){
+            const holder=document.createElement('span'); holder.innerHTML=compactLiveBadge(s);
+            if(holder.firstElementChild) badge.replaceWith(holder.firstElementChild);
+          }
+          sh.dataset.liveReady='1';
         }
       }
     }catch(_){ /* dataset local remains the fallback */ }
@@ -415,27 +426,49 @@
   function sheetPanel(){ return $m('marketSheet')?.querySelector('.market-sheet__panel')||null; }
   function scrollDossierTop(){
     const panel=sheetPanel(); if(!panel) return;
-    panel.scrollTop=0;
-    requestAnimationFrame(()=>{ panel.scrollTop=0; requestAnimationFrame(()=>{ panel.scrollTop=0; }); });
+    panel.scrollTo ? panel.scrollTo({top:0,left:0,behavior:'auto'}) : (panel.scrollTop=0);
   }
-  function scrollDossierToTabs(){
-    const panel=sheetPanel(), tabs=$m('marketSheet')?.querySelector('.market-tabs'); if(!panel||!tabs) return;
-    const head=$m('marketSheet')?.querySelector('.market-detail-head');
-    const headH=head?head.getBoundingClientRect().height:0;
-    const target=Math.max(0,tabs.offsetTop-headH-10);
-    panel.scrollTop=target;
-    requestAnimationFrame(()=>{ panel.scrollTop=target; });
+  function resetDossierViewport(){
+    const panel=sheetPanel(); if(!panel) return;
+    panel.scrollTop=0; panel.scrollLeft=0;
+    // One delayed reset after layout is enough; repeated RAF writes can fight iOS momentum.
+    setTimeout(()=>{ if(!$m('marketSheet')?.hidden){ panel.scrollTop=0; panel.scrollLeft=0; } }, 35);
+  }
+  function refreshActiveTabFromLive(){
+    const sh=$m('marketSheet'); if(!sh || sh.hidden || !sh.dataset.ticker || sh.dataset.liveReady!=='1') return;
+    const s=M.byTicker.get(sh.dataset.ticker.toUpperCase()); if(!s) return;
+    sh.dataset.liveReady='0';
+    const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview';
+    renderDetailTab(s,active);
   }
 
   function openTicker(ticker){
     const s=M.byTicker.get(txt(ticker).toUpperCase()); if(!s) return;
     const sh=$m('marketSheet'), content=$m('marketSheetContent'); if(!sh||!content)return;
-    content.innerHTML=detailBase(s); sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open');
-    sh.dataset.ticker=s.ticker; renderDetailTab(s,'overview');
-    scrollDossierTop();
+    // Fully close/reset the previous modal state before constructing a new dossier.
+    sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.liveReady='0';
+    try{
+      const html=detailBase(s);
+      content.innerHTML=html;
+      sh.dataset.ticker=s.ticker;
+      renderDetailTab(s,'overview');
+    }catch(err){
+      console.error('Vestra dossier render',err);
+      content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER</div><h2>${esc(s.ticker||'Ativo')}</h2><p>${esc(s.name||'')}</p></div><button class="market-close" data-market-close>×</button></div><div class="market-detail-card"><h4>Não foi possível apresentar este dossier</h4><p>Os dados deste ativo têm um formato inesperado. Fecha e tenta novamente.</p></div>`;
+      sh.dataset.ticker=s.ticker;
+    }
+    document.documentElement.classList.add('modal-open');
+    document.body.classList.add('modal-open');
+    sh.hidden=false; sh.setAttribute('aria-hidden','false');
+    resetDossierViewport();
     enrichTickerLive(s);
   }
-  function closeSheet(){ const sh=$m('marketSheet'); if(!sh)return; sh.hidden=true; sh.setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+  function closeSheet(){
+    const sh=$m('marketSheet'); if(!sh)return;
+    sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.liveReady='0';
+    document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
+    const panel=sheetPanel(); if(panel){panel.scrollTop=0;panel.scrollLeft=0;}
+  }
 
   function openTool(tool){
     ensureLoaded().then(()=>{
@@ -513,9 +546,7 @@
   function wireVisibleRails(){
     document.querySelectorAll('.market-chipbar,.market-tabs').forEach(wireHorizontalRail);
   }
-  const railObserver=new MutationObserver(()=>requestAnimationFrame(wireVisibleRails));
-  railObserver.observe(document.documentElement,{subtree:true,childList:true});
-  document.addEventListener('DOMContentLoaded',wireVisibleRails,{once:true});
+  // v2.6: bounded grids no longer need custom touch interception.
 
   document.addEventListener('click', e=>{
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
@@ -525,7 +556,11 @@
     const row=e.target.closest('[data-market-ticker]'); if(row){ensureLoaded().then(()=>openTicker(row.dataset.marketTicker));}
     const close=e.target.closest('[data-market-close]'); if(close) closeSheet();
     const sh=$m('marketSheet'); if(sh&&e.target===sh) closeSheet();
-    const tab=e.target.closest('[data-detail-tab]'); if(tab&&sh?.dataset.ticker){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab)); const s=M.byTicker.get(sh.dataset.ticker.toUpperCase()); if(s){renderDetailTab(s,tab.dataset.detailTab); scrollDossierToTabs();} }
+    const tab=e.target.closest('[data-detail-tab]'); if(tab&&sh?.dataset.ticker){
+      sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));
+      const s=M.byTicker.get(sh.dataset.ticker.toUpperCase());
+      if(s){ sh.dataset.liveReady='0'; renderDetailTab(s,tab.dataset.detailTab); }
+    }
     const tool=e.target.closest('[data-market-tool]'); if(tool) openTool(tool.dataset.marketTool);
     if(e.target.closest('#marketCompareGo')) compareNow();
     if(e.target.closest('[data-market-retry]')) { M.loaded=false; M.loading=null; ensureLoaded(); }

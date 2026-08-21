@@ -1,4 +1,4 @@
-## Vestra v2.5 — Mobile containment
+## Vestra v2.6 — Mobile containment
 
 - Mercado sem carrosséis infinitos: 8 controlos de setor (Todos + 6 setores + Mais).
 - Dossier com 8 tabs em grelha: Resumo, Perspetiva, Growth, Valuation, Resultados, Financeiro, Smart e Notícias.
@@ -142,3 +142,12 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Nova aba Perspetiva com consenso, price targets, revisões de EPS e earnings.
 - Dossier e listas permitem guardar/remover ativos com ☆/★.
 - Mercado aproxima pesquisa, acompanhamento e património sem expor complexidade no primeiro nível.
+
+### v2.6 — Dossier reliability lock
+- Layout visual congelado a partir da v2.5; esta versão altera apenas robustez/comportamento.
+- O dossier deixa de reconstruir todo o DOM quando chegam dados Live, evitando saltos/cortes no Safari.
+- Modal passa a usar viewport fixo determinístico e um único scroll vertical.
+- Abertura de cada ticker reinicia completamente o estado/scroll do modal.
+- Mudança de tab já não força scroll programático.
+- Removida a interceção táctil custom das tabs, agora que a navegação é uma grelha limitada.
+- Fallback seguro quando um instrumento contém dados num formato inesperado.

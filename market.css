@@ -232,3 +232,46 @@ body.modal-open .market-sheet{pointer-events:auto!important}
   .market-sector-grid .market-chip{line-height:36px;font-size:9.5px!important}
   .market-tab{font-size:9.5px!important;padding:9px 3px!important}
 }
+
+/* v2.6 — dossier reliability lock. Layout intentionally unchanged. */
+html.modal-open,body.modal-open{
+  overflow:hidden!important;
+  height:100%!important;
+}
+#marketSheet.market-sheet{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+  display:block!important;
+  overflow:hidden!important;
+  contain:layout paint!important;
+}
+#marketSheet[hidden]{display:none!important}
+#marketSheet>.market-sheet__panel{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow-x:hidden!important;
+  overflow-y:scroll!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-y:contain!important;
+  transform:none!important;
+  contain:layout style!important;
+}
+#marketSheetContent{
+  min-height:100%!important;
+  width:100%!important;
+  max-width:100%!important;
+  overflow:visible!important;
+}
+/* Tabs and sector controls are bounded grids in v2.5: do not intercept vertical touch. */
+.market-tabs,.market-sector-grid{touch-action:pan-y!important}
+.market-tabs{overflow:visible!important}
+@supports not (height:100dvh){
+  #marketSheet.market-sheet{height:100vh!important;min-height:100vh!important}
+}
