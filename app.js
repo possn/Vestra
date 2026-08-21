@@ -2585,8 +2585,12 @@ function setModeLiabs(on) {
   showingLiabs = !!on;
   $("segLiabs").classList.toggle("seg__btn--active", showingLiabs);
   $("segAssets").classList.toggle("seg__btn--active", !showingLiabs);
-  $("itemsTitle").textContent = showingLiabs ? "Passivos" : "Ativos";
-  $("itemsSub").textContent = showingLiabs ? "Créditos, dívidas, cartões…" : "Imobiliário, liquidez, ações/ETFs, metais, cripto, fundos, PPR, depósitos, obrigações…";
+  $("itemsTitle").textContent = showingLiabs ? "Passivos" : "Posições";
+  $("itemsSub").textContent = showingLiabs ? "Créditos e outras responsabilidades." : "Ordenadas por valor.";
+  const heroTitle = document.getElementById("portfolioHeroTitle");
+  const heroSub = document.getElementById("portfolioHeroSub");
+  if (heroTitle) heroTitle.textContent = showingLiabs ? "Passivos" : "Carteira";
+  if (heroSub) heroSub.textContent = showingLiabs ? "Responsabilidades financeiras num só lugar." : "As tuas posições, sem ruído.";
   rebuildClassFilter();
   renderItems();
 }
@@ -2603,7 +2607,30 @@ function rebuildClassFilter() {
 
 let itemsExpanded = false;
 
+function renderPortfolioGlance() {
+  const src = showingLiabs ? (state.liabilities || []) : (state.assets || []);
+  const total = src.reduce((sum, x) => sum + parseNum(x.value), 0);
+  const byClass = {};
+  src.forEach(x => { const k = x.class || "Outros"; byClass[k] = (byClass[k] || 0) + parseNum(x.value); });
+  const topClass = Object.entries(byClass).sort((a,b) => b[1]-a[1])[0];
+  const annualIncome = showingLiabs ? 0 : src.reduce((sum, x) => sum + (getAssetPassiveRatePct(x) * parseNum(x.value) / 100), 0);
+  const setText = (id, value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
+  setText("portfolioTotalLabel", showingLiabs ? "Total em passivos" : "Total em ativos");
+  setText("portfolioTotalValue", fmtEUR(total));
+  setText("portfolioPositionCount", String(src.length));
+  setText("portfolioClassLabel", showingLiabs ? "Principal tipo" : "Maior classe");
+  setText("portfolioTopClass", topClass ? topClass[0] : "—");
+  setText("portfolioIncomeLabel", showingLiabs ? "Peso no património" : "Rendimento/ano");
+  if (showingLiabs) {
+    const net = Math.max(1, (state.assets || []).reduce((sum,x)=>sum+parseNum(x.value),0));
+    setText("portfolioIncomeValue", fmtPct(total / net * 100));
+  } else {
+    setText("portfolioIncomeValue", fmtEUR(annualIncome));
+  }
+}
+
 function renderItems() {
+  renderPortfolioGlance();
   rebuildClassFilter();
   const list = $("itemsList");
   list.innerHTML = "";
@@ -11843,6 +11870,15 @@ function wire() {
     if (!confirm("Limpar histórico?")) return;
     state.history = []; saveState(); renderDashboard();
   });
+  const portfolioFilterBtn = document.getElementById("btnPortfolioFilters");
+  const portfolioFilterPanel = document.getElementById("portfolioFilterPanel");
+  if (portfolioFilterBtn && portfolioFilterPanel) portfolioFilterBtn.addEventListener("click", () => {
+    const willOpen = portfolioFilterPanel.hidden;
+    portfolioFilterPanel.hidden = !willOpen;
+    portfolioFilterBtn.setAttribute("aria-expanded", String(willOpen));
+    portfolioFilterBtn.textContent = willOpen ? "Fechar" : "Filtrar";
+  });
+
   $("btnSummaryAll").addEventListener("click", () => setView("assets"));
   $("btnSummaryToggle").addEventListener("click", () => { summaryExpanded = !summaryExpanded; renderSummary(); });
 

@@ -42,3 +42,10 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Navegação principal simplificada para Início · Carteira · Mercado · Fluxos · Mais.
 - Visual global mais claro e luminoso, mantendo turquesa/dourado e linguagem premium Vestra.
 - Mercado mantém carga lazy do dataset Finscanner.
+
+
+## v1.3 — Carteira + Mercado simplificados (2026-08-21)
+- Carteira com leitura imediata: total, posições, maior classe e rendimento anual.
+- Pesquisa, filtros, cotações e P&L movidos para disclosure progressivo.
+- Mercado com pesquisa como ação dominante e modos compactos: Ideias, ETFs e Smart Money.
+- Funcionalidades avançadas preservadas em Explorar mercado.
