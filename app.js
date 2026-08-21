@@ -11815,7 +11815,7 @@ function wire() {
   wireModalClosers();
 
   // Nav
-  ["dashboard","assets","import","cashflow","analysis","settings","dividends"].forEach(v => {
+  ["dashboard","assets","import","cashflow","analysis","settings","dividends","market"].forEach(v => {
     const btn = document.getElementById("nav" + v.charAt(0).toUpperCase() + v.slice(1));
     if (btn) btn.addEventListener("click", () => setView(v));
   });
