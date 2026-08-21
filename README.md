@@ -1,3 +1,15 @@
+## Vestra v3.3 — Broker Identity Audit & Congress Live
+
+- Quote identities audited against the original Trading 212 2023–2026 and XTB exports.
+- 664 broker security-name identities are used only to repair ticker/ISIN/venue metadata; no quantities, values or account identifiers are embedded.
+- Corrects recent ticker changes (including BK→BNY, IINN→QTEX, HOTH→RKTO) and UCITS ETF venue mappings derived from the actual trade currency (including ARXK.DE and QWTM.L).
+- Broker rebuild schema bumped so existing imported positions are reconciled automatically.
+- If an identity repair occurs, the next automatic quote refresh is forced to replace contaminated values.
+- Congress live feed now tries Bargo directly from the browser (open CORS) and only then the Worker, with a 15-minute local cache and visible attribution.
+- Smart Money now reports Congress-feed failure explicitly instead of silently appearing empty.
+- Layout remains frozen.
+- PWA cache: `vestra-cache-v26`.
+
 ## Vestra v3.2 — Safe Quotes & Settings Cleanup
 - Layout visual mantido/congelado.
 - Remove atalhos legacy sem styling no topo de Mais.

@@ -19,7 +19,8 @@
     liveLoading: new Set(),
     congressLive: [],
     congressLoaded: false,
-    congressLoading: null
+    congressLoading: null,
+    congressError: ""
   };
 
   const $m = id => document.getElementById(id);
@@ -113,33 +114,73 @@
   }
 
   async function loadCongressLive(ticker=''){
-    const base=workerBase(); if(!base) return [];
     const tk=txt(ticker).toUpperCase().split('.')[0];
+    const cacheKey=`vestra-congress-live-v2:${tk||'GLOBAL'}`;
+    const maxAge=15*60*1000;
+
+    // Reuse the global feed for a ticker when possible: one request instead of
+    // burning the free API quota with one call per dossier.
+    if(tk && M.congressLoaded && M.congressLive.length){
+      const fromGlobal=M.congressLive.filter(x=>x.ticker===tk);
+      if(fromGlobal.length) return fromGlobal;
+    }
     if(!tk && M.congressLoaded) return M.congressLive;
     if(!tk && M.congressLoading) return M.congressLoading;
+
     const work=(async()=>{
       try{
-        const url=`${base}/congress?${tk?`ticker=${encodeURIComponent(tk)}&`:''}limit=100`;
-        const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(`congress ${r.status}`);
-        const d=await r.json();
-        const trades=(Array.isArray(d)?d:(d?.trades||[])).map(normalizeCongressLive).filter(x=>x.ticker);
+        // Local cache makes Congress resilient to rate limits / temporary outages.
+        try{
+          const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+          if(cached && Array.isArray(cached.trades) && Date.now()-Number(cached.ts||0)<maxAge){
+            const trades=cached.trades.map(normalizeCongressLive).filter(x=>x.ticker);
+            if(!tk){ M.congressLive=trades; M.congressLoaded=true; M.congressError=''; }
+            return trades;
+          }
+        }catch(_){}
+
+        const from=new Date(Date.now()-120*86400000).toISOString().slice(0,10);
+        const direct=`https://www.bargo.ai/free-apis/congress/v1/trades${tk?`/${encodeURIComponent(tk)}`:''}?from=${from}&limit=100`;
+        const base=workerBase();
+        const fallback=base?`${base}/congress?${tk?`ticker=${encodeURIComponent(tk)}&`:''}limit=100`:'';
+        const urls=[direct,fallback].filter(Boolean);
+
+        let lastErr='';
+        let trades=[];
+        for(const url of urls){
+          try{
+            const r=await fetch(url,{cache:'no-store',mode:'cors'});
+            if(!r.ok){ lastErr=`HTTP ${r.status}`; continue; }
+            const d=await r.json();
+            trades=(Array.isArray(d)?d:(d?.trades||d?.data||[])).map(normalizeCongressLive).filter(x=>x.ticker);
+            if(tk) trades=trades.filter(x=>x.ticker===tk);
+            if(trades.length || !tk) break;
+          }catch(e){ lastErr=e?.message||String(e); }
+        }
+
+        try{ localStorage.setItem(cacheKey,JSON.stringify({ts:Date.now(),trades})); }catch(_){}
+
         if(tk){
           const s=M.byTicker.get(txt(ticker).toUpperCase()) || [...M.byTicker.values()].find(x=>txt(x.ticker).toUpperCase().split('.')[0]===tk);
           if(s && trades.length) s.congress_trades=trades;
         }else{
-          M.congressLive=trades; M.congressLoaded=true;
+          M.congressLive=trades; M.congressLoaded=true; M.congressError=trades.length?'':(lastErr||'Sem trades recentes');
           for(const tr of trades){
             const stock=M.byTicker.get(tr.ticker) || [...M.byTicker.values()].find(x=>txt(x.ticker).toUpperCase().split('.')[0]===tr.ticker);
             if(stock){
               const cur=Array.isArray(stock.congress_trades)?stock.congress_trades:[];
               const key=x=>`${txt(x.transaction_date||x.date)}|${txt(x.representative||x.member||x.name)}|${txt(x.type)}|${txt(x.amount||x.amount_range)}`;
               const seen=new Set(cur.map(key));
-              stock.congress_trades=[...cur,...trades.filter(t=>t.ticker===tr.ticker&&!seen.has(key(t)))];
+              const additions=trades.filter(t=>t.ticker===tr.ticker&&!seen.has(key(t)));
+              stock.congress_trades=[...cur,...additions];
             }
           }
         }
         return trades;
-      }catch(_){ return []; }
+      }catch(e){
+        if(!tk) M.congressError=e?.message||'Congress feed indisponível';
+        return [];
+      }
       finally{ if(!tk) M.congressLoading=null; }
     })();
     if(!tk) M.congressLoading=work;
@@ -351,7 +392,11 @@
     let rows=M.stocks.filter(s=>!isFund(s)&&((n(s.insider_buy_count_30d)||0)>0 || (Array.isArray(s.congress_trades)&&s.congress_trades.length)))
       .sort((a,b)=>smartRank(b)-smartRank(a)).slice(0,20);
     const liveCount=M.congressLive.length;
-    return `<section class="market-section"><div class="market-section__head"><div><h3>Smart money</h3><p>Compras de insiders e atividade declarada no Congresso dos EUA</p></div><span class="market-data-age">${liveCount?`Congresso live · ${liveCount}`:ageText()}</span></div><div class="market-list">${rows.map(s=>renderRow(s,`${n(s.insider_buy_count_30d)||0} compras insider · ${Array.isArray(s.congress_trades)?s.congress_trades.length:0} trades Congresso`)).join('')||'<div class="market-empty">A carregar atividade recente…</div>'}</div></section>`;
+    const status=liveCount?`Congresso live · ${liveCount}`:(M.congressError?'Congresso indisponível':ageText());
+    const empty=M.congressError
+      ? `<div class="market-empty"><strong>Não foi possível carregar Congresso.</strong><br><span>${esc(M.congressError)}</span><br><small>Insiders continuam disponíveis. Os trades do Congresso serão tentados novamente.</small></div>`
+      : '<div class="market-empty">A carregar atividade recente…</div>';
+    return `<section class="market-section"><div class="market-section__head"><div><h3>Smart money</h3><p>Compras de insiders e atividade declarada no Congresso dos EUA</p><p class="market-source-credit">Congresso: <a href="https://www.bargo.ai/free-apis/congress" target="_blank" rel="noopener">Bargo</a> · divulgações STOCK Act</p></div><span class="market-data-age">${status}</span></div><div class="market-list">${rows.map(s=>renderRow(s,`${n(s.insider_buy_count_30d)||0} compras insider · ${Array.isArray(s.congress_trades)?s.congress_trades.length:0} trades Congresso`)).join('')||empty}</div></section>`;
   }
 
   function renderPrimary(){
