@@ -2325,11 +2325,10 @@ function renderDashboard() {
       if (ref == null || ref === 0) return "";
       const diff = val - ref, pct = diff / Math.abs(ref) * 100;
       const pos = diff >= 0;
-      const color = pos ? "#059669" : "#ef4444";
       const arrow = pos ? "▲" : "▼";
-      return `<div style="background:${pos?"#f0fdf4":"#fff1f2"};border-radius:8px;padding:5px 10px;font-size:12px">
-        <span style="color:#64748b">${label} </span>
-        <span style="color:${color};font-weight:700">${arrow} ${fmtEUR(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%)</span>
+      return `<div class="hero-change-chip ${pos ? "hero-change-chip--up" : "hero-change-chip--down"}">
+        <span class="hero-change-chip__label">${label}</span>
+        <span class="hero-change-chip__value">${arrow} ${fmtEUR(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%)</span>
       </div>`;
     };
     if (prev) chips.push(chip("vs mês ant.", t.net, parseNum(prev.net)));

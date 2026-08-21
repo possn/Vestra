@@ -153,7 +153,7 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Fallback seguro quando um instrumento contém dados num formato inesperado.
 
 
-## Vestra v2.8 — Fundamental Coverage
+## Vestra v2.9 — Fundamental Coverage
 - Corrige `null`/campo ausente apresentado como zero nas tabs do dossier.
 - Worker Market Proxy v4.1 com fallback Yahoo `fundamentals-timeseries` para empresas com `quoteSummary` incompleto.
 - Enriquecimento de receita, lucro, EPS, margens, OCF, FCF, EBITDA, dívida, equity e caixa quando disponíveis.
@@ -161,6 +161,12 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Campos genuinamente indisponíveis passam a aparecer como `—`, nunca como `0` fictício.
 
 
-### v2.8 — Portfolio clarity
+### v2.9 — Portfolio clarity
 - Carteira: rendimento anual, mensal estimado e yield médio ponderado no resumo.
 - Mais: grupos expansíveis redesenhados como cards premium, mantendo o layout global congelado.
+
+
+### v2.9 — Contrast & Settings Hub
+- Hero variation chips now use theme-safe contrast classes.
+- Dashboard shortcuts are fully contained on iPhone.
+- Settings groups are presented as a 2×2 navigation hub and expand full width.
