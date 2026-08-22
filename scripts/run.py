@@ -29,6 +29,7 @@ from earnings_intelligence import assess as assess_earnings_intelligence
 from catalysts import assess as assess_catalysts
 from low52_intelligence import assess as assess_low52_intelligence
 from peer_drawdown import assess_universe as assess_peer_drawdown
+from recovery_confirmation import assess_universe as assess_recovery_confirmation
 from drawdown_diagnosis import assess as assess_drawdown_diagnosis
 from scanner import assess as assess_scanner
 from analyst import fetch_many as fetch_analyst_many
@@ -448,9 +449,10 @@ def main():
         })
 
     rows = assess_peer_drawdown(rows)
+    rows = assess_recovery_confirmation(rows)
 
     payload = {
-        "schema_version": 520,
+        "schema_version": 521,
         "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
         "data_quality": {
             "portfolio_extra_requested": len(portfolio_extra),
