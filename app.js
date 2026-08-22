@@ -2703,10 +2703,19 @@ function renderItems() {
     const badge = !showingLiabs ? yieldBadge(it) : "";
     const gainBadge = !showingLiabs ? renderGainLossBadge(it) : "";
     const cBadge = !showingLiabs ? ccyBadge(it) : "";
+    const researchCandidate = !showingLiabs && /a[cç][oõ]es|etf|fund/i.test(String(it.class||"")) && !!String(it.yahooTicker||it.ticker||it.symbol||"").trim();
     row.innerHTML = `<div class="item__l">
-      <div class="item__t">${escapeHtml(it.name || "—")}${gainBadge}${cBadge}</div>
+      <div class="item__t">${escapeHtml(it.name || "—")}${gainBadge}${cBadge}${researchCandidate ? `<button class="item__research" type="button" aria-label="Abrir dossier de mercado" title="Abrir dossier">↗</button>` : ""}</div>
       <div class="item__s">${escapeHtml(it.class || "")}${badge}${!showingLiabs ? appreciationBadge(it) : ""}</div>
     </div><div class="item__v">${fmtEUR(parseNum(it.value))}</div>`;
+    const openResearch = async ev=>{
+      ev.preventDefault(); ev.stopPropagation();
+      const ok = window.VestraMarket?.openPortfolioAsset ? await window.VestraMarket.openPortfolioAsset(it) : false;
+      if(!ok) toast('Ainda não há dossier Vestra para este instrumento.');
+    };
+    const researchBtn=row.querySelector('.item__research');
+    if(researchBtn) researchBtn.addEventListener('click', openResearch);
+    if(researchCandidate){ const left=row.querySelector('.item__l'); if(left){ left.style.cursor='pointer'; left.addEventListener('click',openResearch); } }
     row.addEventListener("click", () => editItem(it.id));
     list.appendChild(row);
   }

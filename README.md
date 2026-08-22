@@ -1,3 +1,11 @@
+## Vestra v3.4 — Search Assist & Portfolio Dossiers
+
+- Autocomplete instantâneo no Mercado, com ticker, nome e tipo antes de carregar Enter.
+- Dossier reforçado contra overflow horizontal no iPhone; botão fechar persistente e sempre acessível.
+- Ações/ETFs reconhecidos na Carteira podem abrir diretamente o mesmo dossier de Mercado; a edição da posição mantém-se disponível ao tocar fora do atalho de research.
+- Layout visual global permanece congelado.
+- PWA cache: `vestra-cache-v27`.
+
 ## Vestra v3.3 — Broker Identity Audit & Congress Live
 
 - Quote identities audited against the original Trading 212 2023–2026 and XTB exports.

@@ -537,8 +537,9 @@
 <p>Pesquisa primeiro. A análise aparece só quando precisas dela.</p>
 </div>
 <div class="market-search">
-<input autocomplete="off" id="marketSearch" placeholder="Empresa, ticker, ETF ou tema…" spellcheck="false" type="search"/>
+<input autocomplete="off" id="marketSearch" placeholder="Empresa, ticker, ETF ou tema…" spellcheck="false" type="search" aria-autocomplete="list" aria-controls="marketSuggestions"/>
 <span class="market-search__icon">⌕</span>
+<div class="market-suggestions" id="marketSuggestions" role="listbox" hidden></div>
 </div>
 <div aria-label="Áreas de mercado" class="market-mode-grid">
 <button class="market-mode is-active" data-market-mode="discover"><span class="market-mode__icon">◫</span><strong>Ideias</strong></button>
@@ -562,6 +563,7 @@
 </section>
 <div aria-hidden="true" class="market-sheet" hidden="" id="marketSheet">
 <div class="market-sheet__panel">
+<button class="market-close-persistent" data-market-close aria-label="Fechar dossier">×</button>
 <div class="market-sheet__grab"></div>
 <div id="marketSheetContent"></div>
 </div>
@@ -1393,7 +1395,7 @@
 <summary><div class="more-group__lead"><span class="more-group__icon" aria-hidden="true">V</span><div><b>Sobre a Vestra</b><small>Versão, PWA e armazenamento</small></div></div><span class="more-group__chevron">›</span></summary>
 <div class="more-group__body"><div class="card">
 <div class="card__title" style="margin-bottom:8px">Sobre</div>
-<div class="card__muted"><span id="swVersionBadge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px">a verificar cache activa…</span><br/><br/>Vestra <b>v3.3</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br/><br/>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br/><br/><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
+<div class="card__muted"><span id="swVersionBadge" style="display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700;font-size:12px">a verificar cache activa…</span><br/><br/>Vestra <b>v3.4</b> · PWA · Dados guardados apenas neste dispositivo (IndexedDB).<br/><br/>Safari (iOS) e Chrome (Android/Desktop). Adiciona ao Ecrã Principal para usar offline.<br/><br/><b>Vestra nasce hoje</b> — a partir do Património Familiar (última versão: v64za), com todas as funcionalidades e correcções construídas até aqui: multi-classe de activos, balanço, dividendos, FIRE, modo Simples/Avançado, import de corretoras e bancos, backup. Chamou-se Finva por umas horas antes deste nome (e este logótipo, navy/turquesa/dourado) ficarem definidos como identidade final. O histórico detalhado de versões do Património Familiar não foi trazido — fica registado no repositório antigo; a Vestra começa o seu próprio.
         </div>
 </div></div>
 </details>

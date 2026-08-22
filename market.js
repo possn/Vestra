@@ -404,6 +404,59 @@
     root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():renderDiscover();
   }
 
+  function marketSearchMatches(query, limit=7){
+    const q=txt(query).toLowerCase();
+    if(!q) return [];
+    const scoreMatch=(x)=>{
+      const t=txt(x.ticker).toLowerCase(), name=txt(x.name).toLowerCase();
+      if(t===q) return 1000;
+      if(t.startsWith(q)) return 800 - t.length;
+      if(name.startsWith(q)) return 650 - name.length/100;
+      if(t.includes(q)) return 500;
+      if(name.includes(q)) return 350;
+      return 0;
+    };
+    return M.stocks.map(x=>({x,rank:scoreMatch(x)})).filter(r=>r.rank>0)
+      .sort((a,b)=>b.rank-a.rank || (n(b.x.score)||0)-(n(a.x.score)||0))
+      .slice(0,limit).map(r=>r.x);
+  }
+
+  function hideSearchSuggestions(){
+    const box=$m('marketSuggestions'); if(!box)return; box.hidden=true; box.innerHTML='';
+  }
+
+  function renderSearchSuggestions(){
+    const box=$m('marketSuggestions'); if(!box || !M.loaded)return;
+    const q=txt(M.query);
+    if(!q){ hideSearchSuggestions(); return; }
+    const rows=marketSearchMatches(q,7);
+    if(!rows.length){
+      box.innerHTML='<div class="market-suggestion-empty">Sem correspondências imediatas</div>';
+      box.hidden=false; return;
+    }
+    box.innerHTML=rows.map(x=>`<button type="button" class="market-suggestion" role="option" data-market-ticker="${esc(x.ticker)}"><span class="market-suggestion__ticker">${esc(x.ticker)}</span><span class="market-suggestion__name">${esc(x.name||'')}</span><span class="market-suggestion__type">${esc(isFund(x)?'ETF/Fundo':x.sector||'Ação')}</span></button>`).join('');
+    box.hidden=false;
+  }
+
+  function resolvePortfolioStock(asset){
+    if(!researchEligibleAsset(asset)) return null;
+    const raw=assetTicker(asset); if(!raw) return null;
+    if(M.byTicker.has(raw)) return M.byTicker.get(raw);
+    const base=raw.replace(/\.[A-Z]+$/,'');
+    const exactBase=M.stocks.filter(x=>txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')===base);
+    if(exactBase.length===1) return exactBase[0];
+    return null;
+  }
+
+  async function openPortfolioAsset(asset){
+    await ensureLoaded();
+    const stock=resolvePortfolioStock(asset);
+    if(!stock) return false;
+    hideSearchSuggestions();
+    openTicker(stock.ticker);
+    return true;
+  }
+
   function sparkSvg(history){
     const arr=(Array.isArray(history)?history:[]).map(x=>typeof x==='number'?x:n(x.close??x.price)).filter(Number.isFinite);
     if(arr.length<2) return '';
@@ -550,6 +603,8 @@
 
   function openTicker(ticker){
     const s=M.byTicker.get(txt(ticker).toUpperCase()); if(!s) return;
+    hideSearchSuggestions();
+    try{ window.scrollTo({left:0,top:window.scrollY,behavior:'auto'}); }catch(_){ window.scrollTo(0,window.scrollY); }
     const sh=$m('marketSheet'), content=$m('marketSheetContent'); if(!sh||!content)return;
     // Fully close/reset the previous modal state before constructing a new dossier.
     sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.liveReady='0';
@@ -659,7 +714,7 @@
     const mode=e.target.closest('[data-market-mode]'); if(mode){M.mode=mode.dataset.marketMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}
     const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
     const watch=e.target.closest('[data-market-watch]'); if(watch){e.preventDefault();e.stopPropagation();toggleWatch(watch.dataset.marketWatch);return;}
-    const row=e.target.closest('[data-market-ticker]'); if(row){ensureLoaded().then(()=>openTicker(row.dataset.marketTicker));}
+    const row=e.target.closest('[data-market-ticker]'); if(row){ hideSearchSuggestions(); ensureLoaded().then(()=>openTicker(row.dataset.marketTicker)); }
     const close=e.target.closest('[data-market-close]'); if(close) closeSheet();
     const sh=$m('marketSheet'); if(sh&&e.target===sh) closeSheet();
     const tab=e.target.closest('[data-detail-tab]'); if(tab&&sh?.dataset.ticker){
@@ -688,10 +743,21 @@
 
   document.addEventListener('input', e=>{
     if(e.target.id==='marketSearch'){
-      M.query=e.target.value.trim(); ensureLoaded().then(()=>renderPrimary());
+      M.query=e.target.value.trim(); ensureLoaded().then(()=>{ renderSearchSuggestions(); renderPrimary(); });
     }
   });
 
+
+  document.addEventListener('focusin', e=>{
+    if(e.target?.id==='marketSearch' && M.query) ensureLoaded().then(renderSearchSuggestions);
+  });
+  document.addEventListener('focusout', e=>{
+    if(e.target?.id==='marketSearch') setTimeout(()=>{
+      const active=document.activeElement;
+      if(!active?.closest?.('#marketSuggestions')) hideSearchSuggestions();
+    },140);
+  });
+
   loadWatchlist();
-  window.VestraMarket={ensureLoaded,openTicker,toggleWatch};
+  window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,toggleWatch};
 })();
