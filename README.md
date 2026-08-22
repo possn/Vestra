@@ -1,3 +1,12 @@
+## Vestra v5.7 — Fresh Capital Planner
+
+- Novo simulador para alocar capital novo sem vender posições existentes.
+- Distribui o montante por até 3 destinos principais, podendo usar destinos adicionais quando os limites impedem a alocação completa.
+- Respeita máximo por posição, máximo por setor, política de overlap e prioridade Equilibrado/Quality/Growth/Dividendos.
+- Exclui Risk Gate alto/severo, confiança <60, valuation excessivo e expectativas em deterioração.
+- Mostra impacto estimado na convicção ponderada e peso/setor após cada reforço.
+- PWA cache: `vestra-cache-v52`.
+
 ## Vestra v5.6 — Portfolio Health Timeline
 
 - Guarda localmente um snapshot diário da saúde da carteira; reabrir no mesmo dia atualiza o snapshot em vez de o duplicar.

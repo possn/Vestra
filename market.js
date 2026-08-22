@@ -973,6 +973,7 @@
     const healthHistory=savePortfolioHealthSnapshot(healthSnapshot);
     const healthTimelineHtml=renderPortfolioHealthTimeline(healthHistory);
     const targetHtml=`<div class="market-detail-card market-target-engine" data-target-engine><div class="market-perspective-head"><div><small>PORTFOLIO TARGETS</small><h4>Objetivos da carteira</h4></div><span class="market-data-age">guardado localmente</span></div><p class="market-case-note">Estes objetivos passam a orientar o Rebalancer e o plano multi-movimento. Não alteram a carteira por si só.</p><div class="market-target-grid"><label><span>Máx. por posição</span><div><input data-target-position type="number" min="3" max="30" step="1" value="${targets.maxPosition}"><em>%</em></div></label><label><span>Máx. por setor</span><div><input data-target-sector type="number" min="10" max="60" step="1" value="${targets.maxSector}"><em>%</em></div></label><label><span>Overlap ETF</span><select data-target-overlap><option value="reduce" ${targets.overlap==='reduce'?'selected':''}>Reduzir</option><option value="neutral" ${targets.overlap==='neutral'?'selected':''}>Neutro</option></select></label><label><span>Prioridade</span><select data-target-tilt><option value="balanced" ${targets.tilt==='balanced'?'selected':''}>Equilibrado</option><option value="quality" ${targets.tilt==='quality'?'selected':''}>Quality</option><option value="growth" ${targets.tilt==='growth'?'selected':''}>Growth</option><option value="dividend" ${targets.tilt==='dividend'?'selected':''}>Dividendos</option></select></label></div><button type="button" class="market-plan-run" data-target-save>Guardar objetivos</button><span class="market-target-status" data-target-status></span></div>`;
+    const freshCapitalHtml=`<div class="market-detail-card market-fresh-capital" data-fresh-capital-card><div class="market-perspective-head"><div><small>FRESH CAPITAL PLANNER</small><h4>Entrou capital novo. Onde reforçar?</h4></div><span class="market-data-age">sem vendas</span></div><p class="market-case-note">Distribui novo capital por até 3 destinos elegíveis, respeitando os Portfolio Targets e sem vender posições existentes.</p><div class="market-fresh-controls"><label><span>Novo capital</span><div><input data-fresh-amount type="number" min="50" step="50" value="1000"><em>€</em></div></label><button type="button" data-fresh-run>Distribuir</button></div><div data-fresh-results><p class="market-case-note">A simulação privilegia convicção, margem de segurança, espaço dentro dos limites e a prioridade da carteira.</p></div></div>`;
     const planHtml=`<div class="market-detail-card market-rebalance-plan" data-rebalance-plan-card><div class="market-perspective-head"><div><small>MULTI-MOVE PLAN · TARGET AWARE</small><h4>Plano de rebalanceamento</h4></div><span class="market-data-age">até 3 movimentos</span></div><p class="market-case-note">Gera um plano a partir das posições mais frágeis e respeita os objetivos guardados acima.</p><button type="button" class="market-plan-run" data-rebalance-plan>Gerar plano</button><div data-rebalance-plan-results><p class="market-case-note">Nenhuma alteração é aplicada à carteira.</p></div></div>`;
     const concentratedCount=ranked.filter(r=>r.portfolioFit?.fit==='concentrated').length;
     const overlapCount=ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length;
@@ -988,6 +989,7 @@
       ${targetFitHtml}
       ${healthTimelineHtml}
       ${targetHtml}
+      ${freshCapitalHtml}
       ${rebalancerHtml}
       ${planHtml}`;
   }
@@ -1086,6 +1088,64 @@
     return `<div class="market-target-summary">Limites: posição ${t.maxPosition}% · setor ${t.maxSector}% · ${t.overlap==='reduce'?'reduzir overlap':'overlap neutro'} · ${esc(t.tilt)}</div><div class="market-rebalance-list">${sim.results.map((r,i)=>`<button type="button" class="market-rebalance-row" data-market-ticker="${esc(r.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(r.stock.ticker)} · ${esc(r.stock.name||'')}</strong><small>${r.existing?'Já em carteira':'Nova posição'} · conv. ${Math.round(r.conv)} · peso após ${r.positionPct.toFixed(1)}% · setor ${r.sectorPct.toFixed(0)}%</small><small>Δ convicção carteira ${r.convDelta>=0?'+':''}${r.convDelta.toFixed(2)} · overlap ${r.overlapDelta>=0?'+':''}${r.overlapDelta.toFixed(1)} pp</small></span><em>${r.fitScore.toFixed(0)}</em></button>`).join('')}</div>`;
   }
 
+  function freshCapitalPlan(amount){
+    const fresh=Math.max(0,n(amount)||0); if(fresh<50) return {error:'Indica pelo menos 50 € de novo capital.'};
+    const assets=portfolioAssets().slice().filter(researchEligibleAsset);
+    const rowMap=new Map();
+    for(const a of assets){
+      const t=assetTicker(a); if(!t) continue; const base=t.replace(/\.[A-Z]+$/,'');
+      const stock=M.byTicker.get(t)||M.stocks.find(x=>txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')===base); if(!stock) continue;
+      const key=txt(stock.ticker).toUpperCase(); const prev=rowMap.get(key)||{stock,value:0}; prev.value+=portfolioValue(a); rowMap.set(key,prev);
+    }
+    const rows=[...rowMap.values()]; const analysed=rows.reduce((sum,r)=>sum+r.value,0)||1; const afterTotal=analysed+fresh;
+    const sectors=new Map(); for(const r of rows){ const k=txt(r.stock.sector)||'Sem setor'; sectors.set(k,(sectors.get(k)||0)+r.value); }
+    const held=new Map(rows.map(r=>[txt(r.stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,''),r]));
+    const etfs=rows.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
+    const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
+    const universe=M.stocks.filter(x=>!isFund(x)&&n(x.score)!=null&&n(x.confidence_score)>=60&&!['high','severe'].includes(txt(x.risk_gate))&&txt(x.valuation_signal)!=='overvalued'&&txt(x.estimate_signal)!=='deteriorating');
+    const candidates=universe.map(stock=>{
+      const conv=portfolioConviction(stock); if(conv==null) return null;
+      const base=txt(stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,''); const existing=held.get(base); const existingValue=existing?.value||0;
+      const sector=txt(stock.sector)||'Sem setor', sectorValue=sectors.get(sector)||0, indirect=isFund(stock)?0:indirectExposurePct(stock,etfs);
+      const posCapacity=Math.max(0,afterTotal*maxPos/100-existingValue), sectorCapacity=Math.max(0,afterTotal*maxSector/100-sectorValue), capacity=Math.min(posCapacity,sectorCapacity,fresh);
+      if(capacity<50) return null;
+      let score=conv+portfolioTiltBonus(stock,targets.tilt);
+      if(txt(stock.valuation_signal)==='undervalued') score+=4; else if(txt(stock.valuation_signal)==='fair') score+=1;
+      const sectorNow=sectorValue/analysed*100; if(sectorNow<maxSector*.55) score+=3; else if(sectorNow>maxSector*.85) score-=3;
+      if(existing&&existingValue/analysed*100<maxPos*.65) score+=2;
+      if(targets.overlap==='reduce'&&indirect>1.5) score-=(indirect-1.5)*2.5;
+      return {stock,conv,score,capacity,existingValue,sector,sectorValue,indirect};
+    }).filter(Boolean).sort((a,b)=>b.score-a.score);
+    const allocations=[], used=new Set(); let remaining=fresh; const shares=[.5,.3,.2];
+    for(let i=0;i<shares.length&&remaining>=50;i++){
+      const cand=candidates.find(c=>!used.has(txt(c.stock.ticker).toUpperCase())&&c.capacity>=50); if(!cand) break;
+      let desired=i===shares.length-1?remaining:Math.max(50,Math.round((fresh*shares[i])/50)*50);
+      let alloc=Math.min(remaining,cand.capacity,desired); alloc=Math.floor(alloc/50)*50; if(alloc<50){used.add(txt(cand.stock.ticker).toUpperCase()); i--; continue;}
+      used.add(txt(cand.stock.ticker).toUpperCase()); remaining-=alloc;
+      const positionPct=(cand.existingValue+alloc)/afterTotal*100, sectorPct=(cand.sectorValue+alloc)/afterTotal*100;
+      allocations.push({...cand,amount:alloc,positionPct,sectorPct});
+    }
+    if(remaining>=50){
+      for(const cand of candidates){
+        if(remaining<50) break; if(used.has(txt(cand.stock.ticker).toUpperCase())) continue;
+        let alloc=Math.min(remaining,cand.capacity); alloc=Math.floor(alloc/50)*50; if(alloc<50) continue;
+        used.add(txt(cand.stock.ticker).toUpperCase()); remaining-=alloc;
+        allocations.push({...cand,amount:alloc,positionPct:(cand.existingValue+alloc)/afterTotal*100,sectorPct:(cand.sectorValue+alloc)/afterTotal*100});
+        if(allocations.length>=5) break;
+      }
+    }
+    const currentConvRows=rows.map(r=>({...r,conv:portfolioConviction(r.stock)})).filter(r=>r.conv!=null&&r.value>0), convBase=currentConvRows.reduce((a,r)=>a+r.value,0)||1;
+    const currentConv=currentConvRows.reduce((a,r)=>a+r.value*r.conv,0)/convBase;
+    const added=allocations.reduce((a,x)=>a+x.amount,0), afterConv=(currentConv*convBase+allocations.reduce((a,x)=>a+x.amount*x.conv,0))/(convBase+added||1);
+    return {fresh,allocated:added,remaining:fresh-added,currentConv,afterConv,allocations,targets};
+  }
+
+  function renderFreshCapitalPlan(plan){
+    if(plan?.error) return `<p class="market-case-note">${esc(plan.error)}</p>`;
+    if(!plan?.allocations?.length) return '<p class="market-case-note">Não encontrei destinos robustos dentro dos objetivos atuais.</p>';
+    return `<div class="market-fresh-summary"><strong>${euro(plan.allocated)} distribuídos</strong><span>Convicção ponderada ${plan.currentConv.toFixed(1)} → ${plan.afterConv.toFixed(1)}${plan.remaining>=50?` · ${euro(plan.remaining)} ficam por alocar`:''}</span></div><div class="market-fresh-list">${plan.allocations.map((x,i)=>`<button type="button" class="market-fresh-row" data-market-ticker="${esc(x.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(x.stock.ticker)} · ${euro(x.amount)}</strong><small>${x.existingValue>0?'Reforço existente':'Nova posição'} · conv. ${Math.round(x.conv)} · ${esc(x.sector)}</small><small>Peso após ${x.positionPct.toFixed(1)}% · setor após ${x.sectorPct.toFixed(1)}% · fit ${x.score.toFixed(0)}</small></span></button>`).join('')}</div><p class="market-case-note">Simulação de research. Não considera impostos, comissões, spreads nem necessidades pessoais de liquidez.</p>`;
+  }
+
   function openTool(tool){
     ensureLoaded().then(()=>{
       const sh=$m('marketSheet'), c=$m('marketSheetContent'); if(!sh||!c)return;
@@ -1179,6 +1239,12 @@
       savePortfolioTargets(targets);
       const status=card?.querySelector('[data-target-status]'); if(status) status.textContent='Guardado · a recalcular';
       setTimeout(()=>openTool('portfolio'),120);
+      return;
+    }
+    const freshRun=e.target.closest('[data-fresh-run]');
+    if(freshRun){
+      const card=freshRun.closest('[data-fresh-capital-card]'), out=card?.querySelector('[data-fresh-results]'), amount=card?.querySelector('[data-fresh-amount]')?.value;
+      if(out) out.innerHTML=renderFreshCapitalPlan(freshCapitalPlan(amount));
       return;
     }
     const plan=e.target.closest('[data-rebalance-plan]');
