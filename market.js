@@ -560,6 +560,17 @@
     return new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short',year:'numeric'}).format(d);
   }
 
+  function catalystPanel(s){
+    const events=Array.isArray(s.catalyst_events)?s.catalyst_events.slice(0,5):[];
+    if(!events.length) return '';
+    const icon=e=>e.tone==='risk'?'!':e.tone==='positive'?'↗':e.tone==='event'?'◷':'•';
+    const tone=e=>e.tone==='risk'?'down':e.tone==='positive'?'up':e.tone==='event'?'event':'neutral';
+    const when=e=>e.date?shortDate(e.date):(e.window?e.window:'Sem data');
+    const next=s.catalyst_next_date?`Próximo · ${shortDate(s.catalyst_next_date)}`:`${events.length} sinais`;
+    return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>CATALYSTS & RISKS</small><h4>${esc(s.catalyst_summary||'Eventos a acompanhar')}</h4></div><span class="market-data-age">${esc(next)}</span></div><div class="market-change-list">${events.map(e=>`<div class="market-change-item market-change-item--${tone(e)}"><b>${icon(e)}</b><span><strong>${esc(e.label||'Evento')}</strong><small style="display:block;margin-top:2px">${esc(when(e))}${e.evidence?` · ${esc(e.evidence)}`:''}${e.source?` · ${esc(e.source)}`:''}</small></span></div>`).join('')}</div></div>`;
+  }
+
+
 
 
   function investmentCase(s){
@@ -619,7 +630,7 @@
 
   function renderDetailTab(s,tab){
     const body=$m('marketDetailBody'); if(!body) return;
-    if(tab==='overview') body.innerHTML=`${changePanel(s)}${investmentCase(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
+    if(tab==='overview') body.innerHTML=`${changePanel(s)}${catalystPanel(s)}${investmentCase(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
     if(tab==='perspective') {
       const buys=(n(s.analyst_strong_buy)||0)+(n(s.analyst_buy)||0), holds=n(s.analyst_hold)||0, sells=(n(s.analyst_sell)||0)+(n(s.analyst_strong_sell)||0);
       const revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;

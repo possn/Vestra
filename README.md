@@ -1,3 +1,11 @@
+## Vestra v4.8 — Catalyst & Risk Engine
+
+- Novo timeline auditável no dossier: “o que pode mexer esta ação e quando”.
+- Usa apenas eventos com evidência já recolhida: earnings, estimate momentum, insiders, trajetória da tese, estrutura de capital e STOCK Act.
+- Datas só são mostradas quando existem na fonte; sinais sem data aparecem como janelas (“30d”, “filings recentes”), nunca como datas inventadas.
+- Eventos de estrutura de capital herdam severidade do Risk Gate e podem dominar o painel quando são materiais.
+- Dataset schema: 517. PWA cache: `vestra-cache-v43`.
+
 ## Vestra v4.7.2 — Portfolio Intelligence Contrast
 
 - Corrige texto secundário ilegível nos cards claros de Portfolio Intelligence.
