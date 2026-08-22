@@ -1,3 +1,12 @@
+## Vestra v5.2 — Assisted Rebalancer
+
+- Novo simulador interativo em As minhas posições: escolhe a posição de origem e o montante a libertar.
+- Mantém o valor total da carteira e ordena até 5 destinos elegíveis por convicção, concentração, overlap indireto e valuation.
+- Destinos com Risk Gate alto/severo, confiança <60, valuation excessivo ou expectativas em deterioração são excluídos.
+- Mostra peso e setor após a realocação, impacto estimado na convicção ponderada e alteração de overlap via ETFs.
+- Não executa ordens nem inclui fiscalidade/custos; é uma ferramenta de research e cenário.
+- PWA cache: `vestra-cache-v47`.
+
 ## Vestra v5.1 — Portfolio Scenario Preview
 
 - As substituições sugeridas passam a mostrar um preview antes/depois mantendo o mesmo valor da posição.
