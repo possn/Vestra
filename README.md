@@ -1,3 +1,13 @@
+## Vestra v4.1 — Risk Gate
+
+- O score quantitativo passa por um Risk Gate antes de gerar o sinal final.
+- FCF yield extremo (>30%) deixa de receber automaticamente um percentil favorável sem confirmação independente.
+- Zombie por interest coverage, qualidade muito fraca, contração relevante de receita e diluição material passam a limitar o score.
+- Dois ou mais red flags impedem um “Sinal forte”; red flags severos limitam o score a 45.
+- A confiança é reduzida quando existem anomalias materiais, mesmo com elevada cobertura de campos.
+- Nenhuma empresa é bloqueada por ticker/país: as regras são genéricas e auditáveis.
+- Layout visual permanece congelado.
+
 ## Vestra v4.0 — European Source Fusion
 
 - Layout visual permanece congelado.
