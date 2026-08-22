@@ -1012,13 +1012,14 @@
     let health=100; health-=Math.max(0,topPositionPct-targets.maxPosition)*1.4; health-=Math.max(0,(topSector?.pct||0)-targets.maxSector)*1.1; health-=review.length*2.2; health-=(100-riskBudget.fit)*.25; health-=(100-(worst?.resilience||100))*.20; health=Math.max(0,Math.min(100,Math.round(health)));
     const tone=health>=80?'is-positive':health>=60?'is-warn':'is-risk';
     const priorities=[];
-    if(review[0]) priorities.push(`Rever ${review[0].stock.ticker}: ${review[0].conviction==null?'convicção insuficiente':`convicção ${Math.round(review[0].conviction)}/100`}`);
-    if(topPositionPct>targets.maxPosition&&topPosition) priorities.push(`${topPosition.stock.ticker} está acima do objetivo por posição (${topPositionPct.toFixed(1)}%)`);
-    if(topSector&&topSector.pct>targets.maxSector) priorities.push(`${topSector.name} está acima do objetivo setorial (${topSector.pct.toFixed(1)}%)`);
-    if(worst&&worst.resilience<70) priorities.push(`Stress mais exigente: ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label} · resiliência ${worst.resilience}/100`);
-    if(!priorities.length&&reinforce[0]) priorities.push(`Carteira sem alerta dominante; ${reinforce[0].stock.ticker} é o reforço com maior convicção atual`);
-    const next=review[0]?`Abrir ${review[0].stock.ticker} e rever a tese`:topPositionPct>targets.maxPosition?'Usar o Rebalancer para reduzir concentração':reinforce[0]?`Avaliar reforço em ${reinforce[0].stock.ticker}`:'Manter e acompanhar';
-    return `<div class="market-detail-card market-decision-center"><div class="market-perspective-head"><div><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora?</h4></div><span class="market-target-fit-score ${tone}">${health}/100</span></div><div class="market-decision-kpis"><div><small>Convicção</small><strong>${conviction.toFixed(1)}</strong></div><div><small>Risk Budget</small><strong>${riskBudget.fit}</strong></div><div><small>Pior stress</small><strong>${worst?worst.resilience:'—'}</strong></div><div><small>Rever/Substituir</small><strong>${review.length}</strong></div></div><div class="market-decision-next"><small>PRÓXIMA AÇÃO DE RESEARCH</small><strong>${esc(next)}</strong></div><ul class="market-case-list">${priorities.slice(0,4).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="market-case-note">Síntese executiva: agrega sinais já existentes e não cria um novo score de investimento.</p></div>`;
+    if(review[0]) priorities.push({label:`Rever ${review[0].stock.ticker}: ${review[0].conviction==null?'convicção insuficiente':`convicção ${Math.round(review[0].conviction)}/100`}`,kind:'ticker',value:review[0].stock.ticker});
+    if(topPositionPct>targets.maxPosition&&topPosition) priorities.push({label:`${topPosition.stock.ticker} está acima do objetivo por posição (${topPositionPct.toFixed(1)}%)`,kind:'ticker',value:topPosition.stock.ticker});
+    if(topSector&&topSector.pct>targets.maxSector) priorities.push({label:`${topSector.name} está acima do objetivo setorial (${topSector.pct.toFixed(1)}%)`,kind:'targets',value:'targets'});
+    if(worst&&worst.resilience<70) priorities.push({label:`Stress mais exigente: ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label} · resiliência ${worst.resilience}/100`,kind:'stress',value:worst.key});
+    if(!priorities.length&&reinforce[0]) priorities.push({label:`Carteira sem alerta dominante; ${reinforce[0].stock.ticker} é o reforço com maior convicção atual`,kind:'ticker',value:reinforce[0].stock.ticker});
+    const next=review[0]?{label:`Abrir ${review[0].stock.ticker} e rever a tese`,kind:'ticker',value:review[0].stock.ticker}:topPositionPct>targets.maxPosition?{label:'Usar o Rebalancer para reduzir concentração',kind:'rebalancer',value:'rebalancer'}:reinforce[0]?{label:`Avaliar reforço em ${reinforce[0].stock.ticker}`,kind:'ticker',value:reinforce[0].stock.ticker}:{label:'Manter e acompanhar',kind:'health',value:'health'};
+    const jumpAttrs=x=>`data-decision-jump="${esc(x.kind)}" data-decision-value="${esc(x.value||'')}"`;
+    return `<div class="market-detail-card market-decision-center"><div class="market-perspective-head"><div><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora?</h4></div><span class="market-target-fit-score ${tone}">${health}/100</span></div><div class="market-decision-kpis"><button type="button" ${jumpAttrs({kind:'actionmap',value:'all'})}><small>Convicção</small><strong>${conviction.toFixed(1)}</strong></button><button type="button" ${jumpAttrs({kind:'riskbudget',value:'riskbudget'})}><small>Risk Budget</small><strong>${riskBudget.fit}</strong></button><button type="button" ${jumpAttrs({kind:'stress',value:worst?.key||'rates'})}><small>Pior stress</small><strong>${worst?worst.resilience:'—'}</strong></button><button type="button" ${jumpAttrs({kind:'actionmap',value:'review'})}><small>Rever/Substituir</small><strong>${review.length}</strong></button></div><button type="button" class="market-decision-next" ${jumpAttrs(next)}><small>PRÓXIMA AÇÃO DE RESEARCH</small><strong>${esc(next.label)}</strong><span>→</span></button><div class="market-decision-priorities">${priorities.slice(0,4).map(x=>`<button type="button" ${jumpAttrs(x)}><span>${esc(x.label)}</span><b>→</b></button>`).join('')}</div><p class="market-case-note">Síntese executiva: toca num sinal para abrir diretamente o detalhe correspondente. Não cria um novo score de investimento.</p></div>`;
   }
 
   function portfolioIntelligence(rows,total){
@@ -1501,6 +1502,29 @@
 
   loadWatchlist();
   window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,toggleWatch};
+
+  // v6.1 — Decision Center is a navigation surface, not a passive summary.
+  document.addEventListener('click', e=>{
+    const btn=e.target.closest?.('[data-decision-jump]');
+    if(!btn) return;
+    const kind=btn.dataset.decisionJump||'', value=btn.dataset.decisionValue||'';
+    e.preventDefault();
+    const scrollTo=el=>{ if(el) el.scrollIntoView?.({behavior:'smooth',block:'start'}); };
+    if(kind==='ticker'&&value){ openTicker(value); return; }
+    if(kind==='riskbudget'){ scrollTo(document.querySelector('.market-risk-budget')); return; }
+    if(kind==='targets'){ scrollTo(document.querySelector('.market-target-fit')||document.querySelector('.market-target-engine')); return; }
+    if(kind==='rebalancer'){ scrollTo(document.querySelector('.market-rebalancer')); return; }
+    if(kind==='health'){ scrollTo(document.querySelector('.market-health-timeline')); return; }
+    if(kind==='stress'){
+      const box=document.querySelector('.market-stress-test'); scrollTo(box);
+      const tab=box?.querySelector(`[data-stress-scenario="${CSS.escape(value||'rates')}"]`); tab?.click(); return;
+    }
+    if(kind==='actionmap'){
+      const map=document.querySelector('.market-action-map'); scrollTo(map);
+      if(value&&value!=='all'){ const filter=map?.querySelector(`[data-action-filter="${CSS.escape(value)}"]`); if(filter && !filter.classList.contains('is-active')) filter.click(); }
+      return;
+    }
+  });
 
   // v6.0.1 — Action Map summary acts as an immediate filter.
   document.addEventListener('click', e=>{
