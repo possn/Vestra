@@ -835,6 +835,39 @@
     return 0;
   }
 
+  const PORTFOLIO_HEALTH_KEY='vestra_portfolio_health_v1';
+  function portfolioHealthDay(d=new Date()){
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function loadPortfolioHealth(){
+    try{ const x=JSON.parse(localStorage.getItem(PORTFOLIO_HEALTH_KEY)||'[]'); return Array.isArray(x)?x:[]; }
+    catch{return [];}
+  }
+  function savePortfolioHealthSnapshot(snapshot){
+    try{
+      const day=portfolioHealthDay();
+      const rows=loadPortfolioHealth().filter(x=>x&&x.day!==day);
+      rows.push({...snapshot,day,ts:Date.now()});
+      rows.sort((a,b)=>String(a.day).localeCompare(String(b.day)));
+      const trimmed=rows.slice(-120);
+      localStorage.setItem(PORTFOLIO_HEALTH_KEY,JSON.stringify(trimmed));
+      return trimmed;
+    }catch{return loadPortfolioHealth();}
+  }
+  function healthDeltaLabel(value,prev,inverse=false,suffix=''){
+    if(value==null||prev==null) return '—';
+    const d=value-prev; if(Math.abs(d)<0.05) return '≈ estável';
+    const good=inverse?d<0:d>0; return `${good?'↑':'↓'} ${d>0?'+':''}${d.toFixed(1)}${suffix}`;
+  }
+  function renderPortfolioHealthTimeline(history){
+    if(!history?.length) return '';
+    const latest=history[history.length-1], prev=history.length>1?history[history.length-2]:null;
+    const rows=history.slice(-8);
+    const trend=prev?`${healthDeltaLabel(latest.targetFit,prev.targetFit,false,'')} fit · ${healthDeltaLabel(latest.conviction,prev.conviction,false,'')} conv.`:'Primeiro snapshot criado';
+    return `<div class="market-detail-card market-health-timeline"><div class="market-perspective-head"><div><small>PORTFOLIO HEALTH · HISTÓRICO</small><h4>A carteira está a melhorar?</h4></div><span class="market-data-age">${history.length} ${history.length===1?'dia':'dias'}</span></div><div class="market-health-kpis"><div><small>Target Fit</small><strong>${Math.round(latest.targetFit)}</strong><em>${prev?healthDeltaLabel(latest.targetFit,prev.targetFit):'baseline'}</em></div><div><small>Convicção</small><strong>${latest.conviction.toFixed(1)}</strong><em>${prev?healthDeltaLabel(latest.conviction,prev.conviction):'baseline'}</em></div><div><small>Maior posição</small><strong>${latest.topPosition.toFixed(1)}%</strong><em>${prev?healthDeltaLabel(latest.topPosition,prev.topPosition,true,' pp'):'baseline'}</em></div><div><small>Rever/Substituir</small><strong>${latest.riskPositions}</strong><em>${prev?healthDeltaLabel(latest.riskPositions,prev.riskPositions,true):'baseline'}</em></div></div><div class="market-health-trend">${esc(trend)}</div><div class="market-health-history">${rows.map(x=>`<div class="market-health-row"><span>${esc(x.day.slice(5))}</span><div><i style="width:${Math.max(3,Math.min(100,x.targetFit))}%"></i></div><strong>${Math.round(x.targetFit)}</strong><small>conv ${x.conviction.toFixed(0)} · pos ${x.topPosition.toFixed(0)}% · setor ${x.topSector.toFixed(0)}% · overlap ${x.overlapCount} · risco ${x.riskPositions}</small></div>`).join('')}</div>${history.length<2?'<p class="market-case-note">A partir do próximo dia a Vestra começa a mostrar a direção das métricas. O snapshot do mesmo dia é atualizado, não duplicado.</p>':''}</div>`;
+  }
+
   function portfolioIntelligence(rows,total){
     if(!rows.length) return '';
     const analysed=rows.reduce((a,r)=>a+r.value,0)||1;
@@ -936,6 +969,9 @@
     targetSectorBreaches.slice(0,2).forEach(x=>targetIssues.push(`${x.sector} ${x.pct.toFixed(1)}% > objetivo ${targets.maxSector}%`));
     if(targetOverlapBreaches.length) targetIssues.push(`${targetOverlapBreaches.length} posições com overlap indireto ≥2%`);
     const targetFitHtml=`<div class="market-detail-card market-target-fit"><div class="market-perspective-head"><div><small>TARGET FIT</small><h4>Aderência aos objetivos</h4></div><span class="market-target-fit-score ${targetTone}">${targetFit}/100</span></div><div class="market-action-context"><span>${targetPositionBreaches.length} posições acima</span><span>${targetSectorBreaches.length} setores acima</span><span>${targetOverlapBreaches.length} overlap</span></div>${targetIssues.length?`<ul class="market-case-list">${targetIssues.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="market-case-note">A parte analisável da carteira está dentro dos objetivos definidos.</p>'}</div>`;
+    const healthSnapshot={targetFit,conviction:portfolioConvictionNow,topPosition:topPosPct,topSector:sectorRows[0]?.pct||0,overlapCount:ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length,riskPositions:(actionCounts.review||0)+(actionCounts.replace||0)};
+    const healthHistory=savePortfolioHealthSnapshot(healthSnapshot);
+    const healthTimelineHtml=renderPortfolioHealthTimeline(healthHistory);
     const targetHtml=`<div class="market-detail-card market-target-engine" data-target-engine><div class="market-perspective-head"><div><small>PORTFOLIO TARGETS</small><h4>Objetivos da carteira</h4></div><span class="market-data-age">guardado localmente</span></div><p class="market-case-note">Estes objetivos passam a orientar o Rebalancer e o plano multi-movimento. Não alteram a carteira por si só.</p><div class="market-target-grid"><label><span>Máx. por posição</span><div><input data-target-position type="number" min="3" max="30" step="1" value="${targets.maxPosition}"><em>%</em></div></label><label><span>Máx. por setor</span><div><input data-target-sector type="number" min="10" max="60" step="1" value="${targets.maxSector}"><em>%</em></div></label><label><span>Overlap ETF</span><select data-target-overlap><option value="reduce" ${targets.overlap==='reduce'?'selected':''}>Reduzir</option><option value="neutral" ${targets.overlap==='neutral'?'selected':''}>Neutro</option></select></label><label><span>Prioridade</span><select data-target-tilt><option value="balanced" ${targets.tilt==='balanced'?'selected':''}>Equilibrado</option><option value="quality" ${targets.tilt==='quality'?'selected':''}>Quality</option><option value="growth" ${targets.tilt==='growth'?'selected':''}>Growth</option><option value="dividend" ${targets.tilt==='dividend'?'selected':''}>Dividendos</option></select></label></div><button type="button" class="market-plan-run" data-target-save>Guardar objetivos</button><span class="market-target-status" data-target-status></span></div>`;
     const planHtml=`<div class="market-detail-card market-rebalance-plan" data-rebalance-plan-card><div class="market-perspective-head"><div><small>MULTI-MOVE PLAN · TARGET AWARE</small><h4>Plano de rebalanceamento</h4></div><span class="market-data-age">até 3 movimentos</span></div><p class="market-case-note">Gera um plano a partir das posições mais frágeis e respeita os objetivos guardados acima.</p><button type="button" class="market-plan-run" data-rebalance-plan>Gerar plano</button><div data-rebalance-plan-results><p class="market-case-note">Nenhuma alteração é aplicada à carteira.</p></div></div>`;
     const concentratedCount=ranked.filter(r=>r.portfolioFit?.fit==='concentrated').length;
@@ -950,6 +986,7 @@
       <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida com score pelo menos 8 pontos superior, confiança ≥60 e sem Risk Gate alto/severo.</p>${altHtml}</div>
       ${scenarioHtml}
       ${targetFitHtml}
+      ${healthTimelineHtml}
       ${targetHtml}
       ${rebalancerHtml}
       ${planHtml}`;
@@ -1140,7 +1177,8 @@
       const card=saveTargets.closest('[data-target-engine]');
       const targets={maxPosition:Math.max(3,Math.min(30,n(card?.querySelector('[data-target-position]')?.value)||10)),maxSector:Math.max(10,Math.min(60,n(card?.querySelector('[data-target-sector]')?.value)||25)),overlap:card?.querySelector('[data-target-overlap]')?.value||'reduce',tilt:card?.querySelector('[data-target-tilt]')?.value||'balanced'};
       savePortfolioTargets(targets);
-      const status=card?.querySelector('[data-target-status]'); if(status) status.textContent='Guardado';
+      const status=card?.querySelector('[data-target-status]'); if(status) status.textContent='Guardado · a recalcular';
+      setTimeout(()=>openTool('portfolio'),120);
       return;
     }
     const plan=e.target.closest('[data-rebalance-plan]');
