@@ -1,3 +1,11 @@
+## Vestra v5.1 — Portfolio Scenario Preview
+
+- As substituições sugeridas passam a mostrar um preview antes/depois mantendo o mesmo valor da posição.
+- A simulação estima a alteração da convicção ponderada da carteira e do overlap indireto via ETFs.
+- Como as alternativas são do mesmo setor, a concentração setorial é assumida como inalterada nesta primeira versão.
+- Cada cenário é marcado como Melhora / Neutro / Piora e continua a ser apenas apoio a research.
+- PWA cache: `vestra-cache-v46`.
+
 ## Vestra v5.0 — Portfolio Optimization Context
 
 - O Portfolio Action Map passa a considerar o impacto de cada posição na carteira, não apenas a qualidade isolada do ativo.

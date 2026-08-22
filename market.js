@@ -883,6 +883,25 @@
     const altHtml=alternatives.length?`<div class="market-list">${alternatives.map(a=>renderRow(a.to,`Alternativa a ${a.from.ticker} · Score +${a.delta.toFixed(0)} · ${a.portfolioFit==='better'?'reduz overlap':a.portfolioFit==='worse'?'aumenta overlap':'impacto neutro'}`)).join('')}</div>`:'<p class="market-case-note">Sem alternativa claramente superior identificada no mesmo setor.</p>';
     const concHtml=concentration.length?`<ul class="market-case-list">${[...new Set(concentration)].slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="market-case-note">Sem concentração material detetada com os dados disponíveis.</p>';
 
+    const convRows=ranked.filter(r=>r.conviction!=null&&r.value>0);
+    const convictionWeight=convRows.reduce((sum,r)=>sum+r.value,0)||1;
+    const portfolioConvictionNow=convRows.reduce((sum,r)=>sum+r.value*r.conviction,0)/convictionWeight;
+    const scenarioRows=alternatives.map(a=>{
+      const fromRow=ranked.find(r=>txt(r.stock.ticker).toUpperCase()===txt(a.from.ticker).toUpperCase());
+      if(!fromRow) return null;
+      const oldConv=portfolioConviction(a.from), newConv=portfolioConviction(a.to);
+      if(oldConv==null||newConv==null) return null;
+      const w=fromRow.value/convictionWeight;
+      const after=portfolioConvictionNow+(newConv-oldConv)*w;
+      const overlapBefore=n(a.currentIndirect)||0, overlapAfter=n(a.candidateIndirect)||0;
+      const convDelta=after-portfolioConvictionNow, overlapDelta=overlapAfter-overlapBefore;
+      let impact='Neutro';
+      if(convDelta>=.5||overlapDelta<=-1) impact='Melhora';
+      if(convDelta<0||overlapDelta>=2) impact='Piora';
+      return {from:a.from,to:a.to,before:portfolioConvictionNow,after,convDelta,overlapBefore,overlapAfter,overlapDelta,impact};
+    }).filter(Boolean).slice(0,3);
+    const scenarioHtml=scenarioRows.length?`<div class="market-detail-card market-scenario-preview"><div class="market-perspective-head"><div><small>SCENARIO PREVIEW</small><h4>Se substituíres pelo mesmo valor</h4></div><span class="market-data-age">simulação</span></div><p class="market-case-note">Mantém o valor da posição e o setor; estima apenas o efeito na convicção ponderada e no overlap indireto.</p><div class="market-scenario-list">${scenarioRows.map(x=>`<div class="market-scenario-row"><div><strong>${esc(x.from.ticker)} → ${esc(x.to.ticker)}</strong><small>Convicção carteira ${x.before.toFixed(1)} → ${x.after.toFixed(1)} · overlap ${x.overlapBefore.toFixed(1)}% → ${x.overlapAfter.toFixed(1)}%</small></div><em class="${x.impact==='Melhora'?'is-positive':x.impact==='Piora'?'is-risk':''}">${x.impact}</em></div>`).join('')}</div></div>`:'';
+
     const concentratedCount=ranked.filter(r=>r.portfolioFit?.fit==='concentrated').length;
     const overlapCount=ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length;
     const actionMapHtml=`<div class="market-detail-card market-action-map"><div class="market-perspective-head"><div><small>ACTION MAP · PORTFOLIO FIT</small><h4>Mapa da carteira</h4></div><span class="market-data-age">${actionRows.length} posições</span></div><div class="market-action-context"><span>${concentratedCount} concentração</span><span>${overlapCount} overlap indireto</span><span>${sectorRows[0]?`${esc(sectorRows[0].sector)} ${sectorRows[0].pct.toFixed(0)}%`:'setor —'}</span></div><div class="market-action-summary"><span class="is-positive">Reforçar ${actionCounts.reinforce||0}</span><span>Manter ${actionCounts.hold||0}</span><span class="is-warn">Rever ${actionCounts.review||0}</span><span class="is-risk">Substituir ${actionCounts.replace||0}</span></div><div class="market-action-list">${actionRows.slice(0,12).map(r=>`<button type="button" class="market-action-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div>${actionRows.length>12?`<details class="market-detail-disclosure"><summary>Ver mais ${actionRows.length-12} posições</summary><div class="market-action-list">${actionRows.slice(12).map(r=>`<button type="button" class="market-action-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div></details>`:''}<p class="market-case-note">Classificação de research baseada em dados atuais; não é uma ordem automática de compra ou venda.</p></div>`;
@@ -892,7 +911,8 @@
       <div class="market-detail-card"><h4>Candidatos a reforço</h4>${compactRows(reinforce,r=>`Convicção ${Math.round(r.conviction)}/100 · ${txt(r.stock.valuation_signal)||'valuation sem sinal'}`)}</div>
       <div class="market-detail-card"><h4>Posições a rever</h4>${compactRows(review,r=>`Convicção ${r.conviction==null?'—':Math.round(r.conviction)}/100 · ${txt(r.stock.risk_gate)||'clear'} · ${txt(r.stock.estimate_signal)||'expectativas —'}`)}</div>
       <div class="market-detail-card"><h4>Concentração e overlap</h4>${concHtml}</div>
-      <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida com score pelo menos 8 pontos superior, confiança ≥60 e sem Risk Gate alto/severo.</p>${altHtml}</div>`;
+      <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida com score pelo menos 8 pontos superior, confiança ≥60 e sem Risk Gate alto/severo.</p>${altHtml}</div>
+      ${scenarioHtml}`;
   }
 
   function openTool(tool){
