@@ -1,3 +1,13 @@
+## Vestra v5.0 — Portfolio Optimization Context
+
+- O Portfolio Action Map passa a considerar o impacto de cada posição na carteira, não apenas a qualidade isolada do ativo.
+- Peso da posição, concentração setorial e exposição indireta via ETFs entram no contexto de Reforçar / Manter / Rever / Substituir.
+- Uma posição forte mas já demasiado grande deixa de ser candidata automática a reforço.
+- Alternativas do mesmo setor são penalizadas quando aumentam overlap indireto e destacadas quando o reduzem.
+- O mapa mostra indicadores de concentração e overlap antes das ações por posição.
+- Continua a ser priorização de research, não uma ordem automática de transação.
+- PWA cache: `vestra-cache-v45`.
+
 ## Vestra v4.9 — Portfolio Action Map
 
 - Novo mapa por posição em As minhas posições: Reforçar / Manter / Rever / Substituir.
