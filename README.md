@@ -1,3 +1,9 @@
+## Vestra v4.7.2 — Portfolio Intelligence Contrast
+
+- Corrige texto secundário ilegível nos cards claros de Portfolio Intelligence.
+- O override é scoped a `.market-detail-card`, preservando o texto claro do Investment Case escuro.
+- PWA cache: `vestra-cache-v42`.
+
 ## Vestra v4.7.1 — Portfolio Intelligence Access
 
 - “As minhas posições” deixa de ficar escondido em Mais ferramentas e passa a ter acesso direto visível na área Mercado.
