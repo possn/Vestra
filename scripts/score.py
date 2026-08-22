@@ -115,6 +115,9 @@ class ScoredTicker:
     score_model: str = "general"
     score_model_note: str | None = None
     score_dimensions: dict[str, float | None] | None = None
+    risk_flags: list[str] | None = None
+    risk_gate: str = "clear"
+    score_cap: float | None = None
 
     # bank-native statement-derived proxies
     net_interest_income: float | None = None
@@ -317,8 +320,12 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         ])
 
         fcf_yield = fcf_yields[idx]
+        # Extremely high FCF yields are often distress/data/capital-structure signals.
+        # Do not reward >30% automatically until an independent source confirms it.
+        fcf_yield_for_score = fcf_yield if fcf_yield is None or abs(fcf_yield) <= 0.30 else None
+        plausible_fcf_yields = [v if v is None or abs(v) <= 0.30 else None for v in fcf_yields]
         cashflow = _avg([
-            _percentile_rank(fcf_yield, fcf_yields),
+            _percentile_rank(fcf_yield_for_score, plausible_fcf_yields),
             _positive_score(r.operating_cash_flow),
         ])
 
@@ -464,8 +471,33 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             earnings_quality = None
             capital_allocation = None
 
-        if composite is not None and zombie == "yes" and model not in ("bank", "insurance"):
-            composite = min(composite, 45.0)
+        # v4.1 Risk Gate: weighted averages cannot wash away structural red flags.
+        # Generic and explainable rules only; no ticker blacklist.
+        risk_flags = []
+        if zombie == "yes" and model not in ("bank", "insurance"):
+            risk_flags.append("zombie_interest_coverage")
+        if fcf_yield is not None and abs(fcf_yield) > 0.30:
+            risk_flags.append("extreme_fcf_yield")
+        if quality is not None and quality < 40:
+            risk_flags.append("weak_quality")
+        if r.revenue_growth is not None and r.revenue_growth < -0.15:
+            risk_flags.append("revenue_contraction")
+        if r.diluted_shares_yoy is not None and r.diluted_shares_yoy > 0.20:
+            risk_flags.append("material_dilution")
+        if r.diluted_shares_yoy is not None and r.diluted_shares_yoy > 0.50:
+            risk_flags.append("severe_dilution")
+
+        risk_gate = "clear"
+        score_cap = None
+        severe = any(x in risk_flags for x in ("zombie_interest_coverage", "severe_dilution"))
+        if severe:
+            risk_gate, score_cap = "severe", 45.0
+        elif len(risk_flags) >= 2:
+            risk_gate, score_cap = "high", 59.0
+        elif risk_flags:
+            risk_gate, score_cap = "watch", 69.0
+        if composite is not None and score_cap is not None:
+            composite = min(composite, score_cap)
 
         metric_values = [
             r.roe, r.roa, r.profit_margin, r.operating_margin, r.gross_margin,
@@ -480,6 +512,10 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         ]
         metric_coverage = sum(v is not None for v in metric_values) / len(metric_values) * 100
         confidence = "high" if metric_coverage >= 70 else "medium" if metric_coverage >= 40 else "low"
+        if risk_gate == "severe":
+            confidence = "low"
+        elif risk_gate == "high" and confidence == "high":
+            confidence = "medium"
         if model == "bank" and confidence == "high":
             confidence = "medium"
         if model == "insurance":
@@ -560,6 +596,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             sector_dividend_yield_median=round(sector_div,4) if sector_div is not None else None,
             score_model=model, score_model_note=model_note,
             score_dimensions={k: (round(v,1) if v is not None else None) for k,v in score_dimensions.items()},
+            risk_flags=risk_flags, risk_gate=risk_gate, score_cap=score_cap,
             net_interest_income=r.net_interest_income, net_interest_income_yoy=r.net_interest_income_yoy,
             efficiency_ratio_proxy=r.efficiency_ratio_proxy,
             provision_for_credit_losses=r.provision_for_credit_losses, provision_to_revenue=r.provision_to_revenue,
