@@ -37,3 +37,10 @@ API oficial live, mas requer API key. Boa candidata para identidade societária 
 
 ### Regra de provenance
 Nenhuma nova fonte substitui silenciosamente um valor existente. O pipeline deve guardar a origem por métrica, preferir filings oficiais para contas históricas e manter Yahoo/consenso para preços/estimativas.
+
+
+## v4.0 — European Source Fusion
+- **GLEIF / ANNA ISIN→LEI**: resolução certificada de identidade jurídica a partir do ISIN.
+- **filings.xbrl.org**: filings ESEF/UKSEF e xBRL-JSON, usados apenas após resolução exata para LEI.
+- Hierarquia: preço/consenso continuam no feed de mercado; filings oficiais têm prioridade apenas para preencher contas históricas ausentes.
+- Alemanha/Irlanda: sem enrichment automático por lacunas conhecidas do índice público; a Vestra mantém o dado como ausente em vez de adivinhar.

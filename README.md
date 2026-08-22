@@ -1,3 +1,14 @@
+## Vestra v4.0 — European Source Fusion
+
+- Layout visual permanece congelado.
+- Cadeia europeia estrita: `ticker → ISIN → GLEIF/ANNA LEI → ESEF/UKSEF`.
+- Sem fuzzy matching por nome de empresa: qualquer identidade ambígua é ignorada.
+- xBRL-JSON oficial preenche apenas fundamentais em falta deixados pelo Yahoo.
+- Dossiers podem expor ISIN/LEI e provenance da identidade quando o enriquecimento ESEF é usado.
+- SEC EDGAR fica ativo por defeito com User-Agent identificável e pode ser sobrescrito por `SEC_USER_AGENT`.
+- Alemanha e Irlanda ficam deliberadamente fora do enrichment automático enquanto persistirem lacunas documentadas de discovery no índice público.
+- PWA cache: `vestra-cache-v33`.
+
 ## Vestra v3.9 — Earnings Quality & Capital Allocation
 
 - Layout visual permanece congelado.

@@ -21,6 +21,7 @@ import traceback
 
 from fundamentals import fetch_many
 from sec_enrich import enrich as enrich_sec
+from esef_enrich import enrich as enrich_esef
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
@@ -64,7 +65,7 @@ _fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
 _handler_stream.setFormatter(_fmt)
 _handler_console.setFormatter(_fmt)
 logging.basicConfig(level=logging.WARNING, handlers=[_handler_stream, _handler_console], force=True)
-for _name in ("run", "universe", "fundamentals", "sec_enrich", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
+for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
     logging.getLogger(_name).setLevel(logging.INFO)
 log = logging.getLogger("run")
 
@@ -156,6 +157,7 @@ def main():
     raw_by_symbol.update({r.ticker: r for r in raw_portfolio})
     raw = [raw_by_symbol[t] for t in all_tickers if t in raw_by_symbol]
     raw = enrich_sec(raw, priority=portfolio_set)
+    raw = enrich_esef(raw, priority=portfolio_set)
     scored = score_universe(raw)
 
     analyst_map = fetch_analyst_many(
@@ -237,6 +239,12 @@ def main():
         rm = raw_by_ticker.get(s.ticker)
         row["data_sources"] = ["Yahoo Finance"]
         if rm is not None and getattr(rm, "sec_edgar_enriched", False): row["data_sources"].append("SEC EDGAR")
+        if rm is not None and getattr(rm, "esef_enriched", False):
+            row["data_sources"].append("ESEF / filings.xbrl.org")
+            row["identity_source"] = "GLEIF/ANNA ISIN→LEI"
+            row["isin"] = getattr(rm, "isin", None)
+            row["lei"] = getattr(rm, "lei", None)
+            row["esef_period_end"] = getattr(rm, "esef_period_end", None)
         if analyst: row["data_sources"].append("Analyst feed")
         if insider.get("status") not in (None,"not_available","error"): row["data_sources"].append("SEC Form 4")
         if row.get("congress_trades"): row["data_sources"].append("STOCK Act / Bargo")
