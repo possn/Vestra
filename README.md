@@ -1,3 +1,12 @@
+## Vestra v6.1 — Interactive Decision Center
+
+- Portfolio Decision Center deixa de ser apenas uma síntese passiva e passa a navegar diretamente para o detalhe relevante.
+- KPIs de Convicção, Risk Budget, Pior Stress e Rever/Substituir são tocáveis.
+- Prioridades e Próxima ação abrem o dossier da posição ou saltam para Targets, Rebalancer, Stress Test, Risk Budget ou Action Map.
+- O pior cenário de stress é selecionado automaticamente quando aberto a partir do Decision Center.
+- Mantém a arquitetura de research: navegação e priorização, sem executar ordens.
+- PWA cache: `vestra-cache-v58`.
+
 ## Vestra v6.0.1 — Action Map Filters
 
 - Reforçar / Manter / Rever / Substituir passam a ser filtros interativos no Action Map.
