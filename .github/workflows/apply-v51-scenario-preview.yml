@@ -1,0 +1,37 @@
+name: Apply Vestra v5.1 scenario preview
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'chatgpt/v5.1-scenario-preview'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/v5.1-scenario-preview
+          fetch-depth: 0
+      - name: Apply and validate v5.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/apply_v51_scenario_preview.py
+          rm -f scripts/apply_v51_scenario_preview.py
+          python -m py_compile scripts/*.py
+          node --check market.js
+          node --check sw.js
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add -- market.js market.css README.md sw.js
+          git add -u scripts/apply_v51_scenario_preview.py
+          if git diff --cached --quiet; then
+            echo "v5.1 already applied"
+          else
+            git commit -m "feat: Vestra v5.1 portfolio scenario preview"
+            git push origin HEAD:chatgpt/v5.1-scenario-preview
+          fi
