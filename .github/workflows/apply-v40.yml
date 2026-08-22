@@ -26,10 +26,12 @@ jobs:
             exit 0
           fi
           python scripts/apply_v40_release2.py
+          # Remove publication-only helpers before production validation.
+          rm -f v40.patch.gz.b64 scripts/apply_v40_release.py scripts/apply_v40_release2.py
           python -m py_compile scripts/*.py
           node --check market.js
           node --check sw.js
-          rm -f v40.patch.gz.b64 scripts/apply_v40_release.py scripts/apply_v40_release2.py .github/workflows/apply-v40.yml
+          rm -f .github/workflows/apply-v40.yml
           git config user.name "Vestra Build"
           git config user.email "actions@github.com"
           git add -- README.md DATA_SOURCES.md index.html market.js sw.js scripts/run.py scripts/esef_enrich.py .github/workflows/update-market-data.yml
