@@ -1,3 +1,12 @@
+## Vestra v5.4 — Portfolio Target Engine
+
+- Objetivos persistentes e locais para orientar o rebalanceamento: máximo por posição, máximo por setor, política de overlap e prioridade de carteira.
+- Perfis de prioridade: Equilibrado, Quality, Growth e Dividendos.
+- Assisted Rebalancer e Multi-Move Plan passam a usar estes objetivos em vez de thresholds fixos.
+- Destinos que excedem os limites recebem penalização progressiva; reduzir overlap pode ser imposto como objetivo explícito.
+- Nenhuma alteração é executada automaticamente; os objetivos são guardados apenas no dispositivo.
+- PWA cache: `vestra-cache-v49`.
+
 ## Vestra v5.3 — Multi-Move Rebalance Plan
 
 - Novo plano de rebalanceamento com até 3 movimentos coerentes a partir das posições mais frágeis.
