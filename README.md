@@ -1,3 +1,12 @@
+## Vestra v5.3 — Multi-Move Rebalance Plan
+
+- Novo plano de rebalanceamento com até 3 movimentos coerentes a partir das posições mais frágeis.
+- Cada movimento usa o Assisted Rebalancer v5.2 e evita repetir o mesmo destino.
+- O plano mostra capital total realocado e impacto agregado estimado na convicção ponderada e overlap indireto.
+- Prefere movimentos com melhoria de convicção e rejeita cenários com agravamento excessivo de overlap quando há alternativa.
+- Não altera a carteira nem considera impostos/spreads/comissões; continua a ser simulação de research.
+- PWA cache: `vestra-cache-v48`.
+
 ## Vestra v5.2 — Assisted Rebalancer
 
 - Novo simulador interativo em As minhas posições: escolhe a posição de origem e o montante a libertar.
