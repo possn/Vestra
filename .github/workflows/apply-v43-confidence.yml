@@ -1,0 +1,36 @@
+name: Apply Vestra v4.3 confidence engine
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_v43_confidence.py'
+      - 'scripts/confidence.py'
+      - '.github/workflows/apply-v43-confidence.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply and validate v4.3
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/apply_v43_confidence.py
+          rm -f scripts/apply_v43_confidence.py
+          python -m py_compile scripts/*.py
+          node --check market.js
+          node --check sw.js
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add -- scripts/confidence.py scripts/sec_enrich.py scripts/run.py scripts/thesis.py README.md sw.js
+          git add -u scripts/apply_v43_confidence.py
+          git commit -m "feat: Vestra v4.3 confidence engine"
+          git push origin HEAD:main
