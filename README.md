@@ -1,3 +1,10 @@
+## Vestra v4.7.1 — Portfolio Intelligence Access
+
+- “As minhas posições” deixa de ficar escondido em Mais ferramentas e passa a ter acesso direto visível na área Mercado.
+- O acesso abre a mesma inteligência v4.7: convicção, candidatos a reforço, posições a rever, concentração/overlap e alternativas.
+- Mantém-se o layout global; apenas se torna visível uma funcionalidade já existente.
+- PWA cache: `vestra-cache-v41`.
+
 ## Vestra v4.7 — Portfolio Intelligence
 
 - A área As minhas posições passa a incluir inteligência de carteira sem alterar a navegação global.
