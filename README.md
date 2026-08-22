@@ -1,3 +1,13 @@
+## Vestra v5.8 — Portfolio Risk Budget
+
+- Novo Risk Budget proxy na Portfolio Intelligence: fatores, moeda, região e sensibilidade provável a taxas.
+- Fatores suportados com os dados atuais: Growth, Value, Dividendos, Small caps e Sensível a taxas.
+- Portfolio Targets passam a incluir máximos configuráveis por fator, moeda e região.
+- Assisted Rebalancer e Fresh Capital Planner penalizam destinos que agravem concentrações acima desses orçamentos.
+- País/moeda usam dados explícitos quando disponíveis e fallback pelo ticker/mercado quando necessário; a interface identifica a leitura como proxy.
+- O Risk Budget mede construção/diversificação e não substitui VaR, volatilidade ou análise macro profissional.
+- PWA cache: `vestra-cache-v53`.
+
 ## Vestra v5.7 — Fresh Capital Planner
 
 - Novo simulador para alocar capital novo sem vender posições existentes.

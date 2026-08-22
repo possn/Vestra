@@ -819,7 +819,7 @@
   }
 
   const PORTFOLIO_TARGETS_KEY='vestra_portfolio_targets_v1';
-  function defaultPortfolioTargets(){ return {maxPosition:10,maxSector:25,overlap:'reduce',tilt:'balanced'}; }
+  function defaultPortfolioTargets(){ return {maxPosition:10,maxSector:25,maxFactor:45,maxCurrency:70,maxRegion:70,overlap:'reduce',tilt:'balanced'}; }
   function loadPortfolioTargets(){
     try{ const raw=JSON.parse(localStorage.getItem(PORTFOLIO_TARGETS_KEY)||'{}'); return {...defaultPortfolioTargets(),...raw}; }
     catch{return defaultPortfolioTargets();}
@@ -833,6 +833,72 @@
       return (y!=null?Math.min(8,Math.max(0,y*100))*0.7:0)+(q-50)*.035+(cf-50)*.035;
     }
     return 0;
+  }
+
+
+  function stockCurrency(stock){
+    const explicit=txt(stock?.currency||stock?.financial_currency||stock?.financialCurrency).toUpperCase();
+    if(explicit) return explicit;
+    const t=txt(stock?.ticker).toUpperCase();
+    if(t.endsWith('.L')) return 'GBP'; if(/\.(DE|PA|AS|MI|MC|LS)$/.test(t)) return 'EUR';
+    if(t.endsWith('.SW')) return 'CHF'; if(/\.(TO|V)$/.test(t)) return 'CAD'; if(t.endsWith('.T')) return 'JPY';
+    if(t.endsWith('.HK')) return 'HKD'; if(t.endsWith('.AX')) return 'AUD'; if(t.endsWith('.ST')) return 'SEK';
+    if(t.endsWith('.CO')) return 'DKK'; if(t.endsWith('.OL')) return 'NOK';
+    return t.includes('.')?'Outra':'USD';
+  }
+  function stockRegion(stock){
+    const c=txt(stock?.country||stock?.country_name||stock?.region).toLowerCase();
+    if(/united states|usa|canada|mexico/.test(c)) return 'Am. Norte';
+    if(/portugal|spain|france|germany|italy|netherlands|belgium|switzerland|austria|ireland|united kingdom|uk|sweden|norway|denmark|finland|poland/.test(c)) return 'Europa';
+    if(/china|hong kong|japan|korea|taiwan|india|singapore|indonesia|thailand|malaysia/.test(c)) return 'Ásia';
+    if(/australia|new zealand/.test(c)) return 'Pacífico';
+    const t=txt(stock?.ticker).toUpperCase();
+    if(/\.(L|DE|PA|AS|MI|MC|LS|SW|ST|CO|OL)$/.test(t)) return 'Europa';
+    if(/\.(T|HK)$/.test(t)) return 'Ásia'; if(t.endsWith('.AX')) return 'Pacífico'; if(/\.(TO|V)$/.test(t)||!t.includes('.')) return 'Am. Norte';
+    return 'Outra';
+  }
+  function stockRiskTags(stock){
+    const tags=[]; const growth=n(stock?.growth_pct), value=n(stock?.value_pct), y=n(stock?.dividend_yield), cap=n(stock?.market_cap??stock?.marketCap);
+    const model=txt(stock?.score_model).toLowerCase(), sec=txt(stock?.sector).toLowerCase(), ind=txt(stock?.industry).toLowerCase();
+    if(model==='growth'||growth>=65||((n(stock?.revenue_growth)||0)>.20)) tags.push('Growth');
+    if(value>=65) tags.push('Value');
+    if(y!=null&&y>=.025) tags.push('Dividendos');
+    if(cap!=null&&cap>0&&cap<2e9) tags.push('Small caps');
+    if(model==='reit'||/real estate|reit|utilities|utility/.test(sec+' '+ind)||model==='growth') tags.push('Sensível a taxas');
+    return [...new Set(tags)];
+  }
+  function riskMapAdd(map,key,value){ if(!key||!Number.isFinite(value)) return; map.set(key,(map.get(key)||0)+value); }
+  function portfolioRiskProfile(rows,totalOverride){
+    const total=totalOverride||rows.reduce((a,r)=>a+(n(r.value)||0),0)||1;
+    const factors=new Map(), currencies=new Map(), regions=new Map();
+    for(const r of rows){
+      const v=n(r.value)||0; if(v<=0) continue;
+      stockRiskTags(r.stock).forEach(tag=>riskMapAdd(factors,tag,v));
+      riskMapAdd(currencies,stockCurrency(r.stock),v); riskMapAdd(regions,stockRegion(r.stock),v);
+    }
+    const pctRows=m=>[...m.entries()].map(([name,value])=>({name,value,pct:value/total*100})).sort((a,b)=>b.pct-a.pct);
+    return {total,factors:pctRows(factors),currencies:pctRows(currencies),regions:pctRows(regions)};
+  }
+  function riskBudgetPenalty(stock,rows,amount,totalAfter,sourceStock=null){
+    const targets=loadPortfolioTargets(); const maxFactor=n(targets.maxFactor)||45, maxCurrency=n(targets.maxCurrency)||70, maxRegion=n(targets.maxRegion)||70;
+    const prof=portfolioRiskProfile(rows,totalAfter); const a=Math.max(0,n(amount)||0), delta=a/(totalAfter||1)*100;
+    let penalty=0; const factors=stockRiskTags(stock), srcFactors=sourceStock?stockRiskTags(sourceStock):[];
+    for(const tag of factors){ const now=prof.factors.find(x=>x.name===tag)?.pct||0; const after=now+delta-(srcFactors.includes(tag)?delta:0); if(after>maxFactor) penalty+=(after-maxFactor)*.65; }
+    const cur=stockCurrency(stock), srcCur=sourceStock?stockCurrency(sourceStock):null, curNow=prof.currencies.find(x=>x.name===cur)?.pct||0;
+    const curAfter=curNow+delta-(srcCur===cur?delta:0); if(curAfter>maxCurrency) penalty+=(curAfter-maxCurrency)*.55;
+    const reg=stockRegion(stock), srcReg=sourceStock?stockRegion(sourceStock):null, regNow=prof.regions.find(x=>x.name===reg)?.pct||0;
+    const regAfter=regNow+delta-(srcReg===reg?delta:0); if(regAfter>maxRegion) penalty+=(regAfter-maxRegion)*.45;
+    return penalty;
+  }
+  function renderRiskBudget(rows){
+    const profile=portfolioRiskProfile(rows), t=loadPortfolioTargets();
+    const maxFactor=n(t.maxFactor)||45, maxCurrency=n(t.maxCurrency)||70, maxRegion=n(t.maxRegion)||70;
+    const breaches=[...profile.factors.filter(x=>x.pct>maxFactor).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxFactor}%`),...profile.currencies.filter(x=>x.pct>maxCurrency).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxCurrency}%`),...profile.regions.filter(x=>x.pct>maxRegion).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxRegion}%`)];
+    const excess=profile.factors.reduce((a,x)=>a+Math.max(0,x.pct-maxFactor),0)+profile.currencies.reduce((a,x)=>a+Math.max(0,x.pct-maxCurrency),0)+profile.regions.reduce((a,x)=>a+Math.max(0,x.pct-maxRegion),0);
+    const fit=Math.max(0,Math.min(100,Math.round(100-excess*1.4))), tone=fit>=85?'is-positive':fit>=65?'is-warn':'is-risk';
+    const chips=(items,limit)=>items.slice(0,limit).map(x=>`<span><strong>${esc(x.name)}</strong>${x.pct.toFixed(0)}%</span>`).join('');
+    const html=`<div class=\"market-detail-card market-risk-budget\"><div class=\"market-perspective-head\"><div><small>PORTFOLIO RISK BUDGET · PROXY</small><h4>Diversificação real</h4></div><span class=\"market-target-fit-score ${tone}\">${fit}/100</span></div><p class=\"market-case-note\">Exposição ponderada por fatores, moeda e região. É um proxy baseado nos dados disponíveis; não é um modelo quantitativo de risco/volatilidade.</p><div class=\"market-risk-group\"><small>Fatores</small><div>${chips(profile.factors,5)||'<span>Sem classificação suficiente</span>'}</div></div><div class=\"market-risk-group\"><small>Moedas</small><div>${chips(profile.currencies,4)}</div></div><div class=\"market-risk-group\"><small>Regiões</small><div>${chips(profile.regions,4)}</div></div>${breaches.length?`<ul class=\"market-case-list\">${breaches.slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class=\"market-case-note\">Sem excesso material face aos orçamentos definidos.</p>'}</div>`;
+    return {fit,html,profile};
   }
 
   const PORTFOLIO_HEALTH_KEY='vestra_portfolio_health_v1';
@@ -969,10 +1035,12 @@
     targetSectorBreaches.slice(0,2).forEach(x=>targetIssues.push(`${x.sector} ${x.pct.toFixed(1)}% > objetivo ${targets.maxSector}%`));
     if(targetOverlapBreaches.length) targetIssues.push(`${targetOverlapBreaches.length} posições com overlap indireto ≥2%`);
     const targetFitHtml=`<div class="market-detail-card market-target-fit"><div class="market-perspective-head"><div><small>TARGET FIT</small><h4>Aderência aos objetivos</h4></div><span class="market-target-fit-score ${targetTone}">${targetFit}/100</span></div><div class="market-action-context"><span>${targetPositionBreaches.length} posições acima</span><span>${targetSectorBreaches.length} setores acima</span><span>${targetOverlapBreaches.length} overlap</span></div>${targetIssues.length?`<ul class="market-case-list">${targetIssues.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="market-case-note">A parte analisável da carteira está dentro dos objetivos definidos.</p>'}</div>`;
-    const healthSnapshot={targetFit,conviction:portfolioConvictionNow,topPosition:topPosPct,topSector:sectorRows[0]?.pct||0,overlapCount:ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length,riskPositions:(actionCounts.review||0)+(actionCounts.replace||0)};
+    const riskBudget=renderRiskBudget(ranked);
+    const riskBudgetHtml=riskBudget.html;
+    const healthSnapshot={targetFit,conviction:portfolioConvictionNow,topPosition:topPosPct,topSector:sectorRows[0]?.pct||0,overlapCount:ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length,riskPositions:(actionCounts.review||0)+(actionCounts.replace||0),riskFit:riskBudget.fit};
     const healthHistory=savePortfolioHealthSnapshot(healthSnapshot);
     const healthTimelineHtml=renderPortfolioHealthTimeline(healthHistory);
-    const targetHtml=`<div class="market-detail-card market-target-engine" data-target-engine><div class="market-perspective-head"><div><small>PORTFOLIO TARGETS</small><h4>Objetivos da carteira</h4></div><span class="market-data-age">guardado localmente</span></div><p class="market-case-note">Estes objetivos passam a orientar o Rebalancer e o plano multi-movimento. Não alteram a carteira por si só.</p><div class="market-target-grid"><label><span>Máx. por posição</span><div><input data-target-position type="number" min="3" max="30" step="1" value="${targets.maxPosition}"><em>%</em></div></label><label><span>Máx. por setor</span><div><input data-target-sector type="number" min="10" max="60" step="1" value="${targets.maxSector}"><em>%</em></div></label><label><span>Overlap ETF</span><select data-target-overlap><option value="reduce" ${targets.overlap==='reduce'?'selected':''}>Reduzir</option><option value="neutral" ${targets.overlap==='neutral'?'selected':''}>Neutro</option></select></label><label><span>Prioridade</span><select data-target-tilt><option value="balanced" ${targets.tilt==='balanced'?'selected':''}>Equilibrado</option><option value="quality" ${targets.tilt==='quality'?'selected':''}>Quality</option><option value="growth" ${targets.tilt==='growth'?'selected':''}>Growth</option><option value="dividend" ${targets.tilt==='dividend'?'selected':''}>Dividendos</option></select></label></div><button type="button" class="market-plan-run" data-target-save>Guardar objetivos</button><span class="market-target-status" data-target-status></span></div>`;
+    const targetHtml=`<div class="market-detail-card market-target-engine" data-target-engine><div class="market-perspective-head"><div><small>PORTFOLIO TARGETS</small><h4>Objetivos da carteira</h4></div><span class="market-data-age">guardado localmente</span></div><p class="market-case-note">Estes objetivos passam a orientar o Rebalancer e o plano multi-movimento. Não alteram a carteira por si só.</p><div class="market-target-grid"><label><span>Máx. por posição</span><div><input data-target-position type="number" min="3" max="30" step="1" value="${targets.maxPosition}"><em>%</em></div></label><label><span>Máx. por setor</span><div><input data-target-sector type="number" min="10" max="60" step="1" value="${targets.maxSector}"><em>%</em></div></label><label><span>Máx. fator</span><div><input data-target-factor type="number" min="20" max="80" step="5" value="${targets.maxFactor}"><em>%</em></div></label><label><span>Máx. moeda</span><div><input data-target-currency type="number" min="30" max="100" step="5" value="${targets.maxCurrency}"><em>%</em></div></label><label><span>Máx. região</span><div><input data-target-region type="number" min="30" max="100" step="5" value="${targets.maxRegion}"><em>%</em></div></label><label><span>Overlap ETF</span><select data-target-overlap><option value="reduce" ${targets.overlap==='reduce'?'selected':''}>Reduzir</option><option value="neutral" ${targets.overlap==='neutral'?'selected':''}>Neutro</option></select></label><label><span>Prioridade</span><select data-target-tilt><option value="balanced" ${targets.tilt==='balanced'?'selected':''}>Equilibrado</option><option value="quality" ${targets.tilt==='quality'?'selected':''}>Quality</option><option value="growth" ${targets.tilt==='growth'?'selected':''}>Growth</option><option value="dividend" ${targets.tilt==='dividend'?'selected':''}>Dividendos</option></select></label></div><button type="button" class="market-plan-run" data-target-save>Guardar objetivos</button><span class="market-target-status" data-target-status></span></div>`;
     const freshCapitalHtml=`<div class="market-detail-card market-fresh-capital" data-fresh-capital-card><div class="market-perspective-head"><div><small>FRESH CAPITAL PLANNER</small><h4>Entrou capital novo. Onde reforçar?</h4></div><span class="market-data-age">sem vendas</span></div><p class="market-case-note">Distribui novo capital por até 3 destinos elegíveis, respeitando os Portfolio Targets e sem vender posições existentes.</p><div class="market-fresh-controls"><label><span>Novo capital</span><div><input data-fresh-amount type="number" min="50" step="50" value="1000"><em>€</em></div></label><button type="button" data-fresh-run>Distribuir</button></div><div data-fresh-results><p class="market-case-note">A simulação privilegia convicção, margem de segurança, espaço dentro dos limites e a prioridade da carteira.</p></div></div>`;
     const planHtml=`<div class="market-detail-card market-rebalance-plan" data-rebalance-plan-card><div class="market-perspective-head"><div><small>MULTI-MOVE PLAN · TARGET AWARE</small><h4>Plano de rebalanceamento</h4></div><span class="market-data-age">até 3 movimentos</span></div><p class="market-case-note">Gera um plano a partir das posições mais frágeis e respeita os objetivos guardados acima.</p><button type="button" class="market-plan-run" data-rebalance-plan>Gerar plano</button><div data-rebalance-plan-results><p class="market-case-note">Nenhuma alteração é aplicada à carteira.</p></div></div>`;
     const concentratedCount=ranked.filter(r=>r.portfolioFit?.fit==='concentrated').length;
@@ -988,6 +1056,7 @@
       ${scenarioHtml}
       ${targetFitHtml}
       ${healthTimelineHtml}
+      ${riskBudgetHtml}
       ${targetHtml}
       ${freshCapitalHtml}
       ${rebalancerHtml}
@@ -1075,7 +1144,8 @@
       const diversityBonus=(destSector!==srcSector && (sectors.get(destSector)||0)/analysed*100<Math.min(20,maxSector*.75))?3:0;
       const valuationBonus=txt(stock.valuation_signal)==='undervalued'?3:0;
       const tiltBonus=portfolioTiltBonus(stock,targets.tilt);
-      const fitScore=conv-penalty+diversityBonus+valuationBonus+tiltBonus;
+      const riskPenalty=riskBudgetPenalty(stock,rows,move,analysed,src.stock);
+      const fitScore=conv-penalty-riskPenalty+diversityBonus+valuationBonus+tiltBonus;
       return {stock,conv,convDelta,fitScore,positionPct,sectorPct,indirect,overlapDelta:indirect-srcIndirect,existing:!!existing,targets};
     }).filter(Boolean).sort((a,b)=>b.fitScore-a.fitScore).slice(0,5);
     return {source:src.stock,amount:move,sourceConv:srcConv,results:ranked};
@@ -1114,6 +1184,7 @@
       const sectorNow=sectorValue/analysed*100; if(sectorNow<maxSector*.55) score+=3; else if(sectorNow>maxSector*.85) score-=3;
       if(existing&&existingValue/analysed*100<maxPos*.65) score+=2;
       if(targets.overlap==='reduce'&&indirect>1.5) score-=(indirect-1.5)*2.5;
+      score-=riskBudgetPenalty(stock,rows,Math.min(capacity,fresh),afterTotal);
       return {stock,conv,score,capacity,existingValue,sector,sectorValue,indirect};
     }).filter(Boolean).sort((a,b)=>b.score-a.score);
     const allocations=[], used=new Set(); let remaining=fresh; const shares=[.5,.3,.2];
@@ -1235,7 +1306,7 @@
     const saveTargets=e.target.closest('[data-target-save]');
     if(saveTargets){
       const card=saveTargets.closest('[data-target-engine]');
-      const targets={maxPosition:Math.max(3,Math.min(30,n(card?.querySelector('[data-target-position]')?.value)||10)),maxSector:Math.max(10,Math.min(60,n(card?.querySelector('[data-target-sector]')?.value)||25)),overlap:card?.querySelector('[data-target-overlap]')?.value||'reduce',tilt:card?.querySelector('[data-target-tilt]')?.value||'balanced'};
+      const targets={maxPosition:Math.max(3,Math.min(30,n(card?.querySelector('[data-target-position]')?.value)||10)),maxSector:Math.max(10,Math.min(60,n(card?.querySelector('[data-target-sector]')?.value)||25)),maxFactor:Math.max(20,Math.min(80,n(card?.querySelector('[data-target-factor]')?.value)||45)),maxCurrency:Math.max(30,Math.min(100,n(card?.querySelector('[data-target-currency]')?.value)||70)),maxRegion:Math.max(30,Math.min(100,n(card?.querySelector('[data-target-region]')?.value)||70)),overlap:card?.querySelector('[data-target-overlap]')?.value||'reduce',tilt:card?.querySelector('[data-target-tilt]')?.value||'balanced'};
       savePortfolioTargets(targets);
       const status=card?.querySelector('[data-target-status]'); if(status) status.textContent='Guardado · a recalcular';
       setTimeout(()=>openTool('portfolio'),120);
