@@ -3689,7 +3689,7 @@ function renderDivSummaryKPIs() {
   el.innerHTML = `
     <!-- HERO: dividendos TTM -->
     <div class="card" style="margin-top:0;padding:0;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:16px 16px 14px;color:#fff">
+      <div style="background:linear-gradient(135deg,#173845 0%,#1D6664 62%,#9C8054 130%);padding:16px 16px 14px;color:#fff">
         <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;opacity:.75;margin-bottom:8px">
           Rendimento de dividendos · TTM${sourceBadge}
         </div>
@@ -3764,7 +3764,7 @@ function renderDivSummaryKPIs() {
               return `<tr style="${rowStyle}">
                 <td style="padding:9px 16px;font-weight:800">
                   ${s.year}
-                  ${isCurrentYear ? '<span style="font-size:9px;background:#ede9fe;color:#6d28d9;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px">YTD</span>' : ''}
+                  ${isCurrentYear ? '<span style="font-size:9px;background:#d7e8e4;color:#176c67;padding:1px 5px;border-radius:999px;font-weight:700;margin-left:4px">YTD</span>' : ''}
                 </td>
                 <td style="padding:9px 8px;text-align:right;font-weight:700">${fmtEUR2(s.gross)}</td>
                 <td style="padding:9px 8px;text-align:right;color:var(--red)">-${fmtEUR2(s.wh)}</td>
@@ -12500,7 +12500,35 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker) {
   return { ok:true };
 }
 
+let quoteRefreshPromise = null;
 async function refreshLiveQuotes(options = {}) {
+  // One refresh at a time. Re-entering the app while a pass is already running
+  // must reuse the same promise instead of starting hundreds of duplicate calls.
+  if (quoteRefreshPromise) return quoteRefreshPromise;
+  const manual = options && options.manual === true;
+  quoteRefreshPromise = refreshLiveQuotesCore(options)
+    .catch(err => {
+      console.error('[Quotes] refresh failed', err);
+      if (manual) toast(`⚠️ Falha ao atualizar cotações: ${err && err.message ? err.message : 'erro de rede'}`, 4200);
+      throw err;
+    })
+    .finally(() => {
+      quoteRefreshPromise = null;
+      const btn = document.getElementById('btnRefreshQuotes');
+      const quickBtn = document.getElementById('btnRefreshQuotesQuick');
+      const syncCard = document.getElementById('quoteSyncCard');
+      const progress = document.getElementById('quoteRefreshProgress');
+      if (btn) { btn.disabled = false; btn.textContent = '⟳ Cotações'; }
+      if (quickBtn) { quickBtn.disabled = false; quickBtn.textContent = 'Atualizar'; }
+      if (syncCard) syncCard.classList.remove('is-updating');
+      if (progress) { progress.style.opacity = '0'; progress.style.display = 'none'; }
+      try { renderQuoteSyncStatus(); } catch (_) {}
+    });
+  return quoteRefreshPromise;
+}
+
+async function refreshLiveQuotesCore(options = {}) {
+  const refreshStartedAt = performance.now();
   // v3.3: never resolve quotes from stale legacy names/tickers.
   try { repairBrokerIdentitiesFromHistory(); } catch (_) {}
 
@@ -12563,7 +12591,7 @@ async function refreshLiveQuotes(options = {}) {
     const el = document.getElementById("quoteRefreshProgress");
     if (el) { el.style.opacity = "0"; setTimeout(() => { if (el) el.style.display = "none"; }, 300); }
   };
-  _showRefreshProgress("⟳ A actualizar cotações…");
+  if (manual) _showRefreshProgress("⟳ A atualizar cotações…");
 
   // Convert local / broker tickers into Yahoo candidates.
   // Several imports keep a stale ISIN→Yahoo guess; try that first, then sensible fallbacks.
@@ -12930,21 +12958,41 @@ function isQuoteCandidateAcceptable(asset, candidate) {
 }
 
 
-async function fetchQuoteWithFallback(ref) {
-  let lastErr = null;
-  for (const candidate of ref.candidates) {
-    try {
-      const q = await fetchQuote(candidate, workerUrl);
-      if (!isQuoteCandidateAcceptable(ref.asset, candidate)) {
-        lastErr = new Error(`Candidato incompatível com a identidade do activo: ${candidate}`);
-        continue;
-      }
-      return { yahoo: candidate, quote: q };
-    } catch (e) {
-      lastErr = e;
-    }
+async function fetchQuoteBatch(tickers) {
+  const unique = [...new Set((tickers || []).filter(Boolean))];
+  if (!unique.length) return {};
+  const url = `${workerUrl.replace(/\/$/, "")}/quotes?tickers=${encodeURIComponent(unique.join(","))}`;
+  let resp;
+  try {
+    resp = await fetch(url, { signal: AbortSignal.timeout(18000) });
+  } catch (e) {
+    throw new Error(`Worker inacessível: ${e.message || "timeout"}`);
   }
-  throw lastErr || new Error("Não foi possível obter uma cotação válida");
+  let data = null;
+  try { data = await resp.json(); } catch (_) {}
+  if (!resp.ok) throw new Error(`Worker HTTP ${resp.status}${data && data.error ? `: ${data.error}` : ""}`);
+  return data || {};
+}
+
+async function fetchQuoteBatches(tickers, concurrency = 6) {
+  const unique = [...new Set((tickers || []).filter(Boolean))];
+  const chunks = [];
+  for (let i = 0; i < unique.length; i += 20) chunks.push(unique.slice(i, i + 20));
+  const out = {};
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(concurrency, chunks.length) }, async () => {
+    while (cursor < chunks.length) {
+      const idx = cursor++;
+      const chunk = chunks[idx];
+      try {
+        Object.assign(out, await fetchQuoteBatch(chunk));
+      } catch (e) {
+        chunk.forEach(t => { out[t] = { ticker:t, error:e.message || "Erro" }; });
+      }
+    }
+  });
+  await Promise.all(workers);
+  return out;
 }
 
   const rawTickerRefs = candidates.map(asset => {
@@ -12954,32 +13002,49 @@ async function fetchQuoteWithFallback(ref) {
   const noCandidateRefs = rawTickerRefs.filter(x => !(x.candidates && x.candidates.length));
   const tickerList = rawTickerRefs.filter(x => x.candidates && x.candidates.length);
   noCandidateRefs.forEach(ref => {
-    // Silently skip assets in SKIP_TICKERS — not a user-facing error
     const rawUp = String(ref.raw || "").toUpperCase().trim();
     const baseUp = canonicalBrokerTickerBase(rawUp);
     if (SKIP_TICKERS.has(rawUp) || SKIP_TICKERS.has(baseUp)) return;
     failed++;
     errors.push({
-      raw: ref.raw,
-      yahoo: "",
-      assetName: ref.asset.name || ref.raw || "Ativo",
-      reason: "Sem ticker Yahoo reconhecível para este activo"
+      raw: ref.raw, yahoo: "", assetName: ref.asset.name || ref.raw || "Ativo",
+      reason: "Sem ticker Yahoo reconhecível para este ativo"
     });
   });
 
-  // Fire all quote requests in parallel - Cloudflare handles the load
-  const quoteResults = await Promise.allSettled(
-    tickerList.map(x => fetchQuoteWithFallback(x))
-  );
+  // v3.5: real batch refresh. Resolve one candidate round at a time using /quotes
+  // (20 symbols/request) and only advance to exchange fallbacks for unresolved assets.
+  // This replaces ~500 individual Worker requests with a few dozen batched calls.
   const quoteMap = {};
   const quoteErrMap = {};
-  quoteResults.forEach((r, i) => {
-    if (r.status === "fulfilled" && r.value && r.value.quote) {
-      quoteMap[i] = r.value;
-    } else {
-      quoteErrMap[i] = (r && r.reason && r.reason.message) ? r.reason.message : "Erro ao obter cotação";
+  const unresolved = new Set(tickerList.map((_, i) => i));
+  const maxRounds = Math.min(3, Math.max(0, ...tickerList.map(x => (x.candidates || []).length)));
+  for (let round = 0; round < maxRounds && unresolved.size; round++) {
+    const tickerForIndex = new Map();
+    const roundTickers = [];
+    for (const idx of [...unresolved]) {
+      const ref = tickerList[idx];
+      const candidate = (ref.candidates || [])[round];
+      if (!candidate) continue;
+      if (!isQuoteCandidateAcceptable(ref.asset, candidate)) {
+        quoteErrMap[idx] = `Candidato incompatível com a identidade do ativo: ${candidate}`;
+        continue;
+      }
+      tickerForIndex.set(idx, candidate);
+      roundTickers.push(candidate);
     }
-  });
+    if (!roundTickers.length) continue;
+    const batch = await fetchQuoteBatches(roundTickers, 6);
+    for (const [idx, candidate] of tickerForIndex.entries()) {
+      const q = batch[candidate];
+      if (q && !q.error && Number.isFinite(Number(q.price)) && Number(q.price) > 0) {
+        quoteMap[idx] = { yahoo:candidate, quote:q };
+        unresolved.delete(idx);
+      } else {
+        quoteErrMap[idx] = (q && q.error) || `Sem dados para ${candidate}`;
+      }
+    }
+  }
 
   // Collect currencies needing FX (crypto always USD, others from quote)
   const ccysNeeded = new Set();
@@ -13165,7 +13230,7 @@ async function fetchQuoteWithFallback(ref) {
     }
   } catch (_) {}
 
-  state.settings.lastQuoteRefresh = { updated, failed, errors, ts: new Date().toISOString() };
+  state.settings.lastQuoteRefresh = { updated, failed, errors, ts: new Date().toISOString(), durationMs: Math.round(performance.now() - refreshStartedAt) };
   // Hide progress indicator
   try { _hideRefreshProgress(); } catch (_) {}
   // Record staleness timestamp for auto-refresh logic
@@ -13433,8 +13498,13 @@ function renderQuoteSyncStatus() {
   card.classList.toggle("is-error", !!(report && report.failed > 0));
   status.textContent = workerUrl ? formatQuoteRefreshAge(lastTs) : "Worker por configurar";
   if (!workerUrl) meta.textContent = "Configura em Mais → Preferências";
-  else if (report && report.failed > 0) meta.textContent = `${report.updated || 0} atualizadas · ${report.failed} com erro`;
-  else meta.textContent = auto ? "Automático · atualiza se >30 min" : "Automático desativado";
+  else if (report && report.failed > 0) {
+    const secs = report.durationMs ? ` · ${Math.max(1, Math.round(report.durationMs/1000))} s` : "";
+    meta.textContent = `${report.updated || 0} atualizadas · ${report.failed} com erro${secs}`;
+  } else if (report && report.updated > 0) {
+    const secs = report.durationMs ? ` · ${Math.max(1, Math.round(report.durationMs/1000))} s` : "";
+    meta.textContent = `${report.updated} atualizadas${secs} · automático`;
+  } else meta.textContent = auto ? "Automático · atualiza se >30 min" : "Automático desativado";
 }
 
 function updateQuoteButtonStaleness() {
@@ -13578,7 +13648,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try { checkAndNotifyMaturities(); } catch (e) { console.error("Falha nas notificações de vencimento", e); }
     // Auto-refresh quotes if stale (>30min since last update or never updated today)
     try { autoRefreshQuotesIfStale(); } catch (e) { console.error("Falha no auto-refresh de cotações", e); }
-  }, 600);
+  }, 150);
   window.openDividendBaseModal = openDividendBaseModal;
   window.setDividendYieldDisplayMode = setDividendYieldDisplayMode;
   window.applyPreferredDividendYieldToProjection = applyPreferredDividendYieldToProjection;
@@ -13595,7 +13665,7 @@ document.addEventListener("visibilitychange", () => {
     saveStateAsync();
   } else if (document.visibilityState === "visible") {
     try { renderQuoteSyncStatus(); } catch (_) {}
-    setTimeout(() => { try { autoRefreshQuotesIfStale(); } catch (_) {} }, 250);
+    setTimeout(() => { try { autoRefreshQuotesIfStale(); } catch (_) {} }, 100);
   }
 });
 window.addEventListener("pagehide", () => saveStateAsync());

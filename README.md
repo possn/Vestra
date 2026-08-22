@@ -1,3 +1,15 @@
+## Vestra v3.5 — Fast Quote Sync
+
+- Layout visual congelado; sem alterações estruturais de UI.
+- Atualização automática de cotações convertida para batches (`/quotes`, 20 símbolos por pedido) em vez de centenas de requests individuais.
+- Resolução por rondas: só tenta bolsa/ticker alternativo nos ativos que falham na ronda anterior.
+- Refresh concorrente protegido: regressar à app durante uma atualização reutiliza a mesma operação.
+- Estado `A atualizar` é sempre limpo em `finally`, mesmo perante erro de rede/JavaScript.
+- Auto-refresh começa durante o splash e continua a respeitar a janela de 30 minutos.
+- A duração da última atualização fica registada no painel de Preferências.
+- Hero de Dividendos alinhado com a paleta Vestra teal/navy/dourado; removido o roxo isolado.
+- PWA cache: `vestra-cache-v28`.
+
 ## Vestra v3.4 — Search Assist & Portfolio Dossiers
 
 - Autocomplete instantâneo no Mercado, com ticker, nome e tipo antes de carregar Enter.
