@@ -318,3 +318,79 @@ html.modal-open,body.modal-open{
   .market-suggestion__type{display:none}
   #marketSheetContent .market-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
+
+
+/* v3.7 — single-scroll dossier hardening for iOS Safari. Layout frozen. */
+html.modal-open,body.modal-open{
+  overflow:hidden!important;
+  width:100%!important;
+  max-width:100%!important;
+  overscroll-behavior:none!important;
+}
+#marketSheet.market-sheet{
+  position:fixed!important;
+  inset:0!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  overflow-x:clip!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  overscroll-behavior-x:none!important;
+  overscroll-behavior-y:contain!important;
+  contain:none!important;
+  display:block!important;
+}
+#marketSheet[hidden]{display:none!important}
+#marketSheet>.market-sheet__panel{
+  position:relative!important;
+  inset:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:100dvh!important;
+  max-height:none!important;
+  margin:0!important;
+  overflow:visible!important;
+  contain:none!important;
+  box-sizing:border-box!important;
+  padding:max(10px,env(safe-area-inset-top,0px)) 14px max(96px,calc(76px + env(safe-area-inset-bottom,0px)))!important;
+}
+#marketSheetContent{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow-x:hidden!important;
+  overflow-y:visible!important;
+  contain:none!important;
+  box-sizing:border-box!important;
+}
+#marketSheetContent,
+#marketSheetContent *{
+  box-sizing:border-box;
+  max-width:100%;
+}
+#marketSheetContent .market-metrics,
+#marketSheetContent .market-case-grid,
+#marketSheetContent .market-tabs{
+  min-width:0!important;
+  max-width:100%!important;
+}
+.market-close-persistent{
+  position:fixed!important;
+  top:max(calc(env(safe-area-inset-top) + 10px),14px)!important;
+  right:max(calc(env(safe-area-inset-right) + 14px),14px)!important;
+  z-index:9999!important;
+  transform:none!important;
+  margin:0!important;
+}
+#marketSheetContent .market-detail-head{
+  padding-right:58px!important;
+}
+@supports not (height:100dvh){
+  #marketSheet.market-sheet{height:100vh!important;max-height:100vh!important}
+  #marketSheet>.market-sheet__panel{min-height:100vh!important}
+}

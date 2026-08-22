@@ -1,4 +1,23 @@
-## Vestra v3.6 — 52-week lows — Fast Quote Sync
+## Vestra v3.9 — Earnings Quality & Capital Allocation
+
+- Layout visual permanece congelado.
+- Score geral v3 separa **Execução**, **Qualidade dos lucros** e **Alocação de capital**.
+- Qualidade dos lucros usa conversão de lucro em cash flow operacional, accrual ratio e margem de FCF.
+- Alocação de capital usa diluição, buybacks efetivamente reportados, ROCE proxy e cobertura de dividendos por FCF.
+- Ausência de quatro trimestres comparáveis mantém a métrica ausente; nunca é convertida em zero.
+- Dossier → Financeiro passa a explicar e mostrar estes diagnósticos.
+- PWA cache: `vestra-cache-v32`.
+
+## Vestra v3.8 — Source Fusion / Score v2
+
+- Layout congelado: esta versão altera apenas dados/análise.
+- Score geral passa a incluir **Execução / alocação de capital**: aceleração de receita, evolução de margem, diluição e ROCE proxy.
+- Cobertura de dados inclui estas métricas adicionais; ausência continua a ser `null`, nunca zero.
+- Suporte opcional a **SEC EDGAR Company Facts** no pipeline para ações US. Para ativar, definir o secret/env `SEC_USER_AGENT` com identificação adequada; não requer API key. O enriquecimento só preenche buracos deixados pelo Yahoo.
+- Dossier Financeiro passa a mostrar cobertura, confiança, modelo e fontes efetivamente usadas.
+- Arquitetura preparada para mais providers sem tornar qualquer um deles fonte única.
+
+## Vestra v3.7 — 52-week lows — Fast Quote Sync
 
 - Layout visual congelado; sem alterações estruturais de UI.
 - Atualização automática de cotações convertida para batches (`/quotes`, 20 símbolos por pedido) em vez de centenas de requests individuais.
@@ -232,8 +251,15 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - PWA cache: `vestra-cache-v24`.
 
 
-### v3.6 — Mínimos 52s
+### v3.7 — Mínimos 52s
 - Novo modo **Mínimos 52s** no Mercado.
 - Calcula o mínimo dos últimos 12 meses a partir do histórico local de cada empresa.
 - Mostra empresas até 5% acima do mínimo, ordenadas pela proximidade.
 - Cada resultado indica distância ao mínimo e o valor do mínimo de 52 semanas.
+
+
+### v3.7 — Dossier single-scroll repair
+- Dossier passa a ter um único scroll vertical no modal.
+- Remove scroll aninhado do painel interno no Safari iOS.
+- Botão fechar movido para fora do painel e fixo ao viewport.
+- Bloqueio explícito de overflow horizontal.

@@ -484,21 +484,27 @@ def fetch_one(ticker: str) -> RawMetrics:
             except Exception as e:
                 log.debug("%s: financials unavailable (%s)", ticker, e)
 
-            # Capital efficiency proxy: EBIT / (Total Assets - Current Liabilities).
-            # This is labelled ROCE proxy in the UI because statement taxonomy and
-            # capital definitions vary across issuers. It is never used for banks/REITs.
+            # Balance-sheet anchors and capital-efficiency proxy. Keeping total
+            # assets/equity for every company lets the scoring layer calculate
+            # accrual quality without fabricating missing accounting data.
             try:
                 bs = t.balance_sheet
-                if bs is not None and not bs.empty and m.ebit is not None:
+                if bs is not None and not bs.empty:
                     total_assets = _row_value(bs, ("Total Assets",))
-                    current_liab = _row_value(bs, ("Current Liabilities", "Total Current Liabilities"))
-                    capital_employed = None
-                    if total_assets is not None and current_liab is not None:
-                        capital_employed = total_assets - current_liab
-                    if capital_employed not in (None, 0) and capital_employed > 0:
-                        m.roce_proxy = m.ebit / capital_employed
+                    equity = _row_value(bs, ("Stockholders Equity", "Total Stockholder Equity", "Common Stock Equity", "Total Equity Gross Minority Interest"))
+                    if m.total_assets is None:
+                        m.total_assets = total_assets
+                    if m.stockholders_equity is None:
+                        m.stockholders_equity = equity
+                    if m.ebit is not None:
+                        current_liab = _row_value(bs, ("Current Liabilities", "Total Current Liabilities"))
+                        capital_employed = None
+                        if total_assets is not None and current_liab is not None:
+                            capital_employed = total_assets - current_liab
+                        if capital_employed not in (None, 0) and capital_employed > 0:
+                            m.roce_proxy = m.ebit / capital_employed
             except Exception as e:
-                log.debug("%s: ROCE proxy unavailable (%s)", ticker, e)
+                log.debug("%s: balance-sheet anchors/ROCE proxy unavailable (%s)", ticker, e)
 
             # Annual quality context for Winston-style "current / 1Y / 3Y" cards.
             # These are statement-derived historical observations, not estimates.
