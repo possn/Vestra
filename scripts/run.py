@@ -24,6 +24,7 @@ from sec_enrich import enrich as enrich_sec
 from esef_enrich import enrich as enrich_esef
 from capital_risk import enrich as enrich_capital_risk
 from confidence import assess as assess_confidence
+from valuation import assess as assess_valuation
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
@@ -300,6 +301,7 @@ def main():
             row["net_margin_yoy_change_prior_pp"] = rm.net_margin_yoy_change_prior_pp
             row["repurchases_last_quarter"] = rm.repurchases_last_quarter
         row.update(assess_confidence(row))
+        row.update(assess_valuation(row))
         row.update(classify_thesis(row))
         prev_date, prev_snapshot = thesis_history_mod.previous(thesis_history, s.ticker, today)
         d7_date, d7_snapshot = thesis_history_mod.nearest_days_ago(thesis_history, s.ticker, today, 7)
@@ -435,7 +437,7 @@ def main():
         })
 
     payload = {
-        "schema_version": 513,
+        "schema_version": 514,
         "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
         "data_quality": {
             "portfolio_extra_requested": len(portfolio_extra),

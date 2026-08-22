@@ -112,6 +112,7 @@ class ScoredTicker:
     sector_gross_margin_median: float | None = None
     sector_roce_proxy_median: float | None = None
     sector_dividend_yield_median: float | None = None
+    sector_fcf_yield_median: float | None = None
     score_model: str = "general"
     score_model_note: str | None = None
     score_dimensions: dict[str, float | None] | None = None
@@ -221,6 +222,17 @@ def _score_model_for(r: RawMetrics) -> str:
             return "bank"
         if any(k in industry for k in ("insurance", "insur")):
             return "insurance"
+    if "utilit" in sector:
+        return "utility"
+    if "energy" in sector:
+        return "energy"
+    if "healthcare" in sector and any(k in industry for k in ("biotech", "biotechnology", "drug", "pharma")):
+        return "biotech"
+    if "technology" in sector and (
+        (r.revenue_growth is not None and r.revenue_growth >= 0.15)
+        or any(k in industry for k in ("software", "semiconductor", "internet", "cloud", "cyber"))
+    ):
+        return "growth_tech"
     return "general"
 
 
@@ -424,6 +436,96 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             quality, balance, value = _avg([ins_quality, ins_underwriting]), ins_capital, ins_value
             score_dimensions = {"Insurance Quality": ins_quality, "Underwriting Proxy": ins_underwriting, "Capital Proxy": ins_capital, "Growth": growth, "Valuation": ins_value, "Income": ins_income_quality, "Stability": stability}
             model_note = "Insurance-native proxy model: profitability, claims/cost-load proxies, accounting capitalisation, growth, P/B-P/E valuation and income. It does not fabricate statutory combined ratio or solvency capital."
+        elif model == "utility":
+            peers = [x for x in equities if _score_model_for(x) == "utility"]
+            util_quality = _avg([
+                _percentile_rank(r.roe, [x.roe for x in peers]),
+                _percentile_rank(r.operating_margin, [x.operating_margin for x in peers]),
+                _percentile_rank(r.roce_proxy, [x.roce_proxy for x in peers]),
+            ])
+            util_balance = _avg([
+                _percentile_rank(r.debt_to_equity, [x.debt_to_equity for x in peers], invert=True),
+                coverage_pct,
+            ])
+            util_income = _avg([
+                _percentile_rank(r.dividend_yield, [x.dividend_yield for x in peers]),
+                _percentile_rank(r.payout_ratio, [x.payout_ratio for x in peers], invert=True) if r.payout_ratio is not None else None,
+            ])
+            util_value = _avg([
+                _percentile_rank(r.forward_pe, [x.forward_pe for x in peers], invert=True) if r.forward_pe and r.forward_pe > 0 else None,
+                _percentile_rank(r.trailing_pe, [x.trailing_pe for x in peers], invert=True) if r.trailing_pe and r.trailing_pe > 0 else None,
+                _percentile_rank(r.price_to_book, [x.price_to_book for x in peers], invert=True) if r.price_to_book and r.price_to_book > 0 else None,
+            ])
+            util_cash = _avg([cashflow, _positive_score(r.operating_cash_flow)])
+            composite = _weighted([(util_quality,.18),(util_balance,.22),(util_income,.18),(util_value,.17),(growth,.10),(stability,.10),(util_cash,.05)])
+            quality, balance, value, cashflow = util_quality, util_balance, util_value, util_cash
+            score_dimensions = {"Utility Quality":util_quality,"Balance":util_balance,"Income":util_income,"Valuation":util_value,"Growth":growth,"Stability":stability,"Cash Flow":util_cash}
+            model_note = "Utility model: balance-sheet resilience, regulated-style income durability, profitability, peer valuation and stability receive more weight than headline growth."
+        elif model == "energy":
+            peers = [x for x in equities if _score_model_for(x) == "energy"]
+            peer_fcf = [(x.free_cash_flow/x.market_cap) if x.free_cash_flow is not None and x.market_cap and x.market_cap>0 else None for x in peers]
+            energy_quality = _avg([
+                _percentile_rank(r.roe, [x.roe for x in peers]),
+                _percentile_rank(r.operating_margin, [x.operating_margin for x in peers]),
+                _percentile_rank(r.roce_proxy, [x.roce_proxy for x in peers]),
+            ])
+            energy_cash = _avg([
+                _percentile_rank(fcf_yield_for_score, peer_fcf),
+                _positive_score(r.operating_cash_flow),
+            ])
+            energy_balance = _avg([
+                _percentile_rank(r.debt_to_equity, [x.debt_to_equity for x in peers], invert=True),
+                _percentile_rank(net_cash_to_cap[idx], [((x.total_cash or 0)-(x.total_debt or 0))/x.market_cap if x.market_cap and (x.total_cash is not None or x.total_debt is not None) else None for x in peers]),
+                coverage_pct,
+            ])
+            energy_value = _avg([
+                _percentile_rank(r.trailing_pe, [x.trailing_pe for x in peers], invert=True) if r.trailing_pe and r.trailing_pe>0 else None,
+                _percentile_rank(r.forward_pe, [x.forward_pe for x in peers], invert=True) if r.forward_pe and r.forward_pe>0 else None,
+                _percentile_rank(r.enterprise_to_ebitda, [x.enterprise_to_ebitda for x in peers], invert=True) if r.enterprise_to_ebitda and r.enterprise_to_ebitda>0 else None,
+            ])
+            composite = _weighted([(energy_quality,.20),(energy_cash,.22),(energy_balance,.18),(energy_value,.20),(growth,.10),(stability,.10)])
+            quality,balance,value,cashflow=energy_quality,energy_balance,energy_value,energy_cash
+            score_dimensions={"Energy Quality":energy_quality,"Cash Flow":energy_cash,"Balance":energy_balance,"Valuation":energy_value,"Growth":growth,"Stability":stability}
+            model_note = "Energy model: cash generation, capital efficiency, leverage and peer valuation dominate; cyclical growth receives a lower weight."
+        elif model == "biotech":
+            peers = [x for x in equities if _score_model_for(x) == "biotech"]
+            runway = (r.total_cash/abs(r.free_cash_flow)) if r.total_cash is not None and r.total_cash>0 and r.free_cash_flow is not None and r.free_cash_flow<0 else None
+            runways=[(x.total_cash/abs(x.free_cash_flow)) if x.total_cash is not None and x.total_cash>0 and x.free_cash_flow is not None and x.free_cash_flow<0 else None for x in peers]
+            runway_score = 100.0 if r.free_cash_flow is not None and r.free_cash_flow>=0 else _percentile_rank(runway,runways)
+            biotech_cash = _percentile_rank(net_cash_to_cap[idx], [((x.total_cash or 0)-(x.total_debt or 0))/x.market_cap if x.market_cap and (x.total_cash is not None or x.total_debt is not None) else None for x in peers])
+            biotech_dilution = _percentile_rank(r.diluted_shares_yoy,[x.diluted_shares_yoy for x in peers],invert=True)
+            biotech_quality = _avg([
+                _percentile_rank(r.gross_margin,[x.gross_margin for x in peers]),
+                _percentile_rank(r.roa,[x.roa for x in peers]),
+            ])
+            composite = _weighted([(runway_score,.25),(biotech_cash,.15),(biotech_dilution,.20),(growth,.20),(biotech_quality,.10),(stability,.10)])
+            quality=_avg([biotech_quality,runway_score]); balance=_avg([runway_score,biotech_cash]); value=None
+            score_dimensions={"Cash Runway":runway_score,"Net Cash":biotech_cash,"Dilution Discipline":biotech_dilution,"Growth":growth,"Operating Quality":biotech_quality,"Stability":stability}
+            model_note = "Biotech model: cash runway, net cash, dilution and operating progress dominate. Generic P/E valuation is deliberately excluded for pre-profit companies; pipeline quality/catalysts are not fabricated from accounting data."
+        elif model == "growth_tech":
+            peers = [x for x in equities if _score_model_for(x) == "growth_tech"]
+            execution = _avg([
+                _percentile_rank(r.revenue_yoy_acceleration_pp,[x.revenue_yoy_acceleration_pp for x in peers]),
+                _percentile_rank(r.net_margin_yoy_change_pp,[x.net_margin_yoy_change_pp for x in peers]),
+                _percentile_rank(r.eps_yoy_acceleration_pp,[x.eps_yoy_acceleration_pp for x in peers]),
+            ])
+            earnings_quality = _avg([
+                _percentile_rank(cash_conversion[idx],cash_conversion),
+                _percentile_rank(accrual_ratios[idx],accrual_ratios,invert=True),
+                _percentile_rank(fcf_margins[idx],fcf_margins),
+            ])
+            capital_allocation = _avg([
+                _percentile_rank(r.diluted_shares_yoy,[x.diluted_shares_yoy for x in peers],invert=True),
+                _percentile_rank(r.roce_proxy,[x.roce_proxy for x in peers]),
+            ])
+            tech_value = _avg([
+                _percentile_rank(r.forward_pe,[x.forward_pe for x in peers],invert=True) if r.forward_pe and r.forward_pe>0 else None,
+                _percentile_rank(fcf_yield_for_score,[(x.free_cash_flow/x.market_cap) if x.free_cash_flow is not None and x.market_cap and x.market_cap>0 else None for x in peers]),
+            ])
+            composite = _weighted([(quality,.20),(growth,.22),(balance,.12),(cashflow,.10),(tech_value,.07),(execution,.12),(earnings_quality,.09),(capital_allocation,.05),(stability,.03)])
+            value=tech_value
+            score_dimensions={"Quality":quality,"Growth":growth,"Balance":balance,"Cash Flow":cashflow,"Valuation":tech_value,"Execution":execution,"Earnings Quality":earnings_quality,"Capital Allocation":capital_allocation,"Stability":stability}
+            model_note = "Growth-tech model: growth, quality, execution and cash conversion dominate; valuation remains relevant but cannot overwhelm superior or deteriorating operating evidence."
         else:
             # Execution is operating momentum, deliberately separated from
             # shareholder-capital decisions so a buyback cannot disguise weak
@@ -466,7 +568,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             }
             model_note = "General company model v3: adds cash-conversion/accrual quality and separates capital allocation from operating execution."
 
-        if model != "general":
+        if model not in ("general", "growth_tech"):
             execution = None
             earnings_quality = None
             capital_allocation = None
@@ -556,6 +658,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         sector_gm = _median_any([x.gross_margin for x in peers]) if peer_count >= 4 else None
         sector_roce = _median_any([x.roce_proxy for x in peers]) if peer_count >= 4 else None
         sector_div = _median_any([x.dividend_yield for x in peers]) if peer_count >= 4 else None
+        sector_fcf = _median_positive([(x.free_cash_flow/x.market_cap) if x.free_cash_flow is not None and x.market_cap and x.market_cap>0 else None for x in peers]) if peer_count >= 4 else None
         quality_value = _avg([quality, value])
 
         net_cash = net_cash_values[idx]
@@ -609,6 +712,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             sector_gross_margin_median=round(sector_gm,4) if sector_gm is not None else None,
             sector_roce_proxy_median=round(sector_roce,4) if sector_roce is not None else None,
             sector_dividend_yield_median=round(sector_div,4) if sector_div is not None else None,
+            sector_fcf_yield_median=round(sector_fcf,6) if sector_fcf is not None else None,
             score_model=model, score_model_note=model_note,
             score_dimensions={k: (round(v,1) if v is not None else None) for k,v in score_dimensions.items()},
             risk_flags=risk_flags, risk_gate=risk_gate, score_cap=score_cap,

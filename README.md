@@ -1,3 +1,14 @@
+## Vestra v4.4 — Valuation Engine & Sector Models
+
+- Novo fair value Vestra em faixa, nunca como target pontual: mínimo, centro, máximo, upside/downside e margem de segurança.
+- Âncoras explicáveis: P/E, forward P/E, P/B, FCF yield e dividend yield comparados com pares do mesmo setor.
+- O fair value é independente dos price targets dos analistas e pode ser marcado como não acionável pelo Risk Gate.
+- Novos score packs: Utilities, Energy, Biotech e Growth Tech, além de General, Banks, Insurance e REITs.
+- Biotech pre-profit deixa de ser forçada para P/E: cash runway, net cash e diluição passam a dominar; sem dados adequados o valuation diz explicitamente “insuficiente”.
+- “Sinal forte” no dossier passa a exigir score elevado + confiança de evidência suficiente + ausência de Risk Gate alto/severo.
+- Layout visual permanece congelado.
+- PWA cache: `vestra-cache-v37`.
+
 ## Vestra v4.3 — Confidence Engine
 
 - “Confiança” deixa de ser sinónimo de quantidade de campos preenchidos.
