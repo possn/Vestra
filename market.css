@@ -394,3 +394,11 @@ html.modal-open,body.modal-open{
   #marketSheet.market-sheet{height:100vh!important;max-height:100vh!important}
   #marketSheet>.market-sheet__panel{min-height:100vh!important}
 }
+
+/* v4.7.1 — visible portfolio intelligence access */
+.market-portfolio-access{width:100%;display:grid;grid-template-columns:38px minmax(0,1fr) 22px;align-items:center;gap:10px;margin:10px 0 14px;padding:13px 14px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);text-align:left;box-shadow:var(--shadow-sm);cursor:pointer}
+.market-portfolio-access__icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--soft);font-size:19px}
+.market-portfolio-access strong{display:block;font-size:14px;line-height:1.2}
+.market-portfolio-access small{display:block;margin-top:3px;color:var(--muted);font-size:11px;line-height:1.25}
+.market-portfolio-access__arrow{font-size:26px;color:var(--muted);text-align:right}
+.market-portfolio-access:active{transform:scale(.995)}
