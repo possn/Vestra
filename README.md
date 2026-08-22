@@ -1,3 +1,11 @@
+## Vestra v5.5 — Target Fit & Drift
+
+- Novo Target Fit 0–100 na Portfolio Intelligence para medir aderência aos objetivos definidos na v5.4.
+- Identifica posições acima do peso máximo, setores acima do limite e overlap indireto relevante quando o objetivo é reduzi-lo.
+- Mostra os principais desvios em linguagem simples, antes do painel de configuração e do rebalanceador.
+- O score de aderência é de construção de carteira e não altera o Score Vestra das empresas.
+- PWA cache: `vestra-cache-v50`.
+
 ## Vestra v5.4 — Portfolio Target Engine
 
 - Objetivos persistentes e locais para orientar o rebalanceamento: máximo por posição, máximo por setor, política de overlap e prioridade de carteira.
