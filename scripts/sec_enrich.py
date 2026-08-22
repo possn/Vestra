@@ -1,9 +1,9 @@
 """Optional SEC EDGAR enrichment for US-listed equities.
 
-Enabled when SEC_USER_AGENT is set in the environment. Uses official SEC
+Enabled by default with an identifiable Vestra User-Agent; SEC_USER_AGENT can override it. Uses official SEC
 company_tickers + companyfacts JSON; fills only fields that Yahoo left empty.
 No API key is required. SEC asks automated clients to identify themselves via
-User-Agent, so we deliberately do nothing until a proper value is configured.
+User-Agent; Vestra ships a repository-identifying default and allows an environment override.
 """
 from __future__ import annotations
 import logging, os, time
@@ -60,7 +60,7 @@ def _annual_two(facts,tags):
     return out
 
 def enrich(raw, priority=None, max_nonpriority=350):
-    ua=os.getenv('SEC_USER_AGENT','').strip()
+    ua=os.getenv('SEC_USER_AGENT','Vestra/4.0 (+https://github.com/possn/Vestra)').strip()
     if not ua:
         log.info('SEC enrichment disabled: set SEC_USER_AGENT to enable official EDGAR fallback')
         return raw
