@@ -1,3 +1,12 @@
+## Vestra v6.6 — Recovery Confirmation
+
+- Empresas em drawdown/mínimos passam a distinguir simples ressalto de recuperação apoiada por evidência.
+- Estados: Sem confirmação, Estabilização, Recuperação em curso, Recuperação confirmada, Ressalto sem confirmação e Falha de recuperação.
+- Cruza retornos 20/60 dias com expectativas, aceleração de receita, margens, tese, tendência da causa da queda e comportamento relativo ao setor.
+- Novo card Recovery Confirmation no dossier e contexto adicional em Mínimos 52s.
+- Não altera Score Vestra nem constitui sinal de entrada.
+- Dataset schema: 521. PWA cache: `vestra-cache-v63`.
+
 ## Vestra v6.5 — Sector-relative Drawdown & Flow Ranking Repair
 
 - Corrige os rankings de Fluxos: Maiores ganhos (€/% ) mostram apenas ganhos positivos; perdas e zeros deixam de contaminar o ranking.
