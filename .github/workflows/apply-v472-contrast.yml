@@ -1,0 +1,36 @@
+name: Apply Vestra v4.7.2 portfolio contrast
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'chatgpt/v4.7.2-portfolio-contrast'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/v4.7.2-portfolio-contrast
+          fetch-depth: 0
+      - name: Apply and validate v4.7.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/apply_v472_portfolio_contrast.py
+          rm -f scripts/apply_v472_portfolio_contrast.py tmp/branch-marker.txt
+          node --check market.js
+          node --check sw.js
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add -- market.css README.md sw.js
+          git add -u scripts/apply_v472_portfolio_contrast.py tmp/branch-marker.txt
+          if git diff --cached --quiet; then
+            echo "v4.7.2 already applied"
+          else
+            git commit -m "fix: improve Portfolio Intelligence contrast"
+            git push origin HEAD:chatgpt/v4.7.2-portfolio-contrast
+          fi
