@@ -753,6 +753,29 @@
     return w;
   }
 
+  function portfolioAction(stock, alternativesByTicker){
+    const conviction=portfolioConviction(stock);
+    const gate=txt(stock?.risk_gate);
+    const valuation=txt(stock?.valuation_signal);
+    const thesis=txt(stock?.thesis_direction);
+    const estimates=txt(stock?.estimate_signal);
+    const conf=n(stock?.confidence_score);
+    const alt=alternativesByTicker?.get?.(txt(stock?.ticker).toUpperCase())||null;
+    const reasons=[];
+    if(gate==='severe'||gate==='high') reasons.push(`Risk Gate ${gate}`);
+    if(thesis==='down') reasons.push('tese a deteriorar');
+    if(estimates==='deteriorating') reasons.push('expectativas a piorar');
+    if(valuation==='overvalued') reasons.push('valuation exigente');
+    if(valuation==='undervalued') reasons.push('margem de segurança');
+    if(thesis==='up') reasons.push('tese a melhorar');
+    if(estimates==='improving') reasons.push('expectativas a melhorar');
+    if(conf!=null&&conf<60) reasons.push('confiança limitada');
+    if(alt && (gate==='high'||gate==='severe'||(conviction!=null&&conviction<50))) return {key:'replace',label:'Substituir',tone:'risk',reason:`${reasons[0]||'convicção fraca'} · alternativa ${alt.to.ticker} superior`};
+    if(gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50)) return {key:'review',label:'Rever',tone:'risk',reason:reasons.slice(0,2).join(' · ')||'convicção baixa'};
+    if(conviction!=null&&conviction>=70&&conf!=null&&conf>=60&&!['overvalued','uncertain'].includes(valuation)) return {key:'reinforce',label:'Reforçar',tone:'positive',reason:reasons.slice(0,2).join(' · ')||'convicção elevada'};
+    return {key:'hold',label:'Manter',tone:'neutral',reason:reasons.slice(0,2).join(' · ')||'tese sem alteração material'};
+  }
+
   function portfolioIntelligence(rows,total){
     if(!rows.length) return '';
     const analysed=rows.reduce((a,r)=>a+r.value,0)||1;
@@ -779,6 +802,11 @@
       if(cand) alternatives.push({from:r.stock,to:cand,delta:n(cand.score)-curScore});
       if(alternatives.length>=3) break;
     }
+    const alternativesByTicker=new Map(alternatives.map(a=>[txt(a.from.ticker).toUpperCase(),a]));
+    const actionRows=ranked.map(r=>({...r,action:portfolioAction(r.stock,alternativesByTicker)}));
+    const actionOrder={replace:0,review:1,reinforce:2,hold:3};
+    actionRows.sort((a,b)=>(actionOrder[a.action.key]??9)-(actionOrder[b.action.key]??9)||(b.value-a.value));
+    const actionCounts=actionRows.reduce((acc,r)=>{acc[r.action.key]=(acc[r.action.key]||0)+1;return acc;},{});
 
     const overlaps=[];
     const etfs=ranked.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length);
@@ -805,7 +833,10 @@
     const altHtml=alternatives.length?`<div class="market-list">${alternatives.map(a=>renderRow(a.to,`Alternativa a ${a.from.ticker} · Score +${a.delta.toFixed(0)} · mesmo setor`)).join('')}</div>`:'<p class="market-case-note">Sem alternativa claramente superior identificada no mesmo setor.</p>';
     const concHtml=concentration.length?`<ul class="market-case-list">${[...new Set(concentration)].slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="market-case-note">Sem concentração material detetada com os dados disponíveis.</p>';
 
+    const actionMapHtml=`<div class="market-detail-card market-action-map"><div class="market-perspective-head"><div><small>ACTION MAP</small><h4>Mapa da carteira</h4></div><span class="market-data-age">${actionRows.length} posições</span></div><div class="market-action-summary"><span class="is-positive">Reforçar ${actionCounts.reinforce||0}</span><span>Manter ${actionCounts.hold||0}</span><span class="is-warn">Rever ${actionCounts.review||0}</span><span class="is-risk">Substituir ${actionCounts.replace||0}</span></div><div class="market-action-list">${actionRows.slice(0,12).map(r=>`<button type="button" class="market-action-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div>${actionRows.length>12?`<details class="market-detail-disclosure"><summary>Ver mais ${actionRows.length-12} posições</summary><div class="market-action-list">${actionRows.slice(12).map(r=>`<button type="button" class="market-action-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div></details>`:''}<p class="market-case-note">Classificação de research baseada em dados atuais; não é uma ordem automática de compra ou venda.</p></div>`;
+
     return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>PORTFOLIO INTELLIGENCE</small><h4>Prioridades da carteira</h4></div><span class="market-data-age">${Math.round(analysed/(total||analysed)*100)}% coberto</span></div><p>Convicção combina Score Vestra, confiança, valuation, expectativas e Risk Gate. É uma priorização de research — não uma ordem de compra ou venda.</p></div>
+      ${actionMapHtml}
       <div class="market-detail-card"><h4>Candidatos a reforço</h4>${compactRows(reinforce,r=>`Convicção ${Math.round(r.conviction)}/100 · ${txt(r.stock.valuation_signal)||'valuation sem sinal'}`)}</div>
       <div class="market-detail-card"><h4>Posições a rever</h4>${compactRows(review,r=>`Convicção ${r.conviction==null?'—':Math.round(r.conviction)}/100 · ${txt(r.stock.risk_gate)||'clear'} · ${txt(r.stock.estimate_signal)||'expectativas —'}`)}</div>
       <div class="market-detail-card"><h4>Concentração e overlap</h4>${concHtml}</div>
