@@ -1133,7 +1133,7 @@
     const planHtml=`<div class="market-detail-card market-rebalance-plan" data-rebalance-plan-card><div class="market-perspective-head"><div><small>MULTI-MOVE PLAN · TARGET AWARE</small><h4>Plano de rebalanceamento</h4></div><span class="market-data-age">até 3 movimentos</span></div><p class="market-case-note">Gera um plano a partir das posições mais frágeis e respeita os objetivos guardados acima.</p><button type="button" class="market-plan-run" data-rebalance-plan>Gerar plano</button><div data-rebalance-plan-results><p class="market-case-note">Nenhuma alteração é aplicada à carteira.</p></div></div>`;
     const concentratedCount=ranked.filter(r=>r.portfolioFit?.fit==='concentrated').length;
     const overlapCount=ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length;
-    const actionMapHtml=`<div class="market-detail-card market-action-map"><div class="market-perspective-head"><div><small>ACTION MAP · PORTFOLIO FIT</small><h4>Mapa da carteira</h4></div><span class="market-data-age">${actionRows.length} posições</span></div><div class="market-action-context"><span>${concentratedCount} concentração</span><span>${overlapCount} overlap indireto</span><span>${sectorRows[0]?`${esc(sectorRows[0].sector)} ${sectorRows[0].pct.toFixed(0)}%`:'setor —'}</span></div><div class="market-action-summary"><span class="is-positive">Reforçar ${actionCounts.reinforce||0}</span><span>Manter ${actionCounts.hold||0}</span><span class="is-warn">Rever ${actionCounts.review||0}</span><span class="is-risk">Substituir ${actionCounts.replace||0}</span></div><div class="market-action-list">${actionRows.slice(0,12).map(r=>`<button type="button" class="market-action-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div>${actionRows.length>12?`<details class="market-detail-disclosure"><summary>Ver mais ${actionRows.length-12} posições</summary><div class="market-action-list">${actionRows.slice(12).map(r=>`<button type="button" class="market-action-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div></details>`:''}<p class="market-case-note">Classificação de research baseada em dados atuais; não é uma ordem automática de compra ou venda.</p></div>`;
+    const actionMapHtml=`<div class="market-detail-card market-action-map"><div class="market-perspective-head"><div><small>ACTION MAP · PORTFOLIO FIT</small><h4>Mapa da carteira</h4></div><span class="market-data-age">${actionRows.length} posições</span></div><div class="market-action-context"><span>${concentratedCount} concentração</span><span>${overlapCount} overlap indireto</span><span>${sectorRows[0]?`${esc(sectorRows[0].sector)} ${sectorRows[0].pct.toFixed(0)}%`:'setor —'}</span></div><div class="market-action-summary"><button type="button" class="is-positive" data-action-filter="reinforce">Reforçar ${actionCounts.reinforce||0}</button><button type="button" data-action-filter="hold">Manter ${actionCounts.hold||0}</button><button type="button" class="is-warn" data-action-filter="review">Rever ${actionCounts.review||0}</button><button type="button" class="is-risk" data-action-filter="replace">Substituir ${actionCounts.replace||0}</button></div><div class="market-action-filter-status" data-action-filter-status>Mostrar todas as posições</div><div class="market-action-list">${actionRows.slice(0,12).map(r=>`<button type="button" class="market-action-row" data-action-key="${esc(r.action.key)}" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div>${actionRows.length>12?`<details class="market-detail-disclosure"><summary>Ver mais ${actionRows.length-12} posições</summary><div class="market-action-list">${actionRows.slice(12).map(r=>`<button type="button" class="market-action-row" data-action-key="${esc(r.action.key)}" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div></details>`:''}<p class="market-case-note">Classificação de research baseada em dados atuais; não é uma ordem automática de compra ou venda.</p></div>`;
 
     return `${renderPortfolioDecisionCenter(rows,total)}
       <div class="market-detail-card"><div class="market-perspective-head"><div><small>PORTFOLIO INTELLIGENCE</small><h4>Prioridades da carteira</h4></div><span class="market-data-age">${Math.round(analysed/(total||analysed)*100)}% coberto</span></div><p>Convicção combina Score Vestra, confiança, valuation, expectativas e Risk Gate. É uma priorização de research — não uma ordem de compra ou venda.</p></div>
@@ -1501,4 +1501,36 @@
 
   loadWatchlist();
   window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,toggleWatch};
+
+  // v6.0.1 — Action Map summary acts as an immediate filter.
+  document.addEventListener('click', e=>{
+    const btn=e.target.closest?.('[data-action-filter]');
+    if(!btn) return;
+    const map=btn.closest('.market-action-map');
+    if(!map) return;
+    e.preventDefault();
+    const requested=btn.dataset.actionFilter||'';
+    const active=map.dataset.actionFilter||'';
+    const next=active===requested?'':requested;
+    map.dataset.actionFilter=next;
+    map.querySelectorAll('[data-action-filter]').forEach(x=>x.classList.toggle('is-active',next && x.dataset.actionFilter===next));
+    let shown=0;
+    map.querySelectorAll('.market-action-row[data-action-key]').forEach(row=>{
+      const visible=!next || row.dataset.actionKey===next;
+      row.hidden=!visible;
+      if(visible) shown++;
+    });
+    map.querySelectorAll('.market-detail-disclosure').forEach(d=>{
+      const any=[...d.querySelectorAll('.market-action-row[data-action-key]')].some(r=>!r.hidden);
+      d.hidden=!!next && !any;
+      d.open=!!next && any;
+    });
+    const status=map.querySelector('[data-action-filter-status]');
+    if(status){
+      const labels={reinforce:'a reforçar',hold:'a manter',review:'a rever',replace:'a substituir'};
+      status.textContent=next?`${shown} ${shown===1?'posição':'posições'} ${labels[next]||''}`:'Mostrar todas as posições';
+    }
+    map.querySelector('.market-action-list')?.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+  });
+
 })();

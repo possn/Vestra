@@ -1,3 +1,11 @@
+## Vestra v6.0.1 — Action Map Filters
+
+- Reforçar / Manter / Rever / Substituir passam a ser filtros interativos no Action Map.
+- Tocar num estado mostra imediatamente apenas as posições dessa categoria; tocar novamente repõe a lista completa.
+- O filtro selecionado fica visualmente ativo e mostra quantas posições estão visíveis.
+- Os detalhes expandem automaticamente quando o filtro tem resultados fora das primeiras 12 posições.
+- PWA cache: `vestra-cache-v57`.
+
 ## Vestra v6.0 — Portfolio Decision Center
 
 - Nova síntese executiva no topo de As minhas posições.
