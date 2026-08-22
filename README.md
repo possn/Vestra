@@ -1,3 +1,13 @@
+## Vestra v4.6 — Intelligent Scanner
+
+- Novo Scanner Vestra em Mais ferramentas, sem alterar a navegação principal congelada.
+- Estratégias: QARP, Fallen Angels, Mínimos 52s com fundamentos intactos, Revisões positivas, Insider Accumulation, Turnarounds e Dividend Growers.
+- Cada estratégia tem score próprio 0–100 e razões auditáveis; não altera o core Score Vestra.
+- Confidence Engine e Risk Gate são filtros obrigatórios onde aplicável, reduzindo falling knives e falsos positivos de valuation.
+- O botão Mínimos 52s continua como pesquisa ampla; “Mínimos intactos” é a versão filtrada por qualidade, confiança, diluição e risco.
+- Layout visual global permanece congelado.
+- Dataset schema: 516. PWA cache: `vestra-cache-v39`.
+
 ## Vestra v4.5 — Earnings & Estimate Intelligence
 
 - Novo overlay quantitativo de expectativas, separado do Score Vestra por causa da cobertura desigual entre mercados.
