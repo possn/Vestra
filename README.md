@@ -1,3 +1,12 @@
+## Vestra v5.8.1 — Candidate Fallbacks
+
+- Fresh Capital Planner e Assisted Rebalancer deixam de falhar silenciosamente quando nenhum ativo cumpre simultaneamente todos os filtros ideais.
+- Candidatos são classificados em Preferido, Aceitável com alertas e Apenas research; Risk Gate high/severe continua a ser exclusão dura.
+- Portfolio Targets continuam prioritários, mas existe um soft budget limitado quando pequenas ultrapassagens bloqueiam todos os candidatos.
+- A interface mostra confiança baixa/ausente, valuation exigente, expectativas em deterioração e soft budget em vez de esconder o candidato.
+- Rebalancer deixa de sugerir um montante superior ao valor da posição de origem.
+- PWA cache: `vestra-cache-v54`.
+
 ## Vestra v5.8 — Portfolio Risk Budget
 
 - Novo Risk Budget proxy na Portfolio Intelligence: fatores, moeda, região e sensibilidade provável a taxas.
