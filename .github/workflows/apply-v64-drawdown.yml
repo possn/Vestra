@@ -1,0 +1,31 @@
+name: Apply Vestra v6.4 drawdown diagnosis
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.head_ref == 'chatgpt/v6.4-drawdown-diagnosis'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/v6.4-drawdown-diagnosis
+          fetch-depth: 0
+      - name: Apply and validate v6.4
+        run: |
+          set -euo pipefail
+          python scripts/apply_v64_drawdown_diagnosis.py
+          rm -f scripts/apply_v64_drawdown_diagnosis.py
+          python -m py_compile scripts/*.py
+          node --check market.js
+          node --check sw.js
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add scripts/run.py market.js market.css README.md sw.js
+          git add -u scripts/apply_v64_drawdown_diagnosis.py
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: Vestra v6.4 drawdown diagnosis"
+            git push origin HEAD:chatgpt/v6.4-drawdown-diagnosis
+          fi
