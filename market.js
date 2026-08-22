@@ -993,6 +993,33 @@
     return `<div class="market-detail-card market-health-timeline"><div class="market-perspective-head"><div><small>PORTFOLIO HEALTH · HISTÓRICO</small><h4>A carteira está a melhorar?</h4></div><span class="market-data-age">${history.length} ${history.length===1?'dia':'dias'}</span></div><div class="market-health-kpis"><div><small>Target Fit</small><strong>${Math.round(latest.targetFit)}</strong><em>${prev?healthDeltaLabel(latest.targetFit,prev.targetFit):'baseline'}</em></div><div><small>Convicção</small><strong>${latest.conviction.toFixed(1)}</strong><em>${prev?healthDeltaLabel(latest.conviction,prev.conviction):'baseline'}</em></div><div><small>Maior posição</small><strong>${latest.topPosition.toFixed(1)}%</strong><em>${prev?healthDeltaLabel(latest.topPosition,prev.topPosition,true,' pp'):'baseline'}</em></div><div><small>Rever/Substituir</small><strong>${latest.riskPositions}</strong><em>${prev?healthDeltaLabel(latest.riskPositions,prev.riskPositions,true):'baseline'}</em></div></div><div class="market-health-trend">${esc(trend)}</div><div class="market-health-history">${rows.map(x=>`<div class="market-health-row"><span>${esc(x.day.slice(5))}</span><div><i style="width:${Math.max(3,Math.min(100,x.targetFit))}%"></i></div><strong>${Math.round(x.targetFit)}</strong><small>conv ${x.conviction.toFixed(0)} · pos ${x.topPosition.toFixed(0)}% · setor ${x.topSector.toFixed(0)}% · overlap ${x.overlapCount} · risco ${x.riskPositions}</small></div>`).join('')}</div>${history.length<2?'<p class="market-case-note">A partir do próximo dia a Vestra começa a mostrar a direção das métricas. O snapshot do mesmo dia é atualizado, não duplicado.</p>':''}</div>`;
   }
 
+  const RESEARCH_QUEUE_KEY='vestra_research_queue_v1';
+  function loadResearchQueue(){
+    try{ const x=JSON.parse(localStorage.getItem(RESEARCH_QUEUE_KEY)||'{}'); return x&&typeof x==='object'?x:{}; }
+    catch{return {};}
+  }
+  function saveResearchQueue(x){ try{localStorage.setItem(RESEARCH_QUEUE_KEY,JSON.stringify(x||{}));}catch{} }
+  function researchQueueState(ticker){
+    const all=loadResearchQueue(), key=txt(ticker).toUpperCase(), x=all[key]||{};
+    if(x.status==='snoozed'&&Number(x.snoozeUntil||0)<=Date.now()) return {...x,status:'new',snoozeUntil:0};
+    return {status:x.status||'new',snoozeUntil:Number(x.snoozeUntil||0),updatedAt:Number(x.updatedAt||0)};
+  }
+  function setResearchQueueState(ticker,status){
+    const all=loadResearchQueue(), key=txt(ticker).toUpperCase(); if(!key)return;
+    all[key]={status,updatedAt:Date.now(),snoozeUntil:status==='snoozed'?Date.now()+7*86400000:0};
+    saveResearchQueue(all);
+  }
+  function renderResearchQueue(review){
+    const rank={new:0,in_review:1,snoozed:2,reviewed:3};
+    const items=review.map(r=>({r,state:researchQueueState(r.stock.ticker)})).sort((a,b)=>(rank[a.state.status]??9)-(rank[b.state.status]??9)||(a.r.conviction??999)-(b.r.conviction??999));
+    const counts=items.reduce((a,x)=>{a[x.state.status]=(a[x.state.status]||0)+1;return a;},{});
+    const visible=items.filter(x=>x.state.status!=='reviewed'&&x.state.status!=='snoozed').slice(0,12);
+    const label={new:'Novo',in_review:'Em revisão',reviewed:'Revisto',snoozed:'Adiado'};
+    const tone={new:'is-risk',in_review:'is-warn',reviewed:'is-positive',snoozed:''};
+    const rows=visible.length?visible.map(({r,state})=>`<div class="market-research-queue-row" data-queue-ticker="${esc(r.stock.ticker)}"><button type="button" class="market-research-queue-main" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${r.conviction==null?'convicção insuficiente':`convicção ${Math.round(r.conviction)}/100`} · ${esc(txt(r.stock.risk_gate)||'clear')}</small></span><em class="${tone[state.status]||''}">${label[state.status]||'Novo'}</em></button><div class="market-research-queue-actions"><button type="button" data-queue-status="in_review">Em revisão</button><button type="button" data-queue-status="reviewed">Revisto</button><button type="button" data-queue-status="snoozed">Adiar 7d</button></div></div>`).join(''):'<p class="market-case-note">Sem revisões ativas pendentes. Itens adiados regressam automaticamente após 7 dias.</p>';
+    return `<div class="market-detail-card market-research-queue"><div class="market-perspective-head"><div><small>RESEARCH QUEUE · LOCAL</small><h4>Fila de revisão</h4></div><span class="market-data-age">${(counts.new||0)+(counts.in_review||0)} pendentes</span></div><div class="market-action-context"><span>${counts.new||0} novos</span><span>${counts.in_review||0} em revisão</span><span>${counts.snoozed||0} adiados</span><span>${counts.reviewed||0} revistos</span></div><p class="market-case-note">Memória operacional: organiza o research sem alterar Score Vestra, Action Map ou carteira.</p><div class="market-research-queue-list">${rows}</div>${items.length>12?`<p class="market-case-note">A mostrar as 12 prioridades ativas mais urgentes de ${items.length} posições sinalizadas.</p>`:''}</div>`;
+  }
+
   function renderPortfolioDecisionCenter(rows,total){
     const analysed=rows.reduce((a,r)=>a+(n(r.value)||0),0)||1;
     const ranked=rows.map(r=>({...r,conviction:portfolioConviction(r.stock)}));
@@ -1019,7 +1046,7 @@
     if(!priorities.length&&reinforce[0]) priorities.push({label:`Carteira sem alerta dominante; ${reinforce[0].stock.ticker} é o reforço com maior convicção atual`,kind:'ticker',value:reinforce[0].stock.ticker});
     const next=review[0]?{label:`Abrir ${review[0].stock.ticker} e rever a tese`,kind:'ticker',value:review[0].stock.ticker}:topPositionPct>targets.maxPosition?{label:'Usar o Rebalancer para reduzir concentração',kind:'rebalancer',value:'rebalancer'}:reinforce[0]?{label:`Avaliar reforço em ${reinforce[0].stock.ticker}`,kind:'ticker',value:reinforce[0].stock.ticker}:{label:'Manter e acompanhar',kind:'health',value:'health'};
     const jumpAttrs=x=>`data-decision-jump="${esc(x.kind)}" data-decision-value="${esc(x.value||'')}"`;
-    return `<div class="market-detail-card market-decision-center"><div class="market-perspective-head"><div><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora?</h4></div><span class="market-target-fit-score ${tone}">${health}/100</span></div><div class="market-decision-kpis"><button type="button" ${jumpAttrs({kind:'actionmap',value:'all'})}><small>Convicção</small><strong>${conviction.toFixed(1)}</strong></button><button type="button" ${jumpAttrs({kind:'riskbudget',value:'riskbudget'})}><small>Risk Budget</small><strong>${riskBudget.fit}</strong></button><button type="button" ${jumpAttrs({kind:'stress',value:worst?.key||'rates'})}><small>Pior stress</small><strong>${worst?worst.resilience:'—'}</strong></button><button type="button" ${jumpAttrs({kind:'actionmap',value:'review'})}><small>Rever/Substituir</small><strong>${review.length}</strong></button></div><button type="button" class="market-decision-next" ${jumpAttrs(next)}><small>PRÓXIMA AÇÃO DE RESEARCH</small><strong>${esc(next.label)}</strong><span>→</span></button><div class="market-decision-priorities">${priorities.slice(0,4).map(x=>`<button type="button" ${jumpAttrs(x)}><span>${esc(x.label)}</span><b>→</b></button>`).join('')}</div><p class="market-case-note">Síntese executiva: toca num sinal para abrir diretamente o detalhe correspondente. Não cria um novo score de investimento.</p></div>`;
+    return `<div class="market-detail-card market-decision-center"><div class="market-perspective-head"><div><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora?</h4></div><span class="market-target-fit-score ${tone}">${health}/100</span></div><div class="market-decision-kpis"><button type="button" ${jumpAttrs({kind:'actionmap',value:'all'})}><small>Convicção</small><strong>${conviction.toFixed(1)}</strong></button><button type="button" ${jumpAttrs({kind:'riskbudget',value:'riskbudget'})}><small>Risk Budget</small><strong>${riskBudget.fit}</strong></button><button type="button" ${jumpAttrs({kind:'stress',value:worst?.key||'rates'})}><small>Pior stress</small><strong>${worst?worst.resilience:'—'}</strong></button><button type="button" ${jumpAttrs({kind:'actionmap',value:'review'})}><small>Rever/Substituir</small><strong>${review.length}</strong></button></div><button type="button" class="market-decision-next" ${jumpAttrs(next)}><small>PRÓXIMA AÇÃO DE RESEARCH</small><strong>${esc(next.label)}</strong><span>→</span></button><div class="market-decision-priorities">${priorities.slice(0,4).map(x=>`<button type="button" ${jumpAttrs(x)}><span>${esc(x.label)}</span><b>→</b></button>`).join('')}</div><p class="market-case-note">Síntese executiva: toca num sinal para abrir diretamente o detalhe correspondente. Não cria um novo score de investimento.</p></div>${renderResearchQueue(review)}`;
   }
 
   function portfolioIntelligence(rows,total){
@@ -1524,6 +1551,16 @@
       if(value&&value!=='all'){ const filter=map?.querySelector(`[data-action-filter="${CSS.escape(value)}"]`); if(filter && !filter.classList.contains('is-active')) filter.click(); }
       return;
     }
+  });
+
+  // v6.2 — Research Queue state is local operational memory.
+  document.addEventListener('click', e=>{
+    const btn=e.target.closest?.('[data-queue-status]'); if(!btn)return;
+    const row=btn.closest('.market-research-queue-row'); if(!row)return;
+    e.preventDefault(); e.stopPropagation();
+    setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new');
+    renderPrimary();
+    requestAnimationFrame(()=>document.querySelector('.market-research-queue')?.scrollIntoView?.({behavior:'smooth',block:'start'}));
   });
 
   // v6.0.1 — Action Map summary acts as an immediate filter.

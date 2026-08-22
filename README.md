@@ -1,3 +1,11 @@
+## Vestra v6.2 — Research Queue
+
+- Nova fila operacional de research dentro de As minhas posições, logo após o Decision Center.
+- Posições a rever entram automaticamente como Novo e podem ser marcadas Em revisão, Revisto ou Adiar 7 dias.
+- Estado fica apenas no dispositivo via localStorage e não altera Score Vestra, Action Map, Risk Gate ou carteira.
+- A fila prioriza pendentes e evita que uma carteira grande obrigue a recomeçar sempre a revisão do zero.
+- PWA cache: `vestra-cache-v59`.
+
 ## Vestra v6.1 — Interactive Decision Center
 
 - Portfolio Decision Center deixa de ser apenas uma síntese passiva e passa a navegar diretamente para o detalhe relevante.
