@@ -1,3 +1,12 @@
+## Vestra v5.6 — Portfolio Health Timeline
+
+- Guarda localmente um snapshot diário da saúde da carteira; reabrir no mesmo dia atualiza o snapshot em vez de o duplicar.
+- Histórico inclui Target Fit, convicção ponderada, maior posição, maior setor, overlap indireto e número de posições em Rever/Substituir.
+- Mostra tendência vs snapshot anterior e os últimos 8 registos diretamente em As minhas posições.
+- Ao guardar novos Portfolio Targets, Target Fit e snapshot são recalculados imediatamente.
+- Histórico fica apenas no dispositivo e mantém até 120 snapshots.
+- PWA cache: `vestra-cache-v51`.
+
 ## Vestra v5.5 — Target Fit & Drift
 
 - Novo Target Fit 0–100 na Portfolio Intelligence para medir aderência aos objetivos definidos na v5.4.
