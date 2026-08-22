@@ -59,6 +59,30 @@ def _annual_two(facts,tags):
         except Exception: pass
     return out
 
+def _latest_period_end(facts):
+    ends=[]
+    us=facts.get('us-gaap',{})
+    for tags in _TAGS.values():
+        for tag in tags:
+            node=us.get(tag,{})
+            for rows in (node.get('units') or {}).values():
+                for r in rows:
+                    if r.get('form') in ('10-K','10-Q','20-F','40-F','6-K') and r.get('end'):
+                        ends.append(str(r.get('end')))
+    return max(ends) if ends else None
+
+
+def _agreement(old, new, tolerance=0.25):
+    try:
+        if old is None or new is None:
+            return None
+        a=float(old); b=float(new)
+        scale=max(abs(a),abs(b),1.0)
+        return abs(a-b)/scale <= tolerance
+    except Exception:
+        return None
+
+
 def enrich(raw, priority=None, max_nonpriority=350):
     ua=os.getenv('SEC_USER_AGENT','Vestra/4.0 (+https://github.com/possn/Vestra)').strip()
     if not ua:
@@ -87,6 +111,20 @@ def enrich(raw, priority=None, max_nonpriority=350):
             ac=_latest(facts,_TAGS['assets_current']); lc=_latest(facts,_TAGS['liabilities_current']); cash=_latest(facts,_TAGS['cash'])
             cfo=_latest(facts,_TAGS['cfo']); capex=_latest(facts,_TAGS['capex']); op=_latest(facts,_TAGS['operating_income'])
             debt=sum(x or 0 for x in [_latest(facts,(_TAGS['debt'][0],)),_latest(facts,(_TAGS['debt'][1],)),_latest(facts,(_TAGS['debt'][2],)),_latest(facts,(_TAGS['debt'][3],))]) or None
+            setattr(m,'sec_period_end',_latest_period_end(facts))
+            sec_current_ratio=(ac/lc) if ac is not None and lc not in (None,0) else None
+            checks=[]
+            for old,new,tol in (
+                (getattr(m,'total_cash',None),cash,0.30),
+                (getattr(m,'total_debt',None),debt,0.30),
+                (getattr(m,'current_ratio',None),sec_current_ratio,0.20),
+                (getattr(m,'total_assets',None),assets,0.20),
+                (getattr(m,'stockholders_equity',None),eq,0.20),
+            ):
+                ok=_agreement(old,new,tol)
+                if ok is not None: checks.append(ok)
+            setattr(m,'source_agreement_checks',len(checks))
+            setattr(m,'source_agreement_pct',round(sum(1 for x in checks if x)/len(checks)*100,1) if checks else None)
             if getattr(m,'profit_margin',None) is None and rev and ni is not None: m.profit_margin=ni/rev
             if getattr(m,'operating_margin',None) is None and rev and op is not None: m.operating_margin=op/rev
             if getattr(m,'roe',None) is None and eq and ni is not None: m.roe=ni/eq
