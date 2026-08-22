@@ -5,7 +5,7 @@ on:
     branches:
       - chatgpt/v3.9-earnings-quality
     paths:
-      - 'v39.part.*.b64'
+      - 'v39.patch.gz.b64'
       - '.github/workflows/apply-v39.yml'
   pull_request:
     branches:
@@ -28,15 +28,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          parts=(v39.part.*.b64)
-          if [ ! -e "${parts[0]}" ]; then
+          if [ ! -f v39.patch.gz.b64 ]; then
             echo "Patch already applied; nothing to do."
             exit 0
           fi
-          cat v39.part.*.b64 | base64 -d > /tmp/v39.patch
+          base64 -d v39.patch.gz.b64 | gzip -d > /tmp/v39.patch
           git apply --check /tmp/v39.patch
           git apply /tmp/v39.patch
-          rm -f v39.part.*.b64 .github/workflows/apply-v39.yml
+          rm -f v39.patch.gz.b64 v39.part.*.b64 .github/workflows/apply-v39.yml
           git config user.name "Vestra Build"
           git config user.email "actions@github.com"
           git add -- README.md index.html market.css market.js sw.js DATA_SOURCES.md scripts/fundamentals.py scripts/run.py scripts/score.py scripts/sec_enrich.py
