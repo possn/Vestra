@@ -28,6 +28,7 @@ from valuation import assess as assess_valuation
 from earnings_intelligence import assess as assess_earnings_intelligence
 from catalysts import assess as assess_catalysts
 from low52_intelligence import assess as assess_low52_intelligence
+from peer_drawdown import assess_universe as assess_peer_drawdown
 from drawdown_diagnosis import assess as assess_drawdown_diagnosis
 from scanner import assess as assess_scanner
 from analyst import fetch_many as fetch_analyst_many
@@ -446,8 +447,10 @@ def main():
             "pipeline_status": "catalog_only",
         })
 
+    rows = assess_peer_drawdown(rows)
+
     payload = {
-        "schema_version": 519,
+        "schema_version": 520,
         "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
         "data_quality": {
             "portfolio_extra_requested": len(portfolio_extra),

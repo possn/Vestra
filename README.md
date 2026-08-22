@@ -1,3 +1,12 @@
+## Vestra v6.5 — Sector-relative Drawdown & Flow Ranking Repair
+
+- Corrige os rankings de Fluxos: Maiores ganhos (€/% ) mostram apenas ganhos positivos; perdas e zeros deixam de contaminar o ranking.
+- A ordenação dos rankings deixa de usar valor absoluto, evitando que uma grande perda apareça como maior ganho.
+- Novo contexto empresa vs setor: retorno 1 ano de cada empresa comparado com a mediana de pelo menos 4 pares do mesmo setor.
+- Classifica a queda como sobretudo específica da empresa, pior que o setor, próxima do setor ou melhor que o setor.
+- Mínimos 52s e o card “Porque caiu?” passam a mostrar esta comparação; não altera Score Vestra.
+- Dataset schema: 520. PWA cache: `vestra-cache-v62`.
+
 ## Vestra v6.4 — Drawdown Diagnosis
 
 - Empresas com drawdown material passam a ter diagnóstico explícito do provável motor da queda: operação, expectativas, balanço/financiamento, diluição, compressão de múltiplos ou mercado/setor residual.
