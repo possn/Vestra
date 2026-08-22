@@ -26,7 +26,7 @@ replace_once(
 )
 
 replace_once('scripts/run.py','from capital_risk import enrich as enrich_capital_risk\n','from capital_risk import enrich as enrich_capital_risk\nfrom confidence import assess as assess_confidence\n')
-replace_once('scripts/run.py','for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "analyst",','for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "confidence", "analyst",')
+replace_once('scripts/run.py','for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "capital_risk", "analyst",','for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "capital_risk", "confidence", "analyst",')
 replace_once(
     'scripts/run.py',
     '        if rm is not None and getattr(rm, "sec_edgar_enriched", False): row["data_sources"].append("SEC EDGAR")\n',
