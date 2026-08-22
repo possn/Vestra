@@ -20,6 +20,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/apply_v52_rebalancer.py')
+          s=p.read_text()
+          s=s.replace("    const close=e.target.closest('[data-market-close]'); if(close){ closeSheet(); return; }", "    const close=e.target.closest('[data-market-close]'); if(close) closeSheet();")
+          p.write_text(s)
+          PY
           python scripts/apply_v52_rebalancer.py
           rm -f scripts/apply_v52_rebalancer.py tmp/v52-marker.txt tmp/v52-marker2.txt
           python -m py_compile scripts/*.py
