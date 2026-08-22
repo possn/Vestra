@@ -1,3 +1,14 @@
+## Vestra v4.3 — Confidence Engine
+
+- “Confiança” deixa de ser sinónimo de quantidade de campos preenchidos.
+- Novo Confidence Score 0–100 combina cobertura, autoridade/diversidade das fontes, frescura das contas, concordância entre fontes e robustez da identidade.
+- SEC EDGAR expõe a data do período mais recente e cross-checks like-for-like de caixa, dívida, current ratio, ativos e equity quando Yahoo também tem esses valores.
+- Divergência relevante entre fontes impede confiança alta; contas muito antigas também limitam a confiança.
+- A confiança da tese passa a usar o Confidence Engine e pode ser alta tanto para uma boa tese como para um risco estrutural bem confirmado.
+- `metric_confidence` preserva a antiga leitura baseada apenas em cobertura para auditoria.
+- Layout visual permanece congelado.
+- PWA cache: `vestra-cache-v36`.
+
 ## Vestra v4.2 — Capital Structure & Corporate Actions Risk
 
 - SEC filings recentes passam a ser analisados para reverse splits, ATMs, ofertas de capital, convertíveis, warrants e risco de delisting.

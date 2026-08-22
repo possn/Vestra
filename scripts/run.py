@@ -23,6 +23,7 @@ from fundamentals import fetch_many
 from sec_enrich import enrich as enrich_sec
 from esef_enrich import enrich as enrich_esef
 from capital_risk import enrich as enrich_capital_risk
+from confidence import assess as assess_confidence
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
@@ -66,7 +67,7 @@ _fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
 _handler_stream.setFormatter(_fmt)
 _handler_console.setFormatter(_fmt)
 logging.basicConfig(level=logging.WARNING, handlers=[_handler_stream, _handler_console], force=True)
-for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "capital_risk", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
+for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "capital_risk", "confidence", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
     logging.getLogger(_name).setLevel(logging.INFO)
 log = logging.getLogger("run")
 
@@ -240,7 +241,11 @@ def main():
 
         rm = raw_by_ticker.get(s.ticker)
         row["data_sources"] = ["Yahoo Finance"]
-        if rm is not None and getattr(rm, "sec_edgar_enriched", False): row["data_sources"].append("SEC EDGAR")
+        if rm is not None and getattr(rm, "sec_edgar_enriched", False):
+            row["data_sources"].append("SEC EDGAR")
+            row["sec_period_end"] = getattr(rm, "sec_period_end", None)
+            row["source_agreement_checks"] = getattr(rm, "source_agreement_checks", 0)
+            row["source_agreement_pct"] = getattr(rm, "source_agreement_pct", None)
         if rm is not None and getattr(rm, "esef_enriched", False):
             row["data_sources"].append("ESEF / filings.xbrl.org")
             row["identity_source"] = "GLEIF/ANNA ISIN→LEI"
@@ -294,6 +299,7 @@ def main():
             row["net_margin_yoy_change_pp"] = rm.net_margin_yoy_change_pp
             row["net_margin_yoy_change_prior_pp"] = rm.net_margin_yoy_change_prior_pp
             row["repurchases_last_quarter"] = rm.repurchases_last_quarter
+        row.update(assess_confidence(row))
         row.update(classify_thesis(row))
         prev_date, prev_snapshot = thesis_history_mod.previous(thesis_history, s.ticker, today)
         d7_date, d7_snapshot = thesis_history_mod.nearest_days_ago(thesis_history, s.ticker, today, 7)
@@ -429,7 +435,7 @@ def main():
         })
 
     payload = {
-        "schema_version": 512,
+        "schema_version": 513,
         "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
         "data_quality": {
             "portfolio_extra_requested": len(portfolio_extra),

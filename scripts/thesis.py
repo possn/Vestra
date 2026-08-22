@@ -140,7 +140,15 @@ def classify(row: dict) -> dict:
     # Keep the UI concise and deterministic.
     evidence = evidence[:4]
     risks = risks[:4]
-    if risk_gate == "severe" or coverage is None or coverage < 40:
+    confidence_score = _n(row.get("confidence_score"))
+    if confidence_score is not None:
+        if confidence_score >= 80 and (len(evidence) >= 2 or risk_gate in ("high", "severe")):
+            confidence = "high"
+        elif confidence_score >= 60:
+            confidence = "medium"
+        else:
+            confidence = "low"
+    elif risk_gate == "severe" or coverage is None or coverage < 40:
         confidence = "low"
     elif risk_gate == "high":
         confidence = "medium"
