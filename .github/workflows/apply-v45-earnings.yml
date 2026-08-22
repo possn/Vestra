@@ -1,0 +1,39 @@
+name: Apply Vestra v4.5 earnings intelligence
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'chatgpt/v4.5-earnings-intelligence'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/v4.5-earnings-intelligence
+          fetch-depth: 0
+      - name: Apply and validate v4.5
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f scripts/apply_v45_earnings_intelligence.py ]; then
+            python scripts/apply_v45_earnings_intelligence.py
+            rm -f scripts/apply_v45_earnings_intelligence.py
+          fi
+          python -m py_compile scripts/*.py
+          node --check market.js
+          node --check sw.js
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add -- scripts/earnings_intelligence.py scripts/run.py market.js README.md sw.js
+          git add -u scripts/apply_v45_earnings_intelligence.py
+          if git diff --cached --quiet; then
+            echo "v4.5 already applied"
+          else
+            git commit -m "feat: Vestra v4.5 earnings and estimate intelligence"
+            git push origin HEAD:chatgpt/v4.5-earnings-intelligence
+          fi
