@@ -1,3 +1,12 @@
+## Vestra v4.9 — Portfolio Action Map
+
+- Novo mapa por posição em As minhas posições: Reforçar / Manter / Rever / Substituir.
+- A classificação usa Convicção, Confidence Engine, valuation, estimate momentum, thesis direction, Risk Gate e alternativas já identificadas.
+- “Substituir” só aparece quando a posição está materialmente fraca e existe uma alternativa do mesmo setor já filtrada como superior.
+- Cada linha mostra a razão principal e abre diretamente o dossier da posição.
+- É uma classificação de research, não uma ordem automática de compra/venda.
+- PWA cache: `vestra-cache-v44`.
+
 ## Vestra v4.8 — Catalyst & Risk Engine
 
 - Novo timeline auditável no dossier: “o que pode mexer esta ação e quando”.
