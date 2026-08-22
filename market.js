@@ -427,6 +427,31 @@
     return `<section class="market-section"><div class="market-section__head"><div><h3>Smart money</h3><p>Compras de insiders e atividade declarada no Congresso dos EUA</p><p class="market-source-credit">Congresso: <a href="https://www.bargo.ai/free-apis/congress" target="_blank" rel="noopener">Bargo</a> · divulgações STOCK Act</p></div><span class="market-data-age">${status}</span></div><div class="market-list">${rows.map(s=>renderRow(s,`${n(s.insider_buy_count_30d)||0} compras insider · ${Array.isArray(s.congress_trades)?s.congress_trades.length:0} trades Congresso`)).join('')||empty}</div></section>`;
   }
 
+
+  const SCANNER_STRATEGIES=[
+    ['qarp','QARP','Qualidade + valuation'],
+    ['fallen_angels','Fallen Angels','Preço deprimido, tese intacta'],
+    ['lows_intact','Mínimos intactos','52s sem red flags'],
+    ['positive_revisions','Revisões +','Expectativas a melhorar'],
+    ['insider_accumulation','Insiders','Compras open-market'],
+    ['turnarounds','Turnarounds','Execução a recuperar'],
+    ['dividend_growers','Dividend growers','Rendimento sustentável']
+  ];
+  function scannerResult(s,key){ return s?.scanner_results && typeof s.scanner_results==='object' ? s.scanner_results[key] : null; }
+  function renderScanner(strategy='qarp'){
+    const meta=SCANNER_STRATEGIES.find(x=>x[0]===strategy)||SCANNER_STRATEGIES[0];
+    let rows=M.stocks.filter(s=>!isFund(s)&&scannerResult(s,meta[0]))
+      .sort((a,b)=>(n(scannerResult(b,meta[0])?.score)||0)-(n(scannerResult(a,meta[0])?.score)||0));
+    const total=rows.length; rows=rows.slice(0,30);
+    const chips=SCANNER_STRATEGIES.map(([key,label])=>`<button class="market-chip ${key===meta[0]?'is-active':''}" data-scanner-strategy="${key}">${esc(label)}</button>`).join('');
+    const body=rows.length?rows.map(s=>{
+      const r=scannerResult(s,meta[0])||{}; const reasons=Array.isArray(r.reasons)?r.reasons:[];
+      const line=[`Scanner ${Math.round(n(r.score)||0)}/100`,...reasons.slice(0,2)].join(' · ');
+      return renderRow(s,line);
+    }).join(''):`<div class="market-empty"><strong>Sem candidatos robustos neste momento.</strong><br><span>O filtro prefere não mostrar nada a aceitar empresas com evidência insuficiente ou Risk Gate elevado.</span></div>`;
+    return `<div class="market-detail-head"><div><div class="market-kicker">SCANNER VESTRA</div><h2>${esc(meta[1])}</h2><p>${esc(meta[2])}. Estratégias independentes do core score, com filtros de confiança e risco.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-chipbar" style="margin-bottom:12px">${chips}</div><section class="market-section"><div class="market-section__head"><div><h3>Candidatos</h3><p>Ordenados pelo score específico desta estratégia.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
+  }
+
   function renderPrimary(){
     const root=$m('marketPrimary'); if(!root || !M.loaded) return;
     root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover();
@@ -731,6 +756,7 @@
         const p=portfolioTickers(); const picks=[...p].map(t=>M.byTicker.get(t)).filter(Boolean).slice(0,12);
         c.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">NOTÍCIAS</div><h2>Notícias das tuas posições</h2><p>Abre uma posição para ver o feed específico.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-list">${picks.length?picks.map(s=>renderRow(s,'Abrir notícias e dossier')).join(''):'<div class="market-empty">Sem posições reconhecidas.</div>'}</div>`;
       }
+      if(tool==='scanner') c.innerHTML=renderScanner('qarp');
     });
   }
 
@@ -777,6 +803,7 @@
       const s=M.byTicker.get(sh.dataset.ticker.toUpperCase());
       if(s){ sh.dataset.liveReady='0'; renderDetailTab(s,tab.dataset.detailTab); }
     }
+    const strat=e.target.closest('[data-scanner-strategy]'); if(strat){ const c=$m('marketSheetContent'); if(c)c.innerHTML=renderScanner(strat.dataset.scannerStrategy); return; }
     const tool=e.target.closest('[data-market-tool]'); if(tool) openTool(tool.dataset.marketTool);
     if(e.target.closest('#marketCompareGo')) compareNow();
     if(e.target.closest('[data-market-retry]')) { M.loaded=false; M.loading=null; ensureLoaded(); }

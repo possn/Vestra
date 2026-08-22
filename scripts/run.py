@@ -26,6 +26,7 @@ from capital_risk import enrich as enrich_capital_risk
 from confidence import assess as assess_confidence
 from valuation import assess as assess_valuation
 from earnings_intelligence import assess as assess_earnings_intelligence
+from scanner import assess as assess_scanner
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
@@ -312,6 +313,7 @@ def main():
             row, prev_snapshot, prev_date,
             d7_snapshot, d7_date, d30_snapshot, d30_date,
         ))
+        row.update(assess_scanner(row))
         rows.append(row)
 
     portfolio_extra = set(universe.get("EXTRA", []))
@@ -439,7 +441,7 @@ def main():
         })
 
     payload = {
-        "schema_version": 515,
+        "schema_version": 516,
         "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
         "data_quality": {
             "portfolio_extra_requested": len(portfolio_extra),
