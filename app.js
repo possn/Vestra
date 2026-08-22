@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260509v61").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260509v62").catch(() => {});
     });
   }
 } catch (_) {}
@@ -5569,7 +5569,7 @@ function renderRankingsPanel() {
   function rankSection(title, items, valFn, labelFn, colorFn, icon, limit) {
     limit = limit || 10;
     if (!items || !items.length) return "";
-    var sorted = items.slice().sort(function(a,b){ return Math.abs(valFn(b))-Math.abs(valFn(a)); });
+    var sorted = items.slice().sort(function(a,b){ return valFn(b)-valFn(a); });
     var top = sorted.slice(0,limit);
     var max = Math.abs(valFn(top[0])) || 1;
     var rows = "";
@@ -5598,11 +5598,13 @@ function renderRankingsPanel() {
 
   // Rankings data
   var secValue = rankSection("Maiores posições", allAssets, function(a){return parseNum(a.value);}, function(a,v){return fmtE(v);}, function(){return "var(--purple)";}, "💼");
-  var gainers = allAssets.filter(function(a){return parseNum(a.costBasis)>50;});
-  var secGainAbs = rankSection("Maiores ganhos (€)", gainers, gainAbs, function(a,v){return fmtE(v);}, function(a,v){return clr(v);}, "📈");
-  var gainersReal = gainers.filter(function(a){return parseNum(a.value)>=parseNum(a.costBasis)*0.1 && parseNum(a.value)>20;});
-  var secGainPct = rankSection("Maiores ganhos (%)", gainersReal, gainPct, function(a,v){return fmtP(v);}, function(a,v){return clr(v);}, "🚀");
-  var losers = gainersReal.filter(function(a){return gainPct(a)<0;});
+  var costed = allAssets.filter(function(a){return parseNum(a.costBasis)>50;});
+  var validPerformance = costed.filter(function(a){return parseNum(a.value)>=parseNum(a.costBasis)*0.1 && parseNum(a.value)>20;});
+  var gainersAbs = validPerformance.filter(function(a){return gainAbs(a)>0.005;});
+  var gainersPct = validPerformance.filter(function(a){return gainPct(a)>0.005;});
+  var secGainAbs = rankSection("Maiores ganhos (€)", gainersAbs, gainAbs, function(a,v){return fmtE(v);}, function(a,v){return clr(v);}, "📈");
+  var secGainPct = rankSection("Maiores ganhos (%)", gainersPct, gainPct, function(a,v){return fmtP(v);}, function(a,v){return clr(v);}, "🚀");
+  var losers = validPerformance.filter(function(a){return gainPct(a)<-0.005;});
   var secLoss = losers.length>=3 ? rankSection("Maiores perdas (%)", losers, function(a){return -gainPct(a);}, function(a){return fmtP(gainPct(a));}, function(){return "var(--red)";}, "📉") : "";
   var divItems = Object.entries(divByTicker).map(function(e){return {name:e[1].name||e[0],ticker:e[0],_gross:e[1].gross,_count:e[1].count};}).filter(function(x){return x._gross>0;});
   var secDiv = rankSection("Maiores dividendos recebidos", divItems, function(x){return x._gross;}, function(x,v){return fmtE(v);}, function(){return "var(--green)";}, "💰");
