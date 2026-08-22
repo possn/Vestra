@@ -1,9 +1,7 @@
 from pathlib import Path
-import re
 
 root=Path(__file__).resolve().parents[1]
 
-# Pipeline
 p=root/'scripts/run.py'
 s=p.read_text()
 anchor='from low52_intelligence import assess as assess_low52_intelligence\n'
@@ -17,7 +15,6 @@ if 'row.update(assess_drawdown_diagnosis(row))' not in s:
 s=s.replace('"schema_version": 518','"schema_version": 519',1)
 p.write_text(s)
 
-# Frontend
 p=root/'market.js'
 s=p.read_text()
 if 'function drawdownPanel(s)' not in s:
@@ -37,22 +34,16 @@ if 'function drawdownPanel(s)' not in s:
 
 '''
     s=s.replace(marker,fn+marker,1)
-
 old="if(tab==='overview') body.innerHTML=`${changePanel(s)}${catalystPanel(s)}${investmentCase(s)}"
 new="if(tab==='overview') body.innerHTML=`${changePanel(s)}${drawdownPanel(s)}${catalystPanel(s)}${investmentCase(s)}"
 assert old in s
 s=s.replace(old,new,1)
-
-# Enrich lows row metadata without changing broad lows membership.
-pattern=r"(function renderLows\(\)\{.*?const body=rows\.length\?rows\.map\(\(\{s,stats\}\)=>\{.*?const currency=txt\(s\.currency\)\|\|'USD';\s*const dist=Math\.max\(0,stats\.above\);\s*)const meta=`[^`]*`;"
-m=re.search(pattern,s,re.S)
-assert m, 'renderLows meta anchor not found'
-replacement=m.group(1)+"const lowLabel=txt(s.low52_label); const cause=txt(s.drawdown_primary_label); const trend=txt(s.drawdown_driver_trend); const trendText=trend==='improving'?'causa a melhorar':trend==='deteriorating'?'causa a piorar':'';\n      const meta=[`${dist.toFixed(1)}% acima do mínimo`,lowLabel,cause,trendText].filter(Boolean).join(' · ');"
-s=s[:m.start()]+replacement+s[m.end():]
-
+old_meta="      const status=txt(s.low52_status), label=txt(s.low52_label)||'Sem classificação', lowScore=n(s.low52_score);\n      const meta=`${dist.toFixed(1)}% acima do mínimo · ${label}${lowScore!=null?` · Low52 ${Math.round(lowScore)}/100`:''} · mínimo ${money(stats.low,currency)}`;"
+new_meta="      const status=txt(s.low52_status), label=txt(s.low52_label)||'Sem classificação', lowScore=n(s.low52_score);\n      const cause=txt(s.drawdown_primary_label), trend=txt(s.drawdown_driver_trend);\n      const trendText=trend==='improving'?'causa a melhorar':trend==='deteriorating'?'causa a piorar':'';\n      const meta=[`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText].filter(Boolean).join(' · ');"
+assert old_meta in s
+s=s.replace(old_meta,new_meta,1)
 p.write_text(s)
 
-# CSS
 p=root/'market.css'
 s=p.read_text()
 if '.market-drawdown-drivers' not in s:
@@ -67,15 +58,12 @@ if '.market-drawdown-drivers' not in s:
 '''
 p.write_text(s)
 
-# README
 p=root/'README.md'
 s=p.read_text()
 if not s.startswith('## Vestra v6.4'):
-    intro='''## Vestra v6.4 — Drawdown Diagnosis\n\n- Empresas com drawdown material passam a ter diagnóstico explícito do provável motor da queda: operação, expectativas, balanço/financiamento, diluição, compressão de múltiplos ou mercado/setor residual.\n- Cada driver tem intensidade 0–100, evidência curta e tendência: a melhorar, estável ou a piorar.\n- O diagnóstico aparece no dossier em “Porque caiu?” e também contextualiza a lista de Mínimos 52s.\n- Não prova causalidade e não altera o Score Vestra; é uma camada explicável de research.\n- Dataset schema: 519. PWA cache: `vestra-cache-v61`.\n\n'''
-    s=intro+s
+    s='''## Vestra v6.4 — Drawdown Diagnosis\n\n- Empresas com drawdown material passam a ter diagnóstico explícito do provável motor da queda: operação, expectativas, balanço/financiamento, diluição, compressão de múltiplos ou mercado/setor residual.\n- Cada driver tem intensidade 0–100, evidência curta e tendência: a melhorar, estável ou a piorar.\n- O diagnóstico aparece no dossier em “Porque caiu?” e também contextualiza a lista de Mínimos 52s.\n- Não prova causalidade e não altera o Score Vestra; é uma camada explicável de research.\n- Dataset schema: 519. PWA cache: `vestra-cache-v61`.\n\n'''+s
 p.write_text(s)
 
-# PWA cache
 p=root/'sw.js'
 s=p.read_text().replace('vestra-cache-v60','vestra-cache-v61')
 p.write_text(s)
