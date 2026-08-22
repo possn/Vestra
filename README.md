@@ -1,3 +1,12 @@
+## Vestra v6.3 — Thesis Checkpoints & Low52 Intelligence
+
+- Research Queue passa a guardar checkpoint da tese e uma nota curta por posição, localmente no dispositivo.
+- Checkpoints: Mantém, Deteriorou, Aguardar earnings, A melhorar e Rever saída; não alteram Score Vestra nem a carteira.
+- Novo motor específico para empresas perto dos mínimos de 52 semanas: combina qualidade, balanço, cash flow, confiança, valuation, expectativas, receita/margens, diluição, estrutura de capital e Risk Gate.
+- Cada empresa perto do mínimo é classificada como Oportunidade potencial, Queda saudável / acompanhar, Indeterminado, Risco de value trap ou Deterioração estrutural.
+- Fallen Angels e Mínimos intactos passam a consumir esta classificação em vez de apenas thresholds simples.
+- Dataset schema: 518. PWA cache: `vestra-cache-v60`.
+
 ## Vestra v6.2 — Research Queue
 
 - Nova fila operacional de research dentro de As minhas posições, logo após o Decision Center.
