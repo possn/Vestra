@@ -818,6 +818,23 @@
     return {key:'hold',label:'Manter',tone:'neutral',reason:reasons.slice(0,2).join(' · ')||'tese sem alteração material'};
   }
 
+  const PORTFOLIO_TARGETS_KEY='vestra_portfolio_targets_v1';
+  function defaultPortfolioTargets(){ return {maxPosition:10,maxSector:25,overlap:'reduce',tilt:'balanced'}; }
+  function loadPortfolioTargets(){
+    try{ const raw=JSON.parse(localStorage.getItem(PORTFOLIO_TARGETS_KEY)||'{}'); return {...defaultPortfolioTargets(),...raw}; }
+    catch{return defaultPortfolioTargets();}
+  }
+  function savePortfolioTargets(t){ try{ localStorage.setItem(PORTFOLIO_TARGETS_KEY,JSON.stringify(t)); }catch{} return t; }
+  function portfolioTiltBonus(stock,tilt){
+    if(tilt==='quality') return ((n(stock?.quality_pct)||50)-50)*.10 + ((n(stock?.cashflow_pct)||50)-50)*.05;
+    if(tilt==='growth') return ((n(stock?.growth_pct)||50)-50)*.10 + ((n(stock?.estimate_momentum_score)||50)-50)*.05;
+    if(tilt==='dividend'){
+      const y=n(stock?.dividend_yield); const q=n(stock?.quality_pct)||50; const cf=n(stock?.cashflow_pct)||50;
+      return (y!=null?Math.min(8,Math.max(0,y*100))*0.7:0)+(q-50)*.035+(cf-50)*.035;
+    }
+    return 0;
+  }
+
   function portfolioIntelligence(rows,total){
     if(!rows.length) return '';
     const analysed=rows.reduce((a,r)=>a+r.value,0)||1;
@@ -905,7 +922,9 @@
     const rebalSourceRows=actionRows.filter(r=>r.value>0&&r.conviction!=null).slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999));
     const defaultSource=rebalSourceRows[0]||null;
     const rebalancerHtml=defaultSource?`<div class="market-detail-card market-rebalancer" data-rebalancer-card><div class="market-perspective-head"><div><small>ASSISTED REBALANCER</small><h4>Onde melhora mais este capital?</h4></div><span class="market-data-age">simulação</span></div><p class="market-case-note">Escolhe a posição de origem e o montante. A Vestra mantém o valor total da carteira e compara destinos elegíveis por convicção, concentração, overlap e valuation.</p><div class="market-rebalancer-controls"><label><span>Libertar de</span><select data-rebalance-source>${rebalSourceRows.map(r=>`<option value="${esc(r.stock.ticker)}">${esc(r.stock.ticker)} · ${euro(r.value)} · conv. ${Math.round(r.conviction)}</option>`).join('')}</select></label><label><span>Montante</span><input data-rebalance-amount type="number" min="50" step="50" value="${Math.max(50,Math.min(1000,Math.round(defaultSource.value/50)*50||50))}"></label><button type="button" data-rebalance-run>Simular</button></div><div class="market-rebalancer-results" data-rebalance-results><p class="market-case-note">Toca em Simular para comparar os melhores destinos.</p></div><p class="market-case-note">Research assistido; não considera fiscalidade, custos de transação, liquidez pessoal ou ordens reais.</p></div>`:'';
-    const planHtml=`<div class="market-detail-card market-rebalance-plan" data-rebalance-plan-card><div class="market-perspective-head"><div><small>MULTI-MOVE PLAN</small><h4>Plano de rebalanceamento</h4></div><span class="market-data-age">até 3 movimentos</span></div><p class="market-case-note">Gera um plano pequeno a partir das posições mais frágeis. Evita repetir o mesmo destino e mostra o impacto agregado estimado.</p><button type="button" class="market-plan-run" data-rebalance-plan>Gerar plano</button><div data-rebalance-plan-results><p class="market-case-note">Nenhuma alteração é aplicada à carteira.</p></div></div>`;
+    const targets=loadPortfolioTargets();
+    const targetHtml=`<div class="market-detail-card market-target-engine" data-target-engine><div class="market-perspective-head"><div><small>PORTFOLIO TARGETS</small><h4>Objetivos da carteira</h4></div><span class="market-data-age">guardado localmente</span></div><p class="market-case-note">Estes objetivos passam a orientar o Rebalancer e o plano multi-movimento. Não alteram a carteira por si só.</p><div class="market-target-grid"><label><span>Máx. por posição</span><div><input data-target-position type="number" min="3" max="30" step="1" value="${targets.maxPosition}"><em>%</em></div></label><label><span>Máx. por setor</span><div><input data-target-sector type="number" min="10" max="60" step="1" value="${targets.maxSector}"><em>%</em></div></label><label><span>Overlap ETF</span><select data-target-overlap><option value="reduce" ${targets.overlap==='reduce'?'selected':''}>Reduzir</option><option value="neutral" ${targets.overlap==='neutral'?'selected':''}>Neutro</option></select></label><label><span>Prioridade</span><select data-target-tilt><option value="balanced" ${targets.tilt==='balanced'?'selected':''}>Equilibrado</option><option value="quality" ${targets.tilt==='quality'?'selected':''}>Quality</option><option value="growth" ${targets.tilt==='growth'?'selected':''}>Growth</option><option value="dividend" ${targets.tilt==='dividend'?'selected':''}>Dividendos</option></select></label></div><button type="button" class="market-plan-run" data-target-save>Guardar objetivos</button><span class="market-target-status" data-target-status></span></div>`;
+    const planHtml=`<div class="market-detail-card market-rebalance-plan" data-rebalance-plan-card><div class="market-perspective-head"><div><small>MULTI-MOVE PLAN · TARGET AWARE</small><h4>Plano de rebalanceamento</h4></div><span class="market-data-age">até 3 movimentos</span></div><p class="market-case-note">Gera um plano a partir das posições mais frágeis e respeita os objetivos guardados acima.</p><button type="button" class="market-plan-run" data-rebalance-plan>Gerar plano</button><div data-rebalance-plan-results><p class="market-case-note">Nenhuma alteração é aplicada à carteira.</p></div></div>`;
     const concentratedCount=ranked.filter(r=>r.portfolioFit?.fit==='concentrated').length;
     const overlapCount=ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length;
     const actionMapHtml=`<div class="market-detail-card market-action-map"><div class="market-perspective-head"><div><small>ACTION MAP · PORTFOLIO FIT</small><h4>Mapa da carteira</h4></div><span class="market-data-age">${actionRows.length} posições</span></div><div class="market-action-context"><span>${concentratedCount} concentração</span><span>${overlapCount} overlap indireto</span><span>${sectorRows[0]?`${esc(sectorRows[0].sector)} ${sectorRows[0].pct.toFixed(0)}%`:'setor —'}</span></div><div class="market-action-summary"><span class="is-positive">Reforçar ${actionCounts.reinforce||0}</span><span>Manter ${actionCounts.hold||0}</span><span class="is-warn">Rever ${actionCounts.review||0}</span><span class="is-risk">Substituir ${actionCounts.replace||0}</span></div><div class="market-action-list">${actionRows.slice(0,12).map(r=>`<button type="button" class="market-action-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div>${actionRows.length>12?`<details class="market-detail-disclosure"><summary>Ver mais ${actionRows.length-12} posições</summary><div class="market-action-list">${actionRows.slice(12).map(r=>`<button type="button" class="market-action-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div></details>`:''}<p class="market-case-note">Classificação de research baseada em dados atuais; não é uma ordem automática de compra ou venda.</p></div>`;
@@ -917,6 +936,7 @@
       <div class="market-detail-card"><h4>Concentração e overlap</h4>${concHtml}</div>
       <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida com score pelo menos 8 pontos superior, confiança ≥60 e sem Risk Gate alto/severo.</p>${altHtml}</div>
       ${scenarioHtml}
+      ${targetHtml}
       ${rebalancerHtml}
       ${planHtml}`;
   }
@@ -990,16 +1010,20 @@
       const positionPct=(existingValue+move)/analysed*100;
       const indirect=isFund(stock)?0:indirectExposurePct(stock,etfs);
       const convDelta=(conv-srcConv)*(move/analysed);
+      const targets=loadPortfolioTargets();
+      const maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10));
+      const maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
       let penalty=0;
-      if(positionPct>15) penalty+=(positionPct-15)*1.6;
-      else if(positionPct>10) penalty+=(positionPct-10)*.7;
-      if(sectorPct>35) penalty+=(sectorPct-35)*1.1;
-      else if(sectorPct>28) penalty+=(sectorPct-28)*.45;
-      if(indirect>2) penalty+=(indirect-2)*2.2;
-      const diversityBonus=(destSector!==srcSector && (sectors.get(destSector)||0)/analysed*100<20)?3:0;
+      if(positionPct>maxPos) penalty+=(positionPct-maxPos)*1.7;
+      else if(positionPct>maxPos*.85) penalty+=(positionPct-maxPos*.85)*.55;
+      if(sectorPct>maxSector) penalty+=(sectorPct-maxSector)*1.2;
+      else if(sectorPct>maxSector*.88) penalty+=(sectorPct-maxSector*.88)*.45;
+      if(targets.overlap==='reduce'&&indirect>1.5) penalty+=(indirect-1.5)*2.4;
+      const diversityBonus=(destSector!==srcSector && (sectors.get(destSector)||0)/analysed*100<Math.min(20,maxSector*.75))?3:0;
       const valuationBonus=txt(stock.valuation_signal)==='undervalued'?3:0;
-      const fitScore=conv-penalty+diversityBonus+valuationBonus;
-      return {stock,conv,convDelta,fitScore,positionPct,sectorPct,indirect,overlapDelta:indirect-srcIndirect,existing:!!existing};
+      const tiltBonus=portfolioTiltBonus(stock,targets.tilt);
+      const fitScore=conv-penalty+diversityBonus+valuationBonus+tiltBonus;
+      return {stock,conv,convDelta,fitScore,positionPct,sectorPct,indirect,overlapDelta:indirect-srcIndirect,existing:!!existing,targets};
     }).filter(Boolean).sort((a,b)=>b.fitScore-a.fitScore).slice(0,5);
     return {source:src.stock,amount:move,sourceConv:srcConv,results:ranked};
   }
@@ -1007,7 +1031,8 @@
   function renderRebalanceResults(sim){
     if(sim?.error) return `<p class="market-case-note">${esc(sim.error)}</p>`;
     if(!sim?.results?.length) return '<p class="market-case-note">Sem destinos elegíveis com os filtros atuais.</p>';
-    return `<div class="market-rebalance-list">${sim.results.map((r,i)=>`<button type="button" class="market-rebalance-row" data-market-ticker="${esc(r.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(r.stock.ticker)} · ${esc(r.stock.name||'')}</strong><small>${r.existing?'Já em carteira':'Nova posição'} · conv. ${Math.round(r.conv)} · peso após ${r.positionPct.toFixed(1)}% · setor ${r.sectorPct.toFixed(0)}%</small><small>Δ convicção carteira ${r.convDelta>=0?'+':''}${r.convDelta.toFixed(2)} · overlap ${r.overlapDelta>=0?'+':''}${r.overlapDelta.toFixed(1)} pp</small></span><em>${r.fitScore.toFixed(0)}</em></button>`).join('')}</div>`;
+    const t=loadPortfolioTargets();
+    return `<div class="market-target-summary">Limites: posição ${t.maxPosition}% · setor ${t.maxSector}% · ${t.overlap==='reduce'?'reduzir overlap':'overlap neutro'} · ${esc(t.tilt)}</div><div class="market-rebalance-list">${sim.results.map((r,i)=>`<button type="button" class="market-rebalance-row" data-market-ticker="${esc(r.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(r.stock.ticker)} · ${esc(r.stock.name||'')}</strong><small>${r.existing?'Já em carteira':'Nova posição'} · conv. ${Math.round(r.conv)} · peso após ${r.positionPct.toFixed(1)}% · setor ${r.sectorPct.toFixed(0)}%</small><small>Δ convicção carteira ${r.convDelta>=0?'+':''}${r.convDelta.toFixed(2)} · overlap ${r.overlapDelta>=0?'+':''}${r.overlapDelta.toFixed(1)} pp</small></span><em>${r.fitScore.toFixed(0)}</em></button>`).join('')}</div>`;
   }
 
   function openTool(tool){
@@ -1096,6 +1121,14 @@
     const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
     const watch=e.target.closest('[data-market-watch]'); if(watch){e.preventDefault();e.stopPropagation();toggleWatch(watch.dataset.marketWatch);return;}
     const row=e.target.closest('[data-market-ticker]'); if(row){ hideSearchSuggestions(); ensureLoaded().then(()=>openTicker(row.dataset.marketTicker)); }
+    const saveTargets=e.target.closest('[data-target-save]');
+    if(saveTargets){
+      const card=saveTargets.closest('[data-target-engine]');
+      const targets={maxPosition:Math.max(3,Math.min(30,n(card?.querySelector('[data-target-position]')?.value)||10)),maxSector:Math.max(10,Math.min(60,n(card?.querySelector('[data-target-sector]')?.value)||25)),overlap:card?.querySelector('[data-target-overlap]')?.value||'reduce',tilt:card?.querySelector('[data-target-tilt]')?.value||'balanced'};
+      savePortfolioTargets(targets);
+      const status=card?.querySelector('[data-target-status]'); if(status) status.textContent='Guardado';
+      return;
+    }
     const plan=e.target.closest('[data-rebalance-plan]');
     if(plan){
       const card=plan.closest('[data-rebalance-plan-card]'); const out=card?.querySelector('[data-rebalance-plan-results]');
