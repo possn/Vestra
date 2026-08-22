@@ -37,8 +37,8 @@ replace_once('scripts/run.py','"schema_version": 512,','"schema_version": 513,')
 
 replace_once(
     'scripts/thesis.py',
-    '''    if coverage is None or coverage < 40:\n        confidence = "low"\n    elif coverage >= 70 and len(evidence) >= 2:\n        confidence = "high"\n    else:\n        confidence = "medium"\n''',
-    '''    confidence_score = _n(row.get("confidence_score"))\n    if confidence_score is not None:\n        if confidence_score >= 80 and (len(evidence) >= 2 or row.get("risk_gate") in ("high", "severe")):\n            confidence = "high"\n        elif confidence_score >= 60:\n            confidence = "medium"\n        else:\n            confidence = "low"\n    elif coverage is None or coverage < 40:\n        confidence = "low"\n    elif coverage >= 70 and len(evidence) >= 2:\n        confidence = "high"\n    else:\n        confidence = "medium"\n'''
+    '''    if risk_gate == "severe" or coverage is None or coverage < 40:\n        confidence = "low"\n    elif risk_gate == "high":\n        confidence = "medium"\n    elif coverage >= 70 and len(evidence) >= 2:\n        confidence = "high"\n    else:\n        confidence = "medium"\n''',
+    '''    confidence_score = _n(row.get("confidence_score"))\n    if confidence_score is not None:\n        if confidence_score >= 80 and (len(evidence) >= 2 or risk_gate in ("high", "severe")):\n            confidence = "high"\n        elif confidence_score >= 60:\n            confidence = "medium"\n        else:\n            confidence = "low"\n    elif risk_gate == "severe" or coverage is None or coverage < 40:\n        confidence = "low"\n    elif risk_gate == "high":\n        confidence = "medium"\n    elif coverage >= 70 and len(evidence) >= 2:\n        confidence = "high"\n    else:\n        confidence = "medium"\n'''
 )
 
 p=ROOT/'README.md'
