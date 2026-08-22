@@ -1,0 +1,37 @@
+name: Apply Vestra v4.8 catalyst engine
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'chatgpt/v4.8-catalyst-risk-engine'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/v4.8-catalyst-risk-engine
+          fetch-depth: 0
+      - name: Apply and validate v4.8
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/apply_v48_catalysts.py
+          rm -f scripts/apply_v48_catalysts.py
+          python -m py_compile scripts/*.py
+          node --check market.js
+          node --check sw.js
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add -- scripts/catalysts.py scripts/run.py market.js README.md sw.js
+          git add -u scripts/apply_v48_catalysts.py
+          if git diff --cached --quiet; then
+            echo "v4.8 already applied"
+          else
+            git commit -m "feat: Vestra v4.8 catalyst and risk engine"
+            git push origin HEAD:chatgpt/v4.8-catalyst-risk-engine
+          fi
