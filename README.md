@@ -1,3 +1,13 @@
+## Vestra v4.7 — Portfolio Intelligence
+
+- A área As minhas posições passa a incluir inteligência de carteira sem alterar a navegação global.
+- Convicção de research combina Score Vestra, Confidence Engine, valuation, estimate momentum e Risk Gate; permanece explicável e não é uma recomendação automática.
+- Novos blocos: candidatos a reforço, posições a rever, concentração/overlap e alternativas melhores no mesmo setor.
+- Overlap deteta concentração por posição/setor, holdings comuns entre ETFs e ações detidas diretamente que também aparecem dentro de ETFs.
+- Alternativas exigem score pelo menos 8 pontos superior, confiança >=60, mesmo setor e ausência de Risk Gate alto/severo.
+- Layout visual global permanece congelado.
+- PWA cache: `vestra-cache-v40`.
+
 ## Vestra v4.6 — Intelligent Scanner
 
 - Novo Scanner Vestra em Mais ferramentas, sem alterar a navegação principal congelada.
