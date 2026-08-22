@@ -1,3 +1,14 @@
+## Vestra v4.5 — Earnings & Estimate Intelligence
+
+- Novo overlay quantitativo de expectativas, separado do Score Vestra por causa da cobertura desigual entre mercados.
+- Combina revisões de EPS 30d, breadth de revisões, surpresa média/mais recente, sequência de beats e crescimento esperado.
+- Produz `estimate_momentum_score` 0–100 e sinal Improving / Neutral / Deteriorating / Insufficient.
+- A aba Resultados passa a mostrar momentum, breadth, revisão, surpresa, confiança e proximidade dos earnings.
+- Alterações rápidas de expectativas entram nos catalisadores e pontos a vigiar do Investment Case.
+- O cabeçalho do dossier sinaliza expectativas a melhorar/piorar sem alterar o core score.
+- Layout visual permanece congelado.
+- PWA cache: `vestra-cache-v38`.
+
 ## Vestra v4.4 — Valuation Engine & Sector Models
 
 - Novo fair value Vestra em faixa, nunca como target pontual: mínimo, centro, máximo, upside/downside e margem de segurança.
