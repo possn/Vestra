@@ -1,4 +1,4 @@
-## Vestra v3.5 — Fast Quote Sync
+## Vestra v3.6 — 52-week lows — Fast Quote Sync
 
 - Layout visual congelado; sem alterações estruturais de UI.
 - Atualização automática de cotações convertida para batches (`/quotes`, 20 símbolos por pedido) em vez de centenas de requests individuais.
@@ -230,3 +230,10 @@ Vanilla HTML/CSS/JS · IndexedDB · Chart.js · Service Worker · PWA · pipelin
 - Atualização manual também não bloqueia: mostra apenas um toast; detalhes só abrem por ação explícita do utilizador.
 - Indicador de erros continua disponível na Carteira.
 - PWA cache: `vestra-cache-v24`.
+
+
+### v3.6 — Mínimos 52s
+- Novo modo **Mínimos 52s** no Mercado.
+- Calcula o mínimo dos últimos 12 meses a partir do histórico local de cada empresa.
+- Mostra empresas até 5% acima do mínimo, ordenadas pela proximidade.
+- Cada resultado indica distância ao mínimo e o valor do mínimo de 52 semanas.

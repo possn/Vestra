@@ -367,6 +367,34 @@
       <div class="market-list">${rows.length?rows.map(s=>renderRow(s)).join(''):'<div class="market-empty market-empty--filters"><strong>Sem resultados neste filtro.</strong><span>Experimenta outro setor ou remove a pesquisa.</span></div>'}</div></section>`;
   }
 
+
+  function low52Stats(s){
+    const hist=Array.isArray(s?.price_history_1y)?s.price_history_1y:[];
+    const closes=hist.map(x=>n(x?.close)).filter(x=>x!=null&&x>0);
+    const current=n(s?.current_price) ?? (closes.length?closes[closes.length-1]:null);
+    if(!closes.length || current==null || current<=0) return null;
+    const low=Math.min(...closes);
+    const high=Math.max(...closes);
+    if(!(low>0)) return null;
+    const above=(current/low-1)*100;
+    return {low,high,current,above};
+  }
+
+  function renderLows(){
+    let rows=M.stocks.filter(s=>!isFund(s)).map(s=>({s,stats:low52Stats(s)}))
+      .filter(x=>x.stats && x.stats.above>=-0.5 && x.stats.above<=5)
+      .sort((a,b)=>a.stats.above-b.stats.above || (n(b.s.score)||0)-(n(a.s.score)||0));
+    const total=rows.length;
+    rows=rows.slice(0,30);
+    const body=rows.length?rows.map(({s,stats})=>{
+      const currency=txt(s.currency)||'USD';
+      const dist=Math.max(0,stats.above);
+      const meta=`${dist.toFixed(1)}% acima do mínimo · mínimo ${money(stats.low,currency)}`;
+      return renderRow(s,meta);
+    }).join(''):'<div class="market-empty"><strong>Sem empresas até 5% do mínimo de 52 semanas.</strong><br><span>O universo será recalculado quando os dados de mercado forem atualizados.</span></div>';
+    return `<section class="market-section"><div class="market-section__head"><div><h3>Mínimos de 52 semanas</h3><p>Empresas até 5% acima do mínimo dos últimos 12 meses, ordenadas pela proximidade ao mínimo.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
+  }
+
   function renderFunds(){
     const qs=M.query.toLowerCase();
     let funds=M.stocks.filter(isFund);
@@ -401,7 +429,7 @@
 
   function renderPrimary(){
     const root=$m('marketPrimary'); if(!root || !M.loaded) return;
-    root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():renderDiscover();
+    root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover();
   }
 
   function marketSearchMatches(query, limit=7){
