@@ -493,14 +493,23 @@
     return `<svg class="market-spark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Preço 1 ano"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" style="color:var(--vio)"/></svg>`;
   }
 
+  function scoreDims(s){
+    const mapped=[
+      ['Qualidade',s.quality_pct],['Crescimento',s.growth_pct],['Balanço',s.balance_pct],['Cash flow',s.cashflow_pct],
+      ['Valuation',s.value_pct],['Execução',s.execution_pct],['Qualidade dos lucros',s.earnings_quality_pct],
+      ['Alocação de capital',s.capital_allocation_pct],['Estabilidade',s.stability_pct]
+    ];
+    return mapped.filter(([,v])=>v!=null);
+  }
+
   function dimRows(s){
-    const dims=[['Qualidade',s.quality_pct],['Crescimento',s.growth_pct],['Balanço',s.balance_pct],['Cash flow',s.cashflow_pct],['Valuation',s.value_pct],['Estabilidade',s.stability_pct]];
+    const dims=scoreDims(s);
     return dims.map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${k}</span><strong>${n(v)==null?'—':Math.round(v)}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
   }
 
   function vestraRead(s){
     const score=n(s.score);
-    const dims=[['Qualidade',s.quality_pct],['Crescimento',s.growth_pct],['Balanço',s.balance_pct],['Cash flow',s.cashflow_pct],['Valuation',s.value_pct],['Estabilidade',s.stability_pct]];
+    const dims=scoreDims(s);
     const strengths=dims.filter(([,v])=>n(v)!=null&&n(v)>=68).sort((a,b)=>n(b[1])-n(a[1])).slice(0,2).map(([k])=>k);
     const cautions=dims.filter(([,v])=>n(v)!=null&&n(v)<48).sort((a,b)=>n(a[1])-n(b[1])).slice(0,2).map(([k])=>k);
     const direction=txt(s.thesis_direction);
@@ -528,7 +537,7 @@
     const evidence=Array.isArray(s.thesis_evidence)?s.thesis_evidence.filter(Boolean):[];
     const drivers=Array.isArray(s.thesis_evolution_drivers)?s.thesis_evolution_drivers.filter(Boolean):[];
     const risks=Array.isArray(s.thesis_risks)?s.thesis_risks.filter(Boolean):[];
-    const dims=[['Qualidade',s.quality_pct],['Crescimento',s.growth_pct],['Balanço',s.balance_pct],['Cash flow',s.cashflow_pct],['Valuation',s.value_pct],['Estabilidade',s.stability_pct]];
+    const dims=scoreDims(s);
     const weak=dims.filter(([,v])=>n(v)!=null&&n(v)<48).sort((a,b)=>n(a[1])-n(b[1])).map(([k,v])=>`${k} ${Math.round(n(v))}/100`);
     const fwdVs=n(s.forward_pe_vs_sector_pct), trailVs=n(s.trailing_pe_vs_sector_pct), evVs=n(s.ev_ebitda_vs_sector_pct);
     const valuationDelta=fwdVs??trailVs??evVs;
@@ -586,7 +595,7 @@
       const hist=Array.isArray(s.analyst_earnings_history_4q)?s.analyst_earnings_history_4q.slice(0,4):[];
       body.innerHTML=`<div class="market-detail-card"><h4>Resultados e catalisadores</h4><div class="market-metrics"><div class="market-metric"><small>Próx. resultados</small><strong>${shortDate(s.analyst_next_earnings_date)}</strong></div><div class="market-metric"><small>Dias até earnings</small><strong>${n(s.analyst_days_to_earnings)==null?'—':Math.round(n(s.analyst_days_to_earnings))}</strong></div><div class="market-metric"><small>Última surpresa EPS</small><strong>${pct(s.analyst_latest_eps_surprise_pct)}</strong></div><div class="market-metric"><small>Beats 4T</small><strong>${n(s.analyst_earnings_beats_4q)==null?'—':Math.round(n(s.analyst_earnings_beats_4q))}</strong></div><div class="market-metric"><small>Misses 4T</small><strong>${n(s.analyst_earnings_misses_4q)==null?'—':Math.round(n(s.analyst_earnings_misses_4q))}</strong></div><div class="market-metric"><small>Surpresa média 4T</small><strong>${pct(s.analyst_earnings_avg_surprise_4q)}</strong></div></div>${hist.length?`<div class="market-earnings-list">${hist.map(x=>`<div><span>${shortDate(x.date||x.earnings_date)}</span><strong>${pct(x.surprise_pct??x.eps_surprise_pct)}</strong></div>`).join('')}</div>`:''}</div>`;
     }
-    if(tab==='financials') body.innerHTML=`<div class="market-detail-card"><h4>Saúde financeira</h4><div class="market-metrics"><div class="market-metric"><small>Margem bruta</small><strong>${pct(s.gross_margin)}</strong></div><div class="market-metric"><small>Margem operacional</small><strong>${pct(s.operating_margin)}</strong></div><div class="market-metric"><small>Margem líquida</small><strong>${pct(s.profit_margin)}</strong></div><div class="market-metric"><small>Debt / Equity</small><strong>${num(s.debt_to_equity)}</strong></div><div class="market-metric"><small>Current ratio</small><strong>${num(s.current_ratio)}</strong></div><div class="market-metric"><small>Quick ratio</small><strong>${num(s.quick_ratio)}</strong></div><div class="market-metric"><small>Cash flow operacional</small><strong>${compact(s.operating_cash_flow)}</strong></div><div class="market-metric"><small>Free cash flow</small><strong>${compact(s.free_cash_flow)}</strong></div><div class="market-metric"><small>Net cash / dívida</small><strong>${compact(s.net_cash)}</strong></div></div></div>`;
+    if(tab==='financials') body.innerHTML=`<div class="market-detail-card"><h4>Saúde financeira</h4><div class="market-metrics"><div class="market-metric"><small>Margem bruta</small><strong>${pct(s.gross_margin)}</strong></div><div class="market-metric"><small>Margem operacional</small><strong>${pct(s.operating_margin)}</strong></div><div class="market-metric"><small>Margem líquida</small><strong>${pct(s.profit_margin)}</strong></div><div class="market-metric"><small>Debt / Equity</small><strong>${num(s.debt_to_equity)}</strong></div><div class="market-metric"><small>Current ratio</small><strong>${num(s.current_ratio)}</strong></div><div class="market-metric"><small>Quick ratio</small><strong>${num(s.quick_ratio)}</strong></div><div class="market-metric"><small>Cash flow operacional</small><strong>${compact(s.operating_cash_flow)}</strong></div><div class="market-metric"><small>Free cash flow</small><strong>${compact(s.free_cash_flow)}</strong></div><div class="market-metric"><small>Net cash / dívida</small><strong>${compact(s.net_cash)}</strong></div></div></div><div class="market-detail-card"><h4>Qualidade dos lucros</h4><div class="market-metrics"><div class="market-metric"><small>Score qualidade</small><strong>${n(s.earnings_quality_pct)==null?'—':Math.round(n(s.earnings_quality_pct))+'/100'}</strong></div><div class="market-metric"><small>Conversão caixa/lucro</small><strong>${n(s.cash_conversion_ratio)==null?'—':num(s.cash_conversion_ratio)+'×'}</strong></div><div class="market-metric"><small>Accrual ratio</small><strong>${pct(s.accrual_ratio)}</strong></div><div class="market-metric"><small>Margem FCF</small><strong>${pct(s.fcf_margin)}</strong></div></div><p style="margin-top:10px">Quanto maior a conversão de lucro em caixa e menor o accrual ratio, menor a dependência de resultados puramente contabilísticos.</p></div><div class="market-detail-card"><h4>Alocação de capital</h4><div class="market-metrics"><div class="market-metric"><small>Score alocação</small><strong>${n(s.capital_allocation_pct)==null?'—':Math.round(n(s.capital_allocation_pct))+'/100'}</strong></div><div class="market-metric"><small>Diluição YoY</small><strong>${pct(s.diluted_shares_yoy)}</strong></div><div class="market-metric"><small>Buybacks último T</small><strong>${compact(s.repurchases_last_quarter)}</strong></div><div class="market-metric"><small>ROCE proxy</small><strong>${pct(s.roce_proxy)}</strong></div><div class="market-metric"><small>Cobertura dividendo/FCF</small><strong>${n(s.dividend_fcf_coverage)==null?'—':num(s.dividend_fcf_coverage)+'×'}</strong></div></div></div><div class="market-detail-card"><h4>Qualidade dos dados</h4><div class="market-metrics"><div class="market-metric"><small>Cobertura</small><strong>${n(s.data_coverage_pct)==null?'—':Math.round(n(s.data_coverage_pct))+'%'}</strong></div><div class="market-metric"><small>Confiança</small><strong>${esc(txt(s.data_confidence)||'—')}</strong></div><div class="market-metric"><small>Modelo</small><strong>${esc(txt(s.score_model)||'general')}</strong></div></div><p style="margin-top:10px">O score só usa métricas disponíveis; valores ausentes não são tratados como zero. A confiança mede cobertura, não certeza do investimento.</p>${Array.isArray(s.data_sources)&&s.data_sources.length?`<p class="market-case-note" style="margin-top:8px">Fontes: ${s.data_sources.map(esc).join(' · ')}</p>`:''}</div>`;
     if(tab==='smart') {
       const ins=Array.isArray(s.insider_transactions)?s.insider_transactions.slice(0,8):[];
       const con=Array.isArray(s.congress_trades)?s.congress_trades.slice(0,8):[];
@@ -610,7 +619,7 @@
     }catch{ body.innerHTML='<div class="market-empty">Não foi possível carregar notícias.</div>'; }
   }
 
-  function sheetPanel(){ return $m('marketSheet')?.querySelector('.market-sheet__panel')||null; }
+  function sheetPanel(){ return $m('marketSheet')||null; }
   function scrollDossierTop(){
     const panel=sheetPanel(); if(!panel) return;
     panel.scrollTo ? panel.scrollTo({top:0,left:0,behavior:'auto'}) : (panel.scrollTop=0);

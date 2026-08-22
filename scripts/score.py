@@ -5,13 +5,16 @@ The score is cross-sectional: each metric is ranked against the currently
 fetched equity universe. It is a screening model, not a return forecast.
 Missing data are excluded rather than treated as zero.
 
-Dimensions / weights:
-  Quality       25%  ROE, ROA, net/operating/gross margins
-  Growth        20%  revenue and earnings growth
-  Balance       20%  liquidity, debt/equity, net cash, interest coverage
-  Cash flow     10%  free-cash-flow yield, operating cash flow positivity
-  Valuation     15%  trailing/forward P-E, P/B, EV/EBITDA, PEG
-  Stability     10%  beta (lower is better)
+General-company dimensions / weights (v3):
+  Quality          18%  ROE, ROA, net/operating/gross margins
+  Growth           15%  revenue and earnings growth
+  Balance          14%  liquidity, leverage, net cash, interest coverage
+  Cash flow         8%  FCF yield and positive operating cash flow
+  Valuation        12%  trailing/forward P-E, P/B, EV/EBITDA, PEG
+  Execution        10%  revenue/margin/EPS momentum
+  Earnings quality 10%  cash conversion, accrual discipline, FCF margin
+  Capital alloc.    8%  dilution/buybacks, ROCE, dividend FCF coverage
+  Stability         5%  beta (lower is better)
 
 A data confidence score is also emitted, based on metric coverage.
 """
@@ -48,6 +51,9 @@ class ScoredTicker:
     growth_pct: float | None
     balance_pct: float | None
     cashflow_pct: float | None
+    execution_pct: float | None = None
+    earnings_quality_pct: float | None = None
+    capital_allocation_pct: float | None = None
 
     # raw metrics for the company dossier
     roe: float | None = None
@@ -73,6 +79,17 @@ class ScoredTicker:
     dividend_yield: float | None = None
     payout_ratio: float | None = None
     beta: float | None = None
+
+    # quality-of-earnings / capital-allocation diagnostics
+    cash_conversion_ratio: float | None = None
+    accrual_ratio: float | None = None
+    fcf_margin: float | None = None
+    ttm_net_income: float | None = None
+    ttm_revenue: float | None = None
+    diluted_shares_yoy: float | None = None
+    repurchases_last_quarter: float | None = None
+    dividend_fcf_coverage: float | None = None
+    roce_proxy: float | None = None
 
     expense_ratio: float | None = None
     ai_exposure_pct: float | None = None
@@ -174,6 +191,22 @@ def _positive_score(value: float | None) -> float | None:
     return 100.0 if value > 0 else 0.0
 
 
+def _sum_recent(series, count=4):
+    """Sum the most recent fully-populated observations; otherwise stay missing."""
+    if not isinstance(series, list) or len(series) < count:
+        return None
+    vals=[]
+    for row in series[:count]:
+        try:
+            v=row.get("value") if isinstance(row, dict) else None
+            if v is None:
+                return None
+            vals.append(float(v))
+        except Exception:
+            return None
+    return sum(vals)
+
+
 
 def _score_model_for(r: RawMetrics) -> str:
     sector = (r.sector or "").lower()
@@ -221,6 +254,24 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
     net_cash_to_cap = [
         (v / r.market_cap) if v is not None and r.market_cap and r.market_cap > 0 else None
         for v, r in zip(net_cash_values, equities)
+    ]
+
+    # TTM statement-derived diagnostics. These deliberately remain None when
+    # four comparable quarters are not available.
+    ttm_net_incomes = [_sum_recent(r.quarterly_net_income, 4) for r in equities]
+    ttm_revenues = [_sum_recent(r.quarterly_revenue, 4) for r in equities]
+    cash_conversion = [
+        (r.operating_cash_flow / ni) if ni is not None and ni > 0 and r.operating_cash_flow is not None else None
+        for r, ni in zip(equities, ttm_net_incomes)
+    ]
+    accrual_ratios = [
+        ((ni - r.operating_cash_flow) / abs(r.total_assets))
+        if ni is not None and r.operating_cash_flow is not None and r.total_assets not in (None, 0) else None
+        for r, ni in zip(equities, ttm_net_incomes)
+    ]
+    fcf_margins = [
+        (r.free_cash_flow / rev) if r.free_cash_flow is not None and rev not in (None, 0) else None
+        for r, rev in zip(equities, ttm_revenues)
     ]
 
     out: list[ScoredTicker] = []
@@ -367,9 +418,51 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             score_dimensions = {"Insurance Quality": ins_quality, "Underwriting Proxy": ins_underwriting, "Capital Proxy": ins_capital, "Growth": growth, "Valuation": ins_value, "Income": ins_income_quality, "Stability": stability}
             model_note = "Insurance-native proxy model: profitability, claims/cost-load proxies, accounting capitalisation, growth, P/B-P/E valuation and income. It does not fabricate statutory combined ratio or solvency capital."
         else:
-            composite = _weighted([(quality,.25),(growth,.20),(balance,.20),(cashflow,.10),(value,.15),(stability,.10)])
-            score_dimensions = {"Quality": quality, "Growth": growth, "Balance": balance, "Cash Flow": cashflow, "Valuation": value, "Stability": stability}
-            model_note = "General company model: quality, growth, balance sheet, cash flow, valuation and stability."
+            # Execution is operating momentum, deliberately separated from
+            # shareholder-capital decisions so a buyback cannot disguise weak
+            # underlying execution (or vice versa).
+            execution = _avg([
+                _percentile_rank(r.revenue_yoy_acceleration_pp, [x.revenue_yoy_acceleration_pp for x in equities]),
+                _percentile_rank(r.net_margin_yoy_change_pp, [x.net_margin_yoy_change_pp for x in equities]),
+                _percentile_rank(r.eps_yoy_acceleration_pp, [x.eps_yoy_acceleration_pp for x in equities]),
+            ])
+
+            earnings_quality = _avg([
+                _percentile_rank(cash_conversion[idx], cash_conversion),
+                _percentile_rank(accrual_ratios[idx], accrual_ratios, invert=True),
+                _percentile_rank(fcf_margins[idx], fcf_margins),
+            ])
+
+            # Capital allocation rewards per-share discipline and productive
+            # reinvestment. Repurchases are only a positive signal when actually
+            # reported; missing buybacks are not treated as a penalty.
+            buyback_signal = _positive_score(r.repurchases_last_quarter)
+            dividend_cover_rank = _percentile_rank(
+                r.dividend_fcf_coverage,
+                [x.dividend_fcf_coverage for x in equities]
+            ) if r.dividend_fcf_coverage is not None else None
+            capital_allocation = _avg([
+                _percentile_rank(r.diluted_shares_yoy, [x.diluted_shares_yoy for x in equities], invert=True),
+                buyback_signal,
+                _percentile_rank(r.roce_proxy, [x.roce_proxy for x in equities]),
+                dividend_cover_rank,
+            ])
+
+            composite = _weighted([
+                (quality,.18),(growth,.15),(balance,.14),(cashflow,.08),(value,.12),
+                (execution,.10),(earnings_quality,.10),(capital_allocation,.08),(stability,.05)
+            ])
+            score_dimensions = {
+                "Quality": quality, "Growth": growth, "Balance": balance, "Cash Flow": cashflow,
+                "Valuation": value, "Execution": execution, "Earnings Quality": earnings_quality,
+                "Capital Allocation": capital_allocation, "Stability": stability
+            }
+            model_note = "General company model v3: adds cash-conversion/accrual quality and separates capital allocation from operating execution."
+
+        if model != "general":
+            execution = None
+            earnings_quality = None
+            capital_allocation = None
 
         if composite is not None and zombie == "yes" and model not in ("bank", "insurance"):
             composite = min(composite, 45.0)
@@ -380,6 +473,10 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             r.free_cash_flow, r.operating_cash_flow, r.current_ratio, r.quick_ratio,
             r.debt_to_equity, r.total_cash, r.total_debt, r.trailing_pe, r.forward_pe,
             r.price_to_book, r.enterprise_to_ebitda, r.peg_ratio, r.beta,
+            r.revenue_yoy_acceleration_pp, r.net_margin_yoy_change_pp,
+            r.diluted_shares_yoy, r.roce_proxy, cash_conversion[idx],
+            accrual_ratios[idx], fcf_margins[idx], r.repurchases_last_quarter,
+            r.dividend_fcf_coverage,
         ]
         metric_coverage = sum(v is not None for v in metric_values) / len(metric_values) * 100
         confidence = "high" if metric_coverage >= 70 else "medium" if metric_coverage >= 40 else "low"
@@ -425,6 +522,9 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             growth_pct=round(growth, 1) if growth is not None else None,
             balance_pct=round(balance, 1) if balance is not None else None,
             cashflow_pct=round(cashflow, 1) if cashflow is not None else None,
+            execution_pct=round(execution, 1) if execution is not None else None,
+            earnings_quality_pct=round(earnings_quality, 1) if earnings_quality is not None else None,
+            capital_allocation_pct=round(capital_allocation, 1) if capital_allocation is not None else None,
             roe=r.roe, roa=r.roa, profit_margin=r.profit_margin,
             operating_margin=r.operating_margin, gross_margin=r.gross_margin,
             revenue_growth=r.revenue_growth, earnings_growth=r.earnings_growth,
@@ -437,6 +537,12 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             price_to_book=r.price_to_book, enterprise_to_ebitda=r.enterprise_to_ebitda,
             peg_ratio=r.peg_ratio, dividend_yield=r.dividend_yield,
             payout_ratio=r.payout_ratio, beta=r.beta, current_price=r.current_price,
+            cash_conversion_ratio=round(cash_conversion[idx],4) if cash_conversion[idx] is not None else None,
+            accrual_ratio=round(accrual_ratios[idx],6) if accrual_ratios[idx] is not None else None,
+            fcf_margin=round(fcf_margins[idx],6) if fcf_margins[idx] is not None else None,
+            ttm_net_income=ttm_net_incomes[idx], ttm_revenue=ttm_revenues[idx],
+            diluted_shares_yoy=r.diluted_shares_yoy, repurchases_last_quarter=r.repurchases_last_quarter,
+            dividend_fcf_coverage=r.dividend_fcf_coverage, roce_proxy=r.roce_proxy,
             peer_count=peer_count,
             sector_trailing_pe_median=round(sector_pe, 2) if sector_pe is not None else None,
             trailing_pe_vs_sector_pct=round(_relative_pct(r.trailing_pe, sector_pe), 1) if _relative_pct(r.trailing_pe, sector_pe) is not None else None,
@@ -482,7 +588,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             score=None, data_confidence="low", data_coverage_pct=0,
             zombie="unknown", interest_coverage=None,
             profitability_pct=None, leverage_pct=None, value_pct=None, stability_pct=None,
-            quality_pct=None, growth_pct=None, balance_pct=None, cashflow_pct=None,
+            quality_pct=None, growth_pct=None, balance_pct=None, cashflow_pct=None, execution_pct=None,
             current_price=r.current_price,
         ))
 
@@ -524,7 +630,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             score=None, data_confidence="low", data_coverage_pct=0,
             zombie="unknown", interest_coverage=None,
             profitability_pct=None, leverage_pct=None, value_pct=None, stability_pct=None,
-            quality_pct=None, growth_pct=None, balance_pct=None, cashflow_pct=None,
+            quality_pct=None, growth_pct=None, balance_pct=None, cashflow_pct=None, execution_pct=None,
             expense_ratio=r.expense_ratio, ai_exposure_pct=ai_pct, current_price=r.current_price,
         ))
 
