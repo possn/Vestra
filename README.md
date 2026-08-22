@@ -1,3 +1,11 @@
+## Vestra v6.0 — Portfolio Decision Center
+
+- Nova síntese executiva no topo de As minhas posições.
+- Consolida convicção ponderada, Risk Budget, pior Stress Test, concentração e posições a rever.
+- Mostra prioridades e uma próxima ação de research sem criar um novo score de investimento.
+- Mantém Action Map, Targets, Stress Test, Fresh Capital Planner e Rebalancer abaixo para detalhe.
+- PWA cache: `vestra-cache-v56`.
+
 ## Vestra v5.9 — Portfolio Stress Test
 
 - Novo Stress Test proxy dentro de As minhas posições, sem alterar a navegação principal.
