@@ -472,3 +472,11 @@ html.modal-open,body.modal-open{
 
 /* v6.3 — Research checkpoint + richer lows */
 .market-research-checkpoint{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:7px;padding:8px 0 2px}.market-research-checkpoint select,.market-research-checkpoint input{min-width:0;border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:11px;padding:9px 10px;font:inherit;font-size:11px}.market-research-checkpoint button{border:0;border-radius:11px;background:var(--text);color:var(--card);font-weight:800;padding:9px 11px;cursor:pointer}@media(max-width:620px){.market-research-checkpoint{grid-template-columns:1fr auto}.market-research-checkpoint input{grid-column:1/-1;grid-row:2}}
+
+
+/* v6.4 — Drawdown Diagnosis */
+.market-drawdown-drivers{display:grid;gap:8px;margin-top:10px}
+.market-drawdown-driver{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--paper) 92%,transparent)}
+.market-drawdown-driver.is-primary{border-color:color-mix(in srgb,var(--ink) 28%,var(--line));background:color-mix(in srgb,var(--paper) 82%,var(--warm) 18%)}
+.market-drawdown-driver>div{min-width:0;display:grid;gap:3px}.market-drawdown-driver strong{color:var(--ink);font-size:14px}.market-drawdown-driver small{color:var(--muted);line-height:1.35}
+.market-drawdown-driver>span{display:grid;justify-items:end;gap:2px;flex:0 0 auto}.market-drawdown-driver b{font-size:17px;color:var(--ink)}.market-drawdown-driver em{font-style:normal;font-size:11px;color:var(--muted)}.market-drawdown-driver em.is-positive{color:var(--positive)}.market-drawdown-driver em.is-risk{color:var(--risk)}

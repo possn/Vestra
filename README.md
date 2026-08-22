@@ -1,3 +1,11 @@
+## Vestra v6.4 — Drawdown Diagnosis
+
+- Empresas com drawdown material passam a ter diagnóstico explícito do provável motor da queda: operação, expectativas, balanço/financiamento, diluição, compressão de múltiplos ou mercado/setor residual.
+- Cada driver tem intensidade 0–100, evidência curta e tendência: a melhorar, estável ou a piorar.
+- O diagnóstico aparece no dossier em “Porque caiu?” e também contextualiza a lista de Mínimos 52s.
+- Não prova causalidade e não altera o Score Vestra; é uma camada explicável de research.
+- Dataset schema: 519. PWA cache: `vestra-cache-v61`.
+
 ## Vestra v6.3 — Thesis Checkpoints & Low52 Intelligence
 
 - Research Queue passa a guardar checkpoint da tese e uma nota curta por posição, localmente no dispositivo.

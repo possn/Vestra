@@ -390,7 +390,9 @@
       const currency=txt(s.currency)||'USD';
       const dist=Math.max(0,stats.above);
       const status=txt(s.low52_status), label=txt(s.low52_label)||'Sem classificação', lowScore=n(s.low52_score);
-      const meta=`${dist.toFixed(1)}% acima do mínimo · ${label}${lowScore!=null?` · Low52 ${Math.round(lowScore)}/100`:''} · mínimo ${money(stats.low,currency)}`;
+      const cause=txt(s.drawdown_primary_label), trend=txt(s.drawdown_driver_trend);
+      const trendText=trend==='improving'?'causa a melhorar':trend==='deteriorating'?'causa a piorar':'';
+      const meta=[`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText].filter(Boolean).join(' · ');
       return renderRow(s,meta);
     }).join(''):'<div class="market-empty"><strong>Sem empresas até 5% do mínimo de 52 semanas.</strong><br><span>O universo será recalculado quando os dados de mercado forem atualizados.</span></div>';
     return `<section class="market-section"><div class="market-section__head"><div><h3>Mínimos de 52 semanas</h3><p>Até 5% do mínimo, agora classificados por oportunidade potencial, queda saudável, value trap ou deterioração estrutural.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
@@ -574,6 +576,18 @@
 
 
 
+  function drawdownPanel(s){
+    const items=Array.isArray(s.drawdown_diagnosis)?s.drawdown_diagnosis:[];
+    if(!items.length || txt(s.drawdown_diagnosis_status)==='not_material') return '';
+    const trendLabel={improving:'a melhorar',deteriorating:'a piorar',stable:'estável'};
+    const trendTone={improving:'is-positive',deteriorating:'is-risk',stable:''};
+    const primary=items[0]||{};
+    const mixed=txt(s.drawdown_diagnosis_status)==='mixed';
+    const title=mixed?'Queda com causas mistas':(s.drawdown_primary_label||primary.label||'Causa não identificada');
+    const dd=n(s.drawdown_from_high_pct);
+    return `<div class="market-detail-card market-drawdown-panel"><div class="market-perspective-head"><div><small>PORQUE CAIU? · DIAGNÓSTICO</small><h4>${esc(title)}</h4></div><span class="market-data-age">${dd==null?'drawdown':`${dd.toFixed(0)}% vs máximo 52s`}</span></div><p class="market-case-note">Diagnóstico por evidência disponível; identifica drivers prováveis, não prova causalidade.</p><div class="market-drawdown-drivers">${items.slice(0,4).map((d,i)=>`<div class="market-drawdown-driver ${i===0?'is-primary':''}"><div><strong>${esc(d.label||d.key||'Driver')}</strong><small>${(d.evidence||[]).slice(0,2).map(esc).join(' · ')||'Evidência limitada'}</small></div><span><b>${Math.round(n(d.strength)||0)}</b><em class="${trendTone[txt(d.trend)]||''}">${esc(trendLabel[txt(d.trend)]||'estável')}</em></span></div>`).join('')}</div></div>`;
+  }
+
   function investmentCase(s){
     const evidence=Array.isArray(s.thesis_evidence)?s.thesis_evidence.filter(Boolean):[];
     const drivers=Array.isArray(s.thesis_evolution_drivers)?s.thesis_evolution_drivers.filter(Boolean):[];
@@ -631,7 +645,7 @@
 
   function renderDetailTab(s,tab){
     const body=$m('marketDetailBody'); if(!body) return;
-    if(tab==='overview') body.innerHTML=`${changePanel(s)}${catalystPanel(s)}${investmentCase(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
+    if(tab==='overview') body.innerHTML=`${changePanel(s)}${drawdownPanel(s)}${catalystPanel(s)}${investmentCase(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
     if(tab==='perspective') {
       const buys=(n(s.analyst_strong_buy)||0)+(n(s.analyst_buy)||0), holds=n(s.analyst_hold)||0, sells=(n(s.analyst_sell)||0)+(n(s.analyst_strong_sell)||0);
       const revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;

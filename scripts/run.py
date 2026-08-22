@@ -28,6 +28,7 @@ from valuation import assess as assess_valuation
 from earnings_intelligence import assess as assess_earnings_intelligence
 from catalysts import assess as assess_catalysts
 from low52_intelligence import assess as assess_low52_intelligence
+from drawdown_diagnosis import assess as assess_drawdown_diagnosis
 from scanner import assess as assess_scanner
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
@@ -317,6 +318,7 @@ def main():
         ))
         row.update(assess_catalysts(row))
         row.update(assess_low52_intelligence(row))
+        row.update(assess_drawdown_diagnosis(row))
         row.update(assess_scanner(row))
         rows.append(row)
 
@@ -445,7 +447,7 @@ def main():
         })
 
     payload = {
-        "schema_version": 518,
+        "schema_version": 519,
         "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
         "data_quality": {
             "portfolio_extra_requested": len(portfolio_extra),
