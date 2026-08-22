@@ -1,3 +1,12 @@
+## Vestra v5.9 — Portfolio Stress Test
+
+- Novo Stress Test proxy dentro de As minhas posições, sem alterar a navegação principal.
+- Cenários iniciais: Taxas +100 bps, Nasdaq -20%, Petróleo -25%, USD -10% e Recessão europeia.
+- Mostra impacto ponderado estimado, Stress Resilience 0–100, peso com exposição forte e posições que mais contribuem para o choque.
+- Usa fatores, setor/indústria, beta, moeda e região já disponíveis; é explicitamente uma heurística de stress, não previsão, VaR ou modelo de correlação.
+- Nenhum cenário altera Score Vestra, Investment Case ou Portfolio Targets.
+- PWA cache: `vestra-cache-v55`.
+
 ## Vestra v5.8.1 — Candidate Fallbacks
 
 - Fresh Capital Planner e Assisted Rebalancer deixam de falhar silenciosamente quando nenhum ativo cumpre simultaneamente todos os filtros ideais.
