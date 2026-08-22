@@ -383,16 +383,17 @@
   function renderLows(){
     let rows=M.stocks.filter(s=>!isFund(s)).map(s=>({s,stats:low52Stats(s)}))
       .filter(x=>x.stats && x.stats.above>=-0.5 && x.stats.above<=5)
-      .sort((a,b)=>a.stats.above-b.stats.above || (n(b.s.score)||0)-(n(a.s.score)||0));
+      .sort((a,b)=>{const rank={opportunity:0,watch:1,uncertain:2,value_trap_risk:3,structural_risk:4,insufficient:5}; return (rank[txt(a.s.low52_status)]??9)-(rank[txt(b.s.low52_status)]??9)||(n(b.s.low52_score)||0)-(n(a.s.low52_score)||0)||a.stats.above-b.stats.above;});
     const total=rows.length;
     rows=rows.slice(0,30);
     const body=rows.length?rows.map(({s,stats})=>{
       const currency=txt(s.currency)||'USD';
       const dist=Math.max(0,stats.above);
-      const meta=`${dist.toFixed(1)}% acima do mínimo · mínimo ${money(stats.low,currency)}`;
+      const status=txt(s.low52_status), label=txt(s.low52_label)||'Sem classificação', lowScore=n(s.low52_score);
+      const meta=`${dist.toFixed(1)}% acima do mínimo · ${label}${lowScore!=null?` · Low52 ${Math.round(lowScore)}/100`:''} · mínimo ${money(stats.low,currency)}`;
       return renderRow(s,meta);
     }).join(''):'<div class="market-empty"><strong>Sem empresas até 5% do mínimo de 52 semanas.</strong><br><span>O universo será recalculado quando os dados de mercado forem atualizados.</span></div>';
-    return `<section class="market-section"><div class="market-section__head"><div><h3>Mínimos de 52 semanas</h3><p>Empresas até 5% acima do mínimo dos últimos 12 meses, ordenadas pela proximidade ao mínimo.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
+    return `<section class="market-section"><div class="market-section__head"><div><h3>Mínimos de 52 semanas</h3><p>Até 5% do mínimo, agora classificados por oportunidade potencial, queda saudável, value trap ou deterioração estrutural.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
   }
 
   function renderFunds(){
@@ -1002,13 +1003,24 @@
   function researchQueueState(ticker){
     const all=loadResearchQueue(), key=txt(ticker).toUpperCase(), x=all[key]||{};
     if(x.status==='snoozed'&&Number(x.snoozeUntil||0)<=Date.now()) return {...x,status:'new',snoozeUntil:0};
-    return {status:x.status||'new',snoozeUntil:Number(x.snoozeUntil||0),updatedAt:Number(x.updatedAt||0)};
+    return {status:x.status||'new',snoozeUntil:Number(x.snoozeUntil||0),updatedAt:Number(x.updatedAt||0),checkpoint:txt(x.checkpoint),note:txt(x.note),checkpointAt:Number(x.checkpointAt||0)};
   }
   function setResearchQueueState(ticker,status){
     const all=loadResearchQueue(), key=txt(ticker).toUpperCase(); if(!key)return;
-    all[key]={status,updatedAt:Date.now(),snoozeUntil:status==='snoozed'?Date.now()+7*86400000:0};
+    const prev=all[key]||{}; all[key]={...prev,status,updatedAt:Date.now(),snoozeUntil:status==='snoozed'?Date.now()+7*86400000:0};
     saveResearchQueue(all);
   }
+  function saveResearchCheckpoint(ticker,checkpoint,note){
+    const all=loadResearchQueue(), key=txt(ticker).toUpperCase(); if(!key)return;
+    const prev=all[key]||{};
+    all[key]={...prev,checkpoint:txt(checkpoint),note:txt(note).slice(0,500),checkpointAt:Date.now(),updatedAt:Date.now()};
+    saveResearchQueue(all);
+  }
+  function researchCheckpointEditor(ticker,state){
+    const cp=txt(state?.checkpoint)||'';
+    return `<div class="market-research-checkpoint" data-checkpoint-ticker="${esc(ticker)}"><select data-checkpoint-select><option value="" ${!cp?'selected':''}>Checkpoint…</option><option value="maintain" ${cp==='maintain'?'selected':''}>Mantém</option><option value="deteriorated" ${cp==='deteriorated'?'selected':''}>Deteriorou</option><option value="wait_earnings" ${cp==='wait_earnings'?'selected':''}>Aguardar earnings</option><option value="improving" ${cp==='improving'?'selected':''}>A melhorar</option><option value="exit_review" ${cp==='exit_review'?'selected':''}>Rever saída</option></select><input type="text" maxlength="500" data-checkpoint-note placeholder="Nota curta de research" value="${esc(state?.note||'')}"><button type="button" data-checkpoint-save>Guardar</button></div>`;
+  }
+
   function renderResearchQueue(review){
     const rank={new:0,in_review:1,snoozed:2,reviewed:3};
     const items=review.map(r=>({r,state:researchQueueState(r.stock.ticker)})).sort((a,b)=>(rank[a.state.status]??9)-(rank[b.state.status]??9)||(a.r.conviction??999)-(b.r.conviction??999));
@@ -1016,7 +1028,7 @@
     const visible=items.filter(x=>x.state.status!=='reviewed'&&x.state.status!=='snoozed').slice(0,12);
     const label={new:'Novo',in_review:'Em revisão',reviewed:'Revisto',snoozed:'Adiado'};
     const tone={new:'is-risk',in_review:'is-warn',reviewed:'is-positive',snoozed:''};
-    const rows=visible.length?visible.map(({r,state})=>`<div class="market-research-queue-row" data-queue-ticker="${esc(r.stock.ticker)}"><button type="button" class="market-research-queue-main" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${r.conviction==null?'convicção insuficiente':`convicção ${Math.round(r.conviction)}/100`} · ${esc(txt(r.stock.risk_gate)||'clear')}</small></span><em class="${tone[state.status]||''}">${label[state.status]||'Novo'}</em></button><div class="market-research-queue-actions"><button type="button" data-queue-status="in_review">Em revisão</button><button type="button" data-queue-status="reviewed">Revisto</button><button type="button" data-queue-status="snoozed">Adiar 7d</button></div></div>`).join(''):'<p class="market-case-note">Sem revisões ativas pendentes. Itens adiados regressam automaticamente após 7 dias.</p>';
+    const rows=visible.length?visible.map(({r,state})=>`<div class="market-research-queue-row" data-queue-ticker="${esc(r.stock.ticker)}"><button type="button" class="market-research-queue-main" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${r.conviction==null?'convicção insuficiente':`convicção ${Math.round(r.conviction)}/100`} · ${esc(txt(r.stock.risk_gate)||'clear')}</small></span><em class="${tone[state.status]||''}">${label[state.status]||'Novo'}</em></button><div class="market-research-queue-actions"><button type="button" data-queue-status="in_review">Em revisão</button><button type="button" data-queue-status="reviewed">Revisto</button><button type="button" data-queue-status="snoozed">Adiar 7d</button></div>${state.status==='in_review'||state.checkpoint?researchCheckpointEditor(r.stock.ticker,state):''}</div>`).join(''):'<p class="market-case-note">Sem revisões ativas pendentes. Itens adiados regressam automaticamente após 7 dias.</p>';
     return `<div class="market-detail-card market-research-queue"><div class="market-perspective-head"><div><small>RESEARCH QUEUE · LOCAL</small><h4>Fila de revisão</h4></div><span class="market-data-age">${(counts.new||0)+(counts.in_review||0)} pendentes</span></div><div class="market-action-context"><span>${counts.new||0} novos</span><span>${counts.in_review||0} em revisão</span><span>${counts.snoozed||0} adiados</span><span>${counts.reviewed||0} revistos</span></div><p class="market-case-note">Memória operacional: organiza o research sem alterar Score Vestra, Action Map ou carteira.</p><div class="market-research-queue-list">${rows}</div>${items.length>12?`<p class="market-case-note">A mostrar as 12 prioridades ativas mais urgentes de ${items.length} posições sinalizadas.</p>`:''}</div>`;
   }
 
@@ -1561,6 +1573,15 @@
     setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new');
     renderPrimary();
     requestAnimationFrame(()=>document.querySelector('.market-research-queue')?.scrollIntoView?.({behavior:'smooth',block:'start'}));
+  });
+
+  // v6.3 — Thesis checkpoint + note for Research Queue.
+  document.addEventListener('click', e=>{
+    const btn=e.target.closest?.('[data-checkpoint-save]'); if(!btn)return;
+    const box=btn.closest('.market-research-checkpoint'); if(!box)return;
+    e.preventDefault(); e.stopPropagation();
+    saveResearchCheckpoint(box.dataset.checkpointTicker||'',box.querySelector('[data-checkpoint-select]')?.value||'',box.querySelector('[data-checkpoint-note]')?.value||'');
+    btn.textContent='Guardado'; setTimeout(()=>{btn.textContent='Guardar';},900);
   });
 
   // v6.0.1 — Action Map summary acts as an immediate filter.

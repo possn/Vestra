@@ -61,16 +61,17 @@ def assess(row: dict) -> dict:
     est=_n(row.get("estimate_momentum_score")); est_signal=str(row.get("estimate_signal") or ""); buy_count=_n(row.get("insider_buy_count_30d")) or 0
     buy_val=_n(row.get("insider_buy_value_30d")) or 0; sell_val=_n(row.get("insider_sell_value_30d")) or 0
     div_yield=_n(row.get("dividend_yield")); div_cover=_n(row.get("dividend_fcf_coverage")); low52=_low52(row); div_growth=_dividend_growth(row)
+    low52_status=str(row.get("low52_status") or ""); low52_score=_n(row.get("low52_score")); low52_reasons=list(row.get("low52_reasons") or [])
     flags=set(row.get("risk_flags") or []); safe_gate=gate in ("clear","watch"); results={}
     def add(key,label,parts,reasons):
         vals=[float(p) for p in parts if p is not None]
         if vals: results[key]={"label":label,"score":round(_clamp(sum(vals)/len(vals)),1),"reasons":reasons[:4]}
     if safe_gate and (quality or 0)>=65 and (conf or 0)>=60 and (score or 0)>=62 and (valuation in ("undervalued","fair") or (mos is not None and mos>=8) or (value or 0)>=60):
         add("qarp","Quality at a Reasonable Price",[quality,score,conf,(value or 50),_clamp(50+(mos or 0))],[f"Qualidade {quality:.0f}/100",f"Score {score:.0f}/100",f"Confiança {conf:.0f}/100",f"Margem de segurança {mos:.0f}%" if mos is not None else "Valuation favorável vs pares"])
-    if low52 and low52["above_pct"]<=15 and safe_gate and (quality or 0)>=60 and (conf or 0)>=60 and (score or 0)>=58 and thesis!="down" and (rev is None or rev>-0.12) and not ({"material_dilution","severe_dilution"}&flags):
-        add("fallen_angels","Fallen Angels",[_clamp(100-low52["above_pct"]*4),quality,conf,score],[f"{max(0,low52['above_pct']):.1f}% acima do mínimo 52s",f"Qualidade {quality:.0f}/100",f"Confiança {conf:.0f}/100","Sem deterioração estrutural dominante"])
-    if low52 and low52["above_pct"]<=5 and safe_gate and (quality or 0)>=60 and (conf or 0)>=60 and (score or 0)>=55 and (rev is None or rev>-0.15) and not ({"material_dilution","severe_dilution","weak_quality"}&flags):
-        add("lows_intact","Mínimos 52s · fundamentos intactos",[_clamp(100-low52["above_pct"]*8),quality,conf,score],[f"{max(0,low52['above_pct']):.1f}% acima do mínimo 52s",f"Qualidade {quality:.0f}/100",f"Confiança {conf:.0f}/100","Risk Gate sem alerta alto/severo"])
+    if low52 and low52["above_pct"]<=15 and low52_status in ("opportunity","watch") and low52_score is not None:
+        add("fallen_angels","Fallen Angels",[low52_score,quality,conf,score],low52_reasons or [f"{max(0,low52['above_pct']):.1f}% acima do mínimo 52s","Sem deterioração estrutural dominante"])
+    if low52 and low52["above_pct"]<=5 and low52_status=="opportunity" and low52_score is not None:
+        add("lows_intact","Mínimos 52s · fundamentos intactos",[low52_score,quality,conf,score],low52_reasons or [f"{max(0,low52['above_pct']):.1f}% acima do mínimo 52s","Risk Gate sem alerta alto/severo"])
     if est_signal=="improving" and (est or 0)>=65 and gate not in ("high","severe"):
         breadth=_n(row.get("estimate_revision_breadth_pct")); add("positive_revisions","Revisões positivas",[est,breadth,conf],[f"Momentum de expectativas {est:.0f}/100",f"Breadth {breadth:.0f}%" if breadth is not None else "Revisões de EPS a subir",f"Confiança {conf:.0f}/100" if conf is not None else "Overlay de analistas"])
     if gate not in ("high","severe") and buy_count>=1 and buy_val>sell_val and (buy_count>=2 or buy_val>=100000):
