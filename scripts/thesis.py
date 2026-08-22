@@ -50,9 +50,14 @@ def classify(row: dict) -> dict:
     insider_buys = _n(row.get("insider_buy_count_30d")) or 0
     coverage = _n(row.get("data_coverage_pct"))
     zombie = row.get("zombie") == "yes"
+    risk_gate = str(row.get("risk_gate") or "clear")
+    capital_flags = list(row.get("capital_structure_flags") or [])
 
-    # Priority matters: explicit risk archetypes outrank superficially attractive scores.
-    if zombie or (v is not None and v >= 65 and ((q is not None and q < 40) or (g is not None and g < 30))):
+    # Priority matters: structural-risk archetypes outrank superficially attractive scores.
+    if risk_gate in ("high", "severe"):
+        thesis_type, slug = "Capital Structure Risk", "capital-structure-risk"
+        summary = "A estrutura de capital ou os filings recentes mostram riscos que não devem ser compensados por valuation ou cash-flow aparentemente atrativos."
+    elif zombie or (v is not None and v >= 65 and ((q is not None and q < 40) or (g is not None and g < 30))):
         thesis_type, slug = "Value Trap Risk", "value-trap"
         summary = "O valuation parece apelativo, mas a qualidade, crescimento ou solvência levantam risco de armadilha de valor."
     elif (g is not None and g >= 65 or (rev_yoy is not None and rev_yoy >= 20)) and dilution is not None and dilution >= 8:
@@ -117,12 +122,28 @@ def classify(row: dict) -> dict:
         risks.append(f"Qualidade apenas no percentil {q:.0f}.")
     if insider_net is not None and insider_net < -100_000:
         risks.append("Fluxo líquido de insiders open-market negativo nos últimos 30 dias.")
+    capital_labels = {
+        "reverse_split_recent": "Reverse split identificado nos últimos 24 meses.",
+        "repeated_reverse_splits": "Reverse splits repetidos nos últimos 24 meses.",
+        "atm_offering": "Programa ATM / emissão contínua de ações identificado.",
+        "equity_financing": "Oferta de capital recente identificada nos filings.",
+        "convertible_financing": "Financiamento convertível recente identificado.",
+        "variable_price_convertible": "Convertível com preço variável/desconto ao mercado: risco elevado de diluição.",
+        "warrants_outstanding": "Warrants associados a financiamento/oferta identificados.",
+        "listing_compliance_risk": "Risco de cumprimento das regras de cotação/delisting identificado.",
+    }
+    for flag in capital_flags:
+        label = capital_labels.get(flag)
+        if label and label not in risks:
+            risks.append(label)
 
     # Keep the UI concise and deterministic.
     evidence = evidence[:4]
     risks = risks[:4]
-    if coverage is None or coverage < 40:
+    if risk_gate == "severe" or coverage is None or coverage < 40:
         confidence = "low"
+    elif risk_gate == "high":
+        confidence = "medium"
     elif coverage >= 70 and len(evidence) >= 2:
         confidence = "high"
     else:

@@ -1,3 +1,15 @@
+## Vestra v4.2 — Capital Structure & Corporate Actions Risk
+
+- SEC filings recentes passam a ser analisados para reverse splits, ATMs, ofertas de capital, convertíveis, warrants e risco de delisting.
+- Reverse splits repetidos e convertíveis com preço variável/desconto ao mercado tornam-se red flags estruturais.
+- O Risk Gate aplica caps não compensáveis: watch 64, high 49, severe 35.
+- A tese passa a usar “Capital Structure Risk” quando estes sinais dominam o caso de investimento.
+- O dossier recebe os eventos traduzidos em “O que pode quebrar a tese” através da taxonomia existente.
+- A recolha SEC é seletiva (micro/small caps, preços baixos, diluição/anomalias e posições prioritárias) para manter o pipeline rápido.
+- Sem blacklist por ticker ou país; regras auditáveis a partir dos filings.
+- Layout visual permanece congelado.
+- PWA cache: `vestra-cache-v35`.
+
 ## Vestra v4.1 — Risk Gate
 
 - O score quantitativo passa por um Risk Gate antes de gerar o sinal final.

@@ -22,6 +22,7 @@ import traceback
 from fundamentals import fetch_many
 from sec_enrich import enrich as enrich_sec
 from esef_enrich import enrich as enrich_esef
+from capital_risk import enrich as enrich_capital_risk
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
@@ -65,7 +66,7 @@ _fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
 _handler_stream.setFormatter(_fmt)
 _handler_console.setFormatter(_fmt)
 logging.basicConfig(level=logging.WARNING, handlers=[_handler_stream, _handler_console], force=True)
-for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
+for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "capital_risk", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
     logging.getLogger(_name).setLevel(logging.INFO)
 log = logging.getLogger("run")
 
@@ -158,6 +159,7 @@ def main():
     raw = [raw_by_symbol[t] for t in all_tickers if t in raw_by_symbol]
     raw = enrich_sec(raw, priority=portfolio_set)
     raw = enrich_esef(raw, priority=portfolio_set)
+    raw = enrich_capital_risk(raw, priority=portfolio_set)
     scored = score_universe(raw)
 
     analyst_map = fetch_analyst_many(
@@ -249,6 +251,13 @@ def main():
         if insider.get("status") not in (None,"not_available","error"): row["data_sources"].append("SEC Form 4")
         if row.get("congress_trades"): row["data_sources"].append("STOCK Act / Bargo")
         if rm is not None:
+            if getattr(rm, "capital_risk_checked", False):
+                row["data_sources"].append("SEC Capital Structure")
+                row["capital_structure_flags"] = getattr(rm, "capital_structure_flags", [])
+                row["capital_structure_risk"] = getattr(rm, "capital_structure_risk", "clear")
+                row["reverse_split_count_24m"] = getattr(rm, "reverse_split_count_24m", 0)
+                row["reverse_split_latest_date"] = getattr(rm, "reverse_split_latest_date", None)
+                row["capital_risk_filings_checked"] = getattr(rm, "capital_risk_filings_checked", 0)
             if row.get("quote_type") == "ETF":
                 row["top_holdings"] = rm.top_holdings
                 row["fund_family"] = rm.fund_family
@@ -420,7 +429,7 @@ def main():
         })
 
     payload = {
-        "schema_version": 511,
+        "schema_version": 512,
         "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
         "data_quality": {
             "portfolio_extra_requested": len(portfolio_extra),

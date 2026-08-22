@@ -487,6 +487,12 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         if r.diluted_shares_yoy is not None and r.diluted_shares_yoy > 0.50:
             risk_flags.append("severe_dilution")
 
+        capital_flags = list(getattr(r, "capital_structure_flags", []) or [])
+        for flag in capital_flags:
+            if flag not in risk_flags:
+                risk_flags.append(flag)
+        capital_gate = str(getattr(r, "capital_structure_risk", "clear") or "clear")
+
         risk_gate = "clear"
         score_cap = None
         severe = any(x in risk_flags for x in ("zombie_interest_coverage", "severe_dilution"))
@@ -496,6 +502,15 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             risk_gate, score_cap = "high", 59.0
         elif risk_flags:
             risk_gate, score_cap = "watch", 69.0
+
+        # Filing-derived capital structure risk gets the most restrictive cap.
+        cap_by_gate = {"watch": 64.0, "high": 49.0, "severe": 35.0}
+        rank = {"clear": 0, "watch": 1, "high": 2, "severe": 3}
+        if capital_gate in cap_by_gate:
+            ccap = cap_by_gate[capital_gate]
+            score_cap = min(score_cap if score_cap is not None else 100.0, ccap)
+            if rank.get(capital_gate, 0) > rank.get(risk_gate, 0):
+                risk_gate = capital_gate
         if composite is not None and score_cap is not None:
             composite = min(composite, score_cap)
 
