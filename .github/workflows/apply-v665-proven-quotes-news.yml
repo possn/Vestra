@@ -19,6 +19,13 @@ jobs:
           sed -i 's/^  let skipped = 0;$/  skipped = 0;/' scripts/apply_v665_proven_quotes_asset_news.py
           python scripts/apply_v665_proven_quotes_asset_news.py
           rm -f scripts/apply_v665_proven_quotes_asset_news.py
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('app.js')
+          s=p.read_text()
+          s=s.replace('quoteWorkerMode','"individual"')
+          p.write_text(s)
+          PY
           python -m py_compile scripts/*.py
           node --check app.js
           node --check market.js
