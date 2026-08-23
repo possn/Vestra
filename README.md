@@ -1,3 +1,12 @@
+## Vestra v6.6.4 — Quote Refresh Compatibility & Diagnostics
+
+- O refresh deteta automaticamente um Worker sem `/quotes` compatível e faz fallback para `/quote` individual com concorrência limitada.
+- Se o endpoint batch responder mas falhar quase todo o lote, a app também muda automaticamente para o modo de compatibilidade.
+- Ativos sem identidade segura deixam de ser apresentados como erros de rede: são contados como ignorados e mantêm o último valor conhecido.
+- O estado da sincronização mostra quando foi usado modo de compatibilidade.
+- Manual e automático usam exatamente o mesmo caminho.
+- PWA cache: `vestra-cache-v67`.
+
 ## Vestra v6.6.3 — Quote Refresh Scope Repair
 
 - Revisto o caminho completo de atualização manual e automática de cotações após o erro Safari `normalizeTickerLookupKey is not defined`.

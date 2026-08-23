@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260509v66").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260509v67").catch(() => {});
     });
   }
 } catch (_) {}
@@ -12613,8 +12613,9 @@ async function refreshLiveQuotesCore(options = {}) {
   const syncStatus = $("quoteSyncStatus");
   if (syncStatus) syncStatus.textContent = "A atualizar cotações…";
 
-  let updated = 0, failed = 0;
+  let updated = 0, failed = 0, skipped = 0;
   const errors = [];
+  quoteWorkerMode = "batch";
 
   // Show persistent progress indicator during refresh
   const _showRefreshProgress = (msg) => {
@@ -13008,15 +13009,46 @@ async function fetchQuoteBatch(tickers) {
   try {
     resp = await fetch(url, { signal: AbortSignal.timeout(18000) });
   } catch (e) {
-    throw new Error(`Worker inacessível: ${e.message || "timeout"}`);
+    const err = new Error(`Worker inacessível: ${e.message || "timeout"}`);
+    err.batchTransport = true;
+    throw err;
   }
   let data = null;
   try { data = await resp.json(); } catch (_) {}
-  if (!resp.ok) throw new Error(`Worker HTTP ${resp.status}${data && data.error ? `: ${data.error}` : ""}`);
-  return data || {};
+  if (!resp.ok) {
+    const err = new Error(`Worker HTTP ${resp.status}${data && data.error ? `: ${data.error}` : ""}`);
+    err.batchUnsupported = [400,404,405,501].includes(resp.status) || /endpoint|quotes/i.test(String(data && data.error || ""));
+    throw err;
+  }
+  // A compatible /quotes endpoint must return an object keyed by requested symbols.
+  if (!data || typeof data !== "object" || Array.isArray(data) || !unique.some(t => Object.prototype.hasOwnProperty.call(data, t))) {
+    const err = new Error("Resposta /quotes incompatível com esta versão da app");
+    err.batchUnsupported = true;
+    throw err;
+  }
+  return data;
 }
 
-async function fetchQuoteBatches(tickers, concurrency = 6) {
+async function fetchQuotesIndividually(tickers, concurrency = 5) {
+  const unique = [...new Set((tickers || []).filter(Boolean))];
+  const out = {};
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(concurrency, unique.length) }, async () => {
+    while (cursor < unique.length) {
+      const ticker = unique[cursor++];
+      try {
+        out[ticker] = await fetchQuote(ticker, workerUrl);
+      } catch (e) {
+        out[ticker] = { ticker, error:e && e.message ? e.message : "Erro" };
+      }
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+let quoteWorkerMode = "batch";
+async function fetchQuoteBatches(tickers, concurrency = 3) {
   const unique = [...new Set((tickers || []).filter(Boolean))];
   const chunks = [];
   for (let i = 0; i < unique.length; i += 20) chunks.push(unique.slice(i, i + 20));
@@ -13026,10 +13058,26 @@ async function fetchQuoteBatches(tickers, concurrency = 6) {
     while (cursor < chunks.length) {
       const idx = cursor++;
       const chunk = chunks[idx];
+      // Once incompatibility is proven, stop hammering /quotes and use /quote.
+      if (quoteWorkerMode === "single") {
+        Object.assign(out, await fetchQuotesIndividually(chunk, 5));
+        continue;
+      }
       try {
-        Object.assign(out, await fetchQuoteBatch(chunk));
+        const batch = await fetchQuoteBatch(chunk);
+        const successes = chunk.filter(t => {
+          const q=batch[t]; return q && !q.error && Number.isFinite(Number(q.price)) && Number(q.price)>0;
+        }).length;
+        // Some older/degraded Workers answer /quotes but fail almost everything while /quote still works.
+        if (chunk.length >= 4 && successes <= Math.max(1, Math.floor(chunk.length * 0.1))) {
+          quoteWorkerMode = "single";
+          Object.assign(out, await fetchQuotesIndividually(chunk, 5));
+        } else {
+          Object.assign(out, batch);
+        }
       } catch (e) {
-        chunk.forEach(t => { out[t] = { ticker:t, error:e.message || "Erro" }; });
+        quoteWorkerMode = "single";
+        Object.assign(out, await fetchQuotesIndividually(chunk, 5));
       }
     }
   });
@@ -13046,12 +13094,9 @@ async function fetchQuoteBatches(tickers, concurrency = 6) {
   noCandidateRefs.forEach(ref => {
     const rawUp = String(ref.raw || "").toUpperCase().trim();
     const baseUp = canonicalBrokerTickerBase(rawUp);
-    if (SKIP_TICKERS.has(rawUp) || SKIP_TICKERS.has(baseUp)) return;
-    failed++;
-    errors.push({
-      raw: ref.raw, yahoo: "", assetName: ref.asset.name || ref.raw || "Ativo",
-      reason: "Sem ticker Yahoo reconhecível para este ativo"
-    });
+    if (SKIP_TICKERS.has(rawUp) || SKIP_TICKERS.has(baseUp)) { skipped++; return; }
+    // Missing/unsafe identity is not a network failure. Keep the last value and report as skipped.
+    skipped++;
   });
 
   // v3.5: real batch refresh. Resolve one candidate round at a time using /quotes
@@ -13272,7 +13317,7 @@ async function fetchQuoteBatches(tickers, concurrency = 6) {
     }
   } catch (_) {}
 
-  state.settings.lastQuoteRefresh = { updated, failed, errors, ts: new Date().toISOString(), durationMs: Math.round(performance.now() - refreshStartedAt) };
+  state.settings.lastQuoteRefresh = { updated, failed, skipped, errors, workerMode:quoteWorkerMode, ts: new Date().toISOString(), durationMs: Math.round(performance.now() - refreshStartedAt) };
   // Hide progress indicator
   try { _hideRefreshProgress(); } catch (_) {}
   // Record staleness timestamp for auto-refresh logic
@@ -13542,10 +13587,14 @@ function renderQuoteSyncStatus() {
   if (!workerUrl) meta.textContent = "Configura em Mais → Preferências";
   else if (report && report.failed > 0) {
     const secs = report.durationMs ? ` · ${Math.max(1, Math.round(report.durationMs/1000))} s` : "";
-    meta.textContent = `${report.updated || 0} atualizadas · ${report.failed} com erro${secs}`;
+    const skipped = report.skipped ? ` · ${report.skipped} ignoradas` : "";
+    const mode = report.workerMode === "single" ? " · compatibilidade" : "";
+    meta.textContent = `${report.updated || 0} atualizadas · ${report.failed} com erro${skipped}${mode}${secs}`;
   } else if (report && report.updated > 0) {
     const secs = report.durationMs ? ` · ${Math.max(1, Math.round(report.durationMs/1000))} s` : "";
-    meta.textContent = `${report.updated} atualizadas${secs} · automático`;
+    const skipped = report.skipped ? ` · ${report.skipped} ignoradas` : "";
+    const mode = report.workerMode === "single" ? " · compatibilidade" : "";
+    meta.textContent = `${report.updated} atualizadas${skipped}${mode}${secs} · automático`;
   } else meta.textContent = auto ? "Automático · atualiza se >30 min" : "Automático desativado";
 }
 
