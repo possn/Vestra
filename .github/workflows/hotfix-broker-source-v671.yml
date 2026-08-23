@@ -1,0 +1,140 @@
+name: Vestra v6.7.1 broker source truth repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hotfix-broker-source-v671.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch XTB snapshot parser and broker identities
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('app.js')
+          s = p.read_text()
+
+          # 1) XTB Open Positions: modern export contains one summary row per security
+          # (Category filled, Type blank) plus child lot rows. The old parser ignored the
+          # Ticker column and could miss the authoritative snapshot entirely.
+          pattern = re.compile(r'/\*\* XTB Open Positions CSV \(portfolio snapshot\) \*/\nfunction parseXTBPositionsRows\(rows, meta\) \{.*?\n\}\n\nfunction parseXTBCashRows', re.S)
+          replacement = r'''/** XTB Open Positions XLSX/CSV (authoritative portfolio snapshot) */
+function parseXTBPositionsRows(rows, meta) {
+  const norm = (rows || []).map(normalizeRow);
+
+  const buildPos = (symbol, name, volume, marketValueEUR, costBasisEUR) => {
+    const ticker = xtbTickerToYahoo(symbol);
+    const pos = {
+      id: uid(), sourceHash: meta.hash, sourceName: meta.name, broker: "XTB",
+      ticker, isin: "", name: name || symbol,
+      qty: volume, costBasisEUR: Math.max(0, costBasisEUR || 0),
+      marketValueEUR: Math.max(0, marketValueEUR || 0),
+      pricePerShare: volume > 0 ? Math.max(0, marketValueEUR || 0) / volume : 0,
+      priceCurrency: "EUR",
+      class: brokerPositionClassFromTicker(ticker),
+      positionKind: "market_snapshot",
+      snapshotDate: meta.asOfDate || isoToday(),
+      key: ""
+    };
+    pos.key = brokerPositionKey(pos);
+    return pos;
+  };
+
+  // Current XTB workbook: summary rows have Category and no Type. These rows already
+  // contain the TOTAL open volume and TOTAL value, so they must be used exactly once.
+  const summaries = [];
+  for (const r of norm) {
+    const symbol = String(r.ticker || r.symbol || r.simbolo || r.instrumento || "").trim();
+    const name = String(r.instrument_position || r.instrument || r.instrumento || r.name || symbol).trim();
+    const category = String(r.category || r.categoria || "").trim();
+    const typeRaw = String(r.type || r.tipo || r.direction || "").trim();
+    const volume = parseNumberSmart(r.volume || r.qty || r.quantity);
+    const value = parseNumberSmart(r.value || r.valor || r.market_value || r.current_value);
+    const netProfit = parseNumberSmart(r.net_profit || r.profit || r.result || r.resultado);
+    if (!symbol || !category || typeRaw || !Number.isFinite(volume) || volume <= 0 || !Number.isFinite(value) || value < 0) continue;
+    const cost = Number.isFinite(netProfit) ? Math.max(0, value - netProfit) : 0;
+    summaries.push(buildPos(symbol, name, volume, value, cost));
+  }
+  if (summaries.length) return summaries;
+
+  // Backward-compatible fallback for older XTB exports containing only lot rows.
+  const lotMap = new Map();
+  for (const r of norm) {
+    const symbol = String(r.ticker || r.symbol || r.simbolo || r.instrumento || "").trim();
+    const typeRaw = String(r.type || r.tipo || r.direction || "").trim().toUpperCase();
+    const volume = parseNumberSmart(r.volume || r.qty || r.quantity);
+    const value = parseNumberSmart(r.value || r.valor || r.market_value || r.current_value);
+    const netProfit = parseNumberSmart(r.net_profit || r.profit || r.result || r.resultado);
+    if (!symbol || !/^(BUY|SELL)$/.test(typeRaw) || !Number.isFinite(volume) || volume <= 0 || !Number.isFinite(value) || value < 0) continue;
+    const k = symbol.toUpperCase();
+    const cur = lotMap.get(k) || { symbol, name: String(r.instrument_position || r.instrument || r.name || symbol), qty:0, value:0, cost:0 };
+    cur.qty += volume;
+    cur.value += value;
+    cur.cost += Number.isFinite(netProfit) ? Math.max(0, value - netProfit) : 0;
+    lotMap.set(k, cur);
+  }
+  return Array.from(lotMap.values()).map(x => buildPos(x.symbol, x.name, x.qty, x.value, x.cost));
+}
+
+function parseXTBCashRows'''
+          s2, n = pattern.subn(replacement, s, count=1)
+          if n != 1:
+            raise SystemExit('XTB positions parser marker not found')
+          s = s2
+
+          # 2) Correct concrete Yahoo identities proven from the user's source files / listings.
+          s = s.replace('"IE00BLCHJ534":"PAVE.DE"', '"IE00BLCHJ534":"94VE.DE"')
+          if '"DE000SHL1006":"SHL.DE"' not in s:
+            anchor = '"IE00BLCHJ534":"94VE.DE"'
+            s = s.replace(anchor, anchor + ',"DE000SHL1006":"SHL.DE"', 1)
+          s = s.replace('"SIEMENS HEALTHINEERS":{"isin":"DE000SHL1006","ticker":"SHL","priceCurrency":"EUR","yahooTicker":"SHL"',
+                        '"SIEMENS HEALTHINEERS":{"isin":"DE000SHL1006","ticker":"SHL","priceCurrency":"EUR","yahooTicker":"SHL.DE"')
+          s = s.replace('"GLOBAL X US INFRASTRUCTURE DEVELOPMENT ACC":{"isin":"IE00BLCHJ534","ticker":"PAVE","priceCurrency":"EUR","yahooTicker":"PAVE.DE"',
+                        '"GLOBAL X US INFRASTRUCTURE DEVELOPMENT ACC":{"isin":"IE00BLCHJ534","ticker":"PAVE","priceCurrency":"EUR","yahooTicker":"94VE.DE"')
+
+          # 3) Force every existing device to rebuild the broker mirror from source truth.
+          s = re.sub(r'const BROKER_REBUILD_SCHEMA_VERSION = \d+;', 'const BROKER_REBUILD_SCHEMA_VERSION = 46;', s, count=1)
+
+          # 4) Tiny-position collision guard: catastrophic quote mismatches must not turn a
+          # €30-€70 position into tens of thousands just because costBasis < €100.
+          s = s.replace('if (_assetCostBasis > 100 && safeNewValue > _assetCostBasis * 50) {',
+                        'if (_assetCostBasis > 1 && safeNewValue > _assetCostBasis * 200) {', 1)
+
+          p.write_text(s)
+
+          idx = Path('index.html')
+          h = idx.read_text()
+          h = re.sub(r'app\.js\?v=[^"\']+', 'app.js?v=20260823v12', h, count=1)
+          idx.write_text(h)
+
+          sw = Path('sw.js')
+          w = sw.read_text()
+          w = re.sub(r'const CACHE_NAME = "vestra-cache-v\d+";', 'const CACHE_NAME = "vestra-cache-v73";', w, count=1)
+          sw.write_text(w)
+
+      - name: Validate syntax
+        run: node --check app.js
+
+      - name: Commit hotfix
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add app.js index.html sw.js
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "fix: v6.7.1 rebuild portfolio from authoritative broker sources"
+            git push
+          fi
