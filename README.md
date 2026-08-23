@@ -1,3 +1,11 @@
+## Vestra v6.6.2 — Risk Budget Clarity & Quote Refresh Repair
+
+- A box Diversificação real passa a usar blocos legíveis, barras de exposição, limites explícitos e uma leitura curta do score.
+- Excessos de fator/moeda/região ficam destacados sem depender de chips pequenos.
+- Corrige o erro `hasStrongQuoteIdentity is not defined` no caminho de atualização de cotações, preservando as proteções contra colisões de ticker e identidade fraca.
+- A mesma correção desbloqueia a atualização manual e o caminho automático que usa o mesmo motor de cotações ao abrir/regressar à app.
+- PWA cache: `vestra-cache-v65`.
+
 ## Vestra v6.6.1 — Research Queue Repair & Low52 Opportunity Rank
 
 - Research Queue agora atualiza a própria janela de Portfolio Intelligence imediatamente ao marcar Em revisão / Revisto / Adiar 7d.

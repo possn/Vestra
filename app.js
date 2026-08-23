@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260509v64").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260509v65").catch(() => {});
     });
   }
 } catch (_) {}
@@ -12458,12 +12458,26 @@ async function fetchQuote(ticker, workerUrl) {
 }
 
 
+function hasStrongQuoteIdentitySafe(asset) {
+  if (!asset) return false;
+  const cls = normalizeTickerLookupKey(asset.class || "");
+  if (cls === "CRIPTO" || cls === "CRYPTO") return true;
+  const isin = String(asset.isin || "").trim().toUpperCase();
+  if (/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(isin)) return true;
+  if (typeof hasExplicitTickerTag === "function" && hasExplicitTickerTag(asset)) return true;
+  const storedYahoo = String(asset.yahooTicker || "").trim().toUpperCase();
+  if (storedYahoo && typeof isPlausibleMarketTicker === "function" && isPlausibleMarketTicker(storedYahoo, asset)) return true;
+  const raw = String(asset.ticker || asset.symbol || "").trim().toUpperCase();
+  if (raw && typeof isPlausibleMarketTicker === "function" && isPlausibleMarketTicker(raw, asset)) return true;
+  return false;
+}
+
 function quoteSanityCheck(asset, q, priceEur, rawTicker) {
   if (!asset || !q || !Number.isFinite(priceEur) || priceEur <= 0) return { ok:false, reason:"Cotação inválida" };
 
   const assetCcy = String(asset.priceCurrency || asset.currency || "").trim().toUpperCase();
   const quoteCcy = String(q.currency || "").trim().toUpperCase();
-  const explicit = hasStrongQuoteIdentity(asset);
+  const explicit = hasStrongQuoteIdentitySafe(asset);
   // Currency mismatch is a strong collision signal for explicit broker instruments.
   if (assetCcy && quoteCcy && assetCcy !== quoteCcy && !(assetCcy === "GBX" && quoteCcy === "GBP")) {
     if (!String(rawTicker || "").includes("=") && !String(rawTicker || "").endsWith("-USD")) {
@@ -12768,9 +12782,9 @@ async function refreshLiveQuotesCore(options = {}) {
 
     // Broker imports are deliberately conservative: a descriptive product name is not a ticker.
     // Auto-refresh only when the asset has an explicit/structural market identity.
-    if (asset.generatedFromBroker && !hasStrongQuoteIdentity(asset)) return false;
+    if (asset.generatedFromBroker && !hasStrongQuoteIdentitySafe(asset)) return false;
     if (!isMarketClass) return !!(storedYahoo || hasExplicitTickerTag(asset));
-    return !!(isin || (hasStrongQuoteIdentity(asset) && (raw || storedYahoo || inferredYahoo || isPlausibleMarketTicker(raw, asset))));
+    return !!(isin || (hasStrongQuoteIdentitySafe(asset) && (raw || storedYahoo || inferredYahoo || isPlausibleMarketTicker(raw, asset))));
   }
 
 
