@@ -1,0 +1,212 @@
+name: Vestra v4.6 capital allocation intelligence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/feature-capital-allocation-v46.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  feature:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add capital allocation intelligence
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          cap = Path('scripts/capital_allocation_intelligence.py')
+          if not cap.exists():
+              cap.write_text(r'''"""Capital-allocation intelligence overlay.
+
+Uses only observed/accounting-derived fields already present in Vestra. Missing
+metrics stay missing; no synthetic buybacks, SBC, or dividend assumptions.
+"""
+from __future__ import annotations
+
+
+def _f(v):
+    try:
+        x=float(v)
+        return x if x==x and abs(x)!=float('inf') else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _clip(x, lo=0.0, hi=100.0):
+    return max(lo, min(hi, x))
+
+
+def assess(row: dict) -> dict:
+    dilution=_f(row.get('diluted_shares_yoy'))
+    buybacks=_f(row.get('repurchases_last_quarter'))
+    roce=_f(row.get('roce_proxy'))
+    sector_roce=_f(row.get('sector_roce_proxy_median'))
+    div_cover=_f(row.get('dividend_fcf_coverage'))
+    sbc_ratio=_f(row.get('sbc_to_revenue'))
+    hist=row.get('annual_quality_history') if isinstance(row.get('annual_quality_history'), list) else []
+
+    parts=[]; reasons=[]; risks=[]
+
+    if dilution is not None:
+        # 0% dilution ~80; -5% share count ~100; +10% ~30; +20% ~0.
+        dilution_score=_clip(80 - dilution*500)
+        parts.append((dilution_score, .30))
+        if dilution <= -0.01: reasons.append('Redução líquida do número de ações')
+        elif dilution >= .10: risks.append('Diluição material do acionista')
+        elif dilution >= .03: risks.append('Número de ações em crescimento')
+    else:
+        dilution_score=None
+
+    if roce is not None:
+        if sector_roce not in (None, 0):
+            rel=roce/abs(sector_roce)
+            roce_score=_clip(50 + (rel-1)*35)
+            if rel >= 1.25: reasons.append('ROCE acima da mediana do setor')
+            elif rel < .75: risks.append('ROCE abaixo da mediana do setor')
+        else:
+            roce_score=_clip(50 + roce*180)
+        parts.append((roce_score, .25))
+    else:
+        roce_score=None
+
+    if div_cover is not None:
+        # Existing field is FCF/dividend coverage. >1.5 robust, <1 weak.
+        cover_score=_clip((div_cover-.5)/1.5*100)
+        parts.append((cover_score, .18))
+        if div_cover >= 1.5: reasons.append('Dividendos bem cobertos pelo FCF')
+        elif div_cover < 1.0: risks.append('Dividendos sem cobertura confortável de FCF')
+    else:
+        cover_score=None
+
+    if buybacks is not None:
+        buyback_score=75.0 if buybacks > 0 else 45.0
+        parts.append((buyback_score, .07))
+        if buybacks > 0 and (dilution is None or dilution <= 0): reasons.append('Buybacks traduzem-se em redução/estabilidade de ações')
+    else:
+        buyback_score=None
+
+    if sbc_ratio is not None:
+        # SBC/Revenue: <=2% strong; 5% neutral-ish; >=15% weak.
+        sbc_score=_clip(100 - sbc_ratio*500)
+        parts.append((sbc_score, .12))
+        if sbc_ratio >= .10: risks.append('SBC elevada face à receita')
+        elif sbc_ratio <= .02: reasons.append('SBC contida face à receita')
+    else:
+        sbc_score=None
+
+    # Multi-year ROCE persistence from observed annual statements.
+    roces=[_f(x.get('roce_proxy')) for x in hist[:4] if isinstance(x,dict)]
+    roces=[x for x in roces if x is not None]
+    persistence=None
+    if len(roces)>=3:
+        positive=sum(1 for x in roces if x>0)/len(roces)
+        spread=max(roces)-min(roces)
+        base=max(abs(sum(roces)/len(roces)), .05)
+        stability=_clip(100-(spread/base)*28)
+        persistence=_clip(positive*55+stability*.45)
+        parts.append((persistence,.08))
+        if persistence>=75: reasons.append('ROCE consistente em vários anos')
+        elif persistence<45: risks.append('ROCE pouco consistente historicamente')
+
+    if parts:
+        score=sum(v*w for v,w in parts)/sum(w for _,w in parts)
+        score=round(_clip(score),1)
+        label='Disciplinada' if score>=75 else 'Razoável' if score>=55 else 'Fraca' if score<40 else 'A vigiar'
+    else:
+        score=None; label='Dados insuficientes'
+
+    # A buyback is not rewarded when share count still expands materially.
+    if buybacks and dilution is not None and dilution>.03:
+        risks.append('Buybacks não compensam a diluição líquida')
+        if score is not None: score=round(min(score,54.0),1)
+        label='A vigiar'
+
+    return {
+        'capital_allocation_intelligence_score': score,
+        'capital_allocation_intelligence_label': label,
+        'capital_allocation_reasons': reasons[:4],
+        'capital_allocation_risks': risks[:4],
+        'capital_allocation_components': {
+            'dilution_discipline': round(dilution_score,1) if dilution_score is not None else None,
+            'roce_efficiency': round(roce_score,1) if roce_score is not None else None,
+            'dividend_fcf_coverage': round(cover_score,1) if cover_score is not None else None,
+            'buyback_quality': round(buyback_score,1) if buyback_score is not None else None,
+            'sbc_discipline': round(sbc_score,1) if sbc_score is not None else None,
+            'roce_persistence': round(persistence,1) if persistence is not None else None,
+        },
+    }
+''')
+
+          run=Path('scripts/run.py')
+          s=run.read_text()
+          if 'from capital_allocation_intelligence import assess as assess_capital_allocation_intelligence' not in s:
+              anchor='from capital_risk import enrich as enrich_capital_risk\n'
+              if anchor not in s: raise SystemExit('run import anchor missing')
+              s=s.replace(anchor,anchor+'from capital_allocation_intelligence import assess as assess_capital_allocation_intelligence\n',1)
+          marker='        row["insider_reason"] = insider.get("reason")\n'
+          if marker not in s: raise SystemExit('row marker missing')
+          if 'capital_allocation_intelligence_score' not in s:
+              inject='''        try:\n            row.update(assess_capital_allocation_intelligence(row))\n        except Exception as _cap_exc:\n            log.debug("%s capital allocation intelligence unavailable: %s", s.ticker, _cap_exc)\n'''
+              s=s.replace(marker,inject+marker,1)
+          run.write_text(s)
+
+          market=Path('market.js')
+          m=market.read_text()
+          if 'function capitalAllocationPanel(s)' not in m:
+              marker='  function investmentCase(s){\n'
+              if marker not in m: raise SystemExit('market marker missing')
+              helper=r'''  function capitalAllocationPanel(s){
+    const score=n(s.capital_allocation_intelligence_score), label=txt(s.capital_allocation_intelligence_label)||'Dados insuficientes';
+    const comps=(s.capital_allocation_components&&typeof s.capital_allocation_components==='object')?s.capital_allocation_components:{};
+    const reasons=Array.isArray(s.capital_allocation_reasons)?s.capital_allocation_reasons:[];
+    const risks=Array.isArray(s.capital_allocation_risks)?s.capital_allocation_risks:[];
+    const names={dilution_discipline:'Diluição',roce_efficiency:'ROCE',dividend_fcf_coverage:'Dividendos / FCF',buyback_quality:'Buybacks',sbc_discipline:'SBC',roce_persistence:'ROCE multi-ano'};
+    const rows=Object.entries(comps).filter(([,v])=>n(v)!=null).map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${esc(names[k]||k)}</span><strong>${Math.round(n(v))}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
+    if(score==null&&!rows) return '';
+    const tone=score>=75?'is-positive':score<45?'is-negative':'';
+    return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>CAPITAL ALLOCATION</small><h4>Disciplina por ação</h4></div><span class="market-consensus ${tone}">${score==null?esc(label):Math.round(score)+'/100 · '+esc(label)}</span></div>${rows?`<div style="margin-top:12px">${rows}</div>`:''}${reasons.length?`<div class="market-signal-row" style="margin-top:12px">${reasons.map(x=>`<span class="market-signal">↑ ${esc(x)}</span>`).join('')}</div>`:''}${risks.length?`<ul class="market-case-list" style="margin-top:12px">${risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}<p class="market-case-note">Avalia diluição, eficiência do capital, cobertura de dividendos, buybacks, SBC e persistência de ROCE quando os dados existem. Não preenche métricas em falta.</p></div>`;
+  }
+
+'''
+              m=m.replace(marker,helper+marker,1)
+          # Put the panel into Financial tab without disturbing the core dossier layout.
+          finpat="if(tab==='financials') body.innerHTML=`"
+          if finpat in m and '${capitalAllocationPanel(s)}' not in m:
+              m=m.replace(finpat,"if(tab==='financials') body.innerHTML=`${capitalAllocationPanel(s)}",1)
+          market.write_text(m)
+
+          idx=Path('index.html')
+          h=idx.read_text()
+          h=re.sub(r'market\\.js\\?v=[^\"\']+', 'market.js?v=20260823v8', h, count=1)
+          idx.write_text(h)
+
+          sw=Path('sw.js')
+          w=sw.read_text()
+          w=re.sub(r'vestra-cache-v\\d+', 'vestra-cache-v82', w, count=1)
+          sw.write_text(w)
+
+      - name: Validate
+        run: |
+          python -m py_compile scripts/capital_allocation_intelligence.py scripts/run.py
+          node --check market.js
+          grep -q 'capital_allocation_intelligence_score' scripts/run.py
+          grep -q 'function capitalAllocationPanel' market.js
+
+      - name: Commit
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add scripts/capital_allocation_intelligence.py scripts/run.py market.js index.html sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: add capital allocation intelligence overlay"
+            git push
+          fi
