@@ -88,7 +88,7 @@ jobs:
   margin: 0 auto;
   /* v6.6.6: layout containment traps position:fixed descendants on iOS Safari.
      Quote-error and other long modals live inside .main, so they could open but
-     become effectively frozen/unscrollable. Keep style containment out here. */
+     become effectively frozen/unscrollable. */
   contain: none;
 }'''
           if old_main not in s:
@@ -132,7 +132,7 @@ jobs:
           grep -q "do NOT reject a quote just because" app.js
           grep -q "if (!explicit)" app.js
           grep -q "contain: none" styles.css
-          grep -q "-webkit-overflow-scrolling: touch" styles.css
+          grep -q -- "-webkit-overflow-scrolling: touch" styles.css
           grep -q "vestra-cache-v69" sw.js
           grep -q "app.js?v=20260823v9" index.html
 
