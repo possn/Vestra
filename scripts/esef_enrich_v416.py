@@ -1,86 +1,146 @@
-"""Current filings.xbrl.org adapter for Vestra v4.16.
+"""Current filings.xbrl.org enrichment adapter for Vestra v4.16.
 
-Uses the documented /api/filings resource and a public entity-page fallback.
-This module is intentionally conservative: exact LEI identity, standard IFRS
-concepts only, and no issuer-name fuzzy matching.
+Uses documented /api/filings plus a public entity-page fallback. Identity is
+strict: Yahoo ticker -> ISIN -> GLEIF LEI. Only standard IFRS concepts are used.
 """
 from __future__ import annotations
-import gzip, json, logging, re
+import datetime as dt, gzip, json, logging, re, time
 from urllib.parse import urljoin
-import requests
+import requests, yfinance as yf
 
-log=logging.getLogger('esef_v416')
-BASE='https://filings.xbrl.org'
+log=logging.getLogger('esef_enrich')
+BASE='https://filings.xbrl.org'; GLEIF='https://api.gleif.org/api/v1/lei-records'
 UA='Vestra/4.16 (+https://github.com/possn/Vestra)'
-_ALLOWED={'concept','entity','period','unit','language'}
+ISIN_RE=re.compile(r'^[A-Z]{2}[A-Z0-9]{9}[0-9]$')
+COUNTRY={'.L':'GB','.PA':'FR','.AS':'NL','.BR':'BE','.MC':'ES','.MI':'IT','.ST':'SE','.HE':'FI','.CO':'DK','.OL':'NO','.LS':'PT','.VI':'AT','.WA':'PL','.PR':'CZ','.AT':'GR','.SW':'CH','.DE':'DE'}
+ALLOWED={'concept','entity','period','unit','language'}
+C={
+'revenue':('Revenue','RevenueFromContractsWithCustomers','RevenueFromContractsWithCustomersExcludingAssessedTax'),
+'net_income':('ProfitLoss','ProfitLossAttributableToOwnersOfParent'),
+'operating_income':('ProfitLossFromOperatingActivities','OperatingProfitLoss'),
+'gross_profit':('GrossProfit',),'assets':('Assets',),'current_assets':('CurrentAssets',),'current_liab':('CurrentLiabilities',),
+'equity':('Equity','EquityAttributableToOwnersOfParent'),'cash':('CashAndCashEquivalents','CashAndCashEquivalentsAtCarryingValue'),
+'inventory':('Inventories',),'cfo':('CashFlowsFromUsedInOperatingActivities','CashFlowsFromUsedInOperations'),
+'capex':('PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities','PaymentsToAcquirePropertyPlantAndEquipment','PurchaseOfPropertyPlantAndEquipment'),
+'debt_cur':('CurrentBorrowings','CurrentPortionOfNoncurrentBorrowings'),'debt_non':('NoncurrentBorrowings','LongtermBorrowings'),
+'interest':('InterestExpense','FinanceCosts')}
 
-
-def _session():
+def session():
     s=requests.Session(); s.headers.update({'User-Agent':UA,'Accept':'application/vnd.api+json, application/json, text/html;q=0.8'}); return s
 
+def country_for(t):
+    u=str(t or '').upper(); return next((v for k,v in COUNTRY.items() if u.endswith(k)),None)
 
-def _json_link(sess, filing_id):
+def resolve_isin(t):
+    try: x=str(yf.Ticker(t).isin or '').strip().upper()
+    except Exception: return None
+    return x if ISIN_RE.match(x) else None
+
+def resolve_lei(s,isin):
     try:
-        r=sess.get(f'{BASE}/filing/{filing_id}',timeout=20); r.raise_for_status()
+        r=s.get(GLEIF,params={'filter[isin]':isin,'page[size]':5},timeout=18); r.raise_for_status()
+        ids={str(x.get('id') or '').strip() for x in (r.json().get('data') or []) if x.get('id')}
+        return next(iter(ids)) if len(ids)==1 else None
+    except Exception: return None
+
+def json_link(s,fid):
+    try:
+        r=s.get(f'{BASE}/filing/{fid}',timeout=20); r.raise_for_status()
         links=re.findall(r'href=["\']([^"\']+\.json(?:\.gz)?(?:\?[^"\']*)?)["\']',r.text,re.I)
         if not links: return None
-        links.sort(key=lambda x:("-en." not in x.lower(), x.lower().endswith('.gz')))
+        links.sort(key=lambda x:("-en." not in x.lower(),x.lower().endswith('.gz')))
         return urljoin(BASE,links[0])
-    except Exception as e:
-        log.debug('filing page %s: %s',filing_id,e); return None
+    except Exception: return None
 
-
-def latest_filing(lei, country=None):
-    s=_session(); rows=[]
+def latest_filing(s,lei,country=None):
+    cand=[]
     try:
-        r=s.get(f'{BASE}/api/filings',params={'filter[entity.identifier]':lei,'sort':'-processed','page[size]':30,'include':'entity'},timeout=22)
-        r.raise_for_status(); rows=r.json().get('data') or []
-    except Exception as e:
-        log.debug('api filings %s: %s',lei,e)
-    candidates=[]
-    for item in rows:
-        a=item.get('attributes') or {}; c=str(a.get('country') or '').upper()
-        if country and c and c!=country: continue
-        system=str(a.get('filing_system') or a.get('system') or '').upper()
-        if system and system not in ('ESEF','UKSEF'): continue
-        fid=str(item.get('id') or ''); url=a.get('json_url') or a.get('xbrl_json_url') or (_json_link(s,fid) if fid else None)
-        if url: candidates.append((str(a.get('period_end') or a.get('report_date') or ''),str(a.get('language') or '').lower() in ('en','eng','english'),urljoin(BASE,url),fid))
-    if not candidates:
+        r=s.get(f'{BASE}/api/filings',params={'filter[entity.identifier]':lei,'sort':'-processed','page[size]':30,'include':'entity'},timeout=22); r.raise_for_status()
+        for item in r.json().get('data') or []:
+            a=item.get('attributes') or {}; c=str(a.get('country') or '').upper()
+            if country and c and c!=country: continue
+            fid=str(item.get('id') or ''); u=a.get('json_url') or a.get('xbrl_json_url') or (json_link(s,fid) if fid else None)
+            if u: cand.append((str(a.get('period_end') or a.get('report_date') or ''),str(a.get('language') or '').lower() in ('en','eng','english'),urljoin(BASE,u),fid,'api'))
+    except Exception as e: log.debug('ESEF API %s: %s',lei,e)
+    if not cand:
         try:
-            r=s.get(f'{BASE}/entity/{lei}',timeout=20); r.raise_for_status()
+            r=s.get(f'{BASE}/entity/{lei}',timeout=22); r.raise_for_status()
             ids=re.findall(r'/filing/([A-Z0-9]{20}-\d{4}-\d{2}-\d{2}-(?:ESEF|UKSEF)-[A-Z]{2}-\d+)',r.text,re.I)
             for fid in dict.fromkeys(ids):
                 m=re.match(r'^[A-Z0-9]{20}-(\d{4}-\d{2}-\d{2})-(?:ESEF|UKSEF)-([A-Z]{2})-',fid,re.I)
                 if not m or (country and m.group(2).upper()!=country): continue
-                url=_json_link(s,fid)
-                if url: candidates.append((m.group(1),False,url,fid))
-        except Exception as e:
-            log.debug('entity fallback %s: %s',lei,e)
-    if not candidates: return None
-    candidates.sort(key=lambda x:(x[0],x[1]),reverse=True)
-    p,_,u,fid=candidates[0]; return {'period_end':p,'json_url':u,'filing_id':fid}
+                u=json_link(s,fid)
+                if u: cand.append((m.group(1),False,u,fid,'html'))
+        except Exception as e: log.debug('ESEF entity %s: %s',lei,e)
+    if not cand: return None
+    cand.sort(key=lambda x:(x[0],x[1]),reverse=True); p,_,u,fid,path=cand[0]
+    return {'period_end':p,'json_url':u,'filing_id':fid,'path':path}
 
-
-def fetch_report(filing):
-    if not filing: return None
+def report(s,f):
     try:
-        r=_session().get(filing['json_url'],timeout=40); r.raise_for_status(); data=r.content
-        if filing['json_url'].lower().split('?',1)[0].endswith('.gz'): data=gzip.decompress(data)
-        return json.loads(data.decode('utf-8'))
-    except Exception as e:
-        log.debug('xbrl-json %s: %s',filing.get('json_url'),e); return None
+        r=s.get(f['json_url'],timeout=40); r.raise_for_status(); b=r.content
+        if f['json_url'].lower().split('?',1)[0].endswith('.gz'): b=gzip.decompress(b)
+        return json.loads(b.decode('utf-8'))
+    except Exception: return None
 
+def local(v): return str(v or '').rsplit('#',1)[-1].split(':',1)[-1]
+def period(v):
+    try:
+        if '/' in v:
+            a,b=v.split('/',1); return dt.date.fromisoformat(a[:10]),dt.date.fromisoformat(b[:10])
+        return None,dt.date.fromisoformat(v[:10])
+    except Exception: return None,None
 
-def local_concept(v):
-    s=str(v or '').rsplit('#',1)[-1]; return s.split(':',1)[-1]
+def rows(rep,key,duration):
+    out=[]; wanted=set(C[key])
+    for f in (rep.get('facts') or {}).values():
+        d=f.get('dimensions') or {}
+        if local(d.get('concept')) not in wanted or set(d)-ALLOWED: continue
+        try: val=float(f.get('value'))
+        except Exception: continue
+        st,en=period(str(d.get('period') or '')); isdur=st is not None
+        if en is None or isdur!=duration or (isdur and not 250<=(en-st).days<=390): continue
+        out.append((en,val))
+    by={}
+    for d,v in out: by.setdefault(d,set()).add(v)
+    z=[(d,next(iter(vs))) for d,vs in by.items() if len(vs)==1]; z.sort(key=lambda x:x[0],reverse=True); return z
 
+def latest(rep,key,duration):
+    x=rows(rep,key,duration); return x[0][1] if x else None
 
-def facts(report, concepts):
-    wanted=set(concepts); out=[]
-    for fact in (report or {}).get('facts',{}).values():
-        d=fact.get('dimensions') or {}
-        if local_concept(d.get('concept')) not in wanted or set(d)-_ALLOWED: continue
-        try: value=float(fact.get('value'))
-        except (TypeError,ValueError): continue
-        if value==value and abs(value)!=float('inf'): out.append((d.get('period'),value))
-    return out
+def growth(rep,key):
+    x=rows(rep,key,True)
+    if len(x)<2 or x[1][1] in (0,None): return None
+    g=abs((x[0][0]-x[1][0]).days); return x[0][1]/x[1][1]-1 if 300<=g<=430 else None
+
+def set_missing(m,k,v):
+    if v is not None and getattr(m,k,None) is None: setattr(m,k,v); return True
+    return False
+
+def enrich(raw,priority=None,max_nonpriority=220):
+    priority=set(priority or []); s=session(); non=0; done=0
+    for m in raw:
+        t=str(getattr(m,'ticker','') or '').upper(); c=country_for(t)
+        if not c or getattr(m,'quote_type',None) in ('ETF','CRYPTO'): continue
+        miss=sum(getattr(m,k,None) is None for k in ('roe','roa','profit_margin','operating_margin','gross_margin','revenue_growth','free_cash_flow','current_ratio','quick_ratio','debt_to_equity','operating_cash_flow'))
+        if miss<2 and t not in priority: continue
+        if t not in priority:
+            non+=1
+            if non>max_nonpriority: continue
+        isin=resolve_isin(t); lei=resolve_lei(s,isin) if isin else None
+        if not lei: continue
+        f=latest_filing(s,lei,c); rep=report(s,f) if f else None
+        if not rep: continue
+        rev=latest(rep,'revenue',True); ni=latest(rep,'net_income',True); op=latest(rep,'operating_income',True); gp=latest(rep,'gross_profit',True)
+        a=latest(rep,'assets',False); e=latest(rep,'equity',False); ca=latest(rep,'current_assets',False); cl=latest(rep,'current_liab',False); inv=latest(rep,'inventory',False); cash=latest(rep,'cash',False)
+        cfo=latest(rep,'cfo',True); capex=latest(rep,'capex',True); dc=latest(rep,'debt_cur',False); dn=latest(rep,'debt_non',False); interest=latest(rep,'interest',True)
+        debt=(dc or 0)+(dn or 0) if dc is not None or dn is not None else None
+        if rev not in (None,0):
+            set_missing(m,'profit_margin',ni/rev if ni is not None else None); set_missing(m,'operating_margin',op/rev if op is not None else None); set_missing(m,'gross_margin',gp/rev if gp is not None else None)
+        set_missing(m,'roe',ni/e if ni is not None and e not in (None,0) else None); set_missing(m,'roa',ni/a if ni is not None and a not in (None,0) else None)
+        set_missing(m,'current_ratio',ca/cl if ca is not None and cl not in (None,0) else None); set_missing(m,'quick_ratio',(ca-inv)/cl if ca is not None and inv is not None and cl not in (None,0) else None)
+        set_missing(m,'debt_to_equity',debt/e if debt is not None and e not in (None,0) else None); set_missing(m,'total_assets',a); set_missing(m,'stockholders_equity',e); set_missing(m,'total_cash',cash); set_missing(m,'total_debt',debt); set_missing(m,'operating_cash_flow',cfo)
+        set_missing(m,'free_cash_flow',cfo-abs(capex) if cfo is not None and capex is not None else None); set_missing(m,'ebit',op); set_missing(m,'interest_expense',abs(interest) if interest is not None else None); set_missing(m,'revenue_growth',growth(rep,'revenue')); set_missing(m,'earnings_growth',growth(rep,'net_income'))
+        if op is not None and e is not None and debt is not None and cash is not None and e+debt-cash>0: set_missing(m,'roce_proxy',op/(e+debt-cash))
+        m.isin=isin; m.lei=lei; m.esef_period_end=f.get('period_end'); m.esef_enriched=True; m.esef_retrieval_path=f.get('path'); done+=1; time.sleep(.05)
+    log.info('ESEF v4.16 enriched %d rows',done); return raw
