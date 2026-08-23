@@ -9,9 +9,9 @@ if 'function low52OpportunityRank(s,stats)' not in s:
     marker='  function renderLows(){\n'
     assert marker in s
     fn=r'''  function low52OpportunityRank(s,stats){
-    const low=n(s.low52_score), recovery=n(s.recovery_confirmation_score), quality=n(s.quality_pct), confidence=n(s.confidence_score);
+    const low=n(s.low52_score), recovery=n(s.recovery_score), quality=n(s.quality_pct), confidence=n(s.confidence_score);
     const rel=n(s.sector_relative_return_1y_pct), upside=n(s.fair_value_upside_pct);
-    const risk=txt(s.risk_gate).toLowerCase(), lowStatus=txt(s.low52_status), rec=txt(s.recovery_confirmation_status);
+    const risk=txt(s.risk_gate).toLowerCase(), lowStatus=txt(s.low52_status), rec=txt(s.recovery_status);
     let parts=[], weight=0;
     const add=(v,w)=>{ if(v!=null){ parts.push(Math.max(0,Math.min(100,v))*w); weight+=w; } };
     add(low,0.35); add(recovery,0.25); add(quality,0.15); add(confidence,0.05);
@@ -25,7 +25,7 @@ if 'function low52OpportunityRank(s,stats)' not in s:
     if(rec==='confirmed') score+=8;
     else if(rec==='recovering') score+=5;
     else if(rec==='stabilizing') score+=2;
-    else if(rec==='bounce_unconfirmed') score-=7;
+    else if(rec==='bounce_only') score-=7;
     else if(rec==='failed') score-=16;
     if(risk==='high') score-=25; else if(risk==='severe') score-=40;
     const dist=stats?.above; if(dist!=null && dist<=2) score+=2;
@@ -51,11 +51,10 @@ new="""    const body=rows.length?rows.map(({s,stats,opportunityRank})=>{
       const currency=txt(s.currency)||'USD';"""
 assert old in s
 s=s.replace(old,new,1)
-old="""      const meta=[`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText,recovery,peer].filter(Boolean).join(' · ');"""
-if old not in s:
-    old="""      const meta=[`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText].filter(Boolean).join(' · ');"""
+
+old="""      const meta=[`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText,recoveryLabel,recoveryScore!=null?`Recovery ${Math.round(recoveryScore)}/100`:'' ].filter(Boolean).join(' · ');"""
 assert old in s
-new=old.replace("const meta=[", "const meta=[`Opportunity ${opportunityRank}/100`,")
+new="""      const meta=[`Opportunity ${opportunityRank}/100`,`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText,recoveryLabel,recoveryScore!=null?`Recovery ${Math.round(recoveryScore)}/100`:'' ].filter(Boolean).join(' · ');"""
 s=s.replace(old,new,1)
 s=s.replace('<h3>Mínimos de 52 semanas</h3><p>Até 5% do mínimo, agora classificados por oportunidade potencial, queda saudável, value trap ou deterioração estrutural.</p>', '<h3>Mínimos de 52 semanas</h3><p>Até 5% do mínimo, ordenados pelo Opportunity Rank: qualidade + valuation + causa da queda + setor + confirmação de recuperação.</p>',1)
 
@@ -106,6 +105,4 @@ if not r.startswith('## Vestra v6.6.1'):
 p.write_text(r)
 
 p=root/'sw.js'; sw=p.read_text().replace('vestra-cache-v63','vestra-cache-v64'); p.write_text(sw)
-
-# Keep app service-worker query aligned if present.
 p=root/'app.js'; a=p.read_text().replace('sw.js?v=20260509v63','sw.js?v=20260509v64').replace('sw.js?v=20260509v62','sw.js?v=20260509v64'); p.write_text(a)
