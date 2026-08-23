@@ -7,6 +7,12 @@ Identity chain:
 No issuer-name fuzzy matching is used. The enricher only fills metrics that are
 missing in the primary Yahoo feed. If any identity hop is ambiguous, the row is
 left unchanged.
+
+v4.12 broadens the IFRS taxonomy fallback materially. Sparse European dossiers
+were often caused by relying on only one canonical IFRS concept per metric while
+issuers legitimately use alternative standard concepts. This module now derives
+more profitability, liquidity, leverage, cash-flow and multi-year quality fields
+without inventing values or using fuzzy issuer matching.
 """
 from __future__ import annotations
 
@@ -29,25 +35,72 @@ _SUFFIX_COUNTRY = {
     ".L": "GB", ".PA": "FR", ".AS": "NL", ".BR": "BE", ".MC": "ES",
     ".MI": "IT", ".ST": "SE", ".HE": "FI", ".CO": "DK", ".OL": "NO",
     ".LS": "PT", ".VI": "AT", ".WA": "PL", ".PR": "CZ", ".AT": "GR",
+    ".DE": "DE", ".SW": "CH",
 }
 _ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
+# Only standard IFRS concepts are accepted here. Extension concepts are not
+# guessed because issuer-specific labels can mean different things.
 _CONCEPTS = {
-    "revenue": ("ifrs-full:Revenue", "ifrs-full:RevenueFromContractsWithCustomers"),
-    "net_income": ("ifrs-full:ProfitLoss", "ifrs-full:ProfitLossAttributableToOwnersOfParent"),
-    "operating_income": ("ifrs-full:ProfitLossFromOperatingActivities",),
+    "revenue": (
+        "ifrs-full:Revenue",
+        "ifrs-full:RevenueFromContractsWithCustomers",
+        "ifrs-full:RevenueFromContractsWithCustomersExcludingAssessedTax",
+    ),
+    "net_income": (
+        "ifrs-full:ProfitLoss",
+        "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+    ),
+    "operating_income": (
+        "ifrs-full:ProfitLossFromOperatingActivities",
+        "ifrs-full:OperatingProfitLoss",
+    ),
+    "gross_profit": ("ifrs-full:GrossProfit",),
     "assets": ("ifrs-full:Assets",),
     "assets_current": ("ifrs-full:CurrentAssets",),
     "liabilities_current": ("ifrs-full:CurrentLiabilities",),
-    "equity": ("ifrs-full:Equity", "ifrs-full:EquityAttributableToOwnersOfParent"),
-    "cash": ("ifrs-full:CashAndCashEquivalents",),
-    "cfo": ("ifrs-full:CashFlowsFromUsedInOperatingActivities",),
+    "equity": (
+        "ifrs-full:Equity",
+        "ifrs-full:EquityAttributableToOwnersOfParent",
+    ),
+    "cash": (
+        "ifrs-full:CashAndCashEquivalents",
+        "ifrs-full:CashAndCashEquivalentsAtCarryingValue",
+    ),
+    "inventory": ("ifrs-full:Inventories",),
+    "cfo": (
+        "ifrs-full:CashFlowsFromUsedInOperatingActivities",
+        "ifrs-full:CashFlowsFromUsedInOperations",
+    ),
     "capex": (
         "ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
         "ifrs-full:PaymentsToAcquirePropertyPlantAndEquipment",
+        "ifrs-full:PurchaseOfPropertyPlantAndEquipment",
     ),
-    "borrowings_current": ("ifrs-full:CurrentBorrowings",),
-    "borrowings_noncurrent": ("ifrs-full:NoncurrentBorrowings",),
+    "borrowings_current": (
+        "ifrs-full:CurrentBorrowings",
+        "ifrs-full:CurrentPortionOfNoncurrentBorrowings",
+    ),
+    "borrowings_noncurrent": (
+        "ifrs-full:NoncurrentBorrowings",
+        "ifrs-full:LongtermBorrowings",
+    ),
+    "interest_expense": (
+        "ifrs-full:InterestExpense",
+        "ifrs-full:FinanceCosts",
+    ),
+    "shares": (
+        "ifrs-full:WeightedAverageNumberOfSharesOutstanding",
+        "ifrs-full:WeightedAverageNumberOfDilutedSharesOutstanding",
+    ),
+    "eps": (
+        "ifrs-full:BasicEarningsLossPerShare",
+        "ifrs-full:DilutedEarningsLossPerShare",
+    ),
+    "dividends": (
+        "ifrs-full:DividendsPaid",
+        "ifrs-full:DividendsPaidClassifiedAsFinancingActivities",
+    ),
 }
 
 
@@ -92,7 +145,7 @@ def _resolve_lei(sess: requests.Session, isin: str) -> str | None:
 def _latest_filing(sess: requests.Session, lei: str, expected_country: str | None) -> dict | None:
     try:
         url = f"{ESEF}/api/entities/{lei}/filings"
-        r = sess.get(url, params={"page[size]": 12}, timeout=20)
+        r = sess.get(url, params={"page[size]": 16}, timeout=20)
         r.raise_for_status()
         rows = r.json().get("data") or []
     except Exception as exc:
@@ -189,6 +242,39 @@ def _growth(report: dict, key: str) -> float | None:
     return rows[0][1] / rows[1][1] - 1
 
 
+def _series_as_dict(report: dict, key: str, duration: bool, limit: int = 4) -> list[dict]:
+    rows = _concept_rows(report, _CONCEPTS[key], duration=duration)
+    return [{"date": d.isoformat(), "value": v} for d, v in rows[:limit]]
+
+
+def _history(report: dict) -> list[dict]:
+    rev = dict(_concept_rows(report, _CONCEPTS["revenue"], duration=True))
+    ni = dict(_concept_rows(report, _CONCEPTS["net_income"], duration=True))
+    op = dict(_concept_rows(report, _CONCEPTS["operating_income"], duration=True))
+    gp = dict(_concept_rows(report, _CONCEPTS["gross_profit"], duration=True))
+    assets = dict(_concept_rows(report, _CONCEPTS["assets"], duration=False))
+    eq = dict(_concept_rows(report, _CONCEPTS["equity"], duration=False))
+    cfo = dict(_concept_rows(report, _CONCEPTS["cfo"], duration=True))
+    capex = dict(_concept_rows(report, _CONCEPTS["capex"], duration=True))
+    dates = sorted(set(rev) | set(ni) | set(op) | set(gp), reverse=True)
+    out = []
+    for d in dates[:4]:
+        r, n, o, g = rev.get(d), ni.get(d), op.get(d), gp.get(d)
+        a, e = assets.get(d), eq.get(d)
+        cf, cx = cfo.get(d), capex.get(d)
+        row = {"date": d.isoformat()}
+        if r not in (None, 0):
+            if n is not None: row["net_margin"] = n / r
+            if o is not None: row["operating_margin"] = o / r
+            if g is not None: row["gross_margin"] = g / r
+        if e not in (None, 0) and n is not None: row["roe"] = n / e
+        if a not in (None, 0) and n is not None: row["roa"] = n / a
+        if cf is not None and cx is not None and r not in (None, 0): row["fcf_margin"] = (cf - abs(cx)) / r
+        if len(row) > 1:
+            out.append(row)
+    return out
+
+
 def _fetch_report(sess: requests.Session, filing: dict) -> dict | None:
     try:
         r = sess.get(filing["json_url"], timeout=35)
@@ -199,7 +285,7 @@ def _fetch_report(sess: requests.Session, filing: dict) -> dict | None:
         return None
 
 
-def enrich(raw, priority=None, max_nonpriority=90):
+def enrich(raw, priority=None, max_nonpriority=180):
     priority = set(priority or [])
     sess = _session()
     non = 0
@@ -211,8 +297,9 @@ def enrich(raw, priority=None, max_nonpriority=90):
         if not country or getattr(m, "quote_type", None) in ("ETF", "CRYPTO"):
             continue
         missing = sum(getattr(m, k, None) is None for k in (
-            "roe", "profit_margin", "revenue_growth", "free_cash_flow",
-            "current_ratio", "debt_to_equity", "operating_cash_flow",
+            "roe", "roa", "profit_margin", "operating_margin", "gross_margin",
+            "revenue_growth", "free_cash_flow", "current_ratio", "quick_ratio",
+            "debt_to_equity", "operating_cash_flow", "interest_expense",
         ))
         if missing < 2 and ticker not in priority:
             continue
@@ -237,38 +324,65 @@ def enrich(raw, priority=None, max_nonpriority=90):
         rev = _latest_value(report, "revenue", True)
         ni = _latest_value(report, "net_income", True)
         op = _latest_value(report, "operating_income", True)
+        gp = _latest_value(report, "gross_profit", True)
         assets = _latest_value(report, "assets", False)
         equity = _latest_value(report, "equity", False)
         current_assets = _latest_value(report, "assets_current", False)
         current_liab = _latest_value(report, "liabilities_current", False)
+        inventory = _latest_value(report, "inventory", False)
         cash = _latest_value(report, "cash", False)
         cfo = _latest_value(report, "cfo", True)
         capex = _latest_value(report, "capex", True)
         dcur = _latest_value(report, "borrowings_current", False)
         dnon = _latest_value(report, "borrowings_noncurrent", False)
+        interest = _latest_value(report, "interest_expense", True)
         debt = (dcur or 0) + (dnon or 0) if dcur is not None or dnon is not None else None
 
-        if getattr(m, "profit_margin", None) is None and rev and ni is not None: m.profit_margin = ni / rev
-        if getattr(m, "operating_margin", None) is None and rev and op is not None: m.operating_margin = op / rev
+        if getattr(m, "profit_margin", None) is None and rev not in (None, 0) and ni is not None: m.profit_margin = ni / rev
+        if getattr(m, "operating_margin", None) is None and rev not in (None, 0) and op is not None: m.operating_margin = op / rev
+        if getattr(m, "gross_margin", None) is None and rev not in (None, 0) and gp is not None: m.gross_margin = gp / rev
         if getattr(m, "roe", None) is None and equity not in (None, 0) and ni is not None: m.roe = ni / equity
         if getattr(m, "roa", None) is None and assets not in (None, 0) and ni is not None: m.roa = ni / assets
         if getattr(m, "total_assets", None) is None: m.total_assets = assets
         if getattr(m, "stockholders_equity", None) is None: m.stockholders_equity = equity
         if getattr(m, "current_ratio", None) is None and current_liab not in (None, 0) and current_assets is not None: m.current_ratio = current_assets / current_liab
+        if getattr(m, "quick_ratio", None) is None and current_liab not in (None, 0) and current_assets is not None:
+            m.quick_ratio = (current_assets - (inventory or 0)) / current_liab
         if getattr(m, "total_cash", None) is None: m.total_cash = cash
         if getattr(m, "total_debt", None) is None: m.total_debt = debt
         if getattr(m, "debt_to_equity", None) is None and equity not in (None, 0) and debt is not None: m.debt_to_equity = debt / equity
         if getattr(m, "operating_cash_flow", None) is None: m.operating_cash_flow = cfo
         if getattr(m, "free_cash_flow", None) is None and cfo is not None and capex is not None: m.free_cash_flow = cfo - abs(capex)
+        if getattr(m, "ebit", None) is None and op is not None: m.ebit = op
+        if getattr(m, "interest_expense", None) is None and interest is not None: m.interest_expense = abs(interest)
         if getattr(m, "revenue_growth", None) is None: m.revenue_growth = _growth(report, "revenue")
         if getattr(m, "earnings_growth", None) is None: m.earnings_growth = _growth(report, "net_income")
+
+        if not getattr(m, "annual_quality_history", None):
+            m.annual_quality_history = _history(report)
+        if not getattr(m, "quarterly_revenue", None):
+            # ESEF filings are primarily annual; keep the generic series only as
+            # annual fallback and never label it quarterly.
+            pass
+        if not getattr(m, "annual_dividend_history", None):
+            m.annual_dividend_history = _series_as_dict(report, "dividends", True, 4)
+
+        # A statement-derived ROCE proxy is useful when Yahoo omits it. This is
+        # deliberately conservative: equity + debt - cash approximates invested
+        # capital and is not used when the denominator is non-positive.
+        if getattr(m, "roce_proxy", None) is None and op is not None:
+            invested = None
+            if equity is not None or debt is not None or cash is not None:
+                invested = (equity or 0) + (debt or 0) - (cash or 0)
+            if invested is not None and invested > 0:
+                m.roce_proxy = op / invested
 
         m.isin = isin
         m.lei = lei
         m.esef_period_end = filing.get("period_end")
         m.esef_enriched = True
         enriched += 1
-        time.sleep(0.08)
+        time.sleep(0.06)
 
     log.info("ESEF/UKSEF enriched %d rows", enriched)
     return raw
