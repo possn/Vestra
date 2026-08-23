@@ -1,0 +1,156 @@
+name: Vestra v6.7.4 source-of-truth repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hotfix-broker-source-v674.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch app source
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('app.js')
+          s = p.read_text()
+
+          # XTB Open Positions: summary rows are authoritative current holdings.
+          a = s.find('function parseXTBPositionsRows(rows, meta) {')
+          b = s.find('function parseXTBCashRows', a)
+          if a < 0 or b < 0:
+              raise SystemExit('XTB parser boundaries not found')
+          parser = r'''function parseXTBPositionsRows(rows, meta) {
+  const norm = (rows || []).map(normalizeRow);
+  const out = [];
+  const seen = new Set();
+  for (const r of norm) {
+    const symbol = String(r.ticker || r.symbol || r.simbolo || '').trim();
+    const name = String(r.instrument_position || r.instrument || r.name || symbol).trim();
+    const category = String(r.category || r.categoria || '').trim();
+    const typeRaw = String(r.type || r.tipo || r.direction || '').trim();
+    const qty = parseNumberSmart(r.volume || r.qty || r.quantity);
+    const valueEUR = parseNumberSmart(r.value || r.market_value || r.current_value);
+    const netProfitEUR = parseNumberSmart(r.net_profit || r.profit || r.result || r.resultado);
+    const summary = !!category && category !== '3' && !/^\d+(?:\.\d+)?$/.test(category) && !typeRaw;
+    if (!symbol || !summary || !Number.isFinite(qty) || qty <= 0 || !Number.isFinite(valueEUR) || valueEUR < 0) continue;
+    const ticker = xtbTickerToYahoo(symbol);
+    const pos = {
+      id: uid(), sourceHash: meta.hash, sourceName: meta.name, broker:'XTB',
+      ticker, isin:'', name:name || symbol, qty,
+      costBasisEUR: Number.isFinite(netProfitEUR) ? Math.max(0, valueEUR - netProfitEUR) : 0,
+      marketValueEUR:valueEUR, pricePerShare:qty > 0 ? valueEUR/qty : 0,
+      priceCurrency:xtbSymbolCurrency(symbol), class:brokerPositionClassFromTicker(ticker),
+      positionKind:'market_snapshot', snapshotDate:meta.asOfDate || isoToday(), key:''
+    };
+    pos.key = brokerPositionKey(pos);
+    if (!seen.has(pos.key)) { seen.add(pos.key); out.push(pos); }
+  }
+  return out;
+}
+
+'''
+          s = s[:a] + parser + s[b:]
+
+          # Current snapshot wins over historical reconstructed ledger.
+          s = re.sub(
+            r'const finalQty\s*=\s*snapshotQty \+ ledgerQty > 0 \? snapshotQty \+ ledgerQty : \(snapshotQty \|\| ledgerQty\);',
+            'const finalQty        = snapshotQty > 0 ? snapshotQty : ledgerQty;', s, count=1)
+          s = re.sub(
+            r'let finalValue\s*=\s*snapshotVal \+ ledgerVal > 0 \? snapshotVal \+ ledgerVal\s*:\s*\(snapshotVal \|\| p\.costBasis \|\| ledgerVal\);',
+            'let finalValue        = snapshotVal > 0 ? snapshotVal : (p.costBasis || ledgerVal);', s, count=1)
+
+          # Proven Yahoo identities from broker statements.
+          marker = '  const pair = `${i}|${t}`;'
+          if marker in s and 'IE00BLCHJ534' not in s[s.find('function getKnownBrokerYahooOverride'):s.find('function getKnownBrokerYahooOverride')+2500]:
+              s = s.replace(marker,
+                '  if (i === "IE00BLCHJ534") return "94VE.DE";\n  if (i === "DE000SHL1006") return "SHL.DE";\n  if (i === "US58463J3041") return "MPW";\n' + marker, 1)
+          s = s.replace('"IE00BLCHJ534":"PAVE.DE"', '"IE00BLCHJ534":"94VE.DE"')
+          s = s.replace('"IE00BLCHJ534": "PAVE.DE"', '"IE00BLCHJ534": "94VE.DE"')
+
+          # Generic purge: fully closed ledger positions with no current snapshot cannot remain in portfolio.
+          if 'function purgeFullyClosedBrokerPositionsV674()' not in s:
+              helper = r'''
+function purgeFullyClosedBrokerPositionsV674() {
+  try {
+    const bd = ensureBrokerData();
+    const base = x => canonicalBrokerTickerBase((x && (x.ticker || x.yahooTicker)) || '');
+    const snapshot = new Set();
+    for (const p of (bd.positions || [])) {
+      if (p && (p.positionKind === 'market_snapshot' || p.positionKind === 'cost_snapshot')) {
+        const k = base(p); if (k) snapshot.add(k);
+      }
+    }
+    const net = new Map();
+    for (const e of (bd.events || [])) {
+      if (!e || (e.type !== 'BUY' && e.type !== 'SELL')) continue;
+      const k = base(e); if (!k) continue;
+      const q = Math.abs(typeof parseQty === 'function' ? parseQty(e.qty) : parseNum(e.qty));
+      net.set(k, (net.get(k) || 0) + (e.type === 'BUY' ? q : -q));
+    }
+    state.assets = (state.assets || []).filter(a => {
+      if (!a || !a.generatedFromBroker) return true;
+      const k = base(a);
+      if (!k || snapshot.has(k) || !net.has(k)) return true;
+      return Math.abs(net.get(k) || 0) > 1e-8;
+    });
+  } catch (_) {}
+}
+
+'''
+              dm = 'document.addEventListener("DOMContentLoaded", async () => {'
+              s = s.replace(dm, helper + dm, 1)
+
+          # Run purge after automatic rebuild and before first render.
+          s = s.replace('        rebuildBrokerGeneratedData();\n        if (!state.settings) state.settings = {};',
+                        '        rebuildBrokerGeneratedData();\n        purgeFullyClosedBrokerPositionsV674();\n        if (!state.settings) state.settings = {};', 1)
+          s = s.replace('    autoSyncDivSummariesFromImportedData();',
+                        '    purgeFullyClosedBrokerPositionsV674();\n    autoSyncDivSummariesFromImportedData();', 1)
+
+          # Guard tiny broker positions against catastrophic quote collisions.
+          s = s.replace('if (_assetCostBasis > 100 && safeNewValue > _assetCostBasis * 50) {',
+                        'if (_assetCostBasis > 1 && safeNewValue > _assetCostBasis * 100) {', 1)
+
+          # Force every device to rebuild once from source data.
+          s = re.sub(r'const BROKER_REBUILD_SCHEMA_VERSION = \d+;', 'const BROKER_REBUILD_SCHEMA_VERSION = 48;', s, count=1)
+
+          p.write_text(s)
+
+          idx = Path('index.html')
+          h = idx.read_text()
+          h = re.sub(r'app\.js\?v=[^"\']+', 'app.js?v=20260823v14', h, count=1)
+          idx.write_text(h)
+
+          # Remove runtime monkey-patching and forced quote refresh. Source now owns the fix.
+          sw = Path('sw.js')
+          sw.write_text('''/* Vestra — Service Worker v6.7.4 */\nconst CACHE_NAME = "vestra-cache-v75";\nconst ASSETS = ["./","./index.html","./styles.css","./market.css","./app.js","./market.js","./manifest.webmanifest","./icon192.png","./icon512.png","./icon192-maskable.png","./icon512-maskable.png","./apple-touch-icon.png","./apple-touch-icon-167.png","./apple-touch-icon-152.png","./apple-touch-icon-120.png","./favicon-32.png","./favicon-16.png"];\nself.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).catch(()=>{})); });\nself.addEventListener("activate", e => { e.waitUntil((async()=>{ const keys=await caches.keys(); await Promise.all(keys.map(k=>k!==CACHE_NAME?caches.delete(k):Promise.resolve())); await self.clients.claim(); })()); });\nasync function networkFirst(req){ const c=await caches.open(CACHE_NAME); try{ const r=await fetch(req,{cache:"no-store"}); c.put(req,r.clone()).catch(()=>{}); return r; }catch(_){ return (await c.match(req)) || new Response("Offline",{status:503}); } }\nself.addEventListener("fetch", e => { const r=e.request; if(r.method!=="GET") return; const u=new URL(r.url); if(u.origin!==self.location.origin) return; if(r.mode==="navigate" || r.destination==="document" || ["script","style","worker","manifest"].includes(r.destination)) e.respondWith(networkFirst(r)); else e.respondWith(caches.match(r).then(x=>x||fetch(r))); });\n''')
+
+      - name: Validate
+        run: |
+          node --check app.js
+          grep -q 'BROKER_REBUILD_SCHEMA_VERSION = 48' app.js
+          grep -q 'purgeFullyClosedBrokerPositionsV674' app.js
+          grep -q '94VE.DE' app.js
+          grep -q 'SHL.DE' app.js
+          grep -q 'vestra-cache-v75' sw.js
+
+      - name: Commit
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add app.js index.html sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: v6.7.4 make broker source truth authoritative"
+            git push
+          fi
