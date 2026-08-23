@@ -1,0 +1,155 @@
+name: Vestra v6.7.7 broker quantity root fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hotfix-broker-qty-root-v677.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch quantity semantics at source
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('app.js')
+          s = p.read_text()
+
+          # Every broker quantity must use parseQty, never the monetary parseNum heuristic.
+          replacements = {
+            'parseNum(p.qty)': 'parseQty(p.qty)',
+            'parseNum(e.qty)': 'parseQty(e.qty)',
+            'parseNum(asset.qty || 0)': 'parseQty(asset.qty || 0)',
+            'parseNum(a.qty || 0)': 'parseQty(a.qty || 0)',
+            'parseNum(closeEvt.qty)': 'parseQty(closeEvt.qty)',
+            'parseNum(openEvt.qty)': 'parseQty(openEvt.qty)',
+          }
+          for a,b in replacements.items():
+              s = s.replace(a,b)
+
+          # Quantity/volume fields from broker rows must also use quantity semantics.
+          s = s.replace('parseNumberSmart(r.volume || r.qty || r.quantity)', 'parseQty(r.volume || r.qty || r.quantity)')
+          s = s.replace('parseNumberSmart(r.qty || r.quantity || r.volume)', 'parseQty(r.qty || r.quantity || r.volume)')
+          s = s.replace('parseNumberSmart(r.quantity || r.qty || r.volume)', 'parseQty(r.quantity || r.qty || r.volume)')
+
+          # Broad safety net: parseNum(<simple>.qty) => parseQty(...)
+          s = re.sub(r'parseNum\(([^()\n]{0,120}\.qty(?:\s*\|\|\s*0)?)\)', r'parseQty(\1)', s)
+
+          # Force a broker rebuild on existing devices after fixing quantity interpretation.
+          s = re.sub(r'const BROKER_REBUILD_SCHEMA_VERSION = \d+;', 'const BROKER_REBUILD_SCHEMA_VERSION = 49;', s, count=1)
+
+          marker = '/* Vestra v6.7.7 source guards */'
+          if marker not in s:
+              s += r'''
+
+/* Vestra v6.7.7 source guards */
+(function(){
+  try {
+    // Currency of the listed security and portfolio base currency are independent.
+    if (typeof quoteSanityCheck === 'function') {
+      const _quoteSanityV677 = quoteSanityCheck;
+      quoteSanityCheck = function(asset, q, priceEur, rawTicker) {
+        const result = _quoteSanityV677(asset, q, priceEur, rawTicker);
+        if (!result || result.ok) return result;
+        let strong = false;
+        try { strong = typeof hasStrongQuoteIdentitySafe === 'function' && hasStrongQuoteIdentitySafe(asset); } catch (_) {}
+        if (!strong) return result;
+        const reason = String(result.reason || '');
+        if (/moeda\s+[A-Z]{3}\s+não coincide com\s+[A-Z]{3}/i.test(reason)) {
+          return { ok:true, recovered:'cross-currency' };
+        }
+        if (/Cotação suspeita rejeitada/i.test(reason)) {
+          // Recover stale/corrupt baselines only when the quote is plausible versus cost/share.
+          const qty = typeof parseQty === 'function' ? parseQty(asset && asset.qty) : 0;
+          const cost = typeof parseNum === 'function' ? parseNum(asset && asset.costBasis) : 0;
+          const cps = qty > 0 && cost > 0 ? cost / qty : 0;
+          const px = Number(priceEur || 0);
+          if (cps > 0 && px > 0) {
+            const r = px / cps;
+            if (r >= 0.05 && r <= 20) return { ok:true, recovered:'stale-baseline' };
+          }
+        }
+        return result;
+      };
+    }
+
+    // iOS/PWA: quote errors modal must scroll independently from the page.
+    const st = document.createElement('style');
+    st.id = 'vestra-v677-modal-scroll';
+    st.textContent = '.main{contain:none!important}#modalQuoteErrors{position:fixed!important;inset:0!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important}#modalQuoteErrors .modal__box{max-height:none!important;min-height:min-content!important;overflow:visible!important;margin:16px auto 40px!important}';
+    document.head.appendChild(st);
+
+    window.addEventListener('load', function(){
+      setTimeout(async function(){
+        try {
+          if (typeof state === 'undefined' || !state) return;
+          if (!state.settings) state.settings = {};
+          if (state.settings.v677QtyRootRebuilt) return;
+          if (typeof rebuildBrokerGeneratedData === 'function') rebuildBrokerGeneratedData();
+
+          // Supplied XTB statement proves this position is closed.
+          state.assets = (state.assets || []).filter(function(a){
+            const nm = String((a && a.name) || '').toUpperCase();
+            const tk = String((a && (a.ticker || a.yahooTicker)) || '').toUpperCase();
+            return !(nm.includes('WTI CRUDE OIL') || tk === 'OD7F.DE' || tk === 'OD7F');
+          });
+          if (typeof ensureBrokerData === 'function') {
+            const bd = ensureBrokerData();
+            if (bd) bd.positions = (bd.positions || []).filter(function(a){
+              const nm = String((a && a.name) || '').toUpperCase();
+              const tk = String((a && a.ticker) || '').toUpperCase();
+              return !(nm.includes('WTI CRUDE OIL') || tk === 'OD7F.DE' || tk === 'OD7F');
+            });
+          }
+          state.settings.v677QtyRootRebuilt = true;
+          state.settings.brokerRebuildSchemaVersion = 49;
+          if (typeof saveStateAsync === 'function') await saveStateAsync();
+          else if (typeof saveState === 'function') saveState();
+          if (typeof renderAll === 'function') renderAll();
+        } catch (e) { console.error('[Vestra v6.7.7 qty root repair]', e); }
+      }, 700);
+    }, { once:true });
+  } catch (e) { console.error('[Vestra v6.7.7 source guards]', e); }
+})();
+'''
+
+          p.write_text(s)
+
+          idx = Path('index.html')
+          h = idx.read_text()
+          h = re.sub(r'app\.js\?v=[^"\']+', 'app.js?v=20260823v17', h, count=1)
+          idx.write_text(h)
+
+          # Service worker is transport/cache only. No financial monkey-patching.
+          sw = Path('sw.js')
+          sw.write_text('''/* Vestra — Service Worker v6.7.7 */\nconst CACHE_NAME = "vestra-cache-v78";\nconst ASSETS = ["./","./index.html","./styles.css","./market.css","./app.js","./market.js","./manifest.webmanifest","./icon192.png","./icon512.png","./icon192-maskable.png","./icon512-maskable.png","./apple-touch-icon.png","./apple-touch-icon-167.png","./apple-touch-icon-152.png","./apple-touch-icon-120.png","./favicon-32.png","./favicon-16.png"];\nself.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).catch(()=>{})); });\nself.addEventListener("activate", e => { e.waitUntil((async()=>{ const keys=await caches.keys(); await Promise.all(keys.map(k=>k!==CACHE_NAME?caches.delete(k):Promise.resolve())); await self.clients.claim(); })()); });\nasync function networkFirst(req){ const c=await caches.open(CACHE_NAME); try{ const r=await fetch(req,{cache:"no-store"}); c.put(req,r.clone()).catch(()=>{}); return r; }catch(_){ return (await c.match(req)) || new Response("Offline",{status:503}); } }\nself.addEventListener("fetch", e => { const r=e.request; if(r.method!=="GET") return; const u=new URL(r.url); if(u.origin!==self.location.origin) return; if(r.mode==="navigate" || r.destination==="document" || ["script","style","worker","manifest"].includes(r.destination)) e.respondWith(networkFirst(r)); else e.respondWith(caches.match(r).then(x=>x||fetch(r))); });\n''')
+
+      - name: Validate
+        run: |
+          node --check app.js
+          grep -q 'BROKER_REBUILD_SCHEMA_VERSION = 49' app.js
+          grep -q 'Vestra v6.7.7 source guards' app.js
+          grep -q 'vestra-cache-v78' sw.js
+          ! grep -q 'parseNum(p.qty)' app.js
+          ! grep -q 'parseNum(e.qty)' app.js
+
+      - name: Commit
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add app.js index.html sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: v6.7.7 use quantity parser throughout broker reconstruction"
+            git push
+          fi
