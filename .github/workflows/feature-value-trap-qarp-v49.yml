@@ -1,0 +1,97 @@
+name: Vestra v4.9 value trap and QARP intelligence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/feature-value-trap-qarp-v49.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  feature:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Integrate value-trap and QARP intelligence
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          run=Path('scripts/run.py')
+          s=run.read_text()
+          imp='from value_trap import assess as assess_value_trap\n'
+          if imp not in s:
+              anchor='from valuation import assess as assess_valuation\n'
+              if anchor not in s: raise SystemExit('valuation import anchor missing')
+              s=s.replace(anchor, anchor+imp, 1)
+
+          # Compute after the row has received all available enrichments so the
+          # overlay can consume moat/capital-allocation/confidence when present.
+          if 'row.update(assess_value_trap(row))' not in s:
+              marker='        rows.append(row)\n'
+              if marker not in s: raise SystemExit('rows.append(row) marker missing')
+              inject='''        try:\n            row.update(assess_value_trap(row))\n        except Exception as _vt_exc:\n            log.debug("%s value-trap/QARP intelligence unavailable: %s", s.ticker, _vt_exc)\n'''
+              s=s.replace(marker,inject+marker,1)
+          run.write_text(s)
+
+          market=Path('market.js')
+          m=market.read_text()
+          if 'function valueTrapPanel(s)' not in m:
+              marker='  function investmentCase(s){\n'
+              if marker not in m: raise SystemExit('market investmentCase marker missing')
+              helper=r'''  function valueTrapPanel(s){
+    const trap=n(s.value_trap_risk_score), qarp=n(s.qarp_score);
+    const trapLabel=txt(s.value_trap_label)||'Dados insuficientes', qarpLabel=txt(s.qarp_label)||'Dados insuficientes';
+    const risks=Array.isArray(s.value_trap_reasons)?s.value_trap_reasons:[];
+    const positives=Array.isArray(s.qarp_reasons)?s.qarp_reasons:[];
+    const comps=(s.value_trap_components&&typeof s.value_trap_components==='object')?s.value_trap_components:{};
+    if(trap==null&&qarp==null&&!risks.length&&!positives.length) return '';
+    const names={relative_value:'Valor relativo',structural_quality:'Qualidade estrutural',operating_trend:'Tendência operacional',deterioration:'Deterioração'};
+    const rows=Object.entries(comps).filter(([,v])=>n(v)!=null).map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${esc(names[k]||k)}</span><strong>${Math.round(n(v))}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
+    const trapTone=trap!=null&&trap>=58?'is-negative':trap!=null&&trap<40?'is-positive':'';
+    const qarpTone=qarp!=null&&qarp>=60?'is-positive':qarp!=null&&qarp<45?'is-negative':'';
+    return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>VALUE TRAP / QARP</small><h4>Preço baixo ou oportunidade?</h4></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><span class="market-consensus ${trapTone}">${trap==null?esc(trapLabel):'Trap '+Math.round(trap)+'/100 · '+esc(trapLabel)}</span><span class="market-consensus ${qarpTone}">${qarp==null?esc(qarpLabel):'QARP '+Math.round(qarp)+'/100 · '+esc(qarpLabel)}</span></div></div>${rows?`<div style="margin-top:12px">${rows}</div>`:''}${positives.length?`<div class="market-signal-row" style="margin-top:12px">${positives.map(x=>`<span class="market-signal">↑ ${esc(x)}</span>`).join('')}</div>`:''}${risks.length?`<ul class="market-case-list" style="margin-top:12px">${risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}<p class="market-case-note">O risco de value trap só aumenta quando valuation barato coincide com qualidade fraca ou deterioração operacional. O QARP combina qualidade, tendência, preço relativo e confiança dos dados.</p></div>`;
+  }
+
+'''
+              m=m.replace(marker,helper+marker,1)
+
+          # Show next to financial/quality evidence, without changing core score.
+          finpat="if(tab==='financials') body.innerHTML=`"
+          if finpat in m and '${valueTrapPanel(s)}' not in m:
+              m=m.replace(finpat,"if(tab==='financials') body.innerHTML=`${valueTrapPanel(s)}",1)
+          market.write_text(m)
+
+          idx=Path('index.html')
+          h=idx.read_text()
+          h=re.sub(r'market\.js\?v=[^\"\']+', 'market.js?v=20260823v10', h, count=1)
+          idx.write_text(h)
+
+          sw=Path('sw.js')
+          w=sw.read_text()
+          w=re.sub(r'vestra-cache-v\d+', 'vestra-cache-v85', w, count=1)
+          sw.write_text(w)
+
+      - name: Validate
+        run: |
+          python -m py_compile scripts/value_trap.py scripts/run.py
+          node --check market.js
+          grep -q 'assess_value_trap' scripts/run.py
+          grep -q 'function valueTrapPanel' market.js
+          grep -q 'value_trap_risk_score' scripts/value_trap.py
+
+      - name: Commit
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add scripts/run.py market.js index.html sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: integrate value trap and QARP intelligence"
+            git push
+          fi
