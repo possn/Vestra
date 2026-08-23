@@ -1,92 +1,68 @@
-"""
-news.py — headlines per ticker, fetched server-side during the pipeline.
-
-WHY SERVER-SIDE: the previous approach tried to fetch news directly from
-the browser (client-side fetch() to Yahoo's search endpoint). That is
-fundamentally broken, not just flaky — CORS is enforced by the browser,
-and Yahoo's endpoints don't send the Access-Control-Allow-Origin header
-that would permit a cross-origin browser request to succeed. No amount
-of retrying or reformatting fixes that; the fetch must happen somewhere
-CORS doesn't apply, i.e. server-side. Confirmed via real user testing:
-every single ticker (including AAPL) failed identically in-browser.
-
-SOURCE: Google News RSS search (`news.google.com/rss/search`). No API
-key, no auth, generous with automated requests, and reliably returns
-real, dated headlines with working links. This is a genuine trade-off
-versus a real financial news API (Benzinga, Polygon, etc.) which would
-need a paid key — RSS is the free option.
-
-SCOPE: every ticker in the tracked universe (not just portfolio/watchlist
-— those live in the browser's localStorage and the pipeline has no way
-to know what a given user holds). A ticker outside the tracked universe
-still won't have pre-fetched news, same limitation as score/sector data.
-"""
+"""Ticker-specific company news, fetched server-side during the daily pipeline."""
 from __future__ import annotations
 
 import datetime
 import logging
+import re
+import urllib.parse
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 
 log = logging.getLogger("news")
-
-HEADERS = {"User-Agent": "Finscanner research-tool finscanner-app@proton.me"}
-MAX_ITEMS_PER_TICKER = 4
-MAX_WORKERS = 15
+HEADERS = {"User-Agent": "Vestra research-tool"}
+MAX_ITEMS_PER_TICKER = 6
+MAX_WORKERS = 12
 REQUEST_TIMEOUT = 8
 
+_STOP = {"inc","inc.","corp","corp.","corporation","company","co","co.","plc","ltd","limited","sa","se","ag","nv","holdings","holding","group","the","class"}
 
-def _fetch_one(ticker: str) -> tuple[str, list[dict]]:
-    # Strip exchange suffix for the query — "AIR.PA" searches better as
-    # "AIR stock" than "AIR.PA stock" against a general news index.
-    query_ticker = ticker.split(".")[0]
-    url = (
-        "https://news.google.com/rss/search"
-        f"?q={query_ticker}+stock&hl=en-US&gl=US&ceid=US:en"
-    )
+def _tokens(name: str) -> list[str]:
+    words=re.findall(r"[A-Za-z0-9]+", name or "")
+    return [w.lower() for w in words if len(w)>=3 and w.lower() not in _STOP][:5]
+
+def _relevant(title: str, ticker: str, name: str) -> bool:
+    text=(title or "").lower()
+    base=ticker.split(".")[0].lower()
+    toks=_tokens(name)
+    # Company-name evidence is strongest. Require at least one meaningful name token.
+    if toks and any(t in text for t in toks): return True
+    # Ticker-only matching is allowed only for unambiguous tickers (>=3 chars),
+    # and must be a standalone token to avoid M/F/O-style false positives.
+    if len(base)>=3 and re.search(rf"(?<![a-z0-9]){re.escape(base)}(?![a-z0-9])", text): return True
+    return False
+
+def _fetch_one(ticker: str, name: str="") -> tuple[str, list[dict]]:
+    base=ticker.split(".")[0]
+    query=(f'"{name}" {base} stock' if name else f'"{base}" stock')
+    url=("https://news.google.com/rss/search?q="+urllib.parse.quote_plus(query)+"&hl=en-US&gl=US&ceid=US:en")
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+        resp=requests.get(url,headers=HEADERS,timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
-        root = ET.fromstring(resp.content)
-        items = []
-        for item in root.findall(".//item")[:MAX_ITEMS_PER_TICKER]:
-            title = (item.findtext("title") or "").strip()
-            link = (item.findtext("link") or "").strip()
-            pub_date = (item.findtext("pubDate") or "").strip()
-            source_el = item.find("source")
-            source = source_el.text.strip() if source_el is not None and source_el.text else None
-            if title and link:
-                items.append({"title": title, "link": link, "published": pub_date, "source": source})
-        return ticker, items
+        root=ET.fromstring(resp.content)
+        items=[]
+        for item in root.findall(".//item"):
+            title=(item.findtext("title") or "").strip()
+            link=(item.findtext("link") or "").strip()
+            pub=(item.findtext("pubDate") or "").strip()
+            source_el=item.find("source")
+            source=source_el.text.strip() if source_el is not None and source_el.text else None
+            if title and link and _relevant(title,ticker,name):
+                items.append({"title":title,"link":link,"published":pub,"source":source})
+            if len(items)>=MAX_ITEMS_PER_TICKER: break
+        return ticker,items
     except Exception as e:
-        log.debug("%s: news fetch failed (%s)", ticker, e)
-        return ticker, []
+        log.debug("%s: news fetch failed (%s)",ticker,e)
+        return ticker,[]
 
-
-def fetch_news_for_universe(tickers: list[str]) -> dict:
-    results: dict[str, list[dict]] = {}
-    done = 0
+def fetch_news_for_universe(tickers: list[str], names: dict[str,str] | None=None) -> dict:
+    names=names or {}
+    results={}
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        futures = {pool.submit(_fetch_one, t): t for t in tickers}
+        futures={pool.submit(_fetch_one,t,names.get(t,"")):t for t in tickers}
         for future in as_completed(futures):
-            ticker, items = future.result()
-            if items:  # skip empty entries — smaller file, and "ticker not
-                results[ticker] = items  # in dict" already means "no news" to the frontend
-            done += 1
-            if done % 200 == 0:
-                log.info("news fetch %d/%d", done, len(tickers))
-
-    log.info("news: %d/%d tickers returned at least one headline", len(results), len(tickers))
-    return {
-        "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
-        "source": "Google News RSS (news.google.com/rss/search)",
-        "note": (
-            "Fetched server-side during the daily pipeline run — client-side "
-            "fetching from the browser is blocked by CORS on essentially every "
-            "financial news source, including Yahoo Finance. Coverage is "
-            "limited to tickers in the tracked universe."
-        ),
-        "tickers": results,
-    }
+            ticker,items=future.result()
+            if items: results[ticker]=items
+    log.info("news: %d/%d tickers returned relevant headlines",len(results),len(tickers))
+    return {"generated_at":datetime.datetime.utcnow().isoformat()+"Z","source":"Google News RSS","note":"Company-name + ticker query with relevance filtering; dossier news is asset-specific.","tickers":results}

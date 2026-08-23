@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260509v67").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260509v68").catch(() => {});
     });
   }
 } catch (_) {}
@@ -12615,7 +12615,6 @@ async function refreshLiveQuotesCore(options = {}) {
 
   let updated = 0, failed = 0, skipped = 0;
   const errors = [];
-  quoteWorkerMode = "batch";
 
   // Show persistent progress indicator during refresh
   const _showRefreshProgress = (msg) => {
@@ -13001,84 +13000,35 @@ function isQuoteCandidateAcceptable(asset, candidate) {
 }
 
 
-async function fetchQuoteBatch(tickers) {
-  const unique = [...new Set((tickers || []).filter(Boolean))];
-  if (!unique.length) return {};
-  const url = `${workerUrl.replace(/\/$/, "")}/quotes?tickers=${encodeURIComponent(unique.join(","))}`;
-  let resp;
-  try {
-    resp = await fetch(url, { signal: AbortSignal.timeout(18000) });
-  } catch (e) {
-    const err = new Error(`Worker inacessível: ${e.message || "timeout"}`);
-    err.batchTransport = true;
-    throw err;
-  }
-  let data = null;
-  try { data = await resp.json(); } catch (_) {}
-  if (!resp.ok) {
-    const err = new Error(`Worker HTTP ${resp.status}${data && data.error ? `: ${data.error}` : ""}`);
-    err.batchUnsupported = [400,404,405,501].includes(resp.status) || /endpoint|quotes/i.test(String(data && data.error || ""));
-    throw err;
-  }
-  // A compatible /quotes endpoint must return an object keyed by requested symbols.
-  if (!data || typeof data !== "object" || Array.isArray(data) || !unique.some(t => Object.prototype.hasOwnProperty.call(data, t))) {
-    const err = new Error("Resposta /quotes incompatível com esta versão da app");
-    err.batchUnsupported = true;
-    throw err;
-  }
-  return data;
-}
-
-async function fetchQuotesIndividually(tickers, concurrency = 5) {
-  const unique = [...new Set((tickers || []).filter(Boolean))];
-  const out = {};
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(concurrency, unique.length) }, async () => {
-    while (cursor < unique.length) {
-      const ticker = unique[cursor++];
-      try {
-        out[ticker] = await fetchQuote(ticker, workerUrl);
-      } catch (e) {
-        out[ticker] = { ticker, error:e && e.message ? e.message : "Erro" };
-      }
-    }
-  });
-  await Promise.all(workers);
-  return out;
-}
-
-let quoteWorkerMode = "batch";
-async function fetchQuoteBatches(tickers, concurrency = 3) {
-  const unique = [...new Set((tickers || []).filter(Boolean))];
-  const chunks = [];
-  for (let i = 0; i < unique.length; i += 20) chunks.push(unique.slice(i, i + 20));
-  const out = {};
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(concurrency, chunks.length) }, async () => {
-    while (cursor < chunks.length) {
-      const idx = cursor++;
-      const chunk = chunks[idx];
-      // Once incompatibility is proven, stop hammering /quotes and use /quote.
-      if (quoteWorkerMode === "single") {
-        Object.assign(out, await fetchQuotesIndividually(chunk, 5));
+async function fetchQuoteWithFallback(ref) {
+  let lastErr = null;
+  for (const candidate of (ref.candidates || [])) {
+    try {
+      if (!isQuoteCandidateAcceptable(ref.asset, candidate)) {
+        lastErr = new Error(`Candidato incompatível com a identidade do ativo: ${candidate}`);
         continue;
       }
-      try {
-        const batch = await fetchQuoteBatch(chunk);
-        const successes = chunk.filter(t => {
-          const q=batch[t]; return q && !q.error && Number.isFinite(Number(q.price)) && Number(q.price)>0;
-        }).length;
-        // Some older/degraded Workers answer /quotes but fail almost everything while /quote still works.
-        if (chunk.length >= 4 && successes <= Math.max(1, Math.floor(chunk.length * 0.1))) {
-          quoteWorkerMode = "single";
-          Object.assign(out, await fetchQuotesIndividually(chunk, 5));
-        } else {
-          Object.assign(out, batch);
-        }
-      } catch (e) {
-        quoteWorkerMode = "single";
-        Object.assign(out, await fetchQuotesIndividually(chunk, 5));
+      const q = await fetchQuote(candidate, workerUrl);
+      if (q && Number.isFinite(Number(q.price)) && Number(q.price) > 0) {
+        return { yahoo: candidate, quote: q };
       }
+      lastErr = new Error(`Sem dados para ${candidate}`);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error("Não foi possível obter uma cotação válida");
+}
+
+async function mapWithConcurrency(items, concurrency, fn) {
+  const out = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({length: Math.max(1, Math.min(concurrency, items.length || 1))}, async () => {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= items.length) return;
+      try { out[idx] = {status:'fulfilled', value: await fn(items[idx], idx)}; }
+      catch (reason) { out[idx] = {status:'rejected', reason}; }
     }
   });
   await Promise.all(workers);
@@ -13091,47 +13041,25 @@ async function fetchQuoteBatches(tickers, concurrency = 3) {
   });
   const noCandidateRefs = rawTickerRefs.filter(x => !(x.candidates && x.candidates.length));
   const tickerList = rawTickerRefs.filter(x => x.candidates && x.candidates.length);
+  skipped = 0;
   noCandidateRefs.forEach(ref => {
     const rawUp = String(ref.raw || "").toUpperCase().trim();
     const baseUp = canonicalBrokerTickerBase(rawUp);
     if (SKIP_TICKERS.has(rawUp) || SKIP_TICKERS.has(baseUp)) { skipped++; return; }
-    // Missing/unsafe identity is not a network failure. Keep the last value and report as skipped.
+    // No safe market identity is not a quote failure. Keep the last known value.
     skipped++;
   });
 
-  // v3.5: real batch refresh. Resolve one candidate round at a time using /quotes
-  // (20 symbols/request) and only advance to exchange fallbacks for unresolved assets.
-  // This replaces ~500 individual Worker requests with a few dozen batched calls.
+  // Proven architecture from the former Património app: each asset resolves its
+  // own Yahoo candidates through /quote. Bounded concurrency avoids launching
+  // hundreds of simultaneous requests while preserving per-asset fallbacks.
+  const quoteResults = await mapWithConcurrency(tickerList, 8, x => fetchQuoteWithFallback(x));
   const quoteMap = {};
   const quoteErrMap = {};
-  const unresolved = new Set(tickerList.map((_, i) => i));
-  const maxRounds = Math.min(3, Math.max(0, ...tickerList.map(x => (x.candidates || []).length)));
-  for (let round = 0; round < maxRounds && unresolved.size; round++) {
-    const tickerForIndex = new Map();
-    const roundTickers = [];
-    for (const idx of [...unresolved]) {
-      const ref = tickerList[idx];
-      const candidate = (ref.candidates || [])[round];
-      if (!candidate) continue;
-      if (!isQuoteCandidateAcceptable(ref.asset, candidate)) {
-        quoteErrMap[idx] = `Candidato incompatível com a identidade do ativo: ${candidate}`;
-        continue;
-      }
-      tickerForIndex.set(idx, candidate);
-      roundTickers.push(candidate);
-    }
-    if (!roundTickers.length) continue;
-    const batch = await fetchQuoteBatches(roundTickers, 6);
-    for (const [idx, candidate] of tickerForIndex.entries()) {
-      const q = batch[candidate];
-      if (q && !q.error && Number.isFinite(Number(q.price)) && Number(q.price) > 0) {
-        quoteMap[idx] = { yahoo:candidate, quote:q };
-        unresolved.delete(idx);
-      } else {
-        quoteErrMap[idx] = (q && q.error) || `Sem dados para ${candidate}`;
-      }
-    }
-  }
+  quoteResults.forEach((r, i) => {
+    if (r && r.status === "fulfilled" && r.value && r.value.quote) quoteMap[i] = r.value;
+    else quoteErrMap[i] = (r && r.reason && r.reason.message) ? r.reason.message : "Erro ao obter cotação";
+  });
 
   // Collect currencies needing FX (crypto always USD, others from quote)
   const ccysNeeded = new Set();
@@ -13317,7 +13245,7 @@ async function fetchQuoteBatches(tickers, concurrency = 3) {
     }
   } catch (_) {}
 
-  state.settings.lastQuoteRefresh = { updated, failed, skipped, errors, workerMode:quoteWorkerMode, ts: new Date().toISOString(), durationMs: Math.round(performance.now() - refreshStartedAt) };
+  state.settings.lastQuoteRefresh = { updated, failed, skipped, errors, workerMode:"individual", ts: new Date().toISOString(), durationMs: Math.round(performance.now() - refreshStartedAt) };
   // Hide progress indicator
   try { _hideRefreshProgress(); } catch (_) {}
   // Record staleness timestamp for auto-refresh logic
