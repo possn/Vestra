@@ -1,5 +1,6 @@
 name: Vestra v6.7.0 broker rebuild repair
 
+# trigger touch 2026-08-23 10:53
 on:
   push:
     branches: [main]
@@ -26,7 +27,6 @@ jobs:
           p = Path('app.js')
           s = p.read_text()
 
-          # Force every existing device to rebuild the broker mirror once.
           s, n = re.subn(r'const BROKER_REBUILD_SCHEMA_VERSION = 44;', 'const BROKER_REBUILD_SCHEMA_VERSION = 45;', s, count=1)
           if n != 1 and 'const BROKER_REBUILD_SCHEMA_VERSION = 45;' not in s:
               raise SystemExit('BROKER_REBUILD_SCHEMA_VERSION marker not found')
