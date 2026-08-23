@@ -6,8 +6,6 @@ name: Update market data
 
 on:
   schedule:
-    # 06:15 UTC todos os dias — antes da abertura dos mercados europeus,
-    # depois do fecho dos mercados asiáticos.
     - cron: "15 6 * * *"
   workflow_dispatch: {}
   push:
@@ -16,6 +14,7 @@ on:
       - 'scripts/fundamentals.py'
       - 'scripts/sec_enrich.py'
       - 'scripts/esef_enrich.py'
+      - 'scripts/esef_enrich_v416.py'
       - 'scripts/gap_retrieval.py'
       - 'scripts/coverage_audit.py'
       - 'scripts/score.py'
@@ -56,7 +55,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/score.py scripts/confidence.py scripts/run.py scripts/coverage_audit.py
+          python -m py_compile scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/score.py scripts/confidence.py scripts/run.py scripts/coverage_audit.py
           if [ -f scripts/gap_retrieval.py ]; then python -m py_compile scripts/gap_retrieval.py; fi
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
