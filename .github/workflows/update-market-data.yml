@@ -16,6 +16,8 @@ on:
       - 'scripts/fundamentals.py'
       - 'scripts/sec_enrich.py'
       - 'scripts/esef_enrich.py'
+      - 'scripts/gap_retrieval.py'
+      - 'scripts/coverage_audit.py'
       - 'scripts/score.py'
       - 'scripts/confidence.py'
       - 'scripts/reliability_gate.py'
@@ -54,7 +56,8 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/score.py scripts/confidence.py scripts/run.py
+          python -m py_compile scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/score.py scripts/confidence.py scripts/run.py scripts/coverage_audit.py
+          if [ -f scripts/gap_retrieval.py ]; then python -m py_compile scripts/gap_retrieval.py; fi
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
@@ -65,6 +68,10 @@ jobs:
       - name: Run pipeline
         working-directory: scripts
         run: python run.py
+
+      - name: Build coverage audit
+        working-directory: scripts
+        run: python coverage_audit.py
 
       - name: Commit updated data
         run: |
@@ -78,13 +85,14 @@ jobs:
             git push
           fi
 
-      - name: Upload pipeline log (mesmo em caso de falha)
+      - name: Upload pipeline diagnostics (mesmo em caso de falha)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pipeline-log
+          name: pipeline-diagnostics
           path: |
             data/pipeline_log.txt
             data/last_error.log
+            data/coverage_audit.json
           if-no-files-found: ignore
           retention-days: 14
