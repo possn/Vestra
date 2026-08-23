@@ -16,6 +16,7 @@ jobs:
       - name: Apply and validate v6.6.5
         run: |
           set -euo pipefail
+          sed -i 's/^  let skipped = 0;$/  skipped = 0;/' scripts/apply_v665_proven_quotes_asset_news.py
           python scripts/apply_v665_proven_quotes_asset_news.py
           rm -f scripts/apply_v665_proven_quotes_asset_news.py
           python -m py_compile scripts/*.py
