@@ -1,3 +1,11 @@
+## Vestra v6.6.1 — Research Queue Repair & Low52 Opportunity Rank
+
+- Research Queue agora atualiza a própria janela de Portfolio Intelligence imediatamente ao marcar Em revisão / Revisto / Adiar 7d.
+- Fechar “As minhas posições” regressa ao separador Carteira, em vez de deixar o utilizador no Mercado por trás do modal.
+- Novo Low52 Opportunity Rank 0–100 ordena os mínimos combinando Low52 intelligence, Recovery Confirmation, qualidade, confiança, valuation e comportamento relativo ao setor.
+- O Opportunity Rank é apenas ranking de research e não altera o Score Vestra.
+- PWA cache: `vestra-cache-v64`.
+
 ## Vestra v6.6 — Recovery Confirmation
 
 - Empresas em drawdown/mínimos passam a distinguir simples ressalto de recuperação apoiada por evidência.

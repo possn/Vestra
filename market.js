@@ -380,23 +380,48 @@
     return {low,high,current,above};
   }
 
+  function low52OpportunityRank(s,stats){
+    const low=n(s.low52_score), recovery=n(s.recovery_score), quality=n(s.quality_pct), confidence=n(s.confidence_score);
+    const rel=n(s.sector_relative_return_1y_pct), upside=n(s.fair_value_upside_pct);
+    const risk=txt(s.risk_gate).toLowerCase(), lowStatus=txt(s.low52_status), rec=txt(s.recovery_status);
+    let parts=[], weight=0;
+    const add=(v,w)=>{ if(v!=null){ parts.push(Math.max(0,Math.min(100,v))*w); weight+=w; } };
+    add(low,0.35); add(recovery,0.25); add(quality,0.15); add(confidence,0.05);
+    if(upside!=null) add(Math.max(0,Math.min(100,50+upside)),0.10);
+    if(rel!=null) add(Math.max(0,Math.min(100,50+rel)),0.10);
+    let score=weight?parts.reduce((a,b)=>a+b,0)/weight:50;
+    if(lowStatus==='opportunity') score+=7;
+    if(lowStatus==='watch') score+=2;
+    if(lowStatus==='value_trap_risk') score-=18;
+    if(lowStatus==='structural_risk') score-=30;
+    if(rec==='confirmed') score+=8;
+    else if(rec==='recovering') score+=5;
+    else if(rec==='stabilizing') score+=2;
+    else if(rec==='bounce_only') score-=7;
+    else if(rec==='failed') score-=16;
+    if(risk==='high') score-=25; else if(risk==='severe') score-=40;
+    const dist=stats?.above; if(dist!=null && dist<=2) score+=2;
+    return Math.round(Math.max(0,Math.min(100,score)));
+  }
+
   function renderLows(){
     let rows=M.stocks.filter(s=>!isFund(s)).map(s=>({s,stats:low52Stats(s)}))
       .filter(x=>x.stats && x.stats.above>=-0.5 && x.stats.above<=5)
-      .sort((a,b)=>{const rank={opportunity:0,watch:1,uncertain:2,value_trap_risk:3,structural_risk:4,insufficient:5}; return (rank[txt(a.s.low52_status)]??9)-(rank[txt(b.s.low52_status)]??9)||(n(b.s.low52_score)||0)-(n(a.s.low52_score)||0)||a.stats.above-b.stats.above;});
+      .map(x=>({...x,opportunityRank:low52OpportunityRank(x.s,x.stats)}))
+      .sort((a,b)=>b.opportunityRank-a.opportunityRank||a.stats.above-b.stats.above);
     const total=rows.length;
     rows=rows.slice(0,30);
-    const body=rows.length?rows.map(({s,stats})=>{
+    const body=rows.length?rows.map(({s,stats,opportunityRank})=>{
       const currency=txt(s.currency)||'USD';
       const dist=Math.max(0,stats.above);
       const status=txt(s.low52_status), label=txt(s.low52_label)||'Sem classificação', lowScore=n(s.low52_score);
       const cause=txt(s.drawdown_primary_label), trend=txt(s.drawdown_driver_trend);
       const trendText=trend==='improving'?'causa a melhorar':trend==='deteriorating'?'causa a piorar':'';
       const recoveryLabel=txt(s.recovery_label), recoveryScore=n(s.recovery_score);
-      const meta=[`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText,recoveryLabel,recoveryScore!=null?`Recovery ${Math.round(recoveryScore)}/100`:'' ].filter(Boolean).join(' · ');
+      const meta=[`Opportunity ${opportunityRank}/100`,`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText,recoveryLabel,recoveryScore!=null?`Recovery ${Math.round(recoveryScore)}/100`:'' ].filter(Boolean).join(' · ');
       return renderRow(s,meta);
     }).join(''):'<div class="market-empty"><strong>Sem empresas até 5% do mínimo de 52 semanas.</strong><br><span>O universo será recalculado quando os dados de mercado forem atualizados.</span></div>';
-    return `<section class="market-section"><div class="market-section__head"><div><h3>Mínimos de 52 semanas</h3><p>Até 5% do mínimo, agora classificados por oportunidade potencial, queda saudável, value trap ou deterioração estrutural.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
+    return `<section class="market-section"><div class="market-section__head"><div><h3>Mínimos de 52 semanas</h3><p>Até 5% do mínimo, ordenados pelo Opportunity Rank: qualidade + valuation + causa da queda + setor + confirmação de recuperação.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
   }
 
   function renderFunds(){
@@ -742,9 +767,11 @@
   }
   function closeSheet(){
     const sh=$m('marketSheet'); if(!sh)return;
-    sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.liveReady='0';
+    const returnView=txt(sh.dataset.returnView);
+    sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.liveReady='0'; sh.dataset.tool=''; sh.dataset.returnView='';
     document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     const panel=sheetPanel(); if(panel){panel.scrollTop=0;panel.scrollLeft=0;}
+    if(returnView==='assets' && typeof setView==='function') setView('assets');
   }
 
   function portfolioConviction(s){
@@ -1400,6 +1427,7 @@
     ensureLoaded().then(()=>{
       const sh=$m('marketSheet'), c=$m('marketSheetContent'); if(!sh||!c)return;
       sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open'); sh.dataset.ticker='';
+      sh.dataset.tool=tool||''; sh.dataset.returnView=tool==='portfolio'?'assets':'';
       scrollDossierTop();
       if(tool==='portfolio'){
         const assets=portfolioAssets().slice().sort((a,b)=>portfolioValue(b)-portfolioValue(a));
@@ -1595,8 +1623,10 @@
     const row=btn.closest('.market-research-queue-row'); if(!row)return;
     e.preventDefault(); e.stopPropagation();
     setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new');
-    renderPrimary();
-    requestAnimationFrame(()=>document.querySelector('.market-research-queue')?.scrollIntoView?.({behavior:'smooth',block:'start'}));
+    if(txt($m('marketSheet')?.dataset.tool)==='portfolio'){
+      openTool('portfolio');
+      setTimeout(()=>document.querySelector('.market-research-queue')?.scrollIntoView?.({behavior:'smooth',block:'start'}),0);
+    } else renderPrimary();
   });
 
   // v6.3 — Thesis checkpoint + note for Research Queue.
