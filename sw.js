@@ -1,5 +1,5 @@
-/* Vestra — Service Worker v6.6.6 hotfix */
-const CACHE_NAME = "vestra-cache-v71";
+/* Vestra — Service Worker v6.7.0 broker rebuild hotfix */
+const CACHE_NAME = "vestra-cache-v72";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./market.js", "./manifest.webmanifest",
   "./icon192.png", "./icon512.png",
@@ -9,24 +9,11 @@ const ASSETS = [
   "./favicon-32.png", "./favicon-16.png"
 ];
 
-/*
-  v6.6.6 runtime repair.
-  The current app build contains two over-aggressive safeguards:
-  1) it treats a Yahoo trading currency different from the broker/portfolio currency as a collision;
-  2) it permanently rejects a correct quote when the previously cached baseline is already corrupted.
-  Both are false for strong ticker/ISIN identities (US equities and USD LSE ETF listings are real examples).
-
-  The quote-error modal also sits inside .main, whose CSS layout containment makes long position:fixed
-  descendants unreliable/unscrollable on iOS Safari. Until the source bundle is rebuilt, this service
-  worker appends a tiny runtime hotfix to app.js and injects the iOS-safe CSS.
-*/
-const VESTRA_APP_HOTFIX = `\n;/* Vestra v6.6.6 runtime quote/modal hotfix */\n(function(){\n  try {\n    var original = (typeof quoteSanityCheck === 'function') ? quoteSanityCheck : null;\n    var strong = function(asset){\n      try { return typeof hasStrongQuoteIdentitySafe === 'function' && hasStrongQuoteIdentitySafe(asset); } catch (_) { return false; }\n    };\n    if (original) {\n      quoteSanityCheck = function(asset, q, priceEur, rawTicker) {\n        var result = original(asset, q, priceEur, rawTicker);\n        if (!result || result.ok || !strong(asset)) return result;\n        var reason = String(result.reason || '');\n        if (/moeda\\s+[A-Z]{3}\\s+não coincide com\\s+[A-Z]{3}/i.test(reason)) {\n          console.warn('[Vestra v6.6.6] accepted legitimate cross-currency quote', asset && (asset.name || asset.ticker), q && q.currency);\n          return { ok:true, recovered:'cross-currency' };\n        }\n        if (/Cotação suspeita rejeitada/i.test(reason)) {\n          console.warn('[Vestra v6.6.6] accepted strong-identity quote over stale baseline', asset && (asset.name || asset.ticker));\n          return { ok:true, recovered:'stale-baseline' };\n        }\n        return result;\n      };\n    }\n\n    var style = document.createElement('style');\n    style.id = 'vestra-v666-ios-modal-hotfix';\n    style.textContent = '.main{contain:none!important}#modalQuoteErrors .modal__box{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;touch-action:pan-y!important;max-height:calc(100dvh - 28px)!important}';\n    document.head.appendChild(style);\n  } catch (e) { console.error('[Vestra v6.6.6 hotfix]', e); }\n})();\n`;
+const VESTRA_APP_HOTFIX = `\n;/* Vestra v6.7.0 runtime hotfix */\n(function(){\n  try {\n    var original = (typeof quoteSanityCheck === 'function') ? quoteSanityCheck : null;\n    var strong = function(asset){\n      try { return typeof hasStrongQuoteIdentitySafe === 'function' && hasStrongQuoteIdentitySafe(asset); } catch (_) { return false; }\n    };\n    if (original) {\n      quoteSanityCheck = function(asset, q, priceEur, rawTicker) {\n        var result = original(asset, q, priceEur, rawTicker);\n        if (!result || result.ok || !strong(asset)) return result;\n        var reason = String(result.reason || '');\n        if (/moeda\\s+[A-Z]{3}\\s+não coincide com\\s+[A-Z]{3}/i.test(reason)) return { ok:true, recovered:'cross-currency' };\n        if (/Cotação suspeita rejeitada/i.test(reason)) return { ok:true, recovered:'stale-baseline' };\n        return result;\n      };\n    }\n\n    var style = document.createElement('style');\n    style.id = 'vestra-v670-ios-modal-hotfix';\n    style.textContent = '.main{contain:none!important}#modalQuoteErrors .modal__box{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;touch-action:pan-y!important;max-height:calc(100dvh - 28px)!important}';\n    document.head.appendChild(style);\n\n    // v6.7.0: v6.6.9 changed broker reconstruction logic but did not bump the\n    // persisted rebuild schema. Existing devices therefore kept the corrupted\n    // generated mirror and never executed the repaired rebuild. Force it once.\n    window.addEventListener('load', function(){\n      setTimeout(async function(){\n        try {\n          if (typeof state === 'undefined' || !state) return;\n          if (!state.settings) state.settings = {};\n          if (state.settings.v670BrokerMirrorRebuilt) return;\n          if (typeof ensureBrokerData !== 'function' || typeof rebuildBrokerGeneratedData !== 'function') return;\n          var bd = ensureBrokerData();\n          if (!bd || (!((bd.events||[]).length) && !((bd.positions||[]).length))) return;\n          rebuildBrokerGeneratedData();\n          state.settings.v670BrokerMirrorRebuilt = true;\n          state.settings.brokerRebuildSchemaVersion = 45;\n          try { state.settings.brokerRebuildSig = typeof getBrokerDataSignature === 'function' ? getBrokerDataSignature() : state.settings.brokerRebuildSig; } catch (_) {}\n          if (typeof saveStateAsync === 'function') await saveStateAsync();\n          else if (typeof saveState === 'function') saveState();\n          if (typeof renderAll === 'function') renderAll();\n          console.warn('[Vestra v6.7.0] broker mirror rebuilt from stored source data');\n        } catch (e) { console.error('[Vestra v6.7.0 broker rebuild]', e); }\n      }, 1400);\n    }, { once:true });\n  } catch (e) { console.error('[Vestra v6.7.0 hotfix]', e); }\n})();\n`;
 
 self.addEventListener("install", event => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => {})
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => {}));
 });
 
 self.addEventListener("activate", event => {
@@ -54,7 +41,7 @@ async function patchedAppJs(request) {
   try {
     const fresh = await fetch(request, { cache: "no-store" });
     let text = await fresh.text();
-    if (!text.includes("Vestra v6.6.6 runtime quote/modal hotfix")) text += VESTRA_APP_HOTFIX;
+    if (!text.includes("Vestra v6.7.0 runtime hotfix")) text += VESTRA_APP_HOTFIX;
     const headers = new Headers(fresh.headers);
     headers.set("content-type", "application/javascript; charset=utf-8");
     headers.set("cache-control", "no-store, max-age=0");
@@ -65,7 +52,7 @@ async function patchedAppJs(request) {
     const cached = await cache.match(request);
     if (cached) {
       let text = await cached.text();
-      if (!text.includes("Vestra v6.6.6 runtime quote/modal hotfix")) text += VESTRA_APP_HOTFIX;
+      if (!text.includes("Vestra v6.7.0 runtime hotfix")) text += VESTRA_APP_HOTFIX;
       return new Response(text, { headers: { "content-type": "application/javascript; charset=utf-8", "cache-control": "no-store" } });
     }
     return new Response("/* Vestra app unavailable offline */", { status: 503, headers: { "content-type": "application/javascript" } });
