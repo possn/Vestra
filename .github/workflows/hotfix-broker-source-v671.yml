@@ -1,5 +1,6 @@
 name: Vestra v6.7.1 broker source truth repair
 
+# trigger 2026-08-23 source-of-truth rebuild
 on:
   push:
     branches: [main]
@@ -26,9 +27,6 @@ jobs:
           p = Path('app.js')
           s = p.read_text()
 
-          # 1) XTB Open Positions: modern export contains one summary row per security
-          # (Category filled, Type blank) plus child lot rows. The old parser ignored the
-          # Ticker column and could miss the authoritative snapshot entirely.
           pattern = re.compile(r'/\*\* XTB Open Positions CSV \(portfolio snapshot\) \*/\nfunction parseXTBPositionsRows\(rows, meta\) \{.*?\n\}\n\nfunction parseXTBCashRows', re.S)
           replacement = r'''/** XTB Open Positions XLSX/CSV (authoritative portfolio snapshot) */
 function parseXTBPositionsRows(rows, meta) {
@@ -52,8 +50,6 @@ function parseXTBPositionsRows(rows, meta) {
     return pos;
   };
 
-  // Current XTB workbook: summary rows have Category and no Type. These rows already
-  // contain the TOTAL open volume and TOTAL value, so they must be used exactly once.
   const summaries = [];
   for (const r of norm) {
     const symbol = String(r.ticker || r.symbol || r.simbolo || r.instrumento || "").trim();
@@ -69,7 +65,6 @@ function parseXTBPositionsRows(rows, meta) {
   }
   if (summaries.length) return summaries;
 
-  // Backward-compatible fallback for older XTB exports containing only lot rows.
   const lotMap = new Map();
   for (const r of norm) {
     const symbol = String(r.ticker || r.symbol || r.simbolo || r.instrumento || "").trim();
@@ -94,7 +89,6 @@ function parseXTBCashRows'''
             raise SystemExit('XTB positions parser marker not found')
           s = s2
 
-          # 2) Correct concrete Yahoo identities proven from the user's source files / listings.
           s = s.replace('"IE00BLCHJ534":"PAVE.DE"', '"IE00BLCHJ534":"94VE.DE"')
           if '"DE000SHL1006":"SHL.DE"' not in s:
             anchor = '"IE00BLCHJ534":"94VE.DE"'
@@ -104,11 +98,7 @@ function parseXTBCashRows'''
           s = s.replace('"GLOBAL X US INFRASTRUCTURE DEVELOPMENT ACC":{"isin":"IE00BLCHJ534","ticker":"PAVE","priceCurrency":"EUR","yahooTicker":"PAVE.DE"',
                         '"GLOBAL X US INFRASTRUCTURE DEVELOPMENT ACC":{"isin":"IE00BLCHJ534","ticker":"PAVE","priceCurrency":"EUR","yahooTicker":"94VE.DE"')
 
-          # 3) Force every existing device to rebuild the broker mirror from source truth.
           s = re.sub(r'const BROKER_REBUILD_SCHEMA_VERSION = \d+;', 'const BROKER_REBUILD_SCHEMA_VERSION = 46;', s, count=1)
-
-          # 4) Tiny-position collision guard: catastrophic quote mismatches must not turn a
-          # €30-€70 position into tens of thousands just because costBasis < €100.
           s = s.replace('if (_assetCostBasis > 100 && safeNewValue > _assetCostBasis * 50) {',
                         'if (_assetCostBasis > 1 && safeNewValue > _assetCostBasis * 200) {', 1)
 
