@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260509v65").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260509v66").catch(() => {});
     });
   }
 } catch (_) {}
@@ -12459,16 +12459,42 @@ async function fetchQuote(ticker, workerUrl) {
 
 
 function hasStrongQuoteIdentitySafe(asset) {
+  // Deliberately self-contained. This function is called from top-level quote
+  // refresh/sanity paths, so it must never depend on helpers declared inside
+  // another lexical scope.
   if (!asset) return false;
-  const cls = normalizeTickerLookupKey(asset.class || "");
-  if (cls === "CRIPTO" || cls === "CRYPTO") return true;
-  const isin = String(asset.isin || "").trim().toUpperCase();
+
+  const norm = (v) => String(v || "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const plausibleTicker = (v) => {
+    const t = norm(v);
+    if (!t || t.length > 24 || /\s/.test(t)) return false;
+    if (!/^[A-Z0-9.^=\-]+$/.test(t)) return false;
+    // A structured ticker may be one letter (e.g. Realty Income = O), but
+    // never accept punctuation-only or numeric-only strings as an identity.
+    return /[A-Z]/.test(t);
+  };
+
+  const cls = norm(asset.class);
+  if (cls === "CRIPTO" || cls === "CRYPTO" || cls.includes("CRIPTO")) return true;
+
+  const isin = norm(asset.isin);
   if (/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(isin)) return true;
-  if (typeof hasExplicitTickerTag === "function" && hasExplicitTickerTag(asset)) return true;
-  const storedYahoo = String(asset.yahooTicker || "").trim().toUpperCase();
-  if (storedYahoo && typeof isPlausibleMarketTicker === "function" && isPlausibleMarketTicker(storedYahoo, asset)) return true;
-  const raw = String(asset.ticker || asset.symbol || "").trim().toUpperCase();
-  if (raw && typeof isPlausibleMarketTicker === "function" && isPlausibleMarketTicker(raw, asset)) return true;
+
+  // An explicit Yahoo/Ticker tag in notes is a strong user/broker identity.
+  if (/\b(?:Ticker|Yahoo)=([A-Z0-9.\-=^]{1,24})\b/i.test(String(asset.notes || ""))) return true;
+
+  // yahooTicker is a structured field produced by broker identity repair or
+  // explicit user configuration, so a plausible value is strong evidence.
+  if (plausibleTicker(asset.yahooTicker)) return true;
+
+  // ticker/symbol is accepted only as a compact market symbol; descriptive
+  // broker product names contain spaces and are rejected here.
+  if (plausibleTicker(asset.ticker || asset.symbol)) return true;
+
   return false;
 }
 

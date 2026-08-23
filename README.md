@@ -1,3 +1,12 @@
+## Vestra v6.6.3 — Quote Refresh Scope Repair
+
+- Revisto o caminho completo de atualização manual e automática de cotações após o erro Safari `normalizeTickerLookupKey is not defined`.
+- O validador de identidade usado pelo refresh é agora totalmente autocontido e não depende de helpers em scopes internos.
+- Mantém validação conservadora: ISIN, yahooTicker/ticker estruturado, tags explícitas e rejeição de nomes descritivos de produtos como tickers.
+- Manual e automático continuam a usar o mesmo `refreshLiveQuotesCore()`.
+- Adicionado smoke test de execução do helper, além de `node --check`.
+- PWA cache: `vestra-cache-v66`.
+
 ## Vestra v6.6.2 — Risk Budget Clarity & Quote Refresh Repair
 
 - A box Diversificação real passa a usar blocos legíveis, barras de exposição, limites explícitos e uma leitura curta do score.
