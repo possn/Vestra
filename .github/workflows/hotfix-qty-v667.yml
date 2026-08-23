@@ -1,5 +1,6 @@
 name: Vestra v6.6.7 broker quantity hotfix
 
+# trigger touch 2026-08-23
 on:
   push:
     branches: [main]
@@ -26,14 +27,14 @@ jobs:
           s = p.read_text()
 
           marker = 'function fmtPct(n) { return fmt(n, 2) + "%"; }\n'
-          helper = '''function fmtPct(n) { return fmt(n, 2) + "%"; }\n\n// Quantidades de corretora NÃO usam a heurística monetária de parseNum.\n// Valores como "328.000" ou "5.038" significam 328 e 5,038 unidades,\n// não 328000 e 5038. Esta função preserva até 6 casas decimais.\nfunction parseQty(x) {\n  if (x === null || x === undefined || x === "") return 0;\n  if (typeof x === "number") return Number.isFinite(x) ? x : 0;\n  let t = String(x).trim().replace(/[\\u2212−]/g, "-").replace(/\\u00A0/g, "").replace(/\\s+/g, "");\n  t = t.replace(/[^0-9,.-]+/g, "");\n  const commas = (t.match(/,/g) || []).length;\n  const dots = (t.match(/\\./g) || []).length;\n  if (commas && dots) {\n    // último separador = decimal; o outro = milhares\n    if (t.lastIndexOf(',') > t.lastIndexOf('.')) t = t.replace(/\\./g, '').replace(',', '.');\n    else t = t.replace(/,/g, '');\n  } else if (commas) {\n    // corretoras europeias: vírgula decimal\n    if (commas === 1) t = t.replace(',', '.');\n    else t = t.replace(/,/g, '');\n  }\n  // ponto isolado permanece decimal por definição em quantidade\n  const n = Number(t);\n  return Number.isFinite(n) ? n : 0;\n}\n'''
+          helper = '''function fmtPct(n) { return fmt(n, 2) + "%"; }\n\n// Quantidades de corretora NÃO usam a heurística monetária de parseNum.\n// Valores como "328.000" ou "5.038" significam 328 e 5,038 unidades,\n// não 328000 e 5038. Esta função preserva até 6 casas decimais.\nfunction parseQty(x) {\n  if (x === null || x === undefined || x === "") return 0;\n  if (typeof x === "number") return Number.isFinite(x) ? x : 0;\n  let t = String(x).trim().replace(/[\\u2212−]/g, "-").replace(/\\u00A0/g, "").replace(/\\s+/g, "");\n  t = t.replace(/[^0-9,.-]+/g, "");\n  const commas = (t.match(/,/g) || []).length;\n  const dots = (t.match(/\\./g) || []).length;\n  if (commas && dots) {\n    if (t.lastIndexOf(',') > t.lastIndexOf('.')) t = t.replace(/\\./g, '').replace(',', '.');\n    else t = t.replace(/,/g, '');\n  } else if (commas) {\n    if (commas === 1) t = t.replace(',', '.');\n    else t = t.replace(/,/g, '');\n  }\n  const n = Number(t);\n  return Number.isFinite(n) ? n : 0;\n}\n'''
           if marker not in s:
               raise SystemExit('fmtPct marker not found')
           if 'function parseQty(x)' not in s:
               s = s.replace(marker, helper, 1)
 
           old = '''    const qtyField = parseNum(asset.qty || 0);\n    const qtyMatch = (asset.notes||"").match(/Qty=([\\d.,]+)/);\n    const qtyFromNotes = qtyMatch ? parseFloat(qtyMatch[1].replace(",", ".")) : null;\n    const qty = qtyField > 0 ? qtyField : qtyFromNotes;\n    const newValue = qty ? qty * priceEur : priceEur;'''
-          new = '''    const qtyField = parseQty(asset.qty || 0);\n    const qtyMatch = (asset.notes||"").match(/Qty=([\\d.,]+)/);\n    const qtyFromNotes = qtyMatch ? parseQty(qtyMatch[1]) : 0;\n    // Nos ativos importados da corretora, Qty= nas notas foi gravado pelo parser\n    // antes das heurísticas monetárias e é a fonte mais segura para reparar\n    // quantidades antigas guardadas como strings com 3 casas decimais.\n    const qty = (asset.generatedFromBroker && qtyFromNotes > 0) ? qtyFromNotes : (qtyField > 0 ? qtyField : qtyFromNotes);\n    const newValue = qty ? qty * priceEur : priceEur;'''
+          new = '''    const qtyField = parseQty(asset.qty || 0);\n    const qtyMatch = (asset.notes||"").match(/Qty=([\\d.,]+)/);\n    const qtyFromNotes = qtyMatch ? parseQty(qtyMatch[1]) : 0;\n    const qty = (asset.generatedFromBroker && qtyFromNotes > 0) ? qtyFromNotes : (qtyField > 0 ? qtyField : qtyFromNotes);\n    const newValue = qty ? qty * priceEur : priceEur;'''
           if old not in s:
               raise SystemExit('refresh qty block not found')
           s = s.replace(old, new, 1)
@@ -43,15 +44,13 @@ jobs:
           if old2 in s:
               s = s.replace(old2, new2, 1)
 
-          # P&L helper quantity should use the same semantics.
           s = s.replace('  let qty = parseNum(asset.qty || 0);\n  if (!qty) {\n    const m = notes.match(/Qty=([\\d.,]+)/);\n    qty = m ? parseNum(m[1]) : 0;\n  }',
                         '  let qty = parseQty(asset.qty || 0);\n  if (!qty) {\n    const m = notes.match(/Qty=([\\d.,]+)/);\n    qty = m ? parseQty(m[1]) : 0;\n  }', 1)
 
           p.write_text(s)
 
           idx = Path('index.html')
-          h = idx.read_text()
-          h = h.replace('app.js?v=20260821v8', 'app.js?v=20260823v9')
+          h = idx.read_text().replace('app.js?v=20260821v8', 'app.js?v=20260823v9')
           idx.write_text(h)
 
           sw = Path('sw.js')
