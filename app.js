@@ -106,6 +106,30 @@ function fmt(n, maxFrac = 4) {
 
 function fmtPct(n) { return fmt(n, 2) + "%"; }
 
+// Quantidades de corretora NÃO usam a heurística monetária de parseNum.
+// Valores como "328.000" ou "5.038" significam 328 e 5,038 unidades,
+// não 328000 e 5038. Esta função preserva até 6 casas decimais.
+function parseQty(x) {
+  if (x === null || x === undefined || x === "") return 0;
+  if (typeof x === "number") return Number.isFinite(x) ? x : 0;
+  let t = String(x).trim().replace(/[\u2212−]/g, "-").replace(/\u00A0/g, "").replace(/\s+/g, "");
+  t = t.replace(/[^0-9,.-]+/g, "");
+  const commas = (t.match(/,/g) || []).length;
+  const dots = (t.match(/\./g) || []).length;
+  if (commas && dots) {
+    // último separador = decimal; o outro = milhares
+    if (t.lastIndexOf(',') > t.lastIndexOf('.')) t = t.replace(/\./g, '').replace(',', '.');
+    else t = t.replace(/,/g, '');
+  } else if (commas) {
+    // corretoras europeias: vírgula decimal
+    if (commas === 1) t = t.replace(',', '.');
+    else t = t.replace(/,/g, '');
+  }
+  // ponto isolado permanece decimal por definição em quantidade
+  const n = Number(t);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function normalizeDate(s) {
   if (!s) return null;
   s = String(s).trim();
@@ -12511,7 +12535,7 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker) {
     }
   }
 
-  const qty = parseNum(asset.qty || 0);
+  const qty = parseQty(asset.qty || 0);
   const previousPrice = parseNum(asset.lastPriceEur || 0);
   const previousValue = parseNum(asset.value || 0);
   const impliedPreviousPrice = qty > 0 && previousValue > 0 ? previousValue / qty : 0;
@@ -13143,10 +13167,13 @@ async function mapWithConcurrency(items, concurrency, fn) {
     const fxToEur = ccy === "EUR" ? 1 : (fxRates[ccy] || FX_FALLBACK_LOCAL[ccy] || FX_FALLBACK_STATIC[ccy] || 1);
     const priceEur = q.price * fxToEur;
 
-    const qtyField = parseNum(asset.qty || 0);
+    const qtyField = parseQty(asset.qty || 0);
     const qtyMatch = (asset.notes||"").match(/Qty=([\d.,]+)/);
-    const qtyFromNotes = qtyMatch ? parseFloat(qtyMatch[1].replace(",", ".")) : null;
-    const qty = qtyField > 0 ? qtyField : qtyFromNotes;
+    const qtyFromNotes = qtyMatch ? parseQty(qtyMatch[1]) : 0;
+    // Nos ativos importados da corretora, Qty= nas notas foi gravado pelo parser
+    // antes das heurísticas monetárias e é a fonte mais segura para reparar
+    // quantidades antigas guardadas como strings com 3 casas decimais.
+    const qty = (asset.generatedFromBroker && qtyFromNotes > 0) ? qtyFromNotes : (qtyField > 0 ? qtyField : qtyFromNotes);
     const newValue = qty ? qty * priceEur : priceEur;
 
     const sanity = quoteSanityCheck(asset, q, priceEur, yahoo || raw);
@@ -15670,10 +15697,10 @@ function parsePositionFromAsset(asset) {
   const notes = asset.notes || "";
 
   // 1. Qty — campo dedicado (guardado no import) ou das notas
-  let qty = parseNum(asset.qty || 0);
+  let qty = parseQty(asset.qty || 0);
   if (!qty) {
     const m = notes.match(/Qty=([\d.,]+)/);
-    qty = m ? parseNum(m[1]) : 0;
+    qty = m ? parseQty(m[1]) : 0;
   }
   if (!qty || qty <= 0) return null;
 
