@@ -1,0 +1,109 @@
+name: Vestra v4.10 opportunity ranking integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/triggers/v410.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Integrate intelligence engines and opportunity ranking
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          run=Path('scripts/run.py')
+          s=run.read_text()
+          imports=[
+            ('from capital_risk import enrich as enrich_capital_risk\n','from capital_allocation_intelligence import assess as assess_capital_allocation_intelligence\n'),
+            ('from capital_risk import enrich as enrich_capital_risk\n','from moat import assess as assess_moat\n'),
+            ('from capital_risk import enrich as enrich_capital_risk\n','from sector_native import assess as assess_sector_native\n'),
+            ('from capital_risk import enrich as enrich_capital_risk\n','from value_trap import assess as assess_value_trap\n'),
+            ('from capital_risk import enrich as enrich_capital_risk\n','from opportunity_rank import assess as assess_opportunity\n'),
+          ]
+          anchor='from capital_risk import enrich as enrich_capital_risk\n'
+          if anchor not in s: raise SystemExit('run import anchor missing')
+          block=''.join(x[1] for x in imports if x[1] not in s)
+          if block: s=s.replace(anchor,anchor+block,1)
+
+          marker='        row.update(assess_scanner(row))\n        rows.append(row)\n'
+          if marker not in s: raise SystemExit('assessment marker missing')
+          inject='''        row.update(assess_scanner(row))\n        try:\n            row.update(assess_moat(row))\n        except Exception as _exc:\n            log.debug("%s moat unavailable: %s", s.ticker, _exc)\n        try:\n            row.update(assess_capital_allocation_intelligence(row))\n        except Exception as _exc:\n            log.debug("%s capital allocation unavailable: %s", s.ticker, _exc)\n        try:\n            row.update(assess_sector_native(row))\n        except Exception as _exc:\n            log.debug("%s sector-native unavailable: %s", s.ticker, _exc)\n        try:\n            row.update(assess_value_trap(row))\n        except Exception as _exc:\n            log.debug("%s value-trap unavailable: %s", s.ticker, _exc)\n        try:\n            row.update(assess_opportunity(row))\n        except Exception as _exc:\n            log.debug("%s opportunity rank unavailable: %s", s.ticker, _exc)\n        rows.append(row)\n'''
+          if 'assess_opportunity(row)' not in s:
+              s=s.replace(marker,inject,1)
+          run.write_text(s)
+
+          market=Path('market.js')
+          m=market.read_text()
+          marker='  function investmentCase(s){\n'
+          if marker not in m: raise SystemExit('market investmentCase marker missing')
+          if 'function opportunityPanel(s)' not in m:
+              helper=r'''  function opportunityPanel(s){
+    const score=n(s.opportunity_score), label=txt(s.opportunity_label)||'Dados insuficientes';
+    if(score==null) return '';
+    const reasons=Array.isArray(s.opportunity_reasons)?s.opportunity_reasons:[];
+    const cautions=Array.isArray(s.opportunity_cautions)?s.opportunity_cautions:[];
+    const comps=(s.opportunity_components&&typeof s.opportunity_components==='object')?s.opportunity_components:{};
+    const names={vestra_score:'Score Vestra',confidence:'Confiança',moat:'Moat',capital_allocation:'Capital Allocation',qarp:'QARP',value_trap_inverse:'Anti Value-Trap',sector_native:'Setor',low52:'52 semanas',recovery:'Recuperação',valuation:'Valuation'};
+    const rows=Object.entries(comps).filter(([,v])=>n(v)!=null).map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${esc(names[k]||k)}</span><strong>${Math.round(n(v))}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
+    const tone=score>=72?'is-positive':score<45?'is-negative':'';
+    return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>BEST OPPORTUNITY NOW · PRIORITIZAÇÃO</small><h4>${esc(label)}</h4></div><span class="market-consensus ${tone}">${Math.round(score)}/100</span></div>${rows?`<div style="margin-top:12px">${rows}</div>`:''}${reasons.length?`<div class="market-signal-row" style="margin-top:12px">${reasons.map(x=>`<span class="market-signal">↑ ${esc(x)}</span>`).join('')}</div>`:''}${cautions.length?`<ul class="market-case-list" style="margin-top:12px">${cautions.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}<p class="market-case-note">Serve para ordenar investigação. Combina sinais independentes e não constitui recomendação automática de compra.</p></div>`;
+  }
+
+  function sectorNativePanel(s){
+    const score=n(s.sector_native_score), label=txt(s.sector_native_label), model=txt(s.sector_native_model||s.score_model);
+    if(score==null) return '';
+    const comps=(s.sector_native_components&&typeof s.sector_native_components==='object')?s.sector_native_components:{};
+    const reasons=Array.isArray(s.sector_native_reasons)?s.sector_native_reasons:[];
+    const risks=Array.isArray(s.sector_native_risks)?s.sector_native_risks:[];
+    const rows=Object.entries(comps).filter(([,v])=>n(v)!=null).map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${esc(k)}</span><strong>${Math.round(n(v))}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
+    return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>SECTOR-NATIVE · ${esc(model||'modelo')}</small><h4>${esc(label||'Leitura setorial')}</h4></div><span class="market-consensus">${Math.round(score)}/100</span></div>${rows?`<div style="margin-top:12px">${rows}</div>`:''}${reasons.length?`<div class="market-signal-row" style="margin-top:12px">${reasons.map(x=>`<span class="market-signal">↑ ${esc(x)}</span>`).join('')}</div>`:''}${risks.length?`<ul class="market-case-list" style="margin-top:12px">${risks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}<p class="market-case-note">Usa métricas economicamente adequadas ao setor e deixa em branco o que não existe.</p></div>`;
+  }
+
+'''
+              m=m.replace(marker,helper+marker,1)
+
+          fin="if(tab==='financials') body.innerHTML=`"
+          if fin in m and '${opportunityPanel(s)}${sectorNativePanel(s)}' not in m:
+              m=m.replace(fin,"if(tab==='financials') body.innerHTML=`${opportunityPanel(s)}${sectorNativePanel(s)}",1)
+          market.write_text(m)
+
+          idx=Path('index.html')
+          h=idx.read_text()
+          h=re.sub(r'market\.js\?v=[^\"\']+', 'market.js?v=20260823v10', h, count=1)
+          idx.write_text(h)
+
+          sw=Path('sw.js')
+          w=sw.read_text()
+          w=re.sub(r'vestra-cache-v\d+', 'vestra-cache-v86', w, count=1)
+          sw.write_text(w)
+
+      - name: Validate
+        run: |
+          python -m py_compile scripts/run.py scripts/moat.py scripts/capital_allocation_intelligence.py scripts/sector_native.py scripts/value_trap.py scripts/opportunity_rank.py
+          node --check market.js
+          grep -q 'assess_opportunity(row)' scripts/run.py
+          grep -q 'function opportunityPanel' market.js
+          grep -q 'function sectorNativePanel' market.js
+          grep -q 'vestra-cache-v86' sw.js
+
+      - name: Commit
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add scripts/run.py market.js index.html sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: integrate structural intelligence and opportunity ranking"
+            git push
+          fi
