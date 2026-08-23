@@ -557,7 +557,7 @@ def main():
     thesis_history = thesis_history_mod.update(thesis_history, rows, today)
     thesis_history_mod.save(thesis_history, THESIS_HISTORY_PATH)
 
-    news_payload = fetch_news_for_universe(all_tickers)
+    news_payload = fetch_news_for_universe(all_tickers, {str(r.get("ticker") or ""): str(r.get("name") or "") for r in rows})
     with open(NEWS_PATH, "w") as f:
         json.dump(_json_safe(news_payload), f, separators=(",", ":"))
     log.info("Wrote news for %d tickers to %s", len(news_payload["tickers"]), NEWS_PATH)

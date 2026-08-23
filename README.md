@@ -1,3 +1,12 @@
+## Vestra v6.6.5 — Proven Quote Refresh & Asset-Specific News
+
+- Reposto o mecanismo de cotações comprovado na app Património: `/quote` individual com fallback por candidato Yahoo, agora com concorrência limitada.
+- Removido o estado experimental `quoteWorkerMode` e a dependência do endpoint batch `/quotes`.
+- Ativos sem identidade segura são ignorados, não apresentados como falhas de rede.
+- Notícias passam a pesquisar nome da empresa + ticker e a aplicar filtro de relevância.
+- A tab Notícias do dossier mostra apenas títulos confirmadamente relacionados com o ativo aberto.
+- PWA cache: `vestra-cache-v68`.
+
 ## Vestra v6.6.4 — Quote Refresh Compatibility & Diagnostics
 
 - O refresh deteta automaticamente um Worker sem `/quotes` compatível e faz fallback para `/quote` individual com concorrência limitada.

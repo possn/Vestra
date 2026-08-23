@@ -718,8 +718,11 @@
     body.innerHTML='<div class="market-loader"><span></span><div>A carregar notícias…</div></div>';
     try{
       if(!M.news){ const r=await fetch('data/news.json',{cache:'no-store'}); M.news=await r.json(); }
-      const items=M.news?.tickers?.[s.ticker]||[];
-      body.innerHTML=`<div class="market-detail-card"><h4>Notícias recentes</h4>${items.length?items.slice(0,10).map(x=>`<div class="market-news-item"><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.title)}</a><small>${esc(x.source||'')} · ${esc(x.published||'')}</small></div>`).join(''):'<p>Sem notícias recentes para este ticker.</p>'}</div>`;
+      const rawItems=M.news?.tickers?.[s.ticker]||[];
+      const nameTokens=txt(s.name).toLowerCase().match(/[a-z0-9]{3,}/g)||[];
+      const baseTicker=txt(s.ticker).toLowerCase().split('.')[0];
+      const items=rawItems.filter(x=>{ const h=txt(x.title).toLowerCase(); return nameTokens.some(t=>h.includes(t)) || (baseTicker.length>=3 && new RegExp(`(^|[^a-z0-9])${baseTicker.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}([^a-z0-9]|$)`,'i').test(h)); });
+      body.innerHTML=`<div class="market-detail-card"><h4>Notícias de ${esc(s.name||s.ticker)}</h4>${items.length?items.slice(0,10).map(x=>`<div class="market-news-item"><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.title)}</a><small>${esc(x.source||'')} · ${esc(x.published||'')}</small></div>`).join(''):'<p>Sem notícias recentes confirmadas para este ativo.</p>'}</div>`;
     }catch{ body.innerHTML='<div class="market-empty">Não foi possível carregar notícias.</div>'; }
   }
 
