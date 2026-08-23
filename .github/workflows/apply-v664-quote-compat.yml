@@ -1,0 +1,36 @@
+name: Apply Vestra v6.6.4 quote compatibility
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply and validate v6.6.4
+        run: |
+          set -euo pipefail
+          python scripts/apply_v664_quote_refresh_compatibility.py
+          rm -f scripts/apply_v664_quote_refresh_compatibility.py
+          python -m py_compile scripts/*.py
+          node --check app.js
+          node --check market.js
+          node --check sw.js
+          node <<'NODE'
+          const fs=require('fs');
+          const src=fs.readFileSync('app.js','utf8');
+          for (const needle of [
+            'async function fetchQuotesIndividually',
+            'let quoteWorkerMode = "batch"',
+            'quoteWorkerMode = "single"',
+            'skipped = 0'
+          ]) if(!src.includes(needle)) throw new Error('missing '+needle);
+          console.log('quote compatibility smoke: ok');
+          NODE
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add README.md app.js sw.js
+          git add -u scripts/apply_v664_quote_refresh_compatibility.py
+          git commit -m "fix: Vestra v6.6.4 quote refresh compatibility"
+          git push
