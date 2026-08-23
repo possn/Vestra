@@ -1,0 +1,191 @@
+name: Vestra v6.7.2 broker truth and quote repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hotfix-broker-source-v672.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch broker source truth and catastrophic quote guards
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('app.js')
+          s = p.read_text()
+
+          # 1) Replace XTB Open Positions parser by function boundaries, independent of comments.
+          start = s.find('function parseXTBPositionsRows(rows, meta) {')
+          end = s.find('function parseXTBCashRows', start)
+          if start < 0 or end < 0:
+              raise SystemExit('XTB parser boundaries not found')
+          new_parser = r'''function parseXTBPositionsRows(rows, meta) {
+  const norm = (rows || []).map(normalizeRow);
+  const out = [];
+  const seen = new Set();
+
+  // Modern XTB workbook: each security has one summary row followed by lot rows.
+  // Summary row has a real Category (e.g. STOCK), while lot rows use placeholder "3"
+  // and Type BUY/SELL. The summary row already contains total Volume + current Value in EUR.
+  for (const r of norm) {
+    const symbol = String(r.ticker || r.symbol || r.simbolo || '').trim();
+    const name = String(r.instrument_position || r.instrument || r.name || symbol).trim();
+    const category = String(r.category || r.categoria || '').trim();
+    const volume = parseNumberSmart(r.volume || r.qty || r.quantity);
+    const valueEUR = parseNumberSmart(r.value || r.market_value || r.current_value);
+    const netProfitEUR = parseNumberSmart(r.net_profit || r.profit || r.result || r.resultado);
+    const isRealCategory = !!category && category !== '3' && !/^\d+(?:\.\d+)?$/.test(category);
+    if (!symbol || !isRealCategory || !Number.isFinite(volume) || volume <= 0 || !Number.isFinite(valueEUR) || valueEUR < 0) continue;
+    const ticker = xtbTickerToYahoo(symbol);
+    const costEUR = Number.isFinite(netProfitEUR) ? Math.max(0, valueEUR - netProfitEUR) : 0;
+    const pos = {
+      id: uid(), sourceHash: meta.hash, sourceName: meta.name, broker: 'XTB',
+      ticker, isin: '', name: name || symbol,
+      qty: volume, costBasisEUR: costEUR, marketValueEUR: valueEUR,
+      pricePerShare: volume > 0 ? valueEUR / volume : 0,
+      priceCurrency: xtbSymbolCurrency(symbol),
+      class: brokerPositionClassFromTicker(ticker),
+      positionKind: 'market_snapshot', snapshotDate: meta.asOfDate || isoToday(), key: ''
+    };
+    pos.key = brokerPositionKey(pos);
+    if (!seen.has(pos.key)) { seen.add(pos.key); out.push(pos); }
+  }
+  if (out.length) return out;
+
+  // Backward-compatible old XTB CSV fallback: aggregate explicit BUY/SELL lot rows.
+  const lots = new Map();
+  for (const r of norm) {
+    const symbol = String(r.ticker || r.symbol || r.simbolo || r.instrumento || '').trim();
+    const typeRaw = String(r.type || r.tipo || r.direction || '').trim().toUpperCase();
+    const vol = parseNumberSmart(r.volume || r.qty || r.quantity);
+    const valueEUR = parseNumberSmart(r.value || r.market_value || r.current_value);
+    if (!symbol || !/^(BUY|SELL)$/.test(typeRaw) || !Number.isFinite(vol) || vol <= 0) continue;
+    const k = symbol.toUpperCase();
+    const cur = lots.get(k) || { symbol, qty:0, value:0 };
+    cur.qty += vol;
+    if (Number.isFinite(valueEUR) && valueEUR > 0) cur.value += valueEUR;
+    lots.set(k, cur);
+  }
+  return Array.from(lots.values()).map(x => {
+    const ticker = xtbTickerToYahoo(x.symbol);
+    const pos = {
+      id: uid(), sourceHash: meta.hash, sourceName: meta.name, broker:'XTB', ticker, isin:'', name:x.symbol,
+      qty:x.qty, costBasisEUR:0, marketValueEUR:x.value, pricePerShare:x.qty > 0 ? x.value/x.qty : 0,
+      priceCurrency:xtbSymbolCurrency(x.symbol), class:brokerPositionClassFromTicker(ticker),
+      positionKind:'market_snapshot', snapshotDate:meta.asOfDate || isoToday(), key:''
+    };
+    pos.key = brokerPositionKey(pos); return pos;
+  });
+}
+
+'''
+          s = s[:start] + new_parser + s[end:]
+
+          # 2) Proven identity overrides from the user's broker files.
+          marker = '  const pair = `${i}|${t}`;'
+          if marker in s and 'i === "IE00BLCHJ534"' not in s:
+              identity = '''  if (i === "IE00BLCHJ534") return "94VE.DE";\n  if (i === "DE000SHL1006") return "SHL.DE";\n  if (i === "US58463J3041") return "MPW";\n'''
+              s = s.replace(marker, identity + marker, 1)
+
+          # Also repair static ISIN maps when present.
+          s = s.replace('"IE00BLCHJ534":"PAVE.DE"', '"IE00BLCHJ534":"94VE.DE"')
+          s = s.replace('"IE00BLCHJ534": "PAVE.DE"', '"IE00BLCHJ534": "94VE.DE"')
+          if '"DE000SHL1006":"SHL.DE"' not in s and '"DE000SHL1006": "SHL.DE"' not in s:
+              # Insert next to a known ISIN map entry if available; override function above remains authoritative.
+              pass
+
+          # 3) Catastrophic mismatch guard must protect tiny positions too.
+          s = s.replace('if (_assetCostBasis > 100 && safeNewValue > _assetCostBasis * 50) {',
+                        'if (_assetCostBasis > 1 && safeNewValue > _assetCostBasis * 100) {', 1)
+
+          # If a quote was rejected, never keep the rejected local-currency badge.
+          old_local = '''    if (ccy !== "EUR") {\n      asset.currency   = ccy;\n      asset.valueLocal = effectiveQty ? +(effectiveQty * q.price).toFixed(6) : +q.price.toFixed(6);\n    } else {'''
+          if old_local not in s:
+              old_local = '''    if (ccy !== "EUR") {\n      asset.currency   = ccy;\n      asset.valueLocal = qty ? +(qty * q.price).toFixed(6) : +q.price.toFixed(6);\n    } else {'''
+          if old_local in s:
+              qty_expr = 'effectiveQty' if 'effectiveQty ? +(effectiveQty * q.price)' in old_local else 'qty'
+              new_local = f'''    if (ccy !== "EUR") {{\n      asset.currency = ccy;\n      if (Math.abs(safeNewValue - newValue) > 0.000001) {{\n        delete asset.valueLocal;\n      }} else {{\n        asset.valueLocal = {qty_expr} ? +({qty_expr} * q.price).toFixed(6) : +q.price.toFixed(6);\n      }}\n    }} else {{'''
+              s = s.replace(old_local, new_local, 1)
+
+          # 4) Generic closed-position purge from BUY/SELL event ledger.
+          purge_fn = r'''
+function purgeFullyClosedBrokerMirrorsV672() {
+  try {
+    const bd = ensureBrokerData();
+    const net = new Map(), hasLedger = new Set(), snapshotBases = new Set();
+    const base = x => canonicalBrokerTickerBase((x && (x.ticker || x.yahooTicker)) || '');
+    for (const p of (bd.positions || [])) {
+      if (!p || !(p.positionKind === 'market_snapshot' || p.positionKind === 'cost_snapshot')) continue;
+      const k = base(p); if (k) snapshotBases.add(k);
+    }
+    for (const e of (bd.events || [])) {
+      if (!e || (e.type !== 'BUY' && e.type !== 'SELL')) continue;
+      const k = base(e); if (!k) continue;
+      const q = Math.abs(typeof parseQty === 'function' ? parseQty(e.qty) : parseNum(e.qty));
+      hasLedger.add(k); net.set(k, (net.get(k) || 0) + (e.type === 'BUY' ? q : -q));
+    }
+    const before = (state.assets || []).length;
+    state.assets = (state.assets || []).filter(a => {
+      if (!a || !a.generatedFromBroker) return true;
+      const k = base(a); if (!k || snapshotBases.has(k) || !hasLedger.has(k)) return true;
+      return Math.abs(net.get(k) || 0) > 1e-8;
+    });
+    return before !== state.assets.length;
+  } catch (_) { return false; }
+}
+
+'''
+          dm = 'document.addEventListener("DOMContentLoaded", async () => {'
+          if dm in s and 'function purgeFullyClosedBrokerMirrorsV672()' not in s:
+              s = s.replace(dm, purge_fn + dm, 1)
+
+          # Run purge after every broker rebuild and once at startup.
+          s = s.replace('        rebuildBrokerGeneratedData();\n        if (!state.settings) state.settings = {};',
+                        '        rebuildBrokerGeneratedData();\n        try { purgeFullyClosedBrokerMirrorsV672(); } catch (_) {}\n        if (!state.settings) state.settings = {};', 1)
+
+          # Force a fresh on-device rebuild.
+          s = re.sub(r'const BROKER_REBUILD_SCHEMA_VERSION = \d+;', 'const BROKER_REBUILD_SCHEMA_VERSION = 47;', s, count=1)
+
+          p.write_text(s)
+
+          idx = Path('index.html')
+          h = idx.read_text()
+          h = re.sub(r'app\.js\?v=[^"\']+', 'app.js?v=20260823v13', h, count=1)
+          idx.write_text(h)
+
+          sw = Path('sw.js')
+          w = sw.read_text()
+          w = re.sub(r'const CACHE_NAME = "vestra-cache-v\d+";', 'const CACHE_NAME = "vestra-cache-v73";', w, count=1)
+          sw.write_text(w)
+
+      - name: Validate syntax and assertions
+        run: |
+          node --check app.js
+          grep -q 'BROKER_REBUILD_SCHEMA_VERSION = 47' app.js
+          grep -q 'IE00BLCHJ534.*94VE.DE' app.js
+          grep -q 'DE000SHL1006' app.js
+          grep -q 'purgeFullyClosedBrokerMirrorsV672' app.js
+
+      - name: Commit hotfix
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add app.js index.html sw.js
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "fix: v6.7.2 rebuild broker truth and block catastrophic quote mismatches"
+            git push
+          fi
