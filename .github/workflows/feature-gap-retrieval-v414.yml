@@ -1,0 +1,93 @@
+name: Vestra v4.14 targeted gap retrieval
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/triggers/gap-retrieval-v414.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vestra-gap-retrieval-v414
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Integrate targeted gap retrieval
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p=Path('scripts/run.py')
+          s=p.read_text(encoding='utf-8')
+          imp='from gap_retrieval import enrich as enrich_gaps\n'
+          if imp not in s:
+              anchor='from esef_enrich import enrich as enrich_esef\n'
+              if anchor not in s: raise SystemExit('esef import anchor missing')
+              s=s.replace(anchor,anchor+imp,1)
+
+          call='    raw = enrich_gaps(raw, priority=portfolio_set)\n'
+          if call not in s:
+              anchor='    raw = enrich_esef(raw, priority=portfolio_set)\n'
+              if anchor not in s: raise SystemExit('esef call anchor missing')
+              s=s.replace(anchor,anchor+call,1)
+
+          # Expose provenance in dossiers when the gap pass actually filled data.
+          marker='        row["data_sources"] = ["Yahoo Finance"]\n'
+          if marker in s and 'Yahoo Statements (targeted)' not in s:
+              s=s.replace(marker,marker+'        if rm is not None and getattr(rm, "gap_statement_enriched", False):\n            row["data_sources"].append("Yahoo Statements (targeted)")\n            row["gap_coverage_before"] = getattr(rm, "gap_coverage_before", None)\n            row["gap_coverage_after"] = getattr(rm, "gap_coverage_after", None)\n',1)
+
+          # Log channel.
+          s=s.replace('"esef_enrich", "capital_risk"', '"esef_enrich", "gap_retrieval", "capital_risk"')
+          p.write_text(s,encoding='utf-8')
+
+          # Ensure ordinary market-data workflow rebuilds whenever this engine changes.
+          w=Path('.github/workflows/update-market-data.yml')
+          if w.exists():
+              t=w.read_text(encoding='utf-8')
+              if 'scripts/gap_retrieval.py' not in t:
+                  # Add a push trigger if one already exists; otherwise extend `on` safely.
+                  if '  push:\n' in t and '    paths:\n' in t:
+                      t=t.replace('    paths:\n','    paths:\n      - "scripts/gap_retrieval.py"\n',1)
+                  else:
+                      t=t.replace('on:\n','on:\n  push:\n    branches: [main]\n    paths:\n      - "scripts/gap_retrieval.py"\n      - "scripts/sec_enrich.py"\n      - "scripts/esef_enrich.py"\n      - "scripts/score.py"\n      - "scripts/confidence.py"\n',1)
+                  w.write_text(t,encoding='utf-8')
+
+      - name: Validate
+        run: |
+          python -m py_compile scripts/gap_retrieval.py scripts/run.py
+          grep -q 'enrich_gaps' scripts/run.py
+          grep -q 'Yahoo Statements (targeted)' scripts/run.py
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Rebuild market data
+        working-directory: scripts
+        run: python run.py
+
+      - name: Commit integration and refreshed data
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add scripts/run.py .github/workflows/update-market-data.yml data/
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: integrate targeted sparse-dossier retrieval"
+            git push
+          fi
