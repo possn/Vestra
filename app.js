@@ -8545,6 +8545,19 @@ function rebuildBrokerGeneratedData() {
     }
   }
 
+  // v6.6.9: BUY/SELL events are the authoritative ledger for a security+source.
+  // Older imports could also leave a reconstructed non-snapshot bd.positions row for the
+  // same instrument. Adding both created phantom holdings after a position was fully closed
+  // (confirmed with the real XTB export: OD7F.DE / WTI has 45.4323 bought and 45.4323 sold,
+  // and is absent from Open Positions). Never seed the same ledger twice.
+  const eventLedgerKeys = new Set();
+  for (const e of (bd.events || [])) {
+    if (!e || (e.type !== "BUY" && e.type !== "SELL")) continue;
+    const sec = makeBrokerSecurityKey(e);
+    const src = String(e.sourceName || "").trim();
+    eventLedgerKeys.add(`${sec}|${src}`);
+  }
+
   const posMap = new Map();
   const touchPos = ({ ticker = "", isin = "", name = "", cls = "", currency = "EUR", sourceName = "" } = {}) => {
     const isinNorm = normalizeISIN(isin);
@@ -8614,8 +8627,11 @@ function rebuildBrokerGeneratedData() {
 
   for (const p of (bd.positions || [])) {
     const cls = p.class || brokerPositionClassFromTicker(p.ticker);
+    const isSnapshot = p.positionKind === "market_snapshot" || p.positionKind === "cost_snapshot";
+    const pLedgerKey = `${makeBrokerSecurityKey(p)}|${String(p.sourceName || "").trim()}`;
+    if (!isSnapshot && eventLedgerKeys.has(pLedgerKey)) continue;
     const pos = touchPos({ ticker: p.ticker, isin: p.isin, name: p.name, cls, sourceName: p.sourceName, currency: p.priceCurrency || "EUR" });
-    if (p.positionKind === "market_snapshot" || p.positionKind === "cost_snapshot") {
+    if (isSnapshot) {
       // v63q: "cost_snapshot" (from parseBrokerPositionRows — a generic positions
       // CSV with qty + cost-per-share, no market value) was falling into the
       // ledger-reconstruction branch below, which ADDS onto pos.qty per source.
@@ -8914,6 +8930,22 @@ function rebuildBrokerGeneratedData() {
     if (nMonths >= 3)  return 4;   // quarterly
     if (nMonths >= 2)  return 2;   // semi-annual
     return 1;                      // annual (or a single/irregular payment)
+  }
+
+  // v6.6.9 final closed-position reconciliation.
+  const eventNetByKey = new Map();
+  for (const e of events) {
+    if (!e || (e.type !== "BUY" && e.type !== "SELL")) continue;
+    const k = makeBrokerSecurityKey(e);
+    const q = Math.abs(typeof parseQty === "function" ? parseQty(e.qty) : parseNum(e.qty));
+    eventNetByKey.set(k, (eventNetByKey.get(k) || 0) + (e.type === "BUY" ? q : -q));
+  }
+  for (const p of posMap.values()) {
+    const k = makeBrokerSecurityKey(p);
+    const net = eventNetByKey.get(k);
+    if (!p.hasSnapshot && Number.isFinite(net) && Math.abs(net) < 1e-8) {
+      p.qty = 0; p.costBasis = 0; p.ledgerCostBasis = 0; p.marketValueEUR = 0;
+    }
   }
 
   for (const p of posMap.values()) {
