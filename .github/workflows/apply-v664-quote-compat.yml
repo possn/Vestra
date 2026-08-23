@@ -1,6 +1,10 @@
 name: Apply Vestra v6.6.4 quote compatibility
 on:
-  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v664-quote-compat.yml'
+      - 'scripts/apply_v664_quote_refresh_compatibility.py'
 permissions:
   contents: write
 jobs:
@@ -30,6 +34,7 @@ jobs:
           NODE
           git config user.name "Vestra Build"
           git config user.email "actions@github.com"
+          git rm -f .github/workflows/apply-v664-quote-compat.yml
           git add README.md app.js sw.js
           git add -u scripts/apply_v664_quote_refresh_compatibility.py
           git commit -m "fix: Vestra v6.6.4 quote refresh compatibility"
