@@ -21,40 +21,42 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
 
           p = Path('app.js')
           s = p.read_text()
 
           marker = '''  const posMap = new Map();\n  const touchPos = ({ ticker = "", isin = "", name = "", cls = "", currency = "EUR", sourceName = "" } = {}) => {'''
           replacement = '''  // v6.6.9: BUY/SELL events are the authoritative ledger for a security+source.\n  // Older imports could also leave a reconstructed non-snapshot bd.positions row for the\n  // same instrument. Adding both created phantom holdings after a position was fully closed\n  // (confirmed with the real XTB export: OD7F.DE / WTI has 45.4323 bought and 45.4323 sold,\n  // and is absent from Open Positions). Never seed the same ledger twice.\n  const eventLedgerKeys = new Set();\n  for (const e of (bd.events || [])) {\n    if (!e || (e.type !== "BUY" && e.type !== "SELL")) continue;\n    const sec = makeBrokerSecurityKey(e);\n    const src = String(e.sourceName || "").trim();\n    eventLedgerKeys.add(`${sec}|${src}`);\n  }\n\n  const posMap = new Map();\n  const touchPos = ({ ticker = "", isin = "", name = "", cls = "", currency = "EUR", sourceName = "" } = {}) => {'''
-          if marker not in s:
+          if marker not in s and 'const eventLedgerKeys = new Set();' not in s:
               raise SystemExit('posMap marker not found')
-          s = s.replace(marker, replacement, 1)
+          if marker in s:
+              s = s.replace(marker, replacement, 1)
 
           old = '''  for (const p of (bd.positions || [])) {\n    const cls = p.class || brokerPositionClassFromTicker(p.ticker);\n    const pos = touchPos({ ticker: p.ticker, isin: p.isin, name: p.name, cls, sourceName: p.sourceName, currency: p.priceCurrency || "EUR" });\n    if (p.positionKind === "market_snapshot" || p.positionKind === "cost_snapshot") {'''
-          new = '''  for (const p of (bd.positions || [])) {\n    const cls = p.class || brokerPositionClassFromTicker(p.ticker);\n    const isSnapshot = p.positionKind === "market_snapshot" || p.positionKind === "cost_snapshot";\n    const pLedgerKey = `${makeBrokerSecurityKey(p)}|${String(p.sourceName || "").trim()}`;\n    // If this source already has BUY/SELL events for the same security, those events rebuild\n    // the live quantity exactly. A non-snapshot position row is legacy/derived data and must\n    // not be added on top of them. Snapshots remain authoritative and are preserved.\n    if (!isSnapshot && eventLedgerKeys.has(pLedgerKey)) continue;\n    const pos = touchPos({ ticker: p.ticker, isin: p.isin, name: p.name, cls, sourceName: p.sourceName, currency: p.priceCurrency || "EUR" });\n    if (isSnapshot) {'''
-          if old not in s:
+          new = '''  for (const p of (bd.positions || [])) {\n    const cls = p.class || brokerPositionClassFromTicker(p.ticker);\n    const isSnapshot = p.positionKind === "market_snapshot" || p.positionKind === "cost_snapshot";\n    const pLedgerKey = `${makeBrokerSecurityKey(p)}|${String(p.sourceName || "").trim()}`;\n    if (!isSnapshot && eventLedgerKeys.has(pLedgerKey)) continue;\n    const pos = touchPos({ ticker: p.ticker, isin: p.isin, name: p.name, cls, sourceName: p.sourceName, currency: p.priceCurrency || "EUR" });\n    if (isSnapshot) {'''
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif 'const pLedgerKey = `${makeBrokerSecurityKey(p)}|' not in s:
               raise SystemExit('bd.positions loop marker not found')
-          s = s.replace(old, new, 1)
 
-          # Final defensive reconciliation: fully closed event ledgers cannot survive as holdings.
           marker2 = '''  for (const p of posMap.values()) {\n    // Combine broker snapshot qty + ledger-reconstructed qty'''
-          replacement2 = '''  // v6.6.9 final closed-position reconciliation. This also repairs IndexedDB states\n  // produced by older builds without forcing the user to delete/re-import broker history.\n  const eventNetByKey = new Map();\n  for (const e of events) {\n    if (!e || (e.type !== "BUY" && e.type !== "SELL")) continue;\n    const k = makeBrokerSecurityKey(e);\n    const q = Math.abs(parseQty ? parseQty(e.qty) : parseNum(e.qty));\n    eventNetByKey.set(k, (eventNetByKey.get(k) || 0) + (e.type === "BUY" ? q : -q));\n  }\n  for (const p of posMap.values()) {\n    const k = makeBrokerSecurityKey(p);\n    const net = eventNetByKey.get(k);\n    if (!p.hasSnapshot && Number.isFinite(net) && Math.abs(net) < 1e-8) {\n      p.qty = 0; p.costBasis = 0; p.ledgerCostBasis = 0; p.marketValueEUR = 0;\n    }\n  }\n\n  for (const p of posMap.values()) {\n    // Combine broker snapshot qty + ledger-reconstructed qty'''
-          if marker2 not in s:
+          replacement2 = '''  // v6.6.9 final closed-position reconciliation.\n  const eventNetByKey = new Map();\n  for (const e of events) {\n    if (!e || (e.type !== "BUY" && e.type !== "SELL")) continue;\n    const k = makeBrokerSecurityKey(e);\n    const q = Math.abs(typeof parseQty === "function" ? parseQty(e.qty) : parseNum(e.qty));\n    eventNetByKey.set(k, (eventNetByKey.get(k) || 0) + (e.type === "BUY" ? q : -q));\n  }\n  for (const p of posMap.values()) {\n    const k = makeBrokerSecurityKey(p);\n    const net = eventNetByKey.get(k);\n    if (!p.hasSnapshot && Number.isFinite(net) && Math.abs(net) < 1e-8) {\n      p.qty = 0; p.costBasis = 0; p.ledgerCostBasis = 0; p.marketValueEUR = 0;\n    }\n  }\n\n  for (const p of posMap.values()) {\n    // Combine broker snapshot qty + ledger-reconstructed qty'''
+          if marker2 in s:
+              s = s.replace(marker2, replacement2, 1)
+          elif 'const eventNetByKey = new Map();' not in s:
               raise SystemExit('final posMap loop marker not found')
-          s = s.replace(marker2, replacement2, 1)
 
           p.write_text(s)
 
           idx = Path('index.html')
           h = idx.read_text()
-          import re
-          h = re.sub(r'app\\.js\\?v=[^"\\']+', 'app.js?v=20260823v10', h, count=1)
+          h = re.sub(r'app\.js\?v=[^"\']+', 'app.js?v=20260823v10', h, count=1)
           idx.write_text(h)
 
           sw = Path('sw.js')
           w = sw.read_text()
-          w = re.sub(r'const CACHE_NAME = "vestra-cache-v\\d+";', 'const CACHE_NAME = "vestra-cache-v71";', w, count=1)
+          w = re.sub(r'const CACHE_NAME = "vestra-cache-v\d+";', 'const CACHE_NAME = "vestra-cache-v71";', w, count=1)
           sw.write_text(w)
 
       - name: Validate syntax
