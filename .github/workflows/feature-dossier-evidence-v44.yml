@@ -1,0 +1,96 @@
+name: Vestra v4.4 dossier evidence & provenance
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/feature-dossier-evidence-v44.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  feature:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add evidence/provenance dossier tab
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p=Path('market.js')
+          s=p.read_text()
+
+          marker='  function detailBase(s){\n'
+          if marker not in s:
+              raise SystemExit('detailBase marker not found')
+
+          if 'function evidencePanel(s)' not in s:
+              helper=r'''  function evidencePanel(s){
+    const score=n(s.confidence_score);
+    const label=txt(s.confidence_label||s.data_confidence||s.metric_confidence)||'—';
+    const coverage=n(s.data_coverage_pct);
+    const components=(s.confidence_components&&typeof s.confidence_components==='object')?s.confidence_components:{};
+    const reasons=Array.isArray(s.confidence_reasons)?s.confidence_reasons.filter(Boolean):[];
+    const sources=Array.isArray(s.data_sources)?s.data_sources.filter(Boolean):[];
+    const provenance=(s.metric_provenance&&typeof s.metric_provenance==='object')?s.metric_provenance:{};
+    const provRows=Object.entries(provenance).filter(([,v])=>v).slice(0,18);
+    const agreement=n(s.source_agreement_pct), checks=n(s.source_agreement_checks);
+    const age=n(s.fundamental_age_days);
+    const lei=txt(s.lei), isin=txt(s.isin);
+    const componentLabels={coverage:'Cobertura',source_quality:'Qualidade das fontes',freshness:'Atualidade',source_agreement:'Concordância',identity:'Identidade'};
+    const componentRows=Object.entries(components).filter(([,v])=>n(v)!=null).map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${esc(componentLabels[k]||k)}</span><strong>${Math.round(n(v))}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
+    const sourceChips=sources.length?sources.map(x=>`<span class="market-signal">${esc(x)}</span>`).join(''):'<span class="market-case-note">Sem provenance explícita disponível.</span>';
+    const provenanceRows=provRows.length?`<div class="market-list">${provRows.map(([metric,source])=>`<div class="market-row" style="cursor:default"><div><div class="market-row__title"><span class="market-row__name">${esc(metric.replace(/_/g,' '))}</span></div></div><div class="market-row__meta">${esc(typeof source==='string'?source:JSON.stringify(source))}</div></div>`).join('')}</div>`:'<p class="market-case-note">A provenance por métrica ainda não está disponível neste ativo.</p>';
+    return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>EVIDÊNCIA & PROVENANCE</small><h4>Confiança dos dados</h4></div><span class="market-consensus ${score!=null&&score>=80?'is-positive':score!=null&&score<60?'is-negative':''}">${score==null?esc(label):Math.round(score)+'/100 · '+esc(label)}</span></div><div class="market-metrics"><div class="market-metric"><small>Cobertura</small><strong>${coverage==null?'—':Math.round(coverage)+'%'}</strong></div><div class="market-metric"><small>Idade fundamental</small><strong>${age==null?'—':Math.round(age)+' dias'}</strong></div><div class="market-metric"><small>Concordância fontes</small><strong>${agreement==null?'—':Math.round(agreement)+'%'}</strong></div><div class="market-metric"><small>Cross-checks</small><strong>${checks==null?'—':Math.round(checks)}</strong></div><div class="market-metric"><small>ISIN</small><strong>${esc(isin||'—')}</strong></div><div class="market-metric"><small>LEI</small><strong>${esc(lei||'—')}</strong></div></div>${componentRows?`<div style="margin-top:14px">${componentRows}</div>`:''}${reasons.length?`<ul class="market-case-list" style="margin-top:14px">${reasons.slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</div><div class="market-detail-card"><h4>Fontes usadas</h4><div class="market-signal-row">${sourceChips}</div><p class="market-case-note" style="margin-top:10px">O Score Vestra mede atratividade. Esta confiança mede a robustez da evidência e não deve ser confundida com o score de investimento.</p></div><div class="market-detail-card"><h4>Origem por métrica</h4>${provenanceRows}</div>`;
+  }
+
+'''
+              s=s.replace(marker,helper+marker,1)
+
+          old='<button class="market-tab" data-detail-tab="financials">Financeiro</button><button class="market-tab" data-detail-tab="smart">Smart</button><button class="market-tab" data-detail-tab="news">Notícias</button>'
+          new='<button class="market-tab" data-detail-tab="financials">Financeiro</button><button class="market-tab" data-detail-tab="evidence">Evidência</button><button class="market-tab" data-detail-tab="smart">Smart</button><button class="market-tab" data-detail-tab="news">Notícias</button>'
+          if old not in s:
+              raise SystemExit('tabs marker not found')
+          s=s.replace(old,new,1)
+
+          detail_marker='    if(tab===\'growth\') body.innerHTML='
+          if detail_marker not in s:
+              raise SystemExit('renderDetailTab growth marker not found')
+          if "if(tab==='evidence') body.innerHTML=evidencePanel(s);" not in s:
+              s=s.replace(detail_marker,"    if(tab==='evidence') body.innerHTML=evidencePanel(s);\n"+detail_marker,1)
+
+          p.write_text(s)
+
+          idx=Path('index.html')
+          h=idx.read_text()
+          h=re.sub(r'market\.js\?v=[^\"\']+', 'market.js?v=20260823v6', h, count=1)
+          idx.write_text(h)
+
+          sw=Path('sw.js')
+          w=sw.read_text()
+          w=re.sub(r'vestra-cache-v\d+', 'vestra-cache-v80', w, count=1)
+          sw.write_text(w)
+
+      - name: Validate
+        run: |
+          node --check market.js
+          grep -q 'function evidencePanel' market.js
+          grep -q 'data-detail-tab="evidence"' market.js
+          grep -q "if(tab==='evidence')" market.js
+          grep -q 'vestra-cache-v80' sw.js
+
+      - name: Commit
+        run: |
+          git config user.name "Vestra Build"
+          git config user.email "actions@github.com"
+          git add market.js index.html sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: add evidence and provenance tab to company dossiers"
+            git push
+          fi
