@@ -1,0 +1,71 @@
+name: Fix passive income consistency v4.37
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/triggers/passive-income-consistency-v437.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Align dashboard and portfolio passive-income semantics
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('app.js')
+          s=p.read_text(encoding='utf-8')
+
+          old='''    let projected = 0;\n    if (isDiv && real > 0) {\n      projected = real;\n    } else {\n      const ratePct = Math.max(0, getAssetPassiveRatePct(a, { allowClassFallback: true }));\n      projected = val * (ratePct / 100);\n    }'''
+          new='''    // Projected income must always mean current value × configured/current yield.\n    // TTM/registered dividends remain the realised/actual measure and must not\n    // overwrite the projection, otherwise Dashboard and Portfolio disagree.\n    const ratePct = Math.max(0, getAssetPassiveRatePct(a, { allowClassFallback: true }));\n    const projected = val * (ratePct / 100);'''
+          if old not in s:
+              raise SystemExit('calcPassiveAnnualSummary projection anchor not found')
+          s=s.replace(old,new,1)
+
+          old='''function getDisplayedPassiveAnnual(totals) {\n  const t = totals || (_rc ? _rc.totals : calcTotals());\n  const real = parseNum(t && (t.passiveAnnualReal != null ? t.passiveAnnualReal : t.passiveAnnual));\n  const projected = parseNum(t && (t.passiveAnnualProjected != null ? t.passiveAnnualProjected : t.passiveAnnual));\n  return real > 0 ? real : projected;\n}'''
+          new='''function getDisplayedPassiveAnnual(totals) {\n  const t = totals || (_rc ? _rc.totals : calcTotals());\n  const real = parseNum(t && (t.passiveAnnualReal != null ? t.passiveAnnualReal : t.passiveAnnual));\n  const projected = parseNum(t && (t.passiveAnnualProjected != null ? t.passiveAnnualProjected : t.passiveAnnual));\n  // UI labels say "estimado": use the forward projection consistently.\n  // Real/TTM income remains available in the dividend/history views.\n  return projected > 0 ? projected : real;\n}'''
+          if old not in s:
+              raise SystemExit('getDisplayedPassiveAnnual anchor not found')
+          s=s.replace(old,new,1)
+
+          old='''A app calcula dois valores:<br>\n• <b>Teórico</b>: baseado nos yields que introduziste<br>\n• <b>Real</b>: baseado nos dividendos que registaste (mais preciso)<br><br>'''
+          new='''A app calcula dois valores:<br>\n• <b>Projectado</b>: valor atual × yield configurado/observado de cada ativo<br>\n• <b>Real</b>: rendimento efetivamente registado/TTM, usado para histórico e validação<br><br>'''
+          if old in s:
+              s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+
+          # Cache-bust iOS/PWA so the corrected app.js is picked up immediately.
+          ip=Path('index.html')
+          i=ip.read_text(encoding='utf-8')
+          i=i.replace('app.js?v=20260823v10','app.js?v=20260824v11',1)
+          ip.write_text(i,encoding='utf-8')
+
+          sp=Path('sw.js')
+          sw=sp.read_text(encoding='utf-8')
+          sw=sw.replace('vestra-cache-v79','vestra-cache-v80',1)
+          sp.write_text(sw,encoding='utf-8')
+          PY
+          node --check app.js
+          node --check sw.js
+      - name: Commit and push
+        run: |
+          git config user.name "vestra-ui-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add app.js index.html sw.js
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "fix: unify projected passive income across dashboard and portfolio"
+            git pull --rebase origin main
+            git push
+          fi
