@@ -169,4 +169,23 @@ def assess(row: dict) -> dict:
         "scanner_best_score": ordered[0][1]["score"] if ordered else None,
     }
     base.update(_structural_overlays(row, base))
+
+    # Expose the structural ranking through the same scanner contract consumed by
+    # market.js. This avoids a second frontend-specific data path and keeps all
+    # opportunity surfaces under the same evidence gate.
+    opp = _n(base.get("opportunity_score"))
+    if opp is not None and bool(base.get("opportunity_eligible")):
+        reasons = list(base.get("opportunity_reasons") or [])
+        cautions = list(base.get("opportunity_cautions") or [])
+        scanner_results = dict(base.get("scanner_results") or {})
+        scanner_results["best_opportunities"] = {
+            "label": base.get("opportunity_label") or "Best Opportunities",
+            "score": round(opp, 1),
+            "reasons": (reasons + [f"Atenção: {x}" for x in cautions])[:4],
+        }
+        tags = ["best_opportunities"] + [x for x in (base.get("scanner_tags") or []) if x != "best_opportunities"]
+        base["scanner_results"] = scanner_results
+        base["scanner_tags"] = tags
+        base["scanner_best"] = "best_opportunities"
+        base["scanner_best_score"] = round(opp, 1)
     return base
