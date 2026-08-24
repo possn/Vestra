@@ -1,13 +1,13 @@
 """Vestra data-quality guardrails.
 
-Runs after the market pipeline and coverage audit.  It prevents two classes of
+Runs after the market pipeline and coverage audit. It prevents two classes of
 silent regressions that previously produced misleading opportunities:
 
-1. malformed European Yahoo symbols (for example ADS-DE.DE), and
+1. malformed European Yahoo symbols, and
 2. positive scores/scanner opportunity labels on dossiers with insufficient
    fundamental evidence.
 
-The guard never invents or repairs financial values.  It only validates the
+The guard never invents or repairs financial values. It only validates the
 finished stocks.json and exits non-zero when an invariant is violated.
 """
 from __future__ import annotations
@@ -24,9 +24,12 @@ STOCKS_PATH = os.path.join(BASE, "..", "data", "stocks.json")
 OUT_PATH = os.path.join(BASE, "..", "data", "coverage_guard.json")
 
 EU_SUFFIXES = ("DE", "PA", "AS", "MC", "MI", "SW", "LS", "BR")
-# Examples rejected: ADS-DE.DE, ACA-PA.PA, A2A-MI.MI, ABN-AS.AS.
+# Reject any explicit exchange token left in the base immediately before a
+# Yahoo exchange suffix, both duplicate (ADS-DE.DE) and cross-market
+# (AIR-PA.DE) forms. The universe normalizer must resolve these first.
 MALFORMED_EU = re.compile(
-    r"-(?P<token>" + "|".join(EU_SUFFIXES) + r")\.(?P=token)$",
+    r"-(?P<source>" + "|".join(EU_SUFFIXES) + r")\.(?P<target>"
+    + "|".join(EU_SUFFIXES) + r")$",
     re.IGNORECASE,
 )
 
@@ -67,12 +70,15 @@ def main() -> int:
         low52_status = str(row.get("low52_status") or "").lower()
         pipeline_status = str(row.get("pipeline_status") or "")
 
-        if MALFORMED_EU.search(ticker):
+        malformed_match = MALFORMED_EU.search(ticker)
+        if malformed_match:
             counts["malformed_european_ticker"] += 1
             violations.append({
                 "ticker": ticker,
                 "type": "malformed_european_ticker",
-                "detail": "exchange qualifier duplicated before Yahoo suffix",
+                "source_exchange_token": malformed_match.group("source").upper(),
+                "target_yahoo_suffix": malformed_match.group("target").upper(),
+                "detail": "exchange qualifier remained in ticker base before Yahoo suffix",
             })
 
         # Metadata-only/carried catalogue rows are allowed to be sparse, but may
@@ -136,7 +142,7 @@ def main() -> int:
         "violation_counts": dict(counts),
         "violations": violations[:200],
         "rules": {
-            "malformed_european_tickers": "forbidden",
+            "malformed_european_exchange_token_before_suffix": "forbidden",
             "score_ge_60_requires_coverage_pct": 50,
             "score_ge_60_requires_critical_coverage_pct": 35,
             "scanner_requires_coverage_pct": 55,
