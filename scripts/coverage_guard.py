@@ -20,9 +20,6 @@ STOCKS_PATH = os.path.join(BASE, "..", "data", "stocks.json")
 OUT_PATH = os.path.join(BASE, "..", "data", "coverage_guard.json")
 
 EU_SUFFIXES = ("DE", "PA", "AS", "MC", "MI", "SW", "LS", "BR")
-# Reject any explicit exchange token left in the base immediately before a
-# Yahoo exchange suffix, both duplicate (ADS-DE.DE) and cross-market
-# (AIR-PA.DE) forms. The universe normalizer must resolve these first.
 MALFORMED_EU = re.compile(
     r"-(?P<source>" + "|".join(EU_SUFFIXES) + r")\.(?P<target>"
     + "|".join(EU_SUFFIXES) + r")$",
@@ -78,6 +75,9 @@ def main() -> int:
         opportunity_eligible = bool(row.get("opportunity_eligible"))
         signal_count = _n(row.get("opportunity_signal_count"))
         structural_count = _n(row.get("opportunity_structural_signal_count"))
+        timing_score = _n(row.get("opportunity_timing_score"))
+        timing_label = str(row.get("opportunity_timing_label") or "")
+        overextended = bool(row.get("opportunity_overextended"))
 
         malformed_match = MALFORMED_EU.search(ticker)
         if malformed_match:
@@ -88,17 +88,12 @@ def main() -> int:
                 detail="exchange qualifier remained in ticker base before Yahoo suffix",
             )
 
-        # A public score must always carry its evidence metadata. This catches
-        # stale carried rows from older schemas as well as future serialization
-        # regressions where the score survives but the reliability context does not.
         if score is not None and (coverage is None or critical is None):
             _add(
                 violations, counts, ticker, "score_missing_evidence_metadata",
                 score=score, coverage_pct=coverage, critical_coverage_pct=critical,
             )
 
-        # Metadata-only/carried catalogue rows are allowed to be sparse, but may
-        # never be presented as scored opportunities.
         sparse = (coverage is None or coverage < 55) or (critical is None or critical < 45)
         weak_conf = confidence is None or confidence < 50
 
@@ -128,9 +123,9 @@ def main() -> int:
                 critical_coverage_pct=critical, confidence_score=confidence,
             )
 
-        # Best Opportunities has a stricter contract than ordinary scanner tags.
-        # Any non-null ranking must have a public Vestra score plus the same
-        # minimum evidence used by opportunity_rank.py.
+        # Best Opportunities Now is stricter than ordinary scanner tags. It must
+        # have strong evidence plus enough independent/structural signals and a
+        # usable timing score from current price history.
         if opportunity_score is not None:
             if score is None or sparse or weak_conf:
                 _add(
@@ -140,7 +135,7 @@ def main() -> int:
                     confidence_score=confidence,
                 )
             if opportunity_eligible and (
-                signal_count is None or signal_count < 4
+                signal_count is None or signal_count < 5
                 or structural_count is None or structural_count < 2
             ):
                 _add(
@@ -149,9 +144,25 @@ def main() -> int:
                     signal_count=signal_count,
                     structural_signal_count=structural_count,
                 )
+            if timing_score is None:
+                _add(
+                    violations, counts, ticker, "opportunity_rank_without_timing",
+                    opportunity_score=opportunity_score,
+                    timing_label=timing_label,
+                )
 
-        # Labels shown as strong recommendations must obey the stronger gates in
-        # opportunity_rank.py, even if the numeric ranking itself is otherwise valid.
+        # The Discover list is explicitly meant to surface emerging opportunities,
+        # not companies whose move is already materially extended. The backend may
+        # retain an opportunity score for dossier context, but an overextended name
+        # must not qualify as a high-priority actionable opportunity.
+        if overextended and opportunity_label in {"Oportunidade forte", "Prioridade alta"}:
+            _add(
+                violations, counts, ticker, "strong_opportunity_is_overextended",
+                label=opportunity_label,
+                opportunity_score=opportunity_score,
+                timing_score=timing_score,
+            )
+
         if opportunity_label == "Oportunidade forte" and (
             coverage is None or coverage < 65 or confidence is None or confidence < 60
         ):
@@ -199,8 +210,10 @@ def main() -> int:
             "scanner_requires_critical_coverage_pct": 45,
             "scanner_requires_confidence_score": 50,
             "opportunity_rank_requires_public_score": True,
-            "opportunity_rank_requires_signal_count": 4,
+            "opportunity_rank_requires_signal_count": 5,
             "opportunity_rank_requires_structural_signal_count": 2,
+            "opportunity_rank_requires_timing_score": True,
+            "strong_opportunities_may_not_be_overextended": True,
             "strong_opportunity_requires_coverage_pct": 65,
             "strong_opportunity_requires_confidence_score": 60,
             "high_priority_requires_coverage_pct": 75,
