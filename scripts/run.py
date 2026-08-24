@@ -260,6 +260,16 @@ def main():
             row["isin"] = getattr(rm, "isin", None)
             row["lei"] = getattr(rm, "lei", None)
             row["esef_period_end"] = getattr(rm, "esef_period_end", None)
+        if rm is not None and getattr(rm, "gap_statement_enriched", False):
+            row["data_sources"].append("Yahoo Statements (targeted)")
+            row["gap_statement_enriched"] = True
+            row["gap_coverage_before"] = getattr(rm, "gap_coverage_before", None)
+            row["gap_coverage_after"] = getattr(rm, "gap_coverage_after", None)
+        if rm is not None and getattr(rm, "quarterly_gap_enriched", False):
+            row["data_sources"].append("Yahoo Quarterly Statements (TTM)")
+            row["quarterly_gap_enriched"] = True
+            row["quarterly_gap_coverage_before"] = getattr(rm, "quarterly_gap_coverage_before", None)
+            row["quarterly_gap_coverage_after"] = getattr(rm, "quarterly_gap_coverage_after", None)
         if analyst: row["data_sources"].append("Analyst feed")
         if insider.get("status") not in (None,"not_available","error"): row["data_sources"].append("SEC Form 4")
         if row.get("congress_trades"): row["data_sources"].append("STOCK Act / Bargo")

@@ -144,6 +144,15 @@ class RawMetrics:
     fund_asset_classes: dict = field(default_factory=dict)
     fund_sector_weightings: dict = field(default_factory=dict)
 
+    # Targeted retrieval provenance. These fields live on the dataclass so they
+    # survive dataclasses.asdict() and can be audited in the published dossier.
+    gap_statement_enriched: bool = False
+    gap_coverage_before: float | None = None
+    gap_coverage_after: float | None = None
+    quarterly_gap_enriched: bool = False
+    quarterly_gap_coverage_before: float | None = None
+    quarterly_gap_coverage_after: float | None = None
+
     error: str | None = None
 
 
