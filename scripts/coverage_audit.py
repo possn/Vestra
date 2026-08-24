@@ -9,15 +9,24 @@ from __future__ import annotations
 import collections
 import datetime as dt
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "data" / "stocks.json"
 OUT = ROOT / "data" / "coverage_audit.json"
 
+EU_SUFFIXES = ("DE", "PA", "AS", "MC", "MI", "SW", "LS", "BR")
+MALFORMED_EU = re.compile(
+    r"-(?P<token>" + "|".join(EU_SUFFIXES) + r")\.(?P=token)$",
+    re.IGNORECASE,
+)
+
 
 def f(v):
     try:
+        if v is None or v == "":
+            return None
         x = float(v)
         return x if x == x and abs(x) != float("inf") else None
     except (TypeError, ValueError):
@@ -27,7 +36,7 @@ def f(v):
 def equity_rows(payload):
     return [
         r for r in (payload.get("stocks") or [])
-        if r.get("quote_type") not in ("ETF", "CRYPTO")
+        if str(r.get("quote_type") or "").upper() not in ("ETF", "CRYPTO", "MUTUALFUND", "FUND")
     ]
 
 
@@ -72,6 +81,13 @@ def main():
     by_model = collections.defaultdict(list)
     source_hits = collections.Counter()
     missing_metric = collections.Counter()
+    reliability = collections.Counter()
+    opportunity_labels = collections.Counter()
+    opportunity_suppressed = collections.Counter()
+    malformed = []
+    gap_attempted = 0
+    gap_enriched = 0
+    gap_gain = []
 
     critical = [
         "roe", "roa", "profit_margin", "operating_margin", "gross_margin",
@@ -90,6 +106,28 @@ def main():
             if r.get(key) is None:
                 missing_metric[key] += 1
 
+        reliability[str(r.get("score_reliability") or "unknown")] += 1
+        opportunity_labels[str(r.get("opportunity_label") or "none")] += 1
+        reason = str(r.get("opportunity_suppressed_reason") or "").strip()
+        if reason:
+            opportunity_suppressed[reason] += 1
+
+        ticker = str(r.get("ticker") or "").upper()
+        if MALFORMED_EU.search(ticker):
+            malformed.append(ticker)
+
+        # Current gap-retrieval implementation marks only successful fills.
+        # Treat presence of before/after coverage as evidence of an attempted row.
+        before = f(r.get("gap_coverage_before"))
+        after = f(r.get("gap_coverage_after"))
+        enriched = bool(r.get("gap_statement_enriched"))
+        if before is not None or after is not None or enriched:
+            gap_attempted += 1
+        if enriched:
+            gap_enriched += 1
+        if before is not None and after is not None:
+            gap_gain.append(after - before)
+
     sparse = sorted(
         rows,
         key=lambda r: (f(r.get("data_coverage_pct")) if f(r.get("data_coverage_pct")) is not None else -1),
@@ -101,6 +139,18 @@ def main():
         "by_region": {k: summarize_group(v) for k, v in sorted(by_region.items())},
         "by_score_model": {k: summarize_group(v) for k, v in sorted(by_model.items())},
         "source_coverage": dict(source_hits.most_common()),
+        "score_reliability": dict(reliability.most_common()),
+        "opportunity_labels": dict(opportunity_labels.most_common()),
+        "opportunity_suppressed_reasons": dict(opportunity_suppressed.most_common()),
+        "ticker_hygiene": {
+            "malformed_european_count": len(malformed),
+            "malformed_european_examples": malformed[:50],
+        },
+        "gap_retrieval": {
+            "rows_with_gap_metadata": gap_attempted,
+            "rows_enriched": gap_enriched,
+            "avg_critical_coverage_gain_pp": round(sum(gap_gain) / len(gap_gain), 1) if gap_gain else None,
+        },
         "most_missing_critical_metrics": [
             {"metric": k, "missing": n, "missing_pct": round(n / len(rows) * 100, 1) if rows else 0}
             for k, n in missing_metric.most_common()
@@ -113,10 +163,16 @@ def main():
                 "score_model": r.get("score_model"),
                 "coverage_pct": f(r.get("data_coverage_pct")),
                 "critical_coverage_pct": f(r.get("critical_metric_coverage_pct")),
+                "score_raw": f(r.get("score_raw")),
+                "score": f(r.get("score")),
                 "score_reliability": r.get("score_reliability"),
                 "sources": row_sources(r),
-                "gap_retrieval_attempted": bool(r.get("gap_retrieval_attempted")),
-                "gap_retrieval_filled": r.get("gap_retrieval_filled"),
+                "gap_statement_enriched": bool(r.get("gap_statement_enriched")),
+                "gap_coverage_before": f(r.get("gap_coverage_before")),
+                "gap_coverage_after": f(r.get("gap_coverage_after")),
+                "opportunity_eligible": r.get("opportunity_eligible"),
+                "opportunity_score": f(r.get("opportunity_score")),
+                "opportunity_suppressed_reason": r.get("opportunity_suppressed_reason"),
             }
             for r in sparse
         ],
