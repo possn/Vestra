@@ -18,7 +18,8 @@ OUT = ROOT / "data" / "coverage_audit.json"
 
 EU_SUFFIXES = ("DE", "PA", "AS", "MC", "MI", "SW", "LS", "BR")
 MALFORMED_EU = re.compile(
-    r"-(?P<token>" + "|".join(EU_SUFFIXES) + r")\.(?P=token)$",
+    r"-(?P<source>" + "|".join(EU_SUFFIXES) + r")\.(?P<target>"
+    + "|".join(EU_SUFFIXES) + r")$",
     re.IGNORECASE,
 )
 
@@ -85,9 +86,12 @@ def main():
     opportunity_labels = collections.Counter()
     opportunity_suppressed = collections.Counter()
     malformed = []
-    gap_attempted = 0
-    gap_enriched = 0
-    gap_gain = []
+    annual_attempted = 0
+    annual_enriched = 0
+    annual_gain = []
+    quarterly_attempted = 0
+    quarterly_enriched = 0
+    quarterly_gain = []
 
     critical = [
         "roe", "roa", "profit_margin", "operating_margin", "gross_margin",
@@ -116,17 +120,25 @@ def main():
         if MALFORMED_EU.search(ticker):
             malformed.append(ticker)
 
-        # Current gap-retrieval implementation marks only successful fills.
-        # Treat presence of before/after coverage as evidence of an attempted row.
         before = f(r.get("gap_coverage_before"))
         after = f(r.get("gap_coverage_after"))
         enriched = bool(r.get("gap_statement_enriched"))
         if before is not None or after is not None or enriched:
-            gap_attempted += 1
+            annual_attempted += 1
         if enriched:
-            gap_enriched += 1
+            annual_enriched += 1
         if before is not None and after is not None:
-            gap_gain.append(after - before)
+            annual_gain.append(after - before)
+
+        q_before = f(r.get("quarterly_gap_coverage_before"))
+        q_after = f(r.get("quarterly_gap_coverage_after"))
+        q_enriched = bool(r.get("quarterly_gap_enriched"))
+        if q_before is not None or q_after is not None or q_enriched:
+            quarterly_attempted += 1
+        if q_enriched:
+            quarterly_enriched += 1
+        if q_before is not None and q_after is not None:
+            quarterly_gain.append(q_after - q_before)
 
     sparse = sorted(
         rows,
@@ -147,9 +159,16 @@ def main():
             "malformed_european_examples": malformed[:50],
         },
         "gap_retrieval": {
-            "rows_with_gap_metadata": gap_attempted,
-            "rows_enriched": gap_enriched,
-            "avg_critical_coverage_gain_pp": round(sum(gap_gain) / len(gap_gain), 1) if gap_gain else None,
+            "annual": {
+                "rows_with_metadata": annual_attempted,
+                "rows_enriched": annual_enriched,
+                "avg_critical_coverage_gain_pp": round(sum(annual_gain) / len(annual_gain), 1) if annual_gain else None,
+            },
+            "quarterly_ttm": {
+                "rows_with_metadata": quarterly_attempted,
+                "rows_enriched": quarterly_enriched,
+                "avg_critical_coverage_gain_pp": round(sum(quarterly_gain) / len(quarterly_gain), 1) if quarterly_gain else None,
+            },
         },
         "most_missing_critical_metrics": [
             {"metric": k, "missing": n, "missing_pct": round(n / len(rows) * 100, 1) if rows else 0}
@@ -170,6 +189,9 @@ def main():
                 "gap_statement_enriched": bool(r.get("gap_statement_enriched")),
                 "gap_coverage_before": f(r.get("gap_coverage_before")),
                 "gap_coverage_after": f(r.get("gap_coverage_after")),
+                "quarterly_gap_enriched": bool(r.get("quarterly_gap_enriched")),
+                "quarterly_gap_coverage_before": f(r.get("quarterly_gap_coverage_before")),
+                "quarterly_gap_coverage_after": f(r.get("quarterly_gap_coverage_after")),
                 "opportunity_eligible": r.get("opportunity_eligible"),
                 "opportunity_score": f(r.get("opportunity_score")),
                 "opportunity_suppressed_reason": r.get("opportunity_suppressed_reason"),
