@@ -1,0 +1,65 @@
+name: Feature v4.35 Opportunity Timing UI
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/triggers/opportunity-timing-ui-v435.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-market-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch Best Opportunities score badge and timing context
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('market.js')
+          s=p.read_text(encoding='utf-8')
+
+          old="function renderRow(s, meta=''){"
+          new="function renderRow(s, meta='', displayScore=null){"
+          if old not in s:
+              raise SystemExit('renderRow signature anchor not found')
+          s=s.replace(old,new,1)
+
+          old="<div class=\"market-row__end\"><button class=\"market-watch ${watched?'is-active':''}\" data-market-watch=\"${esc(s.ticker)}\" aria-label=\"${watched?'Remover da lista':'Guardar para acompanhar'}\" title=\"${watched?'A acompanhar':'Acompanhar'}\">${watched?'★':'☆'}</button><div class=\"market-score ${scoreClass(s.score)}\">${n(s.score)==null?'—':Math.round(n(s.score))}</div></div>"
+          new="<div class=\"market-row__end\"><button class=\"market-watch ${watched?'is-active':''}\" data-market-watch=\"${esc(s.ticker)}\" aria-label=\"${watched?'Remover da lista':'Guardar para acompanhar'}\" title=\"${watched?'A acompanhar':'Acompanhar'}\">${watched?'★':'☆'}</button><div class=\"market-score ${scoreClass(displayScore??s.score)}\">${n(displayScore??s.score)==null?'—':Math.round(n(displayScore??s.score))}</div></div>"
+          if old not in s:
+              raise SystemExit('renderRow score badge anchor not found')
+          s=s.replace(old,new,1)
+
+          old="rows.map(s=>renderRow(s,qs?'':[`Opportunity ${Math.round(n(s.opportunity_score))}/100`,txt(s.opportunity_label),`Confiança ${Math.round(n(s.confidence_score))}%`,`Cobertura ${Math.round(n(s.data_coverage_pct))}%`].filter(Boolean).join(' · '))).join('')"
+          new="rows.map(s=>renderRow(s,qs?'':[`Opportunity ${Math.round(n(s.opportunity_score))}/100`,txt(s.opportunity_label),txt(s.opportunity_timing_label),n(s.opportunity_timing_score)!=null?`Momento ${Math.round(n(s.opportunity_timing_score))}/100`:'',n(s.opportunity_return_20d_pct)!=null?`20d ${n(s.opportunity_return_20d_pct)>=0?'+':''}${num(s.opportunity_return_20d_pct)}%`:'',`Confiança ${Math.round(n(s.confidence_score))}%`].filter(Boolean).join(' · '),qs?null:s.opportunity_score)).join('')"
+          if old not in s:
+              # v4.32 may not have landed yet; patch the older discover rendering too.
+              old="rows.map(s=>renderRow(s)).join('')"
+              new="rows.map(s=>renderRow(s,qs?'':[`Opportunity ${Math.round(n(s.opportunity_score))}/100`,txt(s.opportunity_label),txt(s.opportunity_timing_label),n(s.opportunity_timing_score)!=null?`Momento ${Math.round(n(s.opportunity_timing_score))}/100`:'',n(s.opportunity_return_20d_pct)!=null?`20d ${n(s.opportunity_return_20d_pct)>=0?'+':''}${num(s.opportunity_return_20d_pct)}%`:''].filter(Boolean).join(' · '),qs?null:s.opportunity_score)).join('')"
+              if old not in s:
+                  raise SystemExit('renderDiscover row anchor not found')
+          s=s.replace(old,new,1)
+
+          old="Ranking estrutural Vestra · score, confiança, moat, capital, QARP e value-trap risk"
+          new="Oportunidade agora · qualidade estrutural + valuation + momentum emergente + confirmação de recuperação"
+          if old in s:
+              s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check market.js
+      - name: Commit and push
+        run: |
+          git config user.name "vestra-ui-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add market.js
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: show opportunity score and emerging momentum in Discover"
+          git pull --rebase origin main
+          git push
