@@ -44,8 +44,8 @@ jobs:
               if anchor not in s: raise SystemExit('investmentCase anchor missing')
               s=s.replace(anchor,helper+anchor,1)
 
-          old="""${changePanel(s)}${drawdownPanel(s)}${recoveryPanel(s)}${catalystPanel(s)}"""
-          new="""${changePanel(s)}${structuralIntelligencePanel(s)}${drawdownPanel(s)}${recoveryPanel(s)}${catalystPanel(s)}"""
+          old="""${changePanel(s)}${recoveryPanel(s)}${drawdownPanel(s)}${catalystPanel(s)}"""
+          new="""${changePanel(s)}${structuralIntelligencePanel(s)}${recoveryPanel(s)}${drawdownPanel(s)}${catalystPanel(s)}"""
           if old in s:
               s=s.replace(old,new,1)
           elif '${structuralIntelligencePanel(s)}' not in s:
@@ -53,7 +53,8 @@ jobs:
 
           oldq="""<div class=\"market-metric\"><small>Cobertura</small><strong>${n(s.data_coverage_pct)==null?'—':Math.round(n(s.data_coverage_pct))+'%'}</strong></div><div class=\"market-metric\"><small>Confiança</small>"""
           newq="""<div class=\"market-metric\"><small>Cobertura</small><strong>${n(s.data_coverage_pct)==null?'—':Math.round(n(s.data_coverage_pct))+'%'}</strong></div><div class=\"market-metric\"><small>Cobertura crítica</small><strong>${n(s.critical_metric_coverage_pct)==null?'—':Math.round(n(s.critical_metric_coverage_pct))+'%'}</strong></div><div class=\"market-metric\"><small>Confiança</small>"""
-          if oldq in s: s=s.replace(oldq,newq,1)
+          if oldq in s:
+              s=s.replace(oldq,newq,1)
 
           oldcopy='O score só usa métricas disponíveis; valores ausentes não são tratados como zero. A confiança mede cobertura, não certeza do investimento.'
           newcopy='Valores ausentes aparecem como — e não contam como evidência. O Evidence Gate pode suprimir ou limitar o Score Vestra quando a cobertura global, a cobertura crítica ou a confiança são insuficientes.'
@@ -81,6 +82,7 @@ jobs:
       - name: Verify expected UI integration
         run: |
           grep -q "function structuralIntelligencePanel" market.js
+          grep -q "structuralIntelligencePanel(s)" market.js
           grep -q "Cobertura crítica" market.js
           grep -q "Evidence Gate" market.js
           node --check market.js
