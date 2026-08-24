@@ -36,9 +36,14 @@ on:
 permissions:
   contents: write
 
+# A full market rebuild can take tens of minutes. During development several
+# source commits may land in quick succession; queued runs for older commits are
+# stale by definition and can also fail to push because main has moved on.
+# Keep only the newest requested build so published data always corresponds to
+# the latest pipeline source state.
 concurrency:
   group: update-market-data
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   update-data:
