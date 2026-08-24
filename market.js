@@ -351,14 +351,17 @@
     const qs = M.query.toLowerCase();
     let rows = M.stocks.filter(s=>!isFund(s));
     if(qs) rows=rows.filter(s=>`${s.ticker} ${s.name} ${s.sector} ${s.industry}`.toLowerCase().includes(qs));
-    else rows=rows.filter(s=>n(s.score)!=null && n(s.data_coverage_pct)>=65 && txt(s.zombie)!=='yes');
+    else rows=rows.filter(s=>n(s.opportunity_score)!=null && s.opportunity_eligible===true && n(s.opportunity_timing_score)>=55 && s.opportunity_overextended!==true && n(s.data_coverage_pct)>=55 && n(s.confidence_score)>=50 && txt(s.zombie)!=='yes');
     if(M.sector!=='all') rows=rows.filter(s=>s.sector===M.sector);
     if(!qs){
-      const dir=x=>txt(x.thesis_direction)==='up'?5:txt(x.thesis_direction)==='down'?-5:0;
-      const rank=x=>n(x.opportunity_score)??((n(x.score)||0)+dir(x)); rows.sort((a,b)=>rank(b)-rank(a));
+      rows.sort((a,b)=>{
+        const ob=n(b.opportunity_score)||0, oa=n(a.opportunity_score)||0;
+        if(ob!==oa) return ob-oa;
+        return (n(b.opportunity_timing_score)||0)-(n(a.opportunity_timing_score)||0);
+      });
     } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
     rows=rows.slice(0,20);
-    return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Oportunidade agora · qualidade estrutural + valuation + momentum emergente + confirmação de recuperação'}</p></div><span class="market-data-age">${ageText()}</span></div>
+    return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Oportunidades emergentes · empresas robustas com momentum a começar, sem preço excessivamente esticado'}</p></div><span class="market-data-age">${ageText()}</span></div>
       <div class="market-sector-grid" role="group" aria-label="Setores">
         <button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>
         ${visibleSectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}" title="${esc(x)}">${esc(x)}</button>`).join('')}
