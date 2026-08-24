@@ -624,9 +624,9 @@ def europe_constituents() -> list[str]:
         ("https://en.wikipedia.org/wiki/Swiss_Market_Index", ["Ticker", "Symbol"], ".SW"),
     ]
     out=[]
-    exchange_tokens={
-        ".DE": {"DE"}, ".PA": {"PA"}, ".AS": {"AS"},
-        ".MC": {"MC"}, ".MI": {"MI"}, ".SW": {"SW"},
+    exchange_suffix={
+        "DE": ".DE", "PA": ".PA", "AS": ".AS",
+        "MC": ".MC", "MI": ".MI", "SW": ".SW",
     }
     for url, cols, suffix in specs:
         raw=_wikipedia_table(url, match="Ticker", symbol_col_candidates=cols)
@@ -634,24 +634,22 @@ def europe_constituents() -> list[str]:
             if not x:
                 continue
             symbol=str(x).split()[0].strip().upper()
-            # Wikipedia index tables increasingly expose market-qualified forms
-            # such as ADS-DE, ACA-PA or A2A-MI. Yahoo expects ADS.DE, ACA.PA,
-            # A2A.MI. Strip only a trailing exchange token that matches the
-            # national table, preserving legitimate hyphens inside tickers.
-            for token in exchange_tokens.get(suffix, set()):
-                if symbol.endswith('-'+token):
-                    symbol=symbol[:-(len(token)+1)]
+            # Wikipedia may provide an exchange-qualified symbol that differs
+            # from the country/index table itself (e.g. AIR-PA inside DAX, or
+            # MT-AS inside CAC 40). Preserve that explicit source identity
+            # rather than relabelling it to the table suffix.
+            source_suffix=None
+            base=symbol
+            for token, yahoo_suffix in exchange_suffix.items():
+                if symbol.endswith('-'+token) or symbol.endswith('.'+token):
+                    base=symbol[:-(len(token)+1)]
+                    source_suffix=yahoo_suffix
                     break
-                if symbol.endswith('.'+token):
-                    symbol=symbol[:-(len(token)+1)]
-                    break
-            # If the source already supplied the exact Yahoo suffix, do not
-            # append it a second time. Dots elsewhere remain Yahoo-class
-            # separators and are normalised to hyphens only for the base code.
-            if symbol.endswith(suffix.upper()):
-                yahoo=symbol
+            chosen_suffix=source_suffix or suffix
+            if base.endswith(chosen_suffix.upper()):
+                yahoo=base
             else:
-                yahoo=f"{symbol.replace('.', '-')}{suffix}"
+                yahoo=f"{base.replace('.', '-')}{chosen_suffix}"
             out.append(yahoo)
         time.sleep(0.4)
     return sorted(set(out))
