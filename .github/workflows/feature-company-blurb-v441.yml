@@ -1,0 +1,84 @@
+name: Add company descriptions to opportunity cards v4.41
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/triggers/v441-company-blurb.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Show what each company actually does
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('market.js')
+          s=p.read_text(encoding='utf-8')
+
+          old="""  function renderRow(s, meta='', displayScore=null){
+    const thesis = txt(s.thesis_type) || txt(s.sector) || 'Sem classificação';
+    const sub = meta || [txt(s.sector), thesis].filter(Boolean).join(' · ');
+    const held=inPortfolio(s.ticker), watched=isWatched(s.ticker);
+    return `<div class=\"market-row\" data-market-ticker=\"${esc(s.ticker)}\">
+      <div><div class=\"market-row__title\"><span class=\"market-row__ticker\">${esc(s.ticker)}</span>${held?'<span class=\"market-held-badge\">Carteira</span>':''}<span class=\"market-row__name\">${esc(s.name||'')}</span></div><div class=\"market-row__meta\">${esc(sub)}</div>${(held||watched)?changeBadge(s):''}</div>
+      <div class=\"market-row__end\"><button class=\"market-watch ${watched?'is-active':''}\" data-market-watch=\"${esc(s.ticker)}\" aria-label=\"${watched?'Remover da lista':'Guardar para acompanhar'}\" title=\"${watched?'A acompanhar':'Acompanhar'}\">${watched?'★':'☆'}</button><div class=\"market-score ${scoreClass(displayScore??s.score)}\">${n(displayScore??s.score)==null?'—':Math.round(n(displayScore??s.score))}</div></div>
+    </div>`;
+  }"""
+          new="""  function renderRow(s, meta='', displayScore=null, showSummary=false){
+    const thesis = txt(s.thesis_type) || txt(s.sector) || 'Sem classificação';
+    const sub = meta || [txt(s.sector), thesis].filter(Boolean).join(' · ');
+    const held=inPortfolio(s.ticker), watched=isWatched(s.ticker);
+    const summary=showSummary ? (txt(s.business_summary)||txt(s.company_summary)||txt(s.description)||'') : '';
+    const summaryHtml=summary?`<div class=\"market-row__desc\">${esc(summary)}</div>`:'';
+    return `<div class=\"market-row\" data-market-ticker=\"${esc(s.ticker)}\">
+      <div><div class=\"market-row__title\"><span class=\"market-row__ticker\">${esc(s.ticker)}</span>${held?'<span class=\"market-held-badge\">Carteira</span>':''}<span class=\"market-row__name\">${esc(s.name||'')}</span></div>${summaryHtml}<div class=\"market-row__meta\">${esc(sub)}</div>${(held||watched)?changeBadge(s):''}</div>
+      <div class=\"market-row__end\"><button class=\"market-watch ${watched?'is-active':''}\" data-market-watch=\"${esc(s.ticker)}\" aria-label=\"${watched?'Remover da lista':'Guardar para acompanhar'}\" title=\"${watched?'A acompanhar':'Acompanhar'}\">${watched?'★':'☆'}</button><div class=\"market-score ${scoreClass(displayScore??s.score)}\">${n(displayScore??s.score)==null?'—':Math.round(n(displayScore??s.score))}</div></div>
+    </div>`;
+  }"""
+          if old not in s:
+              raise SystemExit('renderRow anchor not found')
+          s=s.replace(old,new,1)
+
+          # In Discover/opportunities, enable the company blurb. Keep search/results
+          # and compact tool lists unchanged unless they explicitly opt in.
+          marker="qs?null:s.opportunity_score)).join('')"
+          replacement="qs?null:s.opportunity_score,!qs)).join('')"
+          if marker not in s:
+              raise SystemExit('Discover renderRow call anchor not found')
+          s=s.replace(marker,replacement,1)
+          p.write_text(s,encoding='utf-8')
+
+          c=Path('market.css')
+          css=c.read_text(encoding='utf-8')
+          rule="""
+/* v4.41 — brief company description in Discover/opportunities */
+.market-row__desc{font-size:11px;line-height:1.38;color:var(--text2);margin-top:5px;max-width:520px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media(max-width:520px){.market-row__desc{font-size:10.5px;line-height:1.35;-webkit-line-clamp:2}}
+"""
+          if '.market-row__desc{' not in css:
+              css += rule
+              c.write_text(css,encoding='utf-8')
+          PY
+          node --check market.js
+      - name: Commit and push
+        run: |
+          git config user.name "vestra-ui-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add market.js market.css
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "feat: restore brief company descriptions in opportunities"
+            git pull --rebase origin main
+            git push
+          fi
