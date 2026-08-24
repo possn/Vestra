@@ -1,0 +1,71 @@
+name: Vestra v4.22 Best Opportunities UI
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/triggers/best-opportunities-ui-v422.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate Best Opportunities into Market UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('market.js')
+          s=p.read_text()
+
+          old="""  const SCANNER_STRATEGIES=[\n    ['qarp','QARP','Qualidade + valuation'],"""
+          new="""  const SCANNER_STRATEGIES=[\n    ['best_opportunities','Best Opportunities','Ranking estrutural com evidência forte'],\n    ['qarp','QARP','Qualidade + valuation'],"""
+          if old not in s:
+              raise SystemExit('scanner strategy anchor not found')
+          s=s.replace(old,new,1)
+
+          old="function renderScanner(strategy='qarp'){"
+          new="function renderScanner(strategy='best_opportunities'){"
+          if old not in s:
+              raise SystemExit('renderScanner default anchor not found')
+          s=s.replace(old,new,1)
+
+          old="if(tool==='scanner') c.innerHTML=renderScanner('qarp');"
+          new="if(tool==='scanner') c.innerHTML=renderScanner('best_opportunities');"
+          if old not in s:
+              raise SystemExit('scanner tool anchor not found')
+          s=s.replace(old,new,1)
+
+          old="rows.sort((a,b)=>(n(b.score)||0)+dir(b)-(n(a.score)||0)-dir(a));"
+          new="const rank=x=>n(x.opportunity_score)??((n(x.score)||0)+dir(x)); rows.sort((a,b)=>rank(b)-rank(a));"
+          if old not in s:
+              raise SystemExit('discover sort anchor not found')
+          s=s.replace(old,new,1)
+
+          old="<h3>${qs?'Resultados':'Ideias com melhor sinal'}</h3><p>${qs?'Pesquisa no universo global':'Qualidade, crescimento, balanço, cash flow e valuation'}</p>"
+          new="<h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Ranking estrutural Vestra · score, confiança, moat, capital, QARP e value-trap risk'}</p>"
+          if old not in s:
+              raise SystemExit('discover title anchor not found')
+          s=s.replace(old,new,1)
+
+          p.write_text(s)
+          PY
+
+      - name: Validate JavaScript
+        run: node --check market.js
+
+      - name: Commit integration
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add market.js
+          if git diff --cached --quiet; then
+            echo "Already integrated"
+          else
+            git commit -m "feat: surface Best Opportunities in market scanner"
+            git push
+          fi
