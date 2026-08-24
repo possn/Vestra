@@ -36,11 +36,7 @@ on:
 permissions:
   contents: write
 
-# A full market rebuild can take tens of minutes. During development several
-# source commits may land in quick succession; queued runs for older commits are
-# stale by definition and can also fail to push because main has moved on.
-# Keep only the newest requested build so published data always corresponds to
-# the latest pipeline source state.
+# During development, only the newest source state is worth rebuilding.
 concurrency:
   group: update-market-data
   cancel-in-progress: true
@@ -48,7 +44,10 @@ concurrency:
 jobs:
   update-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    # The complete universe plus SEC/ESEF/Yahoo fallbacks can legitimately
+    # exceed the old 55-minute budget. A job timeout kills the runner before
+    # diagnostics can be persisted, so allow a complete evidence-gated rebuild.
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -97,6 +96,7 @@ jobs:
             echo "Sem alterações nos dados — nada para gravar."
           else
             git commit -m "Actualização automática de dados de mercado ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            git pull --rebase origin main
             git push
           fi
 
@@ -113,6 +113,7 @@ jobs:
             echo "Guard bloqueou publicação e não há novos diagnósticos para gravar."
           else
             git commit -m "diagnostics: market build blocked by coverage guard ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            git pull --rebase origin main
             git push
           fi
 
