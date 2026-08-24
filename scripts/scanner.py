@@ -2,8 +2,16 @@
 
 Scanner strategies are research overlays. They must never promote a company as
 an opportunity when the fundamental dossier is too sparse to support the claim.
+The scanner is also the final composition layer for structural intelligence,
+which guarantees those overlays are emitted without a second run.py integration.
 """
 from __future__ import annotations
+
+from capital_allocation_intelligence import assess as assess_capital_allocation
+from moat import assess as assess_moat
+from sector_native import assess as assess_sector_native
+from value_trap import assess as assess_value_trap
+from opportunity_rank import assess as assess_opportunity_rank
 
 
 def _n(v):
@@ -21,9 +29,14 @@ def _clamp(v, lo=0.0, hi=100.0):
 
 
 def _empty(reason=None):
-    out = {"scanner_tags": [], "scanner_results": {}, "scanner_best": None, "scanner_best_score": None}
+    out = {
+        "scanner_tags": [], "scanner_results": {}, "scanner_best": None,
+        "scanner_best_score": None, "opportunity_score": None,
+        "opportunity_label": "Dados insuficientes", "opportunity_eligible": False,
+    }
     if reason:
         out["scanner_suppressed_reason"] = reason
+        out["opportunity_suppressed_reason"] = reason
     return out
 
 
@@ -83,6 +96,31 @@ def _dividend_growth(row):
     return sum(comps) / len(comps) if comps else None
 
 
+def _structural_overlays(row, base):
+    """Compose structural engines in dependency order and return only new fields."""
+    working = dict(row)
+    working.update(base)
+    for fn in (assess_capital_allocation, assess_moat, assess_sector_native, assess_value_trap):
+        try:
+            extra = fn(working) or {}
+            working.update(extra)
+        except Exception as exc:
+            working.setdefault("structural_intelligence_errors", []).append(type(exc).__name__)
+    if working.get("low52_opportunity_score") is None and working.get("low52_score") is not None:
+        working["low52_opportunity_score"] = working.get("low52_score")
+    try:
+        working.update(assess_opportunity_rank(working) or {})
+    except Exception as exc:
+        working.setdefault("structural_intelligence_errors", []).append(type(exc).__name__)
+        working.update({
+            "opportunity_score": None,
+            "opportunity_label": "Dados insuficientes",
+            "opportunity_eligible": False,
+            "opportunity_suppressed_reason": "Erro no ranking estrutural",
+        })
+    return {k: v for k, v in working.items() if k not in row or row.get(k) != v}
+
+
 def assess(row: dict) -> dict:
     if str(row.get("quote_type") or "").upper() in ("ETF", "CRYPTO", "MUTUALFUND"):
         return _empty()
@@ -124,4 +162,11 @@ def assess(row: dict) -> dict:
         add("dividend_growers", "Dividend Growers", [quality, conf, _clamp(50 + (div_growth or 0) * 200), _clamp(45 + div_yield * 700), score], [f"Dividend yield {div_yield*100:.1f}%", f"Qualidade {quality:.0f}/100", f"Cobertura FCF {div_cover:.2f}×" if div_cover is not None else "Sem sinal de payout descoberto", "Sem diluição material"])
 
     ordered = sorted(results.items(), key=lambda kv: kv[1]["score"], reverse=True)
-    return {"scanner_tags": [k for k, _ in ordered], "scanner_results": dict(ordered), "scanner_best": ordered[0][0] if ordered else None, "scanner_best_score": ordered[0][1]["score"] if ordered else None}
+    base = {
+        "scanner_tags": [k for k, _ in ordered],
+        "scanner_results": dict(ordered),
+        "scanner_best": ordered[0][0] if ordered else None,
+        "scanner_best_score": ordered[0][1]["score"] if ordered else None,
+    }
+    base.update(_structural_overlays(row, base))
+    return base
