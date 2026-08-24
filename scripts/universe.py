@@ -624,9 +624,35 @@ def europe_constituents() -> list[str]:
         ("https://en.wikipedia.org/wiki/Swiss_Market_Index", ["Ticker", "Symbol"], ".SW"),
     ]
     out=[]
+    exchange_tokens={
+        ".DE": {"DE"}, ".PA": {"PA"}, ".AS": {"AS"},
+        ".MC": {"MC"}, ".MI": {"MI"}, ".SW": {"SW"},
+    }
     for url, cols, suffix in specs:
         raw=_wikipedia_table(url, match="Ticker", symbol_col_candidates=cols)
-        out.extend(f"{x.split()[0].replace('.', '-').strip()}{suffix}" for x in raw if x)
+        for x in raw:
+            if not x:
+                continue
+            symbol=str(x).split()[0].strip().upper()
+            # Wikipedia index tables increasingly expose market-qualified forms
+            # such as ADS-DE, ACA-PA or A2A-MI. Yahoo expects ADS.DE, ACA.PA,
+            # A2A.MI. Strip only a trailing exchange token that matches the
+            # national table, preserving legitimate hyphens inside tickers.
+            for token in exchange_tokens.get(suffix, set()):
+                if symbol.endswith('-'+token):
+                    symbol=symbol[:-(len(token)+1)]
+                    break
+                if symbol.endswith('.'+token):
+                    symbol=symbol[:-(len(token)+1)]
+                    break
+            # If the source already supplied the exact Yahoo suffix, do not
+            # append it a second time. Dots elsewhere remain Yahoo-class
+            # separators and are normalised to hyphens only for the base code.
+            if symbol.endswith(suffix.upper()):
+                yahoo=symbol
+            else:
+                yahoo=f"{symbol.replace('.', '-')}{suffix}"
+            out.append(yahoo)
         time.sleep(0.4)
     return sorted(set(out))
 
