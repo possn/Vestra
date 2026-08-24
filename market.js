@@ -331,13 +331,13 @@
       }).slice(0,7);
   }
 
-  function renderRow(s, meta=''){
+  function renderRow(s, meta='', displayScore=null){
     const thesis = txt(s.thesis_type) || txt(s.sector) || 'Sem classificação';
     const sub = meta || [txt(s.sector), thesis].filter(Boolean).join(' · ');
     const held=inPortfolio(s.ticker), watched=isWatched(s.ticker);
     return `<div class="market-row" data-market-ticker="${esc(s.ticker)}">
       <div><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span>${held?'<span class="market-held-badge">Carteira</span>':''}<span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__meta">${esc(sub)}</div>${(held||watched)?changeBadge(s):''}</div>
-      <div class="market-row__end"><button class="market-watch ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}" title="${watched?'A acompanhar':'Acompanhar'}">${watched?'★':'☆'}</button><div class="market-score ${scoreClass(s.score)}">${n(s.score)==null?'—':Math.round(n(s.score))}</div></div>
+      <div class="market-row__end"><button class="market-watch ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}" title="${watched?'A acompanhar':'Acompanhar'}">${watched?'★':'☆'}</button><div class="market-score ${scoreClass(displayScore??s.score)}">${n(displayScore??s.score)==null?'—':Math.round(n(displayScore??s.score))}</div></div>
     </div>`;
   }
 
@@ -358,13 +358,13 @@
       const rank=x=>n(x.opportunity_score)??((n(x.score)||0)+dir(x)); rows.sort((a,b)=>rank(b)-rank(a));
     } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
     rows=rows.slice(0,20);
-    return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Ranking estrutural Vestra · score, confiança, moat, capital, QARP e value-trap risk'}</p></div><span class="market-data-age">${ageText()}</span></div>
+    return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Oportunidade agora · qualidade estrutural + valuation + momentum emergente + confirmação de recuperação'}</p></div><span class="market-data-age">${ageText()}</span></div>
       <div class="market-sector-grid" role="group" aria-label="Setores">
         <button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>
         ${visibleSectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}" title="${esc(x)}">${esc(x)}</button>`).join('')}
         <label class="market-sector-more ${hiddenActive?'is-active':''}"><span>${hiddenActive?esc(M.sector):'Mais'}</span><select data-market-sector-select aria-label="Mais setores"><option value="">Mais setores</option>${moreSectors.map(x=>`<option value="${esc(x)}" ${M.sector===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
       </div>
-      <div class="market-list">${rows.length?rows.map(s=>renderRow(s)).join(''):'<div class="market-empty market-empty--filters"><strong>Sem resultados neste filtro.</strong><span>Experimenta outro setor ou remove a pesquisa.</span></div>'}</div></section>`;
+      <div class="market-list">${rows.length?rows.map(s=>renderRow(s,qs?'':[`Opportunity ${Math.round(n(s.opportunity_score))}/100`,txt(s.opportunity_label),txt(s.opportunity_timing_label),n(s.opportunity_timing_score)!=null?`Momento ${Math.round(n(s.opportunity_timing_score))}/100`:'',n(s.opportunity_return_20d_pct)!=null?`20d ${n(s.opportunity_return_20d_pct)>=0?'+':''}${num(s.opportunity_return_20d_pct)}%`:''].filter(Boolean).join(' · '),qs?null:s.opportunity_score)).join(''):'<div class="market-empty market-empty--filters"><strong>Sem resultados neste filtro.</strong><span>Experimenta outro setor ou remove a pesquisa.</span></div>'}</div></section>`;
   }
 
 
