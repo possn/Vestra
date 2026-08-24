@@ -355,10 +355,10 @@
     if(M.sector!=='all') rows=rows.filter(s=>s.sector===M.sector);
     if(!qs){
       const dir=x=>txt(x.thesis_direction)==='up'?5:txt(x.thesis_direction)==='down'?-5:0;
-      rows.sort((a,b)=>(n(b.score)||0)+dir(b)-(n(a.score)||0)-dir(a));
+      const rank=x=>n(x.opportunity_score)??((n(x.score)||0)+dir(x)); rows.sort((a,b)=>rank(b)-rank(a));
     } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
     rows=rows.slice(0,20);
-    return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Ideias com melhor sinal'}</h3><p>${qs?'Pesquisa no universo global':'Qualidade, crescimento, balanço, cash flow e valuation'}</p></div><span class="market-data-age">${ageText()}</span></div>
+    return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Ranking estrutural Vestra · score, confiança, moat, capital, QARP e value-trap risk'}</p></div><span class="market-data-age">${ageText()}</span></div>
       <div class="market-sector-grid" role="group" aria-label="Setores">
         <button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>
         ${visibleSectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}" title="${esc(x)}">${esc(x)}</button>`).join('')}
@@ -458,6 +458,7 @@
 
 
   const SCANNER_STRATEGIES=[
+    ['best_opportunities','Best Opportunities','Ranking estrutural com evidência forte'],
     ['qarp','QARP','Qualidade + valuation'],
     ['fallen_angels','Fallen Angels','Preço deprimido, tese intacta'],
     ['lows_intact','Mínimos intactos','52s sem red flags'],
@@ -467,7 +468,7 @@
     ['dividend_growers','Dividend growers','Rendimento sustentável']
   ];
   function scannerResult(s,key){ return s?.scanner_results && typeof s.scanner_results==='object' ? s.scanner_results[key] : null; }
-  function renderScanner(strategy='qarp'){
+  function renderScanner(strategy='best_opportunities'){
     const meta=SCANNER_STRATEGIES.find(x=>x[0]===strategy)||SCANNER_STRATEGIES[0];
     let rows=M.stocks.filter(s=>!isFund(s)&&scannerResult(s,meta[0]))
       .sort((a,b)=>(n(scannerResult(b,meta[0])?.score)||0)-(n(scannerResult(a,meta[0])?.score)||0));
@@ -1477,7 +1478,7 @@
         const p=portfolioTickers(); const picks=[...p].map(t=>M.byTicker.get(t)).filter(Boolean).slice(0,12);
         c.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">NOTÍCIAS</div><h2>Notícias das tuas posições</h2><p>Abre uma posição para ver o feed específico.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-list">${picks.length?picks.map(s=>renderRow(s,'Abrir notícias e dossier')).join(''):'<div class="market-empty">Sem posições reconhecidas.</div>'}</div>`;
       }
-      if(tool==='scanner') c.innerHTML=renderScanner('qarp');
+      if(tool==='scanner') c.innerHTML=renderScanner('best_opportunities');
     });
   }
 
