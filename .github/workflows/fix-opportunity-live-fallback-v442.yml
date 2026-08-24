@@ -1,0 +1,154 @@
+name: Fix opportunity live fallback v4.42
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/triggers/v442-opportunity-live-fallback.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore useful opportunity results from current dataset
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('market.js')
+          s=p.read_text(encoding='utf-8')
+          anchor='  function renderDiscover(){'
+          if anchor not in s:
+              raise SystemExit('renderDiscover anchor missing')
+
+          helper=r'''  function effectiveOpportunityTiming(s){
+    const backend=n(s?.opportunity_timing_score);
+    if(backend!=null) return backend;
+    const hist=Array.isArray(s?.price_history_1y)?s.price_history_1y:[];
+    const closes=hist.map(x=>n(x?.close)).filter(x=>x!=null&&x>0);
+    if(closes.length<22) return null;
+    const ret=d=>closes.length>d&&closes[closes.length-d-1]>0?(closes[closes.length-1]/closes[closes.length-d-1]-1)*100:null;
+    const r20=ret(20),r60=ret(60),hi=Math.max(...closes),cur=closes[closes.length-1],room=hi>0?(1-cur/hi)*100:null;
+    const band=(v,b)=>{if(v==null)return null;for(const [u,x] of b)if(v<=u)return x;return b[b.length-1][1]};
+    const a=band(r20,[[-12,20],[-5,38],[0,58],[4,86],[10,92],[16,72],[24,48],[1e9,28]]);
+    const b=band(r60,[[-25,18],[-10,35],[0,55],[8,82],[20,90],[30,75],[45,50],[1e9,30]]);
+    const c=room==null?null:room<2?48:room<5?62:room<=20?88:room<=35?72:room<=50?48:28;
+    const parts=[[a,.42],[b,.36],[c,.22]].filter(([v])=>v!=null); if(!parts.length)return null;
+    let t=parts.reduce((z,[v,w])=>z+v*w,0)/parts.reduce((z,[,w])=>z+w,0);
+    const est=txt(s?.estimate_signal).toLowerCase(),rec=txt(s?.recovery_status).toLowerCase(),th=txt(s?.thesis_direction).toLowerCase();
+    if(est==='improving')t+=7; else if(est==='deteriorating')t-=9;
+    if(rec==='confirmed')t+=8; else if(rec==='recovering')t+=5; else if(rec==='failed'||rec==='bounce_only')t-=9;
+    if(th==='up')t+=3; else if(th==='down')t-=4;
+    const over=(r20!=null&&r20>18)||(r60!=null&&r60>35)||(room!=null&&room<2&&r60!=null&&r60>20);
+    if((r20!=null&&r20>28)||(r60!=null&&r60>50))t-=18; else if(over)t-=10;
+    return Math.max(0,Math.min(100,t));
+  }
+
+  function effectiveOpportunityOverextended(s){
+    if(typeof s?.opportunity_overextended==='boolean') return s.opportunity_overextended;
+    const hist=Array.isArray(s?.price_history_1y)?s.price_history_1y:[];
+    const closes=hist.map(x=>n(x?.close)).filter(x=>x!=null&&x>0); if(closes.length<22)return false;
+    const ret=d=>closes.length>d&&closes[closes.length-d-1]>0?(closes[closes.length-1]/closes[closes.length-d-1]-1)*100:null;
+    const r20=ret(20),r60=ret(60),hi=Math.max(...closes),cur=closes[closes.length-1],room=hi>0?(1-cur/hi)*100:null;
+    return (r20!=null&&r20>18)||(r60!=null&&r60>35)||(room!=null&&room<2&&r60!=null&&r60>20);
+  }
+
+  function effectiveOpportunityCandidate(s){
+    const timing=effectiveOpportunityTiming(s), critical=n(s?.critical_metric_coverage_pct);
+    return n(s?.score)!=null && n(s?.score)>=60 && n(s?.data_coverage_pct)>=55 && n(s?.confidence_score)>=50 &&
+      (critical==null||critical>=35) && timing!=null && timing>=45 && !effectiveOpportunityOverextended(s) &&
+      txt(s?.score_reliability).toLowerCase()!=='insufficient' && txt(s?.score_reliability).toLowerCase()!=='suppressed' && txt(s?.zombie)!=='yes';
+  }
+
+  function effectiveOpportunityScore(s){
+    const official=n(s?.opportunity_score);
+    if(official!=null && s?.opportunity_eligible===true) return official;
+    const timing=effectiveOpportunityTiming(s), quality=n(s?.score), conf=n(s?.confidence_score), val=n(s?.valuation_score), recovery=n(s?.recovery_score);
+    const parts=[[quality,.48],[timing,.34],[conf,.10],[recovery,.05],[val,.03]].filter(([v])=>v!=null);
+    if(!parts.length) return null;
+    return parts.reduce((a,[v,w])=>a+v*w,0)/parts.reduce((a,[,w])=>a+w,0);
+  }
+
+  function companyBrief(s){
+    const summary=txt(s?.business_summary);
+    if(summary) return summary;
+    const industry=txt(s?.industry), sector=txt(s?.sector);
+    if(industry&&sector) return `${industry} · ${sector}`;
+    return industry||sector||'';
+  }
+
+'''
+          # Replace any previous fallback helper block before renderDiscover.
+          start=s.find('  function effectiveOpportunityTiming(s){')
+          if start!=-1:
+              end=s.find(anchor,start)
+              if end!=-1:
+                  s=s[:start]+s[end:]
+          s=s.replace(anchor,helper+anchor,1)
+
+          # Opportunity browse filter: never depend on opportunity_score being present in the stale dataset.
+          s=re.sub(r"    else rows=rows\.filter\(s=>[^\n]+\);",
+                   "    else rows=rows.filter(s=>effectiveOpportunityCandidate(s));",
+                   s,count=1)
+
+          # Sort by a current opportunity score, not historic quality alone.
+          sort_pat=r"    if\(!qs\)\{[\s\S]*?    \} else rows\.sort\(\(a,b\)=>\(n\(b\.score\)\|\|0\)-\(n\(a\.score\)\|\|0\)\);"
+          sort_new="""    if(!qs){
+      rows.sort((a,b)=>{
+        const ob=effectiveOpportunityScore(b)||0, oa=effectiveOpportunityScore(a)||0;
+        if(ob!==oa) return ob-oa;
+        return (effectiveOpportunityTiming(b)||0)-(effectiveOpportunityTiming(a)||0);
+      });
+    } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));"""
+          s,nrep=re.subn(sort_pat,sort_new,s,count=1)
+          if nrep!=1:
+              raise SystemExit('Discover sort block not found')
+
+          # Add optional company description to the generic row renderer.
+          s=s.replace("function renderRow(s, meta='', displayScore=null){","function renderRow(s, meta='', displayScore=null, description=''){")
+          old="""<div><div class=\"market-row__title\"><span class=\"market-row__ticker\">${esc(s.ticker)}</span>${held?'<span class=\"market-held-badge\">Carteira</span>':''}<span class=\"market-row__name\">${esc(s.name||'')}</span></div><div class=\"market-row__meta\">${esc(sub)}</div>${(held||watched)?changeBadge(s):''}</div>"""
+          new="""<div><div class=\"market-row__title\"><span class=\"market-row__ticker\">${esc(s.ticker)}</span>${held?'<span class=\"market-held-badge\">Carteira</span>':''}<span class=\"market-row__name\">${esc(s.name||'')}</span></div>${description?`<div class=\"market-row__description\">${esc(description)}</div>`:''}<div class=\"market-row__meta\">${esc(sub)}</div>${(held||watched)?changeBadge(s):''}</div>"""
+          if old not in s:
+              raise SystemExit('renderRow body anchor missing')
+          s=s.replace(old,new,1)
+
+          # Replace the Discover list renderer regardless of the previous opportunity metadata variant.
+          list_pat=r"<div class=\"market-list\">\$\{rows\.length\?rows\.map\(s=>renderRow\(s,[\s\S]*?\)\)\.join\(''\):'<div class=\"market-empty market-empty--filters\">[\s\S]*?</div>'\}</div></section>"
+          list_new="""<div class=\"market-list\">${rows.length?rows.map(s=>{
+        if(qs) return renderRow(s);
+        const os=effectiveOpportunityScore(s), timing=effectiveOpportunityTiming(s);
+        const meta=[os!=null?`Opportunity ${Math.round(os)}/100`:'',timing!=null?`Momento ${Math.round(timing)}/100`:'',txt(s.opportunity_label)].filter(Boolean).join(' · ');
+        return renderRow(s,meta,os,companyBrief(s));
+      }).join(''):'<div class=\"market-empty market-empty--filters\"><strong>Sem oportunidades neste momento.</strong><span>Não há empresas que combinem qualidade mínima, evidência suficiente e momentum inicial sem extensão excessiva.</span></div>'}</div></section>"""
+          s,nrep=re.subn(list_pat,list_new,s,count=1)
+          if nrep!=1:
+              raise SystemExit('Discover list block not found')
+
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check market.js
+      - name: Add compact description styling
+        run: |
+          cat >> market.css <<'EOF'
+          /* v4.42 — concise company identity on opportunity cards */
+          .market-row__description{font-size:11px;line-height:1.35;color:var(--text2);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:560px}
+          EOF
+      - name: Commit and push
+        run: |
+          git config user.name "vestra-ui-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add market.js market.css
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "fix: restore live opportunity candidates and company descriptions"
+            git pull --rebase origin main
+            git push
+          fi
