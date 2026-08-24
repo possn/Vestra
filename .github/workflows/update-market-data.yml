@@ -27,6 +27,8 @@ on:
       - 'scripts/moat.py'
       - 'scripts/value_trap.py'
       - 'scripts/capital_allocation_intelligence.py'
+      - 'scripts/low52_intelligence.py'
+      - 'scripts/scanner.py'
       - 'scripts/run.py'
       - '.github/triggers/market-data-rebuild.txt'
 
@@ -57,7 +59,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/confidence.py scripts/run.py scripts/coverage_audit.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/run.py scripts/coverage_audit.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
