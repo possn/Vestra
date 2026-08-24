@@ -77,10 +77,13 @@ jobs:
         run: python coverage_audit.py
 
       - name: Enforce coverage and opportunity guardrails
+        id: coverage_guard
+        continue-on-error: true
         working-directory: scripts
         run: python coverage_guard.py
 
-      - name: Commit updated data
+      - name: Publish validated market data
+        if: steps.coverage_guard.outcome == 'success'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -91,6 +94,28 @@ jobs:
             git commit -m "Actualização automática de dados de mercado ($(date -u +'%Y-%m-%d %H:%M UTC'))"
             git push
           fi
+
+      - name: Persist blocked-build diagnostics
+        if: steps.coverage_guard.outcome != 'success'
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # Never publish the rejected stocks.json. Persist only diagnostics so the
+          # exact failing tickers/rules can be repaired on the next iteration.
+          git checkout -- data/stocks.json 2>/dev/null || true
+          git add data/coverage_audit.json data/coverage_guard.json data/pipeline_log.txt data/last_error.log 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Guard bloqueou publicação e não há novos diagnósticos para gravar."
+          else
+            git commit -m "diagnostics: market build blocked by coverage guard ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            git push
+          fi
+
+      - name: Fail build after diagnostics are persisted
+        if: steps.coverage_guard.outcome != 'success'
+        run: |
+          echo "Coverage guard bloqueou a publicação de stocks.json. Ver data/coverage_guard.json."
+          exit 1
 
       - name: Upload pipeline diagnostics (mesmo em caso de falha)
         if: always()
