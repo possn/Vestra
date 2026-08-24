@@ -1,5 +1,5 @@
 /* Vestra — Service Worker v6.7.8 targeted broker quantity repair */
-const CACHE_NAME = "vestra-cache-v79";
+const CACHE_NAME = "vestra-cache-v80";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./market.js", "./manifest.webmanifest",
   "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",

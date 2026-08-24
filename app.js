@@ -194,8 +194,8 @@ Na app, o rendimento base projectado da carteira é calculado automaticamente co
 • Rendas de imóveis<br>
 • Juros de PPR e fundos<br><br>
 A app calcula dois valores:<br>
-• <b>Teórico</b>: baseado nos yields que introduziste<br>
-• <b>Real</b>: baseado nos dividendos que registaste (mais preciso)<br><br>
+• <b>Projectado</b>: valor atual × yield configurado/observado de cada ativo<br>
+• <b>Real</b>: rendimento efetivamente registado/TTM, usado para histórico e validação<br><br>
 <b>Onde vês isto na app</b> — é o mesmo número, mostrado de ângulos diferentes:<br>
 • Esta barra e o cartão "Rend. passivo/mês": o total actual, todas as fontes<br>
 • Cartão "Objetivo de rendimento": o mesmo total, comparado com a tua meta mensal<br>
@@ -1547,13 +1547,11 @@ function calcPassiveAnnualSummary() {
       real = Math.max(0, passiveFromItem(a));
     }
 
-    let projected = 0;
-    if (isDiv && real > 0) {
-      projected = real;
-    } else {
-      const ratePct = Math.max(0, getAssetPassiveRatePct(a, { allowClassFallback: true }));
-      projected = val * (ratePct / 100);
-    }
+    // Projected income must always mean current value × configured/current yield.
+    // TTM/registered dividends remain the realised/actual measure and must not
+    // overwrite the projection, otherwise Dashboard and Portfolio disagree.
+    const ratePct = Math.max(0, getAssetPassiveRatePct(a, { allowClassFallback: true }));
+    const projected = val * (ratePct / 100);
 
     if (real > 0) {
       realAnnual += real;
@@ -1872,7 +1870,9 @@ function getDisplayedPassiveAnnual(totals) {
   const t = totals || (_rc ? _rc.totals : calcTotals());
   const real = parseNum(t && (t.passiveAnnualReal != null ? t.passiveAnnualReal : t.passiveAnnual));
   const projected = parseNum(t && (t.passiveAnnualProjected != null ? t.passiveAnnualProjected : t.passiveAnnual));
-  return real > 0 ? real : projected;
+  // UI labels say "estimado": use the forward projection consistently.
+  // Real/TTM income remains available in the dividend/history views.
+  return projected > 0 ? projected : real;
 }
 
 function renderAll(opts = {}) {
