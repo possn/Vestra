@@ -1,4 +1,4 @@
-/* Vestra Market Hotfix loader v4.71 — safe direct deploy. */
+/* Vestra Market Hotfix loader v4.72 — safe direct deploy. */
 (() => {
   'use strict';
   const load=(src,key)=>{
@@ -24,11 +24,9 @@
   load('./vestra-portfolio-overview-v462.js?v=4.62','vestraPortfolioOverviewV462');
   load('./vestra-politicians-dedupe-v463.js?v=4.63','vestraPoliticiansDedupeV463');
   load('./vestra-portfolio-nav-fix-v464.js?v=4.64','vestraPortfolioNavFixV464');
-  load('./vestra-politician-filters-v465.js?v=4.65','vestraPoliticianFiltersV465');
   load('./vestra-politician-ledger-v466.js?v=4.66','vestraPoliticianLedgerV466');
-  load('./vestra-politician-activity-v467.js?v=4.67','vestraPoliticianActivityV467');
-  load('./vestra-politician-simple-v468.js?v=4.68','vestraPoliticianSimpleV468');
   load('./vestra-portfolio-close-v469.js?v=4.69','vestraPortfolioCloseV469');
   load('./vestra-portfolio-close-dedupe-v470.js?v=4.70','vestraPortfolioCloseDedupeV470');
   load('./vestra-market-close-cleanup-v471.js?v=4.71','vestraMarketCloseCleanupV471');
+  load('./vestra-politicians-simple-v472.js?v=4.72','vestraPoliticiansSimpleV472');
 })();
