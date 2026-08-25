@@ -1,7 +1,7 @@
-/* Vestra — Service Worker v6.7.9 + Market live repair v4.44 */
-const CACHE_NAME = "vestra-cache-v82";
+/* Vestra — Service Worker v6.8.0 + Politicians explorer */
+const CACHE_NAME = "vestra-cache-v83";
 const ASSETS = [
-  "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./market.js", "./market-hotfix.js", "./manifest.webmanifest",
+  "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./market.js", "./market-hotfix.js", "./politicians.js", "./manifest.webmanifest",
   "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",
   "./apple-touch-icon.png", "./apple-touch-icon-167.png", "./apple-touch-icon-152.png", "./apple-touch-icon-120.png",
   "./favicon-32.png", "./favicon-16.png"
@@ -37,7 +37,10 @@ async function patchedDocument(request) {
     const fresh = await fetch(request, { cache: "no-store" });
     let text = await fresh.text();
     if (!text.includes('market-hotfix.js')) {
-      text = text.replace(/<\/body>/i, '<script src="./market-hotfix.js?v=4.44"></script></body>');
+      text = text.replace(/<\/body>/i, '<script src="./market-hotfix.js?v=4.47"></script></body>');
+    }
+    if (!text.includes('politicians.js')) {
+      text = text.replace(/<\/body>/i, '<script src="./politicians.js?v=1.0"></script></body>');
     }
     const headers = new Headers(fresh.headers);
     headers.set('content-type','text/html; charset=utf-8');
@@ -49,7 +52,8 @@ async function patchedDocument(request) {
     const cached=await cache.match(request);
     if(cached){
       let text=await cached.text();
-      if(!text.includes('market-hotfix.js')) text=text.replace(/<\/body>/i,'<script src="./market-hotfix.js?v=4.44"></script></body>');
+      if(!text.includes('market-hotfix.js')) text=text.replace(/<\/body>/i,'<script src="./market-hotfix.js?v=4.47"></script></body>');
+      if(!text.includes('politicians.js')) text=text.replace(/<\/body>/i,'<script src="./politicians.js?v=1.0"></script></body>');
       return new Response(text,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store'}});
     }
     return new Response('Offline',{status:503});
