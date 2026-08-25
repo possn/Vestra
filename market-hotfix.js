@@ -1,7 +1,7 @@
-/* Vestra Market Hotfix v4.46 — direct deploy, independent of Actions. */
+/* Vestra Market Hotfix v4.47 — direct deploy, independent of Actions. */
 (() => {
   'use strict';
-  const VERSION='4.46';
+  const VERSION='4.47';
   let stocks=[];
   let byTicker=new Map();
   let loading=null;
@@ -112,12 +112,16 @@
       const name=info.querySelector('.market-title-line + p')||info.querySelector('p');
       if(name)name.insertAdjacentElement('afterend',node); else info.appendChild(node);
     }
+    if(node.dataset.ticker===ticker && node.textContent===desc)return;
     node.textContent=desc;
     node.dataset.ticker=ticker;
   }
 
   function ptNumber(text){
-    const z=t(text).replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9+\-.]/g,'');
+    const raw=t(text);
+    if(!/[0-9]/.test(raw))return null;
+    const z=raw.replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9+\-.]/g,'');
+    if(!z)return null;
     const x=Number(z); return Number.isFinite(x)?x:null;
   }
   function repairValuationMultiples(root=document){
@@ -126,7 +130,8 @@
       const label=t(card.querySelector('small,label,.market-kv__label')?.textContent);
       if(!labels.has(label))return;
       const value=card.querySelector('strong,.market-kv__value'); if(!value)return;
-      const x=ptNumber(value.textContent); if(x!=null&&x<=0)value.textContent='—';
+      const x=ptNumber(value.textContent);
+      if(x!=null&&x<=0&&t(value.textContent)!=='—')value.textContent='—';
     });
   }
   function repairLow52(root=document){
@@ -134,18 +139,20 @@
       const s=byTicker.get(t(row.dataset.marketTicker).toUpperCase());
       if(!s||t(s.low52_status)!=='insufficient')return;
       const meta=row.querySelector('.market-row__meta'); if(!meta)return;
-      meta.textContent=meta.textContent.replace(/Opportunity\s+50\/100\s*·?\s*/i,'Dados insuficientes para Opportunity Rank · ');
+      const before=meta.textContent;
+      const after=before.replace(/Opportunity\s+50\/100\s*·?\s*/i,'Dados insuficientes para Opportunity Rank · ');
+      if(after!==before)meta.textContent=after;
     });
   }
   function addStyle(){
-    if(document.getElementById('vestra-market-hotfix-v446'))return;
-    const st=document.createElement('style'); st.id='vestra-market-hotfix-v446';
+    if(document.getElementById('vestra-market-hotfix-v447'))return;
+    const st=document.createElement('style'); st.id='vestra-market-hotfix-v447';
     st.textContent='.market-row__description{font-size:11px;line-height:1.4;color:var(--text2,#62757c);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:560px}.market-row--hotfix .market-row__meta{margin-top:4px}.market-company-brief{font-size:12px;line-height:1.45;color:var(--text2,#62757c);margin-top:5px;max-width:520px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}';
     document.head.appendChild(st);
   }
   function apply(){repairOpportunitySection();repairDossierDescription();repairValuationMultiples();repairLow52();}
   function start(){
-    addStyle(); load().then(()=>{apply(); const mo=new MutationObserver(()=>apply()); mo.observe(document.body,{childList:true,subtree:true});});
+    addStyle(); load().then(()=>{apply(); let pending=false; const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});}); mo.observe(document.body,{childList:true,subtree:true});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
