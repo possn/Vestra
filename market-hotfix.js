@@ -1,7 +1,7 @@
-/* Vestra Market Hotfix v4.45 — direct deploy, independent of Actions. */
+/* Vestra Market Hotfix v4.46 — direct deploy, independent of Actions. */
 (() => {
   'use strict';
-  const VERSION='4.45';
+  const VERSION='4.46';
   let stocks=[];
   let byTicker=new Map();
   let loading=null;
@@ -94,6 +94,28 @@
     list.dataset.vestraSignature=signature;
   }
 
+  function repairDossierDescription(){
+    const sheet=document.getElementById('marketSheet');
+    if(!sheet || sheet.hidden)return;
+    const ticker=t(sheet.dataset.ticker).toUpperCase();
+    if(!ticker)return;
+    const s=byTicker.get(ticker)||stocks.find(x=>t(x?.ticker).toUpperCase().split('.')[0]===ticker.split('.')[0]);
+    if(!s)return;
+    const head=sheet.querySelector('.market-detail-head');
+    const info=head?.querySelector('.market-detail-head > div:first-child');
+    if(!info)return;
+    const desc=brief(s);
+    let node=info.querySelector('.market-company-brief');
+    if(!node){
+      node=document.createElement('div');
+      node.className='market-company-brief';
+      const name=info.querySelector('.market-title-line + p')||info.querySelector('p');
+      if(name)name.insertAdjacentElement('afterend',node); else info.appendChild(node);
+    }
+    node.textContent=desc;
+    node.dataset.ticker=ticker;
+  }
+
   function ptNumber(text){
     const z=t(text).replace(/\s/g,'').replace(/\./g,'').replace(',','.').replace(/[^0-9+\-.]/g,'');
     const x=Number(z); return Number.isFinite(x)?x:null;
@@ -116,12 +138,12 @@
     });
   }
   function addStyle(){
-    if(document.getElementById('vestra-market-hotfix-v445'))return;
-    const st=document.createElement('style'); st.id='vestra-market-hotfix-v445';
-    st.textContent='.market-row__description{font-size:11px;line-height:1.4;color:var(--text2,#62757c);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:560px}.market-row--hotfix .market-row__meta{margin-top:4px}';
+    if(document.getElementById('vestra-market-hotfix-v446'))return;
+    const st=document.createElement('style'); st.id='vestra-market-hotfix-v446';
+    st.textContent='.market-row__description{font-size:11px;line-height:1.4;color:var(--text2,#62757c);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:560px}.market-row--hotfix .market-row__meta{margin-top:4px}.market-company-brief{font-size:12px;line-height:1.45;color:var(--text2,#62757c);margin-top:5px;max-width:520px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}';
     document.head.appendChild(st);
   }
-  function apply(){repairOpportunitySection();repairValuationMultiples();repairLow52();}
+  function apply(){repairOpportunitySection();repairDossierDescription();repairValuationMultiples();repairLow52();}
   function start(){
     addStyle(); load().then(()=>{apply(); const mo=new MutationObserver(()=>apply()); mo.observe(document.body,{childList:true,subtree:true});});
   }
