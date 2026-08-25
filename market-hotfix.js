@@ -1,4 +1,4 @@
-/* Vestra Market Hotfix loader v4.54 — safe direct deploy. */
+/* Vestra Market Hotfix loader v4.55 — safe direct deploy. */
 (() => {
   'use strict';
   const load=(src,key)=>{
@@ -14,4 +14,5 @@
   load('./vestra-ux-v452.js?v=4.52','vestraUxV452');
   load('./vestra-ux-v453.js?v=4.53','vestraUxV453');
   load('./vestra-ux-v454.js?v=4.54','vestraUxV454');
+  load('./vestra-ux-v455.js?v=4.55','vestraUxV455');
 })();
