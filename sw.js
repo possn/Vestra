@@ -1,7 +1,7 @@
-/* Vestra — Service Worker v6.7.8 targeted broker quantity repair */
-const CACHE_NAME = "vestra-cache-v80";
+/* Vestra — Service Worker v6.7.9 + Market live repair v4.44 */
+const CACHE_NAME = "vestra-cache-v82";
 const ASSETS = [
-  "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./market.js", "./manifest.webmanifest",
+  "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./market.js", "./market-hotfix.js", "./manifest.webmanifest",
   "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",
   "./apple-touch-icon.png", "./apple-touch-icon-167.png", "./apple-touch-icon-152.png", "./apple-touch-icon-120.png",
   "./favicon-32.png", "./favicon-16.png"
@@ -29,6 +29,30 @@ async function networkFirst(request) {
   } catch {
     const cached = await cache.match(request);
     return cached || new Response("Offline", { status: 503 });
+  }
+}
+async function patchedDocument(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const fresh = await fetch(request, { cache: "no-store" });
+    let text = await fresh.text();
+    if (!text.includes('market-hotfix.js')) {
+      text = text.replace(/<\/body>/i, '<script src="./market-hotfix.js?v=4.44"></script></body>');
+    }
+    const headers = new Headers(fresh.headers);
+    headers.set('content-type','text/html; charset=utf-8');
+    headers.set('cache-control','no-store, max-age=0');
+    const patched = new Response(text,{status:fresh.status,statusText:fresh.statusText,headers});
+    cache.put(request,patched.clone()).catch(()=>{});
+    return patched;
+  } catch (_) {
+    const cached=await cache.match(request);
+    if(cached){
+      let text=await cached.text();
+      if(!text.includes('market-hotfix.js')) text=text.replace(/<\/body>/i,'<script src="./market-hotfix.js?v=4.44"></script></body>');
+      return new Response(text,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store'}});
+    }
+    return new Response('Offline',{status:503});
   }
 }
 async function patchedAppJs(request) {
@@ -65,7 +89,7 @@ self.addEventListener("fetch", event => {
   const url=new URL(req.url);
   if (url.origin!==self.location.origin) return;
   if (url.pathname.endsWith("/app.js")) { event.respondWith(patchedAppJs(req)); return; }
-  if (req.mode==="navigate" || req.destination==="document") { event.respondWith(networkFirst(req)); return; }
+  if (req.mode==="navigate" || req.destination==="document") { event.respondWith(patchedDocument(req)); return; }
   if (["script","style","worker","manifest"].includes(req.destination)) { event.respondWith(networkFirst(req)); return; }
   event.respondWith(staleWhileRevalidate(req));
 });
