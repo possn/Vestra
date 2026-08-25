@@ -42,6 +42,14 @@
       .ux461-secondary-nav[hidden]{display:none!important}
     `;document.head.appendChild(s);
   }
-  function start(){style();clean();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;clean();});});mo.observe(document.body,{childList:true,subtree:true});}
+  function loadPortfolioTabs(){
+    if(document.querySelector('script[data-vestra-portfolio-tabs-v479]'))return;
+    const s=document.createElement('script');
+    s.src='./vestra-portfolio-tabs-v479.js?v=4.79';
+    s.defer=true;
+    s.dataset.vestraPortfolioTabsV479='1';
+    document.head.appendChild(s);
+  }
+  function start(){style();clean();loadPortfolioTabs();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;clean();});});mo.observe(document.body,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
