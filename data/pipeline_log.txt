@@ -1,732 +1,719 @@
-2026-08-24 22:38:29,377 INFO universe: US small/micro-cap screener returned 500 tickers
-2026-08-24 22:38:30,107 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/List_of_S%26P_500_companies -> HTTP 200, 568331 bytes
-2026-08-24 22:38:30,149 INFO universe: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies: pd.read_html found 2 table(s) total (hint pattern was 'Symbol')
-2026-08-24 22:38:30,150 INFO universe: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies: table[0] columns=['Symbol', 'Security', 'GICS Sector', 'GICS Sub-Industry', 'Headquarters Location', 'Date added', 'CIK', 'Founded'] -> matched column 'Symbol', 503 symbols, e.g. ['MMM', 'AOS', 'ABT', 'ABBV', 'ACN']
-2026-08-24 22:38:30,509 INFO universe: US mid/large-cap screener returned 500 tickers
-2026-08-24 22:38:31,540 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/FTSE_100_Index -> HTTP 200, 909352 bytes
-2026-08-24 22:38:31,579 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: pd.read_html found 24 table(s) total (hint pattern was 'Ticker')
-2026-08-24 22:38:31,579 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[0] columns=['0', '1'] -> no match
-2026-08-24 22:38:31,579 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[1] columns=['ICB Supersector', 'Marketcap (£ billion)[28]'] -> no match
-2026-08-24 22:38:31,579 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[2] columns=['0', '1'] -> no match
-2026-08-24 22:38:31,579 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[3] columns=['0', '1'] -> no match
-2026-08-24 22:38:31,579 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[4] columns=['0', '1', '2'] -> no match
-2026-08-24 22:38:31,579 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[5] columns=["('Year', 'Year')", "('Closing level', 'Closing level')", "('Change in index', '(points)')", "('Change in index', '(%)')"] -> no match
-2026-08-24 22:38:31,579 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[6] columns=['Company', 'Ticker', 'FTSE industry classification benchmark sector[39]'] -> matched column 'Ticker', 100 symbols, e.g. ['III', 'ABDN', 'ADM', 'AAF', 'ALW']
-2026-08-24 22:38:32,607 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/DAX -> HTTP 200, 320627 bytes
-2026-08-24 22:38:32,666 INFO universe: https://en.wikipedia.org/wiki/DAX: pd.read_html found 19 table(s) total (hint pattern was 'Ticker')
-2026-08-24 22:38:32,666 INFO universe: https://en.wikipedia.org/wiki/DAX: table[0] columns=['0', '1'] -> no match
-2026-08-24 22:38:32,666 INFO universe: https://en.wikipedia.org/wiki/DAX: table[1] columns=['DAX Combined Index (DAXA)', 'Unnamed: 1'] -> no match
-2026-08-24 22:38:32,667 INFO universe: https://en.wikipedia.org/wiki/DAX: table[2] columns=['Category', 'All-time highs[9][10]', 'All-time highs[9][10].1'] -> no match
-2026-08-24 22:38:32,667 INFO universe: https://en.wikipedia.org/wiki/DAX: table[3] columns=['Year', 'Closing level', 'Change in Index in Points', 'Change in Index in\xa0%'] -> no match
-2026-08-24 22:38:32,667 INFO universe: https://en.wikipedia.org/wiki/DAX: table[4] columns=['Ticker', 'Logo', 'Company', 'Prime Standard Sector', 'Index weighting (%)1', 'Employees', 'Founded'] -> matched column 'Ticker', 40 symbols, e.g. ['ADS.DE', 'AIR.PA', 'ALV.DE', 'BAS.DE', 'BAYN.DE']
-2026-08-24 22:38:33,094 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/CAC_40 -> HTTP 200, 229769 bytes
-2026-08-24 22:38:33,112 INFO universe: https://en.wikipedia.org/wiki/CAC_40: pd.read_html found 20 table(s) total (hint pattern was 'Ticker')
-2026-08-24 22:38:33,113 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[0] columns=['0', '1'] -> no match
-2026-08-24 22:38:33,113 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[1] columns=['CAC 40 (PIL)', 'Unnamed: 1'] -> no match
-2026-08-24 22:38:33,113 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[2] columns=['Type', 'Date', 'Value'] -> no match
-2026-08-24 22:38:33,113 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[3] columns=['Year', 'Closing level', 'Change in Index in Points', 'Change in Index in\xa0%'] -> no match
-2026-08-24 22:38:33,113 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[4] columns=['Company', 'Sector', 'GICS Sub-Industry', 'Ticker'] -> matched column 'Ticker', 40 symbols, e.g. ['AC.PA', 'AI.PA', 'AIR.PA', 'MT.AS', 'CS.PA']
-2026-08-24 22:38:33,540 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/AEX_index -> HTTP 200, 229570 bytes
-2026-08-24 22:38:33,559 INFO universe: https://en.wikipedia.org/wiki/AEX_index: pd.read_html found 22 table(s) total (hint pattern was 'Ticker')
-2026-08-24 22:38:33,559 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[0] columns=['0', '1'] -> no match
-2026-08-24 22:38:33,559 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[1] columns=['Year', 'Closing level', 'Change in index in points', 'Change in index in\xa0%'] -> no match
-2026-08-24 22:38:33,559 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[2] columns=['AEX Index (FTI)', 'Unnamed: 1'] -> no match
-2026-08-24 22:38:33,560 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[3] columns=['Ticker', 'Company', 'ICB Sector', 'Index weighting (%)'] -> matched column 'Ticker', 25 symbols, e.g. ['ABN.AS', 'ADYEN.AS', 'AGN.AS', 'AD.AS', 'AKZA.AS']
-2026-08-24 22:38:33,986 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/IBEX_35 -> HTTP 200, 250522 bytes
-2026-08-24 22:38:34,003 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: pd.read_html found 17 table(s) total (hint pattern was 'Ticker')
-2026-08-24 22:38:34,003 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[0] columns=['0', '1'] -> no match
-2026-08-24 22:38:34,003 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[1] columns=['IBEX Mini (BIBX)', 'Unnamed: 1'] -> no match
-2026-08-24 22:38:34,003 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[2] columns=['Ticker', 'Company', 'Sector'] -> matched column 'Ticker', 35 symbols, e.g. ['ACS.MC', 'ACX.MC', 'AMS.MC', 'ANA.MC', 'ANE.MC']
-2026-08-24 22:38:34,604 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/FTSE_MIB -> HTTP 200, 146891 bytes
-2026-08-24 22:38:34,616 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: pd.read_html found 13 table(s) total (hint pattern was 'Ticker')
-2026-08-24 22:38:34,616 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[0] columns=['Year', 'Closing level', 'Change in index in points', 'Change in index in\xa0%'] -> no match
-2026-08-24 22:38:34,617 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[1] columns=['Ticker', 'Company', 'ISIN', 'ICB Sector'] -> matched column 'Ticker', 40 symbols, e.g. ['A2A.MI', 'AMP.MI', 'AVIO.MI', 'AZM.MI', 'BMED.MI']
-2026-08-24 22:38:35,043 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/Swiss_Market_Index -> HTTP 200, 263552 bytes
-2026-08-24 22:38:35,062 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: pd.read_html found 17 table(s) total (hint pattern was 'Ticker')
-2026-08-24 22:38:35,062 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[0] columns=['0', '1'] -> no match
-2026-08-24 22:38:35,062 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[1] columns=['0', '1'] -> no match
-2026-08-24 22:38:35,063 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[2] columns=['Rank', 'Name', 'Sector', 'Ticker', 'Canton', 'Weighting in\xa0%'] -> matched column 'Ticker', 20 symbols, e.g. ['NOVN', 'ROP', 'NESN', 'ABBN', 'UBSG']
-2026-08-24 22:38:35,465 INFO universe: Extra portfolio coverage: 479 ticker(s) loaded
-2026-08-24 22:38:35,465 INFO universe: US: 1183 tickers
-2026-08-24 22:38:35,465 INFO universe: UK: 100 tickers
-2026-08-24 22:38:35,465 INFO universe: EU: 198 tickers
-2026-08-24 22:38:35,465 INFO universe: ETF: 257 tickers
-2026-08-24 22:38:35,465 INFO universe: DISCOVERY: 61 tickers
-2026-08-24 22:38:35,465 INFO universe: EXTRA: 479 tickers
-2026-08-24 22:38:35,466 INFO run: Total universe: 2032 tickers (479 portfolio-priority)
-2026-08-24 22:38:35,466 INFO fundamentals: Fetching 479 tickers with 3 workers
-2026-08-24 22:38:53,497 INFO fundamentals: fetched 50/479
-2026-08-24 22:39:02,588 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
-2026-08-24 22:39:03,052 ERROR yfinance: $BITF: No data found, symbol may be delisted
-2026-08-24 22:39:03,238 ERROR yfinance: $BITF: No data found, symbol may be delisted
-2026-08-24 22:39:03,803 ERROR yfinance: $BITF: possibly delisted; no timezone found
-2026-08-24 22:39:12,219 INFO fundamentals: fetched 100/479
-2026-08-24 22:39:22,138 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
-2026-08-24 22:39:22,602 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
-2026-08-24 22:39:22,756 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
-2026-08-24 22:39:23,334 ERROR yfinance: $DN3.DE: possibly delisted; no timezone found
-2026-08-24 22:39:32,500 INFO fundamentals: fetched 150/479
-2026-08-24 22:39:51,523 INFO fundamentals: fetched 200/479
-2026-08-24 22:39:53,605 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
-2026-08-24 22:39:54,116 ERROR yfinance: $IINN: No data found, symbol may be delisted
-2026-08-24 22:39:54,259 ERROR yfinance: $IINN: No data found, symbol may be delisted
-2026-08-24 22:39:54,881 ERROR yfinance: $IINN: possibly delisted; no timezone found
-2026-08-24 22:40:04,648 ERROR yfinance: $KOM1.DE: possibly delisted; no price data found  (period=5d)
-2026-08-24 22:40:04,729 ERROR yfinance: $KOM1.DE: possibly delisted; no price data found  (period=5d)
-2026-08-24 22:40:05,507 ERROR yfinance: $KOM1.DE: possibly delisted; no price data found  (1d 1927-09-18 -> 2026-08-24)
-2026-08-24 22:40:07,385 INFO fundamentals: fetched 250/479
-2026-08-24 22:40:28,070 INFO fundamentals: fetched 300/479
-2026-08-24 22:40:31,889 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
-2026-08-24 22:40:32,060 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
-2026-08-24 22:40:32,628 ERROR yfinance: $OD7F.DE: possibly delisted; no timezone found
-2026-08-24 22:40:46,361 INFO fundamentals: fetched 350/479
-2026-08-24 22:40:48,668 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 20s (strike 1)
-2026-08-24 22:40:48,669 WARNING fundamentals: RED.MC: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:40:48,688 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 40s (strike 2)
-2026-08-24 22:40:48,688 WARNING fundamentals: REKR: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:41:08,699 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 80s (strike 3)
-2026-08-24 22:41:08,699 WARNING fundamentals: RELL: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:41:28,749 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 160s (strike 4)
-2026-08-24 22:41:28,749 WARNING fundamentals: RENE.LS: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:41:28,753 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 5)
-2026-08-24 22:41:28,753 WARNING fundamentals: RENDER.CC: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:46:42,258 INFO fundamentals: fetched 400/479
-2026-08-24 22:46:46,782 ERROR yfinance: TAO-USD: Period 'max' is invalid, must be one of: 1d, 5d
-2026-08-24 22:46:51,356 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: U9UA.DE"}}}
-2026-08-24 22:46:51,738 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
-2026-08-24 22:46:51,894 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
-2026-08-24 22:46:52,441 ERROR yfinance: $U9UA.DE: possibly delisted; no timezone found
-2026-08-24 22:47:00,685 INFO fundamentals: fetched 450/479
-2026-08-24 22:47:09,167 INFO fundamentals: fetched 479/479
-2026-08-24 22:47:09,168 INFO fundamentals: Retrying 5 failed ticker(s), pass 1/2 (waiting 8s first)
-2026-08-24 22:47:23,194 INFO fundamentals: Fetching 1553 tickers with 4 workers
-2026-08-24 22:47:36,759 INFO fundamentals: fetched 50/1553
-2026-08-24 22:47:50,696 INFO fundamentals: fetched 100/1553
-2026-08-24 22:48:04,451 INFO fundamentals: fetched 150/1553
-2026-08-24 22:48:08,732 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 6)
-2026-08-24 22:48:08,732 WARNING fundamentals: BDTX: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:48:08,778 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 7)
-2026-08-24 22:48:08,778 WARNING fundamentals: BCS: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:53:18,338 INFO fundamentals: fetched 200/1553
-2026-08-24 22:53:22,392 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BT.A.L"}}}
-2026-08-24 22:53:22,841 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
-2026-08-24 22:53:22,982 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
-2026-08-24 22:53:23,573 ERROR yfinance: $BT.A.L: possibly delisted; no timezone found
-2026-08-24 22:53:32,455 INFO fundamentals: fetched 250/1553
-2026-08-24 22:53:46,725 INFO fundamentals: fetched 300/1553
-2026-08-24 22:54:00,932 INFO fundamentals: fetched 350/1553
-2026-08-24 22:54:13,980 INFO fundamentals: fetched 400/1553
-2026-08-24 22:54:18,844 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 8)
-2026-08-24 22:54:18,844 WARNING fundamentals: EARN: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:54:18,873 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 9)
-2026-08-24 22:54:18,873 WARNING fundamentals: EBAY: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 22:59:27,007 INFO fundamentals: fetched 450/1553
-2026-08-24 22:59:37,620 INFO fundamentals: fetched 500/1553
-2026-08-24 22:59:50,774 INFO fundamentals: fetched 550/1553
-2026-08-24 23:00:03,756 INFO fundamentals: fetched 600/1553
-2026-08-24 23:00:18,055 INFO fundamentals: fetched 650/1553
-2026-08-24 23:00:27,270 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 10)
-2026-08-24 23:00:27,271 WARNING fundamentals: IGV: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 23:05:28,722 INFO fundamentals: fetched 700/1553
-2026-08-24 23:05:40,053 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IUSN.L"}}}
-2026-08-24 23:05:40,519 ERROR yfinance: $IUSN.L: No data found, symbol may be delisted
-2026-08-24 23:05:40,712 ERROR yfinance: $IUSN.L: No data found, symbol may be delisted
-2026-08-24 23:05:41,069 INFO fundamentals: fetched 750/1553
-2026-08-24 23:05:41,286 ERROR yfinance: $IUSN.L: possibly delisted; no timezone found
-2026-08-24 23:05:52,214 INFO fundamentals: fetched 800/1553
-2026-08-24 23:06:06,078 INFO fundamentals: fetched 850/1553
-2026-08-24 23:06:20,189 INFO fundamentals: fetched 900/1553
-2026-08-24 23:06:34,462 INFO fundamentals: fetched 950/1553
-2026-08-24 23:06:34,494 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 11)
-2026-08-24 23:06:34,494 WARNING fundamentals: NEXI.MI: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 23:06:34,514 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 12)
-2026-08-24 23:06:34,514 WARNING fundamentals: NERV: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 23:06:34,524 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 13)
-2026-08-24 23:06:34,524 WARNING fundamentals: NFLX: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 23:11:47,275 INFO fundamentals: fetched 1000/1553
-2026-08-24 23:12:01,866 INFO fundamentals: fetched 1050/1553
-2026-08-24 23:12:14,413 INFO fundamentals: fetched 1100/1553
-2026-08-24 23:12:28,761 INFO fundamentals: fetched 1150/1553
-2026-08-24 23:12:40,767 INFO fundamentals: fetched 1200/1553
-2026-08-24 23:12:42,991 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 14)
-2026-08-24 23:12:42,991 WARNING fundamentals: SHW: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 23:17:45,751 ERROR yfinance: $SJW: No data found, symbol may be delisted
-2026-08-24 23:17:45,894 ERROR yfinance: $SJW: No data found, symbol may be delisted
-2026-08-24 23:17:46,467 ERROR yfinance: $SJW: possibly delisted; no timezone found
-2026-08-24 23:17:52,573 INFO fundamentals: fetched 1250/1553
-2026-08-24 23:18:04,918 INFO fundamentals: fetched 1300/1553
-2026-08-24 23:18:19,397 INFO fundamentals: fetched 1350/1553
-2026-08-24 23:18:33,734 INFO fundamentals: fetched 1400/1553
-2026-08-24 23:18:41,846 INFO fundamentals: fetched 1450/1553
-2026-08-24 23:18:47,756 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 15)
-2026-08-24 23:18:47,756 WARNING fundamentals: WDAY: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 23:18:47,804 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 16)
-2026-08-24 23:18:47,804 WARNING fundamentals: WCN: fetch failed (Too Many Requests. Rate limited. Try after a while.)
-2026-08-24 23:23:52,814 INFO fundamentals: fetched 1500/1553
-2026-08-24 23:24:03,294 INFO fundamentals: fetched 1550/1553
-2026-08-24 23:24:04,154 INFO fundamentals: fetched 1553/1553
-2026-08-24 23:24:04,155 INFO fundamentals: Retrying 11 failed ticker(s), pass 1/1 (waiting 8s first)
-2026-08-24 23:24:23,628 WARNING sec_enrich: SEC ticker map unavailable: Expecting value: line 1 column 1 (char 0)
-2026-08-24 23:24:46,810 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BT.A.L"}}}
-2026-08-24 23:24:57,071 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
-2026-08-24 23:25:24,082 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IUSN.L"}}}
-2026-08-24 23:26:01,422 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: U9UA.DE"}}}
-2026-08-24 23:26:11,688 INFO esef_enrich: ESEF v4.16 enriched 4 rows
-2026-08-24 23:31:42,781 WARNING capital_risk: SEC ticker map unavailable for capital risk: Expecting value: line 1 column 1 (char 0)
-2026-08-24 23:31:58,429 INFO analyst: Analyst intelligence: 800/1734 equities requested (432 priority), workers=8
-2026-08-24 23:32:02,211 ERROR yfinance: ALCPB.PA: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:02,335 ERROR yfinance: ALGIL.PA: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:08,556 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
-2026-08-24 23:32:08,759 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
-2026-08-24 23:32:09,127 ERROR yfinance: BITF: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:09,599 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
-2026-08-24 23:32:09,830 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
-2026-08-24 23:32:12,984 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: COPA.L"}}}
-2026-08-24 23:32:13,383 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: COPA.L"}}}
-2026-08-24 23:32:13,812 ERROR yfinance: COPA.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:14,168 ERROR yfinance: CRML: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:14,281 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: COPA.L"}}}
-2026-08-24 23:32:14,536 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: COPA.L"}}}
-2026-08-24 23:32:14,708 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: CVV"}}}
-2026-08-24 23:32:14,864 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: CVV"}}}
-2026-08-24 23:32:15,976 INFO analyst: Analyst intelligence progress: 100/800
-2026-08-24 23:32:16,039 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: CVV"}}}
-2026-08-24 23:32:16,153 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
-2026-08-24 23:32:16,302 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
-2026-08-24 23:32:16,878 ERROR yfinance: DN3.DE: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:17,319 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
-2026-08-24 23:32:17,502 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
-2026-08-24 23:32:18,560 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: EGLN.L"}}}
-2026-08-24 23:32:18,942 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: EGLN.L"}}}
-2026-08-24 23:32:19,656 ERROR yfinance: EGLN.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:19,886 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: EGLN.L"}}}
-2026-08-24 23:32:20,336 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: EGLN.L"}}}
-2026-08-24 23:32:27,657 ERROR yfinance: HOLO: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:27,658 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
-2026-08-24 23:32:28,096 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
-2026-08-24 23:32:28,390 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
-2026-08-24 23:32:28,540 ERROR yfinance: IB1T.DE: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:28,806 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
-2026-08-24 23:32:29,013 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
-2026-08-24 23:32:29,194 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
-2026-08-24 23:32:29,647 ERROR yfinance: IINN: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:29,801 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
-2026-08-24 23:32:30,171 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
-2026-08-24 23:32:30,574 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
-2026-08-24 23:32:30,735 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
-2026-08-24 23:32:30,736 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
-2026-08-24 23:32:30,859 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
-2026-08-24 23:32:30,861 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
-2026-08-24 23:32:31,228 ERROR yfinance: IPDM.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:31,230 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
-2026-08-24 23:32:31,287 ERROR yfinance: IPLT.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:31,544 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
-2026-08-24 23:32:31,548 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
-2026-08-24 23:32:31,613 ERROR yfinance: ISLN.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:31,941 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
-2026-08-24 23:32:31,944 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
-2026-08-24 23:32:31,948 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
-2026-08-24 23:32:32,192 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
-2026-08-24 23:32:32,376 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: KOM1.DE"}}}
-2026-08-24 23:32:32,578 ERROR yfinance: JMGI.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:32,580 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: KOM1.DE"}}}
-2026-08-24 23:32:32,863 INFO analyst: Analyst intelligence progress: 200/800
-2026-08-24 23:32:33,149 ERROR yfinance: KOM1.DE: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:33,399 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: KOM1.DE"}}}
-2026-08-24 23:32:33,571 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: KOM1.DE"}}}
-2026-08-24 23:32:34,953 ERROR yfinance: LND: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:37,859 ERROR yfinance: MLGO: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:40,199 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,200 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,201 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,209 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,287 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,288 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,358 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,359 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,363 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,457 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,622 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,623 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,688 ERROR yfinance: NGAS.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:40,748 ERROR yfinance: NICK.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:40,751 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,751 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,828 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,845 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,922 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,961 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:40,965 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,075 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,077 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,167 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,239 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,245 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,249 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,253 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,526 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,884 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:41,885 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,017 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,018 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,060 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,098 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,137 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,146 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,148 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,167 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,240 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,319 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,322 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,322 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,393 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,468 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,476 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:42,536 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,358 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,359 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,431 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,434 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,440 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,450 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,460 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,520 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,632 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,633 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,636 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,707 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,709 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,710 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,727 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,730 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,768 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,865 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,874 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:43,886 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,132 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,138 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,192 ERROR yfinance: OD7F.DE: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:44,570 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,572 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,574 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,656 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,664 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,671 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,739 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,910 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,910 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:44,911 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,031 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,034 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,108 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,112 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,120 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,164 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,178 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,211 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,259 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,270 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,357 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,409 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,485 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,486 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,562 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,607 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,608 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,685 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,692 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,711 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,812 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:45,861 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:46,405 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:46,433 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:46,473 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:46,513 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:46,564 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:46,639 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:46,641 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:46,974 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,047 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,048 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,050 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,051 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,179 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,180 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,183 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,185 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,200 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,221 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,415 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,525 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,537 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,680 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,681 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,723 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,812 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:47,881 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,075 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,076 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,550 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,557 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,637 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,639 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,710 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,712 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,714 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,715 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,731 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,854 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,855 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,857 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,860 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:48,865 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,028 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,062 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,065 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,065 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,137 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,198 ERROR yfinance: PRYMY: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:49,259 ERROR yfinance: PRZO: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:49,262 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,263 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,553 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,659 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,659 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,659 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,708 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,749 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,753 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,859 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,941 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:49,941 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,011 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,013 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,128 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,132 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,135 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,241 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,354 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,358 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,723 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,724 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,726 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,727 INFO analyst: Analyst intelligence progress: 300/800
-2026-08-24 23:32:50,729 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,859 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,950 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:50,951 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,023 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,029 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,092 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,103 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,131 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,204 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,205 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,315 ERROR yfinance: RAM.LS: No earnings dates found, symbol may be delisted
-2026-08-24 23:32:51,317 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,422 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,422 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,439 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,497 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,514 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,547 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,609 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:51,687 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,255 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,420 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,441 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,443 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,456 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,462 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,529 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,563 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,591 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,662 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,768 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,769 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,806 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,842 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,861 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,937 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:52,948 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,524 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,525 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,676 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,677 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,684 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,766 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,771 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,778 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,809 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:53,862 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:32:59,503 ERROR yfinance: SWP.PA: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:02,082 ERROR yfinance: TXT.WA: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:02,140 ERROR yfinance: U9UA.DE: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:03,017 ERROR yfinance: VETH.DE: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:06,980 INFO analyst: Analyst intelligence progress: 400/800
-2026-08-24 23:33:07,225 ERROR yfinance: AR.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:07,586 ERROR yfinance: ARB.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:07,590 ERROR yfinance: APT.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:07,645 ERROR yfinance: ALGO.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:08,444 ERROR yfinance: ATOM.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:08,504 ERROR yfinance: BTC.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:08,572 ERROR yfinance: DOT.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:08,631 ERROR yfinance: HIVE.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:08,739 ERROR yfinance: HBAR.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:08,743 ERROR yfinance: ETH.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:08,984 ERROR yfinance: FET.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:09,046 ERROR yfinance: FIL.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:09,493 ERROR yfinance: QNT.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:09,558 ERROR yfinance: POL.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:09,619 ERROR yfinance: LINK.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:09,689 ERROR yfinance: PYTH.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:09,955 ERROR yfinance: NEAR.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:09,967 ERROR yfinance: LRC.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:10,028 ERROR yfinance: INJ.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:10,086 ERROR yfinance: OP.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:10,673 ERROR yfinance: TRAC.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:10,740 ERROR yfinance: SUI.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:10,804 ERROR yfinance: RENDER.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:11,040 ERROR yfinance: XDC.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:11,117 ERROR yfinance: SOL.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:11,190 ERROR yfinance: XTZ.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:11,211 ERROR yfinance: STX.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:11,273 ERROR yfinance: TAO.CC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:11,725 ERROR yfinance: FCIT.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:11,784 ERROR yfinance: SMT.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:12,121 ERROR yfinance: PCT.L: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:21,474 ERROR yfinance: JPM-PD: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:21,617 ERROR yfinance: GGT: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:21,628 ERROR yfinance: JPM-PC: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:22,516 INFO analyst: Analyst intelligence progress: 500/800
-2026-08-24 23:33:23,282 ERROR yfinance: KXIAY: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:26,255 ERROR yfinance: BAC-PB: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:30,244 ERROR yfinance: CYATY: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:31,686 ERROR yfinance: TGOPY: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:33,926 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:33:35,423 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:33:35,964 ERROR yfinance: ADYEY: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:36,130 ERROR yfinance: RLLCF: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:38,414 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:33:38,849 ERROR yfinance: BRR: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:38,874 INFO analyst: Analyst intelligence progress: 600/800
-2026-08-24 23:33:45,687 ERROR yfinance: AIBGY: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:46,323 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:33:46,326 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:33:47,673 ERROR yfinance: EHI: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:49,780 ERROR yfinance: SMTOY: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:53,135 ERROR yfinance: CTLDF: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:53,561 ERROR yfinance: GS-PD: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:54,734 ERROR yfinance: MS-PK: No earnings dates found, symbol may be delisted
-2026-08-24 23:33:55,521 INFO analyst: Analyst intelligence progress: 700/800
-2026-08-24 23:33:55,943 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
-2026-08-24 23:34:04,231 ERROR yfinance: ARDNF: No earnings dates found, symbol may be delisted
-2026-08-24 23:34:05,787 ERROR yfinance: GLND: No earnings dates found, symbol may be delisted
-2026-08-24 23:34:10,802 ERROR yfinance: RBKB: No earnings dates found, symbol may be delisted
-2026-08-24 23:34:12,753 INFO analyst: Analyst intelligence progress: 800/800
-2026-08-24 23:34:12,951 INFO insiders: SEC ticker->CIK map loaded with 10403 entries
-2026-08-24 23:34:19,210 INFO insiders: ABBV 0001171780-26-000012 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1551152/000117178026000012/xslF345X06/form4-07022026_050703.xml (HTTP 200, 16477 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:19,988 INFO insiders: ABBV 0001997505-26-000008 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1551152/000199750526000008/xslF345X06/form4-07022026_050702.xml (HTTP 200, 16457 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:24,933 INFO insiders: ABR 0001104659-26-079872 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1253986/000110465926079872/xslF345X06/tm2619465-1_4seq1.xml (HTTP 200, 16607 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:25,063 INFO insiders: ABT 0001385262-26-000019 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000138526226000019/xslF345X06/form4-07012026_100703.xml (HTTP 200, 16395 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:25,722 INFO insiders: ABR 0001104659-26-074591 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1253986/000110465926074591/xslF345X06/tm2618019-3_4seq1.xml (HTTP 200, 16491 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:25,860 INFO insiders: ABT 0001577544-26-000010 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000157754426000010/xslF345X06/form4-07012026_090744.xml (HTTP 200, 16344 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:26,502 INFO insiders: ABR 0001104659-26-074590 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1253986/000110465926074590/xslF345X06/tm2618019-2_4seq1.xml (HTTP 200, 16548 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:26,625 INFO insiders: ABT 0001879701-26-000008 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000187970126000008/xslF345X06/form4-07012026_090745.xml (HTTP 200, 16409 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:27,322 INFO insiders: ABR 0001104659-26-074585 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1253986/000110465926074585/xslF345X06/tm2618019-1_4seq1.xml (HTTP 200, 16489 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:27,416 INFO insiders: ABT 0001306119-26-000006 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000130611926000006/xslF345X06/form4-07012026_090707.xml (HTTP 200, 16206 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:28,192 INFO insiders: ABT 0002102715-26-000006 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000210271526000006/xslF345X06/form4-07012026_090738.xml (HTTP 200, 16331 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:33,791 INFO insiders: ACH 0000075252-26-000025 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/75252/000007525226000025/xslF345X06/form4.xml (HTTP 200, 16307 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:39,376 INFO insiders: ACRV 0001231919-26-000686 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1781174/000123191926000686/xslF345X06/form4-06222026_080632.xml (HTTP 200, 29712 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:39,514 INFO insiders: ACXP 0001104659-26-046846 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1736243/000110465926046846/xslF345X06/tm2612397-8_4seq1.xml (HTTP 200, 16113 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:34:40,158 INFO insiders: ACRV 0000905148-26-003042 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1781174/000090514826003042/xslF345X06/form4.xml (HTTP 200, 16124 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
-2026-08-24 23:35:29,492 INFO insiders: insider intelligence 50/1347
-2026-08-24 23:36:50,268 INFO insiders: insider intelligence 100/1347
-2026-08-24 23:38:07,236 INFO insiders: insider intelligence 150/1347
-2026-08-24 23:39:26,668 INFO insiders: insider intelligence 200/1347
-2026-08-24 23:40:46,006 INFO insiders: insider intelligence 250/1347
-2026-08-24 23:42:06,043 INFO insiders: insider intelligence 300/1347
-2026-08-24 23:43:26,705 INFO insiders: insider intelligence 350/1347
-2026-08-24 23:44:42,447 INFO insiders: insider intelligence 400/1347
-2026-08-24 23:46:04,150 INFO insiders: insider intelligence 450/1347
-2026-08-24 23:47:27,055 INFO insiders: insider intelligence 500/1347
-2026-08-24 23:48:45,748 INFO insiders: insider intelligence 550/1347
-2026-08-24 23:50:13,387 INFO insiders: insider intelligence 600/1347
-2026-08-24 23:51:41,060 INFO insiders: insider intelligence 650/1347
-2026-08-24 23:52:52,102 INFO insiders: insider intelligence 700/1347
-2026-08-24 23:54:11,339 INFO insiders: insider intelligence 750/1347
-2026-08-24 23:55:33,827 INFO insiders: insider intelligence 800/1347
-2026-08-24 23:56:52,415 INFO insiders: insider intelligence 850/1347
-2026-08-24 23:58:01,507 INFO insiders: insider intelligence 900/1347
-2026-08-24 23:59:27,785 INFO insiders: insider intelligence 950/1347
-2026-08-25 00:00:57,065 INFO insiders: insider intelligence 1000/1347
-2026-08-25 00:02:04,053 INFO insiders: insider intelligence 1050/1347
-2026-08-25 00:03:07,111 INFO insiders: insider intelligence 1100/1347
-2026-08-25 00:04:27,519 INFO insiders: insider intelligence 1150/1347
-2026-08-25 00:05:44,157 INFO insiders: insider intelligence 1200/1347
-2026-08-25 00:07:05,994 INFO insiders: insider intelligence 1250/1347
-2026-08-25 00:08:34,997 INFO insiders: insider intelligence 1300/1347
-2026-08-25 00:09:50,584 INFO insiders: insider intelligence 1347/1347
-2026-08-25 00:09:50,895 WARNING congress: Congress data source (bargo.ai free-apis) returned 403 for all 5 probe requests — the free endpoint appears retired (see their site: now an invite-only paid MCP product). Skipping the remaining 1342 tickers rather than burning pipeline time on a dead source. See scripts/congress.py docstring for what a real free replacement would require.
-2026-08-25 00:09:51,376 ERROR yfinance: $ALGO.CC: No data found, symbol may be delisted
-2026-08-25 00:09:52,349 ERROR yfinance: $AR.CC: No data found, symbol may be delisted
-2026-08-25 00:09:53,897 ERROR yfinance: $ARB.CC: No data found, symbol may be delisted
-2026-08-25 00:09:55,402 ERROR yfinance: $ATOM.CC: No data found, symbol may be delisted
-2026-08-25 00:09:56,524 ERROR yfinance: $APT.CC: No data found, symbol may be delisted
-2026-08-25 00:09:56,798 ERROR yfinance: 
+2026-08-25 07:10:01,747 INFO universe: US small/micro-cap screener returned 500 tickers
+2026-08-25 07:10:01,785 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/List_of_S%26P_500_companies -> HTTP 200, 568331 bytes
+2026-08-25 07:10:01,835 INFO universe: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies: pd.read_html found 2 table(s) total (hint pattern was 'Symbol')
+2026-08-25 07:10:01,837 INFO universe: https://en.wikipedia.org/wiki/List_of_S%26P_500_companies: table[0] columns=['Symbol', 'Security', 'GICS Sector', 'GICS Sub-Industry', 'Headquarters Location', 'Date added', 'CIK', 'Founded'] -> matched column 'Symbol', 503 symbols, e.g. ['MMM', 'AOS', 'ABT', 'ABBV', 'ACN']
+2026-08-25 07:10:02,578 INFO universe: US mid/large-cap screener returned 500 tickers
+2026-08-25 07:10:03,616 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/FTSE_100_Index -> HTTP 200, 909319 bytes
+2026-08-25 07:10:03,667 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: pd.read_html found 24 table(s) total (hint pattern was 'Ticker')
+2026-08-25 07:10:03,667 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[0] columns=['0', '1'] -> no match
+2026-08-25 07:10:03,667 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[1] columns=['ICB Supersector', 'Marketcap (£ billion)[28]'] -> no match
+2026-08-25 07:10:03,667 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[2] columns=['0', '1'] -> no match
+2026-08-25 07:10:03,667 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[3] columns=['0', '1'] -> no match
+2026-08-25 07:10:03,667 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[4] columns=['0', '1', '2'] -> no match
+2026-08-25 07:10:03,667 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[5] columns=["('Year', 'Year')", "('Closing level', 'Closing level')", "('Change in index', '(points)')", "('Change in index', '(%)')"] -> no match
+2026-08-25 07:10:03,668 INFO universe: https://en.wikipedia.org/wiki/FTSE_100_Index: table[6] columns=['Company', 'Ticker', 'FTSE industry classification benchmark sector[39]'] -> matched column 'Ticker', 100 symbols, e.g. ['III', 'ABDN', 'ADM', 'AAF', 'ALW']
+2026-08-25 07:10:04,705 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/DAX -> HTTP 200, 320525 bytes
+2026-08-25 07:10:04,767 INFO universe: https://en.wikipedia.org/wiki/DAX: pd.read_html found 19 table(s) total (hint pattern was 'Ticker')
+2026-08-25 07:10:04,767 INFO universe: https://en.wikipedia.org/wiki/DAX: table[0] columns=['0', '1'] -> no match
+2026-08-25 07:10:04,767 INFO universe: https://en.wikipedia.org/wiki/DAX: table[1] columns=['DAX Combined Index (DAXA)', 'Unnamed: 1'] -> no match
+2026-08-25 07:10:04,767 INFO universe: https://en.wikipedia.org/wiki/DAX: table[2] columns=['Category', 'All-time highs[9][10]', 'All-time highs[9][10].1'] -> no match
+2026-08-25 07:10:04,767 INFO universe: https://en.wikipedia.org/wiki/DAX: table[3] columns=['Year', 'Closing level', 'Change in Index in Points', 'Change in Index in\xa0%'] -> no match
+2026-08-25 07:10:04,768 INFO universe: https://en.wikipedia.org/wiki/DAX: table[4] columns=['Ticker', 'Logo', 'Company', 'Prime Standard Sector', 'Index weighting (%)1', 'Employees', 'Founded'] -> matched column 'Ticker', 40 symbols, e.g. ['ADS.DE', 'AIR.PA', 'ALV.DE', 'BAS.DE', 'BAYN.DE']
+2026-08-25 07:10:05,274 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/CAC_40 -> HTTP 200, 229807 bytes
+2026-08-25 07:10:05,300 INFO universe: https://en.wikipedia.org/wiki/CAC_40: pd.read_html found 20 table(s) total (hint pattern was 'Ticker')
+2026-08-25 07:10:05,300 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[0] columns=['0', '1'] -> no match
+2026-08-25 07:10:05,300 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[1] columns=['CAC 40 (PIL)', 'Unnamed: 1'] -> no match
+2026-08-25 07:10:05,300 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[2] columns=['Type', 'Date', 'Value'] -> no match
+2026-08-25 07:10:05,300 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[3] columns=['Year', 'Closing level', 'Change in Index in Points', 'Change in Index in\xa0%'] -> no match
+2026-08-25 07:10:05,301 INFO universe: https://en.wikipedia.org/wiki/CAC_40: table[4] columns=['Company', 'Sector', 'GICS Sub-Industry', 'Ticker'] -> matched column 'Ticker', 40 symbols, e.g. ['AC.PA', 'AI.PA', 'AIR.PA', 'MT.AS', 'CS.PA']
+2026-08-25 07:10:05,737 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/AEX_index -> HTTP 200, 229565 bytes
+2026-08-25 07:10:05,763 INFO universe: https://en.wikipedia.org/wiki/AEX_index: pd.read_html found 22 table(s) total (hint pattern was 'Ticker')
+2026-08-25 07:10:05,763 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[0] columns=['0', '1'] -> no match
+2026-08-25 07:10:05,764 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[1] columns=['Year', 'Closing level', 'Change in index in points', 'Change in index in\xa0%'] -> no match
+2026-08-25 07:10:05,764 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[2] columns=['AEX Index (FTI)', 'Unnamed: 1'] -> no match
+2026-08-25 07:10:05,764 INFO universe: https://en.wikipedia.org/wiki/AEX_index: table[3] columns=['Ticker', 'Company', 'ICB Sector', 'Index weighting (%)'] -> matched column 'Ticker', 25 symbols, e.g. ['ABN.AS', 'ADYEN.AS', 'AGN.AS', 'AD.AS', 'AKZA.AS']
+2026-08-25 07:10:06,276 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/IBEX_35 -> HTTP 200, 250525 bytes
+2026-08-25 07:10:06,299 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: pd.read_html found 17 table(s) total (hint pattern was 'Ticker')
+2026-08-25 07:10:06,299 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[0] columns=['0', '1'] -> no match
+2026-08-25 07:10:06,299 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[1] columns=['IBEX Mini (BIBX)', 'Unnamed: 1'] -> no match
+2026-08-25 07:10:06,299 INFO universe: https://en.wikipedia.org/wiki/IBEX_35: table[2] columns=['Ticker', 'Company', 'Sector'] -> matched column 'Ticker', 35 symbols, e.g. ['ACS.MC', 'ACX.MC', 'AMS.MC', 'ANA.MC', 'ANE.MC']
+2026-08-25 07:10:06,734 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/FTSE_MIB -> HTTP 200, 146885 bytes
+2026-08-25 07:10:06,751 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: pd.read_html found 13 table(s) total (hint pattern was 'Ticker')
+2026-08-25 07:10:06,751 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[0] columns=['Year', 'Closing level', 'Change in index in points', 'Change in index in\xa0%'] -> no match
+2026-08-25 07:10:06,752 INFO universe: https://en.wikipedia.org/wiki/FTSE_MIB: table[1] columns=['Ticker', 'Company', 'ISIN', 'ICB Sector'] -> matched column 'Ticker', 40 symbols, e.g. ['A2A.MI', 'AMP.MI', 'AVIO.MI', 'AZM.MI', 'BMED.MI']
+2026-08-25 07:10:07,318 INFO universe: Wikipedia GET https://en.wikipedia.org/wiki/Swiss_Market_Index -> HTTP 200, 263545 bytes
+2026-08-25 07:10:07,343 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: pd.read_html found 17 table(s) total (hint pattern was 'Ticker')
+2026-08-25 07:10:07,343 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[0] columns=['0', '1'] -> no match
+2026-08-25 07:10:07,343 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[1] columns=['0', '1'] -> no match
+2026-08-25 07:10:07,344 INFO universe: https://en.wikipedia.org/wiki/Swiss_Market_Index: table[2] columns=['Rank', 'Name', 'Sector', 'Ticker', 'Canton', 'Weighting in\xa0%'] -> matched column 'Ticker', 20 symbols, e.g. ['NOVN', 'ROP', 'NESN', 'ABBN', 'UBSG']
+2026-08-25 07:10:07,746 INFO universe: Extra portfolio coverage: 479 ticker(s) loaded
+2026-08-25 07:10:07,746 INFO universe: US: 1189 tickers
+2026-08-25 07:10:07,746 INFO universe: UK: 100 tickers
+2026-08-25 07:10:07,746 INFO universe: EU: 198 tickers
+2026-08-25 07:10:07,746 INFO universe: ETF: 257 tickers
+2026-08-25 07:10:07,746 INFO universe: DISCOVERY: 61 tickers
+2026-08-25 07:10:07,746 INFO universe: EXTRA: 479 tickers
+2026-08-25 07:10:07,747 INFO run: Total universe: 2038 tickers (479 portfolio-priority)
+2026-08-25 07:10:07,747 INFO fundamentals: Fetching 479 tickers with 3 workers
+2026-08-25 07:10:27,881 INFO fundamentals: fetched 50/479
+2026-08-25 07:10:37,917 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
+2026-08-25 07:10:38,596 ERROR yfinance: $BITF: No data found, symbol may be delisted
+2026-08-25 07:10:38,855 ERROR yfinance: $BITF: No data found, symbol may be delisted
+2026-08-25 07:10:39,275 ERROR yfinance: $BITF: possibly delisted; no timezone found
+2026-08-25 07:10:49,258 INFO fundamentals: fetched 100/479
+2026-08-25 07:11:00,459 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
+2026-08-25 07:11:01,209 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
+2026-08-25 07:11:01,469 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
+2026-08-25 07:11:01,999 ERROR yfinance: $DN3.DE: possibly delisted; no timezone found
+2026-08-25 07:11:12,684 INFO fundamentals: fetched 150/479
+2026-08-25 07:11:34,571 INFO fundamentals: fetched 200/479
+2026-08-25 07:11:37,194 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-08-25 07:11:37,949 ERROR yfinance: $IINN: No data found, symbol may be delisted
+2026-08-25 07:11:38,255 ERROR yfinance: $IINN: No data found, symbol may be delisted
+2026-08-25 07:11:38,828 ERROR yfinance: $IINN: possibly delisted; no timezone found
+2026-08-25 07:11:49,646 ERROR yfinance: $KOM1.DE: possibly delisted; no price data found  (period=5d)
+2026-08-25 07:11:49,759 ERROR yfinance: $KOM1.DE: possibly delisted; no price data found  (period=5d)
+2026-08-25 07:11:50,385 ERROR yfinance: $KOM1.DE: possibly delisted; no price data found  (1d 1927-09-19 -> 2026-08-25)
+2026-08-25 07:11:52,564 INFO fundamentals: fetched 250/479
+2026-08-25 07:12:15,654 INFO fundamentals: fetched 300/479
+2026-08-25 07:12:19,916 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
+2026-08-25 07:12:20,334 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
+2026-08-25 07:12:20,842 ERROR yfinance: $OD7F.DE: possibly delisted; no timezone found
+2026-08-25 07:12:36,122 INFO fundamentals: fetched 350/479
+2026-08-25 07:12:45,795 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 20s (strike 1)
+2026-08-25 07:12:45,795 WARNING fundamentals: RY: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:13:05,833 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 40s (strike 2)
+2026-08-25 07:13:05,833 WARNING fundamentals: SANA: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:13:05,838 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 80s (strike 3)
+2026-08-25 07:13:05,838 WARNING fundamentals: S: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:13:05,839 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 160s (strike 4)
+2026-08-25 07:13:05,839 WARNING fundamentals: SAP.DE: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:13:45,862 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 5)
+2026-08-25 07:13:45,863 WARNING fundamentals: SATL: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:18:52,939 INFO fundamentals: fetched 400/479
+2026-08-25 07:18:57,709 ERROR yfinance: TAO-USD: Period 'max' is invalid, must be one of: 1d, 5d
+2026-08-25 07:19:03,660 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: U9UA.DE"}}}
+2026-08-25 07:19:04,341 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
+2026-08-25 07:19:04,660 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
+2026-08-25 07:19:05,037 ERROR yfinance: $U9UA.DE: possibly delisted; no timezone found
+2026-08-25 07:19:13,863 INFO fundamentals: fetched 450/479
+2026-08-25 07:19:23,501 INFO fundamentals: fetched 479/479
+2026-08-25 07:19:23,502 INFO fundamentals: Retrying 5 failed ticker(s), pass 1/2 (waiting 8s first)
+2026-08-25 07:19:37,551 INFO fundamentals: Fetching 1559 tickers with 4 workers
+2026-08-25 07:19:52,999 INFO fundamentals: fetched 50/1559
+2026-08-25 07:20:09,381 INFO fundamentals: fetched 100/1559
+2026-08-25 07:20:24,914 INFO fundamentals: fetched 150/1559
+2026-08-25 07:20:39,635 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 6)
+2026-08-25 07:20:39,635 WARNING fundamentals: BNP.PA: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:20:39,648 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 7)
+2026-08-25 07:20:39,648 WARNING fundamentals: BNTX: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:20:39,648 INFO fundamentals: fetched 200/1559
+2026-08-25 07:20:39,653 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 8)
+2026-08-25 07:20:39,653 WARNING fundamentals: BNR.DE: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:25:44,420 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BT.A.L"}}}
+2026-08-25 07:25:45,128 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
+2026-08-25 07:25:45,503 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
+2026-08-25 07:25:46,188 ERROR yfinance: $BT.A.L: possibly delisted; no timezone found
+2026-08-25 07:25:56,473 INFO fundamentals: fetched 250/1559
+2026-08-25 07:26:12,728 INFO fundamentals: fetched 300/1559
+2026-08-25 07:26:29,201 INFO fundamentals: fetched 350/1559
+2026-08-25 07:26:44,357 INFO fundamentals: fetched 400/1559
+2026-08-25 07:27:00,025 INFO fundamentals: fetched 450/1559
+2026-08-25 07:27:03,874 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 9)
+2026-08-25 07:27:03,875 WARNING fundamentals: EQQQ.L: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:27:03,904 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 10)
+2026-08-25 07:27:03,905 WARNING fundamentals: ERF.PA: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:27:03,909 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 11)
+2026-08-25 07:27:03,909 WARNING fundamentals: EQT: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:32:11,121 INFO fundamentals: fetched 500/1559
+2026-08-25 07:32:26,129 INFO fundamentals: fetched 550/1559
+2026-08-25 07:32:40,737 INFO fundamentals: fetched 600/1559
+2026-08-25 07:32:57,753 INFO fundamentals: fetched 650/1559
+2026-08-25 07:33:10,401 INFO fundamentals: fetched 700/1559
+2026-08-25 07:33:24,097 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IUSN.L"}}}
+2026-08-25 07:33:24,434 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 12)
+2026-08-25 07:33:24,434 WARNING fundamentals: IVV: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:33:24,434 INFO fundamentals: fetched 750/1559
+2026-08-25 07:33:24,482 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 13)
+2026-08-25 07:33:24,482 WARNING fundamentals: IVZ: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:38:37,036 INFO fundamentals: fetched 800/1559
+2026-08-25 07:38:53,359 INFO fundamentals: fetched 850/1559
+2026-08-25 07:39:09,600 INFO fundamentals: fetched 900/1559
+2026-08-25 07:39:26,897 INFO fundamentals: fetched 950/1559
+2026-08-25 07:39:43,452 INFO fundamentals: fetched 1000/1559
+2026-08-25 07:39:49,277 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 14)
+2026-08-25 07:39:49,277 WARNING fundamentals: ORGO: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:39:49,297 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 15)
+2026-08-25 07:39:49,297 WARNING fundamentals: ORLY: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:44:59,079 INFO fundamentals: fetched 1050/1559
+2026-08-25 07:45:14,173 INFO fundamentals: fetched 1100/1559
+2026-08-25 07:45:30,725 INFO fundamentals: fetched 1150/1559
+2026-08-25 07:45:44,722 INFO fundamentals: fetched 1200/1559
+2026-08-25 07:45:52,078 ERROR yfinance: $SJW: No data found, symbol may be delisted
+2026-08-25 07:45:52,368 ERROR yfinance: $SJW: No data found, symbol may be delisted
+2026-08-25 07:45:52,891 ERROR yfinance: $SJW: possibly delisted; no timezone found
+2026-08-25 07:45:59,022 INFO fundamentals: fetched 1250/1559
+2026-08-25 07:46:11,268 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 16)
+2026-08-25 07:46:11,268 WARNING fundamentals: STMMI.MI: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:46:11,275 WARNING fundamentals: Yahoo rate-limit detected — pausing all fetch workers for 300s (strike 17)
+2026-08-25 07:46:11,275 WARNING fundamentals: STM: fetch failed (Too Many Requests. Rate limited. Try after a while.)
+2026-08-25 07:51:13,089 INFO fundamentals: fetched 1300/1559
+2026-08-25 07:51:29,312 INFO fundamentals: fetched 1350/1559
+2026-08-25 07:51:47,770 INFO fundamentals: fetched 1400/1559
+2026-08-25 07:51:56,185 INFO fundamentals: fetched 1450/1559
+2026-08-25 07:52:09,507 INFO fundamentals: fetched 1500/1559
+2026-08-25 07:52:21,599 INFO fundamentals: fetched 1550/1559
+2026-08-25 07:52:24,158 INFO fundamentals: fetched 1559/1559
+2026-08-25 07:52:24,159 INFO fundamentals: Retrying 12 failed ticker(s), pass 1/1 (waiting 8s first)
+2026-08-25 07:52:45,416 WARNING sec_enrich: SEC ticker map unavailable: Expecting value: line 1 column 1 (char 0)
+2026-08-25 07:53:11,029 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BT.A.L"}}}
+2026-08-25 07:53:22,841 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
+2026-08-25 07:53:50,850 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IUSN.L"}}}
+2026-08-25 07:54:32,688 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: U9UA.DE"}}}
+2026-08-25 07:54:43,661 INFO esef_enrich: ESEF v4.16 enriched 4 rows
+2026-08-25 07:59:30,143 WARNING capital_risk: SEC ticker map unavailable for capital risk: Expecting value: line 1 column 1 (char 0)
+2026-08-25 07:59:48,750 INFO analyst: Analyst intelligence: 800/1740 equities requested (432 priority), workers=8
+2026-08-25 07:59:53,402 ERROR yfinance: ALGIL.PA: No earnings dates found, symbol may be delisted
+2026-08-25 07:59:53,494 ERROR yfinance: ALCPB.PA: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:00,651 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
+2026-08-25 08:00:00,823 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
+2026-08-25 08:00:01,311 ERROR yfinance: BITF: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:01,824 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
+2026-08-25 08:00:02,189 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: BITF"}}}
+2026-08-25 08:00:07,247 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: COPA.L"}}}
+2026-08-25 08:00:07,519 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: COPA.L"}}}
+2026-08-25 08:00:08,138 ERROR yfinance: COPA.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:08,845 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: COPA.L"}}}
+2026-08-25 08:00:09,012 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: COPA.L"}}}
+2026-08-25 08:00:09,359 ERROR yfinance: CRML: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:10,499 INFO analyst: Analyst intelligence progress: 100/800
+2026-08-25 08:00:10,898 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
+2026-08-25 08:00:11,068 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
+2026-08-25 08:00:11,783 ERROR yfinance: DN3.DE: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:12,146 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
+2026-08-25 08:00:12,610 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DN3.DE"}}}
+2026-08-25 08:00:14,148 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: EGLN.L"}}}
+2026-08-25 08:00:14,460 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: EGLN.L"}}}
+2026-08-25 08:00:15,074 ERROR yfinance: EGLN.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:15,496 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: EGLN.L"}}}
+2026-08-25 08:00:16,042 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: EGLN.L"}}}
+2026-08-25 08:00:24,250 ERROR yfinance: HOLO: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:25,224 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
+2026-08-25 08:00:25,464 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
+2026-08-25 08:00:25,658 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-08-25 08:00:25,941 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-08-25 08:00:26,061 ERROR yfinance: IB1T.DE: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:26,227 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
+2026-08-25 08:00:26,515 ERROR yfinance: IINN: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:26,722 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IB1T.DE"}}}
+2026-08-25 08:00:26,993 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-08-25 08:00:27,430 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: IINN"}}}
+2026-08-25 08:00:27,683 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
+2026-08-25 08:00:27,738 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
+2026-08-25 08:00:27,844 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
+2026-08-25 08:00:27,855 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
+2026-08-25 08:00:27,946 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
+2026-08-25 08:00:28,048 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
+2026-08-25 08:00:28,729 ERROR yfinance: IPLT.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:28,749 ERROR yfinance: IPDM.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:29,101 ERROR yfinance: ISLN.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:29,103 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
+2026-08-25 08:00:29,105 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
+2026-08-25 08:00:29,256 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
+2026-08-25 08:00:29,257 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPLT.L"}}}
+2026-08-25 08:00:29,262 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: IPDM.L"}}}
+2026-08-25 08:00:29,412 ERROR yfinance: HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"No fundamentals data found for symbol: ISLN.L"}}}
+2026-08-25 08:00:29,845 ERROR yfinance: JMGI.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:30,877 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:30,880 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:30,881 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:30,889 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:30,931 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:30,978 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:30,982 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:30,985 INFO analyst: Analyst intelligence progress: 200/800
+2026-08-25 08:00:31,048 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,056 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,060 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,141 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,144 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,145 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,547 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,548 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,633 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,634 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,636 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,719 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,720 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,745 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,841 ERROR yfinance: KOM1.DE: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:31,890 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,977 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:31,978 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:32,118 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:32,124 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:32,709 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,238 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,243 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,417 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,418 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,502 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,506 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,508 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,508 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,513 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,515 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,600 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,604 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,607 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,610 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,688 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,699 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,819 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,820 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,905 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,910 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,918 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:33,919 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:34,228 ERROR yfinance: LND: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:34,605 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:34,699 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:34,890 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:34,895 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:34,907 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,163 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,274 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,279 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,366 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,368 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,418 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,419 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,498 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,500 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,502 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,581 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,666 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,671 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,672 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:35,775 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,082 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,101 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,459 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,546 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,628 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,685 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,714 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,851 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:36,880 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,262 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,277 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,437 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,439 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,440 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,584 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,588 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,590 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,591 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,611 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,613 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,773 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,774 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,820 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,874 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:37,878 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,017 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,152 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,368 ERROR yfinance: MLGO: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:38,370 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,371 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,372 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,513 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,515 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,520 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,522 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,921 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:38,923 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,127 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,147 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,232 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,233 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,234 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,234 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,240 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,476 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,477 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,481 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,482 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,483 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,570 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,710 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,711 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,812 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:39,816 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,025 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,475 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,729 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,730 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,935 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,955 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,992 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,995 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:40,995 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,078 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,101 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,163 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,164 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,181 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,252 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,260 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,606 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,611 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,614 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,629 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,636 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,717 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,718 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,720 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,726 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,730 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,809 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,885 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,887 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:41,994 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:42,045 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:42,353 ERROR yfinance: NGAS.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:42,355 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:42,504 ERROR yfinance: NICK.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:42,624 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,013 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,208 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,225 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,245 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,330 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,335 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,337 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,338 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,339 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,422 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,424 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,425 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,503 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,507 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,509 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,594 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,596 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,596 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,601 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,607 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,620 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,760 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,761 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:43,762 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:44,854 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,241 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,243 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,327 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,327 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,331 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,411 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,412 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,414 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,414 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,495 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,497 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,508 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,580 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,583 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,587 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,589 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,665 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,672 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,676 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,747 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,751 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,840 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:45,843 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:46,688 ERROR yfinance: OD7F.DE: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:46,972 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:47,423 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:47,508 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:47,508 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:47,509 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:47,515 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:47,596 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:47,597 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:47,603 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:00:52,287 ERROR yfinance: PRZO: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:52,379 ERROR yfinance: PRYMY: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:54,419 ERROR yfinance: RAM.LS: No earnings dates found, symbol may be delisted
+2026-08-25 08:00:54,911 INFO analyst: Analyst intelligence progress: 300/800
+2026-08-25 08:00:55,306 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:01:04,283 ERROR yfinance: SWP.PA: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:07,316 ERROR yfinance: U9UA.DE: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:07,543 ERROR yfinance: TXT.WA: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:08,810 ERROR yfinance: VETH.DE: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:09,825 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:01:09,828 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:01:15,431 INFO analyst: Analyst intelligence progress: 400/800
+2026-08-25 08:01:16,345 ERROR yfinance: APT.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:16,468 ERROR yfinance: ARB.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:16,545 ERROR yfinance: AR.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:16,654 ERROR yfinance: ATOM.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:16,753 ERROR yfinance: ALGO.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:17,645 ERROR yfinance: FET.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:17,745 ERROR yfinance: BTC.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:17,977 ERROR yfinance: FIL.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:17,983 ERROR yfinance: HIVE.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:18,037 ERROR yfinance: ETH.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:18,365 ERROR yfinance: DOT.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:18,377 ERROR yfinance: HBAR.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:18,470 ERROR yfinance: INJ.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:18,972 ERROR yfinance: LRC.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:19,072 ERROR yfinance: QNT.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:19,222 ERROR yfinance: LINK.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:19,408 ERROR yfinance: OP.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:19,562 ERROR yfinance: PYTH.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:19,613 ERROR yfinance: NEAR.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:19,684 ERROR yfinance: RENDER.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:19,778 ERROR yfinance: POL.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:20,305 ERROR yfinance: SOL.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:20,399 ERROR yfinance: TAO.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:20,656 ERROR yfinance: STX.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:20,753 ERROR yfinance: SUI.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:20,854 ERROR yfinance: PCT.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:20,960 ERROR yfinance: XDC.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:21,040 ERROR yfinance: TRAC.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:21,127 ERROR yfinance: XTZ.CC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:21,326 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:01:21,641 ERROR yfinance: FCIT.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:21,890 ERROR yfinance: SMT.L: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:34,868 ERROR yfinance: GGT: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:35,684 ERROR yfinance: JPM-PC: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:35,775 ERROR yfinance: JPM-PD: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:36,004 INFO analyst: Analyst intelligence progress: 500/800
+2026-08-25 08:01:37,210 ERROR yfinance: KXIAY: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:46,899 ERROR yfinance: CYATY: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:48,623 ERROR yfinance: TGOPY: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:52,092 ERROR yfinance: IGA: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:53,586 ERROR yfinance: RLLCF: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:55,583 ERROR yfinance: ADYEY: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:55,867 ERROR yfinance: BAC-PB: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:56,836 INFO analyst: Analyst intelligence progress: 600/800
+2026-08-25 08:01:57,245 ERROR yfinance: BRR: No earnings dates found, symbol may be delisted
+2026-08-25 08:01:58,475 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:02:01,930 ERROR yfinance: HTTP Error 401: {"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}
+2026-08-25 08:02:04,271 ERROR yfinance: PCQ: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:08,149 ERROR yfinance: EHI: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:11,515 ERROR yfinance: SMTOY: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:16,322 ERROR yfinance: CTLDF: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:17,593 INFO analyst: Analyst intelligence progress: 700/800
+2026-08-25 08:02:17,975 ERROR yfinance: MS-PK: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:28,520 ERROR yfinance: TRT: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:28,858 ERROR yfinance: GLND: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:29,839 ERROR yfinance: ARDNF: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:30,965 ERROR yfinance: GS-PD: No earnings dates found, symbol may be delisted
+2026-08-25 08:02:37,263 INFO analyst: Analyst intelligence progress: 800/800
+2026-08-25 08:02:37,385 INFO insiders: SEC ticker->CIK map loaded with 10403 entries
+2026-08-25 08:02:43,658 INFO insiders: ABBV 0001171780-26-000012 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1551152/000117178026000012/xslF345X06/form4-07022026_050703.xml (HTTP 200, 16477 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:44,447 INFO insiders: ABBV 0001997505-26-000008 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1551152/000199750526000008/xslF345X06/form4-07022026_050702.xml (HTTP 200, 16457 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:49,401 INFO insiders: ABR 0001104659-26-079872 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1253986/000110465926079872/xslF345X06/tm2619465-1_4seq1.xml (HTTP 200, 16607 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:49,514 INFO insiders: ABT 0001385262-26-000019 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000138526226000019/xslF345X06/form4-07012026_100703.xml (HTTP 200, 16395 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:50,165 INFO insiders: ABR 0001104659-26-074591 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1253986/000110465926074591/xslF345X06/tm2618019-3_4seq1.xml (HTTP 200, 16491 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:50,294 INFO insiders: ABT 0001577544-26-000010 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000157754426000010/xslF345X06/form4-07012026_090744.xml (HTTP 200, 16344 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:50,945 INFO insiders: ABR 0001104659-26-074590 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1253986/000110465926074590/xslF345X06/tm2618019-2_4seq1.xml (HTTP 200, 16548 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:51,074 INFO insiders: ABT 0001879701-26-000008 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000187970126000008/xslF345X06/form4-07012026_090745.xml (HTTP 200, 16409 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:51,726 INFO insiders: ABR 0001104659-26-074585 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1253986/000110465926074585/xslF345X06/tm2618019-1_4seq1.xml (HTTP 200, 16489 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:51,862 INFO insiders: ABT 0001306119-26-000006 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000130611926000006/xslF345X06/form4-07012026_090707.xml (HTTP 200, 16206 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:52,637 INFO insiders: ABT 0002102715-26-000006 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1800/000210271526000006/xslF345X06/form4-07012026_090738.xml (HTTP 200, 16331 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:02:58,232 INFO insiders: ACH 0000075252-26-000025 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/75252/000007525226000025/xslF345X06/form4.xml (HTTP 200, 16307 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:03:03,826 INFO insiders: ACXP 0001104659-26-046846 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1736243/000110465926046846/xslF345X06/tm2612397-8_4seq1.xml (HTTP 200, 16113 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:03:03,957 INFO insiders: ACRV 0001231919-26-000686 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1781174/000123191926000686/xslF345X06/form4-06222026_080632.xml (HTTP 200, 29712 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:03:04,607 INFO insiders: ACXP 0001104659-26-046844 detail unavailable: fetched https://www.sec.gov/Archives/edgar/data/1736243/000110465926046844/xslF345X06/tm2612397-7_4seq1.xml (HTTP 200, 16111 bytes) but found 0 transactions — content starts: '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>SEC FORM   '
+2026-08-25 08:03:54,845 INFO insiders: insider intelligence 50/1353
+2026-08-25 08:05:15,131 INFO insiders: insider intelligence 100/1353
+2026-08-25 08:06:30,904 INFO insiders: insider intelligence 150/1353
+2026-08-25 08:07:50,229 INFO insiders: insider intelligence 200/1353
+2026-08-25 08:09:11,168 INFO insiders: insider intelligence 250/1353
+2026-08-25 08:10:32,754 INFO insiders: insider intelligence 300/1353
+2026-08-25 08:11:48,787 INFO insiders: insider intelligence 350/1353
+2026-08-25 08:13:03,566 INFO insiders: insider intelligence 400/1353
+2026-08-25 08:14:26,457 INFO insiders: insider intelligence 450/1353
+2026-08-25 08:15:49,357 INFO insiders: insider intelligence 500/1353
+2026-08-25 08:17:06,510 INFO insiders: insider intelligence 550/1353
+2026-08-25 08:18:35,649 INFO insiders: insider intelligence 600/1353
+2026-08-25 08:19:58,152 INFO insiders: insider intelligence 650/1353
+2026-08-25 08:21:11,521 INFO insiders: insider intelligence 700/1353
+2026-08-25 08:22:27,932 INFO insiders: insider intelligence 750/1353
+2026-08-25 08:23:53,818 INFO insiders: insider intelligence 800/1353
+2026-08-25 08:25:13,327 INFO insiders: insider intelligence 850/1353
+2026-08-25 08:26:19,043 INFO insiders: insider intelligence 900/1353
+2026-08-25 08:27:47,793 INFO insiders: insider intelligence 950/1353
+2026-08-25 08:29:11,776 INFO insiders: insider intelligence 1000/1353
+2026-08-25 08:30:23,039 INFO insiders: insider intelligence 1050/1353
+2026-08-25 08:31:26,803 INFO insiders: insider intelligence 1100/1353
+2026-08-25 08:32:47,484 INFO insiders: insider intelligence 1150/1353
+2026-08-25 08:34:03,603 INFO insiders: insider intelligence 1200/1353
+2026-08-25 08:35:25,321 INFO insiders: insider intelligence 1250/1353
+2026-08-25 08:36:51,586 INFO insiders: insider intelligence 1300/1353
+2026-08-25 08:38:14,732 INFO insiders: insider intelligence 1350/1353
+2026-08-25 08:38:15,512 INFO insiders: insider intelligence 1353/1353
+2026-08-25 08:38:15,860 WARNING congress: Congress data source (bargo.ai free-apis) returned 403 for all 5 probe requests — the free endpoint appears retired (see their site: now an invite-only paid MCP product). Skipping the remaining 1348 tickers rather than burning pipeline time on a dead source. See scripts/congress.py docstring for what a real free replacement would require.
+2026-08-25 08:38:17,119 ERROR yfinance: $ATOM.CC: No data found, symbol may be delisted
+2026-08-25 08:38:18,784 ERROR yfinance: $ALGO.CC: No data found, symbol may be delisted
+2026-08-25 08:38:19,359 ERROR yfinance: $AR.CC: No data found, symbol may be delisted
+2026-08-25 08:38:19,408 ERROR yfinance: $APT.CC: No data found, symbol may be delisted
+2026-08-25 08:38:23,282 ERROR yfinance: $ARB.CC: No data found, symbol may be delisted
+2026-08-25 08:38:25,218 ERROR yfinance: 
 3 Failed downloads:
-2026-08-25 00:09:56,798 ERROR yfinance: ['AR.CC', 'ARB.CC', 'APT.CC']: No data found, symbol may be delisted
-2026-08-25 00:09:56,841 INFO insider_prices: price histories batch phase 60/2032
-2026-08-25 00:09:57,412 ERROR yfinance: 
+2026-08-25 08:38:25,218 ERROR yfinance: ['AR.CC', 'APT.CC', 'ARB.CC']: No data found, symbol may be delisted
+2026-08-25 08:38:25,333 INFO insider_prices: price histories batch phase 60/2038
+2026-08-25 08:38:25,350 INFO insider_prices: price histories batch phase 120/2038
+2026-08-25 08:38:26,386 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:09:57,412 ERROR yfinance: ['ATOM.CC']: No data found, symbol may be delisted
-2026-08-25 00:09:57,449 INFO insider_prices: price histories batch phase 120/2032
-2026-08-25 00:09:58,576 INFO insider_prices: price histories batch phase 180/2032
-2026-08-25 00:10:00,118 ERROR yfinance: $BITF: No data found, symbol may be delisted
-2026-08-25 00:10:01,338 ERROR yfinance: 
+2026-08-25 08:38:26,386 ERROR yfinance: ['ALGO.CC']: No data found, symbol may be delisted
+2026-08-25 08:38:26,471 INFO insider_prices: price histories batch phase 180/2038
+2026-08-25 08:38:26,678 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:10:01,338 ERROR yfinance: ['ALGO.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:01,373 INFO insider_prices: price histories batch phase 240/2032
-2026-08-25 00:10:01,700 ERROR yfinance: $BTC.CC: No data found, symbol may be delisted
-2026-08-25 00:10:02,491 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
-2026-08-25 00:10:03,260 ERROR yfinance: 
+2026-08-25 08:38:26,678 ERROR yfinance: ['ATOM.CC']: No data found, symbol may be delisted
+2026-08-25 08:38:26,729 INFO insider_prices: price histories batch phase 240/2038
+2026-08-25 08:38:27,847 ERROR yfinance: $BTC.CC: No data found, symbol may be delisted
+2026-08-25 08:38:27,851 ERROR yfinance: $BT.A.L: No data found, symbol may be delisted
+2026-08-25 08:38:28,803 ERROR yfinance: $BITF: No data found, symbol may be delisted
+2026-08-25 08:38:33,168 ERROR yfinance: 
 2 Failed downloads:
-2026-08-25 00:10:03,260 ERROR yfinance: ['BTC.CC', 'BT.A.L']: No data found, symbol may be delisted
-2026-08-25 00:10:03,314 INFO insider_prices: price histories batch phase 300/2032
-2026-08-25 00:10:03,493 ERROR yfinance: 
+2026-08-25 08:38:33,168 ERROR yfinance: ['BTC.CC', 'BT.A.L']: No data found, symbol may be delisted
+2026-08-25 08:38:33,220 INFO insider_prices: price histories batch phase 300/2038
+2026-08-25 08:38:37,183 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:10:03,493 ERROR yfinance: ['BITF']: No data found, symbol may be delisted
-2026-08-25 00:10:03,534 INFO insider_prices: price histories batch phase 360/2032
-2026-08-25 00:10:09,023 INFO insider_prices: price histories batch phase 420/2032
-2026-08-25 00:10:09,108 ERROR yfinance: $DOT.CC: No data found, symbol may be delisted
-2026-08-25 00:10:10,144 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
-2026-08-25 00:10:11,819 ERROR yfinance: 
+2026-08-25 08:38:37,183 ERROR yfinance: ['BITF']: No data found, symbol may be delisted
+2026-08-25 08:38:37,234 INFO insider_prices: price histories batch phase 360/2038
+2026-08-25 08:38:39,423 INFO insider_prices: price histories batch phase 420/2038
+2026-08-25 08:38:41,501 ERROR yfinance: $DOT.CC: No data found, symbol may be delisted
+2026-08-25 08:38:41,764 ERROR yfinance: $DN3.DE: No data found, symbol may be delisted
+2026-08-25 08:38:42,519 INFO insider_prices: price histories batch phase 480/2038
+2026-08-25 08:38:45,495 ERROR yfinance: 
 2 Failed downloads:
-2026-08-25 00:10:11,819 ERROR yfinance: ['DOT.CC', 'DN3.DE']: No data found, symbol may be delisted
-2026-08-25 00:10:11,982 INFO insider_prices: price histories batch phase 480/2032
-2026-08-25 00:10:12,233 INFO insider_prices: price histories batch phase 540/2032
-2026-08-25 00:10:14,274 INFO insider_prices: price histories batch phase 600/2032
-2026-08-25 00:10:15,578 ERROR yfinance: $ETH.CC: No data found, symbol may be delisted
-2026-08-25 00:10:18,257 ERROR yfinance: 
+2026-08-25 08:38:45,495 ERROR yfinance: ['DOT.CC', 'DN3.DE']: No data found, symbol may be delisted
+2026-08-25 08:38:45,546 INFO insider_prices: price histories batch phase 540/2038
+2026-08-25 08:38:47,902 ERROR yfinance: $ETH.CC: No data found, symbol may be delisted
+2026-08-25 08:38:48,951 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:10:18,257 ERROR yfinance: ['ETH.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:18,292 INFO insider_prices: price histories batch phase 660/2032
-2026-08-25 00:10:18,828 ERROR yfinance: $FIL.CC: No data found, symbol may be delisted
-2026-08-25 00:10:19,269 ERROR yfinance: $FET.CC: No data found, symbol may be delisted
-2026-08-25 00:10:21,031 ERROR yfinance: 
+2026-08-25 08:38:48,951 ERROR yfinance: ['ETH.CC']: No data found, symbol may be delisted
+2026-08-25 08:38:49,008 INFO insider_prices: price histories batch phase 600/2038
+2026-08-25 08:38:49,662 INFO insider_prices: price histories batch phase 660/2038
+2026-08-25 08:38:49,878 ERROR yfinance: $FET.CC: No data found, symbol may be delisted
+2026-08-25 08:38:50,147 ERROR yfinance: $FIL.CC: No data found, symbol may be delisted
+2026-08-25 08:38:54,482 INFO insider_prices: price histories batch phase 720/2038
+2026-08-25 08:38:56,906 ERROR yfinance: $HBAR.CC: No data found, symbol may be delisted
+2026-08-25 08:38:57,219 ERROR yfinance: 
 2 Failed downloads:
-2026-08-25 00:10:21,031 ERROR yfinance: ['FIL.CC', 'FET.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:21,067 INFO insider_prices: price histories batch phase 720/2032
-2026-08-25 00:10:25,154 ERROR yfinance: $HBAR.CC: No data found, symbol may be delisted
-2026-08-25 00:10:25,675 ERROR yfinance: $HIVE.CC: No data found, symbol may be delisted
-2026-08-25 00:10:27,280 ERROR yfinance: 
+2026-08-25 08:38:57,219 ERROR yfinance: ['FET.CC', 'FIL.CC']: No data found, symbol may be delisted
+2026-08-25 08:38:57,400 INFO insider_prices: price histories batch phase 780/2038
+2026-08-25 08:38:57,806 ERROR yfinance: $HIVE.CC: No data found, symbol may be delisted
+2026-08-25 08:39:00,883 INFO insider_prices: price histories batch phase 840/2038
+2026-08-25 08:39:01,485 ERROR yfinance: 
 2 Failed downloads:
-2026-08-25 00:10:27,281 ERROR yfinance: ['HBAR.CC', 'HIVE.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:27,316 INFO insider_prices: price histories batch phase 780/2032
-2026-08-25 00:10:30,323 ERROR yfinance: $IINN: No data found, symbol may be delisted
-2026-08-25 00:10:30,375 INFO insider_prices: price histories batch phase 840/2032
-2026-08-25 00:10:30,889 ERROR yfinance: $INJ.CC: No data found, symbol may be delisted
-2026-08-25 00:10:33,361 ERROR yfinance: 
+2026-08-25 08:39:01,485 ERROR yfinance: ['HBAR.CC', 'HIVE.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:01,539 INFO insider_prices: price histories batch phase 900/2038
+2026-08-25 08:39:01,976 ERROR yfinance: $IINN: No data found, symbol may be delisted
+2026-08-25 08:39:03,054 ERROR yfinance: $INJ.CC: No data found, symbol may be delisted
+2026-08-25 08:39:03,883 ERROR yfinance: 
 2 Failed downloads:
-2026-08-25 00:10:33,361 ERROR yfinance: ['IINN', 'INJ.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:33,394 INFO insider_prices: price histories batch phase 900/2032
-2026-08-25 00:10:34,654 INFO insider_prices: price histories batch phase 960/2032
-2026-08-25 00:10:35,648 ERROR yfinance: $IUSN.L: No data found, symbol may be delisted
-2026-08-25 00:10:37,615 ERROR yfinance: $KOM1.DE: possibly delisted; no price data found  (period=1y)
-2026-08-25 00:10:38,721 ERROR yfinance: 
+2026-08-25 08:39:03,884 ERROR yfinance: ['IINN', 'INJ.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:03,931 INFO insider_prices: price histories batch phase 960/2038
+2026-08-25 08:39:06,087 ERROR yfinance: $IUSN.L: No data found, symbol may be delisted
+2026-08-25 08:39:07,300 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:10:38,721 ERROR yfinance: ['KOM1.DE']: possibly delisted; no price data found  (period=1y)
-2026-08-25 00:10:38,763 INFO insider_prices: price histories batch phase 1020/2032
-2026-08-25 00:10:40,219 ERROR yfinance: $LINK.CC: No data found, symbol may be delisted
-2026-08-25 00:10:40,596 ERROR yfinance: $LRC.CC: No data found, symbol may be delisted
-2026-08-25 00:10:41,966 ERROR yfinance: 
+2026-08-25 08:39:07,300 ERROR yfinance: ['IUSN.L']: No data found, symbol may be delisted
+2026-08-25 08:39:07,353 INFO insider_prices: price histories batch phase 1020/2038
+2026-08-25 08:39:07,994 ERROR yfinance: $KOM1.DE: possibly delisted; no price data found  (period=1y)
+2026-08-25 08:39:09,784 ERROR yfinance: 
+1 Failed download:
+2026-08-25 08:39:09,784 ERROR yfinance: ['KOM1.DE']: possibly delisted; no price data found  (period=1y)
+2026-08-25 08:39:09,839 INFO insider_prices: price histories batch phase 1080/2038
+2026-08-25 08:39:11,024 ERROR yfinance: $LRC.CC: No data found, symbol may be delisted
+2026-08-25 08:39:11,990 ERROR yfinance: $LINK.CC: No data found, symbol may be delisted
+2026-08-25 08:39:14,851 INFO insider_prices: price histories batch phase 1140/2038
+2026-08-25 08:39:16,488 ERROR yfinance: $NEAR.CC: No data found, symbol may be delisted
+2026-08-25 08:39:17,181 ERROR yfinance: 
+1 Failed download:
+2026-08-25 08:39:17,181 ERROR yfinance: ['NEAR.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:17,232 INFO insider_prices: price histories batch phase 1200/2038
+2026-08-25 08:39:17,423 ERROR yfinance: 
 2 Failed downloads:
-2026-08-25 00:10:41,966 ERROR yfinance: ['LINK.CC', 'LRC.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:41,998 INFO insider_prices: price histories batch phase 1080/2032
-2026-08-25 00:10:42,019 ERROR yfinance: 
+2026-08-25 08:39:17,423 ERROR yfinance: ['LRC.CC', 'LINK.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:17,471 INFO insider_prices: price histories batch phase 1260/2038
+2026-08-25 08:39:18,740 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
+2026-08-25 08:39:21,190 ERROR yfinance: $OP.CC: No data found, symbol may be delisted
+2026-08-25 08:39:22,806 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:10:42,019 ERROR yfinance: ['IUSN.L']: No data found, symbol may be delisted
-2026-08-25 00:10:42,052 INFO insider_prices: price histories batch phase 1140/2032
-2026-08-25 00:10:44,371 ERROR yfinance: $NEAR.CC: No data found, symbol may be delisted
-2026-08-25 00:10:47,183 ERROR yfinance: 
+2026-08-25 08:39:22,807 ERROR yfinance: ['OD7F.DE']: No data found, symbol may be delisted
+2026-08-25 08:39:22,859 INFO insider_prices: price histories batch phase 1320/2038
+2026-08-25 08:39:22,869 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:10:47,183 ERROR yfinance: ['NEAR.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:47,229 INFO insider_prices: price histories batch phase 1200/2032
-2026-08-25 00:10:47,429 ERROR yfinance: $OD7F.DE: No data found, symbol may be delisted
-2026-08-25 00:10:47,706 INFO insider_prices: price histories batch phase 1260/2032
-2026-08-25 00:10:50,306 ERROR yfinance: 
-1 Failed download:
-2026-08-25 00:10:50,306 ERROR yfinance: ['OD7F.DE']: No data found, symbol may be delisted
-2026-08-25 00:10:50,341 INFO insider_prices: price histories batch phase 1320/2032
-2026-08-25 00:10:51,432 ERROR yfinance: $OP.CC: No data found, symbol may be delisted
-2026-08-25 00:10:52,564 ERROR yfinance: 
-1 Failed download:
-2026-08-25 00:10:52,564 ERROR yfinance: ['OP.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:52,601 INFO insider_prices: price histories batch phase 1380/2032
-2026-08-25 00:10:54,481 ERROR yfinance: $POL.CC: No data found, symbol may be delisted
-2026-08-25 00:10:54,853 ERROR yfinance: $PYTH.CC: No data found, symbol may be delisted
-2026-08-25 00:10:55,586 ERROR yfinance: 
+2026-08-25 08:39:22,869 ERROR yfinance: ['OP.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:22,923 INFO insider_prices: price histories batch phase 1380/2038
+2026-08-25 08:39:23,889 ERROR yfinance: $PYTH.CC: No data found, symbol may be delisted
+2026-08-25 08:39:24,145 ERROR yfinance: $POL.CC: No data found, symbol may be delisted
+2026-08-25 08:39:27,562 ERROR yfinance: $RENDER.CC: No data found, symbol may be delisted
+2026-08-25 08:39:28,767 ERROR yfinance: $QNT.CC: No data found, symbol may be delisted
+2026-08-25 08:39:28,963 ERROR yfinance: 
 2 Failed downloads:
-2026-08-25 00:10:55,586 ERROR yfinance: ['POL.CC', 'PYTH.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:55,624 INFO insider_prices: price histories batch phase 1440/2032
-2026-08-25 00:10:57,787 ERROR yfinance: $QNT.CC: No data found, symbol may be delisted
-2026-08-25 00:10:58,256 ERROR yfinance: $RENDER.CC: No data found, symbol may be delisted
-2026-08-25 00:10:58,372 ERROR yfinance: 
+2026-08-25 08:39:28,963 ERROR yfinance: ['RENDER.CC', 'QNT.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:29,016 INFO insider_prices: price histories batch phase 1440/2038
+2026-08-25 08:39:29,584 ERROR yfinance: $SOL.CC: No data found, symbol may be delisted
+2026-08-25 08:39:32,041 ERROR yfinance: $SJW: No data found, symbol may be delisted
+2026-08-25 08:39:33,009 ERROR yfinance: 
 2 Failed downloads:
-2026-08-25 00:10:58,372 ERROR yfinance: ['QNT.CC', 'RENDER.CC']: No data found, symbol may be delisted
-2026-08-25 00:10:58,407 INFO insider_prices: price histories batch phase 1500/2032
-2026-08-25 00:11:03,411 ERROR yfinance: $SJW: No data found, symbol may be delisted
-2026-08-25 00:11:03,706 ERROR yfinance: 
+2026-08-25 08:39:33,009 ERROR yfinance: ['PYTH.CC', 'POL.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:33,079 INFO insider_prices: price histories batch phase 1500/2038
+2026-08-25 08:39:35,625 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:11:03,707 ERROR yfinance: ['SJW']: No data found, symbol may be delisted
-2026-08-25 00:11:03,741 INFO insider_prices: price histories batch phase 1560/2032
-2026-08-25 00:11:05,885 ERROR yfinance: $SOL.CC: No data found, symbol may be delisted
-2026-08-25 00:11:06,928 INFO insider_prices: price histories batch phase 1620/2032
-2026-08-25 00:11:07,124 ERROR yfinance: 
+2026-08-25 08:39:35,625 ERROR yfinance: ['SJW']: No data found, symbol may be delisted
+2026-08-25 08:39:35,677 INFO insider_prices: price histories batch phase 1560/2038
+2026-08-25 08:39:37,860 INFO insider_prices: price histories batch phase 1620/2038
+2026-08-25 08:39:38,319 ERROR yfinance: 
 1 Failed download:
-2026-08-25 00:11:07,124 ERROR yfinance: ['SOL.CC']: No data found, symbol may be delisted
-2026-08-25 00:11:07,157 INFO insider_prices: price histories batch phase 1680/2032
-2026-08-25 00:11:07,337 ERROR yfinance: $STX.CC: No data found, symbol may be delisted
-2026-08-25 00:11:08,162 ERROR yfinance: $TAO.CC: No data found, symbol may be delisted
-2026-08-25 00:11:09,188 ERROR yfinance: $SUI.CC: No data found, symbol may be delisted
-2026-08-25 00:11:09,728 ERROR yfinance: 
+2026-08-25 08:39:38,320 ERROR yfinance: ['SOL.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:38,368 INFO insider_prices: price histories batch phase 1680/2038
+2026-08-25 08:39:38,914 ERROR yfinance: $TAO.CC: No data found, symbol may be delisted
+2026-08-25 08:39:41,077 ERROR yfinance: $STX.CC: No data found, symbol may be delisted
+2026-08-25 08:39:41,416 ERROR yfinance: $SUI.CC: No data found, symbol may be delisted
+2026-08-25 08:39:42,365 ERROR yfinance: $TRAC.CC: No data found, symbol may be delisted
+2026-08-25 08:39:44,592 ERROR yfinance: 
+1 Failed download:
+2026-08-25 08:39:44,592 ERROR yfinance: ['TRAC.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:44,647 INFO insider_prices: price histories batch phase 1740/2038
+2026-08-25 08:39:47,028 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
+2026-08-25 08:39:47,205 ERROR yfinance: 
+1 Failed download:
+2026-08-25 08:39:47,205 ERROR yfinance: ['U9UA.DE']: No data found, symbol may be delisted
+2026-08-25 08:39:47,254 INFO insider_prices: price histories batch phase 1800/2038
+2026-08-25 08:39:47,750 ERROR yfinance: 
 3 Failed downloads:
-2026-08-25 00:11:09,728 ERROR yfinance: ['STX.CC', 'TAO.CC', 'SUI.CC']: No data found, symbol may be delisted
-2026-08-25 00:11:09,762 INFO insider_prices: price histories batch phase 1740/2032
-2026-08-25 00:11:12,353 ERROR yfinance: $U9UA.DE: No data found, symbol may be delisted
-2026-08-25 00:11:12,361 ERROR yfinance: $TRAC.CC: No data found, symbol may be delisted
-2026-08-25 00:11:12,367 ERROR yfinance: 
-1 Failed download:
-2026-08-25 00:11:12,367 ERROR yfinance: ['TRAC.CC']: No data found, symbol may be delisted
-2026-08-25 00:11:12,404 INFO insider_prices: price histories batch phase 1800/2032
-2026-08-25 00:11:15,698 ERROR yfinance: 
-1 Failed download:
-2026-08-25 00:11:15,699 ERROR yfinance: ['U9UA.DE']: No data found, symbol may be delisted
-2026-08-25 00:11:15,734 INFO insider_prices: price histories batch phase 1860/2032
-2026-08-25 00:11:19,327 INFO insider_prices: price histories batch phase 1920/2032
-2026-08-25 00:11:19,381 ERROR yfinance: $XDC.CC: No data found, symbol may be delisted
-2026-08-25 00:11:21,829 ERROR yfinance: 
-1 Failed download:
-2026-08-25 00:11:21,829 ERROR yfinance: ['XDC.CC']: No data found, symbol may be delisted
-2026-08-25 00:11:21,863 INFO insider_prices: price histories batch phase 1980/2032
-2026-08-25 00:11:22,954 ERROR yfinance: $XTZ.CC: No data found, symbol may be delisted
-2026-08-25 00:11:23,913 ERROR yfinance: 
-1 Failed download:
-2026-08-25 00:11:23,913 ERROR yfinance: ['XTZ.CC']: No data found, symbol may be delisted
-2026-08-25 00:11:23,938 INFO insider_prices: price histories batch phase 2032/2032
-2026-08-25 00:11:23,939 INFO insider_prices: price histories direct fallback for 39 missing tickers
-2026-08-25 00:11:25,380 INFO insider_prices: price histories fallback 39/39
-2026-08-25 00:11:28,242 INFO run: Wrote 2038 rows to /home/runner/work/Vestra/Vestra/scripts/../data/stocks.json
-2026-08-25 00:11:54,070 WARNING physical_metals: CME gold stocks unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=25)
-2026-08-25 00:12:19,127 WARNING physical_metals: CME silver stocks unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=25)
-2026-08-25 00:12:49,410 WARNING physical_metals: CME delivery notices unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=30)
-2026-08-25 00:12:51,134 WARNING physical_metals: SGE benchmark unavailable: benchmark table not found
-2026-08-25 00:12:51,526 WARNING physical_metals: WGC central bank changes unavailable: 403 Client Error: Forbidden for url: https://www.gold.org/download/file/7741/Changes_latest_as_of_Aug2026_IFS.xlsx
-2026-08-25 00:12:51,644 INFO run: Wrote metals data to /home/runner/work/Vestra/Vestra/scripts/../data/metals.json
-2026-08-25 00:12:51,645 INFO run: Wrote daily metals brief to /home/runner/work/Vestra/Vestra/scripts/../data/metals_brief.json
-2026-08-25 00:12:54,002 INFO run: Wrote FX data to /home/runner/work/Vestra/Vestra/scripts/../data/fx.json
-2026-08-25 00:12:54,022 INFO history: Wrote history for 2932 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/history.json
-2026-08-25 00:12:54,096 INFO valuation_history: Wrote valuation history for 2790 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/valuation_history.json
-2026-08-25 00:12:54,345 INFO thesis_history: Wrote thesis history for 3493 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/thesis_history.json
-2026-08-25 00:13:54,195 INFO news: news: 1676/2032 tickers returned relevant headlines
-2026-08-25 00:13:54,259 INFO run: Wrote news for 1676 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/news.json
+2026-08-25 08:39:47,750 ERROR yfinance: ['TAO.CC', 'STX.CC', 'SUI.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:47,796 INFO insider_prices: price histories batch phase 1860/2038
+2026-08-25 08:39:53,450 INFO insider_prices: price histories batch phase 1920/2038
+2026-08-25 08:39:53,709 INFO insider_prices: price histories batch phase 1980/2038
+2026-08-25 08:39:54,288 ERROR yfinance: $XTZ.CC: No data found, symbol may be delisted
+2026-08-25 08:39:55,466 ERROR yfinance: $XDC.CC: No data found, symbol may be delisted
+2026-08-25 08:39:56,432 ERROR yfinance: 
+2 Failed downloads:
+2026-08-25 08:39:56,432 ERROR yfinance: ['XTZ.CC', 'XDC.CC']: No data found, symbol may be delisted
+2026-08-25 08:39:56,596 INFO insider_prices: price histories batch phase 2038/2038
+2026-08-25 08:39:56,598 INFO insider_prices: price histories direct fallback for 39 missing tickers
+2026-08-25 08:39:57,805 INFO insider_prices: price histories fallback 39/39
+2026-08-25 08:40:01,292 INFO run: Wrote 2044 rows to /home/runner/work/Vestra/Vestra/scripts/../data/stocks.json
+2026-08-25 08:40:27,674 WARNING physical_metals: CME gold stocks unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=25)
+2026-08-25 08:40:52,743 WARNING physical_metals: CME silver stocks unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=25)
+2026-08-25 08:41:22,942 WARNING physical_metals: CME delivery notices unavailable: HTTPSConnectionPool(host='www.cmegroup.com', port=443): Read timed out. (read timeout=30)
+2026-08-25 08:41:26,283 WARNING physical_metals: SGE benchmark unavailable: benchmark table not found
+2026-08-25 08:41:26,951 WARNING physical_metals: WGC central bank changes unavailable: 403 Client Error: Forbidden for url: https://www.gold.org/download/file/7741/Changes_latest_as_of_Aug2026_IFS.xlsx
+2026-08-25 08:41:27,176 INFO run: Wrote metals data to /home/runner/work/Vestra/Vestra/scripts/../data/metals.json
+2026-08-25 08:41:27,177 INFO run: Wrote daily metals brief to /home/runner/work/Vestra/Vestra/scripts/../data/metals_brief.json
+2026-08-25 08:41:30,675 INFO run: Wrote FX data to /home/runner/work/Vestra/Vestra/scripts/../data/fx.json
+2026-08-25 08:41:30,702 INFO history: Wrote history for 2933 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/history.json
+2026-08-25 08:41:30,801 INFO valuation_history: Wrote valuation history for 2791 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/valuation_history.json
+2026-08-25 08:41:31,139 INFO thesis_history: Wrote thesis history for 3494 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/thesis_history.json
+2026-08-25 08:42:29,305 INFO news: news: 1671/2038 tickers returned relevant headlines
+2026-08-25 08:42:29,376 INFO run: Wrote news for 1671 tickers to /home/runner/work/Vestra/Vestra/scripts/../data/news.json
