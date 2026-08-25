@@ -1,4 +1,4 @@
-/* Vestra Market Hotfix loader v4.65 — safe direct deploy. */
+/* Vestra Market Hotfix loader v4.66 — safe direct deploy. */
 (() => {
   'use strict';
   const load=(src,key)=>{
@@ -25,4 +25,5 @@
   load('./vestra-politicians-dedupe-v463.js?v=4.63','vestraPoliticiansDedupeV463');
   load('./vestra-portfolio-nav-fix-v464.js?v=4.64','vestraPortfolioNavFixV464');
   load('./vestra-politician-filters-v465.js?v=4.65','vestraPoliticianFiltersV465');
+  load('./vestra-politician-ledger-v466.js?v=4.66','vestraPoliticianLedgerV466');
 })();
