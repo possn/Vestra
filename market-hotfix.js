@@ -1,10 +1,14 @@
-/* Vestra Market Hotfix loader v4.50 — safe direct deploy. */
+/* Vestra Market Hotfix loader v4.51 — safe direct deploy. */
 (() => {
   'use strict';
-  if (document.querySelector('script[data-vestra-market-enhancements]')) return;
-  const s=document.createElement('script');
-  s.src='./market-enhancements.js?v=4.50';
-  s.defer=true;
-  s.dataset.vestraMarketEnhancements='1';
-  document.head.appendChild(s);
+  const load=(src,key)=>{
+    if(document.querySelector(`script[data-${key}]`)) return;
+    const s=document.createElement('script');
+    s.src=src;
+    s.defer=true;
+    s.dataset[key]='1';
+    document.head.appendChild(s);
+  };
+  load('./market-enhancements.js?v=4.50','vestraMarketEnhancements');
+  load('./portfolio-navigation-fix.js?v=1.0','vestraPortfolioNavigationFix');
 })();
