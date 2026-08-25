@@ -1,0 +1,18 @@
+/* Vestra Portfolio UX v4.80 — canonical landing summary + analysis tabs below it. */
+(()=>{'use strict';
+const G={decide:['research','priority','reinforce','review'],monitor:['target','history','risk','stress'],optimize:['swap','scenario','overlap','map']};
+const t=v=>String(v??'').trim();let active='decide',busy=false;
+function root(){const s=document.getElementById('marketSheet'),c=document.getElementById('marketSheetContent');return(!s||s.hidden||t(s.dataset.tool)!=='portfolio'||!c)?null:c}
+function shell(c){return c.querySelector('.v479-portfolio-tabs')}
+function reveal(c){return c.querySelector('.ux461-reveal')}
+function classify(card){const k=t(card.dataset.uxKind);for(const [g,a] of Object.entries(G))if(a.includes(k))return g;const x=t(card.textContent).toLowerCase();if(/fila de revisão|prioridades da carteira|candidatos a reforço|posições a rever|capital novo.*reforçar/.test(x))return'decide';if(/aderência aos objetivos|carteira está a melhorar|diversificação da carteira|como reage a carteira|objetivos da carteira/.test(x))return'monitor';if(/alternativas no mesmo setor|substituíres pelo mesmo valor|concentração e overlap|mapa da carteira|onde melhora mais este capital|plano de rebalanceamento|trocas inteligentes/.test(x))return'optimize';return''}
+function canon(){const c=root();if(!c)return;const sh=shell(c),rv=reveal(c),hero=c.querySelector('.ux460-overview');if(sh){if(rv&&rv.nextElementSibling!==sh)rv.insertAdjacentElement('afterend',sh);else if(!rv&&hero&&hero.nextElementSibling!==sh)hero.insertAdjacentElement('afterend',sh)}
+ c.querySelectorAll('.ux455-group-label,.ux454-group-label,.ux454-nav-title,.market-collapse-toolbar,.ux-portfolio-shortcuts,.ux453-focusbar').forEach(x=>x.style.display='none');
+ const expanded=c.dataset.ux461Expanded==='1'; if(sh)sh.hidden=!expanded;
+ c.querySelectorAll('.market-detail-card[data-collapsible="1"],[data-ux-kind]').forEach(card=>{const g=classify(card);if(!g)return;card.dataset.v480Group=g;card.classList.toggle('v480-hidden',!expanded||g!==active)});
+ if(sh){sh.querySelectorAll('[data-v479-tab]').forEach(b=>{const on=b.dataset.v479Tab===active;b.classList.toggle('is-active',on);b.setAttribute('aria-selected',on?'true':'false')});const meta={decide:['Prioridades','Research, reforços e posições que merecem atenção.'],monitor:['Monitorizar','Saúde, objetivos, concentração e resistência da carteira.'],optimize:['Otimizar','Trocas, alternativas, overlap e impacto antes de mexer.']}[active];sh.querySelector('.v479-tab-intro strong').textContent=meta[0];sh.querySelector('.v479-tab-intro span').textContent=meta[1]}
+}
+function style(){if(document.getElementById('v480-style'))return;const s=document.createElement('style');s.id='v480-style';s.textContent='#marketSheetContent .v480-hidden{display:none!important}#marketSheetContent .v479-portfolio-tabs[hidden]{display:none!important}#marketSheetContent .v479-portfolio-tabs{order:initial!important;margin:10px 0 12px!important}';document.head.appendChild(s)}
+document.addEventListener('click',e=>{const b=e.target.closest?.('[data-v479-tab]');if(b){active=b.dataset.v479Tab||'decide';try{localStorage.setItem('vestra.portfolio.analysisTab',active)}catch{};setTimeout(canon,0)}const q=e.target.closest?.('[data-ux461-toggle]');if(q)setTimeout(canon,0)},true);
+function start(){style();try{active=localStorage.getItem('vestra.portfolio.analysisTab')||'decide'}catch{};canon();new MutationObserver(()=>{if(busy)return;busy=true;requestAnimationFrame(()=>{busy=false;canon()})}).observe(document.body,{childList:true,subtree:true})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();})();
