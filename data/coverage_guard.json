@@ -1,16 +1,27 @@
 {
-  "generated_at": "2026-08-24T17:11:11.206121+00:00",
-  "rows_checked": 1688,
+  "generated_at": "2026-08-25T00:13:57.384939+00:00",
+  "rows_checked": 1711,
   "ok": true,
   "violation_count": 0,
   "violation_counts": {},
   "violations": [],
   "rules": {
     "malformed_european_exchange_token_before_suffix": "forbidden",
+    "public_score_requires_coverage_and_critical_metadata": true,
     "score_ge_60_requires_coverage_pct": 50,
     "score_ge_60_requires_critical_coverage_pct": 35,
     "scanner_requires_coverage_pct": 55,
     "scanner_requires_critical_coverage_pct": 45,
-    "scanner_requires_confidence_score": 50
+    "scanner_requires_confidence_score": 50,
+    "opportunity_rank_requires_public_score": true,
+    "opportunity_rank_requires_signal_count": 5,
+    "opportunity_rank_requires_structural_signal_count": 2,
+    "opportunity_rank_requires_timing_score": true,
+    "strong_opportunities_may_not_be_overextended": true,
+    "strong_opportunity_requires_coverage_pct": 65,
+    "strong_opportunity_requires_confidence_score": 60,
+    "high_priority_requires_coverage_pct": 75,
+    "high_priority_requires_confidence_score": 70,
+    "carried_rows_may_not_have_active_opportunity_rank": true
   }
 }
