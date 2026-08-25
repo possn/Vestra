@@ -1,7 +1,7 @@
-/* Vestra Market Hotfix v4.44 — direct deploy, independent of Actions. */
+/* Vestra Market Hotfix v4.45 — direct deploy, independent of Actions. */
 (() => {
   'use strict';
-  const VERSION='4.44';
+  const VERSION='4.45';
   let stocks=[];
   let byTicker=new Map();
   let loading=null;
@@ -54,7 +54,16 @@
     if(!parts.length)return null;
     return Math.max(0,Math.min(100,parts.reduce((a,[v,w])=>a+v*w,0)/parts.reduce((a,[,w])=>a+w,0)));
   }
-  function brief(s){return t(s?.business_summary)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ');}
+  function brief(s){
+    const direct=t(s?.business_summary||s?.longBusinessSummary||s?.long_business_summary||s?.description||s?.company_description);
+    if(direct)return direct;
+    const industry=t(s?.industry), sector=t(s?.sector), country=t(s?.country);
+    if(industry&&sector&&industry.toLowerCase()!==sector.toLowerCase())return `Empresa do setor ${sector}, com atividade principal em ${industry}.`;
+    if(industry)return `Empresa com atividade principal em ${industry}.`;
+    if(sector)return `Empresa integrada no setor ${sector}.`;
+    if(country)return `Empresa cotada com sede/atividade principal em ${country}.`;
+    return 'Empresa cotada acompanhada pelo universo Vestra.';
+  }
   function sectorFilter(section){
     const active=section.querySelector('[data-market-sector].is-active');
     if(active)return t(active.dataset.marketSector)||'all';
@@ -65,23 +74,24 @@
   function rowHTML(s){
     const os=opportunity(s), tm=timing(s), desc=brief(s);
     const meta=[os!=null?`Opportunity ${Math.round(os)}/100`:'',`Momento ${Math.round(tm)}/100`,t(s?.opportunity_label)].filter(Boolean).join(' · ');
-    return `<div class="market-row market-row--hotfix" data-market-ticker="${esc(s.ticker)}"><div><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div>${desc?`<div class="market-row__description">${esc(desc)}</div>`:''}<div class="market-row__meta">${esc(meta)}</div></div><div class="market-row__end"><div class="market-score ${scoreClass(os||0)}">${os==null?'—':Math.round(os)}</div></div></div>`;
+    return `<div class="market-row market-row--hotfix" data-market-ticker="${esc(s.ticker)}"><div><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(desc)}</div><div class="market-row__meta">${esc(meta)}</div></div><div class="market-row__end"><div class="market-score ${scoreClass(os||0)}">${os==null?'—':Math.round(os)}</div></div></div>`;
   }
 
   function repairOpportunitySection(){
     const section=[...document.querySelectorAll('.market-section')].find(x=>t(x.querySelector('h3')?.textContent)==='Melhores oportunidades');
     if(!section)return;
     const list=section.querySelector('.market-list'); if(!list)return;
-    const empty=list.querySelector('.market-empty');
-    if(!empty && !list.dataset.vestraHotfix)return;
     const sector=sectorFilter(section);
     let rows=stocks.filter(eligible);
     if(sector!=='all')rows=rows.filter(s=>t(s?.sector)===sector);
     rows.sort((a,b)=>(opportunity(b)||0)-(opportunity(a)||0)||(timing(b)||0)-(timing(a)||0));
     rows=rows.slice(0,20);
     if(!rows.length)return;
+    const signature=rows.map(s=>`${t(s.ticker)}:${Math.round(opportunity(s)||0)}`).join('|')+`|${sector}`;
+    if(list.dataset.vestraHotfix===VERSION && list.dataset.vestraSignature===signature)return;
     list.innerHTML=rows.map(rowHTML).join('');
     list.dataset.vestraHotfix=VERSION;
+    list.dataset.vestraSignature=signature;
   }
 
   function ptNumber(text){
@@ -106,8 +116,8 @@
     });
   }
   function addStyle(){
-    if(document.getElementById('vestra-market-hotfix-v444'))return;
-    const st=document.createElement('style'); st.id='vestra-market-hotfix-v444';
+    if(document.getElementById('vestra-market-hotfix-v445'))return;
+    const st=document.createElement('style'); st.id='vestra-market-hotfix-v445';
     st.textContent='.market-row__description{font-size:11px;line-height:1.4;color:var(--text2,#62757c);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:560px}.market-row--hotfix .market-row__meta{margin-top:4px}';
     document.head.appendChild(st);
   }
