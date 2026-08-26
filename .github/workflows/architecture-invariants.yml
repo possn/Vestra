@@ -1,0 +1,66 @@
+name: Architecture invariants
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'tests/**'
+      - 'data/stocks-index.json'
+      - 'data/dossiers-manifest.json'
+      - 'data/dossiers/**'
+      - 'data/politicians.json'
+      - 'market.js'
+      - 'politicians.js'
+      - 'market-data-loader.js'
+      - 'app-storage.js'
+      - 'app-asset-identity.js'
+      - 'worker.js'
+      - 'scripts/run.py'
+      - 'scripts/congress.py'
+      - '.github/workflows/architecture-invariants.yml'
+  pull_request:
+    paths:
+      - 'tests/**'
+      - 'data/stocks-index.json'
+      - 'data/dossiers-manifest.json'
+      - 'data/dossiers/**'
+      - 'data/politicians.json'
+      - 'market.js'
+      - 'politicians.js'
+      - 'market-data-loader.js'
+      - 'app-storage.js'
+      - 'app-asset-identity.js'
+      - 'worker.js'
+      - 'scripts/run.py'
+      - 'scripts/congress.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: architecture-invariants-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate JavaScript syntax
+        run: |
+          node --check market.js
+          node --check politicians.js
+          node --check market-data-loader.js
+          node --check app-storage.js
+          node --check app-asset-identity.js
+          node --check worker.js
+      - name: Validate Python syntax
+        run: |
+          python -m py_compile scripts/run.py scripts/congress.py scripts/build_market_shards.py scripts/build_politicians_feed.py
+      - name: Run architecture invariants
+        run: python -m unittest -v tests.test_architecture_invariants
