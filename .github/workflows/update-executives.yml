@@ -32,6 +32,24 @@ jobs:
         run: pip install requests pdfplumber
       - name: Validate executive pipeline
         run: python -m py_compile scripts/build_executive_feed.py scripts/normalize_executive_amounts.py
+      - name: Inspect White House PTR text layer
+        run: |
+          python - <<'PY'
+          import io, re, requests, pdfplumber
+          url='https://www.whitehouse.gov/wp-content/uploads/2026/06/President-Donald-J.-Trump-Periodic-Transaction-Report-0.6.25.26-2.pdf'
+          r=requests.get(url, timeout=90, headers={'User-Agent':'Vestra/1.0 public-financial-disclosure research'})
+          r.raise_for_status()
+          with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+              print('pages=', len(pdf.pages))
+              for page_no, page in enumerate(pdf.pages, 1):
+                  text=page.extract_text(x_tolerance=2, y_tolerance=2) or ''
+                  upper=text.upper()
+                  for needle in ('ILLINOIS','MCDONALD','MEDTRONIC'):
+                      pos=upper.find(needle)
+                      if pos >= 0:
+                          snippet=text[max(0,pos-220):pos+420].replace('\n',' | ')
+                          print(f'PAGE {page_no} {needle}: {snippet}')
+          PY
       - name: Refresh official Executive OGE PTRs
         run: python scripts/build_executive_feed.py
       - name: Normalize Executive OCR ranges
