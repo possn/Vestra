@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# One-shot guarded migration. Kept in-repo as an auditable record of the source rename.
 p = Path("scripts/run.py")
 s = p.read_text(encoding="utf-8")
 old = '        if row.get("congress_trades"): row["data_sources"].append("STOCK Act / Bargo")\n'
