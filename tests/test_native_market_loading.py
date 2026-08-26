@@ -42,10 +42,11 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_service_worker_matches_native_market_generation(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.3', sw)
-        self.assertIn('vestra-cache-v107', sw)
+        self.assertIn('Vestra Service Worker v9.4', sw)
+        self.assertIn('vestra-cache-v108', sw)
         self.assertIn('./market-data-loader.js', sw)
         self.assertIn('./market-company-brief.js', sw)
+        self.assertIn('./portfolio-card-classifier.js', sw)
         self.assertIn('./market-opportunities.js', sw)
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
         self.assertIn('./vestra-swap-lab.js', sw)
