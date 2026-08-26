@@ -1,4 +1,4 @@
-/* Vestra Market compatibility loader v4.86 — sequential, deterministic. */
+/* Vestra Market compatibility loader v4.87 — sequential, deterministic. */
 (() => {
   'use strict';
 
@@ -39,19 +39,15 @@
   load('./vestra-ux-v457.js?v=4.57','vestraUxV457');
   load('./market-opportunity-lenses.js?v=1.0','vestraOpportunityLenses');
   load('./vestra-ai-brief-v459.js?v=4.59','vestraAiBriefV459');
-
-  // Canonical portfolio UI: replaces v460 + v461 + v479 + v480 and therefore
-  // removes four overlapping MutationObservers / DOM reconstruction layers.
   load('./vestra-portfolio-ui.js?v=1.0','vestraPortfolioUi');
-
   load('./vestra-portfolio-nav-fix-v464.js?v=4.64','vestraPortfolioNavFixV464');
-  load('./vestra-portfolio-close-v469.js?v=4.69','vestraPortfolioCloseV469');
-  load('./vestra-portfolio-close-dedupe-v470.js?v=4.70','vestraPortfolioCloseDedupeV470');
-  load('./vestra-market-close-cleanup-v471.js?v=4.71','vestraMarketCloseCleanupV471');
+
+  // Canonical close/navigation controller replaces v469 + v470 + v471.
+  load('./market-close-controller.js?v=1.0','vestraMarketCloseController');
   load('./vestra-portfolio-dossier-routing-v482.js?v=4.82','vestraPortfolioDossierRoutingV482');
 
   const style = document.createElement('style');
-  style.id = 'vestra-politicians-canonical-v486';
+  style.id = 'vestra-politicians-canonical-v487';
   style.textContent = '.politicians-section .ux454-flow{display:none!important}';
   document.head.appendChild(style);
   load('./politicians.js?v=1.3','vestraPoliticiansCanonical');
