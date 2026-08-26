@@ -34,7 +34,15 @@ jobs:
           sudo apt-get install -y tesseract-ocr >/dev/null
           pip install requests pdfplumber pytesseract
       - name: Validate executive pipeline
-        run: python -m py_compile scripts/build_executive_feed.py scripts/normalize_executive_amounts.py
+        run: |
+          python -m py_compile scripts/build_executive_feed.py scripts/normalize_executive_amounts.py
+          python - <<'PY'
+          from pathlib import Path
+          source=Path('scripts/build_executive_feed.py').read_text()
+          assert 'def parse_ocr_windows' in source
+          assert 'for width in range(1, 5)' in source
+          assert 'len(types) != 1 or len(amounts) != 1 or len(dates) != 1' in source
+          PY
       - name: Refresh official Executive OGE PTRs
         run: python scripts/build_executive_feed.py
       - name: Normalize Executive OCR ranges
