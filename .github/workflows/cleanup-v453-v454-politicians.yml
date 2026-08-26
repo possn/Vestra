@@ -1,0 +1,52 @@
+name: Cleanup v453-v454 politicians
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/cleanup_v453_v454_politicians.py'
+      - '.github/workflows/cleanup-v453-v454-politicians.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded cleanup
+        run: python scripts/cleanup_v453_v454_politicians.py
+      - name: Validate JavaScript and invariants
+        run: |
+          node --check vestra-ux-v453.js
+          node --check vestra-ux-v454.js
+          python - <<'PY'
+          from pathlib import Path
+          p453=Path('vestra-ux-v453.js').read_text()
+          p454=Path('vestra-ux-v454.js').read_text()
+          for token in ('politicianSummary','ux453-politician-summary','.politicians-section'):
+              assert token not in p453, token
+          for token in ('recentPolitical','loadPoliticalFlow','enhancePoliticalFlow','www.bargo.ai','ux454-flow','.politicians-section'):
+              assert token not in p454, token
+          canonical=Path('politicians.js').read_text()
+          assert "const VERSION='2.1';" in canonical
+          assert 'data/executives.json' in canonical
+          PY
+          git diff --check
+      - name: Commit cleanup
+        run: |
+          git config user.name 'vestra-refactor-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vestra-ux-v453.js vestra-ux-v454.js
+          if git diff --cached --quiet; then
+            echo 'No cleanup required.'
+          else
+            git commit -m 'refactor: remove duplicate political overlays from v453-v454'
+            git pull --rebase origin main
+            git push
+          fi
