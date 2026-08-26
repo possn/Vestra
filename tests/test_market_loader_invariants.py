@@ -18,18 +18,23 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_hotfix_does_not_reload_base_utils(self):
         hotfix = read("market-hotfix.js")
         self.assertNotIn("load('./app-utils.js", hotfix)
-        self.assertIn("market-data-loader.js?v=1.2", hotfix)
+        self.assertIn("market-data-loader.js?v=2.0", hotfix)
 
-    def test_legacy_stocks_requests_share_one_lightweight_index_payload(self):
+    def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
+        market = read("market.js")
         loader = read("market-data-loader.js")
-        self.assertIn("let indexPayloadPromise = null;", loader)
-        self.assertIn("async function sharedIndexPayload()", loader)
-        self.assertIn("if(indexPayloadPromise) return indexPayloadPromise;", loader)
-        self.assertIn("stocks-index.json", loader)
-        self.assertIn("new Response(body", loader)
-        self.assertIn("X-Vestra-Market-Source", loader)
+        start = market.index("async function ensureLoaded")
+        end = market.index("\n  function ", start)
+        block = market[start:end]
+        self.assertIn("stocks-index.json", block)
+        self.assertLess(block.index("stocks-index.json"), block.index("stocks.json"))
+        self.assertNotIn("window.fetch =", loader)
+        self.assertNotIn("indexPayloadPromise", loader)
+        self.assertNotIn("sharedIndexPayload", loader)
+        self.assertIn("dossiers-manifest.json", loader)
+        self.assertIn("data/dossiers/", loader)
         self.assertIn("stocks.json?full=1", loader)
-        self.assertIn("version:'1.2'", loader)
+        self.assertIn("version:'2.0'", loader)
 
     def test_legacy_full_dataset_is_only_explicit_dossier_emergency_fallback(self):
         loader = read("market-data-loader.js")
