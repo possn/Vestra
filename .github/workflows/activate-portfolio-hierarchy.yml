@@ -1,0 +1,64 @@
+name: Activate portfolio hierarchy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/activate_portfolio_hierarchy.py'
+      - 'vestra-portfolio-hierarchy.js'
+      - '.github/workflows/activate-portfolio-hierarchy.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: activate-portfolio-hierarchy
+  cancel-in-progress: true
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Activate canonical hierarchy
+        run: python scripts/activate_portfolio_hierarchy.py
+      - name: Validate portfolio hierarchy invariants
+        run: |
+          node --check vestra-portfolio-hierarchy.js
+          node --check vestra-ux-v454.js
+          node --check vestra-ux-v456.js
+          node --check market-hotfix.js
+          python - <<'PY'
+          from pathlib import Path
+          h=Path('market-hotfix.js').read_text()
+          c=Path('vestra-portfolio-hierarchy.js').read_text()
+          v454=Path('vestra-ux-v454.js').read_text()
+          assert 'vestra-portfolio-hierarchy.js?v=1.0' in h
+          assert 'vestra-ux-v455.js' not in h
+          assert 'vestra-ux-v457.js' not in h
+          assert h.index('vestra-portfolio-hierarchy.js') < h.index('vestra-ux-v456.js')
+          assert 'organizePortfolio' not in v454
+          assert 'rankOpportunityRows' in v454
+          for token in ("['research','priority','reinforce','review']","['swap','scenario','overlap','map']","['target','history','risk','stress']"):
+              assert token in c
+          for token in ('ux454-swap-head','ux454-overlap-head','ux455-swap-summary','ux455-overlap-note'):
+              assert token in c
+          assert c.count('new MutationObserver') == 1
+          PY
+          git diff --check
+      - name: Commit activation
+        run: |
+          git config user.name 'vestra-refactor-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vestra-ux-v454.js market-hotfix.js
+          if git diff --cached --quiet; then
+            echo 'Canonical hierarchy already active.'
+          else
+            git commit -m 'refactor: activate canonical portfolio hierarchy'
+            git pull --rebase origin main
+            git push
+          fi
