@@ -82,86 +82,16 @@ function normalizeYieldType(s) {
 
 /* ─── INFO TIPS + TOAST moved to app-feedback.js ───────────── */
 
-/* ─── PERSISTENCE (IndexedDB + localStorage fallback) ─────── */
-const STORAGE_KEY = "PF_STATE_V6";
-const DB_NAME = "pf_v6", DB_STORE = "kv", DB_KEY = "state";
+/* ─── PERSISTENCE — moved to app-storage.js ──────────────── */
+const {
+  requestPersistentStorage,
+  storageGet,
+  storageSet,
+  storageClear,
+} = window.VestraStorage || {};
 
-function idbAvailable() { return typeof indexedDB !== "undefined" && indexedDB; }
-
-// v64c: idbOpen used to open a fresh connection and idbGet/idbSet each closed it
-// again immediately after. Every allocation-phase button click (and anything
-// else calling saveState) paid the full open+upgrade-check+close cost, and two
-// rapid clicks could race — a second open() starting before the first
-// connection had fully closed. That is what made the phase buttons ("Transição",
-// "Independência"...) feel slow or occasionally unresponsive on a real device,
-// on top of state being a multi-MB JSON blob (thousands of dividends/broker
-// events) that has to be reserialized every save. Cache one shared connection
-// and reuse it; only reopen if it was never created or got invalidated.
-let _idbConn = null;
-function idbOpen() {
-  if (_idbConn) return _idbConn;
-  _idbConn = new Promise((res, rej) => {
-    try {
-      const req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(DB_STORE)) req.result.createObjectStore(DB_STORE); };
-      req.onsuccess = () => {
-        const db = req.result;
-        db.onclose = () => { _idbConn = null; }; // browser can force-close (e.g. version change) — allow reopening
-        res(db);
-      };
-      req.onerror = () => { _idbConn = null; rej(req.error); };
-    } catch (e) { _idbConn = null; rej(e); }
-  });
-  return _idbConn;
-}
-
-async function idbGet(key) {
-  const db = await idbOpen();
-  return new Promise((res, rej) => {
-    const tx = db.transaction(DB_STORE, "readonly");
-    const req = tx.objectStore(DB_STORE).get(key);
-    req.onsuccess = () => res(req.result);
-    req.onerror = () => rej(req.error);
-  });
-}
-
-async function idbSet(key, value) {
-  const db = await idbOpen();
-  return new Promise((res, rej) => {
-    const tx = db.transaction(DB_STORE, "readwrite");
-    tx.objectStore(DB_STORE).put(value, key);
-    tx.oncomplete = () => res(true);
-    tx.onerror = () => rej(tx.error);
-  });
-}
-
-async function idbDel(key) {
-  const db = await idbOpen();
-  return new Promise(res => {
-    const tx = db.transaction(DB_STORE, "readwrite");
-    tx.objectStore(DB_STORE).delete(key);
-    tx.oncomplete = () => res(true);
-    tx.onerror = () => res(false);
-  });
-}
-
-async function requestPersistentStorage() {
-  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (_) {}
-}
-
-async function storageGet() {
-  if (idbAvailable()) { try { const v = await idbGet(DB_KEY); if (v) return v; } catch (_) {} }
-  try { return localStorage.getItem(STORAGE_KEY); } catch (_) { return null; }
-}
-
-async function storageSet(raw) {
-  if (idbAvailable()) { try { await idbSet(DB_KEY, raw); return; } catch (_) {} }
-  try { localStorage.setItem(STORAGE_KEY, raw); } catch (_) {}
-}
-
-async function storageClear() {
-  if (idbAvailable()) await idbDel(DB_KEY);
-  try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+if (![requestPersistentStorage, storageGet, storageSet, storageClear].every(fn => typeof fn === "function")) {
+  throw new Error("VestraStorage não foi carregado antes de app.js");
 }
 
 /* ─── STATE ───────────────────────────────────────────────── */
