@@ -32,19 +32,23 @@ jobs:
         run: python -m py_compile scripts/build_politicians_feed.py
       - name: Build politicians snapshot
         run: python scripts/build_politicians_feed.py
-      - name: Validate snapshot
+      - name: Validate snapshot freshness
         run: |
           python - <<'PY'
-          import json
+          import datetime as dt, json
           from pathlib import Path
           p=Path('data/politicians.json')
           assert p.exists(), 'politicians snapshot missing'
           d=json.loads(p.read_text())
-          assert d.get('schema_version') == 1
+          assert d.get('schema_version') == 2
           assert len(d.get('trades') or []) >= 10
           assert len(d.get('members') or []) >= 2
           assert all(x.get('ticker') and x.get('member') and x.get('transaction_date') for x in d['trades'][:50])
-          assert d.get('source') == 'CongressInvests API'
+          newest=d.get('newest_disclosure')
+          assert newest, 'newest disclosure missing'
+          age=(dt.date.today()-dt.date.fromisoformat(newest)).days
+          assert age <= 60, f'politicians feed stale by {age} days'
+          assert d.get('source') in {'Capitol Trades','CongressInvests API'}
           PY
       - name: Publish snapshot
         run: |
