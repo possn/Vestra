@@ -1,0 +1,74 @@
+name: Update executive disclosures
+
+on:
+  schedule:
+    - cron: "40 */6 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build_executive_feed.py'
+      - 'scripts/normalize_executive_amounts.py'
+      - '.github/workflows/update-executives.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-executive-disclosures
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install parser dependencies
+        run: pip install requests pdfplumber
+      - name: Validate executive pipeline
+        run: python -m py_compile scripts/build_executive_feed.py scripts/normalize_executive_amounts.py
+      - name: Refresh official Executive OGE PTRs
+        run: python scripts/build_executive_feed.py
+      - name: Normalize Executive OCR ranges
+        run: python scripts/normalize_executive_amounts.py
+      - name: Validate executive snapshot
+        run: |
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+
+          p=Path('data/executives.json')
+          assert p.exists(), 'executive snapshot missing'
+          d=json.loads(p.read_text())
+          assert d.get('schema_version') == 2
+          assert d.get('coverage') == 'automated_official_oge'
+          people=d.get('people') or []
+          trades=d.get('trades') or []
+          assert any(x.get('key') == 'executive:donald-trump' for x in people), 'Donald Trump missing'
+          assert sum(1 for x in trades if x.get('type') == 'buy') >= 10, 'top-10 buys unavailable'
+          assert sum(1 for x in trades if x.get('type') == 'sell') >= 10, 'top-10 sells unavailable'
+          assert all(x.get('ticker') and x.get('filing_url') and x.get('transaction_date') for x in trades)
+          for x in trades:
+              nums=[int(v.replace(',','')) for v in re.findall(r'\$([0-9,]+)', x.get('amount') or '')]
+              if len(nums)>=2:
+                  assert nums[1] >= nums[0], f'bad amount range: {x}'
+          filings=d.get('filings') or []
+          assert any('whitehouse.gov' in str(x.get('url')) for x in filings), 'White House filing status missing'
+          assert any('oge.gov' in str(x.get('url')) for x in filings), 'OGE filing status missing'
+          PY
+      - name: Publish executive snapshot
+        run: |
+          git config user.name 'vestra-data-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add data/executives.json
+          if git diff --cached --quiet; then
+            echo 'Sem alterações no feed executivo.'
+          else
+            git commit -m "Actualização disclosures Executivo ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            git pull --rebase origin main
+            git push
+          fi
