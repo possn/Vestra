@@ -7,6 +7,7 @@ MODULE = Path('app-broker-parsers.js')
 
 src = APP.read_text()
 html = INDEX.read_text()
+original_len = len(src)
 
 names = [
     'estimateEURFactorFromRow',
@@ -109,13 +110,12 @@ if (![estimateEURFactorFromRow, parseBrokerLedgerRows, parseBrokerPositionRows,
 """
 src = src.replace(anchor, import_block + anchor, 1)
 
-script_tag = '  <script defer="" src="app-broker-parsers.js?v=1.0"></script>\n'
+script_tag = '<script defer="" src="app-broker-parsers.js?v=1.0"></script>\n'
 if 'app-broker-parsers.js' not in html:
-    app_tag = '  <script defer="" src="app.js'
-    pos = html.find(app_tag)
-    if pos < 0:
+    m = re.search(r'(?m)^<script\s+defer=""[^>]*src="app\.js[^>]*></script>$', html)
+    if not m:
         raise SystemExit('app.js script tag not found')
-    html = html[:pos] + script_tag + html[pos:]
+    html = html[:m.start()] + script_tag + html[m.start():]
 
 # Final guards.
 for name in names:
@@ -129,5 +129,5 @@ if 'function rebuildBrokerGeneratedData(' not in src:
 APP.write_text(src)
 INDEX.write_text(html)
 MODULE.write_text(module)
-print(f'app.js reduced by {len(APP.read_text()) - len(src)} bytes')
+print(f'app.js reduced by {original_len - len(src)} bytes')
 print(f'broker parser module {len(module)} bytes')
