@@ -29,27 +29,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install parser dependencies
-        run: pip install requests pdfplumber
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y tesseract-ocr >/dev/null
+          pip install requests pdfplumber pytesseract
       - name: Validate executive pipeline
         run: python -m py_compile scripts/build_executive_feed.py scripts/normalize_executive_amounts.py
-      - name: Inspect White House PTR text layer
-        run: |
-          python - <<'PY'
-          import io, re, requests, pdfplumber
-          url='https://www.whitehouse.gov/wp-content/uploads/2026/06/President-Donald-J.-Trump-Periodic-Transaction-Report-0.6.25.26-2.pdf'
-          r=requests.get(url, timeout=90, headers={'User-Agent':'Vestra/1.0 public-financial-disclosure research'})
-          r.raise_for_status()
-          with pdfplumber.open(io.BytesIO(r.content)) as pdf:
-              print('pages=', len(pdf.pages))
-              for page_no, page in enumerate(pdf.pages, 1):
-                  text=page.extract_text(x_tolerance=2, y_tolerance=2) or ''
-                  upper=text.upper()
-                  for needle in ('ILLINOIS','MCDONALD','MEDTRONIC'):
-                      pos=upper.find(needle)
-                      if pos >= 0:
-                          snippet=text[max(0,pos-220):pos+420].replace('\n',' | ')
-                          print(f'PAGE {page_no} {needle}: {snippet}')
-          PY
       - name: Refresh official Executive OGE PTRs
         run: python scripts/build_executive_feed.py
       - name: Normalize Executive OCR ranges
@@ -76,8 +61,14 @@ jobs:
               if len(nums)>=2:
                   assert nums[1] >= nums[0], f'bad amount range: {x}'
           filings=d.get('filings') or []
-          assert any('whitehouse.gov' in str(x.get('url')) for x in filings), 'White House filing status missing'
-          assert any('oge.gov' in str(x.get('url')) for x in filings), 'OGE filing status missing'
+          whitehouse=[x for x in filings if 'whitehouse.gov' in str(x.get('url'))]
+          oge=[x for x in filings if 'oge.gov' in str(x.get('url'))]
+          assert whitehouse, 'White House filing status missing'
+          assert oge, 'OGE filing status missing'
+          assert whitehouse[0].get('ok') is True
+          assert whitehouse[0].get('extraction') in {'text','ocr'}
+          assert int(whitehouse[0].get('parsed_trades') or 0) > 0, 'June White House filing produced no mapped trades'
+          assert d.get('newest_disclosure') >= '2026-06-25', 'June White House filing not represented in snapshot'
           PY
       - name: Publish executive snapshot
         run: |
