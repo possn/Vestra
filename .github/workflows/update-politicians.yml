@@ -1,0 +1,60 @@
+name: Update politicians feed
+
+on:
+  schedule:
+    - cron: "25 */6 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build_politicians_feed.py'
+      - '.github/workflows/update-politicians.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-politicians-feed
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install requests
+        run: pip install requests
+      - name: Validate builder
+        run: python -m py_compile scripts/build_politicians_feed.py
+      - name: Build politicians snapshot
+        run: python scripts/build_politicians_feed.py
+      - name: Validate snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('data/politicians.json')
+          assert p.exists(), 'politicians snapshot missing'
+          d=json.loads(p.read_text())
+          assert d.get('schema_version') == 1
+          assert len(d.get('trades') or []) >= 10
+          assert len(d.get('members') or []) >= 2
+          assert all(x.get('ticker') and x.get('member') and x.get('transaction_date') for x in d['trades'][:50])
+          assert d.get('source') == 'CongressInvests API'
+          PY
+      - name: Publish snapshot
+        run: |
+          git config user.name 'vestra-data-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add data/politicians.json
+          if git diff --cached --quiet; then
+            echo 'Sem alterações no feed político.'
+          else
+            git commit -m "Actualização feed políticos ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            git pull --rebase origin main
+            git push
+          fi
