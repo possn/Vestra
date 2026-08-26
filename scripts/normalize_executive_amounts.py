@@ -48,14 +48,43 @@ def normalize_trade(row: dict) -> dict:
     return out
 
 
+def trade_key(row: dict) -> tuple:
+    return (
+        str(row.get("member_key") or row.get("member") or ""),
+        str(row.get("ticker") or "").upper(),
+        str(row.get("type") or "").lower(),
+        str(row.get("amount") or ""),
+        str(row.get("transaction_date") or ""),
+        str(row.get("disclosure_date") or ""),
+    )
+
+
 def main() -> None:
     if not PATH.exists():
         raise SystemExit("executives.json missing")
     data = json.loads(PATH.read_text(encoding="utf-8"))
-    trades = [normalize_trade(x) for x in (data.get("trades") or []) if isinstance(x, dict)]
+    normalized = [normalize_trade(x) for x in (data.get("trades") or []) if isinstance(x, dict)]
+
+    deduped: dict[tuple, dict] = {}
+    for row in normalized:
+        deduped[trade_key(row)] = row
+    trades = list(deduped.values())
+    trades.sort(key=lambda x: (x.get("disclosure_date") or "", x.get("transaction_date") or "", x.get("ticker") or ""), reverse=True)
     data["trades"] = trades
+
+    buys = sum(1 for x in trades if x.get("type") == "buy")
+    sells = sum(1 for x in trades if x.get("type") == "sell")
+    newest = max((str(x.get("disclosure_date") or "") for x in trades), default="")
+    data["newest_disclosure"] = newest
+    for person in data.get("people") or []:
+        if person.get("key") == "executive:donald-trump":
+            person["count"] = len(trades)
+            person["buys"] = buys
+            person["sells"] = sells
+            person["last"] = newest
+
     PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-    print(f"Normalized executive amount ranges: {len(trades)} rows")
+    print(f"Normalized/deduplicated executive feed: {len(trades)} rows ({buys} buys / {sells} sells)")
 
 
 if __name__ == "__main__":
