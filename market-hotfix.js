@@ -1,4 +1,4 @@
-/* Vestra Market compatibility loader v4.83 — sequential, deterministic. */
+/* Vestra Market compatibility loader v4.84 — sequential, deterministic. */
 (() => {
   'use strict';
 
@@ -28,6 +28,9 @@
     drain();
   }
 
+  // Must be first: installs the stocks-index redirect before the Market view is
+  // normally opened, and hydrates full dossier shards only on demand.
+  load('./market-data-loader.js?v=1.0','vestraMarketDataLoader');
   load('./market-enhancements.js?v=4.50','vestraMarketEnhancements');
   load('./portfolio-navigation-fix.js?v=1.0','vestraPortfolioNavigationFix');
   load('./vestra-ux-v452.js?v=4.52','vestraUxV452');
@@ -49,12 +52,7 @@
   load('./vestra-portfolio-tabs-v480.js?v=4.80','vestraPortfolioTabsV480');
   load('./vestra-portfolio-dossier-routing-v482.js?v=4.82','vestraPortfolioDossierRoutingV482');
 
-  // v4.83: politicians.js is now the single canonical politicians UI.
-  // The v463/v466/v475/v476/v477/v478/v481 layers used to repeatedly hide,
-  // rebuild and re-hide the same section and could leave duplicated controls or
-  // stale trade counts depending on observer order. They are deliberately no
-  // longer loaded. Older general UX files v454/v458 also contain optional
-  // political widgets; suppress those widgets so only politicians.js renders.
+  // v4.83+: politicians.js is the single canonical politicians UI.
   const style = document.createElement('style');
   style.id = 'vestra-politicians-canonical-v483';
   style.textContent = '.politicians-section .ux454-flow,.politicians-section .ux458-politician-leaders{display:none!important}';
