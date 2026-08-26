@@ -18,6 +18,8 @@ on:
       - 'worker.js'
       - 'scripts/run.py'
       - 'scripts/congress.py'
+      - 'scripts/normalize_market_provenance.py'
+      - '.github/workflows/update-market-data.yml'
       - '.github/workflows/architecture-invariants.yml'
   pull_request:
     paths:
@@ -34,6 +36,8 @@ on:
       - 'worker.js'
       - 'scripts/run.py'
       - 'scripts/congress.py'
+      - 'scripts/normalize_market_provenance.py'
+      - '.github/workflows/update-market-data.yml'
 
 permissions:
   contents: read
@@ -61,6 +65,6 @@ jobs:
           node --check worker.js
       - name: Validate Python syntax
         run: |
-          python -m py_compile scripts/run.py scripts/congress.py scripts/build_market_shards.py scripts/build_politicians_feed.py
+          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py
       - name: Run architecture invariants
         run: python -m unittest -v tests.test_architecture_invariants
