@@ -9,7 +9,12 @@
 
   function load(){
     if(loading)return loading;
-    loading=fetch(`./data/stocks.json?v=${VERSION}`,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+    loading=fetch('./data/stocks-index.json',{cache:'no-store'}).then(async r=>{
+      if(r.ok)return r.json();
+      const legacy=await fetch('./data/stocks.json',{cache:'no-store'});
+      if(!legacy.ok)throw 0;
+      return legacy.json();
+    }).then(d=>{
       stocks=Array.isArray(d)?d:(Array.isArray(d?.stocks)?d.stocks:[]);
       byTicker=new Map(stocks.map(s=>[t(s?.ticker).toUpperCase(),s]));
       return stocks;
