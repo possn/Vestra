@@ -1,0 +1,53 @@
+name: Cleanup v452 opportunities
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/cleanup_v452_opportunities.py'
+      - '.github/workflows/cleanup-v452-opportunities.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cleanup-v452-opportunities
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded cleanup
+        run: python scripts/cleanup_v452_opportunities.py
+      - name: Validate JavaScript and invariants
+        run: |
+          node --check vestra-ux-v452.js
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('vestra-ux-v452.js').read_text()
+          assert 'data/stocks.json' not in p
+          assert 'refineOpportunities' not in p
+          assert 'classifyPortfolioCards' in p
+          assert 'jumpPortfolio' in p
+          q=Path('vestra-ux-v453.js').read_text()
+          assert 'function opportunities()' in q
+          PY
+          git diff --check
+      - name: Commit cleanup
+        run: |
+          git config user.name 'vestra-refactor-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add vestra-ux-v452.js
+          if git diff --cached --quiet; then
+            echo 'No cleanup required.'
+          else
+            git commit -m 'refactor: remove superseded opportunity engine from v452'
+            git pull --rebase origin main
+            git push
+          fi
