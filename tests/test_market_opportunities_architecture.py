@@ -13,6 +13,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         hotfix = read('market-hotfix.js')
         self.assertIn("market-opportunities.js?v=1.1", hotfix)
         self.assertIn("vestra-portfolio-focus.js?v=1.0", hotfix)
+        self.assertNotIn("vestra-ux-v452.js", hotfix)
         self.assertNotIn("vestra-ux-v453.js", hotfix)
         self.assertNotIn("vestra-ux-v454.js", hotfix)
         self.assertLess(hotfix.index('market-opportunities.js'), hotfix.index('market-opportunity-lenses.js'))
@@ -58,26 +59,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn(".ux453-badge", source)
         self.assertIn("data-ux-focus", source)
 
-    def test_legacy_overlays_no_longer_own_politician_ui(self):
-        combined = '\n'.join(read(x) for x in ('vestra-ux-v452.js', 'vestra-ux-v453.js', 'vestra-ux-v454.js'))
-        for token in (
-            'enhancePoliticians', 'applyPoliticianView', 'addPoliticianPulse',
-            'politicianSummary', 'enhancePoliticalFlow', 'bargo.ai',
-            'vestra-politician-favourites-v1',
-        ):
-            self.assertNotIn(token, combined)
-
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.3', sw)
-        self.assertIn('vestra-cache-v107', sw)
-        self.assertIn('./market-opportunities.js', sw)
-        self.assertIn('./vestra-portfolio-focus.js', sw)
-        self.assertIn('./vestra-portfolio-hierarchy.js', sw)
-        self.assertIn('./vestra-swap-lab.js', sw)
-        self.assertIn('./market-company-brief.js', sw)
-        self.assertIn('./market-metric-cleanup.js', sw)
-        self.assertIn('./portfolio-collapsibles.js', sw)
+        self.assertIn('Vestra Service Worker v9.4', sw)
+        self.assertIn('vestra-cache-v108', sw)
+        for module in (
+            './market-opportunities.js','./vestra-portfolio-focus.js','./vestra-portfolio-hierarchy.js','./vestra-swap-lab.js',
+            './market-company-brief.js','./market-metric-cleanup.js','./portfolio-collapsibles.js','./portfolio-card-classifier.js',
+        ):
+            self.assertIn(module, sw)
 
 
 if __name__ == '__main__':
