@@ -747,6 +747,7 @@ def fetch_one(ticker: str) -> RawMetrics:
 _cooldown_lock = threading.Lock()
 _cooldown_until = 0.0
 _cooldown_strikes = 0
+_last_rate_limit_hit = 0.0
 
 
 def _is_rate_limit_error(exc: Exception) -> bool:
@@ -756,23 +757,32 @@ def _is_rate_limit_error(exc: Exception) -> bool:
 
 
 def _wait_for_cooldown():
+    global _cooldown_strikes
+    now = time.time()
     with _cooldown_lock:
-        remaining = _cooldown_until - time.time()
+        # A throttle burst must not poison the rest of the whole pipeline. If
+        # Yahoo has been quiet for two minutes, treat a future 429 as a fresh
+        # incident instead of resuming at the maximum backoff forever.
+        if _last_rate_limit_hit and now - _last_rate_limit_hit > 120:
+            _cooldown_strikes = 0
+        remaining = _cooldown_until - now
     if remaining > 0:
         time.sleep(remaining)
 
 
 def _register_rate_limit_hit():
-    global _cooldown_until, _cooldown_strikes
+    global _cooldown_until, _cooldown_strikes, _last_rate_limit_hit
     with _cooldown_lock:
+        _last_rate_limit_hit = time.time()
         _cooldown_strikes += 1
-        # Escalating cooldown: 20s, 40s, 80s, ... capped at 5 minutes so a
-        # very long block doesn't eat the whole Actions run budget either.
-        backoff = min(300, 20 * (2 ** (_cooldown_strikes - 1)))
-        candidate = time.time() + backoff
+        # 10s, 20s, 40s, then 60s maximum. The previous 300s ceiling, combined
+        # with thousands of sequential retries, could hold an Actions build for
+        # hours after a single broad Yahoo throttle event.
+        backoff = min(60, 10 * (2 ** (_cooldown_strikes - 1)))
+        candidate = _last_rate_limit_hit + backoff
         if candidate > _cooldown_until:
             _cooldown_until = candidate
-            log.warning("Yahoo rate-limit detected — pausing all fetch workers for %ds (strike %d)", backoff, _cooldown_strikes)
+            log.warning("Yahoo rate-limit detected — pausing fetch workers for %ds (strike %d)", backoff, _cooldown_strikes)
 
 
 def fetch_many(tickers: list[str], pause: float = 0.0, workers_override: int | None = None, retries: int = 3) -> list[RawMetrics]:
@@ -810,10 +820,18 @@ def fetch_many(tickers: list[str], pause: float = 0.0, workers_override: int | N
         failed = [tk for tk in tickers if getattr(results_by_ticker.get(tk), "error", None)]
         if not failed:
             break
-        # Exponential backoff between retry passes (not just the per-worker
-        # cooldown above) — a pass that hit a rate-limit wall needs more
-        # than a couple seconds before trying the same tickers again.
-        backoff = min(120, 8 * (2 ** attempt))
+        failure_ratio = len(failed) / max(1, len(tickers))
+        # A broad Yahoo throttle is not repaired by retrying hundreds/thousands
+        # of names sequentially. Portfolio positions are fetched separately in
+        # run.py with their own small retry pool; for the generic universe fail
+        # fast when the first pass is broadly blocked and let the coverage guard
+        # reject publication rather than monopolising the runner for hours.
+        if len(tickers) > 250 and failure_ratio >= 0.25:
+            log.warning("Broad Yahoo failure: %d/%d (%.1f%%). Skipping bulk retry pass to keep build bounded.", len(failed), len(tickers), failure_ratio * 100)
+            break
+        # Exponential backoff between retry passes. Keep this bounded because
+        # the shared cooldown already handles the immediate throttle window.
+        backoff = min(45, 6 * (2 ** attempt))
         log.info("Retrying %d failed ticker(s), pass %d/%d (waiting %ds first)", len(failed), attempt + 1, retries, backoff)
         time.sleep(backoff)
         # Retry sequentially: after a Yahoo throttle event, another burst of
