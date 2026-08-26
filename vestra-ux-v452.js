@@ -3,118 +3,6 @@
   'use strict';
   const VERSION='4.52';
   const t=v=>String(v??'').trim();
-  const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
-  const clamp=v=>Math.max(0,Math.min(100,v));
-  const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let stocks=[],loading=null;
-
-  function loadStocks(){
-    if(loading)return loading;
-    loading=fetch(`./data/stocks.json?v=${VERSION}`,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
-      stocks=Array.isArray(d)?d:(Array.isArray(d?.stocks)?d.stocks:[]);return stocks;
-    }).catch(()=>[]);
-    return loading;
-  }
-
-  function priceStats(s){
-    const closes=(Array.isArray(s?.price_history_1y)?s.price_history_1y:[]).map(x=>n(x?.close)).filter(x=>x!=null&&x>0);
-    const ret=d=>closes.length>d&&closes[closes.length-d-1]>0?(closes.at(-1)/closes[closes.length-d-1]-1)*100:null;
-    const hi=closes.length?Math.max(...closes):null,cur=closes.at(-1)||null;
-    return {r5:ret(5),r20:ret(20),r60:ret(60),room:hi&&cur?(1-cur/hi)*100:null};
-  }
-  function timing(s){
-    const official=n(s?.opportunity_timing_score); if(official!=null)return official;
-    const p=priceStats(s); let x=50;
-    if(p.r20!=null)x+=p.r20>=1&&p.r20<=9?22:p.r20>-4&&p.r20<1?8:p.r20>18?-16:p.r20<=-12?-15:0;
-    if(p.r60!=null)x+=p.r60>=3&&p.r60<=22?14:p.r60>38?-13:p.r60<=-18?-11:0;
-    if(p.r5!=null&&p.r20!=null){if(p.r5>0&&p.r20>=-2&&p.r20<11)x+=5;if(p.r5<-6)x-=6;}
-    if(p.room!=null)x+=p.room>=5&&p.room<=26?10:p.room<2?-8:p.room>45?-4:0;
-    if(t(s?.estimate_signal)==='improving')x+=8;
-    if(t(s?.estimate_signal)==='deteriorating')x-=10;
-    if(['confirmed','recovering'].includes(t(s?.recovery_status)))x+=7;
-    if(['failed','bounce_only'].includes(t(s?.recovery_status)))x-=10;
-    return clamp(x);
-  }
-  function overextended(s){
-    if(typeof s?.opportunity_overextended==='boolean')return s.opportunity_overextended;
-    const p=priceStats(s);
-    return (p.r20!=null&&p.r20>22)||(p.r60!=null&&p.r60>44)||((p.room!=null&&p.room<2)&&(p.r60!=null&&p.r60>18));
-  }
-  function eligible(s){
-    const qt=t(s?.quote_type||s?.quoteType).toUpperCase();
-    if(['ETF','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
-    const sc=n(s?.score),cov=n(s?.data_coverage_pct),conf=n(s?.confidence_score),crit=n(s?.critical_metric_coverage_pct);
-    const rel=t(s?.score_reliability).toLowerCase(),risk=t(s?.risk_gate).toLowerCase();
-    if(sc==null||sc<58||cov==null||cov<55||conf==null||conf<50)return false;
-    if(crit!=null&&crit<35)return false;
-    if(['insufficient','suppressed'].includes(rel)||['high','severe'].includes(risk)||t(s?.zombie).toLowerCase()==='yes'||overextended(s))return false;
-    return timing(s)>=46;
-  }
-  function oppScore(s){
-    const vals=[
-      [n(s?.score),.25],[timing(s),.25],[n(s?.recovery_score),.09],[n(s?.qarp_score),.10],[n(s?.moat_score),.07],
-      [n(s?.capital_allocation_intelligence_score),.05],[n(s?.confidence_score),.07],[n(s?.value_pct),.06],[n(s?.growth_pct),.03],[n(s?.sector_native_score),.03]
-    ].filter(([v])=>v!=null);
-    if(!vals.length)return null;
-    let x=vals.reduce((a,[v,w])=>a+clamp(v)*w,0)/vals.reduce((a,[,w])=>a+w,0);
-    const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);
-    if(fv!=null)x+=Math.max(-7,Math.min(8,fv/4.5)); else if(pt!=null)x+=Math.max(-5,Math.min(6,pt/7));
-    const est=t(s?.estimate_signal),rec=t(s?.recovery_status),val=t(s?.valuation_signal),dir=t(s?.thesis_direction);
-    if(est==='improving')x+=4;if(est==='deteriorating')x-=7;
-    if(['confirmed','recovering'].includes(rec))x+=4;if(['failed','bounce_only'].includes(rec))x-=7;
-    if(dir==='up')x+=2;if(dir==='down')x-=3;
-    if(val==='overvalued')x-=7;
-    if(overextended(s))x=Math.min(x,58);
-    return clamp(x);
-  }
-  function businessBrief(s){
-    const d=t(s?.business_summary||s?.longBusinessSummary||s?.long_business_summary||s?.description||s?.company_description);
-    if(d)return d;
-    const sec=t(s?.sector),ind=t(s?.industry);
-    if(sec&&ind&&sec.toLowerCase()!==ind.toLowerCase())return `${ind} · ${sec}`;
-    return ind||sec||'Empresa acompanhada pelo Vestra.';
-  }
-  function opportunityReason(s){
-    const p=priceStats(s),bits=[];
-    if(t(s?.estimate_signal)==='improving')bits.push('revisões a melhorar');
-    if(['confirmed','recovering'].includes(t(s?.recovery_status)))bits.push('recuperação confirmada');
-    if(p.r20!=null&&p.r20>=1&&p.r20<=10)bits.push('momentum ainda controlado');
-    if(p.room!=null&&p.room>=5&&p.room<=30)bits.push(`${p.room.toFixed(0)}% abaixo do máximo`);
-    const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);
-    if(fv!=null&&fv>8)bits.push(`upside fundamental +${fv.toFixed(0)}%`);else if(pt!=null&&pt>10)bits.push(`target +${pt.toFixed(0)}%`);
-    if(!bits.length)bits.push('qualidade + timing equilibrados');
-    return bits.slice(0,3).join(' · ');
-  }
-  function miniChip(label,value,kind=''){
-    if(value===null||value===undefined||value==='')return '';
-    return `<span class="ux-opp-chip ${kind}"><b>${esc(label)}</b>${esc(value)}</span>`;
-  }
-  function oppRow(s){
-    const os=oppScore(s),tm=timing(s),p=priceStats(s),fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);
-    const upside=fv!=null?`${fv>=0?'+':''}${fv.toFixed(0)}%`:pt!=null?`${pt>=0?'+':''}${pt.toFixed(0)}%`:'';
-    const momentum=p.r20!=null?`${p.r20>=0?'+':''}${p.r20.toFixed(1)}% / 20d`:'—';
-    return `<div class="market-row ux-opp-row" data-market-ticker="${esc(s.ticker)}">
-      <div class="ux-opp-main"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div>
-      <div class="market-row__description">${esc(businessBrief(s))}</div>
-      <div class="ux-opp-why">✦ ${esc(opportunityReason(s))}</div>
-      <div class="ux-opp-chips">${miniChip('Qualidade ',Math.round(n(s?.score)||0))}${miniChip('Timing ',Math.round(tm),'timing')}${miniChip('20d ',momentum,'momentum')}${upside?miniChip('Upside ',upside,'upside'):''}</div></div>
-      <div class="ux-opp-score"><small>ENTRY</small><strong>${Math.round(os)}</strong></div></div>`;
-  }
-  function refineOpportunities(){
-    const section=[...document.querySelectorAll('.market-section')].find(x=>t(x.querySelector('h3')?.textContent)==='Melhores oportunidades');
-    if(!section||!stocks.length)return;
-    const list=section.querySelector('.market-list'); if(!list)return;
-    const active=section.querySelector('[data-market-sector].is-active'); const sec=t(active?.dataset.marketSector)||'all';
-    let rows=stocks.filter(eligible); if(sec!=='all')rows=rows.filter(s=>t(s?.sector)===sec);
-    rows.sort((a,b)=>(oppScore(b)||0)-(oppScore(a)||0)||(timing(b)||0)-(timing(a)||0)); rows=rows.slice(0,12);
-    if(!rows.length)return;
-    const sig=rows.map(s=>`${t(s.ticker)}:${Math.round(oppScore(s)||0)}`).join('|')+sec;
-    if(list.dataset.uxOpp===sig)return;
-    list.innerHTML=rows.map(oppRow).join('');list.dataset.uxOpp=sig;
-    const h=section.querySelector('.market-section__head h3'); if(h)h.textContent='Oportunidades agora';
-    const p=section.querySelector('.market-section__head p'); if(p)p.textContent='Entrada potencial · qualidade + aceleração + recuperação + valuation, sem perseguir preços já esticados';
-  }
-
   const PORTFOLIO_KINDS=[
     {q:'Fila de revisão',kind:'research',icon:'◌',tone:'violet'},
     {q:'Prioridades da carteira',kind:'priority',icon:'✦',tone:'teal'},
@@ -178,7 +66,7 @@
 
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-ux-jump]');if(b){e.preventDefault();e.stopPropagation();jumpPortfolio(b.dataset.uxJump);}});
 
-  function apply(){refineOpportunities();classifyPortfolioCards();}
-  function start(){addStyle();loadStocks().then(()=>{apply();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});});}
+  function apply(){classifyPortfolioCards();}
+  function start(){addStyle();apply();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
