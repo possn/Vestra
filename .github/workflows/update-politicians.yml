@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/build_politicians_feed.py'
+      - 'scripts/congress.py'
       - '.github/workflows/update-politicians.yml'
 
 permissions:
@@ -28,17 +29,18 @@ jobs:
           python-version: '3.12'
       - name: Install parser dependencies
         run: pip install requests pdfplumber
-      - name: Validate builder and UI
+      - name: Validate builder, dossier mapper and UI
         run: |
-          python -m py_compile scripts/build_politicians_feed.py
+          python -m py_compile scripts/build_politicians_feed.py scripts/congress.py
           node --check politicians.js
       - name: Build politicians snapshot
         run: python scripts/build_politicians_feed.py
-      - name: Validate snapshot freshness
+      - name: Validate snapshot freshness and dossier mapping
         run: |
           python - <<'PY'
           import datetime as dt, json
           from pathlib import Path
+          from scripts.congress import fetch_congress_for_universe
           p=Path('data/politicians.json')
           assert p.exists(), 'politicians snapshot missing'
           d=json.loads(p.read_text())
@@ -56,6 +58,11 @@ jobs:
           if d.get('source') == 'U.S. House Clerk':
               assert coverage == {'House'}
               assert all(x.get('chamber') == 'House' for x in d['trades'][:100])
+          tickers=sorted({x['ticker'] for x in d['trades'] if x.get('ticker')})[:100]
+          mapped=fetch_congress_for_universe(tickers)
+          assert mapped, 'dossier Congress mapper returned no matching tickers'
+          sample=next(iter(mapped.values()))[0]
+          assert sample.get('member') and sample.get('transaction_date') and sample.get('amount_range')
           PY
       - name: Publish snapshot
         run: |
