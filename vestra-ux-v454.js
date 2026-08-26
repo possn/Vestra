@@ -5,8 +5,6 @@
   const t=v=>String(v??'').trim();
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let recentPolitical=null;
-
   const GROUPS=[
     {id:'decide',title:'Decidir agora',sub:'As ações que podem exigir atenção.',kinds:['priority','reinforce','review','research']},
     {id:'optimize',title:'Otimizar a carteira',sub:'Trocas, overlap e eficiência da alocação.',kinds:['swap','overlap','scenario','map']},
@@ -90,29 +88,6 @@
     }
   }
 
-  async function loadPoliticalFlow(){
-    if(recentPolitical)return recentPolitical;
-    try{
-      const r=await fetch('https://www.bargo.ai/free-apis/congress/v1/trades?limit=100&page=0',{cache:'no-store',mode:'cors'});if(!r.ok)throw 0;
-      const d=await r.json();recentPolitical=Array.isArray(d)?d:(d?.trades||d?.data||[]);return recentPolitical;
-    }catch{return[];}
-  }
-  function tradeType(x){return t(x?.type||x?.transaction||x?.transaction_type).toLowerCase();}
-  function isBuy(x){return /purchase|buy|compr/.test(tradeType(x));}
-  function isSell(x){return /sale|sell|vend/.test(tradeType(x));}
-  function aggregate(rows,pred){
-    const m=new Map();rows.filter(pred).forEach(x=>{const tk=t(x?.ticker).toUpperCase();if(!tk)return;m.set(tk,(m.get(tk)||0)+1);});
-    return [...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
-  }
-  async function enhancePoliticalFlow(){
-    const section=document.querySelector('.politicians-section');if(!section||section.querySelector('.ux454-flow'))return;
-    const rows=await loadPoliticalFlow();if(!rows.length)return;
-    const buys=aggregate(rows,isBuy),sells=aggregate(rows,isSell);
-    const box=document.createElement('div');box.className='ux454-flow';
-    box.innerHTML=`<div class="ux454-flow-head"><div><small>POLITICAL FLOW · ÚLTIMAS 100</small><strong>O que o Congresso está a negociar agora</strong></div><span>${rows.length} divulgações</span></div><div class="ux454-flow-grid"><section><small>↗ MAIS COMPRADOS</small>${buys.map(([tk,c])=>`<button data-market-ticker="${esc(tk)}"><b>${esc(tk)}</b><span>${c} operações</span></button>`).join('')}</section><section><small>↘ MAIS VENDIDOS</small>${sells.map(([tk,c])=>`<button data-market-ticker="${esc(tk)}"><b>${esc(tk)}</b><span>${c} operações</span></button>`).join('')}</section></div>`;
-    const picker=section.querySelector('.politician-picker');picker?.insertAdjacentElement('beforebegin',box);
-  }
-
   function style(){
     if(document.getElementById('vestra-ux-v454-style'))return;
     const s=document.createElement('style');s.id='vestra-ux-v454-style';s.textContent=`
@@ -120,12 +95,10 @@
       .ux454-group-label{display:grid;gap:2px;margin:18px 3px 8px;padding-left:3px}.ux454-group-label span{font-size:13px;font-weight:900;color:var(--text)}.ux454-group-label small{font-size:9.5px;color:var(--text2)}.ux454-purpose{display:none}.market-detail-card.is-collapsed>.ux454-purpose{display:block!important;position:absolute;left:52px;right:50px;bottom:12px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ux454-portfolio .market-detail-card.is-collapsed{min-height:78px!important;padding-bottom:27px!important}.ux454-portfolio .market-detail-card:not(.is-collapsed){box-shadow:0 8px 26px rgba(18,52,58,.055)}
       .ux454-swap-head,.ux454-overlap-head{margin:-2px -2px 12px;padding:13px;border-radius:15px;background:linear-gradient(135deg,#f3efff,#faf8ff);display:flex;align-items:center;justify-content:space-between;gap:10px}.ux454-swap-head div{display:grid;gap:2px}.ux454-swap-head small,.ux454-overlap-head small{font-size:8px;font-weight:900;letter-spacing:.12em;color:#6a55aa}.ux454-swap-head strong,.ux454-overlap-head strong{font-size:14px}.ux454-swap-head span{font-size:9px;color:var(--text2)}.ux454-swap-head button{border:0;border-radius:999px;padding:8px 11px;background:#7664b7;color:white;font-size:10px;font-weight:800}.ux454-overlap-head{display:grid;background:linear-gradient(135deg,#fff3df,#fffaf1)}.ux454-overlap-head small{color:#9a6819}
       .ux454-opportunity-guide{display:flex;gap:6px;overflow-x:auto;padding:0 1px 9px;margin-top:-2px;scrollbar-width:none}.ux454-opportunity-guide span{flex:0 0 auto;padding:6px 8px;border-radius:999px;background:var(--soft);font-size:8.5px;color:var(--text2)}.ux454-opportunity-guide b{color:var(--text);margin-right:3px}.ux454-podium{position:relative!important;border-width:1.5px!important}.ux454-podium-1{background:linear-gradient(145deg,color-mix(in srgb,var(--accent,#168e89) 12%,var(--card)),var(--card))!important;box-shadow:0 10px 26px rgba(18,118,111,.10)!important}.ux454-podium-2{background:linear-gradient(145deg,#f3f6fb,var(--card))!important}.ux454-podium-3{background:linear-gradient(145deg,#fff7ec,var(--card))!important}.ux454-rank{position:absolute;right:8px;top:7px;font-size:8px;font-weight:900;letter-spacing:.08em;color:var(--text2);opacity:.8}
-      .ux454-flow{margin:0 0 14px;padding:14px;border-radius:19px;background:linear-gradient(145deg,#123e49,#176b69);color:white;box-shadow:0 12px 30px rgba(18,62,73,.16)}.ux454-flow-head{display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:11px}.ux454-flow-head div{display:grid;gap:3px}.ux454-flow-head small{font-size:8px;letter-spacing:.13em;font-weight:900;opacity:.68}.ux454-flow-head strong{font-size:15px}.ux454-flow-head>span{font-size:8px;padding:5px 7px;border-radius:999px;background:rgba(255,255,255,.11)}.ux454-flow-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ux454-flow-grid section{display:grid;gap:5px;padding:10px;border-radius:14px;background:rgba(255,255,255,.08)}.ux454-flow-grid section>small{font-size:8px;font-weight:900;letter-spacing:.07em;opacity:.75}.ux454-flow-grid button{display:flex;justify-content:space-between;gap:6px;border:0;background:transparent;color:white;padding:5px 0;text-align:left}.ux454-flow-grid button b{font-size:11px}.ux454-flow-grid button span{font-size:8px;opacity:.72}
-      @media(max-width:620px){.ux454-nav-title>span{display:none}.ux454-group-label{margin-top:14px}.ux454-flow-grid{grid-template-columns:1fr}.ux454-swap-head{align-items:flex-start}.ux454-swap-head button{flex:0 0 auto}}
     `;document.head.appendChild(s);
   }
 
-  function apply(){organizePortfolio();rankOpportunityRows();enhancePoliticalFlow();}
+  function apply(){organizePortfolio();rankOpportunityRows();}
   function start(){style();apply();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});}
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('[data-ux454-open-swap]');if(!b)return;e.preventDefault();e.stopPropagation();const card=b.closest('[data-ux-kind="swap"]');if(card?.classList.contains('is-collapsed'))card.querySelector('[data-collapse-toggle]')?.click();setTimeout(()=>card?.scrollIntoView({behavior:'smooth',block:'start'}),20);
