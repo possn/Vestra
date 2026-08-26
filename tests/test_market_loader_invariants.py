@@ -18,17 +18,23 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_hotfix_does_not_reload_base_utils(self):
         hotfix = read("market-hotfix.js")
         self.assertNotIn("load('./app-utils.js", hotfix)
-        self.assertIn("market-data-loader.js?v=1.1", hotfix)
+        self.assertIn("market-data-loader.js?v=1.2", hotfix)
 
-    def test_market_bootstrap_fetch_bridge_is_one_shot(self):
+    def test_legacy_stocks_requests_share_one_lightweight_index_payload(self):
         loader = read("market-data-loader.js")
-        self.assertIn("let bootstrapIntercepted = false;", loader)
-        self.assertIn("bootstrapIntercepted = true;", loader)
-        self.assertIn("function restoreFetch()", loader)
-        self.assertIn("window.fetch = originalFetch", loader)
+        self.assertIn("let indexPayloadPromise = null;", loader)
+        self.assertIn("async function sharedIndexPayload()", loader)
+        self.assertIn("if(indexPayloadPromise) return indexPayloadPromise;", loader)
         self.assertIn("stocks-index.json", loader)
+        self.assertIn("new Response(body", loader)
+        self.assertIn("X-Vestra-Market-Source", loader)
         self.assertIn("stocks.json?full=1", loader)
-        self.assertIn("version:'1.1'", loader)
+        self.assertIn("version:'1.2'", loader)
+
+    def test_legacy_full_dataset_is_only_explicit_dossier_emergency_fallback(self):
+        loader = read("market-data-loader.js")
+        self.assertEqual(loader.count("stocks.json?full=1"), 1)
+        self.assertIn("Emergency compatibility fallback", loader)
 
     def test_politicians_loader_matches_canonical_module_version(self):
         hotfix = read("market-hotfix.js")
