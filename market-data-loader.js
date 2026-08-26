@@ -1,4 +1,4 @@
-/* Vestra Market Data Loader v1.0 — lightweight index + lazy dossier hydration. */
+/* Vestra Market Data Loader v1.1 — lightweight index + lazy dossier hydration. */
 (() => {
   'use strict';
 
@@ -6,6 +6,7 @@
   const shardCache = new Map();
   let manifestPromise = null;
   let bypassClick = false;
+  let bootstrapIntercepted = false;
 
   const txt = v => String(v ?? '').trim();
   const tickerKey = v => txt(v).toUpperCase();
@@ -17,20 +18,30 @@
     }catch(_){ return null; }
   }
 
-  // market.js still asks for stocks.json. During the migration we transparently
-  // serve stocks-index.json instead. If the index is not published yet, fall back
-  // to the legacy full file so a partial deploy cannot break Market.
-  window.fetch = async function vestraMarketFetch(input, init){
+  function restoreFetch(){
+    if(window.fetch === vestraMarketFetch) window.fetch = originalFetch;
+  }
+
+  // Migration bridge only: market.js still asks for stocks.json. Intercept exactly
+  // the first bootstrap request, serve stocks-index.json when available and then
+  // restore the browser's original fetch immediately. The shim therefore cannot
+  // affect live quotes, news, politicians or later application requests.
+  async function vestraMarketFetch(input, init){
     const u=requestUrl(input);
-    if(u && u.origin===location.origin && /\/data\/stocks\.json$/i.test(u.pathname) && u.searchParams.get('full')!=='1'){
+    const isBootstrap = u && u.origin===location.origin && /\/data\/stocks\.json$/i.test(u.pathname) && u.searchParams.get('full')!=='1';
+    if(isBootstrap && !bootstrapIntercepted){
+      bootstrapIntercepted = true;
       try{
         const idx=new URL('data/stocks-index.json',location.href);
         const r=await originalFetch(idx.toString(),{...(init||{}),cache:'no-store'});
-        if(r.ok) return r;
+        if(r.ok){ restoreFetch(); return r; }
       }catch(_){}
+      restoreFetch();
+      return originalFetch(input,init);
     }
     return originalFetch(input,init);
-  };
+  }
+  window.fetch = vestraMarketFetch;
 
   async function loadManifest(){
     if(manifestPromise) return manifestPromise;
@@ -190,5 +201,5 @@
   },true);
 
   ensureApiWrapper();
-  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,version:'1.0'};
+  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,version:'1.1'};
 })();
