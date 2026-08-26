@@ -1,4 +1,4 @@
-/* Vestra Market compatibility loader v4.99 — sequential, deterministic. */
+/* Vestra Market compatibility loader v5.00 — sequential, deterministic. */
 (() => {
   'use strict';
 
@@ -43,6 +43,7 @@
   load('./market-opportunity-lenses.js?v=1.0','vestraOpportunityLenses');
   load('./vestra-ai-brief-v459.js?v=4.59','vestraAiBriefV459');
   load('./vestra-portfolio-ui.js?v=1.0','vestraPortfolioUi');
+  load('./portfolio-diagnostics.js?v=1.0','vestraPortfolioDiagnostics');
   load('./vestra-portfolio-nav-fix-v464.js?v=4.64','vestraPortfolioNavFixV464');
   load('./market-close-controller.js?v=1.0','vestraMarketCloseController');
   load('./vestra-portfolio-dossier-routing-v482.js?v=4.82','vestraPortfolioDossierRoutingV482');
