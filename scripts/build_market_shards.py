@@ -57,17 +57,30 @@ def index_row(row: dict) -> dict:
 def main() -> None:
     with open(SRC, "r", encoding="utf-8") as f:
         payload = json.load(f)
-    rows = payload.get("stocks") or []
+    source_rows = payload.get("stocks") or []
     generated_at = payload.get("generated_at")
     schema_version = payload.get("schema_version")
+
+    # Historical builds can contain the same canonical ticker more than once
+    # (for example when a position also belongs to a discovery/index universe).
+    # The frontend, manifest and shard dictionaries are ticker-keyed, so enforce
+    # the same invariant here: one canonical row per uppercase ticker. The last
+    # occurrence wins because late pipeline stages may carry fresher enrichment.
+    rows_by_ticker: dict[str, dict] = {}
+    duplicate_count = 0
+    for row in source_rows:
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
+        if ticker in rows_by_ticker:
+            duplicate_count += 1
+        rows_by_ticker[ticker] = row
+    rows = list(rows_by_ticker.items())
 
     shards: dict[str, dict[str, dict]] = defaultdict(dict)
     index_rows = []
     manifest = {}
-    for row in rows:
-        ticker = str(row.get("ticker") or "").upper()
-        if not ticker:
-            continue
+    for ticker, row in rows:
         key = shard_for(ticker)
         shards[key][ticker] = row
         manifest[ticker] = key
@@ -94,11 +107,21 @@ def main() -> None:
             json.dump({"schema_version": schema_version, "generated_at": generated_at, "shard": key, "stocks": values}, f, ensure_ascii=False, separators=(",", ":"))
 
     with open(MANIFEST, "w", encoding="utf-8") as f:
-        json.dump({"schema_version": schema_version, "generated_at": generated_at, "tickers": manifest}, f, ensure_ascii=False, separators=(",", ":"))
+        json.dump({
+            "schema_version": schema_version,
+            "generated_at": generated_at,
+            "ticker_count": len(manifest),
+            "duplicate_rows_dropped": duplicate_count,
+            "tickers": manifest,
+        }, f, ensure_ascii=False, separators=(",", ":"))
 
     src_size = os.path.getsize(SRC)
     idx_size = os.path.getsize(INDEX)
-    print(f"market shards: {len(index_rows)} rows, {len(shards)} shards; index {idx_size/1_000_000:.2f} MB vs source {src_size/1_000_000:.2f} MB")
+    print(
+        f"market shards: {len(index_rows)} unique rows, {len(shards)} shards; "
+        f"dropped {duplicate_count} duplicate rows; "
+        f"index {idx_size/1_000_000:.2f} MB vs source {src_size/1_000_000:.2f} MB"
+    )
     if len(index_rows) != len(manifest):
         raise RuntimeError("Market shard manifest/index cardinality mismatch")
     if src_size > 0 and idx_size >= src_size * 0.60:
