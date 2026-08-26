@@ -1,0 +1,56 @@
+name: Refactor app stage 8
+
+on:
+  push:
+    paths:
+      - 'scripts/refactor_app_stage8.py'
+      - '.github/workflows/refactor-app-stage8.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded XTB normalization extraction
+        run: python scripts/refactor_app_stage8.py
+      - name: Validate JavaScript syntax
+        run: |
+          node --check app-xtb-normalization.js
+          node --check app.js
+      - name: Validate XTB migration and diff
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          h=Path('index.html').read_text()
+          assert h.index('app-utils.js') < h.index('app-xtb-normalization.js') < h.index('app.js')
+          a=Path('app.js').read_text()
+          m=Path('app-xtb-normalization.js').read_text()
+          for token in ['function parseXTBNormalizeAction(','function xtbTickerToYahoo(','function xtbSymbolCurrency(']:
+              assert token not in a
+              assert token in m
+          for mapping in ['"BAM1.US":"BAM"','"NOVOB.DK":"NOVO-B.CO"','"NESN.CH":"NESN.SW"']:
+              assert mapping in m
+          assert 'withholding' in m and 'DIVIDEND_TAX' in m
+          assert 'VestraXtbNormalization não foi carregado antes de app.js' in a
+          PY
+          git diff --check
+      - name: Commit extracted XTB normalization domain
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html app-xtb-normalization.js
+          git commit -m 'refactor: move XTB normalization out of app monolith'
+          git pull --rebase origin main
+          git push
