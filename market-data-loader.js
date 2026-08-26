@@ -1,12 +1,12 @@
-/* Vestra Market Data Loader v1.1 — lightweight index + lazy dossier hydration. */
+/* Vestra Market Data Loader v1.2 — shared lightweight index + lazy dossier hydration. */
 (() => {
   'use strict';
 
   const originalFetch = window.fetch.bind(window);
   const shardCache = new Map();
   let manifestPromise = null;
+  let indexPayloadPromise = null;
   let bypassClick = false;
-  let bootstrapIntercepted = false;
 
   const txt = v => String(v ?? '').trim();
   const tickerKey = v => txt(v).toUpperCase();
@@ -18,30 +18,32 @@
     }catch(_){ return null; }
   }
 
-  function restoreFetch(){
-    if(window.fetch === vestraMarketFetch) window.fetch = originalFetch;
+  async function sharedIndexPayload(){
+    if(indexPayloadPromise) return indexPayloadPromise;
+    indexPayloadPromise=(async()=>{
+      const idx=new URL('data/stocks-index.json',location.href);
+      const r=await originalFetch(idx.toString(),{cache:'no-store'});
+      if(!r.ok) throw new Error(`stocks-index ${r.status}`);
+      return await r.text();
+    })().catch(err=>{ indexPayloadPromise=null; throw err; });
+    return indexPayloadPromise;
   }
 
-  // Migration bridge only: market.js still asks for stocks.json. Intercept exactly
-  // the first bootstrap request, serve stocks-index.json when available and then
-  // restore the browser's original fetch immediately. The shim therefore cannot
-  // affect live quotes, news, politicians or later application requests.
-  async function vestraMarketFetch(input, init){
+  // Migration bridge only: several legacy market overlays still request stocks.json.
+  // Every such request receives a fresh Response backed by ONE shared index payload,
+  // so v452, market.js and other compatibility layers cannot trigger duplicate 7.5 MB
+  // downloads or fall through to the legacy ~50 MB universe during normal startup.
+  window.fetch = async function vestraMarketFetch(input, init){
     const u=requestUrl(input);
-    const isBootstrap = u && u.origin===location.origin && /\/data\/stocks\.json$/i.test(u.pathname) && u.searchParams.get('full')!=='1';
-    if(isBootstrap && !bootstrapIntercepted){
-      bootstrapIntercepted = true;
+    const isLegacyMarketData = u && u.origin===location.origin && /\/data\/stocks\.json$/i.test(u.pathname) && u.searchParams.get('full')!=='1';
+    if(isLegacyMarketData){
       try{
-        const idx=new URL('data/stocks-index.json',location.href);
-        const r=await originalFetch(idx.toString(),{...(init||{}),cache:'no-store'});
-        if(r.ok){ restoreFetch(); return r; }
+        const body=await sharedIndexPayload();
+        return new Response(body,{status:200,headers:{'Content-Type':'application/json; charset=utf-8','X-Vestra-Market-Source':'stocks-index'}});
       }catch(_){}
-      restoreFetch();
-      return originalFetch(input,init);
     }
     return originalFetch(input,init);
-  }
-  window.fetch = vestraMarketFetch;
+  };
 
   async function loadManifest(){
     if(manifestPromise) return manifestPromise;
@@ -201,5 +203,5 @@
   },true);
 
   ensureApiWrapper();
-  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,version:'1.1'};
+  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,version:'1.2'};
 })();
