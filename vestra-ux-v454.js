@@ -5,69 +5,6 @@
   const t=v=>String(v??'').trim();
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const GROUPS=[
-    {id:'decide',title:'Decidir agora',sub:'As ações que podem exigir atenção.',kinds:['priority','reinforce','review','research']},
-    {id:'optimize',title:'Otimizar a carteira',sub:'Trocas, overlap e eficiência da alocação.',kinds:['swap','overlap','scenario','map']},
-    {id:'monitor',title:'Monitorizar',sub:'Saúde, objetivos e resistência da carteira.',kinds:['target','history','risk','stress']}
-  ];
-
-  function portfolioRoot(){
-    const sh=document.getElementById('marketSheet'),c=document.getElementById('marketSheetContent');
-    return (!sh||sh.hidden||t(sh.dataset.tool)!=='portfolio'||!c)?null:c;
-  }
-  function makeGroupLabel(g){
-    const d=document.createElement('div');d.className='ux454-group-label';d.dataset.ux454Group=g.id;
-    d.innerHTML=`<span>${esc(g.title)}</span><small>${esc(g.sub)}</small>`;return d;
-  }
-  function organizePortfolio(){
-    const c=portfolioRoot();if(!c)return;
-    c.classList.add('ux454-portfolio');
-
-    // Compress the legacy controls into one navigation surface.
-    const toolbar=c.querySelector('.market-collapse-toolbar');
-    const focus=c.querySelector('.ux453-focusbar');
-    const shortcuts=c.querySelector('.ux-portfolio-shortcuts');
-    if(toolbar)toolbar.classList.add('ux454-toolbar');
-    if(focus)focus.classList.add('ux454-focus');
-    if(shortcuts)shortcuts.classList.add('ux454-shortcuts');
-
-    if(toolbar&&!c.querySelector('.ux454-nav-title')){
-      const title=document.createElement('div');title.className='ux454-nav-title';
-      title.innerHTML='<div><small>PORTFOLIO INTELLIGENCE</small><strong>Navegação rápida</strong></div><span>Escolhe o que queres analisar</span>';
-      toolbar.insertAdjacentElement('beforebegin',title);
-    }
-
-    // Add semantic section headers only once, positioned before the first card of each group.
-    GROUPS.forEach(g=>{
-      if(c.querySelector(`[data-ux454-group="${g.id}"]`))return;
-      const cards=g.kinds.map(k=>c.querySelector(`[data-ux-kind="${k}"]`)).filter(Boolean);
-      if(!cards.length)return;
-      cards[0].insertAdjacentElement('beforebegin',makeGroupLabel(g));
-      cards.forEach(card=>card.dataset.ux454GroupCard=g.id);
-    });
-
-    // Stronger closed-card hierarchy with useful one-line purpose.
-    const purposes={
-      research:'Pendências de research',priority:'O que merece atenção',map:'Como está distribuída',reinforce:'Onde colocar capital novo',review:'O que reavaliar',
-      overlap:'Exposição duplicada',swap:'Melhores substitutos',scenario:'Simular antes de trocar',target:'Fit com os teus objetivos',history:'Evolução da qualidade',risk:'Concentração e diversificação',stress:'Comportamento em quedas'
-    };
-    c.querySelectorAll('[data-ux-kind]').forEach(card=>{
-      const kind=card.dataset.uxKind;if(!kind||card.querySelector(':scope > .ux454-purpose'))return;
-      const p=document.createElement('div');p.className='ux454-purpose';p.textContent=purposes[kind]||'';card.appendChild(p);
-    });
-
-    const swap=c.querySelector('[data-ux-kind="swap"]');
-    if(swap&&!swap.querySelector('.ux454-swap-head')){
-      const h=document.createElement('div');h.className='ux454-swap-head';
-      h.innerHTML='<div><small>SWAP LAB</small><strong>Trocar só quando melhora a carteira</strong><span>Compara qualidade, valuation, momentum e impacto na concentração.</span></div><button type="button" data-ux454-open-swap>Comparar →</button>';
-      swap.prepend(h);
-    }
-    const overlap=c.querySelector('[data-ux-kind="overlap"]');
-    if(overlap&&!overlap.querySelector('.ux454-overlap-head')){
-      const h=document.createElement('div');h.className='ux454-overlap-head';h.innerHTML='<small>EXPOSURE MAP</small><strong>Onde estás a comprar a mesma coisa duas vezes?</strong>';overlap.prepend(h);
-    }
-  }
-
   function rankOpportunityRows(){
     const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades agora|Melhores oportunidades/.test(t(x.querySelector('h3')?.textContent)));
     const list=section?.querySelector('.market-list');if(!section||!list)return;
@@ -98,7 +35,7 @@
     `;document.head.appendChild(s);
   }
 
-  function apply(){organizePortfolio();rankOpportunityRows();}
+  function apply(){rankOpportunityRows();}
   function start(){style();apply();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});}
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('[data-ux454-open-swap]');if(!b)return;e.preventDefault();e.stopPropagation();const card=b.closest('[data-ux-kind="swap"]');if(card?.classList.contains('is-collapsed'))card.querySelector('[data-collapse-toggle]')?.click();setTimeout(()=>card?.scrollIntoView({behavior:'smooth',block:'start'}),20);
