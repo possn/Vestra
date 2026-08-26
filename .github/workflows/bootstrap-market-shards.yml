@@ -1,0 +1,46 @@
+name: Bootstrap lightweight market shards
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bootstrap-market-shards.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-shards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build shards from current validated stocks.json
+        working-directory: scripts
+        run: python build_market_shards.py
+      - name: Validate generated artefacts
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('data')
+          src=json.loads((root/'stocks.json').read_text())
+          idx=json.loads((root/'stocks-index.json').read_text())
+          man=json.loads((root/'dossiers-manifest.json').read_text())
+          assert len(idx.get('stocks',[])) == len(src.get('stocks',[]))
+          assert man.get('ticker_count') == len(src.get('stocks',[]))
+          assert list((root/'dossiers').glob('*.json'))
+          print('validated', len(idx.get('stocks',[])), 'rows;', len(list((root/'dossiers').glob('*.json'))), 'shards')
+          PY
+      - name: Publish shards only
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/stocks-index.json data/dossiers-manifest.json data/dossiers/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "data: publish lightweight market index and dossier shards"
+          git pull --rebase origin main
+          git push
