@@ -131,7 +131,7 @@ class PoliticiansAndCongressTests(unittest.TestCase):
     def test_pipeline_normalizes_official_stock_act_provenance(self):
         normalizer = read("scripts/normalize_market_provenance.py")
         workflow = read(".github/workflows/update-market-data.yml")
-        self.assertIn('OFFICIAL_CONGRESS_SOURCE = "U.S. House Clerk / STOCK Act"', normalizer)
+        self.assertIn('OFFICIAL_CONGRESS_SOURCE = "Official House/Senate disclosures / STOCK Act"', normalizer)
         self.assertIn('"STOCK Act / Bargo"', normalizer, "legacy label must be explicitly scrubbed")
         self.assertIn("python normalize_market_provenance.py", workflow)
         self.assertLess(
@@ -139,6 +139,14 @@ class PoliticiansAndCongressTests(unittest.TestCase):
             workflow.index("python build_market_shards.py"),
             "provenance must be normalized before index/shard publication",
         )
+
+    def test_senate_enrichment_is_official_and_non_destructive(self):
+        senate = read("scripts/enrich_politicians_senate.py")
+        workflow = read(".github/workflows/update-politicians.yml")
+        self.assertIn("https://efdsearch.senate.gov", senate)
+        self.assertIn('"report_types": "[11]"', senate)
+        self.assertIn("preserving House-only snapshot", senate)
+        self.assertIn("python scripts/enrich_politicians_senate.py", workflow)
 
 
 class FrontendArchitectureTests(unittest.TestCase):
