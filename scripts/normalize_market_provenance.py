@@ -11,11 +11,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STOCKS = ROOT / "data" / "stocks.json"
-OFFICIAL_CONGRESS_SOURCE = "U.S. House Clerk / STOCK Act"
+OFFICIAL_CONGRESS_SOURCE = "Official House/Senate disclosures / STOCK Act"
 LEGACY_CONGRESS_SOURCES = {
     "STOCK Act / Bargo",
     "Bargo",
     "Bargo / STOCK Act",
+    "U.S. House Clerk / STOCK Act",
 }
 
 
