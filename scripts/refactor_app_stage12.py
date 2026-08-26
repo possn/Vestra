@@ -20,40 +20,49 @@ names = [
     'parseTrading212HoldingsPdf',
 ]
 
-# Find only top-level function declarations. This deliberately avoids trying to
-# parse JavaScript braces/regex literals: each function is sliced until the next
-# top-level declaration, which is stable in the monolith.
 pat = re.compile(r'(?m)^(?:async\s+)?function\s+([A-Za-z0-9_$]+)\s*\(')
 all_matches = list(pat.finditer(src))
-by_name = {m.group(1): i for i, m in enumerate(all_matches)}
+by_name = {m.group(1): m for m in all_matches}
 missing = [n for n in names if n not in by_name]
 if missing:
     raise SystemExit(f'missing parser functions: {missing}')
 
+# Extract exactly one function declaration. We scan from its opening brace until
+# brace depth returns to zero. Braces that appear inside regex quantifiers or
+# template substitutions are balanced locally, and node --check remains the final guard.
+def function_range(name):
+    m = by_name[name]
+    start = m.start()
+    brace = src.find('{', m.end())
+    if brace < 0:
+        raise SystemExit(f'opening brace not found for {name}')
+    depth = 0
+    for i in range(brace, len(src)):
+        ch = src[i]
+        if ch == '{':
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0:
+                return start, i + 1
+    raise SystemExit(f'closing brace not found for {name}')
+
+ranges = []
 blocks = {}
 for name in names:
-    i = by_name[name]
-    start = all_matches[i].start()
-    end = all_matches[i + 1].start() if i + 1 < len(all_matches) else len(src)
+    start, end = function_range(name)
     block = src[start:end].rstrip() + '\n\n'
     blocks[name] = block
+    ranges.append((start, end, name))
 
-# Guard against accidental capture of state-mutating reconstruction logic.
 for forbidden in ['function rebuildBrokerGeneratedData(', 'state.assets.push(', 'state.liabilities.push(']:
     if any(forbidden in b for b in blocks.values()):
         raise SystemExit(f'unsafe parser boundary captured: {forbidden}')
 
-# Remove selected blocks from bottom to top so offsets remain valid.
-ranges = []
-for name in names:
-    i = by_name[name]
-    start = all_matches[i].start()
-    end = all_matches[i + 1].start() if i + 1 < len(all_matches) else len(src)
-    ranges.append((start, end, name))
 for start, end, name in sorted(ranges, reverse=True):
     src = src[:start] + src[end:]
 
-module = """/* Vestra broker parsers v1.0 — pure-ish file/row transformation only. */
+module = """/* Vestra broker parsers v1.0 — file/row transformation only. */
 (() => {
   'use strict';
 
@@ -85,8 +94,6 @@ module = """/* Vestra broker parsers v1.0 — pure-ish file/row transformation o
 })();
 """
 
-# Insert an explicit import near the other shared-domain imports, not at the old
-# parser location. This makes dependency order obvious and independent of calls.
 anchor = '/* ─── SAVE / LOAD ─────────────────────────────────────────── */'
 if anchor not in src:
     raise SystemExit('app import anchor not found')
@@ -117,11 +124,8 @@ if 'app-broker-parsers.js' not in html:
         raise SystemExit('app.js script tag not found')
     html = html[:m.start()] + script_tag + html[m.start():]
 
-# Final guards.
 for name in names:
-    token = f'function {name}('
-    async_token = f'async function {name}('
-    if token in src or async_token in src:
+    if re.search(rf'(?m)^(?:async\s+)?function\s+{re.escape(name)}\s*\(', src):
         raise SystemExit(f'{name} still implemented in app.js')
 if 'function rebuildBrokerGeneratedData(' not in src:
     raise SystemExit('stateful broker rebuild unexpectedly removed')
