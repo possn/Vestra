@@ -42,7 +42,12 @@ def median(values):
 def main():
     payload = json.loads(STOCKS.read_text(encoding="utf-8"))
     rows = [x for x in (payload.get("stocks") or []) if isinstance(x, dict)]
-    equities = [x for x in rows if str(x.get("quote_type") or "").upper() not in {"ETF", "CRYPTO", "FUND", "MUTUALFUND"}]
+    equities = [
+        x for x in rows
+        if str(x.get("quote_type") or "").upper() not in {"ETF", "CRYPTO", "FUND", "MUTUALFUND"}
+        and str(x.get("pipeline_status") or "") not in {"equity_catalog_only", "equity_carried_forward"}
+        and finite(x.get("score")) is not None
+    ]
     result = {}
 
     for model, fields in MODEL_FIELDS.items():
@@ -84,6 +89,7 @@ def main():
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "production_unchanged": True,
         "min_peer_observations": MIN_PEERS,
+        "rows_analysed": len(equities),
         "models": result,
     }, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
