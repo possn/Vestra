@@ -88,10 +88,17 @@ class PoliticiansAndCongressTests(unittest.TestCase):
         self.assertNotIn("bargo.ai", combined)
         self.assertNotIn('url.pathname === "/congress"', worker)
 
-    def test_pipeline_provenance_names_official_stock_act_source(self):
-        run = read("scripts/run.py")
-        self.assertNotIn('row["data_sources"].append("STOCK Act / Bargo")', run)
-        self.assertIn('row["data_sources"].append("U.S. House Clerk / STOCK Act")', run)
+    def test_pipeline_normalizes_official_stock_act_provenance(self):
+        normalizer = read("scripts/normalize_market_provenance.py")
+        workflow = read(".github/workflows/update-market-data.yml")
+        self.assertIn('OFFICIAL_CONGRESS_SOURCE = "U.S. House Clerk / STOCK Act"', normalizer)
+        self.assertIn('"STOCK Act / Bargo"', normalizer, "legacy label must be explicitly scrubbed")
+        self.assertIn("python normalize_market_provenance.py", workflow)
+        self.assertLess(
+            workflow.index("python normalize_market_provenance.py"),
+            workflow.index("python build_market_shards.py"),
+            "provenance must be normalized before index/shard publication",
+        )
 
 
 class FrontendArchitectureTests(unittest.TestCase):
