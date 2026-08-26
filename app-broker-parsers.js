@@ -9,11 +9,12 @@
     detectBrokerRowsFormat, detectBrokerTextFormat,
   } = window.VestraBrokerParsingCore || {};
   const { parseXTBNormalizeAction, xtbTickerToYahoo, xtbSymbolCurrency } = window.VestraXtbNormalization || {};
+  const { fileToObjectRows, workbookToBrokerBlocks } = window.VestraBrokerWorkbook || {};
 
   if (![uid, isoToday, normalizeDate, normStr, normalizeRow, parseNumberSmart,
         normalizeISIN, brokerPositionClassFromTicker, brokerEventKey, brokerPositionKey,
         detectBrokerRowsFormat, detectBrokerTextFormat, parseXTBNormalizeAction,
-        xtbTickerToYahoo, xtbSymbolCurrency].every(fn => typeof fn === 'function')) {
+        xtbTickerToYahoo, xtbSymbolCurrency, fileToObjectRows, workbookToBrokerBlocks].every(fn => typeof fn === 'function')) {
     throw new Error('Broker parser dependencies were not loaded before app-broker-parsers.js');
   }
 
