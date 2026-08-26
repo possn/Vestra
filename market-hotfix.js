@@ -1,14 +1,33 @@
 /* Vestra Market Hotfix loader v4.82 — safe direct deploy. */
 (() => {
   'use strict';
-  const load=(src,key)=>{
-    if(document.querySelector(`script[data-${key}]`)) return;
-    const s=document.createElement('script');
-    s.src=src;
-    s.defer=true;
-    s.dataset[key]='1';
-    document.head.appendChild(s);
-  };
+  // v1.1: "s.defer=true" não tem qualquer efeito em <script> criados
+  // dinamicamente — essa propriedade só é respeitada em scripts estáticos
+  // do HTML. Sem isto, os ficheiros carregavam por ordem de rede (o que
+  // chegasse primeiro), não pela ordem da lista — e como o v480 depende de
+  // classes que o v479 cria (e assim por diante ao longo da série), a
+  // funcionalidade podia falhar de forma imprevisível consoante a rede.
+  // Fila sequencial: só pede o próximo ficheiro depois do anterior carregar.
+  const queue = [];
+  let draining = false;
+  function drain() {
+    if (draining) return;
+    draining = true;
+    const next = () => {
+      const job = queue.shift();
+      if (!job) { draining = false; return; }
+      const [src, key] = job;
+      if (document.querySelector(`script[data-${key}]`)) { next(); return; }
+      const s = document.createElement('script');
+      s.src = src;
+      s.dataset[key] = '1';
+      s.onload = next;
+      s.onerror = next; // não bloquear a fila toda por um ficheiro a falhar
+      document.head.appendChild(s);
+    };
+    next();
+  }
+  const load = (src, key) => { queue.push([src, key]); drain(); };
   load('./market-enhancements.js?v=4.50','vestraMarketEnhancements');
   load('./portfolio-navigation-fix.js?v=1.0','vestraPortfolioNavigationFix');
   load('./vestra-ux-v452.js?v=4.52','vestraUxV452');
