@@ -37,22 +37,25 @@ class ExecutiveFeedTests(unittest.TestCase):
 
     def test_ocr_amount_ranges_are_normalized_before_publication(self):
         normalizer = read("scripts/normalize_executive_amounts.py")
-        workflow = read(".github/workflows/update-politicians.yml")
+        workflow = read(".github/workflows/update-executives.yml")
         self.assertIn("FLEX_RANGE", normalizer)
         self.assertIn("def normalize_trade", normalizer)
         self.assertIn("python scripts/normalize_executive_amounts.py", workflow)
         self.assertLess(
             workflow.index("python scripts/normalize_executive_amounts.py"),
-            workflow.index("Validate snapshots and dossier mapping"),
+            workflow.index("Validate executive snapshot"),
         )
 
     def test_scheduled_workflow_refreshes_and_validates_executive_feed(self):
-        workflow = read(".github/workflows/update-politicians.yml")
+        workflow = read(".github/workflows/update-executives.yml")
+        congress_workflow = read(".github/workflows/update-politicians.yml")
         self.assertIn("python scripts/build_executive_feed.py", workflow)
         self.assertIn("data/executives.json", workflow)
         self.assertIn("executive:donald-trump", workflow)
-        self.assertIn("executive top-10 buys unavailable", workflow)
-        self.assertIn("executive top-10 sells unavailable", workflow)
+        self.assertIn("top-10 buys unavailable", workflow)
+        self.assertIn("top-10 sells unavailable", workflow)
+        self.assertNotIn("build_executive_feed.py", congress_workflow)
+        self.assertNotIn("data/executives.json", congress_workflow)
 
     def test_ui_keeps_global_individual_and_favourites_views(self):
         ui = read("politicians.js")
