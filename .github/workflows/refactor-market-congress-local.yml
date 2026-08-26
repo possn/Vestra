@@ -1,0 +1,41 @@
+name: Refactor market Congress source
+
+on:
+  push:
+    paths:
+      - scripts/refactor_market_congress_local.py
+      - .github/workflows/refactor-market-congress-local.yml
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply canonical Congress source patch
+        run: python scripts/refactor_market_congress_local.py
+      - name: Validate market source
+        run: |
+          node --check market.js
+          grep -q "./data/politicians.json" market.js
+          grep -q "politiciansSnapshotFresh" market.js
+          ! grep -q "www.bargo.ai/free-apis/congress" market.js
+          ! grep -q "/congress?" market.js
+          git diff --check
+      - name: Commit market source patch
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add market.js
+          git commit -m 'fix: use canonical politicians snapshot throughout Market'
+          git pull --rebase origin main
+          git push
