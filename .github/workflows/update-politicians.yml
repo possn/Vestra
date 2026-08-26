@@ -10,6 +10,7 @@ on:
       - 'scripts/build_politicians_feed.py'
       - 'scripts/enrich_politicians_senate.py'
       - 'scripts/build_executive_feed.py'
+      - 'scripts/normalize_executive_amounts.py'
       - 'scripts/congress.py'
       - '.github/workflows/update-politicians.yml'
 
@@ -33,7 +34,7 @@ jobs:
         run: pip install requests pdfplumber beautifulsoup4
       - name: Validate builders, dossier mapper and UI
         run: |
-          python -m py_compile scripts/build_politicians_feed.py scripts/enrich_politicians_senate.py scripts/build_executive_feed.py scripts/congress.py
+          python -m py_compile scripts/build_politicians_feed.py scripts/enrich_politicians_senate.py scripts/build_executive_feed.py scripts/normalize_executive_amounts.py scripts/congress.py
           node --check politicians.js
       - name: Build House politicians snapshot
         run: python scripts/build_politicians_feed.py
@@ -41,10 +42,12 @@ jobs:
         run: python scripts/enrich_politicians_senate.py
       - name: Refresh official Executive OGE PTRs
         run: python scripts/build_executive_feed.py
+      - name: Normalize Executive OCR ranges
+        run: python scripts/normalize_executive_amounts.py
       - name: Validate snapshots and dossier mapping
         run: |
           python - <<'PY'
-          import datetime as dt, json
+          import datetime as dt, json, re
           from pathlib import Path
           from scripts.congress import fetch_congress_for_universe
 
@@ -83,6 +86,10 @@ jobs:
           assert sum(1 for x in trades if x.get('type') == 'buy') >= 10, 'executive top-10 buys unavailable'
           assert sum(1 for x in trades if x.get('type') == 'sell') >= 10, 'executive top-10 sells unavailable'
           assert all(x.get('ticker') and x.get('filing_url') for x in trades[:20])
+          for x in trades:
+              nums=[int(v.replace(',','')) for v in re.findall(r'\$([0-9,]+)', x.get('amount') or '')]
+              if len(nums)>=2:
+                  assert nums[1] >= nums[0], f'bad executive amount range: {x}'
           PY
       - name: Publish snapshots
         run: |
