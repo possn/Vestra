@@ -11,12 +11,14 @@ def read(path: str) -> str:
 class PortfolioHierarchyArchitectureTests(unittest.TestCase):
     def test_hotfix_uses_canonical_hierarchy_and_swap_lab(self):
         h=read('market-hotfix.js')
-        self.assertIn('compatibility loader v4.98', h)
+        self.assertIn('compatibility loader v4.99', h)
+        self.assertIn("portfolio-card-classifier.js?v=1.0", h)
         self.assertIn("vestra-portfolio-hierarchy.js?v=1.0", h)
         self.assertIn("vestra-swap-lab.js?v=1.0", h)
-        for legacy in ('vestra-ux-v454.js','vestra-ux-v455.js','vestra-ux-v456.js','vestra-ux-v457.js','market-enhancements.js'):
+        for legacy in ('vestra-ux-v452.js','vestra-ux-v454.js','vestra-ux-v455.js','vestra-ux-v456.js','vestra-ux-v457.js','market-enhancements.js'):
             self.assertNotIn(legacy, h)
-        self.assertLess(h.index('portfolio-collapsibles.js'), h.index('vestra-portfolio-hierarchy.js'))
+        self.assertLess(h.index('portfolio-collapsibles.js'), h.index('portfolio-card-classifier.js'))
+        self.assertLess(h.index('portfolio-card-classifier.js'), h.index('vestra-portfolio-hierarchy.js'))
         self.assertLess(h.index('vestra-portfolio-hierarchy.js'), h.index('vestra-swap-lab.js'))
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
@@ -46,8 +48,9 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
 
     def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
-        self.assertIn('Vestra Service Worker v9.3', sw)
-        self.assertIn('vestra-cache-v107', sw)
+        self.assertIn('Vestra Service Worker v9.4', sw)
+        self.assertIn('vestra-cache-v108', sw)
+        self.assertIn('./portfolio-card-classifier.js', sw)
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
         self.assertIn('./vestra-swap-lab.js', sw)
         self.assertIn('./portfolio-collapsibles.js', sw)
