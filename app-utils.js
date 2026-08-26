@@ -76,5 +76,24 @@
     return new Intl.NumberFormat('pt-PT',{maximumFractionDigits:maxFrac,minimumFractionDigits:0}).format(v);
   }
 
-  window.VestraUtils = Object.freeze({normStr,escapeHtml,uid,isoToday,safeClone,parseNum,parseQty,normalizeDate,formatNumber});
+  function normalizeClassName(s) {
+    const map = {
+      "stock":"Ações/ETFs","etf":"Ações/ETFs","equity":"Ações/ETFs","fund":"Fundos",
+      "crypto":"Cripto","gold":"Ouro","silver":"Prata","real estate":"Imobiliário",
+      "deposit":"Depósitos","cash":"Liquidez","ppr":"PPR","debt":"Dívida"
+    };
+    const n = normStr(s || "");
+    for (const [k,v] of Object.entries(map)) { if (n.includes(k)) return v; }
+    return s || "Outros";
+  }
+
+  function normalizeYieldType(s) {
+    const n = normStr(s || "");
+    if (n.includes("pct") || n.includes("%") || n.includes("percent")) return "yield_pct";
+    if (n.includes("eur") || n.includes("year") || n.includes("annual")) return "yield_eur_year";
+    if (n.includes("rent") || n.includes("month")) return "rent_month";
+    return "none";
+  }
+
+  window.VestraUtils = Object.freeze({normStr,escapeHtml,uid,isoToday,safeClone,parseNum,parseQty,normalizeDate,formatNumber,normalizeClassName,normalizeYieldType});
 })();

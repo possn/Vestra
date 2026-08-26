@@ -36,9 +36,11 @@ const {
   parseQty,
   normalizeDate,
   formatNumber,
+  normalizeClassName,
+  normalizeYieldType,
 } = window.VestraUtils || {};
 
-if (![normStr, escapeHtml, uid, isoToday, safeClone, parseNum, parseQty, normalizeDate, formatNumber].every(fn => typeof fn === "function")) {
+if (![normStr, escapeHtml, uid, isoToday, safeClone, parseNum, parseQty, normalizeDate, formatNumber, normalizeClassName, normalizeYieldType].every(fn => typeof fn === "function")) {
   throw new Error("VestraUtils não foi carregado antes de app.js");
 }
 
@@ -60,25 +62,6 @@ function fmtEUR2(n) {
 
 function fmt(n, maxFrac = 4) { return formatNumber(n, maxFrac); }
 function fmtPct(n) { return fmt(n, 2) + "%"; }
-
-function normalizeClassName(s) {
-  const map = {
-    "stock":"Ações/ETFs","etf":"Ações/ETFs","equity":"Ações/ETFs","fund":"Fundos",
-    "crypto":"Cripto","gold":"Ouro","silver":"Prata","real estate":"Imobiliário",
-    "deposit":"Depósitos","cash":"Liquidez","ppr":"PPR","debt":"Dívida"
-  };
-  const n = normStr(s || "");
-  for (const [k,v] of Object.entries(map)) { if (n.includes(k)) return v; }
-  return s || "Outros";
-}
-
-function normalizeYieldType(s) {
-  const n = normStr(s || "");
-  if (n.includes("pct") || n.includes("%") || n.includes("percent")) return "yield_pct";
-  if (n.includes("eur") || n.includes("year") || n.includes("annual")) return "yield_eur_year";
-  if (n.includes("rent") || n.includes("month")) return "rent_month";
-  return "none";
-}
 
 /* ─── INFO TIPS + TOAST moved to app-feedback.js ───────────── */
 
