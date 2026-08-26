@@ -53,6 +53,46 @@ class MarketShardIntegrityTests(unittest.TestCase):
                 self.assertEqual(stocks[ticker].get("ticker"), ticker)
 
 
+class ScoreInvariantTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rows = load("data/stocks-index.json").get("stocks") or []
+
+    def test_scores_and_dimensions_stay_in_unit_interval_percent_scale(self):
+        bounded = (
+            "score", "quality_pct", "growth_pct", "balance_pct", "cashflow_pct",
+            "execution_pct", "earnings_quality_pct", "capital_allocation_pct",
+            "stability_pct", "value_pct", "confidence_score", "data_coverage_pct",
+            "opportunity_score", "opportunity_score_raw", "recovery_score",
+            "low52_score", "low52_resilience_score", "moat_score",
+            "value_trap_risk_score", "capital_allocation_intelligence_score",
+            "sector_native_score", "qarp_score",
+        )
+        for row in self.rows:
+            ticker = row.get("ticker")
+            for key in bounded:
+                value = row.get(key)
+                if value is None:
+                    continue
+                self.assertIsInstance(value, (int, float), f"{ticker} {key}")
+                self.assertGreaterEqual(value, 0, f"{ticker} {key}={value}")
+                self.assertLessEqual(value, 100, f"{ticker} {key}={value}")
+
+    def test_catalog_and_carried_rows_are_not_actionable_opportunities(self):
+        stale_statuses = {"equity_catalog_only", "equity_carried_forward"}
+        for row in self.rows:
+            if row.get("pipeline_status") in stale_statuses:
+                self.assertIsNot(row.get("opportunity_eligible"), True, row.get("ticker"))
+                self.assertFalse(row.get("scanner_best") == "best_opportunities", row.get("ticker"))
+
+    def test_missing_core_metrics_are_not_serialized_as_nan_strings(self):
+        for row in self.rows:
+            ticker = row.get("ticker")
+            for key in ("score", "roe", "revenue_growth", "forward_pe", "fcf_yield"):
+                value = row.get(key)
+                self.assertNotIn(str(value).lower(), {"nan", "inf", "-inf", "infinity", "-infinity"}, f"{ticker} {key}")
+
+
 class PoliticiansAndCongressTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
