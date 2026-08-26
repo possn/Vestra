@@ -42,7 +42,22 @@ jobs:
           assert shards
           assert all(row.get('dossier_shard') for row in index_rows if row.get('ticker'))
           assert len({row.get('ticker') for row in index_rows if row.get('ticker')}) == len(index_rows)
-          print('validated', len(index_rows), 'unique rows;', len(shards), 'shards;', man.get('duplicate_rows_dropped',0), 'duplicates dropped')
+
+          # End-to-end lazy dossier contract: lightweight row in index, canonical
+          # manifest routing, full evidence/history only in the referenced shard.
+          probe='AAPL' if 'AAPL' in manifest else next(iter(manifest))
+          idx_by={str(r.get('ticker') or '').upper():r for r in index_rows}
+          light=idx_by[probe]
+          shard_key=manifest[probe]
+          assert light.get('dossier_shard') == shard_key
+          assert 'price_history_1y' not in light
+          shard=json.loads((root/'dossiers'/f'{shard_key}.json').read_text())
+          full=(shard.get('stocks') or {}).get(probe)
+          assert isinstance(full,dict) and full.get('ticker')
+          if any(str(r.get('ticker') or '').upper()==probe and r.get('price_history_1y') for r in source_rows):
+              assert isinstance(full.get('price_history_1y'),list) and full.get('price_history_1y')
+          assert (root/'stocks-index.json').stat().st_size < (root/'stocks.json').stat().st_size * .25
+          print('validated', len(index_rows), 'unique rows;', len(shards), 'shards;', man.get('duplicate_rows_dropped',0), 'duplicates dropped; lazy probe', probe, '->', shard_key)
           PY
       - name: Publish shards only
         run: |
