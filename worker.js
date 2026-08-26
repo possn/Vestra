@@ -18,20 +18,18 @@ const TICKER_ALIASES = {
 };
 
 function corsHeaders(origin) {
-  // Match real hostnames, never arbitrary substrings such as
-  // attacker.example/?next=github.io. GitHub Pages / Cloudflare Pages remain
-  // supported, while local development is restricted to loopback hosts.
+  // Vestra is served from possn.github.io. Match the exact browser origin;
+  // local loopback remains available for development. CORS is not auth, but
+  // this prevents unrelated GitHub/Cloudflare Pages sites from reading responses.
   let allowed = !origin;
   if (origin) {
     try {
       const u = new URL(origin);
       const host = u.hostname.toLowerCase();
+      const vestraPages = u.protocol === "https:" && u.origin === "https://possn.github.io";
       const local = host === "localhost" || host === "127.0.0.1" || host === "::1";
-      const githubPages = host === "github.io" || host.endsWith(".github.io");
-      const cloudflarePages = host === "pages.dev" || host.endsWith(".pages.dev");
-      const secureHosted = u.protocol === "https:" && (githubPages || cloudflarePages);
       const localDev = local && (u.protocol === "http:" || u.protocol === "https:");
-      allowed = secureHosted || localDev;
+      allowed = vestraPages || localDev;
     } catch (_) {
       allowed = false;
     }
