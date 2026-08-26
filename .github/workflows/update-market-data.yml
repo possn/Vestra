@@ -27,6 +27,7 @@ on:
       - 'scripts/score_forward_validation.py'
       - 'scripts/peer_benchmark.py'
       - 'scripts/score_peer_shadow.py'
+      - 'scripts/score_benchmark_audit.py'
       - 'scripts/confidence.py'
       - 'scripts/reliability_gate.py'
       - 'scripts/opportunity_rank.py'
@@ -72,7 +73,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/coverage_guard.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/coverage_guard.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
@@ -111,6 +112,7 @@ jobs:
         working-directory: scripts
         run: |
           python score_audit.py
+          python score_benchmark_audit.py
           python score_peer_shadow.py
           python score_forward_validation.py
 
@@ -163,6 +165,7 @@ jobs:
             data/coverage_audit.json
             data/coverage_guard.json
             data/score_audit.json
+            data/score_benchmark_audit.json
             data/score_peer_shadow.json
             data/score_forward_validation.json
             data/score_validation_history.json
