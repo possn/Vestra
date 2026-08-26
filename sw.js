@@ -1,5 +1,5 @@
-/* Vestra Service Worker v8.1 — cache/offline infrastructure only. */
-const CACHE_NAME = "vestra-cache-v95";
+/* Vestra Service Worker v8.2 — cache/offline infrastructure only. */
+const CACHE_NAME = "vestra-cache-v96";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -13,6 +13,7 @@ const APP_SHELL = [
   "./app-ui-core.js",
   "./app-broker-normalization.js",
   "./app-xtb-normalization.js",
+  "./app-broker-identity-data.js",
   "./market.js",
   "./market-hotfix.js",
   "./market-data-loader.js",
