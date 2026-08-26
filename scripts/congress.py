@@ -1,40 +1,28 @@
-"""US Congressional stock trade disclosures, fetched server-side.
+"""US Congressional stock-trade context for Vestra dossiers.
 
-The Vestra market build uses Bargo's public Congress REST API as a recent
-STOCK Act aggregation layer. The source itself derives records from the House
-Clerk and Senate eFD disclosure systems. Congress data are contextual evidence,
-not part of the core Vestra company score.
+The market build no longer calls Bargo (or any third-party Congress API) on a
+per-build basis. A dedicated scheduled job builds data/politicians.json from
+fresh disclosure sources, prioritising the official U.S. House Clerk archive.
+This module only reads that validated local snapshot and maps it onto the Vestra
+US universe.
 
-Important constraints:
-- disclosures are delayed by law and are not real-time trades;
-- amounts are disclosed as ranges, never exact transaction values;
-- the free feed is a rolling recent window and is rate-limited;
-- failures must degrade to an empty contextual layer, never fail the company
-  fundamentals/scoring pipeline.
+Congress activity is contextual evidence only; it never changes the core
+fundamental company score.
 """
 from __future__ import annotations
 
-import datetime
+import datetime as dt
+import json
 import logging
 import re
-import time
-
-import requests
+from pathlib import Path
 
 log = logging.getLogger("congress")
 
-HEADERS = {
-    "User-Agent": "Vestra research-tool finscanner-app@proton.me",
-    "Accept": "application/json",
-}
-API_BASE = "https://www.bargo.ai/free-apis/congress/v1"
-REQUEST_TIMEOUT = 15
-LOOKBACK_DAYS = 92
-PAGE_SIZE = 100
-# Stay comfortably inside the keyless daily request allowance. A maximum of ten
-# pages gives a useful recent cross-Congress sample without making one request
-# per ticker (the previous implementation could attempt >1,000 requests).
-MAX_PAGES = 10
+ROOT = Path(__file__).resolve().parents[1]
+SNAPSHOT = ROOT / "data" / "politicians.json"
+MAX_STALE_DAYS = 60
+MAX_PER_TICKER = 100
 
 
 def _amount_mid(range_str: str | None) -> float | None:
@@ -58,128 +46,122 @@ def _amount_mid(range_str: str | None) -> float | None:
     return (sum(vals) / len(vals)) if vals else None
 
 
+def _slug(name: str) -> str:
+    return "-".join(re.sub(r"[^a-z0-9]+", " ", str(name or "").lower()).split())
+
+
+def _is_fresh(payload: dict) -> bool:
+    if int(payload.get("schema_version") or 0) < 2:
+        return False
+    newest = str(payload.get("newest_disclosure") or payload.get("source_last_updated") or "")[:10]
+    try:
+        age = (dt.date.today() - dt.date.fromisoformat(newest)).days
+    except (TypeError, ValueError):
+        return False
+    return age <= MAX_STALE_DAYS
+
+
+def _load_snapshot() -> dict | None:
+    if not SNAPSHOT.exists():
+        log.warning("congress: canonical politicians snapshot missing")
+        return None
+    try:
+        payload = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    except Exception as exc:
+        log.warning("congress: invalid politicians snapshot (%s: %s)", type(exc).__name__, exc)
+        return None
+    if not isinstance(payload, dict) or not _is_fresh(payload):
+        log.warning("congress: politicians snapshot is stale or invalid; contextual layer omitted")
+        return None
+    trades = payload.get("trades")
+    if not isinstance(trades, list):
+        log.warning("congress: politicians snapshot has no trade list")
+        return None
+    return payload
+
+
 def _normalize_one(x: dict) -> tuple[str, dict] | None:
     ticker = str(x.get("ticker") or "").strip().upper()
-    if not ticker:
+    transaction_date = str(x.get("transaction_date") or "").strip()
+    member = str(x.get("member") or "Membro do Congresso").strip()
+    if not ticker or not transaction_date:
         return None
-    raw_type = str(x.get("type") or x.get("transaction_type") or "").lower()
+    raw_type = str(x.get("type") or "trade").lower()
     if "purchase" in raw_type or "buy" in raw_type:
         tx_type = "buy"
     elif "sale" in raw_type or "sell" in raw_type:
         tx_type = "sell"
     else:
         tx_type = raw_type or "trade"
-    amount_range = x.get("amount_range") or x.get("amount") or "—"
-    transaction_date = x.get("transaction_date") or x.get("date")
-    if not transaction_date:
-        return None
+    amount_range = x.get("amount") or x.get("amount_range") or "—"
     trade = {
-        "member": x.get("member") or x.get("representative") or x.get("name") or "Membro do Congresso",
-        "member_slug": x.get("member_slug") or x.get("slug") or "",
+        "member": member,
+        "member_slug": _slug(member),
         "chamber": str(x.get("chamber") or "").lower(),
         "state": x.get("state") or "",
         "party": x.get("party") or "",
         "type": tx_type,
         "amount_range": amount_range,
         "transaction_date": transaction_date,
-        "disclosure_date": x.get("disclosure_date") or x.get("filed_date") or x.get("filing_date"),
-        "value_mid": _amount_mid(amount_range),
-        "asset": x.get("asset") or x.get("security") or "",
-        "filing_portal": x.get("filing_portal") or "",
+        "disclosure_date": x.get("disclosure_date") or None,
+        "value_mid": _amount_mid(str(amount_range)),
+        "asset": x.get("asset") or "",
+        "filing_portal": x.get("filing_url") or "",
     }
-    # Bargo publishes these fields when available. They are useful context but
-    # remain descriptive and never feed the core company score.
-    for source_key, target_key in (
-        ("est_price", "estimated_trade_price"),
-        ("recent_price", "recent_price"),
-        ("perf_pct", "performance_pct"),
-        ("outcome", "performance_outcome"),
-    ):
-        value = x.get(source_key)
-        if value is not None:
-            trade[target_key] = value
     return ticker, trade
 
 
-def _trade_key(trade: dict) -> tuple:
+def _trade_key(ticker: str, trade: dict) -> tuple:
     return (
         str(trade.get("member") or "").lower(),
-        str(trade.get("ticker") or "").upper(),
+        ticker,
         str(trade.get("transaction_date") or ""),
         str(trade.get("disclosure_date") or ""),
         str(trade.get("type") or "").lower(),
         str(trade.get("amount_range") or ""),
+        str(trade.get("asset") or ""),
     )
 
 
 def fetch_congress_for_universe(us_tickers: list[str]) -> dict[str, list[dict]]:
-    """Fetch one recent global feed, then map it onto Vestra's US universe.
-
-    This replaces the old N-tickers/N-requests strategy. It is faster, respects
-    free-tier limits, and avoids treating a transient per-ticker 403 as proof
-    that the whole source has been retired.
-    """
+    """Map the already-validated canonical snapshot onto Vestra's US universe."""
     universe = {str(t).split(".")[0].upper() for t in us_tickers if t}
     if not universe:
         return {}
+    payload = _load_snapshot()
+    if not payload:
+        return {}
 
-    from_date = (datetime.date.today() - datetime.timedelta(days=LOOKBACK_DAYS)).isoformat()
     grouped: dict[str, list[dict]] = {}
     seen: set[tuple] = set()
-    fetched_rows = 0
-
-    for page in range(MAX_PAGES):
-        try:
-            resp = requests.get(
-                f"{API_BASE}/trades",
-                headers=HEADERS,
-                params={"from": from_date, "limit": PAGE_SIZE, "page": page},
-                timeout=REQUEST_TIMEOUT,
-            )
-            if resp.status_code == 429:
-                log.warning("Congress feed rate-limited on page %d; keeping %d rows already fetched", page, fetched_rows)
-                break
-            resp.raise_for_status()
-            payload = resp.json()
-            raw = payload if isinstance(payload, list) else (payload.get("trades") or payload.get("data") or [])
-            if not isinstance(raw, list) or not raw:
-                break
-
-            fetched_rows += len(raw)
-            for item in raw:
-                if not isinstance(item, dict):
-                    continue
-                normalized = _normalize_one(item)
-                if not normalized:
-                    continue
-                ticker, trade = normalized
-                if ticker not in universe:
-                    continue
-                trade_with_ticker = {"ticker": ticker, **trade}
-                key = _trade_key(trade_with_ticker)
-                if key in seen:
-                    continue
-                seen.add(key)
-                # stocks.json stores each trade under its ticker, so the ticker is
-                # redundant inside the nested record and can be omitted there.
-                grouped.setdefault(ticker, []).append(trade)
-
-            # The API returns newest first. If a short page is returned, there is
-            # no next full page to retrieve.
-            if len(raw) < PAGE_SIZE:
-                break
-            time.sleep(0.12)
-        except Exception as exc:
-            log.warning("Congress global feed page %d failed (%s: %s)", page, type(exc).__name__, exc)
-            break
+    source_rows = 0
+    for item in payload.get("trades") or []:
+        if not isinstance(item, dict):
+            continue
+        normalized = _normalize_one(item)
+        if not normalized:
+            continue
+        source_rows += 1
+        ticker, trade = normalized
+        if ticker not in universe:
+            continue
+        key = _trade_key(ticker, trade)
+        if key in seen:
+            continue
+        seen.add(key)
+        grouped.setdefault(ticker, []).append(trade)
 
     for ticker, trades in grouped.items():
-        trades.sort(key=lambda x: str(x.get("disclosure_date") or x.get("transaction_date") or ""), reverse=True)
-        grouped[ticker] = trades[:100]
+        trades.sort(
+            key=lambda x: str(x.get("disclosure_date") or x.get("transaction_date") or ""),
+            reverse=True,
+        )
+        grouped[ticker] = trades[:MAX_PER_TICKER]
 
     log.info(
-        "congress: fetched %d recent disclosures; %d Vestra tickers had matching STOCK Act activity",
-        fetched_rows,
+        "congress: mapped %d canonical disclosures from %s onto %d Vestra tickers",
+        source_rows,
+        payload.get("source") or "politicians snapshot",
         len(grouped),
     )
     return grouped
