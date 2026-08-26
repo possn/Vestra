@@ -1,0 +1,61 @@
+name: Refactor app stage 12
+
+on:
+  push:
+    paths:
+      - scripts/refactor_app_stage12.py
+      - .github/workflows/refactor-app-stage12.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded broker parser extraction
+        run: python scripts/refactor_app_stage12.py
+      - name: Validate JavaScript syntax
+        run: |
+          node --check app-broker-parsers.js
+          node --check app.js
+      - name: Validate parser migration and critical rules
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          h=Path('index.html').read_text()
+          a=Path('app.js').read_text()
+          m=Path('app-broker-parsers.js').read_text()
+          assert h.index('app-broker-parsers.js') < h.index('app.js')
+          for p in ['parseBrokerLedgerRows','parseBrokerPositionRows','parseXTBTradesRows','parseXTBPositionsRows','parseXTBCashRows','parseBrokerImportFile','parseTrading212HoldingsPdf']:
+              assert f'function {p}(' not in a and f'async function {p}(' not in a
+              assert p in m
+          # Historical correctness probes: withholding before dividend, XTB negative dividend reversals,
+          # unique external transaction IDs, and T212 holdings PDF detection/parsing stay intact.
+          assert 'DIVIDEND_TAX' in m and 'withholding' in m
+          assert 'DIVIDEND_ADJ' in m and 'amount < 0' in m
+          assert 'extId' in m and 'brokerEventKey(evt)' in m
+          assert 'Valor dos ativos' in m and 'holdings_pdf' in m
+          assert 'function rebuildBrokerGeneratedData(' in a
+          assert 'VestraBrokerParsers não foi carregado antes de app.js' in a
+          PY
+          git diff --check
+      - name: Commit extracted broker parsers
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html app-broker-parsers.js
+          git commit -m 'refactor: move broker row parsers out of app monolith'
+          git pull --rebase origin main
+          git push
