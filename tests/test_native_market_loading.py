@@ -32,7 +32,7 @@ class NativeMarketLoadingTests(unittest.TestCase):
         for path in (
             'market-opportunities.js',
             'market-enhancements.js',
-            'vestra-ux-v456.js',
+            'vestra-swap-lab.js',
             'vestra-ai-brief-v459.js',
         ):
             source = read(path)
@@ -42,11 +42,12 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_service_worker_matches_native_market_generation(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.0', sw)
-        self.assertIn('vestra-cache-v104', sw)
+        self.assertIn('Vestra Service Worker v9.2', sw)
+        self.assertIn('vestra-cache-v106', sw)
         self.assertIn('./market-data-loader.js', sw)
         self.assertIn('./market-opportunities.js', sw)
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
+        self.assertIn('./vestra-swap-lab.js', sw)
 
 
 if __name__ == '__main__':
