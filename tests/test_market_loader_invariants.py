@@ -18,7 +18,17 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_hotfix_does_not_reload_base_utils(self):
         hotfix = read("market-hotfix.js")
         self.assertNotIn("load('./app-utils.js", hotfix)
-        self.assertIn("market-data-loader.js", hotfix)
+        self.assertIn("market-data-loader.js?v=1.1", hotfix)
+
+    def test_market_bootstrap_fetch_bridge_is_one_shot(self):
+        loader = read("market-data-loader.js")
+        self.assertIn("let bootstrapIntercepted = false;", loader)
+        self.assertIn("bootstrapIntercepted = true;", loader)
+        self.assertIn("function restoreFetch()", loader)
+        self.assertIn("window.fetch = originalFetch", loader)
+        self.assertIn("stocks-index.json", loader)
+        self.assertIn("stocks.json?full=1", loader)
+        self.assertIn("version:'1.1'", loader)
 
     def test_politicians_loader_matches_canonical_module_version(self):
         hotfix = read("market-hotfix.js")
