@@ -22,6 +22,7 @@ on:
       - 'scripts/score.py'
       - 'scripts/score_audit.py'
       - 'scripts/score_forward_validation.py'
+      - 'scripts/peer_benchmark.py'
       - '.github/workflows/update-market-data.yml'
       - '.github/workflows/architecture-invariants.yml'
   pull_request:
@@ -43,7 +44,9 @@ on:
       - 'scripts/score.py'
       - 'scripts/score_audit.py'
       - 'scripts/score_forward_validation.py'
+      - 'scripts/peer_benchmark.py'
       - '.github/workflows/update-market-data.yml'
+      - '.github/workflows/architecture-invariants.yml'
 
 permissions:
   contents: read
@@ -71,6 +74,6 @@ jobs:
           node --check worker.js
       - name: Validate Python syntax
         run: |
-          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py
+          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py
       - name: Run architecture invariants
-        run: python -m unittest -v tests.test_architecture_invariants
+        run: python -m unittest -v tests.test_architecture_invariants tests.test_peer_benchmark
