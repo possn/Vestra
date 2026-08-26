@@ -48,8 +48,8 @@ for old,new in repls.items():
         raise SystemExit(f'detail metric anchor missing: {old[:40]}')
     s=s.replace(old,new,1)
 
-if s.count('refreshOpenDossierLiveFields(s)') != 1:
-    raise SystemExit('live field refresh call count unexpected')
+if s.count('refreshOpenDossierLiveFields(s)') != 2:
+    raise SystemExit('live field helper definition/call count unexpected')
 for field in ['current_price','forward_pe','roe','revenue_growth','fcf_yield']:
     if f'data-live-field="{field}"' not in s:
         raise SystemExit(f'missing live field {field}')
