@@ -79,11 +79,29 @@ ASSET_TICKERS = {
     "RAYTHEON": "RTX",
     "EXXON": "XOM",
     "CHEVRON": "CVX",
+    # Confirmed rows in the June 25 White House 278-T.
+    "ILLINOIS TOOL WKS": "ITW",
+    "MCDONALDS CORP": "MCD",
+    "MCDONALD'S": "MCD",
+    "MEDTRONIC": "MDT",
+    "STATE STREET SPDR S&P DIVIDEND ETF": "SDY",
 }
 
 AMOUNT_RE = re.compile(r"\$\s*([0-9,]+)\s*(?:-|–|—|to)\s*\$?\s*([0-9,]+)", re.I)
 DATE_RE = re.compile(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b")
 TYPE_RE = re.compile(r"\b(purchase|sale|exchange)\b", re.I)
+# White House PDFs can visually show a normal table while the text layer splits
+# every cell across lines. Flatten the page and recover the semantic row instead
+# of relying on physical newlines. The row number provides a strong boundary.
+LOGICAL_ROW_RE = re.compile(
+    r"(?:^|\s)\d{1,5}\s+"
+    r"(?P<asset>.{2,220}?)\s+"
+    r"(?P<type>purchase|sale|exchange)\s+"
+    r"(?P<date>\d{1,2}/\d{1,2}/\d{2,4})\s+"
+    r"(?:Yes|No)\s+"
+    r"\$\s*(?P<lo>[0-9,]+)\s*(?:-|–|—|to)\s*\$?\s*(?P<hi>[0-9,]+)",
+    re.I,
+)
 
 
 def normalise_space(value: str) -> str:
@@ -108,6 +126,22 @@ def ticker_for(description: str) -> str:
     return ""
 
 
+def make_trade(*, ticker: str, trade_type: str, amount: str, transaction_date: str, asset: str, filing: dict) -> dict:
+    return {
+        "ticker": ticker,
+        "member": "Donald J. Trump",
+        "member_key": "executive:donald-trump",
+        "chamber": "Executive",
+        "type": trade_type,
+        "amount": amount,
+        "transaction_date": transaction_date,
+        "disclosure_date": filing["disclosure_date"],
+        "asset": normalise_space(asset)[:500],
+        "filing_url": filing["url"],
+        "source": filing["source"],
+    }
+
+
 def parse_row_text(text: str, filing: dict) -> dict | None:
     line = normalise_space(text)
     typ = TYPE_RE.search(line)
@@ -123,19 +157,35 @@ def parse_row_text(text: str, filing: dict) -> dict | None:
         return None
     lo, hi = amount.groups()
     trade_type = {"purchase": "buy", "sale": "sell", "exchange": "exchange"}[typ.group(1).lower()]
-    return {
-        "ticker": ticker,
-        "member": "Donald J. Trump",
-        "member_key": "executive:donald-trump",
-        "chamber": "Executive",
-        "type": trade_type,
-        "amount": f"${lo} - ${hi}",
-        "transaction_date": transaction_date,
-        "disclosure_date": filing["disclosure_date"],
-        "asset": line[:500],
-        "filing_url": filing["url"],
-        "source": filing["source"],
-    }
+    return make_trade(
+        ticker=ticker,
+        trade_type=trade_type,
+        amount=f"${lo} - ${hi}",
+        transaction_date=transaction_date,
+        asset=line,
+        filing=filing,
+    )
+
+
+def parse_logical_rows(text: str, filing: dict) -> list[dict]:
+    flat = normalise_space(text)
+    out = []
+    for match in LOGICAL_ROW_RE.finditer(flat):
+        asset = normalise_space(match.group("asset"))
+        ticker = ticker_for(asset)
+        transaction_date = iso_date(match.group("date"))
+        if not ticker or not transaction_date:
+            continue
+        trade_type = {"purchase": "buy", "sale": "sell", "exchange": "exchange"}[match.group("type").lower()]
+        out.append(make_trade(
+            ticker=ticker,
+            trade_type=trade_type,
+            amount=f"${match.group('lo')} - ${match.group('hi')}",
+            transaction_date=transaction_date,
+            asset=asset,
+            filing=filing,
+        ))
+    return out
 
 
 def extract_pdf_rows(content: bytes, filing: dict) -> list[dict]:
@@ -143,14 +193,15 @@ def extract_pdf_rows(content: bytes, filing: dict) -> list[dict]:
     with pdfplumber.open(io.BytesIO(content)) as pdf:
         for page in pdf.pages:
             text = page.extract_text(x_tolerance=2, y_tolerance=2) or ""
-            # First try individual OCR/text lines.
+            # Prefer semantic rows reconstructed from the complete page text.
+            trades.extend(parse_logical_rows(text, filing))
+            # Older OGE PDFs often expose one complete transaction per line.
             for line in text.splitlines():
                 row = parse_row_text(line, filing)
                 if row:
                     trades.append(row)
-            # Some 278-T PDFs split table cells onto separate text lines. Tables
-            # are a slower fallback, but substantially improve robustness.
-            if not trades or len(trades) < 10:
+            # Table extraction remains a final fallback for mixed-layout filings.
+            if len(trades) < 10:
                 try:
                     for table in page.extract_tables() or []:
                         for cells in table or []:
@@ -159,7 +210,12 @@ def extract_pdf_rows(content: bytes, filing: dict) -> list[dict]:
                                 trades.append(row)
                 except Exception:
                     pass
-    return trades
+    # A transaction can be found by both logical-row and line/table passes.
+    deduped = {}
+    for row in trades:
+        key = (row.get("ticker"), row.get("type"), row.get("amount"), row.get("transaction_date"), row.get("member"))
+        deduped[key] = row
+    return list(deduped.values())
 
 
 def trade_key(row: dict) -> tuple:
