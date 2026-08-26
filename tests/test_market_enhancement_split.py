@@ -9,11 +9,17 @@ def read(path: str) -> str:
 
 
 class MarketEnhancementSplitTests(unittest.TestCase):
-    def test_hotfix_uses_three_canonical_modules_not_overlay(self):
+    def test_hotfix_uses_canonical_modules_not_legacy_overlays(self):
         h = read('market-hotfix.js')
-        self.assertIn('compatibility loader v4.98', h)
+        self.assertIn('compatibility loader v4.99', h)
         self.assertNotIn('market-enhancements.js', h)
-        for module in ('market-company-brief.js?v=1.0', 'market-metric-cleanup.js?v=1.0', 'portfolio-collapsibles.js?v=1.0'):
+        self.assertNotIn('vestra-ux-v452.js', h)
+        for module in (
+            'market-company-brief.js?v=1.0',
+            'market-metric-cleanup.js?v=1.0',
+            'portfolio-collapsibles.js?v=1.0',
+            'portfolio-card-classifier.js?v=1.0',
+        ):
             self.assertIn(module, h)
 
     def test_company_brief_is_index_first_and_keeps_copy_fallbacks(self):
@@ -39,11 +45,21 @@ class MarketEnhancementSplitTests(unittest.TestCase):
             self.assertIn(token, s)
         self.assertIn('window.VestraPortfolioCollapsibles', s)
 
-    def test_service_worker_caches_all_split_modules(self):
+    def test_classifier_preserves_all_portfolio_kinds_shortcuts_and_hints(self):
+        s = read('portfolio-card-classifier.js')
+        for kind in ('research','priority','map','reinforce','review','overlap','swap','scenario','target','history','risk','stress'):
+            self.assertIn(f"kind:'{kind}'", s)
+        for token in ('data-ux-jump="priority"','data-ux-jump="swap"','data-ux-jump="overlap"','data-ux-jump="risk"'):
+            self.assertIn(token, s)
+        self.assertIn('Trocas inteligentes · compara alternativas sem assumir que vender é obrigatório.', s)
+        self.assertIn('Sobreposição · mostra onde várias posições estão a comprar a mesma exposição.', s)
+        self.assertIn('window.VestraPortfolioCardClassifier', s)
+
+    def test_service_worker_caches_all_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.3', sw)
-        self.assertIn('vestra-cache-v107', sw)
-        for module in ('./market-company-brief.js', './market-metric-cleanup.js', './portfolio-collapsibles.js'):
+        self.assertIn('Vestra Service Worker v9.4', sw)
+        self.assertIn('vestra-cache-v108', sw)
+        for module in ('./market-company-brief.js', './market-metric-cleanup.js', './portfolio-collapsibles.js', './portfolio-card-classifier.js'):
             self.assertIn(module, sw)
 
 
