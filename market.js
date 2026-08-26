@@ -327,8 +327,9 @@
     if (M.loaded) return;
     if (M.loading) return M.loading;
     M.loading = (async()=>{
-      const r = await fetch('data/stocks.json', {cache:'no-store'});
-      if(!r.ok) throw new Error(`stocks.json ${r.status}`);
+      let r = await fetch('data/stocks-index.json', {cache:'no-store'});
+      if(!r.ok) r = await fetch('data/stocks.json', {cache:'no-store'});
+      if(!r.ok) throw new Error(`market data ${r.status}`);
       M.data = await r.json();
       M.stocks = Array.isArray(M.data.stocks) ? M.data.stocks : [];
       M.byTicker = new Map(M.stocks.map(s=>[txt(s.ticker).toUpperCase(),s]));
