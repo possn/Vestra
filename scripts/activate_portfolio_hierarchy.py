@@ -22,10 +22,14 @@ start=v.index('  const GROUPS=[')
 end=v.index('  function rankOpportunityRows(){', start)
 v=v[:start]+v[end:]
 v=v.replace('  function apply(){organizePortfolio();rankOpportunityRows();}\n','  function apply(){rankOpportunityRows();}\n')
-for token in ('organizePortfolio','makeGroupLabel','GROUPS','ux454-nav-title'):
+for token in ('organizePortfolio','makeGroupLabel','GROUPS'):
     assert token not in v, token
 assert 'rankOpportunityRows' in v
 assert 'ux454-podium' in v
+# Legacy portfolio selectors may remain temporarily in the v454 style block, but
+# v454 must no longer create or reorder portfolio DOM nodes.
+assert "document.createElement('div');title.className='ux454-nav-title'" not in v
+assert "data-ux454-group" not in v
 
 old=(
     "  load('./vestra-ux-v454.js?v=4.54','vestraUxV454');\n"
