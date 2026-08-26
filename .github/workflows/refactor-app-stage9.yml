@@ -1,0 +1,55 @@
+name: Refactor app stage 9
+
+on:
+  push:
+    paths:
+      - 'scripts/refactor_app_stage9.py'
+      - '.github/workflows/refactor-app-stage9.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded broker identity data extraction
+        run: python scripts/refactor_app_stage9.py
+      - name: Validate JavaScript syntax
+        run: |
+          node --check app-broker-identity-data.js
+          node --check app.js
+      - name: Validate identity data migration and diff
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          h=Path('index.html').read_text()
+          assert h.index('app-broker-identity-data.js') < h.index('app.js')
+          a=Path('app.js').read_text()
+          m=Path('app-broker-identity-data.js').read_text()
+          assert 'const BROKER_SECURITY_IDENTITY_BY_NAME = {' not in a
+          assert 'const BROKER_SECURITY_IDENTITY_BY_NAME = {' in m
+          for probe in ['"APPLE"','"MICROSOFT"','"REALTY INCOME"','"C3 AI"']:
+              assert probe in m
+          assert 'VestraBrokerIdentityData não foi carregado antes de app.js' in a
+          assert len(m) > 10000
+          PY
+          git diff --check
+      - name: Commit extracted broker identity data
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html app-broker-identity-data.js
+          git commit -m 'refactor: move broker security identity data out of app monolith'
+          git pull --rebase origin main
+          git push
