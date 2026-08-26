@@ -1,0 +1,57 @@
+name: Patch market native index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/patch_market_native_index.py'
+      - '.github/workflows/patch-market-native-index.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: patch-market-native-index
+  cancel-in-progress: true
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded native index patch
+        run: python scripts/patch_market_native_index.py
+      - name: Validate JavaScript and lazy-loading invariants
+        run: |
+          node --check market.js
+          python - <<'PY'
+          from pathlib import Path
+          market=Path('market.js').read_text()
+          start=market.index('async function ensureLoaded')
+          end=market.index('\n  function ', start)
+          block=market[start:end]
+          assert "fetch('data/stocks-index.json'" in block
+          assert "fetch('data/stocks.json'" in block
+          assert block.index('stocks-index.json') < block.index('stocks.json')
+          assert 'price_history_1y' not in Path('data/stocks-index.json').read_text()[:5000]
+          loader=Path('market-data-loader.js').read_text()
+          assert 'dossiers-manifest.json' in loader
+          assert 'data/dossiers' in loader
+          PY
+          git diff --check
+      - name: Commit native index loading
+        run: |
+          git config user.name 'vestra-refactor-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add market.js
+          if git diff --cached --quiet; then
+            echo 'Native market index loading already active.'
+          else
+            git commit -m 'perf: load lightweight market index natively'
+            git pull --rebase origin main
+            git push
+          fi
