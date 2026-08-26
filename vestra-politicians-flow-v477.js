@@ -5,7 +5,7 @@
   const t=v=>String(v??'').trim();
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const BUY=/purchase|buy|compr/i, SELL=/sale|sell|vend/i;
-  let flowData=null, flowLoading=null, pending=false;
+  let flowData=null, flowLoading=null, flowFailed=false, pending=false;
 
   const section=()=>document.querySelector('.politicians-section');
   const readFollows=()=>{try{return JSON.parse(localStorage.getItem(FOLLOW_KEY)||'[]').filter(x=>x?.value&&x?.label)}catch{return[]}};
@@ -43,7 +43,8 @@
         if(!r.ok)throw new Error(String(r.status));
         const d=await r.json();
         flowData=Array.isArray(d)?d:(d?.trades||d?.data||[]);
-      }catch(_){flowData=[];}
+        flowFailed=false;
+      }catch(_){flowData=[];flowFailed=true;}
       return flowData;
     })();
     return flowLoading;
@@ -70,7 +71,16 @@
     if(!flowData){card.innerHTML='<div class="ux477-flowhead"><div><small>FLUXO POLÍTICO</small><strong>O que os políticos estão a negociar</strong></div><span>últimas 100</span></div><p class="ux477-loading">A atualizar…</p>';return;}
     const buys=topTickers(flowData,BUY), sells=topTickers(flowData,SELL);
     const list=(arr,tone)=>`<div class="ux477-flowcol ${tone}"><b>${tone==='buy'?'↗ Mais compradas':'↘ Mais vendidas'}</b>${arr.length?arr.map(([tk,c])=>`<button type="button" data-market-ticker="${esc(tk)}"><strong>${esc(tk)}</strong><span>${c} ${c===1?'operação':'operações'}</span></button>`).join(''):'<small>Sem dados recentes.</small>'}</div>`;
-    card.innerHTML=`<div class="ux477-flowhead"><div><small>FLUXO POLÍTICO</small><strong>Top 5 das últimas divulgações</strong></div><span>100 operações</span></div><div class="ux477-flowgrid">${list(buys,'buy')}${list(sells,'sell')}</div><p>Resumo global. Para ver operações individuais, escolhe um político abaixo.</p>`;
+    // v4.77.1: o "100 operações" era texto fixo, aparecia mesmo com zero
+    // resultados (parecia "carregado mas vazio" em vez de "falhou a
+    // carregar"). Mostra a contagem real e distingue os dois casos.
+    const badge = flowFailed
+      ? '<span class="ux477-flow-error" title="Não foi possível contactar a fonte de dados">⚠️ Sem ligação</span>'
+      : `<span>${flowData.length} operaç${flowData.length===1?'ão':'ões'}</span>`;
+    const note = flowFailed
+      ? 'Não foi possível carregar dados de políticos agora. Tenta outra vez daqui a pouco.'
+      : 'Resumo global. Para ver operações individuais, escolhe um político abaixo.';
+    card.innerHTML=`<div class="ux477-flowhead"><div><small>FLUXO POLÍTICO</small><strong>Top 5 das últimas divulgações</strong></div>${badge}</div><div class="ux477-flowgrid">${list(buys,'buy')}${list(sells,'sell')}</div><p>${note}</p>`;
   }
 
   function renderFollowHub(s){
