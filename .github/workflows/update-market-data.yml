@@ -31,7 +31,9 @@ on:
       - 'scripts/capital_allocation_intelligence.py'
       - 'scripts/low52_intelligence.py'
       - 'scripts/scanner.py'
+      - 'scripts/congress.py'
       - 'scripts/run.py'
+      - '.github/workflows/update-market-data.yml'
       - '.github/triggers/market-data-rebuild.txt'
 
 permissions:
@@ -65,7 +67,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/run.py scripts/postprocess_market.py scripts/coverage_audit.py scripts/coverage_guard.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/coverage_audit.py scripts/coverage_guard.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
