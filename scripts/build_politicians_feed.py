@@ -5,8 +5,9 @@ recent STOCK Act disclosures server-side, normalizes them, and publishes a
 small data/politicians.json snapshot.
 
 Provider policy:
-1. Capitol Trades structured Next.js flight data (primary)
-2. CongressInvests API (fallback only when its own data are fresh)
+1. U.S. House Clerk annual disclosure archive + PTR PDFs (primary, official)
+2. Capitol Trades structured Next.js flight data (secondary)
+3. CongressInvests API (fallback only when its own data are fresh)
 
 A source is accepted only when the newest disclosure is recent enough. This
 prevents stale providers from advertising themselves as current indefinitely.
@@ -14,13 +15,17 @@ prevents stale providers from advertising themselves as current indefinitely.
 from __future__ import annotations
 
 import datetime as dt
+import io
 import json
 import logging
 import re
 import time
+import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 from urllib.parse import urlencode
 
+import pdfplumber
 import requests
 
 log = logging.getLogger("politicians-feed")
@@ -37,20 +42,37 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.7",
 }
 
+HOUSE_YEAR = dt.date.today().year
+HOUSE_ARCHIVE = f"https://disclosures-clerk.house.gov/public_disc/financial-pdfs/{HOUSE_YEAR}FD.ZIP"
+HOUSE_PTR_BASE = f"https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/{HOUSE_YEAR}"
 CAPITOL_URL = "https://www.capitoltrades.com/trades"
 CONGRESSINVESTS_API = "https://congressinfor-production.up.railway.app"
 PUSH_RE = re.compile(r'self\.__next_f\.push\((\[.*?\])\)</script>', re.S)
 TRADE_NEEDLE = '{"_issuerId":'
 TOTAL_PAGES_RE = re.compile(r'"totalPages":(\d+)')
+TICKER_RE = re.compile(r"\(([A-Z][A-Z0-9.\-]{0,9})\)\s*\[(?:ST|OP|MF|EF|CS|PS|RS|OI|GS|CT|CO|PE|VI|OT)[^\]]*\]", re.I)
+DATE_RE = re.compile(r"\b(\d{2}/\d{2}/\d{4})\b")
+AMOUNT_RE = re.compile(r"\$[\d,]+(?:\.\d+)?\s*(?:-|–|—|to)\s*\$[\d,]+(?:\.\d+)?|Over\s+\$[\d,]+|\$[\d,]+(?:\.\d+)?", re.I)
 
 
 def text(v) -> str:
-    return str(v or "").strip()
+    return str(v or "").replace("\x00", "").strip()
+
+
+def clean_space(v) -> str:
+    return re.sub(r"\s+", " ", text(v)).strip()
 
 
 def iso_date(v) -> str:
     s = text(v)
-    return s[:10] if re.match(r"^\d{4}-\d{2}-\d{2}", s) else ""
+    if re.match(r"^\d{4}-\d{2}-\d{2}", s):
+        return s[:10]
+    for fmt in ("%m/%d/%Y", "%m/%d/%y"):
+        try:
+            return dt.datetime.strptime(s[:10], fmt).date().isoformat()
+        except ValueError:
+            pass
+    return ""
 
 
 def display_amount_from_value(v) -> str:
@@ -69,6 +91,181 @@ def trade_key(x: dict) -> tuple:
         x.get("disclosure_date", ""), x.get("type", ""), x.get("amount", ""),
         x.get("asset", ""),
     )
+
+
+def _xml_row(child) -> dict:
+    return {str(c.tag).split("}")[-1]: text(c.text) for c in child}
+
+
+def _house_member_name(row: dict) -> str:
+    parts = [row.get("Prefix", ""), row.get("First", ""), row.get("Last", ""), row.get("Suffix", "")]
+    return clean_space(" ".join(p for p in parts if p))
+
+
+def _house_tx_type(raw: str) -> str:
+    s = clean_space(raw).upper()
+    if s.startswith("P") or "PURCHASE" in s:
+        return "buy"
+    if s.startswith("S") or "SALE" in s:
+        return "sell"
+    if s.startswith("E") or "EXCHANGE" in s:
+        return "exchange"
+    return s.lower() or "trade"
+
+
+def _house_row_to_trade(row: list, headers: list[str], filing: dict, filing_url: str) -> dict | None:
+    vals = [clean_space(v) for v in row]
+    by = {headers[i]: vals[i] if i < len(vals) else "" for i in range(len(headers))}
+    asset = by.get("asset", "")
+    ticker_match = TICKER_RE.search(asset)
+    if not ticker_match:
+        # Some Clerk-generated PDFs omit the asset type suffix after ticker.
+        ticker_match = re.search(r"\(([A-Z][A-Z0-9.\-]{0,9})\)", asset)
+    ticker = ticker_match.group(1).upper() if ticker_match else ""
+    if not ticker:
+        return None
+    tx_raw = by.get("transactiontype", "") or by.get("transaction", "") or by.get("type", "")
+    tx_date = iso_date(by.get("date", "") or by.get("transactiondate", ""))
+    if not tx_date:
+        dates = DATE_RE.findall(" ".join(vals))
+        tx_date = iso_date(dates[0]) if dates else ""
+    if not tx_date:
+        return None
+    amount = by.get("amount", "")
+    if not amount:
+        m = AMOUNT_RE.search(" ".join(vals))
+        amount = clean_space(m.group(0)) if m else "—"
+    state_district = text(filing.get("StateDst"))
+    state = state_district[:2].upper() if state_district else ""
+    return {
+        "ticker": ticker,
+        "member": _house_member_name(filing),
+        "chamber": "House",
+        "party": "",
+        "state": state,
+        "type": _house_tx_type(tx_raw),
+        "amount": amount or "—",
+        "transaction_date": tx_date,
+        "disclosure_date": iso_date(filing.get("FilingDate")),
+        "asset": asset,
+        "filing_url": filing_url,
+    }
+
+
+def _table_headers(row: list) -> list[str]:
+    out = []
+    for cell in row:
+        s = clean_space(cell).lower()
+        s = re.sub(r"[^a-z]+", "", s)
+        out.append(s)
+    return out
+
+
+def _parse_house_pdf(content: bytes, filing: dict, filing_url: str) -> list[dict]:
+    trades: list[dict] = []
+    seen: set[tuple] = set()
+    with pdfplumber.open(io.BytesIO(content)) as pdf:
+        for page in pdf.pages:
+            for table in page.extract_tables() or []:
+                if not table:
+                    continue
+                header_idx = None
+                headers: list[str] = []
+                for i, candidate in enumerate(table[:5]):
+                    h = _table_headers(candidate or [])
+                    joined = "|".join(h)
+                    if "asset" in h and "amount" in h and ("transactiontype" in h or "transaction" in h or "type" in h):
+                        header_idx, headers = i, h
+                        break
+                    if "asset" in joined and "amount" in joined and "transaction" in joined:
+                        header_idx, headers = i, h
+                        break
+                if header_idx is None:
+                    continue
+                # Normalize common multi-line Clerk headers.
+                headers = [
+                    "transactiontype" if h in {"transactiontype", "transaction"} else
+                    "transactiondate" if h in {"transactiondate", "date"} else h
+                    for h in headers
+                ]
+                for raw_row in table[header_idx + 1:]:
+                    if not raw_row or not any(text(x) for x in raw_row):
+                        continue
+                    item = _house_row_to_trade(raw_row, headers, filing, filing_url)
+                    if not item:
+                        continue
+                    key = trade_key(item)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    trades.append(item)
+    return trades
+
+
+def fetch_house_clerk() -> tuple[list[dict], dict]:
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    r = session.get(HOUSE_ARCHIVE, timeout=45)
+    r.raise_for_status()
+    archive = zipfile.ZipFile(io.BytesIO(r.content))
+    xml_name = next((n for n in archive.namelist() if n.lower().endswith("fd.xml")), None)
+    if not xml_name:
+        raise RuntimeError("House archive XML index missing")
+    root = ET.fromstring(archive.read(xml_name))
+    cutoff = dt.date.today() - dt.timedelta(days=DAYS)
+    filings: list[dict] = []
+    for child in root:
+        row = _xml_row(child)
+        if text(row.get("FilingType")).upper() != "P":
+            continue
+        filed = iso_date(row.get("FilingDate"))
+        doc_id = text(row.get("DocID"))
+        if not filed or not doc_id:
+            continue
+        try:
+            if dt.date.fromisoformat(filed) < cutoff:
+                continue
+        except ValueError:
+            continue
+        filings.append(row)
+    filings.sort(key=lambda x: iso_date(x.get("FilingDate")), reverse=True)
+    if not filings:
+        raise RuntimeError("House archive contains no recent PTR filings")
+
+    rows: list[dict] = []
+    seen: set[tuple] = set()
+    parsed_filings = 0
+    failed_filings = 0
+    for filing in filings:
+        doc_id = text(filing.get("DocID"))
+        filing_url = f"{HOUSE_PTR_BASE}/{doc_id}.pdf"
+        try:
+            pdf = session.get(filing_url, timeout=TIMEOUT)
+            if pdf.status_code == 404:
+                failed_filings += 1
+                continue
+            pdf.raise_for_status()
+            parsed = _parse_house_pdf(pdf.content, filing, filing_url)
+            parsed_filings += 1
+            for item in parsed:
+                key = trade_key(item)
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append(item)
+        except Exception as exc:
+            failed_filings += 1
+            log.debug("House PTR %s failed: %s", doc_id, exc)
+        time.sleep(0.06)
+    rows.sort(key=lambda x: (x.get("disclosure_date") or x["transaction_date"], x["transaction_date"]), reverse=True)
+    log.info("House Clerk: %d recent PTR filings; parsed %d, failed %d, %d stock trades", len(filings), parsed_filings, failed_filings, len(rows))
+    return rows, {
+        "provider": "U.S. House Clerk",
+        "last_updated": iso_date(filings[0].get("FilingDate")),
+        "coverage_chambers": ["House"],
+        "filings_considered": len(filings),
+        "filings_parsed": parsed_filings,
+    }
 
 
 def _extract_flight(html: str) -> str:
@@ -148,8 +345,6 @@ def fetch_capitol_trades() -> tuple[list[dict], dict]:
     rows: list[dict] = []
     seen: set[tuple] = set()
     total_pages: int | None = None
-    # Recent pages are newest first. Eight pages is normally hundreds of rows;
-    # stop early once a page is entirely older than our lookback.
     for page in range(1, 9):
         page_rows, page_count = _capitol_page(page)
         if total_pages is None:
@@ -173,7 +368,7 @@ def fetch_capitol_trades() -> tuple[list[dict], dict]:
             break
         time.sleep(0.25)
     rows.sort(key=lambda x: (x.get("disclosure_date") or x["transaction_date"], x["transaction_date"]), reverse=True)
-    return rows, {"provider": "Capitol Trades", "last_updated": rows[0].get("disclosure_date") if rows else ""}
+    return rows, {"provider": "Capitol Trades", "last_updated": newest_disclosure(rows), "coverage_chambers": sorted({x.get("chamber") for x in rows if x.get("chamber")})}
 
 
 def _congressinvests_normalize(raw: dict) -> dict | None:
@@ -238,7 +433,7 @@ def fetch_congressinvests() -> tuple[list[dict], dict]:
         offset += len(raw_rows)
         time.sleep(0.15)
     rows.sort(key=lambda x: (x.get("disclosure_date") or x["transaction_date"], x["transaction_date"]), reverse=True)
-    return rows, {"provider": "CongressInvests API", "last_updated": text(metadata.get("last_updated"))}
+    return rows, {"provider": "CongressInvests API", "last_updated": text(metadata.get("last_updated")), "coverage_chambers": sorted({x.get("chamber") for x in rows if x.get("chamber")})}
 
 
 def newest_disclosure(trades: list[dict]) -> str:
@@ -283,7 +478,12 @@ def build_members(trades: list[dict]) -> list[dict]:
 
 def choose_provider() -> tuple[list[dict], dict]:
     errors: list[str] = []
-    for name, fetcher in (("Capitol Trades", fetch_capitol_trades), ("CongressInvests API", fetch_congressinvests)):
+    providers = (
+        ("U.S. House Clerk", fetch_house_clerk),
+        ("Capitol Trades", fetch_capitol_trades),
+        ("CongressInvests API", fetch_congressinvests),
+    )
+    for name, fetcher in providers:
         try:
             trades, meta = fetcher()
             newest = newest_disclosure(trades)
@@ -304,18 +504,18 @@ def main() -> None:
         trades, meta = choose_provider()
     except Exception as exc:
         if OUT.exists():
-            # Do not silently stamp a stale file as current. Keep the old snapshot
-            # untouched; the frontend shows its generated/data dates honestly.
             log.warning("no fresh politicians provider (%s); preserving previous snapshot", exc)
             return
         raise
     members = build_members(trades)
     provider = text(meta.get("provider")) or "Congress disclosure provider"
+    coverage = meta.get("coverage_chambers") or sorted({x.get("chamber") for x in trades if x.get("chamber")})
     payload = {
         "schema_version": 2,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source": provider,
-        "source_origin": "Public STOCK Act disclosures; House Clerk and Senate eFD",
+        "source_origin": "Public STOCK Act disclosures",
+        "coverage_chambers": coverage,
         "window_days": DAYS,
         "source_last_updated": text(meta.get("last_updated")) or newest_disclosure(trades),
         "newest_disclosure": newest_disclosure(trades),
@@ -327,7 +527,7 @@ def main() -> None:
     tmp = OUT.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     tmp.replace(OUT)
-    log.info("politicians: %d trades, %d members", len(trades), len(members))
+    log.info("politicians: %d trades, %d members; coverage=%s", len(trades), len(members), ",".join(coverage))
 
 
 if __name__ == "__main__":
