@@ -1,4 +1,4 @@
-/* Vestra Market compatibility loader v4.90 — sequential, deterministic. */
+/* Vestra Market compatibility loader v4.91 — sequential, deterministic. */
 (() => {
   'use strict';
 
@@ -30,7 +30,7 @@
 
   // app-utils.js is part of the ordered base bundle in index.html. Keep this
   // compatibility loader focused on market-only overlays to avoid duplicate work.
-  load('./market-data-loader.js?v=1.1','vestraMarketDataLoader');
+  load('./market-data-loader.js?v=1.2','vestraMarketDataLoader');
   load('./market-enhancements.js?v=4.50','vestraMarketEnhancements');
   load('./portfolio-navigation-fix.js?v=1.0','vestraPortfolioNavigationFix');
   load('./vestra-ux-v452.js?v=4.52','vestraUxV452');
@@ -47,7 +47,7 @@
   load('./vestra-portfolio-dossier-routing-v482.js?v=4.82','vestraPortfolioDossierRoutingV482');
 
   const style = document.createElement('style');
-  style.id = 'vestra-politicians-canonical-v490';
+  style.id = 'vestra-politicians-canonical-v491';
   style.textContent = '.politicians-section .ux454-flow{display:none!important}';
   document.head.appendChild(style);
   load('./politicians.js?v=2.0','vestraPoliticiansCanonical');
