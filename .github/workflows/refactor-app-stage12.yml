@@ -33,6 +33,7 @@ jobs:
           h=Path('index.html').read_text()
           a=Path('app.js').read_text()
           m=Path('app-broker-parsers.js').read_text()
+          core=Path('app-broker-parsing-core.js').read_text()
           assert h.index('app-broker-parsers.js') < h.index('app.js')
           for p in ['parseBrokerLedgerRows','parseBrokerPositionRows','parseXTBTradesRows','parseXTBPositionsRows','parseXTBCashRows','parseBrokerImportFile','parseTrading212HoldingsPdf']:
               assert f'function {p}(' not in a and f'async function {p}(' not in a
@@ -42,7 +43,7 @@ jobs:
           assert 'DIVIDEND_TAX' in m and 'withholding' in m
           assert 'DIVIDEND_ADJ' in m and 'amount < 0' in m
           assert 'extId' in m and 'brokerEventKey(evt)' in m
-          assert 'Valor dos ativos' in m and 'holdings_pdf' in m
+          assert 'Valor dos ativos' in m and 'holdings_pdf' in core
           assert 'function rebuildBrokerGeneratedData(' in a
           assert 'VestraBrokerParsers não foi carregado antes de app.js' in a
           PY
