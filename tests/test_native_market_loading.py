@@ -31,7 +31,7 @@ class NativeMarketLoadingTests(unittest.TestCase):
     def test_runtime_market_consumers_are_index_first(self):
         for path in (
             'market-opportunities.js',
-            'market-enhancements.js',
+            'market-company-brief.js',
             'vestra-swap-lab.js',
             'vestra-ai-brief-v459.js',
         ):
@@ -42,9 +42,10 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_service_worker_matches_native_market_generation(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.2', sw)
-        self.assertIn('vestra-cache-v106', sw)
+        self.assertIn('Vestra Service Worker v9.3', sw)
+        self.assertIn('vestra-cache-v107', sw)
         self.assertIn('./market-data-loader.js', sw)
+        self.assertIn('./market-company-brief.js', sw)
         self.assertIn('./market-opportunities.js', sw)
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
         self.assertIn('./vestra-swap-lab.js', sw)
