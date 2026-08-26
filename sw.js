@@ -1,5 +1,5 @@
-/* Vestra Service Worker v7.2 — cache/offline infrastructure only. */
-const CACHE_NAME = "vestra-cache-v86";
+/* Vestra Service Worker v7.3 — cache/offline infrastructure only. */
+const CACHE_NAME = "vestra-cache-v87";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const APP_SHELL = [
   "./market-hotfix.js",
   "./market-data-loader.js",
   "./market-opportunity-lenses.js",
+  "./vestra-portfolio-ui.js",
   "./politicians.js",
   "./manifest.webmanifest",
   "./icon192.png",
@@ -83,9 +84,6 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // All generated market artefacts — the lightweight index, dossier manifest,
-  // dossier shards and legacy fallback — are network-first. Cached copies are
-  // used only when the device is offline.
   if (/\/data\/.*\.(json|txt)$/i.test(url.pathname)) {
     event.respondWith(networkFirst(request));
     return;
