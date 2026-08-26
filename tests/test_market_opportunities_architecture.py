@@ -61,10 +61,11 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v8.8', sw)
-        self.assertIn('vestra-cache-v102', sw)
+        self.assertIn('Vestra Service Worker v9.0', sw)
+        self.assertIn('vestra-cache-v104', sw)
         self.assertIn('./market-opportunities.js', sw)
         self.assertIn('./vestra-portfolio-focus.js', sw)
+        self.assertIn('./vestra-portfolio-hierarchy.js', sw)
 
 
 if __name__ == '__main__':
