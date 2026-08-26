@@ -25,77 +25,32 @@ FILINGS = [
     },
 ]
 
-# Publish only mappings that are unambiguous in the filing text/OCR output.
 ASSET_TICKERS = {
-    "NVIDIA": "NVDA",
-    "BOEING": "BA",
-    "VANGUARD S&P 500": "VOO",
-    "COMCAST": "CMCSA",
-    "PTC INC": "PTC",
-    "ACCENTURE": "ACN",
-    "ADVANCED MICRO DEVICES": "AMD",
-    "ENERGY SELECT SECTOR SPDR": "XLE",
-    "EQUINIX": "EQIX",
-    "DIGITAL REALTY": "DLR",
-    "MICROSOFT": "MSFT",
-    "AMAZON": "AMZN",
-    "META PLATFORMS": "META",
-    "FACEBOOK": "META",
-    "VANGUARD DIVIDEND APPRECIATION": "VIG",
-    "WALT DISNEY": "DIS",
-    "DISNEY": "DIS",
-    "UNITEDHEALTH": "UNH",
-    "ORACLE": "ORCL",
-    "CDW": "CDW",
-    "NETFLIX": "NFLX",
-    "PALO ALTO NETWORKS": "PANW",
-    "INTEL": "INTC",
-    "ALPHABET": "GOOGL",
-    "GOOGLE": "GOOGL",
-    "APPLE": "AAPL",
-    "BROADCOM": "AVGO",
-    "TESLA": "TSLA",
-    "SALESFORCE": "CRM",
-    "ADOBE": "ADBE",
-    "COSTCO": "COST",
-    "JPMORGAN": "JPM",
-    "BANK OF AMERICA": "BAC",
-    "GOLDMAN SACHS": "GS",
-    "MORGAN STANLEY": "MS",
-    "BLACKROCK": "BLK",
-    "VISA": "V",
-    "MASTERCARD": "MA",
-    "COCA-COLA": "KO",
-    "COCA COLA": "KO",
-    "PEPSICO": "PEP",
-    "WALMART": "WMT",
-    "HOME DEPOT": "HD",
-    "CATERPILLAR": "CAT",
-    "LOCKHEED MARTIN": "LMT",
-    "RTX": "RTX",
-    "RAYTHEON": "RTX",
-    "EXXON": "XOM",
-    "CHEVRON": "CVX",
-    # Confirmed company names present in the June White House filing.
-    "ILLINOIS TOOL WKS": "ITW",
-    "ILLINOIS TOOL WORKS": "ITW",
-    "MCDONALDS CORP": "MCD",
-    "MCDONALD'S": "MCD",
-    "MCDONALDS": "MCD",
-    "MEDTRONIC": "MDT",
-    "STATE STREET SPDR S&P DIVIDEND ETF": "SDY",
-    "SPDR S&P DIVIDEND ETF": "SDY",
+    "NVIDIA": "NVDA", "BOEING": "BA", "VANGUARD S&P 500": "VOO", "COMCAST": "CMCSA",
+    "PTC INC": "PTC", "ACCENTURE": "ACN", "ADVANCED MICRO DEVICES": "AMD",
+    "ENERGY SELECT SECTOR SPDR": "XLE", "EQUINIX": "EQIX", "DIGITAL REALTY": "DLR",
+    "MICROSOFT": "MSFT", "AMAZON": "AMZN", "META PLATFORMS": "META", "FACEBOOK": "META",
+    "VANGUARD DIVIDEND APPRECIATION": "VIG", "WALT DISNEY": "DIS", "DISNEY": "DIS",
+    "UNITEDHEALTH": "UNH", "ORACLE": "ORCL", "CDW": "CDW", "NETFLIX": "NFLX",
+    "PALO ALTO NETWORKS": "PANW", "INTEL": "INTC", "ALPHABET": "GOOGL", "GOOGLE": "GOOGL",
+    "APPLE": "AAPL", "BROADCOM": "AVGO", "TESLA": "TSLA", "SALESFORCE": "CRM",
+    "ADOBE": "ADBE", "COSTCO": "COST", "JPMORGAN": "JPM", "BANK OF AMERICA": "BAC",
+    "GOLDMAN SACHS": "GS", "MORGAN STANLEY": "MS", "BLACKROCK": "BLK", "VISA": "V",
+    "MASTERCARD": "MA", "COCA-COLA": "KO", "COCA COLA": "KO", "PEPSICO": "PEP",
+    "WALMART": "WMT", "HOME DEPOT": "HD", "CATERPILLAR": "CAT", "LOCKHEED MARTIN": "LMT",
+    "RTX": "RTX", "RAYTHEON": "RTX", "EXXON": "XOM", "CHEVRON": "CVX",
+    "ILLINOIS TOOL WKS": "ITW", "ILLINOIS TOOL WORKS": "ITW", "MCDONALDS CORP": "MCD",
+    "MCDONALD'S": "MCD", "MCDONALDS": "MCD", "MEDTRONIC": "MDT",
+    "STATE STREET SPDR S&P DIVIDEND ETF": "SDY", "SPDR S&P DIVIDEND ETF": "SDY",
 }
 
 AMOUNT_RE = re.compile(r"\$\s*([0-9][0-9,.]*)\s*(?:-|–|—|to|•)\s*\$?\s*([0-9][0-9,.]*)", re.I)
+OCR_AMOUNT_RE = re.compile(r"\$?\s*([0-9][0-9,.]{2,})\s*(?:-|–|—|to|•)\s*\$?\s*([0-9][0-9,.]{2,})", re.I)
 DATE_RE = re.compile(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b")
 TYPE_RE = re.compile(r"\b(purchase|sale|exchange)\b", re.I)
 LOGICAL_ROW_RE = re.compile(
-    r"(?:^|\s)\d{1,5}\s+"
-    r"(?P<asset>.{2,220}?)\s+"
-    r"(?P<type>purchase|sale|exchange)\s+"
-    r"(?P<date>\d{1,2}/\d{1,2}/\d{2,4})\s+"
-    r"(?:Yes|No)\s+"
+    r"(?:^|\s)\d{1,5}\s+(?P<asset>.{2,220}?)\s+(?P<type>purchase|sale|exchange)\s+"
+    r"(?P<date>\d{1,2}/\d{1,2}/\d{2,4})\s+(?:Yes|No)\s+"
     r"\$\s*(?P<lo>[0-9][0-9,.]*)\s*(?:-|–|—|to|•)\s*\$?\s*(?P<hi>[0-9][0-9,.]*)",
     re.I,
 )
@@ -149,13 +104,11 @@ def make_trade(*, ticker: str, trade_type: str, amount: str, transaction_date: s
     }
 
 
-def parse_row_text(text: str, filing: dict) -> dict | None:
+def parse_candidate(text: str, filing: dict, *, amount_re=AMOUNT_RE) -> dict | None:
     line = normalise_space(text)
     types = TYPE_RE.findall(line)
-    amounts = list(AMOUNT_RE.finditer(line))
+    amounts = list(amount_re.finditer(line))
     dates = DATE_RE.findall(line)
-    # Physical lines from older OGE PDFs can contain several neighbouring rows.
-    # Reject them rather than assigning one row's date/type to another asset.
     if len(types) != 1 or len(amounts) != 1 or len(dates) != 1:
         return None
     ticker = ticker_for(line)
@@ -164,19 +117,21 @@ def parse_row_text(text: str, filing: dict) -> dict | None:
     transaction_date = iso_date(dates[0])
     if not transaction_date:
         return None
-    amount = amounts[0]
-    lo, hi = money_digits(amount.group(1)), money_digits(amount.group(2))
+    lo, hi = money_digits(amounts[0].group(1)), money_digits(amounts[0].group(2))
     if not lo or not hi:
+        return None
+    lo_i, hi_i = int(lo), int(hi)
+    if lo_i <= 0 or hi_i < lo_i:
         return None
     trade_type = {"purchase": "buy", "sale": "sell", "exchange": "exchange"}[types[0].lower()]
     return make_trade(
-        ticker=ticker,
-        trade_type=trade_type,
-        amount=f"${int(lo):,} - ${int(hi):,}",
-        transaction_date=transaction_date,
-        asset=line,
-        filing=filing,
+        ticker=ticker, trade_type=trade_type, amount=f"${lo_i:,} - ${hi_i:,}",
+        transaction_date=transaction_date, asset=line, filing=filing,
     )
+
+
+def parse_row_text(text: str, filing: dict) -> dict | None:
+    return parse_candidate(text, filing, amount_re=AMOUNT_RE)
 
 
 def parse_logical_rows(text: str, filing: dict) -> list[dict]:
@@ -189,16 +144,12 @@ def parse_logical_rows(text: str, filing: dict) -> list[dict]:
         if not ticker or not transaction_date:
             continue
         lo, hi = money_digits(match.group("lo")), money_digits(match.group("hi"))
-        if not lo or not hi:
+        if not lo or not hi or int(hi) < int(lo):
             continue
         trade_type = {"purchase": "buy", "sale": "sell", "exchange": "exchange"}[match.group("type").lower()]
         out.append(make_trade(
-            ticker=ticker,
-            trade_type=trade_type,
-            amount=f"${int(lo):,} - ${int(hi):,}",
-            transaction_date=transaction_date,
-            asset=asset,
-            filing=filing,
+            ticker=ticker, trade_type=trade_type, amount=f"${int(lo):,} - ${int(hi):,}",
+            transaction_date=transaction_date, asset=asset, filing=filing,
         ))
     return out
 
@@ -212,13 +163,34 @@ def parse_text_blob(text: str, filing: dict) -> list[dict]:
     return rows
 
 
+def parse_ocr_windows(text: str, filing: dict) -> list[dict]:
+    """Recover scanned table rows that Tesseract splits across adjacent lines.
+
+    A candidate is accepted only if one 1-4-line window contains exactly one
+    recognised asset, one transaction type, one date and one plausible amount
+    range. This keeps OCR fallback conservative while tolerating column wrapping.
+    """
+    lines = [normalise_space(x) for x in (text or "").splitlines() if normalise_space(x)]
+    rows: list[dict] = []
+    for i in range(len(lines)):
+        for width in range(1, 5):
+            chunk = " ".join(lines[i:i + width])
+            if not TYPE_RE.search(chunk) or not DATE_RE.search(chunk) or not ticker_for(chunk):
+                continue
+            row = parse_candidate(chunk, filing, amount_re=OCR_AMOUNT_RE)
+            if row:
+                rows.append(row)
+                break
+    return rows
+
+
 def ocr_page_text(page) -> str:
     try:
         import pytesseract
     except Exception:
         return ""
     try:
-        image = page.to_image(resolution=135, antialias=True).original.convert("L")
+        image = page.to_image(resolution=165, antialias=True).original.convert("L")
         return pytesseract.image_to_string(image, config="--psm 6") or ""
     except Exception as exc:
         print(f"OCR page failed: {exc}")
@@ -227,8 +199,8 @@ def ocr_page_text(page) -> str:
 
 def trade_key(row: dict) -> tuple:
     return (
-        row.get("ticker"), row.get("type"), row.get("amount"),
-        row.get("transaction_date"), row.get("member"), row.get("disclosure_date"),
+        row.get("ticker"), row.get("type"), row.get("amount"), row.get("transaction_date"),
+        row.get("member"), row.get("disclosure_date"),
     )
 
 
@@ -260,16 +232,13 @@ def extract_pdf_rows(content: bytes, filing: dict) -> tuple[list[dict], str]:
         if text_rows:
             return text_rows, "text"
 
-        # Some White House filings are scans with effectively no usable text
-        # layer. OCR is intentionally a fallback only, and every OCR candidate
-        # still has to satisfy the same strict ticker/type/date/amount contract.
         print(f"No usable text-layer trades for {filing['disclosure_date']}; trying OCR fallback across {len(pages)} pages")
         ocr_rows: list[dict] = []
         for index, page in enumerate(pages, 1):
             text = ocr_page_text(page)
             if not text:
                 continue
-            found = parse_text_blob(text, filing)
+            found = parse_ocr_windows(text, filing)
             if found:
                 print(f"OCR page {index}: {len(found)} mapped rows")
                 ocr_rows.extend(found)
@@ -298,19 +267,16 @@ def main() -> None:
             parsed, mode = extract_pdf_rows(response.content, filing)
             rows.extend(parsed)
             filing_status.append({
-                "url": filing["url"],
-                "disclosure_date": filing["disclosure_date"],
-                "parsed_trades": len(parsed),
-                "extraction": mode,
-                "ok": True,
+                "url": filing["url"], "disclosure_date": filing["disclosure_date"],
+                "parsed_trades": len(parsed), "extraction": mode, "ok": True,
             })
         except Exception as exc:
-            filing_status.append({"url": filing["url"], "disclosure_date": filing["disclosure_date"], "parsed_trades": 0, "ok": False, "error": str(exc)[:180]})
+            filing_status.append({
+                "url": filing["url"], "disclosure_date": filing["disclosure_date"],
+                "parsed_trades": 0, "ok": False, "error": str(exc)[:180],
+            })
 
     merged = {}
-    # Keep the last valid snapshot as a resilience layer, but newly parsed rows
-    # replace identical transactions. A second post-normalization dedupe runs in
-    # normalize_executive_amounts.py because OCR punctuation can canonicalize later.
     for row in old.get("trades") or []:
         if isinstance(row, dict) and row.get("ticker"):
             merged[trade_key(row)] = row
@@ -336,16 +302,10 @@ def main() -> None:
         "coverage": "automated_official_oge",
         "newest_disclosure": newest,
         "people": [{
-            "key": "executive:donald-trump",
-            "name": "Donald J. Trump",
-            "role": "President of the United States",
-            "chamber": "Executive",
-            "source_label": "OGE Form 278-T",
-            "source_url": FILINGS[0]["url"],
-            "count": len(trades),
-            "buys": buys,
-            "sells": sells,
-            "last": newest,
+            "key": "executive:donald-trump", "name": "Donald J. Trump",
+            "role": "President of the United States", "chamber": "Executive",
+            "source_label": "OGE Form 278-T", "source_url": FILINGS[0]["url"],
+            "count": len(trades), "buys": buys, "sells": sells, "last": newest,
         }],
         "trades": trades,
         "filings": filing_status,
