@@ -1,4 +1,4 @@
-/* Vestra Market compatibility loader v4.92 — sequential, deterministic. */
+/* Vestra Market compatibility loader v4.93 — sequential, deterministic. */
 (() => {
   'use strict';
 
@@ -34,7 +34,8 @@
   load('./market-enhancements.js?v=4.50','vestraMarketEnhancements');
   load('./portfolio-navigation-fix.js?v=1.0','vestraPortfolioNavigationFix');
   load('./vestra-ux-v452.js?v=4.52','vestraUxV452');
-  load('./vestra-ux-v453.js?v=4.53','vestraUxV453');
+  load('./market-opportunities.js?v=1.0','vestraMarketOpportunities');
+  load('./vestra-portfolio-focus.js?v=1.0','vestraPortfolioFocus');
   load('./vestra-ux-v454.js?v=4.54','vestraUxV454');
   load('./vestra-ux-v455.js?v=4.55','vestraUxV455');
   load('./vestra-ux-v456.js?v=4.56','vestraUxV456');
@@ -46,9 +47,5 @@
   load('./market-close-controller.js?v=1.0','vestraMarketCloseController');
   load('./vestra-portfolio-dossier-routing-v482.js?v=4.82','vestraPortfolioDossierRoutingV482');
 
-  const style = document.createElement('style');
-  style.id = 'vestra-politicians-canonical-v492';
-  style.textContent = '.politicians-section .ux454-flow{display:none!important}';
-  document.head.appendChild(style);
   load('./politicians.js?v=2.1','vestraPoliticiansCanonical');
 })();
