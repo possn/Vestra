@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/build_market_shards.py'
+      - 'scripts/score_audit.py'
+      - 'scripts/score_forward_validation.py'
       - '.github/workflows/bootstrap-market-shards.yml'
   workflow_dispatch: {}
 
@@ -20,9 +22,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Validate bootstrap modules
+        run: python -m py_compile scripts/build_market_shards.py scripts/score_audit.py scripts/score_forward_validation.py
       - name: Build shards from current validated stocks.json
         working-directory: scripts
         run: python build_market_shards.py
+      - name: Audit current Vestra score and record prospective baseline
+        working-directory: scripts
+        run: |
+          python score_audit.py
+          python score_forward_validation.py
       - name: Validate generated artefacts
         run: |
           python - <<'PY'
@@ -31,6 +40,7 @@ jobs:
           src=json.loads((root/'stocks.json').read_text())
           idx=json.loads((root/'stocks-index.json').read_text())
           man=json.loads((root/'dossiers-manifest.json').read_text())
+          audit=json.loads((root/'score_audit.json').read_text())
           source_rows=src.get('stocks',[])
           unique_tickers={str(r.get('ticker') or '').strip().upper() for r in source_rows if r.get('ticker')}
           index_rows=idx.get('stocks',[])
@@ -57,14 +67,18 @@ jobs:
           if any(str(r.get('ticker') or '').upper()==probe and r.get('price_history_1y') for r in source_rows):
               assert isinstance(full.get('price_history_1y'),list) and full.get('price_history_1y')
           assert (root/'stocks-index.json').stat().st_size < (root/'stocks.json').stat().st_size * .25
-          print('validated', len(index_rows), 'unique rows;', len(shards), 'shards;', man.get('duplicate_rows_dropped',0), 'duplicates dropped; lazy probe', probe, '->', shard_key)
+
+          assert audit.get('rows_analysed',0) > 100, 'score audit too small'
+          assert audit.get('score_model_summary'), 'score model audit missing'
+          assert isinstance(audit.get('flags'), list), 'score audit flags missing'
+          print('validated', len(index_rows), 'unique rows;', len(shards), 'shards;', man.get('duplicate_rows_dropped',0), 'duplicates dropped; lazy probe', probe, '->', shard_key, '; audited', audit.get('rows_analysed'), 'scored equities')
           PY
-      - name: Publish shards only
+      - name: Publish shards and score diagnostics
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/stocks-index.json data/dossiers-manifest.json data/dossiers/
+          git add data/stocks-index.json data/dossiers-manifest.json data/dossiers/ data/score_audit.json data/score_validation_history.json data/score_forward_validation.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "data: publish lightweight market index and dossier shards"
+          git commit -m "data: publish lightweight market index and score diagnostics"
           git pull --rebase origin main
           git push
