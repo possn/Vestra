@@ -1,0 +1,55 @@
+name: Refactor app stage 7
+
+on:
+  push:
+    paths:
+      - 'scripts/refactor_app_stage7.py'
+      - '.github/workflows/refactor-app-stage7.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded broker normalization extraction
+        run: python scripts/refactor_app_stage7.py
+      - name: Validate JavaScript syntax
+        run: |
+          node --check app-broker-normalization.js
+          node --check app.js
+      - name: Validate normalization migration and diff
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          h=Path('index.html').read_text()
+          assert h.index('app-utils.js') < h.index('app-broker-normalization.js') < h.index('app.js')
+          a=Path('app.js').read_text()
+          m=Path('app-broker-normalization.js').read_text()
+          for token in ['function divFloor(','function getDividendGross(','function getDividendNet(','function normalizeDividendRecord(']:
+              assert token not in a
+              assert token in m
+          assert 'generatedFromBroker' in m
+          assert 'amount = g; // storage stays GROSS' in m
+          assert 'VestraBrokerNormalization não foi carregado antes de app.js' in a
+          PY
+          git diff --check
+      - name: Commit extracted broker normalization domain
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html app-broker-normalization.js
+          git commit -m 'refactor: move broker dividend normalization out of app monolith'
+          git pull --rebase origin main
+          git push
