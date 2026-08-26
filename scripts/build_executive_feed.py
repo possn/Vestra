@@ -12,8 +12,6 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "executives.json"
 
-# Official public filings. Discovery of new filings can be extended without
-# changing the JSON/UI contract; every configured document is downloaded fresh.
 FILINGS = [
     {
         "url": "https://www.whitehouse.gov/wp-content/uploads/2026/06/President-Donald-J.-Trump-Periodic-Transaction-Report-0.6.25.26-2.pdf",
@@ -27,8 +25,7 @@ FILINGS = [
     },
 ]
 
-# Only publish mappings that are unambiguous in the filing text. This is
-# intentionally conservative: an unknown asset is omitted rather than guessed.
+# Publish only mappings that are unambiguous in the filing text/OCR output.
 ASSET_TICKERS = {
     "NVIDIA": "NVDA",
     "BOEING": "BA",
@@ -79,33 +76,37 @@ ASSET_TICKERS = {
     "RAYTHEON": "RTX",
     "EXXON": "XOM",
     "CHEVRON": "CVX",
-    # Confirmed rows in the June 25 White House 278-T.
+    # Confirmed company names present in the June White House filing.
     "ILLINOIS TOOL WKS": "ITW",
+    "ILLINOIS TOOL WORKS": "ITW",
     "MCDONALDS CORP": "MCD",
     "MCDONALD'S": "MCD",
+    "MCDONALDS": "MCD",
     "MEDTRONIC": "MDT",
     "STATE STREET SPDR S&P DIVIDEND ETF": "SDY",
+    "SPDR S&P DIVIDEND ETF": "SDY",
 }
 
-AMOUNT_RE = re.compile(r"\$\s*([0-9,]+)\s*(?:-|–|—|to)\s*\$?\s*([0-9,]+)", re.I)
+AMOUNT_RE = re.compile(r"\$\s*([0-9][0-9,.]*)\s*(?:-|–|—|to|•)\s*\$?\s*([0-9][0-9,.]*)", re.I)
 DATE_RE = re.compile(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b")
 TYPE_RE = re.compile(r"\b(purchase|sale|exchange)\b", re.I)
-# White House PDFs can visually show a normal table while the text layer splits
-# every cell across lines. Flatten the page and recover the semantic row instead
-# of relying on physical newlines. The row number provides a strong boundary.
 LOGICAL_ROW_RE = re.compile(
     r"(?:^|\s)\d{1,5}\s+"
     r"(?P<asset>.{2,220}?)\s+"
     r"(?P<type>purchase|sale|exchange)\s+"
     r"(?P<date>\d{1,2}/\d{1,2}/\d{2,4})\s+"
     r"(?:Yes|No)\s+"
-    r"\$\s*(?P<lo>[0-9,]+)\s*(?:-|–|—|to)\s*\$?\s*(?P<hi>[0-9,]+)",
+    r"\$\s*(?P<lo>[0-9][0-9,.]*)\s*(?:-|–|—|to|•)\s*\$?\s*(?P<hi>[0-9][0-9,.]*)",
     re.I,
 )
 
 
 def normalise_space(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip()
+
+
+def money_digits(value: str) -> str:
+    return re.sub(r"[^0-9]", "", value or "")
 
 
 def iso_date(value: str) -> str:
@@ -118,12 +119,18 @@ def iso_date(value: str) -> str:
     return ""
 
 
-def ticker_for(description: str) -> str:
+def ticker_matches(description: str) -> list[str]:
     upper = normalise_space(description).upper()
+    found = []
     for needle, ticker in sorted(ASSET_TICKERS.items(), key=lambda kv: len(kv[0]), reverse=True):
-        if needle in upper:
-            return ticker
-    return ""
+        if needle in upper and ticker not in found:
+            found.append(ticker)
+    return found
+
+
+def ticker_for(description: str) -> str:
+    found = ticker_matches(description)
+    return found[0] if len(found) == 1 else ""
 
 
 def make_trade(*, ticker: str, trade_type: str, amount: str, transaction_date: str, asset: str, filing: dict) -> dict:
@@ -144,23 +151,28 @@ def make_trade(*, ticker: str, trade_type: str, amount: str, transaction_date: s
 
 def parse_row_text(text: str, filing: dict) -> dict | None:
     line = normalise_space(text)
-    typ = TYPE_RE.search(line)
-    amount = AMOUNT_RE.search(line)
+    types = TYPE_RE.findall(line)
+    amounts = list(AMOUNT_RE.finditer(line))
     dates = DATE_RE.findall(line)
-    if not typ or not amount or not dates:
+    # Physical lines from older OGE PDFs can contain several neighbouring rows.
+    # Reject them rather than assigning one row's date/type to another asset.
+    if len(types) != 1 or len(amounts) != 1 or len(dates) != 1:
         return None
     ticker = ticker_for(line)
     if not ticker:
         return None
-    transaction_date = iso_date(dates[-1])
+    transaction_date = iso_date(dates[0])
     if not transaction_date:
         return None
-    lo, hi = amount.groups()
-    trade_type = {"purchase": "buy", "sale": "sell", "exchange": "exchange"}[typ.group(1).lower()]
+    amount = amounts[0]
+    lo, hi = money_digits(amount.group(1)), money_digits(amount.group(2))
+    if not lo or not hi:
+        return None
+    trade_type = {"purchase": "buy", "sale": "sell", "exchange": "exchange"}[types[0].lower()]
     return make_trade(
         ticker=ticker,
         trade_type=trade_type,
-        amount=f"${lo} - ${hi}",
+        amount=f"${int(lo):,} - ${int(hi):,}",
         transaction_date=transaction_date,
         asset=line,
         filing=filing,
@@ -176,11 +188,14 @@ def parse_logical_rows(text: str, filing: dict) -> list[dict]:
         transaction_date = iso_date(match.group("date"))
         if not ticker or not transaction_date:
             continue
+        lo, hi = money_digits(match.group("lo")), money_digits(match.group("hi"))
+        if not lo or not hi:
+            continue
         trade_type = {"purchase": "buy", "sale": "sell", "exchange": "exchange"}[match.group("type").lower()]
         out.append(make_trade(
             ticker=ticker,
             trade_type=trade_type,
-            amount=f"${match.group('lo')} - ${match.group('hi')}",
+            amount=f"${int(lo):,} - ${int(hi):,}",
             transaction_date=transaction_date,
             asset=asset,
             filing=filing,
@@ -188,41 +203,77 @@ def parse_logical_rows(text: str, filing: dict) -> list[dict]:
     return out
 
 
-def extract_pdf_rows(content: bytes, filing: dict) -> list[dict]:
-    trades: list[dict] = []
-    with pdfplumber.open(io.BytesIO(content)) as pdf:
-        for page in pdf.pages:
-            text = page.extract_text(x_tolerance=2, y_tolerance=2) or ""
-            # Prefer semantic rows reconstructed from the complete page text.
-            trades.extend(parse_logical_rows(text, filing))
-            # Older OGE PDFs often expose one complete transaction per line.
-            for line in text.splitlines():
-                row = parse_row_text(line, filing)
-                if row:
-                    trades.append(row)
-            # Table extraction remains a final fallback for mixed-layout filings.
-            if len(trades) < 10:
-                try:
-                    for table in page.extract_tables() or []:
-                        for cells in table or []:
-                            row = parse_row_text(" ".join(normalise_space(x or "") for x in cells), filing)
-                            if row:
-                                trades.append(row)
-                except Exception:
-                    pass
-    # A transaction can be found by both logical-row and line/table passes.
-    deduped = {}
-    for row in trades:
-        key = (row.get("ticker"), row.get("type"), row.get("amount"), row.get("transaction_date"), row.get("member"))
-        deduped[key] = row
-    return list(deduped.values())
+def parse_text_blob(text: str, filing: dict) -> list[dict]:
+    rows = parse_logical_rows(text, filing)
+    for line in text.splitlines():
+        row = parse_row_text(line, filing)
+        if row:
+            rows.append(row)
+    return rows
+
+
+def ocr_page_text(page) -> str:
+    try:
+        import pytesseract
+    except Exception:
+        return ""
+    try:
+        image = page.to_image(resolution=135, antialias=True).original.convert("L")
+        return pytesseract.image_to_string(image, config="--psm 6") or ""
+    except Exception as exc:
+        print(f"OCR page failed: {exc}")
+        return ""
 
 
 def trade_key(row: dict) -> tuple:
     return (
         row.get("ticker"), row.get("type"), row.get("amount"),
-        row.get("transaction_date"), row.get("member"),
+        row.get("transaction_date"), row.get("member"), row.get("disclosure_date"),
     )
+
+
+def dedupe_rows(rows: list[dict]) -> list[dict]:
+    out = {}
+    for row in rows:
+        if row.get("ticker") and row.get("transaction_date") and row.get("amount"):
+            out[trade_key(row)] = row
+    return list(out.values())
+
+
+def extract_pdf_rows(content: bytes, filing: dict) -> tuple[list[dict], str]:
+    text_rows: list[dict] = []
+    with pdfplumber.open(io.BytesIO(content)) as pdf:
+        pages = list(pdf.pages)
+        for page in pages:
+            text = page.extract_text(x_tolerance=2, y_tolerance=2) or ""
+            text_rows.extend(parse_text_blob(text, filing))
+            if len(text_rows) < 10:
+                try:
+                    for table in page.extract_tables() or []:
+                        for cells in table or []:
+                            row = parse_row_text(" ".join(normalise_space(x or "") for x in cells), filing)
+                            if row:
+                                text_rows.append(row)
+                except Exception:
+                    pass
+        text_rows = dedupe_rows(text_rows)
+        if text_rows:
+            return text_rows, "text"
+
+        # Some White House filings are scans with effectively no usable text
+        # layer. OCR is intentionally a fallback only, and every OCR candidate
+        # still has to satisfy the same strict ticker/type/date/amount contract.
+        print(f"No usable text-layer trades for {filing['disclosure_date']}; trying OCR fallback across {len(pages)} pages")
+        ocr_rows: list[dict] = []
+        for index, page in enumerate(pages, 1):
+            text = ocr_page_text(page)
+            if not text:
+                continue
+            found = parse_text_blob(text, filing)
+            if found:
+                print(f"OCR page {index}: {len(found)} mapped rows")
+                ocr_rows.extend(found)
+        return dedupe_rows(ocr_rows), "ocr"
 
 
 def existing_payload() -> dict:
@@ -244,15 +295,22 @@ def main() -> None:
         try:
             response = session.get(filing["url"], timeout=90)
             response.raise_for_status()
-            parsed = extract_pdf_rows(response.content, filing)
+            parsed, mode = extract_pdf_rows(response.content, filing)
             rows.extend(parsed)
-            filing_status.append({"url": filing["url"], "disclosure_date": filing["disclosure_date"], "parsed_trades": len(parsed), "ok": True})
+            filing_status.append({
+                "url": filing["url"],
+                "disclosure_date": filing["disclosure_date"],
+                "parsed_trades": len(parsed),
+                "extraction": mode,
+                "ok": True,
+            })
         except Exception as exc:
             filing_status.append({"url": filing["url"], "disclosure_date": filing["disclosure_date"], "parsed_trades": 0, "ok": False, "error": str(exc)[:180]})
 
     merged = {}
-    # Preserve previously verified rows; newly parsed official rows overwrite an
-    # identical transaction so their newest source metadata wins.
+    # Keep the last valid snapshot as a resilience layer, but newly parsed rows
+    # replace identical transactions. A second post-normalization dedupe runs in
+    # normalize_executive_amounts.py because OCR punctuation can canonicalize later.
     for row in old.get("trades") or []:
         if isinstance(row, dict) and row.get("ticker"):
             merged[trade_key(row)] = row
