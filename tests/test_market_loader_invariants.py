@@ -39,8 +39,20 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_politicians_loader_matches_canonical_module_version(self):
         hotfix = read("market-hotfix.js")
         politicians = read("politicians.js")
-        self.assertIn("const VERSION='2.0';", politicians)
-        self.assertIn("politicians.js?v=2.0", hotfix)
+        self.assertIn("const VERSION='2.1';", politicians)
+        self.assertIn("politicians.js?v=2.1", hotfix)
+        self.assertIn("data/executives.json", politicians)
+        self.assertIn("TOP 10 COMPRAS", politicians)
+        self.assertIn("TOP 10 VENDAS", politicians)
+        self.assertIn("vestra-politician-favourites-v2", politicians)
+
+    def test_trump_is_restored_through_executive_disclosures_not_congress_hardcode(self):
+        executives = read("data/executives.json")
+        politicians = read("politicians.js")
+        self.assertIn('"key": "executive:donald-trump"', executives)
+        self.assertIn('"name": "Donald J. Trump"', executives)
+        self.assertIn('OGE Form 278-T', executives)
+        self.assertNotIn("const TRUMP", politicians)
         self.assertNotIn("donald-trump", politicians.lower())
 
 
