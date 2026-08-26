@@ -35,9 +35,11 @@ jobs:
         run: |
           node --check worker.js
           git diff --check
-          grep -q 'host.endsWith(".github.io")' worker.js
-          grep -q 'host.endsWith(".pages.dev")' worker.js
+          grep -q 'u.origin === "https://possn.github.io"' worker.js
+          grep -q 'host === "localhost"' worker.js
           grep -q '"Vary": "Origin"' worker.js
+          ! grep -q 'origin.includes("github.io")' worker.js
+          ! grep -q 'origin.includes("pages.dev")' worker.js
 
       - name: Commit hardened Worker
         run: |
@@ -48,5 +50,6 @@ jobs:
           git config user.name 'vestra-actions'
           git config user.email 'actions@users.noreply.github.com'
           git add worker.js
-          git commit -m 'security: validate Worker CORS origins by hostname'
+          git commit -m 'security: restrict Worker CORS to Vestra origin'
+          git pull --rebase origin main
           git push
