@@ -21,6 +21,7 @@ on:
       - 'scripts/coverage_audit.py'
       - 'scripts/coverage_guard.py'
       - 'scripts/postprocess_market.py'
+      - 'scripts/build_market_shards.py'
       - 'scripts/score.py'
       - 'scripts/confidence.py'
       - 'scripts/reliability_gate.py'
@@ -67,7 +68,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/coverage_audit.py scripts/coverage_guard.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/coverage_guard.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
@@ -82,6 +83,10 @@ jobs:
       - name: Refresh late-stage opportunity ranking and stale-row hygiene
         working-directory: scripts
         run: python postprocess_market.py
+
+      - name: Build lightweight market index and dossier shards
+        working-directory: scripts
+        run: python build_market_shards.py
 
       - name: Build coverage audit
         working-directory: scripts
@@ -112,9 +117,10 @@ jobs:
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          # Never publish the rejected stocks.json. Persist only diagnostics so the
-          # exact failing tickers/rules can be repaired on the next iteration.
-          git checkout -- data/stocks.json 2>/dev/null || true
+          # Never publish the rejected stocks.json or derived market shards. Persist
+          # only diagnostics so rejected data cannot leak into the live frontend.
+          git checkout -- data/stocks.json data/stocks-index.json data/dossiers-manifest.json data/dossiers 2>/dev/null || true
+          git clean -fd data/dossiers data/stocks-index.json data/dossiers-manifest.json 2>/dev/null || true
           git add data/coverage_audit.json data/coverage_guard.json data/pipeline_log.txt data/last_error.log 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Guard bloqueou publicação e não há novos diagnósticos para gravar."
