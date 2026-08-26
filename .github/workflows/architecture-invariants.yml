@@ -44,6 +44,7 @@ on:
       - 'scripts/score_audit.py'
       - 'scripts/score_forward_validation.py'
       - '.github/workflows/update-market-data.yml'
+      - '.github/workflows/architecture-invariants.yml'
 
 permissions:
   contents: read
@@ -55,12 +56,14 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install Senate diagnostic dependencies
+        run: pip install requests beautifulsoup4
       - name: Validate JavaScript syntax
         run: |
           node --check market.js
@@ -71,6 +74,35 @@ jobs:
           node --check worker.js
       - name: Validate Python syntax
         run: |
-          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py
+          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/enrich_politicians_senate.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py
       - name: Run architecture invariants
         run: python -m unittest -v tests.test_architecture_invariants
+      - name: Run score audit against current validated market index
+        run: |
+          python scripts/score_audit.py
+          python - <<'PY'
+          import json
+          d=json.load(open('data/score_audit.json'))
+          print('SCORE_AUDIT_ROWS', d.get('rows_analysed'))
+          print('SCORE_AUDIT_FLAGS', json.dumps(d.get('flags',[]), ensure_ascii=False))
+          print('SCORE_MODEL_SUMMARY', json.dumps(d.get('score_model_summary',[]), ensure_ascii=False))
+          print('TOP_REDUNDANCIES', json.dumps((d.get('dimension_correlations') or [])[:12], ensure_ascii=False))
+          sensitive=sorted(d.get('weight_sensitivity') or [], key=lambda x: (x.get('top_decile_jaccard',1), x.get('rank_spearman',1)))[:20]
+          print('MOST_SENSITIVE', json.dumps(sensitive, ensure_ascii=False))
+          skew=sorted(d.get('sector_top_decile_bias') or [], key=lambda x: x.get('top_decile_representation_ratio') or 0, reverse=True)[:12]
+          print('SECTOR_BIAS', json.dumps(skew, ensure_ascii=False))
+          PY
+      - name: Probe Senate eFD enrichment without publishing
+        continue-on-error: true
+        run: |
+          cp data/politicians.json /tmp/politicians-house.json
+          python scripts/enrich_politicians_senate.py
+          python - <<'PY'
+          import json
+          d=json.load(open('data/politicians.json'))
+          print('POLITICAL_SOURCE', d.get('source'))
+          print('POLITICAL_COVERAGE', d.get('coverage_chambers'))
+          print('POLITICAL_TRADES', len(d.get('trades') or []))
+          print('SENATE_ENRICHMENT', json.dumps(d.get('senate_enrichment'), ensure_ascii=False))
+          PY
+          mv /tmp/politicians-house.json data/politicians.json
