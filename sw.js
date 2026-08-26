@@ -1,5 +1,5 @@
-/* Vestra Service Worker v8.6 — cache/offline infrastructure only. */
-const CACHE_NAME = "vestra-cache-v100";
+/* Vestra Service Worker v8.7 — cache/offline infrastructure only. */
+const CACHE_NAME = "vestra-cache-v101";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -25,6 +25,7 @@ const APP_SHELL = [
   "./vestra-portfolio-ui.js",
   "./market-close-controller.js",
   "./politicians.js",
+  "./data/executives.json",
   "./manifest.webmanifest",
   "./icon192.png",
   "./icon512.png",
@@ -102,10 +103,7 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  if (request.destination === "image" || /\.(png|jpg|jpeg|webp|svg|ico)$/i.test(url.pathname)) {
+  if (request.destination === "image") {
     event.respondWith(cacheFirst(request));
-    return;
   }
-
-  event.respondWith(networkFirst(request));
 });
