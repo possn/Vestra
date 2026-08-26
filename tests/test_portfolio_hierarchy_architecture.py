@@ -9,13 +9,14 @@ def read(path: str) -> str:
 
 
 class PortfolioHierarchyArchitectureTests(unittest.TestCase):
-    def test_hotfix_uses_canonical_hierarchy(self):
+    def test_hotfix_uses_canonical_hierarchy_and_swap_lab(self):
         h=read('market-hotfix.js')
-        self.assertIn('compatibility loader v4.95', h)
+        self.assertIn('compatibility loader v4.97', h)
         self.assertIn("vestra-portfolio-hierarchy.js?v=1.0", h)
-        self.assertNotIn('vestra-ux-v455.js', h)
-        self.assertNotIn('vestra-ux-v457.js', h)
-        self.assertLess(h.index('vestra-portfolio-hierarchy.js'), h.index('vestra-ux-v456.js'))
+        self.assertIn("vestra-swap-lab.js?v=1.0", h)
+        for legacy in ('vestra-ux-v454.js','vestra-ux-v455.js','vestra-ux-v456.js','vestra-ux-v457.js'):
+            self.assertNotIn(legacy, h)
+        self.assertLess(h.index('vestra-portfolio-hierarchy.js'), h.index('vestra-swap-lab.js'))
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
         s=read('vestra-portfolio-hierarchy.js')
@@ -28,18 +29,26 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             self.assertIn(token, s)
         self.assertEqual(s.count('new MutationObserver'), 1)
 
-    def test_v454_only_owns_opportunity_presentation_now(self):
-        s=read('vestra-ux-v454.js')
-        self.assertIn('rankOpportunityRows', s)
-        self.assertIn('ux454-podium', s)
-        self.assertNotIn('organizePortfolio', s)
-        self.assertNotIn('const GROUPS=', s)
+    def test_swap_lab_preserves_v456_contract(self):
+        s=read('vestra-swap-lab.js')
+        for token in (
+            "cmp('qualidade',n(a?.score),n(b?.score),true,3)",
+            "cmp('timing',timing(a),timing(b),true,5)",
+            "cmp('confiança',n(a?.confidence_score),n(b?.confidence_score),true,5)",
+            "cmp('ROE',n(a?.roe),n(b?.roe),true,0.02)",
+            "cmp('FCF yield',n(a?.free_cash_flow_yield_pct),n(b?.free_cash_flow_yield_pct),true,1)",
+            "cmp('Forward P/E',n(a?.forward_pe),n(b?.forward_pe),false,2)",
+            'ux456-swaplab','data-ux456-impact','window.VestraSwapLab',
+        ):
+            self.assertIn(token, s)
+        self.assertEqual(s.count('new MutationObserver'), 1)
 
-    def test_service_worker_caches_hierarchy(self):
+    def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
-        self.assertIn('Vestra Service Worker v9.0', sw)
-        self.assertIn('vestra-cache-v104', sw)
+        self.assertIn('Vestra Service Worker v9.2', sw)
+        self.assertIn('vestra-cache-v106', sw)
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
+        self.assertIn('./vestra-swap-lab.js', sw)
 
 
 if __name__ == '__main__':
