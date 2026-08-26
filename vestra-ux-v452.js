@@ -159,56 +159,6 @@
     setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'start'}),30);
   }
 
-  function enhancePoliticians(){
-    const section=document.querySelector('.politicians-section'); if(!section||section.dataset.uxPoliticians==='1')return;
-    section.dataset.uxPoliticians='1';
-    const picker=section.querySelector('.politician-picker');const sel=picker?.querySelector('[data-politician-select]');if(!picker||!sel)return;
-    const search=document.createElement('div');search.className='ux-politician-search';
-    search.innerHTML='<span>⌕</span><input type="search" placeholder="Procurar Trump, Pelosi, Tuberville…" autocomplete="off"><div class="ux-politician-matches" hidden></div>';
-    picker.prepend(search);
-    const input=search.querySelector('input'),matches=search.querySelector('.ux-politician-matches');
-    const options=()=>[...sel.options].map(o=>({value:o.value,label:t(o.textContent),group:o.parentElement?.label||''}));
-    const show=()=>{
-      const q=t(input.value).toLowerCase();if(q.length<2){matches.hidden=true;matches.innerHTML='';return;}
-      const found=options().filter(x=>x.label.toLowerCase().includes(q)).slice(0,8);
-      matches.innerHTML=found.map(x=>`<button type="button" data-ux-politician-value="${esc(x.value)}"><b>${esc(x.label)}</b><small>${esc(x.group)}</small></button>`).join('')||'<em>Sem correspondências.</em>';matches.hidden=false;
-    };
-    input.addEventListener('input',show);
-    search.addEventListener('click',e=>{
-      const b=e.target.closest('[data-ux-politician-value]');if(!b)return;
-      sel.value=b.dataset.uxPoliticianValue;sel.dispatchEvent(new Event('change',{bubbles:true}));input.value=t(b.querySelector('b')?.textContent).split(' · ')[0];matches.hidden=true;
-    });
-    const controls=document.createElement('div');controls.className='ux-politician-controls';
-    controls.innerHTML='<button class="is-active" data-ux-politician-view="all">Tudo</button><button data-ux-politician-view="buy">↗ Compras</button><button data-ux-politician-view="sell">↘ Vendas</button><button data-ux-politician-fav>☆ Favorito</button>';
-    picker.insertAdjacentElement('afterend',controls);
-    const key='vestra-politician-favourites-v1';
-    function currentName(){return t(document.querySelector('#politicianProfile h3')?.textContent||sel.selectedOptions?.[0]?.textContent).split(' · ')[0];}
-    function favs(){try{return new Set(JSON.parse(localStorage.getItem(key)||'[]'))}catch{return new Set()}}
-    function updateFav(){const b=controls.querySelector('[data-ux-politician-fav]'),f=favs(),name=currentName();if(!b)return;b.textContent=f.has(name)?'★ Favorito':'☆ Favorito';b.classList.toggle('is-fav',f.has(name));}
-    controls.addEventListener('click',e=>{
-      const view=e.target.closest('[data-ux-politician-view]');
-      if(view){controls.querySelectorAll('[data-ux-politician-view]').forEach(x=>x.classList.toggle('is-active',x===view));section.dataset.uxPoliticianView=view.dataset.uxPoliticianView;applyPoliticianView(section);return;}
-      const fav=e.target.closest('[data-ux-politician-fav]');if(fav){const f=favs(),name=currentName();f.has(name)?f.delete(name):f.add(name);try{localStorage.setItem(key,JSON.stringify([...f]))}catch{}updateFav();}
-    });
-    updateFav();
-    setTimeout(()=>{addPoliticianPulse(section);updateFav();},50);
-  }
-  function applyPoliticianView(section){
-    const view=t(section.dataset.uxPoliticianView||'all');
-    section.querySelectorAll('.politician-sides > section').forEach((x,i)=>x.style.display=view==='all'||(view==='buy'&&i===0)||(view==='sell'&&i===1)?'':'none');
-    section.querySelectorAll('.politician-trade').forEach(x=>{
-      const em=x.querySelector('em');const buy=em?.classList.contains('is-buy'),sell=em?.classList.contains('is-sell');x.style.display=view==='all'||(view==='buy'&&buy)||(view==='sell'&&sell)?'':'none';
-    });
-  }
-  function addPoliticianPulse(section){
-    const profile=section.querySelector('.politician-profile');if(!profile||profile.querySelector('.ux-politician-pulse'))return;
-    const kpis=[...profile.querySelectorAll('.politician-kpis span')];
-    let buys=0,sells=0;kpis.forEach(k=>{const label=t(k.querySelector('small')?.textContent).toLowerCase(),val=parseInt(t(k.querySelector('strong')?.textContent).replace(/[^0-9]/g,''),10)||0;if(label.includes('compra'))buys=val;if(label.includes('venda'))sells=val;});
-    const pulse=document.createElement('div');pulse.className='ux-politician-pulse '+(buys>sells?'is-buy':sells>buys?'is-sell':'');
-    pulse.innerHTML=`<span>${buys>sells?'↗':sells>buys?'↘':'↔'}</span><div><small>RADAR</small><strong>${buys>sells?'Mais comprador':sells>buys?'Mais vendedor':'Equilibrado'}</strong><em>${buys} compras · ${sells} vendas no período carregado</em></div>`;
-    profile.appendChild(pulse);
-  }
-
   function addStyle(){
     if(document.getElementById('vestra-ux-v452-style'))return;
     const s=document.createElement('style');s.id='vestra-ux-v452-style';s.textContent=`
@@ -222,16 +172,13 @@
       .ux-section-hint{font-size:11px;color:var(--text2);padding:8px 0 2px}.is-collapsed>.ux-section-hint{display:none!important}
       [data-ux-kind="swap"]:not(.is-collapsed),[data-ux-kind="scenario"]:not(.is-collapsed){background:linear-gradient(145deg,var(--card),rgba(143,112,199,.06))}[data-ux-kind="overlap"]:not(.is-collapsed){background:linear-gradient(145deg,var(--card),rgba(216,163,74,.07))}
       .ux-opp-row{align-items:center!important;padding:13px!important;border:1px solid var(--line);border-radius:18px!important;background:linear-gradient(135deg,var(--card),rgba(23,123,120,.045));margin-bottom:9px}.ux-opp-main{min-width:0;flex:1}.ux-opp-why{font-size:10.5px;color:#177b78;font-weight:700;margin-top:5px}.ux-opp-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.ux-opp-chip{font-size:9px;padding:4px 7px;border-radius:999px;background:var(--soft);color:var(--text2)}.ux-opp-chip b{color:var(--text);font-weight:800}.ux-opp-chip.timing{background:rgba(23,123,120,.09)}.ux-opp-chip.upside{background:rgba(73,168,120,.11)}.ux-opp-score{width:58px;height:62px;border-radius:17px;background:linear-gradient(145deg,#dff3ef,#caebe6);display:grid;place-items:center;align-content:center;color:#126d69;flex:0 0 auto}.ux-opp-score small{font-size:8px;font-weight:900;letter-spacing:.12em}.ux-opp-score strong{font-size:22px;line-height:1}
-      .ux-politician-search{position:relative;display:grid;grid-template-columns:20px 1fr;align-items:center;gap:5px;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:9px 11px;margin-bottom:9px}.ux-politician-search input{border:0!important;background:transparent!important;outline:0;width:100%;font:inherit;color:var(--text)}.ux-politician-matches{position:absolute;left:0;right:0;top:calc(100% + 5px);z-index:20;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:6px;box-shadow:0 15px 35px rgba(20,37,45,.16);max-height:280px;overflow:auto}.ux-politician-matches button{display:grid;width:100%;text-align:left;border:0;background:none;padding:9px;border-radius:10px;color:var(--text)}.ux-politician-matches button:active{background:var(--soft)}.ux-politician-matches small{color:var(--text2)}.ux-politician-matches em{padding:10px;color:var(--text2)}
-      .ux-politician-controls{display:flex;gap:7px;overflow:auto;margin:-7px 0 12px;padding-bottom:2px}.ux-politician-controls button{white-space:nowrap;border:1px solid var(--line);border-radius:999px;background:var(--card);padding:7px 10px;color:var(--text2);font-size:10px;font-weight:800}.ux-politician-controls button.is-active{background:#165f6c;color:white;border-color:#165f6c}.ux-politician-controls button.is-fav{color:#b27a16;background:#fff8df}
-      .ux-politician-pulse{grid-column:1/-1;display:flex;gap:10px;align-items:center;padding:11px 12px;border-radius:14px;background:var(--soft);margin-top:3px}.ux-politician-pulse>span{font-size:22px}.ux-politician-pulse div{display:grid}.ux-politician-pulse small{font-size:8px;font-weight:900;letter-spacing:.12em;color:var(--text2)}.ux-politician-pulse strong{font-size:13px}.ux-politician-pulse em{font-size:10px;font-style:normal;color:var(--text2)}.ux-politician-pulse.is-buy{background:rgba(33,178,143,.08)}.ux-politician-pulse.is-sell{background:rgba(217,93,114,.08)}
       @media(max-width:420px){.ux-portfolio-shortcuts{grid-template-columns:repeat(2,1fr)}.ux-portfolio .market-detail-card[data-collapsible="1"].is-collapsed{min-height:68px}.ux-opp-chip{font-size:8.5px}.ux-opp-score{width:52px;height:57px}.ux-opp-score strong{font-size:20px}}
     `;document.head.appendChild(s);
   }
 
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-ux-jump]');if(b){e.preventDefault();e.stopPropagation();jumpPortfolio(b.dataset.uxJump);}});
 
-  function apply(){refineOpportunities();classifyPortfolioCards();enhancePoliticians();const p=document.querySelector('.politicians-section');if(p){applyPoliticianView(p);addPoliticianPulse(p);}}
+  function apply(){refineOpportunities();classifyPortfolioCards();}
   function start(){addStyle();loadStocks().then(()=>{apply();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
