@@ -1,4 +1,4 @@
-/* Vestra Market compatibility loader v4.97 — sequential, deterministic. */
+/* Vestra Market compatibility loader v4.98 — sequential, deterministic. */
 (() => {
   'use strict';
 
@@ -29,9 +29,11 @@
   }
 
   // app-utils.js is part of the ordered base bundle in index.html. Keep this
-  // compatibility loader focused on market-only overlays to avoid duplicate work.
+  // compatibility loader focused on market-only modules to avoid duplicate work.
   load('./market-data-loader.js?v=2.0','vestraMarketDataLoader');
-  load('./market-enhancements.js?v=4.50','vestraMarketEnhancements');
+  load('./market-company-brief.js?v=1.0','vestraMarketCompanyBrief');
+  load('./market-metric-cleanup.js?v=1.0','vestraMarketMetricCleanup');
+  load('./portfolio-collapsibles.js?v=1.0','vestraPortfolioCollapsibles');
   load('./portfolio-navigation-fix.js?v=1.0','vestraPortfolioNavigationFix');
   load('./vestra-ux-v452.js?v=4.52','vestraUxV452');
   load('./market-opportunities.js?v=1.1','vestraMarketOpportunities');
