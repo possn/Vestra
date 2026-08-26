@@ -1,4 +1,4 @@
-/* Vestra Market compatibility loader v4.91 — sequential, deterministic. */
+/* Vestra Market compatibility loader v4.92 — sequential, deterministic. */
 (() => {
   'use strict';
 
@@ -47,8 +47,8 @@
   load('./vestra-portfolio-dossier-routing-v482.js?v=4.82','vestraPortfolioDossierRoutingV482');
 
   const style = document.createElement('style');
-  style.id = 'vestra-politicians-canonical-v491';
+  style.id = 'vestra-politicians-canonical-v492';
   style.textContent = '.politicians-section .ux454-flow{display:none!important}';
   document.head.appendChild(style);
-  load('./politicians.js?v=2.0','vestraPoliticiansCanonical');
+  load('./politicians.js?v=2.1','vestraPoliticiansCanonical');
 })();
