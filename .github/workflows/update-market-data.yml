@@ -77,14 +77,6 @@ jobs:
         working-directory: scripts
         run: python run.py
 
-      - name: Post-process market rankings
-        # v1.1: postprocess_market.py diz no seu próprio docstring "Runs
-        # after run.py has completed" — recalcula Best Opportunities usando
-        # o recovery_score já actualizado nesta mesma corrida. Sem este
-        # passo, os dados ficavam sempre uma corrida atrasados.
-        working-directory: scripts
-        run: python postprocess_market.py
-
       - name: Refresh late-stage opportunity ranking and stale-row hygiene
         working-directory: scripts
         run: python postprocess_market.py

@@ -48,6 +48,17 @@ from score import score_universe
 from thesis import classify as classify_thesis, evolve as evolve_thesis
 import thesis_history as thesis_history_mod
 from universe import build_universe, ETF_UNIVERSE, STOCK_DISCOVERY_CATALOG, region_for_equity
+# v1.1 (auditoria): estes 6 módulos já existiam no repositório mas não eram
+# chamados por ninguém — construídos, nunca ligados. gap_retrieval e
+# quarterly_gap_retrieval dizem no seu próprio docstring quando devem correr
+# (depois do enrich_esef; um depois do outro); os 4 "assess" são overlays
+# que não substituem o score principal, adicionam contexto.
+from gap_retrieval import enrich as enrich_gap_retrieval
+from quarterly_gap_retrieval import enrich as enrich_quarterly_gap_retrieval
+from capital_allocation_intelligence import assess as assess_capital_allocation
+from moat import assess as assess_moat
+from sector_native import assess as assess_sector_native
+from value_trap import assess as assess_value_trap
 
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "stocks.json")
 METALS_OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "metals.json")
@@ -168,6 +179,8 @@ def main():
     raw = [raw_by_symbol[t] for t in all_tickers if t in raw_by_symbol]
     raw = enrich_sec(raw, priority=portfolio_set)
     raw = enrich_esef(raw, priority=portfolio_set)
+    raw = enrich_gap_retrieval(raw, priority=portfolio_set)
+    raw = enrich_quarterly_gap_retrieval(raw, priority=portfolio_set)
     raw = enrich_capital_risk(raw, priority=portfolio_set)
     scored = score_universe(raw)
 
@@ -320,6 +333,10 @@ def main():
         row.update(assess_earnings_intelligence(row))
         row.update(assess_confidence(row))
         row.update(assess_valuation(row))
+        row.update(assess_capital_allocation(row))
+        row.update(assess_moat(row))
+        row.update(assess_sector_native(row))
+        row.update(assess_value_trap(row))
         row.update(classify_thesis(row))
         prev_date, prev_snapshot = thesis_history_mod.previous(thesis_history, s.ticker, today)
         d7_date, d7_snapshot = thesis_history_mod.nearest_days_ago(thesis_history, s.ticker, today, 7)
