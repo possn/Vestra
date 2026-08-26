@@ -27,6 +27,25 @@ class ExecutiveFeedTests(unittest.TestCase):
         self.assertIn("len(trades) < 20 or buys < 10 or sells < 10", builder)
         self.assertIn("unambiguous", builder)
 
+    def test_white_house_split_table_layout_has_semantic_row_parser(self):
+        builder = read("scripts/build_executive_feed.py")
+        self.assertIn("LOGICAL_ROW_RE", builder)
+        self.assertIn("def parse_logical_rows", builder)
+        self.assertIn("ILLINOIS TOOL WKS", builder)
+        self.assertIn("MCDONALDS CORP", builder)
+        self.assertIn("MEDTRONIC", builder)
+
+    def test_ocr_amount_ranges_are_normalized_before_publication(self):
+        normalizer = read("scripts/normalize_executive_amounts.py")
+        workflow = read(".github/workflows/update-politicians.yml")
+        self.assertIn("FLEX_RANGE", normalizer)
+        self.assertIn("def normalize_trade", normalizer)
+        self.assertIn("python scripts/normalize_executive_amounts.py", workflow)
+        self.assertLess(
+            workflow.index("python scripts/normalize_executive_amounts.py"),
+            workflow.index("Validate snapshots and dossier mapping"),
+        )
+
     def test_scheduled_workflow_refreshes_and_validates_executive_feed(self):
         workflow = read(".github/workflows/update-politicians.yml")
         self.assertIn("python scripts/build_executive_feed.py", workflow)
