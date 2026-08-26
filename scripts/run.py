@@ -285,7 +285,7 @@ def main():
             row["quarterly_gap_coverage_after"] = getattr(rm, "quarterly_gap_coverage_after", None)
         if analyst: row["data_sources"].append("Analyst feed")
         if insider.get("status") not in (None,"not_available","error"): row["data_sources"].append("SEC Form 4")
-        if row.get("congress_trades"): row["data_sources"].append("STOCK Act / Bargo")
+        if row.get("congress_trades"): row["data_sources"].append("U.S. House Clerk / STOCK Act")
         if rm is not None:
             if getattr(rm, "capital_risk_checked", False):
                 row["data_sources"].append("SEC Capital Structure")
