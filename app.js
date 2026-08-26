@@ -25,61 +25,21 @@ try {
   }
 } catch (_) {}
 
-/* ─── UTILS ───────────────────────────────────────────────── */
-const normStr = (s) => String(s || "")
-  .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-  .replace(/\s+/g, " ").trim();
+/* ─── UTILS — shared pure helpers live in app-utils.js ───────── */
+const {
+  normStr,
+  escapeHtml,
+  uid,
+  isoToday,
+  safeClone,
+  parseNum,
+  parseQty,
+  normalizeDate,
+  formatNumber,
+} = window.VestraUtils || {};
 
-function escapeHtml(s) {
-  return String(s || "").replace(/[&<>"']/g,
-    c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-}
-
-function uid() { return Math.random().toString(16).slice(2) + Date.now().toString(16); }
-
-function isoToday() { return new Date().toISOString().slice(0, 10); }
-
-function safeClone(obj) {
-  try { if (typeof structuredClone === "function") return structuredClone(obj); } catch (_) {}
-  return JSON.parse(JSON.stringify(obj));
-}
-
-function parseNum(x) {
-  if (x === null || x === undefined) return 0;
-  if (typeof x === "number") return Number.isFinite(x) ? x : 0;
-  let s = String(x).trim().replace(/[\u2212−]/g, "-").replace(/\u00A0/g, " ").replace(/\s+/g, " ");
-  let neg = false;
-  if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
-  let t = s.replace(/[^0-9,.\-]+/g, "").replace(/\s/g, "");
-  const hasComma = t.includes(","), hasDot = t.includes(".");
-  if (hasComma && hasDot) {
-    // Formato misto: o ÚLTIMO separador é o decimal
-    if (t.lastIndexOf(",") > t.lastIndexOf(".")) t = t.replace(/\./g,"").replace(/,/g,".");
-    else t = t.replace(/,/g,"");
-  } else if (hasComma && !hasDot) {
-    // Só vírgula: decimal por defeito, EXCEPTO se for claramente separador de milhares
-    // (exactamente 3 dígitos depois, e parte antes ≠ "0"). Isto preserva cripto com 4+ casas
-    // decimais (0,1805, 0,00000021) e dinheiro PT (12,500 = doze mil e quinhentos).
-    if ((t.match(/,/g) || []).length === 1) {
-      const [before, after] = t.split(",");
-      const isThousands = /^[0-9]{3}$/.test(after) && before !== "0" && before.length >= 1;
-      t = isThousands ? t.replace(/,/g,"") : t.replace(/,/g,".");
-    } else {
-      t = t.replace(/,/g,"");  // múltiplas vírgulas = milhares
-    }
-  } else if (!hasComma && hasDot) {
-    // Só ponto: decimal por defeito, EXCEPTO se for claramente separador de milhares.
-    // Regra igual: "12.500" = 12500, mas "0.1805" = 0.1805 e "100.5" = 100.5
-    if ((t.match(/\./g) || []).length === 1) {
-      const [before, after] = t.split(".");
-      const isThousands = /^[0-9]{3}$/.test(after) && before !== "0" && before.length >= 1;
-      t = isThousands ? t.replace(/\./g,"") : t;
-    } else {
-      t = t.replace(/\./g,"");  // múltiplos pontos = milhares
-    }
-  }
-  const n = Number(t);
-  return neg ? -(Number.isFinite(n) ? n : 0) : (Number.isFinite(n) ? n : 0);
+if (![normStr, escapeHtml, uid, isoToday, safeClone, parseNum, parseQty, normalizeDate, formatNumber].every(fn => typeof fn === "function")) {
+  throw new Error("VestraUtils não foi carregado antes de app.js");
 }
 
 function fmtEUR(n) {
@@ -98,53 +58,8 @@ function fmtEUR2(n) {
   } catch { return v.toFixed(2) + " " + cur; }
 }
 
-function fmt(n, maxFrac = 4) {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return "0";
-  return new Intl.NumberFormat("pt-PT", { maximumFractionDigits: maxFrac, minimumFractionDigits: 0 }).format(v);
-}
-
+function fmt(n, maxFrac = 4) { return formatNumber(n, maxFrac); }
 function fmtPct(n) { return fmt(n, 2) + "%"; }
-
-// Quantidades de corretora NÃO usam a heurística monetária de parseNum.
-// Valores como "328.000" ou "5.038" significam 328 e 5,038 unidades,
-// não 328000 e 5038. Esta função preserva até 6 casas decimais.
-function parseQty(x) {
-  if (x === null || x === undefined || x === "") return 0;
-  if (typeof x === "number") return Number.isFinite(x) ? x : 0;
-  let t = String(x).trim().replace(/[\u2212−]/g, "-").replace(/\u00A0/g, "").replace(/\s+/g, "");
-  t = t.replace(/[^0-9,.-]+/g, "");
-  const commas = (t.match(/,/g) || []).length;
-  const dots = (t.match(/\./g) || []).length;
-  if (commas && dots) {
-    // último separador = decimal; o outro = milhares
-    if (t.lastIndexOf(',') > t.lastIndexOf('.')) t = t.replace(/\./g, '').replace(',', '.');
-    else t = t.replace(/,/g, '');
-  } else if (commas) {
-    // corretoras europeias: vírgula decimal
-    if (commas === 1) t = t.replace(',', '.');
-    else t = t.replace(/,/g, '');
-  }
-  // ponto isolado permanece decimal por definição em quantidade
-  const n = Number(t);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function normalizeDate(s) {
-  if (!s) return null;
-  s = String(s).trim();
-  // Strip time portion if present: "2024-01-15 14:32:11" → "2024-01-15"
-  // "15.01.2024 14:32:11" → "15.01.2024"
-  const noTime = s.replace(/[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/, "").trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(noTime)) return noTime;
-  const parts = noTime.split(/[\/\-\.]/).filter(Boolean);
-  if (parts.length === 3) {
-    const [a, b, c] = parts.map(Number);
-    if (Number.isFinite(c) && c > 1000) return `${c}-${String(b).padStart(2,"0")}-${String(a).padStart(2,"0")}`;
-    if (Number.isFinite(a) && a > 1000) return `${a}-${String(b).padStart(2,"0")}-${String(c).padStart(2,"0")}`;
-  }
-  return null;
-}
 
 function normalizeClassName(s) {
   const map = {
