@@ -62,6 +62,21 @@
   function compactLiveBadge(s){
     return s?._liveUpdated ? `<span class="market-live-badge">● Live · ${esc(new Intl.DateTimeFormat('pt-PT',{hour:'2-digit',minute:'2-digit'}).format(new Date(s._liveUpdated)))}</span>` : '';
   }
+  function refreshOpenDossierLiveFields(s){
+    const sh=$m('marketSheet');
+    if(!sh || sh.hidden || txt(sh.dataset.ticker).toUpperCase()!==txt(s?.ticker).toUpperCase()) return;
+    const values={
+      current_price: money(s.current_price,s.currency),
+      forward_pe: num(s.forward_pe),
+      roe: pct(s.roe),
+      revenue_growth: pct(s.revenue_growth),
+      fcf_yield: pct(s.fcf_yield),
+    };
+    for(const [field,value] of Object.entries(values)){
+      const el=sh.querySelector(`[data-live-field="${field}"]`);
+      if(el && value!=='—') el.textContent=value;
+    }
+  }
   async function enrichTickerLive(s){
     const base=workerBase(), ticker=txt(s?.ticker).toUpperCase();
     if(!base||!ticker||M.liveLoading.has(ticker)) return;
@@ -94,6 +109,7 @@
             const holder=document.createElement('span'); holder.innerHTML=compactLiveBadge(s);
             if(holder.firstElementChild) badge.replaceWith(holder.firstElementChild);
           }
+          refreshOpenDossierLiveFields(s);
           sh.dataset.liveReady='1';
         }
       }
@@ -682,7 +698,7 @@
     return `<div class="market-detail-head"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h2>${esc(s.ticker)}</h2>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><p>${esc(s.name||'')}</p>${compactLiveBadge(s)}</div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
       ${sparkSvg(s.price_history_1y)}
       ${vestraRead(s)}
-      <div class="market-metrics"><div class="market-metric"><small>Score Vestra</small><strong>${n(s.score)==null?'—':Math.round(s.score)}/100</strong></div><div class="market-metric"><small>Preço</small><strong>${money(s.current_price,s.currency)}</strong></div><div class="market-metric"><small>Forward P/E</small><strong>${num(s.forward_pe)}</strong></div><div class="market-metric"><small>ROE</small><strong>${pct(s.roe)}</strong></div><div class="market-metric"><small>Receita YoY</small><strong>${pct(s.revenue_growth)}</strong></div><div class="market-metric"><small>FCF yield</small><strong>${pct(s.fcf_yield)}</strong></div></div>
+      <div class="market-metrics"><div class="market-metric"><small>Score Vestra</small><strong>${n(s.score)==null?'—':Math.round(s.score)}/100</strong></div><div class="market-metric"><small>Preço</small><strong data-live-field="current_price">${money(s.current_price,s.currency)}</strong></div><div class="market-metric"><small>Forward P/E</small><strong data-live-field="forward_pe">${num(s.forward_pe)}</strong></div><div class="market-metric"><small>ROE</small><strong data-live-field="roe">${pct(s.roe)}</strong></div><div class="market-metric"><small>Receita YoY</small><strong data-live-field="revenue_growth">${pct(s.revenue_growth)}</strong></div><div class="market-metric"><small>FCF yield</small><strong data-live-field="fcf_yield">${pct(s.fcf_yield)}</strong></div></div>
       <div class="market-tabs" role="tablist" aria-label="Dossier"><button class="market-tab is-active" data-detail-tab="overview">Resumo</button><button class="market-tab" data-detail-tab="perspective">Perspetiva</button><button class="market-tab" data-detail-tab="growth">Growth</button><button class="market-tab" data-detail-tab="valuation">Valuation</button><button class="market-tab" data-detail-tab="earnings">Resultados</button><button class="market-tab" data-detail-tab="financials">Financeiro</button><button class="market-tab" data-detail-tab="smart">Smart</button><button class="market-tab" data-detail-tab="news">Notícias</button></div><div id="marketDetailBody"></div>`;
   }
 
