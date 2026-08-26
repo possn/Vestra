@@ -30,10 +30,15 @@ jobs:
           src=json.loads((root/'stocks.json').read_text())
           idx=json.loads((root/'stocks-index.json').read_text())
           man=json.loads((root/'dossiers-manifest.json').read_text())
-          assert len(idx.get('stocks',[])) == len(src.get('stocks',[]))
-          assert man.get('ticker_count') == len(src.get('stocks',[]))
-          assert list((root/'dossiers').glob('*.json'))
-          print('validated', len(idx.get('stocks',[])), 'rows;', len(list((root/'dossiers').glob('*.json'))), 'shards')
+          source_rows=src.get('stocks',[])
+          index_rows=idx.get('stocks',[])
+          manifest=man.get('tickers',{})
+          assert len(index_rows) == len(source_rows)
+          assert len(manifest) == len(source_rows)
+          shards=list((root/'dossiers').glob('*.json'))
+          assert shards
+          assert all(row.get('dossier_shard') for row in index_rows if row.get('ticker'))
+          print('validated', len(index_rows), 'rows;', len(shards), 'shards')
           PY
       - name: Publish shards only
         run: |
