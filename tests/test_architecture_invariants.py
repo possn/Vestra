@@ -158,15 +158,18 @@ class FrontendArchitectureTests(unittest.TestCase):
             self.assertIn(f'data-live-field="{field}"', market)
         self.assertNotIn("www.bargo.ai", market)
 
-    def test_lazy_loader_prefers_index_and_shards(self):
+    def test_lazy_loader_prefers_native_index_and_shards(self):
+        market = read("market.js")
         loader = read("market-data-loader.js")
-        self.assertIn("stocks-index.json", loader)
+        start = market.index("async function ensureLoaded")
+        end = market.index("\n  function ", start)
+        block = market[start:end]
+        self.assertIn("stocks-index.json", block)
+        self.assertLess(block.index("stocks-index.json"), block.index("stocks.json"))
+        self.assertNotIn("window.fetch =", loader)
         self.assertIn("dossiers-manifest.json", loader)
         self.assertRegex(loader, r"data/dossiers")
-        # Full stocks is permitted only as an explicit emergency fallback.
-        for match in re.finditer(r"stocks\.json", loader):
-            window = loader[max(0, match.start() - 120): match.end() + 120]
-            self.assertTrue("full=1" in window or "legacy" in window.lower() or "intercept" in window.lower(), window)
+        self.assertEqual(loader.count("stocks.json?full=1"), 1)
 
     def test_storage_keys_and_cached_idb_connection_are_stable(self):
         storage = read("app-storage.js")
