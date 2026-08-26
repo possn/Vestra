@@ -6,7 +6,7 @@ const t=v=>String(v??'').trim();
 const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null};
 const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let stocks=[],byTicker=new Map(),loading=null;
-function load(){if(loading)return loading;loading=fetch(`./data/stocks.json?v=${VERSION}`,{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{stocks=Array.isArray(d)?d:(d?.stocks||[]);byTicker=new Map(stocks.map(s=>[t(s?.ticker).toUpperCase(),s]));return stocks}).catch(()=>[]);return loading}
+function load(){if(loading)return loading;loading=fetch('./data/stocks-index.json',{cache:'no-store'}).then(async r=>{if(r.ok)return r.json();const legacy=await fetch('./data/stocks.json',{cache:'no-store'});if(!legacy.ok)throw 0;return legacy.json()}).then(d=>{stocks=Array.isArray(d)?d:(d?.stocks||[]);byTicker=new Map(stocks.map(s=>[t(s?.ticker).toUpperCase(),s]));return stocks}).catch(()=>[]);return loading}
 function workerBase(){try{return t(window.state?.settings?.workerUrl).replace(/\/$/,'')}catch{return''}}
 function stock(tk){const x=t(tk).toUpperCase();return byTicker.get(x)||stocks.find(s=>t(s?.ticker).toUpperCase().split('.')[0]===x.split('.')[0])||null}
 function pct(v){const x=n(v);return x==null?'—':`${(Math.abs(x)<=1?x*100:x).toFixed(1)}%`}
