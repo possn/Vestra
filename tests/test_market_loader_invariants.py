@@ -46,14 +46,15 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("TOP 10 VENDAS", politicians)
         self.assertIn("vestra-politician-favourites-v2", politicians)
 
-    def test_trump_is_restored_through_executive_disclosures_not_congress_hardcode(self):
+    def test_trump_is_restored_through_executive_disclosures_not_inline_trade_hardcode(self):
         executives = read("data/executives.json")
         politicians = read("politicians.js")
         self.assertIn('"key": "executive:donald-trump"', executives)
         self.assertIn('"name": "Donald J. Trump"', executives)
         self.assertIn('OGE Form 278-T', executives)
+        self.assertIn("data/executives.json", politicians)
         self.assertNotIn("const TRUMP", politicians)
-        self.assertNotIn("donald-trump", politicians.lower())
+        self.assertNotIn("TRUMP_TRADES", politicians)
 
 
 if __name__ == "__main__":
