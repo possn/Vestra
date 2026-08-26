@@ -98,9 +98,15 @@ new="""  function normalizeCongressLive(x){
 
 """
 s=s[:start]+new+s[end:]
+old_credit='Congresso: <a href="https://www.bargo.ai/free-apis/congress" target="_blank" rel="noopener">Bargo</a> · divulgações STOCK Act'
+new_credit='Congresso: snapshot Vestra · divulgações STOCK Act oficiais'
+if old_credit not in s:
+    raise SystemExit('legacy Bargo source credit not found')
+s=s.replace(old_credit,new_credit,1)
+s=s.replace('const status=liveCount?`Congresso live · ${liveCount}`:', 'const status=liveCount?`Congresso · ${liveCount}`:', 1)
 if 'www.bargo.ai/free-apis/congress' in s or '/congress?' in s:
     raise SystemExit('legacy Congress network source remains in market.js')
 if './data/politicians.json' not in s:
     raise SystemExit('canonical politicians snapshot not wired')
 p.write_text(s)
-print('market Congress live source replaced with canonical local snapshot')
+print('market Congress source replaced with canonical local snapshot')
