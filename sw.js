@@ -1,5 +1,5 @@
-/* Vestra Service Worker v9.5 — cache/offline infrastructure only. */
-const CACHE_NAME = "vestra-cache-v109";
+/* Vestra Service Worker v9.6 — cache/offline infrastructure only. */
+const CACHE_NAME = "vestra-cache-v110";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -30,9 +30,11 @@ const APP_SHELL = [
   "./vestra-portfolio-hierarchy.js",
   "./vestra-swap-lab.js",
   "./market-opportunity-lenses.js",
+  "./vestra-ai-brief.js",
   "./vestra-portfolio-ui.js",
   "./portfolio-diagnostics.js",
   "./market-close-controller.js",
+  "./portfolio-dossier-routing.js",
   "./politicians.js",
   "./data/executives.json",
   "./manifest.webmanifest",
