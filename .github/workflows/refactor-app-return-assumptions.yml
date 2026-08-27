@@ -1,0 +1,45 @@
+name: Refactor app return assumptions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/refactor_app_return_assumptions.py'
+      - 'app-return-assumptions.js'
+      - '.github/workflows/refactor-app-return-assumptions.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Extract return assumptions
+        run: python scripts/refactor_app_return_assumptions.py
+      - name: Validate JavaScript syntax
+        run: |
+          node --check app-return-assumptions.js
+          node --check app-market-client.js
+          node --check app.js
+          node --check market.js
+      - name: Run architecture invariants
+        run: python -m unittest discover -v -s tests -p 'test_*.py'
+      - name: Validate diff
+        run: git diff --check
+      - name: Commit extraction
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'vestra-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add app.js app-return-assumptions.js index.html sw.js tests scripts/refactor_app_return_assumptions.py
+          git commit -m 'refactor: move return assumptions out of app monolith'
+          git push
