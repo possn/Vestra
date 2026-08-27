@@ -219,8 +219,8 @@ if (!PASSIVE_DEFAULTS || !APPRECIATION_DEFAULTS || !DEFAULT_RETURN_SETTINGS ||
 }
 
 /* ─── FINANCIAL ENGINE — moved to app-financial-engine.js ─ */
-const { compoundGrowth, projectFireScenarios } = window.VestraFinancialEngine || {};
-if (![compoundGrowth, projectFireScenarios].every(fn => typeof fn === 'function')) {
+const { compoundGrowth, projectFireScenarios, projectDividendScenarios } = window.VestraFinancialEngine || {};
+if (![compoundGrowth, projectFireScenarios, projectDividendScenarios].every(fn => typeof fn === 'function')) {
   throw new Error('VestraFinancialEngine não foi carregado antes de app.js');
 }
 
@@ -3090,25 +3090,16 @@ function renderDivProjection() {
     { name: "Otimista", yield: baseYield + 1, color: "#20817E" }
   ];
 
-  const allData = scenarios.map(sc => {
-    const labels = [], netArr = [], grossArr = [];
-    let curPortfolio = portfolioVal;
-    for (let y = 0; y <= years; y++) {
-      labels.push(y === 0 ? (latest ? String(latest.year) : "Hoje") : `+${y}a`);
-      if (y === 0) {
-        // Ano 0: valores REAIS do resumo, não calculados
-        grossArr.push(baseGross);
-        netArr.push(baseNet);
-      } else {
-        // Anos seguintes: carteira cresce, aplica yield e retenção
-        const projGross = curPortfolio * (sc.yield / 100);
-        const projNet = projGross * (1 - retRate);
-        grossArr.push(projGross);
-        netArr.push(projNet);
-      }
-      curPortfolio = curPortfolio * (1 + portfolioGrowth / 100) + contrib * 12;
-    }
-    return { ...sc, labels, netArr, grossArr };
+  const allData = projectDividendScenarios({
+    portfolioValue: portfolioVal,
+    baseGross,
+    baseNet,
+    retentionRate: retRate,
+    portfolioGrowthPct: portfolioGrowth,
+    monthlyContribution: contrib,
+    years,
+    baseLabel: latest ? String(latest.year) : "Hoje",
+    scenarios,
   });
 
   const base = allData[1]; // cenário base

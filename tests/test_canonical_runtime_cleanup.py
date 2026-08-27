@@ -51,8 +51,8 @@ class CanonicalRuntimeCleanupTests(unittest.TestCase):
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v10.7', sw)
-        self.assertIn('vestra-cache-v121', sw)
+        self.assertIn('Vestra Service Worker v10.8', sw)
+        self.assertIn('vestra-cache-v122', sw)
         self.assertIn('./vestra-ai-brief.js', sw)
         self.assertIn('./portfolio-dossier-routing.js', sw)
         self.assertNotIn('./market-hotfix.js', sw)

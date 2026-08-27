@@ -10,8 +10,8 @@ class FireProjectionEngineTests(unittest.TestCase):
     self.assertNotIn("for (const sc of scenarios) {\n    let cap = cap0",a)
   def test_bundle_versions(self):
     i=read("index.html"); sw=read("sw.js")
-    self.assertIn("app-financial-engine.js?v=1.1",i)
-    self.assertIn("app.js?v=20260827v18",i)
-    self.assertIn("Vestra Service Worker v10.7",sw)
-    self.assertIn("vestra-cache-v121",sw)
+    self.assertIn("app-financial-engine.js?v=1.2",i)
+    self.assertIn("app.js?v=20260827v19",i)
+    self.assertIn("Vestra Service Worker v10.8",sw)
+    self.assertIn("vestra-cache-v122",sw)
 if __name__=="__main__": unittest.main(verbosity=2)
