@@ -22,15 +22,11 @@ if (![summarizeQuoteErrors, decorateQuoteError].every(fn => typeof fn === 'funct
 """
 app=once(app,anchor,anchor+imp,'quote diagnostics import')
 
-count=app.count('return errors.map(err => {')
-if count!=2: raise SystemExit(f'error render maps: expected 2, found {count}')
-app=app.replace('return errors.map(err => {','return errors.map(err => {\n    err = decorateQuoteError(err);')
+app=once(app,'return errors.map(err => {','return errors.map(err => {\n    err = decorateQuoteError(err);','error renderer')
 
 old='<div><b>Motivo:</b> ${escapeHtml(reason || "Erro desconhecido")}</div>'
 new='<div><b>Categoria:</b> ${escapeHtml((isObj && err.categoryLabel) || "Outro")}</div>\n          <div><b>Motivo:</b> ${escapeHtml(reason || "Erro desconhecido")}</div>'
-count=app.count(old)
-if count!=2: raise SystemExit(f'category render targets: expected 2, found {count}')
-app=app.replace(old,new)
+app=once(app,old,new,'modal category render')
 
 old='summary.textContent = `${updatedCount} actualizado${updatedCount !== 1 ? "s" : ""} com sucesso · ${failedCount} falha${failedCount !== 1 ? "s" : ""}`;'
 new='''const groups = summarizeQuoteErrors(errors || []);
