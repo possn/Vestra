@@ -1,0 +1,55 @@
+name: Update metals news
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '40 */6 * * *'
+  push:
+    paths:
+      - 'scripts/build_metals_news.py'
+      - '.github/workflows/update-metals-news.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: metals-news
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build snapshot
+        run: python scripts/build_metals_news.py
+      - name: Validate snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('data/metals-news.json')
+          d=json.loads(p.read_text())
+          assert d.get('schema_version') == 1
+          assert isinstance(d.get('items'), list) and d['items'], 'empty metals news'
+          valid={'gold','silver','copper','platinum','palladium','uranium'}
+          assert all(x.get('metal') in valid and x.get('title') and x.get('url') for x in d['items'])
+          print(f"validated {len(d['items'])} metals headlines")
+          PY
+      - name: Commit snapshot
+        run: |
+          if git diff --quiet -- data/metals-news.json; then
+            echo 'No metals news changes'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/metals-news.json
+          git commit -m 'data: refresh metals news'
+          git push
