@@ -98,8 +98,24 @@ jobs:
       - name: Validate Python syntax
         run: |
           python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py
-      - name: Runtime contract regressions
-        run: python -m unittest -v tests.test_runtime_regressions
+      - name: Runtime · module load order
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_app_module_load_order
+      - name: Runtime · CI syntax coverage
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_all_app_modules_are_syntax_checked_by_ci
+      - name: Runtime · quote errors stay inline
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_quote_errors_are_inline_not_modal_locked
+      - name: Runtime · broker schema and dividend repair
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_broker_rebuild_schema_contains_latest_dividend_repair
+      - name: Runtime · dividend gross tax net
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_dividend_normalization_remains_gross_minus_tax
+      - name: Runtime · broker quote identities
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_canonical_broker_quote_repairs_remain_present
+      - name: Runtime · Worker market-only Congress contract
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_worker_is_live_market_only_for_congress
+      - name: Runtime · live dossier overlay
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_market_live_overlay_does_not_rerender_open_dossier
+      - name: Runtime · storage contract
+        run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_storage_contract_is_stable
       - name: Historical regression suite
         run: |
           set -euo pipefail
