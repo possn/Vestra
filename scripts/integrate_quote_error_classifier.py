@@ -7,6 +7,9 @@ def once(s,old,new,label):
     n=s.count(old)
     if n!=1: raise SystemExit(f'{label}: expected 1 occurrence, found {n}')
     return s.replace(old,new,1)
+def first(s,old,new,label):
+    if old not in s: raise SystemExit(f'{label}: target not found')
+    return s.replace(old,new,1)
 
 app=read('app.js')
 anchor="""if (![fetchQuote, fetchFxRates, mapWithConcurrency].every(fn => typeof fn === 'function') || !FX_FALLBACK_LOCAL) {
@@ -26,7 +29,7 @@ app=once(app,'return errors.map(err => {','return errors.map(err => {\n    err =
 
 old='<div><b>Motivo:</b> ${escapeHtml(reason || "Erro desconhecido")}</div>'
 new='<div><b>Categoria:</b> ${escapeHtml((isObj && err.categoryLabel) || "Outro")}</div>\n          <div><b>Motivo:</b> ${escapeHtml(reason || "Erro desconhecido")}</div>'
-app=once(app,old,new,'modal category render')
+app=first(app,old,new,'modal category render')
 
 old='summary.textContent = `${updatedCount} actualizado${updatedCount !== 1 ? "s" : ""} com sucesso · ${failedCount} falha${failedCount !== 1 ? "s" : ""}`;'
 new='''const groups = summarizeQuoteErrors(errors || []);
