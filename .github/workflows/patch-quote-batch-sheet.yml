@@ -1,0 +1,70 @@
+name: Patch quote batch and error sheet
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/patch_quote_batch_sheet.py'
+      - 'app-market-client.js'
+      - '.github/workflows/patch-quote-batch-sheet.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: quote-batch-sheet-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded migration
+        run: python scripts/patch_quote_batch_sheet.py
+      - name: Validate JavaScript
+        run: |
+          node --check app-market-client.js
+          node --check app.js
+          node --check worker.js
+      - name: Validate batch contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          a=Path('app.js').read_text()
+          c=Path('app-market-client.js').read_text()
+          i=Path('index.html').read_text()
+          s=Path('sw.js').read_text()
+          assert 'fetchQuotesBatch' in c and "`${base}/quotes`" in c
+          assert 'fetchQuotesBatch(uniqueFirst, workerUrl, 9000)' in a
+          assert 'mapWithConcurrency(fallbackIndexes, 6' in a
+          assert "openModal('modalQuoteErrors')" not in a
+          assert 'function closeQuoteErrorDetails()' in a
+          assert "document.body.classList.remove('modal-open')" in a
+          assert 'app-market-client.js?v=1.1' in i
+          assert 'app.js?v=20260827v22' in i
+          assert 'portfolio-dossier-routing.js?v=1.1' in i
+          assert 'Service Worker v10.11' in s and 'vestra-cache-v125' in s
+          print('quote batch + error sheet contract OK')
+          PY
+      - name: Run architecture tests
+        run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Diff check
+        run: git diff --check
+      - name: Commit migration
+        run: |
+          if git diff --quiet -- app.js index.html sw.js; then
+            echo 'Migration already applied'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js index.html sw.js
+          git commit -m 'perf: batch quote refresh and fix error sheet'
+          git push
