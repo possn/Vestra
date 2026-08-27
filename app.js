@@ -218,6 +218,12 @@ if (!PASSIVE_DEFAULTS || !APPRECIATION_DEFAULTS || !DEFAULT_RETURN_SETTINGS ||
   throw new Error('VestraReturnAssumptions não foi carregado antes de app.js');
 }
 
+/* ─── FINANCIAL ENGINE — moved to app-financial-engine.js ─ */
+const { compoundGrowth } = window.VestraFinancialEngine || {};
+if (typeof compoundGrowth !== 'function') {
+  throw new Error('VestraFinancialEngine não foi carregado antes de app.js');
+}
+
 /* ─── SAVE / LOAD ─────────────────────────────────────────── */
 async function loadStateAsync() {
   try {
@@ -657,26 +663,6 @@ function calcTotals() {
 
 /* ─── COMPOUND INTEREST ENGINE ────────────────────────────── */
 // Returns array of {year, value} for n years with compound interest
-function compoundGrowth(principal, rateAnnual, years, freq = 12, contributions = 0) {
-  const r = rateAnnual / 100;
-  const result = [];
-  let v = principal;
-  for (let y = 0; y <= years; y++) {
-    result.push({ year: y, value: v });
-    // Compound once per year using the effective annual rate
-    // This avoids the bug where freq=1 would apply interest 12 times
-    if (freq <= 1) {
-      // Annual: apply once, add annual contributions
-      v = v * (1 + r) + contributions * 12;
-    } else {
-      // Sub-annual: apply freq times per year with monthly contributions
-      for (let m = 0; m < freq; m++) {
-        v = v * (1 + r / freq) + contributions * (12 / freq);
-      }
-    }
-  }
-  return result;
-}
 
 // Effective annual rate from nominal rate and frequency
 function effectiveRate(nominalPct, freq) {
