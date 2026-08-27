@@ -11,17 +11,20 @@ def read(path: str) -> str:
 class PortfolioHierarchyArchitectureTests(unittest.TestCase):
     def test_hotfix_uses_canonical_hierarchy_and_swap_lab(self):
         h=read('market-hotfix.js')
-        self.assertIn('compatibility loader v5.00', h)
+        self.assertIn('compatibility loader v5.01', h)
         self.assertIn("portfolio-card-classifier.js?v=1.0", h)
         self.assertIn("vestra-portfolio-hierarchy.js?v=1.0", h)
         self.assertIn("vestra-swap-lab.js?v=1.0", h)
         self.assertIn("portfolio-diagnostics.js?v=1.0", h)
-        for legacy in ('vestra-ux-v452.js','vestra-ux-v454.js','vestra-ux-v455.js','vestra-ux-v456.js','vestra-ux-v457.js','market-enhancements.js'):
+        self.assertIn("vestra-ai-brief.js?v=1.0", h)
+        self.assertIn("portfolio-dossier-routing.js?v=1.0", h)
+        for legacy in ('vestra-ux-v452.js','vestra-ux-v454.js','vestra-ux-v455.js','vestra-ux-v456.js','vestra-ux-v457.js','market-enhancements.js','vestra-portfolio-nav-fix-v464.js','vestra-portfolio-tabs-v479.js','vestra-portfolio-dossier-routing-v482.js'):
             self.assertNotIn(legacy, h)
         self.assertLess(h.index('portfolio-collapsibles.js'), h.index('portfolio-card-classifier.js'))
         self.assertLess(h.index('portfolio-card-classifier.js'), h.index('vestra-portfolio-hierarchy.js'))
         self.assertLess(h.index('vestra-portfolio-hierarchy.js'), h.index('vestra-swap-lab.js'))
         self.assertLess(h.index('vestra-portfolio-ui.js'), h.index('portfolio-diagnostics.js'))
+        self.assertLess(h.index('portfolio-diagnostics.js'), h.index('portfolio-dossier-routing.js'))
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
         s=read('vestra-portfolio-hierarchy.js')
@@ -50,13 +53,15 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
 
     def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
-        self.assertIn('Vestra Service Worker v9.5', sw)
-        self.assertIn('vestra-cache-v109', sw)
+        self.assertIn('Vestra Service Worker v9.6', sw)
+        self.assertIn('vestra-cache-v110', sw)
         self.assertIn('./portfolio-card-classifier.js', sw)
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
         self.assertIn('./vestra-swap-lab.js', sw)
         self.assertIn('./portfolio-collapsibles.js', sw)
         self.assertIn('./portfolio-diagnostics.js', sw)
+        self.assertIn('./vestra-ai-brief.js', sw)
+        self.assertIn('./portfolio-dossier-routing.js', sw)
 
 
 if __name__ == '__main__':
