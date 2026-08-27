@@ -508,6 +508,11 @@
 
   function renderPrimary(){
     const root=$m('marketPrimary'); if(!root || !M.loaded) return;
+    if(M.mode==='metals' && window.VestraMetals?.renderInto){
+      window.VestraMetals.renderInto(root);
+      return;
+    }
+    root.dataset.metalsActive='0';
     root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover();
   }
 

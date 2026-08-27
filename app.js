@@ -10051,14 +10051,7 @@ function wire() {
   const btnRefreshQuick = $("btnRefreshQuotesQuick");
   if (btnRefreshQuick) btnRefreshQuick.addEventListener("click", () => refreshLiveQuotes({ manual: true }));
   const btnQuoteErrors = document.getElementById('btnQuoteErrors');
-  if (btnQuoteErrors) btnQuoteErrors.addEventListener('click', () => {
-    const report = (((state || {}).settings || {}).lastQuoteRefresh) || { updated:0, failed:0, errors:[] };
-    showQuoteErrors(report.updated || 0, report.failed || 0, report.errors || [], report.updated || 0, report.failed || 0);
-    quoteErrorsInlineOpen = true;
-    renderQuoteErrorsInline(true);
-    const panel = document.getElementById('quoteErrorsInline');
-    if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  if (btnQuoteErrors) btnQuoteErrors.addEventListener('click', () => openQuoteErrorDetails());
   const btnQuoteErrorsInlineClose = document.getElementById('btnQuoteErrorsInlineClose');
   if (btnQuoteErrorsInlineClose) btnQuoteErrorsInlineClose.addEventListener('click', () => {
     quoteErrorsInlineOpen = false;
@@ -11362,13 +11355,7 @@ async function fetchQuoteWithFallback(ref) {
     if (manual) {
       toastClickable(
         `✅ ${updated} atualizados · ⚠️ ${failed} com erro — toca para detalhes`,
-        () => {
-          showQuoteErrors(updated, failed, errors, updated, failed);
-          quoteErrorsInlineOpen = true;
-          renderQuoteErrorsInline(true);
-          const panel = document.getElementById('quoteErrorsInline');
-          if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 6500
+        () => openQuoteErrorDetails({ updated, failed, errors }), 6500
       );
     }
   } else if (failed > 0) {
@@ -11376,13 +11363,7 @@ async function fetchQuoteWithFallback(ref) {
     if (manual) {
       toastClickable(
         `⚠️ Não foi possível atualizar ${failed} ativo${failed !== 1 ? "s" : ""} — toca para detalhes`,
-        () => {
-          showQuoteErrors(0, failed, errors, 0, failed);
-          quoteErrorsInlineOpen = true;
-          renderQuoteErrorsInline(true);
-          const panel = document.getElementById('quoteErrorsInline');
-          if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 6500
+        () => openQuoteErrorDetails({ updated:0, failed, errors }), 6500
       );
     } else {
       console.warn(`[AutoRefresh] ${failed} cotações falharam; mantidos os últimos valores conhecidos.`);
@@ -11453,6 +11434,16 @@ function formatQuoteErrorsHtml(errors) {
 }
 
 let quoteErrorsInlineOpen = false;
+
+function openQuoteErrorDetails(reportOverride = null) {
+  const report = reportOverride || ((((state || {}).settings || {}).lastQuoteRefresh) || { updated:0, failed:0, errors:[] });
+  const errors = Array.isArray(report.errors) ? report.errors : [];
+  const failed = Number(report.failed || errors.length || 0);
+  showQuoteErrors(Number(report.updated || 0), failed, errors, Number(report.updated || 0), failed);
+  // Explicit user action must always open a visible surface in the current view.
+  // The inline list belongs to Carteira and is hidden while the user is in Mais.
+  openModal('modalQuoteErrors');
+}
 
 function renderQuoteErrorsInline(forceOpen = quoteErrorsInlineOpen) {
   const wrap = document.getElementById("quoteErrorsInline");
@@ -11615,6 +11606,22 @@ function renderQuoteSyncStatus() {
     const mode = report.workerMode === "single" ? " · compatibilidade" : "";
     meta.textContent = `${report.updated} atualizadas${skipped}${mode}${secs} · automático`;
   } else meta.textContent = auto ? "Automático · atualiza se >30 min" : "Automático desativado";
+
+  const copy = card.querySelector('.quote-sync-card__copy');
+  let errorBtn = copy && copy.querySelector('[data-quote-errors-open]');
+  const errorCount = report && Array.isArray(report.errors) ? report.errors.length : 0;
+  if (copy && errorCount > 0) {
+    if (!errorBtn) {
+      errorBtn = document.createElement('button');
+      errorBtn.type = 'button';
+      errorBtn.dataset.quoteErrorsOpen = '1';
+      errorBtn.style.cssText = 'border:0;background:transparent;color:var(--teal,#178c88);padding:4px 0 0;text-align:left;font:inherit;font-size:12px;font-weight:850;cursor:pointer;align-self:flex-start';
+      errorBtn.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openQuoteErrorDetails(); });
+      copy.appendChild(errorBtn);
+    }
+    errorBtn.style.display = '';
+    errorBtn.textContent = `Ver ${errorCount} erro${errorCount === 1 ? '' : 's'} →`;
+  } else if (errorBtn) errorBtn.style.display = 'none';
 }
 
 function updateQuoteButtonStaleness() {
