@@ -98,10 +98,15 @@ class RuntimeRegressionTests(unittest.TestCase):
 
     def test_storage_contract_is_stable(self):
         storage = read("app-storage.js")
-        self.assertIn('PF_STATE_V6', storage)
-        self.assertIn('pf_v6', storage)
-        self.assertIn('"kv"', storage)
-        self.assertIn('"state"', storage)
+        expected = {
+            "STORAGE_KEY": "PF_STATE_V6",
+            "DB_NAME": "pf_v6",
+            "DB_STORE": "kv",
+            "DB_KEY": "state",
+        }
+        for const_name, value in expected.items():
+            pattern = rf"const\s+{const_name}\s*=\s*(['\"])({re.escape(value)})\1\s*;"
+            self.assertRegex(storage, pattern, f"storage contract changed: {const_name}")
 
 
 if __name__ == "__main__":
