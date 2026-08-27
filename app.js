@@ -202,6 +202,16 @@ if (![fetchQuote, fetchFxRates, mapWithConcurrency].every(fn => typeof fn === 'f
   throw new Error('VestraMarketClient não foi carregado antes de app.js');
 }
 
+/* ─── RETURN ASSUMPTIONS — moved to app-return-assumptions.js ─ */
+const {
+  PASSIVE_DEFAULTS, APPRECIATION_DEFAULTS, DEFAULT_RETURN_SETTINGS,
+  normalizeReturnSettings, getReturnClassDefinitions,
+} = window.VestraReturnAssumptions || {};
+if (!PASSIVE_DEFAULTS || !APPRECIATION_DEFAULTS || !DEFAULT_RETURN_SETTINGS ||
+    typeof normalizeReturnSettings !== 'function' || typeof getReturnClassDefinitions !== 'function') {
+  throw new Error('VestraReturnAssumptions não foi carregado antes de app.js');
+}
+
 /* ─── SAVE / LOAD ─────────────────────────────────────────── */
 async function loadStateAsync() {
   try {
@@ -360,51 +370,10 @@ function migrateDividendRecords() {
   return changed;
 }
 
-const PASSIVE_DEFAULTS = {
-  "acoes/etfs": 1.8,
-  "fundos": 1.2,
-  "ppr": 0.4,
-  "imobiliario": 4,
-  "ouro": 0,
-  "prata": 0,
-  "cripto": 0,
-  "liquidez": 0,
-  "depositos": 2,
-  "obrigacoes": 3,
-  "outros": 0
-};
-
-const APPRECIATION_DEFAULTS = {
-  "acoes/etfs": 6,
-  "fundos": 4,
-  "ppr": 3.5,
-  "imobiliario": 2,
-  "ouro": 2,
-  "prata": 1.5,
-  "cripto": 0,
-  "liquidez": 0,
-  "depositos": 0,
-  "obrigacoes": 0,
-  "outros": 0
-};
-
 const BROKER_REBUILD_SCHEMA_VERSION = 44; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
 
-const DEFAULT_RETURN_SETTINGS = {
-  classPassivePct: { ...PASSIVE_DEFAULTS },
-  classAppreciationPct: { ...APPRECIATION_DEFAULTS },
-  preferTWR: true,
-  twrMinYears: 0.5
-};
-
 function getReturnSettings() {
-  const s = (state && state.settings && state.settings.returnDefaults) || {};
-  return {
-    classPassivePct: { ...PASSIVE_DEFAULTS, ...(s.classPassivePct || {}) },
-    classAppreciationPct: { ...APPRECIATION_DEFAULTS, ...(s.classAppreciationPct || {}) },
-    preferTWR: s.preferTWR !== false,
-    twrMinYears: Number.isFinite(parseNum(s.twrMinYears)) && parseNum(s.twrMinYears) > 0 ? parseNum(s.twrMinYears) : DEFAULT_RETURN_SETTINGS.twrMinYears
-  };
+  return normalizeReturnSettings((state && state.settings && state.settings.returnDefaults) || {}, parseNum);
 }
 
 function saveReturnSettings(partial = {}) {
@@ -9748,22 +9717,6 @@ function resetAll() {
 }
 
 /* ─── SETTINGS ────────────────────────────────────────────── */
-function getReturnClassDefinitions() {
-  return [
-    { key: "acoes/etfs", label: "Ações / ETFs", hint: "dividendos + crescimento do mercado", passiveHint: "dividendo esperado", appreciationHint: "crescimento esperado" },
-    { key: "fundos", label: "Fundos", hint: "fundos multi-activos / UCITS", passiveHint: "distribuição esperada", appreciationHint: "crescimento esperado" },
-    { key: "ppr", label: "PPR", hint: "fundos PPR / seguros PPR", passiveHint: "distribuição / participação", appreciationHint: "crescimento esperado" },
-    { key: "imobiliario", label: "Imobiliário", hint: "renda + valorização do activo", passiveHint: "yield renda", appreciationHint: "valorização do imóvel" },
-    { key: "ouro", label: "Ouro", hint: "activo sem yield natural", passiveHint: "yield projectado", appreciationHint: "valorização esperada" },
-    { key: "prata", label: "Prata", hint: "activo sem yield natural", passiveHint: "yield projectado", appreciationHint: "valorização esperada" },
-    { key: "cripto", label: "Cripto", hint: "staking separado da apreciação", passiveHint: "staking / yield", appreciationHint: "apreciação esperada" },
-    { key: "liquidez", label: "Liquidez", hint: "contas / saldo à ordem", passiveHint: "juro esperado", appreciationHint: "valorização" },
-    { key: "depositos", label: "Depósitos", hint: "juro contratual", passiveHint: "juro esperado", appreciationHint: "valorização" },
-    { key: "obrigacoes", label: "Obrigações", hint: "cupão separado do capital", passiveHint: "cupão / carry", appreciationHint: "pull-to-par / preço" },
-    { key: "outros", label: "Outros", hint: "fallback residual", passiveHint: "rendimento base", appreciationHint: "valorização" }
-  ];
-}
-
 function renderReturnSettingsCard() {
   const wrap = document.getElementById("returnAssumptionsCard");
   if (!wrap) return;
