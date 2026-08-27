@@ -24,8 +24,8 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertLess(index.index('src="app-market-client.js'),index.index('src="app.js'))
         self.assertIn('app-market-client.js?v=1.0',index)
         sw=read("sw.js")
-        self.assertIn("Vestra Service Worker v10.6",sw)
-        self.assertIn("vestra-cache-v120",sw)
+        self.assertIn("Vestra Service Worker v10.7",sw)
+        self.assertIn("vestra-cache-v121",sw)
         self.assertIn('./app-market-client.js',sw)
 
 if __name__=='__main__': unittest.main(verbosity=2)

@@ -219,8 +219,8 @@ if (!PASSIVE_DEFAULTS || !APPRECIATION_DEFAULTS || !DEFAULT_RETURN_SETTINGS ||
 }
 
 /* ─── FINANCIAL ENGINE — moved to app-financial-engine.js ─ */
-const { compoundGrowth } = window.VestraFinancialEngine || {};
-if (typeof compoundGrowth !== 'function') {
+const { compoundGrowth, projectFireScenarios } = window.VestraFinancialEngine || {};
+if (![compoundGrowth, projectFireScenarios].every(fn => typeof fn === 'function')) {
   throw new Error('VestraFinancialEngine não foi carregado antes de app.js');
 }
 
@@ -5963,21 +5963,14 @@ function renderFire() {
       ], customR > 0 ? 'O retorno FIRE foi sobreposto manualmente.' : 'Sem override manual, FIRE herda o retorno total da carteira.')}`;
   }
 
-  const results = [];
-  for (const sc of scenarios) {
-    let cap = cap0, exp = exp0, hit = null;
-    const fireNum = sc.swr > 0 ? exp0 / sc.swr : Infinity;
-    for (let t = 0; t <= H; t++) {
-      const pass = passiveYieldRate * cap;
-      const fn = sc.swr > 0 ? exp / sc.swr : Infinity;
-      if (!hit && cap >= fn) hit = {t, cap, exp, pass, fireNum: fn};
-      if (t < H) {
-        cap = cap * (1 + sc.r) + saveM * 12;
-        exp = exp * (1 + sc.inf);
-      }
-    }
-    results.push({sc, hit, fireNum});
-  }
+  const results = projectFireScenarios({
+    capital: cap0,
+    annualExpenses: exp0,
+    monthlySavings: saveM,
+    horizonYears: H,
+    passiveYieldRate,
+    scenarios,
+  });
 
   // Results list
   const list = $("fireResults");

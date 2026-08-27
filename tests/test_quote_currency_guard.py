@@ -18,9 +18,9 @@ class QuoteCurrencyGuardTests(unittest.TestCase):
 
     def test_fresh_bundle_is_published(self):
         index=read("index.html")
-        self.assertIn("app.js?v=20260827v17",index)
+        self.assertIn("app.js?v=20260827v18",index)
         sw=read("sw.js")
-        self.assertIn("Vestra Service Worker v10.6",sw)
-        self.assertIn("vestra-cache-v120",sw)
+        self.assertIn("Vestra Service Worker v10.7",sw)
+        self.assertIn("vestra-cache-v121",sw)
 
 if __name__=='__main__': unittest.main(verbosity=2)
