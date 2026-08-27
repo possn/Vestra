@@ -22,8 +22,7 @@ new_open='''function closeQuoteErrorDetails() {\n  const modal = document.getEle
 assert app.count(old_open)==1, 'quote error opener changed'
 app=app.replace(old_open,new_open)
 
-# Add strong, capture-phase close wiring once after inline close wiring.
-marker='''  const btnQuoteErrorsInlineClose = $("btnQuoteErrorsInlineClose");\n  if (btnQuoteErrorsInlineClose) btnQuoteErrorsInlineClose.addEventListener("click", () => { quoteErrorsInlineOpen = false; renderQuoteErrorsInline(false); });'''
+marker='''  const btnQuoteErrorsInlineClose = document.getElementById('btnQuoteErrorsInlineClose');\n  if (btnQuoteErrorsInlineClose) btnQuoteErrorsInlineClose.addEventListener('click', () => {\n    quoteErrorsInlineOpen = false;\n    renderQuoteErrorsInline(false);\n  });'''
 insert=marker+'''\n  const quoteErrModal = document.getElementById('modalQuoteErrors');\n  const quoteErrClose = quoteErrModal && quoteErrModal.querySelector('[data-close]');\n  if (quoteErrClose && !quoteErrClose.dataset.quoteCloseWired) {\n    quoteErrClose.dataset.quoteCloseWired = '1';\n    quoteErrClose.addEventListener('click', e => { e.preventDefault(); e.stopImmediatePropagation(); closeQuoteErrorDetails(); }, true);\n  }\n  if (quoteErrModal && !quoteErrModal.dataset.quoteBackdropWired) {\n    quoteErrModal.dataset.quoteBackdropWired = '1';\n    quoteErrModal.addEventListener('click', e => { if (e.target === quoteErrModal) { e.preventDefault(); closeQuoteErrorDetails(); } }, true);\n  }'''
 assert app.count(marker)==1, 'quote close wiring marker changed'
 app=app.replace(marker,insert)
@@ -33,12 +32,10 @@ new_mode='state.settings.lastQuoteRefresh = { updated, failed, skipped, errors, 
 assert app.count(old_mode)==1, 'workerMode marker changed'
 app=app.replace(old_mode,new_mode)
 
-# Cache-bust runtime files.
 assert 'app-market-client.js?v=1.0' in index
 assert 'app.js?v=20260827v21' in index
 index=index.replace('app-market-client.js?v=1.0','app-market-client.js?v=1.1')
 index=index.replace('app.js?v=20260827v21','app.js?v=20260827v22')
-# Also surface the already-published routing v1.1 rather than stale query string.
 index=index.replace('portfolio-dossier-routing.js?v=1.0','portfolio-dossier-routing.js?v=1.1')
 
 assert 'Service Worker v10.10' in sw and 'vestra-cache-v124' in sw
