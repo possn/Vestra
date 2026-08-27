@@ -66,13 +66,13 @@ class RuntimeRegressionTests(unittest.TestCase):
         m = re.search(r"BROKER_REBUILD_SCHEMA_VERSION\s*=\s*(\d+)", app)
         self.assertIsNotNone(m)
         self.assertGreaterEqual(int(m.group(1)), 45)
-        self.assertIn("reconcileBrokerDividendRecords", app)
+        self.assertIn("reconcileBrokerDividends", app)
 
     def test_dividend_normalization_remains_gross_minus_tax(self):
         norm = read("app-broker-normalization.js")
         self.assertIn("return divFloor(d, parseNum(d.amount) - tax)", norm)
         self.assertIn("d.netAmount = g - tax", norm)
-        self.assertIn("reconcileBrokerDividendRecords", norm)
+        self.assertIn("reconcileBrokerDividends", norm)
 
     def test_canonical_broker_quote_repairs_remain_present(self):
         core = read("app-broker-parsing-core.js")
