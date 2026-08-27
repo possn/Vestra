@@ -60,8 +60,8 @@ class MarketEnhancementSplitTests(unittest.TestCase):
 
     def test_service_worker_caches_all_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v10.0', sw)
-        self.assertIn('vestra-cache-v114', sw)
+        self.assertIn('Vestra Service Worker v10.1', sw)
+        self.assertIn('vestra-cache-v115', sw)
         for module in ('./market-company-brief.js', './market-metric-cleanup.js', './portfolio-collapsibles.js', './portfolio-card-classifier.js', './portfolio-diagnostics.js', './vestra-ai-brief.js', './portfolio-dossier-routing.js'):
             self.assertIn(module, sw)
 

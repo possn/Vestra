@@ -196,6 +196,12 @@ if (![estimateEURFactorFromRow, parseBrokerLedgerRows, parseBrokerPositionRows,
   throw new Error('VestraBrokerParsers não foi carregado antes de app.js');
 }
 
+/* ─── MARKET CLIENT — moved to app-market-client.js ───────── */
+const { fetchQuote, fetchFxRates, mapWithConcurrency, FX_FALLBACK_LOCAL } = window.VestraMarketClient || {};
+if (![fetchQuote, fetchFxRates, mapWithConcurrency].every(fn => typeof fn === 'function') || !FX_FALLBACK_LOCAL) {
+  throw new Error('VestraMarketClient não foi carregado antes de app.js');
+}
+
 /* ─── SAVE / LOAD ─────────────────────────────────────────── */
 async function loadStateAsync() {
   try {
@@ -1992,9 +1998,7 @@ function wireMarketLookup() {
           const fxQ = await fetchQuote(`EUR${ccy}=X`, workerUrl);
           if (fxQ && fxQ.price > 0) fxToEur = 1 / fxQ.price;
         } catch(_) {
-          const FX_LOCAL = {USD:0.92, GBP:1.17, CHF:1.05, CAD:0.68, AUD:0.59,
-            DKK:0.134, SEK:0.087, NOK:0.085, PLN:0.23, JPY:0.006};
-          fxToEur = FX_LOCAL[ccy] || 1;
+          fxToEur = FX_FALLBACK_LOCAL[ccy] || 1;
         }
       }
       const priceEur = quote.price * fxToEur;
@@ -10540,27 +10544,6 @@ function extractTicker(asset) {
 }
 
 
-async function fetchQuote(ticker, workerUrl) {
-  const url = `${workerUrl.replace(/\/$/, "")}/quote?ticker=${encodeURIComponent(ticker)}`;
-  let resp;
-  try {
-    resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  } catch (e) {
-    throw new Error(`Worker inacessível: ${e.message || "timeout"}`);
-  }
-
-  let data = null;
-  try { data = await resp.clone().json(); } catch (_) {}
-
-  if (!resp.ok) {
-    const detail = data && data.error ? `: ${data.error}` : "";
-    throw new Error(`Worker HTTP ${resp.status}${detail}`);
-  }
-  if (data && data.error) throw new Error(data.error);
-  return data;
-}
-
-
 function hasStrongQuoteIdentitySafe(asset) {
   // Deliberately self-contained. This function is called from top-level quote
   // refresh/sanity paths, so it must never depend on helpers declared inside
@@ -11123,21 +11106,6 @@ async function fetchQuoteWithFallback(ref) {
   throw lastErr || new Error("Não foi possível obter uma cotação válida");
 }
 
-async function mapWithConcurrency(items, concurrency, fn) {
-  const out = new Array(items.length);
-  let cursor = 0;
-  const workers = Array.from({length: Math.max(1, Math.min(concurrency, items.length || 1))}, async () => {
-    while (true) {
-      const idx = cursor++;
-      if (idx >= items.length) return;
-      try { out[idx] = {status:'fulfilled', value: await fn(items[idx], idx)}; }
-      catch (reason) { out[idx] = {status:'rejected', reason}; }
-    }
-  });
-  await Promise.all(workers);
-  return out;
-}
-
   const rawTickerRefs = candidates.map(asset => {
     const raw = getRawTickerForAsset(asset);
     return { asset, raw, candidates: buildYahooTickerCandidates(asset) };
@@ -11176,16 +11144,7 @@ async function mapWithConcurrency(items, concurrency, fn) {
   }
 
   // Fetch FX rates via Worker (EURUSD=X, EURGBP=X, etc.)
-  const fxRates = {};
-  const FX_FALLBACK_LOCAL = {USD:0.92,GBP:1.17,DKK:0.134,CHF:1.05,PLN:0.23,
-    SEK:0.087,NOK:0.085,CAD:0.68,AUD:0.59,JPY:0.006,HKD:0.118};
-  await Promise.allSettled([...ccysNeeded].map(async ccy => {
-    try {
-      const fq = await fetchQuote(`EUR${ccy}=X`, workerUrl);
-      if (fq && fq.price > 0) fxRates[ccy] = 1 / fq.price;
-    } catch(_) {}
-  }));
-  for (const c of ccysNeeded) if (!fxRates[c]) fxRates[c] = FX_FALLBACK_LOCAL[c] || 1;
+  const fxRates = await fetchFxRates(ccysNeeded, workerUrl, FX_FALLBACK_LOCAL);
 
   // ── Store latest FX rates for offline/display use
   if (!state.settings) state.settings = {};
