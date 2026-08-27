@@ -1,4 +1,4 @@
-/* Vestra Portfolio Card Classifier v1.0 — canonical card identity, tones, shortcuts and hints. */
+/* Vestra Portfolio Card Classifier v1.2 — canonical card identity, tones, shortcuts and hints. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -61,7 +61,7 @@
     `;document.head.appendChild(s);
   }
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-ux-jump]');if(b){e.preventDefault();e.stopPropagation();jumpPortfolio(b.dataset.uxJump);}});
-  function start(){style();classify();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;classify();});});mo.observe(document.body,{childList:true,subtree:true});}
+  function start(){style();classify();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.0'});
+  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.2'});
 })();

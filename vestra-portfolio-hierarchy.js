@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.0 — canonical final hierarchy from UX 4.54/4.55/4.57. */
+/* Vestra Portfolio Hierarchy v1.2 — canonical final hierarchy from UX 4.54/4.55/4.57. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -144,6 +144,8 @@
   }
 
   function apply(){
+    window.VestraPortfolioCollapsibles?.refresh?.();
+    window.VestraPortfolioCardClassifier?.refresh?.();
     const c=root();if(!c)return;
     decorateBase(c);repairHierarchy(c);fixHeaderCollisions(c);swapLab(c);overlapCard(c);dedupeSurfaces(c);
   }
