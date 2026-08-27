@@ -98,5 +98,14 @@ jobs:
       - name: Validate Python syntax
         run: |
           python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py
-      - name: Run permanent regression suite
-        run: python -m unittest discover -v -s tests -p 'test_*.py'
+      - name: Runtime contract regressions
+        run: python -m unittest -v tests.test_runtime_regressions
+      - name: Historical regression suite
+        run: |
+          set -euo pipefail
+          for test_file in tests/test_*.py; do
+            [ "$test_file" = "tests/test_runtime_regressions.py" ] && continue
+            echo "::group::$test_file"
+            python "$test_file"
+            echo "::endgroup::"
+          done
