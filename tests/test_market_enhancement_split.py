@@ -11,7 +11,7 @@ def read(path: str) -> str:
 class MarketEnhancementSplitTests(unittest.TestCase):
     def test_hotfix_uses_canonical_modules_not_legacy_overlays(self):
         h = read('market-hotfix.js')
-        self.assertIn('compatibility loader v5.00', h)
+        self.assertIn('compatibility loader v5.01', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
         for module in (
@@ -20,6 +20,8 @@ class MarketEnhancementSplitTests(unittest.TestCase):
             'portfolio-collapsibles.js?v=1.0',
             'portfolio-card-classifier.js?v=1.0',
             'portfolio-diagnostics.js?v=1.0',
+            'vestra-ai-brief.js?v=1.0',
+            'portfolio-dossier-routing.js?v=1.0',
         ):
             self.assertIn(module, h)
 
@@ -58,9 +60,9 @@ class MarketEnhancementSplitTests(unittest.TestCase):
 
     def test_service_worker_caches_all_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.5', sw)
-        self.assertIn('vestra-cache-v109', sw)
-        for module in ('./market-company-brief.js', './market-metric-cleanup.js', './portfolio-collapsibles.js', './portfolio-card-classifier.js', './portfolio-diagnostics.js'):
+        self.assertIn('Vestra Service Worker v9.6', sw)
+        self.assertIn('vestra-cache-v110', sw)
+        for module in ('./market-company-brief.js', './market-metric-cleanup.js', './portfolio-collapsibles.js', './portfolio-card-classifier.js', './portfolio-diagnostics.js', './vestra-ai-brief.js', './portfolio-dossier-routing.js'):
             self.assertIn(module, sw)
 
 
