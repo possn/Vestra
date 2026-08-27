@@ -1,4 +1,4 @@
-/* Vestra Market compatibility loader v5.00 — sequential, deterministic. */
+/* Vestra Market compatibility loader v5.01 — sequential, deterministic. */
 (() => {
   'use strict';
 
@@ -41,12 +41,11 @@
   load('./vestra-portfolio-hierarchy.js?v=1.0','vestraPortfolioHierarchy');
   load('./vestra-swap-lab.js?v=1.0','vestraSwapLab');
   load('./market-opportunity-lenses.js?v=1.0','vestraOpportunityLenses');
-  load('./vestra-ai-brief-v459.js?v=4.59','vestraAiBriefV459');
+  load('./vestra-ai-brief.js?v=1.0','vestraAiBrief');
   load('./vestra-portfolio-ui.js?v=1.0','vestraPortfolioUi');
   load('./portfolio-diagnostics.js?v=1.0','vestraPortfolioDiagnostics');
-  load('./vestra-portfolio-nav-fix-v464.js?v=4.64','vestraPortfolioNavFixV464');
   load('./market-close-controller.js?v=1.0','vestraMarketCloseController');
-  load('./vestra-portfolio-dossier-routing-v482.js?v=4.82','vestraPortfolioDossierRoutingV482');
+  load('./portfolio-dossier-routing.js?v=1.0','vestraPortfolioDossierRouting');
 
   load('./politicians.js?v=2.1','vestraPoliticiansCanonical');
 })();
