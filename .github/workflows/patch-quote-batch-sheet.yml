@@ -42,11 +42,15 @@ jobs:
           i=Path('index.html').read_text()
           s=Path('sw.js').read_text()
           assert 'fetchQuotesBatch' in c and "`${base}/quotes`" in c
+          assert "method:'POST'" in c and 'i+=80' in c
           assert 'fetchQuotesBatch(uniqueFirst, workerUrl, 9000)' in a
           assert 'mapWithConcurrency(fallbackIndexes, 6' in a
+          assert 'workerMode: batchUnsupported ? "individual" : "batch"' in a
           assert "openModal('modalQuoteErrors')" not in a
           assert 'function closeQuoteErrorDetails()' in a
           assert "document.body.classList.remove('modal-open')" in a
+          assert "quoteErrClose.addEventListener('click'" in a and ', true);' in a
+          assert '-webkit-overflow-scrolling:touch' in a
           assert 'app-market-client.js?v=1.1' in i
           assert 'app.js?v=20260827v22' in i
           assert 'portfolio-dossier-routing.js?v=1.1' in i
