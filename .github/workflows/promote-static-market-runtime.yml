@@ -26,9 +26,14 @@ jobs:
           node --check market.js
           node --check market-data-loader.js
           node --check market-opportunities.js
+          node --check portfolio-collapsibles.js
+          node --check portfolio-card-classifier.js
+          node --check vestra-portfolio-hierarchy.js
+          node --check vestra-swap-lab.js
           node --check vestra-ai-brief.js
           node --check vestra-portfolio-ui.js
           node --check portfolio-diagnostics.js
+          node --check portfolio-sheet-navigation.js
           node --check portfolio-dossier-routing.js
           node --check politicians.js
       - name: Run architecture invariants
@@ -43,6 +48,9 @@ jobs:
           fi
           git config user.name 'vestra-bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add index.html sw.js tests scripts/promote_static_market_runtime.py
-          git commit -m 'refactor: load canonical market modules statically'
+          git add index.html sw.js tests scripts/promote_static_market_runtime.py \
+            portfolio-collapsibles.js portfolio-card-classifier.js vestra-portfolio-hierarchy.js \
+            vestra-swap-lab.js vestra-portfolio-ui.js portfolio-diagnostics.js \
+            portfolio-sheet-navigation.js portfolio-dossier-routing.js
+          git commit -m 'refactor: consolidate canonical portfolio runtime'
           git push
