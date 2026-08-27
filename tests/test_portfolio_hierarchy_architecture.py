@@ -53,8 +53,8 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
 
     def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
-        self.assertIn('Vestra Service Worker v9.7', sw)
-        self.assertIn('vestra-cache-v111', sw)
+        self.assertIn('Vestra Service Worker v9.8', sw)
+        self.assertIn('vestra-cache-v112', sw)
         self.assertIn('./portfolio-card-classifier.js', sw)
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
         self.assertIn('./vestra-swap-lab.js', sw)

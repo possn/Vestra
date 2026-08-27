@@ -13,30 +13,33 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         order = [
             'market.js', 'market-data-loader.js', 'market-company-brief.js',
             'market-metric-cleanup.js', 'portfolio-collapsibles.js',
-            'portfolio-navigation-fix.js', 'portfolio-card-classifier.js',
+            'portfolio-sheet-navigation.js', 'portfolio-card-classifier.js',
             'market-opportunities.js', 'vestra-portfolio-focus.js',
             'vestra-portfolio-hierarchy.js', 'vestra-swap-lab.js',
             'market-opportunity-lenses.js', 'vestra-ai-brief.js',
             'vestra-portfolio-ui.js', 'portfolio-diagnostics.js',
-            'market-close-controller.js', 'portfolio-dossier-routing.js',
-            'politicians.js',
+            'portfolio-dossier-routing.js', 'politicians.js',
         ]
         positions = [index.index(f'src="{name}') for name in order]
         self.assertEqual(positions, sorted(positions))
         for name in order:
             self.assertEqual(index.count(f'src="{name}'), 1, name)
+        self.assertNotIn('portfolio-navigation-fix.js', index)
+        self.assertNotIn('market-close-controller.js', index)
 
     def test_every_static_market_script_is_deferred(self):
         index = read("index.html")
-        for name in ('market-data-loader.js','market-opportunities.js','vestra-portfolio-ui.js','portfolio-diagnostics.js','politicians.js'):
+        for name in ('market-data-loader.js','portfolio-sheet-navigation.js','market-opportunities.js','vestra-portfolio-ui.js','portfolio-diagnostics.js','politicians.js'):
             self.assertIn(f'<script defer="" src="{name}', index)
 
-    def test_service_worker_no_longer_caches_compatibility_loader(self):
+    def test_service_worker_tracks_final_static_runtime(self):
         sw = read("sw.js")
-        self.assertIn('Vestra Service Worker v9.7', sw)
-        self.assertIn('vestra-cache-v111', sw)
+        self.assertIn('Vestra Service Worker v9.8', sw)
+        self.assertIn('vestra-cache-v112', sw)
         self.assertNotIn('./market-hotfix.js', sw)
-        for name in ('./market-data-loader.js','./vestra-ai-brief.js','./portfolio-dossier-routing.js'):
+        self.assertNotIn('./portfolio-navigation-fix.js', sw)
+        self.assertNotIn('./market-close-controller.js', sw)
+        for name in ('./market-data-loader.js','./portfolio-sheet-navigation.js','./vestra-ai-brief.js','./portfolio-dossier-routing.js'):
             self.assertIn(name, sw)
 
 if __name__ == '__main__':
