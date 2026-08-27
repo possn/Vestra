@@ -10570,7 +10570,16 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker) {
   if (ref > 0) {
     const ratio = priceEur / ref;
     if (ratio > 5 || ratio < 0.2) {
-      return { ok:false, reason:`Cotação suspeita rejeitada (${ratio.toFixed(1)}× face ao último preço fiável)` };
+      // Legitimate stock splits can move a sound quote by an exact structural factor.
+      // Only allow common split ratios and only with explicit/high-confidence identity.
+      const splitFactors = [2, 3, 4, 5, 10, 20];
+      const explicitIdentity = !!(asset.isin || asset.yahooTicker || asset.ticker);
+      const splitLike = splitFactors.some(f =>
+        Math.abs(ratio - f) / f <= 0.04 || Math.abs(ratio - (1/f)) / (1/f) <= 0.04
+      );
+      if (!(explicitIdentity && splitLike)) {
+        return { ok:false, reason:`Cotação suspeita rejeitada (${ratio.toFixed(1)}× face ao último preço fiável)` };
+      }
     }
   }
 
@@ -10694,6 +10703,12 @@ async function refreshLiveQuotesCore(options = {}) {
   // v21: Reduzido para evitar cascata absurda. Ordem por prevalência para equities dual-listed.
   const ALT_EXCHANGE_SUFFIXES = [".DE", ".L", ".PA", ".TO"];
   const YAHOO_TICKER_OVERRIDES = {
+    // 2026/current identity repairs: avoid venue/crypto collisions.
+    "ENS": "ENS",          // EnerSys, NYSE (not Ethereum Name Service crypto)
+    "MPW": "MPT",          // Medical Properties Trust ticker changed 2026-02-02
+    "MPW.US": "MPT",
+    "EDV": "EDV.TO",       // CAD line; LSE dual-list remains EDV.L when explicit
+    "AMS": "AMS.SW",       // ams-OSRAM Swiss line in CHF
     "WCP": "WCP.TO",
     "GRA": "GRA.TO",
     "FRU": "FRU.TO",
@@ -10741,9 +10756,8 @@ async function refreshLiveQuotesCore(options = {}) {
     const t = (raw||"").trim().toUpperCase();
     if (!t || SKIP_TICKERS.has(t)) return null;
     if (YAHOO_TICKER_OVERRIDES[t]) return YAHOO_TICKER_OVERRIDES[t];
-    // Cripto: BTC, ETH, BTC.CC, "Bitcoin" → BTC-USD (via tabela top 100)
-    const cryptoTk = cryptoToYahoo(t);
-    if (cryptoTk) return cryptoTk;
+    // Crypto is resolved earlier from the asset class. Generic equity symbols
+    // must never be reinterpreted as crypto (e.g. ENS = EnerSys, not ENS-USD).
     if (t.endsWith(".CC")) return t.replace(/\.CC$/, "-USD");
     const xmap = {".PT":".LS",".GB":".L",".UK":".L",".PL":".WA",".CH":".SW",
       ".DK":".CO",".SE":".ST",".NO":".OL",".FI":".HE",

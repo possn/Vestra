@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.5 — cache/offline infrastructure only. */
-const CACHE_NAME = "vestra-cache-v119";
+/* Vestra Service Worker v10.6 — cache/offline infrastructure only. */
+const CACHE_NAME = "vestra-cache-v120";
 const APP_SHELL = [
   "./",
   "./index.html",
