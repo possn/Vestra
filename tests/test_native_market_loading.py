@@ -33,7 +33,7 @@ class NativeMarketLoadingTests(unittest.TestCase):
             'market-opportunities.js',
             'market-company-brief.js',
             'vestra-swap-lab.js',
-            'vestra-ai-brief-v459.js',
+            'vestra-ai-brief.js',
         ):
             source = read(path)
             self.assertIn('stocks-index.json', source, path)
@@ -42,8 +42,8 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_service_worker_matches_native_market_generation(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.5', sw)
-        self.assertIn('vestra-cache-v109', sw)
+        self.assertIn('Vestra Service Worker v9.6', sw)
+        self.assertIn('vestra-cache-v110', sw)
         self.assertIn('./market-data-loader.js', sw)
         self.assertIn('./market-company-brief.js', sw)
         self.assertIn('./portfolio-card-classifier.js', sw)
@@ -51,6 +51,8 @@ class NativeMarketLoadingTests(unittest.TestCase):
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
         self.assertIn('./vestra-swap-lab.js', sw)
         self.assertIn('./portfolio-diagnostics.js', sw)
+        self.assertIn('./vestra-ai-brief.js', sw)
+        self.assertIn('./portfolio-dossier-routing.js', sw)
 
 
 if __name__ == '__main__':
