@@ -202,6 +202,12 @@ if (![fetchQuote, fetchFxRates, mapWithConcurrency].every(fn => typeof fn === 'f
   throw new Error('VestraMarketClient não foi carregado antes de app.js');
 }
 
+/* ─── QUOTE ERROR DIAGNOSTICS — moved to app-quote-errors.js ─ */
+const { summarizeQuoteErrors, decorateQuoteError } = window.VestraQuoteErrors || {};
+if (![summarizeQuoteErrors, decorateQuoteError].every(fn => typeof fn === 'function')) {
+  throw new Error('VestraQuoteErrors não foi carregado antes de app.js');
+}
+
 /* ─── RETURN ASSUMPTIONS — moved to app-return-assumptions.js ─ */
 const {
   PASSIVE_DEFAULTS, APPRECIATION_DEFAULTS, DEFAULT_RETURN_SETTINGS,
@@ -11373,6 +11379,7 @@ function openDividendBaseModal() {
 function formatQuoteErrorsHtml(errors) {
   if (!errors || !errors.length) return `<div class="note">Sem erros de cotação.</div>`;
   return errors.map(err => {
+    err = decorateQuoteError(err);
     const isObj = err && typeof err === "object";
     const raw = isObj ? String(err.raw || "") : String(err || "");
     const yahoo = isObj ? String(err.yahoo || "") : raw;
@@ -11386,6 +11393,7 @@ function formatQuoteErrorsHtml(errors) {
         <div class="item__s" style="margin-top:4px;line-height:1.5">
           <div><b>Local:</b> ${escapeHtml(raw || "—")}</div>
           <div><b>Yahoo tentado:</b> ${escapeHtml(yahoo || "—")}</div>
+          <div><b>Categoria:</b> ${escapeHtml((isObj && err.categoryLabel) || "Outro")}</div>
           <div><b>Motivo:</b> ${escapeHtml(reason || "Erro desconhecido")}</div>
         </div>
       </div>
@@ -11453,7 +11461,9 @@ function showQuoteErrors(updated, failed, errors, updatedCount, failedCount) {
   const summary = document.getElementById("quoteErrorsSummary");
   const list = document.getElementById("quoteErrorsList");
   if (!summary || !list) return;
-  summary.textContent = `${updatedCount} actualizado${updatedCount !== 1 ? "s" : ""} com sucesso · ${failedCount} falha${failedCount !== 1 ? "s" : ""}`;
+  const groups = summarizeQuoteErrors(errors || []);
+  const groupText = groups.length ? ` · ${groups.map(g => `${g.label}: ${g.count}`).join(" · ")}` : "";
+  summary.textContent = `${updatedCount} actualizado${updatedCount !== 1 ? "s" : ""} com sucesso · ${failedCount} falha${failedCount !== 1 ? "s" : ""}${groupText}`;
   list.innerHTML = formatQuoteErrorsHtml(errors);
 }
 
