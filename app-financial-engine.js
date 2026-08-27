@@ -1,4 +1,4 @@
-/* Vestra Financial Engine v1.1 — pure compound/projection mathematics. */
+/* Vestra Financial Engine v1.2 — pure compound/projection mathematics. */
 (() => {
   'use strict';
 
@@ -49,5 +49,53 @@
     });
   }
 
-  window.VestraFinancialEngine = Object.freeze({ version:'1.1', compoundGrowth, projectFireScenarios });
+  function projectDividendScenarios({
+    portfolioValue = 0,
+    baseGross = 0,
+    baseNet = 0,
+    retentionRate = 0,
+    portfolioGrowthPct = 0,
+    monthlyContribution = 0,
+    years = 20,
+    baseLabel = 'Hoje',
+    scenarios = [],
+  } = {}) {
+    const startPortfolio = Number(portfolioValue || 0);
+    const gross0 = Number(baseGross || 0);
+    const net0 = Number(baseNet || 0);
+    const retention = Math.max(0, Math.min(1, Number(retentionRate || 0)));
+    const growth = Number(portfolioGrowthPct || 0) / 100;
+    const contribution = Number(monthlyContribution || 0);
+    const H = Math.max(0, Math.floor(Number(years) || 0));
+
+    return (Array.isArray(scenarios) ? scenarios : []).map(sc => {
+      const labels = [];
+      const netArr = [];
+      const grossArr = [];
+      let curPortfolio = startPortfolio;
+      const yieldPct = Number(sc && sc.yield || 0);
+
+      for (let y = 0; y <= H; y++) {
+        labels.push(y === 0 ? String(baseLabel || 'Hoje') : `+${y}a`);
+        if (y === 0) {
+          grossArr.push(gross0);
+          netArr.push(net0);
+        } else {
+          const projGross = curPortfolio * (yieldPct / 100);
+          const projNet = projGross * (1 - retention);
+          grossArr.push(projGross);
+          netArr.push(projNet);
+        }
+        curPortfolio = curPortfolio * (1 + growth) + contribution * 12;
+      }
+      return { ...sc, labels, netArr, grossArr };
+    });
+  }
+
+  window.VestraFinancialEngine = Object.freeze({
+    version:'1.2',
+    compoundGrowth,
+    projectFireScenarios,
+    projectDividendScenarios,
+  });
 })();
