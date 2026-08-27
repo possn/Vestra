@@ -28,7 +28,7 @@ function normalizeSecurityNameKey(v) {
 }
 
 const KNOWN_BROKER_YAHOO_OVERRIDES = {
-  "AT0000A3EPA4|AMS": "AMS2.VI",
+  "AT0000A3EPA4|AMS": "AMS.SW",
   "AU0000185993|IREN": "IREN",
   "BRVALEACNOR0|XVALO": "XVALO.MC",
   "CH0334081137|CRSP": "CRSP",
@@ -42,8 +42,8 @@ const KNOWN_BROKER_YAHOO_OVERRIDES = {
   "NL0009434992|LYB": "LYB",
   "NL0009805522|NBIS": "NBIS",
   "NL00150001Q9|STLA": "STLA",
-  "AT0000A3EPA4|AMS-OSRAM": "AMS2.VI",
-  "|MPW.US": "MPW",
+  "AT0000A3EPA4|AMS-OSRAM": "AMS.SW",
+  "|MPW.US": "MPT",
   "|CRSP": "CRSP",
   "|NZYMB.DK": "NSIS-B.CO",
   "|STM.FR": "STMPA.PA",
@@ -64,7 +64,9 @@ function getKnownBrokerYahooOverride({ isin = "", ticker = "", name = "", curren
 
   if (t === "STM.FR" || /\bSTMICROELECTRONICS\b/.test(n)) return "STMPA.PA";
   if (t === "NZYMB.DK" || /\bNOVOZYMES\b/.test(n)) return "NSIS-B.CO";
-  if ((t === "AMS" || /\bAMS[ -]OSRAM\b/.test(n)) && (ccy === "CHF" || i === "AT0000A3EPA4")) return "AMS2.VI";
+  if ((t === "AMS" || /\bAMS[ -]OSRAM\b/.test(n)) && (ccy === "CHF" || i === "AT0000A3EPA4")) return "AMS.SW";
+  if ((t === "EDV" || /\bENDEAVOUR MINING\b/.test(n)) && ccy === "CAD") return "EDV.TO";
+  if ((t === "NEO" || /\bNEO PERFORMANCE MATERIALS\b/.test(n)) && ccy === "CAD") return "NEO.TO";
   if ((t === "XVALO" || /\bVALE\b/.test(n)) && i === "BRVALEACNOR0") return "XVALO.MC";
   if ((t === "UNA" || /\bUNILEVER\b/.test(n)) && i === "GB00BVZK7T90") return "UNA.AS";
   if ((t === "RIO1" || /\bRIO TINTO\b/.test(n)) && i === "GB0007188757") return "RIO.L";
@@ -78,7 +80,7 @@ function getKnownBrokerYahooOverride({ isin = "", ticker = "", name = "", curren
   if ((t === "IREN" || n === "IREN") && i === "AU0000185993") return "IREN";
   if ((t === "ENL" || /\bENEL\b/.test(n)) && i === "IT0003128367") return "ENEL.MI";
   if ((t === "HTOO" || /\bFUSION FUEL GREEN\b/.test(n)) && i === "IE00045C7B38") return "HTOO";
-  if (t === "MPW.US" || (t === "MPW" && ccy === "USD")) return "MPW";
+  if (t === "MPW.US" || t === "MPW" || /\bMEDICAL PROPERTIES TRUST\b/.test(n)) return "MPT";
   return "";
 }
 

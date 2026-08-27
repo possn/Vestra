@@ -359,7 +359,9 @@ function repairYahooTickersFromISIN() {
   let fixed = 0;
   for (const a of state.assets) {
     if (!a || !a.isin) continue;
-    const truth = ISIN_YAHOO_MAP[String(a.isin).toUpperCase().trim()];
+    const truth = a.generatedFromBroker
+      ? inferYahooTickerFromIdentity({ ...a, yahooTicker: "" })
+      : ISIN_YAHOO_MAP[String(a.isin).toUpperCase().trim()];
     if (!truth) continue;
     if (String(a.yahooTicker || "").toUpperCase() !== String(truth).toUpperCase()) {
       a.yahooTicker = truth;
@@ -382,7 +384,7 @@ function migrateDividendRecords() {
   return changed;
 }
 
-const BROKER_REBUILD_SCHEMA_VERSION = 44; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
+const BROKER_REBUILD_SCHEMA_VERSION = 45; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
 
 function getReturnSettings() {
   return normalizeReturnSettings((state && state.settings && state.settings.returnDefaults) || {}, parseNum);
@@ -6905,16 +6907,17 @@ function rebuildBrokerGeneratedData() {
   // compounding for every broker-imported holding (ADM pays quarterly, not
   // monthly — a flat "Mensal" distorts any FIRE/compound-interest projection).
   const divMonthsBySecurity = new Map();
-  for (const e of (bd.events || [])) {
+  for (const e of events) {
     if (!(e && (e.type === "DIVIDEND" || e.type === "ROC" || e.type === "DIVIDEND_ADJ"))) continue;
     if (String(e.date || "") < cutoffDiv12m) continue;
     const secKey = makeBrokerSecurityKey(e);
     if (!secKey) continue;
-    const net = Math.max(0, parseNum(e.totalEUR) - parseNum(e.taxEUR));
-    if (net <= 0) continue;
+    const rawNet = parseNum(e.totalEUR) - parseNum(e.taxEUR);
+    const net = e.type === "DIVIDEND_ADJ" ? rawNet : Math.max(0, rawNet);
+    if (net === 0) continue;
     divNet12mBySecurity.set(secKey, (divNet12mBySecurity.get(secKey) || 0) + net);
     const ym = String(e.date || "").slice(0, 7);
-    if (ym) {
+    if (ym && net > 0) {
       if (!divMonthsBySecurity.has(secKey)) divMonthsBySecurity.set(secKey, new Set());
       divMonthsBySecurity.get(secKey).add(ym);
     }
@@ -10004,7 +10007,8 @@ function wire() {
     showQuoteErrors(report.updated || 0, report.failed || 0, report.errors || [], report.updated || 0, report.failed || 0);
     quoteErrorsInlineOpen = true;
     renderQuoteErrorsInline(true);
-    openModal('modalQuoteErrors');
+    const panel = document.getElementById('quoteErrorsInline');
+    if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   const btnQuoteErrorsInlineClose = document.getElementById('btnQuoteErrorsInlineClose');
   if (btnQuoteErrorsInlineClose) btnQuoteErrorsInlineClose.addEventListener('click', () => {
@@ -10513,7 +10517,7 @@ function hasStrongQuoteIdentitySafe(asset) {
   return false;
 }
 
-function quoteSanityCheck(asset, q, priceEur, rawTicker) {
+function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "") {
   if (!asset || !q || !Number.isFinite(priceEur) || priceEur <= 0) return { ok:false, reason:"Cotação inválida" };
 
   const portfolioCcy = String((((state || {}).settings || {}).currency) || "EUR").trim().toUpperCase();
@@ -10550,7 +10554,13 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker) {
     const prev = [...hist].reverse().find(h => h && h.date !== today && Number.isFinite(Number(h.priceEur)) && Number(h.priceEur) > 0);
     historical = prev ? Number(prev.priceEur) : 0;
   } catch(_) {}
-  const ref = historical > 0 ? historical : baseline;
+  const prevIdentity = String(previousYahooTicker || "").trim().toUpperCase();
+  const nextIdentity = String(rawTicker || "").trim().toUpperCase();
+  const identityChanged = !!(prevIdentity && nextIdentity && prevIdentity !== nextIdentity && explicit);
+  // A corrected venue/ticker must not be compared to a price stored under the old identity.
+  // The new quote still passed ticker/ISIN resolution and currency guards; from the next refresh
+  // onward it becomes the new historical baseline.
+  const ref = identityChanged ? 0 : (historical > 0 ? historical : baseline);
   if (ref > 0) {
     const ratio = priceEur / ref;
     if (ratio > 5 || ratio < 0.2) {
@@ -10674,7 +10684,7 @@ async function refreshLiveQuotesCore(options = {}) {
     "PARA","PARA.US",      // Paramount - delisted Aug 2024 (Skydance merger)
     "KOM1","KOM1.DE",      // Komatsu XTB internal ticker, no Yahoo equivalent
     "14",                  // internal placeholder
-    "DN3.DE","OD7F.DE",   // delisted/no Yahoo data
+    "DN3.DE","OD7F.DE","OD7F",   // delisted/no Yahoo data
     "U9UA.DE",            // no Yahoo data
     "NGAS.UK","NGAS.L","NGAS",  // post-split price incompatible
     "GVOLT.LS","GVOLT.PT","GVOLT",  // Greenvolt delisted (acquired by Galp)
@@ -11145,12 +11155,13 @@ async function fetchQuoteWithFallback(ref) {
     // v63f: never let a resolved quote overwrite an ISIN-derived identity.
     // A stale/ambiguous resolution previously stamped yahooTicker="AI.PA" onto
     // C3.ai, and the post-rebuild merge then fused it into Air Liquide.
-    const _isinTrue = ISIN_YAHOO_MAP[String(asset.isin || "").toUpperCase().trim()] || "";
-    if (_isinTrue && String(yahoo || "").toUpperCase() !== String(_isinTrue).toUpperCase()) {
-      console.warn("[Quote] ignoring", yahoo, "for", asset.name, "— ISIN says", _isinTrue);
-      asset.yahooTicker = _isinTrue;
-    } else {
-      asset.yahooTicker = yahoo || asset.yahooTicker || "";
+    const _previousYahooTicker = String(asset.yahooTicker || "").trim().toUpperCase();
+    const _identityTrue = asset.generatedFromBroker
+      ? inferYahooTickerFromIdentity({ ...asset, yahooTicker: "" })
+      : (ISIN_YAHOO_MAP[String(asset.isin || "").toUpperCase().trim()] || "");
+    const _resolvedYahoo = _identityTrue || yahoo || asset.yahooTicker || "";
+    if (_identityTrue && String(yahoo || "").toUpperCase() !== String(_identityTrue).toUpperCase()) {
+      console.warn("[Quote] venue-aware identity", _identityTrue, "preferred over", yahoo, "for", asset.name);
     }
     const ccy = (q.currency||"EUR").toUpperCase();
     const fxToEur = ccy === "EUR" ? 1 : (fxRates[ccy] || FX_FALLBACK_LOCAL[ccy] || FX_FALLBACK_STATIC[ccy] || 1);
@@ -11165,7 +11176,7 @@ async function fetchQuoteWithFallback(ref) {
     const qty = (asset.generatedFromBroker && qtyFromNotes > 0) ? qtyFromNotes : (qtyField > 0 ? qtyField : qtyFromNotes);
     const newValue = qty ? qty * priceEur : priceEur;
 
-    const sanity = quoteSanityCheck(asset, q, priceEur, yahoo || raw);
+    const sanity = quoteSanityCheck(asset, q, priceEur, _resolvedYahoo || yahoo || raw, _previousYahooTicker);
     if (!sanity.ok) {
       failed++;
       errors.push({ raw, yahoo: yahoo || "", assetName: asset.name || raw || "Ativo", reason: sanity.reason });
@@ -11175,6 +11186,7 @@ async function fetchQuoteWithFallback(ref) {
     // Heal stale broker metadata after ticker identity + sanity checks pass.
     // Future refreshes then know the instrument's native quote currency instead
     // of the portfolio accounting currency carried by older imports.
+    asset.yahooTicker = _resolvedYahoo || yahoo || asset.yahooTicker || "";
     if (asset.generatedFromBroker && ccy) asset.priceCurrency = ccy;
 
     const priceLabel = ccy === "EUR"
@@ -11303,7 +11315,10 @@ async function fetchQuoteWithFallback(ref) {
         `✅ ${updated} atualizados · ⚠️ ${failed} com erro — toca para detalhes`,
         () => {
           showQuoteErrors(updated, failed, errors, updated, failed);
-          openModal("modalQuoteErrors");
+          quoteErrorsInlineOpen = true;
+          renderQuoteErrorsInline(true);
+          const panel = document.getElementById('quoteErrorsInline');
+          if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 6500
       );
     }
@@ -11314,7 +11329,10 @@ async function fetchQuoteWithFallback(ref) {
         `⚠️ Não foi possível atualizar ${failed} ativo${failed !== 1 ? "s" : ""} — toca para detalhes`,
         () => {
           showQuoteErrors(0, failed, errors, 0, failed);
-          openModal("modalQuoteErrors");
+          quoteErrorsInlineOpen = true;
+          renderQuoteErrorsInline(true);
+          const panel = document.getElementById('quoteErrorsInline');
+          if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 6500
       );
     } else {
