@@ -1,0 +1,66 @@
+name: Restore metals and quote error details
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'market-metals.js'
+      - 'scripts/patch_quote_errors_and_metals.py'
+      - '.github/workflows/restore-metals-and-quote-errors.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: restore-metals-quote-errors
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded integration
+        run: python scripts/patch_quote_errors_and_metals.py
+      - name: JavaScript syntax
+        run: |
+          node --check app.js
+          node --check market.js
+          node --check market-metals.js
+      - name: Validate runtime invariants
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          i=Path('index.html').read_text()
+          m=Path('market.js').read_text()
+          a=Path('app.js').read_text()
+          mm=Path('market-metals.js').read_text()
+          assert i.count('src="market-metals.js?v=1.0"') == 1
+          assert "M.mode==='metals'" in m and 'VestraMetals?.renderInto' in m
+          assert 'function openQuoteErrorDetails' in a
+          assert "openModal('modalQuoteErrors')" in a
+          assert 'data-quote-errors-open' in a
+          assert 'GC=F' in mm and 'SI=F' in mm and 'HG=F' in mm and 'PL=F' in mm and 'PA=F' in mm and 'UX=F' in mm
+          assert '/quotes?tickers=' in mm and '/market?ticker=' in mm
+          print('quote errors + metals invariants OK')
+          PY
+      - name: Diff check
+        run: git diff --check
+      - name: Commit integration
+        run: |
+          if git diff --quiet -- index.html app.js market.js; then
+            echo 'Integration already applied'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html app.js market.js
+          git commit -m 'fix: restore quote error details and metals tab'
+          git pull --rebase origin main
+          git push origin main
