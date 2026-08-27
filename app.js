@@ -10540,10 +10540,18 @@ function hasStrongQuoteIdentitySafe(asset) {
 function quoteSanityCheck(asset, q, priceEur, rawTicker) {
   if (!asset || !q || !Number.isFinite(priceEur) || priceEur <= 0) return { ok:false, reason:"Cotação inválida" };
 
-  const assetCcy = String(asset.priceCurrency || asset.currency || "").trim().toUpperCase();
+  const portfolioCcy = String((((state || {}).settings || {}).currency) || "EUR").trim().toUpperCase();
+  const storedPriceCcy = String(asset.priceCurrency || "").trim().toUpperCase();
+  const storedAssetCcy = String(asset.currency || "").trim().toUpperCase();
   const quoteCcy = String(q.currency || "").trim().toUpperCase();
   const explicit = hasStrongQuoteIdentitySafe(asset);
-  // Currency mismatch is a strong collision signal for explicit broker instruments.
+  // Broker imports often store the portfolio-converted value currency (EUR) in
+  // priceCurrency. That is accounting currency, not evidence that GOOGL/TSLA/LSE
+  // instruments themselves trade in EUR. Only a non-base broker price currency is
+  // strong enough to veto Yahoo here; manual assets keep their explicit currency guard.
+  const assetCcy = asset.generatedFromBroker
+    ? ((storedPriceCcy && storedPriceCcy !== portfolioCcy) ? storedPriceCcy : "")
+    : (storedPriceCcy || storedAssetCcy);
   if (assetCcy && quoteCcy && assetCcy !== quoteCcy && !(assetCcy === "GBX" && quoteCcy === "GBP")) {
     if (!String(rawTicker || "").includes("=") && !String(rawTicker || "").endsWith("-USD")) {
       return { ok:false, reason:`Cotação suspeita: moeda ${quoteCcy} não coincide com ${assetCcy}` };
@@ -11174,6 +11182,10 @@ async function fetchQuoteWithFallback(ref) {
       console.warn("[Quote rejected]", asset.name || raw, sanity.reason, q);
       continue;
     }
+    // Heal stale broker metadata after ticker identity + sanity checks pass.
+    // Future refreshes then know the instrument's native quote currency instead
+    // of the portfolio accounting currency carried by older imports.
+    if (asset.generatedFromBroker && ccy) asset.priceCurrency = ccy;
 
     const priceLabel = ccy === "EUR"
       ? fmtEUR2(priceEur)

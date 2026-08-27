@@ -25,8 +25,8 @@ class AppReturnAssumptionsTests(unittest.TestCase):
         index=read("index.html")
         self.assertLess(index.index('src="app-return-assumptions.js'),index.index('src="app.js'))
         sw=read("sw.js")
-        self.assertIn("Vestra Service Worker v10.2",sw)
-        self.assertIn("vestra-cache-v116",sw)
+        self.assertIn("Vestra Service Worker v10.3",sw)
+        self.assertIn("vestra-cache-v117",sw)
         self.assertIn('./app-return-assumptions.js',sw)
 
 if __name__=='__main__': unittest.main(verbosity=2)
