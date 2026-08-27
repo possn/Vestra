@@ -15,7 +15,7 @@ class DividendProjectionEngineTests(unittest.TestCase):
   def test_bundle_versions(self):
     i=read("index.html"); sw=read("sw.js")
     self.assertIn("app-financial-engine.js?v=1.2",i)
-    self.assertIn("app.js?v=20260827v20",i)
-    self.assertIn("Vestra Service Worker v10.9",sw)
-    self.assertIn("vestra-cache-v123",sw)
+    self.assertIn("app.js?v=20260827v21",i)
+    self.assertIn("Vestra Service Worker v10.10",sw)
+    self.assertIn("vestra-cache-v124",sw)
 if __name__=="__main__": unittest.main(verbosity=2)
