@@ -1,4 +1,4 @@
-/* Vestra Financial Engine v1.0 — pure compound/projection mathematics. */
+/* Vestra Financial Engine v1.1 — pure compound/projection mathematics. */
 (() => {
   'use strict';
 
@@ -14,7 +14,6 @@
       result.push({ year: y, value: v });
       if (y === nYears) break;
       if (periods <= 1) {
-        // Annual compounding: interest once, then twelve monthly contributions.
         v = v * (1 + r) + monthlyContribution * 12;
       } else {
         for (let p = 0; p < periods; p++) {
@@ -25,5 +24,30 @@
     return result;
   }
 
-  window.VestraFinancialEngine = Object.freeze({ version:'1.0', compoundGrowth });
+  function projectFireScenarios({ capital = 0, annualExpenses = 0, monthlySavings = 0, horizonYears = 30, passiveYieldRate = 0, scenarios = [] } = {}) {
+    const cap0 = Number(capital || 0);
+    const exp0 = Number(annualExpenses || 0);
+    const saveM = Number(monthlySavings || 0);
+    const H = Math.max(0, Math.floor(Number(horizonYears) || 0));
+    const py = Number(passiveYieldRate || 0);
+    return (Array.isArray(scenarios) ? scenarios : []).map(sc => {
+      let cap = cap0, exp = exp0, hit = null;
+      const swr = Number(sc && sc.swr || 0);
+      const r = Number(sc && sc.r || 0);
+      const inf = Number(sc && sc.inf || 0);
+      const fireNum = swr > 0 ? exp0 / swr : Infinity;
+      for (let t = 0; t <= H; t++) {
+        const pass = py * cap;
+        const fn = swr > 0 ? exp / swr : Infinity;
+        if (!hit && cap >= fn) hit = { t, cap, exp, pass, fireNum: fn };
+        if (t < H) {
+          cap = cap * (1 + r) + saveM * 12;
+          exp = exp * (1 + inf);
+        }
+      }
+      return { sc, hit, fireNum };
+    });
+  }
+
+  window.VestraFinancialEngine = Object.freeze({ version:'1.1', compoundGrowth, projectFireScenarios });
 })();
