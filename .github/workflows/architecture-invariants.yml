@@ -117,6 +117,8 @@ jobs:
       - name: Runtime · storage contract
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_storage_contract_is_stable
       - name: Historical regression suite
+        env:
+          PYTHONPATH: .
         run: |
           set -euo pipefail
           for test_file in tests/test_*.py; do
