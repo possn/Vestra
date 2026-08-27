@@ -1,0 +1,34 @@
+name: Refactor dividend projection
+on:
+  push:
+    paths:
+      - 'scripts/refactor_dividend_projection.py'
+      - '.github/workflows/refactor-dividend-projection.yml'
+permissions:
+  contents: write
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Extract dividend projection
+        run: python scripts/refactor_dividend_projection.py
+      - name: Validate syntax
+        run: |
+          node --check app-financial-engine.js
+          node --check app.js
+      - name: Run regression suite
+        run: python -m unittest discover -v -s tests -p 'test_*.py'
+      - name: Validate diff
+        run: git diff --check
+      - name: Commit extraction
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'vestra-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add app.js index.html sw.js tests/
+          git commit -m 'refactor: move dividend projection out of app monolith'
+          git push
