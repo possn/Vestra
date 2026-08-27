@@ -55,6 +55,7 @@ from universe import build_universe, ETF_UNIVERSE, STOCK_DISCOVERY_CATALOG, regi
 # que não substituem o score principal, adicionam contexto.
 from gap_retrieval import enrich as enrich_gap_retrieval
 from quarterly_gap_retrieval import enrich as enrich_quarterly_gap_retrieval
+from derived_fundamentals import enrich as enrich_derived_fundamentals
 from capital_allocation_intelligence import assess as assess_capital_allocation
 from moat import assess as assess_moat
 from sector_native import assess as assess_sector_native
@@ -86,7 +87,7 @@ _fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
 _handler_stream.setFormatter(_fmt)
 _handler_console.setFormatter(_fmt)
 logging.basicConfig(level=logging.WARNING, handlers=[_handler_stream, _handler_console], force=True)
-for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "capital_risk", "confidence", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
+for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "derived_fundamentals", "capital_risk", "confidence", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
     logging.getLogger(_name).setLevel(logging.INFO)
 log = logging.getLogger("run")
 
@@ -181,6 +182,7 @@ def main():
     raw = enrich_esef(raw, priority=portfolio_set)
     raw = enrich_gap_retrieval(raw, priority=portfolio_set)
     raw = enrich_quarterly_gap_retrieval(raw, priority=portfolio_set)
+    raw = enrich_derived_fundamentals(raw)
     raw = enrich_capital_risk(raw, priority=portfolio_set)
     scored = score_universe(raw)
 
@@ -262,6 +264,10 @@ def main():
 
         rm = raw_by_ticker.get(s.ticker)
         row["data_sources"] = ["Yahoo Finance"]
+        _derived_metrics = list(getattr(rm, "derived_metrics", []) or []) if rm is not None else []
+        if _derived_metrics:
+            row["derived_metrics"] = _derived_metrics
+            row["derived_metric_note"] = "Calculated only from observed inputs; never an independent source"
         if rm is not None and getattr(rm, "sec_edgar_enriched", False):
             row["data_sources"].append("SEC EDGAR")
             row["sec_period_end"] = getattr(rm, "sec_period_end", None)
