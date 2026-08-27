@@ -10,8 +10,8 @@ def read(path: str) -> str:
 
 class PortfolioHierarchyArchitectureTests(unittest.TestCase):
     def test_hotfix_uses_canonical_hierarchy_and_swap_lab(self):
-        h=read('market-hotfix.js')
-        self.assertIn('compatibility loader v5.01', h)
+        h=read('index.html')
+        self.assertNotIn('market-hotfix.js', h)
         self.assertIn("portfolio-card-classifier.js?v=1.0", h)
         self.assertIn("vestra-portfolio-hierarchy.js?v=1.0", h)
         self.assertIn("vestra-swap-lab.js?v=1.0", h)
@@ -53,8 +53,8 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
 
     def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
-        self.assertIn('Vestra Service Worker v9.6', sw)
-        self.assertIn('vestra-cache-v110', sw)
+        self.assertIn('Vestra Service Worker v9.7', sw)
+        self.assertIn('vestra-cache-v111', sw)
         self.assertIn('./portfolio-card-classifier.js', sw)
         self.assertIn('./vestra-portfolio-hierarchy.js', sw)
         self.assertIn('./vestra-swap-lab.js', sw)

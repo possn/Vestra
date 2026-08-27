@@ -10,8 +10,8 @@ def read(path: str) -> str:
 
 class CanonicalRuntimeCleanupTests(unittest.TestCase):
     def test_loader_uses_canonical_ai_and_routing_without_versioned_nav_overlays(self):
-        h = read('market-hotfix.js')
-        self.assertIn('compatibility loader v5.01', h)
+        h = read('index.html')
+        self.assertNotIn('market-hotfix.js', h)
         self.assertIn("vestra-ai-brief.js?v=1.0", h)
         self.assertIn("portfolio-dossier-routing.js?v=1.0", h)
         for legacy in (
@@ -42,7 +42,7 @@ class CanonicalRuntimeCleanupTests(unittest.TestCase):
 
     def test_no_active_module_dynamically_loads_legacy_tabs(self):
         active = (
-            'market-hotfix.js', 'vestra-portfolio-ui.js', 'portfolio-diagnostics.js',
+            'index.html', 'vestra-portfolio-ui.js', 'portfolio-diagnostics.js',
             'portfolio-card-classifier.js', 'vestra-portfolio-hierarchy.js',
             'portfolio-dossier-routing.js',
         )
@@ -51,10 +51,11 @@ class CanonicalRuntimeCleanupTests(unittest.TestCase):
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.6', sw)
-        self.assertIn('vestra-cache-v110', sw)
+        self.assertIn('Vestra Service Worker v9.7', sw)
+        self.assertIn('vestra-cache-v111', sw)
         self.assertIn('./vestra-ai-brief.js', sw)
         self.assertIn('./portfolio-dossier-routing.js', sw)
+        self.assertNotIn('./market-hotfix.js', sw)
         self.assertNotIn('./vestra-ai-brief-v459.js', sw)
         self.assertNotIn('./vestra-portfolio-nav-fix-v464.js', sw)
         self.assertNotIn('./vestra-portfolio-tabs-v479.js', sw)

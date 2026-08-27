@@ -33,7 +33,7 @@ class PortfolioDiagnosticsTests(unittest.TestCase):
         self.assertIn("ETF × ETF", s)
 
     def test_diagnostics_load_after_portfolio_ui_and_are_cached(self):
-        h = read('market-hotfix.js')
+        h = read('index.html')
         sw = read('sw.js')
         self.assertLess(h.index('vestra-portfolio-ui.js'), h.index('portfolio-diagnostics.js'))
         self.assertIn("portfolio-diagnostics.js?v=1.0", h)

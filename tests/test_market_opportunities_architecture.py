@@ -10,7 +10,7 @@ def read(path: str) -> str:
 
 class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_hotfix_loads_canonical_modules_not_legacy_opportunity_overlays(self):
-        hotfix = read('market-hotfix.js')
+        hotfix = read('index.html')
         self.assertIn("market-opportunities.js?v=1.1", hotfix)
         self.assertIn("vestra-portfolio-focus.js?v=1.0", hotfix)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
@@ -61,8 +61,8 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v9.6', sw)
-        self.assertIn('vestra-cache-v110', sw)
+        self.assertIn('Vestra Service Worker v9.7', sw)
+        self.assertIn('vestra-cache-v111', sw)
         for module in (
             './market-opportunities.js','./vestra-portfolio-focus.js','./vestra-portfolio-hierarchy.js','./vestra-swap-lab.js',
             './market-company-brief.js','./market-metric-cleanup.js','./portfolio-collapsibles.js','./portfolio-card-classifier.js','./portfolio-diagnostics.js',

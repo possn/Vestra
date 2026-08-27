@@ -9,16 +9,18 @@ def read(path: str) -> str:
 
 
 class MarketLoaderInvariantTests(unittest.TestCase):
-    def test_base_bundle_precedes_market_and_hotfix(self):
+    def test_base_bundle_precedes_static_market_modules(self):
         index = read("index.html")
         self.assertLess(index.index('src="app-utils.js'), index.index('src="app.js'))
         self.assertLess(index.index('src="app.js'), index.index('src="market.js'))
-        self.assertLess(index.index('src="market.js'), index.index('src="market-hotfix.js'))
+        self.assertLess(index.index('src="market.js'), index.index('src="market-data-loader.js'))
+        self.assertLess(index.index('src="market-data-loader.js'), index.index('src="politicians.js'))
+        self.assertNotIn('src="market-hotfix.js', index)
 
-    def test_hotfix_does_not_reload_base_utils(self):
-        hotfix = read("market-hotfix.js")
-        self.assertNotIn("load('./app-utils.js", hotfix)
-        self.assertIn("market-data-loader.js?v=2.0", hotfix)
+    def test_static_market_bundle_does_not_reload_base_utils(self):
+        index = read("index.html")
+        self.assertEqual(index.count('src="app-utils.js'), 1)
+        self.assertIn('market-data-loader.js?v=2.0', index)
 
     def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
         market = read("market.js")
@@ -42,10 +44,10 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("Emergency compatibility fallback", loader)
 
     def test_politicians_loader_matches_canonical_module_version(self):
-        hotfix = read("market-hotfix.js")
+        index = read("index.html")
         politicians = read("politicians.js")
         self.assertIn("const VERSION='2.1';", politicians)
-        self.assertIn("politicians.js?v=2.1", hotfix)
+        self.assertIn("politicians.js?v=2.1", index)
         self.assertIn("data/executives.json", politicians)
         self.assertIn("TOP 10 COMPRAS", politicians)
         self.assertIn("TOP 10 VENDAS", politicians)
