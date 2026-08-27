@@ -50,7 +50,9 @@ sw=once(sw,'  "./app-market-client.js",\n','  "./app-market-client.js",\n  "./ap
 write('sw.js',sw)
 
 for path in (ROOT/'tests').glob('test_*.py'):
-    s=path.read_text(encoding='utf-8').replace('Vestra Service Worker v10.3','Vestra Service Worker v10.4').replace('vestra-cache-v117','vestra-cache-v118')
+    s=path.read_text(encoding='utf-8')
+    s=s.replace('Vestra Service Worker v10.3','Vestra Service Worker v10.4').replace('vestra-cache-v117','vestra-cache-v118')
+    s=s.replace('app.js?v=20260827v14','app.js?v=20260827v15')
     path.write_text(s,encoding='utf-8')
 
 (ROOT/'tests/test_quote_error_classifier.py').write_text('''from pathlib import Path\nimport unittest\nROOT=Path(__file__).resolve().parents[1]\ndef read(p): return (ROOT/p).read_text(encoding="utf-8")\nclass QuoteErrorClassifierTests(unittest.TestCase):\n    def test_classifier_has_actionable_buckets(self):\n        s=read("app-quote-errors.js")\n        for token in ("Sem dados Yahoo","Ticker / identidade","Delisted / ignorado","Rede / Worker","Sanity de preço","summarizeQuoteErrors"):\n            self.assertIn(token,s)\n    def test_app_uses_classifier_only_for_diagnostics(self):\n        app=read("app.js")\n        self.assertIn("window.VestraQuoteErrors",app)\n        self.assertIn("Categoria:</b>",app)\n        self.assertIn("summarizeQuoteErrors(errors || [])",app)\n        self.assertNotIn("classifyQuoteError(asset",app)\n    def test_module_load_order_and_cache(self):\n        idx=read("index.html")\n        self.assertLess(idx.index('src="app-quote-errors.js'),idx.index('src="app.js'))\n        sw=read("sw.js")\n        self.assertIn("Vestra Service Worker v10.4",sw)\n        self.assertIn("vestra-cache-v118",sw)\n        self.assertIn('./app-quote-errors.js',sw)\nif __name__=='__main__': unittest.main(verbosity=2)\n''',encoding='utf-8')
