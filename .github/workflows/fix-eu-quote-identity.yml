@@ -1,0 +1,48 @@
+name: Fix EU quote identity
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/fix_eu_quote_identity.py'
+      - '.github/workflows/fix-eu-quote-identity.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-eu-quote-identity
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply identity repair
+        run: python scripts/fix_eu_quote_identity.py
+      - name: Validate JavaScript
+        run: node --check app-asset-identity.js
+      - name: Run focused tests
+        run: python -m unittest tests.test_eu_quote_identity -v
+      - name: Run full regression suite
+        run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Diff check
+        run: git diff --check
+      - name: Commit repair
+        run: |
+          if git diff --quiet -- app-asset-identity.js index.html tests/test_eu_quote_identity.py; then
+            echo 'EU quote identity repair already applied'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app-asset-identity.js index.html tests/test_eu_quote_identity.py
+          git commit -m 'fix: make EU broker quote identity exchange-aware'
+          git push
