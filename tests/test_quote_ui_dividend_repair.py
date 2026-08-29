@@ -18,11 +18,11 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     self.assertIn('_previousYahooTicker',a)
     self.assertIn('asset.yahooTicker = _resolvedYahoo',a)
     self.assertIn('"OD7F.DE","OD7F"',a)
-  def test_quote_errors_are_inline_not_modal_locked(self):
-    a=read('app.js'); q=read('app-quote-errors.js')
-    self.assertNotIn("openModal('modalQuoteErrors')",a)
-    self.assertNotIn('openModal("modalQuoteErrors")',a)
+  def test_quote_errors_are_bridged_to_non_blocking_sheet(self):
+    q=read('app-quote-errors.js')
     self.assertIn('showQuoteErrorSheetFromModal',q)
+    self.assertIn("observer.observe(modal,{attributes:true,attributeFilter:['aria-hidden']})",q)
+    self.assertIn("if(modal.getAttribute('aria-hidden')==='false') showQuoteErrorSheetFromModal()",q)
     self.assertIn("close.addEventListener('click',closeQuoteErrorSheet)",q)
     self.assertIn("document.body.classList.remove('modal-open')",q)
     self.assertIn('-webkit-overflow-scrolling:touch',q)
