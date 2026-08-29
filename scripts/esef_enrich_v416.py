@@ -1,16 +1,19 @@
-"""Current filings.xbrl.org enrichment adapter for Vestra v4.16.
+"""Current filings.xbrl.org enrichment adapter for Vestra v4.20.
 
 Uses documented /api/filings plus a public entity-page fallback. Identity is
-strict: Yahoo ticker -> ISIN -> GLEIF LEI. Only standard IFRS concepts are used.
+strict: ticker -> exact ISIN -> GLEIF LEI. Yahoo remains the first ISIN source;
+London-listed equities gain an official LSE TIDM->ISIN fallback. Only standard
+IFRS concepts are used and no fuzzy issuer matching is permitted.
 """
 from __future__ import annotations
 import datetime as dt, gzip, json, logging, re, time
 from urllib.parse import urljoin
 import requests, yfinance as yf
+from lse_identity import resolve_isin as resolve_lse_isin
 
 log=logging.getLogger('esef_enrich')
 BASE='https://filings.xbrl.org'; GLEIF='https://api.gleif.org/api/v1/lei-records'
-UA='Vestra/4.16 (+https://github.com/possn/Vestra)'
+UA='Vestra/4.20 (+https://github.com/possn/Vestra)'
 ISIN_RE=re.compile(r'^[A-Z]{2}[A-Z0-9]{9}[0-9]$')
 COUNTRY={'.L':'GB','.PA':'FR','.AS':'NL','.BR':'BE','.MC':'ES','.MI':'IT','.ST':'SE','.HE':'FI','.CO':'DK','.OL':'NO','.LS':'PT','.VI':'AT','.WA':'PL','.PR':'CZ','.AT':'GR','.SW':'CH','.DE':'DE'}
 ALLOWED={'concept','entity','period','unit','language'}
@@ -31,10 +34,22 @@ def session():
 def country_for(t):
     u=str(t or '').upper(); return next((v for k,v in COUNTRY.items() if u.endswith(k)),None)
 
-def resolve_isin(t):
+def _yahoo_isin(t):
     try: x=str(yf.Ticker(t).isin or '').strip().upper()
     except Exception: return None
     return x if ISIN_RE.match(x) else None
+
+def resolve_isin_with_source(t,s=None):
+    x=_yahoo_isin(t)
+    if x: return x,'Yahoo Finance'
+    if str(t or '').upper().endswith('.L'):
+        try: x=resolve_lse_isin(t,s)
+        except Exception: x=None
+        if x and ISIN_RE.match(str(x).upper()): return str(x).upper(),'London Stock Exchange official securities files'
+    return None,None
+
+def resolve_isin(t,s=None):
+    return resolve_isin_with_source(t,s)[0]
 
 def resolve_lei(s,isin):
     try:
@@ -118,7 +133,7 @@ def set_missing(m,k,v):
     return False
 
 def enrich(raw,priority=None,max_nonpriority=220):
-    priority=set(priority or []); s=session(); non=0; done=0
+    priority=set(priority or []); s=session(); non=0; done=0; lse_identity_hits=0
     for m in raw:
         t=str(getattr(m,'ticker','') or '').upper(); c=country_for(t)
         if not c or getattr(m,'quote_type',None) in ('ETF','CRYPTO'): continue
@@ -127,7 +142,7 @@ def enrich(raw,priority=None,max_nonpriority=220):
         if t not in priority:
             non+=1
             if non>max_nonpriority: continue
-        isin=resolve_isin(t); lei=resolve_lei(s,isin) if isin else None
+        isin,isin_source=resolve_isin_with_source(t,s); lei=resolve_lei(s,isin) if isin else None
         if not lei: continue
         f=latest_filing(s,lei,c); rep=report(s,f) if f else None
         if not rep: continue
@@ -142,5 +157,7 @@ def enrich(raw,priority=None,max_nonpriority=220):
         set_missing(m,'debt_to_equity',debt/e if debt is not None and e not in (None,0) else None); set_missing(m,'total_assets',a); set_missing(m,'stockholders_equity',e); set_missing(m,'total_cash',cash); set_missing(m,'total_debt',debt); set_missing(m,'operating_cash_flow',cfo)
         set_missing(m,'free_cash_flow',cfo-abs(capex) if cfo is not None and capex is not None else None); set_missing(m,'ebit',op); set_missing(m,'interest_expense',abs(interest) if interest is not None else None); set_missing(m,'revenue_growth',growth(rep,'revenue')); set_missing(m,'earnings_growth',growth(rep,'net_income'))
         if op is not None and e is not None and debt is not None and cash is not None and e+debt-cash>0: set_missing(m,'roce_proxy',op/(e+debt-cash))
-        m.isin=isin; m.lei=lei; m.esef_period_end=f.get('period_end'); m.esef_enriched=True; m.esef_retrieval_path=f.get('path'); done+=1; time.sleep(.05)
-    log.info('ESEF v4.16 enriched %d rows',done); return raw
+        m.isin=isin; m.isin_source=isin_source; m.lei=lei; m.esef_period_end=f.get('period_end'); m.esef_enriched=True; m.esef_retrieval_path=f.get('path'); done+=1
+        if isin_source and isin_source.startswith('London Stock Exchange'): lse_identity_hits+=1
+        time.sleep(.05)
+    log.info('ESEF v4.20 enriched %d rows (%d via LSE identity fallback)',done,lse_identity_hits); return raw
