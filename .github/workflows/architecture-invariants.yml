@@ -121,9 +121,20 @@ jobs:
           PYTHONPATH: .
         run: |
           set -euo pipefail
+          rm -f historical-failure.txt
           for test_file in tests/test_*.py; do
             [ "$test_file" = "tests/test_runtime_regressions.py" ] && continue
             echo "::group::$test_file"
-            python "$test_file"
+            if ! python "$test_file"; then
+              echo "$test_file" | tee historical-failure.txt
+              exit 1
+            fi
             echo "::endgroup::"
           done
+      - name: Upload historical failure marker
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-regression-failure
+          path: historical-failure.txt
+          if-no-files-found: ignore
