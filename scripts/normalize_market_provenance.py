@@ -20,12 +20,56 @@ LEGACY_CONGRESS_SOURCES = {
     "U.S. House Clerk / STOCK Act",
 }
 
-SOURCE_FAMILIES = {
-    "Yahoo Finance": ("yahoo", "market_and_fundamentals", True),
-    "Yahoo Statements (targeted)": ("yahoo", "financial_statements", False),
-    "SEC EDGAR": ("sec_edgar", "regulatory_filing", True),
-    "ESEF / filings.xbrl.org": ("esef", "regulatory_filing", True),
-    OFFICIAL_CONGRESS_SOURCE: ("stock_act", "official_disclosure", True),
+# Provenance is domain-aware. A source may be independent evidence for one domain
+# (e.g. Form 4 for insider activity) without being independent confirmation of
+# accounting fundamentals. Unknown sources are conservative by default and never
+# increase fundamental-source counts silently.
+SOURCE_DEFINITIONS = {
+    "Yahoo Finance": {
+        "family": "yahoo",
+        "role": "market_and_fundamentals",
+        "independent_for": ["fundamentals", "market"],
+    },
+    "Yahoo Statements (targeted)": {
+        "family": "yahoo",
+        "role": "financial_statements",
+        "independent_for": [],
+    },
+    "Yahoo Quarterly Statements (TTM)": {
+        "family": "yahoo",
+        "role": "financial_statements_ttm",
+        "independent_for": [],
+    },
+    "SEC EDGAR": {
+        "family": "sec_edgar",
+        "role": "regulatory_filing",
+        "independent_for": ["fundamentals"],
+    },
+    "SEC Capital Structure": {
+        "family": "sec_edgar",
+        "role": "capital_structure",
+        "independent_for": ["capital_structure"],
+    },
+    "ESEF / filings.xbrl.org": {
+        "family": "esef",
+        "role": "regulatory_filing",
+        "independent_for": ["fundamentals"],
+    },
+    "Analyst feed": {
+        "family": "analyst",
+        "role": "estimates_and_consensus",
+        "independent_for": ["estimates"],
+    },
+    "SEC Form 4": {
+        "family": "sec_form4",
+        "role": "official_insider_disclosure",
+        "independent_for": ["insider"],
+    },
+    OFFICIAL_CONGRESS_SOURCE: {
+        "family": "stock_act",
+        "role": "official_disclosure",
+        "independent_for": ["political_disclosure"],
+    },
 }
 
 CARRIED_STATUSES = {
@@ -39,12 +83,18 @@ METADATA_STATUSES = {
 
 
 def _source_descriptor(name: str) -> dict:
-    family, role, independent = SOURCE_FAMILIES.get(name, ("other", "supplemental", True))
+    definition = SOURCE_DEFINITIONS.get(name) or {
+        "family": "other",
+        "role": "supplemental",
+        "independent_for": [],
+    }
+    independent_for = list(definition.get("independent_for") or [])
     return {
         "name": name,
-        "family": family,
-        "role": role,
-        "independent": independent,
+        "family": definition.get("family") or "other",
+        "role": definition.get("role") or "supplemental",
+        "independent": bool(independent_for),
+        "independent_for": independent_for,
     }
 
 
@@ -66,13 +116,23 @@ def _filing_periods(row: dict) -> dict:
     return periods
 
 
+def _families_for_domain(descriptors: list[dict], domain: str) -> list[str]:
+    return list(dict.fromkeys(
+        d["family"] for d in descriptors
+        if domain in (d.get("independent_for") or [])
+    ))
+
+
 def build_provenance(row: dict, generated_at: str | None = None) -> dict:
     sources = [str(x).strip() for x in (row.get("data_sources") or []) if str(x).strip()]
     descriptors = [_source_descriptor(name) for name in sources]
     families = list(dict.fromkeys(d["family"] for d in descriptors))
-    independent_families = list(dict.fromkeys(
-        d["family"] for d in descriptors if d["independent"]
-    ))
+    fundamental_families = _families_for_domain(descriptors, "fundamentals")
+    domain_families = {
+        domain: _families_for_domain(descriptors, domain)
+        for domain in ("fundamentals", "market", "estimates", "insider", "political_disclosure", "capital_structure")
+    }
+    domain_families = {k: v for k, v in domain_families.items() if v}
 
     agreement_checks = row.get("source_agreement_checks")
     try:
@@ -85,13 +145,18 @@ def build_provenance(row: dict, generated_at: str | None = None) -> dict:
         agreement_pct = None
 
     out = {
-        "schema_version": 1,
+        "schema_version": 2,
         "evidence_state": _evidence_state(row),
         "sources": descriptors,
         "source_count": len(descriptors),
         "source_families": families,
-        "independent_source_count": len(independent_families),
-        "independent_source_families": independent_families,
+        "independent_fundamental_source_count": len(fundamental_families),
+        "independent_fundamental_source_families": fundamental_families,
+        # Backward-compatible aliases now explicitly scoped to fundamentals.
+        "independent_source_count": len(fundamental_families),
+        "independent_source_families": fundamental_families,
+        "independent_source_scope": "fundamentals",
+        "independent_source_families_by_domain": domain_families,
         "agreement_checks": agreement_checks,
         "agreement_pct": agreement_pct,
         "filing_periods": _filing_periods(row),
@@ -133,9 +198,10 @@ def main() -> None:
         if isinstance(row, dict) and normalize_row(row, generated_at)
     )
     payload["provenance_normalization"] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "canonical_congress_source": OFFICIAL_CONGRESS_SOURCE,
         "row_contract": "data_provenance",
+        "independent_source_scope": "fundamentals",
         "rows_changed": changed,
     }
     STOCKS.write_text(json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
