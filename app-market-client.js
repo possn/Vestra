@@ -22,7 +22,7 @@
   }
 
   async function fetchWithTimeout(url, options={}, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
-    // AbortSignal.timeout is concise but Safari can surface it merely as
+    // The built-in timeout signal is concise but Safari can surface it merely as
     // "Fetch is aborted", which made Vestra report the Worker as inaccessible.
     // An explicit controller lets us distinguish our own deadline from a real
     // network failure and always clear the timer.
