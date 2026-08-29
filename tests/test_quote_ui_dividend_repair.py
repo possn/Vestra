@@ -19,12 +19,14 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     self.assertIn('asset.yahooTicker = _resolvedYahoo',a)
     self.assertIn('"OD7F.DE","OD7F"',a)
   def test_quote_errors_are_inline_not_modal_locked(self):
-    a=read('app.js'); css=read('styles.css')
+    a=read('app.js'); q=read('app-quote-errors.js')
     self.assertNotIn("openModal('modalQuoteErrors')",a)
     self.assertNotIn('openModal("modalQuoteErrors")',a)
-    self.assertIn("scrollIntoView({ behavior: 'smooth', block: 'start' })",a)
-    self.assertIn('quote-errors-inline__list',css)
-    self.assertIn('-webkit-overflow-scrolling: touch',css)
+    self.assertIn('showQuoteErrorSheetFromModal',q)
+    self.assertIn("close.addEventListener('click',closeQuoteErrorSheet)",q)
+    self.assertIn("document.body.classList.remove('modal-open')",q)
+    self.assertIn('-webkit-overflow-scrolling:touch',q)
+    self.assertIn('touch-action:manipulation',q)
   def test_broker_ttm_uses_post_wht_events_and_adjustments(self):
     a=read('app.js')
     self.assertIn('for (const e of events) {',a)
