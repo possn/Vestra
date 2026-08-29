@@ -42,13 +42,17 @@ class AppMarketClientTests(unittest.TestCase):
 
     def test_client_loads_before_app_and_is_cached(self):
         index=read("index.html")
-        self.assertLess(index.index('src="app-market-client.js'),index.index('src="app.js'))
-        self.assertIn('app-market-client.js?v=1.1',index)
-        self.assertIn('app.js?v=20260827v22',index)
+        client_pos=index.index('src="app-market-client.js')
+        errors_pos=index.index('src="app-quote-errors.js')
+        app_pos=index.index('src="app.js')
+        self.assertLess(client_pos,errors_pos)
+        self.assertLess(errors_pos,app_pos)
         sw=read("sw.js")
-        self.assertIn("Vestra Service Worker v10.11",sw)
-        self.assertIn("vestra-cache-v125",sw)
         self.assertIn('./app-market-client.js',sw)
+        self.assertIn('./app-quote-errors.js',sw)
+        self.assertIn('request.destination === "document"',sw)
+        self.assertIn('["script", "style", "worker", "manifest"]',sw)
+        self.assertIn('networkFirst(request)',sw)
 
     def test_quote_error_diagnostics_have_non_blocking_ios_bridge(self):
         q=read("app-quote-errors.js")
