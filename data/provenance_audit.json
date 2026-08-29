@@ -1,39 +1,45 @@
 {
-  "schema_version": 1,
-  "generated_at": "2026-08-29T14:33:31+00:00",
-  "pipeline_generated_at": "2026-08-29T14:30:53.517670Z",
+  "schema_version": 2,
+  "generated_at": "2026-08-29T16:18:57+00:00",
+  "pipeline_generated_at": "2026-08-29T16:15:44.996284Z",
+  "independent_source_scope": "fundamentals",
   "equities": {
-    "count": 1755,
-    "rows_with_provenance": 1755,
+    "count": 1710,
+    "rows_with_provenance": 1710,
     "provenance_coverage_pct": 100.0,
     "evidence_state": {
-      "observed": 1749,
+      "observed": 1704,
       "carried_forward": 6
     },
-    "independent_source_count": {
-      "3plus": 183,
-      "2": 1301,
-      "1": 265,
+    "independent_fundamental_source_count": {
+      "1": 1700,
+      "2": 4,
       "0": 6
     },
     "agreement": {
-      "not_measured": 1755
+      "not_measured": 1710
     },
     "official_filing_freshness": {
-      "no_official_filing_date": 1752,
+      "no_official_filing_date": 1706,
       "401_730d": 2,
-      "gt730d": 1
+      "gt730d": 1,
+      "191_400d": 1
     },
-    "official_filing_rows": 3,
+    "official_filing_rows": 4,
     "official_filing_coverage_pct": 0.2,
     "source_family_coverage": {
-      "yahoo": 1749,
-      "other": 1483,
+      "yahoo": 1704,
+      "sec_form4": 1284,
+      "analyst": 771,
       "stock_act": 181,
-      "esef": 3
+      "esef": 4
     },
-    "avg_latest_official_filing_age_days": 971.3,
-    "observed_pct": 99.7
+    "fundamental_source_family_coverage": {
+      "yahoo": 1704,
+      "esef": 4
+    },
+    "avg_latest_official_filing_age_days": 788.8,
+    "observed_pct": 99.6
   },
   "by_region": {
     "Canada": {
@@ -43,8 +49,8 @@
       "evidence_state": {
         "observed": 5
       },
-      "independent_source_count": {
-        "2": 5
+      "independent_fundamental_source_count": {
+        "1": 5
       },
       "agreement": {
         "not_measured": 5
@@ -55,7 +61,10 @@
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "other": 5,
+        "yahoo": 5,
+        "analyst": 5
+      },
+      "fundamental_source_family_coverage": {
         "yahoo": 5
       },
       "avg_latest_official_filing_age_days": null,
@@ -68,8 +77,8 @@
       "evidence_state": {
         "observed": 1
       },
-      "independent_source_count": {
-        "2": 1
+      "independent_fundamental_source_count": {
+        "1": 1
       },
       "agreement": {
         "not_measured": 1
@@ -80,7 +89,10 @@
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "other": 1,
+        "yahoo": 1,
+        "analyst": 1
+      },
+      "fundamental_source_family_coverage": {
         "yahoo": 1
       },
       "avg_latest_official_filing_age_days": null,
@@ -93,26 +105,30 @@
       "evidence_state": {
         "observed": 47
       },
-      "independent_source_count": {
-        "1": 23,
-        "3plus": 1,
-        "2": 23
+      "independent_fundamental_source_count": {
+        "1": 45,
+        "2": 2
       },
       "agreement": {
         "not_measured": 47
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 46,
-        "401_730d": 1
+        "no_official_filing_date": 45,
+        "401_730d": 1,
+        "191_400d": 1
       },
-      "official_filing_rows": 1,
-      "official_filing_coverage_pct": 2.1,
+      "official_filing_rows": 2,
+      "official_filing_coverage_pct": 4.3,
       "source_family_coverage": {
         "yahoo": 47,
-        "other": 24,
-        "esef": 1
+        "analyst": 24,
+        "esef": 2
       },
-      "avg_latest_official_filing_age_days": 606.0,
+      "fundamental_source_family_coverage": {
+        "yahoo": 47,
+        "esef": 2
+      },
+      "avg_latest_official_filing_age_days": 423.5,
       "observed_pct": 100.0
     },
     "Germany": {
@@ -123,9 +139,8 @@
         "observed": 53,
         "carried_forward": 6
       },
-      "independent_source_count": {
-        "1": 20,
-        "2": 33,
+      "independent_fundamental_source_count": {
+        "1": 53,
         "0": 6
       },
       "agreement": {
@@ -138,7 +153,10 @@
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
         "yahoo": 53,
-        "other": 33
+        "analyst": 32
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 53
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 89.8
@@ -150,9 +168,9 @@
       "evidence_state": {
         "observed": 40
       },
-      "independent_source_count": {
-        "2": 13,
-        "1": 27
+      "independent_fundamental_source_count": {
+        "1": 39,
+        "2": 1
       },
       "agreement": {
         "not_measured": 40
@@ -165,34 +183,40 @@
       "official_filing_coverage_pct": 2.5,
       "source_family_coverage": {
         "yahoo": 40,
-        "other": 12,
+        "analyst": 16,
+        "esef": 1
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 40,
         "esef": 1
       },
       "avg_latest_official_filing_age_days": 1702.0,
       "observed_pct": 100.0
     },
     "Netherlands": {
-      "count": 27,
-      "rows_with_provenance": 27,
+      "count": 26,
+      "rows_with_provenance": 26,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 27
+        "observed": 26
       },
-      "independent_source_count": {
-        "1": 17,
-        "2": 10
+      "independent_fundamental_source_count": {
+        "1": 26
       },
       "agreement": {
-        "not_measured": 27
+        "not_measured": 26
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 27
+        "no_official_filing_date": 26
       },
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "yahoo": 27,
-        "other": 10
+        "yahoo": 26,
+        "analyst": 11
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 26
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
@@ -204,8 +228,8 @@
       "evidence_state": {
         "observed": 2
       },
-      "independent_source_count": {
-        "2": 2
+      "independent_fundamental_source_count": {
+        "1": 2
       },
       "agreement": {
         "not_measured": 2
@@ -216,7 +240,10 @@
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "other": 2,
+        "yahoo": 2,
+        "analyst": 2
+      },
+      "fundamental_source_family_coverage": {
         "yahoo": 2
       },
       "avg_latest_official_filing_age_days": null,
@@ -229,9 +256,9 @@
       "evidence_state": {
         "observed": 9
       },
-      "independent_source_count": {
-        "2": 8,
-        "3plus": 1
+      "independent_fundamental_source_count": {
+        "1": 8,
+        "2": 1
       },
       "agreement": {
         "not_measured": 9
@@ -243,7 +270,11 @@
       "official_filing_rows": 1,
       "official_filing_coverage_pct": 11.1,
       "source_family_coverage": {
-        "other": 9,
+        "yahoo": 9,
+        "analyst": 9,
+        "esef": 1
+      },
+      "fundamental_source_family_coverage": {
         "yahoo": 9,
         "esef": 1
       },
@@ -257,9 +288,8 @@
       "evidence_state": {
         "observed": 39
       },
-      "independent_source_count": {
-        "1": 21,
-        "2": 18
+      "independent_fundamental_source_count": {
+        "1": 39
       },
       "agreement": {
         "not_measured": 39
@@ -271,7 +301,10 @@
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
         "yahoo": 39,
-        "other": 18
+        "analyst": 21
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 39
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
@@ -283,8 +316,8 @@
       "evidence_state": {
         "observed": 1
       },
-      "independent_source_count": {
-        "2": 1
+      "independent_fundamental_source_count": {
+        "1": 1
       },
       "agreement": {
         "not_measured": 1
@@ -295,7 +328,10 @@
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "other": 1,
+        "yahoo": 1,
+        "analyst": 1
+      },
+      "fundamental_source_family_coverage": {
         "yahoo": 1
       },
       "avg_latest_official_filing_age_days": null,
@@ -308,9 +344,8 @@
       "evidence_state": {
         "observed": 22
       },
-      "independent_source_count": {
-        "1": 11,
-        "2": 11
+      "independent_fundamental_source_count": {
+        "1": 22
       },
       "agreement": {
         "not_measured": 22
@@ -322,61 +357,68 @@
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
         "yahoo": 22,
-        "other": 11
+        "analyst": 8
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 22
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
     },
     "United Kingdom": {
-      "count": 116,
-      "rows_with_provenance": 116,
+      "count": 113,
+      "rows_with_provenance": 113,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 116
+        "observed": 113
       },
-      "independent_source_count": {
-        "2": 55,
-        "1": 61
+      "independent_fundamental_source_count": {
+        "1": 113
       },
       "agreement": {
-        "not_measured": 116
+        "not_measured": 113
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 116
+        "no_official_filing_date": 113
       },
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "yahoo": 116,
-        "other": 55
+        "yahoo": 113,
+        "analyst": 57
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 113
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
     },
     "United States": {
-      "count": 1387,
-      "rows_with_provenance": 1387,
+      "count": 1346,
+      "rows_with_provenance": 1346,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 1387
+        "observed": 1346
       },
-      "independent_source_count": {
-        "3plus": 181,
-        "2": 1121,
-        "1": 85
+      "independent_fundamental_source_count": {
+        "1": 1346
       },
       "agreement": {
-        "not_measured": 1387
+        "not_measured": 1346
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 1387
+        "no_official_filing_date": 1346
       },
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "yahoo": 1387,
-        "other": 1302,
+        "yahoo": 1346,
+        "sec_form4": 1284,
+        "analyst": 584,
         "stock_act": 181
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 1346
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
@@ -384,231 +426,258 @@
   },
   "by_score_model": {
     "bank": {
-      "count": 71,
-      "rows_with_provenance": 71,
+      "count": 92,
+      "rows_with_provenance": 92,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 71
+        "observed": 92
       },
-      "independent_source_count": {
-        "1": 20,
-        "2": 45,
-        "3plus": 6
+      "independent_fundamental_source_count": {
+        "1": 91,
+        "2": 1
       },
       "agreement": {
-        "not_measured": 71
+        "not_measured": 92
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 70,
+        "no_official_filing_date": 91,
         "gt730d": 1
       },
       "official_filing_rows": 1,
-      "official_filing_coverage_pct": 1.4,
+      "official_filing_coverage_pct": 1.1,
       "source_family_coverage": {
-        "yahoo": 71,
-        "other": 50,
-        "stock_act": 6,
+        "yahoo": 92,
+        "sec_form4": 61,
+        "analyst": 48,
+        "stock_act": 9,
+        "esef": 1
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 92,
         "esef": 1
       },
       "avg_latest_official_filing_age_days": 1702.0,
       "observed_pct": 100.0
     },
     "biotech": {
-      "count": 129,
-      "rows_with_provenance": 129,
+      "count": 161,
+      "rows_with_provenance": 161,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 129
+        "observed": 161
       },
-      "independent_source_count": {
-        "2": 122,
-        "3plus": 7
+      "independent_fundamental_source_count": {
+        "1": 161
       },
       "agreement": {
-        "not_measured": 129
+        "not_measured": 161
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 129
+        "no_official_filing_date": 161
       },
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "other": 129,
-        "yahoo": 129,
-        "stock_act": 7
+        "yahoo": 161,
+        "sec_form4": 148,
+        "analyst": 66,
+        "stock_act": 9
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 161
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
     },
     "energy": {
-      "count": 81,
-      "rows_with_provenance": 81,
+      "count": 86,
+      "rows_with_provenance": 86,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 81
+        "observed": 86
       },
-      "independent_source_count": {
-        "2": 70,
-        "3plus": 5,
-        "1": 6
+      "independent_fundamental_source_count": {
+        "1": 86
       },
       "agreement": {
-        "not_measured": 81
+        "not_measured": 86
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 81
+        "no_official_filing_date": 86
       },
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "yahoo": 81,
-        "other": 75,
-        "stock_act": 5
+        "yahoo": 86,
+        "sec_form4": 67,
+        "analyst": 62,
+        "stock_act": 6
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 86
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
     },
     "general": {
-      "count": 1137,
-      "rows_with_provenance": 1137,
+      "count": 973,
+      "rows_with_provenance": 973,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 1131,
+        "observed": 967,
         "carried_forward": 6
       },
-      "independent_source_count": {
-        "3plus": 122,
-        "2": 803,
-        "1": 206,
+      "independent_fundamental_source_count": {
+        "1": 966,
+        "2": 1,
         "0": 6
       },
       "agreement": {
-        "not_measured": 1137
+        "not_measured": 973
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 1136,
+        "no_official_filing_date": 972,
         "401_730d": 1
       },
       "official_filing_rows": 1,
       "official_filing_coverage_pct": 0.1,
       "source_family_coverage": {
-        "yahoo": 1131,
-        "other": 925,
-        "stock_act": 121,
+        "yahoo": 967,
+        "sec_form4": 688,
+        "analyst": 368,
+        "stock_act": 101,
+        "esef": 1
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 967,
         "esef": 1
       },
       "avg_latest_official_filing_age_days": 606.0,
-      "observed_pct": 99.5
+      "observed_pct": 99.4
     },
     "growth_tech": {
-      "count": 184,
-      "rows_with_provenance": 184,
+      "count": 209,
+      "rows_with_provenance": 209,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 184
+        "observed": 209
       },
-      "independent_source_count": {
-        "3plus": 31,
-        "2": 148,
-        "1": 5
+      "independent_fundamental_source_count": {
+        "1": 209
       },
       "agreement": {
-        "not_measured": 184
+        "not_measured": 209
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 184
+        "no_official_filing_date": 209
       },
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "yahoo": 184,
-        "other": 179,
-        "stock_act": 31
+        "yahoo": 209,
+        "sec_form4": 187,
+        "analyst": 145,
+        "stock_act": 39
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 209
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
     },
     "insurance": {
-      "count": 39,
-      "rows_with_provenance": 39,
+      "count": 49,
+      "rows_with_provenance": 49,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 39
+        "observed": 49
       },
-      "independent_source_count": {
-        "2": 26,
-        "1": 11,
-        "3plus": 2
+      "independent_fundamental_source_count": {
+        "1": 48,
+        "2": 1
       },
       "agreement": {
-        "not_measured": 39
+        "not_measured": 49
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 39
+        "no_official_filing_date": 48,
+        "191_400d": 1
       },
-      "official_filing_rows": 0,
-      "official_filing_coverage_pct": 0.0,
+      "official_filing_rows": 1,
+      "official_filing_coverage_pct": 2.0,
       "source_family_coverage": {
-        "yahoo": 39,
-        "other": 28,
-        "stock_act": 2
+        "yahoo": 49,
+        "sec_form4": 30,
+        "analyst": 17,
+        "stock_act": 4,
+        "esef": 1
       },
-      "avg_latest_official_filing_age_days": null,
+      "fundamental_source_family_coverage": {
+        "yahoo": 49,
+        "esef": 1
+      },
+      "avg_latest_official_filing_age_days": 241.0,
       "observed_pct": 100.0
     },
     "reit": {
-      "count": 59,
-      "rows_with_provenance": 59,
+      "count": 71,
+      "rows_with_provenance": 71,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 59
+        "observed": 71
       },
-      "independent_source_count": {
-        "2": 51,
-        "3plus": 3,
-        "1": 5
+      "independent_fundamental_source_count": {
+        "1": 71
       },
       "agreement": {
-        "not_measured": 59
+        "not_measured": 71
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 59
+        "no_official_filing_date": 71
       },
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "yahoo": 59,
-        "other": 54,
-        "stock_act": 3
+        "yahoo": 71,
+        "sec_form4": 59,
+        "analyst": 36,
+        "stock_act": 5
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 71
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
     },
     "utility": {
-      "count": 55,
-      "rows_with_provenance": 55,
+      "count": 69,
+      "rows_with_provenance": 69,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 55
+        "observed": 69
       },
-      "independent_source_count": {
-        "2": 36,
-        "3plus": 7,
-        "1": 12
+      "independent_fundamental_source_count": {
+        "1": 68,
+        "2": 1
       },
       "agreement": {
-        "not_measured": 55
+        "not_measured": 69
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 54,
+        "no_official_filing_date": 68,
         "401_730d": 1
       },
       "official_filing_rows": 1,
-      "official_filing_coverage_pct": 1.8,
+      "official_filing_coverage_pct": 1.4,
       "source_family_coverage": {
-        "yahoo": 55,
-        "other": 43,
-        "stock_act": 6,
+        "yahoo": 69,
+        "sec_form4": 44,
+        "analyst": 29,
+        "stock_act": 8,
+        "esef": 1
+      },
+      "fundamental_source_family_coverage": {
+        "yahoo": 69,
         "esef": 1
       },
       "avg_latest_official_filing_age_days": 606.0,
@@ -625,8 +694,8 @@
       "coverage_pct": 0.0,
       "score_reliability": null,
       "evidence_state": "carried_forward",
-      "independent_source_count": 0,
-      "independent_source_families": [],
+      "independent_fundamental_source_count": 0,
+      "independent_fundamental_source_families": [],
       "agreement_checks": 0,
       "agreement_pct": null,
       "latest_official_filing_age_days": null
@@ -640,8 +709,8 @@
       "coverage_pct": 0.0,
       "score_reliability": null,
       "evidence_state": "carried_forward",
-      "independent_source_count": 0,
-      "independent_source_families": [],
+      "independent_fundamental_source_count": 0,
+      "independent_fundamental_source_families": [],
       "agreement_checks": 0,
       "agreement_pct": null,
       "latest_official_filing_age_days": null
@@ -655,8 +724,8 @@
       "coverage_pct": 0.0,
       "score_reliability": null,
       "evidence_state": "carried_forward",
-      "independent_source_count": 0,
-      "independent_source_families": [],
+      "independent_fundamental_source_count": 0,
+      "independent_fundamental_source_families": [],
       "agreement_checks": 0,
       "agreement_pct": null,
       "latest_official_filing_age_days": null
@@ -670,8 +739,8 @@
       "coverage_pct": 0.0,
       "score_reliability": null,
       "evidence_state": "carried_forward",
-      "independent_source_count": 0,
-      "independent_source_families": [],
+      "independent_fundamental_source_count": 0,
+      "independent_fundamental_source_families": [],
       "agreement_checks": 0,
       "agreement_pct": null,
       "latest_official_filing_age_days": null
@@ -685,8 +754,8 @@
       "coverage_pct": 0.0,
       "score_reliability": null,
       "evidence_state": "carried_forward",
-      "independent_source_count": 0,
-      "independent_source_families": [],
+      "independent_fundamental_source_count": 0,
+      "independent_fundamental_source_families": [],
       "agreement_checks": 0,
       "agreement_pct": null,
       "latest_official_filing_age_days": null
@@ -700,8 +769,25 @@
       "coverage_pct": 0.0,
       "score_reliability": null,
       "evidence_state": "carried_forward",
-      "independent_source_count": 0,
-      "independent_source_families": [],
+      "independent_fundamental_source_count": 0,
+      "independent_fundamental_source_families": [],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BITF",
+      "name": "BITF",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 0.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
       "agreement_checks": 0,
       "agreement_pct": null,
       "latest_official_filing_age_days": null
@@ -715,8 +801,8 @@
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -724,84 +810,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "BUG",
-      "name": "BUG",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CALF",
-      "name": "CALF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CIBR",
-      "name": "CIBR",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CLOU",
-      "name": "CLOU",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CNDX.L",
-      "name": "CNDX.L",
+      "ticker": "COPA.L",
+      "name": "WISDOMTREE COMMODITY SECURITIES",
       "region": "United Kingdom",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -809,16 +827,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "CNRG",
-      "name": "CNRG",
-      "region": "United States",
+      "ticker": "DN3.DE",
+      "name": "DN3.DE",
+      "region": "Germany",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -826,33 +844,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "COPX",
-      "name": "COPX",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CSPX.L",
-      "name": "CSPX.L",
+      "ticker": "EGLN.L",
+      "name": "ISHARES PHYSICAL METALS PLC ISH",
       "region": "United Kingdom",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -860,16 +861,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "DFEN",
-      "name": "DFEN",
-      "region": "United States",
+      "ticker": "IB1T.DE",
+      "name": "iSHARES DIGITAL ASSETS AG     O",
+      "region": "Germany",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -877,16 +878,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "DGRO",
-      "name": "DGRO",
+      "ticker": "IINN",
+      "name": "IINN",
       "region": "United States",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -894,16 +895,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "DGRW",
-      "name": "DGRW",
-      "region": "United States",
+      "ticker": "IPDM.L",
+      "name": "ISHARES PHYSICAL METALS PLC ISH",
+      "region": "United Kingdom",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -911,16 +912,33 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "HDV",
-      "name": "HDV",
-      "region": "United States",
+      "ticker": "IPLT.L",
+      "name": "ISHARES PHYSICAL METALS PLC ISH",
+      "region": "United Kingdom",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "ISLN.L",
+      "name": "ISHARES PHYSICAL METALS PLC ISH",
+      "region": "United Kingdom",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 0.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -936,8 +954,8 @@
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -945,16 +963,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "IVE",
-      "name": "IVE",
-      "region": "United States",
+      "ticker": "NGAS.L",
+      "name": "WISDOMTREE COMMODITY SECURITIES",
+      "region": "United Kingdom",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -962,16 +980,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "IVV",
-      "name": "IVV",
-      "region": "United States",
+      "ticker": "NICK.L",
+      "name": "WISDOMTREE COMMODITY SECURITIES",
+      "region": "United Kingdom",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -979,339 +997,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "IWD",
-      "name": "IWD",
-      "region": "United States",
+      "ticker": "OD7F.DE",
+      "name": "OD7F.DE",
+      "region": "Germany",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IWDA.AS",
-      "name": "IWDA.AS",
-      "region": "Netherlands",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IWF",
-      "name": "IWF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IWM",
-      "name": "IWM",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IWN",
-      "name": "IWN",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IWO",
-      "name": "IWO",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IXUS",
-      "name": "IXUS",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IYE",
-      "name": "IYE",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IYF",
-      "name": "IYF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IYH",
-      "name": "IYH",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IYM",
-      "name": "IYM",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IYR",
-      "name": "IYR",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IYW",
-      "name": "IYW",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "JEPI",
-      "name": "JEPI",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "JEPQ",
-      "name": "JEPQ",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "JNK",
-      "name": "JNK",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "KBE",
-      "name": "KBE",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "KMGLF",
-      "name": "KMGLF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "KWEB",
-      "name": "KWEB",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "PDBC",
-      "name": "PDBC",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -1320,49 +1015,15 @@
     },
     {
       "ticker": "PHAU.L",
-      "name": "PHAU.L",
+      "name": "WISDOMTREE METAL SECURITIES LIM",
       "region": "United Kingdom",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "PICK",
-      "name": "PICK",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "PPA",
-      "name": "PPA",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -1378,8 +1039,8 @@
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -1395,8 +1056,8 @@
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -1404,16 +1065,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "SKYY",
-      "name": "SKYY",
-      "region": "United States",
+      "ticker": "U9UA.DE",
+      "name": "U9UA.DE",
+      "region": "Germany",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -1421,16 +1082,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "SMH",
-      "name": "SMH",
-      "region": "United States",
+      "ticker": "VETH.DE",
+      "name": "VanEck ETP AG                 E",
+      "region": "Germany",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 0.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -1438,441 +1099,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "SMH.L",
-      "name": "SMH.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "SMIN.L",
-      "name": "SMIN.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "SMT.L",
-      "name": "SMT.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "SOXQ",
-      "name": "SOXQ",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "WMWWF",
-      "name": "WMWWF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "XAR",
-      "name": "XAR",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "XBI",
-      "name": "XBI",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "XLB",
-      "name": "XLB",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "XLC",
-      "name": "XLC",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 0.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "BTRW.L",
-      "name": "BTRW.L",
+      "ticker": "ALW.L",
+      "name": "ALLIANCE WITAN PLC ORD 2.5P",
       "region": "United Kingdom",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 3.3,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CA.PA",
-      "name": "CA.PA",
-      "region": "France",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CABK.MC",
-      "name": "CABK.MC",
-      "region": "Spain",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CNA.L",
-      "name": "CNA.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CPR.MI",
-      "name": "CPR.MI",
-      "region": "Italy",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "CTEC.L",
-      "name": "CTEC.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "DGE.L",
-      "name": "DGE.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "HEIA.AS",
-      "name": "HEIA.AS",
-      "region": "Netherlands",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "JD.L",
-      "name": "JD.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "KER.PA",
-      "name": "KER.PA",
-      "region": "France",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "KGF.L",
-      "name": "KGF.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "LAND.L",
-      "name": "LAND.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "PGEZF",
-      "name": "PGEZF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "PHSE",
-      "name": "PHSE",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "SN.L",
-      "name": "SN.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "WTB.L",
-      "name": "WTB.L",
-      "region": "United Kingdom",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 3.3,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "COL.MC",
-      "name": "COL.MC",
-      "region": "Spain",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 6.7,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -1881,15 +1117,151 @@
     },
     {
       "ticker": "CPPMF",
-      "name": "CPPMF",
+      "name": "Coppernico Metals Inc",
       "region": "United States",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 6.7,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "FCIT.L",
+      "name": "F&C INVESTMENT TRUST PLC ORD 6.",
+      "region": "United Kingdom",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 6.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "PCT.L",
+      "name": "POLAR CAPITAL TECHNOLOGY TRUST ",
+      "region": "United Kingdom",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 6.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "SEV",
+      "name": "Aptera Motors Corp.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 6.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "SMT.L",
+      "name": "SCOTTISH MORTGAGE INVESTMENT TR",
+      "region": "United Kingdom",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 6.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BBOX.L",
+      "name": "TRITAX BIG BOX REIT PLC ORD 1P",
+      "region": "United Kingdom",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 10.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BCHG",
+      "name": "Grayscale Bitcoin Cash Trust (B",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 10.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "RVII",
+      "name": "Robinhood Ventures Fund II",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 10.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "TCGX",
+      "name": "TCGX Acquisition Corp.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 10.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -1898,151 +1270,15 @@
     },
     {
       "ticker": "CTLDF",
-      "name": "CTLDF",
+      "name": "CONTROLADORA AXTEL SAB DE CV",
       "region": "United States",
       "score_model": "general",
       "pipeline_status": null,
-      "coverage_pct": 6.7,
+      "coverage_pct": 13.3,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "HBEIF",
-      "name": "HBEIF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 6.7,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "HER.MI",
-      "name": "HER.MI",
-      "region": "Italy",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 6.7,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "IVG.MI",
-      "name": "IVG.MI",
-      "region": "Italy",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 6.7,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "SLVRF",
-      "name": "SLVRF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 6.7,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "SNGCF",
-      "name": "SNGCF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 6.7,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "WGLIF",
-      "name": "WGLIF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 6.7,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "WLBMF",
-      "name": "WLBMF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 6.7,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "BTRMF",
-      "name": "BTRMF",
-      "region": "United States",
-      "score_model": "general",
-      "pipeline_status": null,
-      "coverage_pct": 10.0,
-      "score_reliability": "insufficient_data",
-      "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2058,8 +1294,8 @@
       "coverage_pct": 13.3,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2067,16 +1303,16 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "PHIA.AS",
-      "name": "PHIA.AS",
-      "region": "Netherlands",
+      "ticker": "ML.PA",
+      "name": "MICHELIN",
+      "region": "France",
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 13.3,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2092,8 +1328,93 @@
       "coverage_pct": 16.7,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "SAGU",
+      "name": "Shreya Acquisition Group",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 16.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "SNGCF",
+      "name": "Sanu Gold Corp.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 16.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "AMFN",
+      "name": "American Fusion Inc.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 20.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "FISV",
+      "name": "Fiserv, Inc.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 20.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "GLND",
+      "name": "Greenland Energy Company",
+      "region": "United States",
+      "score_model": "energy",
+      "pipeline_status": null,
+      "coverage_pct": 20.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2109,8 +1430,8 @@
       "coverage_pct": 20.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2126,8 +1447,8 @@
       "coverage_pct": 20.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2143,8 +1464,246 @@
       "coverage_pct": 23.3,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "CSTPF",
+      "name": "Arrow Expl Corp.",
+      "region": "United States",
+      "score_model": "energy",
+      "pipeline_status": null,
+      "coverage_pct": 26.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BIII",
+      "name": "Black Spade Acquisition III Co",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 30.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BRKH",
+      "name": "Burtech Acquisition Corp II",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 30.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BYDDY",
+      "name": "BYD Co., Ltd.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 30.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "NMAD",
+      "name": "Nomad Power Solutions, Inc.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 30.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "JMGI.L",
+      "name": "JPMORGAN EMERGING MARKETS GROWT",
+      "region": "United Kingdom",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 33.3,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "QRED",
+      "name": "QuasarEdge Acquisition Corporat",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 33.3,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "WATR",
+      "name": "Air Water Ventures Limited",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 33.3,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "USDE",
+      "name": "StablecoinX Inc.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 36.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "VRXA",
+      "name": "Veraxa Biotech AG",
+      "region": "United States",
+      "score_model": "biotech",
+      "pipeline_status": null,
+      "coverage_pct": 36.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "AMCI",
+      "name": "AMC Robotics Corporation",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 40.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BCAR",
+      "name": "D. Boral ARC Acquisition I Corp",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 40.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BRR",
+      "name": "ProCap Financial, Inc.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 40.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "ENGS",
+      "name": "Energys Group Limited",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 40.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2160,8 +1719,59 @@
       "coverage_pct": 40.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "ZSQR",
+      "name": "Z Squared Inc.",
+      "region": "United States",
+      "score_model": "growth_tech",
+      "pipeline_status": null,
+      "coverage_pct": 40.0,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BKRKF",
+      "name": "Bank Rakyat",
+      "region": "United States",
+      "score_model": "bank",
+      "pipeline_status": null,
+      "coverage_pct": 43.3,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "PHSE",
+      "name": "Pride Holdings Group",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 43.3,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2177,8 +1787,76 @@
       "coverage_pct": 43.3,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "AIOS",
+      "name": "AIOS Tech Inc.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 46.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BCBP",
+      "name": "BCB Bancorp, Inc. (NJ)",
+      "region": "United States",
+      "score_model": "bank",
+      "pipeline_status": null,
+      "coverage_pct": 46.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BGEO.L",
+      "name": "LION FINANCE GROUP PLC ORD 1P",
+      "region": "United Kingdom",
+      "score_model": "bank",
+      "pipeline_status": null,
+      "coverage_pct": 46.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "CNXU",
+      "name": "Conexeu Sciences Inc.",
+      "region": "United States",
+      "score_model": "biotech",
+      "pipeline_status": null,
+      "coverage_pct": 46.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2194,8 +1872,59 @@
       "coverage_pct": 46.7,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "NTHI",
+      "name": "NeOnc Technologies Holdings, In",
+      "region": "United States",
+      "score_model": "biotech",
+      "pipeline_status": null,
+      "coverage_pct": 46.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "PNBK",
+      "name": "Patriot National Bancorp Inc.",
+      "region": "United States",
+      "score_model": "bank",
+      "pipeline_status": null,
+      "coverage_pct": 46.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "PSH.L",
+      "name": "PERSHING SQUARE HOLDINGS LTD OR",
+      "region": "United Kingdom",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 46.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2211,8 +1940,8 @@
       "coverage_pct": 46.7,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2228,8 +1957,59 @@
       "coverage_pct": 50.0,
       "score_reliability": "limited_evidence",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "CBRS",
+      "name": "Cerebras Systems Inc.",
+      "region": "United States",
+      "score_model": "growth_tech",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "COPR",
+      "name": "Idaho Copper Corporation",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "ELME",
+      "name": "Elme Communities",
+      "region": "United States",
+      "score_model": "reit",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2245,8 +2025,110 @@
       "coverage_pct": 50.0,
       "score_reliability": "limited_evidence",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "FNUC",
+      "name": "Frontier Nuclear and Minerals I",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "GGT",
+      "name": "Gabelli Multi-Media Trust, Inc.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "HDB",
+      "name": "HDFC Bank Limited",
+      "region": "United States",
+      "score_model": "bank",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "INVP.L",
+      "name": "INVESTEC PLC ORD GBP0.0002",
+      "region": "United Kingdom",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "KMGLF",
+      "name": "ASIAMET RESOURCES LTD",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "MB.MI",
+      "name": "MEDIOBANCA",
+      "region": "Italy",
+      "score_model": "bank",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2262,8 +2144,42 @@
       "coverage_pct": 50.0,
       "score_reliability": "limited_evidence",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "PVL",
+      "name": "Permianville Royalty Trust",
+      "region": "United States",
+      "score_model": "energy",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "QUCY",
+      "name": "Quantum Cyber N.V.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2279,8 +2195,76 @@
       "coverage_pct": 50.0,
       "score_reliability": "limited_evidence",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "RNA",
+      "name": "Atrium Therapeutics, Inc.",
+      "region": "United States",
+      "score_model": "biotech",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "SHMD",
+      "name": "SCHMID Group N.V.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "USBC",
+      "name": "USBC, Inc.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "VIVO",
+      "name": "VivoPower PLC",
+      "region": "United States",
+      "score_model": "growth_tech",
+      "pipeline_status": null,
+      "coverage_pct": 50.0,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
@@ -2296,8 +2280,93 @@
       "coverage_pct": 53.3,
       "score_reliability": "limited_evidence",
       "evidence_state": "observed",
-      "independent_source_count": 1,
-      "independent_source_families": [
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "ANKOF",
+      "name": "Angkor Resources Corp.",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 53.3,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "ANSNF",
+      "name": "Anson Resources",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 53.3,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BGM",
+      "name": "BGM Group Ltd.",
+      "region": "United States",
+      "score_model": "biotech",
+      "pipeline_status": null,
+      "coverage_pct": 53.3,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "CNTN",
+      "name": "Canton Strategic Holdings, Inc.",
+      "region": "United States",
+      "score_model": "biotech",
+      "pipeline_status": null,
+      "coverage_pct": 53.3,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "EARN",
+      "name": "Ellington Credit Company",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 53.3,
+      "score_reliability": "limited_evidence",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
         "yahoo"
       ],
       "agreement_checks": 0,
