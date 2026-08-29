@@ -13,7 +13,7 @@ SPEC.loader.exec_module(mod)
 
 
 class DataProvenanceTests(unittest.TestCase):
-    def test_observed_row_keeps_independent_source_families(self):
+    def test_observed_row_keeps_independent_fundamental_source_families(self):
         row = {
             "ticker": "ABC",
             "data_sources": ["Yahoo Finance", "SEC EDGAR", "Yahoo Statements (targeted)"],
@@ -24,14 +24,44 @@ class DataProvenanceTests(unittest.TestCase):
         changed = mod.normalize_row(row, "2026-08-29T06:00:00Z")
         self.assertTrue(changed)
         p = row["data_provenance"]
+        self.assertEqual(p["schema_version"], 2)
         self.assertEqual(p["evidence_state"], "observed")
         self.assertEqual(p["source_count"], 3)
-        self.assertEqual(p["independent_source_count"], 2)
-        self.assertEqual(p["independent_source_families"], ["yahoo", "sec_edgar"])
+        self.assertEqual(p["independent_fundamental_source_count"], 2)
+        self.assertEqual(p["independent_fundamental_source_families"], ["yahoo", "sec_edgar"])
+        self.assertEqual(p["independent_source_scope"], "fundamentals")
         self.assertEqual(p["agreement_checks"], 4)
         self.assertEqual(p["agreement_pct"], 100.0)
         self.assertEqual(p["filing_periods"]["sec_edgar"], "2026-06-30")
         self.assertEqual(p["pipeline_generated_at"], "2026-08-29T06:00:00Z")
+
+    def test_supplemental_domains_do_not_inflate_fundamental_confirmation(self):
+        row = {
+            "ticker": "ABC",
+            "data_sources": [
+                "Yahoo Finance", "Analyst feed", "SEC Form 4",
+                "SEC Capital Structure", mod.OFFICIAL_CONGRESS_SOURCE,
+            ],
+        }
+        mod.normalize_row(row)
+        p = row["data_provenance"]
+        self.assertEqual(p["independent_fundamental_source_count"], 1)
+        self.assertEqual(p["independent_fundamental_source_families"], ["yahoo"])
+        by_domain = p["independent_source_families_by_domain"]
+        self.assertEqual(by_domain["estimates"], ["analyst"])
+        self.assertEqual(by_domain["insider"], ["sec_form4"])
+        self.assertEqual(by_domain["capital_structure"], ["sec_edgar"])
+        self.assertEqual(by_domain["political_disclosure"], ["stock_act"])
+
+    def test_unknown_source_is_conservative_by_default(self):
+        row = {"data_sources": ["Yahoo Finance", "Future Experimental Feed"]}
+        mod.normalize_row(row)
+        p = row["data_provenance"]
+        self.assertEqual(p["independent_fundamental_source_count"], 1)
+        unknown = next(x for x in p["sources"] if x["name"] == "Future Experimental Feed")
+        self.assertEqual(unknown["family"], "other")
+        self.assertEqual(unknown["independent_for"], [])
+        self.assertFalse(unknown["independent"])
 
     def test_esef_identity_and_derived_metrics_are_explicit(self):
         row = {
@@ -71,6 +101,7 @@ class DataProvenanceTests(unittest.TestCase):
         self.assertIn(mod.OFFICIAL_CONGRESS_SOURCE, row["data_sources"])
         families = row["data_provenance"]["source_families"]
         self.assertIn("stock_act", families)
+        self.assertEqual(row["data_provenance"]["independent_fundamental_source_count"], 1)
 
         no_trades = {"data_sources": ["Yahoo Finance", "Bargo"], "congress_trades": []}
         mod.normalize_row(no_trades)
