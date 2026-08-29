@@ -5,31 +5,46 @@ ROOT=Path(__file__).resolve().parents[1]
 def read(p): return (ROOT/p).read_text(encoding="utf-8")
 
 class AppMarketClientTests(unittest.TestCase):
-    def test_client_owns_transport_fx_and_ios_safe_concurrency(self):
+    def test_client_owns_transport_fx_and_ios_safe_coalescing(self):
         s=read("app-market-client.js")
         for token in (
             "async function fetchQuote",
+            "async function fetchQuoteDirect",
             "async function fetchQuotesBatch",
             "async function fetchFxRates",
             "async function mapWithConcurrency",
             "FX_FALLBACK_LOCAL",
             "MAX_QUOTE_CONCURRENCY = 4",
             "DEFAULT_QUOTE_TIMEOUT_MS = 12000",
+            "BATCH_QUOTE_TIMEOUT_MS = 18000",
+            "BATCH_CHUNK_SIZE = 4",
+            "DIRECT_FALLBACK_CONCURRENCY = 2",
             "async function fetchWithTimeout",
             "new AbortController()",
             "controller.abort()",
             "Tempo limite do Worker",
-            "method:'POST'",
-            "JSON.stringify({tickers:chunk})",
-            "i+=80",
+            "method:'GET'",
+            "/quotes?tickers=",
+            "queueQuote",
+            "flushQuoteQueue",
+            "runDirectFallback",
         ):
             self.assertIn(token,s)
         self.assertIn("Math.min(requested,MAX_QUOTE_CONCURRENCY",s)
-        self.assertIn("`${base}/quotes`",s)
         self.assertIn("[404,405,501].includes(resp.status)",s)
-        self.assertIn("unsupported=true",s)
+        self.assertIn("batchSupport.set(base,false)",s)
         self.assertIn("window.VestraMarketClient",s)
         self.assertNotIn("AbortSignal.timeout",s)
+        self.assertNotIn("method:'POST'",s)
+        self.assertNotIn("JSON.stringify({tickers:chunk})",s)
+
+    def test_worker_batch_endpoint_matches_client_contract(self):
+        w=read("worker.js")
+        self.assertIn('if (url.pathname === "/quotes")',w)
+        self.assertIn('url.searchParams.get("tickers")',w)
+        self.assertIn('.slice(0, 20)',w)
+        self.assertIn('request.method !== "GET"',w)
+        self.assertIn('out[tickers[i]]',w)
 
     def test_app_imports_client_without_duplicate_implementations(self):
         app=read("app.js")
@@ -51,17 +66,18 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("autoRefreshQuotesIfStale()",app)
         self.assertIn('document.addEventListener("visibilitychange"',app)
 
-    def test_active_refresh_uses_proven_individual_quote_path(self):
+    def test_active_refresh_keeps_existing_fallback_and_sanity_path(self):
         app=read("app.js")
         self.assertIn("fetchQuoteWithFallback",app)
         self.assertIn("mapWithConcurrency(tickerList, 8, x => fetchQuoteWithFallback(x))",app)
-        # The caller may request 8, but the transport owns the effective ceiling (4).
         client=read("app-market-client.js")
+        # app.js remains unaware of batching: transport coalesces fetchQuote calls.
         self.assertIn("MAX_QUOTE_CONCURRENCY = 4",client)
-        self.assertIn("Math.min(requested,MAX_QUOTE_CONCURRENCY",client)
-        # Batch transport remains available for compatibility but is not wired into app.js.
+        self.assertIn("return queueQuote(ticker,workerUrl,timeoutMs)",client)
         self.assertNotIn("fetchQuotesBatch(",app)
         self.assertIn('workerMode:"individual"',app)
+        # Price sanity remains in app.js; the transport must never bypass it.
+        self.assertIn("Cotação suspeita rejeitada",app)
 
     def test_auto_refresh_policy_is_stale_only_and_reuses_same_gate(self):
         app=read("app.js")
