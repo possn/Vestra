@@ -51,15 +51,15 @@ class RuntimeRegressionTests(unittest.TestCase):
         for module in modules:
             self.assertIn(f"node --check {module}", workflow, f"CI does not syntax-check {module}")
 
-    def test_quote_errors_are_inline_not_modal_locked(self):
-        app = read("app.js")
-        marker = "const btnQuoteErrors = document.getElementById('btnQuoteErrors')"
-        start = app.find(marker)
-        self.assertGreaterEqual(start, 0)
-        segment = app[start:start + 1400]
-        self.assertIn("renderQuoteErrorsInline(true)", segment)
-        self.assertNotIn("openModal('modalQuoteErrors')", segment)
-        self.assertNotIn('openModal("modalQuoteErrors")', segment)
+    def test_quote_errors_are_not_modal_locked(self):
+        quote_ui = read("app-quote-errors.js")
+        self.assertIn("showQuoteErrorSheetFromModal", quote_ui)
+        self.assertIn("closeQuoteErrorSheet", quote_ui)
+        self.assertIn("MutationObserver", quote_ui)
+        self.assertIn("document.body.classList.remove('modal-open')", quote_ui)
+        self.assertIn("-webkit-overflow-scrolling:touch", quote_ui)
+        self.assertIn("releaseBodyLock(modal)", quote_ui)
+        self.assertIn("z-index:1002", quote_ui)
 
     def test_broker_rebuild_schema_contains_latest_dividend_repair(self):
         app = read("app.js")
