@@ -6,7 +6,7 @@ and exposes a conservative resolver for Yahoo-style ``*.L`` tickers.
 
 No fuzzy company-name matching is allowed. Ambiguous TIDMs are discarded.
 Network or workbook failures degrade to ``None`` and never block the pipeline.
-Spreadsheet dependencies are imported lazily so architecture tests stay light.
+HTTP/spreadsheet dependencies are imported lazily so architecture tests stay light.
 """
 from __future__ import annotations
 
@@ -14,8 +14,6 @@ import io
 import logging
 import re
 from urllib.parse import urljoin
-
-import requests
 
 log = logging.getLogger("lse_identity")
 
@@ -33,7 +31,8 @@ _DOWNLOAD_RE = re.compile(
 _CACHE: dict[str, str] | None = None
 
 
-def _session() -> requests.Session:
+def _session():
+    import requests
     s = requests.Session()
     s.headers.update({"User-Agent": UA, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"})
     return s
@@ -43,7 +42,7 @@ def _norm_col(value) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(value or "").strip().lower()).strip()
 
 
-def _discover_workbook_urls(session: requests.Session) -> list[str]:
+def _discover_workbook_urls(session) -> list[str]:
     try:
         r = session.get(LSE_SECURITIES_PAGE, timeout=25)
         r.raise_for_status()
@@ -103,7 +102,7 @@ def _pairs_from_workbook(content: bytes) -> list[tuple[str, str]]:
     return pairs
 
 
-def build_map(session: requests.Session | None = None) -> dict[str, str]:
+def build_map(session=None) -> dict[str, str]:
     s = session or _session()
     candidates: dict[str, set[str]] = {}
     urls = _discover_workbook_urls(s)
@@ -123,14 +122,14 @@ def build_map(session: requests.Session | None = None) -> dict[str, str]:
     return resolved
 
 
-def get_map(session: requests.Session | None = None, refresh: bool = False) -> dict[str, str]:
+def get_map(session=None, refresh: bool = False) -> dict[str, str]:
     global _CACHE
     if refresh or _CACHE is None:
         _CACHE = build_map(session)
     return _CACHE
 
 
-def resolve_isin(ticker: str, session: requests.Session | None = None) -> str | None:
+def resolve_isin(ticker: str, session=None) -> str | None:
     text = str(ticker or "").strip().upper()
     if not text.endswith(".L"):
         return None
