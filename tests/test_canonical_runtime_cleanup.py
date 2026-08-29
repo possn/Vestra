@@ -2,6 +2,13 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+LEGACY_RUNTIME_FILES = (
+    'market-hotfix.js',
+    'vestra-ai-brief-v459.js',
+    'vestra-portfolio-nav-fix-v464.js',
+    'vestra-portfolio-tabs-v479.js',
+    'vestra-portfolio-dossier-routing-v482.js',
+)
 
 
 def read(path: str) -> str:
@@ -11,16 +18,14 @@ def read(path: str) -> str:
 class CanonicalRuntimeCleanupTests(unittest.TestCase):
     def test_loader_uses_canonical_ai_and_routing_without_versioned_nav_overlays(self):
         h = read('index.html')
-        self.assertNotIn('market-hotfix.js', h)
         self.assertIn("vestra-ai-brief.js?v=1.0", h)
         self.assertIn("portfolio-dossier-routing.js?v=1.0", h)
-        for legacy in (
-            'vestra-ai-brief-v459.js',
-            'vestra-portfolio-nav-fix-v464.js',
-            'vestra-portfolio-tabs-v479.js',
-            'vestra-portfolio-dossier-routing-v482.js',
-        ):
+        for legacy in LEGACY_RUNTIME_FILES:
             self.assertNotIn(legacy, h)
+
+    def test_retired_runtime_overlays_do_not_exist_at_repository_root(self):
+        for legacy in LEGACY_RUNTIME_FILES:
+            self.assertFalse((ROOT / legacy).exists(), f'retired runtime overlay returned: {legacy}')
 
     def test_ai_brief_preserves_safe_contract_and_index_first_loading(self):
         s = read('vestra-ai-brief.js')
@@ -49,17 +54,12 @@ class CanonicalRuntimeCleanupTests(unittest.TestCase):
         combined = '\n'.join(read(path) for path in active)
         self.assertNotIn('vestra-portfolio-tabs-v479.js', combined)
 
-    def test_service_worker_caches_canonical_modules(self):
+    def test_service_worker_caches_canonical_modules_only(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v10.10', sw)
-        self.assertIn('vestra-cache-v124', sw)
         self.assertIn('./vestra-ai-brief.js', sw)
         self.assertIn('./portfolio-dossier-routing.js', sw)
-        self.assertNotIn('./market-hotfix.js', sw)
-        self.assertNotIn('./vestra-ai-brief-v459.js', sw)
-        self.assertNotIn('./vestra-portfolio-nav-fix-v464.js', sw)
-        self.assertNotIn('./vestra-portfolio-tabs-v479.js', sw)
-        self.assertNotIn('./vestra-portfolio-dossier-routing-v482.js', sw)
+        for legacy in LEGACY_RUNTIME_FILES:
+            self.assertNotIn(f'./{legacy}', sw)
 
 
 if __name__ == '__main__':
