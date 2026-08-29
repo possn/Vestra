@@ -40,6 +40,37 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("fetchFxRates(ccysNeeded, workerUrl, FX_FALLBACK_LOCAL)",app)
         self.assertIn("FX_FALLBACK_LOCAL[ccy] || 1",app)
 
+    def test_app_has_one_quote_refresh_gate_for_manual_startup_and_foreground(self):
+        app=read("app.js")
+        self.assertEqual(app.count("let quoteRefreshPromise = null;"),1)
+        self.assertEqual(app.count("async function refreshLiveQuotes(options = {})"),1)
+        self.assertEqual(app.count("async function refreshLiveQuotesCore(options = {})"),1)
+        self.assertIn("if (quoteRefreshPromise) return quoteRefreshPromise;",app)
+        self.assertIn("refreshLiveQuotes({ manual: true })",app)
+        self.assertIn("refreshLiveQuotes({ manual: false })",app)
+        self.assertIn("autoRefreshQuotesIfStale()",app)
+        self.assertIn('document.addEventListener("visibilitychange"',app)
+
+    def test_active_refresh_uses_proven_individual_quote_path(self):
+        app=read("app.js")
+        self.assertIn("fetchQuoteWithFallback",app)
+        self.assertIn("mapWithConcurrency(tickerList, 8, x => fetchQuoteWithFallback(x))",app)
+        # The caller may request 8, but the transport owns the effective ceiling (4).
+        client=read("app-market-client.js")
+        self.assertIn("MAX_QUOTE_CONCURRENCY = 4",client)
+        self.assertIn("Math.min(requested,MAX_QUOTE_CONCURRENCY",client)
+        # Batch transport remains available for compatibility but is not wired into app.js.
+        self.assertNotIn("fetchQuotesBatch(",app)
+        self.assertIn('workerMode:"individual"',app)
+
+    def test_auto_refresh_policy_is_stale_only_and_reuses_same_gate(self):
+        app=read("app.js")
+        self.assertIn("const STALE_MS = 30 * 60 * 1000",app)
+        self.assertIn("const needsRefresh = (lastRefreshISO !== todayISO) || (msSinceRefresh > STALE_MS);",app)
+        self.assertIn("if (!needsRefresh) return;",app)
+        self.assertIn("refreshLiveQuotes({ manual: false })",app)
+        self.assertIn("state.settings.lastQuoteRefreshTs   = Date.now();",app)
+
     def test_client_loads_before_app_and_is_cached(self):
         index=read("index.html")
         client_pos=index.index('src="app-market-client.js')
