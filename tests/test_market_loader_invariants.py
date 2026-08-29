@@ -36,7 +36,15 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("dossiers-manifest.json", loader)
         self.assertIn("data/dossiers/", loader)
         self.assertIn("stocks.json?full=1", loader)
-        self.assertIn("version:'2.0'", loader)
+        self.assertIn("version:'2.1'", loader)
+
+    def test_dossier_opening_delegates_to_canonical_navigation(self):
+        loader = read("market-data-loader.js")
+        self.assertIn("function openDossier", loader)
+        self.assertIn("window.VestraNavigation", loader)
+        self.assertIn("nav?.openCompany", loader)
+        self.assertIn("openDossier(ticker,{sourceNode:row})", loader)
+        self.assertIn("openDossier(ticker,{origin:'market',sourceNode:jump})", loader)
 
     def test_legacy_full_dataset_is_only_explicit_dossier_emergency_fallback(self):
         loader = read("market-data-loader.js")

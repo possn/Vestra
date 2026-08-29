@@ -23,10 +23,12 @@ class NativeMarketLoadingTests(unittest.TestCase):
         self.assertNotIn('window.fetch =', loader)
         self.assertNotIn('sharedIndexPayload', loader)
         self.assertNotIn('requestUrl(', loader)
-        self.assertIn("version:'2.0'", loader)
+        self.assertIn("version:'2.1'", loader)
         self.assertIn('dossiers-manifest.json', loader)
         self.assertIn('data/dossiers/', loader)
         self.assertIn('data/stocks.json?full=1', loader)
+        self.assertIn('window.VestraNavigation', loader)
+        self.assertIn('openDossier', loader)
 
     def test_runtime_market_consumers_are_index_first(self):
         for path in (

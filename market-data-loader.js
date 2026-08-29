@@ -1,4 +1,4 @@
-/* Vestra Market Data Loader v2.0 — lazy dossier hydration only; no global fetch interception. */
+/* Vestra Market Data Loader v2.1 — lazy dossier hydration; opening delegated to canonical navigation when available. */
 (() => {
   'use strict';
 
@@ -125,8 +125,16 @@
     const id=setInterval(()=>{ if(installApiWrapper()||++tries>80) clearInterval(id); },50);
   }
 
-  // Capture dossier-opening clicks before market.js' bubble listener. This lets us
-  // hydrate the shared stock object first, then invoke the original dossier renderer.
+  function openDossier(ticker,options={}){
+    const tk=tickerKey(ticker);
+    if(!tk) return Promise.resolve(false);
+    const nav=window.VestraNavigation;
+    if(nav?.openCompany) return Promise.resolve(nav.openCompany(tk,options));
+    return hydrateTicker(tk).then(()=>window.VestraMarket?.openTicker?.(tk)).then(()=>true,()=>false);
+  }
+
+  // Capture dossier-opening clicks before market.js' bubble listener. Hydration is
+  // owned by the wrapped Market API; origin/return state is owned by VestraNavigation.
   document.addEventListener('click',e=>{
     if(bypassClick) return;
     const row=e.target.closest?.('[data-market-ticker]');
@@ -134,10 +142,7 @@
       const ticker=tickerKey(row.dataset.marketTicker);
       if(!ticker) return;
       e.preventDefault(); e.stopImmediatePropagation();
-      hydrateTicker(ticker).finally(()=>{
-        const api=window.VestraMarket;
-        if(api?.openTicker) api.openTicker(ticker);
-      });
+      openDossier(ticker,{sourceNode:row});
       return;
     }
 
@@ -145,7 +150,7 @@
     if(jump?.dataset.decisionValue){
       const ticker=tickerKey(jump.dataset.decisionValue);
       e.preventDefault(); e.stopImmediatePropagation();
-      hydrateTicker(ticker).finally(()=>window.VestraMarket?.openTicker?.(ticker));
+      openDossier(ticker,{origin:'market',sourceNode:jump});
       return;
     }
 
@@ -164,9 +169,9 @@
     const ticker=tickerKey(e.target.value);
     if(!ticker) return;
     e.preventDefault(); e.stopImmediatePropagation();
-    hydrateTicker(ticker).finally(()=>window.VestraMarket?.openTicker?.(ticker));
+    openDossier(ticker,{origin:'market',sourceNode:e.target});
   },true);
 
   ensureApiWrapper();
-  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,version:'2.0'};
+  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,openDossier,version:'2.1'};
 })();

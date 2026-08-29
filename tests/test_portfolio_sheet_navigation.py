@@ -21,14 +21,27 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
             'closePortfolioToMarket()',
             'cleanupPortfolioChrome()',
             'market-close-persistent',
+            'window.VestraNavigation',
+            'openCompany',
         ): self.assertIn(token,s)
         self.assertEqual(s.count('new MutationObserver'),1)
         self.assertIn('window.VestraPortfolioSheetNavigation',s)
 
-    def test_ticker_decoration_stays_separate(self):
+    def test_latest_navigation_request_wins_before_dossier_open(self):
+        s=read("portfolio-sheet-navigation.js")
+        hydrate=s.index("await Promise.resolve(hydrate(tk))")
+        first_guard=s.index("if(request!==navigationSequence) return false;",hydrate)
+        open_call=s.index("await Promise.resolve(api.openTicker(tk))",first_guard)
+        self.assertLess(hydrate,first_guard)
+        self.assertLess(first_guard,open_call)
+        self.assertIn("const request=++navigationSequence",s)
+
+    def test_ticker_decoration_stays_separate_and_delegates_navigation(self):
         routing=read("portfolio-dossier-routing.js")
         self.assertIn('tickerFrom',routing)
         self.assertIn('data-market-ticker',routing)
+        self.assertIn("window.VestraNavigation",routing)
+        self.assertIn("origin:'portfolio'",routing)
         self.assertNotIn('closePortfolioToMarket',routing)
 
 if __name__=='__main__': unittest.main(verbosity=2)
