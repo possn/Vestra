@@ -37,12 +37,12 @@ jobs:
         run: git diff --check
       - name: Commit repair
         run: |
-          if git diff --quiet -- app-asset-identity.js index.html tests/test_eu_quote_identity.py; then
+          if git diff --quiet -- app-asset-identity.js index.html tests; then
             echo 'EU quote identity repair already applied'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app-asset-identity.js index.html tests/test_eu_quote_identity.py
+          git add app-asset-identity.js index.html tests
           git commit -m 'fix: make EU broker quote identity exchange-aware'
           git push
