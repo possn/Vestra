@@ -51,7 +51,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         for module in modules:
             self.assertIn(f"node --check {module}", workflow, f"CI does not syntax-check {module}")
 
-    def test_quote_errors_are_not_modal_locked(self):
+    def test_quote_errors_are_inline_not_modal_locked(self):
         quote_ui = read("app-quote-errors.js")
         self.assertIn("showQuoteErrorSheetFromModal", quote_ui)
         self.assertIn("closeQuoteErrorSheet", quote_ui)
