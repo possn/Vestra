@@ -1,12 +1,49 @@
-/* Vestra Portfolio Sheet Navigation v1.0 — one sheet observer, one close/return rule. */
+/* Vestra Portfolio Sheet Navigation v1.1 — canonical dossier open origin + portfolio close/return rules. */
 (() => {
   'use strict';
-  const VERSION='1.0';
+  const VERSION='1.1';
   let pending=false;
   let openingFromPortfolio=false;
+  let navigationSequence=0;
 
+  const txt=v=>String(v??'').trim();
   const sheet=()=>document.getElementById('marketSheet');
   const content=()=>document.getElementById('marketSheetContent');
+  const normalizeTicker=value=>txt(value).toUpperCase();
+
+  function inferOrigin(node){
+    const sh=sheet(), c=content();
+    if(node && sh && !sh.hidden && sh.dataset.tool==='portfolio' && c?.contains(node)) return 'portfolio';
+    return 'market';
+  }
+
+  function applyDossierOrigin(origin){
+    const sh=sheet();
+    if(!sh || sh.hidden || !sh.dataset.ticker) return;
+    if(origin==='portfolio'){
+      sh.dataset.tool='ticker-from-portfolio';
+      sh.dataset.returnView='portfolio';
+      openingFromPortfolio=false;
+      cleanupPortfolioChrome();
+      return;
+    }
+    if(sh.dataset.tool==='ticker-from-portfolio') sh.dataset.tool='';
+    if(sh.dataset.returnView==='portfolio') sh.dataset.returnView='';
+  }
+
+  async function openCompany(ticker,options={}){
+    const tk=normalizeTicker(ticker);
+    if(!tk) return false;
+    const api=window.VestraMarket;
+    if(!api?.openTicker) return false;
+    const origin=txt(options.origin)||inferOrigin(options.sourceNode);
+    const request=++navigationSequence;
+    try{ await Promise.resolve(api.openTicker(tk)); }
+    catch(err){ console.error('Vestra navigation openCompany',err); return false; }
+    if(request!==navigationSequence) return false;
+    applyDossierOrigin(origin);
+    return true;
+  }
 
   function cleanupPortfolioChrome(){
     const sh=sheet(), c=content();
@@ -24,10 +61,7 @@
     const sh=sheet();
     if(!sh||sh.hidden||!sh.dataset.ticker) return;
     if(openingFromPortfolio || sh.dataset.tool==='portfolio' || sh.dataset.returnView==='assets'){
-      sh.dataset.tool='ticker-from-portfolio';
-      sh.dataset.returnView='portfolio';
-      openingFromPortfolio=false;
-      cleanupPortfolioChrome();
+      applyDossierOrigin('portfolio');
     }
   }
 
@@ -128,6 +162,7 @@
     mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']});
   }
 
-  window.VestraPortfolioSheetNavigation={version:VERSION,repair,reopenPortfolioAnalysis,closePortfolioToMarket};
+  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,applyDossierOrigin,openCompany});
+  window.VestraPortfolioSheetNavigation={version:VERSION,repair,reopenPortfolioAnalysis,closePortfolioToMarket,openCompany};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
