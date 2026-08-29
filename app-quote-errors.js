@@ -1,4 +1,4 @@
-/* Vestra Quote Errors v1.0 — classify quote refresh failures for actionable diagnostics. */
+/* Vestra Quote Errors v1.1 — classify quote refresh failures and keep diagnostics dismissible. */
 (() => {
   'use strict';
 
@@ -6,7 +6,7 @@
     { key:'no_data', label:'Sem dados Yahoo', re:/sem dados|não foi possível obter uma cotação válida|no data|not found|404/i },
     { key:'identity', label:'Ticker / identidade', re:/ticker|isin|identidade|correspondência errada|sem ticker/i },
     { key:'delisted', label:'Delisted / ignorado', re:/delist|privat|acquired|merger|ignorado|skip/i },
-    { key:'network', label:'Rede / Worker', re:/worker|timeout|http\s*5\d\d|inacessível|network|fetch/i },
+    { key:'network', label:'Rede / Worker', re:/worker|tempo limite|timeout|http\s*5\d\d|inacessível|network|fetch/i },
     { key:'sanity', label:'Sanity de preço', re:/cotação suspeita|moeda .* não coincide|último preço fiável|cotação inválida/i },
   ];
 
@@ -33,5 +33,34 @@
     return {...base, category:c.key, categoryLabel:c.label};
   }
 
-  window.VestraQuoteErrors=Object.freeze({ version:'1.0', classifyQuoteError, summarizeQuoteErrors, decorateQuoteError });
+  // Defensive iOS/Safari close path. The app has a generic delegated modal
+  // closer, but quote diagnostics must never be able to trap the whole UI if
+  // that listener is missed or an older cached runtime leaves the modal open.
+  function forceCloseQuoteErrorsModal(event) {
+    const target=event?.target;
+    if(!(target instanceof Element)) return false;
+    const trigger=target.closest('[data-close="modalQuoteErrors"]');
+    if(!trigger) return false;
+    const modal=document.getElementById('modalQuoteErrors');
+    if(modal) modal.setAttribute('aria-hidden','true');
+    const anyOpen=[...document.querySelectorAll('.modal')]
+      .some(m=>m!==modal && m.getAttribute('aria-hidden')==='false');
+    if(!anyOpen) document.body.classList.remove('modal-open');
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return true;
+  }
+
+  document.addEventListener('click',forceCloseQuoteErrorsModal,true);
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape') return;
+    const modal=document.getElementById('modalQuoteErrors');
+    if(!modal || modal.getAttribute('aria-hidden')!=='false') return;
+    modal.setAttribute('aria-hidden','true');
+    const anyOpen=[...document.querySelectorAll('.modal')]
+      .some(m=>m!==modal && m.getAttribute('aria-hidden')==='false');
+    if(!anyOpen) document.body.classList.remove('modal-open');
+  },true);
+
+  window.VestraQuoteErrors=Object.freeze({ version:'1.1', classifyQuoteError, summarizeQuoteErrors, decorateQuoteError });
 })();
