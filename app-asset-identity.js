@@ -7,6 +7,9 @@
    448 ISINs covering all exchanges in the T212/XTB universe.
 ──────────────────────────────────────────────────────────────────────────── */
 const ISIN_YAHOO_MAP = {
+  // Exchange identity is authoritative for broker-imported instruments.
+  // Never allow a bare symbol to override an exact ISIN mapping: SHL/DG/ENR
+  // can resolve to unrelated instruments on other venues/providers.
   "IE00B8KQN827": "ETN",
   "IE00BJGWQN72": "WCLD.DE",
   "US7561091049":"O",    // Realty Income Corp
@@ -59,6 +62,12 @@ const ISIN_YAHOO_MAP = {
   "PTFRV0AE0004":"RAM.LS","PTGAL0AM0009":"GALP.LS","PTJMT0AE0001":"JMT.LS",
   "PTMEN0AE0005":"EGL.LS","PTPTC0AM0009":"PHR.LS","PTREL0AM0008":"RENE.LS",
   "PTSON0AM0001":"SON.LS",
+
+  "DE000SHL1006":"SHL.DE",
+
+  "DE000ENER6Y0":"ENR.DE",
+
+  "FR0000125486":"DG.PA",
 
   // === AUTO-ADDED: T212 ISIN→ticker mappings (all 460 unique ISINs) ===
   "CA90348V3011":"U9UA",
