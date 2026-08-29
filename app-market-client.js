@@ -1,4 +1,4 @@
-/* Vestra Market Client v1.1 — Worker batch quote transport, FX fallback and bounded concurrency. */
+/* Vestra Market Client v1.2 — resilient Worker quote transport, FX fallback and bounded concurrency. */
 (() => {
   'use strict';
 
@@ -7,17 +7,44 @@
     SEK:0.087, NOK:0.085, CAD:0.68, AUD:0.59, JPY:0.006, HKD:0.118
   });
 
+  // Safari/iOS is noticeably less tolerant of many simultaneous fetches to the
+  // same Worker, especially while the Worker itself is walking Yahoo fallbacks.
+  // Keep one transport-level ceiling even when callers request a higher value.
+  const MAX_QUOTE_CONCURRENCY = 4;
+  const DEFAULT_QUOTE_TIMEOUT_MS = 12000;
+
   const cleanWorkerUrl = workerUrl => String(workerUrl||'').replace(/\/$/,'');
 
-  async function fetchQuote(ticker, workerUrl, timeoutMs=7000) {
+  function isTimeoutError(err) {
+    const name=String(err?.name||'');
+    const msg=String(err?.message||'');
+    return name==='AbortError' || name==='TimeoutError' || /aborted|timeout|timed out/i.test(msg);
+  }
+
+  async function fetchWithTimeout(url, options={}, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
+    // AbortSignal.timeout is concise but Safari can surface it merely as
+    // "Fetch is aborted", which made Vestra report the Worker as inaccessible.
+    // An explicit controller lets us distinguish our own deadline from a real
+    // network failure and always clear the timer.
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(), Math.max(1000, Number(timeoutMs)||DEFAULT_QUOTE_TIMEOUT_MS));
+    try {
+      return await fetch(url,{...options,signal:controller.signal});
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function fetchQuote(ticker, workerUrl, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
     const base=cleanWorkerUrl(workerUrl);
     if(!base) throw new Error('Worker URL não configurado');
     const url=`${base}/quote?ticker=${encodeURIComponent(String(ticker||'').trim())}`;
     let resp;
     try {
-      resp=await fetch(url,{signal:AbortSignal.timeout(timeoutMs)});
+      resp=await fetchWithTimeout(url,{},timeoutMs);
     } catch(e) {
-      throw new Error(`Worker inacessível: ${e?.message||'timeout'}`);
+      if(isTimeoutError(e)) throw new Error(`Tempo limite do Worker (${Math.round(timeoutMs/1000)}s)`);
+      throw new Error(`Worker inacessível: ${e?.message||'erro de rede'}`);
     }
     let data=null;
     try { data=await resp.clone().json(); } catch(_) {}
@@ -29,7 +56,7 @@
     return data;
   }
 
-  async function fetchQuotesBatch(tickers, workerUrl, timeoutMs=9000) {
+  async function fetchQuotesBatch(tickers, workerUrl, timeoutMs=12000) {
     const base=cleanWorkerUrl(workerUrl);
     if(!base) throw new Error('Worker URL não configurado');
     const unique=[...new Set((tickers||[]).map(x=>String(x||'').trim().toUpperCase()).filter(Boolean))];
@@ -43,12 +70,11 @@
       let done=false;
       for(let attempt=0;attempt<2 && !done;attempt++){
         try {
-          const resp=await fetch(`${base}/quotes`,{
+          const resp=await fetchWithTimeout(`${base}/quotes`,{
             method:'POST',
             headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify({tickers:chunk}),
-            signal:AbortSignal.timeout(timeoutMs)
-          });
+            body:JSON.stringify({tickers:chunk})
+          },timeoutMs);
           let data=null;
           try { data=await resp.clone().json(); } catch(_) {}
           if([404,405,501].includes(resp.status)){
@@ -66,7 +92,9 @@
         }
       }
       if(!done){
-        const msg=`Worker inacessível: ${lastErr?.message||'timeout'}`;
+        const msg=isTimeoutError(lastErr)
+          ? `Tempo limite do Worker (${Math.round(timeoutMs/1000)}s)`
+          : `Worker inacessível: ${lastErr?.message||'erro de rede'}`;
         chunk.forEach(t=>{ if(!quotes[t]&&!errors[t]) errors[t]=msg; });
         if(unsupported) break;
       }
@@ -76,9 +104,11 @@
 
   async function mapWithConcurrency(items, concurrency, fn) {
     const list=Array.isArray(items)?items:[];
+    const requested=Math.max(1,Number(concurrency)||1);
+    const effective=Math.min(requested,MAX_QUOTE_CONCURRENCY,list.length||1);
     const out=new Array(list.length);
     let cursor=0;
-    const workers=Array.from({length:Math.max(1,Math.min(Number(concurrency)||1,list.length||1))},async()=>{
+    const workers=Array.from({length:effective},async()=>{
       while(true){
         const idx=cursor++;
         if(idx>=list.length)return;
@@ -95,7 +125,7 @@
     const rates={};
     await Promise.allSettled(ccys.map(async ccy=>{
       try {
-        const q=await fetchQuote(`EUR${ccy}=X`,workerUrl,5000);
+        const q=await fetchQuote(`EUR${ccy}=X`,workerUrl,8000);
         if(q&&Number(q.price)>0)rates[ccy]=1/Number(q.price);
       } catch(_) {}
     }));
@@ -104,8 +134,10 @@
   }
 
   window.VestraMarketClient=Object.freeze({
-    version:'1.1',
+    version:'1.2',
     FX_FALLBACK_LOCAL,
+    MAX_QUOTE_CONCURRENCY,
+    DEFAULT_QUOTE_TIMEOUT_MS,
     cleanWorkerUrl,
     fetchQuote,
     fetchQuotesBatch,
