@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def read(p): return (ROOT/p).read_text(encoding="utf-8")
 
 class AppMarketClientTests(unittest.TestCase):
-    def test_client_owns_batch_transport_fx_and_concurrency(self):
+    def test_client_owns_transport_fx_and_ios_safe_concurrency(self):
         s=read("app-market-client.js")
         for token in (
             "async function fetchQuote",
@@ -13,17 +13,23 @@ class AppMarketClientTests(unittest.TestCase):
             "async function fetchFxRates",
             "async function mapWithConcurrency",
             "FX_FALLBACK_LOCAL",
-            "timeoutMs=7000",
-            "AbortSignal.timeout(timeoutMs)",
+            "MAX_QUOTE_CONCURRENCY = 4",
+            "DEFAULT_QUOTE_TIMEOUT_MS = 12000",
+            "async function fetchWithTimeout",
+            "new AbortController()",
+            "controller.abort()",
+            "Tempo limite do Worker",
             "method:'POST'",
             "JSON.stringify({tickers:chunk})",
             "i+=80",
         ):
             self.assertIn(token,s)
+        self.assertIn("Math.min(requested,MAX_QUOTE_CONCURRENCY",s)
         self.assertIn("`${base}/quotes`",s)
         self.assertIn("[404,405,501].includes(resp.status)",s)
         self.assertIn("unsupported=true",s)
         self.assertIn("window.VestraMarketClient",s)
+        self.assertNotIn("AbortSignal.timeout",s)
 
     def test_app_imports_client_without_duplicate_implementations(self):
         app=read("app.js")
@@ -44,12 +50,14 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("vestra-cache-v125",sw)
         self.assertIn('./app-market-client.js',sw)
 
-    def test_quote_error_sheet_does_not_use_generic_body_lock(self):
-        app=read("app.js")
-        self.assertIn("function closeQuoteErrorDetails()",app)
-        self.assertIn("overflow-y:auto",app)
-        self.assertIn("-webkit-overflow-scrolling:touch",app)
-        self.assertIn("document.body.classList.remove('modal-open')",app)
-        self.assertNotIn("openModal('modalQuoteErrors')",app)
+    def test_quote_error_diagnostics_have_non_blocking_ios_bridge(self):
+        q=read("app-quote-errors.js")
+        self.assertIn("showQuoteErrorSheetFromModal",q)
+        self.assertIn("closeQuoteErrorSheet",q)
+        self.assertIn("MutationObserver",q)
+        self.assertIn("-webkit-overflow-scrolling:touch",q)
+        self.assertIn("document.body.classList.remove('modal-open')",q)
+        self.assertIn("data-close=\"modalQuoteErrors\"",q)
+        self.assertIn("pointer-events:auto",q)
 
 if __name__=='__main__': unittest.main(verbosity=2)
