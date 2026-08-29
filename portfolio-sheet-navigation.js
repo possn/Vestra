@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.1 — canonical dossier open origin + portfolio close/return rules. */
+/* Vestra Portfolio Sheet Navigation v1.2 — canonical dossier open origin + portfolio close/return rules. */
 (() => {
   'use strict';
-  const VERSION='1.1';
+  const VERSION='1.2';
   let pending=false;
   let openingFromPortfolio=false;
   let navigationSequence=0;
@@ -34,13 +34,23 @@
   async function openCompany(ticker,options={}){
     const tk=normalizeTicker(ticker);
     if(!tk) return false;
-    const api=window.VestraMarket;
-    if(!api?.openTicker) return false;
     const origin=txt(options.origin)||inferOrigin(options.sourceNode);
     const request=++navigationSequence;
-    try{ await Promise.resolve(api.openTicker(tk)); }
-    catch(err){ console.error('Vestra navigation openCompany',err); return false; }
-    if(request!==navigationSequence) return false;
+
+    try{
+      const hydrate=window.VestraMarketData?.hydrateTicker;
+      if(hydrate) await Promise.resolve(hydrate(tk));
+      if(request!==navigationSequence) return false;
+
+      const api=window.VestraMarket;
+      if(!api?.openTicker) return false;
+      await Promise.resolve(api.openTicker(tk));
+      if(request!==navigationSequence) return false;
+    }catch(err){
+      console.error('Vestra navigation openCompany',err);
+      return false;
+    }
+
     applyDossierOrigin(origin);
     return true;
   }
