@@ -3,7 +3,8 @@
  * Versão 4.3 — quotes + live market detail + deployment health
  */
 
-const CACHE_TTL = 300; // 5 minutos
+const QUOTE_CACHE_TTL = 60; // quotes: align with browser freshness
+const MARKET_CACHE_TTL = 1800; // market/fundamentals: 30 minutes
 
 const TICKER_ALIASES = {
   "MPW.US": "MPW",
@@ -135,7 +136,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           updated: new Date().toISOString(),
         };
         ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), {
-          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL}` }
+          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${QUOTE_CACHE_TTL}` }
         })));
         return result;
       }
@@ -148,7 +149,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
   ];
   for (const url of chartUrls) {
     try {
-      const json = await fetchJsonMaybe(url, { headers, cf: { cacheTtl: CACHE_TTL, cacheEverything: false } });
+      const json = await fetchJsonMaybe(url, { headers, cf: { cacheTtl: QUOTE_CACHE_TTL, cacheEverything: false } });
       const result0 = json?.chart?.result?.[0];
       const meta = result0?.meta;
       const closes = result0?.indicators?.quote?.[0]?.close || [];
@@ -171,7 +172,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           updated: new Date().toISOString(),
         };
         ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), {
-          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL}` }
+          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${QUOTE_CACHE_TTL}` }
         })));
         return result;
       }
@@ -206,7 +207,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           updated: new Date().toISOString(),
         };
         ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), {
-          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL}` }
+          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${QUOTE_CACHE_TTL}` }
         })));
         return result;
       }
@@ -234,7 +235,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           updated: new Date().toISOString(),
         };
         ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), {
-          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL}` }
+          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${QUOTE_CACHE_TTL}` }
         })));
         return result;
       }
@@ -468,7 +469,7 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   };
   for (const k of Object.keys(result)) if (typeof result[k] === 'number' && !Number.isFinite(result[k])) result[k] = null;
   ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), {
-    headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300" }
+    headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${MARKET_CACHE_TTL}` }
   })));
   return result;
 }
@@ -545,7 +546,7 @@ export default {
           version: "4.3",
           build_id: String(env?.BUILD_ID || "unknown"),
           capabilities: ["quote", "quotes", "market"],
-          quote_cache_ttl_seconds: CACHE_TTL
+          quote_cache_ttl_seconds: QUOTE_CACHE_TTL
         }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
       }
 
