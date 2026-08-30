@@ -8,7 +8,7 @@ Production Worker identified as:
 
 A GitHub Actions network audit was run against that exact endpoint from PR #51.
 
-Observed production behaviour:
+Observed production behaviour before the repository integration was corrected:
 
 - `GET /` -> HTTP 200, service identifies itself as `Vestra Market Proxy v4.2`.
 - `GET /quote?ticker=MSFT` -> HTTP 200.
@@ -23,22 +23,30 @@ Observed production behaviour:
 - Quote payloads expose `_cached` and `updated`; repeated probes showed the same cached generation timestamp.
 - The production root still advertises `/congress` endpoints, while the current source-controlled Worker has already removed that obsolete proxy.
 
-This proves deployment drift: the Worker currently serving production is not the same revision as the current `worker.js` in `main`.
+This proved deployment drift: the Worker serving production did not correspond to the current source-controlled `worker.js`.
 
-## Versioned deployment identity
+## Deployment identity and Git integration
 
 PR #51 introduces:
 
 - `wrangler.toml` with Worker name `delicate-bar-cc80` and `main = "worker.js"`;
-- `.github/workflows/deploy-cloudflare-worker.yml` as an explicit, manual production deployment boundary;
-- `scripts/verify_worker_deployment.py` and `.github/workflows/verify-cloudflare-worker.yml` for repeatable production verification.
+- `scripts/verify_worker_deployment.py` and `.github/workflows/verify-cloudflare-worker.yml` for repeatable production verification;
+- Worker v4.3 source with `/health` and deployment metadata support.
 
-The deploy workflow requires GitHub environment/repository secrets:
+The Cloudflare Worker is now connected directly to GitHub repository `possn/Vestra` using Cloudflare Workers Builds.
 
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
+Cloudflare configuration confirmed in the dashboard:
 
-No Cloudflare secret is committed to the repository.
+- Git repository: `possn/Vestra`;
+- Production branch: `main`;
+- Builds for non-production branches: enabled;
+- Deploy command: `npx wrangler deploy`;
+- Version command: `npx wrangler versions upload`;
+- Root directory: `/`;
+- Include paths: `*`;
+- Cloudflare-managed Workers Builds API token configured by Cloudflare.
+
+Because Cloudflare now owns GitHub-to-Worker deployment through its native Git integration, Vestra does **not** require `CLOUDFLARE_API_TOKEN` or `CLOUDFLARE_ACCOUNT_ID` GitHub Actions secrets. The temporary GitHub deploy workflow used during the audit was removed.
 
 ## Required production contract
 
@@ -57,9 +65,10 @@ Before expanding Worker responsibilities, production should expose a reproducibl
    - `POST /ai-brief`, when enabled, must consume only server-side secrets.
 
 3. **Deployment traceability**
-   - Deployment should be performed by the documented GitHub Actions workflow or an equivalent recorded Wrangler command.
-   - The deployed runtime should expose a harmless revision identifier such as `git_sha` or `build_id` at `/` or `/health`.
-   - The identifier should correspond to the Git commit that supplied `worker.js`.
+   - Production deployment is performed by Cloudflare Workers Builds from the connected GitHub repository.
+   - `main` is the production branch.
+   - Non-production branches may be built separately for validation without replacing production.
+   - The deployed runtime should expose a harmless revision identifier such as `git_sha` or `build_id` at `/` or `/health` when available.
 
 4. **Health endpoint**
    A production health response should identify capability without leaking secrets, for example:
@@ -92,13 +101,12 @@ Before expanding Worker responsibilities, production should expose a reproducibl
 
 ## Recommended rollout order
 
-1. Merge/version the deployment identity and verification tooling.
-2. Add `/health` plus deployed revision/build metadata to `worker.js`.
-3. Configure the two Cloudflare GitHub secrets and deploy the current Worker revision.
-4. Re-run the production verifier and confirm the obsolete `/congress` deployment has disappeared and `Vary: Origin` is present.
-5. Align quote TTL/freshness semantics and add stronger cache-age diagnostics.
-6. Regression-test `/quote`, `/quotes` and `/market` from the Vestra production origin and iOS PWA.
-7. Only then add `POST /ai-brief` and provider secrets.
+1. Merge/version the deployment identity and verification tooling into `main`.
+2. Allow Cloudflare Workers Builds to deploy the `main` revision automatically.
+3. Re-run the production verifier and confirm `/health`, v4.3, CORS and removal of the obsolete `/congress` deployment.
+4. Align quote TTL/freshness semantics and add stronger cache-age diagnostics.
+5. Regression-test `/quote`, `/quotes` and `/market` from the Vestra production origin and iOS PWA.
+6. Only then add `POST /ai-brief` and provider secrets.
 
 ## Acceptance checks
 
@@ -106,7 +114,7 @@ A Worker deployment is considered verified only when all of the following are tr
 
 - the repository identifies how `worker.js` is deployed;
 - the production URL is documented;
-- `/health` or `/` reports the expected deployed revision;
+- `/health` or `/` reports the expected deployed revision/version;
 - CORS succeeds from the Vestra production origin and rejects unrelated browser origins;
 - origin-dependent responses include `Vary: Origin`;
 - `/quote` and `/quotes` return equivalent identity-safe prices for the same instruments;
