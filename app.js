@@ -10635,12 +10635,16 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "
   return { ok:true };
 }
 
+const QUOTE_AUTO_REFRESH_STALE_MS = 60 * 1000;
 let quoteRefreshPromise = null;
+let quoteRefreshInProgress = false;
 async function refreshLiveQuotes(options = {}) {
   // One refresh at a time. Re-entering the app while a pass is already running
   // must reuse the same promise instead of starting hundreds of duplicate calls.
   if (quoteRefreshPromise) return quoteRefreshPromise;
   const manual = options && options.manual === true;
+  quoteRefreshInProgress = true;
+  try { renderQuoteSyncStatus(); } catch (_) {}
   quoteRefreshPromise = refreshLiveQuotesCore(options)
     .catch(err => {
       console.error('[Quotes] refresh failed', err);
@@ -10649,6 +10653,7 @@ async function refreshLiveQuotes(options = {}) {
     })
     .finally(() => {
       quoteRefreshPromise = null;
+      quoteRefreshInProgress = false;
       const btn = document.getElementById('btnRefreshQuotes');
       const quickBtn = document.getElementById('btnRefreshQuotesQuick');
       const syncCard = document.getElementById('quoteSyncCard');
@@ -11596,7 +11601,7 @@ function checkDuplicateWarning() {
    Chama refreshLiveQuotes automaticamente se:
    - O Worker URL estiver configurado
    - Houver activos com ticker
-   - A última actualização foi há mais de 30 minutos OU nunca foi hoje
+   - A última actualização foi há mais de 1 minuto OU nunca foi hoje
    ────────────────────────────────────────────────────────────── */
 function formatQuoteRefreshAge(ts) {
   if (!ts) return "Nunca atualizadas";
@@ -11619,10 +11624,11 @@ function renderQuoteSyncStatus() {
   const report = (state.settings && state.settings.lastQuoteRefresh) || null;
   const auto = !(state.settings && state.settings.autoRefreshQuotes === false);
   const ageMs = lastTs ? Date.now() - lastTs : Infinity;
-  card.classList.toggle("is-stale", ageMs > 30 * 60 * 1000);
+  card.classList.toggle("is-stale", ageMs > QUOTE_AUTO_REFRESH_STALE_MS);
   card.classList.toggle("is-error", !!(report && report.failed > 0));
-  status.textContent = workerUrl ? formatQuoteRefreshAge(lastTs) : "Worker por configurar";
-  if (!workerUrl) meta.textContent = "Configura em Mais → Preferências";
+  status.textContent = quoteRefreshInProgress ? "A atualizar…" : (workerUrl ? formatQuoteRefreshAge(lastTs) : "Worker por configurar");
+  if (quoteRefreshInProgress) meta.textContent = "A obter cotações mais recentes";
+  else if (!workerUrl) meta.textContent = "Configura em Mais → Preferências";
   else if (report && report.failed > 0) {
     const secs = report.durationMs ? ` · ${Math.max(1, Math.round(report.durationMs/1000))} s` : "";
     const skipped = report.skipped ? ` · ${report.skipped} ignoradas` : "";
@@ -11633,7 +11639,7 @@ function renderQuoteSyncStatus() {
     const skipped = report.skipped ? ` · ${report.skipped} ignoradas` : "";
     const mode = report.workerMode === "single" ? " · compatibilidade" : "";
     meta.textContent = `${report.updated} atualizadas${skipped}${mode}${secs} · automático`;
-  } else meta.textContent = auto ? "Automático · atualiza se >30 min" : "Automático desativado";
+  } else meta.textContent = auto ? "Automático · atualiza após 1 min" : "Automático desativado";
 
   const copy = card.querySelector('.quote-sync-card__copy');
   let errorBtn = copy && copy.querySelector('[data-quote-errors-open]');
@@ -11680,7 +11686,7 @@ function autoRefreshQuotesIfStale() {
   const lastRefreshISO = (state.settings && state.settings.lastQuoteRefreshDate) || "";
   const lastRefreshTs  = (state.settings && state.settings.lastQuoteRefreshTs)   || 0;
   const msSinceRefresh = Date.now() - lastRefreshTs;
-  const STALE_MS = 30 * 60 * 1000; // 30 minutos
+  const STALE_MS = QUOTE_AUTO_REFRESH_STALE_MS; // align with browser + Worker quote freshness
 
   const needsRefresh = (lastRefreshISO !== todayISO) || (msSinceRefresh > STALE_MS);
   if (!needsRefresh) return;
@@ -11791,7 +11797,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setTimeout(() => {
     try { autoSnapshotIfNeeded(); } catch (e) { console.error("Falha no auto snapshot", e); }
     try { checkAndNotifyMaturities(); } catch (e) { console.error("Falha nas notificações de vencimento", e); }
-    // Auto-refresh quotes if stale (>30min since last update or never updated today)
+    // Auto-refresh quotes if stale (>1 min since last update or never updated today)
     try { autoRefreshQuotesIfStale(); } catch (e) { console.error("Falha no auto-refresh de cotações", e); }
   }, 150);
   window.openDividendBaseModal = openDividendBaseModal;
