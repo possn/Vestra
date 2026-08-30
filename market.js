@@ -586,9 +586,42 @@
     return mapped.filter(([,v])=>v!=null);
   }
 
+  function scoreMetricValue(s,key,kind='pct'){
+    const value=n(s?.[key]);
+    if(value==null) return null;
+    if(kind==='num') return num(value);
+    if(kind==='compact') return compact(value);
+    if(kind==='multiple') return `${num(value)}×`;
+    return pct(value);
+  }
+
+  function pillarMetricSummary(s,label){
+    const defs={
+      'Qualidade':[['ROE','roe'],['ROA','roa'],['Margem líquida','profit_margin'],['Margem operacional','operating_margin'],['Margem bruta','gross_margin']],
+      'Crescimento':[['Receitas','revenue_growth'],['Lucros','earnings_growth'],['Lucros trimestrais','earnings_quarterly_growth']],
+      'Balanço':[['Current ratio','current_ratio','multiple'],['Quick ratio','quick_ratio','multiple'],['Debt / Equity','debt_to_equity','num'],['Net cash','net_cash','compact'],['Cobertura juros','interest_coverage','multiple']],
+      'Cash flow':[['FCF yield','fcf_yield'],['Cash flow operacional','operating_cash_flow','compact'],['Free cash flow','free_cash_flow','compact']],
+      'Valuation':[['P/E','trailing_pe','multiple'],['Forward P/E','forward_pe','multiple'],['P/B','price_to_book','multiple'],['EV/EBITDA','enterprise_to_ebitda','multiple'],['PEG','peg_ratio','multiple']],
+      'Execução':[['Receitas','revenue_growth'],['Lucros','earnings_growth'],['Margem operacional','operating_margin']],
+      'Qualidade dos lucros':[['Conversão caixa/lucro','cash_conversion_ratio','multiple'],['Accrual ratio','accrual_ratio'],['Margem FCF','fcf_margin']],
+      'Alocação de capital':[['Diluição YoY','diluted_shares_yoy'],['Buybacks último T','repurchases_last_quarter','compact'],['ROCE proxy','roce_proxy'],['Cobertura dividendo/FCF','dividend_fcf_coverage','multiple']],
+      'Estabilidade':[['Beta','beta','num']]
+    };
+    const metrics=defs[label]||[];
+    if(!metrics.length) return '';
+    const present=[]; let missing=0;
+    for(const [name,key,kind] of metrics){
+      const rendered=scoreMetricValue(s,key,kind||'pct');
+      if(rendered==null){ missing+=1; continue; }
+      present.push(`${esc(name)} <strong>${esc(rendered)}</strong>`);
+    }
+    const missingText=missing?` · ${missing} ${missing===1?'métrica em falta':'métricas em falta'}`:'';
+    return `<div class="market-dim__evidence">${present.length?present.join(' · '):'Sem métricas-base disponíveis'}${missingText}</div>`;
+  }
+
   function dimRows(s){
     const dims=scoreDims(s);
-    return dims.map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${k}</span><strong>${n(v)==null?'—':Math.round(v)}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
+    return dims.map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${k}</span><strong>${n(v)==null?'—':Math.round(v)}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div>${pillarMetricSummary(s,k)}</div><span></span></div>`).join('');
   }
 
   function scoreModelLabel(model){
