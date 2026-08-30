@@ -11124,7 +11124,10 @@ function isQuoteCandidateAcceptable(asset, candidate) {
 
 async function fetchQuoteWithFallback(ref) {
   let lastErr = null;
+  let attempts = 0;
+  const startedAt = performance.now();
   for (const candidate of (ref.candidates || [])) {
+    attempts += 1;
     try {
       if (!isQuoteCandidateAcceptable(ref.asset, candidate)) {
         lastErr = new Error(`Candidato incompatível com a identidade do ativo: ${candidate}`);
@@ -11132,14 +11135,19 @@ async function fetchQuoteWithFallback(ref) {
       }
       const q = await fetchQuote(candidate, workerUrl);
       if (q && Number.isFinite(Number(q.price)) && Number(q.price) > 0) {
-        return { yahoo: candidate, quote: q };
+        return { yahoo: candidate, quote: q, attempts, durationMs: Math.round(performance.now() - startedAt) };
       }
       lastErr = new Error(`Sem dados para ${candidate}`);
     } catch (e) {
       lastErr = e;
     }
   }
-  throw lastErr || new Error("Não foi possível obter uma cotação válida");
+  const outErr = lastErr || new Error("Não foi possível obter uma cotação válida");
+  try {
+    outErr.quoteAttempts = attempts;
+    outErr.quoteDurationMs = Math.round(performance.now() - startedAt);
+  } catch (_) {}
+  throw outErr;
 }
 
   const rawTickerRefs = candidates.map(asset => {
@@ -11163,6 +11171,31 @@ async function fetchQuoteWithFallback(ref) {
   const quoteResults = await mapWithConcurrency(tickerList, 8, x => fetchQuoteWithFallback(x));
   const quoteMap = {};
   const quoteErrMap = {};
+  const quotePerformanceRows = quoteResults.map((r, i) => {
+    const ref = tickerList[i] || {};
+    if (r && r.status === "fulfilled" && r.value) {
+      return {
+        ticker: r.value.yahoo || ref.raw || "",
+        attempts: Number(r.value.attempts || 1),
+        durationMs: Number(r.value.durationMs || 0),
+        success: true
+      };
+    }
+    return {
+      ticker: ref.raw || "",
+      attempts: Number((r && r.reason && r.reason.quoteAttempts) || 0),
+      durationMs: Number((r && r.reason && r.reason.quoteDurationMs) || 0),
+      success: false
+    };
+  });
+  const fallbackAssets = quotePerformanceRows.filter(x => x.attempts > 1).length;
+  const maxCandidateAttempts = quotePerformanceRows.length ? Math.max(...quotePerformanceRows.map(x => x.attempts || 0)) : 0;
+  const meanDurationMs = quotePerformanceRows.length
+    ? Math.round(quotePerformanceRows.reduce((sum, x) => sum + (x.durationMs || 0), 0) / quotePerformanceRows.length)
+    : 0;
+  const slowestAssets = [...quotePerformanceRows]
+    .sort((a, b) => (b.durationMs || 0) - (a.durationMs || 0))
+    .slice(0, 5);
   quoteResults.forEach((r, i) => {
     if (r && r.status === "fulfilled" && r.value && r.value.quote) quoteMap[i] = r.value;
     else quoteErrMap[i] = (r && r.reason && r.reason.message) ? r.reason.message : "Erro ao obter cotação";
@@ -11358,7 +11391,18 @@ async function fetchQuoteWithFallback(ref) {
     }
   } catch (_) {}
 
-  state.settings.lastQuoteRefresh = { updated, failed, skipped, errors, workerMode:"individual", ts: new Date().toISOString(), durationMs: Math.round(performance.now() - refreshStartedAt) };
+  state.settings.lastQuoteRefresh = {
+    updated, failed, skipped, errors, workerMode:"individual",
+    ts: new Date().toISOString(),
+    durationMs: Math.round(performance.now() - refreshStartedAt),
+    performance: {
+      assets: quotePerformanceRows.length,
+      fallbackAssets,
+      maxCandidateAttempts,
+      meanDurationMs,
+      slowestAssets
+    }
+  };
   // Hide progress indicator
   try { _hideRefreshProgress(); } catch (_) {}
   // Record staleness timestamp for auto-refresh logic
@@ -11639,12 +11683,16 @@ function renderQuoteSyncStatus() {
     const secs = report.durationMs ? ` · ${Math.max(1, Math.round(report.durationMs/1000))} s` : "";
     const skipped = report.skipped ? ` · ${report.skipped} ignoradas` : "";
     const mode = report.workerMode === "single" ? " · compatibilidade" : "";
-    meta.textContent = `${report.updated || 0} atualizadas · ${report.failed} com erro${skipped}${mode}${secs}`;
+    const fallback = Number(report?.performance?.fallbackAssets || 0);
+    const fallbackLabel = fallback > 0 ? ` · ${fallback} com fallback` : "";
+    meta.textContent = `${report.updated || 0} atualizadas · ${report.failed} com erro${skipped}${mode}${fallbackLabel}${secs}`;
   } else if (report && report.updated > 0) {
     const secs = report.durationMs ? ` · ${Math.max(1, Math.round(report.durationMs/1000))} s` : "";
     const skipped = report.skipped ? ` · ${report.skipped} ignoradas` : "";
     const mode = report.workerMode === "single" ? " · compatibilidade" : "";
-    meta.textContent = `${report.updated} atualizadas${skipped}${mode}${secs} · automático`;
+    const fallback = Number(report?.performance?.fallbackAssets || 0);
+    const fallbackLabel = fallback > 0 ? ` · ${fallback} com fallback` : "";
+    meta.textContent = `${report.updated} atualizadas${skipped}${mode}${fallbackLabel}${secs} · automático`;
   } else meta.textContent = auto ? "Automático · atualiza após 1 min" : "Automático desativado";
 
   const copy = card.querySelector('.quote-sync-card__copy');
