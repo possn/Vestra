@@ -4,8 +4,8 @@
 Usage:
   python scripts/verify_worker_deployment.py --url https://example.workers.dev
 
-The script is deliberately read-only. It performs GET/OPTIONS requests only and
-never changes Cloudflare state.
+The script is deliberately read-only. It performs GET requests only and never
+changes Cloudflare state.
 """
 
 from __future__ import annotations
@@ -13,9 +13,11 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
@@ -24,6 +26,8 @@ import requests
 
 DEFAULT_ORIGIN = "https://possn.github.io"
 DEFAULT_TICKERS = ["MSFT", "AAPL"]
+ROOT = Path(__file__).resolve().parents[1]
+WORKER_SOURCE = ROOT / "worker.js"
 
 
 @dataclass
@@ -31,6 +35,18 @@ class Check:
     name: str
     ok: bool
     detail: str
+
+
+def source_worker_contract() -> dict[str, Any]:
+    text = WORKER_SOURCE.read_text(encoding="utf-8")
+    version = re.search(r"Versão\s+([0-9.]+)", text)
+    quote_ttl = re.search(r"const QUOTE_CACHE_TTL\s*=\s*(\d+)", text)
+    market_ttl = re.search(r"const MARKET_CACHE_TTL\s*=\s*(\d+)", text)
+    return {
+        "version": version.group(1) if version else None,
+        "quote_cache_ttl_seconds": int(quote_ttl.group(1)) if quote_ttl else None,
+        "market_cache_ttl_seconds": int(market_ttl.group(1)) if market_ttl else None,
+    }
 
 
 def clean_base(url: str) -> str:
@@ -70,6 +86,21 @@ def cors_check(resp: requests.Response, origin: str) -> Check:
     )
 
 
+def market_summary(payload: Any) -> dict[str, Any] | None:
+    if not isinstance(payload, dict):
+        return None
+    return {
+        "ticker": payload.get("ticker"),
+        "current_price": payload.get("current_price"),
+        "_cached": payload.get("_cached"),
+        "updated": payload.get("updated"),
+        "quote_updated": payload.get("quote_updated"),
+        "market_cap": payload.get("market_cap"),
+        "forward_pe": payload.get("forward_pe"),
+        "fcf_yield": payload.get("fcf_yield"),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", required=True, help="Worker base URL")
@@ -81,10 +112,12 @@ def main() -> int:
     base = clean_base(args.url)
     tickers = args.tickers or DEFAULT_TICKERS
     session = requests.Session()
-    session.headers.update({"User-Agent": "Vestra-Worker-Audit/1.0"})
+    session.headers.update({"User-Agent": "Vestra-Worker-Audit/1.1"})
 
     checks: list[Check] = []
     report: dict[str, Any] = {"worker": base, "origin": args.origin, "checks": []}
+    contract = source_worker_contract()
+    report["source_contract"] = contract
 
     try:
         root_resp, root, root_ms = get_json(session, base + "/", origin=args.origin, timeout=args.timeout)
@@ -94,7 +127,6 @@ def main() -> int:
         report["root"] = root
     except Exception as exc:
         checks.append(Check("GET /", False, repr(exc)))
-        root = None
 
     try:
         health_resp, health, health_ms = get_json(session, base + "/health", origin=args.origin, timeout=args.timeout)
@@ -104,6 +136,22 @@ def main() -> int:
             health_ok = health_resp.ok and isinstance(health, dict)
             checks.append(Check("GET /health", health_ok, f"HTTP {health_resp.status_code}, {health_ms} ms"))
             report["health"] = health
+            if health_ok:
+                checks.append(Check(
+                    "deployed/source Worker version",
+                    health.get("version") == contract.get("version"),
+                    f"deployed={health.get('version')!r}, source={contract.get('version')!r}",
+                ))
+                for key, label in (
+                    ("quote_cache_ttl_seconds", "quote cache TTL"),
+                    ("market_cache_ttl_seconds", "market cache TTL"),
+                ):
+                    expected = contract.get(key)
+                    checks.append(Check(
+                        label,
+                        health.get(key) == expected,
+                        f"deployed={health.get(key)!r}, source={expected!r}",
+                    ))
     except Exception as exc:
         checks.append(Check("GET /health", False, repr(exc)))
 
@@ -148,9 +196,38 @@ def main() -> int:
     probe = tickers[0]
     try:
         url = f"{base}/market?{urlencode({'ticker': probe})}"
-        resp, payload, elapsed = get_json(session, url, origin=args.origin, timeout=args.timeout)
-        ok = resp.ok and isinstance(payload, dict)
-        checks.append(Check(f"GET /market {probe}", ok, f"HTTP {resp.status_code}, {elapsed} ms"))
+        resp1, market1, elapsed1 = get_json(session, url, origin=args.origin, timeout=args.timeout)
+        time.sleep(1.0)
+        resp2, market2, elapsed2 = get_json(session, url, origin=args.origin, timeout=args.timeout)
+        ok = resp1.ok and resp2.ok and isinstance(market1, dict) and isinstance(market2, dict)
+        checks.append(Check(f"GET /market {probe}", ok, f"HTTP {resp2.status_code}, {elapsed2} ms"))
+
+        quote = single_quotes.get(probe.upper()) or {}
+        q_price = float(quote["price"]) if finite_positive(quote.get("price")) else None
+        m_price = float(market2["current_price"]) if isinstance(market2, dict) and finite_positive(market2.get("current_price")) else None
+        if q_price is not None and m_price is not None:
+            rel = abs(q_price - m_price) / max(abs(q_price), abs(m_price), 1e-9)
+            checks.append(Check(
+                f"quote/market price equivalence {probe.upper()}",
+                rel <= 0.01,
+                f"quote={q_price}, market={m_price}, rel_diff={rel:.4%}",
+            ))
+        else:
+            checks.append(Check(f"quote/market price equivalence {probe.upper()}", False, "missing positive price"))
+
+        cache_hit = isinstance(market2, dict) and market2.get("_cached") is True
+        quote_updated = market2.get("quote_updated") if isinstance(market2, dict) else None
+        checks.append(Check(
+            "cached /market fresh quote overlay",
+            cache_hit and bool(quote_updated),
+            f"cached={cache_hit}, quote_updated={quote_updated!r}",
+        ))
+        report["market_probe"] = {
+            "first": market_summary(market1),
+            "second": market_summary(market2),
+            "first_ms": elapsed1,
+            "second_ms": elapsed2,
+        }
     except Exception as exc:
         checks.append(Check(f"GET /market {probe}", False, repr(exc)))
 
@@ -177,7 +254,11 @@ def main() -> int:
             "cache_control_2": r2.headers.get("Cache-Control"),
         }
         report["cache_probe"] = cache_signal
-        checks.append(Check("cache diagnostics exposed", isinstance(q2, dict) and "updated" in q2, json.dumps(cache_signal)))
+        checks.append(Check(
+            "cache diagnostics exposed",
+            isinstance(q2, dict) and "updated" in q2,
+            json.dumps(cache_signal),
+        ))
     except Exception as exc:
         checks.append(Check("cache diagnostics exposed", False, repr(exc)))
 
