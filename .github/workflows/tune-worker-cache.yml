@@ -1,0 +1,54 @@
+name: Tune Worker cache freshness
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/quote-cache-freshness-20260830
+    paths:
+      - '.github/workflows/tune-worker-cache.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/quote-cache-freshness-20260830
+
+      - name: Patch cache policy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('worker.js')
+          s = p.read_text()
+          pairs = [
+            ('const CACHE_TTL = 300; // 5 minutos', 'const QUOTE_CACHE_TTL = 60; // quotes: align with browser freshness\nconst MARKET_CACHE_TTL = 1800; // market/fundamentals: 30 minutes'),
+            ('max-age=${CACHE_TTL}', 'max-age=${QUOTE_CACHE_TTL}'),
+            ('cacheTtl: CACHE_TTL', 'cacheTtl: QUOTE_CACHE_TTL'),
+            ('quote_cache_ttl_seconds: CACHE_TTL', 'quote_cache_ttl_seconds: QUOTE_CACHE_TTL'),
+            ('headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300" }', 'headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${MARKET_CACHE_TTL}` }'),
+          ]
+          for old, new in pairs:
+              if old not in s:
+                  raise SystemExit(f'missing expected fragment: {old}')
+              s = s.replace(old, new)
+          if 'CACHE_TTL' in s:
+              raise SystemExit('legacy CACHE_TTL reference remains')
+          p.write_text(s)
+          PY
+
+      - name: Validate Worker syntax
+        run: node --check worker.js
+
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add worker.js
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: align quote and market cache freshness"
+          git push origin HEAD:fix/quote-cache-freshness-20260830
