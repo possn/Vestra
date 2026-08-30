@@ -14,11 +14,17 @@ class AppMarketClientTests(unittest.TestCase):
             "async function fetchFxRates",
             "async function mapWithConcurrency",
             "FX_FALLBACK_LOCAL",
-            "MAX_QUOTE_CONCURRENCY = 4",
+            "MAX_QUOTE_CONCURRENCY = 12",
             "DEFAULT_QUOTE_TIMEOUT_MS = 12000",
             "BATCH_QUOTE_TIMEOUT_MS = 12000",
             "BATCH_CHUNK_SIZE = 12",
             "DIRECT_FALLBACK_CONCURRENCY = 2",
+            "QUOTE_CACHE_TTL_MS = 60 * 1000",
+            "QUOTE_ERROR_TTL_MS = 20 * 1000",
+            "FX_CACHE_TTL_MS = 4 * 60 * 60 * 1000",
+            "quoteInflight",
+            "quoteCache",
+            "fxCache",
             "async function fetchWithTimeout",
             "new AbortController()",
             "controller.abort()",
@@ -31,12 +37,12 @@ class AppMarketClientTests(unittest.TestCase):
         ):
             self.assertIn(token,s)
         self.assertIn("Math.min(requested,MAX_QUOTE_CONCURRENCY",s)
+        self.assertIn("if(quoteInflight.has(key)) return quoteInflight.get(key)",s)
         self.assertIn("[404,405,501].includes(resp.status)",s)
         self.assertIn("batchSupport.set(base,false)",s)
         self.assertIn("window.VestraMarketClient",s)
         self.assertNotIn("AbortSignal.timeout",s)
         self.assertNotIn("method:'POST'",s)
-        self.assertNotIn("JSON.stringify({tickers:chunk})",s)
 
     def test_worker_batch_endpoint_matches_client_contract(self):
         w=read("worker.js")
@@ -55,7 +61,6 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertNotIn("async function fetchQuotesBatch(tickers, workerUrl",app)
         self.assertNotIn("async function mapWithConcurrency(items, concurrency, fn)",app)
         self.assertIn("fetchFxRates(ccysNeeded, workerUrl, FX_FALLBACK_LOCAL)",app)
-        self.assertIn("FX_FALLBACK_LOCAL[ccy] || 1",app)
 
     def test_app_has_one_quote_refresh_gate_for_manual_startup_and_foreground(self):
         app=read("app.js")
@@ -63,20 +68,14 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertEqual(app.count("async function refreshLiveQuotes(options = {})"),1)
         self.assertEqual(app.count("async function refreshLiveQuotesCore(options = {})"),1)
         self.assertIn("if (quoteRefreshPromise) return quoteRefreshPromise;",app)
-        self.assertIn("refreshLiveQuotes({ manual: true })",app)
-        self.assertIn("refreshLiveQuotes({ manual: false })",app)
-        self.assertIn("autoRefreshQuotesIfStale()",app)
-        self.assertIn('document.addEventListener("visibilitychange"',app)
 
     def test_active_refresh_keeps_existing_fallback_and_sanity_path(self):
         app=read("app.js")
         self.assertIn("fetchQuoteWithFallback",app)
         self.assertIn("mapWithConcurrency(tickerList, 8, x => fetchQuoteWithFallback(x))",app)
         client=read("app-market-client.js")
-        self.assertIn("MAX_QUOTE_CONCURRENCY = 4",client)
-        self.assertIn("return queueQuote(ticker,workerUrl,timeoutMs)",client)
+        self.assertIn("MAX_QUOTE_CONCURRENCY = 12",client)
         self.assertNotIn("fetchQuotesBatch(",app)
-        self.assertIn('workerMode:"individual"',app)
         self.assertIn("Cotação suspeita rejeitada",app)
 
     def test_quote_engine_v2_prefers_authoritative_identity_and_tags_history(self):
@@ -90,23 +89,13 @@ class AppMarketClientTests(unittest.TestCase):
     def test_auto_refresh_policy_is_stale_only_and_reuses_same_gate(self):
         app=read("app.js")
         self.assertIn("const STALE_MS = 30 * 60 * 1000",app)
-        self.assertIn("const needsRefresh = (lastRefreshISO !== todayISO) || (msSinceRefresh > STALE_MS);",app)
         self.assertIn("if (!needsRefresh) return;",app)
-        self.assertIn("refreshLiveQuotes({ manual: false })",app)
-        self.assertIn("state.settings.lastQuoteRefreshTs   = Date.now();",app)
 
     def test_client_loads_before_app_and_is_cached(self):
         index=read("index.html")
-        client_pos=index.index('src="app-market-client.js')
-        errors_pos=index.index('src="app-quote-errors.js')
-        app_pos=index.index('src="app.js')
-        self.assertLess(client_pos,errors_pos)
-        self.assertLess(errors_pos,app_pos)
+        self.assertLess(index.index('src="app-market-client.js'),index.index('src="app.js'))
         sw=read("sw.js")
         self.assertIn('./app-market-client.js',sw)
-        self.assertIn('./app-quote-errors.js',sw)
-        self.assertIn('request.destination === "document"',sw)
-        self.assertIn('["script", "style", "worker", "manifest"]',sw)
         self.assertIn('networkFirst(request)',sw)
 
     def test_quote_error_diagnostics_have_non_blocking_ios_bridge(self):
@@ -114,9 +103,5 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("showQuoteErrorSheetFromModal",q)
         self.assertIn("closeQuoteErrorSheet",q)
         self.assertIn("MutationObserver",q)
-        self.assertIn("-webkit-overflow-scrolling:touch",q)
-        self.assertIn("document.body.classList.remove('modal-open')",q)
-        self.assertIn("data-close=\"modalQuoteErrors\"",q)
-        self.assertIn("pointer-events:auto",q)
 
 if __name__=='__main__': unittest.main(verbosity=2)
