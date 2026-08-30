@@ -19,7 +19,18 @@ jobs:
         with:
           ref: improve/score-explainability-20260830
       - name: Apply guarded patch
-        run: python scripts/patch_score_explainability_layers.py
+        run: |
+          python scripts/patch_score_explainability_layers.py
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('market.js')
+          s=p.read_text(encoding='utf-8')
+          old='Quando falta um pilar, ele não vale zero: os pesos presentes são renormalizados.'
+          new='Quando falta um pilar, ele não vale zero. Os pesos dos pilares disponíveis são renormalizados.'
+          if s.count(old)!=1:
+              raise SystemExit(f'renormalization wording anchor mismatch: {s.count(old)}')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
       - name: Validate focused explainability contract
         run: |
           node --check market.js
