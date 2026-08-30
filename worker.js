@@ -1,6 +1,6 @@
 /**
  * Cloudflare Worker — Proxy de Cotações (Yahoo Finance)
- * Versão 4.3 — quotes + live market detail + deployment health
+ * Versão 4.4 — fresh quote overlay + cached market fundamentals
  */
 
 const QUOTE_CACHE_TTL = 60; // quotes: align with browser freshness
@@ -349,6 +349,36 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
+    // Fundamentals may stay cached for 30 minutes, but price-sensitive fields must
+    // inherit the 60-second quote freshness contract. This prevents /market from
+    // showing an older price than /quote in an open dossier.
+    try {
+      const quote = await fetchYahooQuote(canonical, ctx);
+      const current = Number(quote?.price);
+      if (Number.isFinite(current) && current > 0) {
+        data.current_price = current;
+        if (quote.currency) data.currency = quote.currency;
+        if (quote.exchange) data.exchange = quote.exchange;
+        if (quote.quote_type) data.quote_type = quote.quote_type;
+        for (const [targetKey, quoteKey] of [
+          ['market_cap','market_cap'],
+          ['trailing_pe','trailing_pe'],
+          ['forward_pe','forward_pe'],
+          ['price_to_book','price_to_book'],
+          ['fifty_two_week_high','fifty_two_week_high'],
+          ['fifty_two_week_low','fifty_two_week_low'],
+        ]) {
+          const value = Number(quote?.[quoteKey]);
+          if (Number.isFinite(value)) data[targetKey] = value;
+        }
+        const target = Number(data.analyst_price_target_mean);
+        if (Number.isFinite(target)) data.analyst_price_target_upside_pct = ((target / current) - 1) * 100;
+        const fcf = Number(data.free_cash_flow);
+        const marketCap = Number(data.market_cap);
+        if (Number.isFinite(fcf) && Number.isFinite(marketCap) && marketCap > 0) data.fcf_yield = (fcf / marketCap) * 100;
+        data.quote_updated = quote.updated || new Date().toISOString();
+      }
+    } catch (_) {}
     data._cached = true;
     return data;
   }
@@ -465,6 +495,7 @@ async function fetchYahooMarketDetail(ticker, ctx) {
     eps_latest: epsAnnual,
     price_history_1y: history,
     updated: new Date().toISOString(),
+    quote_updated: quote.updated || new Date().toISOString(),
     source: qs ? 'Yahoo Finance quoteSummary + fundamentals-timeseries + chart' : 'Yahoo Finance fundamentals-timeseries + quote/chart'
   };
   for (const k of Object.keys(result)) if (typeof result[k] === 'number' && !Number.isFinite(result[k])) result[k] = null;
@@ -543,16 +574,17 @@ export default {
       if (url.pathname === "/health") {
         return new Response(JSON.stringify({
           service: "Vestra Market Proxy",
-          version: "4.3",
+          version: "4.4",
           build_id: String(env?.BUILD_ID || "unknown"),
           capabilities: ["quote", "quotes", "market"],
-          quote_cache_ttl_seconds: QUOTE_CACHE_TTL
+          quote_cache_ttl_seconds: QUOTE_CACHE_TTL,
+          market_cache_ttl_seconds: MARKET_CACHE_TTL
         }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
       }
 
       if (url.pathname === "/" || url.pathname === "") {
         return new Response(JSON.stringify({
-          service: "Vestra Market Proxy v4.3",
+          service: "Vestra Market Proxy v4.4",
           build_id: String(env?.BUILD_ID || "unknown"),
           endpoints: ["/health", "/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT"]
         }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
