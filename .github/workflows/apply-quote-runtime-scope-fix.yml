@@ -1,0 +1,43 @@
+name: Apply quote runtime scope fix
+
+on:
+  push:
+    branches: [fix/quote-runtime-scope-20260831]
+    paths:
+      - 'scripts/patch_quote_runtime_scope.py'
+      - '.github/workflows/apply-quote-runtime-scope-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/quote-runtime-scope-20260831
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded patch
+        run: python scripts/patch_quote_runtime_scope.py
+      - name: Validate quote runtime path
+        run: |
+          node --check app.js
+          python -m unittest -v tests.test_quote_runtime_scope
+          python -m unittest -v tests.test_quote_ui_dividend_repair
+          python -m unittest -v tests.test_quote_refresh_diagnostics
+          python -m unittest -v tests.test_app_market_client
+          git diff --check
+      - name: Commit fix
+        run: |
+          git config user.name "vestra-maintenance-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add app.js tests/test_quote_runtime_scope.py
+          if git diff --cached --quiet; then
+            echo "No patch changes"
+          else
+            git commit -m "fix: keep quote sanity ticker resolver in scope"
+            git push
+          fi
