@@ -1,9 +1,10 @@
 """Audit top-level JavaScript runtime reachability for the Vestra PWA.
 
-This is deliberately conservative: it discovers direct <script src> entries in
-index.html, then follows literal .js references only from already-reachable JS.
-Service Worker and Cloudflare Worker entrypoints are classified separately.
-Unreferenced files are reported, not deleted automatically.
+This is deliberately conservative: it discovers direct local <script src>
+entries in index.html, then follows literal .js references only from already-
+reachable JS. External CDN scripts are ignored. Service Worker and Cloudflare
+Worker entrypoints are classified separately. Unreferenced files are reported,
+not deleted automatically.
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ INDEX = ROOT / "index.html"
 
 SCRIPT_SRC_RE = re.compile(r'<script\b[^>]*\bsrc=["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']', re.I)
 JS_LITERAL_RE = re.compile(r'["\']([A-Za-z0-9_.-]+\.js)(?:\?[^"\']*)?["\']')
+EXTERNAL_RE = re.compile(r'^(?:https?:)?//', re.I)
 
 SPECIAL_ENTRYPOINTS = {"sw.js": "service_worker", "worker.js": "cloudflare_worker"}
 
@@ -26,7 +28,8 @@ def _basename(ref: str) -> str:
 
 def direct_scripts() -> list[str]:
     html = INDEX.read_text(encoding="utf-8")
-    return list(dict.fromkeys(_basename(x) for x in SCRIPT_SRC_RE.findall(html)))
+    local_refs = (x for x in SCRIPT_SRC_RE.findall(html) if not EXTERNAL_RE.match(x))
+    return list(dict.fromkeys(_basename(x) for x in local_refs))
 
 
 def dynamic_reachable(seed: list[str]) -> tuple[set[str], dict[str, list[str]], list[str]]:
