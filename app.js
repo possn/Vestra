@@ -10559,6 +10559,26 @@ function hasStrongQuoteIdentitySafe(asset) {
   return false;
 }
 
+function getRawTickerForAssetSafe(asset) {
+  // Top-level, scope-safe mirror of the refresh-local raw ticker resolver.
+  // quoteSanityCheck runs outside refreshLiveQuotesCore and must never depend
+  // on helpers declared inside that function.
+  const tk = String((asset && asset.ticker) || "").trim();
+  if (tk && /^[A-Z0-9.\-]{1,16}$/i.test(tk)) return tk.toUpperCase();
+
+  const notes = String((asset && asset.notes) || "");
+  const tagged = notes.match(/\b(?:Ticker|Yahoo)=([A-Z0-9.\-=^]{1,24})\b/i);
+  if (tagged) return String(tagged[1] || "").trim().toUpperCase();
+
+  const nm = String((asset && asset.name) || "").trim();
+  if (nm && /^[A-Z0-9.\-]{1,16}$/i.test(nm)) return nm.toUpperCase();
+  const bracketed = nm.match(/[\[(]([A-Z0-9.-]{1,16}(?:\.[A-Z]{1,4}|-[A-Z]{3})?)[\])]/i);
+  if (bracketed) return String(bracketed[1] || "").trim().toUpperCase();
+  const venue = nm.match(/^([A-Z0-9.-]{1,16}\.(?:US|DE|FR|PT|LS|MC|PA|AS|L|SW|TO|IR|CO|ST|OL|HE|AX|F|UK))(?:\b|\s|—|-)/i);
+  if (venue) return String(venue[1] || "").trim().toUpperCase();
+  return "";
+}
+
 function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "") {
   if (!asset || !q || !Number.isFinite(priceEur) || priceEur <= 0) return { ok:false, reason:"Cotação inválida" };
 
@@ -10603,7 +10623,7 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "
   const isinKey = String(asset && asset.isin || "").trim().toUpperCase();
   const exactIsinIdentity = isinKey && ISIN_YAHOO_MAP[isinKey]
     ? String(ISIN_YAHOO_MAP[isinKey]).trim().toUpperCase() : "";
-  const localIdentity = String(getRawTickerForAsset(asset) || "").trim().toUpperCase();
+  const localIdentity = String(getRawTickerForAssetSafe(asset) || "").trim().toUpperCase();
   const brokerAuthoritative = localIdentity.endsWith(".US")
     ? nextIdentity === localIdentity.slice(0, -3)
     : (/\.(?:DE|PA|AS|MC|MI|L|LS|SW|VI|TO|ST|CO|OL|HE|AX|F|IR)$/.test(localIdentity) && nextIdentity === localIdentity);
