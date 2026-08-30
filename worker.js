@@ -1,6 +1,6 @@
 /**
  * Cloudflare Worker — Proxy de Cotações (Yahoo Finance)
- * Versão 4.5 — null-safe fundamentals + fresh quote overlay
+ * Versão 4.6 — null-safe quote + fundamentals semantics
  */
 
 const QUOTE_CACHE_TTL = 60; // quotes: align with browser freshness
@@ -78,7 +78,7 @@ function positiveNumber(...vals) {
 }
 
 async function fetchYahooQuoteCore(ticker, ctx) {
-  const cacheKey = `quote41:${ticker.toUpperCase()}`;
+  const cacheKey = `quote46:${ticker.toUpperCase()}`;
   const cache = caches.default;
   const cacheUrl = `https://cache.internal/${cacheKey}`;
 
@@ -114,7 +114,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           price,
           currency: ccy,
           name: q.shortName || q.longName || ticker,
-          change_pct: Number.isFinite(q.regularMarketChangePercent) ? q.regularMarketChangePercent : 0,
+          change_pct: Number.isFinite(q.regularMarketChangePercent) ? q.regularMarketChangePercent : null,
           sector: q.sector || "",
           industry: q.industry || "",
           country: q.country || "",
@@ -129,8 +129,8 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           fifty_two_week_high: Number.isFinite(q.fiftyTwoWeekHigh) ? q.fiftyTwoWeekHigh : null,
           fifty_two_week_low: Number.isFinite(q.fiftyTwoWeekLow) ? q.fiftyTwoWeekLow : null,
           // Dividend data from Yahoo Finance
-          div_rate: Number.isFinite(q.trailingAnnualDividendRate) ? q.trailingAnnualDividendRate : 0,
-          div_yield: Number.isFinite(q.trailingAnnualDividendYield) ? q.trailingAnnualDividendYield : 0,
+          div_rate: Number.isFinite(q.trailingAnnualDividendRate) ? q.trailingAnnualDividendRate : null,
+          div_yield: Number.isFinite(q.trailingAnnualDividendYield) ? q.trailingAnnualDividendYield : null,
           ex_div_date: q.exDividendDate ? new Date(q.exDividendDate * 1000).toISOString().slice(0,10) : "",
           div_date: q.dividendDate ? new Date(q.dividendDate * 1000).toISOString().slice(0,10) : "",
           updated: new Date().toISOString(),
@@ -163,7 +163,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           currency: ccy,
           name: meta.shortName || meta.symbol || ticker,
           change_pct: (Number.isFinite(meta.regularMarketPrice) && Number.isFinite(meta.previousClose) && meta.previousClose > 0)
-            ? ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100 : 0,
+            ? ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100 : null,
           sector: "",
           industry: "",
           country: "",
@@ -200,7 +200,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           price,
           currency: ccy,
           name: priceNode?.shortName || priceNode?.longName || ticker,
-          change_pct: Number.isFinite(priceNode?.regularMarketChangePercent?.raw) ? priceNode.regularMarketChangePercent.raw : 0,
+          change_pct: Number.isFinite(priceNode?.regularMarketChangePercent?.raw) ? priceNode.regularMarketChangePercent.raw : null,
           sector: "", industry: "", country: "",
           exchange: priceNode?.exchangeName || priceNode?.exchange || "",
           quote_type: priceNode?.quoteType || "",
@@ -231,7 +231,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
           price,
           currency: ccy,
           name: nameMatch ? String(nameMatch[1]).replace(/\u002F/g, '/').trim() : ticker,
-          change_pct: 0, sector: "", industry: "", country: "", exchange: "", quote_type: "",
+          change_pct: null, sector: "", industry: "", country: "", exchange: "", quote_type: "",
           updated: new Date().toISOString(),
         };
         ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), {
@@ -584,7 +584,7 @@ export default {
       if (url.pathname === "/health") {
         return new Response(JSON.stringify({
           service: "Vestra Market Proxy",
-          version: "4.5",
+          version: "4.6",
           build_id: String(env?.BUILD_ID || "unknown"),
           capabilities: ["quote", "quotes", "market"],
           quote_cache_ttl_seconds: QUOTE_CACHE_TTL,
@@ -595,7 +595,7 @@ export default {
 
       if (url.pathname === "/" || url.pathname === "") {
         return new Response(JSON.stringify({
-          service: "Vestra Market Proxy v4.5",
+          service: "Vestra Market Proxy v4.6",
           build_id: String(env?.BUILD_ID || "unknown"),
           endpoints: ["/health", "/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT"]
         }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
