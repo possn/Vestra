@@ -33,4 +33,4 @@ jobs:
         env:
           VESTRA_WORKER_URL: https://delicate-bar-cc80.pedrossnunes.workers.dev
         run: |
-          python scripts/verify_worker_deployment.py "$VESTRA_WORKER_URL" --ticker MSFT --second-ticker AAPL
+          python scripts/verify_worker_deployment.py --url "$VESTRA_WORKER_URL" --ticker MSFT --ticker AAPL
