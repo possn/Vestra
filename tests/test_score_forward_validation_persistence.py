@@ -40,7 +40,9 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
     def test_late_horizon_is_not_backfilled_with_wrong_return(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{
-            "date": "2026-06-01",
+            # 60 days old: too late for the 28-day window and not yet mature
+            # for 84 days. It must not be assigned to either horizon.
+            "date": "2026-07-01",
             "observations": {"AAA": {"price": 100, "score": 80}},
         }]
         outcomes = []
