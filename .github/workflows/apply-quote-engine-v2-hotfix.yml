@@ -1,4 +1,4 @@
-name: Apply Quote Engine v2 hotfix
+name: Validate Quote Engine v2
 
 on:
   workflow_dispatch:
@@ -6,28 +6,26 @@ on:
     branches:
       - fix/quote-engine-v2-identity
     paths:
-      - scripts/apply_quote_engine_v2_hotfix.py
+      - app.js
+      - app-market-client.js
+      - worker.js
       - tests/test_app_market_client.py
       - .github/workflows/apply-quote-engine-v2-hotfix.yml
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch-and-test:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: fix/quote-engine-v2-identity
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Apply quote-engine patch
-        run: python scripts/apply_quote_engine_v2_hotfix.py
 
       - name: Run quote and identity regression tests
         run: |
@@ -39,15 +37,3 @@ jobs:
             tests/test_quote_error_classifier.py \
             tests/test_remaining_quote_identity.py \
             tests/test_runtime_regressions.py
-
-      - name: Commit patched runtime
-        run: |
-          if git diff --quiet -- app.js app-market-client.js worker.js; then
-            echo "No runtime changes"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.js app-market-client.js worker.js
-          git commit -m "fix: apply Quote Engine v2 runtime hotfix"
-          git push origin HEAD:fix/quote-engine-v2-identity
