@@ -3,11 +3,11 @@ name: Verify Cloudflare Worker
 on:
   push:
     branches:
-      - audit/cloudflare-worker-20260830
+      - main
     paths:
+      - 'worker.js'
       - 'scripts/verify_worker_deployment.py'
       - '.github/workflows/verify-cloudflare-worker.yml'
-      - 'docs/CLOUDFLARE_DEPLOYMENT.md'
   workflow_dispatch:
 
 permissions:
@@ -33,4 +33,11 @@ jobs:
         env:
           VESTRA_WORKER_URL: https://delicate-bar-cc80.pedrossnunes.workers.dev
         run: |
-          python scripts/verify_worker_deployment.py --url "$VESTRA_WORKER_URL" --ticker MSFT --ticker AAPL
+          for attempt in 1 2 3 4 5; do
+            if python scripts/verify_worker_deployment.py --url "$VESTRA_WORKER_URL" --ticker MSFT --ticker AAPL; then
+              exit 0
+            fi
+            echo "Production not aligned yet (attempt ${attempt}/5); waiting 15s for Cloudflare deployment..."
+            sleep 15
+          done
+          exit 1
