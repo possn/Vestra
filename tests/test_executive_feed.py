@@ -57,6 +57,13 @@ class ExecutiveFeedTests(unittest.TestCase):
         self.assertNotIn("build_executive_feed.py", congress_workflow)
         self.assertNotIn("data/executives.json", congress_workflow)
 
+    def test_zero_trade_white_house_filing_uses_safe_snapshot_instead_of_failing_schedule(self):
+        workflow = read(".github/workflows/update-executives.yml")
+        self.assertIn("if parsed > 0:", workflow)
+        self.assertIn("preserving last valid official snapshot", workflow)
+        self.assertIn("safe fallback snapshot missing", workflow)
+        self.assertNotIn("June White House filing produced no mapped trades", workflow)
+
     def test_ui_keeps_global_individual_and_favourites_views(self):
         ui = read("politicians.js")
         self.assertIn("TOP 10 COMPRAS", ui)
