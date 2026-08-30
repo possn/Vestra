@@ -1,0 +1,10 @@
+name = "delicate-bar-cc80"
+main = "worker.js"
+compatibility_date = "2026-08-30"
+workers_dev = true
+
+# Production deployment is performed explicitly by
+# .github/workflows/deploy-cloudflare-worker.yml.
+# Secrets are never stored here. GitHub Actions must provide:
+# - CLOUDFLARE_API_TOKEN
+# - CLOUDFLARE_ACCOUNT_ID
