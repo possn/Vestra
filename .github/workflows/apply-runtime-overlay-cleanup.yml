@@ -1,0 +1,45 @@
+name: Apply runtime overlay cleanup
+
+on:
+  push:
+    branches: [remove-unreferenced-runtime-overlays-20260830]
+    paths:
+      - 'scripts/remove_unreferenced_runtime_overlays.py'
+      - '.github/workflows/apply-runtime-overlay-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: remove-unreferenced-runtime-overlays-20260830
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Remove exact unreachable overlay set
+        run: python scripts/remove_unreferenced_runtime_overlays.py
+      - name: Validate runtime graph and regressions
+        run: |
+          python scripts/runtime_js_audit.py
+          python -m unittest tests.test_runtime_js_reachability -v
+          python -m unittest tests.test_canonical_runtime_cleanup -v
+          python -m unittest tests.test_market_enhancement_split -v
+          node --check market.js
+          node --check app.js
+          git diff --check
+      - name: Commit cleanup
+        run: |
+          git config user.name "vestra-maintenance-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git reset scripts/remove_unreferenced_runtime_overlays.py .github/workflows/apply-runtime-overlay-cleanup.yml
+          if git diff --cached --quiet; then
+            echo "No cleanup changes"
+          else
+            git commit -m "chore: remove unreachable legacy runtime overlays"
+            git push
+          fi
