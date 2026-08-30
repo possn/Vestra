@@ -1,8 +1,9 @@
 name: Update market data
 
-# Daily market-data build plus explicit rebuilds when the enrichment/scoring
-# pipeline changes. This keeps data/stocks.json aligned with the code instead of
-# waiting until the next scheduled run after a source repair.
+# Canonical market-data build. The heavy full-universe pipeline is intentionally
+# decoupled from ordinary source-code commits: architecture CI validates code
+# changes quickly, while a full rebuild runs daily, on manual dispatch, or when
+# the explicit rebuild marker is bumped after a coherent batch of pipeline work.
 
 on:
   schedule:
@@ -11,46 +12,18 @@ on:
   push:
     branches: [main]
     paths:
-      - 'scripts/universe.py'
-      - 'scripts/fundamentals.py'
-      - 'scripts/sec_enrich.py'
-      - 'scripts/esef_enrich.py'
-      - 'scripts/esef_enrich_v416.py'
-      - 'scripts/lse_identity.py'
-      - 'scripts/gap_retrieval.py'
-      - 'scripts/quarterly_gap_retrieval.py'
-      - 'scripts/coverage_audit.py'
-      - 'scripts/provenance_audit.py'
-      - 'scripts/coverage_guard.py'
-      - 'scripts/postprocess_market.py'
-      - 'scripts/normalize_market_provenance.py'
-      - 'scripts/score.py'
-      - 'scripts/score_audit.py'
-      - 'scripts/score_forward_validation.py'
-      - 'scripts/peer_benchmark.py'
-      - 'scripts/score_peer_shadow.py'
-      - 'scripts/score_benchmark_audit.py'
-      - 'scripts/confidence.py'
-      - 'scripts/reliability_gate.py'
-      - 'scripts/opportunity_rank.py'
-      - 'scripts/sector_native.py'
-      - 'scripts/moat.py'
-      - 'scripts/value_trap.py'
-      - 'scripts/capital_allocation_intelligence.py'
-      - 'scripts/low52_intelligence.py'
-      - 'scripts/scanner.py'
-      - 'scripts/congress.py'
-      - 'scripts/run.py'
       - '.github/workflows/update-market-data.yml'
       - '.github/triggers/market-data-rebuild.txt'
 
 permissions:
   contents: write
 
-# During development, only the newest source state is worth rebuilding.
+# A canonical build must be allowed to finish. Because automatic push triggers
+# are now deliberate and rare, queuing a later rebuild is safer than cancelling
+# a 60–100 minute run that may already be close to publication.
 concurrency:
   group: update-market-data
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   update-data:
