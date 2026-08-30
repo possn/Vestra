@@ -1,0 +1,34 @@
+name: Apply market score explainability
+
+on:
+  push:
+    branches:
+      - ux/explain-score-evaluation-20260830
+    paths:
+      - '.github/workflows/apply-market-score-explainability.yml'
+      - 'scripts/patch_market_score_explainability.py'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ux/explain-score-evaluation-20260830
+      - name: Apply guarded patch
+        run: python scripts/patch_market_score_explainability.py
+      - name: Validate focused contract
+        run: |
+          node --check market.js
+          python -m unittest tests.test_market_score_explainability -v
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add market.js tests/test_market_score_explainability.py
+          git diff --cached --quiet && exit 0
+          git commit -m "ux: explain Vestra score inside dossier"
+          git push origin HEAD:ux/explain-score-evaluation-20260830
