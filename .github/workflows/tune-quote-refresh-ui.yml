@@ -1,0 +1,55 @@
+name: Tune quote refresh UX
+
+on:
+  push:
+    branches:
+      - fix/quote-refresh-ux-20260830
+    paths:
+      - '.github/workflows/tune-quote-refresh-ui.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/quote-refresh-ux-20260830
+
+      - name: Patch quote refresh UX
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.js')
+          s = p.read_text()
+          pairs = [
+            ('let quoteRefreshPromise = null;\nasync function refreshLiveQuotes(options = {}) {', 'const QUOTE_AUTO_REFRESH_STALE_MS = 60 * 1000;\nlet quoteRefreshPromise = null;\nlet quoteRefreshInProgress = false;\nasync function refreshLiveQuotes(options = {}) {'),
+            ('  const manual = options && options.manual === true;\n  quoteRefreshPromise = refreshLiveQuotesCore(options)', '  const manual = options && options.manual === true;\n  quoteRefreshInProgress = true;\n  try { renderQuoteSyncStatus(); } catch (_) {}\n  quoteRefreshPromise = refreshLiveQuotesCore(options)'),
+            ('      quoteRefreshPromise = null;\n      try { renderQuoteSyncStatus(); } catch (_) {}', '      quoteRefreshPromise = null;\n      quoteRefreshInProgress = false;\n      try { renderQuoteSyncStatus(); } catch (_) {}'),
+            ('  card.classList.toggle("is-stale", ageMs > 30 * 60 * 1000);', '  card.classList.toggle("is-stale", ageMs > QUOTE_AUTO_REFRESH_STALE_MS);'),
+            ('  status.textContent = workerUrl ? formatQuoteRefreshAge(lastTs) : "Worker por configurar";\n  if (!workerUrl) meta.textContent = "Configura em Mais → Preferências";', '  status.textContent = quoteRefreshInProgress ? "A atualizar…" : (workerUrl ? formatQuoteRefreshAge(lastTs) : "Worker por configurar");\n  if (quoteRefreshInProgress) meta.textContent = "A obter cotações mais recentes";\n  else if (!workerUrl) meta.textContent = "Configura em Mais → Preferências";'),
+            ('  } else meta.textContent = auto ? "Automático · atualiza se >30 min" : "Automático desativado";', '  } else meta.textContent = auto ? "Automático · atualiza após 1 min" : "Automático desativado";'),
+            ('  const STALE_MS = 30 * 60 * 1000; // 30 minutos', '  const STALE_MS = QUOTE_AUTO_REFRESH_STALE_MS; // align with browser + Worker quote freshness'),
+            ('   - A última actualização foi há mais de 30 minutos OU nunca foi hoje', '   - A última actualização foi há mais de 1 minuto OU nunca foi hoje'),
+            ('    // Auto-refresh quotes if stale (>30min since last update or never updated today)', '    // Auto-refresh quotes if stale (>1 min since last update or never updated today)'),
+          ]
+          for old, new in pairs:
+              if old not in s:
+                  raise SystemExit(f'missing expected fragment: {old[:100]}')
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+      - name: Validate syntax
+        run: node --check app.js
+
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add app.js
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: make quote refresh visible and timely"
+          git push origin HEAD:fix/quote-refresh-ux-20260830
