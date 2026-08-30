@@ -591,6 +591,32 @@
     return dims.map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${k}</span><strong>${n(v)==null?'—':Math.round(v)}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div></div><span></span></div>`).join('');
   }
 
+  function scoreModelLabel(model){
+    return ({general:'Geral',bank:'Bancos',biotech:'Biotecnologia',energy:'Energia',growth_tech:'Tecnologia / crescimento',insurance:'Seguros',reit:'REIT',utility:'Utilities'})[txt(model)]||txt(model)||'Geral';
+  }
+
+  function scoreBand(value){
+    const v=n(value);
+    if(v==null) return 'Sem score publicável';
+    if(v>=75) return 'Muito forte no ranking';
+    if(v>=60) return 'Acima da média';
+    if(v>=40) return 'Intermédio';
+    return 'Abaixo da média';
+  }
+
+  function scoreExplanation(s){
+    const score=n(s.score), coverage=n(s.data_coverage_pct);
+    const dims=scoreDims(s).map(([label,value])=>({label,value:n(value)})).filter(x=>x.value!=null).sort((a,b)=>b.value-a.value);
+    const strongest=dims.slice(0,2);
+    const weakest=dims.length>2?[...dims].sort((a,b)=>a.value-b.value).slice(0,2):[];
+    const pair=list=>list.map(x=>`${esc(x.label)} <strong>${Math.round(x.value)}</strong>`).join(' · ');
+    const confidence=txt(s.data_confidence)||txt(s.score_reliability)||'—';
+    if(score==null){
+      return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>COMO LER A AVALIAÇÃO</small><h4>Score não publicado</h4></div><span class="market-data-age">evidência insuficiente</span></div><p>Não há dados suficientes para produzir uma avaliação comparável com segurança. A ausência de score não significa uma empresa fraca.</p><div class="market-action-context"><span>Modelo ${esc(scoreModelLabel(s.score_model))}</span><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span></div></div>`;
+    }
+    return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>PORQUE TEM ESTE SCORE</small><h4>${Math.round(score)}/100 · ${esc(scoreBand(score))}</h4></div><span class="market-data-age">${esc(scoreModelLabel(s.score_model))}</span></div><p><strong>O Score Vestra é um ranking relativo de qualidade, crescimento, balanço, cash flow, valuation e outros fatores — não é uma previsão de retorno.</strong> Um pilar em 80 significa aproximadamente que a empresa está perto do percentil 80 no conjunto comparável usado pelo modelo; não significa 80% de probabilidade de subir.</p>${strongest.length?`<p class="market-case-note">A puxar para cima: ${pair(strongest)}.</p>`:''}${weakest.length?`<p class="market-case-note">A limitar a avaliação: ${pair(weakest)}.</p>`:''}<div class="market-action-context"><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span><span>${dims.length}/9 pilares disponíveis</span></div><p class="market-case-note">Valores ausentes não são tratados como zero. Os pesos dos pilares disponíveis são renormalizados; por isso scores com coberturas muito diferentes devem ser comparados com cautela.</p></div>`;
+  }
+
   function vestraRead(s){
     const score=n(s.score);
     const dims=scoreDims(s);
@@ -710,7 +736,7 @@
 
   function renderDetailTab(s,tab){
     const body=$m('marketDetailBody'); if(!body) return;
-    if(tab==='overview') body.innerHTML=`${changePanel(s)}${recoveryPanel(s)}${drawdownPanel(s)}${catalystPanel(s)}${investmentCase(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
+    if(tab==='overview') body.innerHTML=`${changePanel(s)}${recoveryPanel(s)}${drawdownPanel(s)}${catalystPanel(s)}${investmentCase(s)}${scoreExplanation(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares · percentis relativos</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
     if(tab==='perspective') {
       const buys=(n(s.analyst_strong_buy)||0)+(n(s.analyst_buy)||0), holds=n(s.analyst_hold)||0, sells=(n(s.analyst_sell)||0)+(n(s.analyst_strong_sell)||0);
       const revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;
