@@ -19,7 +19,15 @@ jobs:
         with:
           ref: fix/worker-null-fundamentals-20260830
       - name: Apply guarded patch
-        run: python scripts/patch_worker_null_fundamentals.py
+        run: |
+          python scripts/patch_worker_null_fundamentals.py
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/test_worker_missing_numeric_semantics.py')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('self.assertIn("missing_numeric_policy: "null"", worker)', 'self.assertIn(\'missing_numeric_policy: "null"\', worker)')
+          p.write_text(s,encoding='utf-8')
+          PY
       - name: Validate focused contract
         run: |
           node --check worker.js
