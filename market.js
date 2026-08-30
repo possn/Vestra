@@ -88,7 +88,7 @@
       if(live && !live.error){
         const merge={};
         for(const [k,v] of Object.entries(live)){ if(v!==null && v!==undefined && v!=='') merge[k]=v; }
-        Object.assign(s,merge,{_liveUpdated:live.updated||new Date().toISOString()});
+        Object.assign(s,merge,{_liveUpdated:live.quote_updated||live.updated||new Date().toISOString()});
         // v2.6 — never rebuild an open dossier when live data arrives.
         // Safari can lose the modal scroll/height when its whole DOM is replaced
         // asynchronously. Keep the open UI frozen; fresh data is used on the next
