@@ -727,6 +727,41 @@
     return notes[model]||txt(s?.score_model_note)||'';
   }
 
+  function peerScoreContext(s){
+    const peerCount=n(s?.peer_count);
+    const lines=[];
+    const rel=(label,value)=>{
+      const v=n(value);
+      if(v==null) return;
+      const direction=v<0?'desconto':'prémio';
+      lines.push(`${label}: ${Math.abs(v).toFixed(0)}% de ${direction} vs mediana`);
+    };
+    rel('Forward P/E',s?.forward_pe_vs_sector_pct);
+    rel('Trailing P/E',s?.trailing_pe_vs_sector_pct);
+    rel('P/B',s?.pb_vs_sector_pct);
+    rel('EV/EBITDA',s?.ev_ebitda_vs_sector_pct);
+
+    const compare=(label,value,median,kind='pct')=>{
+      const v=n(value), m=n(median);
+      if(v==null||m==null) return;
+      const fv=kind==='num'?num(v):pct(v);
+      const fm=kind==='num'?num(m):pct(m);
+      const delta=v-m;
+      const word=Math.abs(delta)<1e-12?'em linha com':delta>0?'acima de':'abaixo de';
+      lines.push(`${label}: ${fv} vs ${fm} · ${word} mediana`);
+    };
+    compare('ROE',s?.roe,s?.sector_roe_median);
+    compare('Margem operacional',s?.operating_margin,s?.sector_operating_margin_median);
+    compare('Margem bruta',s?.gross_margin,s?.sector_gross_margin_median);
+    compare('ROCE proxy',s?.roce_proxy,s?.sector_roce_proxy_median);
+    compare('Dividend yield',s?.dividend_yield,s?.sector_dividend_yield_median);
+    compare('FCF yield',s?.fcf_yield,s?.sector_fcf_yield_median);
+
+    if(!lines.length) return '';
+    const peerLabel=peerCount!=null&&peerCount>0?` · ${Math.round(peerCount)} peers`:'';
+    return `<p class="market-case-note"><strong>Face aos peers${peerLabel}.</strong> ${lines.slice(0,6).map(esc).join(' · ')}. <span class="market-data-age">Contexto relativo; não é recomendação.</span></p>`;
+  }
+
   function scoreExplanation(s){
     const score=n(s.score), coverage=n(s.data_coverage_pct);
     const dims=scoreDims(s).map(([label,value])=>({label,value:n(value)})).filter(x=>x.value!=null).sort((a,b)=>b.value-a.value);
@@ -737,7 +772,7 @@
     if(score==null){
       return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>COMO LER A AVALIAÇÃO</small><h4>Score não publicado</h4></div><span class="market-data-age">evidência insuficiente</span></div><p>Não há dados suficientes para produzir uma avaliação comparável com segurança. A ausência de score não significa uma empresa fraca.</p><div class="market-action-context"><span>Modelo ${esc(scoreModelLabel(s.score_model))}</span><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span></div></div>`;
     }
-    return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>PORQUE TEM ESTE SCORE</small><h4>${Math.round(score)}/100 · ${esc(scoreBand(score))}</h4></div><span class="market-data-age">${esc(scoreModelLabel(s.score_model))}</span></div><p><strong>O Score Vestra é um ranking relativo do perfil fundamental — não é uma previsão de retorno nem uma probabilidade de valorização.</strong> Um pilar em 80 significa aproximadamente percentil 80 no conjunto comparável usado por esse pilar; não significa 80% de probabilidade de subir.</p>${strongest.length?`<p class="market-case-note">A puxar para cima: ${pair(strongest)}.</p>`:''}${weakest.length?`<p class="market-case-note">A limitar a avaliação: ${pair(weakest)}.</p>`:''}<div class="market-action-context"><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span><span>${dims.length} pilares disponíveis</span></div>${scoreModelRationale(s)?`<p class="market-case-note"><strong>Modelo usado.</strong> ${esc(scoreModelRationale(s))}</p>`:''}<div class="market-score-layers"><p class="market-case-note"><strong>1 · Ranking fundamental.</strong> Os pesos-base do modelo ${esc(scoreModelLabel(s.score_model))} são: ${scoreWeightExplanation(s)}. Quando falta um pilar, ele não vale zero. Os pesos dos pilares disponíveis são renormalizados.</p><p class="market-case-note"><strong>2 · Qualidade da evidência.</strong> ${scoreEvidenceExplanation(s)}</p><p class="market-case-note"><strong>3 · Travão de risco.</strong> ${scoreRiskExplanation(s)}</p><p class="market-case-note"><strong>4 · Valuation, tese e expectativas.</strong> A faixa de fair value e os sinais de tese/analistas são camadas separadas. Podem mudar a leitura e a ação sem reescrever artificialmente o score fundamental.</p><p class="market-case-note"><strong>5 · Decisão de carteira.</strong> “Reforçar”, “Manter”, “Rever” ou “Substituir” considera ainda peso da posição, concentração setorial, overlap e alternativas. Uma empresa excelente pode por isso ficar em “Manter”.</p></div><p class="market-case-note">Scores com coberturas muito diferentes devem ser comparados com cautela. A validação prospetiva ainda está a recolher cohorts; o score deve ser usado como screener explicável, não como promessa de performance futura.</p></div>`;
+    return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>PORQUE TEM ESTE SCORE</small><h4>${Math.round(score)}/100 · ${esc(scoreBand(score))}</h4></div><span class="market-data-age">${esc(scoreModelLabel(s.score_model))}</span></div><p><strong>O Score Vestra é um ranking relativo do perfil fundamental — não é uma previsão de retorno nem uma probabilidade de valorização.</strong> Um pilar em 80 significa aproximadamente percentil 80 no conjunto comparável usado por esse pilar; não significa 80% de probabilidade de subir.</p>${strongest.length?`<p class="market-case-note">A puxar para cima: ${pair(strongest)}.</p>`:''}${weakest.length?`<p class="market-case-note">A limitar a avaliação: ${pair(weakest)}.</p>`:''}<div class="market-action-context"><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span><span>${dims.length} pilares disponíveis</span></div>${scoreModelRationale(s)?`<p class="market-case-note"><strong>Modelo usado.</strong> ${esc(scoreModelRationale(s))}</p>`:''}${peerScoreContext(s)}<div class="market-score-layers"><p class="market-case-note"><strong>1 · Ranking fundamental.</strong> Os pesos-base do modelo ${esc(scoreModelLabel(s.score_model))} são: ${scoreWeightExplanation(s)}. Quando falta um pilar, ele não vale zero. Os pesos dos pilares disponíveis são renormalizados.</p><p class="market-case-note"><strong>2 · Qualidade da evidência.</strong> ${scoreEvidenceExplanation(s)}</p><p class="market-case-note"><strong>3 · Travão de risco.</strong> ${scoreRiskExplanation(s)}</p><p class="market-case-note"><strong>4 · Valuation, tese e expectativas.</strong> A faixa de fair value e os sinais de tese/analistas são camadas separadas. Podem mudar a leitura e a ação sem reescrever artificialmente o score fundamental.</p><p class="market-case-note"><strong>5 · Decisão de carteira.</strong> “Reforçar”, “Manter”, “Rever” ou “Substituir” considera ainda peso da posição, concentração setorial, overlap e alternativas. Uma empresa excelente pode por isso ficar em “Manter”.</p></div><p class="market-case-note">Scores com coberturas muito diferentes devem ser comparados com cautela. A validação prospetiva ainda está a recolher cohorts; o score deve ser usado como screener explicável, não como promessa de performance futura.</p></div>`;
   }
 
   function vestraRead(s){

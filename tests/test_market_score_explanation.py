@@ -46,5 +46,16 @@ class MarketScoreExplanationTests(unittest.TestCase):
         self.assertIn("Biotech: runway de caixa", text)
         self.assertNotIn("s.score =", text)
 
+    def test_peer_context_explains_relative_evidence(self):
+        text = MARKET.read_text(encoding="utf-8")
+        self.assertIn("peerScoreContext", text)
+        self.assertIn("Face aos peers", text)
+        self.assertIn("forward_pe_vs_sector_pct", text)
+        self.assertIn("sector_roe_median", text)
+        self.assertIn("sector_operating_margin_median", text)
+        self.assertIn("sector_fcf_yield_median", text)
+        self.assertIn("Contexto relativo; não é recomendação.", text)
+        self.assertNotIn("s.score =", text)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
