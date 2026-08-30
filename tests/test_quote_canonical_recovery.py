@@ -1,0 +1,67 @@
+from pathlib import Path
+import subprocess
+import textwrap
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+REPAIR = ROOT / "quote-canonical-repair.js"
+BOOTSTRAP = ROOT / "market-company-brief.js"
+IDENTITY = ROOT / "app-asset-identity.js"
+
+
+class CanonicalQuoteRecoveryTests(unittest.TestCase):
+    def test_runtime_module_is_valid_javascript(self):
+        subprocess.run(["node", "--check", str(REPAIR)], check=True, cwd=ROOT)
+        subprocess.run(["node", "--check", str(BOOTSTRAP)], check=True, cwd=ROOT)
+
+    def test_siemens_healthineers_has_authoritative_isin_mapping(self):
+        text = IDENTITY.read_text(encoding="utf-8")
+        self.assertIn('"DE000SHL1006":"SHL.DE"', text)
+
+    def test_recovery_is_narrow_and_runtime_effective(self):
+        script = textwrap.dedent(f"""
+            const fs = require('fs');
+            global.window = global;
+            global.document = {{ addEventListener: () => {{}} }};
+            window.quoteSanityCheck = () => ({{ok:false, reason:'historical jump'}});
+            eval(fs.readFileSync({str(REPAIR)!r}, 'utf8'));
+
+            const good = window.quoteSanityCheck(
+              {{isin:'DE000SHL1006'}},
+              {{ticker:'SHL.DE', currency:'EUR', price:34.2}},
+              34.2, 'SHL.DE', 'SHL.DE'
+            );
+            if (!good.ok || !good.canonicalRecovery) process.exit(11);
+
+            const usd = window.quoteSanityCheck(
+              {{isin:'DE000SHL1006'}},
+              {{ticker:'SHL.DE', currency:'USD', price:34.2}},
+              34.2, 'SHL.DE', 'SHL.DE'
+            );
+            if (usd.ok) process.exit(12);
+
+            const absurd = window.quoteSanityCheck(
+              {{isin:'DE000SHL1006'}},
+              {{ticker:'SHL.DE', currency:'EUR', price:78224.14}},
+              78224.14, 'SHL.DE', 'SHL.DE'
+            );
+            if (absurd.ok) process.exit(13);
+
+            const other = window.quoteSanityCheck(
+              {{isin:'US0378331005'}},
+              {{ticker:'AAPL', currency:'USD', price:200}},
+              200, 'AAPL', 'AAPL'
+            );
+            if (other.ok) process.exit(14);
+        """)
+        subprocess.run(["node", "-e", script], check=True, cwd=ROOT)
+
+    def test_bootstrap_loads_recovery_before_user_interaction(self):
+        text = BOOTSTRAP.read_text(encoding="utf-8")
+        self.assertIn("loadCanonicalQuoteRepair();", text)
+        self.assertIn("quote-canonical-repair.js?v=1.0", text)
+        self.assertIn("window.VestraCanonicalQuoteRepair", text)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
