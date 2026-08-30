@@ -1,0 +1,34 @@
+name: Apply Worker quote null semantics
+
+on:
+  push:
+    branches:
+      - fix/worker-quote-null-semantics-20260830
+    paths:
+      - '.github/workflows/apply-worker-quote-null-semantics.yml'
+      - 'scripts/patch_worker_quote_null_semantics.py'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/worker-quote-null-semantics-20260830
+      - name: Apply guarded patch
+        run: python scripts/patch_worker_quote_null_semantics.py
+      - name: Validate focused contract
+        run: |
+          node --check worker.js
+          python -m unittest tests.test_worker_quote_missing_numeric_semantics -v
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add worker.js tests/test_worker_quote_missing_numeric_semantics.py
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: preserve missing quote numerics as null"
+          git push origin HEAD:fix/worker-quote-null-semantics-20260830
