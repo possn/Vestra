@@ -67,9 +67,18 @@ Core application modules currently include:
 - `app.js` contains one refresh orchestrator: `refreshLiveQuotes()` / `refreshLiveQuotesCore()`.
 - `quoteRefreshPromise` is the single-flight gate used by manual refresh, startup auto-refresh and foreground auto-refresh.
 - `autoRefreshQuotesIfStale()` is the only automatic refresh policy and uses the same refresh gate.
-- `app-market-client.js` owns Worker transport, timeout handling, FX retrieval and the effective quote concurrency ceiling (`MAX_QUOTE_CONCURRENCY`).
-- The active portfolio refresh path uses proven individual `/quote` requests with per-asset fallbacks. `fetchQuotesBatch()` remains a compatibility helper but is not wired into `app.js`.
+- `app-market-client.js` owns Worker transport, timeout handling, FX retrieval, request de-duplication and the effective quote concurrency ceiling (`MAX_QUOTE_CONCURRENCY`).
+- Calls from `app.js` still use the logical `fetchQuote()` boundary, but `app-market-client.js` may coalesce near-simultaneous logical quote requests into Worker `GET /quotes` batches. If the batch endpoint is unsupported, the client falls back conservatively to individual `GET /quote` calls.
+- The browser quote cache is intentionally short-lived. Worker/CDN quote caching must not be configured with a materially longer freshness window than the user-facing refresh policy, otherwise a manual or foreground refresh may legitimately re-fetch stale Worker cache entries.
 - Quote failures preserve the existing last-known-value/sanity behavior and are surfaced through `app-quote-errors.js`; missing or failed data must never be converted to zero.
+
+## Cloudflare Worker boundary
+
+- `worker.js` is the source-controlled implementation of the Vestra market proxy.
+- The repository currently does **not** contain a Wrangler deployment manifest or a GitHub Actions deployment workflow that proves which Cloudflare account, Worker name, route or `workers.dev` deployment is serving production.
+- Therefore the deployed Worker must be treated as an external runtime until deployment metadata is versioned. A code change to `worker.js` alone does not prove production has changed.
+- See `docs/CLOUDFLARE_DEPLOYMENT.md` for the deployment contract that should be added before further Worker expansion.
+- The market Worker currently owns quote/market transport. The documented `POST /ai-brief` contract is a separate server-side capability and must not expose provider secrets to the browser.
 
 ## Phase 1 removals
 
