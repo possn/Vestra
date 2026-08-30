@@ -20,7 +20,8 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_static_market_bundle_does_not_reload_base_utils(self):
         index = read("index.html")
         self.assertEqual(index.count('src="app-utils.js'), 1)
-        self.assertIn('market-data-loader.js?v=2.0', index)
+        self.assertIn('market-data-loader.js?v=2.2', index)
+        self.assertIn('portfolio-sheet-navigation.js?v=1.3', index)
 
     def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
         market = read("market.js")
@@ -35,8 +36,10 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertNotIn("sharedIndexPayload", loader)
         self.assertIn("dossiers-manifest.json", loader)
         self.assertIn("data/dossiers/", loader)
-        self.assertIn("stocks.json?full=1", loader)
-        self.assertIn("version:'2.1'", loader)
+        self.assertNotIn("stocks.json?full=1", loader)
+        self.assertIn("version:'2.2'", loader)
+        self.assertIn("const result=rawOpen(ticker);", loader)
+        self.assertIn("hydrateOpenDossier(ticker);", loader)
 
     def test_dossier_opening_delegates_to_canonical_navigation(self):
         loader = read("market-data-loader.js")
@@ -46,10 +49,11 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("openDossier(ticker,{sourceNode:row})", loader)
         self.assertIn("openDossier(ticker,{origin:'market',sourceNode:jump})", loader)
 
-    def test_legacy_full_dataset_is_only_explicit_dossier_emergency_fallback(self):
+    def test_dossier_hydration_never_downloads_full_market_payload(self):
         loader = read("market-data-loader.js")
-        self.assertEqual(loader.count("stocks.json?full=1"), 1)
-        self.assertIn("Emergency compatibility fallback", loader)
+        self.assertNotIn("stocks.json?full=1", loader)
+        self.assertIn("The startup index is a valid fallback", loader)
+        self.assertIn("tickerHydrationCache", loader)
 
     def test_politicians_loader_matches_canonical_module_version(self):
         index = read("index.html")
