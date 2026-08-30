@@ -1,4 +1,4 @@
-/* Vestra Market Data Loader v2.3 — instant dossier/portfolio opening + background hydration. */
+/* Vestra Market Data Loader v2.4 — instant navigation + bounded background hydration. */
 (() => {
   'use strict';
 
@@ -188,7 +188,18 @@
       const c=txt(a?.class).toLowerCase();
       return !c.includes('cripto') && (c.includes('ações')||c.includes('acoes')||c.includes('etf')||c.includes('fund'));
     }).map(a=>tickerKey(a?.yahooTicker||a?.ticker||a?.symbol)).filter(Boolean))];
-    await Promise.allSettled(tickers.map(hydrateTicker));
+    // Keep background enrichment gentle on Safari/iPhone. Shards are large and
+    // launching the whole portfolio at once can create a burst of network + JSON work.
+    const queue=[...tickers];
+    const workerCount=Math.min(2,queue.length);
+    const workers=Array.from({length:workerCount},async()=>{
+      while(queue.length){
+        const ticker=queue.shift();
+        if(!ticker) break;
+        try{ await hydrateTicker(ticker); }catch(_){}
+      }
+    });
+    await Promise.allSettled(workers);
   }
 
   function installApiWrapper(){
@@ -275,5 +286,5 @@
   },true);
 
   ensureApiWrapper();
-  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,version:'2.3'};
+  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,version:'2.4'};
 })();

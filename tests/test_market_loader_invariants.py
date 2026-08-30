@@ -20,7 +20,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_static_market_bundle_does_not_reload_base_utils(self):
         index = read("index.html")
         self.assertEqual(index.count('src="app-utils.js'), 1)
-        self.assertIn('market-data-loader.js?v=2.3', index)
+        self.assertIn('market-data-loader.js?v=2.4', index)
         self.assertIn('portfolio-sheet-navigation.js?v=1.3', index)
 
     def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
@@ -37,7 +37,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("dossiers-manifest.json", loader)
         self.assertIn("data/dossiers/", loader)
         self.assertNotIn("stocks.json?full=1", loader)
-        self.assertIn("version:'2.3'", loader)
+        self.assertIn("version:'2.4'", loader)
         self.assertIn("const result=rawOpen(ticker);", loader)
         self.assertIn("hydrateOpenDossier(ticker);", loader)
 
@@ -50,6 +50,15 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("hydratePortfolio().catch(()=>{})", block)
         self.assertLess(block.index("portfolio.click()"), block.index("hydratePortfolio().catch(()=>{})"))
         self.assertNotIn("hydratePortfolio().finally", block)
+
+    def test_portfolio_background_hydration_is_bounded(self):
+        loader = read("market-data-loader.js")
+        start = loader.index("async function hydratePortfolio()")
+        end = loader.index("\n  function installApiWrapper", start)
+        block = loader[start:end]
+        self.assertIn("const workerCount=Math.min(2,queue.length)", block)
+        self.assertIn("await hydrateTicker(ticker)", block)
+        self.assertNotIn("tickers.map(hydrateTicker)", block)
 
     def test_dossier_opening_delegates_to_canonical_navigation(self):
         loader = read("market-data-loader.js")

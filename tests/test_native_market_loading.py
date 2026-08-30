@@ -23,7 +23,7 @@ class NativeMarketLoadingTests(unittest.TestCase):
         self.assertNotIn('window.fetch =', loader)
         self.assertNotIn('sharedIndexPayload', loader)
         self.assertNotIn('requestUrl(', loader)
-        self.assertIn("version:'2.3'", loader)
+        self.assertIn("version:'2.4'", loader)
         self.assertIn('dossiers-manifest.json', loader)
         self.assertIn('data/dossiers/', loader)
         self.assertNotIn('data/stocks.json?full=1', loader)
