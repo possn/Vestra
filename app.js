@@ -11280,16 +11280,22 @@ async function fetchQuoteWithFallback(ref) {
       console.warn("[Quote sanity]", asset.name || asset.ticker, "rejected:", newValue.toFixed(0), "→ costBasis:", _assetCostBasis.toFixed(0));
     }
     asset.value = safeNewValue;
-    // Store Yahoo dividend data for projection use (q = quote object in this scope)
-    if (q && q.div_rate !== undefined && q.div_rate > 0) {
-      asset._yahooDiv = {
-        rate: parseNum(q.div_rate) || 0,
-        yield: parseNum(q.div_yield) || 0,
-        exDate: q.ex_div_date || "",
-        payDate: q.div_date || "",
-        currency: (q.currency || "USD"),
-        updatedAt: new Date().toISOString()
-      };
+    // Yahoo dividend semantics: null means unavailable; explicit 0 means the
+    // source currently reports no trailing dividend. Preserve the last valid
+    // Yahoo observation on null, but clear it on an explicit suspension/zero.
+    if (q && q.div_rate !== undefined && q.div_rate !== null) {
+      if (Number(q.div_rate) > 0) {
+        asset._yahooDiv = {
+          rate: parseNum(q.div_rate) || 0,
+          yield: q.div_yield == null ? null : (parseNum(q.div_yield) || 0),
+          exDate: q.ex_div_date || "",
+          payDate: q.div_date || "",
+          currency: (q.currency || "USD"),
+          updatedAt: new Date().toISOString()
+        };
+      } else if (Number(q.div_rate) === 0) {
+        delete asset._yahooDiv;
+      }
     }
     // Keep valueLocal in sync for multi-currency display and clear stale FX badges when asset returns to EUR.
     if (ccy !== "EUR") {
