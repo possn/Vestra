@@ -29,5 +29,22 @@ class MarketScoreExplanationTests(unittest.TestCase):
         self.assertNotIn("s.score =", text)
         self.assertNotIn("s.quality_pct =", text)
 
+    def test_specialist_models_use_native_score_dimensions(self):
+        text = MARKET.read_text(encoding="utf-8")
+        self.assertIn("score_dimensions", text)
+        self.assertIn("scoreDimensionLabel", text)
+        self.assertIn("Qualidade bancária", text)
+        self.assertIn("Qualidade REIT", text)
+        self.assertIn("Subscrição", text)
+        self.assertIn("Runway de caixa", text)
+
+    def test_model_rationale_is_visible_and_read_only(self):
+        text = MARKET.read_text(encoding="utf-8")
+        self.assertIn("scoreModelRationale", text)
+        self.assertIn("Modelo usado.", text)
+        self.assertIn("Bancos: rentabilidade", text)
+        self.assertIn("Biotech: runway de caixa", text)
+        self.assertNotIn("s.score =", text)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -577,7 +577,25 @@
     return `<svg class="market-spark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Preço 1 ano"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" style="color:var(--vio)"/></svg>`;
   }
 
+  function scoreDimensionLabel(label){
+    const labels={
+      'Quality':'Qualidade','Growth':'Crescimento','Balance':'Balanço','Cash Flow':'Cash flow','Valuation':'Valuation',
+      'Execution':'Execução','Earnings Quality':'Qualidade dos lucros','Capital Allocation':'Alocação de capital','Stability':'Estabilidade',
+      'Bank Quality':'Qualidade bancária','Efficiency':'Eficiência','Asset Quality':'Qualidade do crédito','Capital Proxy':'Capitalização',
+      'Income':'Rendimento','REIT Quality':'Qualidade REIT','Leverage':'Alavancagem','P/FFO Value':'P/FFO','Distribution':'Distribuição',
+      'Insurance Quality':'Qualidade seguradora','Underwriting Proxy':'Subscrição','Utility Quality':'Qualidade utility',
+      'Energy Quality':'Qualidade energia','Cash Runway':'Runway de caixa','Net Cash':'Caixa líquida',
+      'Dilution Discipline':'Disciplina de diluição','Operating Quality':'Qualidade operacional'
+    };
+    return labels[label]||label;
+  }
+
   function scoreDims(s){
+    const native=s?.score_dimensions;
+    if(native && typeof native==='object' && !Array.isArray(native)){
+      const rows=Object.entries(native).map(([label,value])=>[scoreDimensionLabel(label),n(value)]).filter(([,value])=>value!=null);
+      if(rows.length) return rows;
+    }
     const mapped=[
       ['Qualidade',s.quality_pct],['Crescimento',s.growth_pct],['Balanço',s.balance_pct],['Cash flow',s.cashflow_pct],
       ['Valuation',s.value_pct],['Execução',s.execution_pct],['Qualidade dos lucros',s.earnings_quality_pct],
@@ -605,7 +623,24 @@
       'Execução':[['Receitas','revenue_growth'],['Lucros','earnings_growth'],['Margem operacional','operating_margin']],
       'Qualidade dos lucros':[['Conversão caixa/lucro','cash_conversion_ratio','multiple'],['Accrual ratio','accrual_ratio'],['Margem FCF','fcf_margin']],
       'Alocação de capital':[['Diluição YoY','diluted_shares_yoy'],['Buybacks último T','repurchases_last_quarter','compact'],['ROCE proxy','roce_proxy'],['Cobertura dividendo/FCF','dividend_fcf_coverage','multiple']],
-      'Estabilidade':[['Beta','beta','num']]
+      'Estabilidade':[['Beta','beta','num']],
+      'Qualidade bancária':[['ROE','roe'],['ROA','roa'],['Margem líquida','profit_margin']],
+      'Eficiência':[['Efficiency ratio','efficiency_ratio_proxy']],
+      'Qualidade do crédito':[['Provisões / receitas','provision_to_revenue']],
+      'Capitalização':[['Equity / assets','equity_to_assets']],
+      'Rendimento':[['Dividend yield','dividend_yield']],
+      'Qualidade REIT':[['FFO / ação proxy','reit_ffo_per_share_proxy','num'],['ROE','roe'],['Margem líquida','profit_margin']],
+      'Alavancagem':[['Net debt / EBITDA','reit_net_debt_to_ebitda','multiple'],['Cobertura juros','interest_coverage','multiple']],
+      'P/FFO':[['P/FFO proxy','reit_p_ffo_proxy','multiple']],
+      'Distribuição':[['Dividend yield','dividend_yield'],['Payout FFO proxy','reit_ffo_payout_proxy']],
+      'Qualidade seguradora':[['ROE','roe'],['ROA','roa'],['Margem líquida','profit_margin']],
+      'Subscrição':[['Claims / receitas','insurance_claims_to_revenue'],['Operating ratio proxy','insurance_operating_ratio_proxy']],
+      'Qualidade utility':[['ROE','roe'],['Margem operacional','operating_margin'],['Margem líquida','profit_margin']],
+      'Qualidade energia':[['ROE','roe'],['ROCE proxy','roce_proxy'],['Margem operacional','operating_margin']],
+      'Runway de caixa':[['Cash total','total_cash','compact'],['Free cash flow','free_cash_flow','compact']],
+      'Caixa líquida':[['Net cash','net_cash','compact']],
+      'Disciplina de diluição':[['Diluição YoY','diluted_shares_yoy']],
+      'Qualidade operacional':[['ROA','roa'],['Margem operacional','operating_margin']]
     };
     const metrics=defs[label]||[];
     if(!metrics.length) return '';
@@ -677,6 +712,21 @@
     return 'Abaixo da média';
   }
 
+  function scoreModelRationale(s){
+    const model=txt(s?.score_model||'general');
+    const notes={
+      general:'Modelo geral: qualidade, crescimento, balanço, valuation, execução, qualidade dos lucros, alocação de capital e estabilidade.',
+      growth_tech:'Growth Tech: dá mais peso a crescimento, execução, margens, qualidade do cash flow e valuation compatível com empresas de crescimento.',
+      bank:'Bancos: rentabilidade, eficiência, qualidade do crédito, capitalização, crescimento do net interest income, P/B-P/E e rendimento.',
+      reit:'REIT: FFO/P-FFO proxy, alavancagem, payout/distribuição, crescimento e estabilidade. AFFO, NAV e ocupação não são inventados quando faltam.',
+      insurance:'Seguros: rentabilidade, underwriting proxy, capitalização, crescimento, valuation e rendimento; não fabrica combined ratio regulatório.',
+      utility:'Utilities: resiliência do balanço, rendimento, qualidade operacional, valuation e estabilidade pesam mais do que crescimento headline.',
+      energy:'Energia: geração de caixa, eficiência de capital, balanço e valuation têm maior peso; crescimento cíclico pesa menos.',
+      biotech:'Biotech: runway de caixa, caixa líquida, disciplina de diluição e progresso operacional; P/E genérico é excluído quando não é economicamente útil.'
+    };
+    return notes[model]||txt(s?.score_model_note)||'';
+  }
+
   function scoreExplanation(s){
     const score=n(s.score), coverage=n(s.data_coverage_pct);
     const dims=scoreDims(s).map(([label,value])=>({label,value:n(value)})).filter(x=>x.value!=null).sort((a,b)=>b.value-a.value);
@@ -687,7 +737,7 @@
     if(score==null){
       return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>COMO LER A AVALIAÇÃO</small><h4>Score não publicado</h4></div><span class="market-data-age">evidência insuficiente</span></div><p>Não há dados suficientes para produzir uma avaliação comparável com segurança. A ausência de score não significa uma empresa fraca.</p><div class="market-action-context"><span>Modelo ${esc(scoreModelLabel(s.score_model))}</span><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span></div></div>`;
     }
-    return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>PORQUE TEM ESTE SCORE</small><h4>${Math.round(score)}/100 · ${esc(scoreBand(score))}</h4></div><span class="market-data-age">${esc(scoreModelLabel(s.score_model))}</span></div><p><strong>O Score Vestra é um ranking relativo do perfil fundamental — não é uma previsão de retorno nem uma probabilidade de valorização.</strong> Um pilar em 80 significa aproximadamente percentil 80 no conjunto comparável usado por esse pilar; não significa 80% de probabilidade de subir.</p>${strongest.length?`<p class="market-case-note">A puxar para cima: ${pair(strongest)}.</p>`:''}${weakest.length?`<p class="market-case-note">A limitar a avaliação: ${pair(weakest)}.</p>`:''}<div class="market-action-context"><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span><span>${dims.length} pilares disponíveis</span></div><div class="market-score-layers"><p class="market-case-note"><strong>1 · Ranking fundamental.</strong> Os pesos-base do modelo ${esc(scoreModelLabel(s.score_model))} são: ${scoreWeightExplanation(s)}. Quando falta um pilar, ele não vale zero. Os pesos dos pilares disponíveis são renormalizados.</p><p class="market-case-note"><strong>2 · Qualidade da evidência.</strong> ${scoreEvidenceExplanation(s)}</p><p class="market-case-note"><strong>3 · Travão de risco.</strong> ${scoreRiskExplanation(s)}</p><p class="market-case-note"><strong>4 · Valuation, tese e expectativas.</strong> A faixa de fair value e os sinais de tese/analistas são camadas separadas. Podem mudar a leitura e a ação sem reescrever artificialmente o score fundamental.</p><p class="market-case-note"><strong>5 · Decisão de carteira.</strong> “Reforçar”, “Manter”, “Rever” ou “Substituir” considera ainda peso da posição, concentração setorial, overlap e alternativas. Uma empresa excelente pode por isso ficar em “Manter”.</p></div><p class="market-case-note">Scores com coberturas muito diferentes devem ser comparados com cautela. A validação prospetiva ainda está a recolher cohorts; o score deve ser usado como screener explicável, não como promessa de performance futura.</p></div>`;
+    return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>PORQUE TEM ESTE SCORE</small><h4>${Math.round(score)}/100 · ${esc(scoreBand(score))}</h4></div><span class="market-data-age">${esc(scoreModelLabel(s.score_model))}</span></div><p><strong>O Score Vestra é um ranking relativo do perfil fundamental — não é uma previsão de retorno nem uma probabilidade de valorização.</strong> Um pilar em 80 significa aproximadamente percentil 80 no conjunto comparável usado por esse pilar; não significa 80% de probabilidade de subir.</p>${strongest.length?`<p class="market-case-note">A puxar para cima: ${pair(strongest)}.</p>`:''}${weakest.length?`<p class="market-case-note">A limitar a avaliação: ${pair(weakest)}.</p>`:''}<div class="market-action-context"><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span><span>${dims.length} pilares disponíveis</span></div>${scoreModelRationale(s)?`<p class="market-case-note"><strong>Modelo usado.</strong> ${esc(scoreModelRationale(s))}</p>`:''}<div class="market-score-layers"><p class="market-case-note"><strong>1 · Ranking fundamental.</strong> Os pesos-base do modelo ${esc(scoreModelLabel(s.score_model))} são: ${scoreWeightExplanation(s)}. Quando falta um pilar, ele não vale zero. Os pesos dos pilares disponíveis são renormalizados.</p><p class="market-case-note"><strong>2 · Qualidade da evidência.</strong> ${scoreEvidenceExplanation(s)}</p><p class="market-case-note"><strong>3 · Travão de risco.</strong> ${scoreRiskExplanation(s)}</p><p class="market-case-note"><strong>4 · Valuation, tese e expectativas.</strong> A faixa de fair value e os sinais de tese/analistas são camadas separadas. Podem mudar a leitura e a ação sem reescrever artificialmente o score fundamental.</p><p class="market-case-note"><strong>5 · Decisão de carteira.</strong> “Reforçar”, “Manter”, “Rever” ou “Substituir” considera ainda peso da posição, concentração setorial, overlap e alternativas. Uma empresa excelente pode por isso ficar em “Manter”.</p></div><p class="market-case-note">Scores com coberturas muito diferentes devem ser comparados com cautela. A validação prospetiva ainda está a recolher cohorts; o score deve ser usado como screener explicável, não como promessa de performance futura.</p></div>`;
   }
 
   function vestraRead(s){
