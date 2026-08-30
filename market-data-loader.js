@@ -1,4 +1,4 @@
-/* Vestra Market Data Loader v2.2 — instant dossier opening + background hydration. */
+/* Vestra Market Data Loader v2.3 — instant dossier/portfolio opening + background hydration. */
 (() => {
   'use strict';
 
@@ -258,10 +258,11 @@
     const portfolio=e.target.closest?.('[data-market-tool="portfolio"]');
     if(portfolio){
       e.preventDefault(); e.stopImmediatePropagation();
-      hydratePortfolio().finally(()=>{
-        bypassClick=true;
-        try{ portfolio.click(); } finally { bypassClick=false; }
-      });
+      // Portfolio navigation must never wait for every company shard. Open first,
+      // then hydrate holdings opportunistically in the background.
+      bypassClick=true;
+      try{ portfolio.click(); } finally { bypassClick=false; }
+      hydratePortfolio().catch(()=>{});
     }
   },true);
 
@@ -274,5 +275,5 @@
   },true);
 
   ensureApiWrapper();
-  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,version:'2.2'};
+  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,version:'2.3'};
 })();
