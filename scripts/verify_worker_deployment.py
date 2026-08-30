@@ -42,10 +42,12 @@ def source_worker_contract() -> dict[str, Any]:
     version = re.search(r"Versão\s+([0-9.]+)", text)
     quote_ttl = re.search(r"const QUOTE_CACHE_TTL\s*=\s*(\d+)", text)
     market_ttl = re.search(r"const MARKET_CACHE_TTL\s*=\s*(\d+)", text)
+    missing_policy = re.search(r'missing_numeric_policy:\s*"([^"]+)"', text)
     return {
         "version": version.group(1) if version else None,
         "quote_cache_ttl_seconds": int(quote_ttl.group(1)) if quote_ttl else None,
         "market_cache_ttl_seconds": int(market_ttl.group(1)) if market_ttl else None,
+        "missing_numeric_policy": missing_policy.group(1) if missing_policy else None,
     }
 
 
@@ -145,6 +147,7 @@ def main() -> int:
                 for key, label in (
                     ("quote_cache_ttl_seconds", "quote cache TTL"),
                     ("market_cache_ttl_seconds", "market cache TTL"),
+                    ("missing_numeric_policy", "missing numeric policy"),
                 ):
                     expected = contract.get(key)
                     checks.append(Check(
