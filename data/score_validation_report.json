@@ -1,13 +1,15 @@
 {
-  "schema_version": 1,
-  "generated_at": "2026-08-30T13:24:43.770631+00:00",
-  "methodology": "prospective weekly cohorts; no reconstructed historical scores",
+  "schema_version": 2,
+  "generated_at": "2026-08-30T19:44:40.842218+00:00",
+  "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
   "horizons_days": [
     28,
     84,
     168
   ],
   "snapshots_available": 1,
+  "realised_outcomes": 0,
+  "new_outcomes_this_run": 0,
   "horizons": {
     "28": {
       "n": 0,
@@ -15,7 +17,31 @@
       "top_quintile_mean_return_pct": null,
       "bottom_quintile_mean_return_pct": null,
       "top_minus_bottom_pct": null,
-      "status": "collecting_evidence"
+      "cohort_count": 0,
+      "expected_matured_cohorts": 0,
+      "cohort_capture_pct": null,
+      "median_cohort_rank_ic": null,
+      "positive_ic_cohorts": 0,
+      "median_cohort_top_minus_bottom_pct": null,
+      "positive_spread_cohorts": 0,
+      "factor_rank_information_coefficient": {
+        "score": null,
+        "quality_pct": null,
+        "growth_pct": null,
+        "balance_pct": null,
+        "cashflow_pct": null,
+        "value_pct": null,
+        "execution_pct": null,
+        "earnings_quality_pct": null,
+        "capital_allocation_pct": null,
+        "stability_pct": null
+      },
+      "by_score_model": {},
+      "by_sector": {},
+      "cohorts": [],
+      "status": "collecting_evidence",
+      "first_possible_maturity_date": "2026-09-24",
+      "next_pending_maturity_date": "2026-09-24"
     },
     "84": {
       "n": 0,
@@ -23,7 +49,31 @@
       "top_quintile_mean_return_pct": null,
       "bottom_quintile_mean_return_pct": null,
       "top_minus_bottom_pct": null,
-      "status": "collecting_evidence"
+      "cohort_count": 0,
+      "expected_matured_cohorts": 0,
+      "cohort_capture_pct": null,
+      "median_cohort_rank_ic": null,
+      "positive_ic_cohorts": 0,
+      "median_cohort_top_minus_bottom_pct": null,
+      "positive_spread_cohorts": 0,
+      "factor_rank_information_coefficient": {
+        "score": null,
+        "quality_pct": null,
+        "growth_pct": null,
+        "balance_pct": null,
+        "cashflow_pct": null,
+        "value_pct": null,
+        "execution_pct": null,
+        "earnings_quality_pct": null,
+        "capital_allocation_pct": null,
+        "stability_pct": null
+      },
+      "by_score_model": {},
+      "by_sector": {},
+      "cohorts": [],
+      "status": "collecting_evidence",
+      "first_possible_maturity_date": "2026-11-19",
+      "next_pending_maturity_date": "2026-11-19"
     },
     "168": {
       "n": 0,
@@ -31,8 +81,38 @@
       "top_quintile_mean_return_pct": null,
       "bottom_quintile_mean_return_pct": null,
       "top_minus_bottom_pct": null,
-      "status": "collecting_evidence"
+      "cohort_count": 0,
+      "expected_matured_cohorts": 0,
+      "cohort_capture_pct": null,
+      "median_cohort_rank_ic": null,
+      "positive_ic_cohorts": 0,
+      "median_cohort_top_minus_bottom_pct": null,
+      "positive_spread_cohorts": 0,
+      "factor_rank_information_coefficient": {
+        "score": null,
+        "quality_pct": null,
+        "growth_pct": null,
+        "balance_pct": null,
+        "cashflow_pct": null,
+        "value_pct": null,
+        "execution_pct": null,
+        "earnings_quality_pct": null,
+        "capital_allocation_pct": null,
+        "stability_pct": null
+      },
+      "by_score_model": {},
+      "by_sector": {},
+      "cohorts": [],
+      "status": "collecting_evidence",
+      "first_possible_maturity_date": "2027-02-11",
+      "next_pending_maturity_date": "2027-02-11"
     }
   },
-  "decision_rule": "Do not optimize production weights until multiple independent cohorts exist; prefer stable positive rank IC and top-minus-bottom spread across horizons and sectors."
+  "interpretation": {
+    "rank_ic": "Spearman correlation between the score known at cohort date and realised forward return.",
+    "top_minus_bottom": "Mean return of the highest score quintile minus the lowest score quintile.",
+    "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap.",
+    "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime."
+  },
+  "decision_rule": "Do not optimize production weights from pooled n alone. Require multiple matured weekly cohorts, preferably at least 8 per horizon and evidence across at least two horizons, with stable positive median cohort rank IC and top-minus-bottom spread across score models/sectors."
 }
