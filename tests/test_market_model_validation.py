@@ -58,5 +58,13 @@ class MarketModelValidationTests(unittest.TestCase):
         self.assertIn("Cohorts maturados / esperados", text)
 
 
+    def test_panel_exposes_model_and_sector_diagnostics(self):
+        text = MODULE.read_text(encoding="utf-8")
+        self.assertIn("segmentDiagnostics", text)
+        self.assertIn("by_score_model", text)
+        self.assertIn("by_sector", text)
+        self.assertIn("Por modelo e setor", text)
+        self.assertIn("Amostras segmentadas pequenas", text)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

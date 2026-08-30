@@ -72,8 +72,8 @@
       .model-validation-body{padding:18px 20px 26px}.model-validation-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
       .model-validation-card{border:1px solid var(--border,#e0e6e3);border-radius:17px;padding:14px;background:var(--surface-2,#f7f9f8)}.model-validation-card__top{display:flex;align-items:center;justify-content:space-between;gap:8px}.model-validation-card__h{font-size:17px;font-weight:800}.model-validation-status{font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef1ef;color:#65716c}.model-validation-status[data-tone="amber"]{background:#fff2d9;color:#8d5f0a}.model-validation-status[data-tone="green"]{background:#def4e8;color:#17633e}
       .model-validation-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.model-validation-metric small{display:block;color:var(--muted,#6d7a75);font-size:10px;margin-bottom:2px}.model-validation-metric strong{font-size:15px}.model-validation-card__foot{margin-top:11px;padding-top:10px;border-top:1px solid var(--border,#e0e6e3);font-size:10px;color:var(--muted,#6d7a75)}
-      .model-validation-section{margin-top:18px}.model-validation-section h4{margin:0 0 8px;font-size:14px}.model-validation-note{border-left:3px solid #177b78;padding:11px 12px;background:color-mix(in srgb,#177b78 7%,var(--surface,#fff));border-radius:0 12px 12px 0;color:var(--muted,#66736e);font-size:11px;line-height:1.5}.model-validation-factor-list{display:grid;gap:7px}.model-validation-factor{display:grid;grid-template-columns:minmax(120px,1fr) 70px 1.3fr;align-items:center;gap:10px;font-size:11px}.model-validation-factor__bar{height:7px;background:var(--surface-2,#eef2f0);border-radius:999px;overflow:hidden}.model-validation-factor__fill{height:100%;border-radius:inherit;background:#177b78}.model-validation-factor__fill.is-negative{background:#b85a53}.model-validation-empty{padding:22px;border:1px dashed var(--border,#dfe5e2);border-radius:16px;text-align:center;color:var(--muted,#6d7a75);font-size:12px;line-height:1.5}.model-validation-meta{margin-top:14px;color:var(--muted,#6d7a75);font-size:10px}
-      @media(max-width:640px){.model-validation-overlay{padding:0}.model-validation-sheet{max-height:92vh;border-radius:24px 24px 0 0}.model-validation-summary{grid-template-columns:1fr}.model-validation-factor{grid-template-columns:minmax(105px,1fr) 58px 1fr}.model-validation-head,.model-validation-body{padding-left:16px;padding-right:16px}}
+      .model-validation-section{margin-top:18px}.model-validation-section h4{margin:0 0 8px;font-size:14px}.model-validation-note{border-left:3px solid #177b78;padding:11px 12px;background:color-mix(in srgb,#177b78 7%,var(--surface,#fff));border-radius:0 12px 12px 0;color:var(--muted,#66736e);font-size:11px;line-height:1.5}.model-validation-factor-list{display:grid;gap:7px}.model-validation-factor{display:grid;grid-template-columns:minmax(120px,1fr) 70px 1.3fr;align-items:center;gap:10px;font-size:11px}.model-validation-factor__bar{height:7px;background:var(--surface-2,#eef2f0);border-radius:999px;overflow:hidden}.model-validation-factor__fill{height:100%;border-radius:inherit;background:#177b78}.model-validation-factor__fill.is-negative{background:#b85a53}.model-validation-empty{padding:22px;border:1px dashed var(--border,#dfe5e2);border-radius:16px;text-align:center;color:var(--muted,#6d7a75);font-size:12px;line-height:1.5}.model-validation-meta{margin-top:14px;color:var(--muted,#6d7a75);font-size:10px}.model-validation-segments{display:grid;gap:7px}.model-validation-segment{display:grid;grid-template-columns:minmax(130px,1.5fr) 50px 78px 92px;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--border,#e0e6e3);border-radius:12px;background:var(--surface-2,#f7f9f8);font-size:11px}.model-validation-segment small{display:block;color:var(--muted,#6d7a75);font-size:9px;margin-bottom:2px}.model-validation-segment strong{font-size:11px}
+      @media(max-width:640px){.model-validation-overlay{padding:0}.model-validation-sheet{max-height:92vh;border-radius:24px 24px 0 0}.model-validation-summary{grid-template-columns:1fr}.model-validation-factor{grid-template-columns:minmax(105px,1fr) 58px 1fr}.model-validation-segment{grid-template-columns:minmax(120px,1.4fr) 36px 62px 76px;gap:7px}.model-validation-head,.model-validation-body{padding-left:16px;padding-right:16px}}
     `;
     document.head.appendChild(style);
   }
@@ -129,6 +129,28 @@
     }).join('')}</div>`;
   }
 
+  function segmentDiagnostics(payload) {
+    const rows = [];
+    for (const days of ['28', '84', '168']) {
+      const horizon = payload?.horizons?.[days] || {};
+      for (const [kind, source] of [['Modelo', horizon.by_score_model], ['Setor', horizon.by_sector]]) {
+        if (!source || typeof source !== 'object') continue;
+        for (const [name, stats] of Object.entries(source)) {
+          if (!stats || typeof stats !== 'object') continue;
+          const n = finite(stats.n) ?? 0;
+          const ic = finite(stats.median_cohort_rank_ic ?? stats.rank_information_coefficient);
+          const spread = finite(stats.median_cohort_top_minus_bottom_pct ?? stats.top_minus_bottom_pct);
+          if (n < 20 && ic === null && spread === null) continue;
+          rows.push({ kind, name, days: Number(days), n, ic, spread });
+        }
+      }
+    }
+    if (!rows.length) return '';
+    rows.sort((a, b) => (b.days - a.days) || (b.n - a.n) || a.name.localeCompare(b.name));
+    const selected = rows.slice(0, 12);
+    return `<div class="model-validation-section"><h4>Por modelo e setor</h4><div class="model-validation-segments">${selected.map(row => `<div class="model-validation-segment"><div><small>${esc(row.kind)} · ${row.days}d</small><strong>${esc(row.name)}</strong></div><div><small>n</small><strong>${row.n}</strong></div><div><small>Rank IC</small><strong>${signed(row.ic,3)}</strong></div><div><small>Top − Bottom</small><strong>${signed(row.spread,2,'%')}</strong></div></div>`).join('')}</div><div class="model-validation-meta">Amostras segmentadas pequenas são apenas diagnósticas; não servem para recalibrar pesos isoladamente.</div></div>`;
+  }
+
   function render(payload) {
     const horizons = payload.horizons || {};
     const snapshotCount = finite(payload.snapshots_available) ?? 0;
@@ -141,6 +163,7 @@
       <div class="model-validation-body">
         <div class="model-validation-summary">${['28','84','168'].map(days => horizonCard(days, horizons[days] || {})).join('')}</div>
         <div class="model-validation-section"><h4>Leitura dos pilares</h4>${factorDiagnostics(payload)}</div>
+        ${segmentDiagnostics(payload)}
         <div class="model-validation-section"><h4>Como interpretar</h4><div class="model-validation-note"><strong>Rank IC</strong> é a correlação de Spearman entre o score conhecido na data do cohort e o retorno posterior. <strong>Top − Bottom</strong> compara o retorno médio do quintil de score mais alto com o mais baixo. O Vestra só deve reconsiderar pesos quando houver vários cohorts, consistência em pelo menos dois horizontes e estabilidade entre modelos/setores.</div></div>
         <div class="model-validation-meta">${snapshotCount} snapshot${snapshotCount === 1 ? '' : 's'} · ${outcomes} resultados realizados · relatório ${dateLabel(payload.generated_at)} · schema v${esc(payload.schema_version ?? '—')}</div>
       </div>`;
