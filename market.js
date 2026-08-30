@@ -595,6 +595,46 @@
     return ({general:'Geral',bank:'Bancos',biotech:'Biotecnologia',energy:'Energia',growth_tech:'Tecnologia / crescimento',insurance:'Seguros',reit:'REIT',utility:'Utilities'})[txt(model)]||txt(model)||'Geral';
   }
 
+  function scoreModelWeights(model){
+    const packs={
+      general:[['Qualidade',18],['Crescimento',15],['Balanço',14],['Cash flow',8],['Valuation',12],['Execução',10],['Qualidade dos lucros',10],['Alocação de capital',8],['Estabilidade',5]],
+      growth_tech:[['Qualidade',20],['Crescimento',22],['Balanço',12],['Cash flow',10],['Valuation',7],['Execução',12],['Qualidade dos lucros',9],['Alocação de capital',5],['Estabilidade',3]],
+      bank:[['Qualidade bancária',22],['Eficiência',13],['Qualidade dos ativos',10],['Capital',15],['Crescimento',15],['Valuation',15],['Rendimento',5],['Estabilidade',5]],
+      reit:[['Qualidade REIT',22],['Crescimento',16],['Alavancagem',20],['P/FFO / valuation',20],['Distribuição',17],['Estabilidade',5]],
+      insurance:[['Qualidade',22],['Underwriting',18],['Capital',18],['Crescimento',12],['Valuation',17],['Rendimento',8],['Estabilidade',5]],
+      utility:[['Qualidade',18],['Balanço',22],['Rendimento',18],['Valuation',17],['Crescimento',10],['Estabilidade',10],['Cash flow',5]],
+      energy:[['Qualidade',20],['Cash flow',22],['Balanço',18],['Valuation',20],['Crescimento',10],['Estabilidade',10]],
+      biotech:[['Cash runway',25],['Net cash',15],['Disciplina de diluição',20],['Crescimento',20],['Qualidade operacional',10],['Estabilidade',10]]
+    };
+    return packs[txt(model)]||packs.general;
+  }
+
+  function scoreRiskExplanation(s){
+    const gate=txt(s.risk_gate)||'clear', cap=n(s.score_cap), flags=Array.isArray(s.risk_flags)?s.risk_flags:[];
+    if(gate==='clear'&&!flags.length) return '<strong>Risk Gate:</strong> sem bloqueios estruturais materiais detetados.';
+    const label=({watch:'vigilância',high:'elevado',severe:'severo'})[gate]||gate;
+    const capText=cap!=null?` O score fica limitado a ${Math.round(cap)}/100.`:'';
+    return `<strong>Risk Gate ${esc(label)}:</strong> existem sinais estruturais que não podem ser compensados por outros pilares.${capText}`;
+  }
+
+  function scoreEvidenceExplanation(s){
+    const conf=n(s.confidence_score), coverage=n(s.data_coverage_pct), critical=n(s.critical_metric_coverage_pct);
+    const reliability=txt(s.score_reliability);
+    const raw=n(s.score_raw), published=n(s.score);
+    let tone='Evidência robusta';
+    if(reliability==='insufficient_data') tone='Evidência insuficiente';
+    else if(reliability==='limited_evidence') tone='Evidência limitada';
+    else if(reliability==='moderate_evidence') tone='Evidência moderada';
+    else if(conf!=null&&conf<60) tone='Confiança baixa';
+    const moderation=raw!=null&&published!=null&&published<raw-0.1?` O score quantitativo bruto era ${Math.round(raw)}, mas a publicação foi moderada para ${Math.round(published)} pela qualidade/cobertura da evidência.`:'';
+    return `<strong>${esc(tone)}.</strong> Cobertura global ${coverage==null?'—':Math.round(coverage)+'%'}${critical==null?'':` · métricas críticas ${Math.round(critical)}%`}${conf==null?'':` · confiança da evidência ${Math.round(conf)}/100`}.${moderation}`;
+  }
+
+  function scoreWeightExplanation(s){
+    const weights=scoreModelWeights(s.score_model);
+    return weights.map(([label,w])=>`${esc(label)} ${w}%`).join(' · ');
+  }
+
   function scoreBand(value){
     const v=n(value);
     if(v==null) return 'Sem score publicável';
@@ -614,7 +654,7 @@
     if(score==null){
       return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>COMO LER A AVALIAÇÃO</small><h4>Score não publicado</h4></div><span class="market-data-age">evidência insuficiente</span></div><p>Não há dados suficientes para produzir uma avaliação comparável com segurança. A ausência de score não significa uma empresa fraca.</p><div class="market-action-context"><span>Modelo ${esc(scoreModelLabel(s.score_model))}</span><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span></div></div>`;
     }
-    return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>PORQUE TEM ESTE SCORE</small><h4>${Math.round(score)}/100 · ${esc(scoreBand(score))}</h4></div><span class="market-data-age">${esc(scoreModelLabel(s.score_model))}</span></div><p><strong>O Score Vestra é um ranking relativo de qualidade, crescimento, balanço, cash flow, valuation e outros fatores — não é uma previsão de retorno.</strong> Um pilar em 80 significa aproximadamente que a empresa está perto do percentil 80 no conjunto comparável usado pelo modelo; não significa 80% de probabilidade de subir.</p>${strongest.length?`<p class="market-case-note">A puxar para cima: ${pair(strongest)}.</p>`:''}${weakest.length?`<p class="market-case-note">A limitar a avaliação: ${pair(weakest)}.</p>`:''}<div class="market-action-context"><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span><span>${dims.length}/9 pilares disponíveis</span></div><p class="market-case-note">Valores ausentes não são tratados como zero. Os pesos dos pilares disponíveis são renormalizados; por isso scores com coberturas muito diferentes devem ser comparados com cautela.</p></div>`;
+    return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>PORQUE TEM ESTE SCORE</small><h4>${Math.round(score)}/100 · ${esc(scoreBand(score))}</h4></div><span class="market-data-age">${esc(scoreModelLabel(s.score_model))}</span></div><p><strong>O Score Vestra é um ranking relativo do perfil fundamental — não é uma previsão de retorno nem uma probabilidade de valorização.</strong> Um pilar em 80 significa aproximadamente percentil 80 no conjunto comparável usado por esse pilar; não significa 80% de probabilidade de subir.</p>${strongest.length?`<p class="market-case-note">A puxar para cima: ${pair(strongest)}.</p>`:''}${weakest.length?`<p class="market-case-note">A limitar a avaliação: ${pair(weakest)}.</p>`:''}<div class="market-action-context"><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span><span>${dims.length} pilares disponíveis</span></div><div class="market-score-layers"><p class="market-case-note"><strong>1 · Ranking fundamental.</strong> Os pesos-base do modelo ${esc(scoreModelLabel(s.score_model))} são: ${scoreWeightExplanation(s)}. Quando falta um pilar, ele não vale zero. Os pesos dos pilares disponíveis são renormalizados.</p><p class="market-case-note"><strong>2 · Qualidade da evidência.</strong> ${scoreEvidenceExplanation(s)}</p><p class="market-case-note"><strong>3 · Travão de risco.</strong> ${scoreRiskExplanation(s)}</p><p class="market-case-note"><strong>4 · Valuation, tese e expectativas.</strong> A faixa de fair value e os sinais de tese/analistas são camadas separadas. Podem mudar a leitura e a ação sem reescrever artificialmente o score fundamental.</p><p class="market-case-note"><strong>5 · Decisão de carteira.</strong> “Reforçar”, “Manter”, “Rever” ou “Substituir” considera ainda peso da posição, concentração setorial, overlap e alternativas. Uma empresa excelente pode por isso ficar em “Manter”.</p></div><p class="market-case-note">Scores com coberturas muito diferentes devem ser comparados com cautela. A validação prospetiva ainda está a recolher cohorts; o score deve ser usado como screener explicável, não como promessa de performance futura.</p></div>`;
   }
 
   function vestraRead(s){
