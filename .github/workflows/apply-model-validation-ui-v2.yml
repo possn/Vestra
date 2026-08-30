@@ -1,0 +1,39 @@
+name: Apply model validation UI v2
+
+on:
+  push:
+    branches: [model-validation-ui-v2-20260830]
+    paths:
+      - 'scripts/patch_model_validation_ui.py'
+      - '.github/workflows/apply-model-validation-ui-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: model-validation-ui-v2-20260830
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded patch
+        run: python scripts/patch_model_validation_ui.py
+      - name: Validate focused contract
+        run: |
+          node --check market-model-validation.js
+          python -m unittest tests.test_market_model_validation -v
+      - name: Commit patch
+        run: |
+          git config user.name "vestra-maintenance-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add market-model-validation.js tests/test_market_model_validation.py
+          if git diff --cached --quiet; then
+            echo "No patch changes"
+          else
+            git commit -m "ui: preserve missing validation metrics as unknown"
+            git push
+          fi
