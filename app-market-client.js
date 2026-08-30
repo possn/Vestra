@@ -1,4 +1,4 @@
-/* Vestra Market Client v1.3 — iOS-safe quote coalescing, Worker batch GET and bounded fallback. */
+/* Vestra Market Client v1.4 — identity-safe batching, quote dedupe and FX caching. */
 (() => {
   'use strict';
 
@@ -7,23 +7,36 @@
     SEK:0.087, NOK:0.085, CAD:0.68, AUD:0.59, JPY:0.006, HKD:0.118
   });
 
-  // app.js asks for 8 workers, but the transport keeps the proven iOS ceiling.
-  // fetchQuote calls inside those workers are coalesced into one /quotes GET, so
-  // four portfolio rows normally consume one browser connection instead of four.
-  const MAX_QUOTE_CONCURRENCY = 4;
+  // Logical portfolio concurrency can be higher because requests are coalesced into
+  // one Worker batch connection. Direct fallback remains deliberately conservative.
+  const MAX_QUOTE_CONCURRENCY = 12;
   const DEFAULT_QUOTE_TIMEOUT_MS = 12000;
-  const BATCH_QUOTE_TIMEOUT_MS = 18000;
-  const BATCH_WINDOW_MS = 12;
-  const BATCH_CHUNK_SIZE = 4;
+  const BATCH_QUOTE_TIMEOUT_MS = 12000;
+  const BATCH_WINDOW_MS = 18;
+  const BATCH_CHUNK_SIZE = 12;
   const DIRECT_FALLBACK_CONCURRENCY = 2;
+  const QUOTE_CACHE_TTL_MS = 60 * 1000;
+  const QUOTE_ERROR_TTL_MS = 20 * 1000;
+  const FX_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
   const cleanWorkerUrl = workerUrl => String(workerUrl||'').replace(/\/$/,'');
   const batchSupport = new Map(); // worker base -> true/false once learned
+  const quoteCache = new Map();   // base|ticker -> {ts,value}
+  const quoteErrorCache = new Map(); // base|ticker -> {ts,error}
+  const quoteInflight = new Map(); // base|ticker -> Promise
+  const fxCache = new Map();      // base|ccy -> {ts,rate}
 
   function isTimeoutError(err) {
     const name=String(err?.name||'');
     const msg=String(err?.message||'');
     return name==='AbortError' || name==='TimeoutError' || /aborted|timeout|timed out|tempo limite/i.test(msg);
+  }
+
+  function freshEntry(map,key,ttl){
+    const row=map.get(key);
+    if(!row) return null;
+    if(Date.now()-Number(row.ts||0)>ttl){ map.delete(key); return null; }
+    return row;
   }
 
   async function fetchWithTimeout(url, options={}, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
@@ -66,9 +79,6 @@
     let unsupported=batchSupport.get(base)===false;
     if(unsupported) return {quotes,errors,unsupported:true};
 
-    // Worker v4.2 exposes GET /quotes?tickers=... and caps at 20. Keep client
-    // chunks deliberately small: the Worker resolves the symbols in parallel and
-    // Safari only has to keep one HTTP request alive for the group.
     for(let i=0;i<unique.length;i+=BATCH_CHUNK_SIZE){
       const chunk=unique.slice(i,i+BATCH_CHUNK_SIZE);
       const qs=chunk.map(encodeURIComponent).join(',');
@@ -108,9 +118,6 @@
     return {quotes,errors,unsupported};
   }
 
-  // A tiny queue lets existing app.js code keep calling fetchQuote(ticker)
-  // without knowing about batching. Calls arriving in the same render/refresh
-  // wave are grouped by Worker URL and resolved through /quotes.
   const pendingByBase=new Map();
   let batchTimer=null;
 
@@ -151,7 +158,6 @@
         return;
       }
 
-      // Resolve duplicates once but fan the result out to every caller.
       const tickers=[...new Set(entries.map(e=>e.ticker))];
       const timeout=Math.max(BATCH_QUOTE_TIMEOUT_MS,...entries.map(e=>Number(e.timeoutMs)||0));
       const result=await fetchQuotesBatch(tickers,base,timeout);
@@ -169,7 +175,32 @@
   }
 
   async function fetchQuote(ticker, workerUrl, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
-    return queueQuote(ticker,workerUrl,timeoutMs);
+    const base=cleanWorkerUrl(workerUrl);
+    const tk=String(ticker||'').trim().toUpperCase();
+    if(!base) throw new Error('Worker URL não configurado');
+    if(!tk) throw new Error('Ticker vazio');
+    const key=`${base}|${tk}`;
+
+    const cached=freshEntry(quoteCache,key,QUOTE_CACHE_TTL_MS);
+    if(cached) return cached.value;
+    const cachedErr=freshEntry(quoteErrorCache,key,QUOTE_ERROR_TTL_MS);
+    if(cachedErr) throw cachedErr.error;
+    if(quoteInflight.has(key)) return quoteInflight.get(key);
+
+    const task=queueQuote(tk,base,timeoutMs)
+      .then(value=>{
+        quoteCache.set(key,{ts:Date.now(),value});
+        quoteErrorCache.delete(key);
+        return value;
+      })
+      .catch(err=>{
+        const error=err instanceof Error?err:new Error(String(err||'Erro ao obter cotação'));
+        quoteErrorCache.set(key,{ts:Date.now(),error});
+        throw error;
+      })
+      .finally(()=>quoteInflight.delete(key));
+    quoteInflight.set(key,task);
+    return task;
   }
 
   async function mapWithConcurrency(items, concurrency, fn) {
@@ -191,22 +222,34 @@
   }
 
   async function fetchFxRates(currencies, workerUrl, fallbacks=FX_FALLBACK_LOCAL) {
+    const base=cleanWorkerUrl(workerUrl);
     const ccys=[...new Set([...(currencies||[])].map(x=>String(x||'').trim().toUpperCase()).filter(x=>x&&x!=='EUR'))];
     const rates={};
-    // These calls are also coalesced, so a portfolio with many currencies no
-    // longer opens a burst of independent Worker connections on foregrounding.
-    await Promise.allSettled(ccys.map(async ccy=>{
+    const missing=[];
+
+    for(const ccy of ccys){
+      const row=freshEntry(fxCache,`${base}|${ccy}`,FX_CACHE_TTL_MS);
+      if(row && Number(row.rate)>0) rates[ccy]=Number(row.rate);
+      else missing.push(ccy);
+    }
+
+    await Promise.allSettled(missing.map(async ccy=>{
       try {
-        const q=await fetchQuote(`EUR${ccy}=X`,workerUrl,10000);
-        if(q&&Number(q.price)>0)rates[ccy]=1/Number(q.price);
+        const q=await fetchQuote(`EUR${ccy}=X`,base,10000);
+        if(q&&Number(q.price)>0){
+          const rate=1/Number(q.price);
+          rates[ccy]=rate;
+          fxCache.set(`${base}|${ccy}`,{ts:Date.now(),rate});
+        }
       } catch(_) {}
     }));
+
     for(const ccy of ccys)if(!rates[ccy])rates[ccy]=Number(fallbacks?.[ccy])||1;
     return rates;
   }
 
   window.VestraMarketClient=Object.freeze({
-    version:'1.3',
+    version:'1.4',
     FX_FALLBACK_LOCAL,
     MAX_QUOTE_CONCURRENCY,
     DEFAULT_QUOTE_TIMEOUT_MS,
