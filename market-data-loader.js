@@ -5,8 +5,27 @@
   const originalFetch = window.fetch.bind(window);
   const shardCache = new Map();
   const tickerHydrationCache = new Map();
+  const dossierPerf = [];
+  const dossierOpenMarks = new Map();
   let manifestPromise = null;
   let bypassClick = false;
+
+  function recordDossierPerf(entry){
+    const row={ts:new Date().toISOString(),...entry};
+    dossierPerf.push(row);
+    if(dossierPerf.length>20) dossierPerf.splice(0,dossierPerf.length-20);
+    return row;
+  }
+
+  function markDossierOpen(ticker){
+    const key=tickerKey(ticker); if(!key) return;
+    dossierOpenMarks.set(key,{startedAt:performance.now(),sheetMs:null});
+    requestAnimationFrame(()=>{
+      const mark=dossierOpenMarks.get(key); if(!mark||mark.sheetMs!=null) return;
+      const sh=dossierSheetFor(key);
+      if(sh) mark.sheetMs=Math.round(performance.now()-mark.startedAt);
+    });
+  }
 
   const txt = v => String(v ?? '').trim();
   const tickerKey = v => txt(v).toUpperCase();
@@ -171,12 +190,31 @@
   function hydrateOpenDossier(ticker){
     const key=tickerKey(ticker);
     if(!key) return Promise.resolve(null);
+    const hydrationStartedAt=performance.now();
     setHydrationBadge(key,'loading');
     return hydrateTicker(key).then(stock=>{
       refreshOpenDossier(key,stock);
+      const mark=dossierOpenMarks.get(key)||{};
+      recordDossierPerf({
+        ticker:key,
+        sheetMs:mark.sheetMs,
+        hydrationMs:Math.round(performance.now()-hydrationStartedAt),
+        complete:!!stock?._dossierHydrated,
+        error:txt(stock?._dossierHydrationError)
+      });
+      dossierOpenMarks.delete(key);
       return stock;
-    }).catch(()=>{
+    }).catch(err=>{
       setHydrationBadge(key,'partial');
+      const mark=dossierOpenMarks.get(key)||{};
+      recordDossierPerf({
+        ticker:key,
+        sheetMs:mark.sheetMs,
+        hydrationMs:Math.round(performance.now()-hydrationStartedAt),
+        complete:false,
+        error:txt(err?.message)||'hydration failed'
+      });
+      dossierOpenMarks.delete(key);
       return resolveIndexStock(key);
     });
   }
@@ -236,6 +274,7 @@
   function openDossier(ticker,options={}){
     const tk=tickerKey(ticker);
     if(!tk) return Promise.resolve(false);
+    markDossierOpen(tk);
     const nav=window.VestraNavigation;
     if(nav?.openCompany) return Promise.resolve(nav.openCompany(tk,options));
     try{
@@ -286,5 +325,9 @@
   },true);
 
   ensureApiWrapper();
-  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,version:'2.4'};
+  window.VestraMarketData={
+    hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,
+    performance:()=>dossierPerf.map(x=>({...x})),
+    version:'2.5'
+  };
 })();

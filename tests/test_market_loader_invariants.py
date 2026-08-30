@@ -20,7 +20,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_static_market_bundle_does_not_reload_base_utils(self):
         index = read("index.html")
         self.assertEqual(index.count('src="app-utils.js'), 1)
-        self.assertIn('market-data-loader.js?v=2.4', index)
+        self.assertIn('market-data-loader.js?v=2.5', index)
         self.assertIn('portfolio-sheet-navigation.js?v=1.3', index)
 
     def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
@@ -37,7 +37,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("dossiers-manifest.json", loader)
         self.assertIn("data/dossiers/", loader)
         self.assertNotIn("stocks.json?full=1", loader)
-        self.assertIn("version:'2.4'", loader)
+        self.assertIn("version:'2.5'", loader)
         self.assertIn("const result=rawOpen(ticker);", loader)
         self.assertIn("hydrateOpenDossier(ticker);", loader)
 
@@ -73,6 +73,17 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertNotIn("stocks.json?full=1", loader)
         self.assertIn("The startup index is a valid fallback", loader)
         self.assertIn("tickerHydrationCache", loader)
+
+    def test_dossier_performance_is_local_read_only_diagnostics(self):
+        loader = read("market-data-loader.js")
+        self.assertIn("dossierPerf", loader)
+        self.assertIn("markDossierOpen", loader)
+        self.assertIn("sheetMs", loader)
+        self.assertIn("hydrationMs", loader)
+        self.assertIn("performance:()=>dossierPerf.map", loader)
+        self.assertIn("if(dossierPerf.length>20)", loader)
+        self.assertNotIn("sendBeacon", loader)
+        self.assertNotIn("/telemetry", loader)
 
     def test_politicians_loader_matches_canonical_module_version(self):
         index = read("index.html")
