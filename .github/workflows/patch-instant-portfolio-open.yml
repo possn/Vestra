@@ -1,0 +1,94 @@
+name: Patch instant portfolio open
+
+on:
+  push:
+    branches:
+      - fix/instant-portfolio-open-20260830
+    paths:
+      - '.github/workflows/patch-instant-portfolio-open.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/instant-portfolio-open-20260830
+      - name: Patch loader and tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('market-data-loader.js')
+          s = p.read_text(encoding='utf-8')
+          replacements = [
+              ('/* Vestra Market Data Loader v2.2 — instant dossier opening + background hydration. */',
+               '/* Vestra Market Data Loader v2.3 — instant dossier/portfolio opening + background hydration. */'),
+              ("""    if(portfolio){
+      e.preventDefault(); e.stopImmediatePropagation();
+      hydratePortfolio().finally(()=>{
+        bypassClick=true;
+        try{ portfolio.click(); } finally { bypassClick=false; }
+      });
+    }""",
+               """    if(portfolio){
+      e.preventDefault(); e.stopImmediatePropagation();
+      // Portfolio navigation must never wait for every company shard. Open first,
+      // then hydrate holdings opportunistically in the background.
+      bypassClick=true;
+      try{ portfolio.click(); } finally { bypassClick=false; }
+      hydratePortfolio().catch(()=>{});
+    }"""),
+              ("version:'2.2'", "version:'2.3'"),
+          ]
+          for old, new in replacements:
+              if s.count(old) != 1:
+                  raise SystemExit(f'loader expected exactly one match for {old[:60]!r}, got {s.count(old)}')
+              s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old, new = 'market-data-loader.js?v=2.2', 'market-data-loader.js?v=2.3'
+          if s.count(old) != 1:
+              raise SystemExit(f'index expected one {old}, got {s.count(old)}')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+
+          p = Path('tests/test_market_loader_invariants.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("market-data-loader.js?v=2.2", "market-data-loader.js?v=2.3")
+          s = s.replace("version:'2.2'", "version:'2.3'")
+          anchor = """    def test_dossier_opening_delegates_to_canonical_navigation(self):\n"""
+          test = """    def test_portfolio_tool_opens_before_background_hydration(self):
+        loader = read(\"market-data-loader.js\")
+        block_start = loader.index(\"const portfolio=e.target.closest?.('[data-market-tool=\\\"portfolio\\\"]')\")
+        block_end = loader.index(\"\\n    }\", block_start) + len(\"\\n    }\")
+        block = loader[block_start:block_end]
+        self.assertIn(\"portfolio.click()\", block)
+        self.assertIn(\"hydratePortfolio().catch(()=>{})\", block)
+        self.assertLess(block.index(\"portfolio.click()\"), block.index(\"hydratePortfolio().catch(()=>{})\"))
+        self.assertNotIn(\"hydratePortfolio().finally\", block)
+
+"""
+          if test not in s:
+              if anchor not in s:
+                  raise SystemExit('test anchor missing')
+              s = s.replace(anchor, test + anchor, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Validate syntax and focused tests
+        run: |
+          node --check market-data-loader.js
+          python -m unittest -v tests.test_market_loader_invariants
+          grep -F 'market-data-loader.js?v=2.3' index.html
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add market-data-loader.js index.html tests/test_market_loader_invariants.py
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: open portfolio before background hydration"
+          git push origin HEAD:fix/instant-portfolio-open-20260830
