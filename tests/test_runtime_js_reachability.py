@@ -26,6 +26,10 @@ class RuntimeJsReachabilityTests(unittest.TestCase):
         self.assertEqual(report['special'].get('sw.js'), 'service_worker')
         self.assertEqual(report['special'].get('worker.js'), 'cloudflare_worker')
 
+    def test_no_unreferenced_top_level_runtime_scripts_remain(self):
+        report = audit.build_report()
+        self.assertEqual(report['unreferenced'], [])
+
     def test_audit_never_deletes_unreferenced_scripts(self):
         text = AUDIT_PATH.read_text(encoding='utf-8')
         self.assertNotIn('.unlink(', text)
