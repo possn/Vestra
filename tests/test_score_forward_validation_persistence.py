@@ -84,6 +84,13 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertGreater(summary["median_cohort_rank_ic"], 0)
         self.assertGreater(summary["median_cohort_top_minus_bottom_pct"], 0)
 
+    def test_maturity_dates_expose_first_and_next_checkpoint(self):
+        today = dt.date(2026, 8, 30)
+        snapshots = [{"date": "2026-08-27", "observations": {}}, {"date": "2026-09-03", "observations": {}}]
+        first, pending = MOD.maturity_dates(today, snapshots, 28)
+        self.assertEqual(first, dt.date(2026, 9, 24))
+        self.assertEqual(pending, dt.date(2026, 9, 24))
+
     def test_factor_diagnostics_are_exposed(self):
         rows = []
         for i in range(30):

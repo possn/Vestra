@@ -282,6 +282,21 @@ def expected_matured_count(today, snapshots, horizon):
     return count
 
 
+def maturity_dates(today, snapshots, horizon):
+    dates = []
+    for snap in snapshots:
+        try:
+            dates.append(dt.date.fromisoformat(snap["date"]))
+        except Exception:
+            continue
+    if not dates:
+        return None, None
+    maturity = sorted(d + dt.timedelta(days=horizon) for d in dates)
+    first = maturity[0]
+    pending = [d for d in maturity if d > today]
+    return first, (pending[0] if pending else None)
+
+
 def main():
     today = dt.date.today()
     rows = current_rows()
@@ -315,7 +330,11 @@ def main():
     for horizon in HORIZONS:
         vals = [x for x in outcomes if int(x.get("horizon_days") or 0) == horizon]
         expected = expected_matured_count(today, snapshots, horizon)
-        report_horizons[str(horizon)] = summarize_horizon(vals, expected)
+        summary = summarize_horizon(vals, expected)
+        first_maturity, next_maturity = maturity_dates(today, snapshots, horizon)
+        summary["first_possible_maturity_date"] = first_maturity.isoformat() if first_maturity else None
+        summary["next_pending_maturity_date"] = next_maturity.isoformat() if next_maturity else None
+        report_horizons[str(horizon)] = summary
 
     history["schema_version"] = 2
     history["updated_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
