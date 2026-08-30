@@ -1,14 +1,26 @@
-/* Vestra Market Data Loader v2.1 — lazy dossier hydration; opening delegated to canonical navigation when available. */
+/* Vestra Market Data Loader v2.2 — instant dossier opening + background hydration. */
 (() => {
   'use strict';
 
   const originalFetch = window.fetch.bind(window);
   const shardCache = new Map();
+  const tickerHydrationCache = new Map();
   let manifestPromise = null;
   let bypassClick = false;
 
   const txt = v => String(v ?? '').trim();
   const tickerKey = v => txt(v).toUpperCase();
+  const LIVE_FIELDS = [
+    'current_price','currency','exchange','quote_type','sector','industry','country','business_summary',
+    'market_cap','trailing_pe','forward_pe','price_to_book','enterprise_to_ebitda','dividend_yield',
+    'roe','roa','revenue_growth','earnings_growth','eps_growth','profit_margin','operating_margin',
+    'gross_margin','operating_cash_flow','free_cash_flow','fcf_yield','ebitda','total_debt',
+    'cash_and_short_term_investments','net_cash','stockholders_equity','debt_to_equity','current_ratio',
+    'quick_ratio','analyst_price_target_mean','analyst_price_target_upside_pct','analyst_strong_buy',
+    'analyst_buy','analyst_hold','analyst_sell','analyst_strong_sell','analyst_eps_next_y_growth',
+    'analyst_next_earnings_date','fifty_two_week_high','fifty_two_week_low','beta','revenue_latest',
+    'net_income_latest','eps_latest','price_history_1y','updated','source','_liveUpdated'
+  ];
 
   async function loadManifest(){
     if(manifestPromise) return manifestPromise;
@@ -43,7 +55,20 @@
     }catch(_){ return null; }
   }
 
-  async function hydrateTicker(ticker){
+  function mergeHydrated(ref,full,extra={}){
+    if(!ref || !full) return ref || full || null;
+    const live={};
+    if(ref._liveUpdated){
+      for(const key of LIVE_FIELDS){
+        if(ref[key]!==undefined && ref[key]!==null && ref[key]!=='') live[key]=ref[key];
+      }
+    }
+    Object.assign(ref,full,extra);
+    if(Object.keys(live).length) Object.assign(ref,live);
+    return ref;
+  }
+
+  async function hydrateTickerCore(ticker){
     const key=tickerKey(ticker);
     if(!key) return null;
     const ref=resolveIndexStock(key);
@@ -69,22 +94,91 @@
         if(candidate) full=rows[candidate];
       }
       if(!full) throw new Error('ticker ausente no shard');
-      if(ref){ Object.assign(ref,full,{_dossierHydrated:true}); return ref; }
+      if(ref) return mergeHydrated(ref,full,{_dossierHydrated:true,_dossierHydrationError:''});
       return full;
     }catch(err){
-      // Emergency compatibility fallback: only for the requested ticker. This is
-      // deliberately not used during normal Market startup.
-      try{
-        const r=await originalFetch('data/stocks.json?full=1',{cache:'no-store'});
-        if(!r.ok) throw err;
-        const d=await r.json();
-        const rows=Array.isArray(d?.stocks)?d.stocks:[];
-        const base=key.replace(/\.[A-Z]+$/,'');
-        const full=rows.find(x=>tickerKey(x?.ticker)===key)||rows.find(x=>tickerKey(x?.ticker).replace(/\.[A-Z]+$/,'')===base);
-        if(full && ref){ Object.assign(ref,full,{_dossierHydrated:true,_dossierFallback:true}); return ref; }
-        return full||ref;
-      }catch(_){ return ref; }
+      // Never download the ~54 MB full market file while the user is opening a dossier.
+      // The startup index is a valid fallback and keeps navigation responsive on iOS.
+      if(ref){
+        ref._dossierHydrationError=err?.message||'dossier indisponível';
+        return ref;
+      }
+      return null;
     }
+  }
+
+  function hydrateTicker(ticker){
+    const key=tickerKey(ticker);
+    if(!key) return Promise.resolve(null);
+    const ref=resolveIndexStock(key);
+    if(ref?._dossierHydrated) return Promise.resolve(ref);
+    if(tickerHydrationCache.has(key)) return tickerHydrationCache.get(key);
+    const work=hydrateTickerCore(key).finally(()=>tickerHydrationCache.delete(key));
+    tickerHydrationCache.set(key,work);
+    return work;
+  }
+
+  function dossierSheetFor(ticker){
+    const sh=document.getElementById('marketSheet');
+    if(!sh || sh.hidden || tickerKey(sh.dataset.ticker)!==tickerKey(ticker)) return null;
+    return sh;
+  }
+
+  function setHydrationBadge(ticker,state){
+    const sh=dossierSheetFor(ticker); if(!sh) return;
+    const head=sh.querySelector('.market-detail-head > div:first-child'); if(!head) return;
+    let badge=head.querySelector('.market-dossier-hydration');
+    if(state==='loading'){
+      if(!badge){ badge=document.createElement('span'); badge.className='market-live-badge market-dossier-hydration'; head.appendChild(badge); }
+      badge.textContent='◌ A carregar detalhe…';
+      badge.setAttribute('aria-live','polite');
+      return;
+    }
+    if(!badge) return;
+    if(state==='ready'){
+      badge.textContent='✓ Dossier completo';
+      setTimeout(()=>{ if(badge?.isConnected) badge.remove(); },1400);
+    }else{
+      badge.textContent='Detalhe parcial';
+      setTimeout(()=>{ if(badge?.isConnected) badge.remove(); },1800);
+    }
+  }
+
+  function dossierSparkSvg(history){
+    const arr=(Array.isArray(history)?history:[]).map(x=>typeof x==='number'?Number(x):Number(x?.close??x?.price)).filter(Number.isFinite);
+    if(arr.length<2) return '';
+    const vals=arr.slice(-120), min=Math.min(...vals), max=Math.max(...vals), range=max-min||1;
+    const pts=vals.map((v,i)=>`${(i/(vals.length-1)*100).toFixed(2)},${(92-(v-min)/range*78).toFixed(2)}`).join(' ');
+    return `<svg class="market-spark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Preço 1 ano"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" style="color:var(--vio)"/></svg>`;
+  }
+
+  function refreshOpenDossier(ticker,stock){
+    const sh=dossierSheetFor(ticker); if(!sh || !stock) return;
+    const scrollTop=sh.scrollTop;
+    const content=document.getElementById('marketSheetContent');
+    const spark=dossierSparkSvg(stock.price_history_1y);
+    if(spark && content){
+      const existing=content.querySelector('.market-spark');
+      if(existing) existing.outerHTML=spark;
+      else content.querySelector('.market-detail-head')?.insertAdjacentHTML('afterend',spark);
+    }
+    const active=sh.querySelector('.market-tab.is-active');
+    if(active) active.click();
+    requestAnimationFrame(()=>{ if(!sh.hidden){ sh.scrollTop=scrollTop; } });
+    setHydrationBadge(ticker,stock._dossierHydrated?'ready':'partial');
+  }
+
+  function hydrateOpenDossier(ticker){
+    const key=tickerKey(ticker);
+    if(!key) return Promise.resolve(null);
+    setHydrationBadge(key,'loading');
+    return hydrateTicker(key).then(stock=>{
+      refreshOpenDossier(key,stock);
+      return stock;
+    }).catch(()=>{
+      setHydrationBadge(key,'partial');
+      return resolveIndexStock(key);
+    });
   }
 
   async function hydratePortfolio(){
@@ -94,8 +188,6 @@
       const c=txt(a?.class).toLowerCase();
       return !c.includes('cripto') && (c.includes('ações')||c.includes('acoes')||c.includes('etf')||c.includes('fund'));
     }).map(a=>tickerKey(a?.yahooTicker||a?.ticker||a?.symbol)).filter(Boolean))];
-    // Shards are cached, so several holdings beginning with the same letter cost
-    // only one network request.
     await Promise.allSettled(tickers.map(hydrateTicker));
   }
 
@@ -104,13 +196,18 @@
     if(!api || api.__lazyDossiersInstalled) return false;
     const rawOpen=api.openTicker?.bind(api);
     if(rawOpen){
-      api.openTicker=async ticker=>{ await hydrateTicker(ticker); return rawOpen(ticker); };
+      api.openTicker=ticker=>{
+        const result=rawOpen(ticker);
+        hydrateOpenDossier(ticker);
+        return result;
+      };
     }
     const rawPortfolio=api.openPortfolioAsset?.bind(api);
     if(rawPortfolio){
-      api.openPortfolioAsset=async asset=>{
-        await hydrateTicker(asset?.yahooTicker||asset?.ticker||asset?.symbol);
-        return rawPortfolio(asset);
+      api.openPortfolioAsset=asset=>{
+        const result=rawPortfolio(asset);
+        hydrateTicker(asset?.yahooTicker||asset?.ticker||asset?.symbol).catch(()=>{});
+        return result;
       };
     }
     api.hydrateTicker=hydrateTicker;
@@ -130,11 +227,15 @@
     if(!tk) return Promise.resolve(false);
     const nav=window.VestraNavigation;
     if(nav?.openCompany) return Promise.resolve(nav.openCompany(tk,options));
-    return hydrateTicker(tk).then(()=>window.VestraMarket?.openTicker?.(tk)).then(()=>true,()=>false);
+    try{
+      const result=window.VestraMarket?.openTicker?.(tk);
+      if(!window.VestraMarket?.__lazyDossiersInstalled) hydrateOpenDossier(tk);
+      return Promise.resolve(result).then(()=>true,()=>false);
+    }catch(_){ return Promise.resolve(false); }
   }
 
-  // Capture dossier-opening clicks before market.js' bubble listener. Hydration is
-  // owned by the wrapped Market API; origin/return state is owned by VestraNavigation.
+  // Capture dossier-opening clicks before market.js' bubble listener. The dossier
+  // opens immediately; full shard hydration then continues in the background.
   document.addEventListener('click',e=>{
     if(bypassClick) return;
     const row=e.target.closest?.('[data-market-ticker]');
@@ -173,5 +274,5 @@
   },true);
 
   ensureApiWrapper();
-  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,openDossier,version:'2.1'};
+  window.VestraMarketData={hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,version:'2.2'};
 })();

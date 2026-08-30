@@ -169,7 +169,9 @@ class FrontendArchitectureTests(unittest.TestCase):
         self.assertNotIn("window.fetch =", loader)
         self.assertIn("dossiers-manifest.json", loader)
         self.assertRegex(loader, r"data/dossiers")
-        self.assertEqual(loader.count("stocks.json?full=1"), 1)
+        self.assertNotIn("stocks.json?full=1", loader, "dossier opening must never fall back to the full market payload")
+        self.assertIn("const result=rawOpen(ticker);", loader, "dossier must open before background hydration")
+        self.assertIn("hydrateOpenDossier(ticker);", loader)
 
     def test_storage_keys_and_cached_idb_connection_are_stable(self):
         storage = read("app-storage.js")

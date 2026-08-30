@@ -88,7 +88,8 @@ class AppMarketClientTests(unittest.TestCase):
 
     def test_auto_refresh_policy_is_stale_only_and_reuses_same_gate(self):
         app=read("app.js")
-        self.assertIn("const STALE_MS = 30 * 60 * 1000",app)
+        self.assertIn("const QUOTE_AUTO_REFRESH_STALE_MS = 60 * 1000",app)
+        self.assertIn("const STALE_MS = QUOTE_AUTO_REFRESH_STALE_MS",app)
         self.assertIn("if (!needsRefresh) return;",app)
 
     def test_client_loads_before_app_and_is_cached(self):

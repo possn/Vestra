@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.2 — canonical dossier open origin + portfolio close/return rules. */
+/* Vestra Portfolio Sheet Navigation v1.3 — instant dossier open + portfolio close/return rules. */
 (() => {
   'use strict';
-  const VERSION='1.2';
+  const VERSION='1.3';
   let pending=false;
   let openingFromPortfolio=false;
   let navigationSequence=0;
@@ -38,20 +38,28 @@
     const request=++navigationSequence;
 
     try{
-      const hydrate=window.VestraMarketData?.hydrateTicker;
-      if(hydrate) await Promise.resolve(hydrate(tk));
-      if(request!==navigationSequence) return false;
-
       const api=window.VestraMarket;
       if(!api?.openTicker) return false;
+
+      // Open from the already-loaded market index immediately. The lazy data
+      // loader hydrates the full dossier in the background; navigation must never
+      // wait for a multi-megabyte shard before showing the sheet on iOS.
       await Promise.resolve(api.openTicker(tk));
       if(request!==navigationSequence) return false;
+      applyDossierOrigin(origin);
+
+      // Compatibility path for a runtime where the lazy wrapper has not installed
+      // yet. It must stay fire-and-forget and never delay the visible navigation.
+      if(!api.__lazyDossiersInstalled){
+        const data=window.VestraMarketData;
+        if(data?.hydrateOpenDossier) Promise.resolve(data.hydrateOpenDossier(tk)).catch(()=>{});
+        else if(data?.hydrateTicker) Promise.resolve(data.hydrateTicker(tk)).then(stock=>data.refreshOpenDossier?.(tk,stock)).catch(()=>{});
+      }
     }catch(err){
       console.error('Vestra navigation openCompany',err);
       return false;
     }
 
-    applyDossierOrigin(origin);
     return true;
   }
 

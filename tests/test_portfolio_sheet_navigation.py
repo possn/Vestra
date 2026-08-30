@@ -8,7 +8,7 @@ def read(path): return (ROOT/path).read_text(encoding="utf-8")
 class PortfolioSheetNavigationTests(unittest.TestCase):
     def test_consolidated_navigation_is_the_only_active_sheet_nav(self):
         index=read("index.html")
-        self.assertIn('portfolio-sheet-navigation.js?v=1.0',index)
+        self.assertIn('portfolio-sheet-navigation.js?v=1.3',index)
         self.assertNotIn('portfolio-navigation-fix.js',index)
         self.assertNotIn('market-close-controller.js',index)
 
@@ -27,14 +27,15 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         self.assertEqual(s.count('new MutationObserver'),1)
         self.assertIn('window.VestraPortfolioSheetNavigation',s)
 
-    def test_latest_navigation_request_wins_before_dossier_open(self):
+    def test_latest_navigation_request_opens_before_background_hydration(self):
         s=read("portfolio-sheet-navigation.js")
-        hydrate=s.index("await Promise.resolve(hydrate(tk))")
-        first_guard=s.index("if(request!==navigationSequence) return false;",hydrate)
-        open_call=s.index("await Promise.resolve(api.openTicker(tk))",first_guard)
-        self.assertLess(hydrate,first_guard)
-        self.assertLess(first_guard,open_call)
+        self.assertNotIn("await Promise.resolve(hydrate(tk))",s)
+        open_call=s.index("await Promise.resolve(api.openTicker(tk))")
+        guard=s.index("if(request!==navigationSequence) return false;",open_call)
+        self.assertLess(open_call,guard)
         self.assertIn("const request=++navigationSequence",s)
+        self.assertIn("if(!api.__lazyDossiersInstalled)",s)
+        self.assertIn("hydrateOpenDossier",s)
 
     def test_ticker_decoration_stays_separate_and_delegates_navigation(self):
         routing=read("portfolio-dossier-routing.js")
