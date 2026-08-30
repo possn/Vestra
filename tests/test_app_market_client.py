@@ -16,8 +16,8 @@ class AppMarketClientTests(unittest.TestCase):
             "FX_FALLBACK_LOCAL",
             "MAX_QUOTE_CONCURRENCY = 4",
             "DEFAULT_QUOTE_TIMEOUT_MS = 12000",
-            "BATCH_QUOTE_TIMEOUT_MS = 18000",
-            "BATCH_CHUNK_SIZE = 4",
+            "BATCH_QUOTE_TIMEOUT_MS = 12000",
+            "BATCH_CHUNK_SIZE = 12",
             "DIRECT_FALLBACK_CONCURRENCY = 2",
             "async function fetchWithTimeout",
             "new AbortController()",
@@ -45,6 +45,8 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn('.slice(0, 20)',w)
         self.assertIn('request.method !== "GET"',w)
         self.assertIn('out[tickers[i]]',w)
+        self.assertIn('timeoutMs = 3500',w)
+        self.assertIn('controller.abort()',w)
 
     def test_app_imports_client_without_duplicate_implementations(self):
         app=read("app.js")
@@ -71,13 +73,19 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("fetchQuoteWithFallback",app)
         self.assertIn("mapWithConcurrency(tickerList, 8, x => fetchQuoteWithFallback(x))",app)
         client=read("app-market-client.js")
-        # app.js remains unaware of batching: transport coalesces fetchQuote calls.
         self.assertIn("MAX_QUOTE_CONCURRENCY = 4",client)
         self.assertIn("return queueQuote(ticker,workerUrl,timeoutMs)",client)
         self.assertNotIn("fetchQuotesBatch(",app)
         self.assertIn('workerMode:"individual"',app)
-        # Price sanity remains in app.js; the transport must never bypass it.
         self.assertIn("Cotação suspeita rejeitada",app)
+
+    def test_quote_engine_v2_prefers_authoritative_identity_and_tags_history(self):
+        app=read("app.js")
+        self.assertIn("Quote Engine v2: authoritative identity",app)
+        self.assertIn("const exactIsinYahoo",app)
+        self.assertIn("const usBroker = rawBroker.match",app)
+        self.assertIn("authoritativeLegacyRepair",app)
+        self.assertIn("quoteTicker: String(q.ticker",app)
 
     def test_auto_refresh_policy_is_stale_only_and_reuses_same_gate(self):
         app=read("app.js")
