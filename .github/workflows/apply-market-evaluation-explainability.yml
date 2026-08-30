@@ -19,7 +19,18 @@ jobs:
         with:
           ref: ux/explain-market-evaluations-20260830
       - name: Apply guarded patch
-        run: python scripts/patch_market_evaluation_explainability.py
+        run: |
+          python scripts/patch_market_evaluation_explainability.py
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('market.js')
+          s=p.read_text(encoding='utf-8')
+          old='O Score Vestra mede posição relativa, não retorno esperado.'
+          new='O Score Vestra mede posição relativa; não é uma previsão de retorno nem retorno esperado.'
+          if s.count(old)!=1:
+              raise SystemExit(f'compat wording anchor mismatch: {s.count(old)}')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
       - name: Validate focused explainability contract
         run: |
           node --check market.js
