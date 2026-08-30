@@ -40,6 +40,11 @@ class MarketModelValidationTests(unittest.TestCase):
         self.assertIn("median_cohort_rank_ic", text)
         self.assertIn("median_cohort_top_minus_bottom_pct", text)
 
+    def test_panel_exposes_next_maturity_checkpoint(self):
+        text = MODULE.read_text(encoding="utf-8")
+        self.assertIn("next_pending_maturity_date", text)
+        self.assertIn("Próxima maturação prevista", text)
+
     def test_schema_v1_remains_a_safe_read_fallback(self):
         text = MODULE.read_text(encoding="utf-8")
         self.assertIn("data.median_cohort_rank_ic ?? data.rank_information_coefficient", text)

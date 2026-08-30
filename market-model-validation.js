@@ -86,6 +86,7 @@
     const n = finite(data.n) ?? 0;
     const medianIc = data.median_cohort_rank_ic ?? data.rank_information_coefficient;
     const medianSpread = data.median_cohort_top_minus_bottom_pct ?? data.top_minus_bottom_pct;
+    const nextMaturity = data.next_pending_maturity_date;
     const cohortLabel = expectedCohorts !== null && expectedCohorts > 0
       ? `${cohortCount}/${expectedCohorts}${capturePct !== null ? ` · ${capturePct.toFixed(0)}%` : ''}`
       : String(cohortCount);
@@ -101,7 +102,7 @@
           <div class="model-validation-metric"><small>Rank IC mediano</small><strong>${signed(medianIc, 3)}</strong></div>
           <div class="model-validation-metric"><small>Top − Bottom</small><strong>${signed(medianSpread, 2, '%')}</strong></div>
         </div>
-        <div class="model-validation-card__foot">${cohortCount < 4 ? 'Ainda sem cohorts independentes suficientes para interpretar.' : cohortCount < 8 ? 'Sinal preliminar; não usar para recalibrar pesos.' : 'Base mínima de cohorts atingida; confirmar noutro horizonte antes de calibrar.'}</div>
+        <div class="model-validation-card__foot">${cohortCount < 4 ? (nextMaturity ? `Próxima maturação prevista: ${dateLabel(nextMaturity)}. Ainda sem cohorts independentes suficientes para interpretar.` : 'Ainda sem cohorts independentes suficientes para interpretar.') : cohortCount < 8 ? 'Sinal preliminar; não usar para recalibrar pesos.' : 'Base mínima de cohorts atingida; confirmar noutro horizonte antes de calibrar.'}</div>
       </article>`;
   }
 
