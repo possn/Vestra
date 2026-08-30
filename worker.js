@@ -57,10 +57,18 @@ function uniqueNonEmpty(arr) {
   return [...new Set((arr || []).map(v => String(v || '').trim().toUpperCase()).filter(Boolean))];
 }
 
-async function fetchJsonMaybe(url, init) {
-  const resp = await fetch(url, init);
-  if (!resp.ok) return null;
-  try { return await resp.json(); } catch (_) { return null; }
+async function fetchJsonMaybe(url, init = {}, timeoutMs = 3500) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.max(1000, Number(timeoutMs) || 3500));
+  try {
+    const resp = await fetch(url, { ...init, signal: controller.signal });
+    if (!resp.ok) return null;
+    try { return await resp.json(); } catch (_) { return null; }
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function positiveNumber(...vals) {

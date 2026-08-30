@@ -12,9 +12,9 @@
   // four portfolio rows normally consume one browser connection instead of four.
   const MAX_QUOTE_CONCURRENCY = 4;
   const DEFAULT_QUOTE_TIMEOUT_MS = 12000;
-  const BATCH_QUOTE_TIMEOUT_MS = 18000;
+  const BATCH_QUOTE_TIMEOUT_MS = 12000;
   const BATCH_WINDOW_MS = 12;
-  const BATCH_CHUNK_SIZE = 4;
+  const BATCH_CHUNK_SIZE = 12;
   const DIRECT_FALLBACK_CONCURRENCY = 2;
 
   const cleanWorkerUrl = workerUrl => String(workerUrl||'').replace(/\/$/,'');

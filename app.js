@@ -10595,14 +10595,23 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "
     const today = new Date().toISOString().slice(0,10);
     const prev = [...hist].reverse().find(h => h && h.date !== today && Number.isFinite(Number(h.priceEur)) && Number(h.priceEur) > 0);
     historical = prev ? Number(prev.priceEur) : 0;
+    var legacyHistoryWithoutIdentity = !!(prev && !String(prev.quoteTicker || "").trim());
   } catch(_) {}
   const prevIdentity = String(previousYahooTicker || "").trim().toUpperCase();
   const nextIdentity = String(rawTicker || "").trim().toUpperCase();
   const identityChanged = !!(prevIdentity && nextIdentity && prevIdentity !== nextIdentity && explicit);
-  // A corrected venue/ticker must not be compared to a price stored under the old identity.
-  // The new quote still passed ticker/ISIN resolution and currency guards; from the next refresh
-  // onward it becomes the new historical baseline.
-  const ref = identityChanged ? 0 : (historical > 0 ? historical : baseline);
+  const isinKey = String(asset && asset.isin || "").trim().toUpperCase();
+  const exactIsinIdentity = isinKey && ISIN_YAHOO_MAP[isinKey]
+    ? String(ISIN_YAHOO_MAP[isinKey]).trim().toUpperCase() : "";
+  const localIdentity = String(getRawTickerForAsset(asset) || "").trim().toUpperCase();
+  const brokerAuthoritative = localIdentity.endsWith(".US")
+    ? nextIdentity === localIdentity.slice(0, -3)
+    : (/\.(?:DE|PA|AS|MC|MI|L|LS|SW|VI|TO|ST|CO|OL|HE|AX|F|IR)$/.test(localIdentity) && nextIdentity === localIdentity);
+  const authoritativeLegacyRepair = !!(legacyHistoryWithoutIdentity && explicit &&
+    ((exactIsinIdentity && nextIdentity === exactIsinIdentity) || brokerAuthoritative));
+  // A corrected/authoritative identity must not be compared to an unattributed legacy price.
+  // The accepted quote becomes the new baseline and subsequent history carries quoteTicker.
+  const ref = (identityChanged || authoritativeLegacyRepair) ? 0 : (historical > 0 ? historical : baseline);
   if (ref > 0) {
     const ratio = priceEur / ref;
     if (ratio > 5 || ratio < 0.2) {
@@ -10949,6 +10958,25 @@ async function refreshLiveQuotesCore(options = {}) {
     const raw = getRawTickerForAsset(asset);
     const isin = String(asset.isin || "").trim().toUpperCase();
     const storedYahoo = getStoredYahooTicker(asset);
+
+    // Quote Engine v2: authoritative identity must win before any exchange-suffix guessing.
+    // T212 exports provide ISIN; XTB exports provide exchange-qualified symbols such as
+    // RDW.US / 4BRZ.DE. A guessed venue is never safer than either of those identities.
+    const exactIsinYahoo = isin && ISIN_YAHOO_MAP[isin] ? String(ISIN_YAHOO_MAP[isin]).trim().toUpperCase() : "";
+    if (exactIsinYahoo) {
+      push(exactIsinYahoo);
+      return out;
+    }
+    const rawBroker = String(raw || "").trim().toUpperCase();
+    const usBroker = rawBroker.match(/^(.+)\.US$/);
+    if (usBroker && usBroker[1]) {
+      push(usBroker[1]);
+      return out;
+    }
+    if (/\.(?:DE|PA|AS|MC|MI|L|LS|SW|VI|TO|ST|CO|OL|HE|AX|F|IR)$/.test(rawBroker)) {
+      push(rawBroker);
+      return out;
+    }
     const ccy = String(asset.priceCurrency || asset.currency || "").trim().toUpperCase();
     const knownOverride = getKnownBrokerYahooOverride({
       isin, ticker: raw || asset.ticker || "", name: asset.name || "", currency: ccy, priceCurrency: ccy
@@ -11284,7 +11312,7 @@ async function fetchQuoteWithFallback(ref) {
       const locPrice = q.price; // price in original currency
       // Replace entry for same day or append
       const dayIdx = hist.findIndex(h => h.date === isoNow);
-      const entry  = { date: isoNow, priceEur: +priceEur.toFixed(6), priceLoc: +(locPrice||priceEur).toFixed(6), ccy };
+      const entry  = { date: isoNow, priceEur: +priceEur.toFixed(6), priceLoc: +(locPrice||priceEur).toFixed(6), ccy, quoteTicker: String(q.ticker || raw || "").trim().toUpperCase() };
       if (dayIdx >= 0) hist[dayIdx] = entry; else hist.push(entry);
       // Keep max 1095 days (3 years)
       if (hist.length > 1095) hist.splice(0, hist.length - 1095);
