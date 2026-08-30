@@ -23,6 +23,7 @@
   }[char]));
 
   const finite = value => {
+    if (value === null || value === undefined || value === '') return null;
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   };
@@ -80,9 +81,14 @@
   function horizonCard(days, data = {}) {
     const status = STATUS[data.status] || STATUS.collecting_evidence;
     const cohortCount = finite(data.cohort_count) ?? 0;
+    const expectedCohorts = finite(data.expected_matured_cohorts);
+    const capturePct = finite(data.cohort_capture_pct);
     const n = finite(data.n) ?? 0;
     const medianIc = data.median_cohort_rank_ic ?? data.rank_information_coefficient;
     const medianSpread = data.median_cohort_top_minus_bottom_pct ?? data.top_minus_bottom_pct;
+    const cohortLabel = expectedCohorts !== null && expectedCohorts > 0
+      ? `${cohortCount}/${expectedCohorts}${capturePct !== null ? ` · ${capturePct.toFixed(0)}%` : ''}`
+      : String(cohortCount);
     return `
       <article class="model-validation-card">
         <div class="model-validation-card__top">
@@ -90,7 +96,7 @@
           <span class="model-validation-status" data-tone="${status.tone}">${status.label}</span>
         </div>
         <div class="model-validation-metrics">
-          <div class="model-validation-metric"><small>Cohorts maturados</small><strong>${cohortCount}</strong></div>
+          <div class="model-validation-metric"><small>Cohorts maturados / esperados</small><strong>${cohortLabel}</strong></div>
           <div class="model-validation-metric"><small>Observações</small><strong>${n}</strong></div>
           <div class="model-validation-metric"><small>Rank IC mediano</small><strong>${signed(medianIc, 3)}</strong></div>
           <div class="model-validation-metric"><small>Top − Bottom</small><strong>${signed(medianSpread, 2, '%')}</strong></div>

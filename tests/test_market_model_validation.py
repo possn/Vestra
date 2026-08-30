@@ -45,6 +45,13 @@ class MarketModelValidationTests(unittest.TestCase):
         self.assertIn("data.median_cohort_rank_ic ?? data.rank_information_coefficient", text)
         self.assertIn("data.median_cohort_top_minus_bottom_pct ?? data.top_minus_bottom_pct", text)
 
+    def test_missing_validation_numbers_never_become_zero(self):
+        text = MODULE.read_text(encoding="utf-8")
+        self.assertIn("value === null || value === undefined || value === ''", text)
+        self.assertIn("expected_matured_cohorts", text)
+        self.assertIn("cohort_capture_pct", text)
+        self.assertIn("Cohorts maturados / esperados", text)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
