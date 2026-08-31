@@ -1,0 +1,35 @@
+name: Apply learned promotion priority patch
+
+on:
+  push:
+    branches:
+      - fix/learned-promotion-priority-20260831
+    paths:
+      - 'scripts/patch_learned_promotion_priority.py'
+      - '.github/workflows/apply-learned-promotion-priority.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/learned-promotion-priority-20260831
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply guarded patch
+        run: python scripts/patch_learned_promotion_priority.py
+      - name: Validate syntax
+        run: python -m py_compile scripts/run.py
+      - name: Commit patched runtime
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/run.py
+          git diff --cached --quiet && exit 0
+          git commit -m "Prioritize learned tickers before bulk fetch"
+          git push
