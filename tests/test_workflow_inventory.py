@@ -6,6 +6,7 @@ WORKFLOWS = ROOT / '.github' / 'workflows'
 
 ACTIVE_WORKFLOWS = {
     'architecture-invariants.yml',
+    'browser-e2e.yml',
     'update-executives.yml',
     'update-market-data.yml',
     'update-metals-news.yml',
