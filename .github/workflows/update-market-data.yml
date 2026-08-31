@@ -48,13 +48,19 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/provenance_audit.py scripts/coverage_guard.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
           if [ -f scripts/moat.py ]; then python -m py_compile scripts/moat.py; fi
           if [ -f scripts/value_trap.py ]; then python -m py_compile scripts/value_trap.py; fi
           if [ -f scripts/capital_allocation_intelligence.py ]; then python -m py_compile scripts/capital_allocation_intelligence.py; fi
+
+      - name: Sync learned search universe
+        working-directory: scripts
+        env:
+          VESTRA_WORKER_URL: https://delicate-bar-cc80.pedrossnunes.workers.dev
+        run: python sync_learned_universe.py
 
       - name: Run pipeline
         working-directory: scripts
@@ -149,5 +155,6 @@ jobs:
             data/score_peer_shadow.json
             data/score_validation_report.json
             data/score_validation_history.json
+            data/learned_tickers.json
           if-no-files-found: ignore
           retention-days: 14

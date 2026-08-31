@@ -24,7 +24,8 @@ class RuntimeJsReachabilityTests(unittest.TestCase):
     def test_worker_entrypoints_are_classified_separately(self):
         report = audit.build_report()
         self.assertEqual(report['special'].get('sw.js'), 'service_worker')
-        self.assertEqual(report['special'].get('worker.js'), 'cloudflare_worker')
+        self.assertEqual(report['special'].get('worker-router.js'), 'cloudflare_worker')
+        self.assertEqual(report['special'].get('worker.js'), 'cloudflare_worker_module')
 
     def test_no_unreferenced_top_level_runtime_scripts_remain(self):
         report = audit.build_report()
