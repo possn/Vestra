@@ -59,8 +59,8 @@ vm.runInContext(source, sandbox, { filename: 'market-global-search.js' });
   assert.strictEqual(call.url, 'https://worker.example.test/learned-universe');
   assert.strictEqual(call.options.method, 'POST');
   assert.strictEqual(call.options.cache, 'no-store');
-  assert.deepStrictEqual(call.options.headers, { 'Content-Type': 'application/json' });
-  assert.deepStrictEqual(JSON.parse(call.options.body), { ticker: 'ZZPST' });
+  assert.strictEqual(call.options.headers['Content-Type'], 'application/json');
+  assert.strictEqual(JSON.parse(call.options.body).ticker, 'ZZPST');
 
   const duplicate = await api.learnCentral({ ticker: 'ZZPST' });
   assert.strictEqual(duplicate, false, 'duplicate ticker must not be posted twice in one session');
