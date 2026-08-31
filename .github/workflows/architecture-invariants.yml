@@ -99,9 +99,11 @@ jobs:
           node --check app.js
           node --check market.js
           node --check market-data-loader.js
+          node --check market-data-health.js
           node --check market-global-search.js
           node --check market-learned-universe.js
           node --check tests/runtime_learned_universe_contract.js
+          node --check tests/runtime_market_data_health_contract.js
           node --check politicians.js
           node --check worker.js
       - name: Validate Python syntax
@@ -129,6 +131,8 @@ jobs:
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_storage_contract_is_stable
       - name: Runtime · learned universe central POST
         run: node tests/runtime_learned_universe_contract.js
+      - name: Runtime · market data health semantics
+        run: node tests/runtime_market_data_health_contract.js
       - name: Historical regression suite
         env:
           PYTHONPATH: .
