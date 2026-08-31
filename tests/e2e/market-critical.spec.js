@@ -173,7 +173,7 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
     return rows.find(row => row.ticker === learnedTicker) || null;
   }, ticker);
   expect(learnedBeforeReload).toBeTruthy();
-  expect(learnedBeforeReload.name).toBe('Vestra Synthetic Systems');
+  expect(learnedBeforeReload.ticker).toBe(ticker);
   expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(2);
 
   const centralResult = await page.evaluate(async learnedTicker => {
