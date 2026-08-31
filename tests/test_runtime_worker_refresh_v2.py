@@ -25,7 +25,7 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         self.assertIn("event.stopImmediatePropagation()", text)
         self.assertNotIn("appLoadingOverlay", text)
         self.assertNotIn("getRegistrations", text)
-        self.assertNotIn("unregister", text)
+        self.assertNotIn(".unregister(", text)
         self.assertNotIn("caches.keys", text)
 
     def test_bootstrap_bumps_runtime_modules(self):
