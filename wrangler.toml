@@ -1,10 +1,16 @@
 name = "delicate-bar-cc80"
-main = "worker.js"
+main = "worker-router.js"
 compatibility_date = "2026-08-30"
 workers_dev = true
 
-# Production deployment is performed explicitly by
-# .github/workflows/deploy-cloudflare-worker.yml.
-# Secrets are never stored here. GitHub Actions must provide:
-# - CLOUDFLARE_API_TOKEN
-# - CLOUDFLARE_ACCOUNT_ID
+[[durable_objects.bindings]]
+name = "LEARNED_UNIVERSE"
+class_name = "LearnedUniverse"
+
+[[migrations]]
+tag = "learned-universe-v1"
+new_sqlite_classes = ["LearnedUniverse"]
+
+# Production deployment is performed by Cloudflare's native Git integration.
+# The router delegates the existing market endpoints to worker.js and adds a
+# persistent learned-universe endpoint backed by a Durable Object.
