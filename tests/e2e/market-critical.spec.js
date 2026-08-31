@@ -107,3 +107,109 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+test('iPhone/WebKit: global ticker is learned centrally and persists locally across reload', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  const ticker = 'ZZVST';
+  let centralPosts = 0;
+
+  await isolateExternalSearch(page);
+  await page.route('https://worker.test/**', async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.pathname === '/quote') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ticker,
+          name: 'Vestra Synthetic Systems',
+          exchange: 'NMS',
+          quote_type: 'EQUITY',
+          currency: 'USD',
+          price: 42.5
+        })
+      });
+    }
+    if (url.pathname === '/market') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ticker,
+          name: 'Vestra Synthetic Systems',
+          exchange: 'NMS',
+          quote_type: 'EQUITY',
+          currency: 'USD',
+          current_price: 42.5,
+          market_cap: 1200000000,
+          forward_pe: 18.2,
+          price_to_book: 3.1,
+          roe: 0.18,
+          fcf_yield: 0.052,
+          revenue_growth: 0.14,
+          earnings_growth: 0.17,
+          operating_margin: 0.21,
+          profit_margin: 0.16,
+          debt_to_equity: 0.4,
+          current_ratio: 1.8,
+          fifty_two_week_high: 55,
+          fifty_two_week_low: 38,
+          sector: 'Technology',
+          industry: 'Software',
+          country: 'United States'
+        })
+      });
+    }
+    if (url.pathname === '/learned-universe' && request.method() === 'POST') {
+      centralPosts += 1;
+      expect(JSON.parse(request.postData() || '{}').ticker).toBe(ticker);
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+    }
+    return route.fulfill({ status: 404, body: 'not found' });
+  });
+
+  await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function');
+  await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
+  await page.evaluate(() => {
+    window.state.settings.workerUrl = 'https://worker.test';
+    window.setView('market');
+  });
+
+  const search = page.locator('#marketSearch');
+  await expect(search).toBeVisible();
+  await search.fill(ticker);
+
+  const globalRow = page.locator(`[data-vestra-global-ticker="${ticker}"]`).first();
+  await expect(globalRow).toBeVisible({ timeout: 15_000 });
+  await globalRow.click();
+
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet).toHaveAttribute('data-ticker', ticker);
+  await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
+  await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
+  await expect.poll(() => centralPosts).toBe(1);
+
+  const learnedBeforeReload = await page.evaluate(async learnedTicker => {
+    const rows = await window.VestraLearnedUniverse.list();
+    return rows.find(row => row.ticker === learnedTicker) || null;
+  }, ticker);
+  expect(learnedBeforeReload).toBeTruthy();
+  expect(learnedBeforeReload.name).toBe('Vestra Synthetic Systems');
+  expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(2);
+
+  await page.reload();
+  await page.waitForFunction(() => !!window.VestraLearnedUniverse);
+  const learnedAfterReload = await page.evaluate(async learnedTicker => {
+    const rows = await window.VestraLearnedUniverse.list();
+    return rows.find(row => row.ticker === learnedTicker) || null;
+  }, ticker);
+  expect(learnedAfterReload).toBeTruthy();
+  expect(learnedAfterReload.ticker).toBe(ticker);
+  expect(centralPosts).toBe(1);
+
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
