@@ -55,11 +55,32 @@ test('GitHub Pages: published data and five sentinel dossiers are usable on iPho
   await expect(page.locator('#viewMarket')).toBeVisible();
   await expect(page.locator('#marketSearch')).toBeVisible();
 
+  // `openDossier` is installed early by the loader, but the real market opener and
+  // the compact index finish wiring asynchronously. Wait for both so a successful
+  // return value cannot mask a sheet that was not yet able to render.
+  await page.waitForFunction(() => (
+    typeof window.VestraMarket?.openTicker === 'function' &&
+    window.VestraMarketData?.openDossier &&
+    window.VestraMarket?.__lazyDossiersInstalled === true
+  ));
+
   for (const ticker of sentinels) {
-    const opened = await page.evaluate(async tickerToOpen => {
-      if (!window.VestraMarketData?.openDossier) return false;
-      return window.VestraMarketData.openDossier(tickerToOpen, { origin: 'production-smoke' });
+    await page.waitForFunction(tickerToResolve => {
+      try {
+        return !!window.VestraMarket?.resolvePortfolioStock?.({
+          ticker: tickerToResolve,
+          yahooTicker: tickerToResolve,
+          symbol: tickerToResolve,
+          class: 'Ações'
+        });
+      } catch (_) {
+        return false;
+      }
     }, ticker);
+
+    const opened = await page.evaluate(async tickerToOpen => (
+      window.VestraMarketData.openDossier(tickerToOpen, { origin: 'production-smoke' })
+    ), ticker);
     expect(opened, `${ticker} dossier opener failed`).toBeTruthy();
 
     const sheet = page.locator('#marketSheet');
