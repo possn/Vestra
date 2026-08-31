@@ -53,8 +53,12 @@ jobs:
       - name: Wait for published Vestra
         run: |
           set -euo pipefail
+          body_file="$(mktemp)"
+          trap 'rm -f "$body_file"' EXIT
           for attempt in $(seq 1 12); do
-            if curl -fsSL --retry 2 --connect-timeout 10 "${VESTRA_PRODUCTION_URL}index.html?smoke=${GITHUB_RUN_ID}-${attempt}" | grep -q '<title>Vestra</title>'; then
+            if curl -fsSL --retry 2 --connect-timeout 10 \
+              "${VESTRA_PRODUCTION_URL}index.html?smoke=${GITHUB_RUN_ID}-${attempt}" \
+              -o "$body_file" && grep -q '<title>Vestra</title>' "$body_file"; then
               echo "Vestra publicada acessível."
               exit 0
             fi
