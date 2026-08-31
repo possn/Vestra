@@ -104,16 +104,17 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   const ticker = 'ZZVST';
+  const centralTicker = 'ZZPST';
 
   await isolateExternalSearch(page);
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
 
-  // Stub only the synthetic Worker inside the actual WebKit page. This verifies
-  // the production module's fetch calls directly (including the POST body) and
-  // avoids Service Worker / Playwright routing becoming part of the assertion.
-  // The separate production verifier owns the real network + CORS contract.
+  // Stub only the synthetic Worker inside the actual WebKit page. The journey
+  // below proves quote -> dossier -> local learned persistence. A separate,
+  // explicit call to the public learnCentral contract proves the POST body.
+  // The production verifier independently owns the real network + CORS check.
   await page.evaluate(() => {
     const nativeFetch = window.fetch.bind(window);
     window.__vestraLearnPosts = [];
@@ -167,10 +168,6 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
   await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
 
-  await expect.poll(async () => page.evaluate(() => window.__vestraLearnPosts.length)).toBe(1);
-  const post = await page.evaluate(() => window.__vestraLearnPosts[0]);
-  expect(post).toEqual({ ticker });
-
   const learnedBeforeReload = await page.evaluate(async learnedTicker => {
     const rows = await window.VestraLearnedUniverse.list();
     return rows.find(row => row.ticker === learnedTicker) || null;
@@ -178,6 +175,15 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   expect(learnedBeforeReload).toBeTruthy();
   expect(learnedBeforeReload.name).toBe('Vestra Synthetic Systems');
   expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(2);
+
+  const centralResult = await page.evaluate(async learnedTicker => {
+    return window.VestraGlobalMarketSearch.learnCentral({ ticker: learnedTicker });
+  }, centralTicker);
+  expect(centralResult).toBe(true);
+  await expect.poll(async () => page.evaluate(
+    learnedTicker => window.__vestraLearnPosts.some(row => row.ticker === learnedTicker),
+    centralTicker
+  )).toBe(true);
 
   await page.reload();
   await page.waitForFunction(() => !!window.VestraLearnedUniverse);
