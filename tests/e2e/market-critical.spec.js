@@ -1,6 +1,22 @@
 const { test, expect } = require('@playwright/test');
 
+async function isolateExternalSearch(page) {
+  // The critical journey uses Vestra's local canonical market index and dossier
+  // shards. A direct Yahoo search request is only a secondary autocomplete path
+  // and is CORS-blocked from the local CI origin in WebKit. Fulfil only that
+  // external search endpoint deterministically so real Vestra JS exceptions
+  // remain visible through `pageerror`.
+  await page.route('https://query1.finance.yahoo.com/v1/finance/search**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ quotes: [], news: [], lists: [] })
+    });
+  });
+}
+
 async function openMarket(page) {
+  await isolateExternalSearch(page);
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
