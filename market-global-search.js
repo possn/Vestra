@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v1.1 — search beyond the pre-enriched daily catalogue and learn validated instruments. */
+/* Vestra Global Market Search v1.2 — global search with local + central learned universe. */
 (() => {
   'use strict';
 
@@ -13,6 +13,7 @@
   let timer = null;
   let seq = 0;
   const cache = new Map();
+  const learnedPosted = new Set();
 
   function workerBase(){
     try { return txt(window.state?.settings?.workerUrl).replace(/\/$/,''); } catch (_) { return ''; }
@@ -21,8 +22,30 @@
   function learnedApi(){ return window.VestraLearnedUniverse || null; }
   function validTickerQuery(q){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/i.test(txt(q)); }
 
+  async function learnCentral(row){
+    const ticker = txt(row?.ticker || row?.symbol).toUpperCase();
+    const base = workerBase();
+    if (!base || !validTickerQuery(ticker) || learnedPosted.has(ticker)) return false;
+    learnedPosted.add(ticker);
+    try {
+      const response = await fetch(`${base}/learned-universe`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ticker}),
+        cache:'no-store',
+      });
+      if (!response.ok) throw new Error(`learn ${response.status}`);
+      return true;
+    } catch (_) {
+      learnedPosted.delete(ticker);
+      return false;
+    }
+  }
+
   async function learn(row, source){
-    try { return await learnedApi()?.upsert?.(row, source); } catch (_) { return null; }
+    try { await learnedApi()?.upsert?.(row, source); } catch (_) {}
+    await learnCentral(row);
+    return row;
   }
 
   async function validateExactTicker(q){
@@ -127,7 +150,7 @@
       content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER GLOBAL · LIVE</div><h2>${esc(d.ticker||ticker)}</h2><p>${esc(d.name||'')}</p><span class="market-live-badge">● Live</span></div><button class="market-close" data-market-close>×</button></div>
       <div class="market-detail-card"><h4>Visão rápida</h4><div class="market-detail-grid">${remoteMetric('Preço',money(d.current_price,c))}${remoteMetric('Market cap',compact(d.market_cap))}${remoteMetric('Forward P/E',num(d.forward_pe))}${remoteMetric('P/B',num(d.price_to_book))}${remoteMetric('ROE',pct(d.roe))}${remoteMetric('FCF yield',pct(d.fcf_yield))}</div><p>${esc([d.sector,d.industry,d.country,d.exchange].filter(Boolean).join(' · '))}</p></div>
       <div class="market-detail-card"><h4>Crescimento e rentabilidade</h4><div class="market-detail-grid">${remoteMetric('Receitas',pct(d.revenue_growth))}${remoteMetric('Lucros',pct(d.earnings_growth))}${remoteMetric('Margem operacional',pct(d.operating_margin))}${remoteMetric('Margem líquida',pct(d.profit_margin))}${remoteMetric('Dívida / capital',num(d.debt_to_equity))}${remoteMetric('Current ratio',num(d.current_ratio))}</div></div>
-      <div class="market-detail-card"><h4>Valuation e expectativas</h4><div class="market-detail-grid">${remoteMetric('52w máximo',money(d.fifty_two_week_high,c))}${remoteMetric('52w mínimo',money(d.fifty_two_week_low,c))}${remoteMetric('Target analistas',target==null?'—':money(target,c))}${remoteMetric('Upside consenso',upside==null?'—':pct(upside))}</div><p>Dossier live para empresa fora do catálogo diário. A empresa fica guardada no universo aprendido deste dispositivo e marcada para futura promoção ao universo pré-enriquecido. Não tem ainda Score Vestra pré-calculado.</p></div>`;
+      <div class="market-detail-card"><h4>Valuation e expectativas</h4><div class="market-detail-grid">${remoteMetric('52w máximo',money(d.fifty_two_week_high,c))}${remoteMetric('52w mínimo',money(d.fifty_two_week_low,c))}${remoteMetric('Target analistas',target==null?'—':money(target,c))}${remoteMetric('Upside consenso',upside==null?'—':pct(upside))}</div><p>Dossier live para empresa fora do catálogo diário. Após validação, fica guardada localmente e no catálogo central aprendido; o próximo pipeline diário promove-a para o universo oficial e passa a poder calcular Score Vestra, peers e valuation completos.</p></div>`;
     }catch(e){
       content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER GLOBAL</div><h2>${esc(ticker)}</h2><p>Não foi possível carregar este ativo.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-detail-card"><p>${esc(e?.message||'Sem dados')}</p></div>`;
     }
@@ -144,5 +167,5 @@
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase());});
   document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const q=txt(e.target.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;setTimeout(async()=>{const rows=await validateExactTicker(q);if(rows[0])openRemoteTicker(rows[0].ticker);},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'1.1',validateExactTicker,openRemoteTicker,runSearch});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'1.2',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
 })();
