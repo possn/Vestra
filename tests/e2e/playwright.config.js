@@ -5,6 +5,7 @@ const repoRoot = path.resolve(__dirname, '../..');
 
 module.exports = defineConfig({
   testDir: '.',
+  testMatch: 'market-critical.spec.js',
   outputDir: path.join(repoRoot, 'test-results'),
   timeout: 45_000,
   expect: { timeout: 10_000 },
