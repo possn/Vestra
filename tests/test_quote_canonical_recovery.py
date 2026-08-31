@@ -23,6 +23,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             const fs = require('fs');
             global.window = global;
             global.document = {{ addEventListener: () => {{}} }};
+            window.VestraAssetIdentity = {{ ISIN_YAHOO_MAP: {{ DE000SHL1006:'SHL.DE', US0378331005:'AAPL' }} }};
             window.quoteSanityCheck = () => ({{ok:false, reason:'historical jump'}});
             eval(fs.readFileSync({str(REPAIR)!r}, 'utf8'));
 
@@ -48,7 +49,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             if (absurd.ok) process.exit(13);
 
             const other = window.quoteSanityCheck(
-              {{isin:'US0378331005'}},
+              {{isin:'US0378331005', yahooTicker:'AAPL'}},
               {{ticker:'AAPL', currency:'USD', price:200}},
               200, 'AAPL', 'AAPL'
             );
@@ -56,11 +57,11 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
         """)
         subprocess.run(["node", "-e", script], check=True, cwd=ROOT)
 
-    def test_bootstrap_loads_recovery_before_user_interaction(self):
+    def test_bootstrap_loads_identity_guard_before_user_interaction(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("loadCanonicalQuoteRepair();", text)
-        self.assertIn("quote-canonical-repair.js?v=1.0", text)
-        self.assertIn("window.VestraCanonicalQuoteRepair", text)
+        self.assertIn("quote-canonical-repair.js?v=2.0", text)
+        self.assertIn("window.VestraAssetIdentityGuard", text)
 
 
 if __name__ == "__main__":
