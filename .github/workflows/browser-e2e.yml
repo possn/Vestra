@@ -1,0 +1,68 @@
+name: Browser E2E
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'styles.css'
+      - 'market.css'
+      - 'app*.js'
+      - 'market*.js'
+      - 'data/stocks-index.json'
+      - 'data/dossiers-manifest.json'
+      - 'data/dossiers/**'
+      - 'tests/e2e/**'
+      - 'playwright.config.js'
+      - 'package.json'
+      - '.github/workflows/browser-e2e.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'styles.css'
+      - 'market.css'
+      - 'app*.js'
+      - 'market*.js'
+      - 'data/stocks-index.json'
+      - 'data/dossiers-manifest.json'
+      - 'data/dossiers/**'
+      - 'tests/e2e/**'
+      - 'playwright.config.js'
+      - 'package.json'
+      - '.github/workflows/browser-e2e.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webkit-iphone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package.json
+      - name: Install Playwright test runner
+        run: npm install --no-audit --no-fund
+      - name: Install WebKit browser
+        run: npx playwright install --with-deps webkit
+      - name: Run critical iPhone/WebKit journeys
+        run: npm run test:e2e
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-webkit-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
