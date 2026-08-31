@@ -90,12 +90,18 @@ class RuntimeRegressionTests(unittest.TestCase):
 
     def test_market_live_overlay_does_not_rerender_open_dossier(self):
         market = read("market.js")
-        self.assertIn("refreshOpenDossierLiveFields", market)
-        self.assertIn('data-live-field="current_price"', market)
-        self.assertIn('data-live-field="forward_pe"', market)
-        self.assertIn('data-live-field="roe"', market)
-        self.assertIn('data-live-field="revenue_growth"', market)
-        self.assertIn('data-live-field="fcf_yield"', market)
+        overlay = read("market-live-overlay.js")
+        html = read("index.html")
+        sw = read("sw.js")
+        self.assertIn("VestraMarketLiveOverlay?.create", market)
+        self.assertIn("marketLiveOverlay?.enrichTickerLive", market)
+        self.assertIn("marketLiveOverlay?.refreshOpenDossierLiveFields", market)
+        self.assertNotIn("Object.assign(s,merge,{_liveUpdated", market)
+        for field in ("current_price", "forward_pe", "roe", "revenue_growth", "fcf_yield"):
+            self.assertIn(field, overlay)
+        self.assertNotIn("marketSheetContent", overlay)
+        self.assertLess(html.find("market-live-overlay.js"), html.find("market.js"))
+        self.assertIn('"./market-live-overlay.js"', sw)
 
     def test_storage_contract_is_stable(self):
         storage = read("app-storage.js")

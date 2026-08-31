@@ -59,63 +59,20 @@
   function workerBase(){
     try { return txt(typeof state!=='undefined' && state?.settings?.workerUrl).replace(/\/$/,''); } catch { return ''; }
   }
-  function compactLiveBadge(s){
-    return s?._liveUpdated ? `<span class="market-live-badge">● Live · ${esc(new Intl.DateTimeFormat('pt-PT',{hour:'2-digit',minute:'2-digit'}).format(new Date(s._liveUpdated)))}</span>` : '';
-  }
-  function refreshOpenDossierLiveFields(s){
-    const sh=$m('marketSheet');
-    if(!sh || sh.hidden || txt(sh.dataset.ticker).toUpperCase()!==txt(s?.ticker).toUpperCase()) return;
-    const values={
-      current_price: money(s.current_price,s.currency),
-      forward_pe: num(s.forward_pe),
-      roe: pct(s.roe),
-      revenue_growth: pct(s.revenue_growth),
-      fcf_yield: pct(s.fcf_yield),
-    };
-    for(const [field,value] of Object.entries(values)){
-      const el=sh.querySelector(`[data-live-field="${field}"]`);
-      if(el && value!=='—') el.textContent=value;
-    }
-  }
-  async function enrichTickerLive(s){
-    const base=workerBase(), ticker=txt(s?.ticker).toUpperCase();
-    if(!base||!ticker||M.liveLoading.has(ticker)) return;
-    M.liveLoading.add(ticker);
-    try{
-      const r=await fetch(`${base}/market?ticker=${encodeURIComponent(ticker)}`,{cache:'no-store'});
-      if(!r.ok) throw new Error(`market ${r.status}`);
-      const live=await r.json();
-      if(live && !live.error){
-        const merge={};
-        for(const [k,v] of Object.entries(live)){ if(v!==null && v!==undefined && v!=='') merge[k]=v; }
-        Object.assign(s,merge,{_liveUpdated:live.quote_updated||live.updated||new Date().toISOString()});
-        // v2.6 — never rebuild an open dossier when live data arrives.
-        // Safari can lose the modal scroll/height when its whole DOM is replaced
-        // asynchronously. Keep the open UI frozen; fresh data is used on the next
-        // tab interaction or next opening. Only refresh the small Live badge.
-        const sh=$m('marketSheet');
-        if(sh && !sh.hidden && txt(sh.dataset.ticker).toUpperCase()===ticker){
-          const head=sh.querySelector('.market-detail-head');
-          let badge=head?.querySelector('.market-live-badge');
-          if(!badge && head){
-            const info=head.querySelector('.market-detail-head > div:first-child');
-            if(info){
-              const holder=document.createElement('span');
-              holder.innerHTML=compactLiveBadge(s);
-              badge=holder.firstElementChild;
-              if(badge) info.appendChild(badge);
-            }
-          } else if(badge){
-            const holder=document.createElement('span'); holder.innerHTML=compactLiveBadge(s);
-            if(holder.firstElementChild) badge.replaceWith(holder.firstElementChild);
-          }
-          refreshOpenDossierLiveFields(s);
-          sh.dataset.liveReady='1';
-        }
-      }
-    }catch(_){ /* dataset local remains the fallback */ }
-    finally{ M.liveLoading.delete(ticker); }
-  }
+  const marketLiveOverlay=window.VestraMarketLiveOverlay?.create({
+    getWorkerBase:workerBase,
+    getSheet:()=> $m('marketSheet'),
+    loadingSet:M.liveLoading,
+    text:txt,
+    escapeHtml:esc,
+    formatMoney:money,
+    formatNum:num,
+    formatPct:pct,
+  })||null;
+  function compactLiveBadge(s){ return marketLiveOverlay?.compactLiveBadge(s)||''; }
+  function refreshOpenDossierLiveFields(s){ return marketLiveOverlay?.refreshOpenDossierLiveFields(s); }
+  async function enrichTickerLive(s){ return marketLiveOverlay?.enrichTickerLive(s)??null; }
+
 
 
 
