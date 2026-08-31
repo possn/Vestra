@@ -13,8 +13,7 @@ import json
 import os
 import re
 from pathlib import Path
-
-import requests
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 EXTRA_PATH = ROOT / "data" / "extra_tickers.json"
@@ -85,9 +84,13 @@ def _merge_rows(*groups):
 
 
 def fetch_remote_rows():
-    response = requests.get(f"{WORKER_URL}/learned-universe", timeout=15)
-    response.raise_for_status()
-    return _valid_rows(response.json())
+    request = Request(
+        f"{WORKER_URL}/learned-universe",
+        headers={"Accept": "application/json", "User-Agent": "VestraPipeline/1.0"},
+    )
+    with urlopen(request, timeout=15) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    return _valid_rows(payload)
 
 
 def merge_extra_tickers(rows):
