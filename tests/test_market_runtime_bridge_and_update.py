@@ -32,16 +32,20 @@ class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
     def test_global_search_can_use_runtime_worker_state(self):
         text = GLOBAL.read_text(encoding='utf-8')
         self.assertIn('window.state?.settings?.workerUrl', text)
+        bridge = BRIDGE.read_text(encoding='utf-8')
+        self.assertIn('https://delicate-bar-cc80.pedrossnunes.workers.dev', bridge)
         boot = BOOTSTRAP.read_text(encoding='utf-8')
-        self.assertIn("app-runtime-bridge.js?v=1.0", boot)
+        self.assertIn("app-runtime-bridge.js?v=1.1", boot)
         self.assertIn('loadRuntimeBridge()', boot)
         self.assertIn('loadGlobalMarketSearch();loadAppUpdateManager();', boot)
 
     def test_force_update_does_not_unregister_sw_or_wipe_caches(self):
         text = UPDATE.read_text(encoding='utf-8')
-        self.assertIn('reg.update()', text)
+        self.assertIn('reg?.update?.()', text)
         self.assertIn('window.location.replace', text)
-        self.assertIn('cloneNode(true)', text)
+        self.assertIn("document.addEventListener('click', captureForceUpdate, true)", text)
+        self.assertIn('event.stopImmediatePropagation()', text)
+        self.assertNotIn('appLoadingOverlay', text)
         self.assertNotIn('.unregister()', text)
         self.assertNotIn('caches.delete', text)
         self.assertNotIn('getRegistrations()', text)

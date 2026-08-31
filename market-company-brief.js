@@ -1,4 +1,4 @@
-/* Vestra Market Company Brief v1.5 — canonical dossier/company description repair + runtime diagnostics bootstrap. */
+/* Vestra Market Company Brief v1.6 — canonical dossier/company description repair + runtime diagnostics bootstrap. */
 (() => {
 'use strict';
 const t=v=>String(v??'').trim();
@@ -11,11 +11,11 @@ function loadScript(id,src,ready,onload){if(ready||document.getElementById(id)){
 function loadResearchDiagnostics(){loadScript('vestra-model-validation-script','market-model-validation.js?v=1.0',window.VestraModelValidation)}
 function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.0',window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
 function loadGlobalMarketSearch(){loadScript('vestra-global-market-search-script','market-global-search.js?v=1.0',window.VestraGlobalMarketSearch)}
-function loadAppUpdateManager(){loadScript('vestra-app-update-manager-script','app-update-manager.js?v=1.0',window.VestraAppUpdateManager)}
-function loadRuntimeBridge(){loadScript('vestra-runtime-bridge-script','app-runtime-bridge.js?v=1.0',window.VestraRuntimeBridge,()=>{loadGlobalMarketSearch();loadAppUpdateManager();})}
+function loadAppUpdateManager(){loadScript('vestra-app-update-manager-script','app-update-manager.js?v=1.1',window.VestraAppUpdateManager)}
+function loadRuntimeBridge(){loadScript('vestra-runtime-bridge-script','app-runtime-bridge.js?v=1.1',window.VestraRuntimeBridge,()=>{loadGlobalMarketSearch();loadAppUpdateManager();})}
 function start(){style();loadResearchDiagnostics();load().then(()=>{repair();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;repair()})});mo.observe(document.body,{childList:true,subtree:true})})}
 loadCanonicalQuoteRepair();
 loadRuntimeBridge();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.5'});
+window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.6'});
 })();

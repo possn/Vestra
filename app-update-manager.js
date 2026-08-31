@@ -1,12 +1,9 @@
-/* Vestra App Update Manager v1.0 — safe forced refresh for iOS/PWA. */
+/* Vestra App Update Manager v1.1 — iOS-safe forced refresh without blocking overlay. */
 (() => {
   'use strict';
   let busy = false;
 
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-  const withTimeout = (promise, ms) => Promise.race([promise, sleep(ms)]);
-
-  async function forceFreshReload() {
+  function forceFreshReload() {
     if (busy) return;
     if (!confirm(
       'Forçar actualização?\n\n' +
@@ -14,62 +11,53 @@
     )) return;
     busy = true;
 
-    const overlay = document.getElementById('appLoadingOverlay');
-    const msg = document.getElementById('appLoadingMsg');
-    if (overlay) { overlay.style.display = 'flex'; overlay.style.opacity = '1'; }
-    if (msg) msg.textContent = 'A procurar a versão mais recente…';
-
+    // Ask the registration to check in the background, but never block navigation on it.
     try {
       if ('serviceWorker' in navigator) {
-        const reg = await withTimeout(navigator.serviceWorker.getRegistration(), 1200);
-        if (reg && typeof reg.update === 'function') {
-          await withTimeout(reg.update(), 1800);
-        }
+        navigator.serviceWorker.getRegistration()
+          .then(reg => reg?.update?.())
+          .catch(() => {});
       }
-    } catch (e) {
-      console.warn('[VestraAppUpdate] service worker update', e);
-    }
+    } catch (_) {}
 
-    if (msg) msg.textContent = 'A reabrir a Vestra…';
     const url = new URL(window.location.href);
     url.searchParams.set('_v', String(Date.now()));
 
-    // Do not unregister the controlling SW and do not wipe every CacheStorage
-    // entry. On iOS standalone PWAs that can leave the current navigation
-    // without a controller and strand the loading overlay. The SW is already
-    // network-first for documents/scripts and reg.update() fetches sw.js fresh.
-    try {
-      window.location.replace(url.toString());
-    } catch (_) {
-      window.location.href = url.toString();
-    }
-
-    // Safety hatch if iOS refuses the navigation for any reason.
+    // Do not show the Vestra splash/overlay here. In standalone iOS PWAs the
+    // navigation can be delayed or suspended; keeping the current UI visible
+    // avoids the apparent permanent freeze seen with the old implementation.
     setTimeout(() => {
-      busy = false;
-      if (overlay) overlay.style.display = 'none';
-      if (msg) msg.textContent = 'Não foi possível reabrir automaticamente. Fecha e volta a abrir a app.';
-    }, 5000);
+      try {
+        window.location.replace(url.toString());
+      } catch (_) {
+        window.location.href = url.toString();
+      }
+      setTimeout(() => { busy = false; }, 1200);
+    }, 40);
+  }
+
+  function captureForceUpdate(event) {
+    const btn = event.target?.closest?.('#btnForceUpdate');
+    if (!btn) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    forceFreshReload();
   }
 
   function install() {
-    const old = document.getElementById('btnForceUpdate');
-    if (!old || old.dataset.vestraSafeUpdate === '1') return false;
-
-    // Clone removes the old app.js listener cleanly without needing to reach
-    // into its private lexical scope.
-    const btn = old.cloneNode(true);
-    btn.dataset.vestraSafeUpdate = '1';
-    old.replaceWith(btn);
-    btn.addEventListener('click', forceFreshReload);
+    if (document.documentElement.dataset.vestraSafeUpdateCapture === '1') return false;
+    document.documentElement.dataset.vestraSafeUpdateCapture = '1';
+    // Capture phase runs before the legacy target listener in app.js, so the old
+    // unregister/cache-wipe path cannot execute even if it remains in the bundle.
+    document.addEventListener('click', captureForceUpdate, true);
     return true;
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => install(), { once: true });
-  } else {
-    install();
-  }
+  install();
 
-  window.VestraAppUpdateManager = Object.freeze({ version: '1.0', install, forceFreshReload });
+  window.VestraAppUpdateManager = Object.freeze({
+    version: '1.1',
+    install,
+    forceFreshReload,
+  });
 })();
