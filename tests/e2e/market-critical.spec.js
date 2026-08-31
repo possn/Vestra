@@ -104,79 +104,51 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   const ticker = 'ZZVST';
-  let centralPosts = 0;
 
   await isolateExternalSearch(page);
-
-  // Keep this browser test same-origin: it proves Vestra executes the exact
-  // quote -> learn POST -> market -> local persistence flow. The production
-  // verifier independently checks the real Worker's POST CORS preflight, so the
-  // E2E does not depend on WebKit DNS/TLS behaviour for a fictitious hostname.
-  await page.route('**/__worker_test__/**', async route => {
-    const request = route.request();
-    const url = new URL(request.url());
-    const endpoint = url.pathname.replace('/__worker_test__', '');
-
-    if (endpoint === '/quote') {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ticker,
-          name: 'Vestra Synthetic Systems',
-          exchange: 'NMS',
-          quote_type: 'EQUITY',
-          currency: 'USD',
-          price: 42.5
-        })
-      });
-    }
-    if (endpoint === '/market') {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ticker,
-          name: 'Vestra Synthetic Systems',
-          exchange: 'NMS',
-          quote_type: 'EQUITY',
-          currency: 'USD',
-          current_price: 42.5,
-          market_cap: 1200000000,
-          forward_pe: 18.2,
-          price_to_book: 3.1,
-          roe: 0.18,
-          fcf_yield: 0.052,
-          revenue_growth: 0.14,
-          earnings_growth: 0.17,
-          operating_margin: 0.21,
-          profit_margin: 0.16,
-          debt_to_equity: 0.4,
-          current_ratio: 1.8,
-          fifty_two_week_high: 55,
-          fifty_two_week_low: 38,
-          sector: 'Technology',
-          industry: 'Software',
-          country: 'United States'
-        })
-      });
-    }
-    if (endpoint === '/learned-universe' && request.method() === 'POST') {
-      centralPosts += 1;
-      expect(JSON.parse(request.postData() || '{}').ticker).toBe(ticker);
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ok: true })
-      });
-    }
-    return route.fulfill({ status: 404, body: 'not found' });
-  });
-
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
+
+  // Stub only the synthetic Worker inside the actual WebKit page. This verifies
+  // the production module's fetch calls directly (including the POST body) and
+  // avoids Service Worker / Playwright routing becoming part of the assertion.
+  // The separate production verifier owns the real network + CORS contract.
   await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window);
+    window.__vestraLearnPosts = [];
+    window.fetch = async (input, init = {}) => {
+      const url = new URL(typeof input === 'string' ? input : input.url, window.location.href);
+      if (!url.pathname.startsWith('/__worker_test__/')) return nativeFetch(input, init);
+      const endpoint = url.pathname.replace('/__worker_test__', '');
+      const json = payload => new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (endpoint === '/quote') {
+        return json({
+          ticker: 'ZZVST', name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          quote_type: 'EQUITY', currency: 'USD', price: 42.5
+        });
+      }
+      if (endpoint === '/market') {
+        return json({
+          ticker: 'ZZVST', name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          quote_type: 'EQUITY', currency: 'USD', current_price: 42.5,
+          market_cap: 1200000000, forward_pe: 18.2, price_to_book: 3.1,
+          roe: 0.18, fcf_yield: 0.052, revenue_growth: 0.14,
+          earnings_growth: 0.17, operating_margin: 0.21, profit_margin: 0.16,
+          debt_to_equity: 0.4, current_ratio: 1.8, fifty_two_week_high: 55,
+          fifty_two_week_low: 38, sector: 'Technology', industry: 'Software',
+          country: 'United States'
+        });
+      }
+      if (endpoint === '/learned-universe' && String(init.method || 'GET').toUpperCase() === 'POST') {
+        window.__vestraLearnPosts.push(JSON.parse(init.body || '{}'));
+        return json({ ok: true });
+      }
+      return new Response('not found', { status: 404 });
+    };
     window.state.settings.workerUrl = `${window.location.origin}/__worker_test__`;
     window.setView('market');
   });
@@ -194,7 +166,10 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   await expect(sheet).toHaveAttribute('data-ticker', ticker);
   await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
   await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
-  await expect.poll(() => centralPosts).toBe(1);
+
+  await expect.poll(async () => page.evaluate(() => window.__vestraLearnPosts.length)).toBe(1);
+  const post = await page.evaluate(() => window.__vestraLearnPosts[0]);
+  expect(post).toEqual({ ticker });
 
   const learnedBeforeReload = await page.evaluate(async learnedTicker => {
     const rows = await window.VestraLearnedUniverse.list();
@@ -212,7 +187,6 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   }, ticker);
   expect(learnedAfterReload).toBeTruthy();
   expect(learnedAfterReload.ticker).toBe(ticker);
-  expect(centralPosts).toBe(1);
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
