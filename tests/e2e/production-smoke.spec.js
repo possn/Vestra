@@ -8,6 +8,20 @@ function urlFromBase(base, relative) {
   return new URL(relative, base).toString();
 }
 
+async function isolateExternalSearch(page) {
+  // Vestra's published canonical index + dossier shards are the primary path used
+  // by this smoke. Yahoo's direct autocomplete endpoint rejects browser CORS in
+  // WebKit, so isolate only that secondary external request. All Vestra pageerror
+  // exceptions remain observable and still fail the smoke.
+  await page.route('https://query1.finance.yahoo.com/v1/finance/search**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ quotes: [], news: [], lists: [] })
+    });
+  });
+}
+
 test('GitHub Pages: published data and five sentinel dossiers are usable on iPhone/WebKit', async ({ page, request, baseURL }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -49,6 +63,7 @@ test('GitHub Pages: published data and five sentinel dossiers are usable on iPho
     expect(payload?.stocks?.[ticker], `${ticker} missing from published shard ${shard}`).toBeTruthy();
   }
 
+  await isolateExternalSearch(page);
   await page.goto('index.html', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
