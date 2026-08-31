@@ -47,7 +47,6 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(sheet.locator('[data-live-field="current_price"]')).toBeVisible();
   await expect(sheet.locator('[data-live-field="forward_pe"]')).toBeVisible();
   await expect(sheet.locator('.market-tabs')).toBeVisible();
-
   await expect(sheet.locator('#marketSheetContent svg').first()).toBeVisible();
 
   const valuationTab = sheet.locator('[data-detail-tab="valuation"]');
@@ -106,28 +105,22 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   page.on('pageerror', error => pageErrors.push(error.message));
   const ticker = 'ZZVST';
   let centralPosts = 0;
-  let learnedPreflights = 0;
 
   await isolateExternalSearch(page);
-  await page.route('https://worker.test/**', async route => {
+
+  // Keep this browser test same-origin: it proves Vestra executes the exact
+  // quote -> learn POST -> market -> local persistence flow. The production
+  // verifier independently checks the real Worker's POST CORS preflight, so the
+  // E2E does not depend on WebKit DNS/TLS behaviour for a fictitious hostname.
+  await page.route('**/__worker_test__/**', async route => {
     const request = route.request();
     const url = new URL(request.url());
-    const origin = request.headers().origin || '*';
-    const cors = {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    };
+    const endpoint = url.pathname.replace('/__worker_test__', '');
 
-    if (request.method() === 'OPTIONS') {
-      if (url.pathname === '/learned-universe') learnedPreflights += 1;
-      return route.fulfill({ status: 204, headers: cors, body: '' });
-    }
-    if (url.pathname === '/quote') {
+    if (endpoint === '/quote') {
       return route.fulfill({
         status: 200,
-        headers: { ...cors, 'Content-Type': 'application/json' },
+        contentType: 'application/json',
         body: JSON.stringify({
           ticker,
           name: 'Vestra Synthetic Systems',
@@ -138,10 +131,10 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
         })
       });
     }
-    if (url.pathname === '/market') {
+    if (endpoint === '/market') {
       return route.fulfill({
         status: 200,
-        headers: { ...cors, 'Content-Type': 'application/json' },
+        contentType: 'application/json',
         body: JSON.stringify({
           ticker,
           name: 'Vestra Synthetic Systems',
@@ -168,23 +161,23 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
         })
       });
     }
-    if (url.pathname === '/learned-universe' && request.method() === 'POST') {
+    if (endpoint === '/learned-universe' && request.method() === 'POST') {
       centralPosts += 1;
       expect(JSON.parse(request.postData() || '{}').ticker).toBe(ticker);
       return route.fulfill({
         status: 200,
-        headers: { ...cors, 'Content-Type': 'application/json' },
+        contentType: 'application/json',
         body: JSON.stringify({ ok: true })
       });
     }
-    return route.fulfill({ status: 404, headers: cors, body: 'not found' });
+    return route.fulfill({ status: 404, body: 'not found' });
   });
 
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
   await page.evaluate(() => {
-    window.state.settings.workerUrl = 'https://worker.test';
+    window.state.settings.workerUrl = `${window.location.origin}/__worker_test__`;
     window.setView('market');
   });
 
@@ -202,7 +195,6 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
   await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
   await expect.poll(() => centralPosts).toBe(1);
-  expect(learnedPreflights).toBeGreaterThanOrEqual(1);
 
   const learnedBeforeReload = await page.evaluate(async learnedTicker => {
     const rows = await window.VestraLearnedUniverse.list();
