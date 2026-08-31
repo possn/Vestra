@@ -53,38 +53,23 @@ test('GitHub Pages: published data and five sentinel dossiers are usable on iPho
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
   await expect(page.locator('#viewMarket')).toBeVisible();
-  await expect(page.locator('#marketSearch')).toBeVisible();
 
-  // `openDossier` is installed early by the loader, but the real market opener and
-  // the compact index finish wiring asynchronously. Wait for both so a successful
-  // return value cannot mask a sheet that was not yet able to render.
-  await page.waitForFunction(() => (
-    typeof window.VestraMarket?.openTicker === 'function' &&
-    window.VestraMarketData?.openDossier &&
-    window.VestraMarket?.__lazyDossiersInstalled === true
-  ));
+  const search = page.locator('#marketSearch');
+  await expect(search).toBeVisible();
 
+  // Use the same public journey a user uses in production. Do not couple the smoke
+  // to internal bootstrap helpers such as resolvePortfolioStock(): the published
+  // contract is that a known ticker typed into Market becomes a clickable result
+  // and opens a usable dossier.
   for (const ticker of sentinels) {
-    await page.waitForFunction(tickerToResolve => {
-      try {
-        return !!window.VestraMarket?.resolvePortfolioStock?.({
-          ticker: tickerToResolve,
-          yahooTicker: tickerToResolve,
-          symbol: tickerToResolve,
-          class: 'Ações'
-        });
-      } catch (_) {
-        return false;
-      }
-    }, ticker);
+    await search.fill(ticker);
 
-    const opened = await page.evaluate(async tickerToOpen => (
-      window.VestraMarketData.openDossier(tickerToOpen, { origin: 'production-smoke' })
-    ), ticker);
-    expect(opened, `${ticker} dossier opener failed`).toBeTruthy();
+    const row = page.locator(`.market-row[data-market-ticker="${ticker}"]`).first();
+    await expect(row, `${ticker} missing from published market search`).toBeVisible({ timeout: 20_000 });
+    await row.click();
 
     const sheet = page.locator('#marketSheet');
-    await expect(sheet).toBeVisible();
+    await expect(sheet, `${ticker} dossier did not open`).toBeVisible({ timeout: 15_000 });
     await expect(sheet).toHaveAttribute('data-ticker', ticker);
     await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
     await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
