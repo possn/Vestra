@@ -27,13 +27,15 @@ class GlobalMarketSearchTests(unittest.TestCase):
     def test_remote_dossier_does_not_fake_vestra_score(self):
         text = GLOBAL.read_text(encoding="utf-8")
         self.assertIn("Não tem ainda Score Vestra pré-calculado", text)
+        self.assertIn("próximo pipeline diário promove-a para o universo oficial", text)
         self.assertNotIn("score: 50", text)
 
     def test_bootstrap_loads_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
-        self.assertIn("market-global-search.js?v=1.0", text)
-        self.assertIn("loadGlobalMarketSearch();", text)
-        self.assertIn("version:'1.6'", text)
+        self.assertIn("market-learned-universe.js?v=1.0", text)
+        self.assertIn("market-global-search.js?v=1.2", text)
+        self.assertIn("loadLearnedUniverse();", text)
+        self.assertIn("version:'1.7'", text)
 
 
 if __name__ == "__main__":
