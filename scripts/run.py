@@ -73,6 +73,7 @@ THESIS_HISTORY_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "the
 NEWS_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "news.json")
 ERROR_LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "last_error.log")
 PIPELINE_LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "pipeline_log.txt")
+LEARNED_SNAPSHOT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "learned_tickers.json")
 
 # Every run's log is captured to a string AND committed to the repo as
 # data/pipeline_log.txt, in addition to going to stdout for the Actions
@@ -132,6 +133,30 @@ def _json_safe(obj):
     return obj
 
 
+def _load_learned_tickers() -> list[str]:
+    """Return centrally validated search discoveries in stable snapshot order.
+
+    These names must be fetched before the much larger portfolio/universe pools:
+    otherwise a late Yahoo throttle can make a newly learned company disappear
+    between extra_tickers.json and the scored catalogue even though its identity
+    was already validated by the production Worker.
+    """
+    try:
+        with open(LEARNED_SNAPSHOT_PATH, "r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+        rows = payload.get("rows", []) if isinstance(payload, dict) else []
+        out=[]
+        seen=set()
+        for row in rows:
+            ticker = str((row or {}).get("ticker") or "").strip().upper() if isinstance(row, dict) else ""
+            if ticker and ticker not in seen:
+                seen.add(ticker); out.append(ticker)
+        return out
+    except Exception as exc:
+        log.warning("Could not load learned ticker snapshot: %s", exc)
+        return []
+
+
 def main():
     # Preserve previously enriched ETF catalogue rows. The wider fund universe is
     # refreshed in rotation, so a name not fetched today should keep yesterday's
@@ -162,21 +187,31 @@ def main():
     all_tickers = sorted({t for tickers in universe.values() for t in tickers})
     portfolio_tickers = list(dict.fromkeys(universe.get("EXTRA", [])))
     portfolio_set = set(portfolio_tickers)
+    learned_tickers = [t for t in _load_learned_tickers() if t in portfolio_set]
+    learned_set = set(learned_tickers)
+    portfolio_remainder = [t for t in portfolio_tickers if t not in learned_set]
     remainder_tickers = [t for t in all_tickers if t not in portfolio_set]
-    log.info("Total universe: %d tickers (%d portfolio-priority)", len(all_tickers), len(portfolio_tickers))
+    log.info(
+        "Total universe: %d tickers (%d learned-priority, %d other portfolio-priority)",
+        len(all_tickers), len(learned_tickers), len(portfolio_remainder),
+    )
 
     if not all_tickers:
         log.error("Empty universe — aborting without overwriting existing data/stocks.json")
         return
 
-    # Fetch the user's holdings first. Previously all ~2k instruments were sent
-    # through Yahoo together, so transient throttling could leave most portfolio
-    # names missing even while the generic screener succeeded. Portfolio rows
-    # now get a smaller pool plus two retry passes before the broad universe.
-    raw_portfolio = fetch_many(portfolio_tickers, workers_override=3, retries=2, pause=0.05)
+    # Search-discovered names are fetched first in a tiny isolated pool. They are
+    # new to the canonical catalogue and have no previous scored row to fall back
+    # to, so letting them sit near the end of a 400+ ticker portfolio batch makes
+    # them disproportionately vulnerable to a late Yahoo rate-limit.
+    raw_learned = fetch_many(learned_tickers, workers_override=1, retries=3, pause=0.10)
+
+    # Fetch the user's remaining holdings next, then the broad universe.
+    raw_portfolio = fetch_many(portfolio_remainder, workers_override=3, retries=2, pause=0.05)
     raw_remainder = fetch_many(remainder_tickers, retries=1)
     raw_by_symbol = {r.ticker: r for r in raw_remainder}
     raw_by_symbol.update({r.ticker: r for r in raw_portfolio})
+    raw_by_symbol.update({r.ticker: r for r in raw_learned})
     raw = [raw_by_symbol[t] for t in all_tickers if t in raw_by_symbol]
     raw = enrich_sec(raw, priority=portfolio_set)
     raw = enrich_esef(raw, priority=portfolio_set)
@@ -185,6 +220,16 @@ def main():
     raw = enrich_derived_fundamentals(raw)
     raw = enrich_capital_risk(raw, priority=portfolio_set)
     scored = score_universe(raw)
+    scored_now = {s.ticker for s in scored}
+    missing_learned = [t for t in learned_tickers if t not in scored_now]
+    if missing_learned:
+        details = {
+            t: getattr(raw_by_symbol.get(t), "error", None) or "not scoreable from fetched metrics"
+            for t in missing_learned
+        }
+        log.error("Learned ticker promotion incomplete: %s", details)
+    elif learned_tickers:
+        log.info("Learned ticker promotion complete: %s", ", ".join(learned_tickers))
 
     analyst_map = fetch_analyst_many(
         [dataclasses.asdict(s) for s in scored],
