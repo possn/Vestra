@@ -14,16 +14,44 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "index.html"
+WRANGLER = ROOT / "wrangler.toml"
 
 SCRIPT_SRC_RE = re.compile(r'<script\b[^>]*\bsrc=["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']', re.I)
-JS_LITERAL_RE = re.compile(r'["\']([A-Za-z0-9_.-]+\.js)(?:\?[^"\']*)?["\']')
+JS_LITERAL_RE = re.compile(r'["\']([A-Za-z0-9_./-]+\.js)(?:\?[^"\']*)?["\']')
 EXTERNAL_RE = re.compile(r'^(?:https?:)?//', re.I)
-
-SPECIAL_ENTRYPOINTS = {"sw.js": "service_worker", "worker.js": "cloudflare_worker"}
+WRANGLER_MAIN_RE = re.compile(r'^\s*main\s*=\s*["\']([^"\']+\.js)["\']', re.I | re.M)
 
 
 def _basename(ref: str) -> str:
     return ref.split("/")[-1].split("?")[0]
+
+
+def _special_entrypoints() -> dict[str, str]:
+    special = {"sw.js": "service_worker"}
+    try:
+        config = WRANGLER.read_text(encoding="utf-8")
+        match = WRANGLER_MAIN_RE.search(config)
+        main = _basename(match.group(1)) if match else "worker.js"
+    except Exception:
+        main = "worker.js"
+    if (ROOT / main).exists():
+        special[main] = "cloudflare_worker"
+        queue = [main]
+        seen = {main}
+        while queue:
+            current = queue.pop(0)
+            text = (ROOT / current).read_text(encoding="utf-8", errors="replace")
+            for ref in JS_LITERAL_RE.findall(text):
+                target = _basename(ref)
+                if target in seen or not (ROOT / target).exists():
+                    continue
+                seen.add(target)
+                special[target] = "cloudflare_worker_module"
+                queue.append(target)
+    return special
+
+
+SPECIAL_ENTRYPOINTS = _special_entrypoints()
 
 
 def direct_scripts() -> list[str]:
