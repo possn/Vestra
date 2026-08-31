@@ -1,0 +1,81 @@
+name: Production smoke
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '25 */6 * * *'
+  pull_request:
+    paths:
+      - 'tests/e2e/production-smoke.spec.js'
+      - 'tests/e2e/playwright.production.config.js'
+      - 'package.json'
+      - '.github/workflows/production-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'styles.css'
+      - 'market.css'
+      - 'app*.js'
+      - 'market*.js'
+      - 'data/stocks-index.json'
+      - 'data/dossiers-manifest.json'
+      - 'data/dossiers/**'
+      - 'tests/e2e/production-smoke.spec.js'
+      - 'tests/e2e/playwright.production.config.js'
+      - 'package.json'
+      - '.github/workflows/production-smoke.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webkit-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VESTRA_PRODUCTION_URL: https://possn.github.io/Vestra/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package.json
+      - name: Install Playwright test runner
+        run: npm install --no-audit --no-fund
+      - name: Install WebKit browser
+        run: npx playwright install --with-deps webkit
+      - name: Wait for published Vestra
+        run: |
+          set -euo pipefail
+          body_file="$(mktemp)"
+          trap 'rm -f "$body_file"' EXIT
+          for attempt in $(seq 1 12); do
+            if curl -fsSL --retry 2 --connect-timeout 10 \
+              "${VESTRA_PRODUCTION_URL}index.html?smoke=${GITHUB_RUN_ID}-${attempt}" \
+              -o "$body_file" && grep -q '<title>Vestra</title>' "$body_file"; then
+              echo "Vestra publicada acessível."
+              exit 0
+            fi
+            echo "GitHub Pages ainda não respondeu corretamente (tentativa ${attempt}/12)."
+            sleep 10
+          done
+          echo "GitHub Pages não ficou disponível para o smoke."
+          exit 1
+      - name: Run published iPhone/WebKit smoke
+        run: npm run test:e2e:production
+      - name: Upload production smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-smoke-diagnostics
+          path: |
+            playwright-report-production/
+            test-results-production/
+          if-no-files-found: ignore
+          retention-days: 14

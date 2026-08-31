@@ -2,20 +2,21 @@ const path = require('path');
 const { defineConfig, devices } = require('@playwright/test');
 
 const repoRoot = path.resolve(__dirname, '../..');
+const productionURL = process.env.VESTRA_PRODUCTION_URL || 'https://possn.github.io/Vestra/';
 
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: 'market-critical.spec.js',
-  outputDir: path.join(repoRoot, 'test-results'),
-  timeout: 45_000,
-  expect: { timeout: 10_000 },
+  testMatch: 'production-smoke.spec.js',
+  outputDir: path.join(repoRoot, 'test-results-production'),
+  timeout: 90_000,
+  expect: { timeout: 15_000 },
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI
-    ? [['list'], ['html', { outputFolder: path.join(repoRoot, 'playwright-report'), open: 'never' }]]
+    ? [['list'], ['html', { outputFolder: path.join(repoRoot, 'playwright-report-production'), open: 'never' }]]
     : 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: productionURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -23,17 +24,11 @@ module.exports = defineConfig({
   },
   projects: [
     {
-      name: 'webkit-iphone',
+      name: 'webkit-iphone-production',
       use: {
         ...devices['iPhone 15'],
         browserName: 'webkit'
       }
     }
-  ],
-  webServer: {
-    command: `python3 -m http.server 4173 --bind 127.0.0.1 --directory "${repoRoot}"`,
-    url: 'http://127.0.0.1:4173/index.html',
-    reuseExistingServer: !process.env.CI,
-    timeout: 30_000
-  }
+  ]
 });
