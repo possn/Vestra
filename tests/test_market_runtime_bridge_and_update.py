@@ -8,11 +8,12 @@ BRIDGE = ROOT / 'app-runtime-bridge.js'
 UPDATE = ROOT / 'app-update-manager.js'
 BOOTSTRAP = ROOT / 'market-company-brief.js'
 GLOBAL = ROOT / 'market-global-search.js'
+LEARNED = ROOT / 'market-learned-universe.js'
 
 
 class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
     def test_new_modules_are_valid_javascript(self):
-        for path in (BRIDGE, UPDATE, BOOTSTRAP, GLOBAL):
+        for path in (BRIDGE, UPDATE, BOOTSTRAP, GLOBAL, LEARNED):
             subprocess.run(['node', '--check', str(path)], check=True, cwd=ROOT)
 
     def test_runtime_bridge_exposes_lexical_state_read_only(self):
@@ -37,7 +38,9 @@ class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
         boot = BOOTSTRAP.read_text(encoding='utf-8')
         self.assertIn("app-runtime-bridge.js?v=1.1", boot)
         self.assertIn('loadRuntimeBridge()', boot)
-        self.assertIn('loadGlobalMarketSearch();loadAppUpdateManager();', boot)
+        self.assertIn('loadLearnedUniverse();loadAppUpdateManager();', boot)
+        self.assertIn('window.VestraLearnedUniverse,loadGlobalMarketSearch', boot)
+        self.assertLess(boot.index('loadLearnedUniverse();'), boot.index('loadAppUpdateManager();'))
 
     def test_force_update_does_not_unregister_sw_or_wipe_caches(self):
         text = UPDATE.read_text(encoding='utf-8')
