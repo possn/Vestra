@@ -111,8 +111,7 @@ jobs:
             echo "Sem alterações nos dados — nada para gravar."
           else
             git commit -m "Actualização automática de dados de mercado ($(date -u +'%Y-%m-%d %H:%M UTC'))"
-            git pull --rebase origin main
-            git push
+            bash scripts/publish_with_retry.sh origin main
           fi
 
       - name: Persist blocked-build diagnostics
@@ -129,8 +128,7 @@ jobs:
             echo "Guard bloqueou publicação e não há novos diagnósticos para gravar."
           else
             git commit -m "diagnostics: market build blocked by coverage guard ($(date -u +'%Y-%m-%d %H:%M UTC'))"
-            git pull --rebase origin main
-            git push
+            bash scripts/publish_with_retry.sh origin main
           fi
 
       - name: Fail build after diagnostics are persisted
