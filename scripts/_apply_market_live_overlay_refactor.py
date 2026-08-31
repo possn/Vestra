@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -61,30 +60,7 @@ if needle not in sw_text:
 sw_text = sw_text.replace(needle, needle + '  "./market-live-overlay.js",\n', 1)
 sw.write_text(sw_text, encoding='utf-8')
 
-# 4) Architecture CI: syntax + dedicated runtime contract.
-workflow = ROOT / '.github/workflows/architecture-invariants.yml'
-wf = workflow.read_text(encoding='utf-8')
-wf = wf.replace(
-    '          node --check market.js\n          node --check market-data-loader.js',
-    '          node --check market-live-overlay.js\n          node --check market.js\n          node --check market-data-loader.js',
-    1,
-)
-wf = wf.replace(
-    '          node --check tests/runtime_market_data_health_contract.js\n',
-    '          node --check tests/runtime_market_data_health_contract.js\n          node --check tests/runtime_market_live_overlay_contract.js\n',
-    1,
-)
-anchor = '      - name: Runtime · market data health semantics\n        run: node tests/runtime_market_data_health_contract.js\n'
-if anchor not in wf:
-    raise SystemExit('market data health runtime step not found in architecture workflow')
-wf = wf.replace(
-    anchor,
-    anchor + '      - name: Runtime · market live overlay\n        run: node tests/runtime_market_live_overlay_contract.js\n',
-    1,
-)
-workflow.write_text(wf, encoding='utf-8')
-
-# 5) Runtime regression expectations move from implementation-in-market.js to delegation contract.
+# 4) Runtime regression expectations move from implementation-in-market.js to delegation contract.
 tests = ROOT / 'tests/test_runtime_regressions.py'
 t = tests.read_text(encoding='utf-8')
 t = t.replace(
