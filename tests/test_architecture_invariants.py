@@ -119,11 +119,14 @@ class PoliticiansAndCongressTests(unittest.TestCase):
 
     def test_browser_and_dossiers_use_canonical_snapshot_not_bargo(self):
         market = read("market.js")
+        market_congress = read("market-congress-live.js")
         politicians = read("politicians.js")
         congress = read("scripts/congress.py")
         worker = read("worker.js")
-        combined = "\n".join((market, politicians, congress, worker)).lower()
-        self.assertIn("data/politicians.json", market)
+        combined = "\n".join((market, market_congress, politicians, congress, worker)).lower()
+        self.assertIn("VestraMarketCongressLive", market)
+        self.assertIn("congressLiveFeed?.load", market)
+        self.assertIn("data/politicians.json", market_congress)
         self.assertIn("data/politicians.json", politicians)
         self.assertNotIn("bargo.ai", combined)
         self.assertNotIn('url.pathname === "/congress"', worker)
