@@ -62,6 +62,28 @@ def _valid_rows(payload):
     return sorted(dedup.values(), key=lambda x: x["ticker"])
 
 
+def _merge_rows(*groups):
+    merged = {}
+    for rows in groups:
+        for row in rows:
+            ticker = row["ticker"]
+            previous = merged.get(ticker)
+            if previous is None:
+                merged[ticker] = dict(row)
+                continue
+            merged[ticker] = {
+                **previous,
+                **row,
+                "first_seen": previous.get("first_seen") or row.get("first_seen") or "",
+                "last_seen": max(previous.get("last_seen") or "", row.get("last_seen") or ""),
+                "validation_count": max(
+                    int(previous.get("validation_count") or 1),
+                    int(row.get("validation_count") or 1),
+                ),
+            }
+    return sorted(merged.values(), key=lambda x: x["ticker"])
+
+
 def fetch_remote_rows():
     response = requests.get(f"{WORKER_URL}/learned-universe", timeout=15)
     response.raise_for_status()
@@ -90,8 +112,8 @@ def main():
     previous = _valid_rows(_load_json(SNAPSHOT_PATH, {}))
     try:
         remote = fetch_remote_rows()
-        rows = remote
-        source = "worker"
+        rows = _merge_rows(previous, remote)
+        source = "snapshot+worker"
     except Exception as exc:
         rows = previous
         source = "snapshot-fallback"
