@@ -1,0 +1,48 @@
+name: Apply market live overlay refactor
+
+on:
+  push:
+    branches: [refactor/market-live-overlay-20260831]
+    paths:
+      - 'scripts/_apply_market_live_overlay_refactor.py'
+      - '.github/workflows/_apply-market-live-overlay-refactor.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-market-live-overlay-refactor
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/market-live-overlay-20260831
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply exact refactor patch
+        run: python scripts/_apply_market_live_overlay_refactor.py
+      - name: Validate patched JavaScript
+        run: |
+          node --check market-live-overlay.js
+          node --check market.js
+          node --check tests/runtime_market_live_overlay_contract.js
+          node tests/runtime_market_live_overlay_contract.js
+      - name: Commit patched runtime
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add market.js market-live-overlay.js index.html sw.js .github/workflows/architecture-invariants.yml tests/test_runtime_regressions.py tests/runtime_market_live_overlay_contract.js
+          if git diff --cached --quiet; then
+            echo 'No patch changes to commit.'
+            exit 0
+          fi
+          git commit -m 'refactor: delegate market live overlay to module'
+          git push origin HEAD:refactor/market-live-overlay-20260831
