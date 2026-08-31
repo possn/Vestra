@@ -98,6 +98,7 @@ jobs:
           node --check app-financial-engine.js
           node --check app.js
           node --check market-live-overlay.js
+          node --check market-congress-live.js
           node --check market.js
           node --check market-data-loader.js
           node --check market-data-health.js
@@ -106,6 +107,7 @@ jobs:
           node --check tests/runtime_learned_universe_contract.js
           node --check tests/runtime_market_data_health_contract.js
           node --check tests/runtime_market_live_overlay_contract.js
+          node --check tests/runtime_market_congress_live_contract.js
           node --check politicians.js
           node --check worker.js
       - name: Validate Python syntax
@@ -137,6 +139,8 @@ jobs:
         run: node tests/runtime_market_data_health_contract.js
       - name: Runtime · market live overlay
         run: node tests/runtime_market_live_overlay_contract.js
+      - name: Runtime · market Congress live
+        run: node tests/runtime_market_congress_live_contract.js
       - name: Historical regression suite
         env:
           PYTHONPATH: .
