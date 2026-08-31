@@ -21,6 +21,7 @@ on:
       - 'scripts/normalize_market_provenance.py'
       - 'scripts/build_market_shards.py'
       - 'scripts/build_politicians_feed.py'
+      - 'scripts/low52_intelligence.py'
       - 'scripts/score.py'
       - 'scripts/score_audit.py'
       - 'scripts/score_forward_validation.py'
@@ -48,6 +49,7 @@ on:
       - 'scripts/normalize_market_provenance.py'
       - 'scripts/build_market_shards.py'
       - 'scripts/build_politicians_feed.py'
+      - 'scripts/low52_intelligence.py'
       - 'scripts/score.py'
       - 'scripts/score_audit.py'
       - 'scripts/score_forward_validation.py'
@@ -99,7 +101,7 @@ jobs:
           node --check worker.js
       - name: Validate Python syntax
         run: |
-          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/runtime_js_audit.py
+          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/low52_intelligence.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/runtime_js_audit.py
       - name: Runtime · module load order
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_app_module_load_order
       - name: Runtime · JavaScript reachability
