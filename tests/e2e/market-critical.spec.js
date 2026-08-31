@@ -41,6 +41,12 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await openMarket(page);
+  const health = page.locator('#vestraDataHealth');
+  await expect(health).toBeVisible({ timeout: 15_000 });
+  await expect(health).toContainText('Dados ·');
+  await health.locator('summary').click();
+  await expect(health).toContainText('Universo verificado');
+
   const sheet = await openTicker(page, 'MSFT');
 
   await expect(sheet.locator('.market-detail-head h2')).toHaveText('MSFT');

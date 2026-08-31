@@ -1,4 +1,4 @@
-/* Vestra Market Company Brief v1.7 — canonical dossier/company description repair + runtime diagnostics bootstrap. */
+/* Vestra Market Company Brief v1.8 — canonical dossier/company description repair + runtime diagnostics bootstrap. */
 (() => {
 'use strict';
 const t=v=>String(v??'').trim();
@@ -13,10 +13,11 @@ function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-sc
 function loadGlobalMarketSearch(){loadScript('vestra-global-market-search-script','market-global-search.js?v=1.2',window.VestraGlobalMarketSearch)}
 function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','market-learned-universe.js?v=1.0',window.VestraLearnedUniverse,loadGlobalMarketSearch)}
 function loadAppUpdateManager(){loadScript('vestra-app-update-manager-script','app-update-manager.js?v=1.1',window.VestraAppUpdateManager)}
+function loadDataHealth(){loadScript('vestra-market-data-health-script','market-data-health.js?v=1.0',window.VestraMarketDataHealth)}
 function loadRuntimeBridge(){loadScript('vestra-runtime-bridge-script','app-runtime-bridge.js?v=1.1',window.VestraRuntimeBridge,()=>{loadLearnedUniverse();loadAppUpdateManager();})}
-function start(){style();loadResearchDiagnostics();load().then(()=>{repair();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;repair()})});mo.observe(document.body,{childList:true,subtree:true})})}
+function start(){style();loadResearchDiagnostics();loadDataHealth();load().then(()=>{repair();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;repair()})});mo.observe(document.body,{childList:true,subtree:true})})}
 loadCanonicalQuoteRepair();
 loadRuntimeBridge();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.7'});
+window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.8'});
 })();
