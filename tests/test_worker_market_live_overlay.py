@@ -26,7 +26,8 @@ class WorkerMarketLiveOverlayTests(unittest.TestCase):
 
     def test_frontend_live_badge_uses_quote_timestamp_before_fundamental_timestamp(self):
         overlay = read("market-live-overlay.js")
-        self.assertIn("_liveUpdated:live.quote_updated||live.updated", overlay)
+        compact = "".join(overlay.split())
+        self.assertIn("_liveUpdated:live.quote_updated||live.updated||newDate().toISOString()", compact)
 
 
 if __name__ == "__main__":
