@@ -17,6 +17,7 @@ class RemainingQuoteIdentityTests(unittest.TestCase):
     def test_fresh_bundle(self):
         self.assertIn('app.js?v=20260827v21',read('index.html'))
         sw=read('sw.js')
-        self.assertIn('Vestra Service Worker v10.10',sw)
-        self.assertIn('vestra-cache-v124',sw)
+        self.assertIn('Vestra Service Worker v10.11',sw)
+        self.assertIn('vestra-cache-v125',sw)
+        self.assertIn('./market-live-overlay.js',sw)
 if __name__=='__main__': unittest.main(verbosity=2)
