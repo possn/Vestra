@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add market.js market-live-overlay.js index.html sw.js .github/workflows/architecture-invariants.yml tests/test_runtime_regressions.py tests/runtime_market_live_overlay_contract.js
+          git add market.js market-live-overlay.js index.html sw.js tests/test_runtime_regressions.py tests/runtime_market_live_overlay_contract.js
           if git diff --cached --quiet; then
             echo 'No patch changes to commit.'
             exit 0
