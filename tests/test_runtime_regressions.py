@@ -46,7 +46,8 @@ class RuntimeRegressionTests(unittest.TestCase):
             "app-broker-identity-data.js", "app-broker-parsing-core.js", "app-file-parsing.js",
             "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js",
             "app-quote-errors.js", "app-return-assumptions.js", "app-financial-engine.js",
-            "app.js", "market.js", "market-data-loader.js", "politicians.js", "worker.js",
+            "app.js", "market.js", "market-data-loader.js", "market-data-health.js",
+            "market-global-search.js", "market-learned-universe.js", "politicians.js", "worker.js",
         ]
         for module in modules:
             self.assertIn(f"node --check {module}", workflow, f"CI does not syntax-check {module}")
