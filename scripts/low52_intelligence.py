@@ -32,14 +32,25 @@ def _price_position(row: dict):
                 closes.append(v)
         except Exception:
             pass
+
     current = _n(row.get("current_price"))
     if current is None and closes:
         current = closes[-1]
-    if not closes or current is None or current <= 0:
+    if current is None or current <= 0:
         return None
-    low, high = min(closes), max(closes)
-    if low <= 0 or high <= 0:
+
+    if closes:
+        low, high = min(closes), max(closes)
+    else:
+        # Some valid dossiers have the provider's explicit 52-week extrema before
+        # their full 1Y history shard is available. Preserve useful Low52 analysis
+        # rather than classifying those equities as price-history insufficient.
+        low = _n(row.get("fifty_two_week_low"))
+        high = _n(row.get("fifty_two_week_high"))
+
+    if low is None or high is None or low <= 0 or high <= 0 or high < low:
         return None
+
     return {
         "low": low,
         "high": high,
@@ -158,7 +169,9 @@ def assess(row: dict) -> dict:
         + (est if est is not None else 50.0) * 0.10 + score * 0.15 - deterioration
     )
 
-    near_low = pos["above_low_pct"] <= 10
+    # Protect the exact 10% contract from binary floating-point drift
+    # (e.g. 110 / 100 can be represented infinitesimally above 10.0%).
+    near_low = pos["above_low_pct"] <= 10.0 + 1e-9
     if not near_low: status = "not_near_low"
     elif gate in ("high", "severe") or deterioration >= 35: status = "structural_risk"
     elif deterioration >= 20 or resilience < 48: status = "value_trap_risk"
