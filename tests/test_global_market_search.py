@@ -33,7 +33,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-global-search.js?v=1.0", text)
         self.assertIn("loadGlobalMarketSearch();", text)
-        self.assertIn("version:'1.4'", text)
+        self.assertIn("version:'1.5'", text)
 
 
 if __name__ == "__main__":
