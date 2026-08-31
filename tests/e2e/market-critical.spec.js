@@ -47,10 +47,6 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(sheet.locator('[data-live-field="current_price"]')).toBeVisible();
   await expect(sheet.locator('[data-live-field="forward_pe"]')).toBeVisible();
   await expect(sheet.locator('.market-tabs')).toBeVisible();
-
-  // The dossier header contains the 1Y price sparkline when history is available.
-  // This catches the Safari regression where the dossier opened but the chart area
-  // or its surrounding layout became unusable.
   await expect(sheet.locator('#marketSheetContent svg').first()).toBeVisible();
 
   const valuationTab = sheet.locator('[data-detail-tab="valuation"]');
@@ -63,16 +59,12 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(financialTab).toHaveClass(/is-active/);
   await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
-  // Force a real mobile scroll inside the dossier and verify the persistent close
-  // control remains usable afterwards.
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
   const persistentClose = page.locator('.market-close-persistent');
   await expect(persistentClose).toBeVisible();
   await persistentClose.click();
   await expect(sheet).toBeHidden();
 
-  // Reopening the same dossier is a key regression check: previous Safari bugs
-  // could leave the sheet blocked after async live-data hydration.
   const row = page.locator('.market-row[data-market-ticker="MSFT"]').first();
   await row.click();
   await expect(sheet).toBeVisible();
@@ -104,6 +96,88 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
 
   await page.locator('.market-close-persistent').click();
   await expect(sheet).toBeHidden();
+
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
+
+test('iPhone/WebKit: global ticker opens live and persists locally across reload', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  const ticker = 'ZZVST';
+
+  await isolateExternalSearch(page);
+  await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function');
+  await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
+
+  // The browser owns the user journey and IndexedDB persistence. The central
+  // POST contract is covered deterministically by runtime_learned_universe_contract.js,
+  // while the production verifier owns real Worker network/CORS behaviour.
+  await page.evaluate(() => {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = async (input, init = {}) => {
+      const url = new URL(typeof input === 'string' ? input : input.url, window.location.href);
+      if (!url.pathname.startsWith('/__worker_test__/')) return nativeFetch(input, init);
+      const endpoint = url.pathname.replace('/__worker_test__', '');
+      const json = payload => new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (endpoint === '/quote') {
+        return json({
+          ticker: 'ZZVST', name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          quote_type: 'EQUITY', currency: 'USD', price: 42.5
+        });
+      }
+      if (endpoint === '/market') {
+        return json({
+          ticker: 'ZZVST', name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          quote_type: 'EQUITY', currency: 'USD', current_price: 42.5,
+          market_cap: 1200000000, forward_pe: 18.2, price_to_book: 3.1,
+          roe: 0.18, fcf_yield: 0.052, revenue_growth: 0.14,
+          earnings_growth: 0.17, operating_margin: 0.21, profit_margin: 0.16,
+          debt_to_equity: 0.4, current_ratio: 1.8, fifty_two_week_high: 55,
+          fifty_two_week_low: 38, sector: 'Technology', industry: 'Software',
+          country: 'United States'
+        });
+      }
+      if (endpoint === '/learned-universe') return json({ ok: true });
+      return new Response('not found', { status: 404 });
+    };
+    window.state.settings.workerUrl = `${window.location.origin}/__worker_test__`;
+    window.setView('market');
+  });
+
+  const search = page.locator('#marketSearch');
+  await expect(search).toBeVisible();
+  await search.fill(ticker);
+
+  const globalRow = page.locator(`[data-vestra-global-ticker="${ticker}"]`).first();
+  await expect(globalRow).toBeVisible({ timeout: 15_000 });
+  await globalRow.click();
+
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet).toHaveAttribute('data-ticker', ticker);
+  await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
+  await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
+
+  const learnedBeforeReload = await page.evaluate(async learnedTicker => {
+    const rows = await window.VestraLearnedUniverse.list();
+    return rows.find(row => row.ticker === learnedTicker) || null;
+  }, ticker);
+  expect(learnedBeforeReload).toBeTruthy();
+  expect(learnedBeforeReload.ticker).toBe(ticker);
+  expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(2);
+
+  await page.reload();
+  await page.waitForFunction(() => !!window.VestraLearnedUniverse);
+  const learnedAfterReload = await page.evaluate(async learnedTicker => {
+    const rows = await window.VestraLearnedUniverse.list();
+    return rows.find(row => row.ticker === learnedTicker) || null;
+  }, ticker);
+  expect(learnedAfterReload).toBeTruthy();
+  expect(learnedAfterReload.ticker).toBe(ticker);
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });

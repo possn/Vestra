@@ -22,6 +22,7 @@ on:
       - 'scripts/build_market_shards.py'
       - 'scripts/build_politicians_feed.py'
       - 'scripts/low52_intelligence.py'
+      - 'scripts/sync_learned_universe.py'
       - 'scripts/score.py'
       - 'scripts/score_audit.py'
       - 'scripts/score_forward_validation.py'
@@ -50,6 +51,7 @@ on:
       - 'scripts/build_market_shards.py'
       - 'scripts/build_politicians_feed.py'
       - 'scripts/low52_intelligence.py'
+      - 'scripts/sync_learned_universe.py'
       - 'scripts/score.py'
       - 'scripts/score_audit.py'
       - 'scripts/score_forward_validation.py'
@@ -97,11 +99,14 @@ jobs:
           node --check app.js
           node --check market.js
           node --check market-data-loader.js
+          node --check market-global-search.js
+          node --check market-learned-universe.js
+          node --check tests/runtime_learned_universe_contract.js
           node --check politicians.js
           node --check worker.js
       - name: Validate Python syntax
         run: |
-          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/low52_intelligence.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/runtime_js_audit.py
+          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/low52_intelligence.py scripts/sync_learned_universe.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/runtime_js_audit.py
       - name: Runtime · module load order
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_app_module_load_order
       - name: Runtime · JavaScript reachability
@@ -122,6 +127,8 @@ jobs:
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_market_live_overlay_does_not_rerender_open_dossier
       - name: Runtime · storage contract
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_storage_contract_is_stable
+      - name: Runtime · learned universe central POST
+        run: node tests/runtime_learned_universe_contract.js
       - name: Historical regression suite
         env:
           PYTHONPATH: .

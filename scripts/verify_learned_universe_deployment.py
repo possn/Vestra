@@ -16,6 +16,21 @@ def get_json(url: str, origin: str, timeout: float):
         return response.status, dict(response.headers), json.loads(response.read().decode("utf-8"))
 
 
+def preflight(url: str, origin: str, timeout: float):
+    req = Request(
+        url,
+        method="OPTIONS",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+            "User-Agent": "Vestra-Learned-Universe-Audit/1.0",
+        },
+    )
+    with urlopen(req, timeout=timeout) as response:
+        return response.status, dict(response.headers)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", required=True)
@@ -50,11 +65,37 @@ def main() -> int:
     except Exception as exc:
         failures.append(f"learned-universe request failed: {exc!r}")
 
+    # Read-only POST-path verification: exercise the browser's CORS preflight
+    # without creating or mutating a learned ticker in production.
+    try:
+        status, headers = preflight(base + "/learned-universe", args.origin, args.timeout)
+        allow_origin = headers.get("Access-Control-Allow-Origin", "")
+        allow_methods = {
+            part.strip().upper()
+            for part in headers.get("Access-Control-Allow-Methods", "").split(",")
+            if part.strip()
+        }
+        allow_headers = {
+            part.strip().lower()
+            for part in headers.get("Access-Control-Allow-Headers", "").split(",")
+            if part.strip()
+        }
+        if status not in (200, 204):
+            failures.append(f"OPTIONS /learned-universe HTTP {status}")
+        if allow_origin != args.origin:
+            failures.append(f"learned-universe preflight origin mismatch: {allow_origin!r}")
+        if "POST" not in allow_methods or "OPTIONS" not in allow_methods:
+            failures.append(f"learned-universe preflight methods missing POST/OPTIONS: {sorted(allow_methods)!r}")
+        if "content-type" not in allow_headers:
+            failures.append(f"learned-universe preflight headers missing content-type: {sorted(allow_headers)!r}")
+    except Exception as exc:
+        failures.append(f"learned-universe preflight failed: {exc!r}")
+
     if failures:
         for failure in failures:
             print(f"[FAIL] {failure}")
         return 1
-    print("[PASS] learned-universe router + Durable Object contract")
+    print("[PASS] learned-universe router + Durable Object + POST preflight contract")
     return 0
 
 
