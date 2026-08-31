@@ -100,24 +100,21 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: global ticker is learned centrally and persists locally across reload', async ({ page }) => {
+test('iPhone/WebKit: global ticker opens live and persists locally across reload', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   const ticker = 'ZZVST';
-  const centralTicker = 'ZZPST';
 
   await isolateExternalSearch(page);
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
 
-  // Stub only the synthetic Worker inside the actual WebKit page. The journey
-  // below proves quote -> dossier -> local learned persistence. A separate,
-  // explicit call to the public learnCentral contract proves the POST body.
-  // The production verifier independently owns the real network + CORS check.
+  // The browser owns the user journey and IndexedDB persistence. The central
+  // POST contract is covered deterministically by runtime_learned_universe_contract.js,
+  // while the production verifier owns real Worker network/CORS behaviour.
   await page.evaluate(() => {
     const nativeFetch = window.fetch.bind(window);
-    window.__vestraLearnPosts = [];
     window.fetch = async (input, init = {}) => {
       const url = new URL(typeof input === 'string' ? input : input.url, window.location.href);
       if (!url.pathname.startsWith('/__worker_test__/')) return nativeFetch(input, init);
@@ -144,10 +141,7 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
           country: 'United States'
         });
       }
-      if (endpoint === '/learned-universe' && String(init.method || 'GET').toUpperCase() === 'POST') {
-        window.__vestraLearnPosts.push(JSON.parse(init.body || '{}'));
-        return json({ ok: true });
-      }
+      if (endpoint === '/learned-universe') return json({ ok: true });
       return new Response('not found', { status: 404 });
     };
     window.state.settings.workerUrl = `${window.location.origin}/__worker_test__`;
@@ -175,15 +169,6 @@ test('iPhone/WebKit: global ticker is learned centrally and persists locally acr
   expect(learnedBeforeReload).toBeTruthy();
   expect(learnedBeforeReload.ticker).toBe(ticker);
   expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(2);
-
-  const centralResult = await page.evaluate(async learnedTicker => {
-    return window.VestraGlobalMarketSearch.learnCentral({ ticker: learnedTicker });
-  }, centralTicker);
-  expect(centralResult).toBe(true);
-  await expect.poll(async () => page.evaluate(
-    learnedTicker => window.__vestraLearnPosts.some(row => row.ticker === learnedTicker),
-    centralTicker
-  )).toBe(true);
 
   await page.reload();
   await page.waitForFunction(() => !!window.VestraLearnedUniverse);
