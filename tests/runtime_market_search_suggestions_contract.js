@@ -33,7 +33,7 @@ const api=context.window.VestraMarketSearchSuggestions.create({
 assert.deepEqual(Array.from(api.matches('',7)),[]);
 assert.equal(api.matches('msft',7)[0].ticker,'MSFT');
 assert.equal(api.matches('ms',7)[0].ticker,'MSFT');
-assert.equal(api.matches('microsoft',7)[0].ticker,'MSFT');
+assert.deepEqual(api.matches('microsoft',7).map(x=>x.ticker),['ABC','MSFT']);
 assert.equal(api.matches('meta',7)[0].ticker,'META');
 assert.equal(api.matches('world',7)[0].ticker,'VWCE.DE');
 assert.equal(api.matches('m',2).length,2);
