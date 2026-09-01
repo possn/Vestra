@@ -43,20 +43,5 @@ replace_once(
     '  "./market-static-universe.js",\n',
     '  "./market-static-universe.js",\n  "./market-dossier-signals.js",\n',
 )
-replace_once(
-    '.github/workflows/architecture-invariants.yml',
-    '          node --check market-static-universe.js\n          node --check market.js\n',
-    '          node --check market-static-universe.js\n          node --check market-dossier-signals.js\n          node --check market.js\n',
-)
-replace_once(
-    '.github/workflows/architecture-invariants.yml',
-    '          node --check tests/runtime_market_static_universe_contract.js\n          node --check politicians.js\n',
-    '          node --check tests/runtime_market_static_universe_contract.js\n          node --check tests/runtime_market_dossier_signals_contract.js\n          node --check politicians.js\n',
-)
-replace_once(
-    '.github/workflows/architecture-invariants.yml',
-    '      - name: Runtime · market static universe\n        run: node tests/runtime_market_static_universe_contract.js\n      - name: Historical regression suite\n',
-    '      - name: Runtime · market static universe\n        run: node tests/runtime_market_static_universe_contract.js\n      - name: Runtime · market dossier signals\n        run: node tests/runtime_market_dossier_signals_contract.js\n      - name: Historical regression suite\n',
-)
 
 print('dossier signals extraction applied')
