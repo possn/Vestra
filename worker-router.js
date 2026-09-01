@@ -1,4 +1,5 @@
 import marketWorker from './worker.js';
+import { handleAiBrief, AI_BRIEF_MODEL } from './worker-ai-brief.js';
 
 const APP_ORIGIN = 'https://possn.github.io';
 const MAX_LEARNED = 1500;
@@ -137,12 +138,20 @@ export default {
   async fetch(request, env, ctx){
     const url = new URL(request.url);
     if (url.pathname === '/learned-universe') return handleLearnedUniverse(request,env,ctx);
+    if (url.pathname === '/ai-brief') return handleAiBrief(request,env,ctx);
 
     if (url.pathname === '/health' && request.method === 'GET') {
       const response = await marketWorker.fetch(request,env,ctx);
       const payload = await response.json().catch(()=>({}));
-      const capabilities = Array.from(new Set([...(payload.capabilities || []),'learned_universe']));
-      return json({...payload,capabilities,learned_universe_storage:'durable_object'},response.status,Object.fromEntries(response.headers));
+      const capabilities = Array.from(new Set([...(payload.capabilities || []),'learned_universe','ai_brief']));
+      return json({
+        ...payload,
+        capabilities,
+        learned_universe_storage:'durable_object',
+        ai_brief_provider:'workers_ai',
+        ai_brief_model:AI_BRIEF_MODEL,
+        ai_brief_rate_limit: env?.AI_BRIEF_RATE_LIMITER ? 'binding' : 'unavailable',
+      },response.status,Object.fromEntries(response.headers));
     }
 
     return marketWorker.fetch(request,env,ctx);

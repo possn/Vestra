@@ -11,7 +11,8 @@ on:
       - 'app*.js'
       - 'market*.js'
       - 'politicians.js'
-      - 'worker.js'
+      - 'worker*.js'
+      - 'wrangler.toml'
       - 'data/stocks-index.json'
       - 'data/dossiers-manifest.json'
       - 'data/dossiers/**'
@@ -30,8 +31,10 @@ on:
       - 'scripts/score_peer_shadow.py'
       - 'scripts/score_benchmark_audit.py'
       - 'scripts/runtime_js_audit.py'
+      - 'scripts/verify_ai_brief_deployment.py'
       - '.github/workflows/update-market-data.yml'
       - '.github/workflows/architecture-invariants.yml'
+      - '.github/workflows/verify-cloudflare-worker.yml'
   pull_request:
     paths:
       - 'tests/**'
@@ -40,7 +43,8 @@ on:
       - 'app*.js'
       - 'market*.js'
       - 'politicians.js'
-      - 'worker.js'
+      - 'worker*.js'
+      - 'wrangler.toml'
       - 'data/stocks-index.json'
       - 'data/dossiers-manifest.json'
       - 'data/dossiers/**'
@@ -59,8 +63,10 @@ on:
       - 'scripts/score_peer_shadow.py'
       - 'scripts/score_benchmark_audit.py'
       - 'scripts/runtime_js_audit.py'
+      - 'scripts/verify_ai_brief_deployment.py'
       - '.github/workflows/update-market-data.yml'
       - '.github/workflows/architecture-invariants.yml'
+      - '.github/workflows/verify-cloudflare-worker.yml'
 
 permissions:
   contents: read
@@ -122,9 +128,13 @@ jobs:
           node --check tests/runtime_market_row_ui_contract.js
           node --check politicians.js
           node --check worker.js
+          node --check worker-router.js
+          node --check worker-ai-brief.js
+          node --check vestra-ai-brief.js
+          node --check tests/runtime_worker_ai_brief_contract.mjs
       - name: Validate Python syntax
         run: |
-          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/low52_intelligence.py scripts/sync_learned_universe.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/runtime_js_audit.py
+          python -m py_compile scripts/run.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/low52_intelligence.py scripts/sync_learned_universe.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/runtime_js_audit.py scripts/verify_ai_brief_deployment.py
       - name: Runtime · module load order
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_app_module_load_order
       - name: Runtime · JavaScript reachability
@@ -165,6 +175,8 @@ jobs:
         run: node tests/runtime_market_search_suggestions_contract.js
       - name: Runtime · market row ui
         run: node tests/runtime_market_row_ui_contract.js
+      - name: Runtime · Worker AI brief
+        run: node --experimental-default-type=module tests/runtime_worker_ai_brief_contract.mjs
       - name: Historical regression suite
         env:
           PYTHONPATH: .
