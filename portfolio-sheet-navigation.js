@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.3 — instant dossier open + portfolio close/return rules. */
+/* Vestra Portfolio Sheet Navigation v1.4 — instant dossier open + portfolio close/return rules. */
 (() => {
   'use strict';
-  const VERSION='1.3';
+  const VERSION='1.4';
   let pending=false;
   let openingFromPortfolio=false;
   let navigationSequence=0;
@@ -17,18 +17,27 @@
     return 'market';
   }
 
-  function applyDossierOrigin(origin){
+  function prepareDossierOrigin(origin){
     const sh=sheet();
-    if(!sh || sh.hidden || !sh.dataset.ticker) return;
+    if(!sh) return;
     if(origin==='portfolio'){
+      // Move out of portfolio mode before openTicker replaces the sheet content.
+      // This prevents portfolio MutationObservers from decorating/collapsing the
+      // freshly rendered company dossier during the async hand-off on iOS.
       sh.dataset.tool='ticker-from-portfolio';
       sh.dataset.returnView='portfolio';
       openingFromPortfolio=false;
-      cleanupPortfolioChrome();
       return;
     }
     if(sh.dataset.tool==='ticker-from-portfolio') sh.dataset.tool='';
     if(sh.dataset.returnView==='portfolio') sh.dataset.returnView='';
+  }
+
+  function applyDossierOrigin(origin){
+    const sh=sheet();
+    if(!sh || sh.hidden || !sh.dataset.ticker) return;
+    prepareDossierOrigin(origin);
+    if(origin==='portfolio') cleanupPortfolioChrome();
   }
 
   async function openCompany(ticker,options={}){
@@ -41,10 +50,13 @@
       const api=window.VestraMarket;
       if(!api?.openTicker) return false;
 
-      // Open from the already-loaded market index immediately. The lazy data
-      // loader hydrates the full dossier in the background; navigation must never
-      // wait for a multi-megabyte shard before showing the sheet on iOS.
-      await Promise.resolve(api.openTicker(tk));
+      // Critical ordering: establish dossier navigation state synchronously,
+      // then render. The visible navigation must not wait for hydration.
+      prepareDossierOrigin(origin);
+      const result=api.openTicker(tk);
+      applyDossierOrigin(origin);
+
+      await Promise.resolve(result);
       if(request!==navigationSequence) return false;
       applyDossierOrigin(origin);
 
@@ -78,7 +90,7 @@
   function markTickerFromPortfolio(){
     const sh=sheet();
     if(!sh||sh.hidden||!sh.dataset.ticker) return;
-    if(openingFromPortfolio || sh.dataset.tool==='portfolio' || sh.dataset.returnView==='assets'){
+    if(openingFromPortfolio || sh.dataset.tool==='portfolio' || sh.dataset.tool==='ticker-from-portfolio' || sh.dataset.returnView==='assets' || sh.dataset.returnView==='portfolio'){
       applyDossierOrigin('portfolio');
     }
   }
@@ -180,7 +192,7 @@
     mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']});
   }
 
-  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,applyDossierOrigin,openCompany});
+  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany});
   window.VestraPortfolioSheetNavigation={version:VERSION,repair,reopenPortfolioAnalysis,closePortfolioToMarket,openCompany};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
