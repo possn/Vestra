@@ -193,7 +193,7 @@ test('iPhone/WebKit: portfolio alternative card opens dossier and watch star sta
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/index.html');
-  await page.waitForFunction(() => !!window.VestraPortfolioSheetNavigation && !!window.VestraMarket);
+  await page.waitForFunction(() => !!window.VestraPortfolioSheetNavigation && !!window.VestraMarket?.__lazyDossiersInstalled);
 
   await page.evaluate(() => {
     const sheet = document.getElementById('marketSheet');
