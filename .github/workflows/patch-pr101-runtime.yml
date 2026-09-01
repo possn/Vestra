@@ -65,7 +65,16 @@ jobs:
           PY
           node --check vestra-portfolio-hierarchy.js
           node --check vestra-portfolio-ui.js
-          python -m pytest -q tests/test_portfolio_runtime_robustness.py
+          python - <<'PY'
+          import importlib.util
+          spec = importlib.util.spec_from_file_location('portfolio_runtime_robustness', 'tests/test_portfolio_runtime_robustness.py')
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          mod.test_portfolio_hierarchy_uses_selector_array()
+          mod.test_portfolio_ui_text_helper_is_null_safe()
+          mod.test_portfolio_runtime_cache_busters_are_current()
+          print('portfolio runtime robustness: ok')
+          PY
       - name: Commit fixes
         run: |
           git config user.name github-actions[bot]
