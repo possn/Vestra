@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,33 +18,19 @@ jobs:
           ref: refactor/market-static-universe-20260901
           fetch-depth: 0
       - name: Apply guarded extraction
+        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
 
           p=Path('market.js')
           s=p.read_text()
-          old='''  async function ensureLoaded(){
-    if (M.loaded) return;
-    if (M.loading) return M.loading;
-    M.loading = (async()=>{
-      let r = await fetch('data/stocks-index.json', {cache:'no-store'});
-      if(!r.ok) r = await fetch('data/stocks.json', {cache:'no-store'});
-      if(!r.ok) throw new Error(`market data ${r.status}`);
-      M.data = await r.json();
-      M.stocks = Array.isArray(M.data.stocks) ? M.data.stocks : [];
-      M.byTicker = new Map(M.stocks.map(s=>[txt(s.ticker).toUpperCase(),s]));
-      syncSnapshots();
-      M.loaded = true;
-      renderPrimary();
-    })().catch(err=>{
-      const el=$m('marketPrimary'); if(el) el.innerHTML=`<div class="market-empty market-empty--error"><strong>Mercado indisponível</strong><br><span>Não foi possível carregar os dados agora.</span><br><button class="btn btn--outline btn--sm" data-market-retry style="margin-top:12px">Tentar novamente</button><small class="market-error-detail">${esc(err.message)}</small></div>`;
-    }).finally(()=>{M.loading=null});
-    return M.loading;
-  }
-'''
-          if s.count(old)!=1:
-              raise SystemExit(f'ensureLoaded block count={s.count(old)}')
+          start='  async function ensureLoaded(){\n'
+          end='\n  function bestStocks(){\n'
+          if s.count(start)!=1 or s.count(end)!=1:
+              raise SystemExit('ensureLoaded markers are not unique')
+          a=s.index(start)
+          b=s.index(end,a)
           new='''  const staticUniverseState = {};
   Object.defineProperties(staticUniverseState, {
     loaded: { get: () => M.loaded, set: value => { M.loaded = Boolean(value); } },
@@ -64,25 +50,22 @@ jobs:
   }) || null;
   async function ensureLoaded(){ return staticUniverse?.ensureLoaded(); }
 '''
-          p.write_text(s.replace(old,new,1))
+          p.write_text(s[:a]+new+s[b:])
 
           def once(path, old, new):
               q=Path(path); t=q.read_text()
-              if t.count(old)!=1: raise SystemExit(f'{path} marker count={t.count(old)}')
+              if t.count(old)!=1: raise SystemExit(f'{path}: marker count={t.count(old)}')
               q.write_text(t.replace(old,new,1))
 
-          once('index.html',
-               '<script defer="" src="market-watch-snapshots.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>',
-               '<script defer="" src="market-watch-snapshots.js?v=1.0"></script>\n<script defer="" src="market-static-universe.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>')
-          once('sw.js',
-               '  "./market-watch-snapshots.js",\n',
-               '  "./market-watch-snapshots.js",\n  "./market-static-universe.js",\n')
+          once('index.html', '<script defer="" src="market-watch-snapshots.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>', '<script defer="" src="market-watch-snapshots.js?v=1.0"></script>\n<script defer="" src="market-static-universe.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>')
+          once('sw.js', '  "./market-watch-snapshots.js",\n', '  "./market-watch-snapshots.js",\n  "./market-static-universe.js",\n')
           PY
           node --check market-static-universe.js
           node --check market.js
           node tests/runtime_market_static_universe_contract.js
           python scripts/runtime_js_audit.py
       - name: Commit extraction
+        shell: bash
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
