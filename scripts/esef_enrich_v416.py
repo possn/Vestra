@@ -45,7 +45,7 @@ def resolve_isin_with_source(t,s=None):
     if str(t or '').upper().endswith('.L'):
         try: x=resolve_lse_isin(t,s)
         except Exception: x=None
-        if x and ISIN_RE.match(str(x).upper()): return str(x).upper(),'London Stock Exchange official securities files'
+        if x and ISIN_RE.match(str(x).upper()): return str(x).upper(),'London Stock Exchange official instrument API'
     return None,None
 
 def resolve_isin(t,s=None):
