@@ -120,10 +120,11 @@ jobs:
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
           # Never publish the rejected stocks.json or derived market shards. Persist
-          # only diagnostics so rejected data cannot leak into the live frontend.
+          # diagnostics plus the separately schema-validated SEC ticker→CIK snapshot;
+          # the latter is infrastructure identity data and is safe to reuse next run.
           git checkout -- data/stocks.json data/stocks-index.json data/dossiers-manifest.json data/dossiers 2>/dev/null || true
           git clean -fd data/dossiers data/stocks-index.json data/dossiers-manifest.json 2>/dev/null || true
-          git add data/coverage_audit.json data/provenance_audit.json data/coverage_guard.json data/pipeline_log.txt data/last_error.log 2>/dev/null || true
+          git add data/coverage_audit.json data/provenance_audit.json data/coverage_guard.json data/pipeline_log.txt data/last_error.log data/sec_ticker_map.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Guard bloqueou publicação e não há novos diagnósticos para gravar."
           else
@@ -148,6 +149,7 @@ jobs:
             data/coverage_audit.json
             data/provenance_audit.json
             data/coverage_guard.json
+            data/sec_ticker_map.json
             data/score_audit.json
             data/score_benchmark_audit.json
             data/score_peer_shadow.json
