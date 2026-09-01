@@ -88,7 +88,14 @@ def _resolve_direct(ticker: str, session=None, refresh: bool = False) -> str | N
     if not refresh and tidm in _DIRECT_CACHE:
         return _DIRECT_CACHE[tidm]
 
-    s = session or _session()
+    try:
+        s = session or _session()
+    except Exception as exc:
+        # Dependency-light callers/tests may deliberately inject a prebuilt exact
+        # map without installing requests. Preserve that compatibility path.
+        log.debug("LSE direct session unavailable for %s: %s", tidm, exc)
+        return None
+
     # A small exact compatibility alternative covers the historic class-share
     # punctuation convention. Conflicting valid answers fail closed.
     candidates = list(dict.fromkeys((tidm, tidm.replace("-", "."))))
@@ -266,7 +273,10 @@ def resolve_isin(ticker: str, session=None) -> str | None:
     if not tidm:
         return None
 
-    direct = _resolve_direct(text, session)
+    # Production ESEF passes its live requests session and therefore takes the
+    # direct API path. If an exact map was deliberately injected by a caller
+    # (legacy tooling/tests), preserve it without opening a network dependency.
+    direct = None if session is None and _CACHE is not None else _resolve_direct(text, session)
     if direct:
         return direct
 
