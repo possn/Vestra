@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.2 — canonical final hierarchy from UX 4.54/4.55/4.57. */
+/* Vestra Portfolio Hierarchy v1.3 — canonical final hierarchy from UX 4.54/4.55/4.57. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -121,7 +121,7 @@
     c.querySelectorAll('.ux454-group-label').forEach(x=>x.remove());
     const seen=new Set();
     c.querySelectorAll('.ux455-group-label').forEach(x=>{const key=t(x.dataset.ux455Group)||t(x.textContent).toLowerCase();if(seen.has(key))x.remove();else seen.add(key);});
-    for(const sel of ('.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts')){
+    for(const sel of ['.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts']){
       [...c.querySelectorAll(sel)].slice(1).forEach(x=>x.remove());
     }
   }
