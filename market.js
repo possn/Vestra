@@ -340,39 +340,19 @@ function changePanel(s){ return watchSnapshots?.changePanel(s) || ''; }
     root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover();
   }
 
-  function marketSearchMatches(query, limit=7){
-    const q=txt(query).toLowerCase();
-    if(!q) return [];
-    const scoreMatch=(x)=>{
-      const t=txt(x.ticker).toLowerCase(), name=txt(x.name).toLowerCase();
-      if(t===q) return 1000;
-      if(t.startsWith(q)) return 800 - t.length;
-      if(name.startsWith(q)) return 650 - name.length/100;
-      if(t.includes(q)) return 500;
-      if(name.includes(q)) return 350;
-      return 0;
-    };
-    return M.stocks.map(x=>({x,rank:scoreMatch(x)})).filter(r=>r.rank>0)
-      .sort((a,b)=>b.rank-a.rank || (n(b.x.score)||0)-(n(a.x.score)||0))
-      .slice(0,limit).map(r=>r.x);
-  }
-
-  function hideSearchSuggestions(){
-    const box=$m('marketSuggestions'); if(!box)return; box.hidden=true; box.innerHTML='';
-  }
-
-  function renderSearchSuggestions(){
-    const box=$m('marketSuggestions'); if(!box || !M.loaded)return;
-    const q=txt(M.query);
-    if(!q){ hideSearchSuggestions(); return; }
-    const rows=marketSearchMatches(q,7);
-    if(!rows.length){
-      box.innerHTML='<div class="market-suggestion-empty">Sem correspondências imediatas</div>';
-      box.hidden=false; return;
-    }
-    box.innerHTML=rows.map(x=>`<button type="button" class="market-suggestion" role="option" data-market-ticker="${esc(x.ticker)}"><span class="market-suggestion__ticker">${esc(x.ticker)}</span><span class="market-suggestion__name">${esc(x.name||'')}</span><span class="market-suggestion__type">${esc(isFund(x)?'ETF/Fundo':x.sector||'Ação')}</span></button>`).join('');
-    box.hidden=false;
-  }
+  const marketSearchSuggestions = window.VestraMarketSearchSuggestions?.create({
+    getStocks: () => M.stocks,
+    getQuery: () => M.query,
+    isLoaded: () => M.loaded,
+    getBox: () => $m('marketSuggestions'),
+    text: txt,
+    number: n,
+    escapeHtml: esc,
+    isFund,
+  }) || null;
+  function marketSearchMatches(query, limit=7){ return marketSearchSuggestions?.matches(query,limit) || []; }
+  function hideSearchSuggestions(){ return marketSearchSuggestions?.hide(); }
+  function renderSearchSuggestions(){ return marketSearchSuggestions?.render(); }
 
   function resolvePortfolioStock(asset){
     if(!researchEligibleAsset(asset)) return null;
