@@ -188,57 +188,60 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: portfolio alternative card opens dossier and watch star stays separate', async ({ page }) => {
+test('iPhone/WebKit: real portfolio alternative opens dossier and watch star stays separate', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
+  await isolateExternalSearch(page);
   await page.goto('/index.html');
-  await page.waitForFunction(() => !!window.VestraPortfolioSheetNavigation && !!window.VestraMarket?.__lazyDossiersInstalled);
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarket?.__lazyDossiersInstalled);
 
+  // Seed only the portfolio state, then let production code render the complete
+  // Portfolio Intelligence surface. ALCPB.PA is deliberately weak in the current
+  // canonical universe and yields real same-sector alternatives (including WDC).
   await page.evaluate(() => {
-    const sheet = document.getElementById('marketSheet');
-    const content = document.getElementById('marketSheetContent');
-    sheet.hidden = false;
-    sheet.setAttribute('aria-hidden', 'false');
-    sheet.dataset.tool = 'portfolio';
-    sheet.dataset.ticker = '';
-    content.innerHTML = '<div class="market-row" data-market-ticker="WDC"><div><strong>WDC</strong><span>Western Digital Corporation</span></div><button class="market-watch" data-market-watch="WDC">☆</button></div>';
-
-    window.__portfolioNavOpened = [];
-    window.__portfolioWatchToggled = [];
-    const originalOpen = window.VestraMarket.openTicker;
-    const originalToggle = window.VestraMarket.toggleWatch;
-
-    window.VestraMarket.openTicker = ticker => {
-      window.__portfolioNavOpened.push(ticker);
-      sheet.dataset.ticker = ticker;
-      content.innerHTML = `<div class="market-detail-head"><h2>${ticker}</h2></div>`;
-      return true;
-    };
-    window.VestraMarket.toggleWatch = ticker => {
-      window.__portfolioWatchToggled.push(ticker);
-      const star = content.querySelector(`[data-market-watch="${ticker}"]`);
-      if (star) star.textContent = star.textContent === '☆' ? '★' : '☆';
-    };
-    window.__restorePortfolioNavigation = () => {
-      window.VestraMarket.openTicker = originalOpen;
-      window.VestraMarket.toggleWatch = originalToggle;
-    };
+    window.state.assets = [{
+      id: 'e2e-alcpb',
+      class: 'Ações/ETFs',
+      name: 'Capital B',
+      ticker: 'ALCPB.PA',
+      yahooTicker: 'ALCPB.PA',
+      value: 1000,
+      currency: 'EUR'
+    }];
+    window.setView('market');
   });
 
-  const star = page.locator('[data-market-watch="WDC"]');
+  await expect(page.locator('#viewMarket')).toBeVisible();
+  await page.locator('.market-portfolio-access').click();
+
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible({ timeout: 15_000 });
+  await expect(sheet).toHaveAttribute('data-tool', 'portfolio');
+  await expect(sheet).toHaveAttribute('data-ticker', '');
+
+  const alternativesCard = sheet.locator('.market-detail-card').filter({ hasText: 'Alternativas no mesmo setor' }).first();
+  await expect(alternativesCard).toBeVisible({ timeout: 15_000 });
+  const alternative = alternativesCard.locator('.market-row[data-market-ticker]').first();
+  await expect(alternative).toBeVisible({ timeout: 15_000 });
+  const ticker = await alternative.getAttribute('data-market-ticker');
+  expect(ticker).toBeTruthy();
+
+  // The star is an independent action and must not be reinterpreted by the lazy
+  // dossier capture listener as a click on its parent ticker card.
+  const star = alternative.locator('[data-market-watch]');
+  await expect(star).toBeVisible();
   await star.click();
-  expect(await page.evaluate(() => window.__portfolioWatchToggled.slice())).toEqual(['WDC']);
-  expect(await page.evaluate(() => window.__portfolioNavOpened.slice())).toEqual([]);
-  await expect(page.locator('#marketSheet')).toHaveAttribute('data-ticker', '');
+  await expect(sheet).toHaveAttribute('data-tool', 'portfolio');
+  await expect(sheet).toHaveAttribute('data-ticker', '');
 
-  await page.locator('.market-row[data-market-ticker="WDC"]').click({ position: { x: 35, y: 20 } });
-  await expect(page.locator('#marketSheet')).toHaveAttribute('data-ticker', 'WDC');
-  await expect(page.locator('#marketSheetContent h2')).toHaveText('WDC');
-  expect(await page.evaluate(() => window.__portfolioNavOpened.slice())).toEqual(['WDC']);
-  expect(await page.evaluate(() => window.__portfolioWatchToggled.slice())).toEqual(['WDC']);
-  await expect(page.locator('#marketSheet')).toHaveAttribute('data-return-view', 'portfolio');
+  // The rest of the card is navigation: it must open the suggested company dossier
+  // and remember that the user came from Portfolio Intelligence.
+  await alternative.click({ position: { x: 32, y: 22 } });
+  await expect(sheet).toHaveAttribute('data-ticker', ticker);
+  await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
+  await expect(sheet).toHaveAttribute('data-return-view', 'portfolio');
+  await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
-  await page.evaluate(() => window.__restorePortfolioNavigation?.());
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
