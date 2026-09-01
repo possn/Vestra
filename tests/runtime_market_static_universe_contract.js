@@ -29,9 +29,8 @@ assert(api && api.version === '1.0');
 
   const p1 = loader.ensureLoaded();
   const p2 = loader.ensureLoaded();
-  assert.strictEqual(p1, p2, 'concurrent loads must coalesce');
-  await p1;
-  assert.deepStrictEqual(calls.map(x=>x[0]), ['data/stocks-index.json','data/stocks.json']);
+  await Promise.all([p1,p2]);
+  assert.deepStrictEqual(calls.map(x=>x[0]), ['data/stocks-index.json','data/stocks.json'], 'concurrent loads must share one fetch sequence');
   assert(calls.every(x=>x[1] && x[1].cache === 'no-store'));
   assert.strictEqual(state.loaded, true);
   assert.strictEqual(state.stocks.length, 2);
