@@ -38,23 +38,21 @@
   const money = (v, c='USD') => n(v) == null ? '—' : new Intl.NumberFormat('pt-PT',{style:'currency',currency:c || 'USD',maximumFractionDigits:2}).format(n(v));
   const compact = v => n(v) == null ? '—' : new Intl.NumberFormat('pt-PT',{notation:'compact',maximumFractionDigits:1}).format(n(v));
 
-  function portfolioAssets(){
+  const portfolioContext = window.VestraMarketPortfolioContext?.create({
+  getAssets: () => {
     try { return (typeof state !== 'undefined' && state && Array.isArray(state.assets)) ? state.assets : []; }
     catch { return []; }
-  }
-  function researchEligibleAsset(a){
-    const cls=txt(a?.class).toLowerCase();
-    // Company/fund fundamentals only. Crypto can share symbols with listed companies
-    // (e.g. ATOM), so never infer research eligibility from ticker alone.
-    if(cls.includes('cripto')) return false;
-    return cls.includes('ações') || cls.includes('acoes') || cls.includes('etf') || cls.includes('fund');
-  }
-  function assetTicker(a){ return txt(a?.yahooTicker||a?.ticker||a?.symbol).toUpperCase(); }
-  function portfolioTickers(){
-    return new Set(portfolioAssets().filter(researchEligibleAsset).map(assetTicker).filter(Boolean));
-  }
-  function portfolioValue(a){ return n(a?.value) ?? n(a?.marketValueEUR) ?? 0; }
-  function euro(v){ return n(v)==null ? '—' : new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n(v)); }
+  },
+  text: txt,
+  number: n,
+}) || null;
+function portfolioAssets(){ return portfolioContext?.portfolioAssets() || []; }
+function researchEligibleAsset(a){ return portfolioContext?.researchEligibleAsset(a) || false; }
+function assetTicker(a){ return portfolioContext?.assetTicker(a) || ''; }
+function portfolioTickers(){ return portfolioContext?.portfolioTickers() || new Set(); }
+function portfolioValue(a){ return portfolioContext?.portfolioValue(a) ?? 0; }
+function euro(v){ return portfolioContext?.euro(v) || '—'; }
+function inPortfolio(ticker){ return portfolioContext?.inPortfolio(ticker) || false; }
 
   function workerBase(){
     try { return txt(typeof state!=='undefined' && state?.settings?.workerUrl).replace(/\/$/,''); } catch { return ''; }
@@ -115,10 +113,6 @@ const watchSnapshots = window.VestraMarketWatchSnapshots?.create({
 function loadWatchlist(){ return watchSnapshots?.loadWatchlist() || M.watchlist; }
 function saveWatchlist(){ return watchSnapshots?.saveWatchlist(); }
 function isWatched(ticker){ return watchSnapshots?.isWatched(ticker) || false; }
-function inPortfolio(ticker){
-  const t=txt(ticker).toUpperCase(); const base=t.replace(/\.[A-Z]+$/,'');
-  return [...portfolioTickers()].some(x=>x===t || x.replace(/\.[A-Z]+$/,'')===base);
-}
 function toggleWatch(ticker){
   const t=txt(ticker).toUpperCase(); if(!t) return;
   if(M.watchlist.has(t)) M.watchlist.delete(t); else M.watchlist.add(t);
