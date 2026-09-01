@@ -145,10 +145,12 @@
     if(!sh) return;
 
     const ticker=e.target.closest?.('[data-market-ticker]');
-    if(ticker && !sh.hidden && sh.dataset.tool==='portfolio' && content()?.contains(ticker)){
+    const watch=e.target.closest?.('[data-market-watch]');
+    if(ticker && !watch && !sh.hidden && sh.dataset.tool==='portfolio' && content()?.contains(ticker)){
+      e.preventDefault();
+      e.stopImmediatePropagation();
       openingFromPortfolio=true;
-      setTimeout(markTickerFromPortfolio,0);
-      setTimeout(markTickerFromPortfolio,40);
+      void openCompany(ticker.dataset.marketTicker,{origin:'portfolio',sourceNode:ticker});
       return;
     }
 
