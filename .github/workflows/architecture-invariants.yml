@@ -10,6 +10,8 @@ on:
       - 'sw.js'
       - 'app*.js'
       - 'market*.js'
+      - 'portfolio-sheet-navigation.js'
+      - 'portfolio-dossier-routing.js'
       - 'politicians.js'
       - 'worker.js'
       - 'data/stocks-index.json'
@@ -39,6 +41,8 @@ on:
       - 'sw.js'
       - 'app*.js'
       - 'market*.js'
+      - 'portfolio-sheet-navigation.js'
+      - 'portfolio-dossier-routing.js'
       - 'politicians.js'
       - 'worker.js'
       - 'data/stocks-index.json'
@@ -99,15 +103,20 @@ jobs:
           node --check app.js
           node --check market-live-overlay.js
           node --check market-congress-live.js
+          node --check market-watch-snapshots.js
           node --check market.js
           node --check market-data-loader.js
           node --check market-data-health.js
           node --check market-global-search.js
           node --check market-learned-universe.js
+          node --check portfolio-sheet-navigation.js
+          node --check portfolio-dossier-routing.js
           node --check tests/runtime_learned_universe_contract.js
           node --check tests/runtime_market_data_health_contract.js
           node --check tests/runtime_market_live_overlay_contract.js
           node --check tests/runtime_market_congress_live_contract.js
+          node --check tests/runtime_market_watch_snapshots_contract.js
+          node --check tests/runtime_portfolio_dossier_navigation_contract.js
           node --check politicians.js
           node --check worker.js
       - name: Validate Python syntax
@@ -141,6 +150,10 @@ jobs:
         run: node tests/runtime_market_live_overlay_contract.js
       - name: Runtime · market Congress live
         run: node tests/runtime_market_congress_live_contract.js
+      - name: Runtime · market watch snapshots
+        run: node tests/runtime_market_watch_snapshots_contract.js
+      - name: Runtime · portfolio dossier navigation
+        run: node tests/runtime_portfolio_dossier_navigation_contract.js
       - name: Historical regression suite
         env:
           PYTHONPATH: .
