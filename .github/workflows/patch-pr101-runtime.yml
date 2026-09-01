@@ -1,0 +1,75 @@
+name: Patch PR101 portfolio runtime
+
+on:
+  push:
+    branches:
+      - fix/portfolio-alternative-dossier-20260901
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/portfolio-alternative-dossier-20260901
+          fetch-depth: 0
+      - name: Apply guarded fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected exactly one match, got {count}')
+              p.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              'vestra-portfolio-hierarchy.js',
+              '/* Vestra Portfolio Hierarchy v1.2 — canonical final hierarchy from UX 4.54/4.55/4.57. */',
+              '/* Vestra Portfolio Hierarchy v1.3 — canonical final hierarchy from UX 4.54/4.55/4.57. */'
+          )
+          replace_once(
+              'vestra-portfolio-hierarchy.js',
+              "for(const sel of ('.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts')){",
+              "for(const sel of ['.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts']){"
+          )
+          replace_once(
+              'vestra-portfolio-ui.js',
+              '/* Vestra Portfolio UI v1.0 — canonical portfolio landing + analysis tabs. */',
+              '/* Vestra Portfolio UI v1.1 — canonical portfolio landing + analysis tabs. */'
+          )
+          replace_once(
+              'vestra-portfolio-ui.js',
+              "function text(c,rx){ const el=[...c.querySelectorAll('small,strong,b,span,div,p')].find(x=>rx.test(t(x.textContent))); return t(el?.textContent); }",
+              "function text(c,rx){ if(!c)return ''; const el=[...c.querySelectorAll('small,strong,b,span,div,p')].find(x=>rx.test(t(x.textContent))); return t(el?.textContent); }"
+          )
+          replace_once(
+              'index.html',
+              'vestra-portfolio-hierarchy.js?v=1.2',
+              'vestra-portfolio-hierarchy.js?v=1.3'
+          )
+          replace_once(
+              'index.html',
+              'vestra-portfolio-ui.js?v=1.0',
+              'vestra-portfolio-ui.js?v=1.1'
+          )
+
+          Path('tests/test_portfolio_runtime_robustness.py').write_text('''from pathlib import Path\n\n\ndef test_portfolio_hierarchy_uses_selector_array():\n    js = Path("vestra-portfolio-hierarchy.js").read_text()\n    assert "for(const sel of ['.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts'])" in js\n    assert "for(const sel of ('.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts'))" not in js\n\n\ndef test_portfolio_ui_text_helper_is_null_safe():\n    js = Path("vestra-portfolio-ui.js").read_text()\n    assert "function text(c,rx){ if(!c)return '';" in js\n\n\ndef test_portfolio_runtime_cache_busters_are_current():\n    html = Path("index.html").read_text()\n    assert "vestra-portfolio-hierarchy.js?v=1.3" in html\n    assert "vestra-portfolio-ui.js?v=1.1" in html\n''')
+          PY
+          node --check vestra-portfolio-hierarchy.js
+          node --check vestra-portfolio-ui.js
+          python -m pytest -q tests/test_portfolio_runtime_robustness.py
+      - name: Commit fixes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add vestra-portfolio-hierarchy.js vestra-portfolio-ui.js index.html tests/test_portfolio_runtime_robustness.py
+          git commit -m "fix: harden portfolio intelligence runtime"
+          git push origin HEAD:fix/portfolio-alternative-dossier-20260901
