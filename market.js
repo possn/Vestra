@@ -73,9 +73,6 @@
   function refreshOpenDossierLiveFields(s){ return marketLiveOverlay?.refreshOpenDossierLiveFields(s); }
   async function enrichTickerLive(s){ return marketLiveOverlay?.enrichTickerLive(s)??null; }
 
-
-
-
   const congressLiveState = {};
   Object.defineProperties(congressLiveState, {
     trades: { get: () => M.congressLive, set: value => { M.congressLive = Array.isArray(value) ? value : []; } },
@@ -94,16 +91,26 @@
   function attachCongressToStocks(trades){ return congressLiveFeed?.attachToStocks(trades); }
   async function loadCongressLive(ticker=''){ return congressLiveFeed?.load(ticker) ?? []; }
 
-
-  const WATCH_KEY = 'vestra-market-watchlist-v1';
-  function loadWatchlist(){
-    try { M.watchlist = new Set(JSON.parse(localStorage.getItem(WATCH_KEY)||'[]').map(x=>txt(x).toUpperCase()).filter(Boolean)); }
-    catch { M.watchlist = new Set(); }
-  }
-  function saveWatchlist(){
-    try { localStorage.setItem(WATCH_KEY, JSON.stringify([...M.watchlist])); } catch {}
-  }
-  function isWatched(ticker){ return M.watchlist.has(txt(ticker).toUpperCase()); }
+  const watchSnapshotState = {};
+  Object.defineProperties(watchSnapshotState, {
+    watchlist: { get: () => M.watchlist, set: value => { M.watchlist = value instanceof Set ? value : new Set(); } },
+    previousSnapshot: { get: () => M.previousSnapshot, set: value => { M.previousSnapshot = value || null; } },
+    currentSnapshot: { get: () => M.currentSnapshot, set: value => { M.currentSnapshot = value || null; } },
+  });
+  const watchSnapshots = window.VestraMarketWatchSnapshots?.create({
+    state: watchSnapshotState,
+    text: txt,
+    number: n,
+    escapeHtml: esc,
+    formatShortDate: shortDate,
+    getPortfolioTickers: portfolioTickers,
+    getStocksByTicker: () => M.byTicker,
+    getStocks: () => M.stocks,
+    getGeneratedAt: () => M.data?.generated_at,
+  }) || null;
+  function loadWatchlist(){ return watchSnapshots?.loadWatchlist() || M.watchlist; }
+  function saveWatchlist(){ return watchSnapshots?.saveWatchlist(); }
+  function isWatched(ticker){ return watchSnapshots?.isWatched(ticker) || false; }
   function inPortfolio(ticker){
     const t=txt(ticker).toUpperCase(); const base=t.replace(/\.[A-Z]+$/,'');
     return [...portfolioTickers()].some(x=>x===t || x.replace(/\.[A-Z]+$/,'')===base);
@@ -117,85 +124,14 @@
       const s=M.byTicker.get(t); if(s){ const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview'; $m('marketSheetContent').innerHTML=detailBase(s); renderDetailTab(s,active); const tab=sh.querySelector(`[data-detail-tab="${active}"]`); if(tab){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));} }
     }
   }
-
-
-  const SNAP_LAST_KEY='vestra-market-snapshot-last-v1';
-  const SNAP_PREV_KEY='vestra-market-snapshot-prev-v1';
-  function snapshotStock(s){
-    return {
-      score:n(s.score), thesis_direction:txt(s.thesis_direction), thesis_type:txt(s.thesis_type),
-      forward_pe_vs_sector_pct:n(s.forward_pe_vs_sector_pct), trailing_pe_vs_sector_pct:n(s.trailing_pe_vs_sector_pct),
-      analyst_eps_revisions_up_30d:n(s.analyst_eps_revisions_up_30d)||0, analyst_eps_revisions_down_30d:n(s.analyst_eps_revisions_down_30d)||0,
-      analyst_price_target_upside_pct:n(s.analyst_price_target_upside_pct), insider_buy_count_30d:n(s.insider_buy_count_30d)||0,
-      insider_sell_count_30d:n(s.insider_sell_count_30d)||0, analyst_next_earnings_date:txt(s.analyst_next_earnings_date), current_price:n(s.current_price)
-    };
-  }
-  function buildSnapshot(){
-    const tracked=new Set([...M.watchlist,...portfolioTickers()]);
-    const stocks={};
-    for(const ticker of tracked){
-      const t=txt(ticker).toUpperCase(); const base=t.replace(/\.[A-Z]+$/,'');
-      const s=M.byTicker.get(t)||M.stocks.find(x=>txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')===base);
-      if(s) stocks[txt(s.ticker).toUpperCase()]=snapshotStock(s);
-    }
-    return {generatedAt:txt(M.data?.generated_at),savedAt:new Date().toISOString(),stocks};
-  }
-  function syncSnapshots(){
-    try{
-      const last=JSON.parse(localStorage.getItem(SNAP_LAST_KEY)||'null');
-      const prev=JSON.parse(localStorage.getItem(SNAP_PREV_KEY)||'null');
-      const current=buildSnapshot();
-      if(last && last.generatedAt && current.generatedAt && last.generatedAt!==current.generatedAt){
-        localStorage.setItem(SNAP_PREV_KEY,JSON.stringify(last));
-        M.previousSnapshot=last;
-        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(current));
-      } else if(!last){
-        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(current));
-        M.previousSnapshot=prev;
-      } else {
-        M.previousSnapshot=prev;
-        // enrich same-generation snapshot with newly watched/held tickers without changing baseline
-        last.stocks={...(last.stocks||{}),...(current.stocks||{})};
-        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(last));
-      }
-      M.currentSnapshot=current;
-    }catch{ M.previousSnapshot=null; M.currentSnapshot=null; }
-  }
-  function previousFor(s){ return M.previousSnapshot?.stocks?.[txt(s.ticker).toUpperCase()]||null; }
-  function daysUntil(v){ if(!v)return null; const d=new Date(v); if(Number.isNaN(d.valueOf()))return null; return Math.ceil((d-Date.now())/86400000); }
-  function changeSignals(s){
-    const out=[]; const prev=previousFor(s);
-    if(prev){
-      const ds=n(s.score)!=null&&n(prev.score)!=null?n(s.score)-n(prev.score):null;
-      if(ds!=null&&Math.abs(ds)>=1) out.push({tone:ds>0?'up':'down',label:`Score ${ds>0?'+':''}${ds.toFixed(1)}`});
-      if(txt(s.thesis_direction)&&txt(prev.thesis_direction)&&txt(s.thesis_direction)!==txt(prev.thesis_direction)) out.push({tone:txt(s.thesis_direction)==='up'?'up':txt(s.thesis_direction)==='down'?'down':'neutral',label:`Tese ${txt(s.thesis_direction_label)||txt(s.thesis_direction)}`});
-      const rev=(n(s.analyst_eps_revisions_up_30d)||0)-(n(s.analyst_eps_revisions_down_30d)||0), prevRev=(n(prev.analyst_eps_revisions_up_30d)||0)-(n(prev.analyst_eps_revisions_down_30d)||0);
-      if(Math.abs(rev-prevRev)>=2) out.push({tone:rev>prevRev?'up':'down',label:`Revisões EPS ${rev>prevRev?'melhoraram':'pioraram'}`});
-      const val=n(s.forward_pe_vs_sector_pct)??n(s.trailing_pe_vs_sector_pct), pval=n(prev.forward_pe_vs_sector_pct)??n(prev.trailing_pe_vs_sector_pct);
-      if(val!=null&&pval!=null&&Math.abs(val-pval)>=10) out.push({tone:val<pval?'up':'down',label:`Valuation ${val<pval?'mais favorável':'mais exigente'}`});
-      if((n(s.insider_buy_count_30d)||0)>(n(prev.insider_buy_count_30d)||0)) out.push({tone:'up',label:'Novas compras insider'});
-      if((n(s.insider_sell_count_30d)||0)>(n(prev.insider_sell_count_30d)||0)) out.push({tone:'down',label:'Novas vendas insider'});
-    } else {
-      const d7=n(s.thesis_score_delta_7d);
-      if(d7!=null&&Math.abs(d7)>=1) out.push({tone:d7>0?'up':'down',label:`Score 7d ${d7>0?'+':''}${d7.toFixed(1)}`});
-      if(txt(s.thesis_direction)==='up') out.push({tone:'up',label:'Tese a melhorar'});
-      if(txt(s.thesis_direction)==='down') out.push({tone:'down',label:'Tese a piorar'});
-      const up=n(s.analyst_eps_revisions_up_30d)||0, down=n(s.analyst_eps_revisions_down_30d)||0;
-      if(up-down>=3) out.push({tone:'up',label:'Revisões EPS positivas'}); else if(down-up>=3) out.push({tone:'down',label:'Revisões EPS negativas'});
-      if(n(s.insider_buy_count_30d)>0) out.push({tone:'up',label:'Insiders a comprar'});
-    }
-    const de=daysUntil(s.analyst_next_earnings_date); if(de!=null&&de>=0&&de<=14) out.push({tone:'event',label:`Resultados em ${de}d`});
-    return out.slice(0,4);
-  }
-  function changeBadge(s){
-    const c=changeSignals(s)[0]; if(!c)return '';
-    return `<span class="market-change market-change--${c.tone}">${c.tone==='up'?'↗':c.tone==='down'?'↘':c.tone==='event'?'◷':'•'} ${esc(c.label)}</span>`;
-  }
-  function changePanel(s){
-    const changes=changeSignals(s); const prev=previousFor(s);
-    const label=prev?`Desde ${shortDate(M.previousSnapshot?.generatedAt||M.previousSnapshot?.savedAt)}`:'Sinais recentes';
-    return `<div class="market-change-panel"><div class="market-change-panel__head"><div><small>O QUE MUDOU</small><h4>${esc(label)}</h4></div><span>${changes.length?`${changes.length} ${changes.length===1?'alteração':'alterações'}`:'Estável'}</span></div>${changes.length?`<div class="market-change-list">${changes.map(c=>`<div class="market-change-item market-change-item--${c.tone}"><b>${c.tone==='up'?'↗':c.tone==='down'?'↘':c.tone==='event'?'◷':'•'}</b><span>${esc(c.label)}</span></div>`).join('')}</div>`:'<p>Sem mudança material identificada desde a referência disponível.</p>'}</div>`;
-  }
+  function snapshotStock(s){ return watchSnapshots?.snapshotStock(s) || {}; }
+  function buildSnapshot(){ return watchSnapshots?.buildSnapshot() || {generatedAt:'',savedAt:new Date().toISOString(),stocks:{}}; }
+  function syncSnapshots(){ return watchSnapshots?.syncSnapshots() || null; }
+  function previousFor(s){ return watchSnapshots?.previousFor(s) || null; }
+  function daysUntil(v){ return watchSnapshots?.daysUntil(v) ?? null; }
+  function changeSignals(s){ return watchSnapshots?.changeSignals(s) || []; }
+  function changeBadge(s){ return watchSnapshots?.changeBadge(s) || ''; }
+  function changePanel(s){ return watchSnapshots?.changePanel(s) || ''; }
 
   function isFund(s){
     const q = txt(s.quote_type).toUpperCase();
@@ -279,11 +215,7 @@
       <div class="market-list">${rows.length?rows.map(s=>renderRow(s,qs?'':[`Opportunity ${Math.round(n(s.opportunity_score))}/100`,txt(s.opportunity_label),txt(s.opportunity_timing_label),n(s.opportunity_timing_score)!=null?`Momento ${Math.round(n(s.opportunity_timing_score))}/100`:'',n(s.opportunity_return_20d_pct)!=null?`20d ${n(s.opportunity_return_20d_pct)>=0?'+':''}${num(s.opportunity_return_20d_pct)}%`:''].filter(Boolean).join(' · '),qs?null:s.opportunity_score)).join(''):'<div class="market-empty market-empty--filters"><strong>Sem resultados neste filtro.</strong><span>Experimenta outro setor ou remove a pesquisa.</span></div>'}</div></section>`;
   }
 
-
   function low52Stats(s){
-    // The startup market index deliberately omits the full 1Y history. Use the
-    // compact 52-week bounds there; once a dossier is hydrated the complete
-    // history remains available and takes precedence.
     const hist=Array.isArray(s?.price_history_1y)?s.price_history_1y:[];
     const closes=hist.map(x=>n(x?.close)).filter(x=>x!=null&&x>0);
     const current=n(s?.current_price) ?? (closes.length?closes[closes.length-1]:null);
@@ -369,7 +301,6 @@
       : '<div class="market-empty">A carregar atividade recente…</div>';
     return `<section class="market-section"><div class="market-section__head"><div><h3>Smart money</h3><p>Compras de insiders e atividade declarada no Congresso dos EUA</p><p class="market-source-credit">Congresso: snapshot Vestra · divulgações STOCK Act oficiais</p></div><span class="market-data-age">${status}</span></div><div class="market-list">${rows.map(s=>renderRow(s,`${n(s.insider_buy_count_30d)||0} compras insider · ${Array.isArray(s.congress_trades)?s.congress_trades.length:0} trades Congresso`)).join('')||empty}</div></section>`;
   }
-
 
   const SCANNER_STRATEGIES=[
     ['best_opportunities','Best Opportunities','Ranking estrutural com evidência forte'],
@@ -703,9 +634,6 @@
     return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>CATALYSTS & RISKS</small><h4>${esc(s.catalyst_summary||'Eventos a acompanhar')}</h4></div><span class="market-data-age">${esc(next)}</span></div><div class="market-change-list">${events.map(e=>`<div class="market-change-item market-change-item--${tone(e)}"><b>${icon(e)}</b><span><strong>${esc(e.label||'Evento')}</strong><small style="display:block;margin-top:2px">${esc(when(e))}${e.evidence?` · ${esc(e.evidence)}`:''}${e.source?` · ${esc(e.source)}`:''}</small></span></div>`).join('')}</div></div>`;
   }
 
-
-
-
   function recoveryPanel(s){
     const status=txt(s.recovery_status), label=txt(s.recovery_label), score=n(s.recovery_score);
     if(!status || status==='insufficient') return '';
@@ -838,7 +766,6 @@
   function resetDossierViewport(){
     const panel=sheetPanel(); if(!panel) return;
     panel.scrollTop=0; panel.scrollLeft=0;
-    // One delayed reset after layout is enough; repeated RAF writes can fight iOS momentum.
     setTimeout(()=>{ if(!$m('marketSheet')?.hidden){ panel.scrollTop=0; panel.scrollLeft=0; } }, 35);
   }
   function refreshActiveTabFromLive(){
@@ -854,7 +781,6 @@
     hideSearchSuggestions();
     try{ window.scrollTo({left:0,top:window.scrollY,behavior:'auto'}); }catch(_){ window.scrollTo(0,window.scrollY); }
     const sh=$m('marketSheet'), content=$m('marketSheetContent'); if(!sh||!content)return;
-    // Fully close/reset the previous modal state before constructing a new dossier.
     sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.liveReady='0';
     try{
       const html=detailBase(s);
@@ -993,7 +919,6 @@
     }
     return 0;
   }
-
 
   function stockCurrency(stock){
     const explicit=txt(stock?.currency||stock?.financial_currency||stock?.financialCurrency).toUpperCase();
@@ -1228,21 +1153,17 @@
     const analysed=rows.reduce((a,r)=>a+r.value,0)||1;
     const ranked=rows.map(r=>({...r,conviction:portfolioConviction(r.stock)}));
     const heldTickers=new Set(ranked.map(r=>txt(r.stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')));
-
     const sectors=new Map();
     for(const r of ranked){ const k=txt(r.stock.sector)||'Sem setor'; sectors.set(k,(sectors.get(k)||0)+r.value); }
     const sectorRows=[...sectors.entries()].map(([sector,value])=>({sector,value,pct:value/analysed*100})).sort((a,b)=>b.value-a.value);
     const topPosition=ranked.slice().sort((a,b)=>b.value-a.value)[0];
     const topPosPct=topPosition?topPosition.value/analysed*100:0;
-
     const reinforce=ranked.filter(r=>r.conviction!=null&&r.conviction>=70&&n(r.stock.confidence_score)>=60&&!['high','severe'].includes(txt(r.stock.risk_gate))&&!['overvalued','uncertain'].includes(txt(r.stock.valuation_signal))&&txt(r.stock.estimate_signal)!=='deteriorating')
       .sort((a,b)=>b.conviction-a.conviction).slice(0,3);
     const review=ranked.filter(r=>['high','severe'].includes(txt(r.stock.risk_gate))||txt(r.stock.thesis_direction)==='down'||txt(r.stock.estimate_signal)==='deteriorating'||(r.conviction!=null&&r.conviction<50))
       .sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,3);
-
     const etfsForFit=ranked.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
     for(const r of ranked) r.portfolioFit=portfolioFit(r,sectorRows,analysed,etfsForFit);
-
     const weak=ranked.slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,5);
     const alternatives=[];
     for(const r of weak){
@@ -1262,7 +1183,6 @@
     const actionOrder={replace:0,review:1,reinforce:2,hold:3};
     actionRows.sort((a,b)=>(actionOrder[a.action.key]??9)-(actionOrder[b.action.key]??9)||(b.value-a.value));
     const actionCounts=actionRows.reduce((acc,r)=>{acc[r.action.key]=(acc[r.action.key]||0)+1;return acc;},{});
-
     const overlaps=[];
     const etfs=etfsForFit;
     for(let i=0;i<etfs.length;i++) for(let j=i+1;j<etfs.length;j++){
@@ -1278,16 +1198,13 @@
         if(sym&&w!=null&&w>=2&&heldTickers.has(sym)&&sym!==txt(e.stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')) overlaps.push(`${sym} também está dentro de ${e.stock.ticker} · ~${w.toFixed(1)}% do ETF`);
       }
     }
-
     const concentration=[];
     if(topPosPct>=15) concentration.push(`${topPosition.stock.ticker} representa ~${topPosPct.toFixed(0)}% da parte analisável`);
     if(sectorRows[0]?.pct>=30) concentration.push(`${sectorRows[0].sector} concentra ~${sectorRows[0].pct.toFixed(0)}% da parte analisável`);
     concentration.push(...overlaps.slice(0,3));
-
     const compactRows=(arr,metaFn)=>arr.length?`<div class="market-list">${arr.map(r=>renderRow(r.stock,metaFn(r))).join('')}</div>`:'<p class="market-case-note">Nenhuma posição cumpre este filtro com os dados atuais.</p>';
     const altHtml=alternatives.length?`<div class="market-list">${alternatives.map(a=>renderRow(a.to,`Alternativa a ${a.from.ticker} · Score +${a.delta.toFixed(0)} · ${a.portfolioFit==='better'?'reduz overlap':a.portfolioFit==='worse'?'aumenta overlap':'impacto neutro'}`)).join('')}</div>`:'<p class="market-case-note">Sem alternativa claramente superior identificada no mesmo setor.</p>';
     const concHtml=concentration.length?`<ul class="market-case-list">${[...new Set(concentration)].slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="market-case-note">Sem concentração material detetada com os dados disponíveis.</p>';
-
     const convRows=ranked.filter(r=>r.conviction!=null&&r.value>0);
     const convictionWeight=convRows.reduce((sum,r)=>sum+r.value,0)||1;
     const portfolioConvictionNow=convRows.reduce((sum,r)=>sum+r.value*r.conviction,0)/convictionWeight;
@@ -1306,7 +1223,6 @@
       return {from:a.from,to:a.to,before:portfolioConvictionNow,after,convDelta,overlapBefore,overlapAfter,overlapDelta,impact};
     }).filter(Boolean).slice(0,3);
     const scenarioHtml=scenarioRows.length?`<div class="market-detail-card market-scenario-preview"><div class="market-perspective-head"><div><small>SCENARIO PREVIEW</small><h4>Se substituíres pelo mesmo valor</h4></div><span class="market-data-age">simulação</span></div><p class="market-case-note">Mantém o valor da posição e o setor; estima apenas o efeito na convicção ponderada e no overlap indireto.</p><div class="market-scenario-list">${scenarioRows.map(x=>`<div class="market-scenario-row"><div><strong>${esc(x.from.ticker)} → ${esc(x.to.ticker)}</strong><small>Convicção carteira ${x.before.toFixed(1)} → ${x.after.toFixed(1)} · overlap ${x.overlapBefore.toFixed(1)}% → ${x.overlapAfter.toFixed(1)}%</small></div><em class="${x.impact==='Melhora'?'is-positive':x.impact==='Piora'?'is-risk':''}">${x.impact}</em></div>`).join('')}</div></div>`:'';
-
     const rebalSourceRows=actionRows.filter(r=>r.value>0&&r.conviction!=null).slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999));
     const defaultSource=rebalSourceRows[0]||null;
     const rebalancerHtml=defaultSource?`<div class="market-detail-card market-rebalancer" data-rebalancer-card><div class="market-perspective-head"><div><small>ASSISTED REBALANCER</small><h4>Onde melhora mais este capital?</h4></div><span class="market-data-age">simulação</span></div><p class="market-case-note">Escolhe a posição de origem e o montante. A Vestra mantém o valor total da carteira e compara destinos elegíveis por convicção, concentração, overlap e valuation.</p><div class="market-rebalancer-controls"><label><span>Libertar de</span><select data-rebalance-source>${rebalSourceRows.map(r=>`<option value="${esc(r.stock.ticker)}">${esc(r.stock.ticker)} · ${euro(r.value)} · conv. ${Math.round(r.conviction)}</option>`).join('')}</select></label><label><span>Montante</span><input data-rebalance-amount type="number" min="1" max="${Math.max(1,Math.floor(defaultSource.value))}" step="1" value="${Math.max(1,Math.min(1000,Math.round(defaultSource.value)||1))}"></label><button type="button" data-rebalance-run>Simular</button></div><div class="market-rebalancer-results" data-rebalance-results><p class="market-case-note">Toca em Simular para comparar os melhores destinos.</p></div><p class="market-case-note">Research assistido; não considera fiscalidade, custos de transação, liquidez pessoal ou ordens reais.</p></div>`:'';
@@ -1613,7 +1529,6 @@
   function wireVisibleRails(){
     document.querySelectorAll('.market-chipbar,.market-tabs').forEach(wireHorizontalRail);
   }
-  // v2.6: bounded grids no longer need custom touch interception.
 
   document.addEventListener('click', e=>{
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
@@ -1691,7 +1606,6 @@
     }
   });
 
-
   document.addEventListener('focusin', e=>{
     if(e.target?.id==='marketSearch' && M.query) ensureLoaded().then(renderSearchSuggestions);
   });
@@ -1705,7 +1619,6 @@
   loadWatchlist();
   window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,toggleWatch};
 
-  // v6.1 — Decision Center is a navigation surface, not a passive summary.
   document.addEventListener('click', e=>{
     const btn=e.target.closest?.('[data-decision-jump]');
     if(!btn) return;
@@ -1728,7 +1641,6 @@
     }
   });
 
-  // v6.2 — Research Queue state is local operational memory.
   document.addEventListener('click', e=>{
     const btn=e.target.closest?.('[data-queue-status]'); if(!btn)return;
     const row=btn.closest('.market-research-queue-row'); if(!row)return;
@@ -1740,7 +1652,6 @@
     } else renderPrimary();
   });
 
-  // v6.3 — Thesis checkpoint + note for Research Queue.
   document.addEventListener('click', e=>{
     const btn=e.target.closest?.('[data-checkpoint-save]'); if(!btn)return;
     const box=btn.closest('.market-research-checkpoint'); if(!box)return;
@@ -1749,7 +1660,6 @@
     btn.textContent='Guardado'; setTimeout(()=>{btn.textContent='Guardar';},900);
   });
 
-  // v6.0.1 — Action Map summary acts as an immediate filter.
   document.addEventListener('click', e=>{
     const btn=e.target.closest?.('[data-action-filter]');
     if(!btn) return;
