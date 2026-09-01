@@ -1,12 +1,12 @@
-"""Exact UK ticker -> ISIN resolution from official London Stock Exchange files.
+"""Exact UK ticker -> ISIN resolution from official London Stock Exchange data.
 
-The LSE publishes security/instrument workbooks across several current pages rather
-than one stable landing page. This module discovers those official downloads,
-builds an exact TIDM -> ISIN map, and exposes a conservative resolver for
-Yahoo-style ``*.L`` tickers.
+Primary identity path: the public LSE instrument endpoint used by the current
+price explorer resolves one TIDM directly and returns its ISIN. This avoids
+enumerating the entire exchange and remains exact/fail-closed.
 
-No fuzzy company-name matching is allowed. Ambiguous TIDMs are discarded.
-Network or workbook failures degrade to ``None`` and never block the pipeline.
+The older public workbook discovery remains only as a compatibility fallback.
+No fuzzy company-name matching is allowed. Ambiguous identities are discarded.
+Network/API/workbook failures degrade to ``None`` and never block the pipeline.
 HTTP/spreadsheet dependencies are imported lazily so architecture tests stay light.
 """
 from __future__ import annotations
@@ -15,39 +15,42 @@ import html
 import io
 import logging
 import re
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 log = logging.getLogger("lse_identity")
 
 LSE_BASE = "https://www.londonstockexchange.com"
+LSE_API_BASE = "https://api.londonstockexchange.com"
+LSE_INSTRUMENT_ENDPOINT = f"{LSE_API_BASE}/api/gw/lse/instruments/alldata"
 LSE_DISCOVERY_PAGES = (
-    # Current trading-service pages. SETSqx currently publishes explicit weekly
-    # security lists; SETS remains useful because the site may re-add them there.
     f"{LSE_BASE}/equities-trading/asset-classes/shares-trading/sets",
     f"{LSE_BASE}/equities-trading/asset-classes/shares-trading/setsqx-and-seaq",
-    # Current issuer/instrument report surface. The instrument download is the
-    # broadest source when present and covers securities beyond SETSqx.
     f"{LSE_BASE}/reports?tab=instruments",
     f"{LSE_BASE}/reports?tab=issuers",
-    # Historical landing route retained as a low-cost fallback in case LSE
-    # redirects it again in future.
     f"{LSE_BASE}/equities-trading/asset-classes/shares-trading/uk-and-european-securities",
 )
 # Compatibility alias retained for tests/older callers.
 LSE_SECURITIES_PAGE = LSE_DISCOVERY_PAGES[-1]
-UA = "Vestra/4.21 (+https://github.com/possn/Vestra)"
+UA = "Vestra/4.22 (+https://github.com/possn/Vestra)"
 ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
+TIDM_RE = re.compile(r"^[A-Z0-9][A-Z0-9.\-]{0,14}$")
 _HREF_RE = re.compile(r"href=[\"']([^\"']+)[\"']", re.IGNORECASE)
 _XLS_RE = re.compile(r"(?:https?:)?(?:\\?/\\?/|/)[^\"'<>\s]+?\.(?:xlsx|xls)(?:\?[^\"'<>\s]*)?", re.IGNORECASE)
 
 _CACHE: dict[str, str] | None = None
+_DIRECT_CACHE: dict[str, str | None] = {}
 _LAST_DIAGNOSTICS: dict[str, int] = {}
 
 
 def _session():
     import requests
     s = requests.Session()
-    s.headers.update({"User-Agent": UA, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"})
+    s.headers.update({
+        "User-Agent": UA,
+        "Accept": "application/json,text/html,application/xhtml+xml,*/*;q=0.8",
+        "Origin": LSE_BASE,
+        "Referer": f"{LSE_BASE}/",
+    })
     return s
 
 
@@ -55,9 +58,76 @@ def _norm_col(value) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(value or "").strip().lower()).strip()
 
 
+def _tidm_from_ticker(ticker: str) -> str | None:
+    text = str(ticker or "").strip().upper()
+    if not text.endswith(".L"):
+        return None
+    tidm = text[:-2]
+    return tidm if TIDM_RE.match(tidm) else None
+
+
+def _extract_direct_identity(payload, requested_tidm: str) -> tuple[str, str] | None:
+    """Validate one official LSE instrument payload without fuzzy matching."""
+    if not isinstance(payload, dict):
+        return None
+    returned_tidm = str(payload.get("tidm") or payload.get("code") or "").strip().upper()
+    requested = str(requested_tidm or "").strip().upper()
+    if not returned_tidm or returned_tidm != requested:
+        return None
+    isin = str(payload.get("isin") or "").strip().upper()
+    if not ISIN_RE.match(isin):
+        return None
+    return returned_tidm, isin
+
+
+def _resolve_direct(ticker: str, session=None, refresh: bool = False) -> str | None:
+    """Resolve a Yahoo ``*.L`` ticker using the current official LSE TIDM API."""
+    tidm = _tidm_from_ticker(ticker)
+    if not tidm:
+        return None
+    if not refresh and tidm in _DIRECT_CACHE:
+        return _DIRECT_CACHE[tidm]
+
+    s = session or _session()
+    # A small exact compatibility alternative covers the historic class-share
+    # punctuation convention. Conflicting valid answers fail closed.
+    candidates = list(dict.fromkeys((tidm, tidm.replace("-", "."))))
+    matches: set[str] = set()
+    requests_made = 0
+    failures = 0
+    for candidate in candidates:
+        if not TIDM_RE.match(candidate):
+            continue
+        url = f"{LSE_INSTRUMENT_ENDPOINT}/{quote(candidate, safe='')}"
+        requests_made += 1
+        try:
+            r = s.get(url, timeout=25)
+            r.raise_for_status()
+            identity = _extract_direct_identity(r.json(), candidate)
+        except Exception as exc:
+            failures += 1
+            log.debug("LSE direct identity unavailable %s: %s", candidate, exc)
+            continue
+        if identity:
+            matches.add(identity[1])
+
+    _LAST_DIAGNOSTICS["direct_requests"] = _LAST_DIAGNOSTICS.get("direct_requests", 0) + requests_made
+    _LAST_DIAGNOSTICS["direct_failures"] = _LAST_DIAGNOSTICS.get("direct_failures", 0) + failures
+    if len(matches) == 1:
+        result = next(iter(matches))
+        _DIRECT_CACHE[tidm] = result
+        _LAST_DIAGNOSTICS["direct_hits"] = _LAST_DIAGNOSTICS.get("direct_hits", 0) + 1
+        return result
+    if len(matches) > 1:
+        _LAST_DIAGNOSTICS["direct_ambiguous"] = _LAST_DIAGNOSTICS.get("direct_ambiguous", 0) + 1
+        log.warning("LSE direct identity returned conflicting ISINs for %s", tidm)
+    _DIRECT_CACHE[tidm] = None
+    return None
+
+
 def _candidate_downloads(page_url: str, body: str) -> list[str]:
-    # LSE pages have used both normal anchors and JSON-embedded document URLs.
-    # Decode HTML entities and escaped slashes, then inspect both forms.
+    # Compatibility fallback only. LSE pages historically used both normal
+    # anchors and JSON-embedded document URLs.
     text = html.unescape(str(body or "")).replace("\\/", "/")
     raw = list(_HREF_RE.findall(text)) + list(_XLS_RE.findall(text))
     urls = []
@@ -73,8 +143,6 @@ def _candidate_downloads(page_url: str, body: str) -> list[str]:
             continue
         if not re.search(r"\.(?:xlsx|xls)(?:\?|$)", low):
             continue
-        # Reject obvious unrelated operational workbooks. Broad instrument lists
-        # are accepted even if their filenames do not contain 'security'.
         if any(token in low for token in ("business-parameter", "business_parameter", "market-maker", "market_maker", "trading-statistic")):
             continue
         if any(token in low for token in ("sets", "setsqx", "seaq", "eqs", "securit", "instrument", "issuer")):
@@ -97,9 +165,9 @@ def _discover_workbook_urls(session) -> list[str]:
     out = list(dict.fromkeys(urls))
     _LAST_DIAGNOSTICS.update({"pages_ok": pages_ok, "workbooks_discovered": len(out)})
     if not out:
-        log.warning("LSE identity discovery found 0 workbooks across %d/%d reachable pages", pages_ok, len(LSE_DISCOVERY_PAGES))
+        log.info("LSE workbook fallback found 0 workbooks across %d/%d reachable pages", pages_ok, len(LSE_DISCOVERY_PAGES))
     else:
-        log.info("LSE identity discovery: %d workbook(s) across %d reachable page(s)", len(out), pages_ok)
+        log.info("LSE workbook fallback: %d workbook(s) across %d reachable page(s)", len(out), pages_ok)
     return out
 
 
@@ -175,7 +243,7 @@ def build_map(session=None) -> dict[str, str]:
         "ambiguous_tidms": ambiguous,
     })
     log.info(
-        "LSE identity map: %d exact mappings, %d ambiguous, %d pair(s), %d/%d workbook(s) parsed",
+        "LSE workbook identity map: %d exact mappings, %d ambiguous, %d pair(s), %d/%d workbook(s) parsed",
         len(resolved), ambiguous, pair_count, parsed, len(urls),
     )
     return resolved
@@ -194,9 +262,16 @@ def diagnostics() -> dict[str, int]:
 
 def resolve_isin(ticker: str, session=None) -> str | None:
     text = str(ticker or "").strip().upper()
-    if not text.endswith(".L"):
+    tidm = _tidm_from_ticker(text)
+    if not tidm:
         return None
-    tidm = text[:-2]
+
+    direct = _resolve_direct(text, session)
+    if direct:
+        return direct
+
+    # Compatibility fallback: exact TIDM mapping only. This path is intentionally
+    # secondary because public workbook links are no longer consistently exposed.
     mapping = get_map(session)
     candidates = list(dict.fromkeys((tidm, tidm.replace("-", "."))))
     matches = {mapping[c] for c in candidates if c in mapping}
