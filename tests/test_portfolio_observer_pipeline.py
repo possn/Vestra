@@ -24,7 +24,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
 
     def test_static_bundle_uses_fresh_cache_busters(self):
         index=read("index.html")
-        order=["portfolio-collapsibles.js?v=1.2","portfolio-card-classifier.js?v=1.2","vestra-portfolio-hierarchy.js?v=1.2"]
+        order=["portfolio-collapsibles.js?v=1.2","portfolio-card-classifier.js?v=1.2","vestra-portfolio-hierarchy.js?v=1.3"]
         positions=[index.index(x) for x in order]
         self.assertEqual(positions,sorted(positions))
         sw=read("sw.js")
