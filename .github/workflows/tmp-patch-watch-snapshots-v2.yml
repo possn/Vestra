@@ -102,16 +102,12 @@ jobs:
               '          node --check tests/runtime_market_congress_live_contract.js\n',
               '          node --check tests/runtime_market_congress_live_contract.js\n          node --check tests/runtime_market_watch_snapshots_contract.js\n'
           )
-          marker = '''      - name: Runtime · market Congress live
-                run: node tests/runtime_market_congress_live_contract.js
-          '''
+          marker = '      - name: Runtime · market Congress live\n        run: node tests/runtime_market_congress_live_contract.js\n'
           workflow = Path('.github/workflows/architecture-invariants.yml')
           s = workflow.read_text()
           if s.count(marker) != 1:
               raise SystemExit(f'architecture runtime marker count={s.count(marker)}')
-          s = s.replace(marker, marker + '''      - name: Runtime · market watch snapshots
-                run: node tests/runtime_market_watch_snapshots_contract.js
-          ''', 1)
+          s = s.replace(marker, marker + '      - name: Runtime · market watch snapshots\n        run: node tests/runtime_market_watch_snapshots_contract.js\n', 1)
           workflow.write_text(s)
           PY
           node --check market-watch-snapshots.js
