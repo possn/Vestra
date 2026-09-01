@@ -627,39 +627,15 @@ function changePanel(s){ return watchSnapshots?.changePanel(s) || ''; }
     return new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short',year:'numeric'}).format(d);
   }
 
-  function catalystPanel(s){
-    const events=Array.isArray(s.catalyst_events)?s.catalyst_events.slice(0,5):[];
-    if(!events.length) return '';
-    const icon=e=>e.tone==='risk'?'!':e.tone==='positive'?'↗':e.tone==='event'?'◷':'•';
-    const tone=e=>e.tone==='risk'?'down':e.tone==='positive'?'up':e.tone==='event'?'event':'neutral';
-    const when=e=>e.date?shortDate(e.date):(e.window?e.window:'Sem data');
-    const next=s.catalyst_next_date?`Próximo · ${shortDate(s.catalyst_next_date)}`:`${events.length} sinais`;
-    return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>CATALYSTS & RISKS</small><h4>${esc(s.catalyst_summary||'Eventos a acompanhar')}</h4></div><span class="market-data-age">${esc(next)}</span></div><div class="market-change-list">${events.map(e=>`<div class="market-change-item market-change-item--${tone(e)}"><b>${icon(e)}</b><span><strong>${esc(e.label||'Evento')}</strong><small style="display:block;margin-top:2px">${esc(when(e))}${e.evidence?` · ${esc(e.evidence)}`:''}${e.source?` · ${esc(e.source)}`:''}</small></span></div>`).join('')}</div></div>`;
-  }
-
-
-
-
-  function recoveryPanel(s){
-    const status=txt(s.recovery_status), label=txt(s.recovery_label), score=n(s.recovery_score);
-    if(!status || status==='insufficient') return '';
-    const r20=n(s.recovery_return_20d_pct), r60=n(s.recovery_return_60d_pct);
-    const reasons=Array.isArray(s.recovery_reasons)?s.recovery_reasons:[];
-    const tone=(status==='confirmed'||status==='recovering')?'is-positive':(status==='failed'||status==='bounce_only')?'is-risk':'';
-    return `<div class="market-detail-card"><div class="market-perspective-head"><div><small>RECOVERY CONFIRMATION</small><h4>${esc(label||'Sem confirmação')}</h4></div><span class="market-data-age ${tone}">${score==null?'—':Math.round(score)+'/100'}</span></div><div class="market-mini-grid"><div><small>Preço 20d</small><strong>${r20==null?'—':`${r20>0?'+':''}${r20.toFixed(1)}%`}</strong></div><div><small>Preço 60d</small><strong>${r60==null?'—':`${r60>0?'+':''}${r60.toFixed(1)}%`}</strong></div><div><small>Confirmação preço</small><strong>${n(s.recovery_price_score)==null?'—':Math.round(n(s.recovery_price_score))+'/100'}</strong></div><div><small>Confirmação fundamental</small><strong>${n(s.recovery_fundamental_score)==null?'—':Math.round(n(s.recovery_fundamental_score))+'/100'}</strong></div></div>${reasons.length?`<p class="market-case-note">${reasons.slice(0,4).map(esc).join(' · ')}</p>`:''}<p class="market-case-note">Confirmação de recuperação combina preço recente e melhoria fundamental; não é sinal de entrada nem altera o Score Vestra.</p></div>`;
-  }
-
-  function drawdownPanel(s){
-    const items=Array.isArray(s.drawdown_diagnosis)?s.drawdown_diagnosis:[];
-    if(!items.length || txt(s.drawdown_diagnosis_status)==='not_material') return '';
-    const trendLabel={improving:'a melhorar',deteriorating:'a piorar',stable:'estável'};
-    const trendTone={improving:'is-positive',deteriorating:'is-risk',stable:''};
-    const primary=items[0]||{};
-    const mixed=txt(s.drawdown_diagnosis_status)==='mixed';
-    const title=mixed?'Queda com causas mistas':(s.drawdown_primary_label||primary.label||'Causa não identificada');
-    const dd=n(s.drawdown_from_high_pct);
-    return `<div class="market-detail-card market-drawdown-panel"><div class="market-perspective-head"><div><small>PORQUE CAIU? · DIAGNÓSTICO</small><h4>${esc(title)}</h4></div><span class="market-data-age">${dd==null?'drawdown':`${dd.toFixed(0)}% vs máximo 52s`}</span></div><p class="market-case-note">Diagnóstico por evidência disponível; identifica drivers prováveis, não prova causalidade.</p>${txt(s.sector_relative_drawdown_label)?`<p class="market-case-note"><strong>${esc(s.sector_relative_drawdown_label)}</strong>${n(s.sector_relative_return_1y_pct)!=null?` · ${n(s.sector_relative_return_1y_pct)>0?'+':''}${n(s.sector_relative_return_1y_pct).toFixed(1)} pp vs mediana do setor · ${n(s.sector_relative_peer_count)||0} pares`:''}</p>`:''}<div class="market-drawdown-drivers">${items.slice(0,4).map((d,i)=>`<div class="market-drawdown-driver ${i===0?'is-primary':''}"><div><strong>${esc(d.label||d.key||'Driver')}</strong><small>${(d.evidence||[]).slice(0,2).map(esc).join(' · ')||'Evidência limitada'}</small></div><span><b>${Math.round(n(d.strength)||0)}</b><em class="${trendTone[txt(d.trend)]||''}">${esc(trendLabel[txt(d.trend)]||'estável')}</em></span></div>`).join('')}</div></div>`;
-  }
+  const dossierSignals = window.VestraMarketDossierSignals?.create({
+    text: txt,
+    number: n,
+    escapeHtml: esc,
+    formatShortDate: shortDate,
+  }) || null;
+  function catalystPanel(s){ return dossierSignals?.catalystPanel(s) || ''; }
+  function recoveryPanel(s){ return dossierSignals?.recoveryPanel(s) || ''; }
+  function drawdownPanel(s){ return dossierSignals?.drawdownPanel(s) || ''; }
 
   function investmentCase(s){
     const evidence=Array.isArray(s.thesis_evidence)?s.thesis_evidence.filter(Boolean):[];

@@ -28,6 +28,7 @@ const APP_SHELL = [
   "./market-portfolio-context.js",
   "./market-watch-snapshots.js",
   "./market-static-universe.js",
+  "./market-dossier-signals.js",
   "./market-data-loader.js",
   "./market-company-brief.js",
   "./market-metric-cleanup.js",
