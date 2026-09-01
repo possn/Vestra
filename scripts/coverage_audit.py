@@ -1,4 +1,4 @@
-"""Build a compact coverage audit from data/stocks.json.
+"""Build an actionable coverage audit from data/stocks.json.
 
 The audit is diagnostic only: it never changes scores. It quantifies where
 fundamental retrieval is still weak after Yahoo + SEC + ESEF + targeted gap
@@ -22,6 +22,21 @@ MALFORMED_EU = re.compile(
     + "|".join(EU_SUFFIXES) + r")$",
     re.IGNORECASE,
 )
+
+CRITICAL_METRICS = (
+    "roe", "roa", "profit_margin", "operating_margin", "gross_margin",
+    "revenue_growth", "earnings_growth", "free_cash_flow",
+    "operating_cash_flow", "current_ratio", "quick_ratio",
+    "debt_to_equity", "trailing_pe", "forward_pe", "price_to_book",
+    "enterprise_to_ebitda", "roce_proxy",
+)
+
+US_REGIONS = {"United States", "USA", "US"}
+EU_REGIONS = {
+    "Austria", "Belgium", "Denmark", "Finland", "France", "Germany",
+    "Ireland", "Italy", "Luxembourg", "Netherlands", "Norway", "Portugal",
+    "Spain", "Sweden", "Switzerland",
+}
 
 
 def f(v):
@@ -60,6 +75,71 @@ def row_sources(r):
     return sorted({str(x) for x in src if x})
 
 
+def missing_critical_metrics(row):
+    return [key for key in CRITICAL_METRICS if row.get(key) is None]
+
+
+def retrieval_lane(row, missing=None):
+    """Return the next deterministic retrieval lane for a sparse dossier.
+
+    This is intentionally conservative: it recommends only source families that
+    already exist in Vestra's pipeline. It does not imply data availability and it
+    never increases confidence by itself.
+    """
+    missing = list(missing if missing is not None else missing_critical_metrics(row))
+    if not missing:
+        return "none"
+
+    sources = set(row_sources(row))
+    region = str(row.get("region") or "Unknown")
+    ticker = str(row.get("ticker") or "").upper()
+
+    if region in US_REGIONS and "SEC EDGAR" not in sources:
+        return "sec_edgar"
+    if region in EU_REGIONS and "ESEF / filings.xbrl.org" not in sources:
+        return "esef"
+    if not bool(row.get("gap_statement_enriched")):
+        return "annual_statement_gap"
+    if not bool(row.get("quarterly_gap_enriched")):
+        return "quarterly_ttm_gap"
+    if "forward_pe" in missing and "Analyst feed" not in sources:
+        return "analyst_estimates"
+    if ticker.endswith(".L") and not row.get("isin"):
+        return "lse_identity"
+    return "unresolved"
+
+
+def actionable_gap(row):
+    missing = missing_critical_metrics(row)
+    coverage = f(row.get("data_coverage_pct"))
+    critical_coverage = f(row.get("critical_metric_coverage_pct"))
+    return {
+        "ticker": row.get("ticker"),
+        "name": row.get("name"),
+        "region": row.get("region"),
+        "score_model": row.get("score_model") or "general",
+        "coverage_pct": coverage,
+        "critical_coverage_pct": critical_coverage,
+        "missing_critical_count": len(missing),
+        "missing_critical_metrics": missing,
+        "recommended_retrieval_lane": retrieval_lane(row, missing),
+        "score_reliability": row.get("score_reliability"),
+        "evidence_state": (row.get("data_provenance") or {}).get("evidence_state"),
+        "sources": row_sources(row),
+    }
+
+
+def gap_priority(item):
+    critical = item.get("critical_coverage_pct")
+    coverage = item.get("coverage_pct")
+    return (
+        critical if critical is not None else -1,
+        coverage if coverage is not None else -1,
+        -int(item.get("missing_critical_count") or 0),
+        str(item.get("ticker") or ""),
+    )
+
+
 def summarize_group(rows):
     covs = [f(r.get("data_coverage_pct")) for r in rows]
     covs = [x for x in covs if x is not None]
@@ -85,6 +165,9 @@ def main():
     reliability = collections.Counter()
     opportunity_labels = collections.Counter()
     opportunity_suppressed = collections.Counter()
+    retrieval_lanes = collections.Counter()
+    retrieval_by_region = collections.defaultdict(collections.Counter)
+    retrieval_by_model = collections.defaultdict(collections.Counter)
     malformed = []
     annual_attempted = 0
     annual_enriched = 0
@@ -92,21 +175,16 @@ def main():
     quarterly_attempted = 0
     quarterly_enriched = 0
     quarterly_gain = []
-
-    critical = [
-        "roe", "roa", "profit_margin", "operating_margin", "gross_margin",
-        "revenue_growth", "earnings_growth", "free_cash_flow",
-        "operating_cash_flow", "current_ratio", "quick_ratio",
-        "debt_to_equity", "trailing_pe", "forward_pe", "price_to_book",
-        "enterprise_to_ebitda", "roce_proxy",
-    ]
+    actionable = []
 
     for r in rows:
-        by_region[str(r.get("region") or "Unknown")].append(r)
-        by_model[str(r.get("score_model") or "general")].append(r)
+        region = str(r.get("region") or "Unknown")
+        model = str(r.get("score_model") or "general")
+        by_region[region].append(r)
+        by_model[model].append(r)
         for s in row_sources(r):
             source_hits[s] += 1
-        for key in critical:
+        for key in CRITICAL_METRICS:
             if r.get(key) is None:
                 missing_metric[key] += 1
 
@@ -140,12 +218,22 @@ def main():
         if q_before is not None and q_after is not None:
             quarterly_gain.append(q_after - q_before)
 
+        item = actionable_gap(r)
+        if item["missing_critical_count"]:
+            actionable.append(item)
+            lane = item["recommended_retrieval_lane"]
+            retrieval_lanes[lane] += 1
+            retrieval_by_region[region][lane] += 1
+            retrieval_by_model[model][lane] += 1
+
     sparse = sorted(
         rows,
         key=lambda r: (f(r.get("data_coverage_pct")) if f(r.get("data_coverage_pct")) is not None else -1),
     )[:100]
+    actionable.sort(key=gap_priority)
 
     audit = {
+        "schema_version": 2,
         "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "equities": summarize_group(rows),
         "by_region": {k: summarize_group(v) for k, v in sorted(by_region.items())},
@@ -174,6 +262,19 @@ def main():
             {"metric": k, "missing": n, "missing_pct": round(n / len(rows) * 100, 1) if rows else 0}
             for k, n in missing_metric.most_common()
         ],
+        "retrieval_priority": {
+            "rows_with_critical_gaps": len(actionable),
+            "recommended_lane_impact": dict(retrieval_lanes.most_common()),
+            "by_region": {
+                region: dict(counter.most_common())
+                for region, counter in sorted(retrieval_by_region.items())
+            },
+            "by_score_model": {
+                model: dict(counter.most_common())
+                for model, counter in sorted(retrieval_by_model.items())
+            },
+            "top_actionable_dossiers": actionable[:200],
+        },
         "sparsest_dossiers": [
             {
                 "ticker": r.get("ticker"),
@@ -182,6 +283,8 @@ def main():
                 "score_model": r.get("score_model"),
                 "coverage_pct": f(r.get("data_coverage_pct")),
                 "critical_coverage_pct": f(r.get("critical_metric_coverage_pct")),
+                "missing_critical_metrics": missing_critical_metrics(r),
+                "recommended_retrieval_lane": retrieval_lane(r),
                 "score_raw": f(r.get("score_raw")),
                 "score": f(r.get("score")),
                 "score_reliability": r.get("score_reliability"),
