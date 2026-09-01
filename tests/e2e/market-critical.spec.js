@@ -206,16 +206,17 @@ test('iPhone/WebKit: portfolio alternative card opens dossier and watch star sta
 
   // The ranking dataset legitimately changes every refresh, so an eligible same-sector
   // alternative is not guaranteed on every CI run. Keep the real Portfolio sheet and
-  // real event listeners, and inject only one deterministic row that uses the exact
-  // production data attributes. It intentionally is NOT a market-detail-card so the
-  // collapsible decorator cannot add its own absolute toggle over the watch star.
+  // real event listeners, and inject one deterministic production-shaped card. Mark it
+  // as already handled by the collapsible layer so no absolute toggle is added over the
+  // watch star while all other portfolio observers still see a valid market-detail-card.
   const installFixture = async () => {
     await page.evaluate(() => {
       document.getElementById('e2ePortfolioAlternative')?.remove();
       const content = document.getElementById('marketSheetContent');
       const card = document.createElement('div');
       card.id = 'e2ePortfolioAlternative';
-      card.className = 'e2e-portfolio-alternative';
+      card.className = 'market-detail-card';
+      card.dataset.collapsible = '1';
       card.style.cssText = 'position:relative;z-index:10000;margin:24px 12px 32px;padding:12px;background:var(--card);border-radius:18px;';
       card.innerHTML = '<div class="market-row" data-market-ticker="MSFT"><div><strong>MSFT</strong><span>Microsoft Corporation</span></div><button type="button" class="market-watch" data-market-watch="MSFT">☆</button></div>';
       content.appendChild(card);
