@@ -1,0 +1,127 @@
+name: Patch watch snapshots v2
+
+on:
+  push:
+    branches:
+      - refactor/market-watch-snapshots-v2-20260901
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/market-watch-snapshots-v2-20260901
+          fetch-depth: 0
+      - name: Apply guarded extraction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('market.js')
+          text = p.read_text()
+          start = "  const WATCH_KEY = 'vestra-market-watchlist-v1';\n"
+          end = "  function isFund(s){\n"
+          if text.count(start) != 1 or text.count(end) != 1:
+              raise SystemExit('market.js watch/snapshot markers are not unique')
+          a = text.index(start)
+          b = text.index(end, a)
+          replacement = '''  const watchSnapshotState = {};
+          Object.defineProperties(watchSnapshotState, {
+            watchlist: { get: () => M.watchlist, set: value => { M.watchlist = value instanceof Set ? value : new Set(); } },
+            previousSnapshot: { get: () => M.previousSnapshot, set: value => { M.previousSnapshot = value || null; } },
+            currentSnapshot: { get: () => M.currentSnapshot, set: value => { M.currentSnapshot = value || null; } },
+          });
+          const watchSnapshots = window.VestraMarketWatchSnapshots?.create({
+            state: watchSnapshotState,
+            text: txt,
+            number: n,
+            escapeHtml: esc,
+            formatShortDate: shortDate,
+            getPortfolioTickers: portfolioTickers,
+            getStocksByTicker: () => M.byTicker,
+            getStocks: () => M.stocks,
+            getGeneratedAt: () => M.data?.generated_at,
+          }) || null;
+          function loadWatchlist(){ return watchSnapshots?.loadWatchlist() || M.watchlist; }
+          function saveWatchlist(){ return watchSnapshots?.saveWatchlist(); }
+          function isWatched(ticker){ return watchSnapshots?.isWatched(ticker) || false; }
+          function inPortfolio(ticker){
+            const t=txt(ticker).toUpperCase(); const base=t.replace(/\\.[A-Z]+$/,'');
+            return [...portfolioTickers()].some(x=>x===t || x.replace(/\\.[A-Z]+$/,'')===base);
+          }
+          function toggleWatch(ticker){
+            const t=txt(ticker).toUpperCase(); if(!t) return;
+            if(M.watchlist.has(t)) M.watchlist.delete(t); else M.watchlist.add(t);
+            saveWatchlist(); if(M.loaded) syncSnapshots(); renderPrimary();
+            const sh=$m('marketSheet');
+            if(sh && sh.dataset.ticker && sh.dataset.ticker.toUpperCase()===t){
+              const s=M.byTicker.get(t); if(s){ const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview'; $m('marketSheetContent').innerHTML=detailBase(s); renderDetailTab(s,active); const tab=sh.querySelector(`[data-detail-tab="${active}"]`); if(tab){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));} }
+            }
+          }
+          function snapshotStock(s){ return watchSnapshots?.snapshotStock(s) || {}; }
+          function buildSnapshot(){ return watchSnapshots?.buildSnapshot() || {generatedAt:'',savedAt:new Date().toISOString(),stocks:{}}; }
+          function syncSnapshots(){ return watchSnapshots?.syncSnapshots() || null; }
+          function previousFor(s){ return watchSnapshots?.previousFor(s) || null; }
+          function daysUntil(v){ return watchSnapshots?.daysUntil(v) ?? null; }
+          function changeSignals(s){ return watchSnapshots?.changeSignals(s) || []; }
+          function changeBadge(s){ return watchSnapshots?.changeBadge(s) || ''; }
+          function changePanel(s){ return watchSnapshots?.changePanel(s) || ''; }
+
+          '''
+          p.write_text(text[:a] + replacement + text[b:])
+
+          def replace_once(path, old, new):
+              q = Path(path)
+              s = q.read_text()
+              if s.count(old) != 1:
+                  raise SystemExit(f'{path}: expected one match for {old!r}, got {s.count(old)}')
+              q.write_text(s.replace(old, new, 1))
+
+          replace_once(
+              'index.html',
+              '<script defer="" src="market-congress-live.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>',
+              '<script defer="" src="market-congress-live.js?v=1.0"></script>\n<script defer="" src="market-watch-snapshots.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>'
+          )
+          replace_once(
+              'sw.js',
+              '  "./market-congress-live.js",\n',
+              '  "./market-congress-live.js",\n  "./market-watch-snapshots.js",\n'
+          )
+          replace_once(
+              '.github/workflows/architecture-invariants.yml',
+              '          node --check market-congress-live.js\n',
+              '          node --check market-congress-live.js\n          node --check market-watch-snapshots.js\n'
+          )
+          replace_once(
+              '.github/workflows/architecture-invariants.yml',
+              '          node --check tests/runtime_market_congress_live_contract.js\n',
+              '          node --check tests/runtime_market_congress_live_contract.js\n          node --check tests/runtime_market_watch_snapshots_contract.js\n'
+          )
+          marker = '''      - name: Runtime · market Congress live
+                run: node tests/runtime_market_congress_live_contract.js
+          '''
+          workflow = Path('.github/workflows/architecture-invariants.yml')
+          s = workflow.read_text()
+          if s.count(marker) != 1:
+              raise SystemExit(f'architecture runtime marker count={s.count(marker)}')
+          s = s.replace(marker, marker + '''      - name: Runtime · market watch snapshots
+                run: node tests/runtime_market_watch_snapshots_contract.js
+          ''', 1)
+          workflow.write_text(s)
+          PY
+          node --check market-watch-snapshots.js
+          node --check market.js
+          node tests/runtime_market_watch_snapshots_contract.js
+          python scripts/runtime_js_audit.py
+      - name: Commit extraction
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add market.js index.html sw.js .github/workflows/architecture-invariants.yml
+          git commit -m "refactor: extract market watch snapshots runtime"
+          git push origin HEAD:refactor/market-watch-snapshots-v2-20260901
