@@ -38,6 +38,7 @@ EU_REGIONS = {
     "Ireland", "Italy", "Luxembourg", "Netherlands", "Norway", "Portugal",
     "Spain", "Sweden", "Switzerland",
 }
+_CATALOG_ETF_TICKERS = None
 
 
 def f(v):
@@ -54,15 +55,55 @@ def normalized_quote_type(row):
     return str(row.get("quote_type") or "").strip().upper()
 
 
+def catalog_etf_tickers():
+    """Load the deterministic ETF catalogue only when identity needs it.
+
+    Production executes this file from ``scripts/`` so the universe module is
+    directly importable. Lightweight unit tests intentionally do not install
+    yfinance/pandas; in that context absence of the catalogue simply disables
+    the fallback rather than making the audit module unimportable. Tests that
+    exercise the fallback inject a dependency-free universe stub explicitly.
+    """
+    global _CATALOG_ETF_TICKERS
+    if _CATALOG_ETF_TICKERS is None:
+        try:
+            from universe import ETF_UNIVERSE
+        except (ImportError, ModuleNotFoundError):
+            ETF_UNIVERSE = {}
+        _CATALOG_ETF_TICKERS = frozenset(
+            str(ticker or "").strip().upper()
+            for ticker in ETF_UNIVERSE
+            if str(ticker or "").strip()
+        )
+    return _CATALOG_ETF_TICKERS
+
+
+def authoritative_quote_type(row):
+    """Return a fail-closed type using only explicit evidence.
+
+    Yahoo's heavy info endpoint can fail while the ticker is still a member of
+    Vestra's curated ETF catalogue. Catalogue membership is deterministic and
+    therefore strong enough to recover ETF identity for audit routing. Nothing
+    is ever guessed to be an equity when quote_type is absent.
+    """
+    quote_type = normalized_quote_type(row)
+    if quote_type:
+        return quote_type
+    ticker = str(row.get("ticker") or "").strip().upper()
+    if ticker in catalog_etf_tickers():
+        return "ETF"
+    return ""
+
+
 def equity_rows(payload):
     return [
         r for r in (payload.get("stocks") or [])
-        if normalized_quote_type(r) not in NON_EQUITY_TYPES
+        if authoritative_quote_type(r) not in NON_EQUITY_TYPES
     ]
 
 
 def identity_state(row):
-    quote_type = normalized_quote_type(row)
+    quote_type = authoritative_quote_type(row)
     if quote_type in NON_EQUITY_TYPES:
         return "non_equity"
     if not quote_type:
@@ -133,7 +174,8 @@ def actionable_gap(row):
         "ticker": row.get("ticker"),
         "name": row.get("name"),
         "region": row.get("region"),
-        "quote_type": normalized_quote_type(row) or None,
+        "quote_type": authoritative_quote_type(row) or None,
+        "reported_quote_type": normalized_quote_type(row) or None,
         "identity_state": identity_state(row),
         "score_model": row.get("score_model") or "general",
         "coverage_pct": coverage,
@@ -189,6 +231,10 @@ def main():
     retrieval_by_model = collections.defaultdict(collections.Counter)
     identity_states = collections.Counter(identity_state(r) for r in all_rows)
     unresolved_identity = [r for r in rows if identity_state(r) == "unresolved"]
+    recovered_catalog_etfs = [
+        r for r in all_rows
+        if not normalized_quote_type(r) and authoritative_quote_type(r) == "ETF"
+    ]
     malformed = []
     annual_attempted = 0
     annual_enriched = 0
@@ -254,11 +300,16 @@ def main():
     actionable.sort(key=gap_priority)
 
     audit = {
-        "schema_version": 3,
+        "schema_version": 4,
         "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "equities": summarize_group(rows),
         "asset_type_hygiene": {
             "states": dict(identity_states.most_common()),
+            "authoritative_catalog_etf_recoveries": len(recovered_catalog_etfs),
+            "authoritative_catalog_etf_examples": [
+                {"ticker": r.get("ticker"), "region": r.get("region")}
+                for r in recovered_catalog_etfs[:100]
+            ],
             "unresolved_equity_candidate_count": len(unresolved_identity),
             "unresolved_equity_candidate_examples": [
                 {
@@ -315,7 +366,8 @@ def main():
                 "ticker": r.get("ticker"),
                 "name": r.get("name"),
                 "region": r.get("region"),
-                "quote_type": normalized_quote_type(r) or None,
+                "quote_type": authoritative_quote_type(r) or None,
+                "reported_quote_type": normalized_quote_type(r) or None,
                 "identity_state": identity_state(r),
                 "score_model": r.get("score_model"),
                 "coverage_pct": f(r.get("data_coverage_pct")),
