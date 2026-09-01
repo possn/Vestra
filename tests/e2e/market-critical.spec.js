@@ -187,3 +187,62 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+test('iPhone/WebKit: portfolio alternative card opens dossier and watch star stays separate', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  await isolateExternalSearch(page);
+  await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarket?.__lazyDossiersInstalled);
+  await page.evaluate(() => window.setView('market'));
+  await expect(page.locator('#viewMarket')).toBeVisible();
+  await page.locator('.market-portfolio-access').click();
+
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible({ timeout: 15_000 });
+  await expect(sheet).toHaveAttribute('data-tool', 'portfolio');
+  await expect(sheet).toHaveAttribute('data-ticker', '');
+
+  // The ranking dataset legitimately changes every refresh, so an eligible same-sector
+  // alternative is not guaranteed on every CI run. Keep the real Portfolio sheet and
+  // real event listeners, and inject one deterministic production-shaped card. Mark it
+  // as already handled by the collapsible layer so no absolute toggle is added over the
+  // watch star while all other portfolio observers still see a valid market-detail-card.
+  const installFixture = async () => {
+    await page.evaluate(() => {
+      document.getElementById('e2ePortfolioAlternative')?.remove();
+      const content = document.getElementById('marketSheetContent');
+      const card = document.createElement('div');
+      card.id = 'e2ePortfolioAlternative';
+      card.className = 'market-detail-card';
+      card.dataset.collapsible = '1';
+      card.style.cssText = 'position:relative;z-index:10000;margin:24px 12px 32px;padding:12px;background:var(--card);border-radius:18px;';
+      card.innerHTML = '<div class="market-row" data-market-ticker="MSFT"><div><strong>MSFT</strong><span>Microsoft Corporation</span></div><button type="button" class="market-watch" data-market-watch="MSFT">☆</button></div>';
+      content.appendChild(card);
+    });
+  };
+
+  await installFixture();
+  let alternative = page.locator('#e2ePortfolioAlternative .market-row[data-market-ticker="MSFT"]');
+  await expect(alternative).toBeVisible();
+
+  // Star is an independent action. The lazy dossier listener must ignore it even
+  // though its parent row carries data-market-ticker.
+  await alternative.locator('[data-market-watch="MSFT"]').click();
+  await expect(sheet).toHaveAttribute('data-tool', 'portfolio');
+  await expect(sheet).toHaveAttribute('data-ticker', '');
+
+  // Watchlist updates may re-render Portfolio Intelligence, so reinstall the same
+  // fixture before testing the card body navigation.
+  await installFixture();
+  alternative = page.locator('#e2ePortfolioAlternative .market-row[data-market-ticker="MSFT"]');
+  await alternative.click({ position: { x: 32, y: 22 } });
+
+  await expect(sheet).toHaveAttribute('data-ticker', 'MSFT');
+  await expect(sheet.locator('.market-detail-head h2')).toHaveText('MSFT');
+  await expect(sheet).toHaveAttribute('data-return-view', 'portfolio');
+  await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
+
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});

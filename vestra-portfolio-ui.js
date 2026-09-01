@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v1.0 — canonical portfolio landing + analysis tabs. */
+/* Vestra Portfolio UI v1.1 — canonical portfolio landing + analysis tabs. */
 (() => {
   'use strict';
 
@@ -16,7 +16,7 @@
     return (!sh || sh.hidden || t(sh.dataset.tool)!=='portfolio' || !c) ? null : c;
   }
   function card(kind,c){ return c?.querySelector(`[data-ux-kind="${kind}"]`) || null; }
-  function text(c,rx){ const el=[...c.querySelectorAll('small,strong,b,span,div,p')].find(x=>rx.test(t(x.textContent))); return t(el?.textContent); }
+  function text(c,rx){ if(!c)return ''; const el=[...c.querySelectorAll('small,strong,b,span,div,p')].find(x=>rx.test(t(x.textContent))); return t(el?.textContent); }
   function countRows(el){ return el ? el.querySelectorAll('.market-row,.market-research-queue-row,.market-fresh-row').length : 0; }
   function decisionCenter(c){ return [...c.querySelectorAll('.market-detail-card,section,div')].find(x=>/Portfolio Decision Center/i.test(t(x.textContent))&&/O que merece atenção agora/i.test(t(x.textContent))); }
   function kpiByLabel(c,label){

@@ -284,10 +284,13 @@
     }catch(_){ return Promise.resolve(false); }
   }
 
-  // Capture dossier-opening clicks before market.js' bubble listener. The dossier
-  // opens immediately; full shard hydration then continues in the background.
+  // Capture dossier-opening clicks before market.js' bubble listener. Watchlist
+  // controls are deliberately excluded: a star inside a ticker card is an action,
+  // not a request to navigate to that card's dossier.
   document.addEventListener('click',e=>{
     if(bypassClick) return;
+    const watch=e.target.closest?.('[data-market-watch]');
+    if(watch) return;
     const row=e.target.closest?.('[data-market-ticker]');
     if(row){
       const ticker=tickerKey(row.dataset.marketTicker);
