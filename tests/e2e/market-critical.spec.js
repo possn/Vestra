@@ -215,6 +215,10 @@ test('iPhone/WebKit: portfolio alternative card opens dossier and watch star sta
       const card = document.createElement('div');
       card.id = 'e2ePortfolioAlternative';
       card.className = 'market-detail-card';
+      // The production sheet has absolutely positioned collapse controls. Keep the
+      // routing fixture in a high stacking context so WebKit performs a genuine
+      // pointer click on the star/card rather than hitting an unrelated control.
+      card.style.cssText = 'position:relative;z-index:10000;margin:96px 12px 32px;padding:12px;background:var(--card);';
       card.innerHTML = '<div class="market-row" data-market-ticker="MSFT"><div><strong>MSFT</strong><span>Microsoft Corporation</span></div><button type="button" class="market-watch" data-market-watch="MSFT">☆</button></div>';
       content.appendChild(card);
     });
