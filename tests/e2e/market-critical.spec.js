@@ -188,12 +188,12 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: portfolio alternative card opens dossier and watch star does not', async ({ page }) => {
+test('iPhone/WebKit: portfolio alternative card opens dossier and watch star stays separate', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/index.html');
-  await page.waitForFunction(() => !!window.VestraPortfolioSheetNavigation);
+  await page.waitForFunction(() => !!window.VestraPortfolioSheetNavigation && !!window.VestraMarket);
 
   await page.evaluate(() => {
     const sheet = document.getElementById('marketSheet');
@@ -203,37 +203,42 @@ test('iPhone/WebKit: portfolio alternative card opens dossier and watch star doe
     sheet.dataset.tool = 'portfolio';
     sheet.dataset.ticker = '';
     content.innerHTML = '<div class="market-row" data-market-ticker="WDC"><div><strong>WDC</strong><span>Western Digital Corporation</span></div><button class="market-watch" data-market-watch="WDC">☆</button></div>';
+
     window.__portfolioNavOpened = [];
-    const original = window.VestraMarket.openTicker;
+    window.__portfolioWatchToggled = [];
+    const originalOpen = window.VestraMarket.openTicker;
+    const originalToggle = window.VestraMarket.toggleWatch;
+
     window.VestraMarket.openTicker = ticker => {
       window.__portfolioNavOpened.push(ticker);
       sheet.dataset.ticker = ticker;
       content.innerHTML = `<div class="market-detail-head"><h2>${ticker}</h2></div>`;
       return true;
     };
-    window.__restorePortfolioOpenTicker = () => { window.VestraMarket.openTicker = original; };
+    window.VestraMarket.toggleWatch = ticker => {
+      window.__portfolioWatchToggled.push(ticker);
+      const star = content.querySelector(`[data-market-watch="${ticker}"]`);
+      if (star) star.textContent = star.textContent === '☆' ? '★' : '☆';
+    };
+    window.__restorePortfolioNavigation = () => {
+      window.VestraMarket.openTicker = originalOpen;
+      window.VestraMarket.toggleWatch = originalToggle;
+    };
   });
 
   const star = page.locator('[data-market-watch="WDC"]');
   await star.click();
+  expect(await page.evaluate(() => window.__portfolioWatchToggled.slice())).toEqual(['WDC']);
   expect(await page.evaluate(() => window.__portfolioNavOpened.slice())).toEqual([]);
-
-  // Restore the synthetic row because the real watch handler may rerender it.
-  await page.evaluate(() => {
-    const sheet = document.getElementById('marketSheet');
-    const content = document.getElementById('marketSheetContent');
-    sheet.hidden = false;
-    sheet.dataset.tool = 'portfolio';
-    sheet.dataset.ticker = '';
-    content.innerHTML = '<div class="market-row" data-market-ticker="WDC"><div><strong>WDC</strong><span>Western Digital Corporation</span></div><button class="market-watch" data-market-watch="WDC">★</button></div>';
-  });
+  await expect(page.locator('#marketSheet')).toHaveAttribute('data-ticker', '');
 
   await page.locator('.market-row[data-market-ticker="WDC"]').click({ position: { x: 35, y: 20 } });
   await expect(page.locator('#marketSheet')).toHaveAttribute('data-ticker', 'WDC');
   await expect(page.locator('#marketSheetContent h2')).toHaveText('WDC');
   expect(await page.evaluate(() => window.__portfolioNavOpened.slice())).toEqual(['WDC']);
+  expect(await page.evaluate(() => window.__portfolioWatchToggled.slice())).toEqual(['WDC']);
   await expect(page.locator('#marketSheet')).toHaveAttribute('data-return-view', 'portfolio');
 
-  await page.evaluate(() => window.__restorePortfolioOpenTicker?.());
+  await page.evaluate(() => window.__restorePortfolioNavigation?.());
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
