@@ -1,0 +1,90 @@
+name: Patch market portfolio context
+
+on:
+  push:
+    branches:
+      - refactor/market-portfolio-context-20260901
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/market-portfolio-context-20260901
+          fetch-depth: 0
+      - name: Apply guarded extraction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('market.js')
+          text = p.read_text()
+          start = '  function portfolioAssets(){\n'
+          end = '  function workerBase(){\n'
+          if text.count(start) != 1 or text.count(end) != 1:
+              raise SystemExit('market.js portfolio context markers are not unique')
+          a = text.index(start)
+          b = text.index(end, a)
+          replacement = '''  const portfolioContext = window.VestraMarketPortfolioContext?.create({
+            getAssets: () => {
+              try { return (typeof state !== 'undefined' && state && Array.isArray(state.assets)) ? state.assets : []; }
+              catch { return []; }
+            },
+            text: txt,
+            number: n,
+          }) || null;
+          function portfolioAssets(){ return portfolioContext?.portfolioAssets() || []; }
+          function researchEligibleAsset(a){ return portfolioContext?.researchEligibleAsset(a) || false; }
+          function assetTicker(a){ return portfolioContext?.assetTicker(a) || ''; }
+          function portfolioTickers(){ return portfolioContext?.portfolioTickers() || new Set(); }
+          function portfolioValue(a){ return portfolioContext?.portfolioValue(a) ?? 0; }
+          function euro(v){ return portfolioContext?.euro(v) || '—'; }
+          function inPortfolio(ticker){ return portfolioContext?.inPortfolio(ticker) || false; }
+
+          '''
+          text = text[:a] + replacement + text[b:]
+
+          old_in_portfolio = '''function inPortfolio(ticker){
+            const t=txt(ticker).toUpperCase(); const base=t.replace(/\\.[A-Z]+$/,'');
+            return [...portfolioTickers()].some(x=>x===t || x.replace(/\\.[A-Z]+$/,'')===base);
+          }
+          '''
+          if text.count(old_in_portfolio) != 1:
+              raise SystemExit(f'market.js old inPortfolio count={text.count(old_in_portfolio)}')
+          text = text.replace(old_in_portfolio, '', 1)
+          p.write_text(text)
+
+          def replace_once(path, old, new):
+              q = Path(path)
+              content = q.read_text()
+              if content.count(old) != 1:
+                  raise SystemExit(f'{path}: expected one match for {old!r}, got {content.count(old)}')
+              q.write_text(content.replace(old, new, 1))
+
+          replace_once(
+              'index.html',
+              '<script defer="" src="market-congress-live.js?v=1.0"></script>\n<script defer="" src="market-watch-snapshots.js?v=1.0"></script>',
+              '<script defer="" src="market-congress-live.js?v=1.0"></script>\n<script defer="" src="market-portfolio-context.js?v=1.0"></script>\n<script defer="" src="market-watch-snapshots.js?v=1.0"></script>'
+          )
+          replace_once(
+              'sw.js',
+              '  "./market-congress-live.js",\n',
+              '  "./market-congress-live.js",\n  "./market-portfolio-context.js",\n'
+          )
+          PY
+          node --check market-portfolio-context.js
+          node --check market.js
+          node tests/runtime_market_portfolio_context_contract.js
+          python scripts/runtime_js_audit.py
+      - name: Commit extraction
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add market.js index.html sw.js
+          git commit -m "refactor: extract market portfolio context runtime"
+          git push origin HEAD:refactor/market-portfolio-context-20260901
