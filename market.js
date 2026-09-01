@@ -95,107 +95,47 @@
   async function loadCongressLive(ticker=''){ return congressLiveFeed?.load(ticker) ?? []; }
 
 
-  const WATCH_KEY = 'vestra-market-watchlist-v1';
-  function loadWatchlist(){
-    try { M.watchlist = new Set(JSON.parse(localStorage.getItem(WATCH_KEY)||'[]').map(x=>txt(x).toUpperCase()).filter(Boolean)); }
-    catch { M.watchlist = new Set(); }
+  const watchSnapshotState = {};
+Object.defineProperties(watchSnapshotState, {
+  watchlist: { get: () => M.watchlist, set: value => { M.watchlist = value instanceof Set ? value : new Set(); } },
+  previousSnapshot: { get: () => M.previousSnapshot, set: value => { M.previousSnapshot = value || null; } },
+  currentSnapshot: { get: () => M.currentSnapshot, set: value => { M.currentSnapshot = value || null; } },
+});
+const watchSnapshots = window.VestraMarketWatchSnapshots?.create({
+  state: watchSnapshotState,
+  text: txt,
+  number: n,
+  escapeHtml: esc,
+  formatShortDate: shortDate,
+  getPortfolioTickers: portfolioTickers,
+  getStocksByTicker: () => M.byTicker,
+  getStocks: () => M.stocks,
+  getGeneratedAt: () => M.data?.generated_at,
+}) || null;
+function loadWatchlist(){ return watchSnapshots?.loadWatchlist() || M.watchlist; }
+function saveWatchlist(){ return watchSnapshots?.saveWatchlist(); }
+function isWatched(ticker){ return watchSnapshots?.isWatched(ticker) || false; }
+function inPortfolio(ticker){
+  const t=txt(ticker).toUpperCase(); const base=t.replace(/\.[A-Z]+$/,'');
+  return [...portfolioTickers()].some(x=>x===t || x.replace(/\.[A-Z]+$/,'')===base);
+}
+function toggleWatch(ticker){
+  const t=txt(ticker).toUpperCase(); if(!t) return;
+  if(M.watchlist.has(t)) M.watchlist.delete(t); else M.watchlist.add(t);
+  saveWatchlist(); if(M.loaded) syncSnapshots(); renderPrimary();
+  const sh=$m('marketSheet');
+  if(sh && sh.dataset.ticker && sh.dataset.ticker.toUpperCase()===t){
+    const s=M.byTicker.get(t); if(s){ const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview'; $m('marketSheetContent').innerHTML=detailBase(s); renderDetailTab(s,active); const tab=sh.querySelector(`[data-detail-tab="${active}"]`); if(tab){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));} }
   }
-  function saveWatchlist(){
-    try { localStorage.setItem(WATCH_KEY, JSON.stringify([...M.watchlist])); } catch {}
-  }
-  function isWatched(ticker){ return M.watchlist.has(txt(ticker).toUpperCase()); }
-  function inPortfolio(ticker){
-    const t=txt(ticker).toUpperCase(); const base=t.replace(/\.[A-Z]+$/,'');
-    return [...portfolioTickers()].some(x=>x===t || x.replace(/\.[A-Z]+$/,'')===base);
-  }
-  function toggleWatch(ticker){
-    const t=txt(ticker).toUpperCase(); if(!t) return;
-    if(M.watchlist.has(t)) M.watchlist.delete(t); else M.watchlist.add(t);
-    saveWatchlist(); if(M.loaded) syncSnapshots(); renderPrimary();
-    const sh=$m('marketSheet');
-    if(sh && sh.dataset.ticker && sh.dataset.ticker.toUpperCase()===t){
-      const s=M.byTicker.get(t); if(s){ const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview'; $m('marketSheetContent').innerHTML=detailBase(s); renderDetailTab(s,active); const tab=sh.querySelector(`[data-detail-tab="${active}"]`); if(tab){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));} }
-    }
-  }
-
-
-  const SNAP_LAST_KEY='vestra-market-snapshot-last-v1';
-  const SNAP_PREV_KEY='vestra-market-snapshot-prev-v1';
-  function snapshotStock(s){
-    return {
-      score:n(s.score), thesis_direction:txt(s.thesis_direction), thesis_type:txt(s.thesis_type),
-      forward_pe_vs_sector_pct:n(s.forward_pe_vs_sector_pct), trailing_pe_vs_sector_pct:n(s.trailing_pe_vs_sector_pct),
-      analyst_eps_revisions_up_30d:n(s.analyst_eps_revisions_up_30d)||0, analyst_eps_revisions_down_30d:n(s.analyst_eps_revisions_down_30d)||0,
-      analyst_price_target_upside_pct:n(s.analyst_price_target_upside_pct), insider_buy_count_30d:n(s.insider_buy_count_30d)||0,
-      insider_sell_count_30d:n(s.insider_sell_count_30d)||0, analyst_next_earnings_date:txt(s.analyst_next_earnings_date), current_price:n(s.current_price)
-    };
-  }
-  function buildSnapshot(){
-    const tracked=new Set([...M.watchlist,...portfolioTickers()]);
-    const stocks={};
-    for(const ticker of tracked){
-      const t=txt(ticker).toUpperCase(); const base=t.replace(/\.[A-Z]+$/,'');
-      const s=M.byTicker.get(t)||M.stocks.find(x=>txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')===base);
-      if(s) stocks[txt(s.ticker).toUpperCase()]=snapshotStock(s);
-    }
-    return {generatedAt:txt(M.data?.generated_at),savedAt:new Date().toISOString(),stocks};
-  }
-  function syncSnapshots(){
-    try{
-      const last=JSON.parse(localStorage.getItem(SNAP_LAST_KEY)||'null');
-      const prev=JSON.parse(localStorage.getItem(SNAP_PREV_KEY)||'null');
-      const current=buildSnapshot();
-      if(last && last.generatedAt && current.generatedAt && last.generatedAt!==current.generatedAt){
-        localStorage.setItem(SNAP_PREV_KEY,JSON.stringify(last));
-        M.previousSnapshot=last;
-        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(current));
-      } else if(!last){
-        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(current));
-        M.previousSnapshot=prev;
-      } else {
-        M.previousSnapshot=prev;
-        // enrich same-generation snapshot with newly watched/held tickers without changing baseline
-        last.stocks={...(last.stocks||{}),...(current.stocks||{})};
-        localStorage.setItem(SNAP_LAST_KEY,JSON.stringify(last));
-      }
-      M.currentSnapshot=current;
-    }catch{ M.previousSnapshot=null; M.currentSnapshot=null; }
-  }
-  function previousFor(s){ return M.previousSnapshot?.stocks?.[txt(s.ticker).toUpperCase()]||null; }
-  function daysUntil(v){ if(!v)return null; const d=new Date(v); if(Number.isNaN(d.valueOf()))return null; return Math.ceil((d-Date.now())/86400000); }
-  function changeSignals(s){
-    const out=[]; const prev=previousFor(s);
-    if(prev){
-      const ds=n(s.score)!=null&&n(prev.score)!=null?n(s.score)-n(prev.score):null;
-      if(ds!=null&&Math.abs(ds)>=1) out.push({tone:ds>0?'up':'down',label:`Score ${ds>0?'+':''}${ds.toFixed(1)}`});
-      if(txt(s.thesis_direction)&&txt(prev.thesis_direction)&&txt(s.thesis_direction)!==txt(prev.thesis_direction)) out.push({tone:txt(s.thesis_direction)==='up'?'up':txt(s.thesis_direction)==='down'?'down':'neutral',label:`Tese ${txt(s.thesis_direction_label)||txt(s.thesis_direction)}`});
-      const rev=(n(s.analyst_eps_revisions_up_30d)||0)-(n(s.analyst_eps_revisions_down_30d)||0), prevRev=(n(prev.analyst_eps_revisions_up_30d)||0)-(n(prev.analyst_eps_revisions_down_30d)||0);
-      if(Math.abs(rev-prevRev)>=2) out.push({tone:rev>prevRev?'up':'down',label:`Revisões EPS ${rev>prevRev?'melhoraram':'pioraram'}`});
-      const val=n(s.forward_pe_vs_sector_pct)??n(s.trailing_pe_vs_sector_pct), pval=n(prev.forward_pe_vs_sector_pct)??n(prev.trailing_pe_vs_sector_pct);
-      if(val!=null&&pval!=null&&Math.abs(val-pval)>=10) out.push({tone:val<pval?'up':'down',label:`Valuation ${val<pval?'mais favorável':'mais exigente'}`});
-      if((n(s.insider_buy_count_30d)||0)>(n(prev.insider_buy_count_30d)||0)) out.push({tone:'up',label:'Novas compras insider'});
-      if((n(s.insider_sell_count_30d)||0)>(n(prev.insider_sell_count_30d)||0)) out.push({tone:'down',label:'Novas vendas insider'});
-    } else {
-      const d7=n(s.thesis_score_delta_7d);
-      if(d7!=null&&Math.abs(d7)>=1) out.push({tone:d7>0?'up':'down',label:`Score 7d ${d7>0?'+':''}${d7.toFixed(1)}`});
-      if(txt(s.thesis_direction)==='up') out.push({tone:'up',label:'Tese a melhorar'});
-      if(txt(s.thesis_direction)==='down') out.push({tone:'down',label:'Tese a piorar'});
-      const up=n(s.analyst_eps_revisions_up_30d)||0, down=n(s.analyst_eps_revisions_down_30d)||0;
-      if(up-down>=3) out.push({tone:'up',label:'Revisões EPS positivas'}); else if(down-up>=3) out.push({tone:'down',label:'Revisões EPS negativas'});
-      if(n(s.insider_buy_count_30d)>0) out.push({tone:'up',label:'Insiders a comprar'});
-    }
-    const de=daysUntil(s.analyst_next_earnings_date); if(de!=null&&de>=0&&de<=14) out.push({tone:'event',label:`Resultados em ${de}d`});
-    return out.slice(0,4);
-  }
-  function changeBadge(s){
-    const c=changeSignals(s)[0]; if(!c)return '';
-    return `<span class="market-change market-change--${c.tone}">${c.tone==='up'?'↗':c.tone==='down'?'↘':c.tone==='event'?'◷':'•'} ${esc(c.label)}</span>`;
-  }
-  function changePanel(s){
-    const changes=changeSignals(s); const prev=previousFor(s);
-    const label=prev?`Desde ${shortDate(M.previousSnapshot?.generatedAt||M.previousSnapshot?.savedAt)}`:'Sinais recentes';
-    return `<div class="market-change-panel"><div class="market-change-panel__head"><div><small>O QUE MUDOU</small><h4>${esc(label)}</h4></div><span>${changes.length?`${changes.length} ${changes.length===1?'alteração':'alterações'}`:'Estável'}</span></div>${changes.length?`<div class="market-change-list">${changes.map(c=>`<div class="market-change-item market-change-item--${c.tone}"><b>${c.tone==='up'?'↗':c.tone==='down'?'↘':c.tone==='event'?'◷':'•'}</b><span>${esc(c.label)}</span></div>`).join('')}</div>`:'<p>Sem mudança material identificada desde a referência disponível.</p>'}</div>`;
-  }
+}
+function snapshotStock(s){ return watchSnapshots?.snapshotStock(s) || {}; }
+function buildSnapshot(){ return watchSnapshots?.buildSnapshot() || {generatedAt:'',savedAt:new Date().toISOString(),stocks:{}}; }
+function syncSnapshots(){ return watchSnapshots?.syncSnapshots() || null; }
+function previousFor(s){ return watchSnapshots?.previousFor(s) || null; }
+function daysUntil(v){ return watchSnapshots?.daysUntil(v) ?? null; }
+function changeSignals(s){ return watchSnapshots?.changeSignals(s) || []; }
+function changeBadge(s){ return watchSnapshots?.changeBadge(s) || ''; }
+function changePanel(s){ return watchSnapshots?.changePanel(s) || ''; }
 
   function isFund(s){
     const q = txt(s.quote_type).toUpperCase();
