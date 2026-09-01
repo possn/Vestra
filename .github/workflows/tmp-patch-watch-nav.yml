@@ -1,0 +1,97 @@
+name: Temporary watch/nav patch
+
+on:
+  push:
+    branches: [refactor/market-watch-snapshots-20260901]
+    paths:
+      - '.github/workflows/tmp-patch-watch-nav.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/market-watch-snapshots-20260901
+      - name: Apply guarded patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          index = Path('index.html')
+          s = index.read_text(encoding='utf-8')
+          old = '<script defer="" src="market-congress-live.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>'
+          new = '<script defer="" src="market-congress-live.js?v=1.0"></script>\n<script defer="" src="market-watch-snapshots.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260901v1"></script>'
+          if old not in s:
+              raise SystemExit('index market module marker not found exactly')
+          s = s.replace(old, new, 1)
+          if 'portfolio-sheet-navigation.js?v=1.3' not in s:
+              raise SystemExit('portfolio sheet navigation version marker missing')
+          s = s.replace('portfolio-sheet-navigation.js?v=1.3', 'portfolio-sheet-navigation.js?v=1.4', 1)
+          if 'portfolio-dossier-routing.js?v=1.0' not in s:
+              raise SystemExit('portfolio dossier routing version marker missing')
+          s = s.replace('portfolio-dossier-routing.js?v=1.0', 'portfolio-dossier-routing.js?v=1.2', 1)
+          index.write_text(s, encoding='utf-8')
+
+          spec = Path('tests/e2e/market-critical.spec.js')
+          e = spec.read_text(encoding='utf-8')
+          marker = "test('iPhone/WebKit: global ticker opens live and persists locally across reload'"
+          if marker not in e:
+              raise SystemExit('WebKit insertion marker not found')
+          test_block = r'''
+
+test('iPhone/WebKit: portfolio alternative opens the company dossier', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  await openMarket(page);
+  await page.waitForFunction(() => !!window.VestraMarket && !!window.VestraNavigation && !!window.VestraPortfolioDossierRouting);
+  await page.evaluate(async () => {
+    await window.VestraMarket.ensureLoaded();
+    const sheet = document.getElementById('marketSheet');
+    const content = document.getElementById('marketSheetContent');
+    sheet.hidden = false;
+    sheet.setAttribute('aria-hidden', 'false');
+    sheet.dataset.tool = 'portfolio';
+    sheet.dataset.returnView = 'assets';
+    sheet.dataset.ticker = '';
+    content.innerHTML = '<div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><div class="market-row" data-market-ticker="MSFT"><div><div class="market-row__title"><span class="market-row__ticker">MSFT</span><span class="market-row__name">Microsoft Corporation</span></div><div class="market-row__meta">Alternativa a TEST · Score +10 · impacto neutro</div></div><div class="market-row__end"><div class="market-score">82</div></div></div></div>';
+    window.VestraPortfolioDossierRouting.decorate();
+  });
+
+  const alternative = page.locator('#marketSheetContent .market-row[data-market-ticker="MSFT"]');
+  await expect(alternative).toBeVisible();
+  await alternative.click();
+
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet).toHaveAttribute('data-ticker', 'MSFT');
+  await expect(sheet).toHaveAttribute('data-tool', 'ticker-from-portfolio');
+  await expect(sheet).toHaveAttribute('data-return-view', 'portfolio');
+  await expect(sheet.locator('.market-detail-head h2')).toHaveText('MSFT');
+  await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
+  await expect(sheet.locator('.market-collapse-toolbar')).toHaveCount(0);
+
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
+'''
+          e = e.replace(marker, test_block + '\n' + marker, 1)
+          spec.write_text(e, encoding='utf-8')
+          PY
+          node --check market-watch-snapshots.js
+          node --check portfolio-sheet-navigation.js
+          node --check tests/e2e/market-critical.spec.js
+          node tests/runtime_market_watch_snapshots_contract.js
+          node tests/runtime_portfolio_dossier_navigation_contract.js
+      - name: Commit patch
+        run: |
+          git config user.name vestra-refactor-bot
+          git config user.email actions@users.noreply.github.com
+          git add index.html tests/e2e/market-critical.spec.js
+          git diff --cached --quiet && exit 0
+          git commit -m "test: route portfolio alternatives to dossiers on iPhone"
+          git push origin HEAD:refactor/market-watch-snapshots-20260901
