@@ -3,6 +3,17 @@ main = "worker-router.js"
 compatibility_date = "2026-08-30"
 workers_dev = true
 
+[ai]
+binding = "AI"
+
+[[ratelimits]]
+name = "AI_BRIEF_RATE_LIMITER"
+namespace_id = "20260901"
+
+  [ratelimits.simple]
+  limit = 12
+  period = 60
+
 [[durable_objects.bindings]]
 name = "LEARNED_UNIVERSE"
 class_name = "LearnedUniverse"
@@ -12,5 +23,6 @@ tag = "learned-universe-v1"
 new_sqlite_classes = ["LearnedUniverse"]
 
 # Production deployment is performed by Cloudflare's native Git integration.
-# The router delegates the existing market endpoints to worker.js and adds a
-# persistent learned-universe endpoint backed by a Durable Object.
+# The router delegates the existing market endpoints to worker.js and adds:
+# - persistent learned-universe storage through a Durable Object;
+# - evidence-only AI briefs through the Workers AI binding, rate-limited per app session.
