@@ -25,12 +25,13 @@ class MarketLoaderInvariantTests(unittest.TestCase):
 
     def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
         market = read("market.js")
+        universe = read("market-static-universe.js")
         loader = read("market-data-loader.js")
-        start = market.index("async function ensureLoaded")
-        end = market.index("\n  function ", start)
-        block = market[start:end]
-        self.assertIn("stocks-index.json", block)
-        self.assertLess(block.index("stocks-index.json"), block.index("stocks.json"))
+        self.assertIn("VestraMarketStaticUniverse", market)
+        self.assertIn("staticUniverse?.ensureLoaded", market)
+        self.assertIn("stocks-index.json", universe)
+        self.assertLess(universe.index("stocks-index.json"), universe.index("stocks.json"))
+        self.assertIn("cache: 'no-store'", universe)
         self.assertNotIn("window.fetch =", loader)
         self.assertNotIn("indexPayloadPromise", loader)
         self.assertNotIn("sharedIndexPayload", loader)

@@ -147,24 +147,24 @@ function changePanel(s){ return watchSnapshots?.changePanel(s) || ''; }
     return `Dados ${new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short'}).format(d)}`;
   }
 
-  async function ensureLoaded(){
-    if (M.loaded) return;
-    if (M.loading) return M.loading;
-    M.loading = (async()=>{
-      let r = await fetch('data/stocks-index.json', {cache:'no-store'});
-      if(!r.ok) r = await fetch('data/stocks.json', {cache:'no-store'});
-      if(!r.ok) throw new Error(`market data ${r.status}`);
-      M.data = await r.json();
-      M.stocks = Array.isArray(M.data.stocks) ? M.data.stocks : [];
-      M.byTicker = new Map(M.stocks.map(s=>[txt(s.ticker).toUpperCase(),s]));
-      syncSnapshots();
-      M.loaded = true;
-      renderPrimary();
-    })().catch(err=>{
+  const staticUniverseState = {};
+  Object.defineProperties(staticUniverseState, {
+    loaded: { get: () => M.loaded, set: value => { M.loaded = Boolean(value); } },
+    loading: { get: () => M.loading, set: value => { M.loading = value || null; } },
+    data: { get: () => M.data, set: value => { M.data = value || null; } },
+    stocks: { get: () => M.stocks, set: value => { M.stocks = Array.isArray(value) ? value : []; } },
+    byTicker: { get: () => M.byTicker, set: value => { M.byTicker = value instanceof Map ? value : new Map(); } },
+  });
+  const staticUniverse = window.VestraMarketStaticUniverse?.create({
+    state: staticUniverseState,
+    text: txt,
+    beforeReady: syncSnapshots,
+    onReady: renderPrimary,
+    onError: err => {
       const el=$m('marketPrimary'); if(el) el.innerHTML=`<div class="market-empty market-empty--error"><strong>Mercado indisponível</strong><br><span>Não foi possível carregar os dados agora.</span><br><button class="btn btn--outline btn--sm" data-market-retry style="margin-top:12px">Tentar novamente</button><small class="market-error-detail">${esc(err.message)}</small></div>`;
-    }).finally(()=>{M.loading=null});
-    return M.loading;
-  }
+    },
+  }) || null;
+  async function ensureLoaded(){ return staticUniverse?.ensureLoaded(); }
 
   function bestStocks(){
     return M.stocks.filter(s=>!isFund(s) && n(s.score)!=null && n(s.data_coverage_pct)>=65 && txt(s.zombie)!=='yes')

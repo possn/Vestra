@@ -163,12 +163,13 @@ class FrontendArchitectureTests(unittest.TestCase):
 
     def test_lazy_loader_prefers_native_index_and_shards(self):
         market = read("market.js")
+        universe = read("market-static-universe.js")
         loader = read("market-data-loader.js")
-        start = market.index("async function ensureLoaded")
-        end = market.index("\n  function ", start)
-        block = market[start:end]
-        self.assertIn("stocks-index.json", block)
-        self.assertLess(block.index("stocks-index.json"), block.index("stocks.json"))
+        self.assertIn("VestraMarketStaticUniverse", market)
+        self.assertIn("staticUniverse?.ensureLoaded", market)
+        self.assertIn("stocks-index.json", universe)
+        self.assertLess(universe.index("stocks-index.json"), universe.index("stocks.json"))
+        self.assertIn("cache: 'no-store'", universe)
         self.assertNotIn("window.fetch =", loader)
         self.assertIn("dossiers-manifest.json", loader)
         self.assertRegex(loader, r"data/dossiers")

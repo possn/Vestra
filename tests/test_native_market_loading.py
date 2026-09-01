@@ -11,12 +11,13 @@ def read(path: str) -> str:
 class NativeMarketLoadingTests(unittest.TestCase):
     def test_market_base_loads_light_index_before_legacy_fallback(self):
         market = read('market.js')
-        start = market.index('async function ensureLoaded')
-        end = market.index('\n  function ', start)
-        block = market[start:end]
-        self.assertIn("fetch('data/stocks-index.json'", block)
-        self.assertIn("fetch('data/stocks.json'", block)
-        self.assertLess(block.index('stocks-index.json'), block.index('stocks.json'))
+        universe = read('market-static-universe.js')
+        self.assertIn('VestraMarketStaticUniverse', market)
+        self.assertIn('staticUniverse?.ensureLoaded', market)
+        self.assertIn("fetchImpl('data/stocks-index.json'", universe)
+        self.assertIn("fetchImpl('data/stocks.json'", universe)
+        self.assertLess(universe.index('stocks-index.json'), universe.index('stocks.json'))
+        self.assertIn("cache: 'no-store'", universe)
 
     def test_lazy_loader_never_monkeypatches_window_fetch(self):
         loader = read('market-data-loader.js')
@@ -48,6 +49,7 @@ class NativeMarketLoadingTests(unittest.TestCase):
         self.assertIn('Vestra Service Worker v10.11', sw)
         self.assertIn('vestra-cache-v125', sw)
         self.assertIn('./market-live-overlay.js', sw)
+        self.assertIn('./market-static-universe.js', sw)
         self.assertIn('./market-data-loader.js', sw)
         self.assertIn('./market-company-brief.js', sw)
         self.assertIn('./portfolio-card-classifier.js', sw)
