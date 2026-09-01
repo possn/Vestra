@@ -146,7 +146,16 @@
 
     const ticker=e.target.closest?.('[data-market-ticker]');
     const watch=e.target.closest?.('[data-market-watch]');
-    if(ticker && !watch && !sh.hidden && sh.dataset.tool==='portfolio' && content()?.contains(ticker)){
+    const portfolioSheet=!sh.hidden && sh.dataset.tool==='portfolio';
+
+    if(watch && portfolioSheet && content()?.contains(watch)){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      window.VestraMarket?.toggleWatch?.(watch.dataset.marketWatch);
+      return;
+    }
+
+    if(ticker && portfolioSheet && content()?.contains(ticker)){
       e.preventDefault();
       e.stopImmediatePropagation();
       openingFromPortfolio=true;
