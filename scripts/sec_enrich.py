@@ -1,17 +1,34 @@
 """Official SEC EDGAR enrichment for US-listed equities.
 
-Uses SEC company_tickers + CompanyFacts JSON, no API key. The enricher fills
-only metrics Yahoo left empty and now derives a broader set of statement-backed
-quality/liquidity/cash-flow fields plus multi-year history. Missing values remain
-missing; no zero-filling or issuer-name fuzzy matching is used.
+Uses official SEC ticker/CIK catalogues plus CompanyFacts JSON, no API key. The
+catalogue lookup is deliberately exact and resilient: two official SEC schemas
+are tried with bounded retries, and the last validated mapping is persisted as a
+local snapshot so a transient HTML/error response cannot disable all SEC
+fundamental enrichment for a daily run.
+
+The enricher fills only metrics Yahoo left empty and derives a broader set of
+statement-backed quality/liquidity/cash-flow fields plus multi-year history.
+Missing values remain missing; no zero-filling or issuer-name fuzzy matching is
+used.
 """
 from __future__ import annotations
-import logging, os, time
+
+import datetime as dt
+import json
+import logging
+import os
+from pathlib import Path
+import time
+
 import requests
 
 log=logging.getLogger('sec_enrich')
 BASE='https://data.sec.gov'
 TICKERS='https://www.sec.gov/files/company_tickers.json'
+TICKERS_EXCHANGE='https://www.sec.gov/files/company_tickers_exchange.json'
+ROOT=Path(__file__).resolve().parents[1]
+TICKER_MAP_SNAPSHOT=ROOT/'data'/'sec_ticker_map.json'
+TICKER_MAP_SCHEMA_VERSION=1
 
 _TAGS={
  'revenue': ('RevenueFromContractWithCustomerExcludingAssessedTax','RevenueFromContractWithCustomerIncludingAssessedTax','Revenues','SalesRevenueNet'),
@@ -31,6 +48,156 @@ _TAGS={
  'shares': ('WeightedAverageNumberOfDilutedSharesOutstanding','WeightedAverageNumberOfSharesOutstandingBasic'),
  'dividends': ('PaymentsOfDividends','PaymentsOfDividendsCommonStock'),
 }
+
+
+def _normal_ticker(value):
+    ticker=str(value or '').strip().upper()
+    if not ticker or len(ticker)>15:
+        return None
+    allowed=set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-')
+    return ticker if all(ch in allowed for ch in ticker) else None
+
+
+def _normal_cik(value):
+    try:
+        cik=int(value)
+    except (TypeError,ValueError):
+        return None
+    return cik if 0<cik<10_000_000_000 else None
+
+
+def _parse_company_tickers(payload):
+    """Parse the official company_tickers.json object schema."""
+    if not isinstance(payload,dict):
+        return {}
+    out={}
+    for row in payload.values():
+        if not isinstance(row,dict):
+            continue
+        ticker=_normal_ticker(row.get('ticker'))
+        cik=_normal_cik(row.get('cik_str'))
+        if ticker and cik is not None:
+            out[ticker]=cik
+    return out
+
+
+def _parse_company_tickers_exchange(payload):
+    """Parse the official company_tickers_exchange.json fields/data schema."""
+    if not isinstance(payload,dict):
+        return {}
+    fields=payload.get('fields')
+    rows=payload.get('data')
+    if not isinstance(fields,list) or not isinstance(rows,list):
+        return {}
+    positions={str(name).strip().lower():i for i,name in enumerate(fields)}
+    ticker_i=positions.get('ticker')
+    cik_i=positions.get('cik')
+    if ticker_i is None or cik_i is None:
+        return {}
+    out={}
+    for row in rows:
+        if not isinstance(row,(list,tuple)):
+            continue
+        if ticker_i>=len(row) or cik_i>=len(row):
+            continue
+        ticker=_normal_ticker(row[ticker_i])
+        cik=_normal_cik(row[cik_i])
+        if ticker and cik is not None:
+            out[ticker]=cik
+    return out
+
+
+def _parse_ticker_payload(payload,source):
+    if source==TICKERS_EXCHANGE:
+        return _parse_company_tickers_exchange(payload)
+    return _parse_company_tickers(payload)
+
+
+def _validated_map(mapping):
+    if not isinstance(mapping,dict) or not mapping:
+        return None
+    out={}
+    for ticker,cik in mapping.items():
+        tk=_normal_ticker(ticker)
+        ci=_normal_cik(cik)
+        if not tk or ci is None:
+            return None
+        out[tk]=ci
+    return out or None
+
+
+def _read_ticker_snapshot(path=TICKER_MAP_SNAPSHOT):
+    try:
+        payload=json.loads(Path(path).read_text(encoding='utf-8'))
+        if payload.get('schema_version')!=TICKER_MAP_SCHEMA_VERSION:
+            return None
+        mapping=_validated_map(payload.get('map'))
+        if not mapping or int(payload.get('count') or 0)!=len(mapping):
+            return None
+        return mapping,payload
+    except Exception:
+        return None
+
+
+def _write_ticker_snapshot(mapping,source,path=TICKER_MAP_SNAPSHOT):
+    mapping=_validated_map(mapping)
+    if not mapping:
+        raise ValueError('invalid SEC ticker map')
+    path=Path(path)
+    path.parent.mkdir(parents=True,exist_ok=True)
+    payload={
+        'schema_version':TICKER_MAP_SCHEMA_VERSION,
+        'generated_at':dt.datetime.now(dt.timezone.utc).isoformat(),
+        'source':source,
+        'count':len(mapping),
+        'map':dict(sorted(mapping.items())),
+    }
+    tmp=path.with_suffix(path.suffix+'.tmp')
+    tmp.write_text(json.dumps(payload,ensure_ascii=False,indent=2,sort_keys=False)+'\n',encoding='utf-8')
+    tmp.replace(path)
+    return payload
+
+
+def _remote_ticker_map(sess,retries=2,sleep=time.sleep):
+    errors=[]
+    for source in (TICKERS,TICKERS_EXCHANGE):
+        for attempt in range(1,max(1,int(retries))+1):
+            try:
+                response=sess.get(source,timeout=20)
+                if not response.ok:
+                    raise RuntimeError(f'HTTP {response.status_code}')
+                payload=response.json()
+                mapping=_validated_map(_parse_ticker_payload(payload,source))
+                if not mapping:
+                    raise ValueError('valid JSON but no ticker/CIK rows')
+                log.info('SEC ticker map loaded from %s: %d exact ticker(s)',source,len(mapping))
+                return mapping,source
+            except Exception as exc:
+                errors.append(f'{source} attempt {attempt}: {exc}')
+                if attempt<max(1,int(retries)):
+                    sleep(0.75*attempt)
+    raise RuntimeError('; '.join(errors[-4:]) or 'all SEC ticker-map sources failed')
+
+
+def _load_ticker_map(sess,snapshot_path=TICKER_MAP_SNAPSHOT,retries=2,sleep=time.sleep):
+    """Remote-first exact ticker map with validated persisted fallback."""
+    try:
+        mapping,source=_remote_ticker_map(sess,retries=retries,sleep=sleep)
+        try:
+            _write_ticker_snapshot(mapping,source,snapshot_path)
+        except Exception as exc:
+            log.warning('SEC ticker map loaded but snapshot could not be persisted: %s',exc)
+        return mapping
+    except Exception as remote_error:
+        cached=_read_ticker_snapshot(snapshot_path)
+        if cached:
+            mapping,payload=cached
+            log.warning(
+                'SEC ticker map remote lookup failed; using validated snapshot (%d tickers, generated_at=%s): %s',
+                len(mapping),payload.get('generated_at') or 'unknown',remote_error,
+            )
+            return mapping
+        raise RuntimeError(f'SEC ticker map unavailable and no valid snapshot: {remote_error}') from remote_error
 
 
 def _rows(facts,tags,annual=False):
@@ -115,10 +282,9 @@ def enrich(raw,priority=None,max_nonpriority=500):
     ua=os.getenv('SEC_USER_AGENT','Vestra/4.0 (+https://github.com/possn/Vestra)').strip()
     if not ua:
         log.info('SEC enrichment disabled: set SEC_USER_AGENT to enable official EDGAR fallback'); return raw
-    sess=requests.Session(); sess.headers.update({'User-Agent':ua,'Accept-Encoding':'gzip, deflate'})
+    sess=requests.Session(); sess.headers.update({'User-Agent':ua,'Accept-Encoding':'gzip, deflate','Accept':'application/json'})
     try:
-        j=sess.get(TICKERS,timeout=20).json()
-        cmap={str(v.get('ticker','')).upper():int(v['cik_str']) for v in j.values() if v.get('ticker') and v.get('cik_str')}
+        cmap=_load_ticker_map(sess)
     except Exception as e:
         log.warning('SEC ticker map unavailable: %s',e); return raw
     priority=set(priority or []); non=0; filled=0
@@ -132,7 +298,9 @@ def enrich(raw,priority=None,max_nonpriority=500):
             if non>max_nonpriority: continue
         try:
             cik=f"{cmap[t]:010d}"
-            data=sess.get(f'{BASE}/api/xbrl/companyfacts/CIK{cik}.json',timeout=20).json(); facts=data.get('facts') or {}
+            response=sess.get(f'{BASE}/api/xbrl/companyfacts/CIK{cik}.json',timeout=20)
+            response.raise_for_status()
+            data=response.json(); facts=data.get('facts') or {}
             rev=_latest(facts,_TAGS['revenue']); ni=_latest(facts,_TAGS['net_income']); gp=_latest(facts,_TAGS['gross_profit']); op=_latest(facts,_TAGS['operating_income'])
             assets=_latest(facts,_TAGS['assets']); eq=_latest(facts,_TAGS['equity']); ac=_latest(facts,_TAGS['assets_current']); inv=_latest(facts,_TAGS['inventory']); lc=_latest(facts,_TAGS['liabilities_current'])
             cash=_latest(facts,_TAGS['cash']); cfo=_latest(facts,_TAGS['cfo']); capex=_latest(facts,_TAGS['capex']); interest=_latest(facts,_TAGS['interest_expense'])
