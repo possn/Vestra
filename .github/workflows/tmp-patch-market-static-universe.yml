@@ -1,0 +1,91 @@
+name: Patch market static universe
+
+on:
+  push:
+    branches:
+      - refactor/market-static-universe-20260901
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/market-static-universe-20260901
+          fetch-depth: 0
+      - name: Apply guarded extraction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('market.js')
+          s=p.read_text()
+          old='''  async function ensureLoaded(){
+    if (M.loaded) return;
+    if (M.loading) return M.loading;
+    M.loading = (async()=>{
+      let r = await fetch('data/stocks-index.json', {cache:'no-store'});
+      if(!r.ok) r = await fetch('data/stocks.json', {cache:'no-store'});
+      if(!r.ok) throw new Error(`market data ${r.status}`);
+      M.data = await r.json();
+      M.stocks = Array.isArray(M.data.stocks) ? M.data.stocks : [];
+      M.byTicker = new Map(M.stocks.map(s=>[txt(s.ticker).toUpperCase(),s]));
+      syncSnapshots();
+      M.loaded = true;
+      renderPrimary();
+    })().catch(err=>{
+      const el=$m('marketPrimary'); if(el) el.innerHTML=`<div class="market-empty market-empty--error"><strong>Mercado indisponível</strong><br><span>Não foi possível carregar os dados agora.</span><br><button class="btn btn--outline btn--sm" data-market-retry style="margin-top:12px">Tentar novamente</button><small class="market-error-detail">${esc(err.message)}</small></div>`;
+    }).finally(()=>{M.loading=null});
+    return M.loading;
+  }
+'''
+          if s.count(old)!=1:
+              raise SystemExit(f'ensureLoaded block count={s.count(old)}')
+          new='''  const staticUniverseState = {};
+  Object.defineProperties(staticUniverseState, {
+    loaded: { get: () => M.loaded, set: value => { M.loaded = Boolean(value); } },
+    loading: { get: () => M.loading, set: value => { M.loading = value || null; } },
+    data: { get: () => M.data, set: value => { M.data = value || null; } },
+    stocks: { get: () => M.stocks, set: value => { M.stocks = Array.isArray(value) ? value : []; } },
+    byTicker: { get: () => M.byTicker, set: value => { M.byTicker = value instanceof Map ? value : new Map(); } },
+  });
+  const staticUniverse = window.VestraMarketStaticUniverse?.create({
+    state: staticUniverseState,
+    text: txt,
+    beforeReady: syncSnapshots,
+    onReady: renderPrimary,
+    onError: err => {
+      const el=$m('marketPrimary'); if(el) el.innerHTML=`<div class="market-empty market-empty--error"><strong>Mercado indisponível</strong><br><span>Não foi possível carregar os dados agora.</span><br><button class="btn btn--outline btn--sm" data-market-retry style="margin-top:12px">Tentar novamente</button><small class="market-error-detail">${esc(err.message)}</small></div>`;
+    },
+  }) || null;
+  async function ensureLoaded(){ return staticUniverse?.ensureLoaded(); }
+'''
+          p.write_text(s.replace(old,new,1))
+
+          def once(path, old, new):
+              q=Path(path); t=q.read_text()
+              if t.count(old)!=1: raise SystemExit(f'{path} marker count={t.count(old)}')
+              q.write_text(t.replace(old,new,1))
+
+          once('index.html',
+               '<script defer="" src="market-watch-snapshots.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>',
+               '<script defer="" src="market-watch-snapshots.js?v=1.0"></script>\n<script defer="" src="market-static-universe.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>')
+          once('sw.js',
+               '  "./market-watch-snapshots.js",\n',
+               '  "./market-watch-snapshots.js",\n  "./market-static-universe.js",\n')
+          PY
+          node --check market-static-universe.js
+          node --check market.js
+          node tests/runtime_market_static_universe_contract.js
+          python scripts/runtime_js_audit.py
+      - name: Commit extraction
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add market.js index.html sw.js
+          git commit -m "refactor: extract market static universe loader"
+          git push origin HEAD:refactor/market-static-universe-20260901
