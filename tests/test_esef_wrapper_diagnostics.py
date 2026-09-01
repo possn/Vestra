@@ -1,5 +1,6 @@
 import pathlib
 import sys
+import types
 import unittest
 from unittest.mock import patch
 
@@ -7,6 +8,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+
+# Architecture CI intentionally does not install the heavy market-data
+# dependencies. Stub only the import-time module names; the production enrich
+# function is patched in these unit tests, so no requests/yfinance API is used.
+sys.modules.setdefault("requests", types.ModuleType("requests"))
+sys.modules.setdefault("yfinance", types.ModuleType("yfinance"))
 
 import esef_enrich
 
