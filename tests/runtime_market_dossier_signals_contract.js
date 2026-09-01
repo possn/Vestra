@@ -44,7 +44,7 @@ assert(recovery.includes('82/100'));
 assert(recovery.includes('+5.3%'));
 assert(recovery.includes('-2.0%'));
 assert(recovery.includes('Margens &lt;melhoram&gt;'));
-assert(recovery.includes('não altera o Score Vestra'));
+assert(recovery.includes('nem altera o Score Vestra'));
 
 assert.equal(api.drawdownPanel({drawdown_diagnosis_status:'not_material',drawdown_diagnosis:[{}]}),'');
 const drawdown=api.drawdownPanel({
