@@ -3,6 +3,7 @@ import unittest
 from scripts.coverage_audit import (
     actionable_gap,
     gap_priority,
+    identity_state,
     missing_critical_metrics,
     retrieval_lane,
 )
@@ -25,6 +26,7 @@ class CoverageAuditActionableTests(unittest.TestCase):
         row = {
             "ticker": "TEST.DE",
             "region": "Germany",
+            "quote_type": "EQUITY",
             "data_sources": ["Yahoo Finance"],
             "roe": None,
         }
@@ -34,6 +36,7 @@ class CoverageAuditActionableTests(unittest.TestCase):
         row = {
             "ticker": "TEST",
             "region": "United States",
+            "quote_type": "EQUITY",
             "data_sources": ["Yahoo Finance", "SEC EDGAR"],
             "roe": None,
             "gap_statement_enriched": False,
@@ -44,6 +47,7 @@ class CoverageAuditActionableTests(unittest.TestCase):
         row = {
             "ticker": "TEST",
             "region": "Canada",
+            "quote_type": "EQUITY",
             "data_sources": ["Yahoo Finance"],
             "roe": None,
             "roa": 0,
@@ -52,11 +56,38 @@ class CoverageAuditActionableTests(unittest.TestCase):
         self.assertIn("roe", missing)
         self.assertNotIn("roa", missing)
 
+    def test_missing_quote_type_is_identity_gap_before_fundamental_retrieval(self):
+        row = {
+            "ticker": "UNKNOWN",
+            "region": "United States",
+            "quote_type": None,
+            "data_sources": ["Yahoo Finance"],
+            "roe": None,
+        }
+        self.assertEqual(identity_state(row), "unresolved")
+        self.assertEqual(retrieval_lane(row), "identity_unresolved")
+
+    def test_actionable_gap_exposes_identity_state(self):
+        row = {
+            "ticker": "UNKNOWN",
+            "region": "United States",
+            "quote_type": None,
+            "data_sources": ["Yahoo Finance"],
+            "data_coverage_pct": 0,
+            "critical_metric_coverage_pct": 0,
+            "roe": None,
+        }
+        item = actionable_gap(row)
+        self.assertEqual(item["identity_state"], "unresolved")
+        self.assertEqual(item["recommended_retrieval_lane"], "identity_unresolved")
+        self.assertIsNone(item["quote_type"])
+
     def test_actionable_gap_contains_explainable_lane_and_missing_fields(self):
         row = {
             "ticker": "TEST.PA",
             "name": "Test SA",
             "region": "France",
+            "quote_type": "EQUITY",
             "score_model": "general",
             "data_sources": ["Yahoo Finance"],
             "data_coverage_pct": 61,
@@ -67,6 +98,7 @@ class CoverageAuditActionableTests(unittest.TestCase):
         }
         item = actionable_gap(row)
         self.assertEqual(item["recommended_retrieval_lane"], "esef")
+        self.assertEqual(item["identity_state"], "confirmed_equity")
         self.assertEqual(item["evidence_state"], "observed")
         self.assertGreaterEqual(item["missing_critical_count"], 2)
         self.assertIn("roe", item["missing_critical_metrics"])

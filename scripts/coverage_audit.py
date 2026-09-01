@@ -31,6 +31,7 @@ CRITICAL_METRICS = (
     "enterprise_to_ebitda", "roce_proxy",
 )
 
+NON_EQUITY_TYPES = {"ETF", "CRYPTO", "MUTUALFUND", "FUND"}
 US_REGIONS = {"United States", "USA", "US"}
 EU_REGIONS = {
     "Austria", "Belgium", "Denmark", "Finland", "France", "Germany",
@@ -49,11 +50,24 @@ def f(v):
         return None
 
 
+def normalized_quote_type(row):
+    return str(row.get("quote_type") or "").strip().upper()
+
+
 def equity_rows(payload):
     return [
         r for r in (payload.get("stocks") or [])
-        if str(r.get("quote_type") or "").upper() not in ("ETF", "CRYPTO", "MUTUALFUND", "FUND")
+        if normalized_quote_type(r) not in NON_EQUITY_TYPES
     ]
+
+
+def identity_state(row):
+    quote_type = normalized_quote_type(row)
+    if quote_type in NON_EQUITY_TYPES:
+        return "non_equity"
+    if not quote_type:
+        return "unresolved"
+    return "confirmed_equity"
 
 
 def bucket(cov):
@@ -82,13 +96,15 @@ def missing_critical_metrics(row):
 def retrieval_lane(row, missing=None):
     """Return the next deterministic retrieval lane for a sparse dossier.
 
-    This is intentionally conservative: it recommends only source families that
-    already exist in Vestra's pipeline. It does not imply data availability and it
-    never increases confidence by itself.
+    Identity must be known before the audit recommends a fundamental source.
+    This prevents a throttled/missing quote type from silently being treated as
+    a confirmed equity and routed to SEC/ESEF or statement retrieval.
     """
     missing = list(missing if missing is not None else missing_critical_metrics(row))
     if not missing:
         return "none"
+    if identity_state(row) == "unresolved":
+        return "identity_unresolved"
 
     sources = set(row_sources(row))
     region = str(row.get("region") or "Unknown")
@@ -117,6 +133,8 @@ def actionable_gap(row):
         "ticker": row.get("ticker"),
         "name": row.get("name"),
         "region": row.get("region"),
+        "quote_type": normalized_quote_type(row) or None,
+        "identity_state": identity_state(row),
         "score_model": row.get("score_model") or "general",
         "coverage_pct": coverage,
         "critical_coverage_pct": critical_coverage,
@@ -156,6 +174,7 @@ def summarize_group(rows):
 
 def main():
     payload = json.loads(SRC.read_text(encoding="utf-8"))
+    all_rows = [r for r in (payload.get("stocks") or []) if isinstance(r, dict)]
     rows = equity_rows(payload)
 
     by_region = collections.defaultdict(list)
@@ -168,6 +187,8 @@ def main():
     retrieval_lanes = collections.Counter()
     retrieval_by_region = collections.defaultdict(collections.Counter)
     retrieval_by_model = collections.defaultdict(collections.Counter)
+    identity_states = collections.Counter(identity_state(r) for r in all_rows)
+    unresolved_identity = [r for r in rows if identity_state(r) == "unresolved"]
     malformed = []
     annual_attempted = 0
     annual_enriched = 0
@@ -233,9 +254,23 @@ def main():
     actionable.sort(key=gap_priority)
 
     audit = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "equities": summarize_group(rows),
+        "asset_type_hygiene": {
+            "states": dict(identity_states.most_common()),
+            "unresolved_equity_candidate_count": len(unresolved_identity),
+            "unresolved_equity_candidate_examples": [
+                {
+                    "ticker": r.get("ticker"),
+                    "name": r.get("name"),
+                    "region": r.get("region"),
+                    "coverage_pct": f(r.get("data_coverage_pct")),
+                    "sources": row_sources(r),
+                }
+                for r in unresolved_identity[:100]
+            ],
+        },
         "by_region": {k: summarize_group(v) for k, v in sorted(by_region.items())},
         "by_score_model": {k: summarize_group(v) for k, v in sorted(by_model.items())},
         "source_coverage": dict(source_hits.most_common()),
@@ -280,6 +315,8 @@ def main():
                 "ticker": r.get("ticker"),
                 "name": r.get("name"),
                 "region": r.get("region"),
+                "quote_type": normalized_quote_type(r) or None,
+                "identity_state": identity_state(r),
                 "score_model": r.get("score_model"),
                 "coverage_pct": f(r.get("data_coverage_pct")),
                 "critical_coverage_pct": f(r.get("critical_metric_coverage_pct")),
