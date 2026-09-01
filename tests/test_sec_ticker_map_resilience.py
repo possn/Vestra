@@ -1,11 +1,20 @@
 import json
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+
+# Architecture invariants intentionally do not install the heavy market pipeline
+# requirements. These tests exercise only the pure ticker-map helpers and inject
+# their own fake sessions, so a minimal import stub keeps the contract unit-level.
+if "requests" not in sys.modules:
+    requests_stub = types.ModuleType("requests")
+    requests_stub.Session = object
+    sys.modules["requests"] = requests_stub
 
 import sec_enrich
 
