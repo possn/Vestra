@@ -196,21 +196,70 @@ test('iPhone/WebKit: real portfolio alternative opens dossier and watch star sta
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarket?.__lazyDossiersInstalled);
 
-  // Seed only the portfolio state, then let production code render the complete
-  // Portfolio Intelligence surface. ALCPB.PA is deliberately weak in the current
-  // canonical universe and yields real same-sector alternatives (including WDC).
-  await page.evaluate(() => {
+  // Derive a valid source/alternative pair from the same current market index that
+  // production will render. This keeps the journey stable when scheduled data
+  // refreshes change individual scores or replace yesterday's best alternative.
+  const pair = await page.evaluate(async () => {
+    const response = await fetch('data/stocks-index.json', { cache: 'no-store' });
+    const data = await response.json();
+    const stocks = Array.isArray(data?.stocks) ? data.stocks : [];
+    const text = value => String(value ?? '').trim();
+    const number = value => {
+      if (value === null || value === undefined || value === '') return null;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+    const base = ticker => text(ticker).toUpperCase().replace(/\.[A-Z]+$/, '');
+    const isFund = stock => {
+      const quoteType = text(stock?.quote_type).toUpperCase();
+      const name = text(stock?.name).toUpperCase();
+      return quoteType === 'ETF' || quoteType === 'MUTUALFUND' || /\bETF\b|ISHARES|VANGUARD|XTRACKERS|SPDR|LYXOR|AMUNDI|WISDOMTREE|INVESCO/.test(name);
+    };
+    const equities = stocks.filter(stock => !isFund(stock) && number(stock?.score) != null && text(stock?.sector) && text(stock?.ticker));
+
+    let best = null;
+    for (const source of equities) {
+      const sourceScore = number(source.score);
+      const sourceBase = base(source.ticker);
+      const candidates = equities.filter(candidate => {
+        if (base(candidate.ticker) === sourceBase) return false;
+        if (text(candidate.sector) !== text(source.sector)) return false;
+        if (number(candidate.score) == null || number(candidate.score) < sourceScore + 8) return false;
+        if ((number(candidate.confidence_score) ?? -Infinity) < 60) return false;
+        if (['high', 'severe'].includes(text(candidate.risk_gate).toLowerCase())) return false;
+        if (text(candidate.valuation_signal) === 'overvalued') return false;
+        if (text(candidate.estimate_signal) === 'deteriorating') return false;
+        return true;
+      });
+      if (!candidates.length) continue;
+      const top = candidates.sort((a, b) => (number(b.score) || 0) - (number(a.score) || 0))[0];
+      const delta = number(top.score) - sourceScore;
+      if (!best || delta > best.delta) {
+        best = {
+          sourceTicker: text(source.ticker).toUpperCase(),
+          sourceName: text(source.name) || text(source.ticker),
+          sourceCurrency: text(source.currency) || 'USD',
+          candidateTicker: text(top.ticker).toUpperCase(),
+          delta
+        };
+      }
+    }
+    return best;
+  });
+  expect(pair, 'Current market index must contain at least one valid same-sector replacement pair').toBeTruthy();
+
+  await page.evaluate(selected => {
     window.state.assets = [{
-      id: 'e2e-alcpb',
+      id: 'e2e-portfolio-alternative-source',
       class: 'Ações/ETFs',
-      name: 'Capital B',
-      ticker: 'ALCPB.PA',
-      yahooTicker: 'ALCPB.PA',
+      name: selected.sourceName,
+      ticker: selected.sourceTicker,
+      yahooTicker: selected.sourceTicker,
       value: 1000,
-      currency: 'EUR'
+      currency: selected.sourceCurrency
     }];
     window.setView('market');
-  });
+  }, pair);
 
   await expect(page.locator('#viewMarket')).toBeVisible();
   await page.locator('.market-portfolio-access').click();
