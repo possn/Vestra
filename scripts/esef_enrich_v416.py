@@ -134,18 +134,41 @@ def set_missing(m,k,v):
 
 def enrich(raw,priority=None,max_nonpriority=220):
     priority=set(priority or []); s=session(); non=0; done=0; lse_identity_hits=0
+    diag={
+        'eligible':0,'attempted':0,'isin_resolved':0,'isin_missing':0,
+        'lei_resolved':0,'lei_missing':0,'filing_found':0,'filing_missing':0,
+        'report_parsed':0,'report_failed':0,'enriched':0,
+    }
     for m in raw:
         t=str(getattr(m,'ticker','') or '').upper(); c=country_for(t)
         if not c or getattr(m,'quote_type',None) in ('ETF','CRYPTO'): continue
+        diag['eligible']+=1
         miss=sum(getattr(m,k,None) is None for k in ('roe','roa','profit_margin','operating_margin','gross_margin','revenue_growth','free_cash_flow','current_ratio','quick_ratio','debt_to_equity','operating_cash_flow'))
         if miss<2 and t not in priority: continue
         if t not in priority:
             non+=1
             if non>max_nonpriority: continue
-        isin,isin_source=resolve_isin_with_source(t,s); lei=resolve_lei(s,isin) if isin else None
-        if not lei: continue
-        f=latest_filing(s,lei,c); rep=report(s,f) if f else None
-        if not rep: continue
+        diag['attempted']+=1
+        isin,isin_source=resolve_isin_with_source(t,s)
+        if not isin:
+            diag['isin_missing']+=1
+            continue
+        diag['isin_resolved']+=1
+        lei=resolve_lei(s,isin)
+        if not lei:
+            diag['lei_missing']+=1
+            continue
+        diag['lei_resolved']+=1
+        f=latest_filing(s,lei,c)
+        if not f:
+            diag['filing_missing']+=1
+            continue
+        diag['filing_found']+=1
+        rep=report(s,f)
+        if not rep:
+            diag['report_failed']+=1
+            continue
+        diag['report_parsed']+=1
         rev=latest(rep,'revenue',True); ni=latest(rep,'net_income',True); op=latest(rep,'operating_income',True); gp=latest(rep,'gross_profit',True)
         a=latest(rep,'assets',False); e=latest(rep,'equity',False); ca=latest(rep,'current_assets',False); cl=latest(rep,'current_liab',False); inv=latest(rep,'inventory',False); cash=latest(rep,'cash',False)
         cfo=latest(rep,'cfo',True); capex=latest(rep,'capex',True); dc=latest(rep,'debt_cur',False); dn=latest(rep,'debt_non',False); interest=latest(rep,'interest',True)
@@ -157,7 +180,9 @@ def enrich(raw,priority=None,max_nonpriority=220):
         set_missing(m,'debt_to_equity',debt/e if debt is not None and e not in (None,0) else None); set_missing(m,'total_assets',a); set_missing(m,'stockholders_equity',e); set_missing(m,'total_cash',cash); set_missing(m,'total_debt',debt); set_missing(m,'operating_cash_flow',cfo)
         set_missing(m,'free_cash_flow',cfo-abs(capex) if cfo is not None and capex is not None else None); set_missing(m,'ebit',op); set_missing(m,'interest_expense',abs(interest) if interest is not None else None); set_missing(m,'revenue_growth',growth(rep,'revenue')); set_missing(m,'earnings_growth',growth(rep,'net_income'))
         if op is not None and e is not None and debt is not None and cash is not None and e+debt-cash>0: set_missing(m,'roce_proxy',op/(e+debt-cash))
-        m.isin=isin; m.isin_source=isin_source; m.lei=lei; m.esef_period_end=f.get('period_end'); m.esef_enriched=True; m.esef_retrieval_path=f.get('path'); done+=1
+        m.isin=isin; m.isin_source=isin_source; m.lei=lei; m.esef_period_end=f.get('period_end'); m.esef_enriched=True; m.esef_retrieval_path=f.get('path'); done+=1; diag['enriched']+=1
         if isin_source and isin_source.startswith('London Stock Exchange'): lse_identity_hits+=1
         time.sleep(.05)
-    log.info('ESEF v4.20 enriched %d rows (%d via LSE identity fallback)',done,lse_identity_hits); return raw
+    log.info('ESEF v4.20 enriched %d rows (%d via LSE identity fallback)',done,lse_identity_hits)
+    log.info('ESEF funnel %s',json.dumps(diag,sort_keys=True,separators=(',',':')))
+    return raw
