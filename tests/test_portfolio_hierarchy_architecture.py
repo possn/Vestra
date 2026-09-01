@@ -13,7 +13,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         h=read('index.html')
         self.assertNotIn('market-hotfix.js', h)
         self.assertIn("portfolio-card-classifier.js?v=1.2", h)
-        self.assertIn("vestra-portfolio-hierarchy.js?v=1.2", h)
+        self.assertIn("vestra-portfolio-hierarchy.js?v=1.3", h)
         self.assertIn("vestra-swap-lab.js?v=1.0", h)
         self.assertIn("portfolio-diagnostics.js?v=1.0", h)
         self.assertIn("vestra-ai-brief.js?v=1.0", h)
