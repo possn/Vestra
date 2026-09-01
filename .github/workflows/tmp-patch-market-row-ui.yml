@@ -1,0 +1,81 @@
+name: Patch market row ui
+
+on:
+  push:
+    branches:
+      - refactor/market-row-ui-20260901
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/market-row-ui-20260901
+          fetch-depth: 0
+      - name: Apply guarded extraction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('market.js')
+          s=p.read_text(encoding='utf-8')
+          start='  function isFund(s){\n'
+          end='\n  const staticUniverseState = {};\n'
+          if s.count(start)!=1 or s.count(end)!=1:
+              raise SystemExit('market.js helper markers changed')
+          a=s.index(start); b=s.index(end,a)
+          old=s[a:b]
+          for marker in ('MUTUALFUND','market-score--risk','Intl.DateTimeFormat'):
+              if marker not in old: raise SystemExit('missing helper marker '+marker)
+          new="""  const marketRowUI = window.VestraMarketRowUI?.create({
+            text: txt,
+            number: n,
+            escapeHtml: esc,
+            getGeneratedAt: () => M.data?.generated_at,
+            inPortfolio,
+            isWatched,
+            changeBadge,
+          }) || null;
+          function isFund(s){ return marketRowUI?.isFund(s) || false; }
+          function scoreClass(value){ return marketRowUI?.scoreClass(value) || 'market-score--soft'; }
+          function ageText(){ return marketRowUI?.ageText() || ''; }
+          """
+          s=s[:a]+new+s[b:]
+          start="  function renderRow(s, meta='', displayScore=null){\n"
+          end='\n  function renderDiscover(){\n'
+          if s.count(start)!=1 or s.count(end)!=1:
+              raise SystemExit('market.js row markers changed')
+          a=s.index(start); b=s.index(end,a)
+          old=s[a:b]
+          for marker in ('market-row__ticker','data-market-watch','market-held-badge'):
+              if marker not in old: raise SystemExit('missing row marker '+marker)
+          s=s[:a]+"  function renderRow(s, meta='', displayScore=null){ return marketRowUI?.renderRow(s,meta,displayScore) || ''; }\n"+s[b:]
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('index.html'); s=p.read_text(encoding='utf-8')
+          old='<script defer="" src="market-search-suggestions.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>'
+          new='<script defer="" src="market-search-suggestions.js?v=1.0"></script>\n<script defer="" src="market-row-ui.js?v=1.0"></script>\n<script defer="" src="market.js?v=20260831v2"></script>'
+          if s.count(old)!=1: raise SystemExit('index marker changed')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+
+          p=Path('sw.js'); s=p.read_text(encoding='utf-8')
+          old='  "./market-search-suggestions.js",\n'
+          new='  "./market-search-suggestions.js",\n  "./market-row-ui.js",\n'
+          if s.count(old)!=1: raise SystemExit('sw marker changed')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          print('market row ui extraction applied')
+          PY
+          node --check market-row-ui.js
+          node --check market.js
+          node tests/runtime_market_row_ui_contract.js
+          python scripts/runtime_js_audit.py
+      - name: Commit extraction
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add market.js index.html sw.js
+          git commit -m "refactor: extract market row ui"
+          git push origin HEAD:refactor/market-row-ui-20260901
