@@ -131,21 +131,18 @@ function changeSignals(s){ return watchSnapshots?.changeSignals(s) || []; }
 function changeBadge(s){ return watchSnapshots?.changeBadge(s) || ''; }
 function changePanel(s){ return watchSnapshots?.changePanel(s) || ''; }
 
-  function isFund(s){
-    const q = txt(s.quote_type).toUpperCase();
-    const name = txt(s.name).toUpperCase();
-    return q === 'ETF' || q === 'MUTUALFUND' || /\bETF\b|ISHARES|VANGUARD|XTRACKERS|SPDR|LYXOR|AMUNDI|WISDOMTREE|INVESCO/.test(name);
-  }
-
-  function scoreClass(s){
-    const x=n(s); return x==null?'market-score--soft':x>=70?'':x>=55?'market-score--soft':'market-score--risk';
-  }
-
-  function ageText(){
-    const d = M.data?.generated_at ? new Date(M.data.generated_at) : null;
-    if (!d || Number.isNaN(d.valueOf())) return '';
-    return `Dados ${new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short'}).format(d)}`;
-  }
+  const marketRowUI = window.VestraMarketRowUI?.create({
+  text: txt,
+  number: n,
+  escapeHtml: esc,
+  getGeneratedAt: () => M.data?.generated_at,
+  inPortfolio,
+  isWatched,
+  changeBadge,
+}) || null;
+function isFund(s){ return marketRowUI?.isFund(s) || false; }
+function scoreClass(value){ return marketRowUI?.scoreClass(value) || 'market-score--soft'; }
+function ageText(){ return marketRowUI?.ageText() || ''; }
 
   const staticUniverseState = {};
   Object.defineProperties(staticUniverseState, {
@@ -174,15 +171,7 @@ function changePanel(s){ return watchSnapshots?.changePanel(s) || ''; }
       }).slice(0,7);
   }
 
-  function renderRow(s, meta='', displayScore=null){
-    const thesis = txt(s.thesis_type) || txt(s.sector) || 'Sem classificação';
-    const sub = meta || [txt(s.sector), thesis].filter(Boolean).join(' · ');
-    const held=inPortfolio(s.ticker), watched=isWatched(s.ticker);
-    return `<div class="market-row" data-market-ticker="${esc(s.ticker)}">
-      <div><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span>${held?'<span class="market-held-badge">Carteira</span>':''}<span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__meta">${esc(sub)}</div>${(held||watched)?changeBadge(s):''}</div>
-      <div class="market-row__end"><button class="market-watch ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}" title="${watched?'A acompanhar':'Acompanhar'}">${watched?'★':'☆'}</button><div class="market-score ${scoreClass(displayScore??s.score)}">${n(displayScore??s.score)==null?'—':Math.round(n(displayScore??s.score))}</div></div>
-    </div>`;
-  }
+  function renderRow(s, meta='', displayScore=null){ return marketRowUI?.renderRow(s,meta,displayScore) || ''; }
 
   function renderDiscover(){
     const sectors = [...new Set(M.stocks.filter(s=>!isFund(s)&&s.sector).map(s=>s.sector))].sort();

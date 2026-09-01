@@ -104,6 +104,7 @@ jobs:
           node --check market-static-universe.js
           node --check market-dossier-signals.js
           node --check market-search-suggestions.js
+          node --check market-row-ui.js
           node --check market.js
           node --check market-data-loader.js
           node --check market-data-health.js
@@ -118,6 +119,7 @@ jobs:
           node --check tests/runtime_market_static_universe_contract.js
           node --check tests/runtime_market_dossier_signals_contract.js
           node --check tests/runtime_market_search_suggestions_contract.js
+          node --check tests/runtime_market_row_ui_contract.js
           node --check politicians.js
           node --check worker.js
       - name: Validate Python syntax
@@ -161,6 +163,8 @@ jobs:
         run: node tests/runtime_market_dossier_signals_contract.js
       - name: Runtime · market search suggestions
         run: node tests/runtime_market_search_suggestions_contract.js
+      - name: Runtime · market row ui
+        run: node tests/runtime_market_row_ui_contract.js
       - name: Historical regression suite
         env:
           PYTHONPATH: .
