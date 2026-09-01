@@ -1,7 +1,14 @@
+import pathlib
+import sys
 import unittest
 from unittest.mock import patch
 
-from scripts import esef_enrich
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+import esef_enrich
 
 
 class ESEFWrapperDiagnosticsTests(unittest.TestCase):
