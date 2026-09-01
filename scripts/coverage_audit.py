@@ -12,8 +12,6 @@ import json
 import re
 from pathlib import Path
 
-from universe import ETF_UNIVERSE
-
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "data" / "stocks.json"
 OUT = ROOT / "data" / "coverage_audit.json"
@@ -40,6 +38,7 @@ EU_REGIONS = {
     "Ireland", "Italy", "Luxembourg", "Netherlands", "Norway", "Portugal",
     "Spain", "Sweden", "Switzerland",
 }
+_CATALOG_ETF_TICKERS = None
 
 
 def f(v):
@@ -56,6 +55,29 @@ def normalized_quote_type(row):
     return str(row.get("quote_type") or "").strip().upper()
 
 
+def catalog_etf_tickers():
+    """Load the deterministic ETF catalogue only when identity needs it.
+
+    Production executes this file from ``scripts/`` so the universe module is
+    directly importable. Lightweight unit tests intentionally do not install
+    yfinance/pandas; in that context absence of the catalogue simply disables
+    the fallback rather than making the audit module unimportable. Tests that
+    exercise the fallback inject a dependency-free universe stub explicitly.
+    """
+    global _CATALOG_ETF_TICKERS
+    if _CATALOG_ETF_TICKERS is None:
+        try:
+            from universe import ETF_UNIVERSE
+        except (ImportError, ModuleNotFoundError):
+            ETF_UNIVERSE = {}
+        _CATALOG_ETF_TICKERS = frozenset(
+            str(ticker or "").strip().upper()
+            for ticker in ETF_UNIVERSE
+            if str(ticker or "").strip()
+        )
+    return _CATALOG_ETF_TICKERS
+
+
 def authoritative_quote_type(row):
     """Return a fail-closed type using only explicit evidence.
 
@@ -68,7 +90,7 @@ def authoritative_quote_type(row):
     if quote_type:
         return quote_type
     ticker = str(row.get("ticker") or "").strip().upper()
-    if ticker in ETF_UNIVERSE:
+    if ticker in catalog_etf_tickers():
         return "ETF"
     return ""
 
