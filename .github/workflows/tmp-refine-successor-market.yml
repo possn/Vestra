@@ -1,0 +1,44 @@
+name: Temporary successor market refinement
+on:
+  push:
+    branches: [fix/corporate-action-successor-symbols-20260902]
+    paths:
+      - .github/workflows/tmp-refine-successor-market.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/corporate-action-successor-symbols-20260902
+          fetch-depth: 0
+      - name: Refine market successor semantics
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('worker.js')
+          s=p.read_text(encoding='utf-8')
+          old='''async function fetchYahooMarketDetail(ticker, ctx) {\n  const canonical = normalizeInputTicker(ticker);\n  const cache = caches.default;\n'''
+          new='''async function fetchYahooMarketDetail(ticker, ctx) {\n  const requested = String(ticker || '').trim().toUpperCase();\n  const canonical = normalizeInputTicker(requested);\n  const successor = successorMetadata(requested);\n  const cache = caches.default;\n'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''    data._cached = true;\n    return data;\n  }\n\n  const headers = {\n'''
+          new='''    if (successor) {\n      data.ticker = requested;\n      data.retrieval_ticker = canonical;\n      data.ticker_successor_effective_date = successor.effective_date;\n    }\n    data._cached = true;\n    return data;\n  }\n\n  const headers = {\n'''
+          assert old in s
+          s=s.replace(old,new,1)
+
+          old='''  const result = {\n    ticker: canonical,\n    name: raw(price.longName) || raw(price.shortName) || quote.name || canonical,\n'''
+          new='''  const result = {\n    ticker: successor ? requested : canonical,\n    retrieval_ticker: successor ? canonical : null,\n    ticker_successor_effective_date: successor?.effective_date || null,\n    name: raw(price.longName) || raw(price.shortName) || quote.name || canonical,\n'''
+          assert old in s
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          rm .github/workflows/tmp-refine-successor-market.yml
+          git config user.name "vestra-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add worker.js .github/workflows/tmp-refine-successor-market.yml
+          git commit -m "Preserve requested ticker in successor market dossiers"
+          git push origin HEAD:fix/corporate-action-successor-symbols-20260902
