@@ -95,11 +95,6 @@ async function fetchYahooQuoteCore(ticker, ctx) {
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
-    if (successor) {
-      data.ticker = requested;
-      data.retrieval_ticker = canonical;
-      data.ticker_successor_effective_date = successor.effective_date;
-    }
     data._cached = true;
     return data;
   }
@@ -413,6 +408,11 @@ async function fetchYahooMarketDetail(ticker, ctx) {
         data.quote_updated = quote.updated || new Date().toISOString();
       }
     } catch (_) {}
+    if (successor) {
+      data.ticker = requested;
+      data.retrieval_ticker = canonical;
+      data.ticker_successor_effective_date = successor.effective_date;
+    }
     data._cached = true;
     return data;
   }
