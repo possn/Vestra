@@ -9,11 +9,22 @@ retrieved from market/fund sources.
 from __future__ import annotations
 
 KNOWN_ASSET_IDENTITY = {
+    "BT.A.L": {
+        "quote_type": "EQUITY",
+        "name": "BT Group plc",
+        "isin": "GB0030913577",
+        "identity_source": "BT Group official listing history + London Stock Exchange official listing",
+    },
     "DN3.DE": {
         "quote_type": "EQUITY",
         "name": "Metaplanet Inc.",
         "isin": "JP3481200008",
         "identity_source": "Deutsche Börse official listing",
+    },
+    "QSR": {
+        "quote_type": "EQUITY",
+        "name": "Restaurant Brands International Inc.",
+        "identity_source": "Restaurant Brands International official investor relations",
     },
     "SPY4.DE": {
         "quote_type": "ETF",
