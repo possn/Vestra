@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 
 import yfinance as yf
 
+from ticker_successors import successor_for, retrieval_symbol
+
 log = logging.getLogger("fundamentals")
 
 
@@ -28,6 +30,9 @@ class RawMetrics:
     market_cap: float | None = None
     currency: str | None = None
     quote_type: str | None = None
+    retrieval_ticker: str | None = None
+    ticker_successor_effective_date: str | None = None
+    ticker_successor_source: str | None = None
 
     # profitability / quality
     roe: float | None = None
@@ -177,10 +182,12 @@ def _as_float(x):
 
 
 def _yahoo_symbol(ticker: str) -> str:
-    """Translate broker/DivTracker symbols to Yahoo symbols without changing
-    the canonical ticker stored by Finscanner. Crypto positions are exported
-    by DivTracker as e.g. BTC.CC while Yahoo uses BTC-USD."""
-    t = str(ticker or "").strip().upper()
+    """Translate exact current retrieval identity without changing portfolio ticker.
+
+    Official corporate-action successors are resolved first; crypto broker symbols
+    then retain the existing .CC -> -USD translation. No fuzzy inference is used.
+    """
+    t = retrieval_symbol(ticker)
     if t.endswith(".CC") and len(t) > 3:
         return t[:-3] + "-USD"
     return t
@@ -263,7 +270,13 @@ def _row_series(frame, labels, limit=6):
 def fetch_one(ticker: str) -> RawMetrics:
     _wait_for_cooldown()
     m = RawMetrics(ticker=ticker)
+    successor = successor_for(ticker)
     yahoo_symbol = _yahoo_symbol(ticker)
+    if successor is not None:
+        m.retrieval_ticker = yahoo_symbol
+        m.ticker_successor_effective_date = successor.get("effective_date")
+        m.ticker_successor_source = successor.get("source")
+        log.info("%s: current retrieval via official successor %s", ticker, yahoo_symbol)
     try:
         t = yf.Ticker(yahoo_symbol)
         info_error = None

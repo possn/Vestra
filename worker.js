@@ -18,6 +18,11 @@ const TICKER_ALIASES = {
   "CRSP.SW": "CRSP"
 };
 
+const TICKER_SUCCESSORS = Object.freeze({
+  "BITF": { ticker: "KEEL", effective_date: "2026-04-06" },
+  "IINN": { ticker: "QTEX", effective_date: "2026-05-20" },
+});
+
 function corsHeaders(origin) {
   // Vestra is served from possn.github.io. Match the exact browser origin;
   // local loopback remains available for development. CORS is not auth, but
@@ -51,7 +56,12 @@ function normCcy(price, ccy) {
 
 function normalizeInputTicker(raw) {
   const t = String(raw || "").trim().toUpperCase();
-  return TICKER_ALIASES[t] || t;
+  return TICKER_SUCCESSORS[t]?.ticker || TICKER_ALIASES[t] || t;
+}
+
+function successorMetadata(raw) {
+  const t = String(raw || "").trim().toUpperCase();
+  return TICKER_SUCCESSORS[t] || null;
 }
 
 function uniqueNonEmpty(arr) {
@@ -85,6 +95,11 @@ async function fetchYahooQuoteCore(ticker, ctx) {
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
+    if (successor) {
+      data.ticker = requested;
+      data.retrieval_ticker = canonical;
+      data.ticker_successor_effective_date = successor.effective_date;
+    }
     data._cached = true;
     return data;
   }
@@ -252,7 +267,17 @@ async function fetchYahooQuote(ticker, ctx) {
   let lastErr = null;
   for (const tk of candidates) {
     try {
-      return await fetchYahooQuoteCore(tk, ctx);
+      const data = await fetchYahooQuoteCore(tk, ctx);
+      const successor = successorMetadata(raw);
+      if (successor && tk === canonical) {
+        return {
+          ...data,
+          ticker: raw,
+          retrieval_ticker: canonical,
+          ticker_successor_effective_date: successor.effective_date,
+        };
+      }
+      return data;
     } catch (e) {
       lastErr = e;
     }
@@ -350,7 +375,9 @@ function firstFinite(...vals) {
 }
 
 async function fetchYahooMarketDetail(ticker, ctx) {
-  const canonical = normalizeInputTicker(ticker);
+  const requested = String(ticker || '').trim().toUpperCase();
+  const canonical = normalizeInputTicker(requested);
+  const successor = successorMetadata(requested);
   const cache = caches.default;
   const cacheUrl = `https://cache.internal/market45:${canonical}`;
   const cached = await cache.match(cacheUrl);
@@ -453,7 +480,9 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const target = numberOrNull(fd.targetMeanPrice);
   const current = numberOrNull(quote.price);
   const result = {
-    ticker: canonical,
+    ticker: successor ? requested : canonical,
+    retrieval_ticker: successor ? canonical : null,
+    ticker_successor_effective_date: successor?.effective_date || null,
     name: raw(price.longName) || raw(price.shortName) || quote.name || canonical,
     current_price: current,
     currency: raw(price.currency) || quote.currency || 'USD',
