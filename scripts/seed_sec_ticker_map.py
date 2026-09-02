@@ -38,6 +38,7 @@ MIRROR_URL = (
 EXPECTED_SHA256 = "e6fbad74d63540e73239f257809cf217b9d6b4fed2410691f0c8c576c9a6cf3c"
 EXPECTED_FIELDS = ["cik", "name", "ticker", "exchange"]
 EXPECTED_RECORDS = 10432
+MIN_EXPECTED_MAPPINGS = 10_000
 EXPECTED_SENTINELS = {
     "AAPL": 320193,
     "MSFT": 789019,
@@ -68,7 +69,7 @@ def _verified_mapping(raw: bytes):
         )
 
     mapping = _validated_map(_parse_company_tickers_exchange(payload))
-    if not mapping or len(mapping) < 10_000:
+    if not mapping or len(mapping) < MIN_EXPECTED_MAPPINGS:
         raise ValueError("SEC ticker-map transport produced too few exact ticker/CIK mappings")
     for ticker, cik in EXPECTED_SENTINELS.items():
         if mapping.get(ticker) != cik:
