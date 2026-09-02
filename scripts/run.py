@@ -45,6 +45,7 @@ from fx import build_fx_payload
 from fx_history import build_fx_history_payload
 from news import fetch_news_for_universe
 from score_contract import score_universe
+from asset_types import is_equity_candidate
 from thesis import classify as classify_thesis, evolve as evolve_thesis
 import thesis_history as thesis_history_mod
 from universe import build_universe, ETF_UNIVERSE, STOCK_DISCOVERY_CATALOG, region_for_equity
@@ -232,11 +233,11 @@ def main():
         log.info("Learned ticker promotion complete: %s", ", ".join(learned_tickers))
 
     analyst_map = fetch_analyst_many(
-        [dataclasses.asdict(s) for s in scored],
+        [dataclasses.asdict(s) for s in scored if is_equity_candidate(s.quote_type)],
         priority_tickers=set(universe.get("EXTRA", [])),
     )
 
-    us_tickers = [s.ticker for s in scored if "." not in s.ticker and s.quote_type != "ETF"]
+    us_tickers = [s.ticker for s in scored if "." not in s.ticker and is_equity_candidate(s.quote_type)]
     insider_map = annotate_insiders(us_tickers)
     congress_map = fetch_congress_for_universe(us_tickers)
     # v0.97: price history is dossier infrastructure, not only an insider helper.
@@ -407,7 +408,7 @@ def main():
     portfolio_covered = len(portfolio_extra & row_tickers)
     etf_rows = [r for r in rows if r.get("quote_type") == "ETF"]
     etf_holdings_rows = sum(1 for r in etf_rows if r.get("top_holdings"))
-    us_equity_rows = [r for r in rows if r.get("quote_type") != "ETF" and "." not in (r.get("ticker") or "")]
+    us_equity_rows = [r for r in rows if is_equity_candidate(r.get("quote_type")) and "." not in (r.get("ticker") or "")]
     insider_ok_rows = sum(1 for r in us_equity_rows if r.get("insider_status") == "ok")
     insider_degraded_rows = sum(1 for r in us_equity_rows if r.get("insider_status") == "degraded")
     # "degraded" means SEC submissions were reached but one or more Form 4 detail
