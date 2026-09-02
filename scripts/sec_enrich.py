@@ -22,6 +22,8 @@ import time
 
 import requests
 
+from asset_types import is_equity_candidate
+
 log=logging.getLogger('sec_enrich')
 BASE='https://data.sec.gov'
 TICKERS='https://www.sec.gov/files/company_tickers.json'
@@ -290,7 +292,7 @@ def enrich(raw,priority=None,max_nonpriority=500):
     priority=set(priority or []); non=0; filled=0
     for m in raw:
         t=str(getattr(m,'ticker','')).upper()
-        if '.' in t or getattr(m,'quote_type',None) in ('ETF','CRYPTO') or t not in cmap: continue
+        if '.' in t or not is_equity_candidate(getattr(m,'quote_type',None)) or t not in cmap: continue
         missing=sum(getattr(m,k,None) is None for k in ('roe','roa','profit_margin','operating_margin','gross_margin','revenue_growth','free_cash_flow','current_ratio','quick_ratio','debt_to_equity','interest_expense'))
         if missing<2 and t not in priority: continue
         if t not in priority:

@@ -10,6 +10,7 @@ import datetime as dt, gzip, json, logging, re, time
 from urllib.parse import urljoin
 import requests, yfinance as yf
 from lse_identity import resolve_isin as resolve_lse_isin
+from asset_types import is_equity_candidate
 
 log=logging.getLogger('esef_enrich')
 BASE='https://filings.xbrl.org'; GLEIF='https://api.gleif.org/api/v1/lei-records'
@@ -141,7 +142,7 @@ def enrich(raw,priority=None,max_nonpriority=220):
     }
     for m in raw:
         t=str(getattr(m,'ticker','') or '').upper(); c=country_for(t)
-        if not c or getattr(m,'quote_type',None) in ('ETF','CRYPTO'): continue
+        if not c or not is_equity_candidate(getattr(m,'quote_type',None)): continue
         diag['eligible']+=1
         miss=sum(getattr(m,k,None) is None for k in ('roe','roa','profit_margin','operating_margin','gross_margin','revenue_growth','free_cash_flow','current_ratio','quick_ratio','debt_to_equity','operating_cash_flow'))
         if miss<2 and t not in priority: continue
