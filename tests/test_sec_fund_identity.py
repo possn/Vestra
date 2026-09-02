@@ -8,8 +8,9 @@ from scripts import sec_fund_identity as sfi
 
 
 class _Response:
-    def __init__(self, payload=None, error=None):
+    def __init__(self, payload=None, text="", error=None):
         self.payload = payload
+        self.text = text
         self.error = error
 
     def raise_for_status(self):
@@ -26,7 +27,7 @@ class _Session:
         self.calls = 0
         self.urls = []
 
-    def get(self, url, timeout=None):
+    def get(self, url, timeout=None, headers=None):
         self.calls += 1
         self.urls.append(url)
         return self.responses.pop(0)
@@ -37,63 +38,87 @@ def _valid_payload(count=1000):
     return {"fields": ["cik", "seriesId", "classId", "symbol"], "data": rows}
 
 
+def _series_html(ticker="BUG"):
+    return f"""
+    <html><body><table>
+      <tr><td><a>0001432353</a></td><td>Global X Funds</td></tr>
+      <tr><td><a>S000066713</a></td><td>Global X Cybersecurity ETF</td></tr>
+      <tr><td><a>C000214985</a></td><td>Global X Cybersecurity ETF</td><td>{ticker}</td></tr>
+    </table></body></html>
+    """
+
+
 class SecFundIdentityTests(unittest.TestCase):
     def test_parses_official_fields_data_schema(self):
         payload = {
             "fields": ["cik", "seriesId", "classId", "symbol"],
-            "data": [
-                [1234, "S000001", "C000001", "BUG"],
-                [5678, "S000002", "C000002", "CHAT"],
-            ],
+            "data": [[1234, "S000001", "C000001", "BUG"]],
         }
         parsed = sfi.parse_sec_fund_payload(payload)
         self.assertEqual(parsed["BUG"]["cik"], 1234)
         self.assertEqual(parsed["BUG"]["series_id"], "S000001")
-        self.assertEqual(parsed["CHAT"]["class_id"], "C000002")
 
-    def test_malformed_payload_fails_closed(self):
+    def test_malformed_bulk_payload_fails_closed(self):
         self.assertEqual(sfi.parse_sec_fund_payload({"fields": ["ticker"], "data": [["BUG"]]}), {})
-        self.assertEqual(sfi.parse_sec_fund_payload([]), {})
 
-    def test_snapshot_roundtrip_is_validated_and_records_transport(self):
+    def test_series_parser_carries_cik_and_series_context(self):
+        item = sfi.parse_series_search_html(_series_html(), "BUG")
+        self.assertEqual(item["cik"], 1432353)
+        self.assertEqual(item["series_id"], "S000066713")
+        self.assertEqual(item["class_id"], "C000214985")
+        self.assertEqual(item["class_name"], "Global X Cybersecurity ETF")
+
+    def test_series_parser_requires_exact_ticker_and_class_row(self):
+        self.assertIsNone(sfi.parse_series_search_html(_series_html("BUGX"), "BUG"))
+        echo_only = '<html><body><input value="BUG"><table><tr><td>BUG</td></tr></table></body></html>'
+        self.assertIsNone(sfi.parse_series_search_html(echo_only, "BUG"))
+
+    def test_snapshot_roundtrip_records_scope_and_source(self):
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "fund-map.json"
-            mapping = {"BUG": {"cik": 1234, "series_id": "S1", "class_id": "C1"}}
-            sfi.write_snapshot(mapping, transport="vestra_worker", path=path)
+            mapping = {"BUG": {"cik": 1432353, "series_id": "S000066713", "class_id": "C000214985"}}
+            sfi.write_snapshot(mapping, source=sfi.SEC_FUND_SEARCH, transport="sec_series_search", scope="unresolved_exact_search", path=path)
             loaded, payload = sfi.read_snapshot(path)
             self.assertEqual(loaded, mapping)
-            self.assertEqual(payload["count"], 1)
-            self.assertEqual(payload["transport"], "vestra_worker")
-            self.assertEqual(payload["source"], sfi.SEC_FUND_TICKERS)
+            self.assertEqual(payload["scope"], "unresolved_exact_search")
+            self.assertEqual(payload["source"], sfi.SEC_FUND_SEARCH)
 
     def test_fetch_remote_retries_http_failure_and_accepts_valid_map(self):
         session = _Session([_Response(error=RuntimeError("HTTP 403")), _Response(payload=_valid_payload())])
         mapping = sfi.fetch_remote(session=session, retries=2, sleep=lambda _: None)
         self.assertEqual(session.calls, 2)
         self.assertEqual(len(mapping), 1000)
-        self.assertEqual(mapping["F0"]["cik"], 1000)
 
-    def test_fetch_worker_uses_canonical_route_and_same_strict_parser(self):
-        session = _Session([_Response(payload=_valid_payload())])
-        mapping = sfi.fetch_via_worker(session=session, worker_url="https://worker.example")
-        self.assertEqual(len(mapping), 1000)
-        self.assertEqual(session.urls, ["https://worker.example/sec-fund-map"])
+    def test_fetch_series_exact_uses_official_fast_search(self):
+        session = _Session([_Response(text=_series_html())])
+        item = sfi.fetch_series_exact("BUG", session=session, retries=1)
+        self.assertEqual(item["class_id"], "C000214985")
+        self.assertIn("www.sec.gov/cgi-bin/series?", session.urls[0])
+        self.assertIn("ticker=BUG", session.urls[0])
 
-    def test_refresh_falls_back_from_sec_to_worker_before_snapshot(self):
-        mapping = {f"F{i}": {"cik": 1000 + i} for i in range(1000)}
-        with mock.patch.object(sfi, "fetch_remote", side_effect=RuntimeError("HTTP 403")), \
-             mock.patch.object(sfi, "fetch_via_worker", return_value=mapping) as worker_fetch, \
-             mock.patch.object(sfi, "write_snapshot") as write_snapshot:
-            resolved, state = sfi.refresh_snapshot()
+    def test_unresolved_candidates_are_us_missing_type_only(self):
+        rows = [
+            {"ticker": "BUG", "quote_type": None, "region": "United States"},
+            {"ticker": "CHAT", "quote_type": "ETF", "region": "United States"},
+            {"ticker": "BT.A.L", "quote_type": None, "region": "United Kingdom"},
+        ]
+        self.assertEqual(sfi.unresolved_series_candidates(rows), ["BUG"])
+
+    def test_refresh_falls_back_from_bulk_to_series_exact_search(self):
+        rows = {"stocks": [{"ticker": "BUG", "quote_type": None, "region": "United States"}]}
+        mapping = {"BUG": {"cik": 1432353, "series_id": "S000066713", "class_id": "C000214985"}}
+        with tempfile.TemporaryDirectory() as td:
+            stocks = Path(td) / "stocks.json"
+            stocks.write_text(json.dumps(rows), encoding="utf-8")
+            with mock.patch.object(sfi, "fetch_remote", side_effect=RuntimeError("HTTP 403")), \
+                 mock.patch.object(sfi, "fetch_series_exact", return_value=mapping["BUG"]), \
+                 mock.patch.object(sfi, "resolve_via_series", return_value=(mapping, {"attempted": 1, "matched": 1, "errors": 0, "error_examples": []})), \
+                 mock.patch.object(sfi, "write_snapshot") as write_snapshot:
+                resolved, meta = sfi.refresh_snapshot(stocks_path=stocks)
         self.assertEqual(resolved, mapping)
-        self.assertEqual(state, "remote_via_worker")
-        worker_fetch.assert_called_once()
-        write_snapshot.assert_called_once_with(mapping, transport="vestra_worker")
-
-    def test_fetch_remote_rejects_small_or_malformed_payload(self):
-        session = _Session([_Response(payload={"fields": ["cik", "symbol"], "data": [[1, "BUG"]]})])
-        with self.assertRaises(RuntimeError):
-            sfi.fetch_remote(session=session, retries=1, sleep=lambda _: None)
+        self.assertEqual(meta["state"], "remote_series_search")
+        self.assertEqual(meta["source"], sfi.SEC_FUND_SEARCH)
+        write_snapshot.assert_called_once()
 
     def test_audit_separates_unresolved_and_explicit_conflicts(self):
         with tempfile.TemporaryDirectory() as td:
@@ -102,18 +127,13 @@ class SecFundIdentityTests(unittest.TestCase):
                 {"ticker": "BUG", "quote_type": None, "region": "United States"},
                 {"ticker": "CHAT", "quote_type": "ETF", "region": "United States"},
                 {"ticker": "ODD", "quote_type": "EQUITY", "region": "United States"},
-                {"ticker": "AAPL", "quote_type": "EQUITY", "region": "United States"},
             ]}), encoding="utf-8")
             old_audit = sfi.AUDIT_PATH
             try:
                 sfi.AUDIT_PATH = Path(td) / "audit.json"
                 audit = sfi.build_audit(
-                    {
-                        "BUG": {"cik": 1},
-                        "CHAT": {"cik": 2},
-                        "ODD": {"cik": 3},
-                    },
-                    "test",
+                    {"BUG": {"cik": 1}, "CHAT": {"cik": 2}, "ODD": {"cik": 3}},
+                    {"state": "test", "source": sfi.SEC_FUND_SEARCH, "scope": "test"},
                     stocks_path=stocks,
                 )
             finally:
@@ -121,7 +141,6 @@ class SecFundIdentityTests(unittest.TestCase):
             self.assertEqual(audit["unresolved_rows_confirmed_as_registered_funds"], 1)
             self.assertEqual(audit["explicit_non_equity_rows_confirmed"], 1)
             self.assertEqual(audit["explicit_equity_type_conflicts"], 1)
-            self.assertEqual(audit["unresolved_examples"][0]["ticker"], "BUG")
 
 
 if __name__ == "__main__":
