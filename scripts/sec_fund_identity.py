@@ -108,7 +108,7 @@ def _valid_map(mapping, min_count=1):
 
 
 class _SeriesTableParser(HTMLParser):
-    """Extract table rows without accepting search-box/echo text as evidence."""
+    """Collect visible table cells while ignoring search-form echo text."""
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.rows = []
@@ -142,40 +142,40 @@ class _SeriesTableParser(HTMLParser):
 def parse_series_search_html(html, ticker):
     """Return exact SEC class identity for ticker, or None.
 
-    A positive match requires the ticker and a class-contract ID in the same
-    result row. This prevents the query echoed in the search form from becoming
-    false evidence.
+    SEC's result table is hierarchical: a CIK row is followed by a Series row,
+    then one or more Class/Contract rows. We retain that context, but the final
+    positive decision still requires Class ID + exact ticker in the same row.
     """
     ticker = _normal_ticker(ticker)
     if not ticker or not isinstance(html, str):
         return None
     parser = _SeriesTableParser()
     parser.feed(html)
+    current_cik = None
+    current_series = None
     for row in parser.rows:
         cells = [str(x or "").strip() for x in row]
         upper = [x.upper() for x in cells]
-        if ticker not in upper:
-            continue
-        class_id = next((x for x in cells if _CLASS_ID.fullmatch(x.upper())), None)
-        if not class_id:
-            continue
-        series_id = next((x for x in cells if _SERIES_ID.fullmatch(x.upper())), None)
+
         cik_text = next((x for x in cells if _CIK.fullmatch(x)), None)
-        if cik_text is None:
-            # CIK/series information can be carried in preceding rows by the SEC
-            # table layout. Class ID + exact ticker in one row is still strong
-            # class-level identity; use 1 as an internal placeholder only if CIK
-            # is absent? No: fail closed instead.
+        if cik_text:
+            current_cik = _normal_cik(cik_text)
+            current_series = None
+
+        series_id = next((x.upper() for x in cells if _SERIES_ID.fullmatch(x.upper())), None)
+        if series_id:
+            current_series = series_id
+
+        class_id = next((x.upper() for x in cells if _CLASS_ID.fullmatch(x.upper())), None)
+        if not class_id or ticker not in upper or current_cik is None:
             continue
-        cik = _normal_cik(cik_text)
-        if cik is None:
-            continue
+
         ticker_i = upper.index(ticker)
         name = cells[ticker_i - 1] if ticker_i > 0 else ""
-        item = {"cik": cik, "class_id": class_id.upper()}
-        if series_id:
-            item["series_id"] = series_id.upper()
-        if name and name.upper() not in {ticker, class_id.upper()}:
+        item = {"cik": current_cik, "class_id": class_id}
+        if current_series:
+            item["series_id"] = current_series
+        if name and name.upper() not in {ticker, class_id}:
             item["class_name"] = name
         return item
     return None
@@ -229,10 +229,7 @@ def _session():
 
     ua = os.getenv("SEC_USER_AGENT", "Vestra/4.0 (+https://github.com/possn/Vestra)").strip()
     sess = requests.Session()
-    sess.headers.update({
-        "User-Agent": ua,
-        "Accept-Encoding": "gzip, deflate",
-    })
+    sess.headers.update({"User-Agent": ua, "Accept-Encoding": "gzip, deflate"})
     return sess
 
 
@@ -337,19 +334,14 @@ def refresh_snapshot(session=None, stocks_path=STOCKS_PATH):
             raise RuntimeError(f"SEC series sentinel {SERIES_SENTINEL} returned no exact fund match")
         mapping, series_diag = resolve_via_series(rows, session=session)
         if mapping:
-            write_snapshot(
-                mapping,
-                source=SEC_FUND_SEARCH,
-                transport="sec_series_search",
-                scope="unresolved_exact_search",
-            )
+            write_snapshot(mapping, source=SEC_FUND_SEARCH, transport="sec_series_search", scope="unresolved_exact_search")
         return mapping, {
             "state": "remote_series_search",
             "source": SEC_FUND_SEARCH,
             "transport": "sec_series_search",
             "scope": "unresolved_exact_search",
             "bulk_error": direct_error,
-            "series_sentinel": {"ticker": SERIES_SENTINEL, "matched": True},
+            "series_sentinel": {"ticker": SERIES_SENTINEL, "matched": True, "identity": sentinel},
             "series_search": series_diag,
         }
     except Exception as series_error:
