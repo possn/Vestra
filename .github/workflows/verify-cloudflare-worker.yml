@@ -8,12 +8,10 @@ on:
       - 'worker.js'
       - 'worker-router.js'
       - 'worker-ai-brief.js'
-      - 'worker-sec-fund.js'
       - 'wrangler.toml'
       - 'scripts/verify_worker_deployment.py'
       - 'scripts/verify_learned_universe_deployment.py'
       - 'scripts/verify_ai_brief_deployment.py'
-      - 'scripts/verify_sec_fund_deployment.py'
       - '.github/workflows/verify-cloudflare-worker.yml'
   workflow_dispatch:
 
@@ -40,12 +38,11 @@ jobs:
         env:
           VESTRA_WORKER_URL: https://delicate-bar-cc80.pedrossnunes.workers.dev
         run: |
-          python -m py_compile scripts/verify_learned_universe_deployment.py scripts/verify_ai_brief_deployment.py scripts/verify_sec_fund_deployment.py
+          python -m py_compile scripts/verify_learned_universe_deployment.py scripts/verify_ai_brief_deployment.py
           for attempt in 1 2 3 4 5; do
             if python scripts/verify_worker_deployment.py --url "$VESTRA_WORKER_URL" --ticker MSFT --ticker AAPL \
               && python scripts/verify_learned_universe_deployment.py --url "$VESTRA_WORKER_URL" \
-              && python scripts/verify_ai_brief_deployment.py --url "$VESTRA_WORKER_URL" \
-              && python scripts/verify_sec_fund_deployment.py --url "$VESTRA_WORKER_URL"; then
+              && python scripts/verify_ai_brief_deployment.py --url "$VESTRA_WORKER_URL"; then
               exit 0
             fi
             echo "Production not aligned yet (attempt ${attempt}/5); waiting 15s for Cloudflare deployment..."
