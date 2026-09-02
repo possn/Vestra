@@ -12,8 +12,12 @@ import json
 import re
 from pathlib import Path
 
-from known_asset_identity import exact_identity_override
-from ticker_successors import successor_for
+try:
+    from known_asset_identity import exact_identity_override
+    from ticker_successors import successor_for
+except (ImportError, ModuleNotFoundError):
+    from scripts.known_asset_identity import exact_identity_override
+    from scripts.ticker_successors import successor_for
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "data" / "stocks.json"
