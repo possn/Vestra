@@ -16,8 +16,6 @@ import os
 from pathlib import Path
 import time
 
-import requests
-
 ROOT = Path(__file__).resolve().parents[1]
 STOCKS_PATH = ROOT / "data" / "stocks.json"
 SNAPSHOT_PATH = ROOT / "data" / "sec_fund_ticker_map.json"
@@ -130,6 +128,11 @@ def write_snapshot(mapping, source=SEC_FUND_TICKERS, path=SNAPSHOT_PATH):
 
 
 def _session():
+    # The heavy market workflow installs requests; lightweight architecture CI
+    # deliberately does not. Keep the dependency lazy so parser/audit tests can
+    # import this module and inject a fake session without pulling network deps.
+    import requests
+
     ua = os.getenv("SEC_USER_AGENT", "Vestra/4.0 (+https://github.com/possn/Vestra)").strip()
     sess = requests.Session()
     sess.headers.update({
