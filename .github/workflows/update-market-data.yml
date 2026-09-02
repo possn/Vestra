@@ -48,7 +48,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/sec_fund_identity.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/sec_fund_identity.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/extra_ticker_hygiene.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
@@ -85,6 +85,10 @@ jobs:
       - name: Build coverage audit
         working-directory: scripts
         run: python coverage_audit.py
+
+      - name: Build extra ticker hygiene audit
+        working-directory: scripts
+        run: python extra_ticker_hygiene.py
 
       - name: Build provenance audit
         working-directory: scripts
@@ -128,7 +132,7 @@ jobs:
           # these are infrastructure identity data and are safe to reuse next run.
           git checkout -- data/stocks.json data/stocks-index.json data/dossiers-manifest.json data/dossiers 2>/dev/null || true
           git clean -fd data/dossiers data/stocks-index.json data/dossiers-manifest.json 2>/dev/null || true
-          git add data/coverage_audit.json data/provenance_audit.json data/coverage_guard.json data/pipeline_log.txt data/last_error.log data/sec_ticker_map.json data/sec_fund_ticker_map.json data/sec_fund_identity_audit.json 2>/dev/null || true
+          git add data/coverage_audit.json data/extra_ticker_hygiene.json data/provenance_audit.json data/coverage_guard.json data/pipeline_log.txt data/last_error.log data/sec_ticker_map.json data/sec_fund_ticker_map.json data/sec_fund_identity_audit.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Guard bloqueou publicação e não há novos diagnósticos para gravar."
           else
@@ -151,6 +155,7 @@ jobs:
             data/pipeline_log.txt
             data/last_error.log
             data/coverage_audit.json
+            data/extra_ticker_hygiene.json
             data/provenance_audit.json
             data/coverage_guard.json
             data/sec_ticker_map.json
