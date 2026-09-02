@@ -38,6 +38,34 @@ jobs:
         working-directory: scripts
         run: python sec_fund_identity.py
 
+      - name: Surface SEC source diagnostics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('data/sec_fund_identity_audit.json')
+          payload=json.loads(path.read_text())
+          print(json.dumps({
+              'source_state': payload.get('source_state'),
+              'source': payload.get('source'),
+              'transport': payload.get('transport'),
+              'identity_scope': payload.get('identity_scope'),
+              'sec_fund_identity_count': payload.get('sec_fund_identity_count'),
+              'series_search_attempted': payload.get('series_search_attempted'),
+              'series_search_matched': payload.get('series_search_matched'),
+              'series_search_errors': payload.get('series_search_errors'),
+              'source_diagnostics': payload.get('source_diagnostics'),
+          }, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Upload SEC identity diagnostic artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sec-fund-identity-diagnostic
+          path: data/sec_fund_identity_audit.json
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Require usable SEC identity evidence
         run: |
           python - <<'PY'
