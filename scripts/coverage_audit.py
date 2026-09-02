@@ -12,6 +12,13 @@ import json
 import re
 from pathlib import Path
 
+try:
+    from known_asset_identity import exact_identity_override
+    from ticker_successors import successor_for
+except (ImportError, ModuleNotFoundError):
+    from scripts.known_asset_identity import exact_identity_override
+    from scripts.ticker_successors import successor_for
+
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "data" / "stocks.json"
 OUT = ROOT / "data" / "coverage_audit.json"
@@ -78,18 +85,42 @@ def catalog_etf_tickers():
     return _CATALOG_ETF_TICKERS
 
 
-def authoritative_quote_type(row):
-    """Return a fail-closed type using only explicit evidence.
+def authoritative_identity_evidence(row):
+    """Return the exact deterministic identity source used by runtime/audit."""
+    ticker = str(row.get("ticker") or "").strip().upper()
+    override = exact_identity_override(ticker)
+    if isinstance(override, dict) and str(override.get("quote_type") or "").strip():
+        return "known_asset_identity"
+    successor = successor_for(ticker)
+    if isinstance(successor, dict) and str(successor.get("quote_type") or "").strip():
+        return "ticker_successor"
+    if ticker in catalog_etf_tickers():
+        return "etf_catalog"
+    return ""
 
-    Yahoo's heavy info endpoint can fail while the ticker is still a member of
-    Vestra's curated ETF catalogue. Catalogue membership is deterministic and
-    therefore strong enough to recover ETF identity for audit routing. Nothing
-    is ever guessed to be an equity when quote_type is absent.
+
+def authoritative_quote_type(row):
+    """Return a fail-closed type using only explicit deterministic evidence.
+
+    A live reported type always wins. If the provider lost the type entirely,
+    audit routing may recover it from the same exact-match identity contracts
+    used by runtime (known broker identities, official ticker successors, ETF
+    catalogue). Nothing is ever guessed to be an equity from absence of data.
     """
     quote_type = normalized_quote_type(row)
     if quote_type:
         return quote_type
     ticker = str(row.get("ticker") or "").strip().upper()
+    override = exact_identity_override(ticker)
+    if isinstance(override, dict):
+        override_type = str(override.get("quote_type") or "").strip().upper()
+        if override_type:
+            return override_type
+    successor = successor_for(ticker)
+    if isinstance(successor, dict):
+        successor_type = str(successor.get("quote_type") or "").strip().upper()
+        if successor_type:
+            return successor_type
     if ticker in catalog_etf_tickers():
         return "ETF"
     return ""
@@ -177,6 +208,7 @@ def actionable_gap(row):
         "quote_type": authoritative_quote_type(row) or None,
         "reported_quote_type": normalized_quote_type(row) or None,
         "identity_state": identity_state(row),
+        "identity_evidence": authoritative_identity_evidence(row) or None,
         "score_model": row.get("score_model") or "general",
         "coverage_pct": coverage,
         "critical_coverage_pct": critical_coverage,
@@ -231,10 +263,13 @@ def main():
     retrieval_by_model = collections.defaultdict(collections.Counter)
     identity_states = collections.Counter(identity_state(r) for r in all_rows)
     unresolved_identity = [r for r in rows if identity_state(r) == "unresolved"]
-    recovered_catalog_etfs = [
+    recovered_identity = [
         r for r in all_rows
-        if not normalized_quote_type(r) and authoritative_quote_type(r) == "ETF"
+        if not normalized_quote_type(r) and authoritative_quote_type(r)
     ]
+    recovered_by_evidence = collections.Counter(
+        authoritative_identity_evidence(r) or "unknown" for r in recovered_identity
+    )
     malformed = []
     annual_attempted = 0
     annual_enriched = 0
@@ -300,15 +335,21 @@ def main():
     actionable.sort(key=gap_priority)
 
     audit = {
-        "schema_version": 4,
+        "schema_version": 5,
         "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "equities": summarize_group(rows),
         "asset_type_hygiene": {
             "states": dict(identity_states.most_common()),
-            "authoritative_catalog_etf_recoveries": len(recovered_catalog_etfs),
-            "authoritative_catalog_etf_examples": [
-                {"ticker": r.get("ticker"), "region": r.get("region")}
-                for r in recovered_catalog_etfs[:100]
+            "authoritative_identity_recoveries": len(recovered_identity),
+            "authoritative_identity_recoveries_by_evidence": dict(recovered_by_evidence.most_common()),
+            "authoritative_identity_examples": [
+                {
+                    "ticker": r.get("ticker"),
+                    "region": r.get("region"),
+                    "quote_type": authoritative_quote_type(r),
+                    "identity_evidence": authoritative_identity_evidence(r) or None,
+                }
+                for r in recovered_identity[:100]
             ],
             "unresolved_equity_candidate_count": len(unresolved_identity),
             "unresolved_equity_candidate_examples": [
@@ -369,6 +410,7 @@ def main():
                 "quote_type": authoritative_quote_type(r) or None,
                 "reported_quote_type": normalized_quote_type(r) or None,
                 "identity_state": identity_state(r),
+                "identity_evidence": authoritative_identity_evidence(r) or None,
                 "score_model": r.get("score_model"),
                 "coverage_pct": f(r.get("data_coverage_pct")),
                 "critical_coverage_pct": f(r.get("critical_metric_coverage_pct")),

@@ -9,11 +9,13 @@ from __future__ import annotations
 TICKER_SUCCESSORS = {
     "BITF": {
         "successor": "KEEL",
+        "quote_type": "EQUITY",
         "effective_date": "2026-04-06",
         "source": "Keel Infrastructure / Bitfarms official rebrand",
     },
     "IINN": {
         "successor": "QTEX",
+        "quote_type": "EQUITY",
         "effective_date": "2026-05-20",
         "source": "Inspira Technologies official Nasdaq ticker change",
     },
