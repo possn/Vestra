@@ -22,26 +22,42 @@ class CoverageAuditAuthoritativeAssetTypeTests(unittest.TestCase):
         row = {"ticker": "SPY", "quote_type": None}
         self.assertEqual(coverage_audit.normalized_quote_type(row), "")
         self.assertEqual(coverage_audit.authoritative_quote_type(row), "ETF")
+        self.assertEqual(coverage_audit.authoritative_identity_evidence(row), "etf_catalog")
         self.assertEqual(coverage_audit.identity_state(row), "non_equity")
+
+    def test_known_asset_override_recovers_exact_identity(self):
+        row = {"ticker": "SPYL.DE", "quote_type": None}
+        self.assertEqual(coverage_audit.authoritative_quote_type(row), "ETF")
+        self.assertEqual(coverage_audit.authoritative_identity_evidence(row), "known_asset_identity")
+        self.assertEqual(coverage_audit.identity_state(row), "non_equity")
+
+    def test_ticker_successor_recovers_exact_equity_identity(self):
+        row = {"ticker": "BITF", "quote_type": None}
+        self.assertEqual(coverage_audit.authoritative_quote_type(row), "EQUITY")
+        self.assertEqual(coverage_audit.authoritative_identity_evidence(row), "ticker_successor")
+        self.assertEqual(coverage_audit.identity_state(row), "confirmed_equity")
 
     def test_unknown_missing_type_remains_unresolved(self):
         row = {"ticker": "UNKNOWN", "quote_type": None}
         self.assertEqual(coverage_audit.authoritative_quote_type(row), "")
+        self.assertEqual(coverage_audit.authoritative_identity_evidence(row), "")
         self.assertEqual(coverage_audit.identity_state(row), "unresolved")
 
-    def test_explicit_type_wins_over_catalog_fallback(self):
-        row = {"ticker": "SPY", "quote_type": "EQUITY"}
+    def test_explicit_type_wins_over_all_fallbacks(self):
+        row = {"ticker": "SPYL.DE", "quote_type": "EQUITY"}
         self.assertEqual(coverage_audit.authoritative_quote_type(row), "EQUITY")
         self.assertEqual(coverage_audit.identity_state(row), "confirmed_equity")
 
-    def test_catalog_etf_is_excluded_from_equity_rows(self):
+    def test_known_non_equities_are_excluded_but_successor_equity_remains(self):
         payload = {"stocks": [
             {"ticker": "SPY", "quote_type": None},
+            {"ticker": "SPYL.DE", "quote_type": None},
+            {"ticker": "BITF", "quote_type": None},
             {"ticker": "AAPL", "quote_type": "EQUITY"},
             {"ticker": "UNKNOWN", "quote_type": None},
         ]}
         tickers = [row["ticker"] for row in coverage_audit.equity_rows(payload)]
-        self.assertEqual(tickers, ["AAPL", "UNKNOWN"])
+        self.assertEqual(tickers, ["BITF", "AAPL", "UNKNOWN"])
 
 
 if __name__ == "__main__":
