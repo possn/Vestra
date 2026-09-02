@@ -46,7 +46,9 @@ class KnownAssetIdentityTests(unittest.TestCase):
 
     def test_confirmed_broker_symbols_are_exact_overrides(self):
         expected = {
+            "BT.A.L": ("EQUITY", "GB0030913577"),
             "DN3.DE": ("EQUITY", "JP3481200008"),
+            "QSR": ("EQUITY", None),
             "SPY4.DE": ("ETF", "IE00B4YBJ215"),
             "SPYD.DE": ("ETF", "IE00B6YX5D40"),
             "SPYL.DE": ("ETF", "IE000XZSV718"),
@@ -59,7 +61,7 @@ class KnownAssetIdentityTests(unittest.TestCase):
         for ticker, (quote_type, isin) in expected.items():
             override = known_asset_identity.exact_identity_override(ticker.lower())
             self.assertEqual(override["quote_type"], quote_type)
-            self.assertEqual(override["isin"], isin)
+            self.assertEqual(override.get("isin"), isin)
         self.assertIsNone(known_asset_identity.exact_identity_override("SPY.DE"))
 
     def test_blank_known_etf_is_retyped_before_frozen_core(self):
