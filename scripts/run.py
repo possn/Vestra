@@ -44,7 +44,7 @@ import metals_history as metals_history_mod
 from fx import build_fx_payload
 from fx_history import build_fx_history_payload
 from news import fetch_news_for_universe
-from score import score_universe
+from score_contract import score_universe
 from thesis import classify as classify_thesis, evolve as evolve_thesis
 import thesis_history as thesis_history_mod
 from universe import build_universe, ETF_UNIVERSE, STOCK_DISCOVERY_CATALOG, region_for_equity
