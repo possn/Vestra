@@ -13,13 +13,14 @@ import ticker_successors
 class TickerSuccessorContractTests(unittest.TestCase):
     def test_exact_successors_are_source_backed(self):
         expected = {
-            "BITF": ("KEEL", "2026-04-06"),
-            "IINN": ("QTEX", "2026-05-20"),
+            "BITF": ("KEEL", "EQUITY", "2026-04-06"),
+            "IINN": ("QTEX", "EQUITY", "2026-05-20"),
         }
         self.assertEqual(set(ticker_successors.TICKER_SUCCESSORS), set(expected))
-        for old, (new, date) in expected.items():
+        for old, (new, quote_type, date) in expected.items():
             row = ticker_successors.successor_for(old.lower())
             self.assertEqual(row["successor"], new)
+            self.assertEqual(row["quote_type"], quote_type)
             self.assertEqual(row["effective_date"], date)
             self.assertTrue(row["source"])
             self.assertEqual(ticker_successors.retrieval_symbol(old), new)
