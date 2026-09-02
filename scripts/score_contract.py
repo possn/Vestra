@@ -8,11 +8,22 @@ rows. Missing/unknown quote types remain in the legacy equity-candidate path.
 from __future__ import annotations
 
 from asset_types import is_fund_type, is_explicit_non_equity, normalized_quote_type
-from score import ScoredTicker, score_universe as _core_score_universe
 
 
-def _neutral_fund(r):
-    return ScoredTicker(
+def _load_core():
+    """Load the frozen score engine only when scoring actually runs.
+
+    Architecture CI deliberately avoids installing heavy market dependencies
+    such as yfinance. The production pipeline installs them before importing the
+    score engine, so a lazy boundary keeps unit tests lightweight without
+    changing runtime behaviour.
+    """
+    from score import ScoredTicker, score_universe as core_score_universe
+    return ScoredTicker, core_score_universe
+
+
+def _neutral_fund(r, scored_cls):
+    return scored_cls(
         ticker=r.ticker,
         name=r.name,
         business_summary=getattr(r, "business_summary", None),
@@ -41,10 +52,11 @@ def _neutral_fund(r):
 
 def score_universe(raw):
     """Delegate all score math unchanged after removing explicit fund rows."""
+    scored_cls, core_score_universe = _load_core()
     funds = [r for r in raw if is_fund_type(getattr(r, "quote_type", None)) and getattr(r, "error", None) is None]
     score_input = [r for r in raw if not is_fund_type(getattr(r, "quote_type", None))]
-    scored = list(_core_score_universe(score_input))
-    scored.extend(_neutral_fund(r) for r in funds)
+    scored = list(core_score_universe(score_input))
+    scored.extend(_neutral_fund(r, scored_cls) for r in funds)
     return scored
 
 
