@@ -1,0 +1,62 @@
+name: SEC fund identity diagnostics
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/sec_fund_identity.py'
+      - '.github/workflows/sec-fund-identity.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sec-fund-identity-diagnostics
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install HTTP dependency
+        run: pip install requests
+
+      - name: Validate module
+        run: python -m py_compile scripts/sec_fund_identity.py
+
+      - name: Refresh SEC fund identity diagnostics
+        working-directory: scripts
+        run: python sec_fund_identity.py
+
+      - name: Require usable SEC identity evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('data/sec_fund_identity_audit.json').read_text())
+          assert p.get('source_state') == 'remote', p.get('source_state')
+          assert int(p.get('sec_fund_ticker_count') or 0) >= 1000, p.get('sec_fund_ticker_count')
+          print('SEC fund identity evidence:', p['sec_fund_ticker_count'], 'tickers')
+          PY
+
+      - name: Publish diagnostics
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/sec_fund_ticker_map.json data/sec_fund_identity_audit.json
+          if git diff --cached --quiet; then
+            echo "Sem alterações nos diagnósticos."
+          else
+            git commit -m "diagnostics: refresh SEC fund identity ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            bash scripts/publish_with_retry.sh origin main
+          fi
