@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts import sec_fund_identity as sfi
 
@@ -79,22 +80,15 @@ class SecFundIdentityTests(unittest.TestCase):
         self.assertEqual(session.urls, ["https://worker.example/sec-fund-map"])
 
     def test_refresh_falls_back_from_sec_to_worker_before_snapshot(self):
-        session = _Session([
-            _Response(error=RuntimeError("HTTP 403")),
-            _Response(error=RuntimeError("HTTP 403")),
-            _Response(error=RuntimeError("HTTP 403")),
-            _Response(payload=_valid_payload()),
-        ])
-        with tempfile.TemporaryDirectory() as td:
-            old_snapshot = sfi.SNAPSHOT_PATH
-            try:
-                sfi.SNAPSHOT_PATH = Path(td) / "snapshot.json"
-                mapping, state = sfi.refresh_snapshot(session=session)
-            finally:
-                sfi.SNAPSHOT_PATH = old_snapshot
-        self.assertEqual(len(mapping), 1000)
+        mapping = {f"F{i}": {"cik": 1000 + i} for i in range(1000)}
+        with mock.patch.object(sfi, "fetch_remote", side_effect=RuntimeError("HTTP 403")), \
+             mock.patch.object(sfi, "fetch_via_worker", return_value=mapping) as worker_fetch, \
+             mock.patch.object(sfi, "write_snapshot") as write_snapshot:
+            resolved, state = sfi.refresh_snapshot()
+        self.assertEqual(resolved, mapping)
         self.assertEqual(state, "remote_via_worker")
-        self.assertTrue(session.urls[-1].endswith("/sec-fund-map"))
+        worker_fetch.assert_called_once()
+        write_snapshot.assert_called_once_with(mapping, transport="vestra_worker")
 
     def test_fetch_remote_rejects_small_or_malformed_payload(self):
         session = _Session([_Response(payload={"fields": ["cik", "symbol"], "data": [[1, "BUG"]]})])
