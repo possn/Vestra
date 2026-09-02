@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/sec_fund_identity.py'
+      - 'worker-sec-fund.js'
+      - 'worker-router.js'
       - '.github/workflows/sec-fund-identity.yml'
 
 permissions:
@@ -36,6 +38,8 @@ jobs:
 
       - name: Refresh SEC fund identity diagnostics
         working-directory: scripts
+        env:
+          VESTRA_WORKER_URL: https://delicate-bar-cc80.pedrossnunes.workers.dev
         run: python sec_fund_identity.py
 
       - name: Require usable SEC identity evidence
@@ -44,9 +48,10 @@ jobs:
           import json
           from pathlib import Path
           p=json.loads(Path('data/sec_fund_identity_audit.json').read_text())
-          assert p.get('source_state') == 'remote', p.get('source_state')
+          assert p.get('source_state') in {'remote','remote_via_worker'}, p.get('source_state')
+          assert p.get('source') == 'https://www.sec.gov/files/company_tickers_mf.json', p.get('source')
           assert int(p.get('sec_fund_ticker_count') or 0) >= 1000, p.get('sec_fund_ticker_count')
-          print('SEC fund identity evidence:', p['sec_fund_ticker_count'], 'tickers')
+          print('SEC fund identity evidence:', p['sec_fund_ticker_count'], 'tickers via', p['source_state'])
           PY
 
       - name: Publish diagnostics
