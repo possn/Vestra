@@ -16,6 +16,8 @@ from html import unescape
 
 import requests
 
+from asset_types import is_equity_candidate
+
 log = logging.getLogger("capital_risk")
 SEC_DATA = "https://data.sec.gov"
 SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
@@ -48,7 +50,7 @@ def _recent_rows(submissions: dict, days: int = 730):
 
 def _candidate(m, priority: set[str]) -> bool:
     t = str(getattr(m, "ticker", "") or "").upper()
-    if not t or "." in t or getattr(m, "quote_type", None) in ("ETF", "CRYPTO"):
+    if not t or "." in t or not is_equity_candidate(getattr(m, "quote_type", None)):
         return False
     if t in priority:
         return True
