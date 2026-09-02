@@ -9,6 +9,12 @@ retrieved from market/fund sources.
 from __future__ import annotations
 
 KNOWN_ASSET_IDENTITY = {
+    "DN3.DE": {
+        "quote_type": "EQUITY",
+        "name": "Metaplanet Inc.",
+        "isin": "JP3481200008",
+        "identity_source": "Deutsche Börse official listing",
+    },
     "SPY4.DE": {
         "quote_type": "ETF",
         "name": "State Street SPDR S&P 400 U.S. Mid Cap UCITS ETF (Acc)",
@@ -26,6 +32,24 @@ KNOWN_ASSET_IDENTITY = {
         "name": "State Street SPDR S&P 500 UCITS ETF (Acc)",
         "isin": "IE000XZSV718",
         "identity_source": "State Street official listing",
+    },
+    "U9UA.DE": {
+        "quote_type": "EQUITY",
+        "name": "Ucore Rare Metals Inc.",
+        "isin": "CA90348V3011",
+        "identity_source": "Deutsche Börse official listing",
+    },
+    "URNU.DE": {
+        "quote_type": "ETF",
+        "name": "Global X Uranium UCITS ETF",
+        "isin": "IE000NDWFGA5",
+        "identity_source": "Global X official listing + Deutsche Börse official listing",
+    },
+    "V60A.DE": {
+        "quote_type": "ETF",
+        "name": "Vanguard LifeStrategy 60% Equity UCITS ETF (EUR) Accumulating",
+        "isin": "IE00BMVB5P51",
+        "identity_source": "Vanguard official listing",
     },
     "VGWD.DE": {
         "quote_type": "ETF",
