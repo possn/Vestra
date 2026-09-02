@@ -53,6 +53,7 @@ class SeedSecTickerMapTests(unittest.TestCase):
         self.assertEqual(len(seed.EXPECTED_SHA256), 64)
         self.assertEqual(seed.TICKERS_EXCHANGE, "https://www.sec.gov/files/company_tickers_exchange.json")
         self.assertEqual(seed.EXPECTED_RECORDS, 10432)
+        self.assertGreaterEqual(seed.MIN_EXPECTED_MAPPINGS, 10_000)
 
     def test_verified_mapping_rejects_checksum_mismatch(self):
         raw = fixture_bytes()
@@ -62,7 +63,9 @@ class SeedSecTickerMapTests(unittest.TestCase):
     def test_verified_mapping_checks_schema_count_and_sentinels_after_hash(self):
         raw = fixture_bytes()
         digest = hashlib.sha256(raw).hexdigest()
-        with mock.patch.object(seed, "EXPECTED_SHA256", digest), mock.patch.object(seed, "EXPECTED_RECORDS", 3):
+        with mock.patch.object(seed, "EXPECTED_SHA256", digest), \
+             mock.patch.object(seed, "EXPECTED_RECORDS", 3), \
+             mock.patch.object(seed, "MIN_EXPECTED_MAPPINGS", 3):
             mapping, actual = seed._verified_mapping(raw)
         self.assertEqual(actual, digest)
         self.assertEqual(mapping["AAPL"], 320193)
@@ -76,7 +79,9 @@ class SeedSecTickerMapTests(unittest.TestCase):
             [1045810, "NVIDIA CORP", "NVDA", "Nasdaq"],
         ])
         digest = hashlib.sha256(raw).hexdigest()
-        with mock.patch.object(seed, "EXPECTED_SHA256", digest), mock.patch.object(seed, "EXPECTED_RECORDS", 3):
+        with mock.patch.object(seed, "EXPECTED_SHA256", digest), \
+             mock.patch.object(seed, "EXPECTED_RECORDS", 3), \
+             mock.patch.object(seed, "MIN_EXPECTED_MAPPINGS", 3):
             with self.assertRaisesRegex(ValueError, "sentinel mismatch"):
                 seed._verified_mapping(raw)
 
@@ -104,11 +109,10 @@ class SeedSecTickerMapTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "sec_ticker_map.json"
             session = FakeSession(FakeResponse(raw))
-            with mock.patch.object(seed, "EXPECTED_SHA256", digest), mock.patch.object(seed, "EXPECTED_RECORDS", 3), mock.patch.object(seed, "_validated_map", side_effect=lambda m: m if m else None):
-                # The production guard requires >10k mappings. This unit fixture
-                # patches only that volume guard while retaining schema/sentinel checks.
-                with mock.patch.object(seed, "_verified_mapping", return_value=({"AAPL": 320193, "MSFT": 789019, "NVDA": 1045810}, digest)):
-                    mapping, payload, created = seed.seed_snapshot(session=session, path=path)
+            with mock.patch.object(seed, "EXPECTED_SHA256", digest), \
+                 mock.patch.object(seed, "EXPECTED_RECORDS", 3), \
+                 mock.patch.object(seed, "MIN_EXPECTED_MAPPINGS", 3):
+                mapping, payload, created = seed.seed_snapshot(session=session, path=path)
             self.assertTrue(created)
             self.assertEqual(mapping["AAPL"], 320193)
             self.assertEqual(payload["source"], seed.TICKERS_EXCHANGE)
