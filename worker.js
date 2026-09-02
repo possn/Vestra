@@ -15,7 +15,9 @@ const TICKER_ALIASES = {
   "UNA.PA": "UNA.AS",
   "UNA.AS": "UNA.AS",
   "CRSP": "CRSP",
-  "CRSP.SW": "CRSP"
+  "CRSP.SW": "CRSP",
+  "BITF": "KEEL",
+  "IINN": "QTEX"
 };
 
 function corsHeaders(origin) {
