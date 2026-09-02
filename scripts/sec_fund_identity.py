@@ -14,7 +14,7 @@ import datetime as dt
 import json
 import os
 from pathlib import Path
-from urllib.request import Request, urlopen
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 STOCKS_PATH = ROOT / "data" / "stocks.json"
@@ -127,18 +127,44 @@ def write_snapshot(mapping, source=SEC_FUND_TICKERS, path=SNAPSHOT_PATH):
     return payload
 
 
-def fetch_remote(timeout=30):
-    ua = os.getenv("SEC_USER_AGENT", "Vestra/4.0 (+https://github.com/possn/Vestra)")
-    request = Request(
-        SEC_FUND_TICKERS,
-        headers={"User-Agent": ua, "Accept": "application/json", "Accept-Encoding": "gzip, deflate"},
-    )
-    with urlopen(request, timeout=timeout) as response:
-        payload = json.load(response)
-    mapping = _valid_map(parse_sec_fund_payload(payload), min_count=1000)
-    if not mapping:
-        raise ValueError("SEC fund ticker payload did not pass validation")
-    return mapping
+def _session():
+    # The heavy market workflow installs requests; lightweight architecture CI
+    # deliberately does not. Keep the dependency lazy so parser/audit tests can
+    # import this module and inject a fake session without pulling network deps.
+    import requests
+
+    ua = os.getenv("SEC_USER_AGENT", "Vestra/4.0 (+https://github.com/possn/Vestra)").strip()
+    sess = requests.Session()
+    sess.headers.update({
+        "User-Agent": ua,
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip, deflate",
+    })
+    return sess
+
+
+def fetch_remote(timeout=30, retries=3, session=None, sleep=time.sleep):
+    """Fetch the official SEC fund map with the same client pattern as EDGAR.
+
+    ``urllib`` requests from GitHub Actions were rejected with HTTP 403 while
+    Vestra's established SEC enrichment uses ``requests.Session`` successfully.
+    Retry only transport/HTTP failures; malformed payloads still fail closed.
+    """
+    sess = session or _session()
+    errors = []
+    for attempt in range(1, max(1, int(retries)) + 1):
+        try:
+            response = sess.get(SEC_FUND_TICKERS, timeout=timeout)
+            response.raise_for_status()
+            mapping = _valid_map(parse_sec_fund_payload(response.json()), min_count=1000)
+            if not mapping:
+                raise ValueError("SEC fund ticker payload did not pass validation")
+            return mapping
+        except Exception as exc:
+            errors.append(f"attempt {attempt}: {exc}")
+            if attempt < max(1, int(retries)):
+                sleep(0.75 * attempt)
+    raise RuntimeError("; ".join(errors[-3:]) or "SEC fund ticker map unavailable")
 
 
 def refresh_snapshot():

@@ -6,6 +6,29 @@ from pathlib import Path
 from scripts import sec_fund_identity as sfi
 
 
+class _Response:
+    def __init__(self, payload=None, error=None):
+        self.payload = payload
+        self.error = error
+
+    def raise_for_status(self):
+        if self.error:
+            raise self.error
+
+    def json(self):
+        return self.payload
+
+
+class _Session:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = 0
+
+    def get(self, url, timeout=None):
+        self.calls += 1
+        return self.responses.pop(0)
+
+
 class SecFundIdentityTests(unittest.TestCase):
     def test_parses_official_fields_data_schema(self):
         payload = {
@@ -32,6 +55,20 @@ class SecFundIdentityTests(unittest.TestCase):
             loaded, payload = sfi.read_snapshot(path)
             self.assertEqual(loaded, mapping)
             self.assertEqual(payload["count"], 1)
+
+    def test_fetch_remote_retries_http_failure_and_accepts_valid_map(self):
+        rows = [[1000 + i, f"S{i}", f"C{i}", f"F{i}"] for i in range(1000)]
+        payload = {"fields": ["cik", "seriesId", "classId", "symbol"], "data": rows}
+        session = _Session([_Response(error=RuntimeError("HTTP 403")), _Response(payload=payload)])
+        mapping = sfi.fetch_remote(session=session, retries=2, sleep=lambda _: None)
+        self.assertEqual(session.calls, 2)
+        self.assertEqual(len(mapping), 1000)
+        self.assertEqual(mapping["F0"]["cik"], 1000)
+
+    def test_fetch_remote_rejects_small_or_malformed_payload(self):
+        session = _Session([_Response(payload={"fields": ["cik", "symbol"], "data": [[1, "BUG"]]})])
+        with self.assertRaises(RuntimeError):
+            sfi.fetch_remote(session=session, retries=1, sleep=lambda _: None)
 
     def test_audit_separates_unresolved_and_explicit_conflicts(self):
         with tempfile.TemporaryDirectory() as td:
