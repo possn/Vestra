@@ -58,11 +58,55 @@ jobs:
           }, ensure_ascii=False, indent=2))
           PY
 
+      - name: Probe official SEC EFTS fallback
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import requests
+
+          url='https://efts.sec.gov/LATEST/search-index'
+          headers={
+              'User-Agent':'Vestra/4.0 (+https://github.com/possn/Vestra)',
+              'Accept':'application/json',
+          }
+          params={
+              'q':'BUG',
+              'forms':'NPORT-P,N-PX',
+              'from':'0',
+          }
+          probe={'url':url,'query':params,'status':None,'content_type':None,'hit_count':0,'hits':[],'error':None}
+          try:
+              response=requests.get(url,params=params,headers=headers,timeout=30)
+              probe['status']=response.status_code
+              probe['content_type']=response.headers.get('Content-Type')
+              response.raise_for_status()
+              payload=response.json()
+              hits=((payload.get('hits') or {}).get('hits') or [])
+              probe['hit_count']=len(hits)
+              for hit in hits[:10]:
+                  src=hit.get('_source') or {}
+                  probe['hits'].append({
+                      '_id':hit.get('_id'),
+                      'ciks':src.get('ciks'),
+                      'display_names':src.get('display_names'),
+                      'form':src.get('form'),
+                      'file_date':src.get('file_date'),
+                      'adsh':src.get('adsh'),
+                  })
+          except Exception as exc:
+              probe['error']=str(exc)
+          Path('data/sec_efts_probe.json').write_text(json.dumps(probe,ensure_ascii=False,indent=2)+'\n')
+          print(json.dumps(probe,ensure_ascii=False,indent=2))
+          PY
+
       - name: Upload SEC identity diagnostic artifact
         uses: actions/upload-artifact@v4
         with:
           name: sec-fund-identity-diagnostic
-          path: data/sec_fund_identity_audit.json
+          path: |
+            data/sec_fund_identity_audit.json
+            data/sec_efts_probe.json
           if-no-files-found: error
           retention-days: 7
 
