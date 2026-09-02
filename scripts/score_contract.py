@@ -1,13 +1,22 @@
 """Identity-safe boundary around the frozen Vestra scoring engine.
 
 The core score implementation in score.py is intentionally left untouched.
-Only rows already carrying an explicit FUND/MUTUALFUND quote type are removed
-from the cross-sectional equity input, then re-attached as neutral, non-scored
-rows. Missing/unknown quote types remain in the legacy equity-candidate path.
+Explicit FUND/MUTUALFUND rows are removed from the cross-sectional equity input
+and re-attached as neutral, non-scored rows. If a transient fetch loses the
+quote type entirely, an exact ticker match to a previously published explicit
+fund may carry that fund identity forward. Conflicting explicit current types
+always win; missing/unknown identities without prior fund evidence remain in the
+legacy equity-candidate path.
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from asset_types import is_fund_type, is_explicit_non_equity, normalized_quote_type
+
+ROOT = Path(__file__).resolve().parents[1]
+STOCKS_SNAPSHOT = ROOT / "data" / "stocks.json"
 
 
 def _load_core():
@@ -22,16 +31,51 @@ def _load_core():
     return ScoredTicker, core_score_universe
 
 
-def _neutral_fund(r, scored_cls):
+def _previous_funds(path=STOCKS_SNAPSHOT):
+    """Return exact-ticker prior FUND/MUTUALFUND rows from the last publication.
+
+    The snapshot is identity evidence only when it already carries an explicit
+    fund type. No name matching, ticker normalization beyond trim/uppercase, or
+    inference from missing data is permitted.
+    """
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        rows = payload.get("stocks") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            return {}
+        out = {}
+        for row in rows:
+            if not isinstance(row, dict) or not is_fund_type(row.get("quote_type")):
+                continue
+            ticker = str(row.get("ticker") or "").strip().upper()
+            if ticker:
+                out[ticker] = row
+        return out
+    except Exception:
+        return {}
+
+
+def _value(current, previous, key, default=None):
+    value = getattr(current, key, None)
+    if value is not None:
+        return value
+    if isinstance(previous, dict):
+        value = previous.get(key)
+        if value is not None:
+            return value
+    return default
+
+
+def _neutral_fund(r, scored_cls, previous=None, quote_type=None):
     return scored_cls(
         ticker=r.ticker,
-        name=r.name,
-        business_summary=getattr(r, "business_summary", None),
-        sector=r.sector,
-        industry=r.industry,
-        market_cap=r.market_cap,
-        currency=r.currency,
-        quote_type=normalized_quote_type(r.quote_type),
+        name=_value(r, previous, "name", r.ticker),
+        business_summary=_value(r, previous, "business_summary"),
+        sector=_value(r, previous, "sector"),
+        industry=_value(r, previous, "industry"),
+        market_cap=_value(r, previous, "market_cap"),
+        currency=_value(r, previous, "currency"),
+        quote_type=normalized_quote_type(quote_type or getattr(r, "quote_type", None) or (previous or {}).get("quote_type")),
         score=None,
         data_confidence="low",
         data_coverage_pct=0,
@@ -45,18 +89,38 @@ def _neutral_fund(r, scored_cls):
         growth_pct=None,
         balance_pct=None,
         cashflow_pct=None,
-        expense_ratio=getattr(r, "expense_ratio", None),
-        current_price=getattr(r, "current_price", None),
+        expense_ratio=_value(r, previous, "expense_ratio"),
+        current_price=_value(r, previous, "current_price"),
     )
 
 
-def score_universe(raw):
-    """Delegate all score math unchanged after removing explicit fund rows."""
+def score_universe(raw, previous_path=STOCKS_SNAPSHOT):
+    """Delegate score math unchanged after isolating explicit/prior-confirmed funds."""
     scored_cls, core_score_universe = _load_core()
-    funds = [r for r in raw if is_fund_type(getattr(r, "quote_type", None)) and getattr(r, "error", None) is None]
-    score_input = [r for r in raw if not is_fund_type(getattr(r, "quote_type", None))]
+    previous_funds = _previous_funds(previous_path)
+    fund_rows = []
+    score_input = []
+
+    for r in raw:
+        ticker = str(getattr(r, "ticker", "") or "").strip().upper()
+        current_type = normalized_quote_type(getattr(r, "quote_type", None))
+        previous = previous_funds.get(ticker)
+
+        if is_fund_type(current_type):
+            fund_rows.append((r, previous, current_type))
+            continue
+
+        # Carry forward fund identity only when the current provider lost the
+        # type entirely. An explicit EQUITY/ETF/CRYPTO/other current type is a
+        # conflict and must never be overwritten by stale snapshot evidence.
+        if not current_type and previous is not None:
+            fund_rows.append((r, previous, previous.get("quote_type")))
+            continue
+
+        score_input.append(r)
+
     scored = list(core_score_universe(score_input))
-    scored.extend(_neutral_fund(r, scored_cls) for r in funds)
+    scored.extend(_neutral_fund(r, scored_cls, previous, quote_type) for r, previous, quote_type in fund_rows)
     return scored
 
 
