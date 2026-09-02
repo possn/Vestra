@@ -1,0 +1,42 @@
+name: Temporary successor worker refinement
+on:
+  push:
+    branches: [fix/corporate-action-successor-symbols-20260902]
+    paths:
+      - .github/workflows/tmp-refine-successor-worker.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/corporate-action-successor-symbols-20260902
+          fetch-depth: 0
+      - name: Refine successor semantics
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('worker.js')
+          s=p.read_text(encoding='utf-8')
+          old='''  "CRSP": "CRSP",\n  "CRSP.SW": "CRSP",\n  "BITF": "KEEL",\n  "IINN": "QTEX"\n};\n'''
+          new='''  "CRSP": "CRSP",\n  "CRSP.SW": "CRSP"\n};\n\nconst TICKER_SUCCESSORS = Object.freeze({\n  "BITF": { ticker: "KEEL", effective_date: "2026-04-06" },\n  "IINN": { ticker: "QTEX", effective_date: "2026-05-20" },\n});\n'''
+          assert old in s
+          s=s.replace(old,new,1)
+          old='''function normalizeInputTicker(raw) {\n  const t = String(raw || "").trim().toUpperCase();\n  return TICKER_ALIASES[t] || t;\n}\n'''
+          new='''function normalizeInputTicker(raw) {\n  const t = String(raw || "").trim().toUpperCase();\n  return TICKER_SUCCESSORS[t]?.ticker || TICKER_ALIASES[t] || t;\n}\n\nfunction successorMetadata(raw) {\n  const t = String(raw || "").trim().toUpperCase();\n  return TICKER_SUCCESSORS[t] || null;\n}\n'''
+          assert old in s
+          s=s.replace(old,new,1)
+          old='''  for (const tk of candidates) {\n    try {\n      return await fetchYahooQuoteCore(tk, ctx);\n    } catch (e) {\n      lastErr = e;\n    }\n  }\n'''
+          new='''  for (const tk of candidates) {\n    try {\n      const data = await fetchYahooQuoteCore(tk, ctx);\n      const successor = successorMetadata(raw);\n      if (successor && tk === canonical) {\n        return {\n          ...data,\n          ticker: raw,\n          retrieval_ticker: canonical,\n          ticker_successor_effective_date: successor.effective_date,\n        };\n      }\n      return data;\n    } catch (e) {\n      lastErr = e;\n    }\n  }\n'''
+          assert old in s
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          rm .github/workflows/tmp-refine-successor-worker.yml
+          git config user.name "vestra-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add worker.js .github/workflows/tmp-refine-successor-worker.yml
+          git commit -m "Preserve historical ticker in successor quote responses"
+          git push origin HEAD:fix/corporate-action-successor-symbols-20260902
