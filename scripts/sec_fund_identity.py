@@ -1,29 +1,37 @@
-"""Official SEC fund/mutual-fund ticker identity diagnostics.
+"""Official SEC fund identity diagnostics.
 
-The SEC publishes ``company_tickers_mf.json`` specifically for registered
-funds. Vestra uses this feed only as identity evidence: it does not infer ETF vs
-mutual-fund structure and it never overwrites an explicit quote type.
+The preferred source is SEC ``company_tickers_mf.json``. Some hosted runners
+are denied access to that bulk file even while other EDGAR endpoints remain
+available. When that happens Vestra falls back to the SEC's own Fund Fast Search
+(``/cgi-bin/series``), querying only unresolved US ticker candidates one by one.
 
-Direct SEC access is preferred. GitHub-hosted runners can be rejected by the
-SEC WAF for this specific file, so the canonical Vestra Cloudflare Worker may
-transport the same validated SEC payload as a fallback. A validated local
-snapshot remains the final fallback. The source of truth is always SEC.
+The fallback is deliberately asymmetric: an exact SEC fund match can prove that
+an unresolved ticker is a registered fund; no match never proves that the ticker
+is an equity. Nothing here mutates ``stocks.json`` or any score.
 """
 from __future__ import annotations
 
 import datetime as dt
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
+import re
 import time
+from urllib.parse import urlencode
 
 ROOT = Path(__file__).resolve().parents[1]
 STOCKS_PATH = ROOT / "data" / "stocks.json"
 SNAPSHOT_PATH = ROOT / "data" / "sec_fund_ticker_map.json"
 AUDIT_PATH = ROOT / "data" / "sec_fund_identity_audit.json"
 SEC_FUND_TICKERS = "https://www.sec.gov/files/company_tickers_mf.json"
-DEFAULT_WORKER = "https://delicate-bar-cc80.pedrossnunes.workers.dev"
-SCHEMA_VERSION = 1
+SEC_FUND_SEARCH = "https://www.sec.gov/cgi-bin/series"
+SCHEMA_VERSION = 2
+SERIES_SENTINEL = "BUG"
+US_REGIONS = {"UNITED STATES", "USA", "US"}
+_CLASS_ID = re.compile(r"^C\d{9}$")
+_SERIES_ID = re.compile(r"^S\d{9}$")
+_CIK = re.compile(r"^\d{10}$")
 
 
 def _normal_ticker(value):
@@ -43,7 +51,7 @@ def _normal_cik(value):
 
 
 def parse_sec_fund_payload(payload):
-    """Parse the official SEC fields/data schema fail-closed."""
+    """Parse the official SEC bulk fields/data schema fail-closed."""
     if not isinstance(payload, dict):
         return {}
     fields = payload.get("fields")
@@ -93,8 +101,84 @@ def _valid_map(mapping, min_count=1):
             clean["series_id"] = str(item["series_id"])
         if item.get("class_id"):
             clean["class_id"] = str(item["class_id"])
+        if item.get("class_name"):
+            clean["class_name"] = str(item["class_name"]).strip()
         out[tk] = clean
     return out
+
+
+class _SeriesTableParser(HTMLParser):
+    """Collect visible table cells while ignoring search-form echo text."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.rows = []
+        self._row = None
+        self._cell = None
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag == "tr":
+            self._row = []
+        elif tag in {"td", "th"} and self._row is not None:
+            self._cell = []
+
+    def handle_data(self, data):
+        if self._cell is not None:
+            self._cell.append(data)
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag in {"td", "th"} and self._row is not None and self._cell is not None:
+            text = " ".join("".join(self._cell).split())
+            self._row.append(text)
+            self._cell = None
+        elif tag == "tr" and self._row is not None:
+            if self._row:
+                self.rows.append(self._row)
+            self._row = None
+            self._cell = None
+
+
+def parse_series_search_html(html, ticker):
+    """Return exact SEC class identity for ticker, or None.
+
+    SEC's result table is hierarchical: a CIK row is followed by a Series row,
+    then one or more Class/Contract rows. We retain that context, but the final
+    positive decision still requires Class ID + exact ticker in the same row.
+    """
+    ticker = _normal_ticker(ticker)
+    if not ticker or not isinstance(html, str):
+        return None
+    parser = _SeriesTableParser()
+    parser.feed(html)
+    current_cik = None
+    current_series = None
+    for row in parser.rows:
+        cells = [str(x or "").strip() for x in row]
+        upper = [x.upper() for x in cells]
+
+        cik_text = next((x for x in cells if _CIK.fullmatch(x)), None)
+        if cik_text:
+            current_cik = _normal_cik(cik_text)
+            current_series = None
+
+        series_id = next((x.upper() for x in cells if _SERIES_ID.fullmatch(x.upper())), None)
+        if series_id:
+            current_series = series_id
+
+        class_id = next((x.upper() for x in cells if _CLASS_ID.fullmatch(x.upper())), None)
+        if not class_id or ticker not in upper or current_cik is None:
+            continue
+
+        ticker_i = upper.index(ticker)
+        name = cells[ticker_i - 1] if ticker_i > 0 else ""
+        item = {"cik": current_cik, "class_id": class_id}
+        if current_series:
+            item["series_id"] = current_series
+        if name and name.upper() not in {ticker, class_id}:
+            item["class_name"] = name
+        return item
+    return None
 
 
 def _mapping_from_response(response):
@@ -105,10 +189,11 @@ def _mapping_from_response(response):
     return mapping
 
 
-def read_snapshot(path=SNAPSHOT_PATH):
+def read_snapshot(path=None):
+    path = Path(path or SNAPSHOT_PATH)
     try:
-        payload = json.loads(Path(path).read_text(encoding="utf-8"))
-        if payload.get("schema_version") != SCHEMA_VERSION:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload.get("schema_version") not in {1, SCHEMA_VERSION}:
             return None
         mapping = _valid_map(payload.get("map"), min_count=1)
         if not mapping or int(payload.get("count") or 0) != len(mapping):
@@ -118,17 +203,18 @@ def read_snapshot(path=SNAPSHOT_PATH):
         return None
 
 
-def write_snapshot(mapping, source=SEC_FUND_TICKERS, transport="direct_sec", path=SNAPSHOT_PATH):
+def write_snapshot(mapping, source=SEC_FUND_TICKERS, transport="direct_sec", scope="complete", path=None):
     mapping = _valid_map(mapping, min_count=1)
     if not mapping:
         raise ValueError("invalid SEC fund ticker map")
-    path = Path(path)
+    path = Path(path or SNAPSHOT_PATH)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source": source,
         "transport": transport,
+        "scope": scope,
         "count": len(mapping),
         "map": dict(sorted(mapping.items())),
     }
@@ -139,28 +225,22 @@ def write_snapshot(mapping, source=SEC_FUND_TICKERS, transport="direct_sec", pat
 
 
 def _session():
-    # The heavy market workflow installs requests; lightweight architecture CI
-    # deliberately does not. Keep the dependency lazy so parser/audit tests can
-    # import this module and inject a fake session without pulling network deps.
     import requests
 
     ua = os.getenv("SEC_USER_AGENT", "Vestra/4.0 (+https://github.com/possn/Vestra)").strip()
     sess = requests.Session()
-    sess.headers.update({
-        "User-Agent": ua,
-        "Accept": "application/json",
-        "Accept-Encoding": "gzip, deflate",
-    })
+    sess.headers.update({"User-Agent": ua, "Accept-Encoding": "gzip, deflate"})
     return sess
 
 
 def fetch_remote(timeout=30, retries=3, session=None, sleep=time.sleep):
-    """Fetch directly from SEC, with bounded retry and strict validation."""
+    """Fetch the complete SEC fund ticker map when the bulk file is available."""
     sess = session or _session()
     errors = []
     for attempt in range(1, max(1, int(retries)) + 1):
         try:
-            return _mapping_from_response(sess.get(SEC_FUND_TICKERS, timeout=timeout))
+            response = sess.get(SEC_FUND_TICKERS, timeout=timeout, headers={"Accept": "application/json"})
+            return _mapping_from_response(response)
         except Exception as exc:
             errors.append(f"attempt {attempt}: {exc}")
             if attempt < max(1, int(retries)):
@@ -168,43 +248,132 @@ def fetch_remote(timeout=30, retries=3, session=None, sleep=time.sleep):
     raise RuntimeError("; ".join(errors[-3:]) or "SEC fund ticker map unavailable")
 
 
-def fetch_via_worker(timeout=30, session=None, worker_url=None):
-    """Fetch the same SEC payload through Vestra's canonical Worker transport."""
+def fetch_series_exact(ticker, timeout=20, retries=2, session=None, sleep=time.sleep):
+    """Resolve one ticker through the SEC Fund Fast Search, exact-match only."""
+    ticker = _normal_ticker(ticker)
+    if not ticker or "." in ticker:
+        return None
     sess = session or _session()
-    base = str(worker_url or os.getenv("VESTRA_WORKER_URL") or DEFAULT_WORKER).strip().rstrip("/")
-    if not base.startswith("https://"):
-        raise ValueError("invalid Vestra Worker URL")
-    return _mapping_from_response(sess.get(f"{base}/sec-fund-map", timeout=timeout))
+    query = urlencode({"sc": "companyseries", "type": "N-PX", "ticker": ticker, "Find": "Search"})
+    url = f"{SEC_FUND_SEARCH}?{query}"
+    errors = []
+    for attempt in range(1, max(1, int(retries)) + 1):
+        try:
+            response = sess.get(url, timeout=timeout, headers={"Accept": "text/html,application/xhtml+xml"})
+            response.raise_for_status()
+            return parse_series_search_html(response.text, ticker)
+        except Exception as exc:
+            errors.append(f"attempt {attempt}: {exc}")
+            if attempt < max(1, int(retries)):
+                sleep(0.75 * attempt)
+    raise RuntimeError("; ".join(errors[-2:]) or f"SEC fund search unavailable for {ticker}")
 
 
-def refresh_snapshot(session=None):
+def _load_market_rows(stocks_path=STOCKS_PATH):
+    payload = json.loads(Path(stocks_path).read_text(encoding="utf-8"))
+    return [r for r in payload.get("stocks", []) if isinstance(r, dict)]
+
+
+def unresolved_series_candidates(rows):
+    out = []
+    for row in rows:
+        if str(row.get("quote_type") or "").strip():
+            continue
+        if str(row.get("region") or "").strip().upper() not in US_REGIONS:
+            continue
+        ticker = _normal_ticker(row.get("ticker"))
+        if ticker and "." not in ticker:
+            out.append(ticker)
+    return sorted(set(out))
+
+
+def resolve_via_series(rows, session=None, delay=0.16, max_candidates=400):
+    """Resolve only unresolved candidates; no-match remains unresolved."""
+    candidates = unresolved_series_candidates(rows)[:max_candidates]
+    mapping = {}
+    errors = []
+    attempted = 0
+    for ticker in candidates:
+        attempted += 1
+        try:
+            item = fetch_series_exact(ticker, session=session)
+            if item:
+                mapping[ticker] = item
+        except Exception as exc:
+            errors.append({"ticker": ticker, "error": str(exc)[:240]})
+        if delay:
+            time.sleep(delay)
+    return mapping, {
+        "attempted": attempted,
+        "matched": len(mapping),
+        "errors": len(errors),
+        "error_examples": errors[:20],
+    }
+
+
+def refresh_snapshot(session=None, stocks_path=STOCKS_PATH):
+    """Prefer full bulk map; otherwise use SEC exact series search."""
     direct_error = None
     try:
         mapping = fetch_remote(session=session)
-        write_snapshot(mapping, transport="direct_sec")
-        return mapping, "remote"
+        write_snapshot(mapping, source=SEC_FUND_TICKERS, transport="direct_sec", scope="complete")
+        return mapping, {
+            "state": "remote",
+            "source": SEC_FUND_TICKERS,
+            "transport": "direct_sec",
+            "scope": "complete",
+            "series_search": None,
+        }
     except Exception as exc:
-        direct_error = exc
+        direct_error = str(exc)
 
+    rows = _load_market_rows(stocks_path)
     try:
-        mapping = fetch_via_worker(session=session)
-        write_snapshot(mapping, transport="vestra_worker")
-        return mapping, "remote_via_worker"
-    except Exception as worker_error:
+        sentinel = fetch_series_exact(SERIES_SENTINEL, session=session)
+        if not sentinel:
+            raise RuntimeError(f"SEC series sentinel {SERIES_SENTINEL} returned no exact fund match")
+        mapping, series_diag = resolve_via_series(rows, session=session)
+        if mapping:
+            write_snapshot(mapping, source=SEC_FUND_SEARCH, transport="sec_series_search", scope="unresolved_exact_search")
+        return mapping, {
+            "state": "remote_series_search",
+            "source": SEC_FUND_SEARCH,
+            "transport": "sec_series_search",
+            "scope": "unresolved_exact_search",
+            "bulk_error": direct_error,
+            "series_sentinel": {"ticker": SERIES_SENTINEL, "matched": True, "identity": sentinel},
+            "series_search": series_diag,
+        }
+    except Exception as series_error:
         cached = read_snapshot()
         if cached:
-            transport = cached[1].get("transport") or "unknown"
-            return cached[0], f"snapshot_fallback:{transport}; direct={direct_error}; worker={worker_error}"
-        return {}, f"unavailable: direct={direct_error}; worker={worker_error}"
+            payload = cached[1]
+            return cached[0], {
+                "state": "snapshot_fallback",
+                "source": payload.get("source") or SEC_FUND_TICKERS,
+                "transport": payload.get("transport") or "unknown",
+                "scope": payload.get("scope") or "unknown",
+                "bulk_error": direct_error,
+                "series_error": str(series_error),
+                "series_search": None,
+            }
+        return {}, {
+            "state": "unavailable",
+            "source": SEC_FUND_TICKERS,
+            "transport": None,
+            "scope": None,
+            "bulk_error": direct_error,
+            "series_error": str(series_error),
+            "series_search": None,
+        }
 
 
-def build_audit(mapping, source_state, stocks_path=STOCKS_PATH):
+def build_audit(mapping, source_meta, stocks_path=STOCKS_PATH):
     try:
-        payload = json.loads(Path(stocks_path).read_text(encoding="utf-8"))
-        rows = [r for r in payload.get("stocks", []) if isinstance(r, dict)]
+        rows = _load_market_rows(stocks_path)
     except Exception as exc:
         rows = []
-        source_state = f"{source_state}; stocks_unavailable: {exc}"
+        source_meta = {**dict(source_meta or {}), "stocks_error": str(exc)}
 
     unresolved_matches = []
     explicit_equity_conflicts = []
@@ -232,32 +401,44 @@ def build_audit(mapping, source_state, stocks_path=STOCKS_PATH):
         else:
             explicit_equity_conflicts.append(item)
 
+    source_meta = dict(source_meta or {})
+    series_diag = source_meta.get("series_search") or {}
     audit = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
-        "source": SEC_FUND_TICKERS,
-        "source_state": source_state,
+        "source": source_meta.get("source") or SEC_FUND_TICKERS,
+        "source_state": source_meta.get("state") or "unknown",
+        "transport": source_meta.get("transport"),
+        "identity_scope": source_meta.get("scope"),
+        "sec_fund_identity_count": len(mapping),
         "sec_fund_ticker_count": len(mapping),
         "market_rows_checked": len(rows),
         "market_rows_matching_sec_fund_map": all_matches,
         "unresolved_rows_confirmed_as_registered_funds": len(unresolved_matches),
         "explicit_non_equity_rows_confirmed": len(explicit_non_equity_matches),
         "explicit_equity_type_conflicts": len(explicit_equity_conflicts),
+        "series_search_attempted": series_diag.get("attempted", 0),
+        "series_search_matched": series_diag.get("matched", 0),
+        "series_search_errors": series_diag.get("errors", 0),
+        "series_search_error_examples": series_diag.get("error_examples", []),
+        "source_diagnostics": source_meta,
         "unresolved_examples": unresolved_matches[:200],
         "type_conflict_examples": explicit_equity_conflicts[:100],
     }
     AUDIT_PATH.write_text(json.dumps(audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
         "SEC fund identity audit: "
-        f"{len(mapping)} fund tickers; {len(unresolved_matches)} unresolved matches; "
-        f"{len(explicit_equity_conflicts)} explicit type conflicts; transport={source_state}"
+        f"state={audit['source_state']}; scope={audit['identity_scope']}; "
+        f"{len(mapping)} confirmed fund identities; "
+        f"{len(unresolved_matches)} unresolved matches; "
+        f"{len(explicit_equity_conflicts)} explicit type conflicts"
     )
     return audit
 
 
 def main():
-    mapping, state = refresh_snapshot()
-    build_audit(mapping, state)
+    mapping, meta = refresh_snapshot()
+    build_audit(mapping, meta)
 
 
 if __name__ == "__main__":
