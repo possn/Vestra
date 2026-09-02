@@ -44,17 +44,21 @@ class KnownAssetIdentityTests(unittest.TestCase):
         self.addCleanup(lambda: Path(tmp.name).unlink(missing_ok=True))
         return Path(tmp.name)
 
-    def test_confirmed_broker_symbols_are_exact_etf_overrides(self):
+    def test_confirmed_broker_symbols_are_exact_overrides(self):
         expected = {
-            "SPY4.DE": "IE00B4YBJ215",
-            "SPYD.DE": "IE00B6YX5D40",
-            "SPYL.DE": "IE000XZSV718",
-            "VGWD.DE": "IE00B8GKDB10",
+            "DN3.DE": ("EQUITY", "JP3481200008"),
+            "SPY4.DE": ("ETF", "IE00B4YBJ215"),
+            "SPYD.DE": ("ETF", "IE00B6YX5D40"),
+            "SPYL.DE": ("ETF", "IE000XZSV718"),
+            "U9UA.DE": ("EQUITY", "CA90348V3011"),
+            "URNU.DE": ("ETF", "IE000NDWFGA5"),
+            "V60A.DE": ("ETF", "IE00BMVB5P51"),
+            "VGWD.DE": ("ETF", "IE00B8GKDB10"),
         }
         self.assertEqual(set(known_asset_identity.KNOWN_ASSET_IDENTITY), set(expected))
-        for ticker, isin in expected.items():
+        for ticker, (quote_type, isin) in expected.items():
             override = known_asset_identity.exact_identity_override(ticker.lower())
-            self.assertEqual(override["quote_type"], "ETF")
+            self.assertEqual(override["quote_type"], quote_type)
             self.assertEqual(override["isin"], isin)
         self.assertIsNone(known_asset_identity.exact_identity_override("SPY.DE"))
 
@@ -73,6 +77,23 @@ class KnownAssetIdentityTests(unittest.TestCase):
         self.assertEqual(current.quote_type, "ETF")
         self.assertEqual(current.isin, "IE000XZSV718")
         self.assertIn("State Street", current.name)
+        self.assertEqual(out, [])
+
+    def test_blank_known_equity_is_retyped_before_frozen_core(self):
+        current = row("U9UA.DE", None)
+        captured = []
+
+        def fake_core(items):
+            captured.extend(items)
+            return []
+
+        with mock.patch.object(score_contract, "_load_core", return_value=(FakeScoredTicker, fake_core)):
+            out = score_contract.score_universe([current], previous_path=self.empty_snapshot())
+
+        self.assertEqual(captured, [current])
+        self.assertEqual(current.quote_type, "EQUITY")
+        self.assertEqual(current.isin, "CA90348V3011")
+        self.assertIn("Ucore", current.name)
         self.assertEqual(out, [])
 
     def test_known_etf_with_fetch_error_survives_as_neutral_etf(self):
