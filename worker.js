@@ -15,10 +15,13 @@ const TICKER_ALIASES = {
   "UNA.PA": "UNA.AS",
   "UNA.AS": "UNA.AS",
   "CRSP": "CRSP",
-  "CRSP.SW": "CRSP",
-  "BITF": "KEEL",
-  "IINN": "QTEX"
+  "CRSP.SW": "CRSP"
 };
+
+const TICKER_SUCCESSORS = Object.freeze({
+  "BITF": { ticker: "KEEL", effective_date: "2026-04-06" },
+  "IINN": { ticker: "QTEX", effective_date: "2026-05-20" },
+});
 
 function corsHeaders(origin) {
   // Vestra is served from possn.github.io. Match the exact browser origin;
@@ -53,7 +56,12 @@ function normCcy(price, ccy) {
 
 function normalizeInputTicker(raw) {
   const t = String(raw || "").trim().toUpperCase();
-  return TICKER_ALIASES[t] || t;
+  return TICKER_SUCCESSORS[t]?.ticker || TICKER_ALIASES[t] || t;
+}
+
+function successorMetadata(raw) {
+  const t = String(raw || "").trim().toUpperCase();
+  return TICKER_SUCCESSORS[t] || null;
 }
 
 function uniqueNonEmpty(arr) {
@@ -254,7 +262,17 @@ async function fetchYahooQuote(ticker, ctx) {
   let lastErr = null;
   for (const tk of candidates) {
     try {
-      return await fetchYahooQuoteCore(tk, ctx);
+      const data = await fetchYahooQuoteCore(tk, ctx);
+      const successor = successorMetadata(raw);
+      if (successor && tk === canonical) {
+        return {
+          ...data,
+          ticker: raw,
+          retrieval_ticker: canonical,
+          ticker_successor_effective_date: successor.effective_date,
+        };
+      }
+      return data;
     } catch (e) {
       lastErr = e;
     }
