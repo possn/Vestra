@@ -46,6 +46,16 @@ class TickerSuccessorContractTests(unittest.TestCase):
         self.assertNotIn('"BITF": "KEEL"', source)
         self.assertNotIn('"IINN": "QTEX"', source)
 
+    def test_market_dossier_preserves_requested_ticker_and_successor_provenance(self):
+        source = (ROOT / "worker.js").read_text(encoding="utf-8")
+        self.assertIn("const requested = String(ticker || '').trim().toUpperCase();", source)
+        self.assertIn("const successor = successorMetadata(requested);", source)
+        self.assertIn("ticker: successor ? requested : canonical", source)
+        self.assertIn("retrieval_ticker: successor ? canonical : null", source)
+        self.assertIn("ticker_successor_effective_date: successor?.effective_date || null", source)
+        self.assertIn("data.ticker = requested", source)
+        self.assertIn("data.retrieval_ticker = canonical", source)
+
     def test_historical_portfolio_symbols_are_not_rewritten_in_extra_universe(self):
         extra = (ROOT / "data" / "extra_tickers.json").read_text(encoding="utf-8")
         self.assertIn('"BITF"', extra)
