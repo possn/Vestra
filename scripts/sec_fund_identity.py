@@ -4,9 +4,10 @@ The SEC publishes ``company_tickers_mf.json`` specifically for registered
 funds. Vestra uses this feed only as identity evidence: it does not infer ETF vs
 mutual-fund structure and it never overwrites an explicit quote type.
 
-A validated snapshot is persisted so the audit remains usable during transient
-SEC/network failures. The output is diagnostic only and does not mutate
-``stocks.json`` or any score.
+Direct SEC access is preferred. GitHub-hosted runners can be rejected by the
+SEC WAF for this specific file, so the canonical Vestra Cloudflare Worker may
+transport the same validated SEC payload as a fallback. A validated local
+snapshot remains the final fallback. The source of truth is always SEC.
 """
 from __future__ import annotations
 
@@ -21,6 +22,7 @@ STOCKS_PATH = ROOT / "data" / "stocks.json"
 SNAPSHOT_PATH = ROOT / "data" / "sec_fund_ticker_map.json"
 AUDIT_PATH = ROOT / "data" / "sec_fund_identity_audit.json"
 SEC_FUND_TICKERS = "https://www.sec.gov/files/company_tickers_mf.json"
+DEFAULT_WORKER = "https://delicate-bar-cc80.pedrossnunes.workers.dev"
 SCHEMA_VERSION = 1
 
 
@@ -95,6 +97,14 @@ def _valid_map(mapping, min_count=1):
     return out
 
 
+def _mapping_from_response(response):
+    response.raise_for_status()
+    mapping = _valid_map(parse_sec_fund_payload(response.json()), min_count=1000)
+    if not mapping:
+        raise ValueError("SEC fund ticker payload did not pass validation")
+    return mapping
+
+
 def read_snapshot(path=SNAPSHOT_PATH):
     try:
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -108,7 +118,7 @@ def read_snapshot(path=SNAPSHOT_PATH):
         return None
 
 
-def write_snapshot(mapping, source=SEC_FUND_TICKERS, path=SNAPSHOT_PATH):
+def write_snapshot(mapping, source=SEC_FUND_TICKERS, transport="direct_sec", path=SNAPSHOT_PATH):
     mapping = _valid_map(mapping, min_count=1)
     if not mapping:
         raise ValueError("invalid SEC fund ticker map")
@@ -118,6 +128,7 @@ def write_snapshot(mapping, source=SEC_FUND_TICKERS, path=SNAPSHOT_PATH):
         "schema_version": SCHEMA_VERSION,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source": source,
+        "transport": transport,
         "count": len(mapping),
         "map": dict(sorted(mapping.items())),
     }
@@ -144,22 +155,12 @@ def _session():
 
 
 def fetch_remote(timeout=30, retries=3, session=None, sleep=time.sleep):
-    """Fetch the official SEC fund map with the same client pattern as EDGAR.
-
-    ``urllib`` requests from GitHub Actions were rejected with HTTP 403 while
-    Vestra's established SEC enrichment uses ``requests.Session`` successfully.
-    Retry only transport/HTTP failures; malformed payloads still fail closed.
-    """
+    """Fetch directly from SEC, with bounded retry and strict validation."""
     sess = session or _session()
     errors = []
     for attempt in range(1, max(1, int(retries)) + 1):
         try:
-            response = sess.get(SEC_FUND_TICKERS, timeout=timeout)
-            response.raise_for_status()
-            mapping = _valid_map(parse_sec_fund_payload(response.json()), min_count=1000)
-            if not mapping:
-                raise ValueError("SEC fund ticker payload did not pass validation")
-            return mapping
+            return _mapping_from_response(sess.get(SEC_FUND_TICKERS, timeout=timeout))
         except Exception as exc:
             errors.append(f"attempt {attempt}: {exc}")
             if attempt < max(1, int(retries)):
@@ -167,16 +168,34 @@ def fetch_remote(timeout=30, retries=3, session=None, sleep=time.sleep):
     raise RuntimeError("; ".join(errors[-3:]) or "SEC fund ticker map unavailable")
 
 
-def refresh_snapshot():
+def fetch_via_worker(timeout=30, session=None, worker_url=None):
+    """Fetch the same SEC payload through Vestra's canonical Worker transport."""
+    sess = session or _session()
+    base = str(worker_url or os.getenv("VESTRA_WORKER_URL") or DEFAULT_WORKER).strip().rstrip("/")
+    if not base.startswith("https://"):
+        raise ValueError("invalid Vestra Worker URL")
+    return _mapping_from_response(sess.get(f"{base}/sec-fund-map", timeout=timeout))
+
+
+def refresh_snapshot(session=None):
+    direct_error = None
     try:
-        mapping = fetch_remote()
-        write_snapshot(mapping)
+        mapping = fetch_remote(session=session)
+        write_snapshot(mapping, transport="direct_sec")
         return mapping, "remote"
     except Exception as exc:
+        direct_error = exc
+
+    try:
+        mapping = fetch_via_worker(session=session)
+        write_snapshot(mapping, transport="vestra_worker")
+        return mapping, "remote_via_worker"
+    except Exception as worker_error:
         cached = read_snapshot()
         if cached:
-            return cached[0], f"snapshot_fallback: {exc}"
-        return {}, f"unavailable: {exc}"
+            transport = cached[1].get("transport") or "unknown"
+            return cached[0], f"snapshot_fallback:{transport}; direct={direct_error}; worker={worker_error}"
+        return {}, f"unavailable: direct={direct_error}; worker={worker_error}"
 
 
 def build_audit(mapping, source_state, stocks_path=STOCKS_PATH):
@@ -231,7 +250,7 @@ def build_audit(mapping, source_state, stocks_path=STOCKS_PATH):
     print(
         "SEC fund identity audit: "
         f"{len(mapping)} fund tickers; {len(unresolved_matches)} unresolved matches; "
-        f"{len(explicit_equity_conflicts)} explicit type conflicts"
+        f"{len(explicit_equity_conflicts)} explicit type conflicts; transport={source_state}"
     )
     return audit
 
