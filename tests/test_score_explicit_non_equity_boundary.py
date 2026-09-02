@@ -60,10 +60,14 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
             self.assertEqual(scored.data_confidence, "low")
         self.assertEqual({x.quote_type for x in out}, {"MUTUALFUND", "FUND"})
 
-    def test_failed_fund_is_not_reintroduced(self):
+    def test_failed_explicit_fund_is_preserved_but_never_scored(self):
         with mock.patch.object(score_contract, "_load_core", return_value=(FakeScoredTicker, lambda items: [])):
             out = score_contract.score_universe([row("BAD", "FUND", error="fetch failed")])
-        self.assertEqual(out, [])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0].ticker, "BAD")
+        self.assertEqual(out[0].quote_type, "FUND")
+        self.assertIsNone(out[0].score)
+        self.assertEqual(out[0].data_coverage_pct, 0)
 
     def test_run_routes_through_boundary_and_core_score_source_is_untouched(self):
         run_source = (SCRIPTS / "run.py").read_text(encoding="utf-8")
