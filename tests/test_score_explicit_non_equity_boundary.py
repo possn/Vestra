@@ -28,6 +28,11 @@ def row(ticker, quote_type, error=None):
     )
 
 
+class FakeScoredTicker:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
 class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
     def test_funds_are_removed_before_core_but_unresolved_stays_candidate(self):
         raw = [
@@ -44,7 +49,7 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
             captured.extend(items)
             return []
 
-        with mock.patch.object(score_contract, "_core_score_universe", side_effect=fake_core):
+        with mock.patch.object(score_contract, "_load_core", return_value=(FakeScoredTicker, fake_core)):
             out = score_contract.score_universe(raw)
 
         self.assertEqual([x.ticker for x in captured], ["EQ", "UNK", "ETF1", "CC"])
@@ -56,7 +61,7 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
         self.assertEqual({x.quote_type for x in out}, {"MUTUALFUND", "FUND"})
 
     def test_failed_fund_is_not_reintroduced(self):
-        with mock.patch.object(score_contract, "_core_score_universe", return_value=[]):
+        with mock.patch.object(score_contract, "_load_core", return_value=(FakeScoredTicker, lambda items: [])):
             out = score_contract.score_universe([row("BAD", "FUND", error="fetch failed")])
         self.assertEqual(out, [])
 
