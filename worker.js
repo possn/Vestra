@@ -95,6 +95,11 @@ async function fetchYahooQuoteCore(ticker, ctx) {
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
+    if (successor) {
+      data.ticker = requested;
+      data.retrieval_ticker = canonical;
+      data.ticker_successor_effective_date = successor.effective_date;
+    }
     data._cached = true;
     return data;
   }
@@ -370,7 +375,9 @@ function firstFinite(...vals) {
 }
 
 async function fetchYahooMarketDetail(ticker, ctx) {
-  const canonical = normalizeInputTicker(ticker);
+  const requested = String(ticker || '').trim().toUpperCase();
+  const canonical = normalizeInputTicker(requested);
+  const successor = successorMetadata(requested);
   const cache = caches.default;
   const cacheUrl = `https://cache.internal/market45:${canonical}`;
   const cached = await cache.match(cacheUrl);
@@ -473,7 +480,9 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const target = numberOrNull(fd.targetMeanPrice);
   const current = numberOrNull(quote.price);
   const result = {
-    ticker: canonical,
+    ticker: successor ? requested : canonical,
+    retrieval_ticker: successor ? canonical : null,
+    ticker_successor_effective_date: successor?.effective_date || null,
     name: raw(price.longName) || raw(price.shortName) || quote.name || canonical,
     current_price: current,
     currency: raw(price.currency) || quote.currency || 'USD',
