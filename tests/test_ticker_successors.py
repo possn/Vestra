@@ -56,6 +56,16 @@ class TickerSuccessorContractTests(unittest.TestCase):
         self.assertIn("data.ticker = requested", source)
         self.assertIn("data.retrieval_ticker = canonical", source)
 
+    def test_successor_cache_metadata_is_scoped_only_to_market_detail(self):
+        source = (ROOT / "worker.js").read_text(encoding="utf-8")
+        quote_core = source.split("async function fetchYahooQuoteCore", 1)[1].split("async function fetchYahooQuote(", 1)[0]
+        market_detail = source.split("async function fetchYahooMarketDetail", 1)[1].split("function normalizeCongressTrade", 1)[0]
+        self.assertNotIn("if (successor)", quote_core)
+        self.assertNotIn("data.ticker = requested", quote_core)
+        self.assertIn("if (successor)", market_detail)
+        self.assertIn("data.ticker = requested", market_detail)
+        self.assertIn("data.retrieval_ticker = canonical", market_detail)
+
     def test_historical_portfolio_symbols_are_not_rewritten_in_extra_universe(self):
         extra = (ROOT / "data" / "extra_tickers.json").read_text(encoding="utf-8")
         self.assertIn('"BITF"', extra)
