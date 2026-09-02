@@ -12,6 +12,8 @@ import logging
 import time
 import yfinance as yf
 
+from asset_types import is_explicit_non_equity
+
 log = logging.getLogger("gap_retrieval")
 
 CRITICAL = (
@@ -89,7 +91,7 @@ def enrich(raw, priority=None, max_rows=220, threshold=68.0):
     priority=set(priority or [])
     candidates=[]
     for m in raw:
-        if getattr(m,"quote_type",None) in ("ETF","CRYPTO") or getattr(m,"error",None):
+        if is_explicit_non_equity(getattr(m,"quote_type",None)) or getattr(m,"error",None):
             continue
         cov=_coverage(m)
         if cov < threshold or str(getattr(m,"ticker","") or "").upper() in priority:
