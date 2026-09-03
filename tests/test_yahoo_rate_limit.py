@@ -1,10 +1,12 @@
 import importlib.util
 from pathlib import Path
+import sys
 
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "yahoo_rate_limit.py"
 spec = importlib.util.spec_from_file_location("yahoo_rate_limit", MODULE_PATH)
 mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod
 spec.loader.exec_module(mod)
 RateLimitCoordinator = mod.RateLimitCoordinator
 
