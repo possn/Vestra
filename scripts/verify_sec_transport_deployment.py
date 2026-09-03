@@ -14,6 +14,13 @@ def clean_base(url: str) -> str:
     return url.strip().rstrip("/")
 
 
+def compact_error_payload(payload):
+    if not isinstance(payload, dict):
+        return None
+    allowed = ("error", "upstream_status", "error_type")
+    return {key: payload.get(key) for key in allowed if payload.get(key) is not None} or None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", required=True)
@@ -22,7 +29,7 @@ def main() -> int:
 
     base = clean_base(args.url)
     session = requests.Session()
-    session.headers.update({"Accept": "application/json", "User-Agent": "Vestra-SEC-Transport-Audit/1.0"})
+    session.headers.update({"Accept": "application/json", "User-Agent": "Vestra-SEC-Transport-Audit/1.1"})
     failures = []
 
     try:
@@ -45,14 +52,19 @@ def main() -> int:
         url = f"{base}/sec/{family}?{urlencode({'cik': cik})}"
         try:
             response = session.get(url, timeout=args.timeout)
-            payload = response.json()
+            try:
+                payload = response.json()
+            except Exception:
+                payload = None
             valid = response.ok and isinstance(payload, dict) and isinstance(payload.get(required_key), dict)
             source = response.headers.get("X-Vestra-Sec-Source")
             cache = response.headers.get("X-Vestra-Sec-Cache")
+            diagnostic = compact_error_payload(payload)
             ok = valid and source == "sec.gov" and cache in {"hit", "miss"}
             print(
                 f"[{'PASS' if ok else 'FAIL'}] GET /sec/{family}: "
-                f"HTTP {response.status_code}, source={source!r}, cache={cache!r}"
+                f"HTTP {response.status_code}, source={source!r}, cache={cache!r}, "
+                f"diagnostic={json.dumps(diagnostic, ensure_ascii=False, sort_keys=True) if diagnostic else 'null'}"
             )
             if not ok:
                 failures.append(family)
