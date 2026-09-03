@@ -17,11 +17,11 @@ from html import unescape
 import requests
 
 from asset_types import is_equity_candidate
+from sec_enrich import _load_ticker_map
 
 log = logging.getLogger("capital_risk")
 SEC_DATA = "https://data.sec.gov"
 SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
-TICKERS = "https://www.sec.gov/files/company_tickers.json"
 FORMS = {"8-K", "6-K", "20-F", "10-K", "S-1", "S-3", "F-1", "F-3", "424B3", "424B5", "DEF 14A"}
 
 
@@ -149,8 +149,7 @@ def enrich(raw, priority=None, max_nonpriority=120):
     sess = requests.Session()
     sess.headers.update({"User-Agent": ua, "Accept-Encoding": "gzip, deflate"})
     try:
-        j = sess.get(TICKERS, timeout=20).json()
-        cmap = {str(v.get("ticker", "")).upper(): int(v["cik_str"]) for v in j.values() if v.get("ticker") and v.get("cik_str")}
+        cmap = _load_ticker_map(sess)
     except Exception as exc:
         log.warning("SEC ticker map unavailable for capital risk: %s", exc)
         return raw
