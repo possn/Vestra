@@ -41,12 +41,12 @@ class GapRetrievalMissingSemanticsTests(unittest.TestCase):
         self.assertIsNone(gap_retrieval._enterprise_value(10.0, 0.0, 20.0))
 
     def test_source_contains_no_partial_component_zero_fallbacks(self):
-        annual = (SCRIPTS / "gap_retrieval.py").read_text(encoding="utf-8")
-        quarterly = (SCRIPTS / "quarterly_gap_retrieval.py").read_text(encoding="utf-8")
-        self.assertNotIn("((cash or 0)+(receivables or 0))", annual.replace(" ", ""))
-        self.assertNotIn("((cash or 0) + (receivables or 0))", quarterly)
-        self.assertNotIn("cap+(debt or 0)-(cash or 0)", annual.replace(" ", ""))
-        self.assertNotIn("(current_debt or 0)+(long_debt or 0)", annual.replace(" ", ""))
+        annual = "".join((SCRIPTS / "gap_retrieval.py").read_text(encoding="utf-8").split())
+        quarterly = "".join((SCRIPTS / "quarterly_gap_retrieval.py").read_text(encoding="utf-8").split())
+        self.assertNotIn("((cashor0)+(receivablesor0))", annual)
+        self.assertNotIn("((cashor0)+(receivablesor0))", quarterly)
+        self.assertNotIn("cap+(debtor0)-(cashor0)", annual)
+        self.assertNotIn("(current_debtor0)+(long_debtor0)", annual)
 
 
 if __name__ == "__main__":
