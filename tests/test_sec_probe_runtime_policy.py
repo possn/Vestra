@@ -1,12 +1,18 @@
 from pathlib import Path
 import sys
 import tempfile
+import types
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+
+if "requests" not in sys.modules:
+    requests_stub = types.ModuleType("requests")
+    requests_stub.Session = object
+    sys.modules["requests"] = requests_stub
 
 import sec_endpoint_probe
 
