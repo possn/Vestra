@@ -1,0 +1,30 @@
+name: SEC endpoint probe
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install probe dependency
+        run: pip install requests
+
+      - name: Validate probe modules
+        run: python -m py_compile scripts/asset_types.py scripts/sec_enrich.py scripts/sec_endpoint_probe.py
+
+      - name: Probe SEC CompanyFacts and submissions
+        working-directory: scripts
+        run: python sec_endpoint_probe.py
