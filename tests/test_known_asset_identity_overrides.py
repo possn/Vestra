@@ -46,8 +46,11 @@ class KnownAssetIdentityTests(unittest.TestCase):
 
     def test_confirmed_broker_symbols_are_exact_overrides(self):
         expected = {
+            "AGIG": ("EQUITY", None),
             "BT.A.L": ("EQUITY", "GB0030913577"),
             "DN3.DE": ("EQUITY", "JP3481200008"),
+            "QDVE.DE": ("ETF", "IE00B3WJKG14"),
+            "QDVH.DE": ("ETF", "IE00B4JNQZ49"),
             "QSR": ("EQUITY", None),
             "SPY4.DE": ("ETF", "IE00B4YBJ215"),
             "SPYD.DE": ("ETF", "IE00B6YX5D40"),
