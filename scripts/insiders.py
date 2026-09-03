@@ -1,30 +1,22 @@
 """
 insiders.py — US insider transactions from SEC EDGAR (official, free, no API key).
 
-v0.36 fixes the main reason Smart Money could look empty: SEC submissions often
-identify the Form 4 primary document as HTML even though the structured ownership
-XML lives beside it with the same basename. Older code fetched the HTML and tried
-to parse it as ownership XML, so valid Form 4 filings could yield zero P/S rows.
-
-This implementation:
-- resolves ticker -> CIK once;
-- uses a persistent Session with retry/backoff and SEC-compliant throttling;
-- tries the structured XML companion before the HTML primary document;
-- distinguishes open-market P (purchase) and S (sale) only;
-- emits diagnostics/coverage so the UI and workflow can distinguish "no activity"
-  from "SEC data unavailable";
-- keeps coverage US-only and never turns missing data into zero activity.
+The module resolves ticker -> CIK, checks recent Form 4 filings and parses the
+structured ownership XML. Successfully parsed filing accessions are immutable SEC
+records, so their parsed result is cached in data/insider_filings_cache.json and
+reused on later rebuilds. Failed/HTML/unparseable filings are never cached and
+remain eligible for a later retry.
 """
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
 import os
-import random
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from xml.etree import ElementTree as ET
 
 import requests
@@ -33,12 +25,6 @@ from urllib3.util.retry import Retry
 
 log = logging.getLogger("insiders")
 
-# Cap on how many detailed "why did this filing return zero transactions"
-# diagnostics get written at INFO level per run — with ~370 US tickers x
-# up to 12 filings each, logging every single one would flood
-# pipeline_log.txt. The first N are enough to diagnose the failure mode
-# (wrong document guessed vs. HTTP block vs. unexpected schema); the rest
-# still get logged, just at DEBUG so they don't dominate the file.
 _DIAG_LOG_LIMIT = 15
 _diag_logged = 0
 
@@ -51,13 +37,19 @@ HEADERS = {
 TICKER_CIK_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 ARCHIVE_URL = "https://www.sec.gov/Archives/edgar/data/{cik_int}/{accession}/{document}"
+CACHE_PATH = Path(__file__).resolve().parents[1] / "data" / "insider_filings_cache.json"
+CACHE_SCHEMA_VERSION = 1
+CACHE_RETENTION_DAYS = 400
 
 _ticker_to_cik: dict[str, str] | None = None
 _lock = threading.Lock()
 _last_request_at = 0.0
-# We deliberately stay well below SEC's 10 req/s fair-access ceiling.
 MIN_REQUEST_INTERVAL = float(os.getenv("FINSCANNER_SEC_MIN_INTERVAL", "0.13"))
 SEC_WORKERS = max(1, min(4, int(os.getenv("FINSCANNER_SEC_WORKERS", "3"))))
+
+_cache_lock = threading.Lock()
+_filing_cache: dict[str, dict] | None = None
+_cache_dirty = False
 
 
 def _session() -> requests.Session:
@@ -118,6 +110,112 @@ def _load_ticker_cik_map() -> dict[str, str]:
         log.warning("Could not load SEC ticker->CIK map (%s)", e)
         _ticker_to_cik = {}
     return _ticker_to_cik
+
+
+def _cache_key(cik: str, accession: str) -> str:
+    try:
+        cik_key = str(int(str(cik)))
+    except Exception:
+        cik_key = str(cik or "").strip()
+    return f"{cik_key}:{str(accession or '').strip()}"
+
+
+def _load_filing_cache(path: Path = CACHE_PATH) -> dict[str, dict]:
+    global _filing_cache
+    with _cache_lock:
+        if _filing_cache is not None and path == CACHE_PATH:
+            return _filing_cache
+        rows: dict[str, dict] = {}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if payload.get("schema_version") != CACHE_SCHEMA_VERSION or not isinstance(payload.get("filings"), dict):
+                raise ValueError("unsupported insider filing cache schema")
+            for key, row in payload["filings"].items():
+                if not isinstance(row, dict):
+                    continue
+                raw_count = row.get("raw_nonderivative_transactions")
+                accession = str(row.get("accession") or "").strip()
+                transactions = row.get("transactions")
+                if accession and isinstance(raw_count, int) and raw_count > 0 and isinstance(transactions, list):
+                    rows[str(key)] = row
+        except FileNotFoundError:
+            pass
+        except Exception as exc:
+            log.warning("Insider filing cache unavailable; rebuilding from SEC: %s", exc)
+        if path == CACHE_PATH:
+            _filing_cache = rows
+        return rows
+
+
+def _cached_filing(cik: str, filing: dict, ticker: str):
+    cache = _load_filing_cache()
+    key = _cache_key(cik, filing.get("accession"))
+    with _cache_lock:
+        row = cache.get(key)
+        if not row:
+            return None
+        transactions = []
+        for tx in row.get("transactions") or []:
+            if isinstance(tx, dict):
+                copied = dict(tx)
+                copied["ticker"] = ticker
+                transactions.append(copied)
+        return transactions, int(row["raw_nonderivative_transactions"]), "cache"
+
+
+def _store_cached_filing(cik: str, filing: dict, transactions: list[dict], raw_count: int):
+    global _cache_dirty
+    if not isinstance(raw_count, int) or raw_count <= 0:
+        return
+    accession = str(filing.get("accession") or "").strip()
+    if not accession:
+        return
+    cache = _load_filing_cache()
+    row = {
+        "cik": str(cik),
+        "accession": accession,
+        "filing_date": filing.get("filing_date"),
+        "raw_nonderivative_transactions": raw_count,
+        "transactions": [dict(tx) for tx in transactions if isinstance(tx, dict)],
+        "source": "SEC EDGAR Form 4",
+    }
+    key = _cache_key(cik, accession)
+    with _cache_lock:
+        if cache.get(key) != row:
+            cache[key] = row
+            _cache_dirty = True
+
+
+def _save_filing_cache(path: Path = CACHE_PATH):
+    global _cache_dirty, _filing_cache
+    with _cache_lock:
+        if not _cache_dirty and path == CACHE_PATH:
+            return
+        cache = dict(_filing_cache or {}) if path == CACHE_PATH else dict(_load_filing_cache(path))
+        cutoff = dt.date.today() - dt.timedelta(days=CACHE_RETENTION_DAYS)
+        kept = {}
+        for key, row in cache.items():
+            try:
+                filing_date = dt.date.fromisoformat(str(row.get("filing_date") or ""))
+            except Exception:
+                continue
+            if filing_date >= cutoff:
+                kept[key] = row
+        payload = {
+            "schema_version": CACHE_SCHEMA_VERSION,
+            "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "source": "SEC EDGAR Form 4 immutable accession cache",
+            "filing_count": len(kept),
+            "filings": dict(sorted(kept.items())),
+        }
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp.replace(path)
+        if path == CACHE_PATH:
+            _filing_cache = kept
+            _cache_dirty = False
+        log.info("Insider filing cache: %d immutable accession(s)", len(kept))
 
 
 def _text(node, path: str):
@@ -194,50 +292,37 @@ def _recent_form4_rows(cik: str, days: int) -> list[dict]:
         recent.get("form") or [], recent.get("filingDate") or [],
         recent.get("accessionNumber") or [], recent.get("primaryDocument") or []
     ):
-        if form not in {"4", "4/A"}: continue
-        try: filing_date = dt.date.fromisoformat(date_s)
-        except Exception: continue
-        if filing_date < cutoff: continue
+        if form not in {"4", "4/A"}:
+            continue
+        try:
+            filing_date = dt.date.fromisoformat(date_s)
+        except Exception:
+            continue
+        if filing_date < cutoff:
+            continue
         rows.append({"filing_date": date_s, "accession": acc, "primary_document": doc})
     return rows
 
 
 def _document_candidates(primary: str) -> list[str]:
-    """Return candidate paths for the RAW structured XML of a filing,
-    ordered most-likely-correct first.
-
-    Root cause (found via real diagnostic logging on a live run): SEC's
-    submissions API returns primaryDocument as something like
-    "xslF345X06/form4.xml" for Form 4 filings. That "xslF345X0N/" folder
-    is EDGAR's XSL-rendering view — ANY request for a file inside it
-    returns the human-readable HTML rendering, regardless of the
-    requested filename or its .xml extension. Confirmed empirically:
-    fetching ".../xslF345X06/form4.xml" returns HTTP 200 with an HTML
-    document starting "<!DOCTYPE html ... SEC FORM ...", not XML.
-
-    The actual raw XML lives at the accession root WITHOUT that xsl
-    folder segment — i.e. ".../{accession}/form4.xml", same filename,
-    one directory up. That's the primary candidate now.
-    """
     primary = (primary or "").strip()
     if not primary:
         return []
     p = PurePosixPath(primary)
     out = []
-    # Primary fix: strip a leading "xslF...N/" (or any "xsl*/") view-folder
-    # segment — this is the actual raw XML in the overwhelming majority
-    # of Form 3/4/5 filings.
     if len(p.parts) > 1 and p.parts[0].lower().startswith("xsl"):
         out.append(str(PurePosixPath(*p.parts[1:])))
-    # Fallbacks kept for filings that don't follow the xsl-folder pattern.
     if p.suffix.lower() in {".htm", ".html"}:
         out.append(str(p.with_suffix(".xml")))
     out.append(primary)
-    # stable dedupe
     return list(dict.fromkeys(out))
 
 
 def _fetch_structured_filing(cik: str, filing: dict, ticker: str) -> tuple[list[dict], int, str | None]:
+    cached = _cached_filing(cik, filing, ticker)
+    if cached is not None:
+        return cached
+
     cik_int = str(int(cik))
     accession_no_dash = filing["accession"].replace("-", "")
     last_error = None
@@ -247,13 +332,8 @@ def _fetch_structured_filing(cik: str, filing: dict, ticker: str) -> tuple[list[
             resp = _get(url)
             parsed, raw_count = _parse_ownership_xml(resp.content, ticker, filing["accession"])
             if raw_count > 0 or parsed:
+                _store_cached_filing(cik, filing, parsed, raw_count)
                 return parsed, raw_count, document
-            # Fetch succeeded (2xx) and XML parsed without error, but zero
-            # <nonDerivativeTransaction> elements were found at the expected
-            # path. This is the silent-failure case that was previously
-            # invisible in logs — record enough of the raw response to tell
-            # apart "wrong document" (HTML/error page) from "right document,
-            # unexpected schema" (namespace or path mismatch).
             snippet = resp.content[:200].decode("utf-8", errors="replace").replace("\n", " ")
             last_error = f"fetched {url} (HTTP {resp.status_code}, {len(resp.content)} bytes) but found 0 transactions — content starts: {snippet!r}"
         except requests.HTTPError as e:
@@ -276,12 +356,11 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
         return {"status": "not_available", "reason": "submissions_error", "error": str(e)[:160]}
 
     transactions = []
-    fetch_ok = raw_tx_seen = fetch_errors = 0
+    raw_tx_seen = fetch_errors = 0
     xml_documents = 0
     for filing in filings[:max_detail_filings]:
         parsed, raw_count, detail = _fetch_structured_filing(cik, filing, ticker)
         if raw_count > 0:
-            fetch_ok += 1
             raw_tx_seen += raw_count
             xml_documents += 1
             transactions.extend(parsed)
@@ -325,8 +404,6 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
         except Exception:
             pass
 
-    # No recent filings is a valid, successfully checked state.
-    # Filings present but zero structured docs parsed is a degraded state, not "zero activity".
     status = "ok" if not filings or xml_documents > 0 else "degraded"
     return {
         "status": status,
@@ -352,6 +429,7 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
 
 
 def annotate(tickers: list[str], pause: float = 0.0) -> dict[str, dict]:
+    _load_filing_cache()
     cik_map = _load_ticker_cik_map()
     log.info("SEC ticker->CIK map loaded with %d entries", len(cik_map))
     unique = sorted(set(t.upper() for t in tickers if t and "." not in t))
@@ -368,4 +446,5 @@ def annotate(tickers: list[str], pause: float = 0.0) -> dict[str, dict]:
                 out[tk] = {"status": "not_available", "reason": "worker_error", "error": str(e)[:160]}
             if i % 50 == 0 or i == len(unique):
                 log.info("insider intelligence %d/%d", i, len(unique))
+    _save_filing_cache()
     return out
