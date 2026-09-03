@@ -1,4 +1,4 @@
-"""Small read-only probe for SEC endpoints used by Vestra.
+"""Small SEC connectivity probe and runtime guard for Vestra.
 
 The market pipeline already validates and seeds an exact SEC ticker->CIK snapshot.
 This module performs deterministic probes so GitHub Actions logs show whether the
@@ -8,13 +8,18 @@ runner can reach:
 - the official nightly CompanyFacts and Submissions bulk archives.
 
 Bulk probes use a streaming GET with a one-byte Range request and never consume
-the ZIP body. The module never mutates market data, never retries through proxies
-or mirrors, and never changes Score/Risk Gate semantics.
+the ZIP body. The probe never mutates market data and never retries through
+proxies or mirrors. When every tested per-company SEC API endpoint returns the
+same explicit HTTP 403, the CLI entry point writes an empty SEC_USER_AGENT to
+GITHUB_ENV so the following pipeline step skips SEC network enrichment for that
+run instead of issuing hundreds of requests to a demonstrably blocked upstream.
+Score/Risk Gate semantics are never changed.
 """
 from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 
 import requests
 
@@ -93,6 +98,47 @@ def _probe_bulk(session, url):
         }
 
 
+def _runtime_sec_blocked(report):
+    """Return True only for a broad, explicit SEC API 403 across all probes.
+
+    Network errors, timeouts, missing snapshots and mixed HTTP outcomes are not
+    sufficient evidence to disable the lane. The guard is intentionally narrow:
+    it reacts only when every attempted CompanyFacts/Submissions sentinel request
+    was answered by the SEC with HTTP 403 and no API request succeeded.
+    """
+    sentinels = report.get("sentinels") if isinstance(report, dict) else None
+    if not isinstance(sentinels, dict) or not sentinels:
+        return False
+    statuses = []
+    for row in sentinels.values():
+        if not isinstance(row, dict) or not row.get("cik"):
+            return False
+        for family in ("companyfacts", "submissions"):
+            outcome = row.get(family)
+            if not isinstance(outcome, dict):
+                return False
+            statuses.append(int(outcome.get("status") or 0))
+    summary = report.get("summary") or {}
+    return bool(statuses) and len(statuses) >= 4 and all(status == 403 for status in statuses) and int(summary.get("http_ok") or 0) == 0
+
+
+def apply_runtime_guard(report, env_path=None):
+    """Disable SEC network enrichment for subsequent Actions steps when blocked.
+
+    GitHub Actions imports variables appended to GITHUB_ENV only for subsequent
+    steps. Outside Actions, or when no broad 403 is proven, this function is a
+    no-op. Passing env_path explicitly keeps the behavior unit-testable.
+    """
+    blocked = _runtime_sec_blocked(report)
+    path = env_path if env_path is not None else os.getenv("GITHUB_ENV")
+    if blocked and path:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8") as handle:
+            handle.write("SEC_USER_AGENT=\n")
+        print("SEC runtime guard: upstream returned 403 for all API sentinels; SEC enrichment disabled for subsequent steps")
+    return blocked
+
+
 def probe(session=None, snapshot_path=TICKER_MAP_SNAPSHOT, sentinels=SENTINELS):
     cached = _read_ticker_snapshot(snapshot_path)
     ua = os.getenv("SEC_USER_AGENT", "Vestra/4.0 (+https://github.com/possn/Vestra)").strip()
@@ -158,7 +204,8 @@ def probe(session=None, snapshot_path=TICKER_MAP_SNAPSHOT, sentinels=SENTINELS):
 
 
 def main():
-    probe()
+    report = probe()
+    apply_runtime_guard(report)
 
 
 if __name__ == "__main__":
