@@ -9,6 +9,11 @@ retrieved from market/fund sources.
 from __future__ import annotations
 
 KNOWN_ASSET_IDENTITY = {
+    "AGIG": {
+        "quote_type": "EQUITY",
+        "name": "Abundia Global Impact Group Inc.",
+        "identity_source": "SEC filing + Abundia official ticker-change announcement",
+    },
     "BT.A.L": {
         "quote_type": "EQUITY",
         "name": "BT Group plc",
@@ -20,6 +25,18 @@ KNOWN_ASSET_IDENTITY = {
         "name": "Metaplanet Inc.",
         "isin": "JP3481200008",
         "identity_source": "Deutsche Börse official listing",
+    },
+    "QDVE.DE": {
+        "quote_type": "ETF",
+        "name": "iShares S&P 500 Information Technology Sector UCITS ETF",
+        "isin": "IE00B3WJKG14",
+        "identity_source": "BlackRock/iShares official listing",
+    },
+    "QDVH.DE": {
+        "quote_type": "ETF",
+        "name": "iShares S&P 500 Financials Sector UCITS ETF",
+        "isin": "IE00B4JNQZ49",
+        "identity_source": "BlackRock/iShares official listing",
     },
     "QSR": {
         "quote_type": "EQUITY",
