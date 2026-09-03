@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/sec-connectivity-probe.yml'
+      - 'scripts/sec_endpoint_probe.py'
 
 permissions:
   contents: read
@@ -29,6 +30,6 @@ jobs:
       - name: Validate probe modules
         run: python -m py_compile scripts/asset_types.py scripts/sec_enrich.py scripts/sec_endpoint_probe.py
 
-      - name: Probe SEC CompanyFacts and submissions
+      - name: Probe SEC APIs and official bulk archives
         working-directory: scripts
         run: python sec_endpoint_probe.py
