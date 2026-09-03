@@ -145,15 +145,21 @@ export default {
     if (url.pathname === '/health' && request.method === 'GET') {
       const response = await marketWorker.fetch(request,env,ctx);
       const payload = await response.json().catch(()=>({}));
-      const capabilities = Array.from(new Set([...(payload.capabilities || []),'learned_universe','ai_brief',SEC_TRANSPORT_CAPABILITY]));
+      const capabilities = Array.from(new Set([...(payload.capabilities || []),'learned_universe','ai_brief']));
+      const experimentalCapabilities = Array.from(new Set([...(payload.experimental_capabilities || []),SEC_TRANSPORT_CAPABILITY]));
       return json({
         ...payload,
         capabilities,
+        experimental_capabilities:experimentalCapabilities,
         learned_universe_storage:'durable_object',
         ai_brief_provider:'workers_ai',
         ai_brief_model:AI_BRIEF_MODEL,
         ai_brief_rate_limit: env?.AI_BRIEF_RATE_LIMITER ? 'binding' : 'unavailable',
-        sec_transport:'official_sec_fixed_paths',
+        sec_transport:{
+          status:'experimental_not_in_pipeline',
+          upstream:'sec.gov',
+          routes:['companyfacts','submissions'],
+        },
       },response.status,Object.fromEntries(response.headers));
     }
 
