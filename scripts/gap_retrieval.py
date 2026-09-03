@@ -70,6 +70,25 @@ def _growth(vals):
     return vals[0]/vals[1]-1.0
 
 
+def _quick_ratio(cash, receivables, current_liab):
+    """Return a statement-derived quick ratio only from complete components.
+
+    A missing cash or receivables line is unknown, not zero.  This deliberately
+    prefers a missing ratio to a numerically precise but fabricated one.
+    """
+    if cash is None or receivables is None or current_liab in (None, 0):
+        return None
+    return (cash + receivables) / current_liab
+
+
+def _enterprise_value(market_cap, debt, cash):
+    """Derive EV only when every balance-sheet adjustment is observed."""
+    if market_cap is None or debt is None or cash is None:
+        return None
+    value = market_cap + debt - cash
+    return value if value > 0 else None
+
+
 def _set_missing(m,key,value):
     if value is not None and getattr(m,key,None) is None:
         setattr(m,key,value)
@@ -129,8 +148,10 @@ def enrich(raw, priority=None, max_rows=220, threshold=68.0):
             if debt is None:
                 current_debt=_value(bal,("Current Debt","Current Debt And Capital Lease Obligation"))
                 long_debt=_value(bal,("Long Term Debt","Long Term Debt And Capital Lease Obligation"))
-                if current_debt is not None or long_debt is not None:
-                    debt=(current_debt or 0)+(long_debt or 0)
+                # Unknown components must not be treated as zero.  Only construct
+                # total debt when both constituent statement lines are observed.
+                if current_debt is not None and long_debt is not None:
+                    debt=current_debt+long_debt
 
             cfo=_value(cf,("Operating Cash Flow","Total Cash From Operating Activities"))
             capex=_value(cf,("Capital Expenditure","Capital Expenditures","Purchase Of PPE"))
@@ -147,7 +168,7 @@ def enrich(raw, priority=None, max_rows=220, threshold=68.0):
             if assets not in (None,0) and net_income is not None: changed |= _set_missing(m,"roa",net_income/assets)
             if current_liab not in (None,0):
                 if current_assets is not None: changed |= _set_missing(m,"current_ratio",current_assets/current_liab)
-                if cash is not None or receivables is not None: changed |= _set_missing(m,"quick_ratio",((cash or 0)+(receivables or 0))/current_liab)
+                changed |= _set_missing(m,"quick_ratio",_quick_ratio(cash,receivables,current_liab))
             if equity not in (None,0) and debt is not None: changed |= _set_missing(m,"debt_to_equity",debt/equity)
             changed |= _set_missing(m,"total_cash",cash)
             changed |= _set_missing(m,"total_debt",debt)
@@ -168,16 +189,16 @@ def enrich(raw, priority=None, max_rows=220, threshold=68.0):
                 invested=equity+debt-cash
                 if invested>0: changed |= _set_missing(m,"roce_proxy",ebit/invested)
 
-            # Statement-derived valuation fallbacks are allowed only when the
-            # denominator is positive and the market numerator is observed.
+            # Statement-derived valuation fallbacks are allowed only when all
+            # required numerator/denominator components are observed.
             price=_f(getattr(m,"current_price",None)); cap=_f(getattr(m,"market_cap",None))
             shares=_value(inc,("Diluted Average Shares","Basic Average Shares"))
             eps=_value(inc,("Diluted EPS","Basic EPS"))
             if price and eps and eps>0: changed |= _set_missing(m,"trailing_pe",price/eps)
             if price and shares and shares>0 and equity and equity>0: changed |= _set_missing(m,"price_to_book",price/(equity/shares))
-            if cap and ebitda and ebitda>0:
-                ev=cap+(debt or 0)-(cash or 0)
-                if ev>0: changed |= _set_missing(m,"enterprise_to_ebitda",ev/ebitda)
+            ev=_enterprise_value(cap,debt,cash)
+            if ev is not None and ebitda and ebitda>0:
+                changed |= _set_missing(m,"enterprise_to_ebitda",ev/ebitda)
 
             hist=[]
             years=min(4,max(len(revs),len(nis)))
