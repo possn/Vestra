@@ -48,7 +48,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/sec_enrich.py scripts/seed_sec_ticker_map.py scripts/sec_endpoint_probe.py scripts/sec_fund_identity.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/extra_ticker_hygiene.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/yahoo_rate_limit.py scripts/run_market_pipeline.py scripts/sec_enrich.py scripts/seed_sec_ticker_map.py scripts/sec_endpoint_probe.py scripts/sec_fund_identity.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/extra_ticker_hygiene.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
@@ -73,13 +73,11 @@ jobs:
       - name: Run pipeline
         working-directory: scripts
         env:
-          # The broad universe was producing clustered Yahoo 429 bursts at four
-          # concurrent workers. Portfolio/learned priority lanes already run at
-          # three/one workers respectively. Keep the universe and retry policy
-          # unchanged, but align the generic fetch to three workers so we trade
-          # a small amount of raw parallelism for fewer shared 60s cooldowns.
+          # Keep the A/B-tested three-worker broad fetch. The launcher coalesces
+          # simultaneous 429 observations from those workers into one throttle
+          # incident so a single Yahoo burst cannot inflate the backoff strike.
           FINSCANNER_FETCH_WORKERS: "3"
-        run: python run.py
+        run: python run_market_pipeline.py
 
       - name: Normalize canonical source provenance
         working-directory: scripts
