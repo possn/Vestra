@@ -66,15 +66,11 @@ def assess(row: dict) -> dict:
         if value is not None and value > 0:
             methods.append({'method':name,'fair_value':round(value,4),'weight':weight})
 
-    # Sector-native emphasis. Banks/insurers are book-value heavy; utilities
-    # benefit from income-yield context; growth tech prioritises forward earnings.
     if model in ('bank','insurance'):
         add('P/B vs setor', _implied_by_multiple(price,row.get('price_to_book'),row.get('sector_pb_median')), 1.6)
         add('P/E vs setor', _implied_by_multiple(price,row.get('trailing_pe'),row.get('sector_trailing_pe_median')), 0.8)
         add('Forward P/E vs setor', _implied_by_multiple(price,row.get('forward_pe'),row.get('sector_forward_pe_median')), 0.8)
     elif model == 'reit':
-        # Until peer P/FFO median is persisted, prefer broad same-sector anchors
-        # and never present this as an AFFO/NAV appraisal.
         add('P/B vs setor', _implied_by_multiple(price,row.get('price_to_book'),row.get('sector_pb_median')), 1.0)
         add('P/E vs setor (proxy)', _implied_by_multiple(price,row.get('trailing_pe'),row.get('sector_trailing_pe_median')), 0.6)
         add('Dividend yield vs setor', _implied_by_yield(price,row.get('dividend_yield'),row.get('sector_dividend_yield_median')), 0.8)
@@ -88,8 +84,6 @@ def assess(row: dict) -> dict:
         add('Forward P/E vs setor', _implied_by_multiple(price,row.get('forward_pe'),row.get('sector_forward_pe_median')), 0.9)
         add('FCF yield vs setor', _implied_by_yield(price,row.get('fcf_yield'),row.get('sector_fcf_yield_median')), 1.4)
     elif model == 'biotech':
-        # Pre-profit biotech cannot be responsibly valued from generic multiples.
-        # Only use earnings anchors if they actually exist; otherwise say so.
         add('Forward P/E vs setor', _implied_by_multiple(price,row.get('forward_pe'),row.get('sector_forward_pe_median')), 0.7)
         add('P/B vs setor (proxy)', _implied_by_multiple(price,row.get('price_to_book'),row.get('sector_pb_median')), 0.5)
     elif model == 'growth_tech':
@@ -113,17 +107,12 @@ def assess(row: dict) -> dict:
                                else 'Sem múltiplos/yields comparáveis suficientes para estimar fair value.')
         }
 
-    # Weighted median-like centre via repetition-free weighted mean, with a
-    # median sanity anchor to reduce the influence of one extreme method.
     vals=[m['fair_value'] for m in methods]
     wsum=sum(m['weight'] for m in methods)
     weighted=sum(m['fair_value']*m['weight'] for m in methods)/wsum
     median=statistics.median(vals)
     mid=(weighted+median)/2.0
 
-    # Quality/growth adjustment is intentionally small and bounded. It prevents
-    # a high-quality compounder from being forced exactly to a mediocre peer
-    # multiple while avoiding DCF-like precision we cannot justify.
     quality=_n(row.get('quality_pct')); growth=_n(row.get('growth_pct'))
     adj=0.0
     if model in ('general','growth_tech'):
@@ -139,9 +128,10 @@ def assess(row: dict) -> dict:
 
     upside=(mid/price-1.0)*100.0
     mos=(low/price-1.0)*100.0
-    conf_score=_n(row.get('confidence_score')) or 0.0
+    conf_score=_n(row.get('confidence_score'))
+    confidence_missing=conf_score is None
     risk_gate=str(row.get('risk_gate') or 'clear')
-    if risk_gate in ('high','severe') or conf_score < 50:
+    if risk_gate in ('high','severe') or confidence_missing or conf_score < 50:
         signal='uncertain'
     elif upside >= 25:
         signal='undervalued'
@@ -150,9 +140,9 @@ def assess(row: dict) -> dict:
     else:
         signal='fair'
 
-    if len(methods)>=3 and conf_score>=75 and dispersion<=0.35:
+    if conf_score is not None and len(methods)>=3 and conf_score>=75 and dispersion<=0.35:
         vconf='high'
-    elif len(methods)>=2 and conf_score>=55:
+    elif conf_score is not None and len(methods)>=2 and conf_score>=55:
         vconf='medium'
     else:
         vconf='low'
@@ -162,6 +152,8 @@ def assess(row: dict) -> dict:
     note='Faixa peer-relative; não é DCF nem target de analistas.'
     if risk_gate in ('high','severe'):
         note='Faixa numérica não acionável enquanto persistirem riscos estruturais materiais.'
+    elif confidence_missing:
+        note='Faixa peer-relative disponível, mas confiança global ausente; interpretação conservadora.'
     elif model=='reit':
         note='Proxy peer-relative; AFFO/NAV não são inferidos quando não existem dados próprios.'
     elif model=='biotech':
