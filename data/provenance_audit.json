@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-09-03T09:22:29+00:00",
-  "pipeline_generated_at": "2026-09-03T09:19:48.651823Z",
+  "generated_at": "2026-09-03T11:20:34+00:00",
+  "pipeline_generated_at": "2026-09-03T11:17:54.873289Z",
   "independent_source_scope": "fundamentals",
   "equities": {
     "count": 1728,
@@ -22,9 +22,9 @@
     "official_filing_freshness": {
       "no_official_filing_date": 1709,
       "401_730d": 2,
+      "gt730d": 2,
       "191_400d": 12,
-      "lte190d": 4,
-      "gt730d": 1
+      "lte190d": 3
     },
     "official_filing_rows": 19,
     "official_filing_coverage_pct": 1.1,
@@ -39,7 +39,7 @@
       "yahoo": 1724,
       "esef": 19
     },
-    "avg_latest_official_filing_age_days": 297.8,
+    "avg_latest_official_filing_age_days": 379.4,
     "observed_pct": 99.5
   },
   "by_region": {
@@ -170,24 +170,28 @@
         "observed": 40
       },
       "independent_fundamental_source_count": {
-        "1": 40
+        "1": 39,
+        "2": 1
       },
       "agreement": {
         "not_measured": 40
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 40
+        "no_official_filing_date": 39,
+        "gt730d": 1
       },
-      "official_filing_rows": 0,
-      "official_filing_coverage_pct": 0.0,
+      "official_filing_rows": 1,
+      "official_filing_coverage_pct": 2.5,
       "source_family_coverage": {
         "yahoo": 40,
-        "analyst": 19
+        "analyst": 19,
+        "esef": 1
       },
       "fundamental_source_family_coverage": {
-        "yahoo": 40
+        "yahoo": 40,
+        "esef": 1
       },
-      "avg_latest_official_filing_age_days": null,
+      "avg_latest_official_filing_age_days": 1707.0,
       "observed_pct": 100.0
     },
     "Netherlands": {
@@ -370,30 +374,30 @@
         "observed": 113
       },
       "independent_fundamental_source_count": {
-        "1": 97,
-        "2": 16
+        "1": 98,
+        "2": 15
       },
       "agreement": {
         "not_measured": 113
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 97,
+        "no_official_filing_date": 98,
         "191_400d": 11,
-        "lte190d": 4,
+        "lte190d": 3,
         "gt730d": 1
       },
-      "official_filing_rows": 16,
-      "official_filing_coverage_pct": 14.2,
+      "official_filing_rows": 15,
+      "official_filing_coverage_pct": 13.3,
       "source_family_coverage": {
         "yahoo": 113,
-        "analyst": 60,
-        "esef": 16
+        "analyst": 58,
+        "esef": 15
       },
       "fundamental_source_family_coverage": {
         "yahoo": 113,
-        "esef": 16
+        "esef": 15
       },
-      "avg_latest_official_filing_age_days": 261.9,
+      "avg_latest_official_filing_age_days": 268.9,
       "observed_pct": 100.0
     },
     "United States": {
@@ -417,7 +421,7 @@
       "source_family_coverage": {
         "yahoo": 1362,
         "sec_form4": 1298,
-        "analyst": 607,
+        "analyst": 609,
         "stock_act": 187
       },
       "fundamental_source_family_coverage": {
@@ -429,37 +433,38 @@
   },
   "by_score_model": {
     "bank": {
-      "count": 91,
-      "rows_with_provenance": 91,
+      "count": 89,
+      "rows_with_provenance": 89,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 91
+        "observed": 89
       },
       "independent_fundamental_source_count": {
-        "1": 85,
-        "2": 6
+        "1": 82,
+        "2": 7
       },
       "agreement": {
-        "not_measured": 91
+        "not_measured": 89
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 85,
+        "no_official_filing_date": 82,
+        "gt730d": 1,
         "191_400d": 6
       },
-      "official_filing_rows": 6,
-      "official_filing_coverage_pct": 6.6,
+      "official_filing_rows": 7,
+      "official_filing_coverage_pct": 7.9,
       "source_family_coverage": {
-        "yahoo": 91,
-        "sec_form4": 60,
-        "analyst": 47,
+        "yahoo": 89,
+        "sec_form4": 58,
+        "analyst": 46,
         "stock_act": 9,
-        "esef": 6
+        "esef": 7
       },
       "fundamental_source_family_coverage": {
-        "yahoo": 91,
-        "esef": 6
+        "yahoo": 89,
+        "esef": 7
       },
-      "avg_latest_official_filing_age_days": 236.5,
+      "avg_latest_official_filing_age_days": 446.6,
       "observed_pct": 100.0
     },
     "biotech": {
@@ -527,70 +532,70 @@
       "observed_pct": 100.0
     },
     "general": {
-      "count": 1006,
-      "rows_with_provenance": 1006,
+      "count": 1010,
+      "rows_with_provenance": 1010,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 998,
+        "observed": 1002,
         "carried_forward": 8
       },
       "independent_fundamental_source_count": {
-        "1": 992,
-        "2": 10,
+        "1": 997,
+        "2": 9,
         "0": 4
       },
       "agreement": {
-        "not_measured": 1006
+        "not_measured": 1010
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 996,
+        "no_official_filing_date": 1001,
         "401_730d": 1,
         "191_400d": 4,
-        "lte190d": 4,
+        "lte190d": 3,
         "gt730d": 1
       },
-      "official_filing_rows": 10,
-      "official_filing_coverage_pct": 1.0,
+      "official_filing_rows": 9,
+      "official_filing_coverage_pct": 0.9,
       "source_family_coverage": {
-        "yahoo": 1002,
-        "sec_form4": 719,
-        "analyst": 403,
-        "stock_act": 107,
-        "esef": 10
+        "yahoo": 1006,
+        "sec_form4": 723,
+        "analyst": 406,
+        "stock_act": 108,
+        "esef": 9
       },
       "fundamental_source_family_coverage": {
-        "yahoo": 1002,
-        "esef": 10
+        "yahoo": 1006,
+        "esef": 9
       },
-      "avg_latest_official_filing_age_days": 313.6,
+      "avg_latest_official_filing_age_days": 331.1,
       "observed_pct": 99.2
     },
     "growth_tech": {
-      "count": 201,
-      "rows_with_provenance": 201,
+      "count": 199,
+      "rows_with_provenance": 199,
       "provenance_coverage_pct": 100.0,
       "evidence_state": {
-        "observed": 201
+        "observed": 199
       },
       "independent_fundamental_source_count": {
-        "1": 201
+        "1": 199
       },
       "agreement": {
-        "not_measured": 201
+        "not_measured": 199
       },
       "official_filing_freshness": {
-        "no_official_filing_date": 201
+        "no_official_filing_date": 199
       },
       "official_filing_rows": 0,
       "official_filing_coverage_pct": 0.0,
       "source_family_coverage": {
-        "yahoo": 201,
-        "sec_form4": 180,
-        "analyst": 142,
-        "stock_act": 40
+        "yahoo": 199,
+        "sec_form4": 178,
+        "analyst": 140,
+        "stock_act": 39
       },
       "fundamental_source_family_coverage": {
-        "yahoo": 201
+        "yahoo": 199
       },
       "avg_latest_official_filing_age_days": null,
       "observed_pct": 100.0
@@ -650,7 +655,7 @@
       "source_family_coverage": {
         "yahoo": 70,
         "sec_form4": 57,
-        "analyst": 33,
+        "analyst": 32,
         "stock_act": 5
       },
       "fundamental_source_family_coverage": {
@@ -682,7 +687,7 @@
       "source_family_coverage": {
         "yahoo": 68,
         "sec_form4": 43,
-        "analyst": 30,
+        "analyst": 31,
         "stock_act": 8,
         "esef": 1
       },
@@ -1249,6 +1254,40 @@
       "latest_official_filing_age_days": null
     },
     {
+      "ticker": "BAC-PB",
+      "name": "BAC-PB",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 3.3,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BAC-PK",
+      "name": "BAC-PK",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 3.3,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
       "ticker": "FCIT.L",
       "name": "F&C INVESTMENT TRUST PLC ORD 6.",
       "region": "United Kingdom",
@@ -1306,6 +1345,23 @@
       "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 6.7,
+      "score_reliability": "insufficient_data",
+      "evidence_state": "observed",
+      "independent_fundamental_source_count": 1,
+      "independent_fundamental_source_families": [
+        "yahoo"
+      ],
+      "agreement_checks": 0,
+      "agreement_pct": null,
+      "latest_official_filing_age_days": null
+    },
+    {
+      "ticker": "BAER",
+      "name": "BAER",
+      "region": "United States",
+      "score_model": "general",
+      "pipeline_status": null,
+      "coverage_pct": 10.0,
       "score_reliability": "insufficient_data",
       "evidence_state": "observed",
       "independent_fundamental_source_count": 1,
@@ -2184,40 +2240,6 @@
       "latest_official_filing_age_days": null
     },
     {
-      "ticker": "BAC-PB",
-      "name": "Bank of America Corporation Dep",
-      "region": "United States",
-      "score_model": "bank",
-      "pipeline_status": null,
-      "coverage_pct": 50.0,
-      "score_reliability": "limited_evidence",
-      "evidence_state": "observed",
-      "independent_fundamental_source_count": 1,
-      "independent_fundamental_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "BAC-PK",
-      "name": "Bank of America Corporation Dep",
-      "region": "United States",
-      "score_model": "bank",
-      "pipeline_status": null,
-      "coverage_pct": 50.0,
-      "score_reliability": "limited_evidence",
-      "evidence_state": "observed",
-      "independent_fundamental_source_count": 1,
-      "independent_fundamental_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
       "ticker": "CBRS",
       "name": "Cerebras Systems Inc.",
       "region": "United States",
@@ -2358,23 +2380,6 @@
       "name": "MEDIOBANCA",
       "region": "Italy",
       "score_model": "bank",
-      "pipeline_status": null,
-      "coverage_pct": 50.0,
-      "score_reliability": "limited_evidence",
-      "evidence_state": "observed",
-      "independent_fundamental_source_count": 1,
-      "independent_fundamental_source_families": [
-        "yahoo"
-      ],
-      "agreement_checks": 0,
-      "agreement_pct": null,
-      "latest_official_filing_age_days": null
-    },
-    {
-      "ticker": "NPV",
-      "name": "Nuveen Virginia Quality Municip",
-      "region": "United States",
-      "score_model": "general",
       "pipeline_status": null,
       "coverage_pct": 50.0,
       "score_reliability": "limited_evidence",
