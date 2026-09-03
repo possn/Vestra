@@ -1,10 +1,10 @@
 """Quarterly/TTM fallback for sparse equity dossiers.
 
-Runs after the annual statement gap retriever.  It uses Yahoo quarterly income,
+Runs after the annual statement gap retriever. It uses Yahoo quarterly income,
 balance-sheet and cash-flow tables to reconstruct only metrics that remain
-missing.  It never replaces an observed value and never treats a missing line as
-zero.  TTM metrics require at least three usable quarters; growth requires a
-comparable prior-year quarter.
+missing. It never replaces an observed value and never treats a missing line as
+zero. TTM metrics require four usable quarters; growth requires a comparable
+prior-year quarter.
 """
 from __future__ import annotations
 
@@ -62,11 +62,14 @@ def _latest(vals):
     return next((v for v in vals if v is not None), None)
 
 
-def _sum_recent(vals, n=4, minimum=3):
-    usable = [v for v in vals[:n] if v is not None]
-    if len(usable) < minimum:
+def _sum_recent(vals, n=4):
+    """Return a true TTM sum only when all requested quarters are observed."""
+    if len(vals) < n:
         return None
-    return sum(usable)
+    recent = vals[:n]
+    if any(v is None for v in recent):
+        return None
+    return sum(recent)
 
 
 def _yoy(vals):
@@ -75,6 +78,12 @@ def _yoy(vals):
     if len(vals) < 5 or vals[0] is None or vals[4] in (None, 0):
         return None
     return vals[0] / vals[4] - 1.0
+
+
+def _quick_ratio(cash, receivables, current_liab):
+    if cash is None or receivables is None or current_liab in (None, 0):
+        return None
+    return (cash + receivables) / current_liab
 
 
 def _set_missing(m, key, value):
@@ -167,8 +176,7 @@ def enrich(raw, priority=None, max_rows=180, threshold=65.0):
             if current_liab not in (None, 0):
                 if current_assets is not None:
                     changed |= _set_missing(m, "current_ratio", current_assets / current_liab)
-                if cash is not None or receivables is not None:
-                    changed |= _set_missing(m, "quick_ratio", ((cash or 0) + (receivables or 0)) / current_liab)
+                changed |= _set_missing(m, "quick_ratio", _quick_ratio(cash, receivables, current_liab))
             if equity not in (None, 0) and debt is not None:
                 changed |= _set_missing(m, "debt_to_equity", debt / equity)
 
