@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+env:
+  # SEC asks automated clients to identify themselves with a name and contact.
+  # Use a GitHub noreply contact for the diagnostic so no personal email is exposed.
+  SEC_USER_AGENT: 'Vestra/4.0 possn@users.noreply.github.com'
+
 jobs:
   probe:
     runs-on: ubuntu-latest
