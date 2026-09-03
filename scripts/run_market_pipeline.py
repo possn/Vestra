@@ -1,12 +1,15 @@
-"""Canonical market-pipeline launcher with Yahoo throttle coordination installed.
+"""Canonical market-pipeline launcher with Yahoo request coordination installed.
 
-The data pipeline itself remains in run.py. This launcher changes only the two
-rate-limit hooks owned by fundamentals.py, then executes run.py as __main__ so
-its existing error logging, pipeline-log flushing and exit semantics are kept.
+The data pipeline itself remains in run.py. This launcher changes only runtime
+request-control hooks owned by fundamentals.py and analyst.py, then executes
+run.py as __main__ so its existing error logging, pipeline-log flushing and exit
+semantics are kept.
 """
 from __future__ import annotations
 
+import os
 import runpy
+import threading
 import time
 
 from yahoo_rate_limit import RateLimitCoordinator
@@ -51,8 +54,42 @@ def install_rate_limit_coordinator(module=None, coordinator=None, *, clock=None,
     return coordinator
 
 
+def install_analyst_request_gate(module=None, max_concurrent=None):
+    """Bound simultaneous Yahoo analyst endpoint calls without changing evidence.
+
+    Analyst enrichment fans up to eight ticker workers into several Yahoo
+    analysis endpoints per ticker. yfinance can absorb crumb/auth failures
+    internally, so an exception-only circuit breaker cannot reliably see every
+    401/429 event. Bounding the actual endpoint-call concurrency is deterministic
+    and leaves ticker selection, module order, returned values and missing-data
+    semantics untouched.
+    """
+    if module is None:
+        import analyst as module
+
+    if max_concurrent is None:
+        max_concurrent = int(os.getenv("FINSCANNER_ANALYST_ENDPOINT_CONCURRENCY", "3"))
+    max_concurrent = max(1, min(8, int(max_concurrent)))
+
+    # Preserve the true original across repeated installer calls so tests or
+    # future launch composition never stack semaphores around an existing gate.
+    original = getattr(module, "_vestra_original_safe_call", module._safe_call)
+    gate = threading.BoundedSemaphore(max_concurrent)
+
+    def gated_safe_call(fn):
+        with gate:
+            return original(fn)
+
+    module._vestra_original_safe_call = original
+    module._safe_call = gated_safe_call
+    module._analyst_request_gate = gate
+    module._analyst_request_gate_limit = max_concurrent
+    return gate
+
+
 def main():
     install_rate_limit_coordinator()
+    install_analyst_request_gate()
     runpy.run_module("run", run_name="__main__")
 
 
