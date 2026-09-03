@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only verification of Vestra's deployed SEC transport."""
+"""Read-only verification of Vestra's experimental SEC transport."""
 from __future__ import annotations
 
 import argparse
@@ -29,19 +29,30 @@ def main() -> int:
 
     base = clean_base(args.url)
     session = requests.Session()
-    session.headers.update({"Accept": "application/json", "User-Agent": "Vestra-SEC-Transport-Audit/1.1"})
+    session.headers.update({"Accept": "application/json", "User-Agent": "Vestra-SEC-Transport-Audit/1.2"})
     failures = []
+    degraded = []
 
     try:
         health = session.get(base + "/health", timeout=args.timeout)
         payload = health.json()
         capabilities = payload.get("capabilities") if isinstance(payload, dict) else []
-        ok = health.ok and isinstance(capabilities, list) and "sec_transport" in capabilities
-        print(f"[{'PASS' if ok else 'FAIL'}] health sec_transport capability: HTTP {health.status_code}")
+        experimental = payload.get("experimental_capabilities") if isinstance(payload, dict) else []
+        sec_meta = payload.get("sec_transport") if isinstance(payload, dict) else None
+        ok = (
+            health.ok
+            and isinstance(capabilities, list)
+            and "sec_transport" not in capabilities
+            and isinstance(experimental, list)
+            and "sec_transport" in experimental
+            and isinstance(sec_meta, dict)
+            and sec_meta.get("status") == "experimental_not_in_pipeline"
+        )
+        print(f"[{'PASS' if ok else 'FAIL'}] health SEC transport is experimental, not operational: HTTP {health.status_code}")
         if not ok:
-            failures.append("health capability")
+            failures.append("health semantics")
     except Exception as exc:
-        print(f"[FAIL] health sec_transport capability: {exc!r}")
+        print(f"[FAIL] health SEC transport semantics: {exc!r}")
         failures.append("health exception")
 
     probes = (
@@ -60,13 +71,22 @@ def main() -> int:
             source = response.headers.get("X-Vestra-Sec-Source")
             cache = response.headers.get("X-Vestra-Sec-Cache")
             diagnostic = compact_error_payload(payload)
-            ok = valid and source == "sec.gov" and cache in {"hit", "miss"}
+            live_ok = valid and source == "sec.gov" and cache in {"hit", "miss"}
+            known_block = (
+                response.status_code == 502
+                and isinstance(diagnostic, dict)
+                and diagnostic.get("error") == "SEC upstream indisponível"
+                and diagnostic.get("upstream_status") == 403
+            )
+            state = "PASS" if live_ok else ("WARN" if known_block else "FAIL")
             print(
-                f"[{'PASS' if ok else 'FAIL'}] GET /sec/{family}: "
-                f"HTTP {response.status_code}, source={source!r}, cache={cache!r}, "
+                f"[{state}] GET /sec/{family}: HTTP {response.status_code}, "
+                f"source={source!r}, cache={cache!r}, "
                 f"diagnostic={json.dumps(diagnostic, ensure_ascii=False, sort_keys=True) if diagnostic else 'null'}"
             )
-            if not ok:
+            if known_block:
+                degraded.append(family)
+            elif not live_ok:
                 failures.append(family)
         except Exception as exc:
             print(f"[FAIL] GET /sec/{family}: {exc!r}")
@@ -78,7 +98,7 @@ def main() -> int:
     if not bad_ok:
         failures.append("invalid cik")
 
-    print(json.dumps({"worker": base, "failures": failures}, ensure_ascii=False))
+    print(json.dumps({"worker": base, "failures": failures, "degraded": degraded}, ensure_ascii=False))
     return 1 if failures else 0
 
 
