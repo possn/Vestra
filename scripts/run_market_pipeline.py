@@ -1,9 +1,9 @@
-"""Canonical market-pipeline launcher with Yahoo request coordination installed.
+"""Canonical market-pipeline launcher with request coordination installed.
 
 The data pipeline itself remains in run.py. This launcher changes only runtime
-request-control hooks owned by fundamentals.py and analyst.py, then executes
-run.py as __main__ so its existing error logging, pipeline-log flushing and exit
-semantics are kept.
+request-control hooks owned by fundamentals.py, analyst.py and sec_enrich.py,
+then executes run.py as __main__ so its existing error logging, pipeline-log
+flushing and exit semantics are kept.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import threading
 import time
 
 from yahoo_rate_limit import RateLimitCoordinator
+from sec_worker_fallback import install as install_sec_worker_fallback
 
 
 def install_rate_limit_coordinator(module=None, coordinator=None, *, clock=None, sleeper=None):
@@ -90,6 +91,7 @@ def install_analyst_request_gate(module=None, max_concurrent=None):
 def main():
     install_rate_limit_coordinator()
     install_analyst_request_gate()
+    install_sec_worker_fallback()
     runpy.run_module("run", run_name="__main__")
 
 
