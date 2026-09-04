@@ -32,7 +32,7 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         text = BOOT.read_text(encoding="utf-8")
         self.assertIn("app-runtime-bridge.js?v=1.1", text)
         self.assertIn("app-update-manager.js?v=1.1", text)
-        self.assertIn("market-learned-universe.js?v=1.0", text)
+        self.assertIn("market-learned-universe.js?v=2.0", text)
         self.assertIn("market-global-search.js?v=1.2", text)
         self.assertIn("market-data-health.js?v=1.0", text)
         self.assertIn("loadDataHealth();", text)
