@@ -1,0 +1,54 @@
+name: Runtime JavaScript syntax
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '*.js'
+      - 'tests/**/*.js'
+      - 'tests/**/*.mjs'
+      - '.github/workflows/runtime-js-syntax.yml'
+  pull_request:
+    paths:
+      - '*.js'
+      - 'tests/**/*.js'
+      - 'tests/**/*.mjs'
+      - '.github/workflows/runtime-js-syntax.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-js-syntax-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check all root runtime JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(find . -maxdepth 1 -type f -name '*.js' -print0 | sort -z)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo 'No root JavaScript files found.' >&2
+            exit 1
+          fi
+          printf 'Checking %s root JavaScript files\n' "${#files[@]}"
+          for file in "${files[@]}"; do
+            node --check "$file"
+          done
+      - name: Syntax-check JavaScript runtime contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | sort -z)
