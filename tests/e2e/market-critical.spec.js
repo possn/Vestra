@@ -109,7 +109,9 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
 test('iPhone/WebKit: global ticker opens live and persists locally across reload', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
-  const ticker = 'ZZVST';
+  // Must not collide with any published/legacy catalogue row. The test verifies
+  // the live learned path itself, not whether a stale static row can be found.
+  const ticker = 'E2EVS';
 
   await isolateExternalSearch(page);
   await page.goto('/index.html');
@@ -119,7 +121,7 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   // The browser owns the user journey and IndexedDB persistence. The central
   // POST contract is covered deterministically by runtime_learned_universe_contract.js,
   // while the production verifier owns real Worker network/CORS behaviour.
-  await page.evaluate(() => {
+  await page.evaluate(testTicker => {
     const nativeFetch = window.fetch.bind(window);
     window.fetch = async (input, init = {}) => {
       const url = new URL(typeof input === 'string' ? input : input.url, window.location.href);
@@ -131,13 +133,13 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
       });
       if (endpoint === '/quote') {
         return json({
-          ticker: 'ZZVST', name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          ticker: testTicker, name: 'Vestra Synthetic Systems', exchange: 'NMS',
           quote_type: 'EQUITY', currency: 'USD', price: 42.5
         });
       }
       if (endpoint === '/market') {
         return json({
-          ticker: 'ZZVST', name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          ticker: testTicker, name: 'Vestra Synthetic Systems', exchange: 'NMS',
           quote_type: 'EQUITY', currency: 'USD', current_price: 42.5,
           market_cap: 1200000000, forward_pe: 18.2, price_to_book: 3.1,
           roe: 0.18, fcf_yield: 0.052, revenue_growth: 0.14,
@@ -152,7 +154,7 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
     };
     window.state.settings.workerUrl = `${window.location.origin}/__worker_test__`;
     window.setView('market');
-  });
+  }, ticker);
 
   const search = page.locator('#marketSearch');
   await expect(search).toBeVisible();
