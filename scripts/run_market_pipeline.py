@@ -13,6 +13,7 @@ import threading
 import time
 
 from yahoo_rate_limit import RateLimitCoordinator
+from yahoo_retry_hygiene import install as install_yahoo_retry_hygiene
 from sec_worker_fallback import install as install_sec_worker_fallback
 
 
@@ -90,6 +91,7 @@ def install_analyst_request_gate(module=None, max_concurrent=None):
 
 def main():
     install_rate_limit_coordinator()
+    install_yahoo_retry_hygiene()
     install_analyst_request_gate()
     install_sec_worker_fallback()
     runpy.run_module("run", run_name="__main__")
