@@ -26,7 +26,9 @@ class LearnedUniverseTests(unittest.TestCase):
         self.assertIn("export class LearnedUniverse", router)
         self.assertIn("'/learned-universe'", router)
         self.assertIn("validateLearnedTicker", router)
+        self.assertIn("fetchYahooExactIdentity", router)
         self.assertIn("marketWorker.fetch", router)
+        self.assertIn("vestra-learned-universe-v2", router)
         self.assertIn("main = \"worker-router.js\"", wrangler)
         self.assertIn("name = \"LEARNED_UNIVERSE\"", wrangler)
         self.assertIn("new_sqlite_classes = [\"LearnedUniverse\"]", wrangler)
@@ -39,7 +41,7 @@ class LearnedUniverseTests(unittest.TestCase):
         self.assertIn("/learned-universe", global_js)
         self.assertIn("method:'POST'", global_js)
         self.assertIn("learnedApi()?.upsert", global_js)
-        self.assertIn("market-learned-universe.js?v=1.0", boot)
+        self.assertIn("market-learned-universe.js?v=2.0", boot)
         self.assertIn("market-global-search.js?v=1.2", boot)
         self.assertLess(boot.index('loadLearnedUniverse();'), boot.index('loadAppUpdateManager();'))
 
@@ -49,7 +51,7 @@ class LearnedUniverseTests(unittest.TestCase):
         self.assertIn('name: Sync learned search universe', workflow)
         self.assertLess(workflow.index('name: Sync learned search universe'), workflow.index('name: Run pipeline'))
 
-    def test_sync_preserves_snapshot_and_promotes_to_extra_universe(self):
+    def test_sync_uses_reachable_worker_as_authoritative_catalogue(self):
         spec = importlib.util.spec_from_file_location('sync_learned_universe', SYNC)
         mod = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
@@ -58,7 +60,9 @@ class LearnedUniverseTests(unittest.TestCase):
             tmp = Path(tmp)
             mod.EXTRA_PATH = tmp / 'extra_tickers.json'
             mod.SNAPSHOT_PATH = tmp / 'learned_tickers.json'
+            mod.HYGIENE_PATH = tmp / 'extra_ticker_hygiene.json'
             mod.EXTRA_PATH.write_text(json.dumps({'tickers':['AAPL'],'active_positions':1}), encoding='utf-8')
+            mod.HYGIENE_PATH.write_text(json.dumps({'unresolved_tickers':[]}), encoding='utf-8')
             mod.SNAPSHOT_PATH.write_text(json.dumps({'rows':[{
                 'ticker':'TKR','name':'The Timken Company','quote_type':'EQUITY','validation_count':1
             }]}), encoding='utf-8')
@@ -70,9 +74,11 @@ class LearnedUniverseTests(unittest.TestCase):
             mod.main()
             extra = json.loads(mod.EXTRA_PATH.read_text(encoding='utf-8'))
             snapshot = json.loads(mod.SNAPSHOT_PATH.read_text(encoding='utf-8'))
-            self.assertEqual(extra['tickers'], ['AAPL','MSFT','TKR'])
-            self.assertEqual(snapshot['count'], 2)
-            self.assertEqual({r['ticker'] for r in snapshot['rows']}, {'MSFT','TKR'})
+            self.assertEqual(extra['tickers'], ['AAPL','MSFT'])
+            self.assertEqual(snapshot['schema_version'], 2)
+            self.assertEqual(snapshot['source'], 'worker-authoritative-v2')
+            self.assertEqual(snapshot['count'], 1)
+            self.assertEqual({r['ticker'] for r in snapshot['rows']}, {'MSFT'})
 
     def test_tkr_seed_survives_first_central_sync(self):
         payload = json.loads(SEED.read_text(encoding='utf-8'))
