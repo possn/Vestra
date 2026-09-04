@@ -24,15 +24,17 @@ class LearnedUniversePipelineTests(unittest.TestCase):
         self.assertEqual([r["ticker"] for r in rows], ["FUND.L", "NEW1"])
         self.assertEqual(rows[1]["name"], "New One")
 
-    def test_remote_discovery_is_snapshotted_and_added_to_extra_universe(self):
+    def test_remote_discovery_is_authoritative_snapshotted_and_added_to_extra_universe(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             snapshot = root / "learned_tickers.json"
             extra = root / "extra_tickers.json"
+            hygiene = root / "extra_ticker_hygiene.json"
             snapshot.write_text(json.dumps({"schema_version": 1, "rows": []}), encoding="utf-8")
             extra.write_text(json.dumps({"tickers": ["EXIST"]}), encoding="utf-8")
+            hygiene.write_text(json.dumps({"unresolved_tickers": []}), encoding="utf-8")
             remote = [{
-                "ticker": "ZZVST",
+                "ticker": "E2EVS",
                 "name": "Vestra Synthetic",
                 "exchange": "NMS",
                 "currency": "USD",
@@ -46,35 +48,42 @@ class LearnedUniversePipelineTests(unittest.TestCase):
             }]
             with mock.patch.object(sync, "SNAPSHOT_PATH", snapshot), \
                  mock.patch.object(sync, "EXTRA_PATH", extra), \
+                 mock.patch.object(sync, "HYGIENE_PATH", hygiene), \
                  mock.patch.object(sync, "fetch_remote_rows", return_value=remote):
                 sync.main()
 
             snap = json.loads(snapshot.read_text(encoding="utf-8"))
             merged = json.loads(extra.read_text(encoding="utf-8"))
-            self.assertEqual(snap["source"], "snapshot+worker")
+            self.assertEqual(snap["schema_version"], 2)
+            self.assertEqual(snap["source"], "worker-authoritative-v2")
             self.assertEqual(snap["count"], 1)
-            self.assertEqual(snap["rows"][0]["ticker"], "ZZVST")
-            self.assertEqual(merged["tickers"], ["EXIST", "ZZVST"])
+            self.assertEqual(snap["rows"][0]["ticker"], "E2EVS")
+            self.assertEqual(merged["tickers"], ["E2EVS", "EXIST"])
             self.assertEqual(merged["learned_from_search"], 1)
             self.assertEqual(merged["learned_snapshot"], "data/learned_tickers.json")
+            self.assertEqual(merged["learned_identity_schema"], 2)
 
     def test_worker_outage_preserves_previous_snapshot_and_extra_membership(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             snapshot = root / "learned_tickers.json"
             extra = root / "extra_tickers.json"
+            hygiene = root / "extra_ticker_hygiene.json"
             snapshot.write_text(json.dumps({
                 "schema_version": 1,
                 "rows": [{"ticker": "KEEP", "quote_type": "EQUITY", "validation_count": 3}],
             }), encoding="utf-8")
             extra.write_text(json.dumps({"tickers": []}), encoding="utf-8")
+            hygiene.write_text(json.dumps({"unresolved_tickers": []}), encoding="utf-8")
             with mock.patch.object(sync, "SNAPSHOT_PATH", snapshot), \
                  mock.patch.object(sync, "EXTRA_PATH", extra), \
+                 mock.patch.object(sync, "HYGIENE_PATH", hygiene), \
                  mock.patch.object(sync, "fetch_remote_rows", side_effect=OSError("offline")):
                 sync.main()
 
             snap = json.loads(snapshot.read_text(encoding="utf-8"))
             merged = json.loads(extra.read_text(encoding="utf-8"))
+            self.assertEqual(snap["schema_version"], 2)
             self.assertEqual(snap["source"], "snapshot-fallback")
             self.assertEqual([r["ticker"] for r in snap["rows"]], ["KEEP"])
             self.assertEqual(merged["tickers"], ["KEEP"])
