@@ -8,6 +8,7 @@ ACTIVE_WORKFLOWS = {
     'architecture-invariants.yml',
     'browser-e2e.yml',
     'production-smoke.yml',
+    'runtime-js-syntax.yml',
     'sec-connectivity-probe.yml',
     'sec-fund-identity.yml',
     'update-executives.yml',

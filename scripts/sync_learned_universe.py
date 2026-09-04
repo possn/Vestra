@@ -6,6 +6,11 @@ its learned-universe Durable Object. This script runs before the heavy market
 pipeline, snapshots the central catalogue to data/learned_tickers.json, and
 merges the symbols into data/extra_tickers.json so the existing universe builder
 and scoring pipeline pick them up without a parallel ingestion path.
+
+Schema v2 treats a reachable Worker catalogue as authoritative. The previous
+snapshot remains a fallback only when the Worker is unavailable. During the v1
+identity migration, a legacy learned ticker is retired from extra_tickers only
+when the previous hygiene audit also classified that exact ticker as unresolved.
 """
 from __future__ import annotations
 
@@ -18,6 +23,7 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 EXTRA_PATH = ROOT / "data" / "extra_tickers.json"
 SNAPSHOT_PATH = ROOT / "data" / "learned_tickers.json"
+HYGIENE_PATH = ROOT / "data" / "extra_ticker_hygiene.json"
 WORKER_URL = os.getenv(
     "VESTRA_WORKER_URL",
     "https://delicate-bar-cc80.pedrossnunes.workers.dev",
@@ -61,39 +67,27 @@ def _valid_rows(payload):
     return sorted(dedup.values(), key=lambda x: x["ticker"])
 
 
-def _merge_rows(*groups):
-    merged = {}
-    for rows in groups:
-        for row in rows:
-            ticker = row["ticker"]
-            previous = merged.get(ticker)
-            if previous is None:
-                merged[ticker] = dict(row)
-                continue
-            merged[ticker] = {
-                **previous,
-                **row,
-                "first_seen": previous.get("first_seen") or row.get("first_seen") or "",
-                "last_seen": max(previous.get("last_seen") or "", row.get("last_seen") or ""),
-                "validation_count": max(
-                    int(previous.get("validation_count") or 1),
-                    int(row.get("validation_count") or 1),
-                ),
-            }
-    return sorted(merged.values(), key=lambda x: x["ticker"])
-
-
 def fetch_remote_rows():
     request = Request(
         f"{WORKER_URL}/learned-universe",
-        headers={"Accept": "application/json", "User-Agent": "VestraPipeline/1.0"},
+        headers={"Accept": "application/json", "User-Agent": "VestraPipeline/2.0"},
     )
     with urlopen(request, timeout=15) as response:
         payload = json.loads(response.read().decode("utf-8"))
     return _valid_rows(payload)
 
 
-def merge_extra_tickers(rows):
+def _unresolved_tickers(payload):
+    if not isinstance(payload, dict):
+        return set()
+    return {
+        str(value or "").strip().upper()
+        for value in payload.get("unresolved_tickers", [])
+        if str(value or "").strip()
+    }
+
+
+def merge_extra_tickers(rows, previous_rows=(), hygiene_payload=None):
     payload = _load_json(EXTRA_PATH, {})
     if not isinstance(payload, dict):
         payload = {"tickers": payload if isinstance(payload, list) else []}
@@ -103,35 +97,41 @@ def merge_extra_tickers(rows):
         if str(x).strip()
     }
     learned = {row["ticker"] for row in rows}
-    merged = sorted(existing | learned)
+    previous_learned = {row["ticker"] for row in previous_rows}
+    unresolved = _unresolved_tickers(hygiene_payload or {})
+    retired = previous_learned & unresolved
+    merged = sorted((existing - retired) | learned)
     payload["tickers"] = merged
     payload["learned_from_search"] = len(learned)
     payload["learned_snapshot"] = "data/learned_tickers.json"
+    payload["learned_identity_schema"] = 2
+    payload["retired_unverified_learned"] = sorted(retired)
     EXTRA_PATH.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return len(existing), len(merged)
+    return len(existing), len(merged), sorted(retired)
 
 
 def main():
     previous = _valid_rows(_load_json(SNAPSHOT_PATH, {}))
+    hygiene = _load_json(HYGIENE_PATH, {})
     try:
-        remote = fetch_remote_rows()
-        rows = _merge_rows(previous, remote)
-        source = "snapshot+worker"
+        rows = fetch_remote_rows()
+        source = "worker-authoritative-v2"
     except Exception as exc:
         rows = previous
         source = "snapshot-fallback"
         print(f"Learned universe remote unavailable; using snapshot: {exc}")
 
     snapshot = {
-        "schema_version": 1,
+        "schema_version": 2,
         "source": source,
         "worker_url": WORKER_URL,
         "count": len(rows),
         "rows": rows,
     }
     SNAPSHOT_PATH.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    before, after = merge_extra_tickers(rows)
-    print(f"Learned universe: {len(rows)} validated ticker(s); extra universe {before} -> {after}")
+    before, after, retired = merge_extra_tickers(rows, previous, hygiene)
+    suffix = f"; retired legacy unresolved: {', '.join(retired)}" if retired else ""
+    print(f"Learned universe: {len(rows)} validated ticker(s); extra universe {before} -> {after}{suffix}")
 
 
 if __name__ == "__main__":
