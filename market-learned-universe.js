@@ -1,9 +1,11 @@
-/* Vestra Learned Universe v1.0 — persistent local catalogue of globally discovered instruments. */
+/* Vestra Learned Universe v2.0 — persistent local catalogue of globally discovered instruments. */
 (() => {
   'use strict';
 
-  const DB_KEY = 'market_learned_universe_v1';
-  const SCHEMA_VERSION = 1;
+  // v2 intentionally starts from a clean local catalogue. v1 could persist
+  // symbols that passed a permissive upstream fallback without exact identity.
+  const DB_KEY = 'market_learned_universe_v2';
+  const SCHEMA_VERSION = 2;
   const MAX_ROWS = 500;
   const txt = v => String(v ?? '').trim();
 
@@ -100,6 +102,6 @@
   async function pendingPromotion() { await load(); return rows.filter(r => r.promotion_status === 'pending').map(r => ({...r})); }
 
   window.VestraLearnedUniverse = Object.freeze({
-    version: '1.0', DB_KEY, load, upsert, search, list, pendingPromotion,
+    version: '2.0', DB_KEY, load, upsert, search, list, pendingPromotion,
   });
 })();
