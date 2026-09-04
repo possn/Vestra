@@ -21,8 +21,8 @@ except (ImportError, ModuleNotFoundError):
 ROOT = Path(__file__).resolve().parents[1]
 EXTRA_PATH = ROOT / "data" / "extra_tickers.json"
 STOCKS_PATH = ROOT / "data" / "stocks.json"
+SEC_TICKER_MAP_PATH = ROOT / "data" / "sec_ticker_map.json"
 OUT_PATH = ROOT / "data" / "extra_ticker_hygiene.json"
-NON_EQUITY_TYPES = {"ETF", "CRYPTO", "MUTUALFUND", "FUND"}
 
 
 def _load_json(path):
@@ -53,7 +53,29 @@ def stock_index(payload):
     return out
 
 
-def classify(ticker, published_row=None):
+def sec_identity_index(payload):
+    """Return exact SEC ticker->CIK identity evidence without inferring asset type.
+
+    The validated SEC snapshot proves that a ticker is a registered current
+    identity in that source. It does *not* prove EQUITY versus fund/security type,
+    so hygiene keeps quote_type null unless a stronger source provides it.
+    """
+    values = payload.get("map") if isinstance(payload, dict) else None
+    if not isinstance(values, dict):
+        return {}
+    out = {}
+    for ticker, cik in values.items():
+        key = str(ticker or "").strip().upper()
+        try:
+            cik_value = int(cik)
+        except (TypeError, ValueError):
+            continue
+        if key and cik_value > 0:
+            out[key] = cik_value
+    return out
+
+
+def classify(ticker, published_row=None, sec_cik=None):
     ticker = str(ticker or "").strip().upper()
     published_row = published_row if isinstance(published_row, dict) else {}
     reported_type = str(published_row.get("quote_type") or "").strip().upper()
@@ -81,6 +103,17 @@ def classify(ticker, published_row=None):
             "evidence": "known_asset_identity",
             "isin": override.get("isin"),
         }
+    try:
+        cik_value = int(sec_cik) if sec_cik is not None else None
+    except (TypeError, ValueError):
+        cik_value = None
+    if cik_value is not None and cik_value > 0:
+        return {
+            "state": "sec_registered_identity",
+            "quote_type": None,
+            "evidence": "sec_ticker_map",
+            "cik": cik_value,
+        }
     return {
         "state": "unresolved",
         "quote_type": None,
@@ -101,14 +134,18 @@ def review_family_key(ticker):
     return ticker[:4]
 
 
-def build_audit(extra_payload, stocks_payload):
+def build_audit(extra_payload, stocks_payload, sec_payload=None):
     tickers = extra_tickers(extra_payload)
     stocks = stock_index(stocks_payload)
+    sec_identities = sec_identity_index(sec_payload or {})
     rows = []
     unresolved_by_family = defaultdict(list)
 
     for ticker in tickers:
-        result = {"ticker": ticker, **classify(ticker, stocks.get(ticker))}
+        result = {
+            "ticker": ticker,
+            **classify(ticker, stocks.get(ticker), sec_identities.get(ticker)),
+        }
         if result["state"] == "unresolved":
             key = review_family_key(ticker)
             if key:
@@ -123,7 +160,7 @@ def build_audit(extra_payload, stocks_payload):
     counts = Counter(row["state"] for row in rows)
     unresolved = [row["ticker"] for row in rows if row["state"] == "unresolved"]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "extra_ticker_count": len(tickers),
         "states": dict(counts.most_common()),
         "unresolved_count": len(unresolved),
@@ -131,11 +168,19 @@ def build_audit(extra_payload, stocks_payload):
         "review_families": review_families,
         "rows": rows,
         "mutation_policy": "diagnostic_only_exact_evidence_no_auto_merge_no_delete",
+        "identity_note": (
+            "sec_registered_identity proves exact ticker registration in the validated SEC "
+            "ticker map only; quote_type remains unresolved unless stronger evidence supplies it"
+        ),
     }
 
 
 def main():
-    audit = build_audit(_load_json(EXTRA_PATH), _load_json(STOCKS_PATH))
+    audit = build_audit(
+        _load_json(EXTRA_PATH),
+        _load_json(STOCKS_PATH),
+        _load_json(SEC_TICKER_MAP_PATH),
+    )
     OUT_PATH.write_text(json.dumps(audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Extra ticker hygiene: {audit['extra_ticker_count']} tickers, {audit['unresolved_count']} unresolved -> {OUT_PATH}")
 
