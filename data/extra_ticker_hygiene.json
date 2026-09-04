@@ -1,18 +1,17 @@
 {
-  "schema_version": 1,
-  "extra_ticker_count": 497,
+  "schema_version": 2,
+  "extra_ticker_count": 500,
   "states": {
-    "published_confirmed": 480,
-    "unresolved": 9,
-    "known_identity": 8
+    "published_confirmed": 484,
+    "known_identity": 8,
+    "unresolved": 7,
+    "sec_registered_identity": 1
   },
-  "unresolved_count": 9,
+  "unresolved_count": 7,
   "unresolved_tickers": [
+    "AL",
     "BRADE",
     "BRADES",
-    "Q",
-    "QBTS",
-    "QCOM",
     "VICO",
     "VICOR",
     "ZZPST",
@@ -59,6 +58,12 @@
       "ticker": "4BRZ.DE",
       "state": "published_confirmed",
       "quote_type": "ETF",
+      "evidence": "stocks_snapshot"
+    },
+    {
+      "ticker": "A",
+      "state": "published_confirmed",
+      "quote_type": "EQUITY",
       "evidence": "stocks_snapshot"
     },
     {
@@ -200,6 +205,12 @@
       "evidence": "stocks_snapshot"
     },
     {
+      "ticker": "AL",
+      "state": "unresolved",
+      "quote_type": null,
+      "evidence": null
+    },
+    {
       "ticker": "ALAB",
       "state": "published_confirmed",
       "quote_type": "EQUITY",
@@ -227,6 +238,12 @@
       "ticker": "ALGO.CC",
       "state": "published_confirmed",
       "quote_type": "CRYPTO",
+      "evidence": "stocks_snapshot"
+    },
+    {
+      "ticker": "ALL",
+      "state": "published_confirmed",
+      "quote_type": "EQUITY",
       "evidence": "stocks_snapshot"
     },
     {
@@ -2091,9 +2108,10 @@
     },
     {
       "ticker": "POET",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "sec_registered_identity",
+      "quote_type": null,
+      "evidence": "sec_ticker_map",
+      "cik": 1437424
     },
     {
       "ticker": "POL.CC",
@@ -2157,21 +2175,21 @@
     },
     {
       "ticker": "Q",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
+      "state": "published_confirmed",
+      "quote_type": "EQUITY",
+      "evidence": "stocks_snapshot"
     },
     {
       "ticker": "QBTS",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
+      "state": "published_confirmed",
+      "quote_type": "EQUITY",
+      "evidence": "stocks_snapshot"
     },
     {
       "ticker": "QCOM",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
+      "state": "published_confirmed",
+      "quote_type": "EQUITY",
+      "evidence": "stocks_snapshot"
     },
     {
       "ticker": "QDV5.DE",
@@ -3028,5 +3046,6 @@
       "evidence": null
     }
   ],
-  "mutation_policy": "diagnostic_only_exact_evidence_no_auto_merge_no_delete"
+  "mutation_policy": "diagnostic_only_exact_evidence_no_auto_merge_no_delete",
+  "identity_note": "sec_registered_identity proves exact ticker registration in the validated SEC ticker map only; quote_type remains unresolved unless stronger evidence supplies it"
 }
