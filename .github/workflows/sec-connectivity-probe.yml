@@ -7,13 +7,14 @@ on:
     paths:
       - '.github/workflows/sec-connectivity-probe.yml'
       - 'scripts/sec_endpoint_probe.py'
+      - 'scripts/sec_archive_compat_probe.py'
 
 permissions:
   contents: read
 
 env:
   # SEC asks automated clients to identify themselves with a name and contact.
-  # Use a GitHub noreply contact for the diagnostic so no personal email is exposed.
+  # Use a GitHub noreply contact for the general API diagnostic.
   SEC_USER_AGENT: 'Vestra/4.0 possn@users.noreply.github.com'
 
 jobs:
@@ -33,7 +34,11 @@ jobs:
         run: pip install requests
 
       - name: Validate probe modules
-        run: python -m py_compile scripts/asset_types.py scripts/sec_enrich.py scripts/sec_endpoint_probe.py
+        run: python -m py_compile scripts/asset_types.py scripts/sec_enrich.py scripts/sec_archive_compat_probe.py scripts/sec_endpoint_probe.py
+
+      - name: Probe Archives with historical insiders request profile
+        working-directory: scripts
+        run: python sec_archive_compat_probe.py
 
       - name: Probe SEC APIs and official bulk archives
         working-directory: scripts
