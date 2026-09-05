@@ -1,7 +1,7 @@
 """Canonical market-pipeline launcher with request coordination installed.
 
 The data pipeline itself remains in run.py. This launcher changes only runtime
-request-control hooks owned by fundamentals.py, analyst.py and sec_enrich.py,
+request-control hooks owned by fundamentals.py, analyst.py and SEC enrichment,
 then executes run.py as __main__ so its existing error logging, pipeline-log
 flushing and exit semantics are kept.
 """
@@ -15,6 +15,7 @@ import time
 from yahoo_rate_limit import RateLimitCoordinator
 from yahoo_retry_hygiene import install as install_yahoo_retry_hygiene
 from sec_worker_fallback import install as install_sec_worker_fallback
+from sec_archives_runtime import install as install_sec_archives_fallback
 
 
 def install_rate_limit_coordinator(module=None, coordinator=None, *, clock=None, sleeper=None):
@@ -73,8 +74,6 @@ def install_analyst_request_gate(module=None, max_concurrent=None):
         max_concurrent = int(os.getenv("FINSCANNER_ANALYST_ENDPOINT_CONCURRENCY", "3"))
     max_concurrent = max(1, min(8, int(max_concurrent)))
 
-    # Preserve the true original across repeated installer calls so tests or
-    # future launch composition never stack semaphores around an existing gate.
     original = getattr(module, "_vestra_original_safe_call", module._safe_call)
     gate = threading.BoundedSemaphore(max_concurrent)
 
@@ -94,6 +93,7 @@ def main():
     install_yahoo_retry_hygiene()
     install_analyst_request_gate()
     install_sec_worker_fallback()
+    install_sec_archives_fallback()
     runpy.run_module("run", run_name="__main__")
 
 
