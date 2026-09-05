@@ -37,11 +37,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         ):
             self.assertIn(token, source)
 
-    def test_opportunities_use_light_index_natively(self):
+    def test_opportunities_reuse_canonical_market_universe_without_refetch(self):
         source = read('market-opportunities.js')
-        self.assertIn("fetch('./data/stocks-index.json'", source)
-        self.assertIn("fetch('./data/stocks.json'", source)
-        self.assertLess(source.index("stocks-index.json"), source.index("stocks.json"))
+        universe = read('market-static-universe.js')
+        self.assertIn("window.VestraMarketStaticUniverse", source)
+        self.assertIn("getStocks", source)
+        self.assertNotIn("fetch('./data/stocks-index.json'", source)
+        self.assertNotIn("fetch('./data/stocks.json'", source)
+        self.assertIn("function getStocks()", universe)
+        self.assertIn("sharedStocks = stocks", universe)
         self.assertIn("window.VestraMarketOpportunities", source)
 
     def test_canonical_opportunities_own_podium_and_guide(self):
