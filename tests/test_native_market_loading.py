@@ -34,7 +34,6 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_runtime_market_data_owners_are_index_first(self):
         for path in (
-            'vestra-swap-lab.js',
             'vestra-ai-brief.js',
         ):
             source = read(path)
@@ -56,6 +55,14 @@ class NativeMarketLoadingTests(unittest.TestCase):
         self.assertNotIn("fetch('./data/stocks-index.json'", opportunities)
         self.assertNotIn("fetch('./data/stocks.json'", opportunities)
         self.assertIn('new MutationObserver', opportunities)
+
+        swap = read('vestra-swap-lab.js')
+        self.assertIn('window.VestraMarketStaticUniverse', swap)
+        self.assertIn('getStocks', swap)
+        self.assertNotIn("fetch('./data/stocks-index.json'", swap)
+        self.assertNotIn("fetch('./data/stocks.json'", swap)
+        self.assertNotIn('function load()', swap)
+        self.assertIn('new MutationObserver', swap)
 
     def test_service_worker_matches_native_market_generation(self):
         sw = read('sw.js')

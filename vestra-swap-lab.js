@@ -4,25 +4,15 @@
   const t=v=>String(v??'').trim();
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let stocks=[],byTicker=new Map(),loading=null;
 
-  function load(){
-    if(loading)return loading;
-    loading=fetch('./data/stocks-index.json',{cache:'no-store'}).then(async r=>{
-      if(r.ok)return r.json();
-      const legacy=await fetch('./data/stocks.json',{cache:'no-store'});
-      if(!legacy.ok)throw 0;
-      return legacy.json();
-    }).then(d=>{
-      stocks=Array.isArray(d)?d:(Array.isArray(d?.stocks)?d.stocks:[]);
-      byTicker=new Map(stocks.map(s=>[t(s?.ticker).toUpperCase(),s]));
-      return stocks;
-    }).catch(()=>[]);
-    return loading;
+  function stocks(){
+    const rows=window.VestraMarketStaticUniverse?.getStocks?.();
+    return Array.isArray(rows)?rows:[];
   }
   function stock(ticker){
     const tk=t(ticker).toUpperCase(); if(!tk)return null;
-    return byTicker.get(tk)||stocks.find(s=>t(s?.ticker).toUpperCase().split('.')[0]===tk.split('.')[0])||null;
+    const universe=stocks();
+    return universe.find(s=>t(s?.ticker).toUpperCase()===tk)||universe.find(s=>t(s?.ticker).toUpperCase().split('.')[0]===tk.split('.')[0])||null;
   }
   function pct(v){const x=n(v);return x==null?'—':`${(Math.abs(x)<=1?x*100:x).toFixed(1)}%`;}
   function multiple(v){const x=n(v);return x==null||x<=0?'—':x.toFixed(1);}
@@ -137,7 +127,7 @@
     const impact=e.target.closest?.('[data-ux456-impact]');
     if(impact){e.preventDefault();e.stopPropagation();const root=document.getElementById('marketSheetContent');const scenario=root?.querySelector('[data-ux-kind="scenario"]');if(scenario?.classList.contains('is-collapsed'))scenario.querySelector('[data-collapse-toggle]')?.click();setTimeout(()=>scenario?.scrollIntoView({behavior:'smooth',block:'start'}),30);}
   });
-  function start(){addStyle();load().then(()=>{apply();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});});}
+  function start(){addStyle();apply();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
   window.VestraSwapLab=Object.freeze({stock,priceStats,timing,verdict,refresh:apply});
 })();
