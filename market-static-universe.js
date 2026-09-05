@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.1 */
+/* Vestra Market static universe loader v1.0 */
 (() => {
   'use strict';
 
@@ -54,5 +54,5 @@
   }
 
   ensureScannerCompanion();
-  window.VestraMarketStaticUniverse = Object.freeze({ create, ensureScannerCompanion, version: '1.1' });
+  window.VestraMarketStaticUniverse = Object.freeze({ create, ensureScannerCompanion, version: '1.0' });
 })();
