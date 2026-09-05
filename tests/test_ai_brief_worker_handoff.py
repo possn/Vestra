@@ -25,7 +25,7 @@ class AiBriefWorkerHandoffTests(unittest.TestCase):
         self.assertNotIn("fetch('./data/stocks-index.json'", self.frontend)
         self.assertNotIn("fetch('./data/stocks.json'", self.frontend)
         self.assertNotIn("function load()", self.frontend)
-        self.assertIn("const s=stock(sh?.dataset.ticker)", self.frontend)
+        self.assertIn("s=stock(sh?.dataset.ticker)", self.frontend)
 
     def test_router_owns_post_route_before_market_worker(self):
         ai_route = self.router.index("if (url.pathname === '/ai-brief')")
