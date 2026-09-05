@@ -33,7 +33,7 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertEqual(row["score"], 82.0)
         self.assertEqual(row["dossier_shard"], "A")
 
-    def test_scanner_results_remain_available_before_dossier_hydration(self):
+    def test_scanner_results_move_to_lazy_payload(self):
         scanner_results = {
             "best_opportunities": {
                 "score": 77.0,
@@ -46,8 +46,14 @@ class MarketIndexPayloadTests(unittest.TestCase):
                 "reasons": ["Near 52w low", "Balance sheet adequate"],
             },
         }
-        row = shards.index_row({"ticker": "MSFT", "scanner_results": scanner_results})
-        self.assertEqual(row["scanner_results"], scanner_results)
+        source = {"ticker": "MSFT", "scanner_results": scanner_results}
+        row = shards.index_row(source)
+        self.assertNotIn("scanner_results", row)
+        self.assertEqual(shards.scanner_results(source), scanner_results)
+
+    def test_empty_scanner_results_are_not_emitted(self):
+        self.assertIsNone(shards.scanner_results({"ticker": "MSFT", "scanner_results": {}}))
+        self.assertIsNone(shards.scanner_results({"ticker": "MSFT", "scanner_results": []}))
 
     def test_full_history_is_not_copied_but_compact_52_week_bounds_are_kept(self):
         row = shards.index_row({
