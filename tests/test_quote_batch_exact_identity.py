@@ -26,6 +26,18 @@ class QuoteBatchExactIdentityTests(unittest.TestCase):
         self.assertIn("withDeadline(", self.text)
         self.assertIn("return [ticker,{ticker,error:error?.message || 'Erro ao obter cotação'}]", self.text)
 
+    def test_batch_preserves_fx_crypto_and_gbpence_semantics(self):
+        self.assertIn("function validQuoteTicker", self.text)
+        self.assertIn("[A-Z0-9.\\-^=]", self.text)
+        self.assertIn(".filter(validQuoteTicker)", self.text)
+        self.assertIn("rawCurrency === 'GBp'", self.text)
+        self.assertIn("return {price:value/100,currency:'GBP'}", self.text)
+        # Learned-universe remains type-gated, but the exact quote transport must
+        # not reject CURRENCY/CRYPTOCURRENCY before identity validation.
+        self.assertNotIn("if (row && rawPrice && (!type || ALLOWED_TYPES.has(type)))", self.text)
+        self.assertNotIn("if (meta && symbol === ticker && rawPrice && (!type || ALLOWED_TYPES.has(type)))", self.text)
+        self.assertIn("if (type && !ALLOWED_TYPES.has(type)) return null", self.text)
+
     def test_health_exposes_batch_transport_contract(self):
         self.assertIn("quote_batch_transport:'exact_identity_parallel_v1'", self.text)
         self.assertIn("quote_batch_item_deadline_ms:BATCH_ITEM_DEADLINE_MS", self.text)
