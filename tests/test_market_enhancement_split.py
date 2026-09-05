@@ -27,17 +27,12 @@ class MarketEnhancementSplitTests(unittest.TestCase):
 
     def test_company_brief_reuses_market_runtime_and_keeps_copy_fallbacks(self):
         s = read('market-company-brief.js')
-        # The company brief is a presentation enhancer, not a second market-data
-        # owner. It must reuse the canonical Market runtime object so app startup
-        # never downloads the full market index (or stocks.json fallback) again.
         self.assertIn('window.VestraMarket', s)
         self.assertIn('resolvePortfolioStock', s)
         self.assertNotIn("fetch('./data/stocks-index.json'", s)
         self.assertNotIn("fetch('./data/stocks.json'", s)
         for token in ('business_summary', 'longBusinessSummary', 'company_description', 'Empresa cotada acompanhada pelo universo Vestra.'):
             self.assertIn(token, s)
-        # Dossier hydration mutates the canonical stock object later; the brief
-        # must keep observing DOM changes so richer copy appears without refetch.
         self.assertIn('new MutationObserver', s)
         self.assertIn('requestAnimationFrame', s)
         self.assertIn('window.VestraMarketCompanyBrief', s)
@@ -68,8 +63,8 @@ class MarketEnhancementSplitTests(unittest.TestCase):
 
     def test_service_worker_caches_all_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v10.11', sw)
-        self.assertIn('vestra-cache-v125', sw)
+        self.assertIn('Vestra Service Worker v10.12', sw)
+        self.assertIn('vestra-cache-v126', sw)
         for module in ('./market-live-overlay.js', './market-company-brief.js', './market-metric-cleanup.js', './portfolio-collapsibles.js', './portfolio-card-classifier.js', './portfolio-diagnostics.js', './vestra-ai-brief.js', './portfolio-dossier-routing.js'):
             self.assertIn(module, sw)
 
