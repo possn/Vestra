@@ -1,24 +1,23 @@
-/* Vestra Asset Identity Guard v2.2 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
+/* Vestra Asset Identity Guard v2.3 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
 (() => {
   'use strict';
 
-  // Portfolio-backed listing corrections. An ISIN identifies the instrument but not
-  // necessarily the broker venue. These holdings were being forced onto a
-  // different listing than the one actually held in the imported portfolio.
   const IDENTITY_MAP_REPAIRS = Object.freeze({
-    AU0000185993: 'IREN',    // IREN Ltd — Nasdaq line held by the broker portfolio
-    IE00BLCHJ534: 'PAVE.L',  // Global X U.S. Infrastructure Development UCITS ETF USD Acc — LSE
-    GB00BL6K5J42: 'EDV.TO',  // Endeavour Mining — CAD/TSX line held by the broker portfolio
-    GB00BVZK7T90: 'UNA.AS',  // Unilever — Amsterdam EUR line held by the broker portfolio
-    GB0007188757: 'RIO.L',   // Rio Tinto plc — LSE Yahoo symbol (broker alias RIO1)
-    CH0334081137: 'CRSP',    // CRISPR Therapeutics — Nasdaq USD line held by the broker portfolio
-    US64110L1061: 'NFC.DE',  // Netflix — Xetra EUR line held by the broker portfolio
-    DE0006047004: 'HEI.DE',  // Heidelberg Materials — Xetra EUR
+    AU0000185993: 'IREN',
+    IE00BLCHJ534: 'PAVE.L',
+    GB00BL6K5J42: 'EDV.TO',
+    GB00BVZK7T90: 'UNA.AS',
+    GB0007188757: 'RIO.L',
+    CH0334081137: 'CRSP',
+    US64110L1061: 'NFC.DE',
+    DE0006047004: 'HEI.DE',
   });
 
-  // Explicit historical corruption rules. These are deliberately narrow and
-  // only exist where we have source-of-truth broker identity plus a known bad
-  // persisted quote that can otherwise trap the asset behind the >5x/currency guard.
+  const BROKER_ALIAS_REPAIRS = Object.freeze({
+    RIO1: 'RIO.L',
+    'HEI.DE': 'HEI.DE',
+  });
+
   const SPECIAL_RECOVERY_RULES = Object.freeze({
     DE000SHL1006: Object.freeze({ ticker: 'SHL.DE', currency: 'EUR', minPrice: 5, maxPrice: 200 }),
     US12468P1049: Object.freeze({ ticker: 'AI', currency: 'USD', minPrice: 1, maxPrice: 100 }),
@@ -26,11 +25,16 @@
     DE0006047004: Object.freeze({ ticker: 'HEI.DE', currency: 'EUR', minPrice: 50, maxPrice: 400 }),
   });
 
+  const BROKER_ALIAS_RECOVERY_RULES = Object.freeze({
+    RIO1: Object.freeze({ ticker: 'RIO.L', currency: 'GBP', minPrice: 10, maxPrice: 150 }),
+    'HEI.DE': Object.freeze({ ticker: 'HEI.DE', currency: 'EUR', minPrice: 50, maxPrice: 400 }),
+  });
+
   const VENUE_CURRENCY = Object.freeze({
     '.DE':'EUR', '.F':'EUR', '.PA':'EUR', '.AS':'EUR', '.BR':'EUR', '.MI':'EUR',
     '.LS':'EUR', '.MC':'EUR', '.VI':'EUR', '.HE':'EUR', '.IR':'EUR',
     '.SW':'CHF', '.TO':'CAD', '.AX':'AUD', '.CO':'DKK', '.ST':'SEK',
-    '.OL':'NOK', '.HK':'HKD', '.SI':'SGD', '.NZ':'NZD'
+    '.OL':'NOK', '.HK':'HKD', '.SI':'SGD', '.NZ':'NZD', '.L':'GBP'
   });
 
   const clean = value => String(value == null ? '' : value).trim().toUpperCase();
@@ -45,15 +49,17 @@
     return map;
   }
 
-  // app.js keeps a reference to the same mutable map object, so repairing the map
-  // here also fixes subsequent manual/automatic quote refreshes without rewriting
-  // stored assets or touching quantities/cost basis.
   applyIdentityMapRepairs();
+
+  function localBrokerTicker(asset) {
+    return clean(asset && (asset.ticker || asset.symbol));
+  }
 
   function canonicalTickerFor(asset) {
     const isin = clean(asset && asset.isin);
-    if (!isin) return '';
-    return clean(identityMap()[isin]);
+    const byIsin = isin ? clean(identityMap()[isin]) : '';
+    if (byIsin) return byIsin;
+    return clean(BROKER_ALIAS_REPAIRS[localBrokerTicker(asset)]);
   }
 
   function expectedCurrencyForTicker(ticker) {
@@ -61,9 +67,6 @@
     for (const [suffix, currency] of Object.entries(VENUE_CURRENCY)) {
       if (t.endsWith(suffix)) return currency;
     }
-    // London is intentionally omitted because Yahoo may expose GBP or GBp.
-    // Bare symbols are intentionally omitted too: many non-US issuers trade
-    // on US venues and the ISIN country alone does not determine quote currency.
     return '';
   }
 
@@ -90,35 +93,17 @@
     const quote = q ? quoteIdentity(q, rawTicker) : { ticker:'', currency:'', price:NaN };
     const issues = [];
 
-    if (isin && canonicalTicker && storedTicker && storedTicker !== canonicalTicker) {
-      issues.push({
-        code: 'stored_ticker_mismatch',
-        severity: 'warning',
-        expected: canonicalTicker,
-        actual: storedTicker
-      });
+    if (canonicalTicker && storedTicker && storedTicker !== canonicalTicker) {
+      issues.push({ code:'stored_ticker_mismatch', severity:'warning', expected:canonicalTicker, actual:storedTicker });
     }
-
     if (q && canonicalTicker && quote.ticker && quote.ticker !== canonicalTicker) {
-      issues.push({
-        code: 'quote_ticker_mismatch',
-        severity: 'block',
-        expected: canonicalTicker,
-        actual: quote.ticker
-      });
+      issues.push({ code:'quote_ticker_mismatch', severity:'block', expected:canonicalTicker, actual:quote.ticker });
     }
-
     if (q && expectedCurrency && quote.currency && quote.currency !== expectedCurrency) {
-      issues.push({
-        code: 'quote_currency_mismatch',
-        severity: 'block',
-        expected: expectedCurrency,
-        actual: quote.currency
-      });
+      issues.push({ code:'quote_currency_mismatch', severity:'block', expected:expectedCurrency, actual:quote.currency });
     }
-
     if (q && (!Number.isFinite(quote.price) || quote.price <= 0)) {
-      issues.push({ code: 'invalid_quote_price', severity: 'block', actual: q && q.price });
+      issues.push({ code:'invalid_quote_price', severity:'block', actual:q && q.price });
     }
 
     return Object.freeze({
@@ -133,9 +118,14 @@
     });
   }
 
-  function specialRecoveryAllowed(asset, q, rawTicker) {
+  function ruleForAsset(asset) {
     const isin = clean(asset && asset.isin);
-    const rule = SPECIAL_RECOVERY_RULES[isin];
+    if (isin && SPECIAL_RECOVERY_RULES[isin]) return SPECIAL_RECOVERY_RULES[isin];
+    return BROKER_ALIAS_RECOVERY_RULES[localBrokerTicker(asset)] || null;
+  }
+
+  function specialRecoveryAllowed(asset, q, rawTicker) {
+    const rule = ruleForAsset(asset);
     if (!rule || !q) return false;
     const quote = quoteIdentity(q, rawTicker);
     return quote.ticker === rule.ticker &&
@@ -149,20 +139,11 @@
     if (!asset || !q) return false;
     const report = assess(asset, q, rawTicker, previousYahooTicker);
     if (!report.canonicalTicker) return false;
-
-    // Recovery is only possible when the incoming quote itself is the exact
-    // ISIN-backed canonical ticker and passes currency/price identity checks.
     if (report.issues.some(issue => issue.severity === 'block')) return false;
     if (report.quoteTicker !== report.canonicalTicker) return false;
     if (report.expectedCurrency && report.quoteCurrency !== report.expectedCurrency) return false;
     if (!Number.isFinite(report.quotePrice) || report.quotePrice <= 0) return false;
-
-    // Generic recovery: a stale stored Yahoo identity differs from the exact
-    // canonical mapping. The canonical quote is allowed to replace it.
     if (report.storedTicker && report.storedTicker !== report.canonicalTicker) return true;
-
-    // Known historical contaminations may have already persisted the canonical
-    // ticker while retaining a wrong price/currency history. Keep these explicit.
     return specialRecoveryAllowed(asset, q, rawTicker);
   }
 
@@ -208,9 +189,11 @@
   if (!install()) document.addEventListener('DOMContentLoaded', install, { once: true });
 
   const api = Object.freeze({
-    version: '2.2',
+    version: '2.3',
     identityMapRepairs: IDENTITY_MAP_REPAIRS,
+    brokerAliasRepairs: BROKER_ALIAS_REPAIRS,
     specialRules: SPECIAL_RECOVERY_RULES,
+    brokerAliasRules: BROKER_ALIAS_RECOVERY_RULES,
     applyIdentityMapRepairs,
     canonicalTickerFor,
     expectedCurrencyForTicker,
@@ -221,6 +204,5 @@
   });
 
   window.VestraAssetIdentityGuard = api;
-  // Backward-compatible alias used by the existing bootstrap/tests.
   window.VestraCanonicalQuoteRepair = api;
 })();
