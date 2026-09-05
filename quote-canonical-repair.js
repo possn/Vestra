@@ -3,11 +3,12 @@
   'use strict';
 
   // Portfolio-backed listing corrections. An ISIN identifies the instrument but not
-  // necessarily the broker venue. These two holdings were being forced onto a
+  // necessarily the broker venue. These holdings were being forced onto a
   // different listing than the one actually held in the imported portfolio.
   const IDENTITY_MAP_REPAIRS = Object.freeze({
-    AU0000185993: 'IREN',   // IREN Ltd — Nasdaq line held by the broker portfolio
-    IE00BLCHJ534: 'PAVE.L', // Global X U.S. Infrastructure Development UCITS ETF USD Acc — LSE
+    AU0000185993: 'IREN',    // IREN Ltd — Nasdaq line held by the broker portfolio
+    IE00BLCHJ534: 'PAVE.L',  // Global X U.S. Infrastructure Development UCITS ETF USD Acc — LSE
+    GB00BL6K5J42: 'EDV.TO',  // Endeavour Mining — CAD/TSX line held by the broker portfolio
   });
 
   // Explicit historical corruption rules. These are deliberately narrow and
