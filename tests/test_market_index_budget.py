@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 
@@ -49,3 +50,27 @@ def test_published_index_is_inside_new_budget():
     source_size = (ROOT / "data" / "stocks.json").stat().st_size
     assert index_size <= m.MAX_INDEX_BYTES
     assert index_size / source_size <= m.MAX_INDEX_RATIO
+
+
+def test_columnar_encoding_is_materially_smaller_and_value_equivalent():
+    m = load_builder()
+    payload = json.loads((ROOT / "data" / "stocks-index.json").read_text(encoding="utf-8"))
+    packed = m.pack_index_payload(payload)
+    decoded = m.unpack_index_payload(packed)
+
+    original_bytes = len(json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+    packed_bytes = len(json.dumps(packed, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+    saving_ratio = 1 - packed_bytes / original_bytes
+    assert saving_ratio >= m.MIN_COLUMNAR_SAVING_RATIO
+
+    assert decoded["schema_version"] == payload["schema_version"]
+    assert decoded["generated_at"] == payload["generated_at"]
+    assert len(decoded["stocks"]) == len(payload["stocks"])
+
+    keys = (
+        "ticker", "name", "score", "current_price", "currency", "quote_type",
+        "opportunity_score", "low52_status", "recovery_score", "dossier_shard",
+    )
+    for original, rebuilt in zip(payload["stocks"][:50], decoded["stocks"][:50]):
+        for key in keys:
+            assert rebuilt.get(key) == original.get(key)
