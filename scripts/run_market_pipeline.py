@@ -15,7 +15,6 @@ import time
 from yahoo_rate_limit import RateLimitCoordinator
 from yahoo_retry_hygiene import install as install_yahoo_retry_hygiene
 from sec_worker_fallback import install as install_sec_worker_fallback
-from sec_archives_runtime import install as install_sec_archives_fallback
 
 
 def install_rate_limit_coordinator(module=None, coordinator=None, *, clock=None, sleeper=None):
@@ -89,6 +88,12 @@ def install_analyst_request_gate(module=None, max_concurrent=None):
 
 
 def main():
+    # Keep network-backed SEC dependencies out of module import time. Several
+    # runtime contract tests intentionally import this launcher without installing
+    # the full pipeline requirements; production imports the Archives lane only
+    # when main() is actually executed.
+    from sec_archives_runtime import install as install_sec_archives_fallback
+
     install_rate_limit_coordinator()
     install_yahoo_retry_hygiene()
     install_analyst_request_gate()
