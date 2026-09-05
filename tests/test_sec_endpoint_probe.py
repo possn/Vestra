@@ -71,12 +71,12 @@ class SecEndpointProbeTests(unittest.TestCase):
             headers={"content-range": "bytes 0-0/123456", "content-length": "1", "accept-ranges": "bytes"},
         )
 
-    def _archive_ok(self, status=206, content_type="text/plain"):
+    def _archive_ok(self, status=200, content_type="text/plain"):
         return FakeResponse(
             status=status,
             payload=None,
             content_type=content_type,
-            headers={"content-range": "bytes 0-0/654321", "content-length": "1", "accept-ranges": "bytes"},
+            headers={"content-length": "654321"},
         )
 
     def test_probe_reports_companyfacts_submissions_and_bulk_availability(self):
@@ -158,7 +158,7 @@ class SecEndpointProbeTests(unittest.TestCase):
         })
         self.assertEqual(len(session.calls), 2)
 
-    def test_archive_paths_are_probed_independently_of_api_guard(self):
+    def test_archive_paths_use_normal_streamed_get_without_range(self):
         archives = {
             "master": "https://www.sec.gov/Archives/edgar/full-index/2026/QTR3/master.idx",
             "xbrl": "https://www.sec.gov/Archives/edgar/data/320193/example.xml",
@@ -180,7 +180,7 @@ class SecEndpointProbeTests(unittest.TestCase):
         self.assertEqual(report["archives"]["xbrl"]["content_type"], "application/xml")
         for call in session.calls[-2:]:
             self.assertTrue(call["stream"])
-            self.assertEqual(call["headers"]["Range"], "bytes=0-0")
+            self.assertNotIn("Range", call["headers"])
 
 
 if __name__ == "__main__":
