@@ -27,11 +27,13 @@ class CanonicalRuntimeCleanupTests(unittest.TestCase):
         for legacy in LEGACY_RUNTIME_FILES:
             self.assertFalse((ROOT / legacy).exists(), f'retired runtime overlay returned: {legacy}')
 
-    def test_ai_brief_preserves_safe_contract_and_index_first_loading(self):
+    def test_ai_brief_preserves_safe_contract_and_shared_market_loading(self):
         s = read('vestra-ai-brief.js')
-        self.assertIn("fetch('./data/stocks-index.json'", s)
-        self.assertIn("fetch('./data/stocks.json'", s)
-        self.assertLess(s.index('stocks-index.json'), s.index('stocks.json'))
+        self.assertIn('window.VestraMarketStaticUniverse', s)
+        self.assertIn('getStocks', s)
+        self.assertNotIn("fetch('./data/stocks-index.json'", s)
+        self.assertNotIn("fetch('./data/stocks.json'", s)
+        self.assertNotIn('function load()', s)
         self.assertIn("`${base}/ai-brief`", s)
         self.assertIn('não altera Score Vestra nem cria recomendação automática', s)
         self.assertIn('Brief local · sem inventar métricas', s)

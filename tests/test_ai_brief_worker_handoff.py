@@ -19,6 +19,14 @@ class AiBriefWorkerHandoffTests(unittest.TestCase):
         self.assertIn("method:'POST'", self.frontend)
         self.assertIn("/ai-brief", self.frontend)
 
+    def test_frontend_reuses_canonical_market_state_without_refetch(self):
+        self.assertIn("window.VestraMarketStaticUniverse", self.frontend)
+        self.assertIn("getStocks", self.frontend)
+        self.assertNotIn("fetch('./data/stocks-index.json'", self.frontend)
+        self.assertNotIn("fetch('./data/stocks.json'", self.frontend)
+        self.assertNotIn("function load()", self.frontend)
+        self.assertIn("s=stock(sh?.dataset.ticker)", self.frontend)
+
     def test_router_owns_post_route_before_market_worker(self):
         ai_route = self.router.index("if (url.pathname === '/ai-brief')")
         delegate = self.router.index("return marketWorker.fetch(request,env,ctx);")
