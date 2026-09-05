@@ -20,13 +20,15 @@ SCANNER_INDEX = os.path.join(ROOT, "data", "stocks-scanner.json")
 SHARD_DIR = os.path.join(ROOT, "data", "dossiers")
 MANIFEST = os.path.join(ROOT, "data", "dossiers-manifest.json")
 
-# Startup performance budget. The historical 25% source-relative guard could
-# silently allow the index to grow past 12 MB as stocks.json expands. Keep an
-# absolute iPhone/PWA ceiling as well as a tighter relative ceiling so any future
-# enrichment added to INDEX_KEYS requires an explicit architecture review.
+# Startup performance budgets. The browser now prefers COLUMNAR_INDEX and falls
+# back to INDEX/SRC only when the compact payload is unavailable or invalid.
+# Keep both representations bounded: INDEX protects compatibility/fallback cost;
+# COLUMNAR_INDEX protects the normal iPhone/PWA startup path. The first canonical
+# production snapshot measured 1,958,111 bytes vs a 6,595,930-byte index (29.7%).
 MAX_INDEX_BYTES = 7_250_000
 MAX_INDEX_RATIO = 0.15
-MIN_COLUMNAR_SAVING_RATIO = 0.15
+MAX_COLUMNAR_BYTES = 2_250_000
+MAX_COLUMNAR_INDEX_RATIO = 0.35
 
 # Explicit pre-dossier contract. Anything not listed here belongs to a lazy
 # payload or dossier shard. Keeping this list explicit prevents new enrichment
@@ -155,7 +157,7 @@ def pack_index_payload(index_payload: dict) -> dict:
 
 
 def unpack_index_payload(packed: dict) -> dict:
-    """Reference decoder used by tests and by the future browser loader."""
+    """Reference decoder used by tests and mirrored by the browser loader."""
     if packed.get("layout") != "field_rows_v1":
         return packed
     fields = packed.get("fields") or []
@@ -223,9 +225,9 @@ def main() -> None:
     with open(INDEX, "w", encoding="utf-8") as f:
         json.dump(index_payload, f, ensure_ascii=False, separators=(",", ":"))
 
-    # Experimental parallel representation. The browser still consumes INDEX;
-    # this file is generated now so CI and daily snapshots can prove the actual
-    # byte saving before we switch the production loader.
+    # Production startup representation. market-static-universe.js prefers this
+    # field/rows payload and falls back to INDEX then SRC if it is unavailable or
+    # invalid, so the compact file is now the normal transfer path on iPhone/PWA.
     packed_payload = pack_index_payload(index_payload)
     with open(COLUMNAR_INDEX, "w", encoding="utf-8") as f:
         json.dump(packed_payload, f, ensure_ascii=False, separators=(",", ":"))
@@ -258,7 +260,8 @@ def main() -> None:
     columnar_size = os.path.getsize(COLUMNAR_INDEX)
     scanner_size = os.path.getsize(SCANNER_INDEX)
     ratio = (idx_size / src_size) if src_size else 0
-    saving_ratio = 1 - (columnar_size / idx_size) if idx_size else 0
+    columnar_index_ratio = (columnar_size / idx_size) if idx_size else 0
+    saving_ratio = 1 - columnar_index_ratio if idx_size else 0
     print(
         f"market shards: {len(index_rows)} unique rows, {len(shards)} shards; "
         f"dropped {duplicate_count} duplicate rows; "
@@ -278,10 +281,14 @@ def main() -> None:
         raise RuntimeError(
             f"Market startup index exceeds relative budget: {ratio:.1%} > {MAX_INDEX_RATIO:.1%}"
         )
-    if idx_size > 0 and saving_ratio < MIN_COLUMNAR_SAVING_RATIO:
+    if columnar_size > MAX_COLUMNAR_BYTES:
         raise RuntimeError(
-            f"Columnar startup payload is not materially smaller: {saving_ratio:.1%} < "
-            f"{MIN_COLUMNAR_SAVING_RATIO:.1%}"
+            f"Columnar startup payload exceeds absolute budget: {columnar_size} > {MAX_COLUMNAR_BYTES} bytes"
+        )
+    if idx_size > 0 and columnar_index_ratio > MAX_COLUMNAR_INDEX_RATIO:
+        raise RuntimeError(
+            f"Columnar startup payload exceeds index-relative budget: "
+            f"{columnar_index_ratio:.1%} > {MAX_COLUMNAR_INDEX_RATIO:.1%}"
         )
 
 
