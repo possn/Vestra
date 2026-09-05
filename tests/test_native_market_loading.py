@@ -9,15 +9,18 @@ def read(path: str) -> str:
 
 
 class NativeMarketLoadingTests(unittest.TestCase):
-    def test_market_base_loads_light_index_before_legacy_fallback(self):
+    def test_market_base_prefers_columnar_then_index_then_legacy_fallback(self):
         market = read('market.js')
         universe = read('market-static-universe.js')
         self.assertIn('VestraMarketStaticUniverse', market)
         self.assertIn('staticUniverse?.ensureLoaded', market)
-        self.assertIn("fetchImpl('data/stocks-index.json'", universe)
-        self.assertIn("fetchImpl('data/stocks.json'", universe)
+        self.assertIn("['data/stocks-startup.json', true]", universe)
+        self.assertIn("['data/stocks-index.json', false]", universe)
+        self.assertIn("['data/stocks.json', false]", universe)
+        self.assertLess(universe.index('stocks-startup.json'), universe.index('stocks-index.json'))
         self.assertLess(universe.index('stocks-index.json'), universe.index('stocks.json'))
         self.assertIn("cache: 'no-store'", universe)
+        self.assertIn('unpackStartupPayload', universe)
 
     def test_lazy_loader_never_monkeypatches_window_fetch(self):
         loader = read('market-data-loader.js')
@@ -34,9 +37,12 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_static_universe_is_the_canonical_market_index_owner(self):
         universe = read('market-static-universe.js')
-        self.assertIn("fetchImpl('data/stocks-index.json'", universe)
-        self.assertIn("fetchImpl('data/stocks.json'", universe)
+        self.assertIn('stocks-startup.json', universe)
+        self.assertIn('stocks-index.json', universe)
+        self.assertIn('stocks.json', universe)
         self.assertIn('getStocks', universe)
+        self.assertIn('loadFirstAvailable', universe)
+        self.assertNotIn('window.fetch =', universe)
 
     def test_shared_market_state_consumers_do_not_refetch_universe(self):
         brief = read('market-company-brief.js')
