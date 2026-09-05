@@ -34,7 +34,6 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     self.assertIn('const net = e.type === "DIVIDEND_ADJ" ? rawNet : Math.max(0, rawNet);',a)
     self.assertIn('const BROKER_REBUILD_SCHEMA_VERSION = 45;',a)
   def test_real_t212_semantics_examples(self):
-    # Source-file ground truth: Total is gross EUR, WHT is native and converted once.
     pfe_gross=5.23; pfe_tax_usd=1.00; pfe_fx=0.924978
     self.assertAlmostEqual(pfe_gross-pfe_tax_usd*pfe_fx,4.305022,places=6)
     mpt_gross=1.96; mpt_tax_usd=.41; mpt_fx=.856201
@@ -47,7 +46,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     self.assertIn('app-broker-parsing-core.js?v=1.1',i)
     self.assertIn('app-asset-identity.js?v=20260829v2',i)
     self.assertIn('app.js?v=20260827v21',i)
-    self.assertIn('Vestra Service Worker v10.11',sw)
-    self.assertIn('vestra-cache-v125',sw)
+    self.assertIn('Vestra Service Worker v10.12',sw)
+    self.assertIn('vestra-cache-v126',sw)
     self.assertIn('./market-live-overlay.js',sw)
 if __name__=='__main__': unittest.main(verbosity=2)

@@ -28,8 +28,8 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         positions=[index.index(x) for x in order]
         self.assertEqual(positions,sorted(positions))
         sw=read("sw.js")
-        self.assertIn("Vestra Service Worker v10.11",sw)
-        self.assertIn("vestra-cache-v125",sw)
+        self.assertIn("Vestra Service Worker v10.12",sw)
+        self.assertIn("vestra-cache-v126",sw)
         self.assertIn('./market-live-overlay.js',sw)
 
 if __name__=='__main__': unittest.main(verbosity=2)

@@ -80,9 +80,17 @@ class LearnedUniverseTests(unittest.TestCase):
             self.assertEqual(snapshot['count'], 1)
             self.assertEqual({r['ticker'] for r in snapshot['rows']}, {'MSFT'})
 
-    def test_tkr_seed_survives_first_central_sync(self):
+    def test_published_snapshot_matches_authoritative_v2_contract(self):
         payload = json.loads(SEED.read_text(encoding='utf-8'))
-        self.assertIn('TKR', {r['ticker'] for r in payload.get('rows', [])})
+        rows = payload.get('rows', [])
+        self.assertEqual(payload.get('schema_version'), 2)
+        self.assertEqual(payload.get('source'), 'worker-authoritative-v2')
+        self.assertEqual(payload.get('count'), len(rows))
+        self.assertTrue(rows)
+        for row in rows:
+            self.assertTrue(row.get('ticker'))
+            self.assertIn(row.get('quote_type'), {'EQUITY','ETF','MUTUALFUND'})
+            self.assertGreaterEqual(int(row.get('validation_count') or 0), 1)
 
 
 if __name__ == '__main__':

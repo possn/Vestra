@@ -1,4 +1,4 @@
-/* Vestra Market Client v1.4 — identity-safe batching, quote dedupe and FX caching. */
+/* Vestra Market Client v1.5 — identity-safe batching, quote dedupe and FX caching. */
 (() => {
   'use strict';
 
@@ -7,24 +7,25 @@
     SEK:0.087, NOK:0.085, CAD:0.68, AUD:0.59, JPY:0.006, HKD:0.118
   });
 
-  // Logical portfolio concurrency can be higher because requests are coalesced into
-  // one Worker batch connection. Direct fallback remains deliberately conservative.
-  const MAX_QUOTE_CONCURRENCY = 12;
+  // Portfolio refresh uses high logical concurrency only to enqueue work. Actual
+  // browser->Worker traffic remains bounded and batched below.
+  const MAX_QUOTE_CONCURRENCY = 600;
   const DEFAULT_QUOTE_TIMEOUT_MS = 12000;
   const BATCH_QUOTE_TIMEOUT_MS = 12000;
-  const BATCH_WINDOW_MS = 18;
-  const BATCH_CHUNK_SIZE = 12;
+  const BATCH_WINDOW_MS = 24;
+  const BATCH_CHUNK_SIZE = 20;
+  const BATCH_REQUEST_CONCURRENCY = 8;
   const DIRECT_FALLBACK_CONCURRENCY = 2;
   const QUOTE_CACHE_TTL_MS = 60 * 1000;
   const QUOTE_ERROR_TTL_MS = 20 * 1000;
   const FX_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
   const cleanWorkerUrl = workerUrl => String(workerUrl||'').replace(/\/$/,'');
-  const batchSupport = new Map(); // worker base -> true/false once learned
-  const quoteCache = new Map();   // base|ticker -> {ts,value}
-  const quoteErrorCache = new Map(); // base|ticker -> {ts,error}
-  const quoteInflight = new Map(); // base|ticker -> Promise
-  const fxCache = new Map();      // base|ccy -> {ts,rate}
+  const batchSupport = new Map();
+  const quoteCache = new Map();
+  const quoteErrorCache = new Map();
+  const quoteInflight = new Map();
+  const fxCache = new Map();
 
   function isTimeoutError(err) {
     const name=String(err?.name||'');
@@ -42,11 +43,8 @@
   async function fetchWithTimeout(url, options={}, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(), Math.max(1000, Number(timeoutMs)||DEFAULT_QUOTE_TIMEOUT_MS));
-    try {
-      return await fetch(url,{...options,signal:controller.signal});
-    } finally {
-      clearTimeout(timer);
-    }
+    try { return await fetch(url,{...options,signal:controller.signal}); }
+    finally { clearTimeout(timer); }
   }
 
   async function fetchQuoteDirect(ticker, workerUrl, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
@@ -54,9 +52,8 @@
     if(!base) throw new Error('Worker URL não configurado');
     const url=`${base}/quote?ticker=${encodeURIComponent(String(ticker||'').trim())}`;
     let resp;
-    try {
-      resp=await fetchWithTimeout(url,{},timeoutMs);
-    } catch(e) {
+    try { resp=await fetchWithTimeout(url,{},timeoutMs); }
+    catch(e) {
       if(isTimeoutError(e)) throw new Error(`Tempo limite do Worker (${Math.round(timeoutMs/1000)}s)`);
       throw new Error(`Worker inacessível: ${e?.message||'erro de rede'}`);
     }
@@ -79,42 +76,52 @@
     let unsupported=batchSupport.get(base)===false;
     if(unsupported) return {quotes,errors,unsupported:true};
 
-    for(let i=0;i<unique.length;i+=BATCH_CHUNK_SIZE){
-      const chunk=unique.slice(i,i+BATCH_CHUNK_SIZE);
-      const qs=chunk.map(encodeURIComponent).join(',');
-      let resp;
-      try {
-        resp=await fetchWithTimeout(`${base}/quotes?tickers=${qs}`,{
-          method:'GET', headers:{'Accept':'application/json'}
-        },timeoutMs);
-      } catch(e) {
-        const msg=isTimeoutError(e)
-          ? `Tempo limite do Worker (${Math.round(timeoutMs/1000)}s)`
-          : `Worker inacessível: ${e?.message||'erro de rede'}`;
-        chunk.forEach(t=>{ errors[t]=msg; });
-        continue;
-      }
+    const chunks=[];
+    for(let i=0;i<unique.length;i+=BATCH_CHUNK_SIZE) chunks.push(unique.slice(i,i+BATCH_CHUNK_SIZE));
+    let cursor=0;
+    const workerCount=Math.min(BATCH_REQUEST_CONCURRENCY,chunks.length||1);
 
-      let data=null;
-      try { data=await resp.clone().json(); } catch(_) {}
-      if([404,405,501].includes(resp.status)){
-        unsupported=true;
-        batchSupport.set(base,false);
-        break;
-      }
-      if(!resp.ok){
-        const msg=`Worker HTTP ${resp.status}${data?.error?`: ${data.error}`:''}`;
-        chunk.forEach(t=>{ errors[t]=msg; });
-        continue;
-      }
+    const workers=Array.from({length:workerCount},async()=>{
+      while(true){
+        const idx=cursor++;
+        if(idx>=chunks.length || unsupported) return;
+        const chunk=chunks[idx];
+        const qs=chunk.map(encodeURIComponent).join(',');
+        let resp;
+        try {
+          resp=await fetchWithTimeout(`${base}/quotes?tickers=${qs}`,{
+            method:'GET', headers:{'Accept':'application/json'}
+          },timeoutMs);
+        } catch(e) {
+          const msg=isTimeoutError(e)
+            ? `Tempo limite do Worker (${Math.round(timeoutMs/1000)}s)`
+            : `Worker inacessível: ${e?.message||'erro de rede'}`;
+          chunk.forEach(t=>{ errors[t]=msg; });
+          continue;
+        }
 
-      batchSupport.set(base,true);
-      for(const t of chunk){
-        const row=data && data[t];
-        if(row && !row.error && Number(row.price)>0) quotes[t]=row;
-        else errors[t]=row?.error || 'Sem cotação disponível';
+        let data=null;
+        try { data=await resp.clone().json(); } catch(_) {}
+        if([404,405,501].includes(resp.status)){
+          unsupported=true;
+          batchSupport.set(base,false);
+          return;
+        }
+        if(!resp.ok){
+          const msg=`Worker HTTP ${resp.status}${data?.error?`: ${data.error}`:''}`;
+          chunk.forEach(t=>{ errors[t]=msg; });
+          continue;
+        }
+
+        batchSupport.set(base,true);
+        for(const t of chunk){
+          const row=data && data[t];
+          if(row && !row.error && Number(row.price)>0) quotes[t]=row;
+          else errors[t]=row?.error || 'Sem cotação disponível';
+        }
       }
-    }
+    });
+    await Promise.all(workers);
     return {quotes,errors,unsupported};
   }
 
@@ -206,7 +213,10 @@
   async function mapWithConcurrency(items, concurrency, fn) {
     const list=Array.isArray(items)?items:[];
     const requested=Math.max(1,Number(concurrency)||1);
-    const effective=Math.min(requested,MAX_QUOTE_CONCURRENCY,list.length||1);
+    // Large portfolio refreshes must enqueue together so queueQuote can coalesce
+    // them into true Worker batches. Small generic maps keep the requested limit.
+    const promoted=list.length>=40 ? Math.min(list.length,MAX_QUOTE_CONCURRENCY) : requested;
+    const effective=Math.min(promoted,MAX_QUOTE_CONCURRENCY,list.length||1);
     const out=new Array(list.length);
     let cursor=0;
     const workers=Array.from({length:effective},async()=>{
@@ -249,11 +259,13 @@
   }
 
   window.VestraMarketClient=Object.freeze({
-    version:'1.4',
+    version:'1.5',
     FX_FALLBACK_LOCAL,
     MAX_QUOTE_CONCURRENCY,
     DEFAULT_QUOTE_TIMEOUT_MS,
     BATCH_QUOTE_TIMEOUT_MS,
+    BATCH_CHUNK_SIZE,
+    BATCH_REQUEST_CONCURRENCY,
     cleanWorkerUrl,
     fetchQuote,
     fetchQuotesBatch,
