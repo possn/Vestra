@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 import requests, yfinance as yf
 from lse_identity import resolve_isin as resolve_lse_isin
 from asset_types import is_equity_candidate
+from source_agreement import attach_esef_same_period_observation
 
 log=logging.getLogger('esef_enrich')
 BASE='https://filings.xbrl.org'; GLEIF='https://api.gleif.org/api/v1/lei-records'
@@ -138,7 +139,7 @@ def enrich(raw,priority=None,max_nonpriority=220):
     diag={
         'eligible':0,'attempted':0,'isin_resolved':0,'isin_missing':0,
         'lei_resolved':0,'lei_missing':0,'filing_found':0,'filing_missing':0,
-        'report_parsed':0,'report_failed':0,'enriched':0,
+        'report_parsed':0,'report_failed':0,'enriched':0,'same_period_observations':0,
     }
     for m in raw:
         t=str(getattr(m,'ticker','') or '').upper(); c=country_for(t)
@@ -174,6 +175,20 @@ def enrich(raw,priority=None,max_nonpriority=220):
         a=latest(rep,'assets',False); e=latest(rep,'equity',False); ca=latest(rep,'current_assets',False); cl=latest(rep,'current_liab',False); inv=latest(rep,'inventory',False); cash=latest(rep,'cash',False)
         cfo=latest(rep,'cfo',True); capex=latest(rep,'capex',True); dc=latest(rep,'debt_cur',False); dn=latest(rep,'debt_non',False); interest=latest(rep,'interest',True)
         debt=(dc or 0)+(dn or 0) if dc is not None or dn is not None else None
+
+        # Observe same-period agreement before fill-missing changes canonical fields.
+        # Yahoo values come from annual_quality_history (annual statements), never
+        # from the current/TTM quoteSummary ratios. The helper is dependency-free
+        # and the temporary marker is removed by provenance normalization.
+        esef_quality={}
+        if rev not in (None,0):
+            if gp is not None: esef_quality['gross_margin']=gp/rev
+            if op is not None: esef_quality['operating_margin']=op/rev
+            if ni is not None: esef_quality['net_margin']=ni/rev
+        if ni is not None and e not in (None,0): esef_quality['roe']=ni/e
+        if attach_esef_same_period_observation(m,f.get('period_end'),esef_quality):
+            diag['same_period_observations']+=1
+
         if rev not in (None,0):
             set_missing(m,'profit_margin',ni/rev if ni is not None else None); set_missing(m,'operating_margin',op/rev if op is not None else None); set_missing(m,'gross_margin',gp/rev if gp is not None else None)
         set_missing(m,'roe',ni/e if ni is not None and e not in (None,0) else None); set_missing(m,'roa',ni/a if ni is not None and a not in (None,0) else None)

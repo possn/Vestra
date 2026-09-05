@@ -8,7 +8,19 @@ present on the row.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from source_agreement import (
+    SOURCE_AGREEMENT_METHOD,
+    SOURCE_AGREEMENT_MIN_CHECKS,
+    consume_esef_same_period_observation,
+    finite_number,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 STOCKS = ROOT / "data" / "stocks.json"
@@ -140,8 +152,8 @@ def build_provenance(row: dict, generated_at: str | None = None) -> dict:
     except (TypeError, ValueError):
         agreement_checks = 0
 
-    agreement_pct = row.get("source_agreement_pct")
-    if not isinstance(agreement_pct, (int, float)):
+    agreement_pct = finite_number(row.get("source_agreement_pct"))
+    if agreement_checks < SOURCE_AGREEMENT_MIN_CHECKS:
         agreement_pct = None
 
     out = {
@@ -161,6 +173,13 @@ def build_provenance(row: dict, generated_at: str | None = None) -> dict:
         "agreement_pct": agreement_pct,
         "filing_periods": _filing_periods(row),
     }
+    agreement_details = row.get("source_agreement_details")
+    if isinstance(agreement_details, list) and agreement_details:
+        out["agreement_details"] = agreement_details
+    if row.get("source_agreement_period_end"):
+        out["agreement_period_end"] = row.get("source_agreement_period_end")
+    if row.get("source_agreement_method"):
+        out["agreement_method"] = row.get("source_agreement_method")
     if generated_at:
         out["pipeline_generated_at"] = generated_at
     if row.get("identity_source"):
@@ -179,6 +198,7 @@ def normalize_row(row: dict, generated_at: str | None = None) -> bool:
     sources = [str(x).strip() for x in (row.get("data_sources") or []) if str(x).strip()]
     before_sources = list(sources)
     before_provenance = row.get("data_provenance")
+    consumed_observation = consume_esef_same_period_observation(row)
     sources = [x for x in sources if x not in LEGACY_CONGRESS_SOURCES]
     if row.get("congress_trades"):
         if OFFICIAL_CONGRESS_SOURCE not in sources:
@@ -186,7 +206,7 @@ def normalize_row(row: dict, generated_at: str | None = None) -> bool:
     # Stable order + dedupe while preserving first occurrence.
     row["data_sources"] = list(dict.fromkeys(sources))
     row["data_provenance"] = build_provenance(row, generated_at)
-    return row["data_sources"] != before_sources or row["data_provenance"] != before_provenance
+    return consumed_observation or row["data_sources"] != before_sources or row["data_provenance"] != before_provenance
 
 
 def main() -> None:
@@ -202,6 +222,8 @@ def main() -> None:
         "canonical_congress_source": OFFICIAL_CONGRESS_SOURCE,
         "row_contract": "data_provenance",
         "independent_source_scope": "fundamentals",
+        "source_agreement_min_checks": SOURCE_AGREEMENT_MIN_CHECKS,
+        "source_agreement_method": SOURCE_AGREEMENT_METHOD,
         "rows_changed": changed,
     }
     STOCKS.write_text(json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")

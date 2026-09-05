@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "data" / "stocks.json"
 OUT = ROOT / "data" / "provenance_audit.json"
 FUND_TYPES = {"ETF", "CRYPTO", "MUTUALFUND", "FUND"}
+MIN_AGREEMENT_CHECKS = 2
 
 
 def equity_rows(payload: dict) -> list[dict]:
@@ -80,7 +81,9 @@ def _independent_bucket(count):
 def _agreement_bucket(provenance: dict):
     checks = int(provenance.get("agreement_checks") or 0)
     pct = _number(provenance.get("agreement_pct"))
-    if checks <= 0 or pct is None:
+    # One coincident metric is useful diagnostic detail but is not enough to
+    # describe source agreement as measured at dossier/audit level.
+    if checks < MIN_AGREEMENT_CHECKS or pct is None:
         return "not_measured"
     if pct >= 90:
         return "gte90"
@@ -193,6 +196,7 @@ def build_audit(payload: dict, today: dt.date | None = None) -> dict:
         "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "pipeline_generated_at": payload.get("generated_at"),
         "independent_source_scope": "fundamentals",
+        "agreement_min_checks": MIN_AGREEMENT_CHECKS,
         "equities": summarize(rows, today),
         "by_region": {k: summarize(v, today) for k, v in sorted(by_region.items())},
         "by_score_model": {k: summarize(v, today) for k, v in sorted(by_model.items())},
