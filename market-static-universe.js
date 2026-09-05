@@ -2,6 +2,12 @@
 (() => {
   'use strict';
 
+  let sharedStocks = [];
+
+  function getStocks() {
+    return sharedStocks;
+  }
+
   function ensureScannerCompanion() {
     if (typeof document === 'undefined') return;
     if (window.VestraMarketScannerData || document.querySelector('script[data-vestra-scanner-data]')) return;
@@ -37,6 +43,7 @@
         state.data = data;
         state.stocks = stocks;
         state.byTicker = new Map(stocks.map(stock => [txt(stock?.ticker).toUpperCase(), stock]));
+        sharedStocks = stocks;
 
         beforeReady();
         state.loaded = true;
@@ -54,5 +61,5 @@
   }
 
   ensureScannerCompanion();
-  window.VestraMarketStaticUniverse = Object.freeze({ create, ensureScannerCompanion, version: '1.0' });
+  window.VestraMarketStaticUniverse = Object.freeze({ create, getStocks, ensureScannerCompanion, version: '1.0' });
 })();
