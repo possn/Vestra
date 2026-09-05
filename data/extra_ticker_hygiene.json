@@ -1,40 +1,17 @@
 {
   "schema_version": 2,
-  "extra_ticker_count": 500,
+  "extra_ticker_count": 493,
   "states": {
-    "published_confirmed": 484,
+    "published_confirmed": 482,
     "known_identity": 8,
-    "unresolved": 7,
-    "sec_registered_identity": 1
+    "sec_registered_identity": 2,
+    "unresolved": 1
   },
-  "unresolved_count": 7,
+  "unresolved_count": 1,
   "unresolved_tickers": [
-    "AL",
-    "BRADE",
-    "BRADES",
-    "VICO",
-    "VICOR",
-    "ZZPST",
-    "ZZVST"
+    "RIO1.DE"
   ],
-  "review_families": [
-    {
-      "family_key": "BRAD",
-      "tickers": [
-        "BRADE",
-        "BRADES"
-      ],
-      "action": "review_only"
-    },
-    {
-      "family_key": "VICO",
-      "tickers": [
-        "VICO",
-        "VICOR"
-      ],
-      "action": "review_only"
-    }
-  ],
+  "review_families": [],
   "rows": [
     {
       "ticker": "2B76.DE",
@@ -203,12 +180,6 @@
       "state": "published_confirmed",
       "quote_type": "EQUITY",
       "evidence": "stocks_snapshot"
-    },
-    {
-      "ticker": "AL",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
     },
     {
       "ticker": "ALAB",
@@ -569,18 +540,6 @@
       "state": "published_confirmed",
       "quote_type": "ECNQUOTE",
       "evidence": "stocks_snapshot"
-    },
-    {
-      "ticker": "BRADE",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
-    },
-    {
-      "ticker": "BRADES",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
     },
     {
       "ticker": "BSX",
@@ -2108,10 +2067,9 @@
     },
     {
       "ticker": "POET",
-      "state": "sec_registered_identity",
-      "quote_type": null,
-      "evidence": "sec_ticker_map",
-      "cik": 1437424
+      "state": "published_confirmed",
+      "quote_type": "EQUITY",
+      "evidence": "stocks_snapshot"
     },
     {
       "ticker": "POL.CC",
@@ -2309,21 +2267,23 @@
     },
     {
       "ticker": "RIO",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "sec_registered_identity",
+      "quote_type": null,
+      "evidence": "sec_ticker_map",
+      "cik": 863064
     },
     {
       "ticker": "RIO1.DE",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "unresolved",
+      "quote_type": null,
+      "evidence": null
     },
     {
       "ticker": "RIOT",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "sec_registered_identity",
+      "quote_type": null,
+      "evidence": "sec_ticker_map",
+      "cik": 1167419
     },
     {
       "ticker": "ROP",
@@ -2788,18 +2748,6 @@
       "evidence": "stocks_snapshot"
     },
     {
-      "ticker": "VICO",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
-    },
-    {
-      "ticker": "VICOR",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
-    },
-    {
       "ticker": "VICR",
       "state": "published_confirmed",
       "quote_type": "EQUITY",
@@ -3032,18 +2980,6 @@
       "state": "published_confirmed",
       "quote_type": "EQUITY",
       "evidence": "stocks_snapshot"
-    },
-    {
-      "ticker": "ZZPST",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
-    },
-    {
-      "ticker": "ZZVST",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
     }
   ],
   "mutation_policy": "diagnostic_only_exact_evidence_no_auto_merge_no_delete",
