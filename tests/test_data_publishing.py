@@ -1,3 +1,4 @@
+import re
 import subprocess
 import unittest
 from pathlib import Path
@@ -50,7 +51,10 @@ class DataPublishingContractTests(unittest.TestCase):
                 self.assertIn(path, blocked)
         self.assertLess(blocked.index("git checkout --"), blocked.index("git add data/coverage_audit.json"))
         self.assertLess(blocked.index("git clean -fd"), blocked.index("git add data/coverage_audit.json"))
-        self.assertNotIn("git add data/", blocked)
+        self.assertIsNone(
+            re.search(r"(?m)^\s*git add data/\s*$", blocked),
+            "blocked build must never stage the whole rejected data directory",
+        )
 
     def test_publisher_retries_remote_advance_without_force_push(self):
         source = PUBLISHER.read_text()
