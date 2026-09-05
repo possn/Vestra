@@ -22,6 +22,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
         text = REPAIR.read_text(encoding="utf-8")
         self.assertIn("AU0000185993: 'IREN'", text)
         self.assertIn("IE00BLCHJ534: 'PAVE.L'", text)
+        self.assertIn("GB00BL6K5J42: 'EDV.TO'", text)
         self.assertIn("applyIdentityMapRepairs();", text)
 
     def test_recovery_is_narrow_and_runtime_effective(self):
@@ -34,13 +35,15 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
               US0378331005:'AAPL',
               US12468P1049:'AI',
               AU0000185993:'IREN.AX',
-              IE00BLCHJ534:'PAVE.DE'
+              IE00BLCHJ534:'PAVE.DE',
+              GB00BL6K5J42:'EDV.L'
             }} }};
             window.quoteSanityCheck = () => ({{ok:false, reason:'historical jump'}});
             eval(fs.readFileSync({str(REPAIR)!r}, 'utf8'));
 
             if (window.VestraAssetIdentity.ISIN_YAHOO_MAP.AU0000185993 !== 'IREN') process.exit(10);
             if (window.VestraAssetIdentity.ISIN_YAHOO_MAP.IE00BLCHJ534 !== 'PAVE.L') process.exit(15);
+            if (window.VestraAssetIdentity.ISIN_YAHOO_MAP.GB00BL6K5J42 !== 'EDV.TO') process.exit(17);
 
             const good = window.quoteSanityCheck(
               {{isin:'DE000SHL1006'}},
