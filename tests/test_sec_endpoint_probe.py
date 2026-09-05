@@ -71,6 +71,14 @@ class SecEndpointProbeTests(unittest.TestCase):
             headers={"content-range": "bytes 0-0/123456", "content-length": "1", "accept-ranges": "bytes"},
         )
 
+    def _archive_ok(self, status=206, content_type="text/plain"):
+        return FakeResponse(
+            status=status,
+            payload=None,
+            content_type=content_type,
+            headers={"content-range": "bytes 0-0/654321", "content-length": "1", "accept-ranges": "bytes"},
+        )
+
     def test_probe_reports_companyfacts_submissions_and_bulk_availability(self):
         facts = {"facts": {"us-gaap": {"Assets": {}}}}
         submissions = {"filings": {"recent": {"form": ["10-K"]}}}
@@ -81,12 +89,13 @@ class SecEndpointProbeTests(unittest.TestCase):
             self._bulk_ok(), self._bulk_ok(),
         ])
         with tempfile.TemporaryDirectory() as tmp:
-            report = probe.probe(session=session, snapshot_path=self._snapshot(tmp))
+            report = probe.probe(session=session, snapshot_path=self._snapshot(tmp), archive_endpoints={})
         self.assertTrue(report["snapshot_available"])
         self.assertEqual(report["snapshot_count"], 3)
         self.assertEqual(report["summary"], {
             "requests": 6, "http_ok": 6, "payload_ok": 6,
             "bulk_requests": 2, "bulk_ok": 2,
+            "archive_requests": 0, "archive_ok": 0,
         })
         self.assertTrue(report["sentinels"]["AAPL"]["companyfacts"]["payload_present"])
         self.assertTrue(report["sentinels"]["AAPL"]["submissions"]["payload_present"])
@@ -106,10 +115,11 @@ class SecEndpointProbeTests(unittest.TestCase):
         ])
         with tempfile.TemporaryDirectory() as tmp:
             path = self._snapshot(tmp, {"AAPL": 320193})
-            report = probe.probe(session=session, snapshot_path=path, sentinels=("AAPL",))
+            report = probe.probe(session=session, snapshot_path=path, sentinels=("AAPL",), archive_endpoints={})
         self.assertEqual(report["summary"], {
             "requests": 2, "http_ok": 0, "payload_ok": 0,
             "bulk_requests": 2, "bulk_ok": 0,
+            "archive_requests": 0, "archive_ok": 0,
         })
         self.assertEqual(report["sentinels"]["AAPL"]["companyfacts"]["status"], 403)
         self.assertEqual(report["sentinels"]["AAPL"]["submissions"]["status"], 403)
@@ -123,7 +133,7 @@ class SecEndpointProbeTests(unittest.TestCase):
         ])
         with tempfile.TemporaryDirectory() as tmp:
             path = self._snapshot(tmp, {"AAPL": 320193})
-            report = probe.probe(session=session, snapshot_path=path, sentinels=("AAPL",))
+            report = probe.probe(session=session, snapshot_path=path, sentinels=("AAPL",), archive_endpoints={})
         cf = report["sentinels"]["AAPL"]["companyfacts"]
         self.assertTrue(cf["ok"])
         self.assertFalse(cf["json_valid"])
@@ -135,13 +145,42 @@ class SecEndpointProbeTests(unittest.TestCase):
     def test_missing_snapshot_still_probes_official_bulk_archives(self):
         session = FakeSession([self._bulk_ok(), self._bulk_ok(status=200)])
         with tempfile.TemporaryDirectory() as tmp:
-            report = probe.probe(session=session, snapshot_path=Path(tmp) / "missing.json")
+            report = probe.probe(
+                session=session,
+                snapshot_path=Path(tmp) / "missing.json",
+                archive_endpoints={},
+            )
         self.assertFalse(report["snapshot_available"])
         self.assertEqual(report["summary"], {
             "requests": 0, "http_ok": 0, "payload_ok": 0,
             "bulk_requests": 2, "bulk_ok": 2,
+            "archive_requests": 0, "archive_ok": 0,
         })
         self.assertEqual(len(session.calls), 2)
+
+    def test_archive_paths_are_probed_independently_of_api_guard(self):
+        archives = {
+            "master": "https://www.sec.gov/Archives/edgar/full-index/2026/QTR3/master.idx",
+            "xbrl": "https://www.sec.gov/Archives/edgar/data/320193/example.xml",
+        }
+        session = FakeSession([
+            self._bulk_ok(status=403), self._bulk_ok(status=403),
+            self._archive_ok(), self._archive_ok(content_type="application/xml"),
+        ])
+        with tempfile.TemporaryDirectory() as tmp:
+            report = probe.probe(
+                session=session,
+                snapshot_path=Path(tmp) / "missing.json",
+                archive_endpoints=archives,
+            )
+        self.assertEqual(report["summary"]["bulk_ok"], 0)
+        self.assertEqual(report["summary"]["archive_requests"], 2)
+        self.assertEqual(report["summary"]["archive_ok"], 2)
+        self.assertTrue(report["archives"]["master"]["ok"])
+        self.assertEqual(report["archives"]["xbrl"]["content_type"], "application/xml")
+        for call in session.calls[-2:]:
+            self.assertTrue(call["stream"])
+            self.assertEqual(call["headers"]["Range"], "bytes=0-0")
 
 
 if __name__ == "__main__":
