@@ -19,6 +19,13 @@ SCANNER_INDEX = os.path.join(ROOT, "data", "stocks-scanner.json")
 SHARD_DIR = os.path.join(ROOT, "data", "dossiers")
 MANIFEST = os.path.join(ROOT, "data", "dossiers-manifest.json")
 
+# Startup performance budget. The historical 25% source-relative guard could
+# silently allow the index to grow past 12 MB as stocks.json expands. Keep an
+# absolute iPhone/PWA ceiling as well as a tighter relative ceiling so any future
+# enrichment added to INDEX_KEYS requires an explicit architecture review.
+MAX_INDEX_BYTES = 7_250_000
+MAX_INDEX_RATIO = 0.15
+
 # Explicit pre-dossier contract. Anything not listed here belongs to a lazy
 # payload or dossier shard. Keeping this list explicit prevents new enrichment
 # scalars from silently bloating startup again.
@@ -39,9 +46,9 @@ INDEX_KEYS = {
     "forward_pe_vs_sector_pct", "trailing_pe_vs_sector_pct", "ev_ebitda_vs_sector_pct",
     "dividend_yield", "revenue_growth", "valuation_signal", "valuation_confidence",
     "fair_value_upside_pct", "margin_of_safety_pct",
-    # thesis / change signals
-    "thesis_type", "thesis_slug", "thesis_confidence", "thesis_direction",
-    "thesis_direction_label", "thesis_summary", "thesis_score_delta_7d",
+    # thesis / change signals used by lists and watch snapshots
+    "thesis_type", "thesis_confidence", "thesis_direction",
+    "thesis_direction_label", "thesis_score_delta_7d",
     "estimate_signal", "estimate_momentum_score", "estimate_revision_score",
     # analyst / events used before dossier hydration
     "analyst_eps_revisions_up_30d", "analyst_eps_revisions_down_30d",
@@ -81,6 +88,9 @@ INDEX_KEYS = {
 DETAIL_ONLY_LIST_KEYS = {
     "data_sources", "opportunity_reasons", "opportunity_cautions",
     "scanner_reasons", "scanner_cautions", "thesis_reasons", "thesis_cautions",
+}
+DETAIL_ONLY_SCALAR_KEYS = {
+    "thesis_slug", "thesis_summary",
 }
 
 
@@ -193,19 +203,25 @@ def main() -> None:
     src_size = os.path.getsize(SRC)
     idx_size = os.path.getsize(INDEX)
     scanner_size = os.path.getsize(SCANNER_INDEX)
+    ratio = (idx_size / src_size) if src_size else 0
     print(
         f"market shards: {len(index_rows)} unique rows, {len(shards)} shards; "
         f"dropped {duplicate_count} duplicate rows; "
-        f"index {idx_size/1_000_000:.2f} MB + lazy scanner {scanner_size/1_000_000:.2f} MB "
-        f"vs source {src_size/1_000_000:.2f} MB"
+        f"index {idx_size/1_000_000:.2f} MB ({ratio:.1%} of source) + "
+        f"lazy scanner {scanner_size/1_000_000:.2f} MB vs source {src_size/1_000_000:.2f} MB"
     )
     if len(index_rows) != len(manifest):
         raise RuntimeError("Market shard manifest/index cardinality mismatch")
     if len(scanner_tickers) > len(index_rows):
         raise RuntimeError("Scanner payload cardinality exceeds market index")
-    # Startup data should remain meaningfully smaller than the full dossier source.
-    if src_size > 0 and idx_size >= src_size * 0.25:
-        raise RuntimeError("Lightweight index is unexpectedly large (>=25% of stocks.json)")
+    if idx_size > MAX_INDEX_BYTES:
+        raise RuntimeError(
+            f"Market startup index exceeds absolute budget: {idx_size} > {MAX_INDEX_BYTES} bytes"
+        )
+    if src_size > 0 and ratio > MAX_INDEX_RATIO:
+        raise RuntimeError(
+            f"Market startup index exceeds relative budget: {ratio:.1%} > {MAX_INDEX_RATIO:.1%}"
+        )
 
 
 if __name__ == "__main__":
