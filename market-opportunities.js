@@ -5,20 +5,10 @@
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
   const clamp=v=>Math.max(0,Math.min(100,v));
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let stocks=[],loading=null;
 
-  function load(){
-    if(loading)return loading;
-    loading=fetch('./data/stocks-index.json',{cache:'no-store'})
-      .then(async r=>{
-        if(r.ok)return r.json();
-        const legacy=await fetch('./data/stocks.json',{cache:'no-store'});
-        if(!legacy.ok)throw new Error('market universe unavailable');
-        return legacy.json();
-      })
-      .then(d=>{stocks=Array.isArray(d)?d:(d?.stocks||[]);return stocks;})
-      .catch(()=>[]);
-    return loading;
+  function stocks(){
+    const rows=window.VestraMarketStaticUniverse?.getStocks?.();
+    return Array.isArray(rows)?rows:[];
   }
 
   function stats(s){
@@ -98,9 +88,10 @@
   }
 
   function opportunities(){
-    const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades/.test(t(x.querySelector('h3')?.textContent)));if(!section||!stocks.length)return;
+    const universe=stocks();
+    const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades/.test(t(x.querySelector('h3')?.textContent)));if(!section||!universe.length)return;
     const list=section.querySelector('.market-list');if(!list)return;const active=section.querySelector('[data-market-sector].is-active');const sec=t(active?.dataset.marketSector)||'all';
-    let rows=stocks.filter(eligible);if(sec!=='all')rows=rows.filter(s=>t(s?.sector)===sec);rows.sort((a,b)=>(score(b)||0)-(score(a)||0)||(timing(b)||0)-(timing(a)||0));rows=rows.slice(0,12);if(!rows.length)return;
+    let rows=universe.filter(eligible);if(sec!=='all')rows=rows.filter(s=>t(s?.sector)===sec);rows.sort((a,b)=>(score(b)||0)-(score(a)||0)||(timing(b)||0)-(timing(a)||0));rows=rows.slice(0,12);if(!rows.length)return;
     const sig=rows.map(s=>`${t(s.ticker)}:${Math.round(score(s)||0)}`).join('|')+sec;
     if(list.dataset.ux453!==sig){
       list.innerHTML=rows.map(row).join('');
@@ -116,7 +107,7 @@
   .ux454-opportunity-guide{display:flex;gap:6px;overflow-x:auto;padding:0 1px 9px;margin-top:-2px;scrollbar-width:none}.ux454-opportunity-guide span{flex:0 0 auto;padding:6px 8px;border-radius:999px;background:var(--soft);font-size:8.5px;color:var(--text2)}.ux454-opportunity-guide b{color:var(--text);margin-right:3px}.ux454-podium{position:relative!important;border-width:1.5px!important}.ux454-podium-1{background:linear-gradient(145deg,color-mix(in srgb,var(--accent,#168e89) 12%,var(--card)),var(--card))!important;box-shadow:0 10px 26px rgba(18,118,111,.10)!important}.ux454-podium-2{background:linear-gradient(145deg,#f3f6fb,var(--card))!important}.ux454-podium-3{background:linear-gradient(145deg,#fff7ec,var(--card))!important}.ux454-rank{position:absolute;right:8px;top:7px;font-size:8px;font-weight:900;letter-spacing:.08em;color:var(--text2);opacity:.8}
   `;document.head.appendChild(s);}
 
-  function start(){style();load().then(()=>{opportunities();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(document.body,{childList:true,subtree:true});});}
+  function start(){style();opportunities();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(document.body,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
   window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,score,refresh:opportunities,decorate});
