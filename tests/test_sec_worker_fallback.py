@@ -67,7 +67,7 @@ class SecWorkerFallbackTests(unittest.TestCase):
         )
         self.assertIsNone(fallback._worker_url('https://www.sec.gov/files/company_tickers.json', 'https://worker.example'))
 
-    def test_direct_success_does_not_call_worker(self):
+    def test_direct_success_does_not_call_worker_and_is_counted(self):
         direct_ok = FakeResponse(200)
         module, factory = self.make_module([direct_ok])
         fallback.install(module, worker_url='https://worker.example')
@@ -76,8 +76,12 @@ class SecWorkerFallbackTests(unittest.TestCase):
         self.assertIs(response, direct_ok)
         self.assertEqual(len(factory.instances[0].calls), 1)
         self.assertIn('data.sec.gov', factory.instances[0].calls[0][0])
+        self.assertEqual(session._vestra_transport_diag['companyfacts_direct_attempts'], 1)
+        self.assertEqual(session._vestra_transport_diag['companyfacts_direct_success'], 1)
+        self.assertEqual(session._vestra_transport_diag['companyfacts_direct_status'], {'200': 1})
+        self.assertEqual(session._vestra_transport_diag['companyfacts_worker_attempts'], 0)
 
-    def test_direct_403_retries_same_cik_via_worker(self):
+    def test_direct_403_retries_same_cik_via_worker_and_counts_both_legs(self):
         blocked = FakeResponse(403)
         worker_ok = FakeResponse(200)
         module, factory = self.make_module([blocked, worker_ok])
@@ -90,6 +94,36 @@ class SecWorkerFallbackTests(unittest.TestCase):
             'https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json',
             'https://worker.example/sec/companyfacts?cik=320193',
         ])
+        diag = session._vestra_transport_diag
+        self.assertEqual(diag['companyfacts_direct_status'], {'403': 1})
+        self.assertEqual(diag['companyfacts_worker_status'], {'200': 1})
+        self.assertEqual(diag['companyfacts_worker_success'], 1)
+
+    def test_worker_502_is_counted_and_direct_failure_is_returned(self):
+        blocked = FakeResponse(403)
+        worker_bad = FakeResponse(502)
+        module, _ = self.make_module([blocked, worker_bad])
+        fallback.install(module, worker_url='https://worker.example')
+        session = module.requests.Session()
+        response = session.get('https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json')
+        self.assertIs(response, blocked)
+        diag = session._vestra_transport_diag
+        self.assertEqual(diag['companyfacts_direct_status'], {'403': 1})
+        self.assertEqual(diag['companyfacts_worker_attempts'], 1)
+        self.assertEqual(diag['companyfacts_worker_status'], {'502': 1})
+        self.assertEqual(diag['companyfacts_worker_success'], 0)
+
+    def test_direct_exception_then_worker_success_is_counted(self):
+        worker_ok = FakeResponse(200)
+        module, _ = self.make_module([RuntimeError('network down'), worker_ok])
+        fallback.install(module, worker_url='https://worker.example')
+        session = module.requests.Session()
+        response = session.get('https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json')
+        self.assertIs(response, worker_ok)
+        diag = session._vestra_transport_diag
+        self.assertEqual(diag['companyfacts_direct_attempts'], 1)
+        self.assertEqual(diag['companyfacts_direct_exceptions'], 1)
+        self.assertEqual(diag['companyfacts_worker_success'], 1)
 
     def test_probe_empty_user_agent_becomes_direct_block_signal(self):
         module, factory = self.make_module([FakeResponse(200)])
@@ -99,6 +133,9 @@ class SecWorkerFallbackTests(unittest.TestCase):
             self.assertEqual(os.environ.get('SEC_USER_AGENT'), fallback.DEFAULT_SEC_USER_AGENT)
             session = module.requests.Session()
             session.get('https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json')
+            self.assertTrue(session._vestra_transport_diag['direct_blocked_mode'])
+            self.assertEqual(session._vestra_transport_diag['companyfacts_direct_attempts'], 0)
+            self.assertEqual(session._vestra_transport_diag['companyfacts_worker_success'], 1)
         calls = [url for url, _ in factory.instances[0].calls]
         self.assertEqual(calls, ['https://worker.example/sec/companyfacts?cik=320193'])
 
@@ -110,6 +147,7 @@ class SecWorkerFallbackTests(unittest.TestCase):
         response = session.get('https://www.sec.gov/files/company_tickers.json')
         self.assertIs(response, original)
         self.assertEqual(len(factory.instances[0].calls), 1)
+        self.assertEqual(session._vestra_transport_diag['companyfacts_direct_attempts'], 0)
 
     def test_install_is_idempotent(self):
         module, _ = self.make_module([FakeResponse(200)])
