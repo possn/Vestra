@@ -1,4 +1,4 @@
-/* Vestra Market Company Brief v1.9 — canonical dossier/company description repair + runtime diagnostics bootstrap. */
+/* Vestra Market Company Brief v1.8 — canonical dossier/company description repair + runtime diagnostics bootstrap. */
 (() => {
 'use strict';
 const t=v=>String(v??'').trim();
@@ -18,5 +18,5 @@ function start(){style();loadResearchDiagnostics();loadDataHealth();repair();let
 loadCanonicalQuoteRepair();
 loadRuntimeBridge();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.9'});
+window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.8'});
 })();
