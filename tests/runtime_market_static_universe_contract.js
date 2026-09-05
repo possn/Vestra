@@ -9,6 +9,8 @@ vm.runInContext(source, context);
 
 const api = context.window.VestraMarketStaticUniverse;
 assert(api && api.version === '1.0');
+assert.strictEqual(typeof api.getStocks, 'function');
+assert.deepStrictEqual(Array.from(api.getStocks()), []);
 
 (async () => {
   const calls = [];
@@ -38,10 +40,12 @@ assert(api && api.version === '1.0');
   assert.strictEqual(state.byTicker.get('AIR.PA').ticker, 'AIR.PA');
   assert.deepStrictEqual(events, [['before', false, 2], ['ready', true, true]]);
   assert.strictEqual(state.loading, null);
+  assert.strictEqual(api.getStocks(), state.stocks, 'shared consumers must receive the canonical in-memory universe');
 
   const callCount = calls.length;
   await loader.ensureLoaded();
   assert.strictEqual(calls.length, callCount, 'loaded universe must not refetch');
+  assert.strictEqual(api.getStocks(), state.stocks, 'shared universe must remain stable after repeated ensureLoaded calls');
 
   const failedState = { loaded:false, loading:null, data:null, stocks:[], byTicker:new Map() };
   let errorMessage = '';
@@ -54,6 +58,7 @@ assert(api && api.version === '1.0');
   assert.strictEqual(errorMessage, 'market data 503');
   assert.strictEqual(failedState.loaded, false);
   assert.strictEqual(failedState.loading, null);
+  assert.strictEqual(api.getStocks(), state.stocks, 'failed later loads must not erase the last valid shared universe');
 
   console.log('market static universe runtime contract: ok');
 })().catch(err => { console.error(err); process.exit(1); });
