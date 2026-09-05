@@ -15,6 +15,7 @@ from collections import defaultdict
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(ROOT, "data", "stocks.json")
 INDEX = os.path.join(ROOT, "data", "stocks-index.json")
+COLUMNAR_INDEX = os.path.join(ROOT, "data", "stocks-startup.json")
 SCANNER_INDEX = os.path.join(ROOT, "data", "stocks-scanner.json")
 SHARD_DIR = os.path.join(ROOT, "data", "dossiers")
 MANIFEST = os.path.join(ROOT, "data", "dossiers-manifest.json")
@@ -25,6 +26,7 @@ MANIFEST = os.path.join(ROOT, "data", "dossiers-manifest.json")
 # enrichment added to INDEX_KEYS requires an explicit architecture review.
 MAX_INDEX_BYTES = 7_250_000
 MAX_INDEX_RATIO = 0.15
+MIN_COLUMNAR_SAVING_RATIO = 0.15
 
 # Explicit pre-dossier contract. Anything not listed here belongs to a lazy
 # payload or dossier shard. Keeping this list explicit prevents new enrichment
@@ -123,6 +125,50 @@ def index_row(row: dict) -> dict:
     return out
 
 
+def pack_index_payload(index_payload: dict) -> dict:
+    """Dictionary-code repeated row keys while preserving all startup values."""
+    rows = index_payload.get("stocks") or []
+    frequency: dict[str, int] = defaultdict(int)
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for key in row:
+            frequency[key] += 1
+
+    # Common fields first means sparse fields tend to the tail; trailing nulls can
+    # then be removed from each row without a bitmap or per-row key list.
+    fields = sorted(frequency, key=lambda key: (-frequency[key], key))
+    packed_rows = []
+    for row in rows:
+        values = [row.get(field) if field in row else None for field in fields]
+        while values and values[-1] is None:
+            values.pop()
+        packed_rows.append(values)
+
+    meta = {k: v for k, v in index_payload.items() if k != "stocks"}
+    return {
+        **meta,
+        "layout": "field_rows_v1",
+        "fields": fields,
+        "rows": packed_rows,
+    }
+
+
+def unpack_index_payload(packed: dict) -> dict:
+    """Reference decoder used by tests and by the future browser loader."""
+    if packed.get("layout") != "field_rows_v1":
+        return packed
+    fields = packed.get("fields") or []
+    rows = packed.get("rows") or []
+    stocks = []
+    for values in rows:
+        if not isinstance(values, list):
+            continue
+        stocks.append({field: values[i] for i, field in enumerate(fields[:len(values)])})
+    meta = {k: v for k, v in packed.items() if k not in {"layout", "fields", "rows"}}
+    return {**meta, "stocks": stocks}
+
+
 def scanner_results(row: dict) -> dict | None:
     value = row.get("scanner_results")
     return value if isinstance(value, dict) and value else None
@@ -177,6 +223,13 @@ def main() -> None:
     with open(INDEX, "w", encoding="utf-8") as f:
         json.dump(index_payload, f, ensure_ascii=False, separators=(",", ":"))
 
+    # Experimental parallel representation. The browser still consumes INDEX;
+    # this file is generated now so CI and daily snapshots can prove the actual
+    # byte saving before we switch the production loader.
+    packed_payload = pack_index_payload(index_payload)
+    with open(COLUMNAR_INDEX, "w", encoding="utf-8") as f:
+        json.dump(packed_payload, f, ensure_ascii=False, separators=(",", ":"))
+
     # Keyed object avoids repeating the ticker field inside every scanner row and
     # can be merged into the already-loaded startup universe in O(n).
     with open(SCANNER_INDEX, "w", encoding="utf-8") as f:
@@ -202,12 +255,15 @@ def main() -> None:
 
     src_size = os.path.getsize(SRC)
     idx_size = os.path.getsize(INDEX)
+    columnar_size = os.path.getsize(COLUMNAR_INDEX)
     scanner_size = os.path.getsize(SCANNER_INDEX)
     ratio = (idx_size / src_size) if src_size else 0
+    saving_ratio = 1 - (columnar_size / idx_size) if idx_size else 0
     print(
         f"market shards: {len(index_rows)} unique rows, {len(shards)} shards; "
         f"dropped {duplicate_count} duplicate rows; "
-        f"index {idx_size/1_000_000:.2f} MB ({ratio:.1%} of source) + "
+        f"index {idx_size/1_000_000:.2f} MB ({ratio:.1%} of source); "
+        f"columnar {columnar_size/1_000_000:.2f} MB ({saving_ratio:.1%} smaller); "
         f"lazy scanner {scanner_size/1_000_000:.2f} MB vs source {src_size/1_000_000:.2f} MB"
     )
     if len(index_rows) != len(manifest):
@@ -221,6 +277,11 @@ def main() -> None:
     if src_size > 0 and ratio > MAX_INDEX_RATIO:
         raise RuntimeError(
             f"Market startup index exceeds relative budget: {ratio:.1%} > {MAX_INDEX_RATIO:.1%}"
+        )
+    if idx_size > 0 and saving_ratio < MIN_COLUMNAR_SAVING_RATIO:
+        raise RuntimeError(
+            f"Columnar startup payload is not materially smaller: {saving_ratio:.1%} < "
+            f"{MIN_COLUMNAR_SAVING_RATIO:.1%}"
         )
 
 
