@@ -50,6 +50,28 @@ def _inc(mapping: dict, key: str) -> None:
     mapping[key] = int(mapping.get(key, 0) or 0) + 1
 
 
+def _payload_state(response) -> str:
+    """Classify a successful response without mutating/consuming it.
+
+    requests.Response.json() is repeatable because it parses response.content on
+    each call, so sec_enrich can still call .json() normally afterwards.
+    Test doubles without .json() return 'unchecked'.
+    """
+    if not bool(getattr(response, "ok", False)):
+        return "not_ok"
+    parser = getattr(response, "json", None)
+    if not callable(parser):
+        return "unchecked"
+    try:
+        payload = parser()
+    except Exception:
+        return "json_error"
+    if not isinstance(payload, dict):
+        return "invalid_shape"
+    facts = payload.get("facts")
+    return "valid_facts" if isinstance(facts, dict) and bool(facts) else "missing_facts"
+
+
 def install(module=None, *, worker_url: str | None = None):
     """Install the fallback into sec_enrich and return its Session wrapper.
 
@@ -59,10 +81,8 @@ def install(module=None, *, worker_url: str | None = None):
     This preserves compatibility with the current probe while recovering the
     official payload through the Worker.
 
-    The wrapper also exposes `_vestra_transport_diag`, a bounded aggregate of
-    direct/Worker outcomes. It never changes retry volume or response selection.
-    Milestone logs make a zero-row production run diagnosable even when the SEC
-    parser itself is running at INFO level.
+    Diagnostics are aggregate-only and observational: no extra SEC request is
+    made, no retry policy changes and no parsed value is modified.
     """
     if module is None:
         import sec_enrich as module
@@ -77,6 +97,7 @@ def install(module=None, *, worker_url: str | None = None):
 
     base = (worker_url or os.getenv("VESTRA_WORKER_URL") or CANONICAL_WORKER_URL).strip().rstrip("/")
     original_factory = module.requests.Session
+    original_enrich = getattr(module, "enrich", None)
     log = module.log
 
     class ResilientSecSession:
@@ -89,15 +110,22 @@ def install(module=None, *, worker_url: str | None = None):
                 "companyfacts_direct_success": 0,
                 "companyfacts_direct_exceptions": 0,
                 "companyfacts_direct_status": {},
+                "companyfacts_direct_payload": {},
                 "companyfacts_worker_attempts": 0,
                 "companyfacts_worker_success": 0,
                 "companyfacts_worker_exceptions": 0,
                 "companyfacts_worker_status": {},
+                "companyfacts_worker_payload": {},
                 "direct_blocked_mode": os.getenv("SEC_DIRECT_BLOCKED", "").strip() == "1",
             }
+            module._vestra_last_sec_session = self
 
         def __getattr__(self, name):
             return getattr(self._inner, name)
+
+        def _record_payload(self, source: str, response) -> None:
+            state = _payload_state(response)
+            _inc(self._vestra_transport_diag[f"companyfacts_{source}_payload"], state)
 
         def _log_diag_milestone(self):
             attempts = int(self._vestra_transport_diag["companyfacts_worker_attempts"])
@@ -132,6 +160,7 @@ def install(module=None, *, worker_url: str | None = None):
             _inc(diag["companyfacts_worker_status"], key)
             if bool(getattr(response, "ok", False)):
                 diag["companyfacts_worker_success"] += 1
+                self._record_payload("worker", response)
             if self._worker_hits == 1:
                 log.warning("SEC CompanyFacts using Vestra Worker transport fallback")
             self._log_diag_milestone()
@@ -161,6 +190,7 @@ def install(module=None, *, worker_url: str | None = None):
             _inc(diag["companyfacts_direct_status"], key)
             if bool(getattr(direct, "ok", False)):
                 diag["companyfacts_direct_success"] += 1
+                self._record_payload("direct", direct)
 
             if _should_fallback(direct):
                 try:
@@ -173,6 +203,27 @@ def install(module=None, *, worker_url: str | None = None):
 
     module._vestra_original_requests_session = original_factory
     module.requests.Session = ResilientSecSession
+
+    if callable(original_enrich):
+        def diagnostic_enrich(raw, *args, **kwargs):
+            rows = list(raw) if not isinstance(raw, list) else raw
+            before = sum(bool(getattr(row, "sec_edgar_enriched", False)) for row in rows)
+            result = original_enrich(rows, *args, **kwargs)
+            after = sum(bool(getattr(row, "sec_edgar_enriched", False)) for row in result)
+            session = getattr(module, "_vestra_last_sec_session", None)
+            transport = getattr(session, "_vestra_transport_diag", {}) if session is not None else {}
+            summary = {
+                "input_rows": len(rows),
+                "newly_enriched_rows": max(0, after - before),
+                "total_enriched_rows": after,
+                "transport": transport,
+            }
+            log.info("SEC enrichment runtime diagnostics %s", json.dumps(summary, sort_keys=True, separators=(",", ":")))
+            return result
+
+        module._vestra_original_enrich = original_enrich
+        module.enrich = diagnostic_enrich
+
     module._vestra_sec_worker_fallback_installed = True
     module._vestra_sec_worker_url = base
     return ResilientSecSession
