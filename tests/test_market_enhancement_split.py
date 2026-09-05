@@ -25,13 +25,21 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         ):
             self.assertIn(module, h)
 
-    def test_company_brief_is_index_first_and_keeps_copy_fallbacks(self):
+    def test_company_brief_reuses_market_runtime_and_keeps_copy_fallbacks(self):
         s = read('market-company-brief.js')
-        self.assertIn("fetch('./data/stocks-index.json'", s)
-        self.assertIn("fetch('./data/stocks.json'", s)
-        self.assertLess(s.index('stocks-index.json'), s.index('stocks.json'))
+        # The company brief is a presentation enhancer, not a second market-data
+        # owner. It must reuse the canonical Market runtime object so app startup
+        # never downloads the full market index (or stocks.json fallback) again.
+        self.assertIn('window.VestraMarket', s)
+        self.assertIn('resolvePortfolioStock', s)
+        self.assertNotIn("fetch('./data/stocks-index.json'", s)
+        self.assertNotIn("fetch('./data/stocks.json'", s)
         for token in ('business_summary', 'longBusinessSummary', 'company_description', 'Empresa cotada acompanhada pelo universo Vestra.'):
             self.assertIn(token, s)
+        # Dossier hydration mutates the canonical stock object later; the brief
+        # must keep observing DOM changes so richer copy appears without refetch.
+        self.assertIn('new MutationObserver', s)
+        self.assertIn('requestAnimationFrame', s)
         self.assertIn('window.VestraMarketCompanyBrief', s)
 
     def test_metric_cleanup_preserves_invalid_multiple_rules(self):
