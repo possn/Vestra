@@ -3,13 +3,14 @@ const { test, expect } = require('@playwright/test');
 const PREFERRED_SENTINELS = [
   'MSFT', 'AAPL', 'NVDA', 'AMZN', 'META', 'GOOGL', 'JPM', 'XOM', 'TSLA', 'V'
 ];
+const REQUIRED_STARTUP_FIELDS = ['ticker', 'name', 'score', 'currency', 'dossier_shard'];
 
 function urlFromBase(base, relative) {
   return new URL(relative, base).toString();
 }
 
 async function isolateExternalSearch(page) {
-  // Vestra's published canonical index + dossier shards are the primary path used
+  // Vestra's published compact universe + dossier shards are the primary path used
   // by this smoke. Yahoo's direct autocomplete endpoint rejects browser CORS in
   // WebKit, so isolate only that secondary external request. All Vestra pageerror
   // exceptions remain observable and still fail the smoke.
@@ -22,34 +23,67 @@ async function isolateExternalSearch(page) {
   });
 }
 
-test('GitHub Pages: published data and five sentinel dossiers are usable on iPhone/WebKit', async ({ page, request, baseURL }) => {
+test('GitHub Pages: compact startup data and five sentinel dossiers are usable on iPhone/WebKit', async ({ page, request, baseURL }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   const indexURL = urlFromBase(baseURL, 'index.html');
+  const startupURL = urlFromBase(baseURL, 'data/stocks-startup.json');
   const manifestURL = urlFromBase(baseURL, 'data/dossiers-manifest.json');
   const marketURL = urlFromBase(baseURL, 'market.js');
 
-  const [indexResponse, manifestResponse, marketResponse] = await Promise.all([
+  const [indexResponse, startupResponse, manifestResponse, marketResponse] = await Promise.all([
     request.get(indexURL, { failOnStatusCode: false }),
+    request.get(startupURL, { failOnStatusCode: false }),
     request.get(manifestURL, { failOnStatusCode: false }),
     request.get(marketURL, { failOnStatusCode: false })
   ]);
 
   expect(indexResponse.ok(), `index.html returned ${indexResponse.status()}`).toBeTruthy();
+  expect(startupResponse.ok(), `stocks-startup returned ${startupResponse.status()}`).toBeTruthy();
   expect(manifestResponse.ok(), `dossiers-manifest returned ${manifestResponse.status()}`).toBeTruthy();
   expect(marketResponse.ok(), `market.js returned ${marketResponse.status()}`).toBeTruthy();
   expect(await indexResponse.text()).toContain('<title>Vestra</title>');
 
+  // Validate the payload the production loader prefers. This must fail closed:
+  // a missing/malformed compact payload may still let the UI work via the legacy
+  // index fallback, but that would silently lose the startup-performance rollout.
+  const startup = await startupResponse.json();
+  expect(startup?.layout).toBe('field_rows_v1');
+  expect(Array.isArray(startup?.fields)).toBeTruthy();
+  expect(Array.isArray(startup?.rows)).toBeTruthy();
+  expect(startup.fields.length).toBeGreaterThan(5);
+  expect(startup.rows.length).toBeGreaterThan(100);
+  for (const field of REQUIRED_STARTUP_FIELDS) {
+    expect(startup.fields, `stocks-startup missing required field ${field}`).toContain(field);
+  }
+
   const manifest = await manifestResponse.json();
   const tickers = manifest?.tickers || {};
-  expect(Object.keys(tickers).length).toBeGreaterThan(100);
+  const manifestTickerCount = Object.keys(tickers).length;
+  expect(manifestTickerCount).toBeGreaterThan(100);
+  expect(startup.rows.length, 'stocks-startup and dossier manifest cardinality diverged').toBe(manifestTickerCount);
+  if (Number.isFinite(Number(manifest?.ticker_count))) {
+    expect(Number(manifest.ticker_count)).toBe(manifestTickerCount);
+  }
+
+  const tickerFieldIndex = startup.fields.indexOf('ticker');
+  const startupTickers = new Set(
+    startup.rows
+      .filter(Array.isArray)
+      .map(values => String(values[tickerFieldIndex] || '').trim().toUpperCase())
+      .filter(Boolean)
+  );
+  expect(startupTickers.size, 'stocks-startup contains missing/duplicate ticker identities').toBe(manifestTickerCount);
 
   const sentinels = PREFERRED_SENTINELS.filter(ticker => tickers[ticker]).slice(0, 5);
   expect(
     sentinels.length,
     `Expected at least five stable sentinels in published manifest; found: ${sentinels.join(', ')}`
   ).toBeGreaterThanOrEqual(5);
+  for (const ticker of sentinels) {
+    expect(startupTickers.has(ticker), `${ticker} missing from published stocks-startup`).toBeTruthy();
+  }
 
   // Verify the actual published dossier shard for every sentinel before opening UI.
   for (const ticker of sentinels) {
