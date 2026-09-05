@@ -38,6 +38,47 @@ assert(evidence.includes('Dependência &lt;single-source&gt;'));
 assert(evidence.includes('Analyst, insiders e divulgações políticas'));
 assert(evidence.includes('não altera o Score Vestra'));
 assert(!evidence.includes('77/100'));
+assert(!evidence.includes('Acordo entre fontes ·'));
+
+const measuredAgreement=api.evidencePanel({
+  confidence_score:91,data_coverage_pct:92,
+  data_provenance:{
+    evidence_state:'observed',
+    independent_fundamental_source_count:2,
+    independent_fundamental_source_families:['yahoo','esef'],
+    agreement_checks:4,
+    agreement_pct:75,
+    agreement_period_end:'2025-12-31',
+  },
+});
+assert(measuredAgreement.includes('Yahoo + ESEF'));
+assert(measuredAgreement.includes('Acordo entre fontes · 75%'));
+assert(measuredAgreement.includes('4 métricas anuais do mesmo exercício'));
+assert(measuredAgreement.includes('DATE:2025-12-31'));
+assert(measuredAgreement.includes('is-warn'));
+assert(measuredAgreement.includes('compara apenas métricas anuais do mesmo exercício'));
+
+const oneMetricAgreement=api.evidencePanel({
+  data_provenance:{
+    evidence_state:'observed',
+    independent_fundamental_source_count:2,
+    independent_fundamental_source_families:['yahoo','esef'],
+    agreement_checks:1,
+    agreement_pct:100,
+    agreement_period_end:'2025-12-31',
+  },
+});
+assert(!oneMetricAgreement.includes('Acordo entre fontes ·'));
+
+const strongAgreement=api.evidencePanel({
+  data_provenance:{evidence_state:'observed',independent_fundamental_source_count:2,independent_fundamental_source_families:['yahoo','esef'],agreement_checks:3,agreement_pct:100},
+});
+assert(strongAgreement.includes('is-positive'));
+
+const weakAgreement=api.evidencePanel({
+  data_provenance:{evidence_state:'observed',independent_fundamental_source_count:2,independent_fundamental_source_families:['yahoo','esef'],agreement_checks:3,agreement_pct:66.7},
+});
+assert(weakAgreement.includes('is-risk'));
 
 const catalyst=api.catalystPanel({
   catalyst_summary:'Roadmap <strong>',
