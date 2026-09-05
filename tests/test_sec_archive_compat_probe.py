@@ -16,6 +16,20 @@ if "requests" not in sys.modules:
     sys.modules["requests"] = requests_stub
     sys.modules["requests.adapters"] = adapters_stub
 
+if "urllib3" not in sys.modules:
+    urllib3_stub = types.ModuleType("urllib3")
+    util_stub = types.ModuleType("urllib3.util")
+    retry_stub = types.ModuleType("urllib3.util.retry")
+
+    class Retry:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    retry_stub.Retry = Retry
+    sys.modules["urllib3"] = urllib3_stub
+    sys.modules["urllib3.util"] = util_stub
+    sys.modules["urllib3.util.retry"] = retry_stub
+
 import sec_archive_compat_probe as compat
 
 
