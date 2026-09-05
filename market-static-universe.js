@@ -1,6 +1,15 @@
-/* Vestra Market static universe loader v1.0 */
+/* Vestra Market static universe loader v1.1 */
 (() => {
   'use strict';
+
+  function ensureScannerCompanion() {
+    if (window.VestraMarketScannerData || document.querySelector('script[data-vestra-scanner-data]')) return;
+    const script = document.createElement('script');
+    script.src = 'market-scanner-data.js?v=1.1';
+    script.defer = true;
+    script.dataset.vestraScannerData = '1';
+    document.head.appendChild(script);
+  }
 
   function create({
     state,
@@ -43,5 +52,6 @@
     return Object.freeze({ ensureLoaded });
   }
 
-  window.VestraMarketStaticUniverse = Object.freeze({ create, version: '1.0' });
+  ensureScannerCompanion();
+  window.VestraMarketStaticUniverse = Object.freeze({ create, ensureScannerCompanion, version: '1.1' });
 })();
