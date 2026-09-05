@@ -8,10 +8,12 @@ import sys
 from urllib.request import Request, urlopen
 
 EXPECTED_ORIGIN = "https://possn.github.io"
+EXPECTED_STORAGE = "durable_object_v2_exact_identity"
+EXPECTED_SCHEMA_VERSION = 2
 
 
 def get_json(url: str, origin: str, timeout: float):
-    req = Request(url, headers={"Accept": "application/json", "Origin": origin, "User-Agent": "Vestra-Learned-Universe-Audit/1.0"})
+    req = Request(url, headers={"Accept": "application/json", "Origin": origin, "User-Agent": "Vestra-Learned-Universe-Audit/2.0"})
     with urlopen(req, timeout=timeout) as response:
         return response.status, dict(response.headers), json.loads(response.read().decode("utf-8"))
 
@@ -24,7 +26,7 @@ def preflight(url: str, origin: str, timeout: float):
             "Origin": origin,
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "content-type",
-            "User-Agent": "Vestra-Learned-Universe-Audit/1.0",
+            "User-Agent": "Vestra-Learned-Universe-Audit/2.0",
         },
     )
     with urlopen(req, timeout=timeout) as response:
@@ -45,8 +47,9 @@ def main() -> int:
         capabilities = health.get("capabilities", []) if isinstance(health, dict) else []
         if status != 200 or "learned_universe" not in capabilities:
             failures.append(f"health capability missing: status={status}, capabilities={capabilities!r}")
-        if not isinstance(health, dict) or health.get("learned_universe_storage") != "durable_object":
-            failures.append(f"storage contract missing: {health.get('learned_universe_storage') if isinstance(health, dict) else None!r}")
+        storage = health.get("learned_universe_storage") if isinstance(health, dict) else None
+        if storage != EXPECTED_STORAGE:
+            failures.append(f"storage contract mismatch: expected={EXPECTED_STORAGE!r}, actual={storage!r}")
     except Exception as exc:
         failures.append(f"health request failed: {exc!r}")
 
@@ -56,12 +59,17 @@ def main() -> int:
         count = payload.get("count") if isinstance(payload, dict) else None
         if status != 200:
             failures.append(f"GET /learned-universe HTTP {status}")
-        if not isinstance(payload, dict) or payload.get("schema_version") != 1 or not isinstance(rows, list) or not isinstance(count, int):
+        if (
+            not isinstance(payload, dict)
+            or payload.get("schema_version") != EXPECTED_SCHEMA_VERSION
+            or not isinstance(rows, list)
+            or not isinstance(count, int)
+        ):
             failures.append(f"invalid learned-universe payload: {payload!r}")
         allow = headers.get("Access-Control-Allow-Origin", "")
         if allow != args.origin:
             failures.append(f"learned-universe CORS mismatch: {allow!r}")
-        print(json.dumps({"status": status, "count": count, "rows_sample": (rows or [])[:3]}, ensure_ascii=False))
+        print(json.dumps({"status": status, "schema_version": payload.get("schema_version") if isinstance(payload, dict) else None, "count": count, "rows_sample": (rows or [])[:3]}, ensure_ascii=False))
     except Exception as exc:
         failures.append(f"learned-universe request failed: {exc!r}")
 
@@ -95,7 +103,7 @@ def main() -> int:
         for failure in failures:
             print(f"[FAIL] {failure}")
         return 1
-    print("[PASS] learned-universe router + Durable Object + POST preflight contract")
+    print("[PASS] learned-universe v2 exact-identity router + Durable Object + POST preflight contract")
     return 0
 
 
