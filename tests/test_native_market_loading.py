@@ -34,7 +34,6 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_runtime_market_data_owners_are_index_first(self):
         for path in (
-            'market-opportunities.js',
             'vestra-swap-lab.js',
             'vestra-ai-brief.js',
         ):
@@ -43,13 +42,20 @@ class NativeMarketLoadingTests(unittest.TestCase):
             self.assertIn('stocks.json', source, path)
             self.assertLess(source.index('stocks-index.json'), source.index('stocks.json'), path)
 
-    def test_company_brief_is_a_state_consumer_not_a_second_data_owner(self):
-        source = read('market-company-brief.js')
-        self.assertIn('window.VestraMarket', source)
-        self.assertIn('resolvePortfolioStock', source)
-        self.assertNotIn("fetch('./data/stocks-index.json'", source)
-        self.assertNotIn("fetch('./data/stocks.json'", source)
-        self.assertIn('new MutationObserver', source)
+    def test_shared_market_state_consumers_do_not_refetch_universe(self):
+        brief = read('market-company-brief.js')
+        self.assertIn('window.VestraMarket', brief)
+        self.assertIn('resolvePortfolioStock', brief)
+        self.assertNotIn("fetch('./data/stocks-index.json'", brief)
+        self.assertNotIn("fetch('./data/stocks.json'", brief)
+        self.assertIn('new MutationObserver', brief)
+
+        opportunities = read('market-opportunities.js')
+        self.assertIn('window.VestraMarketStaticUniverse', opportunities)
+        self.assertIn('getStocks', opportunities)
+        self.assertNotIn("fetch('./data/stocks-index.json'", opportunities)
+        self.assertNotIn("fetch('./data/stocks.json'", opportunities)
+        self.assertIn('new MutationObserver', opportunities)
 
     def test_service_worker_matches_native_market_generation(self):
         sw = read('sw.js')
