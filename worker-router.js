@@ -8,6 +8,7 @@ const LEARNED_NAMESPACE = 'vestra-learned-universe-v2';
 const ALLOWED_TYPES = new Set(['EQUITY','ETF','MUTUALFUND']);
 const EXACT_FETCH_TIMEOUT_MS = 3200;
 const BATCH_ITEM_DEADLINE_MS = 6500;
+const BATCH_CHART_FALLBACK_CONCURRENCY = 4;
 
 function txt(v){ return String(v ?? '').trim(); }
 function validTicker(v){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/.test(txt(v).toUpperCase()); }
@@ -96,6 +97,14 @@ async function fetchWithTimeout(target, init={}, timeoutMs=EXACT_FETCH_TIMEOUT_M
   }
 }
 
+function quoteHeaders(){
+  return {
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+    'Accept':'application/json,text/plain,*/*',
+    'Accept-Language':'en-US,en;q=0.9',
+  };
+}
+
 function normalizedQuotePrice(price, currency){
   const value = Number(price);
   const rawCurrency = txt(currency);
@@ -113,12 +122,90 @@ function finitePositive(...values){
   return null;
 }
 
-async function fetchYahooExactIdentity(ticker){
-  const headers = {
-    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-    'Accept':'application/json,text/plain,*/*',
-    'Accept-Language':'en-US,en;q=0.9',
+function quoteFromV7Row(row, expectedTicker){
+  const ticker = txt(expectedTicker).toUpperCase();
+  const symbol = txt(row?.symbol).toUpperCase();
+  if (!row || !ticker || symbol !== ticker) return null;
+  const rawPrice = finitePositive(
+    row?.regularMarketPrice,row?.postMarketPrice,row?.preMarketPrice,
+    row?.regularMarketPreviousClose,row?.regularMarketOpen,row?.bid,row?.ask
+  );
+  if (!rawPrice) return null;
+  const normalized = normalizedQuotePrice(rawPrice,row.currency);
+  if (!normalized.price) return null;
+  return {
+    symbol:ticker,
+    ticker,
+    price:normalized.price,
+    currency:normalized.currency,
+    name:txt(row.shortName || row.longName || ticker),
+    change_pct:Number.isFinite(Number(row.regularMarketChangePercent)) ? Number(row.regularMarketChangePercent) : null,
+    quote_type:txt(row.quoteType).toUpperCase(),
+    exchange:txt(row.exchange || row.fullExchangeName),
+    sector:txt(row.sector),
+    industry:txt(row.industry),
+    country:txt(row.country),
+    market_cap:Number.isFinite(Number(row.marketCap)) ? Number(row.marketCap) : null,
+    trailing_pe:Number.isFinite(Number(row.trailingPE)) ? Number(row.trailingPE) : null,
+    forward_pe:Number.isFinite(Number(row.forwardPE)) ? Number(row.forwardPE) : null,
+    price_to_book:Number.isFinite(Number(row.priceToBook)) ? Number(row.priceToBook) : null,
+    fifty_two_week_high:Number.isFinite(Number(row.fiftyTwoWeekHigh)) ? Number(row.fiftyTwoWeekHigh) : null,
+    fifty_two_week_low:Number.isFinite(Number(row.fiftyTwoWeekLow)) ? Number(row.fiftyTwoWeekLow) : null,
+    div_rate:Number.isFinite(Number(row.trailingAnnualDividendRate)) ? Number(row.trailingAnnualDividendRate) : null,
+    div_yield:Number.isFinite(Number(row.trailingAnnualDividendYield)) ? Number(row.trailingAnnualDividendYield) : null,
+    ex_div_date:row.exDividendDate ? new Date(Number(row.exDividendDate)*1000).toISOString().slice(0,10) : '',
+    div_date:row.dividendDate ? new Date(Number(row.dividendDate)*1000).toISOString().slice(0,10) : '',
+    updated:new Date().toISOString(),
+    source:'yahoo_exact_v7',
   };
+}
+
+function quoteFromChartResult(result0, expectedTicker){
+  const ticker = txt(expectedTicker).toUpperCase();
+  const meta = result0?.meta;
+  const symbol = txt(meta?.symbol).toUpperCase();
+  if (!meta || !ticker || symbol !== ticker) return null;
+  const closes = result0?.indicators?.quote?.[0]?.close || [];
+  const rawPrice = finitePositive(meta?.regularMarketPrice,meta?.previousClose,...[...closes].reverse());
+  if (!rawPrice) return null;
+  const normalized = normalizedQuotePrice(rawPrice,meta.currency);
+  if (!normalized.price) return null;
+  return {
+    symbol,
+    ticker,
+    price:normalized.price,
+    currency:normalized.currency,
+    name:txt(meta.shortName || meta.longName || meta.symbol || ticker),
+    change_pct:(Number.isFinite(Number(meta.regularMarketPrice)) && Number.isFinite(Number(meta.previousClose)) && Number(meta.previousClose)>0)
+      ? ((Number(meta.regularMarketPrice)-Number(meta.previousClose))/Number(meta.previousClose))*100 : null,
+    quote_type:txt(meta.instrumentType).toUpperCase(),
+    exchange:txt(meta.exchangeName),
+    sector:'',industry:'',country:'',
+    updated:new Date().toISOString(),
+    source:'yahoo_exact_chart',
+  };
+}
+
+async function fetchYahooExactChartIdentity(ticker){
+  const headers = quoteHeaders();
+  const targets = [
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`,
+  ];
+  for (const target of targets) {
+    try {
+      const response = await fetchWithTimeout(target,{headers});
+      if (!response.ok) continue;
+      const payload = await response.json().catch(()=>null);
+      const quote = quoteFromChartResult(payload?.chart?.result?.[0],ticker);
+      if (quote) return quote;
+    } catch (_) {}
+  }
+  return null;
+}
+
+async function fetchYahooExactIdentity(ticker){
+  const headers = quoteHeaders();
   const quoteUrls = [
     `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(ticker)}`,
     `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(ticker)}`,
@@ -129,77 +216,63 @@ async function fetchYahooExactIdentity(ticker){
       if (!response.ok) continue;
       const payload = await response.json().catch(()=>null);
       const row = (payload?.quoteResponse?.result || []).find(item=>txt(item?.symbol).toUpperCase()===ticker);
-      const type = txt(row?.quoteType).toUpperCase();
-      const rawPrice = finitePositive(
-        row?.regularMarketPrice,row?.postMarketPrice,row?.preMarketPrice,
-        row?.regularMarketPreviousClose,row?.regularMarketOpen,row?.bid,row?.ask
-      );
-      if (row && rawPrice) {
-        const normalized = normalizedQuotePrice(rawPrice,row.currency);
-        return {
-          symbol:ticker,
-          ticker,
-          price:normalized.price,
-          currency:normalized.currency,
-          name:txt(row.shortName || row.longName || ticker),
-          change_pct:Number.isFinite(Number(row.regularMarketChangePercent)) ? Number(row.regularMarketChangePercent) : null,
-          quote_type:type,
-          exchange:txt(row.exchange || row.fullExchangeName),
-          sector:txt(row.sector),
-          industry:txt(row.industry),
-          country:txt(row.country),
-          market_cap:Number.isFinite(Number(row.marketCap)) ? Number(row.marketCap) : null,
-          trailing_pe:Number.isFinite(Number(row.trailingPE)) ? Number(row.trailingPE) : null,
-          forward_pe:Number.isFinite(Number(row.forwardPE)) ? Number(row.forwardPE) : null,
-          price_to_book:Number.isFinite(Number(row.priceToBook)) ? Number(row.priceToBook) : null,
-          fifty_two_week_high:Number.isFinite(Number(row.fiftyTwoWeekHigh)) ? Number(row.fiftyTwoWeekHigh) : null,
-          fifty_two_week_low:Number.isFinite(Number(row.fiftyTwoWeekLow)) ? Number(row.fiftyTwoWeekLow) : null,
-          div_rate:Number.isFinite(Number(row.trailingAnnualDividendRate)) ? Number(row.trailingAnnualDividendRate) : null,
-          div_yield:Number.isFinite(Number(row.trailingAnnualDividendYield)) ? Number(row.trailingAnnualDividendYield) : null,
-          ex_div_date:row.exDividendDate ? new Date(Number(row.exDividendDate)*1000).toISOString().slice(0,10) : '',
-          div_date:row.dividendDate ? new Date(Number(row.dividendDate)*1000).toISOString().slice(0,10) : '',
-          updated:new Date().toISOString(),
-          source:'yahoo_exact_v7',
-        };
-      }
+      const quote = quoteFromV7Row(row,ticker);
+      if (quote) return quote;
     } catch (_) {}
   }
+  return fetchYahooExactChartIdentity(ticker);
+}
 
-  const chartUrls = [
-    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`,
-    `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`,
+async function fetchYahooBatchExactIdentity(tickers){
+  const requested = [...new Set((tickers || []).map(t=>txt(t).toUpperCase()).filter(validQuoteTicker))].slice(0,20);
+  const quotes = {};
+  if (!requested.length) return quotes;
+  const wanted = new Set(requested);
+  const headers = quoteHeaders();
+  const symbols = encodeURIComponent(requested.join(','));
+  const targets = [
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`,
+    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`,
   ];
-  for (const target of chartUrls) {
+
+  for (const target of targets) {
     try {
       const response = await fetchWithTimeout(target,{headers});
       if (!response.ok) continue;
       const payload = await response.json().catch(()=>null);
-      const result0 = payload?.chart?.result?.[0];
-      const meta = result0?.meta;
-      const symbol = txt(meta?.symbol).toUpperCase();
-      const type = txt(meta?.instrumentType).toUpperCase();
-      const closes = result0?.indicators?.quote?.[0]?.close || [];
-      const rawPrice = finitePositive(meta?.regularMarketPrice,meta?.previousClose,...[...closes].reverse());
-      if (meta && symbol === ticker && rawPrice) {
-        const normalized = normalizedQuotePrice(rawPrice,meta.currency);
-        return {
-          symbol,
-          ticker,
-          price:normalized.price,
-          currency:normalized.currency,
-          name:txt(meta.shortName || meta.longName || meta.symbol || ticker),
-          change_pct:(Number.isFinite(Number(meta.regularMarketPrice)) && Number.isFinite(Number(meta.previousClose)) && Number(meta.previousClose)>0)
-            ? ((Number(meta.regularMarketPrice)-Number(meta.previousClose))/Number(meta.previousClose))*100 : null,
-          quote_type:type,
-          exchange:txt(meta.exchangeName),
-          sector:'',industry:'',country:'',
-          updated:new Date().toISOString(),
-          source:'yahoo_exact_chart',
-        };
+      for (const row of (payload?.quoteResponse?.result || [])) {
+        const ticker = txt(row?.symbol).toUpperCase();
+        if (!wanted.has(ticker) || quotes[ticker]) continue;
+        const quote = quoteFromV7Row(row,ticker);
+        if (quote) quotes[ticker] = quote;
       }
+      if (Object.keys(quotes).length === requested.length) break;
     } catch (_) {}
   }
-  return null;
+  return quotes;
+}
+
+async function fillMissingBatchQuotes(tickers, quotes){
+  const missing = (tickers || []).filter(t=>!quotes[t]);
+  let cursor = 0;
+  const workerCount = Math.min(BATCH_CHART_FALLBACK_CONCURRENCY,missing.length || 1);
+  const workers = Array.from({length:workerCount},async()=>{
+    while (true) {
+      const idx = cursor++;
+      if (idx >= missing.length) return;
+      const ticker = missing[idx];
+      try {
+        const quote = await withDeadline(
+          fetchYahooExactChartIdentity(ticker),
+          BATCH_ITEM_DEADLINE_MS,
+          `Tempo limite da cotação exata (${Math.round(BATCH_ITEM_DEADLINE_MS/1000)}s)`
+        );
+        if (quote) quotes[ticker] = quote;
+      } catch (_) {}
+    }
+  });
+  await Promise.all(workers);
+  return quotes;
 }
 
 function withDeadline(promise, timeoutMs, message){
@@ -218,18 +291,12 @@ async function handleExactBatchQuotes(request){
     .split(',').map(t=>txt(t).toUpperCase()).filter(validQuoteTicker))].slice(0,20);
   if (!tickers.length) return json({error:'tickers obrigatório'},400,cors);
 
-  const rows = await Promise.all(tickers.map(async ticker=>{
-    try {
-      const quote = await withDeadline(
-        fetchYahooExactIdentity(ticker),
-        BATCH_ITEM_DEADLINE_MS,
-        `Tempo limite da cotação exata (${Math.round(BATCH_ITEM_DEADLINE_MS/1000)}s)`
-      );
-      return [ticker, quote || {ticker,error:'Sem cotação exata disponível'}];
-    } catch (error) {
-      return [ticker,{ticker,error:error?.message || 'Erro ao obter cotação'}];
-    }
-  }));
+  const quotes = await fetchYahooBatchExactIdentity(tickers);
+  await fillMissingBatchQuotes(tickers,quotes);
+  const rows = tickers.map(ticker=>[
+    ticker,
+    quotes[ticker] || {ticker,error:'Sem cotação exata disponível'}
+  ]);
   return json(Object.fromEntries(rows),200,cors);
 }
 
@@ -308,8 +375,10 @@ export default {
         capabilities,
         experimental_capabilities:experimentalCapabilities,
         learned_universe_storage:'durable_object_v2_exact_identity',
-        quote_batch_transport:'exact_identity_parallel_v1',
+        quote_batch_transport:'exact_identity_multisymbol_v2',
         quote_batch_item_deadline_ms:BATCH_ITEM_DEADLINE_MS,
+        quote_batch_chunk_size:20,
+        quote_batch_chart_fallback_concurrency:BATCH_CHART_FALLBACK_CONCURRENCY,
         ai_brief_provider:'workers_ai',
         ai_brief_model:AI_BRIEF_MODEL,
         ai_brief_rate_limit: env?.AI_BRIEF_RATE_LIMITER ? 'binding' : 'unavailable',
