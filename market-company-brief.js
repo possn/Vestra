@@ -8,7 +8,8 @@ function repair(){const sh=document.getElementById('marketSheet');if(!sh||sh.hid
 function style(){if(document.getElementById('vestra-market-company-brief-style'))return;const s=document.createElement('style');s.id='vestra-market-company-brief-style';s.textContent='.market-row__description{font-size:11px;line-height:1.4;color:var(--text2,#62757c);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.market-company-brief{font-size:12px;line-height:1.45;color:var(--text2,#62757c);margin-top:5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}';document.head.appendChild(s)}
 function loadScript(id,src,ready,onload){if(ready||document.getElementById(id)){if(onload)onload();return;}const s=document.createElement('script');s.id=id;s.src=src;s.defer=true;if(onload)s.addEventListener('load',onload,{once:true});document.head.appendChild(s)}
 function loadResearchDiagnostics(){loadScript('vestra-model-validation-script','market-model-validation.js?v=1.0',window.VestraModelValidation)}
-function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.2',window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
+function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.3',window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
+function loadQuoteRefreshPerformance(){loadScript('vestra-quote-refresh-performance-script','quote-refresh-performance.js?v=1.0',window.VestraQuoteRefreshPerformance)}
 function loadGlobalMarketSearch(){loadScript('vestra-global-market-search-script','market-global-search.js?v=1.2',window.VestraGlobalMarketSearch)}
 function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','market-learned-universe.js?v=2.0',window.VestraLearnedUniverse,loadGlobalMarketSearch)}
 function loadAppUpdateManager(){loadScript('vestra-app-update-manager-script','app-update-manager.js?v=1.1',window.VestraAppUpdateManager)}
@@ -16,6 +17,7 @@ function loadDataHealth(){loadScript('vestra-market-data-health-script','market-
 function loadRuntimeBridge(){loadScript('vestra-runtime-bridge-script','app-runtime-bridge.js?v=1.1',window.VestraRuntimeBridge,()=>{loadLearnedUniverse();loadAppUpdateManager();})}
 function start(){style();loadResearchDiagnostics();loadDataHealth();repair();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;repair()})});mo.observe(document.body,{childList:true,subtree:true})}
 loadCanonicalQuoteRepair();
+loadQuoteRefreshPerformance();
 loadRuntimeBridge();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.8'});
