@@ -71,6 +71,26 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertEqual(row["low52_price_low"], 95.0)
         self.assertEqual(row["low52_price_high"], 140.0)
 
+    def test_columnar_startup_budget_is_production_grade(self):
+        self.assertEqual(shards.MAX_COLUMNAR_BYTES, 2_250_000)
+        self.assertEqual(shards.MAX_COLUMNAR_INDEX_RATIO, 0.35)
+        self.assertLess(shards.MAX_COLUMNAR_BYTES, shards.MAX_INDEX_BYTES)
+        self.assertLess(shards.MAX_COLUMNAR_INDEX_RATIO, 0.5)
+
+    def test_columnar_pack_round_trips_sparse_rows(self):
+        payload = {
+            "schema_version": 521,
+            "generated_at": "2026-09-05T15:09:55Z",
+            "stocks": [
+                {"ticker": "MSFT", "score": 88.0, "currency": "USD"},
+                {"ticker": "AIR.PA", "score": 79.0, "currency": "EUR", "fund_ucits": True},
+            ],
+        }
+        packed = shards.pack_index_payload(payload)
+        self.assertEqual(packed["layout"], "field_rows_v1")
+        unpacked = shards.unpack_index_payload(packed)
+        self.assertEqual(unpacked["stocks"], payload["stocks"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
