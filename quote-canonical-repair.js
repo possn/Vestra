@@ -1,4 +1,4 @@
-/* Vestra Asset Identity Guard v2.1 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
+/* Vestra Asset Identity Guard v2.2 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
 (() => {
   'use strict';
 
@@ -9,14 +9,21 @@
     AU0000185993: 'IREN',    // IREN Ltd — Nasdaq line held by the broker portfolio
     IE00BLCHJ534: 'PAVE.L',  // Global X U.S. Infrastructure Development UCITS ETF USD Acc — LSE
     GB00BL6K5J42: 'EDV.TO',  // Endeavour Mining — CAD/TSX line held by the broker portfolio
+    GB00BVZK7T90: 'UNA.AS',  // Unilever — Amsterdam EUR line held by the broker portfolio
+    GB0007188757: 'RIO.L',   // Rio Tinto plc — LSE Yahoo symbol (broker alias RIO1)
+    CH0334081137: 'CRSP',    // CRISPR Therapeutics — Nasdaq USD line held by the broker portfolio
+    US64110L1061: 'NFC.DE',  // Netflix — Xetra EUR line held by the broker portfolio
+    DE0006047004: 'HEI.DE',  // Heidelberg Materials — Xetra EUR
   });
 
   // Explicit historical corruption rules. These are deliberately narrow and
   // only exist where we have source-of-truth broker identity plus a known bad
-  // persisted quote that can otherwise trap the asset behind the >5x guard.
+  // persisted quote that can otherwise trap the asset behind the >5x/currency guard.
   const SPECIAL_RECOVERY_RULES = Object.freeze({
     DE000SHL1006: Object.freeze({ ticker: 'SHL.DE', currency: 'EUR', minPrice: 5, maxPrice: 200 }),
     US12468P1049: Object.freeze({ ticker: 'AI', currency: 'USD', minPrice: 1, maxPrice: 100 }),
+    AU0000185993: Object.freeze({ ticker: 'IREN', currency: 'USD', minPrice: 5, maxPrice: 150 }),
+    DE0006047004: Object.freeze({ ticker: 'HEI.DE', currency: 'EUR', minPrice: 50, maxPrice: 400 }),
   });
 
   const VENUE_CURRENCY = Object.freeze({
@@ -201,7 +208,7 @@
   if (!install()) document.addEventListener('DOMContentLoaded', install, { once: true });
 
   const api = Object.freeze({
-    version: '2.1',
+    version: '2.2',
     identityMapRepairs: IDENTITY_MAP_REPAIRS,
     specialRules: SPECIAL_RECOVERY_RULES,
     applyIdentityMapRepairs,
