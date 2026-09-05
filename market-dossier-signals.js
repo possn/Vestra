@@ -8,7 +8,7 @@
       if (v === null || v === undefined || v === '') return null;
       const x=Number(v); return Number.isFinite(x)?x:null;
     });
-    const escapeHtml = options.escapeHtml || (v => text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c])));
+    const escapeHtml = options.escapeHtml || (v => text(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
     const formatShortDate = options.formatShortDate || (v => text(v));
 
     function evidencePanel(s={}){
