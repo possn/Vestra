@@ -5,14 +5,17 @@ This module performs deterministic probes so GitHub Actions logs show whether th
 runner can reach:
 
 - per-company CompanyFacts and Submissions APIs;
-- the official nightly CompanyFacts and Submissions bulk archives.
+- the official nightly CompanyFacts and Submissions bulk archives;
+- immutable EDGAR Archives index/filing/XBRL paths that can support a fallback
+  when data.sec.gov and the bulk ZIPs are blocked.
 
-Bulk probes use a streaming GET with a one-byte Range request and never consume
-the ZIP body. The probe never mutates market data and never retries through
-proxies or mirrors. When every tested per-company SEC API endpoint returns the
-same explicit HTTP 403, the CLI entry point writes an empty SEC_USER_AGENT to
-GITHUB_ENV so the following pipeline step skips SEC network enrichment for that
-run instead of issuing hundreds of requests to a demonstrably blocked upstream.
+Range probes use a streaming GET with a one-byte request and never consume large
+bodies. The probe never mutates market data and never retries through proxies or
+mirrors. When every tested per-company SEC API endpoint returns the same explicit
+HTTP 403, the CLI entry point writes an empty SEC_USER_AGENT to GITHUB_ENV so the
+following pipeline step skips the existing CompanyFacts network lane for that run
+instead of issuing hundreds of requests to a demonstrably blocked upstream.
+EDGAR Archives diagnostics are observational only and do not alter that guard.
 Score/Risk Gate semantics are never changed.
 """
 from __future__ import annotations
@@ -30,6 +33,13 @@ SENTINELS = ("AAPL", "MSFT", "NVDA")
 BULK_ENDPOINTS = {
     "companyfacts_zip": "https://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip",
     "submissions_zip": "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip",
+}
+# Immutable/stable public EDGAR objects. The AAPL accession is a 2026 10-Q and
+# remains a valid connectivity sentinel even after newer filings appear.
+ARCHIVE_ENDPOINTS = {
+    "quarter_master_index": "https://www.sec.gov/Archives/edgar/full-index/2026/QTR3/master.idx",
+    "aapl_10q_filing_index": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000020/0000320193-26-000020-index.htm",
+    "aapl_10q_xbrl_instance": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000020/aapl-20260627_htm.xml",
 }
 
 
@@ -64,12 +74,12 @@ def _probe_response(response, family: str):
     return result
 
 
-def _probe_bulk(session, url):
+def _probe_range(session, url, *, accept="*/*"):
     try:
         response = session.get(
             url,
             timeout=20,
-            headers={"Range": "bytes=0-0", "Accept": "application/zip, application/octet-stream, */*"},
+            headers={"Range": "bytes=0-0", "Accept": accept},
             stream=True,
         )
         status = int(getattr(response, "status_code", 0) or 0)
@@ -98,14 +108,12 @@ def _probe_bulk(session, url):
         }
 
 
-def _runtime_sec_blocked(report):
-    """Return True only for a broad, explicit SEC API 403 across all probes.
+def _probe_bulk(session, url):
+    return _probe_range(session, url, accept="application/zip, application/octet-stream, */*")
 
-    Network errors, timeouts, missing snapshots and mixed HTTP outcomes are not
-    sufficient evidence to disable the lane. The guard is intentionally narrow:
-    it reacts only when every attempted CompanyFacts/Submissions sentinel request
-    was answered by the SEC with HTTP 403 and no API request succeeded.
-    """
+
+def _runtime_sec_blocked(report):
+    """Return True only for a broad, explicit SEC API 403 across all API probes."""
     sentinels = report.get("sentinels") if isinstance(report, dict) else None
     if not isinstance(sentinels, dict) or not sentinels:
         return False
@@ -123,12 +131,7 @@ def _runtime_sec_blocked(report):
 
 
 def apply_runtime_guard(report, env_path=None):
-    """Disable SEC network enrichment for subsequent Actions steps when blocked.
-
-    GitHub Actions imports variables appended to GITHUB_ENV only for subsequent
-    steps. Outside Actions, or when no broad 403 is proven, this function is a
-    no-op. Passing env_path explicitly keeps the behavior unit-testable.
-    """
+    """Disable the current CompanyFacts lane for subsequent Actions steps when blocked."""
     blocked = _runtime_sec_blocked(report)
     path = env_path if env_path is not None else os.getenv("GITHUB_ENV")
     if blocked and path:
@@ -139,7 +142,7 @@ def apply_runtime_guard(report, env_path=None):
     return blocked
 
 
-def probe(session=None, snapshot_path=TICKER_MAP_SNAPSHOT, sentinels=SENTINELS):
+def probe(session=None, snapshot_path=TICKER_MAP_SNAPSHOT, sentinels=SENTINELS, archive_endpoints=ARCHIVE_ENDPOINTS):
     cached = _read_ticker_snapshot(snapshot_path)
     ua = os.getenv("SEC_USER_AGENT", "Vestra/4.0 (+https://github.com/possn/Vestra)").strip()
     session = session or requests.Session()
@@ -154,7 +157,16 @@ def probe(session=None, snapshot_path=TICKER_MAP_SNAPSHOT, sentinels=SENTINELS):
         "snapshot_available": bool(cached),
         "sentinels": {},
         "bulk": {},
-        "summary": {"requests": 0, "http_ok": 0, "payload_ok": 0, "bulk_requests": 0, "bulk_ok": 0},
+        "archives": {},
+        "summary": {
+            "requests": 0,
+            "http_ok": 0,
+            "payload_ok": 0,
+            "bulk_requests": 0,
+            "bulk_ok": 0,
+            "archive_requests": 0,
+            "archive_ok": 0,
+        },
     }
 
     if cached:
@@ -198,6 +210,13 @@ def probe(session=None, snapshot_path=TICKER_MAP_SNAPSHOT, sentinels=SENTINELS):
         report["bulk"][name] = outcome
         if outcome.get("ok"):
             report["summary"]["bulk_ok"] += 1
+
+    for name, url in (archive_endpoints or {}).items():
+        report["summary"]["archive_requests"] += 1
+        outcome = _probe_range(session, url, accept="text/plain, text/html, application/xml, text/xml, */*")
+        report["archives"][name] = outcome
+        if outcome.get("ok"):
+            report["summary"]["archive_ok"] += 1
 
     print("SEC endpoint probe: " + json.dumps(report, sort_keys=True, separators=(",", ":")))
     return report
