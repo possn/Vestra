@@ -7,9 +7,15 @@ present on the row.
 """
 from __future__ import annotations
 
-import math
 import json
 from pathlib import Path
+
+from source_agreement import (
+    SOURCE_AGREEMENT_METHOD,
+    SOURCE_AGREEMENT_MIN_CHECKS,
+    consume_esef_same_period_observation,
+    finite_number,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 STOCKS = ROOT / "data" / "stocks.json"
@@ -20,17 +26,6 @@ LEGACY_CONGRESS_SOURCES = {
     "Bargo / STOCK Act",
     "U.S. House Clerk / STOCK Act",
 }
-
-# Same-period source agreement is diagnostic-only. A percentage is published only
-# when at least two annual metrics can be compared for the exact same fiscal period.
-# Five percentage points is deliberately tolerant of presentation/classification
-# differences between Yahoo statements and ESEF while still surfacing material
-# disagreements. This does not change confidence or Score.
-ESEF_AGREEMENT_OBSERVATION_KEY = "_esef_same_period_observation"
-AGREEMENT_METRICS = ("gross_margin", "operating_margin", "net_margin", "roe")
-SOURCE_AGREEMENT_MIN_CHECKS = 2
-SOURCE_AGREEMENT_TOLERANCE_PP = 5.0
-SOURCE_AGREEMENT_METHOD = "same_period_annual_yahoo_esef_v1"
 
 # Provenance is domain-aware. A source may be independent evidence for one domain
 # (e.g. Form 4 for insider activity) without being independent confirmation of
@@ -94,18 +89,6 @@ METADATA_STATUSES = {
 }
 
 
-def _number(value):
-    if isinstance(value, bool):
-        return None
-    try:
-        if value is None or value == "":
-            return None
-        out = float(value)
-        return out if math.isfinite(out) else None
-    except (TypeError, ValueError):
-        return None
-
-
 def _source_descriptor(name: str) -> dict:
     definition = SOURCE_DEFINITIONS.get(name) or {
         "family": "other",
@@ -147,65 +130,6 @@ def _families_for_domain(descriptors: list[dict], domain: str) -> list[str]:
     ))
 
 
-def _consume_esef_same_period_observation(row: dict) -> bool:
-    """Convert transient ESEF observations into a conservative agreement audit.
-
-    ESEF enriches only missing canonical values, so comparing the final row would
-    risk comparing a source with itself. Instead the adapter temporarily attaches
-    its independent annual observation to the exact Yahoo annual-history period.
-    This function consumes and removes that marker before publication.
-    """
-    history = row.get("annual_quality_history")
-    if not isinstance(history, list):
-        return False
-
-    details = []
-    periods = []
-    consumed = False
-    for item in history:
-        if not isinstance(item, dict):
-            continue
-        observation = item.pop(ESEF_AGREEMENT_OBSERVATION_KEY, None)
-        if not isinstance(observation, dict):
-            continue
-        consumed = True
-        period_end = str(observation.get("period_end") or "").strip()[:10]
-        yahoo_period = str(item.get("date") or "").strip()[:10]
-        if not period_end or yahoo_period != period_end:
-            continue
-        metrics = observation.get("metrics") if isinstance(observation.get("metrics"), dict) else {}
-        for metric in AGREEMENT_METRICS:
-            yahoo_value = _number(item.get(metric))
-            esef_value = _number(metrics.get(metric))
-            if yahoo_value is None or esef_value is None:
-                continue
-            signed_delta_pp = (esef_value - yahoo_value) * 100.0
-            abs_delta_pp = abs(signed_delta_pp)
-            details.append({
-                "metric": metric,
-                "period_end": period_end,
-                "yahoo_value": round(yahoo_value, 8),
-                "esef_value": round(esef_value, 8),
-                "delta_pp": round(signed_delta_pp, 2),
-                "abs_delta_pp": round(abs_delta_pp, 2),
-                "tolerance_pp": SOURCE_AGREEMENT_TOLERANCE_PP,
-                "agrees": abs_delta_pp <= SOURCE_AGREEMENT_TOLERANCE_PP,
-            })
-            periods.append(period_end)
-
-    if details:
-        checks = len(details)
-        row["source_agreement_checks"] = checks
-        row["source_agreement_pct"] = (
-            round(sum(1 for detail in details if detail["agrees"]) / checks * 100.0, 1)
-            if checks >= SOURCE_AGREEMENT_MIN_CHECKS else None
-        )
-        row["source_agreement_details"] = details
-        row["source_agreement_period_end"] = max(periods) if periods else None
-        row["source_agreement_method"] = SOURCE_AGREEMENT_METHOD
-    return consumed
-
-
 def build_provenance(row: dict, generated_at: str | None = None) -> dict:
     sources = [str(x).strip() for x in (row.get("data_sources") or []) if str(x).strip()]
     descriptors = [_source_descriptor(name) for name in sources]
@@ -223,7 +147,7 @@ def build_provenance(row: dict, generated_at: str | None = None) -> dict:
     except (TypeError, ValueError):
         agreement_checks = 0
 
-    agreement_pct = _number(row.get("source_agreement_pct"))
+    agreement_pct = finite_number(row.get("source_agreement_pct"))
     if agreement_checks < SOURCE_AGREEMENT_MIN_CHECKS:
         agreement_pct = None
 
@@ -269,7 +193,7 @@ def normalize_row(row: dict, generated_at: str | None = None) -> bool:
     sources = [str(x).strip() for x in (row.get("data_sources") or []) if str(x).strip()]
     before_sources = list(sources)
     before_provenance = row.get("data_provenance")
-    consumed_observation = _consume_esef_same_period_observation(row)
+    consumed_observation = consume_esef_same_period_observation(row)
     sources = [x for x in sources if x not in LEGACY_CONGRESS_SOURCES]
     if row.get("congress_trades"):
         if OFFICIAL_CONGRESS_SOURCE not in sources:
