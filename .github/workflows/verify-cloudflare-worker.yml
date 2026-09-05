@@ -11,6 +11,7 @@ on:
       - 'worker-sec-transport.js'
       - 'wrangler.toml'
       - 'scripts/verify_worker_deployment.py'
+      - 'scripts/verify_quote_batch_deployment.py'
       - 'scripts/verify_learned_universe_deployment.py'
       - 'scripts/verify_ai_brief_deployment.py'
       - 'scripts/verify_sec_transport_deployment.py'
@@ -23,7 +24,7 @@ permissions:
 jobs:
   verify-worker:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,20 +37,27 @@ jobs:
       - name: Install requests
         run: python -m pip install --disable-pip-version-check requests
 
-      # Keep this verifier as the canonical production gate for Worker capabilities.
+      # Cloudflare's native Git integration owns deployment. This job must fail
+      # closed until the deployed router contract matches the checked-out source.
       - name: Verify production Worker
         env:
           VESTRA_WORKER_URL: https://delicate-bar-cc80.pedrossnunes.workers.dev
         run: |
-          python -m py_compile scripts/verify_learned_universe_deployment.py scripts/verify_ai_brief_deployment.py scripts/verify_sec_transport_deployment.py
-          for attempt in 1 2 3 4 5; do
+          python -m py_compile \
+            scripts/verify_worker_deployment.py \
+            scripts/verify_quote_batch_deployment.py \
+            scripts/verify_learned_universe_deployment.py \
+            scripts/verify_ai_brief_deployment.py \
+            scripts/verify_sec_transport_deployment.py
+          for attempt in 1 2 3 4 5 6 7 8; do
             if python scripts/verify_worker_deployment.py --url "$VESTRA_WORKER_URL" --ticker MSFT --ticker AAPL \
+              && python scripts/verify_quote_batch_deployment.py --url "$VESTRA_WORKER_URL" \
               && python scripts/verify_learned_universe_deployment.py --url "$VESTRA_WORKER_URL" \
               && python scripts/verify_ai_brief_deployment.py --url "$VESTRA_WORKER_URL" \
               && python scripts/verify_sec_transport_deployment.py --url "$VESTRA_WORKER_URL"; then
               exit 0
             fi
-            echo "Production not aligned yet (attempt ${attempt}/5); waiting 15s for Cloudflare deployment..."
-            sleep 15
+            echo "Production not aligned yet (attempt ${attempt}/8); waiting 20s for Cloudflare Git deployment..."
+            sleep 20
           done
           exit 1
