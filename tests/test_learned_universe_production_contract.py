@@ -11,11 +11,12 @@ class LearnedUniverseProductionContractTests(unittest.TestCase):
     def test_verifier_is_valid_python(self):
         subprocess.run(['python', '-m', 'py_compile', str(SCRIPT)], check=True, cwd=ROOT)
 
-    def test_verifier_requires_router_storage_and_endpoint(self):
+    def test_verifier_requires_v2_exact_identity_storage_and_endpoint(self):
         text = SCRIPT.read_text(encoding='utf-8')
         self.assertIn('learned_universe', text)
         self.assertIn('learned_universe_storage', text)
-        self.assertIn('durable_object', text)
+        self.assertIn('durable_object_v2_exact_identity', text)
+        self.assertIn('EXPECTED_SCHEMA_VERSION = 2', text)
         self.assertIn('/learned-universe', text)
         self.assertIn('schema_version', text)
         self.assertIn('Access-Control-Allow-Origin', text)
