@@ -4,6 +4,7 @@ const PREFERRED_SENTINELS = [
   'MSFT', 'AAPL', 'NVDA', 'AMZN', 'META', 'GOOGL', 'JPM', 'XOM', 'TSLA', 'V'
 ];
 const REQUIRED_STARTUP_FIELDS = ['ticker', 'name', 'score', 'currency', 'dossier_shard'];
+const STARTUP_PAYLOAD_FILES = ['stocks-startup.json', 'stocks-index.json', 'stocks.json'];
 
 function urlFromBase(base, relative) {
   return new URL(relative, base).toString();
@@ -25,7 +26,15 @@ async function isolateExternalSearch(page) {
 
 test('GitHub Pages: compact startup data and five sentinel dossiers are usable on iPhone/WebKit', async ({ page, request, baseURL }) => {
   const pageErrors = [];
+  const browserStartupRequests = [];
   page.on('pageerror', error => pageErrors.push(error.message));
+  page.on('request', req => {
+    try {
+      const pathname = new URL(req.url()).pathname;
+      const filename = pathname.split('/').pop();
+      if (STARTUP_PAYLOAD_FILES.includes(filename)) browserStartupRequests.push(filename);
+    } catch (_) {}
+  });
 
   const indexURL = urlFromBase(baseURL, 'index.html');
   const startupURL = urlFromBase(baseURL, 'data/stocks-startup.json');
@@ -110,11 +119,27 @@ test('GitHub Pages: compact startup data and five sentinel dossiers are usable o
   // to internal bootstrap helpers such as resolvePortfolioStock(): the published
   // contract is that a known ticker typed into Market becomes a clickable result
   // and opens a usable dossier.
-  for (const ticker of sentinels) {
+  for (const [index, ticker] of sentinels.entries()) {
     await search.fill(ticker);
 
     const row = page.locator(`.market-row[data-market-ticker="${ticker}"]`).first();
     await expect(row, `${ticker} missing from published market search`).toBeVisible({ timeout: 20_000 });
+
+    if (index === 0) {
+      expect(
+        browserStartupRequests,
+        `Expected browser to load stocks-startup.json; observed: ${browserStartupRequests.join(', ') || 'none'}`
+      ).toContain('stocks-startup.json');
+      expect(
+        browserStartupRequests,
+        `Production browser unexpectedly fell back to stocks-index.json; observed: ${browserStartupRequests.join(', ')}`
+      ).not.toContain('stocks-index.json');
+      expect(
+        browserStartupRequests,
+        `Production browser unexpectedly fell back to stocks.json; observed: ${browserStartupRequests.join(', ')}`
+      ).not.toContain('stocks.json');
+    }
+
     await row.click();
 
     const sheet = page.locator('#marketSheet');
