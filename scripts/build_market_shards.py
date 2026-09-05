@@ -1,7 +1,9 @@
-"""Build a lightweight market index plus full dossier shards from data/stocks.json.
+"""Build compact market startup payloads plus full dossier shards.
 
-stocks.json remains the validated source/fallback. The index contains only fields
-needed before a dossier opens; full evidence/history stays in lazy dossier shards.
+stocks.json remains the validated source/fallback. The startup index contains only
+fields required before a dossier opens. Scanner strategy results are emitted to a
+separate lazy payload because they are needed only when the Scanner tool opens.
+Full evidence/history remains in dossier shards.
 """
 from __future__ import annotations
 
@@ -13,12 +15,13 @@ from collections import defaultdict
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(ROOT, "data", "stocks.json")
 INDEX = os.path.join(ROOT, "data", "stocks-index.json")
+SCANNER_INDEX = os.path.join(ROOT, "data", "stocks-scanner.json")
 SHARD_DIR = os.path.join(ROOT, "data", "dossiers")
 MANIFEST = os.path.join(ROOT, "data", "dossiers-manifest.json")
 
-# Explicit pre-dossier contract. Anything not listed here belongs to the dossier
-# shard and is hydrated only when required. Keeping this list explicit prevents
-# new enrichment scalars from silently bloating the startup payload again.
+# Explicit pre-dossier contract. Anything not listed here belongs to a lazy
+# payload or dossier shard. Keeping this list explicit prevents new enrichment
+# scalars from silently bloating startup again.
 INDEX_KEYS = {
     # identity / search / filters
     "ticker", "name", "sector", "industry", "region", "country", "currency",
@@ -47,7 +50,7 @@ INDEX_KEYS = {
     # insiders / smart-money summaries
     "insider_status", "insider_buy_count_30d", "insider_sell_count_30d",
     "insider_buy_value_30d", "insider_sell_value_30d", "insider_net_value_30d",
-    # opportunity / scanner summaries
+    # opportunity summaries used outside the Scanner tool
     "scanner_best", "scanner_best_score", "qarp_score", "qarp_label",
     "opportunity_score", "opportunity_score_raw", "opportunity_label",
     "opportunity_eligible", "opportunity_signal_count", "opportunity_structural_signal_count",
@@ -80,10 +83,6 @@ DETAIL_ONLY_LIST_KEYS = {
     "scanner_reasons", "scanner_cautions", "thesis_reasons", "thesis_cautions",
 }
 
-# Scanner results remain pre-dossier data: the Scanner tab ranks/filter rows by
-# these compact objects before a company dossier is opened.
-SMALL_OBJECT_KEYS = {"scanner_results"}
-
 
 def shard_for(ticker: str) -> str:
     c = (ticker or "_").strip().upper()[:1]
@@ -92,11 +91,6 @@ def shard_for(ticker: str) -> str:
 
 def index_row(row: dict) -> dict:
     out = {k: row.get(k) for k in INDEX_KEYS if k in row}
-    for k in SMALL_OBJECT_KEYS:
-        v = row.get(k)
-        if isinstance(v, dict):
-            out[k] = v
-
     ticker = str(row.get("ticker") or "").upper()
     out["ticker"] = ticker
     out["dossier_shard"] = shard_for(ticker)
@@ -117,6 +111,11 @@ def index_row(row: dict) -> dict:
         out.setdefault("low52_price_low", min(closes))
         out.setdefault("low52_price_high", max(closes))
     return out
+
+
+def scanner_results(row: dict) -> dict | None:
+    value = row.get("scanner_results")
+    return value if isinstance(value, dict) and value else None
 
 
 def main() -> None:
@@ -141,12 +140,16 @@ def main() -> None:
 
     shards: dict[str, dict[str, dict]] = defaultdict(dict)
     index_rows = []
+    scanner_tickers = {}
     manifest = {}
     for ticker, row in rows:
         key = shard_for(ticker)
         shards[key][ticker] = row
         manifest[ticker] = key
         index_rows.append(index_row(row))
+        results = scanner_results(row)
+        if results:
+            scanner_tickers[ticker] = results
 
     os.makedirs(SHARD_DIR, exist_ok=True)
     for name in os.listdir(SHARD_DIR):
@@ -164,6 +167,16 @@ def main() -> None:
     with open(INDEX, "w", encoding="utf-8") as f:
         json.dump(index_payload, f, ensure_ascii=False, separators=(",", ":"))
 
+    # Keyed object avoids repeating the ticker field inside every scanner row and
+    # can be merged into the already-loaded startup universe in O(n).
+    with open(SCANNER_INDEX, "w", encoding="utf-8") as f:
+        json.dump({
+            "schema_version": schema_version,
+            "generated_at": generated_at,
+            "ticker_count": len(scanner_tickers),
+            "tickers": scanner_tickers,
+        }, f, ensure_ascii=False, separators=(",", ":"))
+
     for key, values in sorted(shards.items()):
         with open(os.path.join(SHARD_DIR, f"{key}.json"), "w", encoding="utf-8") as f:
             json.dump({"schema_version": schema_version, "generated_at": generated_at, "shard": key, "stocks": values}, f, ensure_ascii=False, separators=(",", ":"))
@@ -179,13 +192,17 @@ def main() -> None:
 
     src_size = os.path.getsize(SRC)
     idx_size = os.path.getsize(INDEX)
+    scanner_size = os.path.getsize(SCANNER_INDEX)
     print(
         f"market shards: {len(index_rows)} unique rows, {len(shards)} shards; "
         f"dropped {duplicate_count} duplicate rows; "
-        f"index {idx_size/1_000_000:.2f} MB vs source {src_size/1_000_000:.2f} MB"
+        f"index {idx_size/1_000_000:.2f} MB + lazy scanner {scanner_size/1_000_000:.2f} MB "
+        f"vs source {src_size/1_000_000:.2f} MB"
     )
     if len(index_rows) != len(manifest):
         raise RuntimeError("Market shard manifest/index cardinality mismatch")
+    if len(scanner_tickers) > len(index_rows):
+        raise RuntimeError("Scanner payload cardinality exceeds market index")
     # Startup data should remain meaningfully smaller than the full dossier source.
     if src_size > 0 and idx_size >= src_size * 0.25:
         raise RuntimeError("Lightweight index is unexpectedly large (>=25% of stocks.json)")

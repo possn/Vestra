@@ -2,6 +2,16 @@
 (() => {
   'use strict';
 
+  function ensureScannerCompanion() {
+    if (typeof document === 'undefined') return;
+    if (window.VestraMarketScannerData || document.querySelector('script[data-vestra-scanner-data]')) return;
+    const script = document.createElement('script');
+    script.src = 'market-scanner-data.js?v=1.1';
+    script.defer = true;
+    script.dataset.vestraScannerData = '1';
+    document.head.appendChild(script);
+  }
+
   function create({
     state,
     text,
@@ -43,5 +53,6 @@
     return Object.freeze({ ensureLoaded });
   }
 
-  window.VestraMarketStaticUniverse = Object.freeze({ create, version: '1.0' });
+  ensureScannerCompanion();
+  window.VestraMarketStaticUniverse = Object.freeze({ create, ensureScannerCompanion, version: '1.0' });
 })();
