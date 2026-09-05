@@ -5,8 +5,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHER = ROOT / "scripts" / "publish_with_retry.sh"
+MARKET_WORKFLOW = ROOT / ".github" / "workflows" / "update-market-data.yml"
 WRITER_WORKFLOWS = [
-    ROOT / ".github" / "workflows" / "update-market-data.yml",
+    MARKET_WORKFLOW,
     ROOT / ".github" / "workflows" / "update-executives.yml",
     ROOT / ".github" / "workflows" / "update-politicians.yml",
     ROOT / ".github" / "workflows" / "update-metals-news.yml",
@@ -32,6 +33,24 @@ class DataPublishingContractTests(unittest.TestCase):
                     source,
                     f"{workflow.name} restored the single-shot publication race",
                 )
+
+    def test_blocked_market_build_cleans_every_generated_payload_before_publish(self):
+        source = MARKET_WORKFLOW.read_text()
+        blocked = source.split("- name: Persist blocked-build diagnostics", 1)[1]
+        blocked = blocked.split("- name: Fail build after diagnostics are persisted", 1)[0]
+        for path in (
+            "data/stocks.json",
+            "data/stocks-index.json",
+            "data/stocks-startup.json",
+            "data/stocks-scanner.json",
+            "data/dossiers-manifest.json",
+            "data/dossiers",
+        ):
+            with self.subTest(path=path):
+                self.assertIn(path, blocked)
+        self.assertLess(blocked.index("git checkout --"), blocked.index("git add data/coverage_audit.json"))
+        self.assertLess(blocked.index("git clean -fd"), blocked.index("git add data/coverage_audit.json"))
+        self.assertNotIn("git add data/", blocked)
 
     def test_publisher_retries_remote_advance_without_force_push(self):
         source = PUBLISHER.read_text()
