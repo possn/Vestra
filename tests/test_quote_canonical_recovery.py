@@ -20,9 +20,18 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
 
     def test_runtime_repairs_ambiguous_broker_listing_maps(self):
         text = REPAIR.read_text(encoding="utf-8")
-        self.assertIn("AU0000185993: 'IREN'", text)
-        self.assertIn("IE00BLCHJ534: 'PAVE.L'", text)
-        self.assertIn("GB00BL6K5J42: 'EDV.TO'", text)
+        expected = [
+            "AU0000185993: 'IREN'",
+            "IE00BLCHJ534: 'PAVE.L'",
+            "GB00BL6K5J42: 'EDV.TO'",
+            "GB00BVZK7T90: 'UNA.AS'",
+            "GB0007188757: 'RIO.L'",
+            "CH0334081137: 'CRSP'",
+            "US64110L1061: 'NFC.DE'",
+            "DE0006047004: 'HEI.DE'",
+        ]
+        for mapping in expected:
+            self.assertIn(mapping, text)
         self.assertIn("applyIdentityMapRepairs();", text)
 
     def test_recovery_is_narrow_and_runtime_effective(self):
@@ -36,14 +45,23 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
               US12468P1049:'AI',
               AU0000185993:'IREN.AX',
               IE00BLCHJ534:'PAVE.DE',
-              GB00BL6K5J42:'EDV.L'
+              GB00BL6K5J42:'EDV.L',
+              GB00BVZK7T90:'UNA.L',
+              GB0007188757:'RIO1.L',
+              CH0334081137:'CRSP.SW'
             }} }};
             window.quoteSanityCheck = () => ({{ok:false, reason:'historical jump'}});
             eval(fs.readFileSync({str(REPAIR)!r}, 'utf8'));
 
-            if (window.VestraAssetIdentity.ISIN_YAHOO_MAP.AU0000185993 !== 'IREN') process.exit(10);
-            if (window.VestraAssetIdentity.ISIN_YAHOO_MAP.IE00BLCHJ534 !== 'PAVE.L') process.exit(15);
-            if (window.VestraAssetIdentity.ISIN_YAHOO_MAP.GB00BL6K5J42 !== 'EDV.TO') process.exit(17);
+            const map = window.VestraAssetIdentity.ISIN_YAHOO_MAP;
+            if (map.AU0000185993 !== 'IREN') process.exit(10);
+            if (map.IE00BLCHJ534 !== 'PAVE.L') process.exit(15);
+            if (map.GB00BL6K5J42 !== 'EDV.TO') process.exit(17);
+            if (map.GB00BVZK7T90 !== 'UNA.AS') process.exit(18);
+            if (map.GB0007188757 !== 'RIO.L') process.exit(19);
+            if (map.CH0334081137 !== 'CRSP') process.exit(20);
+            if (map.US64110L1061 !== 'NFC.DE') process.exit(21);
+            if (map.DE0006047004 !== 'HEI.DE') process.exit(22);
 
             const good = window.quoteSanityCheck(
               {{isin:'DE000SHL1006'}},
@@ -73,6 +91,27 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             );
             if (!c3.ok || !c3.canonicalRecovery) process.exit(16);
 
+            const iren = window.quoteSanityCheck(
+              {{isin:'AU0000185993', yahooTicker:'IREN'}},
+              {{ticker:'IREN', currency:'USD', price:41.65}},
+              41.65, 'IREN', 'IREN'
+            );
+            if (!iren.ok || !iren.canonicalRecovery) process.exit(23);
+
+            const hei = window.quoteSanityCheck(
+              {{isin:'DE0006047004', yahooTicker:'HEI.DE', currency:'USD'}},
+              {{ticker:'HEI.DE', currency:'EUR', price:163.15}},
+              163.15, 'HEI.DE', 'HEI.DE'
+            );
+            if (!hei.ok || !hei.canonicalRecovery) process.exit(24);
+
+            const wrongHeiCurrency = window.quoteSanityCheck(
+              {{isin:'DE0006047004', yahooTicker:'HEI.DE'}},
+              {{ticker:'HEI.DE', currency:'USD', price:163.15}},
+              163.15, 'HEI.DE', 'HEI.DE'
+            );
+            if (wrongHeiCurrency.ok) process.exit(25);
+
             const other = window.quoteSanityCheck(
               {{isin:'US0378331005', yahooTicker:'AAPL'}},
               {{ticker:'AAPL', currency:'USD', price:200}},
@@ -85,7 +124,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
     def test_bootstrap_loads_identity_guard_before_user_interaction(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("loadCanonicalQuoteRepair();", text)
-        self.assertIn("quote-canonical-repair.js?v=2.1", text)
+        self.assertIn("quote-canonical-repair.js?v=2.2", text)
         self.assertIn("window.VestraAssetIdentityGuard", text)
 
 
