@@ -10,6 +10,7 @@ function loadScript(id,src,ready,onload){if(ready||document.getElementById(id)){
 function loadResearchDiagnostics(){loadScript('vestra-model-validation-script','market-model-validation.js?v=1.0',window.VestraModelValidation)}
 function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.3',window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
 function loadQuoteRefreshPerformance(){loadScript('vestra-quote-refresh-performance-script','quote-refresh-performance.js?v=1.0',window.VestraQuoteRefreshPerformance)}
+function loadDossierControls(){loadScript('vestra-market-dossier-controls-script','market-dossier-controls.js?v=1.0',window.VestraMarketDossierControls)}
 function loadGlobalMarketSearch(){loadScript('vestra-global-market-search-script','market-global-search.js?v=1.2',window.VestraGlobalMarketSearch)}
 function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','market-learned-universe.js?v=2.0',window.VestraLearnedUniverse,loadGlobalMarketSearch)}
 function loadAppUpdateManager(){loadScript('vestra-app-update-manager-script','app-update-manager.js?v=1.1',window.VestraAppUpdateManager)}
@@ -18,6 +19,7 @@ function loadRuntimeBridge(){loadScript('vestra-runtime-bridge-script','app-runt
 function start(){style();loadResearchDiagnostics();loadDataHealth();repair();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;repair()})});mo.observe(document.body,{childList:true,subtree:true})}
 loadCanonicalQuoteRepair();
 loadQuoteRefreshPerformance();
+loadDossierControls();
 loadRuntimeBridge();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.8'});
