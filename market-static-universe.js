@@ -3,6 +3,7 @@
   'use strict';
 
   function ensureScannerCompanion() {
+    if (typeof document === 'undefined') return;
     if (window.VestraMarketScannerData || document.querySelector('script[data-vestra-scanner-data]')) return;
     const script = document.createElement('script');
     script.src = 'market-scanner-data.js?v=1.1';
