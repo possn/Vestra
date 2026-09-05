@@ -6,9 +6,12 @@ const APP_ORIGIN = 'https://possn.github.io';
 const MAX_LEARNED = 1500;
 const LEARNED_NAMESPACE = 'vestra-learned-universe-v2';
 const ALLOWED_TYPES = new Set(['EQUITY','ETF','MUTUALFUND']);
+const EXACT_FETCH_TIMEOUT_MS = 3200;
+const BATCH_ITEM_DEADLINE_MS = 6500;
 
 function txt(v){ return String(v ?? '').trim(); }
 function validTicker(v){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/.test(txt(v).toUpperCase()); }
+function validQuoteTicker(v){ return /^[A-Z0-9^][A-Z0-9.\-^=]{0,24}$/.test(txt(v).toUpperCase()); }
 function isAllowedBrowserOrigin(origin){
   if (!origin) return false;
   if (origin === APP_ORIGIN) return true;
@@ -83,6 +86,33 @@ async function learnedStub(env){
   return env.LEARNED_UNIVERSE.get(id);
 }
 
+async function fetchWithTimeout(target, init={}, timeoutMs=EXACT_FETCH_TIMEOUT_MS){
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), Math.max(1000, Number(timeoutMs)||EXACT_FETCH_TIMEOUT_MS));
+  try {
+    return await fetch(target,{...init,signal:controller.signal});
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function normalizedQuotePrice(price, currency){
+  const value = Number(price);
+  const rawCurrency = txt(currency);
+  const ccy = rawCurrency.toUpperCase();
+  if (!Number.isFinite(value) || value <= 0) return {price:null,currency:ccy};
+  if (rawCurrency === 'GBp' || ccy === 'GBX' || ccy === 'GBPENCE') return {price:value/100,currency:'GBP'};
+  return {price:value,currency:ccy};
+}
+
+function finitePositive(...values){
+  for (const value of values) {
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return null;
+}
+
 async function fetchYahooExactIdentity(ticker){
   const headers = {
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
@@ -95,13 +125,42 @@ async function fetchYahooExactIdentity(ticker){
   ];
   for (const target of quoteUrls) {
     try {
-      const response = await fetch(target,{headers});
+      const response = await fetchWithTimeout(target,{headers});
       if (!response.ok) continue;
       const payload = await response.json().catch(()=>null);
       const row = (payload?.quoteResponse?.result || []).find(item=>txt(item?.symbol).toUpperCase()===ticker);
       const type = txt(row?.quoteType).toUpperCase();
-      if (row && (!type || ALLOWED_TYPES.has(type))) {
-        return {symbol:ticker,quote_type:type,exchange:txt(row.exchange || row.fullExchangeName)};
+      const rawPrice = finitePositive(
+        row?.regularMarketPrice,row?.postMarketPrice,row?.preMarketPrice,
+        row?.regularMarketPreviousClose,row?.regularMarketOpen,row?.bid,row?.ask
+      );
+      if (row && rawPrice) {
+        const normalized = normalizedQuotePrice(rawPrice,row.currency);
+        return {
+          symbol:ticker,
+          ticker,
+          price:normalized.price,
+          currency:normalized.currency,
+          name:txt(row.shortName || row.longName || ticker),
+          change_pct:Number.isFinite(Number(row.regularMarketChangePercent)) ? Number(row.regularMarketChangePercent) : null,
+          quote_type:type,
+          exchange:txt(row.exchange || row.fullExchangeName),
+          sector:txt(row.sector),
+          industry:txt(row.industry),
+          country:txt(row.country),
+          market_cap:Number.isFinite(Number(row.marketCap)) ? Number(row.marketCap) : null,
+          trailing_pe:Number.isFinite(Number(row.trailingPE)) ? Number(row.trailingPE) : null,
+          forward_pe:Number.isFinite(Number(row.forwardPE)) ? Number(row.forwardPE) : null,
+          price_to_book:Number.isFinite(Number(row.priceToBook)) ? Number(row.priceToBook) : null,
+          fifty_two_week_high:Number.isFinite(Number(row.fiftyTwoWeekHigh)) ? Number(row.fiftyTwoWeekHigh) : null,
+          fifty_two_week_low:Number.isFinite(Number(row.fiftyTwoWeekLow)) ? Number(row.fiftyTwoWeekLow) : null,
+          div_rate:Number.isFinite(Number(row.trailingAnnualDividendRate)) ? Number(row.trailingAnnualDividendRate) : null,
+          div_yield:Number.isFinite(Number(row.trailingAnnualDividendYield)) ? Number(row.trailingAnnualDividendYield) : null,
+          ex_div_date:row.exDividendDate ? new Date(Number(row.exDividendDate)*1000).toISOString().slice(0,10) : '',
+          div_date:row.dividendDate ? new Date(Number(row.dividendDate)*1000).toISOString().slice(0,10) : '',
+          updated:new Date().toISOString(),
+          source:'yahoo_exact_v7',
+        };
       }
     } catch (_) {}
   }
@@ -112,18 +171,66 @@ async function fetchYahooExactIdentity(ticker){
   ];
   for (const target of chartUrls) {
     try {
-      const response = await fetch(target,{headers});
+      const response = await fetchWithTimeout(target,{headers});
       if (!response.ok) continue;
       const payload = await response.json().catch(()=>null);
-      const meta = payload?.chart?.result?.[0]?.meta;
+      const result0 = payload?.chart?.result?.[0];
+      const meta = result0?.meta;
       const symbol = txt(meta?.symbol).toUpperCase();
       const type = txt(meta?.instrumentType).toUpperCase();
-      if (meta && symbol === ticker && (!type || ALLOWED_TYPES.has(type))) {
-        return {symbol,quote_type:type,exchange:txt(meta.exchangeName)};
+      const closes = result0?.indicators?.quote?.[0]?.close || [];
+      const rawPrice = finitePositive(meta?.regularMarketPrice,meta?.previousClose,...[...closes].reverse());
+      if (meta && symbol === ticker && rawPrice) {
+        const normalized = normalizedQuotePrice(rawPrice,meta.currency);
+        return {
+          symbol,
+          ticker,
+          price:normalized.price,
+          currency:normalized.currency,
+          name:txt(meta.shortName || meta.longName || meta.symbol || ticker),
+          change_pct:(Number.isFinite(Number(meta.regularMarketPrice)) && Number.isFinite(Number(meta.previousClose)) && Number(meta.previousClose)>0)
+            ? ((Number(meta.regularMarketPrice)-Number(meta.previousClose))/Number(meta.previousClose))*100 : null,
+          quote_type:type,
+          exchange:txt(meta.exchangeName),
+          sector:'',industry:'',country:'',
+          updated:new Date().toISOString(),
+          source:'yahoo_exact_chart',
+        };
       }
     } catch (_) {}
   }
   return null;
+}
+
+function withDeadline(promise, timeoutMs, message){
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise).finally(()=>clearTimeout(timer)),
+    new Promise((_,reject)=>{ timer=setTimeout(()=>reject(new Error(message)),timeoutMs); }),
+  ]);
+}
+
+async function handleExactBatchQuotes(request){
+  const url = new URL(request.url);
+  const origin = request.headers.get('Origin') || '';
+  const cors = learnedCors(origin);
+  const tickers = [...new Set((url.searchParams.get('tickers') || '')
+    .split(',').map(t=>txt(t).toUpperCase()).filter(validQuoteTicker))].slice(0,20);
+  if (!tickers.length) return json({error:'tickers obrigatório'},400,cors);
+
+  const rows = await Promise.all(tickers.map(async ticker=>{
+    try {
+      const quote = await withDeadline(
+        fetchYahooExactIdentity(ticker),
+        BATCH_ITEM_DEADLINE_MS,
+        `Tempo limite da cotação exata (${Math.round(BATCH_ITEM_DEADLINE_MS/1000)}s)`
+      );
+      return [ticker, quote || {ticker,error:'Sem cotação exata disponível'}];
+    } catch (error) {
+      return [ticker,{ticker,error:error?.message || 'Erro ao obter cotação'}];
+    }
+  }));
+  return json(Object.fromEntries(rows),200,cors);
 }
 
 async function validateLearnedTicker(ticker, env, ctx){
@@ -143,9 +250,9 @@ async function validateLearnedTicker(ticker, env, ctx){
   if (!validTicker(canonical) || canonical !== ticker || retrieval !== ticker) return null;
   return {
     ticker,
-    name: txt(quote.name || ticker),
+    name: txt(quote.name || exactIdentity.name || ticker),
     exchange: txt(quote.exchange || exactIdentity.exchange),
-    currency: txt(quote.currency).toUpperCase(),
+    currency: txt(quote.currency || exactIdentity.currency).toUpperCase(),
     quote_type: type || 'EQUITY',
     sector: txt(quote.sector),
     industry: txt(quote.industry),
@@ -186,6 +293,7 @@ async function handleLearnedUniverse(request, env, ctx){
 export default {
   async fetch(request, env, ctx){
     const url = new URL(request.url);
+    if (url.pathname === '/quotes' && request.method === 'GET') return handleExactBatchQuotes(request);
     if (url.pathname === '/learned-universe') return handleLearnedUniverse(request,env,ctx);
     if (url.pathname === '/ai-brief') return handleAiBrief(request,env,ctx);
     if (url.pathname === '/sec/companyfacts' || url.pathname === '/sec/submissions') return handleSecTransport(request,env,ctx);
@@ -200,6 +308,8 @@ export default {
         capabilities,
         experimental_capabilities:experimentalCapabilities,
         learned_universe_storage:'durable_object_v2_exact_identity',
+        quote_batch_transport:'exact_identity_parallel_v1',
+        quote_batch_item_deadline_ms:BATCH_ITEM_DEADLINE_MS,
         ai_brief_provider:'workers_ai',
         ai_brief_model:AI_BRIEF_MODEL,
         ai_brief_rate_limit: env?.AI_BRIEF_RATE_LIMITER ? 'binding' : 'unavailable',
