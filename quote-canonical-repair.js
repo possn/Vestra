@@ -1,12 +1,21 @@
-/* Vestra Asset Identity Guard v2.0 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
+/* Vestra Asset Identity Guard v2.1 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
 (() => {
   'use strict';
+
+  // Portfolio-backed listing corrections. An ISIN identifies the instrument but not
+  // necessarily the broker venue. These two holdings were being forced onto a
+  // different listing than the one actually held in the imported portfolio.
+  const IDENTITY_MAP_REPAIRS = Object.freeze({
+    AU0000185993: 'IREN',   // IREN Ltd — Nasdaq line held by the broker portfolio
+    IE00BLCHJ534: 'PAVE.L', // Global X U.S. Infrastructure Development UCITS ETF USD Acc — LSE
+  });
 
   // Explicit historical corruption rules. These are deliberately narrow and
   // only exist where we have source-of-truth broker identity plus a known bad
   // persisted quote that can otherwise trap the asset behind the >5x guard.
   const SPECIAL_RECOVERY_RULES = Object.freeze({
-    DE000SHL1006: Object.freeze({ ticker: 'SHL.DE', currency: 'EUR', minPrice: 5, maxPrice: 200 })
+    DE000SHL1006: Object.freeze({ ticker: 'SHL.DE', currency: 'EUR', minPrice: 5, maxPrice: 200 }),
+    US12468P1049: Object.freeze({ ticker: 'AI', currency: 'USD', minPrice: 1, maxPrice: 100 }),
   });
 
   const VENUE_CURRENCY = Object.freeze({
@@ -21,6 +30,17 @@
   function identityMap() {
     return (window.VestraAssetIdentity && window.VestraAssetIdentity.ISIN_YAHOO_MAP) || {};
   }
+
+  function applyIdentityMapRepairs() {
+    const map = identityMap();
+    for (const [isin, ticker] of Object.entries(IDENTITY_MAP_REPAIRS)) map[isin] = ticker;
+    return map;
+  }
+
+  // app.js keeps a reference to the same mutable map object, so repairing the map
+  // here also fixes subsequent manual/automatic quote refreshes without rewriting
+  // stored assets or touching quantities/cost basis.
+  applyIdentityMapRepairs();
 
   function canonicalTickerFor(asset) {
     const isin = clean(asset && asset.isin);
@@ -180,8 +200,10 @@
   if (!install()) document.addEventListener('DOMContentLoaded', install, { once: true });
 
   const api = Object.freeze({
-    version: '2.0',
+    version: '2.1',
+    identityMapRepairs: IDENTITY_MAP_REPAIRS,
     specialRules: SPECIAL_RECOVERY_RULES,
+    applyIdentityMapRepairs,
     canonicalTickerFor,
     expectedCurrencyForTicker,
     assess,
