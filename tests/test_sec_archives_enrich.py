@@ -10,6 +10,35 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+# Architecture's historical suite deliberately runs without the heavy pipeline
+# requirements installed. These modules are only needed at runtime network
+# boundaries; the parser/enrichment tests below inject FakeClient and never use
+# them, so keep the test isolated instead of requiring yfinance/requests.
+if "yfinance" not in sys.modules:
+    sys.modules["yfinance"] = types.ModuleType("yfinance")
+
+if "requests" not in sys.modules:
+    requests_stub = types.ModuleType("requests")
+    requests_stub.Session = object
+    adapters_stub = types.ModuleType("requests.adapters")
+    adapters_stub.HTTPAdapter = object
+    sys.modules["requests"] = requests_stub
+    sys.modules["requests.adapters"] = adapters_stub
+
+if "urllib3" not in sys.modules:
+    urllib3_stub = types.ModuleType("urllib3")
+    util_stub = types.ModuleType("urllib3.util")
+    retry_stub = types.ModuleType("urllib3.util.retry")
+
+    class Retry:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    retry_stub.Retry = Retry
+    sys.modules["urllib3"] = urllib3_stub
+    sys.modules["urllib3.util"] = util_stub
+    sys.modules["urllib3.util.retry"] = retry_stub
+
 from fundamentals import RawMetrics
 import sec_archives_enrich as archives
 
