@@ -74,6 +74,41 @@ def _source_score(row: dict):
     return min(100.0, score), official, len(sources)
 
 
+def _fundamental_source_context(row: dict):
+    """Return domain-aware fundamental source count + evidence state for copy only.
+
+    Analyst estimates, Form 4, Congress disclosures and capital-structure feeds are
+    useful evidence in their own domains but are not an independent confirmation of
+    company fundamentals. Keep this separate from the numerical confidence formula
+    so explainability can improve without silently changing production scoring.
+    """
+    provenance = row.get("data_provenance") if isinstance(row.get("data_provenance"), dict) else {}
+    independent = provenance.get("independent_fundamental_source_count")
+    if isinstance(independent, int) and independent >= 0:
+        count = independent
+    else:
+        sources = {str(x) for x in (row.get("data_sources") or [])}
+        families = set()
+        if "Yahoo Finance" in sources:
+            families.add("yahoo")
+        if "SEC EDGAR" in sources:
+            families.add("sec_edgar")
+        if "ESEF / filings.xbrl.org" in sources:
+            families.add("esef")
+        count = len(families)
+
+    evidence_state = str(provenance.get("evidence_state") or "").strip().lower()
+    if not evidence_state:
+        status = str(row.get("pipeline_status") or "").strip().lower()
+        if status in {"equity_carried_forward", "catalog_carried_forward"}:
+            evidence_state = "carried_forward"
+        elif status in {"equity_catalog_only", "catalog_only"}:
+            evidence_state = "metadata_only"
+        else:
+            evidence_state = "observed"
+    return count, evidence_state
+
+
 _CRITICAL = (
     "roe", "roa", "profit_margin", "operating_margin", "gross_margin",
     "revenue_growth", "earnings_growth", "free_cash_flow", "operating_cash_flow",
@@ -111,6 +146,7 @@ def assess(row: dict) -> dict:
     coverage_score = max(0.0, min(100.0, coverage if coverage is not None else 0.0))
     critical_coverage = _critical_coverage(row)
     source_score, has_official, source_count = _source_score(row)
+    fundamental_source_count, evidence_state = _fundamental_source_context(row)
     freshness_score, age_days = _freshness_score(row)
 
     checks = _n(row.get("source_agreement_checks")) or 0.0
@@ -150,7 +186,12 @@ def assess(row: dict) -> dict:
     if coverage_score >= 75: reasons.append("Cobertura fundamental elevada")
     elif coverage_score < 45: reasons.append("Cobertura fundamental limitada")
     if has_official: reasons.append("Filings oficiais presentes")
-    elif source_count <= 1: reasons.append("Dependência de uma única fonte principal")
+    if fundamental_source_count <= 1:
+        reasons.append("Fundamentais dependem de uma única fonte independente")
+    if evidence_state == "carried_forward":
+        reasons.append("Fundamentais transportados do snapshot anterior")
+    elif evidence_state == "metadata_only":
+        reasons.append("Apenas metadados disponíveis neste snapshot")
     if age_days is not None:
         if age_days <= 180: reasons.append("Contas recentes")
         elif age_days > 365: reasons.append("Contas desatualizadas")
