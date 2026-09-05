@@ -29,6 +29,8 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             "CH0334081137: 'CRSP'",
             "US64110L1061: 'NFC.DE'",
             "DE0006047004: 'HEI.DE'",
+            "RIO1: 'RIO.L'",
+            "'HEI.DE': 'HEI.DE'",
         ]
         for mapping in expected:
             self.assertIn(mapping, text)
@@ -98,15 +100,29 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             );
             if (!iren.ok || !iren.canonicalRecovery) process.exit(23);
 
-            const hei = window.quoteSanityCheck(
-              {{isin:'DE0006047004', yahooTicker:'HEI.DE', currency:'USD'}},
+            const heiWithIsin = window.quoteSanityCheck(
+              {{isin:'DE0006047004', ticker:'HEI.DE', yahooTicker:'HEI.DE', currency:'USD'}},
               {{ticker:'HEI.DE', currency:'EUR', price:163.15}},
               163.15, 'HEI.DE', 'HEI.DE'
             );
-            if (!hei.ok || !hei.canonicalRecovery) process.exit(24);
+            if (!heiWithIsin.ok || !heiWithIsin.canonicalRecovery) process.exit(24);
+
+            const heiWithoutIsin = window.quoteSanityCheck(
+              {{ticker:'HEI.DE', yahooTicker:'HEI.DE', currency:'USD'}},
+              {{ticker:'HEI.DE', currency:'EUR', price:163.15}},
+              163.15, 'HEI.DE', 'HEI.DE'
+            );
+            if (!heiWithoutIsin.ok || !heiWithoutIsin.canonicalRecovery) process.exit(26);
+
+            const rioWithoutIsin = window.quoteSanityCheck(
+              {{ticker:'RIO1', yahooTicker:'RIO.L', currency:'USD'}},
+              {{ticker:'RIO.L', currency:'GBP', price:52.4}},
+              61.2, 'RIO.L', 'RIO.L'
+            );
+            if (!rioWithoutIsin.ok || !rioWithoutIsin.canonicalRecovery) process.exit(27);
 
             const wrongHeiCurrency = window.quoteSanityCheck(
-              {{isin:'DE0006047004', yahooTicker:'HEI.DE'}},
+              {{ticker:'HEI.DE', yahooTicker:'HEI.DE'}},
               {{ticker:'HEI.DE', currency:'USD', price:163.15}},
               163.15, 'HEI.DE', 'HEI.DE'
             );
@@ -121,11 +137,13 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
         """)
         subprocess.run(["node", "-e", script], check=True, cwd=ROOT)
 
-    def test_bootstrap_loads_identity_guard_before_user_interaction(self):
+    def test_bootstrap_loads_identity_guard_and_quote_fast_lane(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("loadCanonicalQuoteRepair();", text)
-        self.assertIn("quote-canonical-repair.js?v=2.2", text)
+        self.assertIn("quote-canonical-repair.js?v=2.3", text)
         self.assertIn("window.VestraAssetIdentityGuard", text)
+        self.assertIn("loadQuoteRefreshPerformance();", text)
+        self.assertIn("quote-refresh-performance.js?v=1.0", text)
 
 
 if __name__ == "__main__":
