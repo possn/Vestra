@@ -1,16 +1,18 @@
 """Resilient transport shim for SEC CompanyFacts inside the market pipeline.
 
 The canonical SEC parser remains scripts/sec_enrich.py. This module changes only
-how its requests.Session reaches CompanyFacts:
+how its requests.Session reaches CompanyFacts when the API lane has not already
+been disproved by the workflow probe:
 
 1. use data.sec.gov directly when the runner can reach it;
-2. if the direct request is blocked/rate-limited/unavailable, retry the same CIK
-   through Vestra's Cloudflare Worker SEC transport;
+2. if an unexpected direct request is blocked/rate-limited/unavailable, retry the
+   same CIK through Vestra's Cloudflare Worker SEC transport;
 3. keep sec_enrich's existing validated ticker-map snapshot fallback unchanged.
 
-The Worker route is a transport proxy only. It still serves sec.gov payloads and
-marks them with X-Vestra-Sec-Source: sec.gov, so this does not create a new
-fundamental evidence family and does not alter Score Vestra semantics.
+An explicitly empty SEC_USER_AGENT is the workflow's evidence that all sentinel
+CompanyFacts/Submissions requests returned 403. In that case the CompanyFacts lane
+remains disabled instead of converting the signal into hundreds of Worker calls.
+The separate EDGAR Archives XBRL fallback owns recovery for that known condition.
 """
 from __future__ import annotations
 
@@ -51,12 +53,6 @@ def _inc(mapping: dict, key: str) -> None:
 
 
 def _payload_state(response) -> str:
-    """Classify a successful response without mutating/consuming it.
-
-    requests.Response.json() is repeatable because it parses response.content on
-    each call, so sec_enrich can still call .json() normally afterwards.
-    Test doubles without .json() return 'unchecked'.
-    """
     if not bool(getattr(response, "ok", False)):
         return "not_ok"
     parser = getattr(response, "json", None)
@@ -73,17 +69,7 @@ def _payload_state(response) -> str:
 
 
 def install(module=None, *, worker_url: str | None = None):
-    """Install the fallback into sec_enrich and return its Session wrapper.
-
-    The SEC connectivity probe historically communicates a broad GitHub-runner
-    403 by exporting an empty SEC_USER_AGENT. Convert that signal into
-    SEC_DIRECT_BLOCKED=1 rather than allowing sec_enrich to disable the lane.
-    This preserves compatibility with the current probe while recovering the
-    official payload through the Worker.
-
-    Diagnostics are aggregate-only and observational: no extra SEC request is
-    made, no retry policy changes and no parsed value is modified.
-    """
+    """Install the fallback into sec_enrich and return its Session wrapper."""
     if module is None:
         import sec_enrich as module
 
@@ -91,9 +77,12 @@ def install(module=None, *, worker_url: str | None = None):
         return module.requests.Session
 
     configured_ua = os.getenv("SEC_USER_AGENT")
-    if configured_ua is not None and not configured_ua.strip():
+    probe_blocked = configured_ua is not None and not configured_ua.strip()
+    if probe_blocked:
         os.environ["SEC_DIRECT_BLOCKED"] = "1"
-        os.environ["SEC_USER_AGENT"] = DEFAULT_SEC_USER_AGENT
+        os.environ["SEC_COMPANYFACTS_BLOCKED"] = "1"
+        # Preserve SEC_USER_AGENT="". sec_enrich will exit before creating a
+        # Session, avoiding the already-proven GitHub->Worker->SEC 502 loop.
 
     base = (worker_url or os.getenv("VESTRA_WORKER_URL") or CANONICAL_WORKER_URL).strip().rstrip("/")
     original_factory = module.requests.Session
@@ -117,6 +106,7 @@ def install(module=None, *, worker_url: str | None = None):
                 "companyfacts_worker_status": {},
                 "companyfacts_worker_payload": {},
                 "direct_blocked_mode": os.getenv("SEC_DIRECT_BLOCKED", "").strip() == "1",
+                "probe_blocked_mode": os.getenv("SEC_COMPANYFACTS_BLOCKED", "").strip() == "1",
             }
             module._vestra_last_sec_session = self
 
@@ -172,6 +162,8 @@ def install(module=None, *, worker_url: str | None = None):
                 return self._inner.get(url, timeout=timeout, **kwargs)
 
             diag = self._vestra_transport_diag
+            if os.getenv("SEC_COMPANYFACTS_BLOCKED", "").strip() == "1":
+                return self._inner.get(url, timeout=timeout, **kwargs)
             if os.getenv("SEC_DIRECT_BLOCKED", "").strip() == "1":
                 response = self._via_worker(url, timeout=timeout, **kwargs)
                 return response if response is not None else self._inner.get(url, timeout=timeout, **kwargs)
@@ -217,6 +209,7 @@ def install(module=None, *, worker_url: str | None = None):
                 "newly_enriched_rows": max(0, after - before),
                 "total_enriched_rows": after,
                 "transport": transport,
+                "probe_blocked": probe_blocked,
             }
             log.info("SEC enrichment runtime diagnostics %s", json.dumps(summary, sort_keys=True, separators=(",", ":")))
             return result

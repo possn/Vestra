@@ -81,6 +81,7 @@ class SecWorkerFallbackTests(unittest.TestCase):
 
     def tearDown(self):
         os.environ.pop('SEC_DIRECT_BLOCKED', None)
+        os.environ.pop('SEC_COMPANYFACTS_BLOCKED', None)
         os.environ.pop('SEC_USER_AGENT', None)
 
     def test_worker_url_extracts_exact_cik(self):
@@ -173,19 +174,21 @@ class SecWorkerFallbackTests(unittest.TestCase):
         self.assertEqual(diag['companyfacts_direct_exceptions'], 1)
         self.assertEqual(diag['companyfacts_worker_success'], 1)
 
-    def test_probe_empty_user_agent_becomes_direct_block_signal(self):
-        module, factory, _ = self.make_module([FakeResponse(200, {'facts': {'us-gaap': {}}})])
+    def test_probe_empty_user_agent_disables_companyfacts_transport(self):
+        module, factory, _ = self.make_module([])
         with mock.patch.dict(os.environ, {'SEC_USER_AGENT': ''}, clear=False):
             fallback.install(module, worker_url='https://worker.example')
             self.assertEqual(os.environ.get('SEC_DIRECT_BLOCKED'), '1')
-            self.assertEqual(os.environ.get('SEC_USER_AGENT'), fallback.DEFAULT_SEC_USER_AGENT)
+            self.assertEqual(os.environ.get('SEC_COMPANYFACTS_BLOCKED'), '1')
+            self.assertEqual(os.environ.get('SEC_USER_AGENT'), '')
             session = module.requests.Session()
-            session.get('https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json')
-            self.assertTrue(session._vestra_transport_diag['direct_blocked_mode'])
-            self.assertEqual(session._vestra_transport_diag['companyfacts_direct_attempts'], 0)
-            self.assertEqual(session._vestra_transport_diag['companyfacts_worker_success'], 1)
-        calls = [url for url, _ in factory.instances[0].calls]
-        self.assertEqual(calls, ['https://worker.example/sec/companyfacts?cik=320193'])
+            diag = session._vestra_transport_diag
+            self.assertTrue(diag['direct_blocked_mode'])
+            self.assertTrue(diag['probe_blocked_mode'])
+            self.assertEqual(diag['companyfacts_direct_attempts'], 0)
+            self.assertEqual(diag['companyfacts_worker_attempts'], 0)
+            self.assertEqual(diag['companyfacts_worker_success'], 0)
+        self.assertEqual(factory.instances[0].calls, [])
 
     def test_non_companyfacts_requests_are_never_proxied(self):
         original = FakeResponse(403)
