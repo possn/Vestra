@@ -11,6 +11,7 @@ const BATCH_ITEM_DEADLINE_MS = 6500;
 
 function txt(v){ return String(v ?? '').trim(); }
 function validTicker(v){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/.test(txt(v).toUpperCase()); }
+function validQuoteTicker(v){ return /^[A-Z0-9^][A-Z0-9.\-^=]{0,24}$/.test(txt(v).toUpperCase()); }
 function isAllowedBrowserOrigin(origin){
   if (!origin) return false;
   if (origin === APP_ORIGIN) return true;
@@ -97,12 +98,10 @@ async function fetchWithTimeout(target, init={}, timeoutMs=EXACT_FETCH_TIMEOUT_M
 
 function normalizedQuotePrice(price, currency){
   const value = Number(price);
-  const ccy = txt(currency).toUpperCase();
+  const rawCurrency = txt(currency);
+  const ccy = rawCurrency.toUpperCase();
   if (!Number.isFinite(value) || value <= 0) return {price:null,currency:ccy};
-  if (ccy === 'GBP' || ccy === 'USD' || ccy === 'EUR' || ccy === 'CHF' || ccy === 'CAD' || ccy === 'AUD' || ccy === 'DKK' || ccy === 'SEK' || ccy === 'NOK' || ccy === 'HKD' || ccy === 'JPY') {
-    return {price:value,currency:ccy};
-  }
-  if (ccy === 'GBX' || ccy === 'GBPENCE' || txt(currency) === 'GBp') return {price:value/100,currency:'GBP'};
+  if (rawCurrency === 'GBp' || ccy === 'GBX' || ccy === 'GBPENCE') return {price:value/100,currency:'GBP'};
   return {price:value,currency:ccy};
 }
 
@@ -135,7 +134,7 @@ async function fetchYahooExactIdentity(ticker){
         row?.regularMarketPrice,row?.postMarketPrice,row?.preMarketPrice,
         row?.regularMarketPreviousClose,row?.regularMarketOpen,row?.bid,row?.ask
       );
-      if (row && rawPrice && (!type || ALLOWED_TYPES.has(type))) {
+      if (row && rawPrice) {
         const normalized = normalizedQuotePrice(rawPrice,row.currency);
         return {
           symbol:ticker,
@@ -181,7 +180,7 @@ async function fetchYahooExactIdentity(ticker){
       const type = txt(meta?.instrumentType).toUpperCase();
       const closes = result0?.indicators?.quote?.[0]?.close || [];
       const rawPrice = finitePositive(meta?.regularMarketPrice,meta?.previousClose,...[...closes].reverse());
-      if (meta && symbol === ticker && rawPrice && (!type || ALLOWED_TYPES.has(type))) {
+      if (meta && symbol === ticker && rawPrice) {
         const normalized = normalizedQuotePrice(rawPrice,meta.currency);
         return {
           symbol,
@@ -216,7 +215,7 @@ async function handleExactBatchQuotes(request){
   const origin = request.headers.get('Origin') || '';
   const cors = learnedCors(origin);
   const tickers = [...new Set((url.searchParams.get('tickers') || '')
-    .split(',').map(t=>txt(t).toUpperCase()).filter(validTicker))].slice(0,20);
+    .split(',').map(t=>txt(t).toUpperCase()).filter(validQuoteTicker))].slice(0,20);
   if (!tickers.length) return json({error:'tickers obrigatório'},400,cors);
 
   const rows = await Promise.all(tickers.map(async ticker=>{
