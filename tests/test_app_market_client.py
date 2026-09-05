@@ -14,10 +14,11 @@ class AppMarketClientTests(unittest.TestCase):
             "async function fetchFxRates",
             "async function mapWithConcurrency",
             "FX_FALLBACK_LOCAL",
-            "MAX_QUOTE_CONCURRENCY = 12",
+            "MAX_QUOTE_CONCURRENCY = 600",
             "DEFAULT_QUOTE_TIMEOUT_MS = 12000",
             "BATCH_QUOTE_TIMEOUT_MS = 12000",
-            "BATCH_CHUNK_SIZE = 12",
+            "BATCH_CHUNK_SIZE = 20",
+            "BATCH_REQUEST_CONCURRENCY = 8",
             "DIRECT_FALLBACK_CONCURRENCY = 2",
             "QUOTE_CACHE_TTL_MS = 60 * 1000",
             "QUOTE_ERROR_TTL_MS = 20 * 1000",
@@ -36,7 +37,9 @@ class AppMarketClientTests(unittest.TestCase):
             "runDirectFallback",
         ):
             self.assertIn(token,s)
-        self.assertIn("Math.min(requested,MAX_QUOTE_CONCURRENCY",s)
+        self.assertIn("list.length>=40 ? Math.min(list.length,MAX_QUOTE_CONCURRENCY) : requested",s)
+        self.assertIn("Math.min(BATCH_REQUEST_CONCURRENCY,chunks.length||1)",s)
+        self.assertIn("await Promise.all(workers)",s)
         self.assertIn("if(quoteInflight.has(key)) return quoteInflight.get(key)",s)
         self.assertIn("[404,405,501].includes(resp.status)",s)
         self.assertIn("batchSupport.set(base,false)",s)
@@ -74,7 +77,8 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("fetchQuoteWithFallback",app)
         self.assertIn("mapWithConcurrency(tickerList, 8, x => fetchQuoteWithFallback(x))",app)
         client=read("app-market-client.js")
-        self.assertIn("MAX_QUOTE_CONCURRENCY = 12",client)
+        self.assertIn("MAX_QUOTE_CONCURRENCY = 600",client)
+        self.assertIn("BATCH_REQUEST_CONCURRENCY = 8",client)
         self.assertNotIn("fetchQuotesBatch(",app)
         self.assertIn("Cotação suspeita rejeitada",app)
 
