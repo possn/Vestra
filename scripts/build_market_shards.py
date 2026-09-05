@@ -72,10 +72,16 @@ INDEX_KEYS = {
     "expense_ratio", "fund_region", "fund_theme", "fund_style", "fund_ucits",
 }
 
-SMALL_LIST_KEYS = {
+# Human-readable evidence belongs to the hydrated dossier, not the startup
+# universe. Keeping this explicit makes the payload boundary testable and avoids
+# reintroducing repeated strings for every asset during future enrichments.
+DETAIL_ONLY_LIST_KEYS = {
     "data_sources", "opportunity_reasons", "opportunity_cautions",
     "scanner_reasons", "scanner_cautions", "thesis_reasons", "thesis_cautions",
 }
+
+# Scanner results remain pre-dossier data: the Scanner tab ranks/filter rows by
+# these compact objects before a company dossier is opened.
 SMALL_OBJECT_KEYS = {"scanner_results"}
 
 
@@ -86,10 +92,6 @@ def shard_for(ticker: str) -> str:
 
 def index_row(row: dict) -> dict:
     out = {k: row.get(k) for k in INDEX_KEYS if k in row}
-    for k in SMALL_LIST_KEYS:
-        v = row.get(k)
-        if isinstance(v, list) and len(v) <= 12:
-            out[k] = v
     for k in SMALL_OBJECT_KEYS:
         v = row.get(k)
         if isinstance(v, dict):
