@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/update_macro_events.py'
+      - 'scripts/macro_calendar_transport.py'
       - 'tests/test_update_macro_events.py'
       - '.github/workflows/update-macro-events.yml'
 
@@ -38,11 +39,11 @@ jobs:
 
       - name: Validate refresher
         run: |
-          python -m py_compile scripts/update_macro_events.py
+          python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py
           python tests/test_update_macro_events.py
 
       - name: Refresh official macro calendar
-        run: python scripts/update_macro_events.py
+        run: PYTHONPATH=scripts python scripts/macro_calendar_transport.py
 
       - name: Validate published contract
         run: |
