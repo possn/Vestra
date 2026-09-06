@@ -22,7 +22,7 @@
     if (typeof document === 'undefined') return;
     if (window.VestraWeeklyEvents || document.querySelector('script[data-vestra-weekly-events]')) return;
     const script = document.createElement('script');
-    script.src = 'dashboard-weekly-events.js?v=1.0';
+    script.src = 'dashboard-weekly-events.js?v=1.1';
     script.defer = true;
     script.dataset.vestraWeeklyEvents = '1';
     document.head.appendChild(script);
@@ -68,9 +68,6 @@
     const txt = typeof text === 'function' ? text : (v => String(v ?? '').trim());
 
     async function loadFirstAvailable() {
-      // Browser runtime is intentionally bounded to compact payloads. The full
-      // canonical stocks.json is a build/audit artifact (~50+ MB), never a UI
-      // fallback: downloading it on iPhone can look like a frozen dossier/app.
       const candidates = [
         ['data/stocks-startup.json', true],
         ['data/stocks-index.json', false],

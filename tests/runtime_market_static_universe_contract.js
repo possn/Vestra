@@ -12,7 +12,7 @@ assert(api && api.version === '1.2');
 assert.strictEqual(typeof api.getStocks, 'function');
 assert.strictEqual(typeof api.unpackStartupPayload, 'function');
 assert.strictEqual(typeof api.ensureWeeklyEventsCompanion, 'function');
-assert(source.includes('dashboard-weekly-events.js?v=1.0'), 'weekly events companion must be loaded by the compact market runtime');
+assert(source.includes('dashboard-weekly-events.js?v=1.1'), 'weekly macro events companion must use the current cache-busted runtime');
 assert.deepStrictEqual(Array.from(api.getStocks()), []);
 assert(!source.includes("['data/stocks.json'"), 'browser runtime must never fall back to the full market snapshot');
 
@@ -72,10 +72,7 @@ assert.strictEqual(api.unpackStartupPayload({layout:'unknown', fields:[], rows:[
     { ok:false, status:404, json:async()=>({}) },
     { ok:true, status:200, json:async()=>({ generated_at:'2026-09-01T07:00:00Z', stocks:[{ticker:'AAPL'}] }) },
   ];
-  const fallback = api.create({
-    state: fallbackState,
-    fetchImpl: async url => { fallbackCalls.push(url); return fallbackResponses.shift(); },
-  });
+  const fallback = api.create({ state: fallbackState, fetchImpl: async url => { fallbackCalls.push(url); return fallbackResponses.shift(); } });
   await fallback.ensureLoaded();
   assert.deepStrictEqual(fallbackCalls, ['data/stocks-startup.json','data/stocks-index.json']);
   assert.strictEqual(fallbackState.loaded, true);
@@ -88,11 +85,7 @@ assert.strictEqual(api.unpackStartupPayload({layout:'unknown', fields:[], rows:[
     { ok:false, status:404, json:async()=>({}) },
   ];
   let invalidError = '';
-  const invalidPacked = api.create({
-    state: invalidPackedState,
-    fetchImpl: async url => { invalidPackedCalls.push(url); return invalidPackedResponses.shift(); },
-    onError: err => { invalidError = err.message; },
-  });
+  const invalidPacked = api.create({ state: invalidPackedState, fetchImpl: async url => { invalidPackedCalls.push(url); return invalidPackedResponses.shift(); }, onError: err => { invalidError = err.message; } });
   await invalidPacked.ensureLoaded();
   assert.deepStrictEqual(invalidPackedCalls, ['data/stocks-startup.json','data/stocks-index.json']);
   assert.strictEqual(invalidPackedState.loaded, false);
@@ -100,11 +93,7 @@ assert.strictEqual(api.unpackStartupPayload({layout:'unknown', fields:[], rows:[
 
   const failedState = { loaded:false, loading:null, data:null, stocks:[], byTicker:new Map() };
   let errorMessage = '';
-  const failed = api.create({
-    state: failedState,
-    fetchImpl: async () => ({ ok:false, status:503, json:async()=>({}) }),
-    onError: err => { errorMessage = err.message; },
-  });
+  const failed = api.create({ state: failedState, fetchImpl: async () => ({ ok:false, status:503, json:async()=>({}) }), onError: err => { errorMessage = err.message; } });
   await failed.ensureLoaded();
   assert.strictEqual(errorMessage, 'market data 503');
   assert.strictEqual(failedState.loaded, false);

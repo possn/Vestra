@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: Dashboard renders rolling weekly earnings with portfolio priority', async ({ page }) => {
+test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio earnings', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -17,6 +17,13 @@ test('iPhone/WebKit: Dashboard renders rolling weekly earnings with portfolio pr
         { ticker:'AAPL', name:'Apple Inc.', quote_type:'EQUITY', market_cap:3_500_000_000_000, analyst_next_earnings_date:'2026-09-09' },
         { ticker:'ETF1', name:'Not an earnings issuer', quote_type:'ETF', market_cap:8_000_000_000, analyst_next_earnings_date:'2026-09-07' },
       ],
+      macroEvents: {
+        events: [
+          { date:'2026-09-10', short_title:'PPI EUA', title:'PPI EUA · agosto', category:'inflation', region:'EUA', importance:'high', source:'bls', time_local:'08:30 ET' },
+          { date:'2026-09-11', short_title:'CPI EUA', title:'CPI EUA · agosto', category:'inflation', region:'EUA', importance:'critical', source:'bls', time_local:'08:30 ET' },
+          { date:'2026-09-15', short_title:'FOMC', title:'FOMC', category:'central_bank', region:'EUA', importance:'critical', source:'fed' },
+        ]
+      }
     });
   });
 
@@ -25,21 +32,24 @@ test('iPhone/WebKit: Dashboard renders rolling weekly earnings with portfolio pr
   await expect(card.locator('.weekly-events-range')).toContainText('6 set');
   await expect(card.locator('.weekly-events-range')).toContainText('12 set');
 
-  const events = card.locator('[data-weekly-event-ticker]');
-  await expect(events).toHaveCount(2);
-  await expect(events.nth(0)).toHaveAttribute('data-weekly-event-ticker', 'NVDA');
-  await expect(events.nth(0)).toContainText('NVIDIA Corporation');
-  await expect(events.nth(0)).toContainText('No portefólio');
-  await expect(events.nth(1)).toHaveAttribute('data-weekly-event-ticker', 'AAPL');
+  const earnings = card.locator('[data-weekly-event-ticker]');
+  await expect(earnings).toHaveCount(2);
+  await expect(earnings.nth(0)).toHaveAttribute('data-weekly-event-ticker', 'NVDA');
+  await expect(earnings.nth(0)).toContainText('NVIDIA Corporation');
+  await expect(earnings.nth(0)).toContainText('No portefólio');
+  await expect(earnings.nth(1)).toHaveAttribute('data-weekly-event-ticker', 'AAPL');
+  await expect(card).toContainText('PPI EUA');
+  await expect(card).toContainText('CPI EUA');
+  await expect(card).toContainText('Inflação');
+  await expect(card).toContainText('Impacto elevado');
+  await expect(card).not.toContainText('FOMC');
   await expect(card).not.toContainText('ETF1');
 
-  const hero = page.locator('#viewDashboard .card.hero');
-  const weekly = page.locator('#dashboardWeeklyEventsCard');
   const order = await page.locator('#viewDashboard > .card').evaluateAll(nodes => nodes.map(node => node.id || node.className));
   const heroIndex = order.findIndex(value => String(value).includes('hero'));
   const weeklyIndex = order.findIndex(value => value === 'dashboardWeeklyEventsCard');
   expect(weeklyIndex).toBe(heroIndex + 1);
-  await expect(hero).toBeVisible();
-  await expect(weekly).toBeVisible();
+  await expect(page.locator('#viewDashboard .card.hero')).toBeVisible();
+  await expect(card).toBeVisible();
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
