@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -9,16 +10,18 @@ def read(path: str) -> str:
 
 
 class NativeMarketLoadingTests(unittest.TestCase):
-    def test_market_base_prefers_columnar_then_index_then_legacy_fallback(self):
+    def test_market_base_prefers_columnar_then_index_without_full_snapshot_fallback(self):
         market = read('market.js')
         universe = read('market-static-universe.js')
         self.assertIn('VestraMarketStaticUniverse', market)
         self.assertIn('staticUniverse?.ensureLoaded', market)
         self.assertIn("['data/stocks-startup.json', true]", universe)
         self.assertIn("['data/stocks-index.json', false]", universe)
-        self.assertIn("['data/stocks.json', false]", universe)
-        self.assertLess(universe.index('stocks-startup.json'), universe.index('stocks-index.json'))
-        self.assertLess(universe.index('stocks-index.json'), universe.index('stocks.json'))
+        candidates_match = re.search(r"const candidates\s*=\s*\[(.*?)\];", universe, re.S)
+        self.assertIsNotNone(candidates_match)
+        candidates = candidates_match.group(1)
+        self.assertLess(candidates.index('stocks-startup.json'), candidates.index('stocks-index.json'))
+        self.assertNotIn('stocks.json', candidates, 'browser runtime must never fall back to the full market snapshot')
         self.assertIn("cache: 'no-store'", universe)
         self.assertIn('unpackStartupPayload', universe)
 
@@ -35,11 +38,13 @@ class NativeMarketLoadingTests(unittest.TestCase):
         self.assertIn('openDossier', loader)
         self.assertIn('hydrateOpenDossier', loader)
 
-    def test_static_universe_is_the_canonical_market_index_owner(self):
+    def test_static_universe_is_the_canonical_compact_market_index_owner(self):
         universe = read('market-static-universe.js')
         self.assertIn('stocks-startup.json', universe)
         self.assertIn('stocks-index.json', universe)
-        self.assertIn('stocks.json', universe)
+        candidates_match = re.search(r"const candidates\s*=\s*\[(.*?)\];", universe, re.S)
+        self.assertIsNotNone(candidates_match)
+        self.assertNotIn('stocks.json', candidates_match.group(1))
         self.assertIn('getStocks', universe)
         self.assertIn('loadFirstAvailable', universe)
         self.assertNotIn('window.fetch =', universe)
@@ -77,8 +82,10 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_service_worker_matches_native_market_generation(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v10.12', sw)
-        self.assertIn('vestra-cache-v126', sw)
+        self.assertIn('Vestra Service Worker v10.13', sw)
+        self.assertIn('vestra-cache-v127', sw)
+        self.assertIn('staleWhileRevalidate', sw)
+        self.assertIn('["script", "style", "worker", "manifest"]', sw)
         self.assertIn('./market-live-overlay.js', sw)
         self.assertIn('./market-static-universe.js', sw)
         self.assertIn('./market-data-loader.js', sw)
