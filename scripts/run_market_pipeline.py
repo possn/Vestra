@@ -145,6 +145,7 @@ def main():
     from sec_archives_runtime import install as install_sec_archives_fallback
     from physical_metals_runtime import install as install_parallel_physical_metals
     from lse_first_esef_runtime import install as install_lse_first_esef_identity
+    from insider_runtime_metrics import install as install_insider_runtime_metrics
 
     install_rate_limit_coordinator()
     install_fetch_worker_cap()
@@ -155,6 +156,7 @@ def main():
     install_lse_first_esef_identity()
     install_parallel_physical_metals()
     install_gap_retrieval_observability()
+    install_insider_runtime_metrics()
     runpy.run_module("run", run_name="__main__")
 
 
