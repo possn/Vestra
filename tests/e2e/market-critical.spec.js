@@ -68,9 +68,10 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
-  const persistentClose = page.locator('.market-close-persistent');
-  await expect(persistentClose).toBeVisible();
-  await persistentClose.click();
+  const groupedClose = sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]');
+  await expect(groupedClose).toBeVisible();
+  await expect(sheet.locator(':scope > .market-close-persistent')).toBeHidden();
+  await groupedClose.click();
   await expect(sheet).toBeHidden();
 
   const row = page.locator('.market-row[data-market-ticker="MSFT"]').first();
@@ -102,7 +103,9 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
   await expect(sheet.locator('[data-detail-tab="overview"]')).toHaveClass(/is-active/);
   await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
-  await page.locator('.market-close-persistent').click();
+  const groupedClose = sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]');
+  await expect(groupedClose).toBeVisible();
+  await groupedClose.click();
   await expect(sheet).toBeHidden();
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
