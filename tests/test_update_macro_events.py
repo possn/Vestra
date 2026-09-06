@@ -4,9 +4,12 @@ from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location('update_macro_events', ROOT / 'scripts' / 'update_macro_events.py')
-mod = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(mod)
+DEPS_AVAILABLE = all(importlib.util.find_spec(name) is not None for name in ('pandas', 'requests', 'lxml'))
+mod = None
+if DEPS_AVAILABLE:
+    SPEC = importlib.util.spec_from_file_location('update_macro_events', ROOT / 'scripts' / 'update_macro_events.py')
+    mod = importlib.util.module_from_spec(SPEC)
+    SPEC.loader.exec_module(mod)
 
 
 class _Response:
@@ -27,6 +30,7 @@ class _Session:
         return _Response(self.text)
 
 
+@unittest.skipUnless(DEPS_AVAILABLE, 'macro refresher dependencies are installed only in the dedicated workflow')
 class MacroCalendarTests(unittest.TestCase):
     def test_bls_ics_extracts_only_high_signal_releases(self):
         ics = '''BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:20261014T083000\nSUMMARY:Consumer Price Index for September 2026\nEND:VEVENT\nBEGIN:VEVENT\nDTSTART:20261015T083000\nSUMMARY:Producer Price Index for September 2026\nEND:VEVENT\nBEGIN:VEVENT\nDTSTART:20261002T083000\nSUMMARY:Employment Situation for September 2026\nEND:VEVENT\nBEGIN:VEVENT\nDTSTART:20261005T100000\nSUMMARY:Minor Statistical Release for September 2026\nEND:VEVENT\nEND:VCALENDAR\n'''
@@ -56,5 +60,16 @@ class MacroCalendarTests(unittest.TestCase):
             self.assertIn(key if key != 'fed' else 'federalreserve', url.lower())
 
 
+class MacroCalendarStaticTests(unittest.TestCase):
+    def test_refresher_source_declares_official_catalog_and_fail_closed_fallback(self):
+        source = (ROOT / 'scripts' / 'update_macro_events.py').read_text(encoding='utf-8')
+        for token in ('federalreserve.gov', 'bls.gov', 'bea.gov', 'ecb.europa.eu', 'census.gov'):
+            self.assertIn(token, source)
+        self.assertIn('no plausible future events', source)
+        self.assertIn('refresh failed and no validated fallback exists', source)
+
+
 if __name__ == '__main__':
+    if not DEPS_AVAILABLE:
+        print('macro calendar functional tests skipped in dependency-free historical suite')
     unittest.main(verbosity=2)
