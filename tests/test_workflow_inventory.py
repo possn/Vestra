@@ -11,6 +11,7 @@ ACTIVE_WORKFLOWS = {
     'runtime-js-syntax.yml',
     'sec-connectivity-probe.yml',
     'sec-fund-identity.yml',
+    'sec-runtime-regression.yml',
     'update-executives.yml',
     'update-market-data.yml',
     'update-metals-news.yml',
