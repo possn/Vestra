@@ -10,12 +10,14 @@ class MarketUiPolishContractTests(unittest.TestCase):
         cls.source = (ROOT / 'market-ui-polish.js').read_text(encoding='utf-8')
         cls.loader = (ROOT / 'market-static-universe.js').read_text(encoding='utf-8')
 
-    def test_dossier_watch_is_fixed_beside_persistent_close(self):
+    def test_dossier_watch_and_close_share_one_geometry_contract(self):
+        self.assertIn('#marketSheet .market-close-persistent', self.source)
         self.assertIn('#marketSheetContent .market-watch--detail', self.source)
-        self.assertIn('position:fixed!important', self.source)
-        self.assertIn('right:max(calc(env(safe-area-inset-right) + 66px),66px)!important', self.source)
-        self.assertIn('width:44px!important', self.source)
-        self.assertIn('height:44px!important', self.source)
+        self.assertIn('width:46px!important', self.source)
+        self.assertIn('height:46px!important', self.source)
+        self.assertIn('right:max(calc(env(safe-area-inset-right) + 14px),14px)!important', self.source)
+        self.assertIn('right:max(calc(env(safe-area-inset-right) + 68px),68px)!important', self.source)
+        self.assertIn("version: '1.1'", self.source)
 
     def test_politicians_state_is_cleared_before_normal_market_mode_switch(self):
         self.assertIn("[data-politicians-mode]", self.source)
@@ -32,7 +34,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
 
     def test_companion_is_reachable_from_loader(self):
         self.assertIn('ensureMarketUiPolish', self.loader)
-        self.assertIn('market-ui-polish.js?v=1.0', self.loader)
+        self.assertIn('market-ui-polish.js?v=1.1', self.loader)
         self.assertIn("version: '1.7'", self.loader)
 
 

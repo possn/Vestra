@@ -19,7 +19,7 @@ assert.strictEqual(typeof api.ensureUiVisualPolish, 'function');
 assert(source.includes('dashboard-weekly-events.js?v=1.2'), 'weekly macro events companion must use the current cache-busted runtime');
 assert(source.includes('dashboard-ui-refresh.js?v=1.0'), 'dashboard UI refresh companion must be cache-busted and reachable');
 assert(source.includes('mobile-ui-refresh.js?v=1.0'), 'mobile UI refresh companion must be cache-busted and reachable');
-assert(source.includes('market-ui-polish.js?v=1.0'), 'market UI polish companion must be cache-busted and reachable');
+assert(source.includes('market-ui-polish.js?v=1.1'), 'market UI polish companion must be cache-busted and reachable');
 assert(source.includes('ui-visual-polish.js?v=1.0'), 'visual polish companion must be cache-busted and reachable');
 assert(source.includes('vestraWeeklyEventsVisibilityGuard'), 'weekly events must stay visible when Dashboard secondary cards are collapsed');
 assert.deepStrictEqual(Array.from(api.getStocks()), []);

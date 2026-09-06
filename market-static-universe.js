@@ -58,7 +58,7 @@
     if (typeof document === 'undefined') return;
     if (window.VestraMarketUiPolish || document.querySelector('script[data-vestra-market-ui-polish]')) return;
     const script = document.createElement('script');
-    script.src = 'market-ui-polish.js?v=1.0';
+    script.src = 'market-ui-polish.js?v=1.1';
     script.defer = true;
     script.dataset.vestraMarketUiPolish = '1';
     document.head.appendChild(script);
