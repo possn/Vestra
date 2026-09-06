@@ -1,4 +1,4 @@
-/* Vestra UI core v1.2 — DOM, Chart infrastructure and launch watchdog. */
+/* Vestra UI core v1.3 — DOM, Chart infrastructure and launch watchdog. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -34,7 +34,7 @@ function installPremiumSplashWatchdog() {
       }
       .vestra-splash--premium .vestra-splash__mark{
         width:138px!important;height:138px!important;margin-bottom:0!important;
-        animation:vestraPremiumMarkIn .95s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumMarkIn .82s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium .vestra-splash__mark::after{
         inset:-18px!important;border-radius:42px!important;
@@ -48,12 +48,12 @@ function installPremiumSplashWatchdog() {
       .vestra-splash--premium .vestra-splash__brand{
         margin-top:24px!important;font-size:31px!important;font-weight:650!important;
         letter-spacing:-.035em!important;opacity:0;
-        animation:vestraPremiumBrandIn 1.05s 1.05s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumBrandIn .82s .72s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium .vestra-splash__tagline{
         margin-top:9px!important;font-size:15px!important;font-weight:600!important;
         letter-spacing:.02em!important;color:#55646b!important;opacity:0;
-        animation:vestraPremiumTaglineIn 1s 1.65s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumTaglineIn .72s 1.18s cubic-bezier(.16,1,.3,1) both!important;
       }
       @keyframes vestraPremiumMarkIn{
         0%{opacity:0;transform:scale(.78) translateY(8px);filter:blur(3px)}
@@ -84,8 +84,10 @@ function installPremiumSplashWatchdog() {
 
   splash.classList.add('vestra-splash--premium');
   const startedAt = performance.now();
-  const minimumVisibleMs = 2700;
-  const failsafeMs = 4600;
+  // The copy is fully visible around 1.9s. Keep the complete identity on screen
+  // for roughly another 1.6s so it can actually be read before the app opens.
+  const minimumVisibleMs = 3500;
+  const failsafeMs = 5400;
   let releasing = false;
   let releaseTimer = null;
 
@@ -114,13 +116,13 @@ function installPremiumSplashWatchdog() {
     splash.style.display = 'flex';
     splash.style.opacity = '1';
     splash.style.pointerEvents = 'auto';
-    splash.style.transition = 'opacity .48s cubic-bezier(.4,0,.2,1)';
+    splash.style.transition = 'opacity .52s cubic-bezier(.4,0,.2,1)';
     requestAnimationFrame(() => requestAnimationFrame(() => { splash.style.opacity = '0'; }));
     setTimeout(() => {
       splash.style.display = 'none';
       splash.style.pointerEvents = 'none';
       splash.classList.remove('vestra-splash--premium');
-    }, 520);
+    }, 570);
   };
 
   const observer = new MutationObserver(() => {
@@ -130,7 +132,7 @@ function installPremiumSplashWatchdog() {
     const elapsed = performance.now() - startedAt;
     if (elapsed < minimumVisibleMs) {
       // app.js still contains the legacy early fade. Neutralise it until the
-      // mark → brand → tagline sequence has actually been visible to the user.
+      // mark → brand → tagline sequence has been visible long enough to read.
       keepSplashVisible();
       if (!releaseTimer) releaseTimer = setTimeout(() => {
         releaseTimer = null;
