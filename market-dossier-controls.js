@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.1 — iPhone-safe close and unified header geometry. */
+/* Vestra Market Dossier Controls v1.2 — iPhone-safe unified fixed action group. */
 (() => {
   'use strict';
 
@@ -9,33 +9,45 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      /* Keep the proven persistent close control and dock the dossier favourite
-         immediately beside it. This preserves close-on-scroll and fixes the
-         vertical split introduced when the inline X was hidden. */
-      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-head .market-detail-actions{
-        flex:0 0 auto;
+      /* Dossier actions are one structural unit. The favourite and close button
+         share a single fixed flex row, so WebKit cannot place them from two
+         independent coordinate systems. Tool sheets keep the persistent X. */
+      #marketSheet[data-ticker]:not([data-ticker=""]) > .market-close-persistent{
+        display:none !important;
+      }
+      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-head{
+        padding-right:112px !important;
+      }
+      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions{
         position:fixed !important;
         z-index:175 !important;
         top:max(calc(env(safe-area-inset-top) + 10px),14px) !important;
-        right:66px !important;
+        right:max(calc(env(safe-area-inset-right) + 14px),14px) !important;
         display:flex !important;
+        flex:0 0 auto !important;
         flex-direction:row !important;
         flex-wrap:nowrap !important;
         align-items:center !important;
         justify-content:flex-end !important;
-        gap:0 !important;
-        width:44px !important;
-        min-width:44px !important;
-        max-width:44px !important;
+        gap:8px !important;
+        width:auto !important;
+        min-width:0 !important;
+        max-width:none !important;
+        overflow:visible !important;
       }
-      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-watch--detail{
-        box-sizing:border-box;
-        flex:0 0 44px !important;
-        width:44px !important;
-        min-width:44px !important;
-        height:44px !important;
-        min-height:44px !important;
+      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-watch--detail,
+      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-close{
+        position:static !important;
+        box-sizing:border-box !important;
+        flex:0 0 46px !important;
+        width:46px !important;
+        min-width:46px !important;
+        max-width:46px !important;
+        height:46px !important;
+        min-height:46px !important;
+        max-height:46px !important;
         aspect-ratio:1 / 1;
+        margin:0 !important;
         padding:0 !important;
         display:grid !important;
         place-items:center !important;
@@ -47,17 +59,15 @@
         background:rgba(239,239,233,.96) !important;
         border:1px solid rgba(115,132,137,.5) !important;
         border-radius:50% !important;
-        font-size:21px !important;
-        box-shadow:0 6px 22px rgba(24,43,54,.12);
+        box-shadow:0 6px 22px rgba(24,43,54,.12) !important;
         backdrop-filter:blur(14px);
         -webkit-backdrop-filter:blur(14px);
       }
-      /* The inline X remains a non-interactive duplicate; the persistent X is
-         the single close target. Keeping it out of layout prevents overlap. */
-      #marketSheetContent .market-detail-actions .market-close{
-        display:none !important;
-        visibility:hidden !important;
-        pointer-events:none !important;
+      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-watch--detail{
+        font-size:21px !important;
+      }
+      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-close{
+        font-size:25px !important;
       }
       #marketSheet[hidden] #marketSheetContent .market-detail-actions{
         display:none !important;
@@ -114,8 +124,7 @@
       const observer = new MutationObserver(normalizeButtons);
       observer.observe(sheet, { childList: true, subtree: true });
     }
-    // Capture phase makes the visible persistent close independent of the large
-    // delegated market handler. A later handler can no longer swallow the tap.
+    // Capture phase keeps closing independent from the large delegated market handler.
     document.addEventListener('click', closeMarketSheet, true);
   }
 
@@ -123,7 +132,7 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.1',
+    version: '1.2',
     closeMarketSheet,
     installStyle,
     normalizeButtons,
