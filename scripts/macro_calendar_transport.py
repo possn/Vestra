@@ -2,7 +2,9 @@
 """Transport hardening for the Vestra macro calendar.
 
 Keeps update_macro_events.py as the canonical schema/fail-closed pipeline while
-making BLS/Census HTML retrieval use the same explicit Vestra HTTP session.
+making BLS/Census retrieval resilient. BLS remains the primary source; when
+bls.gov blocks the GitHub runner, FRED's Federal Reserve release calendar is
+used as an authoritative schedule mirror before falling back to prior data.
 """
 from __future__ import annotations
 
@@ -11,8 +13,17 @@ from datetime import date, datetime
 from io import StringIO
 
 import pandas as pd
+from lxml import html
 
 import update_macro_events as base
+
+
+FRED_BLS_RELEASES = {
+    10: ("Consumer Price Index", "CPI EUA", "inflation", "high"),
+    46: ("Producer Price Index", "PPI EUA", "inflation", "high"),
+    50: ("Employment Situation", "NFP EUA", "labour", "critical"),
+    192: ("Job Openings and Labor Turnover Survey", "JOLTS", "labour", "high"),
+}
 
 
 def table_rows_from_session(session, url: str) -> list[list[str]]:
@@ -33,10 +44,7 @@ def census_events(session) -> list[dict]:
         joined = " | ".join(row)
         if "Advance Monthly Sales for Retail and Food Services" not in joined:
             continue
-        match = re.search(
-            rf"\b({months})\s+(\d{{1,2}}),\s*(\d{{4}})\b",
-            joined,
-        )
+        match = re.search(rf"\b({months})\s+(\d{{1,2}}),\s*(\d{{4}})\b", joined)
         if not match:
             continue
         release_date = date(int(match.group(3)), base.MONTHS[match.group(1)], int(match.group(2)))
@@ -63,7 +71,6 @@ def census_events(session) -> list[dict]:
 
 def _parse_bls_table_date(raw: str) -> date | None:
     text = str(raw).strip()
-    # Annual BLS list-view rows use e.g. "Friday, October 2, 2026".
     text = re.sub(r"^[A-Za-z]+,\s*", "", text)
     for fmt in ("%B %d, %Y", "%b %d, %Y"):
         try:
@@ -93,9 +100,12 @@ def _bls_html_events(session) -> list[dict]:
             chosen = next((entry for entry in mapping if entry[0].lower() in joined.lower()), None)
             if not chosen:
                 continue
-            release_date = next((_parse_bls_table_date(cell) for cell in row if _parse_bls_table_date(cell)), None)
+            release_date = None
+            for cell in row:
+                release_date = _parse_bls_table_date(cell)
+                if release_date:
+                    break
             if not release_date:
-                # Some table layouts combine the date with other cells.
                 date_match = re.search(
                     r"(?:Monday|Tuesday|Wednesday|Thursday|Friday),\s+"
                     r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+"
@@ -114,13 +124,8 @@ def _bls_html_events(session) -> list[dict]:
             else:
                 title = f"{short_title} · {reference}" if reference else short_title
             event = {
-                "date": release_date.isoformat(),
-                "title": title,
-                "short_title": short_title,
-                "category": category,
-                "region": "EUA",
-                "importance": importance,
-                "source": "bls",
+                "date": release_date.isoformat(), "title": title, "short_title": short_title,
+                "category": category, "region": "EUA", "importance": importance, "source": "bls",
             }
             if time_match:
                 event["time_local"] = f"{time_match.group(1)} {time_match.group(2).upper()} ET"
@@ -128,23 +133,68 @@ def _bls_html_events(session) -> list[dict]:
     return out
 
 
+def _fred_bls_events(session) -> list[dict]:
+    """Read BLS release dates mirrored by the Federal Reserve Bank of St. Louis."""
+    today = date.today()
+    months = "|".join(base.MONTHS)
+    out: list[dict] = []
+    for year in (today.year, today.year + 1):
+        for release_id, (_name, short_title, category, importance) in FRED_BLS_RELEASES.items():
+            url = f"https://fred.stlouisfed.org/releases/calendar?rid={release_id}&y={year}"
+            try:
+                page = base.fetch_text(session, url)
+            except Exception:
+                continue
+            text = "\n".join(line.strip() for line in html.fromstring(page).text_content().splitlines() if line.strip())
+            pattern = re.compile(
+                rf"(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+"
+                rf"({months})\s+(\d{{1,2}}),\s*(\d{{4}})(?:\s+Updated)?\s+"
+                rf"(\d{{1,2}}:\d{{2}})\s*(am|pm)",
+                flags=re.I,
+            )
+            for match in pattern.finditer(text):
+                release_date = date(int(match.group(3)), base.MONTHS[match.group(1).title()], int(match.group(2)))
+                title = "Payrolls / NFP EUA" if short_title == "NFP EUA" else short_title
+                out.append({
+                    "date": release_date.isoformat(),
+                    "title": title,
+                    "short_title": short_title,
+                    "category": category,
+                    "region": "EUA",
+                    "importance": importance,
+                    "source": "bls",
+                    "time_local": f"{match.group(4)} {match.group(5).upper()} CT",
+                    "schedule_transport": "fred_stlouisfed",
+                })
+    return out
+
+
 def bls_events(session) -> list[dict]:
+    primary_error = None
     try:
         events = base.bls_events(session)
         if events:
             return events
-    except Exception as ics_error:
-        try:
-            events = _bls_html_events(session)
-            if events:
-                return events
-        except Exception:
-            pass
-        raise ics_error
-    events = _bls_html_events(session)
-    if not events:
-        raise RuntimeError("BLS official ICS and HTML calendars returned no usable events")
-    return events
+    except Exception as exc:
+        primary_error = exc
+
+    try:
+        events = _bls_html_events(session)
+        if events:
+            return events
+    except Exception:
+        pass
+
+    try:
+        events = _fred_bls_events(session)
+        if events:
+            return events
+    except Exception:
+        pass
+
+    if primary_error:
+        raise primary_error
+    raise RuntimeError("BLS official calendar and Federal Reserve schedule mirror returned no usable events")
 
 
 def install() -> None:

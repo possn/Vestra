@@ -12,10 +12,14 @@ class MacroCalendarTransportTests(unittest.TestCase):
         self.assertIn('pd.read_html(StringIO(page))', SOURCE)
         self.assertIn('base.ADAPTERS["census"] = census_events', SOURCE)
 
-    def test_bls_keeps_ics_first_and_official_html_fallback(self):
+    def test_bls_keeps_primary_official_paths_then_fred_mirror(self):
         self.assertIn('events = base.bls_events(session)', SOURCE)
         self.assertIn('https://www.bls.gov/schedule/{year}/', SOURCE)
+        self.assertIn('https://fred.stlouisfed.org/releases/calendar?rid=', SOURCE)
+        self.assertIn('schedule_transport": "fred_stlouisfed"', SOURCE)
         self.assertIn('base.ADAPTERS["bls"] = bls_events', SOURCE)
+        for release_id in ('10:', '46:', '50:', '192:'):
+            self.assertIn(release_id, SOURCE)
 
     def test_workflow_runs_hardened_transport_without_touching_market_pipeline(self):
         self.assertIn('scripts/macro_calendar_transport.py', WORKFLOW)
