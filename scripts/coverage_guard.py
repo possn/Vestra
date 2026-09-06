@@ -15,6 +15,11 @@ import re
 import sys
 from collections import Counter
 
+try:
+    from coverage_audit import authoritative_quote_type, NON_EQUITY_TYPES
+except (ImportError, ModuleNotFoundError):
+    from scripts.coverage_audit import authoritative_quote_type, NON_EQUITY_TYPES
+
 BASE = os.path.dirname(__file__)
 STOCKS_PATH = os.path.join(BASE, "..", "data", "stocks.json")
 OUT_PATH = os.path.join(BASE, "..", "data", "coverage_guard.json")
@@ -38,9 +43,7 @@ def _n(value):
 
 
 def _equity(row):
-    return str(row.get("quote_type") or "").upper() not in {
-        "ETF", "CRYPTO", "MUTUALFUND", "FUND"
-    }
+    return authoritative_quote_type(row) not in NON_EQUITY_TYPES
 
 
 def _add(violations, counts, ticker, kind, **detail):
