@@ -73,10 +73,14 @@ jobs:
       - name: Run pipeline
         working-directory: scripts
         env:
-          # Keep the A/B-tested three-worker broad fetch. The launcher coalesces
-          # simultaneous 429 observations from those workers into one throttle
-          # incident so a single Yahoo burst cannot inflate the backoff strike.
-          FINSCANNER_FETCH_WORKERS: "3"
+          # The 2026-09-05 production run showed repeated 429/401 bursts at
+          # three broad-fetch workers. Two workers trade a little raw parallelism
+          # for materially lower per-IP request pressure and fewer 60s cooldowns.
+          FINSCANNER_FETCH_WORKERS: "2"
+          # Analyst workers fan each ticker into several Yahoo endpoints. Keep
+          # those endpoint calls below the level that produced Invalid Crumb
+          # storms in the same production run.
+          FINSCANNER_ANALYST_ENDPOINT_CONCURRENCY: "2"
         run: python run_market_pipeline.py
 
       - name: Normalize canonical source provenance
