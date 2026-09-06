@@ -44,7 +44,7 @@
 
     // app.js historically attached a destructive target listener to this button.
     // Replacing the node removes every previously attached listener without
-    // depending on capture-phase ordering or stopImmediatePropagation().
+    // depending on capture-phase ordering or propagation interception.
     const button = current.cloneNode(true);
     button.dataset.vestraSafeUpdateOwner = '1';
     current.replaceWith(button);
