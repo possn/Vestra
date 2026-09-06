@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.6 */
+/* Vestra Market static universe loader v1.7 */
 (() => {
   'use strict';
 
@@ -61,6 +61,16 @@
     script.src = 'market-ui-polish.js?v=1.0';
     script.defer = true;
     script.dataset.vestraMarketUiPolish = '1';
+    document.head.appendChild(script);
+  }
+
+  function ensureUiVisualPolish() {
+    if (typeof document === 'undefined') return;
+    if (window.VestraUiVisualPolish || document.querySelector('script[data-vestra-ui-visual-polish]')) return;
+    const script = document.createElement('script');
+    script.src = 'ui-visual-polish.js?v=1.0';
+    script.defer = true;
+    script.dataset.vestraUiVisualPolish = '1';
     document.head.appendChild(script);
   }
 
@@ -153,6 +163,7 @@
   ensureDashboardUiRefresh();
   ensureMobileUiRefresh();
   ensureMarketUiPolish();
+  ensureUiVisualPolish();
   window.VestraMarketStaticUniverse = Object.freeze({
     create,
     getStocks,
@@ -161,7 +172,8 @@
     ensureDashboardUiRefresh,
     ensureMobileUiRefresh,
     ensureMarketUiPolish,
+    ensureUiVisualPolish,
     unpackStartupPayload,
-    version: '1.6',
+    version: '1.7',
   });
 })();
