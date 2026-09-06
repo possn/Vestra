@@ -1,4 +1,4 @@
-/* Vestra UI core v1.0 — DOM and Chart infrastructure extracted from app.js. */
+/* Vestra UI core v1.1 — DOM, Chart infrastructure and launch watchdog. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -12,6 +12,118 @@ const NOOP_EL = {
 };
 
 function $(id) { return document.getElementById(id) || NOOP_EL; }
+
+/* ─── PREMIUM LAUNCH WATCHDOG ───────────────────────────────
+   The splash must never depend on app.js reaching the end of its bootstrap.
+   If any later module fails, this guard still releases the UI. It also owns
+   the staged identity animation: mark first, then brand, then tagline.
+────────────────────────────────────────────────────────────── */
+function installPremiumSplashWatchdog() {
+  const splash = document.getElementById('appLoadingOverlay');
+  if (!splash || splash.dataset.premiumWatchdog === '1') return;
+  splash.dataset.premiumWatchdog = '1';
+
+  if (!document.getElementById('vestraPremiumSplashStyles')) {
+    const style = document.createElement('style');
+    style.id = 'vestraPremiumSplashStyles';
+    style.textContent = `
+      .vestra-splash.vestra-splash--premium{
+        display:flex!important;opacity:1!important;
+        background:
+          radial-gradient(circle at 50% 42%,rgba(255,255,255,.92) 0,rgba(244,242,235,.96) 28%,rgba(224,227,222,.98) 64%,#d4d8d3 100%)!important;
+      }
+      .vestra-splash--premium .vestra-splash__mark{
+        width:138px!important;height:138px!important;margin-bottom:0!important;
+        animation:vestraPremiumMarkIn .95s cubic-bezier(.16,1,.3,1) both!important;
+      }
+      .vestra-splash--premium .vestra-splash__mark::after{
+        inset:-18px!important;border-radius:42px!important;
+        background:radial-gradient(circle,rgba(32,129,126,.18),rgba(196,171,114,.09) 42%,transparent 72%)!important;
+        filter:blur(10px)!important;animation:vestraPremiumGlow 2.1s ease-in-out infinite alternate!important;
+      }
+      .vestra-splash--premium .vestra-splash__mark img{
+        width:122px!important;height:122px!important;border-radius:29px!important;
+        box-shadow:0 22px 54px rgba(18,42,56,.22),0 4px 14px rgba(18,42,56,.10)!important;
+      }
+      .vestra-splash--premium .vestra-splash__brand{
+        margin-top:24px!important;font-size:31px!important;font-weight:650!important;
+        letter-spacing:-.035em!important;opacity:0;
+        animation:vestraPremiumBrandIn 1.05s 1.05s cubic-bezier(.16,1,.3,1) both!important;
+      }
+      .vestra-splash--premium .vestra-splash__tagline{
+        margin-top:9px!important;font-size:15px!important;font-weight:600!important;
+        letter-spacing:.02em!important;color:#55646b!important;opacity:0;
+        animation:vestraPremiumTaglineIn 1.0s 1.65s cubic-bezier(.16,1,.3,1) both!important;
+      }
+      @keyframes vestraPremiumMarkIn{
+        0%{opacity:0;transform:scale(.78) translateY(8px);filter:blur(3px)}
+        60%{opacity:1;filter:blur(0)}
+        100%{opacity:1;transform:scale(1) translateY(0)}
+      }
+      @keyframes vestraPremiumBrandIn{
+        from{opacity:0;transform:translateY(9px);letter-spacing:.015em}
+        to{opacity:1;transform:translateY(0);letter-spacing:-.035em}
+      }
+      @keyframes vestraPremiumTaglineIn{
+        from{opacity:0;transform:translateY(7px)}
+        to{opacity:1;transform:translateY(0)}
+      }
+      @keyframes vestraPremiumGlow{
+        from{opacity:.36;transform:scale(.94)}
+        to{opacity:.86;transform:scale(1.06)}
+      }
+      @media(prefers-reduced-motion:reduce){
+        .vestra-splash--premium .vestra-splash__mark,
+        .vestra-splash--premium .vestra-splash__brand,
+        .vestra-splash--premium .vestra-splash__tagline,
+        .vestra-splash--premium .vestra-splash__mark::after{animation-duration:.01ms!important;animation-delay:0ms!important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  splash.classList.add('vestra-splash--premium');
+  const startedAt = performance.now();
+  const minimumVisibleMs = 2700;
+  const failsafeMs = 4600;
+  let releasing = false;
+  let releaseTimer = null;
+
+  const releaseSplash = () => {
+    if (releasing) return;
+    const elapsed = performance.now() - startedAt;
+    const remaining = Math.max(0, minimumVisibleMs - elapsed);
+    if (remaining > 0) {
+      if (!releaseTimer) releaseTimer = setTimeout(() => {
+        releaseTimer = null;
+        releaseSplash();
+      }, remaining);
+      return;
+    }
+    releasing = true;
+    observer.disconnect();
+    splash.classList.remove('vestra-splash--premium');
+    splash.style.display = 'flex';
+    splash.style.opacity = '1';
+    splash.style.transition = 'opacity .48s cubic-bezier(.4,0,.2,1)';
+    requestAnimationFrame(() => requestAnimationFrame(() => { splash.style.opacity = '0'; }));
+    setTimeout(() => {
+      splash.style.display = 'none';
+      splash.style.pointerEvents = 'none';
+    }, 520);
+  };
+
+  const observer = new MutationObserver(() => {
+    if (releasing) return;
+    if (splash.style.opacity === '0' || splash.style.display === 'none') releaseSplash();
+  });
+  observer.observe(splash, { attributes: true, attributeFilter: ['style'] });
+
+  window.addEventListener('vestra:app-ready', releaseSplash, { once: true });
+  setTimeout(() => releaseSplash(), failsafeMs);
+}
+
+try { installPremiumSplashWatchdog(); } catch (_) {}
 
 function resolveChartHeight(canvas, fallbackHeight = 220) {
   const desired = Number.isFinite(Number(fallbackHeight)) && Number(fallbackHeight) > 80
@@ -92,5 +204,5 @@ function clearChartUnavailable(canvasId) {
 }
 
 
-  window.VestraUiCore = Object.freeze({ NOOP_EL, $, resolveChartHeight, prepareChartCanvas, buildNiceAxis, ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable, clearChartUnavailable });
+  window.VestraUiCore = Object.freeze({ NOOP_EL, $, resolveChartHeight, prepareChartCanvas, buildNiceAxis, ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable, clearChartUnavailable, installPremiumSplashWatchdog });
 })();
