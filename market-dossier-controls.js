@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.0 — iPhone-safe close and action geometry. */
+/* Vestra Market Dossier Controls v1.1 — iPhone-safe close and unified header geometry. */
 (() => {
   'use strict';
 
@@ -9,29 +9,59 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      .market-detail-actions{
+      /* Keep the proven persistent close control and dock the dossier favourite
+         immediately beside it. This preserves close-on-scroll and fixes the
+         vertical split introduced when the inline X was hidden. */
+      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-head .market-detail-actions{
         flex:0 0 auto;
-        position:relative;
-        z-index:5;
+        position:fixed !important;
+        z-index:175 !important;
+        top:max(calc(env(safe-area-inset-top) + 10px),14px) !important;
+        right:66px !important;
+        display:flex !important;
+        flex-direction:row !important;
+        flex-wrap:nowrap !important;
+        align-items:center !important;
+        justify-content:flex-end !important;
+        gap:0 !important;
+        width:44px !important;
+        min-width:44px !important;
+        max-width:44px !important;
       }
-      .market-detail-actions .market-watch--detail,
-      .market-detail-actions .market-close{
+      #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-watch--detail{
         box-sizing:border-box;
-        flex:0 0 40px !important;
-        width:40px !important;
-        min-width:40px !important;
-        height:40px !important;
-        min-height:40px !important;
+        flex:0 0 44px !important;
+        width:44px !important;
+        min-width:44px !important;
+        height:44px !important;
+        min-height:44px !important;
         aspect-ratio:1 / 1;
         padding:0 !important;
-        display:grid;
-        place-items:center;
-        line-height:1;
+        display:grid !important;
+        place-items:center !important;
+        visibility:visible !important;
+        pointer-events:auto !important;
+        line-height:1 !important;
         touch-action:manipulation;
         -webkit-tap-highlight-color:transparent;
+        background:rgba(239,239,233,.96) !important;
+        border:1px solid rgba(115,132,137,.5) !important;
+        border-radius:50% !important;
+        font-size:21px !important;
+        box-shadow:0 6px 22px rgba(24,43,54,.12);
+        backdrop-filter:blur(14px);
+        -webkit-backdrop-filter:blur(14px);
       }
-      .market-detail-actions .market-watch--detail{border-radius:50% !important}
-      .market-detail-actions .market-close{border-radius:50% !important}
+      /* The inline X remains a non-interactive duplicate; the persistent X is
+         the single close target. Keeping it out of layout prevents overlap. */
+      #marketSheetContent .market-detail-actions .market-close{
+        display:none !important;
+        visibility:hidden !important;
+        pointer-events:none !important;
+      }
+      #marketSheet[hidden] #marketSheetContent .market-detail-actions{
+        display:none !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -40,7 +70,7 @@
     const close = event?.target?.closest?.('[data-market-close]');
     if (!close) return false;
     const sheet = document.getElementById('marketSheet');
-    if (!sheet || sheet.hidden) return false;
+    if (!sheet || sheet.hidden || !sheet.contains(close)) return false;
 
     event.preventDefault();
     event.stopPropagation();
@@ -65,10 +95,27 @@
     return true;
   }
 
+  function normalizeButtons() {
+    const sheet = document.getElementById('marketSheet');
+    if (!sheet) return;
+    sheet.querySelectorAll('[data-market-close], [data-market-watch]').forEach(button => {
+      if (button instanceof HTMLButtonElement) button.type = 'button';
+    });
+    sheet.querySelectorAll('[data-market-close]').forEach(button => {
+      if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', 'Fechar dossier');
+    });
+  }
+
   function start() {
     installStyle();
-    // Capture phase makes the close control independent of the large delegated
-    // market handler. A failure in another branch can no longer swallow the X.
+    normalizeButtons();
+    const sheet = document.getElementById('marketSheet');
+    if (sheet) {
+      const observer = new MutationObserver(normalizeButtons);
+      observer.observe(sheet, { childList: true, subtree: true });
+    }
+    // Capture phase makes the visible persistent close independent of the large
+    // delegated market handler. A later handler can no longer swallow the tap.
     document.addEventListener('click', closeMarketSheet, true);
   }
 
@@ -76,8 +123,9 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.0',
+    version: '1.1',
     closeMarketSheet,
     installStyle,
+    normalizeButtons,
   });
 })();
