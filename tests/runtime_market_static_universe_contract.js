@@ -8,11 +8,12 @@ vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraMarketStaticUniverse;
-assert(api && api.version === '1.2');
+assert(api && api.version === '1.3');
 assert.strictEqual(typeof api.getStocks, 'function');
 assert.strictEqual(typeof api.unpackStartupPayload, 'function');
 assert.strictEqual(typeof api.ensureWeeklyEventsCompanion, 'function');
-assert(source.includes('dashboard-weekly-events.js?v=1.1'), 'weekly macro events companion must use the current cache-busted runtime');
+assert(source.includes('dashboard-weekly-events.js?v=1.2'), 'weekly macro events companion must use the current cache-busted runtime');
+assert(source.includes('vestraWeeklyEventsVisibilityGuard'), 'weekly events must stay visible when Dashboard secondary cards are collapsed');
 assert.deepStrictEqual(Array.from(api.getStocks()), []);
 assert(!source.includes("['data/stocks.json'"), 'browser runtime must never fall back to the full market snapshot');
 
