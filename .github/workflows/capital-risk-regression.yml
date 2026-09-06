@@ -1,0 +1,44 @@
+name: Capital risk regression
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/capital_risk.py'
+      - 'scripts/sec_archives_enrich.py'
+      - 'scripts/sec_enrich.py'
+      - 'tests/test_capital_risk_cache.py'
+      - '.github/workflows/capital-risk-regression.yml'
+  pull_request:
+    paths:
+      - 'scripts/capital_risk.py'
+      - 'scripts/sec_archives_enrich.py'
+      - 'scripts/sec_enrich.py'
+      - 'tests/test_capital_risk_cache.py'
+      - '.github/workflows/capital-risk-regression.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capital-risk-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime dependencies
+        run: pip install requests
+      - name: Validate scanner syntax
+        run: python -m py_compile scripts/capital_risk.py scripts/sec_archives_enrich.py scripts/sec_enrich.py
+      - name: Capital-risk cache and Archives fallback contract
+        env:
+          PYTHONPATH: scripts
+        run: python tests/test_capital_risk_cache.py
