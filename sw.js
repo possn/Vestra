@@ -61,6 +61,31 @@ const APP_SHELL = [
   "./favicon-16.png"
 ];
 
+// These files must always agree with one another. Serving a stale copy of one
+// beside a fresh copy of another can make app.js fail before DOMContentLoaded,
+// leaving the launch overlay permanently visible. Keep only this compact
+// bootstrap dependency chain network-first; the rest of the static shell stays
+// stale-while-revalidate for fast repeat launches.
+const BOOTSTRAP_NETWORK_FIRST = new Set([
+  "app-utils.js",
+  "app-feedback.js",
+  "app-storage.js",
+  "app-asset-identity.js",
+  "app-ui-core.js",
+  "app-broker-normalization.js",
+  "app-xtb-normalization.js",
+  "app-broker-identity-data.js",
+  "app-broker-parsing-core.js",
+  "app-file-parsing.js",
+  "app-broker-workbook.js",
+  "app-broker-parsers.js",
+  "app-market-client.js",
+  "app-quote-errors.js",
+  "app-return-assumptions.js",
+  "app-financial-engine.js",
+  "app.js"
+]);
+
 self.addEventListener("install", event => {
   self.skipWaiting();
   event.waitUntil((async () => {
@@ -134,9 +159,14 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Static code is versioned by the app shell URLs. Serve an already-cached copy
-  // immediately on repeat launches and refresh it in the background. This avoids
-  // making iOS standalone startup wait for GitHub Pages/network latency every time.
+  const assetName = url.pathname.split("/").filter(Boolean).pop() || "";
+  if (request.destination === "script" && BOOTSTRAP_NETWORK_FIRST.has(assetName)) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // Non-critical static code remains fast on repeat launches and refreshes in
+  // the background. Core bootstrap scripts above are deliberately excluded.
   if (["script", "style", "worker", "manifest"].includes(request.destination)) {
     event.respondWith(staleWhileRevalidate(request, event));
     return;
