@@ -10,7 +10,7 @@ async function openMarket(page) {
   await expect(page.locator('#marketSearch')).toBeVisible();
 }
 
-test('iPhone/WebKit: favorito e fechar ficam lado a lado e o X fecha o dossier', async ({ page }) => {
+test('iPhone/WebKit: favorito e fechar formam um par compacto e o X fecha o dossier', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -23,6 +23,7 @@ test('iPhone/WebKit: favorito e fechar ficam lado a lado e o X fecha o dossier',
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.1');
+  await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.1');
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
   const watch = actions.locator('[data-market-watch]');
@@ -36,19 +37,24 @@ test('iPhone/WebKit: favorito e fechar ficam lado a lado e o X fecha o dossier',
     const watch = document.querySelector('#marketSheetContent .market-detail-actions [data-market-watch]').getBoundingClientRect();
     const close = document.querySelector('.market-close-persistent').getBoundingClientRect();
     return {
-      watchCenterY: watch.top + watch.height / 2,
-      closeCenterY: close.top + close.height / 2,
+      watchTop: watch.top,
+      closeTop: close.top,
+      watchHeight: watch.height,
+      closeHeight: close.height,
       watchRight: watch.right,
       closeLeft: close.left,
+      gap: close.left - watch.right,
       watchWidth: watch.width,
       closeWidth: close.width,
     };
   });
-  expect(Math.abs(geometry.watchCenterY - geometry.closeCenterY)).toBeLessThanOrEqual(1);
-  expect(geometry.closeLeft).toBeGreaterThanOrEqual(geometry.watchRight);
-  expect(geometry.closeLeft - geometry.watchRight).toBeLessThanOrEqual(12);
-  expect(geometry.watchWidth).toBeGreaterThanOrEqual(44);
-  expect(geometry.closeWidth).toBeGreaterThanOrEqual(44);
+
+  expect(Math.abs(geometry.watchTop - geometry.closeTop)).toBeLessThanOrEqual(1);
+  expect(Math.abs(geometry.watchHeight - geometry.closeHeight)).toBeLessThanOrEqual(1);
+  expect(geometry.watchWidth).toBeGreaterThanOrEqual(45);
+  expect(geometry.closeWidth).toBeGreaterThanOrEqual(45);
+  expect(geometry.gap).toBeGreaterThanOrEqual(7);
+  expect(geometry.gap).toBeLessThanOrEqual(9);
 
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
   await expect(watch).toBeVisible();
