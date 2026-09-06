@@ -47,6 +47,7 @@ EMPTY_SUBMISSION = """
 <FILENAME>ownership.xml
 <TEXT>
 <XML>
+<?xml version="1.0"?>
 <ownershipDocument>
   <derivativeTable></derivativeTable>
 </ownershipDocument>
