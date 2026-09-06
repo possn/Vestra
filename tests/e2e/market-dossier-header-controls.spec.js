@@ -26,15 +26,15 @@ test('iPhone/WebKit: favorito e fechar ficam lado a lado e o X fecha o dossier',
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
   const watch = actions.locator('[data-market-watch]');
-  const close = actions.locator('[data-market-close]');
+  const persistentClose = page.locator('.market-close-persistent');
   await expect(actions).toBeVisible();
   await expect(watch).toBeVisible();
-  await expect(close).toBeVisible();
-  await expect(page.locator('.market-close-persistent')).toBeHidden();
+  await expect(persistentClose).toBeVisible();
+  await expect(actions.locator('.market-close')).toBeHidden();
 
-  const geometry = await actions.evaluate(el => {
-    const watch = el.querySelector('[data-market-watch]').getBoundingClientRect();
-    const close = el.querySelector('[data-market-close]').getBoundingClientRect();
+  const geometry = await page.evaluate(() => {
+    const watch = document.querySelector('#marketSheetContent .market-detail-actions [data-market-watch]').getBoundingClientRect();
+    const close = document.querySelector('.market-close-persistent').getBoundingClientRect();
     return {
       watchCenterY: watch.top + watch.height / 2,
       closeCenterY: close.top + close.height / 2,
@@ -51,8 +51,9 @@ test('iPhone/WebKit: favorito e fechar ficam lado a lado e o X fecha o dossier',
   expect(geometry.closeWidth).toBeGreaterThanOrEqual(44);
 
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
-  await expect(close).toBeVisible();
-  await close.click();
+  await expect(watch).toBeVisible();
+  await expect(persistentClose).toBeVisible();
+  await persistentClose.click();
   await expect(sheet).toBeHidden();
   await expect(sheet).toHaveAttribute('aria-hidden', 'true');
 
