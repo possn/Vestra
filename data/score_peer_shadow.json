@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-06T07:49:18.094196+00:00",
+  "generated_at": "2026-09-06T09:33:50.434584+00:00",
   "production_unchanged": true,
   "phase": "bank_peer_normalization_shadow",
   "methodology": {
@@ -20,9 +20,9 @@
   },
   "bank_rows": 88,
   "shadow_rows": 88,
-  "mean_delta": -5.317,
-  "mean_absolute_delta": 6.581,
-  "max_absolute_delta": 17.68,
+  "mean_delta": -5.183,
+  "mean_absolute_delta": 6.458,
+  "max_absolute_delta": 17.58,
   "benchmark_scope_counts": {
     "peer_model": 1219,
     "global_fallback": 88
@@ -32,9 +32,9 @@
       "ticker": "BMO",
       "name": "Bank Of Montreal",
       "sector": "Financial Services",
-      "production_score": 43.3,
+      "production_score": 43.2,
       "peer_shadow_score": 25.62,
-      "delta": -17.68,
+      "delta": -17.58,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 29.93,
@@ -123,9 +123,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 84,
+      "production_bank_rank": 83,
       "shadow_bank_rank": 88,
-      "rank_shift": -4
+      "rank_shift": -5
     },
     {
       "ticker": "JPM-PD",
@@ -410,8 +410,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 66,
-      "shadow_bank_rank": 81,
+      "production_bank_rank": 65,
+      "shadow_bank_rank": 80,
       "rank_shift": -15
     },
     {
@@ -421,7 +421,7 @@
       "production_score": 57.8,
       "peer_shadow_score": 43.87,
       "delta": -13.93,
-      "score_cap": null,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 19.52,
         "Efficiency": null,
@@ -510,8 +510,8 @@
         }
       ],
       "production_bank_rank": 39,
-      "shadow_bank_rank": 59,
-      "rank_shift": -20
+      "shadow_bank_rank": 58,
+      "rank_shift": -19
     },
     {
       "ticker": "DBK.DE",
@@ -609,8 +609,8 @@
         }
       ],
       "production_bank_rank": 54,
-      "shadow_bank_rank": 74,
-      "rank_shift": -20
+      "shadow_bank_rank": 73,
+      "rank_shift": -19
     },
     {
       "ticker": "DB",
@@ -707,17 +707,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 52,
-      "shadow_bank_rank": 73,
+      "production_bank_rank": 51,
+      "shadow_bank_rank": 72,
       "rank_shift": -21
     },
     {
       "ticker": "BNS",
       "name": "Bank Nova Scotia Halifax Pfd 3",
       "sector": "Financial Services",
-      "production_score": 48.8,
+      "production_score": 48.9,
       "peer_shadow_score": 35.55,
-      "delta": -13.25,
+      "delta": -13.35,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 42.15,
@@ -807,8 +807,8 @@
         }
       ],
       "production_bank_rank": 68,
-      "shadow_bank_rank": 79,
-      "rank_shift": -11
+      "shadow_bank_rank": 78,
+      "rank_shift": -10
     },
     {
       "ticker": "MUFG",
@@ -906,115 +906,16 @@
         }
       ],
       "production_bank_rank": 53,
-      "shadow_bank_rank": 70,
-      "rank_shift": -17
-    },
-    {
-      "ticker": "STAN.L",
-      "name": "STANDARD CHARTERED PLC ORD USD0",
-      "sector": "Financial Services",
-      "production_score": 43.0,
-      "peer_shadow_score": 31.34,
-      "delta": -11.66,
-      "score_cap": 59.0,
-      "shadow_dimensions": {
-        "Bank Quality": 27.22,
-        "Efficiency": 22.86,
-        "Asset Quality": null,
-        "Capital Proxy": 29.55,
-        "Growth": 10.99,
-        "Valuation": 52.25,
-        "Income": 28.4,
-        "Stability": 78.16
-      },
-      "benchmark_scopes": [
-        {
-          "metric": "roe",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "roa",
-          "scope": "peer_model",
-          "peer_observations": 87
-        },
-        {
-          "metric": "profit_margin",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "efficiency_ratio_proxy",
-          "scope": "peer_model",
-          "peer_observations": 35
-        },
-        {
-          "metric": "provision_to_revenue",
-          "scope": "global_fallback",
-          "peer_observations": 0
-        },
-        {
-          "metric": "equity_to_assets",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "revenue_growth",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "earnings_growth",
-          "scope": "peer_model",
-          "peer_observations": 85
-        },
-        {
-          "metric": "earnings_quarterly_growth",
-          "scope": "peer_model",
-          "peer_observations": 79
-        },
-        {
-          "metric": "net_interest_income_yoy",
-          "scope": "peer_model",
-          "peer_observations": 71
-        },
-        {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "trailing_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "forward_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "dividend_yield",
-          "scope": "peer_model",
-          "peer_observations": 81
-        },
-        {
-          "metric": "beta",
-          "scope": "peer_model",
-          "peer_observations": 87
-        }
-      ],
-      "production_bank_rank": 85,
-      "shadow_bank_rank": 87,
-      "rank_shift": -2
+      "shadow_bank_rank": 69,
+      "rank_shift": -16
     },
     {
       "ticker": "CFG",
       "name": "Citizens Financial Group, Inc.",
       "sector": "Financial Services",
-      "production_score": 63.7,
+      "production_score": 63.6,
       "peer_shadow_score": 52.08,
-      "delta": -11.62,
+      "delta": -11.52,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 29.82,
@@ -1108,13 +1009,112 @@
       "rank_shift": -26
     },
     {
+      "ticker": "STAN.L",
+      "name": "STANDARD CHARTERED PLC ORD USD0",
+      "sector": "Financial Services",
+      "production_score": 42.8,
+      "peer_shadow_score": 31.34,
+      "delta": -11.46,
+      "score_cap": 59.0,
+      "shadow_dimensions": {
+        "Bank Quality": 27.22,
+        "Efficiency": 22.86,
+        "Asset Quality": null,
+        "Capital Proxy": 29.55,
+        "Growth": 10.99,
+        "Valuation": 52.25,
+        "Income": 28.4,
+        "Stability": 78.16
+      },
+      "benchmark_scopes": [
+        {
+          "metric": "roe",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "roa",
+          "scope": "peer_model",
+          "peer_observations": 87
+        },
+        {
+          "metric": "profit_margin",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "efficiency_ratio_proxy",
+          "scope": "peer_model",
+          "peer_observations": 35
+        },
+        {
+          "metric": "provision_to_revenue",
+          "scope": "global_fallback",
+          "peer_observations": 0
+        },
+        {
+          "metric": "equity_to_assets",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "revenue_growth",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "earnings_growth",
+          "scope": "peer_model",
+          "peer_observations": 85
+        },
+        {
+          "metric": "earnings_quarterly_growth",
+          "scope": "peer_model",
+          "peer_observations": 79
+        },
+        {
+          "metric": "net_interest_income_yoy",
+          "scope": "peer_model",
+          "peer_observations": 71
+        },
+        {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "trailing_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "forward_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "dividend_yield",
+          "scope": "peer_model",
+          "peer_observations": 81
+        },
+        {
+          "metric": "beta",
+          "scope": "peer_model",
+          "peer_observations": 87
+        }
+      ],
+      "production_bank_rank": 85,
+      "shadow_bank_rank": 87,
+      "rank_shift": -2
+    },
+    {
       "ticker": "TD",
       "name": "Toronto Dominion Bank (The)",
       "sector": "Financial Services",
       "production_score": 51.0,
       "peer_shadow_score": 39.72,
       "delta": -11.28,
-      "score_cap": 69.0,
+      "score_cap": 59.0,
       "shadow_dimensions": {
         "Bank Quality": 42.99,
         "Efficiency": null,
@@ -1203,16 +1203,16 @@
         }
       ],
       "production_bank_rank": 60,
-      "shadow_bank_rank": 71,
-      "rank_shift": -11
+      "shadow_bank_rank": 70,
+      "rank_shift": -10
     },
     {
       "ticker": "AXP",
       "name": "American Express Company",
       "sector": "Financial Services",
-      "production_score": 56.7,
+      "production_score": 56.6,
       "peer_shadow_score": 45.49,
-      "delta": -11.21,
+      "delta": -11.11,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 67.38,
@@ -1400,27 +1400,27 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 82,
+      "production_bank_rank": 81,
       "shadow_bank_rank": 84,
-      "rank_shift": -2
+      "rank_shift": -3
     },
     {
-      "ticker": "ALLY",
-      "name": "Ally Financial Inc.",
+      "ticker": "EDEN.PA",
+      "name": "EDENRED",
       "sector": "Financial Services",
-      "production_score": 58.9,
-      "peer_shadow_score": 48.34,
-      "delta": -10.56,
+      "production_score": 51.3,
+      "peer_shadow_score": 40.77,
+      "delta": -10.53,
       "score_cap": null,
       "shadow_dimensions": {
-        "Bank Quality": 26.1,
-        "Efficiency": null,
+        "Bank Quality": 53.94,
+        "Efficiency": 80.0,
         "Asset Quality": null,
-        "Capital Proxy": 56.82,
-        "Growth": 50.17,
-        "Valuation": 84.28,
-        "Income": 41.98,
-        "Stability": 13.79
+        "Capital Proxy": 1.14,
+        "Growth": 11.93,
+        "Valuation": 33.13,
+        "Income": 75.31,
+        "Stability": 74.71
       },
       "benchmark_scopes": [
         {
@@ -1474,11 +1474,6 @@
           "peer_observations": 71
         },
         {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
           "metric": "trailing_pe",
           "scope": "peer_model",
           "peer_observations": 83
@@ -1499,9 +1494,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 35,
-      "shadow_bank_rank": 45,
-      "rank_shift": -10
+      "production_bank_rank": 59,
+      "shadow_bank_rank": 67,
+      "rank_shift": -8
     },
     {
       "ticker": "UBSG.SW",
@@ -1598,9 +1593,108 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 83,
+      "production_bank_rank": 82,
       "shadow_bank_rank": 82,
-      "rank_shift": 1
+      "rank_shift": 0
+    },
+    {
+      "ticker": "ALLY",
+      "name": "Ally Financial Inc.",
+      "sector": "Financial Services",
+      "production_score": 58.8,
+      "peer_shadow_score": 48.34,
+      "delta": -10.46,
+      "score_cap": 64.0,
+      "shadow_dimensions": {
+        "Bank Quality": 26.1,
+        "Efficiency": null,
+        "Asset Quality": null,
+        "Capital Proxy": 56.82,
+        "Growth": 50.17,
+        "Valuation": 84.28,
+        "Income": 41.98,
+        "Stability": 13.79
+      },
+      "benchmark_scopes": [
+        {
+          "metric": "roe",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "roa",
+          "scope": "peer_model",
+          "peer_observations": 87
+        },
+        {
+          "metric": "profit_margin",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "efficiency_ratio_proxy",
+          "scope": "peer_model",
+          "peer_observations": 35
+        },
+        {
+          "metric": "provision_to_revenue",
+          "scope": "global_fallback",
+          "peer_observations": 0
+        },
+        {
+          "metric": "equity_to_assets",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "revenue_growth",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "earnings_growth",
+          "scope": "peer_model",
+          "peer_observations": 85
+        },
+        {
+          "metric": "earnings_quarterly_growth",
+          "scope": "peer_model",
+          "peer_observations": 79
+        },
+        {
+          "metric": "net_interest_income_yoy",
+          "scope": "peer_model",
+          "peer_observations": 71
+        },
+        {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "trailing_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "forward_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "dividend_yield",
+          "scope": "peer_model",
+          "peer_observations": 81
+        },
+        {
+          "metric": "beta",
+          "scope": "peer_model",
+          "peer_observations": 87
+        }
+      ],
+      "production_bank_rank": 35,
+      "shadow_bank_rank": 45,
+      "rank_shift": -10
     },
     {
       "ticker": "GLE.PA",
@@ -1697,27 +1791,27 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 86,
+      "production_bank_rank": 84,
       "shadow_bank_rank": 85,
-      "rank_shift": 1
+      "rank_shift": -1
     },
     {
-      "ticker": "EDEN.PA",
-      "name": "EDENRED",
+      "ticker": "SOFI",
+      "name": "SoFi Technologies, Inc.",
       "sector": "Financial Services",
-      "production_score": 51.2,
-      "peer_shadow_score": 40.77,
-      "delta": -10.43,
-      "score_cap": null,
+      "production_score": 59.8,
+      "peer_shadow_score": 49.56,
+      "delta": -10.24,
+      "score_cap": 64.0,
       "shadow_dimensions": {
-        "Bank Quality": 53.94,
-        "Efficiency": 80.0,
+        "Bank Quality": 28.73,
+        "Efficiency": null,
         "Asset Quality": null,
-        "Capital Proxy": 1.14,
-        "Growth": 11.93,
-        "Valuation": 33.13,
-        "Income": 75.31,
-        "Stability": 74.71
+        "Capital Proxy": 93.18,
+        "Growth": 91.13,
+        "Valuation": 11.08,
+        "Income": null,
+        "Stability": 1.15
       },
       "benchmark_scopes": [
         {
@@ -1771,6 +1865,11 @@
           "peer_observations": 71
         },
         {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
           "metric": "trailing_pe",
           "scope": "peer_model",
           "peer_observations": 83
@@ -1791,17 +1890,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 59,
-      "shadow_bank_rank": 68,
-      "rank_shift": -9
+      "production_bank_rank": 19,
+      "shadow_bank_rank": 42,
+      "rank_shift": -23
     },
     {
       "ticker": "CBK.DE",
       "name": "Commerzbank AG                I",
       "sector": "Financial Services",
-      "production_score": 47.1,
+      "production_score": 47.0,
       "peer_shadow_score": 36.84,
-      "delta": -10.26,
+      "delta": -10.16,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 27.95,
@@ -1891,107 +1990,8 @@
         }
       ],
       "production_bank_rank": 73,
-      "shadow_bank_rank": 77,
-      "rank_shift": -4
-    },
-    {
-      "ticker": "SOFI",
-      "name": "SoFi Technologies, Inc.",
-      "sector": "Financial Services",
-      "production_score": 59.8,
-      "peer_shadow_score": 49.56,
-      "delta": -10.24,
-      "score_cap": null,
-      "shadow_dimensions": {
-        "Bank Quality": 28.73,
-        "Efficiency": null,
-        "Asset Quality": null,
-        "Capital Proxy": 93.18,
-        "Growth": 91.13,
-        "Valuation": 11.08,
-        "Income": null,
-        "Stability": 1.15
-      },
-      "benchmark_scopes": [
-        {
-          "metric": "roe",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "roa",
-          "scope": "peer_model",
-          "peer_observations": 87
-        },
-        {
-          "metric": "profit_margin",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "efficiency_ratio_proxy",
-          "scope": "peer_model",
-          "peer_observations": 35
-        },
-        {
-          "metric": "provision_to_revenue",
-          "scope": "global_fallback",
-          "peer_observations": 0
-        },
-        {
-          "metric": "equity_to_assets",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "revenue_growth",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "earnings_growth",
-          "scope": "peer_model",
-          "peer_observations": 85
-        },
-        {
-          "metric": "earnings_quarterly_growth",
-          "scope": "peer_model",
-          "peer_observations": 79
-        },
-        {
-          "metric": "net_interest_income_yoy",
-          "scope": "peer_model",
-          "peer_observations": 71
-        },
-        {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "trailing_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "forward_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "dividend_yield",
-          "scope": "peer_model",
-          "peer_observations": 81
-        },
-        {
-          "metric": "beta",
-          "scope": "peer_model",
-          "peer_observations": 87
-        }
-      ],
-      "production_bank_rank": 20,
-      "shadow_bank_rank": 42,
-      "rank_shift": -22
+      "shadow_bank_rank": 76,
+      "rank_shift": -3
     },
     {
       "ticker": "ACA.PA",
@@ -2088,9 +2088,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 87,
+      "production_bank_rank": 86,
       "shadow_bank_rank": 86,
-      "rank_shift": 1
+      "rank_shift": 0
     },
     {
       "ticker": "LYG",
@@ -2188,8 +2188,8 @@
         }
       ],
       "production_bank_rank": 77,
-      "shadow_bank_rank": 80,
-      "rank_shift": -3
+      "shadow_bank_rank": 79,
+      "rank_shift": -2
     },
     {
       "ticker": "ABN.AS",
@@ -2287,16 +2287,16 @@
         }
       ],
       "production_bank_rank": 63,
-      "shadow_bank_rank": 72,
-      "rank_shift": -9
+      "shadow_bank_rank": 71,
+      "rank_shift": -8
     },
     {
       "ticker": "LLOY.L",
       "name": "LLOYDS BANKING GROUP PLC ORD 10",
       "sector": "Financial Services",
-      "production_score": 45.4,
+      "production_score": 45.3,
       "peer_shadow_score": 35.67,
-      "delta": -9.73,
+      "delta": -9.63,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 33.76,
@@ -2386,8 +2386,8 @@
         }
       ],
       "production_bank_rank": 76,
-      "shadow_bank_rank": 78,
-      "rank_shift": -2
+      "shadow_bank_rank": 77,
+      "rank_shift": -1
     },
     {
       "ticker": "MFG",
@@ -2484,8 +2484,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 56,
-      "shadow_bank_rank": 61,
+      "production_bank_rank": 55,
+      "shadow_bank_rank": 60,
       "rank_shift": -5
     }
   ],
@@ -2682,9 +2682,9 @@
       "ticker": "CFG",
       "name": "Citizens Financial Group, Inc.",
       "sector": "Financial Services",
-      "production_score": 63.7,
+      "production_score": 63.6,
       "peer_shadow_score": 52.08,
-      "delta": -11.62,
+      "delta": -11.52,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 29.82,
@@ -2877,105 +2877,6 @@
       "rank_shift": 25
     },
     {
-      "ticker": "OPFI",
-      "name": "OppFi Inc.",
-      "sector": "Financial Services",
-      "production_score": 45.0,
-      "peer_shadow_score": 45.0,
-      "delta": 0.0,
-      "score_cap": 45.0,
-      "shadow_dimensions": {
-        "Bank Quality": 85.59,
-        "Efficiency": 88.57,
-        "Asset Quality": null,
-        "Capital Proxy": 54.55,
-        "Growth": 2.92,
-        "Valuation": 81.19,
-        "Income": null,
-        "Stability": 2.3
-      },
-      "benchmark_scopes": [
-        {
-          "metric": "roe",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "roa",
-          "scope": "peer_model",
-          "peer_observations": 87
-        },
-        {
-          "metric": "profit_margin",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "efficiency_ratio_proxy",
-          "scope": "peer_model",
-          "peer_observations": 35
-        },
-        {
-          "metric": "provision_to_revenue",
-          "scope": "global_fallback",
-          "peer_observations": 0
-        },
-        {
-          "metric": "equity_to_assets",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "revenue_growth",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "earnings_growth",
-          "scope": "peer_model",
-          "peer_observations": 85
-        },
-        {
-          "metric": "earnings_quarterly_growth",
-          "scope": "peer_model",
-          "peer_observations": 79
-        },
-        {
-          "metric": "net_interest_income_yoy",
-          "scope": "peer_model",
-          "peer_observations": 71
-        },
-        {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "trailing_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "forward_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "dividend_yield",
-          "scope": "peer_model",
-          "peer_observations": 81
-        },
-        {
-          "metric": "beta",
-          "scope": "peer_model",
-          "peer_observations": 87
-        }
-      ],
-      "production_bank_rank": 79,
-      "shadow_bank_rank": 54,
-      "rank_shift": 25
-    },
-    {
       "ticker": "PNBK",
       "name": "Patriot National Bancorp Inc.",
       "sector": "Financial Services",
@@ -3065,8 +2966,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 80,
-      "shadow_bank_rank": 55,
+      "production_bank_rank": 79,
+      "shadow_bank_rank": 54,
       "rank_shift": 25
     },
     {
@@ -3154,8 +3055,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 81,
-      "shadow_bank_rank": 56,
+      "production_bank_rank": 80,
+      "shadow_bank_rank": 55,
       "rank_shift": 25
     },
     {
@@ -3165,7 +3066,7 @@
       "production_score": 59.8,
       "peer_shadow_score": 49.56,
       "delta": -10.24,
-      "score_cap": null,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 28.73,
         "Efficiency": null,
@@ -3253,9 +3154,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 20,
+      "production_bank_rank": 19,
       "shadow_bank_rank": 42,
-      "rank_shift": -22
+      "rank_shift": -23
     },
     {
       "ticker": "DB",
@@ -3352,17 +3253,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 52,
-      "shadow_bank_rank": 73,
+      "production_bank_rank": 51,
+      "shadow_bank_rank": 72,
       "rank_shift": -21
     },
     {
       "ticker": "BAC",
       "name": "Bank of America Corporation",
       "sector": "Financial Services",
-      "production_score": 60.3,
+      "production_score": 60.2,
       "peer_shadow_score": 51.95,
-      "delta": -8.35,
+      "delta": -8.25,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 51.3,
@@ -3453,204 +3354,6 @@
       ],
       "production_bank_rank": 18,
       "shadow_bank_rank": 38,
-      "rank_shift": -20
-    },
-    {
-      "ticker": "C",
-      "name": "Citigroup, Inc.",
-      "sector": "Financial Services",
-      "production_score": 57.8,
-      "peer_shadow_score": 43.87,
-      "delta": -13.93,
-      "score_cap": null,
-      "shadow_dimensions": {
-        "Bank Quality": 19.52,
-        "Efficiency": null,
-        "Asset Quality": null,
-        "Capital Proxy": 57.95,
-        "Growth": 72.3,
-        "Valuation": 55.95,
-        "Income": 18.52,
-        "Stability": 12.64
-      },
-      "benchmark_scopes": [
-        {
-          "metric": "roe",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "roa",
-          "scope": "peer_model",
-          "peer_observations": 87
-        },
-        {
-          "metric": "profit_margin",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "efficiency_ratio_proxy",
-          "scope": "peer_model",
-          "peer_observations": 35
-        },
-        {
-          "metric": "provision_to_revenue",
-          "scope": "global_fallback",
-          "peer_observations": 0
-        },
-        {
-          "metric": "equity_to_assets",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "revenue_growth",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "earnings_growth",
-          "scope": "peer_model",
-          "peer_observations": 85
-        },
-        {
-          "metric": "earnings_quarterly_growth",
-          "scope": "peer_model",
-          "peer_observations": 79
-        },
-        {
-          "metric": "net_interest_income_yoy",
-          "scope": "peer_model",
-          "peer_observations": 71
-        },
-        {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "trailing_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "forward_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "dividend_yield",
-          "scope": "peer_model",
-          "peer_observations": 81
-        },
-        {
-          "metric": "beta",
-          "scope": "peer_model",
-          "peer_observations": 87
-        }
-      ],
-      "production_bank_rank": 39,
-      "shadow_bank_rank": 59,
-      "rank_shift": -20
-    },
-    {
-      "ticker": "DBK.DE",
-      "name": "DEUTSCHE BANK AG              N",
-      "sector": "Financial Services",
-      "production_score": 53.0,
-      "peer_shadow_score": 39.07,
-      "delta": -13.93,
-      "score_cap": 69.0,
-      "shadow_dimensions": {
-        "Bank Quality": 18.38,
-        "Efficiency": null,
-        "Asset Quality": null,
-        "Capital Proxy": 19.32,
-        "Growth": 55.25,
-        "Valuation": 76.18,
-        "Income": 44.44,
-        "Stability": 24.14
-      },
-      "benchmark_scopes": [
-        {
-          "metric": "roe",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "roa",
-          "scope": "peer_model",
-          "peer_observations": 87
-        },
-        {
-          "metric": "profit_margin",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "efficiency_ratio_proxy",
-          "scope": "peer_model",
-          "peer_observations": 35
-        },
-        {
-          "metric": "provision_to_revenue",
-          "scope": "global_fallback",
-          "peer_observations": 0
-        },
-        {
-          "metric": "equity_to_assets",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "revenue_growth",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "earnings_growth",
-          "scope": "peer_model",
-          "peer_observations": 85
-        },
-        {
-          "metric": "earnings_quarterly_growth",
-          "scope": "peer_model",
-          "peer_observations": 79
-        },
-        {
-          "metric": "net_interest_income_yoy",
-          "scope": "peer_model",
-          "peer_observations": 71
-        },
-        {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "trailing_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "forward_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "dividend_yield",
-          "scope": "peer_model",
-          "peer_observations": 81
-        },
-        {
-          "metric": "beta",
-          "scope": "peer_model",
-          "peer_observations": 87
-        }
-      ],
-      "production_bank_rank": 54,
-      "shadow_bank_rank": 74,
       "rank_shift": -20
     },
     {
@@ -3753,6 +3456,303 @@
       "rank_shift": 20
     },
     {
+      "ticker": "BPE.MI",
+      "name": "BPER BANCA",
+      "sector": "Financial Services",
+      "production_score": 59.0,
+      "peer_shadow_score": 67.1,
+      "delta": 8.1,
+      "score_cap": 69.0,
+      "shadow_dimensions": {
+        "Bank Quality": 67.86,
+        "Efficiency": 65.71,
+        "Asset Quality": null,
+        "Capital Proxy": 59.09,
+        "Growth": 77.54,
+        "Valuation": 53.24,
+        "Income": 96.3,
+        "Stability": 72.41
+      },
+      "benchmark_scopes": [
+        {
+          "metric": "roe",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "roa",
+          "scope": "peer_model",
+          "peer_observations": 87
+        },
+        {
+          "metric": "profit_margin",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "efficiency_ratio_proxy",
+          "scope": "peer_model",
+          "peer_observations": 35
+        },
+        {
+          "metric": "provision_to_revenue",
+          "scope": "global_fallback",
+          "peer_observations": 0
+        },
+        {
+          "metric": "equity_to_assets",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "revenue_growth",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "earnings_growth",
+          "scope": "peer_model",
+          "peer_observations": 85
+        },
+        {
+          "metric": "earnings_quarterly_growth",
+          "scope": "peer_model",
+          "peer_observations": 79
+        },
+        {
+          "metric": "net_interest_income_yoy",
+          "scope": "peer_model",
+          "peer_observations": 71
+        },
+        {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "trailing_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "forward_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "dividend_yield",
+          "scope": "peer_model",
+          "peer_observations": 81
+        },
+        {
+          "metric": "beta",
+          "scope": "peer_model",
+          "peer_observations": 87
+        }
+      ],
+      "production_bank_rank": 24,
+      "shadow_bank_rank": 5,
+      "rank_shift": 19
+    },
+    {
+      "ticker": "C",
+      "name": "Citigroup, Inc.",
+      "sector": "Financial Services",
+      "production_score": 57.8,
+      "peer_shadow_score": 43.87,
+      "delta": -13.93,
+      "score_cap": 64.0,
+      "shadow_dimensions": {
+        "Bank Quality": 19.52,
+        "Efficiency": null,
+        "Asset Quality": null,
+        "Capital Proxy": 57.95,
+        "Growth": 72.3,
+        "Valuation": 55.95,
+        "Income": 18.52,
+        "Stability": 12.64
+      },
+      "benchmark_scopes": [
+        {
+          "metric": "roe",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "roa",
+          "scope": "peer_model",
+          "peer_observations": 87
+        },
+        {
+          "metric": "profit_margin",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "efficiency_ratio_proxy",
+          "scope": "peer_model",
+          "peer_observations": 35
+        },
+        {
+          "metric": "provision_to_revenue",
+          "scope": "global_fallback",
+          "peer_observations": 0
+        },
+        {
+          "metric": "equity_to_assets",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "revenue_growth",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "earnings_growth",
+          "scope": "peer_model",
+          "peer_observations": 85
+        },
+        {
+          "metric": "earnings_quarterly_growth",
+          "scope": "peer_model",
+          "peer_observations": 79
+        },
+        {
+          "metric": "net_interest_income_yoy",
+          "scope": "peer_model",
+          "peer_observations": 71
+        },
+        {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "trailing_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "forward_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "dividend_yield",
+          "scope": "peer_model",
+          "peer_observations": 81
+        },
+        {
+          "metric": "beta",
+          "scope": "peer_model",
+          "peer_observations": 87
+        }
+      ],
+      "production_bank_rank": 39,
+      "shadow_bank_rank": 58,
+      "rank_shift": -19
+    },
+    {
+      "ticker": "DBK.DE",
+      "name": "DEUTSCHE BANK AG              N",
+      "sector": "Financial Services",
+      "production_score": 53.0,
+      "peer_shadow_score": 39.07,
+      "delta": -13.93,
+      "score_cap": 69.0,
+      "shadow_dimensions": {
+        "Bank Quality": 18.38,
+        "Efficiency": null,
+        "Asset Quality": null,
+        "Capital Proxy": 19.32,
+        "Growth": 55.25,
+        "Valuation": 76.18,
+        "Income": 44.44,
+        "Stability": 24.14
+      },
+      "benchmark_scopes": [
+        {
+          "metric": "roe",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "roa",
+          "scope": "peer_model",
+          "peer_observations": 87
+        },
+        {
+          "metric": "profit_margin",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "efficiency_ratio_proxy",
+          "scope": "peer_model",
+          "peer_observations": 35
+        },
+        {
+          "metric": "provision_to_revenue",
+          "scope": "global_fallback",
+          "peer_observations": 0
+        },
+        {
+          "metric": "equity_to_assets",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "revenue_growth",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "earnings_growth",
+          "scope": "peer_model",
+          "peer_observations": 85
+        },
+        {
+          "metric": "earnings_quarterly_growth",
+          "scope": "peer_model",
+          "peer_observations": 79
+        },
+        {
+          "metric": "net_interest_income_yoy",
+          "scope": "peer_model",
+          "peer_observations": 71
+        },
+        {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "trailing_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "forward_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "dividend_yield",
+          "scope": "peer_model",
+          "peer_observations": 81
+        },
+        {
+          "metric": "beta",
+          "scope": "peer_model",
+          "peer_observations": 87
+        }
+      ],
+      "production_bank_rank": 54,
+      "shadow_bank_rank": 73,
+      "rank_shift": -19
+    },
+    {
       "ticker": "MB.MI",
       "name": "MEDIOBANCA",
       "sector": "Financial Services",
@@ -3852,220 +3852,22 @@
       "rank_shift": 19
     },
     {
-      "ticker": "BPE.MI",
-      "name": "BPER BANCA",
+      "ticker": "COF",
+      "name": "Capital One Financial Corporati",
       "sector": "Financial Services",
-      "production_score": 59.0,
-      "peer_shadow_score": 67.1,
-      "delta": 8.1,
+      "production_score": 66.3,
+      "peer_shadow_score": 58.18,
+      "delta": -8.12,
       "score_cap": 69.0,
       "shadow_dimensions": {
-        "Bank Quality": 67.86,
-        "Efficiency": 65.71,
-        "Asset Quality": null,
-        "Capital Proxy": 59.09,
-        "Growth": 77.54,
-        "Valuation": 53.24,
-        "Income": 96.3,
-        "Stability": 72.41
-      },
-      "benchmark_scopes": [
-        {
-          "metric": "roe",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "roa",
-          "scope": "peer_model",
-          "peer_observations": 87
-        },
-        {
-          "metric": "profit_margin",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "efficiency_ratio_proxy",
-          "scope": "peer_model",
-          "peer_observations": 35
-        },
-        {
-          "metric": "provision_to_revenue",
-          "scope": "global_fallback",
-          "peer_observations": 0
-        },
-        {
-          "metric": "equity_to_assets",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "revenue_growth",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "earnings_growth",
-          "scope": "peer_model",
-          "peer_observations": 85
-        },
-        {
-          "metric": "earnings_quarterly_growth",
-          "scope": "peer_model",
-          "peer_observations": 79
-        },
-        {
-          "metric": "net_interest_income_yoy",
-          "scope": "peer_model",
-          "peer_observations": 71
-        },
-        {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "trailing_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "forward_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "dividend_yield",
-          "scope": "peer_model",
-          "peer_observations": 81
-        },
-        {
-          "metric": "beta",
-          "scope": "peer_model",
-          "peer_observations": 87
-        }
-      ],
-      "production_bank_rank": 24,
-      "shadow_bank_rank": 6,
-      "rank_shift": 18
-    },
-    {
-      "ticker": "BMED.MI",
-      "name": "BANCA MEDIOLANUM",
-      "sector": "Financial Services",
-      "production_score": 58.6,
-      "peer_shadow_score": 59.3,
-      "delta": 0.7,
-      "score_cap": null,
-      "shadow_dimensions": {
-        "Bank Quality": 91.17,
-        "Efficiency": 77.14,
-        "Asset Quality": null,
-        "Capital Proxy": 11.36,
-        "Growth": 66.13,
-        "Valuation": 27.51,
-        "Income": 83.95,
-        "Stability": 66.67
-      },
-      "benchmark_scopes": [
-        {
-          "metric": "roe",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "roa",
-          "scope": "peer_model",
-          "peer_observations": 87
-        },
-        {
-          "metric": "profit_margin",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "efficiency_ratio_proxy",
-          "scope": "peer_model",
-          "peer_observations": 35
-        },
-        {
-          "metric": "provision_to_revenue",
-          "scope": "global_fallback",
-          "peer_observations": 0
-        },
-        {
-          "metric": "equity_to_assets",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "revenue_growth",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "earnings_growth",
-          "scope": "peer_model",
-          "peer_observations": 85
-        },
-        {
-          "metric": "earnings_quarterly_growth",
-          "scope": "peer_model",
-          "peer_observations": 79
-        },
-        {
-          "metric": "net_interest_income_yoy",
-          "scope": "peer_model",
-          "peer_observations": 71
-        },
-        {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "trailing_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "forward_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "dividend_yield",
-          "scope": "peer_model",
-          "peer_observations": 81
-        },
-        {
-          "metric": "beta",
-          "scope": "peer_model",
-          "peer_observations": 87
-        }
-      ],
-      "production_bank_rank": 36,
-      "shadow_bank_rank": 19,
-      "rank_shift": 17
-    },
-    {
-      "ticker": "MUFG",
-      "name": "Mitsubishi UFJ Financial Group,",
-      "sector": "Financial Services",
-      "production_score": 53.1,
-      "peer_shadow_score": 40.2,
-      "delta": -12.9,
-      "score_cap": 59.0,
-      "shadow_dimensions": {
-        "Bank Quality": 27.91,
+        "Bank Quality": 40.24,
         "Efficiency": null,
         "Asset Quality": null,
-        "Capital Proxy": 17.05,
-        "Growth": 88.88,
-        "Valuation": 20.58,
-        "Income": 25.93,
-        "Stability": 90.8
+        "Capital Proxy": 92.05,
+        "Growth": 68.14,
+        "Valuation": 69.67,
+        "Income": 8.64,
+        "Stability": 20.69
       },
       "benchmark_scopes": [
         {
@@ -4144,18 +3946,18 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 53,
-      "shadow_bank_rank": 70,
-      "rank_shift": -17
+      "production_bank_rank": 6,
+      "shadow_bank_rank": 24,
+      "rank_shift": -18
     },
     {
       "ticker": "PYPL",
       "name": "PayPal Holdings, Inc.",
       "sector": "Financial Services",
-      "production_score": 61.7,
+      "production_score": 61.8,
       "peer_shadow_score": 54.59,
-      "delta": -7.11,
-      "score_cap": null,
+      "delta": -7.21,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 65.45,
         "Efficiency": 82.86,
@@ -4243,9 +4045,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 14,
+      "production_bank_rank": 13,
       "shadow_bank_rank": 31,
-      "rank_shift": -17
+      "rank_shift": -18
     },
     {
       "ticker": "BAC-PB",
@@ -4338,26 +4140,26 @@
         }
       ],
       "production_bank_rank": 23,
-      "shadow_bank_rank": 7,
-      "rank_shift": 16
+      "shadow_bank_rank": 6,
+      "rank_shift": 17
     },
     {
-      "ticker": "COF",
-      "name": "Capital One Financial Corporati",
+      "ticker": "BMED.MI",
+      "name": "BANCA MEDIOLANUM",
       "sector": "Financial Services",
-      "production_score": 66.5,
-      "peer_shadow_score": 58.18,
-      "delta": -8.32,
-      "score_cap": 69.0,
+      "production_score": 58.3,
+      "peer_shadow_score": 59.3,
+      "delta": 1.0,
+      "score_cap": null,
       "shadow_dimensions": {
-        "Bank Quality": 40.24,
-        "Efficiency": null,
+        "Bank Quality": 91.17,
+        "Efficiency": 77.14,
         "Asset Quality": null,
-        "Capital Proxy": 92.05,
-        "Growth": 68.14,
-        "Valuation": 69.67,
-        "Income": 8.64,
-        "Stability": 20.69
+        "Capital Proxy": 11.36,
+        "Growth": 66.13,
+        "Valuation": 27.51,
+        "Income": 83.95,
+        "Stability": 66.67
       },
       "benchmark_scopes": [
         {
@@ -4436,9 +4238,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 8,
-      "shadow_bank_rank": 24,
-      "rank_shift": -16
+      "production_bank_rank": 36,
+      "shadow_bank_rank": 19,
+      "rank_shift": 17
     },
     {
       "ticker": "FITB",
@@ -4537,6 +4339,105 @@
       ],
       "production_bank_rank": 25,
       "shadow_bank_rank": 41,
+      "rank_shift": -16
+    },
+    {
+      "ticker": "MUFG",
+      "name": "Mitsubishi UFJ Financial Group,",
+      "sector": "Financial Services",
+      "production_score": 53.1,
+      "peer_shadow_score": 40.2,
+      "delta": -12.9,
+      "score_cap": 59.0,
+      "shadow_dimensions": {
+        "Bank Quality": 27.91,
+        "Efficiency": null,
+        "Asset Quality": null,
+        "Capital Proxy": 17.05,
+        "Growth": 88.88,
+        "Valuation": 20.58,
+        "Income": 25.93,
+        "Stability": 90.8
+      },
+      "benchmark_scopes": [
+        {
+          "metric": "roe",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "roa",
+          "scope": "peer_model",
+          "peer_observations": 87
+        },
+        {
+          "metric": "profit_margin",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "efficiency_ratio_proxy",
+          "scope": "peer_model",
+          "peer_observations": 35
+        },
+        {
+          "metric": "provision_to_revenue",
+          "scope": "global_fallback",
+          "peer_observations": 0
+        },
+        {
+          "metric": "equity_to_assets",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "revenue_growth",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "earnings_growth",
+          "scope": "peer_model",
+          "peer_observations": 85
+        },
+        {
+          "metric": "earnings_quarterly_growth",
+          "scope": "peer_model",
+          "peer_observations": 79
+        },
+        {
+          "metric": "net_interest_income_yoy",
+          "scope": "peer_model",
+          "peer_observations": 71
+        },
+        {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "trailing_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "forward_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "dividend_yield",
+          "scope": "peer_model",
+          "peer_observations": 81
+        },
+        {
+          "metric": "beta",
+          "scope": "peer_model",
+          "peer_observations": 87
+        }
+      ],
+      "production_bank_rank": 53,
+      "shadow_bank_rank": 69,
       "rank_shift": -16
     },
     {
@@ -4639,105 +4540,6 @@
       "rank_shift": 16
     },
     {
-      "ticker": "KEY",
-      "name": "KeyCorp",
-      "sector": "Financial Services",
-      "production_score": 61.7,
-      "peer_shadow_score": 54.91,
-      "delta": -6.79,
-      "score_cap": null,
-      "shadow_dimensions": {
-        "Bank Quality": 46.33,
-        "Efficiency": null,
-        "Asset Quality": null,
-        "Capital Proxy": 76.14,
-        "Growth": 46.43,
-        "Valuation": 61.77,
-        "Income": 69.14,
-        "Stability": 19.54
-      },
-      "benchmark_scopes": [
-        {
-          "metric": "roe",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "roa",
-          "scope": "peer_model",
-          "peer_observations": 87
-        },
-        {
-          "metric": "profit_margin",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "efficiency_ratio_proxy",
-          "scope": "peer_model",
-          "peer_observations": 35
-        },
-        {
-          "metric": "provision_to_revenue",
-          "scope": "global_fallback",
-          "peer_observations": 0
-        },
-        {
-          "metric": "equity_to_assets",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "revenue_growth",
-          "scope": "peer_model",
-          "peer_observations": 86
-        },
-        {
-          "metric": "earnings_growth",
-          "scope": "peer_model",
-          "peer_observations": 85
-        },
-        {
-          "metric": "earnings_quarterly_growth",
-          "scope": "peer_model",
-          "peer_observations": 79
-        },
-        {
-          "metric": "net_interest_income_yoy",
-          "scope": "peer_model",
-          "peer_observations": 71
-        },
-        {
-          "metric": "price_to_book",
-          "scope": "peer_model",
-          "peer_observations": 88
-        },
-        {
-          "metric": "trailing_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "forward_pe",
-          "scope": "peer_model",
-          "peer_observations": 83
-        },
-        {
-          "metric": "dividend_yield",
-          "scope": "peer_model",
-          "peer_observations": 81
-        },
-        {
-          "metric": "beta",
-          "scope": "peer_model",
-          "peer_observations": 87
-        }
-      ],
-      "production_bank_rank": 13,
-      "shadow_bank_rank": 28,
-      "rank_shift": -15
-    },
-    {
       "ticker": "SMFG",
       "name": "Sumitomo Mitsui Financial Group",
       "sector": "Financial Services",
@@ -4832,17 +4634,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 66,
-      "shadow_bank_rank": 81,
+      "production_bank_rank": 65,
+      "shadow_bank_rank": 80,
       "rank_shift": -15
     },
     {
       "ticker": "UCG.MI",
       "name": "UNICREDIT",
       "sector": "Financial Services",
-      "production_score": 55.3,
+      "production_score": 54.9,
       "peer_shadow_score": 54.28,
-      "delta": -1.02,
+      "delta": -0.62,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 78.47,
@@ -4934,6 +4736,194 @@
       "production_bank_rank": 47,
       "shadow_bank_rank": 32,
       "rank_shift": 15
+    },
+    {
+      "ticker": "VRM",
+      "name": "Vroom, Inc.",
+      "sector": "Financial Services",
+      "production_score": 46.4,
+      "peer_shadow_score": 43.79,
+      "delta": -2.61,
+      "score_cap": 69.0,
+      "shadow_dimensions": {
+        "Bank Quality": 4.99,
+        "Efficiency": 0.0,
+        "Asset Quality": null,
+        "Capital Proxy": 82.95,
+        "Growth": 51.25,
+        "Valuation": 92.05,
+        "Income": null,
+        "Stability": null
+      },
+      "benchmark_scopes": [
+        {
+          "metric": "roe",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "roa",
+          "scope": "peer_model",
+          "peer_observations": 87
+        },
+        {
+          "metric": "profit_margin",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "efficiency_ratio_proxy",
+          "scope": "peer_model",
+          "peer_observations": 35
+        },
+        {
+          "metric": "provision_to_revenue",
+          "scope": "global_fallback",
+          "peer_observations": 0
+        },
+        {
+          "metric": "equity_to_assets",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "revenue_growth",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "earnings_growth",
+          "scope": "peer_model",
+          "peer_observations": 85
+        },
+        {
+          "metric": "earnings_quarterly_growth",
+          "scope": "peer_model",
+          "peer_observations": 79
+        },
+        {
+          "metric": "net_interest_income_yoy",
+          "scope": "peer_model",
+          "peer_observations": 71
+        },
+        {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "dividend_yield",
+          "scope": "peer_model",
+          "peer_observations": 81
+        },
+        {
+          "metric": "beta",
+          "scope": "peer_model",
+          "peer_observations": 87
+        }
+      ],
+      "production_bank_rank": 74,
+      "shadow_bank_rank": 59,
+      "rank_shift": 15
+    },
+    {
+      "ticker": "KEY",
+      "name": "KeyCorp",
+      "sector": "Financial Services",
+      "production_score": 61.6,
+      "peer_shadow_score": 54.91,
+      "delta": -6.69,
+      "score_cap": null,
+      "shadow_dimensions": {
+        "Bank Quality": 46.33,
+        "Efficiency": null,
+        "Asset Quality": null,
+        "Capital Proxy": 76.14,
+        "Growth": 46.43,
+        "Valuation": 61.77,
+        "Income": 69.14,
+        "Stability": 19.54
+      },
+      "benchmark_scopes": [
+        {
+          "metric": "roe",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "roa",
+          "scope": "peer_model",
+          "peer_observations": 87
+        },
+        {
+          "metric": "profit_margin",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "efficiency_ratio_proxy",
+          "scope": "peer_model",
+          "peer_observations": 35
+        },
+        {
+          "metric": "provision_to_revenue",
+          "scope": "global_fallback",
+          "peer_observations": 0
+        },
+        {
+          "metric": "equity_to_assets",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "revenue_growth",
+          "scope": "peer_model",
+          "peer_observations": 86
+        },
+        {
+          "metric": "earnings_growth",
+          "scope": "peer_model",
+          "peer_observations": 85
+        },
+        {
+          "metric": "earnings_quarterly_growth",
+          "scope": "peer_model",
+          "peer_observations": 79
+        },
+        {
+          "metric": "net_interest_income_yoy",
+          "scope": "peer_model",
+          "peer_observations": 71
+        },
+        {
+          "metric": "price_to_book",
+          "scope": "peer_model",
+          "peer_observations": 88
+        },
+        {
+          "metric": "trailing_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "forward_pe",
+          "scope": "peer_model",
+          "peer_observations": 83
+        },
+        {
+          "metric": "dividend_yield",
+          "scope": "peer_model",
+          "peer_observations": 81
+        },
+        {
+          "metric": "beta",
+          "scope": "peer_model",
+          "peer_observations": 87
+        }
+      ],
+      "production_bank_rank": 14,
+      "shadow_bank_rank": 28,
+      "rank_shift": -14
     }
   ],
   "rows": [
@@ -5033,8 +5023,8 @@
         }
       ],
       "production_bank_rank": 63,
-      "shadow_bank_rank": 72,
-      "rank_shift": -9
+      "shadow_bank_rank": 71,
+      "rank_shift": -8
     },
     {
       "ticker": "ACA.PA",
@@ -5131,18 +5121,18 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 87,
+      "production_bank_rank": 86,
       "shadow_bank_rank": 86,
-      "rank_shift": 1
+      "rank_shift": 0
     },
     {
       "ticker": "ALLY",
       "name": "Ally Financial Inc.",
       "sector": "Financial Services",
-      "production_score": 58.9,
+      "production_score": 58.8,
       "peer_shadow_score": 48.34,
-      "delta": -10.56,
-      "score_cap": null,
+      "delta": -10.46,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 26.1,
         "Efficiency": null,
@@ -5238,9 +5228,9 @@
       "ticker": "AXP",
       "name": "American Express Company",
       "sector": "Financial Services",
-      "production_score": 56.7,
+      "production_score": 56.6,
       "peer_shadow_score": 45.49,
-      "delta": -11.21,
+      "delta": -11.11,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 67.38,
@@ -5337,9 +5327,9 @@
       "ticker": "BAC",
       "name": "Bank of America Corporation",
       "sector": "Financial Services",
-      "production_score": 60.3,
+      "production_score": 60.2,
       "peer_shadow_score": 51.95,
-      "delta": -8.35,
+      "delta": -8.25,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 51.3,
@@ -5523,17 +5513,17 @@
         }
       ],
       "production_bank_rank": 23,
-      "shadow_bank_rank": 7,
-      "rank_shift": 16
+      "shadow_bank_rank": 6,
+      "rank_shift": 17
     },
     {
       "ticker": "BAFN",
       "name": "BayFirst Financial Corp.",
       "sector": "Financial Services",
-      "production_score": 49.3,
+      "production_score": 49.2,
       "peer_shadow_score": 44.37,
-      "delta": -4.93,
-      "score_cap": 69.0,
+      "delta": -4.83,
+      "score_cap": 59.0,
       "shadow_dimensions": {
         "Bank Quality": 3.82,
         "Efficiency": null,
@@ -5611,17 +5601,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 64,
-      "shadow_bank_rank": 57,
-      "rank_shift": 7
+      "production_bank_rank": 66,
+      "shadow_bank_rank": 56,
+      "rank_shift": 10
     },
     {
       "ticker": "BAMI.MI",
       "name": "BANCO BPM",
       "sector": "Financial Services",
-      "production_score": 53.2,
+      "production_score": 52.9,
       "peer_shadow_score": 49.39,
-      "delta": -3.81,
+      "delta": -3.51,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 61.58,
@@ -5710,17 +5700,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 50,
+      "production_bank_rank": 56,
       "shadow_bank_rank": 43,
-      "rank_shift": 7
+      "rank_shift": 13
     },
     {
       "ticker": "BAP",
       "name": "Credicorp Ltd.",
       "sector": "Financial Services",
-      "production_score": 68.7,
+      "production_score": 68.6,
       "peer_shadow_score": 65.39,
-      "delta": -3.31,
+      "delta": -3.21,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 82.07,
@@ -5809,17 +5799,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 5,
-      "shadow_bank_rank": 9,
+      "production_bank_rank": 3,
+      "shadow_bank_rank": 7,
       "rank_shift": -4
     },
     {
       "ticker": "BARC.L",
       "name": "BARCLAYS PLC ORD 25P",
       "sector": "Financial Services",
-      "production_score": 48.7,
+      "production_score": 48.6,
       "peer_shadow_score": 42.56,
-      "delta": -6.14,
+      "delta": -6.04,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 30.21,
@@ -5909,17 +5899,17 @@
         }
       ],
       "production_bank_rank": 69,
-      "shadow_bank_rank": 63,
-      "rank_shift": 6
+      "shadow_bank_rank": 62,
+      "rank_shift": 7
     },
     {
       "ticker": "BBD",
       "name": "Banco Bradesco Sa",
       "sector": "Financial Services",
-      "production_score": 69.0,
-      "peer_shadow_score": 66.05,
-      "delta": -2.95,
-      "score_cap": null,
+      "production_score": 64.0,
+      "peer_shadow_score": 64.0,
+      "delta": 0.0,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 50.32,
         "Efficiency": null,
@@ -6007,9 +5997,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 4,
-      "shadow_bank_rank": 8,
-      "rank_shift": -4
+      "production_bank_rank": 9,
+      "shadow_bank_rank": 11,
+      "rank_shift": -2
     },
     {
       "ticker": "BBVA",
@@ -6114,9 +6104,9 @@
       "ticker": "BBVA.MC",
       "name": "BANCO BILBAO VIZCAYA ARGENTARIA",
       "sector": "Financial Services",
-      "production_score": 61.3,
+      "production_score": 61.2,
       "peer_shadow_score": 58.29,
-      "delta": -3.01,
+      "delta": -2.91,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 75.56,
@@ -6213,9 +6203,9 @@
       "ticker": "BCP.LS",
       "name": "B.C.P.-BCO COMERCIAL PORTUGUES",
       "sector": "Financial Services",
-      "production_score": 49.1,
+      "production_score": 49.0,
       "peer_shadow_score": 42.71,
-      "delta": -6.39,
+      "delta": -6.29,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 60.21,
@@ -6305,16 +6295,16 @@
         }
       ],
       "production_bank_rank": 67,
-      "shadow_bank_rank": 62,
-      "rank_shift": 5
+      "shadow_bank_rank": 61,
+      "rank_shift": 6
     },
     {
       "ticker": "BCS",
       "name": "Barclays PLC",
       "sector": "Financial Services",
-      "production_score": 48.6,
+      "production_score": 48.5,
       "peer_shadow_score": 42.23,
-      "delta": -6.37,
+      "delta": -6.27,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 30.21,
@@ -6404,16 +6394,16 @@
         }
       ],
       "production_bank_rank": 70,
-      "shadow_bank_rank": 64,
-      "rank_shift": 6
+      "shadow_bank_rank": 63,
+      "rank_shift": 7
     },
     {
       "ticker": "BKT.MC",
       "name": "BANKINTER, S.A.",
       "sector": "Financial Services",
-      "production_score": 55.6,
+      "production_score": 55.4,
       "peer_shadow_score": 51.87,
-      "delta": -3.73,
+      "delta": -3.53,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 73.16,
@@ -6510,9 +6500,9 @@
       "ticker": "BMED.MI",
       "name": "BANCA MEDIOLANUM",
       "sector": "Financial Services",
-      "production_score": 58.6,
+      "production_score": 58.3,
       "peer_shadow_score": 59.3,
-      "delta": 0.7,
+      "delta": 1.0,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 91.17,
@@ -6609,9 +6599,9 @@
       "ticker": "BMO",
       "name": "Bank Of Montreal",
       "sector": "Financial Services",
-      "production_score": 43.3,
+      "production_score": 43.2,
       "peer_shadow_score": 25.62,
-      "delta": -17.68,
+      "delta": -17.58,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 29.93,
@@ -6700,9 +6690,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 84,
+      "production_bank_rank": 83,
       "shadow_bank_rank": 88,
-      "rank_shift": -4
+      "rank_shift": -5
     },
     {
       "ticker": "BMPS.MI",
@@ -6899,16 +6889,16 @@
         }
       ],
       "production_bank_rank": 71,
-      "shadow_bank_rank": 65,
-      "rank_shift": 6
+      "shadow_bank_rank": 64,
+      "rank_shift": 7
     },
     {
       "ticker": "BNS",
       "name": "Bank Nova Scotia Halifax Pfd 3",
       "sector": "Financial Services",
-      "production_score": 48.8,
+      "production_score": 48.9,
       "peer_shadow_score": 35.55,
-      "delta": -13.25,
+      "delta": -13.35,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 42.15,
@@ -6998,16 +6988,16 @@
         }
       ],
       "production_bank_rank": 68,
-      "shadow_bank_rank": 79,
-      "rank_shift": -11
+      "shadow_bank_rank": 78,
+      "rank_shift": -10
     },
     {
       "ticker": "BNY",
       "name": "The Bank of New York Mellon Cor",
       "sector": "Financial Services",
-      "production_score": 56.2,
+      "production_score": 56.0,
       "peer_shadow_score": 46.9,
-      "delta": -9.3,
+      "delta": -9.1,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 62.51,
@@ -7196,16 +7186,16 @@
         }
       ],
       "production_bank_rank": 24,
-      "shadow_bank_rank": 6,
-      "rank_shift": 18
+      "shadow_bank_rank": 5,
+      "rank_shift": 19
     },
     {
       "ticker": "BSBR",
       "name": "Banco Santander Brasil SA",
       "sector": "Financial Services",
-      "production_score": 67.3,
+      "production_score": 67.2,
       "peer_shadow_score": 64.85,
-      "delta": -2.45,
+      "delta": -2.35,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 51.31,
@@ -7294,8 +7284,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 7,
-      "shadow_bank_rank": 11,
+      "production_bank_rank": 5,
+      "shadow_bank_rank": 9,
       "rank_shift": -4
     },
     {
@@ -7305,7 +7295,7 @@
       "production_score": 57.8,
       "peer_shadow_score": 43.87,
       "delta": -13.93,
-      "score_cap": null,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 19.52,
         "Efficiency": null,
@@ -7394,16 +7384,16 @@
         }
       ],
       "production_bank_rank": 39,
-      "shadow_bank_rank": 59,
-      "rank_shift": -20
+      "shadow_bank_rank": 58,
+      "rank_shift": -19
     },
     {
       "ticker": "CABK.MC",
       "name": "CAIXABANK, S.A.",
       "sector": "Financial Services",
-      "production_score": 52.8,
+      "production_score": 52.9,
       "peer_shadow_score": 46.86,
-      "delta": -5.94,
+      "delta": -6.04,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 71.22,
@@ -7492,17 +7482,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 58,
+      "production_bank_rank": 57,
       "shadow_bank_rank": 50,
-      "rank_shift": 8
+      "rank_shift": 7
     },
     {
       "ticker": "CBK.DE",
       "name": "Commerzbank AG                I",
       "sector": "Financial Services",
-      "production_score": 47.1,
+      "production_score": 47.0,
       "peer_shadow_score": 36.84,
-      "delta": -10.26,
+      "delta": -10.16,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 27.95,
@@ -7592,16 +7582,16 @@
         }
       ],
       "production_bank_rank": 73,
-      "shadow_bank_rank": 77,
-      "rank_shift": -4
+      "shadow_bank_rank": 76,
+      "rank_shift": -3
     },
     {
       "ticker": "CFG",
       "name": "Citizens Financial Group, Inc.",
       "sector": "Financial Services",
-      "production_score": 63.7,
+      "production_score": 63.6,
       "peer_shadow_score": 52.08,
-      "delta": -11.62,
+      "delta": -11.52,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 29.82,
@@ -7698,9 +7688,9 @@
       "ticker": "CM",
       "name": "Canadian Imperial Bank of Comme",
       "sector": "Financial Services",
-      "production_score": 50.3,
+      "production_score": 50.4,
       "peer_shadow_score": 41.18,
-      "delta": -9.12,
+      "delta": -9.22,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 63.99,
@@ -7790,16 +7780,16 @@
         }
       ],
       "production_bank_rank": 61,
-      "shadow_bank_rank": 66,
-      "rank_shift": -5
+      "shadow_bank_rank": 65,
+      "rank_shift": -4
     },
     {
       "ticker": "COF",
       "name": "Capital One Financial Corporati",
       "sector": "Financial Services",
-      "production_score": 66.5,
+      "production_score": 66.3,
       "peer_shadow_score": 58.18,
-      "delta": -8.32,
+      "delta": -8.12,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 40.24,
@@ -7888,9 +7878,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 8,
+      "production_bank_rank": 6,
       "shadow_bank_rank": 24,
-      "rank_shift": -16
+      "rank_shift": -18
     },
     {
       "ticker": "DB",
@@ -7987,8 +7977,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 52,
-      "shadow_bank_rank": 73,
+      "production_bank_rank": 51,
+      "shadow_bank_rank": 72,
       "rank_shift": -21
     },
     {
@@ -8087,16 +8077,16 @@
         }
       ],
       "production_bank_rank": 54,
-      "shadow_bank_rank": 74,
-      "rank_shift": -20
+      "shadow_bank_rank": 73,
+      "rank_shift": -19
     },
     {
       "ticker": "EDEN.PA",
       "name": "EDENRED",
       "sector": "Financial Services",
-      "production_score": 51.2,
+      "production_score": 51.3,
       "peer_shadow_score": 40.77,
-      "delta": -10.43,
+      "delta": -10.53,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 53.94,
@@ -8181,16 +8171,16 @@
         }
       ],
       "production_bank_rank": 59,
-      "shadow_bank_rank": 68,
-      "rank_shift": -9
+      "shadow_bank_rank": 67,
+      "rank_shift": -8
     },
     {
       "ticker": "FBK.MI",
       "name": "FINECOBANK",
       "sector": "Financial Services",
-      "production_score": 58.5,
+      "production_score": 58.1,
       "peer_shadow_score": 57.26,
-      "delta": -1.24,
+      "delta": -0.84,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 91.94,
@@ -8477,9 +8467,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 86,
+      "production_bank_rank": 84,
       "shadow_bank_rank": 85,
-      "rank_shift": 1
+      "rank_shift": -1
     },
     {
       "ticker": "HBAN",
@@ -8683,9 +8673,9 @@
       "ticker": "HSBA.L",
       "name": "HSBC HOLDINGS PLC ORD $0.50 (UK",
       "sector": "Financial Services",
-      "production_score": 56.4,
+      "production_score": 56.2,
       "peer_shadow_score": 52.24,
-      "delta": -4.16,
+      "delta": -3.96,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 62.34,
@@ -8782,9 +8772,9 @@
       "ticker": "HSBC",
       "name": "HSBC Holdings, plc.",
       "sector": "Financial Services",
-      "production_score": 54.2,
+      "production_score": 54.0,
       "peer_shadow_score": 50.51,
-      "delta": -3.69,
+      "delta": -3.49,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 62.34,
@@ -8980,9 +8970,9 @@
       "ticker": "ING",
       "name": "ING Group, N.V.",
       "sector": "Financial Services",
-      "production_score": 53.0,
+      "production_score": 53.1,
       "peer_shadow_score": 46.69,
-      "delta": -6.31,
+      "delta": -6.41,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 65.92,
@@ -9071,17 +9061,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 55,
+      "production_bank_rank": 52,
       "shadow_bank_rank": 51,
-      "rank_shift": 4
+      "rank_shift": 1
     },
     {
       "ticker": "INGA.AS",
       "name": "ING GROEP N.V.",
       "sector": "Financial Services",
-      "production_score": 53.2,
+      "production_score": 53.3,
       "peer_shadow_score": 47.78,
-      "delta": -5.42,
+      "delta": -5.52,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 65.92,
@@ -9170,17 +9160,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 51,
+      "production_bank_rank": 50,
       "shadow_bank_rank": 47,
-      "rank_shift": 4
+      "rank_shift": 3
     },
     {
       "ticker": "ISP.MI",
       "name": "INTESA SANPAOLO",
       "sector": "Financial Services",
-      "production_score": 55.9,
+      "production_score": 55.7,
       "peer_shadow_score": 54.01,
-      "delta": -1.89,
+      "delta": -1.69,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 69.29,
@@ -9277,9 +9267,9 @@
       "ticker": "ITUB",
       "name": "Itau Unibanco Banco Holding SA",
       "sector": "Financial Services",
-      "production_score": 65.3,
+      "production_score": 65.2,
       "peer_shadow_score": 64.46,
-      "delta": -0.84,
+      "delta": -0.74,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 80.17,
@@ -9368,8 +9358,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 9,
-      "shadow_bank_rank": 12,
+      "production_bank_rank": 7,
+      "shadow_bank_rank": 10,
       "rank_shift": -3
     },
     {
@@ -9762,9 +9752,9 @@
       "ticker": "KB",
       "name": "KB Financial Group Inc",
       "sector": "Financial Services",
-      "production_score": 54.0,
+      "production_score": 53.8,
       "peer_shadow_score": 48.86,
-      "delta": -5.14,
+      "delta": -4.94,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 50.01,
@@ -9861,9 +9851,9 @@
       "ticker": "KEY",
       "name": "KeyCorp",
       "sector": "Financial Services",
-      "production_score": 61.7,
+      "production_score": 61.6,
       "peer_shadow_score": 54.91,
-      "delta": -6.79,
+      "delta": -6.69,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 46.33,
@@ -9952,17 +9942,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 13,
+      "production_bank_rank": 14,
       "shadow_bank_rank": 28,
-      "rank_shift": -15
+      "rank_shift": -14
     },
     {
       "ticker": "LLOY.L",
       "name": "LLOYDS BANKING GROUP PLC ORD 10",
       "sector": "Financial Services",
-      "production_score": 45.4,
+      "production_score": 45.3,
       "peer_shadow_score": 35.67,
-      "delta": -9.73,
+      "delta": -9.63,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 33.76,
@@ -10052,8 +10042,8 @@
         }
       ],
       "production_bank_rank": 76,
-      "shadow_bank_rank": 78,
-      "rank_shift": -2
+      "shadow_bank_rank": 77,
+      "rank_shift": -1
     },
     {
       "ticker": "LX",
@@ -10250,8 +10240,8 @@
         }
       ],
       "production_bank_rank": 77,
-      "shadow_bank_rank": 80,
-      "rank_shift": -3
+      "shadow_bank_rank": 79,
+      "rank_shift": -2
     },
     {
       "ticker": "MA",
@@ -10348,8 +10338,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 6,
-      "shadow_bank_rank": 10,
+      "production_bank_rank": 4,
+      "shadow_bank_rank": 8,
       "rank_shift": -4
     },
     {
@@ -10546,17 +10536,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 56,
-      "shadow_bank_rank": 61,
+      "production_bank_rank": 55,
+      "shadow_bank_rank": 60,
       "rank_shift": -5
     },
     {
       "ticker": "MTB",
       "name": "M&T Bank Corporation",
       "sector": "Financial Services",
-      "production_score": 62.8,
+      "production_score": 62.7,
       "peer_shadow_score": 58.84,
-      "delta": -3.96,
+      "delta": -3.86,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 60.84,
@@ -10745,16 +10735,16 @@
         }
       ],
       "production_bank_rank": 53,
-      "shadow_bank_rank": 70,
-      "rank_shift": -17
+      "shadow_bank_rank": 69,
+      "rank_shift": -16
     },
     {
       "ticker": "NU",
       "name": "Nu Holdings Ltd.",
       "sector": "Financial Services",
-      "production_score": 74.3,
+      "production_score": 74.1,
       "peer_shadow_score": 72.47,
-      "delta": -1.83,
+      "delta": -1.63,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 95.03,
@@ -10950,9 +10940,9 @@
       "ticker": "NWG.L",
       "name": "NATWEST GROUP PLC ORD 107.69P",
       "sector": "Financial Services",
-      "production_score": 59.5,
+      "production_score": 59.3,
       "peer_shadow_score": 60.69,
-      "delta": 1.19,
+      "delta": 1.39,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 66.99,
@@ -11049,10 +11039,10 @@
       "ticker": "OPFI",
       "name": "OppFi Inc.",
       "sector": "Financial Services",
-      "production_score": 45.0,
-      "peer_shadow_score": 45.0,
+      "production_score": 35.0,
+      "peer_shadow_score": 35.0,
       "delta": 0.0,
-      "score_cap": 45.0,
+      "score_cap": 35.0,
       "shadow_dimensions": {
         "Bank Quality": 85.59,
         "Efficiency": 88.57,
@@ -11140,9 +11130,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 79,
-      "shadow_bank_rank": 54,
-      "rank_shift": 25
+      "production_bank_rank": 88,
+      "shadow_bank_rank": 81,
+      "rank_shift": 7
     },
     {
       "ticker": "PNBK",
@@ -11234,17 +11224,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 80,
-      "shadow_bank_rank": 55,
+      "production_bank_rank": 79,
+      "shadow_bank_rank": 54,
       "rank_shift": 25
     },
     {
       "ticker": "PNC",
       "name": "PNC Financial Services Group, I",
       "sector": "Financial Services",
-      "production_score": 65.3,
+      "production_score": 65.2,
       "peer_shadow_score": 60.93,
-      "delta": -4.37,
+      "delta": -4.27,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 62.44,
@@ -11333,18 +11323,18 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 10,
+      "production_bank_rank": 8,
       "shadow_bank_rank": 15,
-      "rank_shift": -5
+      "rank_shift": -7
     },
     {
       "ticker": "PYPL",
       "name": "PayPal Holdings, Inc.",
       "sector": "Financial Services",
-      "production_score": 61.7,
+      "production_score": 61.8,
       "peer_shadow_score": 54.59,
-      "delta": -7.11,
-      "score_cap": null,
+      "delta": -7.21,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 65.45,
         "Efficiency": 82.86,
@@ -11432,17 +11422,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 14,
+      "production_bank_rank": 13,
       "shadow_bank_rank": 31,
-      "rank_shift": -17
+      "rank_shift": -18
     },
     {
       "ticker": "RF",
       "name": "Regions Financial Corporation",
       "sector": "Financial Services",
-      "production_score": 59.3,
+      "production_score": 59.1,
       "peer_shadow_score": 54.05,
-      "delta": -5.25,
+      "delta": -5.05,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 61.65,
@@ -11542,7 +11532,7 @@
       "production_score": 47.8,
       "peer_shadow_score": 38.72,
       "delta": -9.08,
-      "score_cap": null,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 67.84,
         "Efficiency": null,
@@ -11631,16 +11621,16 @@
         }
       ],
       "production_bank_rank": 72,
-      "shadow_bank_rank": 75,
-      "rank_shift": -3
+      "shadow_bank_rank": 74,
+      "rank_shift": -2
     },
     {
       "ticker": "SAB.MC",
       "name": "BANCO DE SABADELL",
       "sector": "Financial Services",
-      "production_score": 46.4,
+      "production_score": 46.1,
       "peer_shadow_score": 38.33,
-      "delta": -8.07,
+      "delta": -7.77,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 38.76,
@@ -11730,16 +11720,16 @@
         }
       ],
       "production_bank_rank": 75,
-      "shadow_bank_rank": 76,
-      "rank_shift": -1
+      "shadow_bank_rank": 75,
+      "rank_shift": 0
     },
     {
       "ticker": "SAN",
       "name": "Banco Santander, S.A. Sponsored",
       "sector": "Financial Services",
-      "production_score": 49.3,
+      "production_score": 49.4,
       "peer_shadow_score": 40.36,
-      "delta": -8.94,
+      "delta": -9.04,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 57.44,
@@ -11828,8 +11818,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 65,
-      "shadow_bank_rank": 69,
+      "production_bank_rank": 64,
+      "shadow_bank_rank": 68,
       "rank_shift": -4
     },
     {
@@ -11928,8 +11918,8 @@
         }
       ],
       "production_bank_rank": 62,
-      "shadow_bank_rank": 67,
-      "rank_shift": -5
+      "shadow_bank_rank": 66,
+      "rank_shift": -4
     },
     {
       "ticker": "SHG",
@@ -12125,8 +12115,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 66,
-      "shadow_bank_rank": 81,
+      "production_bank_rank": 65,
+      "shadow_bank_rank": 80,
       "rank_shift": -15
     },
     {
@@ -12136,7 +12126,7 @@
       "production_score": 59.8,
       "peer_shadow_score": 49.56,
       "delta": -10.24,
-      "score_cap": null,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 28.73,
         "Efficiency": null,
@@ -12224,17 +12214,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 20,
+      "production_bank_rank": 19,
       "shadow_bank_rank": 42,
-      "rank_shift": -22
+      "rank_shift": -23
     },
     {
       "ticker": "STAN.L",
       "name": "STANDARD CHARTERED PLC ORD USD0",
       "sector": "Financial Services",
-      "production_score": 43.0,
+      "production_score": 42.8,
       "peer_shadow_score": 31.34,
-      "delta": -11.66,
+      "delta": -11.46,
       "score_cap": 59.0,
       "shadow_dimensions": {
         "Bank Quality": 27.22,
@@ -12412,8 +12402,8 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 81,
-      "shadow_bank_rank": 56,
+      "production_bank_rank": 80,
+      "shadow_bank_rank": 55,
       "rank_shift": 25
     },
     {
@@ -12522,7 +12512,7 @@
       "production_score": 51.0,
       "peer_shadow_score": 39.72,
       "delta": -11.28,
-      "score_cap": 69.0,
+      "score_cap": 59.0,
       "shadow_dimensions": {
         "Bank Quality": 42.99,
         "Efficiency": null,
@@ -12611,8 +12601,8 @@
         }
       ],
       "production_bank_rank": 60,
-      "shadow_bank_rank": 71,
-      "rank_shift": -11
+      "shadow_bank_rank": 70,
+      "rank_shift": -10
     },
     {
       "ticker": "TFC",
@@ -12798,9 +12788,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 88,
+      "production_bank_rank": 87,
       "shadow_bank_rank": 83,
-      "rank_shift": 5
+      "rank_shift": 4
     },
     {
       "ticker": "UBS",
@@ -12897,9 +12887,9 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 82,
+      "production_bank_rank": 81,
       "shadow_bank_rank": 84,
-      "rank_shift": -2
+      "rank_shift": -3
     },
     {
       "ticker": "UBSG.SW",
@@ -12996,17 +12986,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 83,
+      "production_bank_rank": 82,
       "shadow_bank_rank": 82,
-      "rank_shift": 1
+      "rank_shift": 0
     },
     {
       "ticker": "UCG.MI",
       "name": "UNICREDIT",
       "sector": "Financial Services",
-      "production_score": 55.3,
+      "production_score": 54.9,
       "peer_shadow_score": 54.28,
-      "delta": -1.02,
+      "delta": -0.62,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 78.47,
@@ -13103,9 +13093,9 @@
       "ticker": "UNI.MC",
       "name": "UNICAJA BANCO, S.A.",
       "sector": "Financial Services",
-      "production_score": 53.0,
+      "production_score": 52.9,
       "peer_shadow_score": 44.04,
-      "delta": -8.96,
+      "delta": -8.86,
       "score_cap": null,
       "shadow_dimensions": {
         "Bank Quality": 40.09,
@@ -13194,18 +13184,18 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 57,
-      "shadow_bank_rank": 58,
-      "rank_shift": -1
+      "production_bank_rank": 58,
+      "shadow_bank_rank": 57,
+      "rank_shift": 1
     },
     {
       "ticker": "USB",
       "name": "U.S. Bancorp",
       "sector": "Financial Services",
-      "production_score": 59.9,
+      "production_score": 59.8,
       "peer_shadow_score": 54.65,
-      "delta": -5.25,
-      "score_cap": null,
+      "delta": -5.15,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 59.0,
         "Efficiency": null,
@@ -13293,18 +13283,18 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 19,
+      "production_bank_rank": 20,
       "shadow_bank_rank": 30,
-      "rank_shift": -11
+      "rank_shift": -10
     },
     {
       "ticker": "V",
       "name": "Visa Inc.",
       "sector": "Financial Services",
-      "production_score": 72.2,
-      "peer_shadow_score": 68.59,
-      "delta": -3.61,
-      "score_cap": null,
+      "production_score": 64.0,
+      "peer_shadow_score": 64.0,
+      "delta": 0.0,
+      "score_cap": 64.0,
       "shadow_dimensions": {
         "Bank Quality": 98.09,
         "Efficiency": 94.29,
@@ -13392,17 +13382,17 @@
           "peer_observations": 87
         }
       ],
-      "production_bank_rank": 3,
-      "shadow_bank_rank": 5,
+      "production_bank_rank": 10,
+      "shadow_bank_rank": 12,
       "rank_shift": -2
     },
     {
       "ticker": "VRM",
       "name": "Vroom, Inc.",
       "sector": "Financial Services",
-      "production_score": 46.6,
+      "production_score": 46.4,
       "peer_shadow_score": 43.79,
-      "delta": -2.81,
+      "delta": -2.61,
       "score_cap": 69.0,
       "shadow_dimensions": {
         "Bank Quality": 4.99,
@@ -13482,8 +13472,8 @@
         }
       ],
       "production_bank_rank": 74,
-      "shadow_bank_rank": 60,
-      "rank_shift": 14
+      "shadow_bank_rank": 59,
+      "rank_shift": 15
     },
     {
       "ticker": "WFC",
