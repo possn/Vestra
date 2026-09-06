@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.1 */
+/* Vestra Market static universe loader v1.2 */
 (() => {
   'use strict';
 
@@ -16,6 +16,24 @@
     script.defer = true;
     script.dataset.vestraScannerData = '1';
     document.head.appendChild(script);
+  }
+
+  function ensureWeeklyEventsCompanion() {
+    if (typeof document === 'undefined') return;
+    if (window.VestraWeeklyEvents || document.querySelector('script[data-vestra-weekly-events]')) return;
+    const script = document.createElement('script');
+    script.src = 'dashboard-weekly-events.js?v=1.0';
+    script.defer = true;
+    script.dataset.vestraWeeklyEvents = '1';
+    document.head.appendChild(script);
+  }
+
+  function announceReady(stocks) {
+    try {
+      if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('vestra:market-ready', { detail: { count: stocks.length } }));
+      }
+    } catch (_) {}
   }
 
   function unpackStartupPayload(payload) {
@@ -84,6 +102,7 @@
         beforeReady();
         state.loaded = true;
         onReady();
+        announceReady(stocks);
       })().catch(error => {
         onError(error);
       }).finally(() => {
@@ -97,5 +116,13 @@
   }
 
   ensureScannerCompanion();
-  window.VestraMarketStaticUniverse = Object.freeze({ create, getStocks, ensureScannerCompanion, unpackStartupPayload, version: '1.1' });
+  ensureWeeklyEventsCompanion();
+  window.VestraMarketStaticUniverse = Object.freeze({
+    create,
+    getStocks,
+    ensureScannerCompanion,
+    ensureWeeklyEventsCompanion,
+    unpackStartupPayload,
+    version: '1.2',
+  });
 })();
