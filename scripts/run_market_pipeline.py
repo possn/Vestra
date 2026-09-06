@@ -1,9 +1,10 @@
 """Canonical market-pipeline launcher with request coordination installed.
 
 The data pipeline itself remains in run.py. This launcher changes only runtime
-request-control hooks owned by fundamentals.py, analyst.py, SEC enrichment and
-independent physical-metals adapters, then executes run.py as __main__ so its
-existing error logging, pipeline-log flushing and exit semantics are kept.
+request-control hooks owned by fundamentals.py, analyst.py, SEC enrichment,
+London ESEF identity and independent physical-metals adapters, then executes
+run.py as __main__ so its existing error logging, pipeline-log flushing and exit
+semantics are kept.
 """
 from __future__ import annotations
 
@@ -127,6 +128,7 @@ def main():
     # full pipeline requirements; production imports those lanes only here.
     from sec_archives_runtime import install as install_sec_archives_fallback
     from physical_metals_runtime import install as install_parallel_physical_metals
+    from lse_first_esef_runtime import install as install_lse_first_esef_identity
 
     install_rate_limit_coordinator()
     install_fetch_worker_cap()
@@ -134,6 +136,7 @@ def main():
     install_analyst_request_gate()
     install_sec_worker_fallback()
     install_sec_archives_fallback()
+    install_lse_first_esef_identity()
     install_parallel_physical_metals()
     runpy.run_module("run", run_name="__main__")
 
