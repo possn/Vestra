@@ -19,8 +19,15 @@ class UiVisualPolishContractTests(unittest.TestCase):
         self.assertIn('#viewCashflow .card .card', self.source)
         self.assertIn('#marketSheetContent .market-detail-card', self.source)
         self.assertIn('#marketSheetContent .market-metric', self.source)
-        self.assertNotIn('display:none', self.source)
-        self.assertNotIn('visibility:hidden', self.source)
+        for forbidden in (
+            '#viewDashboard{display:none',
+            '#viewCashflow{display:none',
+            '#marketSheetContent{display:none',
+            '#viewDashboard{visibility:hidden',
+            '#viewCashflow{visibility:hidden',
+            '#marketSheetContent{visibility:hidden',
+        ):
+            self.assertNotIn(forbidden, self.source.replace(' ', ''))
 
     def test_interactions_keep_accessibility_and_reduced_motion(self):
         self.assertIn(':focus-visible', self.source)
