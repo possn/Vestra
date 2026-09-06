@@ -1,77 +1,155 @@
+from __future__ import annotations
+
+import datetime as dt
 import json
-import pathlib
 import re
 import unittest
+from pathlib import Path
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / "data"
 
 
-def read(path):
+def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
+
+
+def load(path: str):
+    return json.loads(read(path))
 
 
 class MarketShardIntegrityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.index = json.loads(read("data/stocks-index.json"))
-        cls.manifest = json.loads(read("data/dossiers-manifest.json"))
+        cls.index = load("data/stocks-index.json")
+        cls.manifest = load("data/dossiers-manifest.json")
+        cls.rows = cls.index.get("stocks") or []
+        cls.manifest_map = cls.manifest.get("tickers") or {}
 
     def test_index_and_manifest_cover_same_unique_tickers(self):
-        index_tickers = {str(row.get("ticker") or "").upper() for row in self.index.get("stocks", []) if row.get("ticker")}
-        manifest_tickers = {str(ticker).upper() for ticker in (self.manifest.get("tickers") or {})}
-        self.assertEqual(index_tickers, manifest_tickers)
+        index_tickers = [str(r.get("ticker") or "") for r in self.rows]
+        self.assertEqual(len(index_tickers), len(set(index_tickers)), "duplicate tickers in market index")
+        self.assertEqual(set(index_tickers), set(self.manifest_map), "index/manifest ticker mismatch")
+        self.assertEqual(self.manifest.get("ticker_count"), len(index_tickers))
 
     def test_every_index_row_points_to_the_manifest_shard(self):
-        tickers = self.manifest.get("tickers") or {}
-        for row in self.index.get("stocks", []):
-            ticker = str(row.get("ticker") or "").upper()
-            if ticker:
-                self.assertIn(ticker, tickers)
+        for row in self.rows:
+            ticker = row["ticker"]
+            self.assertEqual(row.get("dossier_shard"), self.manifest_map[ticker], ticker)
 
     def test_every_manifest_ticker_exists_in_its_shard(self):
-        shards = self.manifest.get("shards") or {}
-        tickers = self.manifest.get("tickers") or {}
-        cache = {}
-        for ticker, shard_id in tickers.items():
-            if shard_id not in cache:
-                path = ROOT / str(shards[shard_id])
-                cache[shard_id] = json.loads(path.read_text(encoding="utf-8"))
-            rows = cache[shard_id].get("stocks") or []
-            self.assertTrue(any(str(row.get("ticker") or "").upper() == str(ticker).upper() for row in rows))
+        by_shard: dict[str, list[str]] = {}
+        for ticker, shard in self.manifest_map.items():
+            by_shard.setdefault(str(shard), []).append(ticker)
+        for shard, tickers in by_shard.items():
+            path = DATA / "dossiers" / f"{shard}.json"
+            self.assertTrue(path.exists(), f"missing dossier shard {shard}")
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(str(payload.get("shard")), shard)
+            stocks = payload.get("stocks") or {}
+            missing = sorted(set(tickers) - set(stocks))
+            self.assertFalse(missing, f"{shard}: missing {missing[:10]}")
+            for ticker in tickers:
+                self.assertEqual(stocks[ticker].get("ticker"), ticker)
+
+
+class ScoreInvariantTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rows = load("data/stocks-index.json").get("stocks") or []
+
+    def test_scores_and_dimensions_stay_in_unit_interval_percent_scale(self):
+        bounded = (
+            "score", "quality_pct", "growth_pct", "balance_pct", "cashflow_pct",
+            "execution_pct", "earnings_quality_pct", "capital_allocation_pct",
+            "stability_pct", "value_pct", "confidence_score", "data_coverage_pct",
+            "opportunity_score", "opportunity_score_raw", "recovery_score",
+            "low52_score", "low52_resilience_score", "moat_score",
+            "value_trap_risk_score", "capital_allocation_intelligence_score",
+            "sector_native_score", "qarp_score",
+        )
+        for row in self.rows:
+            ticker = row.get("ticker")
+            for key in bounded:
+                value = row.get(key)
+                if value is None:
+                    continue
+                self.assertIsInstance(value, (int, float), f"{ticker} {key}")
+                self.assertGreaterEqual(value, 0, f"{ticker} {key}={value}")
+                self.assertLessEqual(value, 100, f"{ticker} {key}={value}")
+
+    def test_catalog_and_carried_rows_are_not_actionable_opportunities(self):
+        stale_statuses = {"equity_catalog_only", "equity_carried_forward"}
+        for row in self.rows:
+            if row.get("pipeline_status") in stale_statuses:
+                self.assertIsNot(row.get("opportunity_eligible"), True, row.get("ticker"))
+                self.assertFalse(row.get("scanner_best") == "best_opportunities", row.get("ticker"))
+
+    def test_missing_core_metrics_are_not_serialized_as_nan_strings(self):
+        for row in self.rows:
+            ticker = row.get("ticker")
+            for key in ("score", "roe", "revenue_growth", "forward_pe", "fcf_yield"):
+                value = row.get(key)
+                self.assertNotIn(str(value).lower(), {"nan", "inf", "-inf", "infinity", "-infinity"}, f"{ticker} {key}")
 
 
 class PoliticiansAndCongressTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.feed = load("data/politicians.json")
+
+    def test_snapshot_is_current_and_explicit_about_coverage(self):
+        self.assertGreaterEqual(int(self.feed.get("schema_version") or 0), 2)
+        newest = dt.date.fromisoformat(self.feed["newest_disclosure"][:10])
+        age = (dt.date.today() - newest).days
+        self.assertLessEqual(age, 60, f"politicians snapshot stale by {age} days")
+        coverage = set(self.feed.get("coverage_chambers") or [])
+        self.assertTrue(coverage)
+        self.assertTrue(coverage <= {"House", "Senate"})
+
+    def test_snapshot_has_normalized_stock_trades(self):
+        trades = self.feed.get("trades") or []
+        self.assertGreaterEqual(len(trades), 10)
+        for trade in trades:
+            self.assertTrue(trade.get("ticker"))
+            self.assertTrue(trade.get("member"))
+            self.assertTrue(trade.get("transaction_date"))
+            self.assertTrue(trade.get("disclosure_date"))
+            self.assertIn(str(trade.get("type") or "").lower(), {"buy", "sell", "trade", "exchange"})
+
     def test_browser_and_dossiers_use_canonical_snapshot_not_bargo(self):
-        politicians = read("politicians.js")
         market = read("market.js")
+        market_congress = read("market-congress-live.js")
+        politicians = read("politicians.js")
+        congress = read("scripts/congress.py")
+        worker = read("worker.js")
+        combined = "\n".join((market, market_congress, politicians, congress, worker)).lower()
+        self.assertIn("VestraMarketCongressLive", market)
+        self.assertIn("congressLiveFeed?.load", market)
+        self.assertIn("data/politicians.json", market_congress)
         self.assertIn("data/politicians.json", politicians)
-        self.assertIn("congress_trades", market)
-        self.assertNotIn("www.bargo.ai", politicians)
-        self.assertNotIn("www.bargo.ai", market)
+        self.assertNotIn("bargo.ai", combined)
+        self.assertNotIn('url.pathname === "/congress"', worker)
 
     def test_pipeline_normalizes_official_stock_act_provenance(self):
-        congress = read("scripts/congress.py")
-        self.assertIn("official_house", congress)
-        self.assertIn("official_senate", congress)
+        normalizer = read("scripts/normalize_market_provenance.py")
+        workflow = read(".github/workflows/update-market-data.yml")
+        self.assertIn('OFFICIAL_CONGRESS_SOURCE = "Official House/Senate disclosures / STOCK Act"', normalizer)
+        self.assertIn('"STOCK Act / Bargo"', normalizer, "legacy label must be explicitly scrubbed")
+        self.assertIn("python normalize_market_provenance.py", workflow)
+        self.assertLess(
+            workflow.index("python normalize_market_provenance.py"),
+            workflow.index("python build_market_shards.py"),
+            "provenance must be normalized before index/shard publication",
+        )
 
     def test_senate_enrichment_is_official_and_non_destructive(self):
         senate = read("scripts/enrich_politicians_senate.py")
         workflow = read(".github/workflows/update-politicians.yml")
-        self.assertIn("efiling.senate.gov", senate)
+        self.assertIn("https://efdsearch.senate.gov", senate)
         self.assertIn('"report_types": "[11]"', senate)
         self.assertIn("preserving House-only snapshot", senate)
         self.assertIn("python scripts/enrich_politicians_senate.py", workflow)
-
-    def test_snapshot_has_normalized_stock_trades(self):
-        payload = json.loads(read("data/politicians.json"))
-        rows = payload.get("trades") or payload.get("rows") or []
-        stock_rows = [r for r in rows if r.get("ticker")]
-        self.assertTrue(stock_rows)
-
-    def test_snapshot_is_current_and_explicit_about_coverage(self):
-        payload = json.loads(read("data/politicians.json"))
-        self.assertTrue(payload.get("generated_at"))
-        self.assertTrue(payload.get("coverage") or payload.get("source") or payload.get("sources"))
 
 
 class FrontendArchitectureTests(unittest.TestCase):
@@ -110,43 +188,23 @@ class FrontendArchitectureTests(unittest.TestCase):
             "const STORAGE_KEY = 'PF_STATE_V6';",
             "const DB_NAME = 'pf_v6';",
             "const DB_STORE = 'kv';",
+            "const DB_KEY = 'state';",
+            "let _idbConn = null;",
+            "if (_idbConn) return _idbConn;",
         ):
             self.assertIn(exact, storage)
-        self.assertIn("let dbPromise", storage)
 
     def test_asset_identity_collision_guards_remain(self):
         identity = read("app-asset-identity.js")
-        self.assertIn("canonical", identity.lower())
-        self.assertIn("isin", identity.lower())
+        self.assertIn('"PTCOR0AE0006":"COR.LS"', identity)
+        self.assertIn('"BTC":"BTC-USD"', identity)
+        self.assertIn('"ETH":"ETH-USD"', identity)
 
     def test_worker_has_exact_production_origin_policy(self):
         worker = read("worker.js")
-        self.assertIn("pedrossnunes.github.io", worker)
-
-
-class ScoreInvariantTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.payload = json.loads(read("data/stocks.json"))
-
-    def test_scores_and_dimensions_stay_in_unit_interval_percent_scale(self):
-        for row in self.payload.get("stocks", []):
-            for key in ("score", "quality_score", "growth_score", "valuation_score", "momentum_score"):
-                value = row.get(key)
-                if value is not None:
-                    self.assertGreaterEqual(float(value), 0.0)
-                    self.assertLessEqual(float(value), 100.0)
-
-    def test_missing_core_metrics_are_not_serialized_as_nan_strings(self):
-        for row in self.payload.get("stocks", []):
-            for key in ("roe", "roa", "revenue_growth", "earnings_growth", "free_cash_flow"):
-                self.assertNotEqual(str(row.get(key)).lower(), "nan")
-
-    def test_catalog_and_carried_rows_are_not_actionable_opportunities(self):
-        for row in self.payload.get("stocks", []):
-            status = str(row.get("pipeline_status") or "")
-            if status in {"catalog_only", "carried_forward"}:
-                self.assertFalse(bool(row.get("opportunity_eligible")))
+        self.assertIn('u.origin === "https://possn.github.io"', worker)
+        self.assertNotIn('includes("github.io")', worker)
+        self.assertNotIn('includes("pages.dev")', worker)
 
 
 if __name__ == "__main__":
