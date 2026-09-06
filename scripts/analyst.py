@@ -11,11 +11,13 @@ earnings_history, recommendations and analyst_price_targets).
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import yfinance as yf
@@ -58,11 +60,80 @@ def _safe_call(fn):
         return None
 
 
+def _parse_time(value):
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        dt = datetime.fromisoformat(text)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _snapshot_age_days(snapshot: dict[str, Any] | None, now: datetime | None = None):
+    if not snapshot:
+        return None
+    dt = _parse_time(snapshot.get("fetched_at"))
+    if dt is None:
+        return None
+    now = now or datetime.now(timezone.utc)
+    return max(0.0, (now - dt).total_seconds() / 86400.0)
+
+
+def _cacheable(snapshot: dict[str, Any] | None, max_age_days: float, now: datetime | None = None) -> bool:
+    if not snapshot or _float(snapshot.get("coverage_pct")) in (None, 0):
+        return False
+    age = _snapshot_age_days(snapshot, now=now)
+    return age is not None and age <= max_age_days
+
+
+def _load_previous_snapshots(path: str | os.PathLike | None = None) -> dict[str, dict[str, Any]]:
+    """Read analyst-prefixed fields from the last validated market payload.
+
+    The cache is deliberately sourced only from the canonical published file,
+    never from a side cache. This means a coverage-gate rejection cannot promote
+    unvalidated analyst data into the next run.
+    """
+    source = Path(path) if path is not None else Path(__file__).resolve().parents[1] / "data" / "stocks.json"
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    generated_at = payload.get("generated_at") or payload.get("as_of") or payload.get("updated_at")
+    out: dict[str, dict[str, Any]] = {}
+    for row in payload.get("stocks") or []:
+        if not isinstance(row, dict):
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
+        snap = {
+            key[len("analyst_"):]: value
+            for key, value in row.items()
+            if str(key).startswith("analyst_")
+        }
+        if not snap or snap.get("status") == "not_requested" or _float(snap.get("coverage_pct")) in (None, 0):
+            continue
+        snap["ticker"] = ticker
+        if not snap.get("fetched_at") and generated_at:
+            snap["fetched_at"] = str(generated_at)
+        out[ticker] = snap
+    return out
+
+
 @dataclass
 class AnalystSnapshot:
     ticker: str
     status: str = "not_available"
     coverage_pct: float = 0.0
+    fetched_at: str | None = None
+    refresh_state: str = "fresh"
+    snapshot_age_days: float | None = 0.0
 
     # Forward estimates
     eps_next_q: float | None = None
@@ -126,7 +197,7 @@ class AnalystSnapshot:
 
 
 def fetch_one(ticker: str, current_price: float | None = None) -> AnalystSnapshot:
-    out = AnalystSnapshot(ticker=ticker)
+    out = AnalystSnapshot(ticker=ticker, fetched_at=datetime.now(timezone.utc).isoformat())
     try:
         t = yf.Ticker(ticker)
 
@@ -188,8 +259,6 @@ def fetch_one(ticker: str, current_price: float | None = None) -> AnalystSnapsho
                             dt = dt.replace(tzinfo=timezone.utc)
                         else:
                             dt = dt.astimezone(timezone.utc)
-                        # Rows with reported EPS populated are already past even
-                        # if Yahoo provides a slightly future-normalized timestamp.
                         reported = None
                         for c in ("Reported EPS", "reportedEPS", "epsActual"):
                             try:
@@ -261,8 +330,6 @@ def fetch_one(ticker: str, current_price: float | None = None) -> AnalystSnapsho
             except Exception:
                 pass
 
-        # Recommendation trend: first row is the most recent period in Yahoo's
-        # current response (typically 0m).
         if recommendations is not None and not getattr(recommendations, "empty", True):
             try:
                 rr = recommendations.iloc[0]
@@ -284,8 +351,6 @@ def fetch_one(ticker: str, current_price: float | None = None) -> AnalystSnapsho
             if base not in (None, 0) and out.price_target_mean is not None:
                 out.price_target_upside_pct = out.price_target_mean / base - 1.0
 
-        # Coverage is based on six independent evidence blocks, not individual
-        # scalar fields, so one rich module cannot mask five missing modules.
         blocks = [
             out.eps_next_q is not None or out.eps_next_y is not None,
             out.revenue_next_q is not None or out.revenue_next_y is not None,
@@ -307,31 +372,67 @@ def fetch_one(ticker: str, current_price: float | None = None) -> AnalystSnapsho
     return out
 
 
-def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> dict[str, dict[str, Any]]:
-    """Fetch analyst evidence for a bounded, useful subset of equities.
+def _cached_copy(snapshot: dict[str, Any], state: str, now: datetime) -> dict[str, Any]:
+    cached = dict(snapshot)
+    cached["refresh_state"] = state
+    age = _snapshot_age_days(cached, now=now)
+    cached["snapshot_age_days"] = round(age, 2) if age is not None else None
+    return cached
 
-    The universe can exceed ~1,500 equities. Analyst endpoints are materially
-    heavier than basic price/fundamental fetches, so we guarantee portfolio/
-    priority names first and then fill the remaining budget with larger/high-
-    score companies. This prevents a daily static-site workflow from turning
-    into an unbounded Yahoo crawl.
+
+def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> dict[str, dict[str, Any]]:
+    """Refresh priority analyst evidence and rotate the rest of the universe.
+
+    Portfolio/priority names are refreshed on every run. Non-priority names are
+    refreshed from a bounded rotating budget ordered by missing/stale snapshots
+    and then by score/market cap. Recent validated snapshots are carried forward
+    for a short TTL so reducing Yahoo request pressure does not make dossiers
+    oscillate between rich data and ``not_requested``. Cached analyst evidence is
+    contextual only and never enters the core score.
     """
     priority_tickers = set(priority_tickers or set())
-    equities = [r for r in rows if r.get("quote_type") != "ETF"]
+    equities = [r for r in rows if r.get("quote_type") != "ETF" and r.get("ticker")]
     max_rows = max(50, int(os.getenv("FINSCANNER_ANALYST_MAX", "800")))
+    nonpriority_budget = max(0, int(os.getenv("FINSCANNER_ANALYST_NONPRIORITY_REFRESH", "220")))
+    max_cache_age = max(1.0, float(os.getenv("FINSCANNER_ANALYST_CACHE_MAX_AGE_DAYS", "14")))
+    now = datetime.now(timezone.utc)
+    previous = _load_previous_snapshots()
 
     priority = [r for r in equities if r.get("ticker") in priority_tickers]
     other = [r for r in equities if r.get("ticker") not in priority_tickers]
-    other.sort(key=lambda r: (float(r.get("score") or 0), float(r.get("market_cap") or 0)), reverse=True)
-    targets = priority + other[: max(0, max_rows - len(priority))]
-    # preserve one row per ticker
+
+    def rotation_key(row):
+        ticker = row.get("ticker")
+        prev = previous.get(ticker)
+        age = _snapshot_age_days(prev, now=now)
+        missing_or_expired = not _cacheable(prev, max_cache_age, now=now)
+        stale_age = age if age is not None else max_cache_age + 1000.0
+        return (
+            1 if missing_or_expired else 0,
+            stale_age,
+            float(row.get("score") or 0),
+            float(row.get("market_cap") or 0),
+            str(ticker),
+        )
+
+    other.sort(key=rotation_key, reverse=True)
+    available_slots = max(0, max_rows - len(priority))
+    refresh_slots = min(nonpriority_budget, available_slots)
+    targets = priority + other[:refresh_slots]
+
     dedup = {}
     for r in targets:
         dedup[r.get("ticker")] = r
     targets = [r for r in dedup.values() if r.get("ticker")]
+    target_tickers = {r["ticker"] for r in targets}
 
     workers = max(1, min(12, int(os.getenv("FINSCANNER_ANALYST_WORKERS", "8"))))
-    log.info("Analyst intelligence: %d/%d equities requested (%d priority), workers=%d", len(targets), len(equities), len(priority), workers)
+    log.info(
+        "Analyst intelligence: refreshing %d/%d equities (%d priority, %d rotating), workers=%d; previous usable snapshots=%d",
+        len(targets), len(equities), len(priority), max(0, len(targets) - len(priority)), workers,
+        sum(_cacheable(v, max_cache_age, now=now) for v in previous.values()),
+    )
+
     out: dict[str, dict[str, Any]] = {}
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futs = {ex.submit(fetch_one, r["ticker"], _float(r.get("current_price"))): r["ticker"] for r in targets}
@@ -341,9 +442,34 @@ def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> di
             try:
                 snap = fut.result()
             except Exception as exc:
-                snap = AnalystSnapshot(ticker=ticker, status="error", error=f"{type(exc).__name__}: {exc}"[:240])
-            out[ticker] = asdict(snap)
+                snap = AnalystSnapshot(
+                    ticker=ticker,
+                    status="error",
+                    fetched_at=now.isoformat(),
+                    error=f"{type(exc).__name__}: {exc}"[:240],
+                )
+            fresh = asdict(snap)
+            prev = previous.get(ticker)
+            if _float(fresh.get("coverage_pct")) in (None, 0) and _cacheable(prev, max_cache_age, now=now):
+                out[ticker] = _cached_copy(prev, "cached_after_refresh_failure", now)
+            else:
+                fresh["refresh_state"] = "fresh"
+                fresh["snapshot_age_days"] = 0.0
+                out[ticker] = fresh
             done += 1
             if done % 100 == 0 or done == len(targets):
                 log.info("Analyst intelligence progress: %d/%d", done, len(targets))
+
+    carried = 0
+    for row in equities:
+        ticker = row.get("ticker")
+        if not ticker or ticker in target_tickers or ticker in out:
+            continue
+        prev = previous.get(ticker)
+        if _cacheable(prev, max_cache_age, now=now):
+            out[ticker] = _cached_copy(prev, "cached_rotation", now)
+            carried += 1
+
+    if carried:
+        log.info("Analyst intelligence: carried %d recent validated snapshots without Yahoo refresh", carried)
     return out
