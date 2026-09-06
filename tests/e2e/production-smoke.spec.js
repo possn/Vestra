@@ -3,11 +3,20 @@ const { test, expect } = require('@playwright/test');
 const PREFERRED_SENTINELS = [
   'MSFT', 'AAPL', 'NVDA', 'AMZN', 'META', 'GOOGL', 'JPM', 'XOM', 'TSLA', 'V'
 ];
-const REQUIRED_STARTUP_FIELDS = ['ticker', 'name', 'score', 'currency', 'dossier_shard'];
+const REQUIRED_STARTUP_FIELDS = ['ticker', 'name', 'score', 'currency', 'quote_type', 'dossier_shard'];
 const STARTUP_PAYLOAD_FILES = ['stocks-startup.json', 'stocks-index.json', 'stocks.json'];
 
 function urlFromBase(base, relative) {
   return new URL(relative, base).toString();
+}
+
+function unpackStartupRow(fields, values) {
+  const out = {};
+  if (!Array.isArray(values)) return out;
+  for (let i = 0; i < values.length && i < fields.length; i += 1) {
+    out[fields[i]] = values[i];
+  }
+  return out;
 }
 
 async function isolateExternalSearch(page) {
@@ -24,7 +33,7 @@ async function isolateExternalSearch(page) {
   });
 }
 
-test('GitHub Pages: compact startup data and five sentinel dossiers are usable on iPhone/WebKit', async ({ page, request, baseURL }) => {
+test('GitHub Pages: compact startup data and representative market dossiers are usable on iPhone/WebKit', async ({ page, request, baseURL }) => {
   const pageErrors = [];
   const browserStartupRequests = [];
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -76,11 +85,12 @@ test('GitHub Pages: compact startup data and five sentinel dossiers are usable o
     expect(Number(manifest.ticker_count)).toBe(manifestTickerCount);
   }
 
-  const tickerFieldIndex = startup.fields.indexOf('ticker');
+  const startupRows = startup.rows
+    .filter(Array.isArray)
+    .map(values => unpackStartupRow(startup.fields, values));
   const startupTickers = new Set(
-    startup.rows
-      .filter(Array.isArray)
-      .map(values => String(values[tickerFieldIndex] || '').trim().toUpperCase())
+    startupRows
+      .map(row => String(row.ticker || '').trim().toUpperCase())
       .filter(Boolean)
   );
   expect(startupTickers.size, 'stocks-startup contains missing/duplicate ticker identities').toBe(manifestTickerCount);
@@ -90,12 +100,34 @@ test('GitHub Pages: compact startup data and five sentinel dossiers are usable o
     sentinels.length,
     `Expected at least five stable sentinels in published manifest; found: ${sentinels.join(', ')}`
   ).toBeGreaterThanOrEqual(5);
-  for (const ticker of sentinels) {
+
+  // Market breadth is a production contract too. Select live representatives
+  // dynamically so the smoke covers London identity/hydration and an ETF without
+  // coupling the test to one specific fund or FTSE constituent forever.
+  const ukEquity = startupRows.find(row => {
+    const ticker = String(row.ticker || '').toUpperCase();
+    return ticker.endsWith('.L') && String(row.quote_type || '').toUpperCase() !== 'ETF' && tickers[ticker];
+  });
+  const etf = startupRows.find(row => {
+    const ticker = String(row.ticker || '').toUpperCase();
+    return String(row.quote_type || '').toUpperCase() === 'ETF' && tickers[ticker];
+  });
+  expect(ukEquity?.ticker, 'Expected at least one London-listed equity in published startup data').toBeTruthy();
+  expect(etf?.ticker, 'Expected at least one ETF in published startup data').toBeTruthy();
+
+  const journeyTickers = Array.from(new Set([
+    ...sentinels,
+    String(ukEquity.ticker).toUpperCase(),
+    String(etf.ticker).toUpperCase(),
+  ]));
+  for (const ticker of journeyTickers) {
     expect(startupTickers.has(ticker), `${ticker} missing from published stocks-startup`).toBeTruthy();
   }
 
-  // Verify the actual published dossier shard for every sentinel before opening UI.
-  for (const ticker of sentinels) {
+  // Verify the actual published dossier shard for every representative before
+  // opening UI. This catches a manifest/index publication that points at a stale
+  // or missing shard even when the initial market list itself still renders.
+  for (const ticker of journeyTickers) {
     const shard = tickers[ticker];
     const shardResponse = await request.get(
       urlFromBase(baseURL, `data/dossiers/${encodeURIComponent(shard)}.json`),
@@ -116,10 +148,9 @@ test('GitHub Pages: compact startup data and five sentinel dossiers are usable o
   await expect(search).toBeVisible();
 
   // Use the same public journey a user uses in production. Do not couple the smoke
-  // to internal bootstrap helpers such as resolvePortfolioStock(): the published
-  // contract is that a known ticker typed into Market becomes a clickable result
-  // and opens a usable dossier.
-  for (const [index, ticker] of sentinels.entries()) {
+  // to internal bootstrap helpers: the published contract is that a known ticker
+  // typed into Market becomes a clickable result and opens a usable dossier.
+  for (const [index, ticker] of journeyTickers.entries()) {
     await search.fill(ticker);
 
     const row = page.locator(`.market-row[data-market-ticker="${ticker}"]`).first();
