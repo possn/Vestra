@@ -5,11 +5,12 @@ adds auditable flags to RawMetrics. It is intentionally conservative: no fuzzy
 issuer matching and no score is created here; score.py decides how flags cap the
 investment score.
 
-A validated previous result may be reused only when the current SEC submissions
-produce the exact same relevant-filing fingerprint and the scanner rule version
-also matches. We still fetch submissions every run, so a new/amended accession
-invalidates the cache immediately; unchanged issuers avoid re-downloading the
-same filing documents.
+A previous result may be reused only when the current SEC submissions produce the
+exact same relevant-filing fingerprint and the scanner rule version also matches.
+We still fetch submissions every run, so a new/amended accession invalidates the
+cache immediately; unchanged issuers avoid re-downloading the same filing docs.
+The cache lives in data/ and is therefore published only with a coverage-guarded
+successful market build; rejected builds never stage it.
 """
 from __future__ import annotations
 
@@ -32,7 +33,14 @@ SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
 TICKERS = "https://www.sec.gov/files/company_tickers.json"
 FORMS = {"8-K", "6-K", "20-F", "10-K", "S-1", "S-3", "F-1", "F-3", "424B3", "424B5", "DEF 14A"}
 CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v1-2026-09-06"
-PREVIOUS_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "stocks.json")
+CACHE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "capital_risk_cache.json")
+CACHE_FIELDS = (
+    "capital_structure_flags",
+    "capital_structure_risk",
+    "reverse_split_count_24m",
+    "reverse_split_latest_date",
+    "capital_risk_filings_checked",
+)
 
 
 def _text(html: str) -> str:
@@ -73,44 +81,57 @@ def _filings_fingerprint(rows: list[dict]) -> str:
 
 
 def _load_previous(path: str | None = None) -> dict[str, dict]:
-    """Load only previously validated/published capital-risk evidence."""
-    source = path or PREVIOUS_PATH
+    """Load only the cache committed by a prior validated market build."""
+    source = path or CACHE_PATH
     try:
         with open(source, "r", encoding="utf-8") as fh:
             payload = json.load(fh)
     except Exception:
         return {}
-    out = {}
-    for row in payload.get("stocks") or []:
-        if not isinstance(row, dict) or not row.get("capital_risk_checked"):
-            continue
-        ticker = str(row.get("ticker") or "").strip().upper()
-        if ticker:
-            out[ticker] = row
-    return out
+    if payload.get("scanner_version") != CAPITAL_RISK_SCANNER_VERSION:
+        return {}
+    rows = payload.get("rows") or {}
+    return {
+        str(ticker).strip().upper(): dict(row)
+        for ticker, row in rows.items()
+        if ticker and isinstance(row, dict)
+    }
+
+
+def _cache_record(result: dict, fingerprint: str) -> dict:
+    return {
+        "scanner_version": CAPITAL_RISK_SCANNER_VERSION,
+        "filings_fingerprint": fingerprint,
+        **{key: result.get(key) for key in CACHE_FIELDS},
+    }
+
+
+def _write_cache(rows: dict[str, dict], path: str | None = None) -> None:
+    """Atomically write the next cache snapshot; publication remains guard-gated."""
+    target = path or CACHE_PATH
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    tmp = f"{target}.tmp"
+    payload = {
+        "scanner_version": CAPITAL_RISK_SCANNER_VERSION,
+        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "rows": {ticker: rows[ticker] for ticker in sorted(rows)},
+    }
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
+    os.replace(tmp, target)
 
 
 def _apply_previous_if_unchanged(m, previous: dict | None, fingerprint: str) -> bool:
     """Reuse a previous result only when inputs and scanner rules are identical."""
     if not isinstance(previous, dict):
         return False
-    if previous.get("capital_risk_scanner_version") != CAPITAL_RISK_SCANNER_VERSION:
+    if previous.get("scanner_version") != CAPITAL_RISK_SCANNER_VERSION:
         return False
-    if previous.get("capital_risk_filings_fingerprint") != fingerprint:
+    if previous.get("filings_fingerprint") != fingerprint:
         return False
-
-    fields = (
-        "capital_structure_flags",
-        "capital_structure_risk",
-        "reverse_split_count_24m",
-        "reverse_split_latest_date",
-        "capital_risk_filings_checked",
-    )
-    for key in fields:
+    for key in CACHE_FIELDS:
         setattr(m, key, previous.get(key))
     setattr(m, "capital_risk_checked", True)
-    setattr(m, "capital_risk_filings_fingerprint", fingerprint)
-    setattr(m, "capital_risk_scanner_version", CAPITAL_RISK_SCANNER_VERSION)
     setattr(m, "capital_risk_reused", True)
     return True
 
@@ -214,6 +235,7 @@ def enrich(raw, priority=None, max_nonpriority=120):
         return raw
     priority = {str(x).upper() for x in (priority or [])}
     previous = _load_previous()
+    next_cache = dict(previous)
     sess = requests.Session()
     sess.headers.update({"User-Agent": ua, "Accept-Encoding": "gzip, deflate"})
     try:
@@ -241,23 +263,29 @@ def enrich(raw, priority=None, max_nonpriority=120):
             rows = _recent_rows(sub)
             fingerprint = _filings_fingerprint(rows)
             if _apply_previous_if_unchanged(m, previous.get(t), fingerprint):
-                result = previous[t]
+                result = {key: previous[t].get(key) for key in CACHE_FIELDS}
                 reused += 1
             else:
                 result = _scan_docs(sess, cmap[t], rows)
                 for k, v in result.items():
                     setattr(m, k, v)
                 setattr(m, "capital_risk_checked", True)
-                setattr(m, "capital_risk_filings_fingerprint", fingerprint)
-                setattr(m, "capital_risk_scanner_version", CAPITAL_RISK_SCANNER_VERSION)
                 setattr(m, "capital_risk_reused", False)
                 rescanned += 1
+            next_cache[t] = _cache_record(result, fingerprint)
             checked += 1
             if result.get("capital_structure_flags"):
                 flagged += 1
             time.sleep(0.11)
         except Exception as exc:
             log.debug("Capital risk %s: %s", t, exc)
+
+    try:
+        _write_cache(next_cache)
+    except Exception as exc:
+        # Cache persistence must never alter risk results or block the build.
+        log.warning("Capital-risk cache write failed: %s", exc)
+
     log.info(
         "Capital-structure risk checked %d issuers; %d flagged; %d unchanged reused; %d rescanned",
         checked, flagged, reused, rescanned,
