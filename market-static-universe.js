@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.2 */
+/* Vestra Market static universe loader v1.3 */
 (() => {
   'use strict';
 
@@ -20,9 +20,15 @@
 
   function ensureWeeklyEventsCompanion() {
     if (typeof document === 'undefined') return;
+    if (!document.getElementById('vestraWeeklyEventsVisibilityGuard')) {
+      const style = document.createElement('style');
+      style.id = 'vestraWeeklyEventsVisibilityGuard';
+      style.textContent = '#viewDashboard:not(.dash-secondary-open) #dashboardWeeklyEventsCard{display:block!important}';
+      document.head.appendChild(style);
+    }
     if (window.VestraWeeklyEvents || document.querySelector('script[data-vestra-weekly-events]')) return;
     const script = document.createElement('script');
-    script.src = 'dashboard-weekly-events.js?v=1.1';
+    script.src = 'dashboard-weekly-events.js?v=1.2';
     script.defer = true;
     script.dataset.vestraWeeklyEvents = '1';
     document.head.appendChild(script);
@@ -120,6 +126,6 @@
     ensureScannerCompanion,
     ensureWeeklyEventsCompanion,
     unpackStartupPayload,
-    version: '1.2',
+    version: '1.3',
   });
 })();

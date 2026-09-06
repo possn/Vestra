@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.13 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v127";
+/* Vestra Service Worker v10.14 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v128";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -28,6 +28,7 @@ const APP_SHELL = [
   "./market-portfolio-context.js",
   "./market-watch-snapshots.js",
   "./market-static-universe.js",
+  "./dashboard-weekly-events.js",
   "./market-dossier-signals.js",
   "./market-search-suggestions.js",
   "./market-row-ui.js",
@@ -63,9 +64,9 @@ const APP_SHELL = [
 
 // These files must always agree with one another. Serving a stale copy of one
 // beside a fresh copy of another can make app.js fail before DOMContentLoaded,
-// leaving the launch overlay permanently visible. Keep only this compact
-// bootstrap dependency chain network-first; the rest of the static shell stays
-// stale-while-revalidate for fast repeat launches.
+// leaving the launch overlay permanently visible. The weekly-events pair is
+// also network-first because it is loaded dynamically and must not lag behind
+// the Dashboard visibility contract after a PWA update.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -83,14 +84,15 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-quote-errors.js",
   "app-return-assumptions.js",
   "app-financial-engine.js",
-  "app.js"
+  "app.js",
+  "market-static-universe.js",
+  "dashboard-weekly-events.js"
 ]);
 
 self.addEventListener("install", event => {
   self.skipWaiting();
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    // One optional/missing shell file must not make the whole offline shell empty.
     await Promise.allSettled(APP_SHELL.map(asset => cache.add(asset)));
   })());
 });
@@ -165,15 +167,11 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Non-critical static code remains fast on repeat launches and refreshes in
-  // the background. Core bootstrap scripts above are deliberately excluded.
   if (["script", "style", "worker", "manifest"].includes(request.destination)) {
     event.respondWith(staleWhileRevalidate(request, event));
     return;
   }
 
-  // Market payloads intentionally remain network-first: freshness is more
-  // important than shaving a few ms and offline still falls back to the cache.
   if (/\/data\/.*\.(json|txt)$/i.test(url.pathname)) {
     event.respondWith(networkFirst(request));
     return;

@@ -20,8 +20,8 @@ class QuoteCurrencyGuardTests(unittest.TestCase):
         index=read("index.html")
         self.assertIn("app.js?v=20260827v21",index)
         sw=read("sw.js")
-        self.assertIn("Vestra Service Worker v10.13",sw)
-        self.assertIn("vestra-cache-v127",sw)
+        self.assertIn("Vestra Service Worker v10.14",sw)
+        self.assertIn("vestra-cache-v128",sw)
         self.assertIn("staleWhileRevalidate",sw)
         self.assertIn('./market-live-overlay.js',sw)
 
