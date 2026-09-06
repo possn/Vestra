@@ -13,17 +13,21 @@ import datetime as dt
 import json
 from pathlib import Path
 
+try:
+    from coverage_audit import authoritative_quote_type, NON_EQUITY_TYPES
+except (ImportError, ModuleNotFoundError):
+    from scripts.coverage_audit import authoritative_quote_type, NON_EQUITY_TYPES
+
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "data" / "stocks.json"
 OUT = ROOT / "data" / "provenance_audit.json"
-FUND_TYPES = {"ETF", "CRYPTO", "MUTUALFUND", "FUND"}
 MIN_AGREEMENT_CHECKS = 2
 
 
 def equity_rows(payload: dict) -> list[dict]:
     return [
         r for r in (payload.get("stocks") or [])
-        if str(r.get("quote_type") or "").upper() not in FUND_TYPES
+        if authoritative_quote_type(r) not in NON_EQUITY_TYPES
     ]
 
 
