@@ -48,7 +48,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/yahoo_rate_limit.py scripts/yahoo_retry_hygiene.py scripts/run_market_pipeline.py scripts/sec_enrich.py scripts/sec_archives_enrich.py scripts/sec_archives_runtime.py scripts/sec_worker_fallback.py scripts/seed_sec_ticker_map.py scripts/sec_endpoint_probe.py scripts/sec_fund_identity.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/insider_prices.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/extra_ticker_hygiene.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/yahoo_rate_limit.py scripts/yahoo_retry_hygiene.py scripts/run_market_pipeline.py scripts/sec_enrich.py scripts/sec_archives_enrich.py scripts/sec_archives_runtime.py scripts/sec_worker_fallback.py scripts/seed_sec_ticker_map.py scripts/sec_endpoint_probe.py scripts/sec_fund_identity.py scripts/capital_risk.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/insiders.py scripts/insider_runtime_metrics.py scripts/insider_prices.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/extra_ticker_hygiene.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
@@ -190,6 +190,8 @@ jobs:
             data/sec_ticker_map.json
             data/sec_fund_ticker_map.json
             data/sec_fund_identity_audit.json
+            data/capital_risk_cache.json
+            data/insider_filings_cache.json
             data/score_audit.json
             data/score_benchmark_audit.json
             data/score_peer_shadow.json
