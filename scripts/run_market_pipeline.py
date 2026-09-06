@@ -146,6 +146,7 @@ def main():
     from physical_metals_runtime import install as install_parallel_physical_metals
     from lse_first_esef_runtime import install as install_lse_first_esef_identity
     from insider_runtime_metrics import install as install_insider_runtime_metrics
+    from insider_archives_runtime import install as install_insider_archives_fallback
 
     install_rate_limit_coordinator()
     install_fetch_worker_cap()
@@ -156,7 +157,11 @@ def main():
     install_lse_first_esef_identity()
     install_parallel_physical_metals()
     install_gap_retrieval_observability()
+    # Metrics wraps insiders.py first; the fallback then reuses those wrapped
+    # _get/cache hooks, so Archives traffic remains measurable without changing
+    # the Form 4 result contract.
     install_insider_runtime_metrics()
+    install_insider_archives_fallback()
     runpy.run_module("run", run_name="__main__")
 
 
