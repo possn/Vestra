@@ -41,12 +41,15 @@ class SecProbeRuntimePolicyTests(unittest.TestCase):
             self.assertTrue(sec_endpoint_probe.apply_runtime_guard(payload, env_path=env_path))
             self.assertEqual(env_path.read_text(encoding="utf-8"), "SEC_USER_AGENT=\n")
 
-    def test_mixed_statuses_keep_sec_step_available(self):
+    def test_mixed_statuses_keep_sec_step_available_with_runtime_identity(self):
         payload = make_report([403, 403, 403, 500, 403, 403])
         with tempfile.TemporaryDirectory() as tmp:
             env_path = Path(tmp) / "github_env"
             self.assertFalse(sec_endpoint_probe.apply_runtime_guard(payload, env_path=env_path))
-            self.assertFalse(env_path.exists())
+            self.assertEqual(
+                env_path.read_text(encoding="utf-8"),
+                f"SEC_USER_AGENT={sec_endpoint_probe.DEFAULT_USER_AGENT}\n",
+            )
 
     def test_transport_error_is_not_treated_as_uniform_403(self):
         payload = make_report([403, 403, 403, 0, 403, 403])

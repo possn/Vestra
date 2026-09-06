@@ -15,9 +15,10 @@ body, matching the request shape already proven by Vestra's SEC filing fetchers.
 The probe never mutates market data and never retries through proxies or mirrors.
 When every tested per-company SEC API endpoint returns the same explicit HTTP 403,
 the CLI writes an empty SEC_USER_AGENT to GITHUB_ENV so the following pipeline
-step skips the existing CompanyFacts network lane. EDGAR Archives diagnostics are
-observational only and do not alter that guard. Score/Risk Gate semantics are
-never changed.
+step skips the existing CompanyFacts network lane. When CompanyFacts is reachable,
+the validated request identity is exported instead so the canonical CompanyFacts
+lane is actually enabled. EDGAR Archives diagnostics are observational only and do
+not alter that guard. Score/Risk Gate semantics are never changed.
 """
 from __future__ import annotations
 
@@ -31,6 +32,7 @@ from sec_enrich import TICKER_MAP_SNAPSHOT, _read_ticker_snapshot
 
 BASE = "https://data.sec.gov"
 SENTINELS = ("AAPL", "MSFT", "NVDA")
+DEFAULT_USER_AGENT = "Vestra/4.0 (+https://github.com/possn/Vestra)"
 BULK_ENDPOINTS = {
     "companyfacts_zip": "https://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip",
     "submissions_zip": "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip",
@@ -151,21 +153,25 @@ def _runtime_sec_blocked(report):
     return bool(statuses) and len(statuses) >= 4 and all(status == 403 for status in statuses) and int(summary.get("http_ok") or 0) == 0
 
 
-def apply_runtime_guard(report, env_path=None):
-    """Disable the current CompanyFacts lane for subsequent Actions steps when blocked."""
+def apply_runtime_guard(report, env_path=None, user_agent=None):
+    """Export the CompanyFacts runtime identity, or disable it after a proven broad block."""
     blocked = _runtime_sec_blocked(report)
     path = env_path if env_path is not None else os.getenv("GITHUB_ENV")
-    if blocked and path:
+    if path:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
+        value = "" if blocked else str(user_agent or os.getenv("SEC_USER_AGENT") or DEFAULT_USER_AGENT).strip()
         with open(path, "a", encoding="utf-8") as handle:
-            handle.write("SEC_USER_AGENT=\n")
-        print("SEC runtime guard: upstream returned 403 for all API sentinels; SEC enrichment disabled for subsequent steps")
+            handle.write(f"SEC_USER_AGENT={value}\n")
+        if blocked:
+            print("SEC runtime guard: upstream returned 403 for all API sentinels; CompanyFacts disabled for subsequent steps")
+        else:
+            print("SEC runtime guard: CompanyFacts reachable; SEC_USER_AGENT exported for subsequent steps")
     return blocked
 
 
 def probe(session=None, snapshot_path=TICKER_MAP_SNAPSHOT, sentinels=SENTINELS, archive_endpoints=ARCHIVE_ENDPOINTS):
     cached = _read_ticker_snapshot(snapshot_path)
-    ua = os.getenv("SEC_USER_AGENT", "Vestra/4.0 (+https://github.com/possn/Vestra)").strip()
+    ua = os.getenv("SEC_USER_AGENT", DEFAULT_USER_AGENT).strip()
     session = session or requests.Session()
     if hasattr(session, "headers"):
         session.headers.update({

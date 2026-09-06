@@ -1,0 +1,61 @@
+name: SEC runtime regression
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/sec_enrich.py'
+      - 'scripts/sec_endpoint_probe.py'
+      - 'scripts/sec_worker_fallback.py'
+      - 'scripts/sec_archives_enrich.py'
+      - 'scripts/sec_archives_runtime.py'
+      - 'scripts/run_market_pipeline.py'
+      - 'tests/test_sec_*.py'
+      - '.github/workflows/sec-runtime-regression.yml'
+  pull_request:
+    paths:
+      - 'scripts/sec_enrich.py'
+      - 'scripts/sec_endpoint_probe.py'
+      - 'scripts/sec_worker_fallback.py'
+      - 'scripts/sec_archives_enrich.py'
+      - 'scripts/sec_archives_runtime.py'
+      - 'scripts/run_market_pipeline.py'
+      - 'tests/test_sec_*.py'
+      - '.github/workflows/sec-runtime-regression.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sec-runtime-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate SEC Python syntax
+        run: |
+          python -m py_compile \
+            scripts/sec_enrich.py \
+            scripts/sec_endpoint_probe.py \
+            scripts/sec_worker_fallback.py \
+            scripts/sec_archives_enrich.py \
+            scripts/sec_archives_runtime.py \
+            scripts/run_market_pipeline.py
+      - name: Run SEC regression suite
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          for test_file in tests/test_sec_*.py; do
+            echo "::group::$test_file"
+            python "$test_file"
+            echo "::endgroup::"
+          done
