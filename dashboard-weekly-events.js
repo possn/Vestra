@@ -262,7 +262,7 @@
   document.addEventListener('click', event => {
     const button = event.target.closest?.('[data-weekly-event-ticker]');
     if (button) openTicker(button.dataset.weeklyEventTicker);
-    const dashboardNav = event.target.closest?.('[data-view="dashboard"]');
+    const dashboardNav = event.target.closest?.('.sidenavbtn[data-view="dashboard"]');
     if (dashboardNav) setTimeout(() => render(), 0);
   });
   window.addEventListener?.('vestra:market-ready', () => render());
