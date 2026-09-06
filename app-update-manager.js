@@ -1,4 +1,4 @@
-/* Vestra App Update Manager v1.1 — iOS-safe forced refresh without blocking overlay. */
+/* Vestra App Update Manager v1.2 — iOS-safe forced refresh with exclusive button ownership. */
 (() => {
   'use strict';
   let busy = false;
@@ -11,7 +11,8 @@
     )) return;
     busy = true;
 
-    // Ask the registration to check in the background, but never block navigation on it.
+    // Ask the existing registration to check for a newer worker, but never
+    // unregister it and never clear application caches or local data.
     try {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistration()
@@ -36,27 +37,28 @@
     }, 40);
   }
 
-  function captureForceUpdate(event) {
-    const btn = event.target?.closest?.('#btnForceUpdate');
-    if (!btn) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    forceFreshReload();
-  }
-
   function install() {
-    if (document.documentElement.dataset.vestraSafeUpdateCapture === '1') return false;
-    document.documentElement.dataset.vestraSafeUpdateCapture = '1';
-    // Capture phase runs before the legacy target listener in app.js, so the old
-    // unregister/cache-wipe path cannot execute even if it remains in the bundle.
-    document.addEventListener('click', captureForceUpdate, true);
+    const current = document.getElementById('btnForceUpdate');
+    if (!current) return false;
+    if (current.dataset.vestraSafeUpdateOwner === '1') return false;
+
+    // app.js historically attached a destructive target listener to this button.
+    // Replacing the node removes every previously attached listener without
+    // depending on capture-phase ordering or stopImmediatePropagation().
+    const button = current.cloneNode(true);
+    button.dataset.vestraSafeUpdateOwner = '1';
+    current.replaceWith(button);
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      forceFreshReload();
+    });
     return true;
   }
 
   install();
 
   window.VestraAppUpdateManager = Object.freeze({
-    version: '1.1',
+    version: '1.2',
     install,
     forceFreshReload,
   });
