@@ -1,4 +1,4 @@
-/* Vestra UI core v1.1 — DOM, Chart infrastructure and launch watchdog. */
+/* Vestra UI core v1.2 — DOM, Chart infrastructure and launch watchdog. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -30,7 +30,7 @@ function installPremiumSplashWatchdog() {
       .vestra-splash.vestra-splash--premium{
         display:flex!important;opacity:1!important;
         background:
-          radial-gradient(circle at 50% 42%,rgba(255,255,255,.92) 0,rgba(244,242,235,.96) 28%,rgba(224,227,222,.98) 64%,#d4d8d3 100%)!important;
+          radial-gradient(circle at 50% 42%,rgba(255,255,255,.96) 0,rgba(244,242,235,.98) 30%,rgba(224,227,222,.99) 66%,#d4d8d3 100%)!important;
       }
       .vestra-splash--premium .vestra-splash__mark{
         width:138px!important;height:138px!important;margin-bottom:0!important;
@@ -53,7 +53,7 @@ function installPremiumSplashWatchdog() {
       .vestra-splash--premium .vestra-splash__tagline{
         margin-top:9px!important;font-size:15px!important;font-weight:600!important;
         letter-spacing:.02em!important;color:#55646b!important;opacity:0;
-        animation:vestraPremiumTaglineIn 1.0s 1.65s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumTaglineIn 1s 1.65s cubic-bezier(.16,1,.3,1) both!important;
       }
       @keyframes vestraPremiumMarkIn{
         0%{opacity:0;transform:scale(.78) translateY(8px);filter:blur(3px)}
@@ -89,11 +89,20 @@ function installPremiumSplashWatchdog() {
   let releasing = false;
   let releaseTimer = null;
 
+  const keepSplashVisible = () => {
+    if (releasing) return;
+    splash.style.transition = 'none';
+    splash.style.display = 'flex';
+    splash.style.opacity = '1';
+    splash.style.pointerEvents = 'auto';
+  };
+
   const releaseSplash = () => {
     if (releasing) return;
     const elapsed = performance.now() - startedAt;
     const remaining = Math.max(0, minimumVisibleMs - elapsed);
     if (remaining > 0) {
+      keepSplashVisible();
       if (!releaseTimer) releaseTimer = setTimeout(() => {
         releaseTimer = null;
         releaseSplash();
@@ -102,20 +111,34 @@ function installPremiumSplashWatchdog() {
     }
     releasing = true;
     observer.disconnect();
-    splash.classList.remove('vestra-splash--premium');
     splash.style.display = 'flex';
     splash.style.opacity = '1';
+    splash.style.pointerEvents = 'auto';
     splash.style.transition = 'opacity .48s cubic-bezier(.4,0,.2,1)';
     requestAnimationFrame(() => requestAnimationFrame(() => { splash.style.opacity = '0'; }));
     setTimeout(() => {
       splash.style.display = 'none';
       splash.style.pointerEvents = 'none';
+      splash.classList.remove('vestra-splash--premium');
     }, 520);
   };
 
   const observer = new MutationObserver(() => {
     if (releasing) return;
-    if (splash.style.opacity === '0' || splash.style.display === 'none') releaseSplash();
+    const appTriedToHide = splash.style.opacity === '0' || splash.style.display === 'none';
+    if (!appTriedToHide) return;
+    const elapsed = performance.now() - startedAt;
+    if (elapsed < minimumVisibleMs) {
+      // app.js still contains the legacy early fade. Neutralise it until the
+      // mark → brand → tagline sequence has actually been visible to the user.
+      keepSplashVisible();
+      if (!releaseTimer) releaseTimer = setTimeout(() => {
+        releaseTimer = null;
+        releaseSplash();
+      }, Math.max(0, minimumVisibleMs - elapsed));
+      return;
+    }
+    releaseSplash();
   });
   observer.observe(splash, { attributes: true, attributeFilter: ['style'] });
 
@@ -202,7 +225,6 @@ function clearChartUnavailable(canvasId) {
   const note = wrap.querySelector(".chartFallback");
   if (note) note.remove();
 }
-
 
   window.VestraUiCore = Object.freeze({ NOOP_EL, $, resolveChartHeight, prepareChartCanvas, buildNiceAxis, ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable, clearChartUnavailable, installPremiumSplashWatchdog });
 })();
