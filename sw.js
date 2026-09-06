@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.14 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v128";
+/* Vestra Service Worker v10.15 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v129";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -35,6 +35,8 @@ const APP_SHELL = [
   "./market-data-loader.js",
   "./market-company-brief.js",
   "./market-metric-cleanup.js",
+  "./market-dossier-controls.js",
+  "./market-ui-polish.js",
   "./portfolio-collapsibles.js",
   "./portfolio-sheet-navigation.js",
   "./portfolio-card-classifier.js",
@@ -66,7 +68,9 @@ const APP_SHELL = [
 // beside a fresh copy of another can make app.js fail before DOMContentLoaded,
 // leaving the launch overlay permanently visible. The weekly-events pair is
 // also network-first because it is loaded dynamically and must not lag behind
-// the Dashboard visibility contract after a PWA update.
+// the Dashboard visibility contract after a PWA update. Dossier control modules
+// are included so WebKit never mixes the old split-button geometry with the new
+// unified action group.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -86,7 +90,9 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-financial-engine.js",
   "app.js",
   "market-static-universe.js",
-  "dashboard-weekly-events.js"
+  "dashboard-weekly-events.js",
+  "market-dossier-controls.js",
+  "market-ui-polish.js"
 ]);
 
 self.addEventListener("install", event => {
