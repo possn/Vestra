@@ -74,6 +74,43 @@ class YahooRateLimitRuntimeTests(unittest.TestCase):
         module._wait_for_cooldown()
         self.assertEqual(sleeps, [6.0])
 
+    def test_worker_cap_limits_explicit_portfolio_override(self):
+        calls = []
+
+        def fetch_many(tickers, pause=0.0, workers_override=None, retries=3):
+            calls.append((list(tickers), pause, workers_override, retries))
+            return []
+
+        module = types.SimpleNamespace(fetch_many=fetch_many)
+        wrapped = runtime.install_fetch_worker_cap(module, max_workers=2)
+        wrapped(["AAPL"], pause=0.05, workers_override=3, retries=2)
+        self.assertEqual(calls, [(["AAPL"], 0.05, 2, 2)])
+        self.assertEqual(module._fetch_worker_cap, 2)
+
+    def test_worker_cap_preserves_lower_priority_override(self):
+        calls = []
+
+        def fetch_many(tickers, pause=0.0, workers_override=None, retries=3):
+            calls.append(workers_override)
+            return []
+
+        module = types.SimpleNamespace(fetch_many=fetch_many)
+        wrapped = runtime.install_fetch_worker_cap(module, max_workers=2)
+        wrapped(["NEW"], workers_override=1)
+        self.assertEqual(calls, [1])
+
+    def test_worker_cap_applies_to_unspecified_broad_fetch(self):
+        calls = []
+
+        def fetch_many(tickers, pause=0.0, workers_override=None, retries=3):
+            calls.append(workers_override)
+            return []
+
+        module = types.SimpleNamespace(fetch_many=fetch_many)
+        wrapped = runtime.install_fetch_worker_cap(module, max_workers=2)
+        wrapped(["A", "B"])
+        self.assertEqual(calls, [2])
+
 
 if __name__ == "__main__":
     unittest.main()

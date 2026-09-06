@@ -24,7 +24,7 @@ class AnalystRequestGateTests(unittest.TestCase):
         active = 0
         peak = 0
         lock = threading.Lock()
-        started = threading.Barrier(3)
+        three_started = threading.Event()
         release = threading.Event()
 
         def original(fn):
@@ -38,14 +38,9 @@ class AnalystRequestGateTests(unittest.TestCase):
             with lock:
                 active += 1
                 peak = max(peak, active)
+                if active == 3:
+                    three_started.set()
             try:
-                # The first three callers can enter together. Later callers must
-                # wait on the semaphore until release is set.
-                if active <= 3:
-                    try:
-                        started.wait(timeout=2)
-                    except threading.BrokenBarrierError:
-                        pass
                 release.wait(timeout=2)
                 return "ok"
             finally:
@@ -56,7 +51,7 @@ class AnalystRequestGateTests(unittest.TestCase):
         threads = [threading.Thread(target=lambda: results.append(module._safe_call(endpoint))) for _ in range(8)]
         for thread in threads:
             thread.start()
-        started.wait(timeout=2)
+        self.assertTrue(three_started.wait(timeout=2), "three gated calls did not enter concurrently")
         time.sleep(0.05)
         with lock:
             observed_peak = peak
