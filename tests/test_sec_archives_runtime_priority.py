@@ -77,20 +77,20 @@ class SecArchivesRuntimePriorityTests(unittest.TestCase):
         rows = [first, second]
         fake_module = FakeSecModule()
         captured = []
-        original_archive_enrich = runtime.sec_archives_enrich.enrich
+        original_budgeted = runtime._budgeted_archive_enrich
         try:
-            def capture(raw, priority=None):
+            def capture(raw, priority=None, max_nonpriority=None):
                 captured.extend(raw)
                 return raw
 
-            runtime.sec_archives_enrich.enrich = capture
+            runtime._budgeted_archive_enrich = capture
             combined = runtime.install(fake_module)
             result = combined(rows)
             self.assertIs(result, rows)
             self.assertEqual([row.ticker for row in result], ["ZZZ", "AAA"])
             self.assertEqual([row.ticker for row in captured], ["AAA", "ZZZ"])
         finally:
-            runtime.sec_archives_enrich.enrich = original_archive_enrich
+            runtime._budgeted_archive_enrich = original_budgeted
 
 
 if __name__ == "__main__":
