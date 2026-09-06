@@ -39,7 +39,7 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         self.assertIn("app-update-manager.js?v=1.2", text)
         self.assertIn("market-learned-universe.js?v=2.0", text)
         self.assertIn("market-global-search.js?v=1.2", text)
-        self.assertIn("market-data-health.js?v=1.0", text)
+        self.assertIn("market-data-health.js?v=1.1", text)
         self.assertIn("loadDataHealth();", text)
         self.assertLess(text.index("loadAppUpdateManager();"), text.index("loadLearnedUniverse();"))
         self.assertIn("version:'1.8'", text)

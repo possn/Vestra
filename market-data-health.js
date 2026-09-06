@@ -1,4 +1,4 @@
-/* Vestra Market Data Health v1.0 — lightweight operational visibility from published diagnostics. */
+/* Vestra Market Data Health v1.1 — lightweight operational visibility from published diagnostics. */
 (() => {
   'use strict';
 
@@ -53,10 +53,10 @@
   }
 
   function deriveState(guard, minutes) {
-    if (!guard) return { key: 'unknown', label: 'Sem diagnóstico' };
-    if (guard.ok === false || number(guard.violation_count) > 0) return { key: 'bad', label: 'Atenção' };
+    if (!guard) return { key: 'unknown', label: 'Estado dos dados indisponível' };
+    if (guard.ok === false || number(guard.violation_count) > 0) return { key: 'bad', label: 'Atenção aos dados' };
     if (minutes != null && minutes > 240) return { key: 'stale', label: 'Dados antigos' };
-    return { key: 'ok', label: 'Operacional' };
+    return { key: 'ok', label: 'Dados atualizados' };
   }
 
   function model(guard, learned, now = new Date()) {
@@ -115,7 +115,7 @@
     host.innerHTML = `
       <summary aria-label="Estado operacional dos dados Vestra">
         <span class="vestra-data-health__dot" aria-hidden="true"></span>
-        <span class="vestra-data-health__label">Dados · ${data.state.label}</span>
+        <span class="vestra-data-health__label">${data.state.label}</span>
         <span class="vestra-data-health__age">${data.age}</span>
         <span class="vestra-data-health__chev" aria-hidden="true">⌄</span>
       </summary>
@@ -151,5 +151,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
 
-  window.VestraMarketDataHealth = Object.freeze({ version: '1.0', refresh, model, ageLabel, deriveState });
+  window.VestraMarketDataHealth = Object.freeze({ version: '1.1', refresh, model, ageLabel, deriveState });
 })();
