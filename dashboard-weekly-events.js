@@ -246,6 +246,18 @@
   }
 
   function scheduleRender() {
+    const existing = window.VestraMarketStaticUniverse?.getStocks?.() || [];
+    if (existing.length) {
+      render({ stocks: existing });
+      return;
+    }
+    try {
+      const load = window.VestraMarket?.ensureLoaded?.();
+      if (load && typeof load.then === 'function') {
+        load.then(() => render()).catch(() => render());
+        return;
+      }
+    } catch (_) {}
     let tries = 0;
     const attempt = () => {
       const stocks = window.VestraMarketStaticUniverse?.getStocks?.() || [];
