@@ -4,10 +4,18 @@ Reads recent SEC submissions/primary filing documents for US-listed equities and
 adds auditable flags to RawMetrics. It is intentionally conservative: no fuzzy
 issuer matching and no score is created here; score.py decides how flags cap the
 investment score.
+
+A validated previous result may be reused only when the current SEC submissions
+produce the exact same relevant-filing fingerprint and the scanner rule version
+also matches. We still fetch submissions every run, so a new/amended accession
+invalidates the cache immediately; unchanged issuers avoid re-downloading the
+same filing documents.
 """
 from __future__ import annotations
 
 import datetime as _dt
+import hashlib
+import json
 import logging
 import os
 import re
@@ -23,6 +31,8 @@ SEC_DATA = "https://data.sec.gov"
 SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
 TICKERS = "https://www.sec.gov/files/company_tickers.json"
 FORMS = {"8-K", "6-K", "20-F", "10-K", "S-1", "S-3", "F-1", "F-3", "424B3", "424B5", "DEF 14A"}
+CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v1-2026-09-06"
+PREVIOUS_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "stocks.json")
 
 
 def _text(html: str) -> str:
@@ -46,6 +56,63 @@ def _recent_rows(submissions: dict, days: int = 730):
             continue
         out.append({"accession": acc, "date": str(filed), "form": form, "doc": doc})
     return out
+
+
+def _filings_fingerprint(rows: list[dict]) -> str:
+    """Stable identity of every currently relevant filing in the 730-day window."""
+    parts = []
+    for row in rows or []:
+        parts.append("\x1f".join((
+            str(row.get("accession") or ""),
+            str(row.get("date") or ""),
+            str(row.get("form") or ""),
+            str(row.get("doc") or ""),
+        )))
+    payload = "\x1e".join(sorted(parts)).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _load_previous(path: str | None = None) -> dict[str, dict]:
+    """Load only previously validated/published capital-risk evidence."""
+    source = path or PREVIOUS_PATH
+    try:
+        with open(source, "r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception:
+        return {}
+    out = {}
+    for row in payload.get("stocks") or []:
+        if not isinstance(row, dict) or not row.get("capital_risk_checked"):
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if ticker:
+            out[ticker] = row
+    return out
+
+
+def _apply_previous_if_unchanged(m, previous: dict | None, fingerprint: str) -> bool:
+    """Reuse a previous result only when inputs and scanner rules are identical."""
+    if not isinstance(previous, dict):
+        return False
+    if previous.get("capital_risk_scanner_version") != CAPITAL_RISK_SCANNER_VERSION:
+        return False
+    if previous.get("capital_risk_filings_fingerprint") != fingerprint:
+        return False
+
+    fields = (
+        "capital_structure_flags",
+        "capital_structure_risk",
+        "reverse_split_count_24m",
+        "reverse_split_latest_date",
+        "capital_risk_filings_checked",
+    )
+    for key in fields:
+        setattr(m, key, previous.get(key))
+    setattr(m, "capital_risk_checked", True)
+    setattr(m, "capital_risk_filings_fingerprint", fingerprint)
+    setattr(m, "capital_risk_scanner_version", CAPITAL_RISK_SCANNER_VERSION)
+    setattr(m, "capital_risk_reused", True)
+    return True
 
 
 def _candidate(m, priority: set[str]) -> bool:
@@ -146,6 +213,7 @@ def enrich(raw, priority=None, max_nonpriority=120):
     if not ua:
         return raw
     priority = {str(x).upper() for x in (priority or [])}
+    previous = _load_previous()
     sess = requests.Session()
     sess.headers.update({"User-Agent": ua, "Accept-Encoding": "gzip, deflate"})
     try:
@@ -158,6 +226,8 @@ def enrich(raw, priority=None, max_nonpriority=120):
     non = 0
     checked = 0
     flagged = 0
+    reused = 0
+    rescanned = 0
     for m in raw:
         t = str(getattr(m, "ticker", "") or "").upper()
         if t not in cmap or not _candidate(m, priority):
@@ -169,15 +239,27 @@ def enrich(raw, priority=None, max_nonpriority=120):
         try:
             sub = sess.get(f"{SEC_DATA}/submissions/CIK{cmap[t]:010d}.json", timeout=18).json()
             rows = _recent_rows(sub)
-            result = _scan_docs(sess, cmap[t], rows)
-            for k, v in result.items():
-                setattr(m, k, v)
-            setattr(m, "capital_risk_checked", True)
+            fingerprint = _filings_fingerprint(rows)
+            if _apply_previous_if_unchanged(m, previous.get(t), fingerprint):
+                result = previous[t]
+                reused += 1
+            else:
+                result = _scan_docs(sess, cmap[t], rows)
+                for k, v in result.items():
+                    setattr(m, k, v)
+                setattr(m, "capital_risk_checked", True)
+                setattr(m, "capital_risk_filings_fingerprint", fingerprint)
+                setattr(m, "capital_risk_scanner_version", CAPITAL_RISK_SCANNER_VERSION)
+                setattr(m, "capital_risk_reused", False)
+                rescanned += 1
             checked += 1
-            if result["capital_structure_flags"]:
+            if result.get("capital_structure_flags"):
                 flagged += 1
             time.sleep(0.11)
         except Exception as exc:
             log.debug("Capital risk %s: %s", t, exc)
-    log.info("Capital-structure risk checked %d issuers; %d flagged", checked, flagged)
+    log.info(
+        "Capital-structure risk checked %d issuers; %d flagged; %d unchanged reused; %d rescanned",
+        checked, flagged, reused, rescanned,
+    )
     return raw
