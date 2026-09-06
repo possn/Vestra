@@ -8,16 +8,23 @@ class MarketUiPolishContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.source = (ROOT / 'market-ui-polish.js').read_text(encoding='utf-8')
+        cls.dossier = (ROOT / 'market-dossier-controls.js').read_text(encoding='utf-8')
         cls.loader = (ROOT / 'market-static-universe.js').read_text(encoding='utf-8')
 
-    def test_dossier_watch_and_close_share_one_geometry_contract(self):
-        self.assertIn('#marketSheet .market-close-persistent', self.source)
-        self.assertIn('#marketSheetContent .market-watch--detail', self.source)
-        self.assertIn('width:46px!important', self.source)
-        self.assertIn('height:46px!important', self.source)
-        self.assertIn('right:max(calc(env(safe-area-inset-right) + 14px),14px)!important', self.source)
-        self.assertIn('right:max(calc(env(safe-area-inset-right) + 68px),68px)!important', self.source)
-        self.assertIn("version: '1.1'", self.source)
+    def test_dossier_geometry_has_one_owner_and_one_fixed_action_group(self):
+        self.assertNotIn('right:max(calc(env(safe-area-inset-right) + 68px),68px)!important', self.source)
+        self.assertNotIn('#marketSheet .market-close-persistent,', self.source)
+        self.assertIn('.market-detail-actions{', self.dossier)
+        self.assertIn('position:fixed !important', self.dossier)
+        self.assertIn('gap:8px !important', self.dossier)
+        self.assertIn('.market-watch--detail,', self.dossier)
+        self.assertIn('.market-close{', self.dossier)
+        self.assertIn('width:46px !important', self.dossier)
+        self.assertIn('height:46px !important', self.dossier)
+        self.assertIn('> .market-close-persistent', self.dossier)
+        self.assertIn('display:none !important', self.dossier)
+        self.assertIn("version: '1.2'", self.source)
+        self.assertIn("version: '1.2'", self.dossier)
 
     def test_politicians_state_is_cleared_before_normal_market_mode_switch(self):
         self.assertIn("[data-politicians-mode]", self.source)
