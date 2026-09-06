@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.12 — cache/offline infrastructure only. */
-const CACHE_NAME = "vestra-cache-v126";
+/* Vestra Service Worker v10.13 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v127";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -63,11 +63,11 @@ const APP_SHELL = [
 
 self.addEventListener("install", event => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-      .catch(() => {})
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    // One optional/missing shell file must not make the whole offline shell empty.
+    await Promise.allSettled(APP_SHELL.map(asset => cache.add(asset)));
+  })());
 });
 
 self.addEventListener("activate", event => {
@@ -103,6 +103,25 @@ async function cacheFirst(request) {
   }
 }
 
+async function staleWhileRevalidate(request, event) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  const refresh = fetch(request, { cache: "no-store" })
+    .then(fresh => {
+      if (fresh && fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
+      return fresh;
+    })
+    .catch(() => null);
+
+  if (cached) {
+    if (event && typeof event.waitUntil === "function") event.waitUntil(refresh.then(() => {}));
+    return cached;
+  }
+
+  const fresh = await refresh;
+  return fresh || new Response("Offline", { status: 503 });
+}
+
 self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -115,11 +134,16 @@ self.addEventListener("fetch", event => {
     return;
   }
 
+  // Static code is versioned by the app shell URLs. Serve an already-cached copy
+  // immediately on repeat launches and refresh it in the background. This avoids
+  // making iOS standalone startup wait for GitHub Pages/network latency every time.
   if (["script", "style", "worker", "manifest"].includes(request.destination)) {
-    event.respondWith(networkFirst(request));
+    event.respondWith(staleWhileRevalidate(request, event));
     return;
   }
 
+  // Market payloads intentionally remain network-first: freshness is more
+  // important than shaving a few ms and offline still falls back to the cache.
   if (/\/data\/.*\.(json|txt)$/i.test(url.pathname)) {
     event.respondWith(networkFirst(request));
     return;
