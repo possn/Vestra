@@ -43,7 +43,7 @@ US_REGIONS = {"United States", "USA", "US"}
 EU_REGIONS = {
     "Austria", "Belgium", "Denmark", "Finland", "France", "Germany",
     "Ireland", "Italy", "Luxembourg", "Netherlands", "Norway", "Portugal",
-    "Spain", "Sweden", "Switzerland",
+    "Spain", "Sweden", "Switzerland", "United Kingdom",
 }
 _CATALOG_ETF_TICKERS = None
 
