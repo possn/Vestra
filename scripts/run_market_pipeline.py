@@ -56,6 +56,40 @@ def install_rate_limit_coordinator(module=None, coordinator=None, *, clock=None,
     return coordinator
 
 
+def install_fetch_worker_cap(module=None, max_workers=None):
+    """Enforce the workflow's Yahoo worker ceiling across every fetch batch.
+
+    run.py intentionally uses explicit overrides for learned and portfolio names.
+    A lower production ceiling must still win over those overrides; otherwise the
+    workflow can advertise two workers while the portfolio batch silently uses
+    three and recreates the throttle burst the ceiling was introduced to avoid.
+    """
+    if module is None:
+        import fundamentals as module
+    if getattr(module, "_vestra_fetch_worker_cap_installed", False):
+        return module.fetch_many
+
+    if max_workers is None:
+        max_workers = int(os.getenv("FINSCANNER_FETCH_WORKERS", "4"))
+    max_workers = max(1, min(4, int(max_workers)))
+    original = module.fetch_many
+
+    def capped_fetch_many(tickers, pause=0.0, workers_override=None, retries=3):
+        requested = max_workers if workers_override is None else min(max_workers, max(1, int(workers_override)))
+        return original(
+            tickers,
+            pause=pause,
+            workers_override=requested,
+            retries=retries,
+        )
+
+    module._vestra_original_fetch_many_before_worker_cap = original
+    module.fetch_many = capped_fetch_many
+    module._vestra_fetch_worker_cap_installed = True
+    module._fetch_worker_cap = max_workers
+    return capped_fetch_many
+
+
 def install_analyst_request_gate(module=None, max_concurrent=None):
     """Bound simultaneous Yahoo analyst endpoint calls without changing evidence.
 
@@ -95,6 +129,7 @@ def main():
     from sec_archives_runtime import install as install_sec_archives_fallback
 
     install_rate_limit_coordinator()
+    install_fetch_worker_cap()
     install_yahoo_retry_hygiene()
     install_analyst_request_gate()
     install_sec_worker_fallback()
