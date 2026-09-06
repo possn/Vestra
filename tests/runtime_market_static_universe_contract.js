@@ -8,9 +8,11 @@ vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraMarketStaticUniverse;
-assert(api && api.version === '1.1');
+assert(api && api.version === '1.2');
 assert.strictEqual(typeof api.getStocks, 'function');
 assert.strictEqual(typeof api.unpackStartupPayload, 'function');
+assert.strictEqual(typeof api.ensureWeeklyEventsCompanion, 'function');
+assert(source.includes('dashboard-weekly-events.js?v=1.0'), 'weekly events companion must be loaded by the compact market runtime');
 assert.deepStrictEqual(Array.from(api.getStocks()), []);
 assert(!source.includes("['data/stocks.json'"), 'browser runtime must never fall back to the full market snapshot');
 
