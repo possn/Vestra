@@ -17,9 +17,15 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('vestraPremiumMarkIn', UI)
         self.assertIn('vestraPremiumBrandIn', UI)
         self.assertIn('vestraPremiumTaglineIn', UI)
-        self.assertIn('1.05s', UI)
-        self.assertIn('1.65s', UI)
-        self.assertIn('minimumVisibleMs = 2700', UI)
+        self.assertIn('.72s', UI)
+        self.assertIn('1.18s', UI)
+        self.assertIn('minimumVisibleMs = 3500', UI)
+        self.assertIn('failsafeMs = 5400', UI)
+
+    def test_copy_has_a_real_readable_hold_before_release(self):
+        self.assertIn('fully visible around 1.9s', UI)
+        self.assertIn('roughly another 1.6s', UI)
+        self.assertIn("splash.style.transition = 'opacity .52s", UI)
 
     def test_legacy_early_fade_is_neutralised_until_copy_finishes(self):
         self.assertIn('keepSplashVisible', UI)
