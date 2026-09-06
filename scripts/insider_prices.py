@@ -14,7 +14,17 @@ import yfinance as yf
 import requests
 from urllib.parse import quote
 
+from ticker_successors import retrieval_symbol
+
 log = logging.getLogger("insider_prices")
+
+
+def _history_symbol(ticker: str) -> str:
+    """Return the exact current Yahoo retrieval identity for a canonical ticker."""
+    symbol = retrieval_symbol(str(ticker).strip())
+    if symbol.endswith(".CC") and len(symbol) > 3:
+        return symbol[:-3] + "-USD"
+    return symbol
 
 
 def _clean_close(idx, value):
@@ -83,7 +93,6 @@ def _download_batch(batch: list[str]) -> dict[str, list[dict]]:
     return out
 
 
-
 def _download_direct(ticker: str) -> list[dict]:
     """Best-effort Yahoo chart fallback when yfinance batch download is empty.
 
@@ -116,32 +125,44 @@ def _download_direct(ticker: str) -> list[dict]:
         log.debug("direct chart fallback failed for %s: %s", ticker, exc)
         return []
 
+
 def fetch_many(tickers: list[str], workers: int = 4, batch_size: int = 60) -> dict[str, list[dict]]:
-    unique = sorted(set(str(t).strip() for t in tickers if t and str(t).strip()))
-    out: dict[str, list[dict]] = {t: [] for t in unique}
-    if not unique:
+    canonical = sorted(set(str(t).strip() for t in tickers if t and str(t).strip()))
+    out: dict[str, list[dict]] = {t: [] for t in canonical}
+    if not canonical:
         return out
-    batches = [unique[i:i+batch_size] for i in range(0, len(unique), batch_size)]
+
+    retrieval_by_canonical = {t: _history_symbol(t) for t in canonical}
+    retrieval = sorted(set(retrieval_by_canonical.values()))
+    batches = [retrieval[i:i+batch_size] for i in range(0, len(retrieval), batch_size)]
+    retrieved: dict[str, list[dict]] = {t: [] for t in retrieval}
+
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 5))) as pool:
         futures = {pool.submit(_download_batch, batch): batch for batch in batches}
         done = 0
         for fut in as_completed(futures):
             batch = futures[fut]
             try:
-                out.update(fut.result())
+                retrieved.update(fut.result())
             except Exception as exc:
                 log.warning("price history batch crashed: %s", exc)
             done += len(batch)
-            log.info("price histories batch phase %d/%d", min(done, len(unique)), len(unique))
+            log.info("price histories batch phase %d/%d", min(done, len(retrieval)), len(retrieval))
+
+    for ticker, symbol in retrieval_by_canonical.items():
+        vals = retrieved.get(symbol) or []
+        if vals:
+            out[ticker] = vals
 
     # yfinance occasionally returns an empty frame for otherwise valid tickers.
     # Recover those names individually so a transient batch failure does not
-    # leave the dossier charts blank for an entire day.
-    missing=[t for t in unique if len(out.get(t) or []) < 2]
+    # leave the dossier charts blank for an entire day. The fallback uses the
+    # retrieval identity but writes results back under the canonical app ticker.
+    missing=[t for t in canonical if len(out.get(t) or []) < 2]
     if missing:
         log.info("price histories direct fallback for %d missing tickers", len(missing))
         with ThreadPoolExecutor(max_workers=16) as pool:
-            futures={pool.submit(_download_direct,t):t for t in missing}
+            futures={pool.submit(_download_direct,retrieval_by_canonical[t]):t for t in missing}
             done=0
             for fut in as_completed(futures):
                 t=futures[fut]
