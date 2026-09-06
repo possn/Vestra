@@ -19,10 +19,15 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         self.assertIn("workerUrl: CANONICAL_WORKER_URL", text)
         self.assertIn("version: '1.1'", text)
 
-    def test_update_intercepts_legacy_handler_without_overlay(self):
+    def test_update_replaces_legacy_handler_without_overlay(self):
         text = UPDATE.read_text(encoding="utf-8")
-        self.assertIn("document.addEventListener('click', captureForceUpdate, true)", text)
-        self.assertIn("event.stopImmediatePropagation()", text)
+        self.assertIn("document.getElementById('btnForceUpdate')", text)
+        self.assertIn("current.cloneNode(true)", text)
+        self.assertIn("current.replaceWith(button)", text)
+        self.assertIn("button.addEventListener('click'", text)
+        self.assertIn("version: '1.2'", text)
+        self.assertNotIn("document.addEventListener('click'", text)
+        self.assertNotIn("stopImmediatePropagation", text)
         self.assertNotIn("appLoadingOverlay", text)
         self.assertNotIn("getRegistrations", text)
         self.assertNotIn(".unregister(", text)
@@ -31,11 +36,12 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
     def test_bootstrap_bumps_runtime_modules(self):
         text = BOOT.read_text(encoding="utf-8")
         self.assertIn("app-runtime-bridge.js?v=1.1", text)
-        self.assertIn("app-update-manager.js?v=1.1", text)
+        self.assertIn("app-update-manager.js?v=1.2", text)
         self.assertIn("market-learned-universe.js?v=2.0", text)
         self.assertIn("market-global-search.js?v=1.2", text)
         self.assertIn("market-data-health.js?v=1.0", text)
         self.assertIn("loadDataHealth();", text)
+        self.assertLess(text.index("loadAppUpdateManager();"), text.index("loadLearnedUniverse();"))
         self.assertIn("version:'1.8'", text)
 
 

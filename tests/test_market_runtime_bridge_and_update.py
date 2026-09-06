@@ -9,6 +9,7 @@ UPDATE = ROOT / 'app-update-manager.js'
 BOOTSTRAP = ROOT / 'market-company-brief.js'
 GLOBAL = ROOT / 'market-global-search.js'
 LEARNED = ROOT / 'market-learned-universe.js'
+APP = ROOT / 'app.js'
 
 
 class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
@@ -38,20 +39,32 @@ class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
         boot = BOOTSTRAP.read_text(encoding='utf-8')
         self.assertIn("app-runtime-bridge.js?v=1.1", boot)
         self.assertIn('loadRuntimeBridge()', boot)
-        self.assertIn('loadLearnedUniverse();loadAppUpdateManager();', boot)
+        self.assertIn("app-update-manager.js?v=1.2", boot)
+        self.assertIn('loadAppUpdateManager();loadLearnedUniverse();', boot)
         self.assertIn('window.VestraLearnedUniverse,loadGlobalMarketSearch', boot)
-        self.assertLess(boot.index('loadLearnedUniverse();'), boot.index('loadAppUpdateManager();'))
+        self.assertLess(boot.index('loadAppUpdateManager();'), boot.index('loadLearnedUniverse();'))
 
-    def test_force_update_does_not_unregister_sw_or_wipe_caches(self):
+    def test_force_update_replaces_legacy_listener_and_never_wipes_runtime(self):
         text = UPDATE.read_text(encoding='utf-8')
+        app = APP.read_text(encoding='utf-8')
         self.assertIn('reg?.update?.()', text)
         self.assertIn('window.location.replace', text)
-        self.assertIn("document.addEventListener('click', captureForceUpdate, true)", text)
-        self.assertIn('event.stopImmediatePropagation()', text)
+        self.assertIn("document.getElementById('btnForceUpdate')", text)
+        self.assertIn('current.cloneNode(true)', text)
+        self.assertIn('current.replaceWith(button)', text)
+        self.assertIn("button.addEventListener('click'", text)
+        self.assertIn("version: '1.2'", text)
+        self.assertNotIn('stopImmediatePropagation', text)
+        self.assertNotIn("document.addEventListener('click'", text)
         self.assertNotIn('appLoadingOverlay', text)
         self.assertNotIn('.unregister()', text)
         self.assertNotIn('caches.delete', text)
         self.assertNotIn('getRegistrations()', text)
+        # The legacy implementation remains in the historical monolith for now,
+        # but its bound button node is deterministically replaced by the manager.
+        self.assertIn('getRegistrations()', app)
+        self.assertIn('caches.delete', app)
+        self.assertIn('if ($("btnForceUpdate")) $("btnForceUpdate").addEventListener("click", forceAppUpdate);', app)
 
 
 if __name__ == '__main__':
