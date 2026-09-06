@@ -14,6 +14,7 @@ ACTIVE_WORKFLOWS = {
     'sec-fund-identity.yml',
     'sec-runtime-regression.yml',
     'update-executives.yml',
+    'update-macro-events.yml',
     'update-market-data.yml',
     'update-metals-news.yml',
     'update-politicians.yml',
