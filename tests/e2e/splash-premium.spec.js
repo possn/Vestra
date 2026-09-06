@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: splash shows mark, then copy, holds it, then releases UI', async ({ page }) => {
+test('iPhone/WebKit: splash mostra a assinatura cedo e mantém-na legível antes de abrir', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
 
@@ -13,33 +13,31 @@ test('iPhone/WebKit: splash shows mark, then copy, holds it, then releases UI', 
   await expect(splash).toBeVisible();
   await expect(mark).toBeVisible();
 
-  // The mark owns the first beat.
   const earlyBrandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
   expect(earlyBrandOpacity).toBeLessThan(0.35);
 
-  // Copy now arrives earlier than before.
-  await page.waitForTimeout(1050);
+  // Brand and tagline must arrive well before the release phase.
+  await page.waitForTimeout(900);
   const brandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
-  expect(brandOpacity).toBeGreaterThan(0.45);
+  expect(brandOpacity).toBeGreaterThan(0.70);
   await expect(brand).toHaveText('Vestra');
 
-  await page.waitForTimeout(850);
+  await page.waitForTimeout(650);
   const taglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
-  expect(taglineOpacity).toBeGreaterThan(0.70);
+  expect(taglineOpacity).toBeGreaterThan(0.90);
   await expect(tagline).toHaveText('Finance, made simple.');
+  await expect(splash).toHaveClass(/vestra-splash--copy-ready/);
 
-  // Critical regression: once the complete copy is visible it must stay on screen
-  // long enough to read, rather than immediately transitioning to the app.
-  const holdStarted = Date.now();
-  await page.waitForTimeout(1050);
+  // Regression guard: the complete copy remains readable for roughly two seconds
+  // instead of appearing only during the final fade.
+  await page.waitForTimeout(1200);
   await expect(splash).toBeVisible();
   const heldBrandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
   const heldTaglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
   const heldSplashOpacity = await splash.evaluate(node => Number(getComputedStyle(node).opacity));
-  expect(Date.now() - holdStarted).toBeGreaterThanOrEqual(1000);
-  expect(heldBrandOpacity).toBeGreaterThan(0.90);
-  expect(heldTaglineOpacity).toBeGreaterThan(0.90);
-  expect(heldSplashOpacity).toBeGreaterThan(0.90);
+  expect(heldBrandOpacity).toBeGreaterThan(0.95);
+  expect(heldTaglineOpacity).toBeGreaterThan(0.95);
+  expect(heldSplashOpacity).toBeGreaterThan(0.95);
 
   await expect(splash).toBeHidden({ timeout: 5_000 });
   await expect(page.locator('#viewDashboard')).toBeVisible();
