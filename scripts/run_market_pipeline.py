@@ -8,6 +8,7 @@ semantics are kept.
 """
 from __future__ import annotations
 
+import logging
 import os
 import runpy
 import threading
@@ -122,6 +123,21 @@ def install_analyst_request_gate(module=None, max_concurrent=None):
     return gate
 
 
+def install_gap_retrieval_observability():
+    """Keep targeted Yahoo fallback summaries visible in pipeline_log.txt.
+
+    run.py intentionally configures only selected noisy modules at INFO. The two
+    statement-recovery lanes already emit bounded attempted/enriched summaries,
+    but their logger names were not included there, which hid their production
+    cost exactly when Yahoo pressure needed diagnosing. Setting the logger level
+    here survives run.py's handler reconfiguration and changes no data behavior.
+    """
+    names = ("gap_retrieval", "quarterly_gap")
+    for name in names:
+        logging.getLogger(name).setLevel(logging.INFO)
+    return names
+
+
 def main():
     # Keep network-backed dependencies out of module import time. Several runtime
     # contract tests intentionally import this launcher without installing the
@@ -138,6 +154,7 @@ def main():
     install_sec_archives_fallback()
     install_lse_first_esef_identity()
     install_parallel_physical_metals()
+    install_gap_retrieval_observability()
     runpy.run_module("run", run_name="__main__")
 
 
