@@ -22,6 +22,9 @@ on:
       - 'scripts/gap_retrieval.py'
       - 'scripts/quarterly_gap_retrieval.py'
       - 'scripts/sec_enrich.py'
+      - 'scripts/capital_risk.py'
+      - 'scripts/insiders.py'
+      - 'scripts/insider_runtime_metrics.py'
       - 'scripts/congress.py'
       - 'scripts/normalize_market_provenance.py'
       - 'scripts/build_market_shards.py'
@@ -58,6 +61,9 @@ on:
       - 'scripts/gap_retrieval.py'
       - 'scripts/quarterly_gap_retrieval.py'
       - 'scripts/sec_enrich.py'
+      - 'scripts/capital_risk.py'
+      - 'scripts/insiders.py'
+      - 'scripts/insider_runtime_metrics.py'
       - 'scripts/congress.py'
       - 'scripts/normalize_market_provenance.py'
       - 'scripts/build_market_shards.py'
@@ -142,7 +148,7 @@ jobs:
           node --check tests/runtime_worker_ai_brief_contract.mjs
       - name: Validate Python syntax
         run: |
-          python -m py_compile scripts/run.py scripts/run_market_pipeline.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/sec_enrich.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/low52_intelligence.py scripts/sync_learned_universe.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/runtime_js_audit.py scripts/verify_ai_brief_deployment.py
+          python -m py_compile scripts/run.py scripts/run_market_pipeline.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/sec_enrich.py scripts/capital_risk.py scripts/insiders.py scripts/insider_runtime_metrics.py scripts/congress.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/build_politicians_feed.py scripts/low52_intelligence.py scripts/sync_learned_universe.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/runtime_js_audit.py scripts/verify_ai_brief_deployment.py
       - name: Runtime · module load order
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_app_module_load_order
       - name: Runtime · JavaScript reachability
