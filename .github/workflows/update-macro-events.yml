@@ -9,6 +9,7 @@ on:
     paths:
       - 'scripts/update_macro_events.py'
       - 'scripts/macro_calendar_transport.py'
+      - 'scripts/requirements-macro.txt'
       - 'tests/test_update_macro_events.py'
       - '.github/workflows/update-macro-events.yml'
 
@@ -32,10 +33,10 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-          cache-dependency-path: scripts/requirements.txt
+          cache-dependency-path: scripts/requirements-macro.txt
 
       - name: Install dependencies
-        run: pip install -r scripts/requirements.txt
+        run: pip install -r scripts/requirements-macro.txt
 
       - name: Validate refresher
         run: |
