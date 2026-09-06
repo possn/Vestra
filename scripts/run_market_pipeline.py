@@ -147,6 +147,7 @@ def main():
     from lse_first_esef_runtime import install as install_lse_first_esef_identity
     from insider_runtime_metrics import install as install_insider_runtime_metrics
     from insider_archives_runtime import install as install_insider_archives_fallback
+    from capital_risk_scan_order import install as install_capital_risk_scan_order
 
     install_rate_limit_coordinator()
     install_fetch_worker_cap()
@@ -154,6 +155,7 @@ def main():
     install_analyst_request_gate()
     install_sec_worker_fallback()
     install_sec_archives_fallback()
+    install_capital_risk_scan_order()
     install_lse_first_esef_identity()
     install_parallel_physical_metals()
     install_gap_retrieval_observability()
