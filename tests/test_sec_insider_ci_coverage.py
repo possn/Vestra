@@ -7,8 +7,10 @@ MARKET = (ROOT / ".github" / "workflows" / "update-market-data.yml").read_text(e
 
 CRITICAL = (
     "scripts/capital_risk.py",
+    "scripts/capital_risk_scan_order.py",
     "scripts/insiders.py",
     "scripts/insider_runtime_metrics.py",
+    "scripts/insider_archives_runtime.py",
 )
 
 
