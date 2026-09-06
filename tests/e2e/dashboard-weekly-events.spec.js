@@ -6,7 +6,9 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
-  await expect(page.locator('#dashboardWeeklyEventsCard')).toBeVisible({ timeout: 15_000 });
+
+  // Reproduce the real default Dashboard state: secondary cards are collapsed.
+  await page.evaluate(() => document.getElementById('viewDashboard')?.classList.remove('dash-secondary-open'));
 
   await page.evaluate(() => {
     window.VestraWeeklyEvents.render({
@@ -28,6 +30,7 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   });
 
   const card = page.locator('#dashboardWeeklyEventsCard');
+  await expect(card).toBeVisible({ timeout: 15_000 });
   await expect(card.locator('.weekly-events-title')).toHaveText('Eventos da semana');
   await expect(card.locator('.weekly-events-range')).toContainText('6 set');
   await expect(card.locator('.weekly-events-range')).toContainText('12 set');
