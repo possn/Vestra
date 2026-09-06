@@ -1,4 +1,4 @@
-/* Vestra AI Brief Worker v1.0 — evidence-only Workers AI boundary. */
+/* Vestra AI Brief Worker v1.1 — evidence-only Workers AI boundary. */
 
 export const AI_BRIEF_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 export const AI_BRIEF_CACHE_TTL = 1800;
@@ -93,10 +93,19 @@ export function aiCors(origin){
   };
 }
 
+function securityHeaders(){
+  return {
+    'X-Content-Type-Options':'nosniff',
+    'Referrer-Policy':'no-referrer',
+    'Permissions-Policy':'camera=(), microphone=(), geolocation=()',
+    'X-Frame-Options':'DENY',
+  };
+}
+
 function json(data,status=200,headers={}){
   return new Response(JSON.stringify(data),{
     status,
-    headers:{'Content-Type':'application/json','Cache-Control':'no-store',...headers},
+    headers:{'Content-Type':'application/json','Cache-Control':'no-store',...securityHeaders(),...headers},
   });
 }
 
@@ -110,10 +119,47 @@ function sessionKey(request){
   return /^[A-Za-z0-9._-]{8,128}$/.test(raw) ? raw : 'anonymous-session';
 }
 
+export function rateLimitKey(request){
+  // X-Vestra-Session is client-controlled and can be rotated. In production,
+  // Cloudflare supplies CF-Connecting-IP and that must be the stable limiter key.
+  // Session remains a deterministic fallback for local development/tests only.
+  const ip=text(request.headers.get('CF-Connecting-IP'),80);
+  if(ip && /^[0-9A-Fa-f:.]{3,80}$/.test(ip)) return `ip:${ip.toLowerCase()}`;
+  return `session:${sessionKey(request)}`;
+}
+
 async function sha256(value){
   const bytes=new TextEncoder().encode(value);
   const digest=await crypto.subtle.digest('SHA-256',bytes);
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+export async function readJsonBodyLimited(request,maxBytes=AI_BRIEF_MAX_BODY_BYTES){
+  const limit=Math.max(1,Number(maxBytes)||AI_BRIEF_MAX_BODY_BYTES);
+  const declaredLength=Number(request.headers.get('Content-Length')||0);
+  if(Number.isFinite(declaredLength) && declaredLength>limit) return {tooLarge:true,value:null};
+  if(!request.body) return {tooLarge:false,value:null};
+
+  const reader=request.body.getReader();
+  const decoder=new TextDecoder();
+  let total=0;
+  let body='';
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      total += value?.byteLength || 0;
+      if(total>limit){
+        try{ await reader.cancel(); }catch(_){ }
+        return {tooLarge:true,value:null};
+      }
+      body += decoder.decode(value,{stream:true});
+    }
+    body += decoder.decode();
+  }catch(_){
+    return {tooLarge:false,value:null};
+  }
+  try{return {tooLarge:false,value:JSON.parse(body)};}catch{return {tooLarge:false,value:null};}
 }
 
 function promptMessages(evidence){
@@ -141,22 +187,20 @@ function timeoutPromise(ms){
 export async function handleAiBrief(request,env,ctx,options={}){
   const origin=request.headers.get('Origin')||'';
   const cors=aiCors(origin);
-  if(request.method==='OPTIONS') return new Response(null,{status:204,headers:cors});
+  if(request.method==='OPTIONS') return new Response(null,{status:204,headers:{...securityHeaders(),...cors}});
   if(request.method!=='POST') return json({error:'Método não suportado'},405,cors);
   if(!browserOriginAllowed(origin)) return json({error:'Origem não autorizada'},403,cors);
-
-  const declaredLength=Number(request.headers.get('Content-Length')||0);
-  if(Number.isFinite(declaredLength) && declaredLength>AI_BRIEF_MAX_BODY_BYTES)
-    return json({error:'Pedido demasiado grande'},413,cors);
 
   if(!env?.AI || typeof env.AI.run!=='function') return json({error:'AI brief indisponível'},503,cors);
 
   if(env?.AI_BRIEF_RATE_LIMITER?.limit){
-    const result=await env.AI_BRIEF_RATE_LIMITER.limit({key:`ai-brief:${sessionKey(request)}`});
+    const result=await env.AI_BRIEF_RATE_LIMITER.limit({key:`ai-brief:${rateLimitKey(request)}`});
     if(!result?.success) return json({error:'Limite temporário atingido'},429,{...cors,'Retry-After':'60'});
   }
 
-  const body=await request.json().catch(()=>null);
+  const parsed=await readJsonBodyLimited(request,AI_BRIEF_MAX_BODY_BYTES);
+  if(parsed.tooLarge) return json({error:'Pedido demasiado grande'},413,cors);
+  const body=parsed.value;
   if(!body || body.type!=='company_brief' || String(body.version)!=='1')
     return json({error:'Contrato AI brief inválido'},400,cors);
   const evidence=normalizeEvidence(body.data);
