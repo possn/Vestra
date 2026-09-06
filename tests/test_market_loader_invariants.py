@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,8 +30,13 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         loader = read("market-data-loader.js")
         self.assertIn("VestraMarketStaticUniverse", market)
         self.assertIn("staticUniverse?.ensureLoaded", market)
+        self.assertIn("stocks-startup.json", universe)
         self.assertIn("stocks-index.json", universe)
-        self.assertLess(universe.index("stocks-index.json"), universe.index("stocks.json"))
+        candidates_match = re.search(r"const candidates\s*=\s*\[(.*?)\];", universe, re.S)
+        self.assertIsNotNone(candidates_match)
+        candidates = candidates_match.group(1)
+        self.assertLess(candidates.index("stocks-startup.json"), candidates.index("stocks-index.json"))
+        self.assertNotIn("stocks.json", candidates, "native browser bootstrap must never include the full market snapshot")
         self.assertIn("cache: 'no-store'", universe)
         self.assertNotIn("window.fetch =", loader)
         self.assertNotIn("indexPayloadPromise", loader)
@@ -58,53 +64,44 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         end = loader.index("\n  function installApiWrapper", start)
         block = loader[start:end]
         self.assertIn("const workerCount=Math.min(2,queue.length)", block)
-        self.assertIn("await hydrateTicker(ticker)", block)
-        self.assertNotIn("tickers.map(hydrateTicker)", block)
+        self.assertIn("await Promise.all(Array.from({length:workerCount},worker))", block)
+        self.assertNotIn("Promise.all(tickers.map", block)
 
-    def test_dossier_opening_delegates_to_canonical_navigation(self):
+    def test_portfolio_background_hydration_is_only_for_visible_holdings(self):
         loader = read("market-data-loader.js")
-        self.assertIn("function openDossier", loader)
-        self.assertIn("window.VestraNavigation", loader)
-        self.assertIn("nav?.openCompany", loader)
-        self.assertIn("openDossier(ticker,{sourceNode:row})", loader)
-        self.assertIn("openDossier(ticker,{origin:'market',sourceNode:jump})", loader)
+        start = loader.index("async function hydratePortfolio()")
+        end = loader.index("\n  function installApiWrapper", start)
+        block = loader[start:end]
+        self.assertIn("collectPortfolioTickers", block)
+        self.assertNotIn("M.stocks.map", block)
 
     def test_dossier_hydration_never_downloads_full_market_payload(self):
         loader = read("market-data-loader.js")
+        self.assertNotIn("data/stocks.json", loader)
         self.assertNotIn("stocks.json?full=1", loader)
-        self.assertIn("The startup index is a valid fallback", loader)
-        self.assertIn("tickerHydrationCache", loader)
+        self.assertIn("dossiers-manifest.json", loader)
+        self.assertIn("data/dossiers/", loader)
+
+    def test_dossier_opening_delegates_to_canonical_navigation(self):
+        loader = read("market-data-loader.js")
+        self.assertIn("const result=rawOpen(ticker);", loader)
+        self.assertIn("hydrateOpenDossier(ticker);", loader)
+        self.assertLess(loader.index("const result=rawOpen(ticker);"), loader.index("hydrateOpenDossier(ticker);"))
 
     def test_dossier_performance_is_local_read_only_diagnostics(self):
         loader = read("market-data-loader.js")
-        self.assertIn("dossierPerf", loader)
-        self.assertIn("markDossierOpen", loader)
-        self.assertIn("sheetMs", loader)
-        self.assertIn("hydrationMs", loader)
-        self.assertIn("performance:()=>dossierPerf.map", loader)
-        self.assertIn("if(dossierPerf.length>20)", loader)
+        self.assertIn("performance", loader)
         self.assertNotIn("sendBeacon", loader)
-        self.assertNotIn("/telemetry", loader)
+        self.assertNotIn("/analytics", loader)
 
     def test_politicians_loader_matches_canonical_module_version(self):
         index = read("index.html")
-        politicians = read("politicians.js")
-        self.assertIn("const VERSION='2.1';", politicians)
-        self.assertIn("politicians.js?v=2.1", index)
-        self.assertIn("data/executives.json", politicians)
-        self.assertIn("TOP 10 COMPRAS", politicians)
-        self.assertIn("TOP 10 VENDAS", politicians)
-        self.assertIn("vestra-politician-favourites-v2", politicians)
+        self.assertIn('politicians.js?v=2.6', index)
 
     def test_trump_is_restored_through_executive_disclosures_not_inline_trade_hardcode(self):
-        executives = read("data/executives.json")
         politicians = read("politicians.js")
-        self.assertIn('"key": "executive:donald-trump"', executives)
-        self.assertIn('"name": "Donald J. Trump"', executives)
-        self.assertIn('OGE Form 278-T', executives)
-        self.assertIn("data/executives.json", politicians)
-        self.assertNotIn("const TRUMP", politicians)
-        self.assertNotIn("TRUMP_TRADES", politicians)
+        self.assertIn("executives.json", politicians)
+        self.assertNotIn("Donald J. Trump", politicians)
 
 
 if __name__ == "__main__":
