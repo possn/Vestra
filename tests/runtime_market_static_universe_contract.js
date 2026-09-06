@@ -8,10 +8,11 @@ vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraMarketStaticUniverse;
-assert(api && api.version === '1.0');
+assert(api && api.version === '1.1');
 assert.strictEqual(typeof api.getStocks, 'function');
 assert.strictEqual(typeof api.unpackStartupPayload, 'function');
 assert.deepStrictEqual(Array.from(api.getStocks()), []);
+assert(!source.includes("['data/stocks.json'"), 'browser runtime must never fall back to the full market snapshot');
 
 const packed = {
   schema_version: 521,
@@ -83,15 +84,17 @@ assert.strictEqual(api.unpackStartupPayload({layout:'unknown', fields:[], rows:[
   const invalidPackedResponses = [
     { ok:true, status:200, json:async()=>({ layout:'wrong', fields:[], rows:[] }) },
     { ok:false, status:404, json:async()=>({}) },
-    { ok:true, status:200, json:async()=>({ stocks:[{ticker:'NVDA'}] }) },
   ];
+  let invalidError = '';
   const invalidPacked = api.create({
     state: invalidPackedState,
     fetchImpl: async url => { invalidPackedCalls.push(url); return invalidPackedResponses.shift(); },
+    onError: err => { invalidError = err.message; },
   });
   await invalidPacked.ensureLoaded();
-  assert.deepStrictEqual(invalidPackedCalls, ['data/stocks-startup.json','data/stocks-index.json','data/stocks.json']);
-  assert.strictEqual(invalidPackedState.stocks[0].ticker, 'NVDA');
+  assert.deepStrictEqual(invalidPackedCalls, ['data/stocks-startup.json','data/stocks-index.json']);
+  assert.strictEqual(invalidPackedState.loaded, false);
+  assert.strictEqual(invalidError, 'market data 404');
 
   const failedState = { loaded:false, loading:null, data:null, stocks:[], byTicker:new Map() };
   let errorMessage = '';
@@ -104,7 +107,7 @@ assert.strictEqual(api.unpackStartupPayload({layout:'unknown', fields:[], rows:[
   assert.strictEqual(errorMessage, 'market data 503');
   assert.strictEqual(failedState.loaded, false);
   assert.strictEqual(failedState.loading, null);
-  assert.strictEqual(api.getStocks(), invalidPackedState.stocks, 'failed later loads must not erase the last valid shared universe');
+  assert.strictEqual(api.getStocks(), fallbackState.stocks, 'failed later loads must not erase the last valid shared universe');
 
   console.log('market static universe runtime contract: ok');
 })().catch(err => { console.error(err); process.exit(1); });

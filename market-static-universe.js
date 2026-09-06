@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.0 */
+/* Vestra Market static universe loader v1.1 */
 (() => {
   'use strict';
 
@@ -50,10 +50,12 @@
     const txt = typeof text === 'function' ? text : (v => String(v ?? '').trim());
 
     async function loadFirstAvailable() {
+      // Browser runtime is intentionally bounded to compact payloads. The full
+      // canonical stocks.json is a build/audit artifact (~50+ MB), never a UI
+      // fallback: downloading it on iPhone can look like a frozen dossier/app.
       const candidates = [
         ['data/stocks-startup.json', true],
         ['data/stocks-index.json', false],
-        ['data/stocks.json', false],
       ];
       let lastStatus = 0;
       for (const [url, packed] of candidates) {
@@ -95,5 +97,5 @@
   }
 
   ensureScannerCompanion();
-  window.VestraMarketStaticUniverse = Object.freeze({ create, getStocks, ensureScannerCompanion, unpackStartupPayload, version: '1.0' });
+  window.VestraMarketStaticUniverse = Object.freeze({ create, getStocks, ensureScannerCompanion, unpackStartupPayload, version: '1.1' });
 })();

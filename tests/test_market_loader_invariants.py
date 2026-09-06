@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,8 +30,13 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         loader = read("market-data-loader.js")
         self.assertIn("VestraMarketStaticUniverse", market)
         self.assertIn("staticUniverse?.ensureLoaded", market)
+        self.assertIn("stocks-startup.json", universe)
         self.assertIn("stocks-index.json", universe)
-        self.assertLess(universe.index("stocks-index.json"), universe.index("stocks.json"))
+        candidates_match = re.search(r"const candidates\s*=\s*\[(.*?)\];", universe, re.S)
+        self.assertIsNotNone(candidates_match)
+        candidates = candidates_match.group(1)
+        self.assertLess(candidates.index("stocks-startup.json"), candidates.index("stocks-index.json"))
+        self.assertNotIn("stocks.json", candidates, "native browser bootstrap must never include the full market snapshot")
         self.assertIn("cache: 'no-store'", universe)
         self.assertNotIn("window.fetch =", loader)
         self.assertNotIn("indexPayloadPromise", loader)
