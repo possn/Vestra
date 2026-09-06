@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/update_macro_events.py'
+      - 'tests/test_update_macro_events.py'
       - '.github/workflows/update-macro-events.yml'
 
 permissions:
@@ -36,7 +37,9 @@ jobs:
         run: pip install -r scripts/requirements.txt
 
       - name: Validate refresher
-        run: python -m py_compile scripts/update_macro_events.py
+        run: |
+          python -m py_compile scripts/update_macro_events.py
+          python tests/test_update_macro_events.py
 
       - name: Refresh official macro calendar
         run: python scripts/update_macro_events.py
