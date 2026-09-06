@@ -1,13 +1,25 @@
 """SEC filing scanner for capital-structure and corporate-action risk.
 
-Reads recent SEC submissions/primary filing documents for US-listed equities and
-adds auditable flags to RawMetrics. It is intentionally conservative: no fuzzy
-issuer matching and no score is created here; score.py decides how flags cap the
-investment score.
+Reads recent official SEC filings for US-listed equities and adds auditable flags
+to RawMetrics. Exact ticker->CIK identity is used throughout; no fuzzy issuer
+matching is permitted and score.py remains the only place that applies risk caps.
+
+`data.sec.gov/submissions` is preferred when the GitHub runner can reach it. When
+that API is blocked, the scanner discovers the same issuer filings through SEC
+EDGAR quarterly `master.idx` files and scans the immutable full-submission text in
+`www.sec.gov/Archives`. Thus a CompanyFacts/API outage must not silently disable
+the capital-structure Risk Gate.
+
+A previous result may be reused only when the current relevant-filing fingerprint
+and the explicit scanner-rule version are identical. Discovery still runs every
+build, so a new/amended accession invalidates the cache immediately. The cache is
+stored under data/ and is published only by a coverage-guarded successful build.
 """
 from __future__ import annotations
 
 import datetime as _dt
+import hashlib
+import json
 import logging
 import os
 import re
@@ -17,12 +29,28 @@ from html import unescape
 import requests
 
 from asset_types import is_equity_candidate
+from sec_archives_enrich import (
+    ARCHIVES_BASE,
+    ArchiveClient,
+    master_index_url,
+    parse_master_index,
+    recent_quarters,
+)
+from sec_enrich import TICKER_MAP_SNAPSHOT, _read_ticker_snapshot
 
 log = logging.getLogger("capital_risk")
 SEC_DATA = "https://data.sec.gov"
 SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
-TICKERS = "https://www.sec.gov/files/company_tickers.json"
 FORMS = {"8-K", "6-K", "20-F", "10-K", "S-1", "S-3", "F-1", "F-3", "424B3", "424B5", "DEF 14A"}
+CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v2-archives-fallback-2026-09-06"
+CACHE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "capital_risk_cache.json")
+CACHE_FIELDS = (
+    "capital_structure_flags",
+    "capital_structure_risk",
+    "reverse_split_count_24m",
+    "reverse_split_latest_date",
+    "capital_risk_filings_checked",
+)
 
 
 def _text(html: str) -> str:
@@ -44,8 +72,121 @@ def _recent_rows(submissions: dict, days: int = 730):
             continue
         if d < cutoff or form not in FORMS or not acc or not doc:
             continue
-        out.append({"accession": acc, "date": str(filed), "form": form, "doc": doc})
+        out.append({"accession": str(acc), "date": str(filed), "form": str(form), "doc": str(doc)})
     return out
+
+
+def _archive_rows_by_cik(client=None, days: int = 730, quarter_count: int = 9):
+    """Discover exact CIK filings from official EDGAR master indexes.
+
+    Nine quarters safely cover the rolling 730-day window even near quarter
+    boundaries. Master rows point at immutable full-submission .txt objects,
+    which contain the primary filing plus exhibits and are sufficient for the
+    conservative phrase scanner below.
+    """
+    client = client or ArchiveClient()
+    cutoff = _dt.date.today() - _dt.timedelta(days=days)
+    grouped: dict[int, list[dict]] = {}
+    loaded = 0
+    for year, quarter in recent_quarters(count=quarter_count):
+        try:
+            text = client.text(master_index_url(year, quarter), timeout=30)
+        except Exception as exc:
+            log.warning("Capital risk SEC Archives index %s Q%d unavailable: %s", year, quarter, exc)
+            continue
+        loaded += 1
+        for row in parse_master_index(text, allowed_forms=FORMS):
+            try:
+                filed = _dt.date.fromisoformat(str(row.get("filed") or ""))
+            except Exception:
+                continue
+            if filed < cutoff:
+                continue
+            filename = str(row.get("filename") or "")
+            if not filename:
+                continue
+            normalized = {
+                "accession": str(row.get("accession") or ""),
+                "date": str(row.get("filed") or ""),
+                "form": str(row.get("form") or ""),
+                "doc": "",
+                "archive_url": f"{ARCHIVES_BASE}{filename}",
+            }
+            grouped.setdefault(int(row["cik"]), []).append(normalized)
+    log.info(
+        "Capital-risk Archives discovery loaded %d/%d quarterly indexes; %d CIKs with relevant filings",
+        loaded,
+        quarter_count,
+        len(grouped),
+    )
+    return grouped
+
+
+def _filings_fingerprint(rows: list[dict]) -> str:
+    """Stable identity of every currently relevant filing in the 730-day window."""
+    parts = []
+    for row in rows or []:
+        parts.append("\x1f".join((
+            str(row.get("accession") or ""),
+            str(row.get("date") or ""),
+            str(row.get("form") or ""),
+            str(row.get("doc") or row.get("archive_url") or ""),
+        )))
+    payload = "\x1e".join(sorted(parts)).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _load_previous(path: str | None = None) -> dict[str, dict]:
+    source = path or CACHE_PATH
+    try:
+        with open(source, "r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception:
+        return {}
+    if payload.get("scanner_version") != CAPITAL_RISK_SCANNER_VERSION:
+        return {}
+    rows = payload.get("rows") or {}
+    return {
+        str(ticker).strip().upper(): dict(row)
+        for ticker, row in rows.items()
+        if ticker and isinstance(row, dict)
+    }
+
+
+def _cache_record(result: dict, fingerprint: str) -> dict:
+    return {
+        "scanner_version": CAPITAL_RISK_SCANNER_VERSION,
+        "filings_fingerprint": fingerprint,
+        **{key: result.get(key) for key in CACHE_FIELDS},
+    }
+
+
+def _write_cache(rows: dict[str, dict], path: str | None = None) -> None:
+    target = path or CACHE_PATH
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    tmp = f"{target}.tmp"
+    payload = {
+        "scanner_version": CAPITAL_RISK_SCANNER_VERSION,
+        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "rows": {ticker: rows[ticker] for ticker in sorted(rows)},
+    }
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
+    os.replace(tmp, target)
+
+
+def _apply_previous_if_unchanged(m, previous: dict | None, fingerprint: str) -> bool:
+    if not isinstance(previous, dict):
+        return False
+    if previous.get("scanner_version") != CAPITAL_RISK_SCANNER_VERSION:
+        return False
+    if previous.get("filings_fingerprint") != fingerprint:
+        return False
+    for key in CACHE_FIELDS:
+        setattr(m, key, previous.get(key))
+    setattr(m, "capital_risk_checked", True)
+    setattr(m, "capital_risk_reused", True)
+    return True
 
 
 def _candidate(m, priority: set[str]) -> bool:
@@ -69,21 +210,20 @@ def _candidate(m, priority: set[str]) -> bool:
     return False
 
 
-def _scan_docs(sess, cik: int, rows: list[dict], max_docs: int = 8):
+def _scan_docs(client, cik: int, rows: list[dict], max_docs: int = 8):
     flags = set()
     reverse_dates = set()
     latest_reverse = None
     inspected = 0
 
-    # Prioritise filings most likely to disclose financing/listing events.
     order = {"8-K": 0, "6-K": 0, "424B5": 1, "424B3": 1, "S-3": 2, "F-3": 2, "S-1": 2, "F-1": 2, "10-K": 3, "20-F": 3, "DEF 14A": 4}
     rows = sorted(rows, key=lambda r: (order.get(r["form"], 9), r["date"]), reverse=False)
 
     for row in rows[:max_docs]:
-        acc = row["accession"].replace("-", "")
-        url = f"{SEC_ARCHIVES}/{cik}/{acc}/{row['doc']}"
+        acc = str(row["accession"]).replace("-", "")
+        url = row.get("archive_url") or f"{SEC_ARCHIVES}/{cik}/{acc}/{row['doc']}"
         try:
-            resp = sess.get(url, timeout=18)
+            resp = client.get(url, timeout=18)
             if not resp.ok:
                 continue
             txt = _text(resp.text)
@@ -116,7 +256,7 @@ def _scan_docs(sess, cik: int, rows: list[dict], max_docs: int = 8):
             flags.add("equity_financing")
         time.sleep(0.11)
 
-    if len(reverse_dates) >= 1:
+    if reverse_dates:
         flags.add("reverse_split_recent")
     if len(reverse_dates) >= 2:
         flags.add("repeated_reverse_splits")
@@ -141,23 +281,38 @@ def _scan_docs(sess, cik: int, rows: list[dict], max_docs: int = 8):
     }
 
 
+def _validated_ticker_map():
+    cached = _read_ticker_snapshot(TICKER_MAP_SNAPSHOT)
+    return cached[0] if cached else {}
+
+
 def enrich(raw, priority=None, max_nonpriority=120):
-    ua = os.getenv("SEC_USER_AGENT", "Vestra/4.2 (+https://github.com/possn/Vestra)").strip()
-    if not ua:
-        return raw
     priority = {str(x).upper() for x in (priority or [])}
-    sess = requests.Session()
-    sess.headers.update({"User-Agent": ua, "Accept-Encoding": "gzip, deflate"})
-    try:
-        j = sess.get(TICKERS, timeout=20).json()
-        cmap = {str(v.get("ticker", "")).upper(): int(v["cik_str"]) for v in j.values() if v.get("ticker") and v.get("cik_str")}
-    except Exception as exc:
-        log.warning("SEC ticker map unavailable for capital risk: %s", exc)
+    previous = _load_previous()
+    next_cache = dict(previous)
+    cmap = _validated_ticker_map()
+    if not cmap:
+        log.warning("Capital risk unavailable: validated SEC ticker/CIK snapshot missing")
         return raw
 
-    non = 0
-    checked = 0
-    flagged = 0
+    api_ua = os.getenv("SEC_USER_AGENT", "").strip()
+    api_session = None
+    if api_ua:
+        api_session = requests.Session()
+        api_session.headers.update({"User-Agent": api_ua, "Accept-Encoding": "gzip, deflate"})
+
+    archive_client = ArchiveClient()
+    archive_by_cik = None
+
+    def archive_rows(cik):
+        nonlocal archive_by_cik
+        if archive_by_cik is None:
+            archive_by_cik = _archive_rows_by_cik(archive_client)
+        return list(archive_by_cik.get(int(cik), []))
+
+    non = checked = flagged = reused = rescanned = 0
+    api_discovery = archive_discovery = discovery_failed = 0
+
     for m in raw:
         t = str(getattr(m, "ticker", "") or "").upper()
         if t not in cmap or not _candidate(m, priority):
@@ -166,18 +321,56 @@ def enrich(raw, priority=None, max_nonpriority=120):
             non += 1
             if non > max_nonpriority:
                 continue
+
+        cik = int(cmap[t])
+        rows = []
+        scan_client = archive_client
+
+        if api_session is not None:
+            try:
+                resp = api_session.get(f"{SEC_DATA}/submissions/CIK{cik:010d}.json", timeout=18)
+                resp.raise_for_status()
+                rows = _recent_rows(resp.json())
+                scan_client = api_session
+                api_discovery += 1
+            except Exception:
+                rows = []
+
+        if not rows:
+            rows = archive_rows(cik)
+            if rows:
+                archive_discovery += 1
+                scan_client = archive_client
+            else:
+                discovery_failed += 1
+
         try:
-            sub = sess.get(f"{SEC_DATA}/submissions/CIK{cmap[t]:010d}.json", timeout=18).json()
-            rows = _recent_rows(sub)
-            result = _scan_docs(sess, cmap[t], rows)
-            for k, v in result.items():
-                setattr(m, k, v)
-            setattr(m, "capital_risk_checked", True)
+            fingerprint = _filings_fingerprint(rows)
+            if _apply_previous_if_unchanged(m, previous.get(t), fingerprint):
+                result = {key: previous[t].get(key) for key in CACHE_FIELDS}
+                reused += 1
+            else:
+                result = _scan_docs(scan_client, cik, rows)
+                for key, value in result.items():
+                    setattr(m, key, value)
+                setattr(m, "capital_risk_checked", True)
+                setattr(m, "capital_risk_reused", False)
+                rescanned += 1
+            next_cache[t] = _cache_record(result, fingerprint)
             checked += 1
-            if result["capital_structure_flags"]:
+            if result.get("capital_structure_flags"):
                 flagged += 1
             time.sleep(0.11)
         except Exception as exc:
             log.debug("Capital risk %s: %s", t, exc)
-    log.info("Capital-structure risk checked %d issuers; %d flagged", checked, flagged)
+
+    try:
+        _write_cache(next_cache)
+    except Exception as exc:
+        log.warning("Capital-risk cache write failed: %s", exc)
+
+    log.info(
+        "Capital-structure risk checked %d issuers; %d flagged; %d unchanged reused; %d rescanned; discovery api=%d archives=%d missing=%d",
+        checked, flagged, reused, rescanned, api_discovery, archive_discovery, discovery_failed,
+    )
     return raw

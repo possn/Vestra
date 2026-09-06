@@ -7,6 +7,7 @@ WORKFLOWS = ROOT / '.github' / 'workflows'
 ACTIVE_WORKFLOWS = {
     'architecture-invariants.yml',
     'browser-e2e.yml',
+    'capital-risk-regression.yml',
     'production-smoke.yml',
     'runtime-js-syntax.yml',
     'sec-connectivity-probe.yml',
