@@ -1,12 +1,13 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: visual polish loads without hiding content and softens secondary cards', async ({ page }) => {
+test('iPhone/WebKit: visual polish loads without hiding expanded content and softens secondary cards', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => window.VestraUiVisualPolish?.version === '1.0');
+  await page.evaluate(() => document.getElementById('viewDashboard')?.classList.add('dash-secondary-open'));
 
   const style = page.locator('#vestraUiVisualPolishStyle');
   await expect(style).toHaveCount(1);
