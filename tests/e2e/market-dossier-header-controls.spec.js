@@ -22,7 +22,7 @@ test('iPhone/WebKit: favorito e fechar são um único grupo fixo compacto', asyn
 
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
-  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.2');
+  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.3');
   await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.2');
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
@@ -49,6 +49,8 @@ test('iPhone/WebKit: favorito e fechar são um único grupo fixo compacto', asyn
       closeHeight: close.height,
       watchRight: watch.right,
       closeLeft: close.left,
+      closeRight: close.right,
+      viewportWidth: window.innerWidth,
       gap: close.left - watch.right,
       watchWidth: watch.width,
       closeWidth: close.width,
@@ -65,6 +67,8 @@ test('iPhone/WebKit: favorito e fechar são um único grupo fixo compacto', asyn
   expect(geometry.gap).toBeGreaterThanOrEqual(7);
   expect(geometry.gap).toBeLessThanOrEqual(9);
   expect(geometry.groupWidth).toBeLessThanOrEqual(102);
+  expect(geometry.viewportWidth - geometry.closeRight).toBeLessThanOrEqual(10);
+  expect(geometry.viewportWidth - geometry.closeRight).toBeGreaterThanOrEqual(0);
 
   const beforeScroll = await actions.boundingBox();
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });

@@ -50,6 +50,8 @@ test('iPhone/WebKit: dossier close is independent and favorite stays circular', 
   expect(Math.abs(geometry.width - geometry.height)).toBeLessThan(0.5);
   expect(geometry.width).toBeGreaterThanOrEqual(40);
   expect(geometry.flexShrink).toBe('0');
+  const closeEdge = await close.evaluate(el => ({ right: el.getBoundingClientRect().right, viewport: window.innerWidth }));
+  expect(closeEdge.viewport - closeEdge.right).toBeLessThanOrEqual(8);
 
   await close.click();
   await expect(sheet).toBeHidden();

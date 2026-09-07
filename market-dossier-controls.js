@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.2 — iPhone-safe unified fixed action group. */
+/* Vestra Market Dossier Controls v1.3 — iPhone-safe unified fixed action group. */
 (() => {
   'use strict';
 
@@ -22,7 +22,10 @@
         position:fixed !important;
         z-index:175 !important;
         top:max(calc(env(safe-area-inset-top) + 10px),14px) !important;
-        right:max(calc(env(safe-area-inset-right) + 14px),14px) !important;
+        /* The sheet panel is itself an iOS containing block inset ~28px from
+           the viewport edge. A small negative local offset places the group at
+           the physical screen edge instead of leaving a visible double inset. */
+        right:max(calc(env(safe-area-inset-right) - 20px),-20px) !important;
         display:flex !important;
         flex:0 0 auto !important;
         flex-direction:row !important;
@@ -132,7 +135,7 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.2',
+    version: '1.3',
     closeMarketSheet,
     installStyle,
     normalizeButtons,

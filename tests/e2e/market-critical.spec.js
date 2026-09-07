@@ -89,6 +89,13 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
 
   await openMarket(page);
   await page.locator('[data-market-mode="funds"]').click();
+  await expect(page.locator('.market-etf-theme-grid')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('#marketPrimary .market-row[data-market-ticker]')).toHaveCount(0);
+
+  // The product now requires an exposure choice before showing fund names.
+  const firstTheme = page.locator('[data-market-fund-theme]:not([data-market-fund-theme=""])').first();
+  await expect(firstTheme).toBeVisible();
+  await firstTheme.click();
 
   const firstFund = page.locator('#marketPrimary .market-row[data-market-ticker]').first();
   await expect(firstFund).toBeVisible({ timeout: 15_000 });
