@@ -6737,7 +6737,7 @@ function rebuildBrokerGeneratedData() {
     for (let i = 0; i < events.length; i++) {
       const a = events[i];
       if (!a || a.type !== "DIVIDEND_ADJ") continue;
-      if (!(parseNum(a.taxEUR) > 0 && parseNum(a.totalEUR) === 0)) continue;
+      if (!(parseNum(a.taxEUR) !== 0 && parseNum(a.totalEUR) === 0)) continue;
       const id = String(a.extId || "").trim();
       if (id) whtById.set(id, i);
     }
@@ -6756,7 +6756,8 @@ function rebuildBrokerGeneratedData() {
     };
     for (let i = 0; i < events.length; i++) {
       const e = events[i];
-      if (!e || e.type !== "DIVIDEND" || !(parseNum(e.totalEUR) > 0)) continue;
+      const pairableDividend = e && ((e.type === "DIVIDEND" && parseNum(e.totalEUR) > 0) || (e.type === "DIVIDEND_ADJ" && parseNum(e.totalEUR) < 0));
+      if (!pairableDividend) continue;
       const j = takeWht(e);
       if (j < 0) continue;
       const wht = parseNum(events[j].taxEUR);
@@ -6839,7 +6840,7 @@ function rebuildBrokerGeneratedData() {
       // dividend. Booking it here created a phantom record with gross 0 and a
       // negative net, double-counting the tax. Fold it into the matching security
       // as a tax-only correction instead of emitting a bogus dividend.
-      if (e.broker === "XTB" && parseNum(e.totalEUR) === 0 && parseNum(e.taxEUR) > 0) {
+      if (e.broker === "XTB" && parseNum(e.totalEUR) === 0 && parseNum(e.taxEUR) !== 0) {
         orphanWhtByKey.set(makeBrokerSecurityKey(e) || (e.ticker || ""),
           (orphanWhtByKey.get(makeBrokerSecurityKey(e) || (e.ticker || "")) || 0) + parseNum(e.taxEUR));
         continue;
@@ -6850,7 +6851,7 @@ function rebuildBrokerGeneratedData() {
       // The previous code did gross = total + tax, inflating gross by ~22%.
       // XTB: "Amount" for Dividend is also gross (WHT is a separate row, merged above).
       // => Both brokers now store totalEUR as GROSS.
-      const tax = Math.max(0, parseNum(e.taxEUR));
+      const tax = e.type === "DIVIDEND_ADJ" ? parseNum(e.taxEUR) : Math.max(0, parseNum(e.taxEUR));
       // v63: "Dividend adjustment" can be NEGATIVE (clawback of a prior dividend).
       // Math.max(0,...) silently erased those, overstating totals. Allow the sign
       // through for adjustments; ordinary dividends/ROC remain non-negative.
@@ -6923,7 +6924,7 @@ function rebuildBrokerGeneratedData() {
       byXtbSecKey.get(k).push(d);
     }
     for (const [secKey, whtTotal] of orphanWhtByKey) {
-      if (!(whtTotal > 0)) continue;
+      if (!Number.isFinite(whtTotal) || Math.abs(whtTotal) < 1e-9) continue;
       const targets = byXtbSecKey.get(secKey);
       if (!targets || !targets.length) continue;
       const grossSum = targets.reduce((a, d) => a + parseNum(d.grossAmount), 0);
@@ -6934,7 +6935,8 @@ function rebuildBrokerGeneratedData() {
           ? whtTotal - applied
           : Math.round((whtTotal * (parseNum(d.grossAmount) / grossSum)) * 100) / 100;
         applied += share;
-        const cappedTax = Math.min(parseNum(d.grossAmount), parseNum(d.taxWithheld) + share);
+        const adjustedTax = parseNum(d.taxWithheld) + share;
+        const cappedTax = Math.max(0, Math.min(parseNum(d.grossAmount), adjustedTax));
         d.taxWithheld = cappedTax;
         d.netAmount = parseNum(d.grossAmount) - cappedTax;
       });

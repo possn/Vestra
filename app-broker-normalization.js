@@ -10,8 +10,13 @@ function divFloor(d, v) {
   return (d && d.isAdjustment) ? v : Math.max(0, v);
 }
 
+function divTax(d, v) {
+  const tax = parseNum(v);
+  return (d && d.isAdjustment) ? tax : Math.max(0, tax);
+}
+
 function getDividendGross(d) {
-  const tax = Math.max(0, parseNum(d && d.taxWithheld || 0));
+  const tax = divTax(d, d && d.taxWithheld || 0);
   if (!d) return 0;
   if (d.grossAmount !== undefined && d.grossAmount !== null && d.grossAmount !== "") return divFloor(d, parseNum(d.grossAmount));
   if (d.generatedFromBroker && !("grossAmount" in d) && !("netAmount" in d)) {
@@ -25,7 +30,7 @@ function getDividendGross(d) {
 }
 
 function getDividendNet(d) {
-  const tax = Math.max(0, parseNum(d && d.taxWithheld || 0));
+  const tax = divTax(d, d && d.taxWithheld || 0);
   if (!d) return 0;
   if (d.netAmount !== undefined && d.netAmount !== null && d.netAmount !== "") return divFloor(d, parseNum(d.netAmount));
   if (d.generatedFromBroker && !("grossAmount" in d) && !("netAmount" in d)) {
@@ -36,7 +41,7 @@ function getDividendNet(d) {
 
 function normalizeDividendRecord(d) {
   if (!d || typeof d !== "object") return d;
-  const tax = Math.max(0, parseNum(d.taxWithheld || 0));
+  const tax = divTax(d, d.taxWithheld || 0);
 
   if (d.generatedFromBroker) {
     if (!("grossAmount" in d) && !("netAmount" in d)) {
@@ -83,7 +88,7 @@ function reconcileBrokerDividends(events = [], dividends = []) {
     const r = rowFor(e.broker, year);
     const rawGross = parseNum(e.totalEUR);
     const gross = e.type === "DIVIDEND_ADJ" ? rawGross : Math.max(0, rawGross);
-    const tax = Math.max(0, parseNum(e.taxEUR));
+    const tax = e.type === "DIVIDEND_ADJ" ? parseNum(e.taxEUR) : Math.max(0, parseNum(e.taxEUR));
     r.sourceGross += gross;
     r.sourceTax += tax;
     r.sourceNet += gross - tax;
@@ -96,7 +101,7 @@ function reconcileBrokerDividends(events = [], dividends = []) {
     const broker = d.divBroker || (String(d.notes || "").match(/(?:^| · )(Trading 212|XTB|Corretora CSV|Corretora)(?: · |$)/i) || [])[1] || "Corretora";
     const r = rowFor(broker, year);
     r.storedGross += getDividendGross(d);
-    r.storedTax += Math.max(0, parseNum(d.taxWithheld));
+    r.storedTax += divTax(d, d.taxWithheld);
     r.storedNet += getDividendNet(d);
     r.storedCount += 1;
   }
@@ -128,6 +133,6 @@ function reconcileBrokerDividends(events = [], dividends = []) {
 }
 
   window.VestraBrokerNormalization = Object.freeze({
-    divFloor, getDividendGross, getDividendNet, normalizeDividendRecord, reconcileBrokerDividends
+    divFloor, divTax, getDividendGross, getDividendNet, normalizeDividendRecord, reconcileBrokerDividends
   });
 })();

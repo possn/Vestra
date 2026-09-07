@@ -294,8 +294,9 @@ function parseXTBCashRows(rows, meta) {
       evt.type = "DIVIDEND_ADJ";
       evt.totalEUR = 0;
       evt.grossLocal = 0;
-      evt.taxEUR = Math.abs(amount);
-      evt.resultEUR = -Math.abs(amount);
+      // Preserve sign: a negative WHT row is tax withheld; a positive row is a tax reversal/correction.
+      evt.taxEUR = -amount;
+      evt.resultEUR = amount;
     } else if (type === "CASH_INTEREST_TAX") {
       evt.type = "WITHDRAWAL";
       evt.totalEUR = Math.abs(amount);
