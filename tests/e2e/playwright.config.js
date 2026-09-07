@@ -5,7 +5,10 @@ const repoRoot = path.resolve(__dirname, '../..');
 
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: 'market-critical.spec.js',
+  // Run the complete local iPhone/WebKit regression surface. Production has
+  // its own dedicated config and smoke spec, so keep that one out here.
+  testMatch: '*.spec.js',
+  testIgnore: 'production-smoke.spec.js',
   outputDir: path.join(repoRoot, 'test-results'),
   timeout: 45_000,
   expect: { timeout: 10_000 },
