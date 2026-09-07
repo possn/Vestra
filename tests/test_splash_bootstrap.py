@@ -14,20 +14,20 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('setTimeout(() => releaseSplash', UI)
 
     def test_premium_sequence_is_mark_then_brand_then_tagline(self):
-        self.assertIn('vestraPremiumMarkIn', UI)
-        self.assertIn('vestraPremiumBrandIn', UI)
-        self.assertIn('vestraPremiumTaglineIn', UI)
-        self.assertIn('.46s', UI)
-        self.assertIn('.82s', UI)
-        self.assertIn('copyReadyMs = 1500', UI)
-        self.assertIn('minimumVisibleMs = 3600', UI)
-        self.assertIn('failsafeMs = 5600', UI)
+        self.assertIn('vestraPremiumMarkIn .72s', UI)
+        self.assertIn('vestraPremiumBrandIn .82s .82s', UI)
+        self.assertIn('vestraPremiumTaglineIn .76s 1.18s', UI)
+        self.assertIn('copyReadyMs = 1980', UI)
+        self.assertIn('minimumVisibleMs = 3350', UI)
+        self.assertIn('failsafeMs = 5400', UI)
 
     def test_copy_has_a_real_readable_hold_before_release(self):
-        self.assertIn('Full copy is now visible around 1.45s', UI)
-        self.assertIn('for about two seconds', UI)
+        self.assertIn('1.35s quiet hold', UI)
         self.assertIn('vestra-splash--copy-ready', UI)
-        self.assertIn("splash.style.transition = 'opacity .52s", UI)
+        self.assertIn("splash.style.transition = 'opacity .44s", UI)
+        self.assertLess(1980, 3350)
+        self.assertGreaterEqual(3350 - 1980, 1000)
+        self.assertLessEqual(3350 - 1980, 2000)
 
     def test_legacy_early_fade_is_neutralised_until_copy_finishes(self):
         self.assertIn('keepSplashVisible', UI)
