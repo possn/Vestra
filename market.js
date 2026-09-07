@@ -263,10 +263,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   const ETF_THEMES=[
-    ['technology','Tecnologia',/technology|tech(?:nology)?|digital|software|cloud|internet/i],
-    ['semiconductors','Semicondutores',/semiconductor|chip|microchip|semicon|phlx semiconductor/i],
-    ['ai_robotics','IA & Robótica',/artificial intelligence|(^|[^a-z])ai([^a-z]|$)|robot|automation|robotics/i],
-    ['cybersecurity','Cibersegurança',/cyber|security.*tech|digital security/i],
+    ['technology','Tecnologia',/technology|tech(?:nology)?|digital|software|cloud|internet|information technology|computing|saas|platform/i],
+    ['semiconductors','Semicondutores',/semiconductor|chip|microchip|semicon|phlx semiconductor|integrated circuit|foundry|wafer|memory chip/i],
+    ['ai_robotics','IA & Robótica',/artificial intelligence|machine learning|(^|[^a-z])ai([^a-z]|$)|robot|automation|robotics|autonomous systems/i],
+    ['cybersecurity','Cibersegurança',/cyber|security.*tech|digital security|network security|information security/i],
     ['healthcare','Saúde',/health|healthcare|medical|pharma|pharmaceutical/i],
     ['biotech','Biotecnologia',/biotech|biotechnology|genomic|genomics/i],
     ['energy','Energia',/energy|oil|gas|petroleum|exploration|natural gas/i],
@@ -274,9 +274,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     ['nuclear_uranium','Nuclear & Urânio',/uranium|nuclear/i],
     ['gold','Ouro',/gold|gold miner|gold mining/i],
     ['silver_metals','Prata & Metais',/silver|precious metal|metals|mining|copper|lithium/i],
-    ['water','Água',/water|clean water/i],
-    ['agriculture','Agricultura',/agricultur|agribusiness|food|fertili[sz]er/i],
-    ['defence','Defesa',/defen[cs]e|aerospace/i],
+    ['water','Água',/water|clean water|wastewater|desalination|water infrastructure|water utilities/i],
+    ['agriculture','Agricultura',/agricultur|agribusiness|farm|crop|seed|grain|fertili[sz]er|food production/i],
+    ['defence','Defesa',/defen[cs]e|aerospace|military|weapons|defense technology/i],
     ['infrastructure','Infraestruturas',/infrastructure/i],
     ['real_estate','Imobiliário',/real estate|reit|property/i],
     ['dividend','Dividendos',/dividend|income|high yield equity/i],
@@ -291,7 +291,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   ];
 
   function fundThemeText(s){
-    return `${txt(s.ticker)} ${txt(s.name)} ${txt(s.sector)} ${txt(s.industry)} ${txt(s.category)} ${txt(s.region)}`;
+    return `${txt(s.ticker)} ${txt(s.name)} ${txt(s.sector)} ${txt(s.industry)} ${txt(s.category)} ${txt(s.region)} ${txt(s.description)} ${txt(s.long_business_summary)} ${txt(s.business_summary)}`;
   }
 
   function fundMatchesTheme(s,key){
@@ -301,7 +301,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function renderFunds(){
     const qs=M.query.toLowerCase();
-    let funds=M.stocks.filter(isFund).filter(s=>n(s.score)!=null||n(s.expense_ratio)!=null);
+    let funds=M.stocks.filter(isFund);
     const available=ETF_THEMES.map(([key,label,matcher])=>({
       key,label,count:funds.filter(s=>matcher.test(fundThemeText(s))).length
     })).filter(x=>x.count>0);

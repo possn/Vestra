@@ -1,4 +1,4 @@
-/* Vestra Market stock theme discovery + tool hierarchy v1.0 */
+/* Vestra Market stock theme discovery + tool hierarchy v1.1 */
 (() => {
   'use strict';
 
@@ -25,6 +25,7 @@
 
   const WATCH_KEY = 'vestra-market-watchlist-v1';
   let selectedTheme = '';
+  let stockBrowserActive = false;
   let observer = null;
   let renderQueued = false;
 
@@ -48,7 +49,7 @@
     return {
       stock,
       sector: text(stock?.sector),
-      text: [stock?.ticker, stock?.name, stock?.sector, stock?.industry, stock?.category].map(text).join(' '),
+      text: [stock?.ticker, stock?.name, stock?.sector, stock?.industry, stock?.category, stock?.description, stock?.long_business_summary, stock?.business_summary].map(text).join(' '),
     };
   }
 
@@ -98,9 +99,7 @@
     })).filter(theme => theme.count > 0);
   }
 
-  function isStocksMode() {
-    return document.querySelector('[data-market-mode="discover"]')?.classList.contains('is-active') === true;
-  }
+  function isStocksMode() { return stockBrowserActive; }
 
   function hasSearch() {
     return Boolean(text(document.getElementById('marketSearch')?.value));
@@ -138,14 +137,18 @@
     const matches = rows.map(normalizedStock)
       .filter(theme.match)
       .map(item => item.stock)
-      .filter(stock => number(stock?.score) != null)
-      .sort((a, b) => (number(b?.score) || 0) - (number(a?.score) || 0));
-    const visible = matches.slice(0, 50);
+      .sort((a, b) => {
+        const as=number(a?.score), bs=number(b?.score);
+        if(as==null && bs!=null) return 1;
+        if(bs==null && as!=null) return -1;
+        return (bs||0)-(as||0) || text(a?.name).localeCompare(text(b?.name));
+      });
+    const visible = matches.slice(0, 100);
     const watched = watchedTickers();
 
     root.innerHTML = `<section class="market-section market-stock-discovery market-stock-results" data-stock-theme="${escapeHtml(selectedTheme)}">
       <div class="market-section__head">
-        <div><h3>${escapeHtml(theme.label)}</h3><p>Ações classificadas pela atividade/sector disponível, sem alterar o Score ou o Risk Gate.</p></div>
+        <div><h3>${escapeHtml(theme.label)}</h3><p>Universo temático completo disponível. Empresas sem Score também aparecem; o Score continua separado e não é inventado.</p></div>
         <button type="button" class="market-stock-change-theme" data-market-stock-theme="">Mudar tema</button>
       </div>
       <div class="market-list">${visible.length ? visible.map(stock => rowHtml(stock, watched)).join('') : '<div class="market-empty">Sem empresas com Score disponível neste tema.</div>'}</div>
@@ -186,9 +189,25 @@
     else marketApp.insertBefore(section, document.getElementById('marketPrimary'));
   }
 
-  function renameStocksMode() {
-    const label = document.querySelector('[data-market-mode="discover"] strong');
-    if (label && label.textContent !== 'Ações') label.textContent = 'Ações';
+  function installIdeasAndStocksModes() {
+    const ideas = document.querySelector('[data-market-mode="discover"]');
+    if (!ideas) return;
+    const ideasLabel = ideas.querySelector('strong');
+    if (ideasLabel) ideasLabel.textContent = 'Ideias';
+    if (document.querySelector('[data-market-stock-browser]')) return;
+    const stocksButton = ideas.cloneNode(true);
+    stocksButton.removeAttribute('data-market-mode');
+    stocksButton.dataset.marketStockBrowser = '1';
+    stocksButton.classList.remove('is-active');
+    const label = stocksButton.querySelector('strong');
+    if (label) label.textContent = 'Ações';
+    ideas.insertAdjacentElement('afterend', stocksButton);
+  }
+
+  function setModeVisual(activeButton) {
+    document.querySelectorAll('[data-market-mode], [data-market-stock-browser]').forEach(button => {
+      button.classList.toggle('is-active', button === activeButton);
+    });
   }
 
   function installStyles() {
@@ -225,7 +244,7 @@
 
   function boot() {
     installStyles();
-    renameStocksMode();
+    installIdeasAndStocksModes();
     promoteTools();
     installObserver();
     queueRender();
@@ -239,10 +258,21 @@
       queueRender();
       return;
     }
-    const mode = event.target.closest?.('[data-market-mode]');
-    if (mode?.dataset.marketMode === 'discover') {
+    const stocksMode = event.target.closest?.('[data-market-stock-browser]');
+    if (stocksMode) {
+      event.preventDefault();
+      stockBrowserActive = true;
       selectedTheme = '';
-      setTimeout(queueRender, 0);
+      setModeVisual(stocksMode);
+      queueRender();
+      return;
+    }
+    const mode = event.target.closest?.('[data-market-mode]');
+    if (mode) {
+      stockBrowserActive = false;
+      selectedTheme = '';
+      setModeVisual(mode);
+      if (mode.dataset.marketMode === 'discover') setTimeout(queueRender, 0);
     }
   });
 
@@ -257,6 +287,6 @@
   window.VestraMarketStockThemesTools = Object.freeze({
     render: queueRender,
     getSelectedTheme: () => selectedTheme,
-    version: '1.0',
+    version: '1.1',
   });
 })();
