@@ -1,4 +1,4 @@
-/* Vestra Market stock theme discovery + tool hierarchy v1.2 */
+/* Vestra Market stock theme discovery + tool hierarchy v1.3 */
 (() => {
   'use strict';
 
@@ -49,7 +49,7 @@
     return {
       stock,
       sector: text(stock?.sector),
-      text: [stock?.ticker, stock?.name, stock?.sector, stock?.industry, stock?.category, stock?.theme, stock?.style, stock?.description, stock?.long_business_summary, stock?.business_summary].map(text).join(' '),
+      text: [stock?.ticker, stock?.name, stock?.sector, stock?.industry, stock?.category, stock?.theme, stock?.stock_theme, stock?.style, stock?.description, stock?.long_business_summary, stock?.business_summary].map(text).join(' '),
     };
   }
 
@@ -287,6 +287,6 @@
   window.VestraMarketStockThemesTools = Object.freeze({
     render: queueRender,
     getSelectedTheme: () => selectedTheme,
-    version: '1.2',
+    version: '1.3',
   });
 })();

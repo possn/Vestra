@@ -291,7 +291,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   ];
 
   function fundThemeText(s){
-    return `${txt(s.ticker)} ${txt(s.name)} ${txt(s.sector)} ${txt(s.industry)} ${txt(s.category)} ${txt(s.region)} ${txt(s.theme)} ${txt(s.style)} ${txt(s.ucits)} ${txt(s.description)} ${txt(s.long_business_summary)} ${txt(s.business_summary)}`;
+    return `${txt(s.ticker)} ${txt(s.name)} ${txt(s.sector)} ${txt(s.industry)} ${txt(s.category)} ${txt(s.region)} ${txt(s.theme)} ${txt(s.fund_theme)} ${txt(s.style)} ${txt(s.fund_style)} ${txt(s.ucits)} ${txt(s.fund_ucits)} ${txt(s.description)} ${txt(s.long_business_summary)} ${txt(s.business_summary)}`;
   }
 
   function fundMatchesTheme(s,key){

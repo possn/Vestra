@@ -10,14 +10,14 @@ class MarketThemeUniverseTests(unittest.TestCase):
         self.assertIn('let funds=M.stocks.filter(isFund);', MARKET)
         self.assertNotIn('M.stocks.filter(isFund).filter(s=>n(s.score)!=null||n(s.expense_ratio)!=null)', MARKET)
         self.assertIn('long_business_summary', MARKET)
-        self.assertIn('${txt(s.theme)} ${txt(s.style)} ${txt(s.ucits)}', MARKET)
+        self.assertIn('${txt(s.theme)} ${txt(s.fund_theme)} ${txt(s.style)} ${txt(s.fund_style)} ${txt(s.ucits)} ${txt(s.fund_ucits)}', MARKET)
 
     def test_ideas_and_stocks_are_separate_surfaces(self):
         self.assertIn("ideasLabel.textContent = 'Ideias'", STOCKS)
         self.assertIn("stocksButton.dataset.marketStockBrowser = '1'", STOCKS)
         self.assertIn("label.textContent = 'Ações'", STOCKS)
-        self.assertIn("version: '1.2'", STOCKS)
-        self.assertIn('stock?.theme, stock?.style', STOCKS)
+        self.assertIn("version: '1.3'", STOCKS)
+        self.assertIn('stock?.theme, stock?.stock_theme, stock?.style', STOCKS)
 
     def test_stock_theme_results_keep_unscored_companies(self):
         self.assertNotIn('.filter(stock => number(stock?.score) != null)', STOCKS)
