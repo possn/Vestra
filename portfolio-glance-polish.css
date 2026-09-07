@@ -1,0 +1,140 @@
+/* Vestra — Portfolio glance polish v1.0
+   Visual-only refinement for the assets/liabilities summary card. */
+
+#viewAssets .portfolio-glance{
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:12px;
+  border-radius:24px;
+  background:linear-gradient(145deg,rgba(235,236,230,.98),rgba(222,226,220,.98));
+  border:1px solid rgba(139,156,153,.78);
+  box-shadow:0 14px 34px rgba(28,45,50,.10);
+}
+
+#viewAssets .portfolio-glance::before{
+  content:"";
+  position:absolute;
+  width:230px;
+  height:230px;
+  right:-110px;
+  top:-140px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(32,129,126,.13),rgba(32,129,126,0) 68%);
+  pointer-events:none;
+}
+
+#viewAssets .portfolio-glance>div{
+  position:relative;
+  min-width:0;
+  padding:12px 13px;
+  border-radius:17px;
+}
+
+#viewAssets .portfolio-glance__main{
+  grid-column:1/-1;
+  min-height:116px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,.58);
+  background:linear-gradient(135deg,rgba(20,79,79,.96),rgba(32,129,126,.88));
+  box-shadow:inset 0 1px rgba(255,255,255,.12),0 10px 22px rgba(20,75,75,.14);
+}
+
+#viewAssets .portfolio-glance__main small{
+  color:rgba(246,252,251,.72)!important;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:7px;
+}
+
+#viewAssets .portfolio-glance__main strong{
+  color:#fff;
+  font-size:34px;
+  line-height:1;
+  letter-spacing:-.055em;
+  overflow:visible;
+  text-overflow:clip;
+}
+
+#viewAssets .portfolio-glance__stat{
+  min-height:78px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  background:rgba(244,245,240,.72);
+  border:1px solid rgba(151,166,162,.54);
+}
+
+#viewAssets .portfolio-glance__stat small,
+#viewAssets .portfolio-income-strip small{
+  color:var(--muted)!important;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+
+#viewAssets .portfolio-glance__stat strong{
+  font-size:16px;
+  line-height:1.15;
+  letter-spacing:-.025em;
+  color:var(--text);
+}
+
+#viewAssets .portfolio-income-strip{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:0;
+  background:transparent;
+  border:0;
+}
+
+#viewAssets .portfolio-income-strip>div{
+  min-width:0;
+  padding:11px 10px 10px;
+  border-radius:15px;
+  background:rgba(228,233,227,.78);
+  border:1px solid rgba(145,163,159,.52);
+}
+
+#viewAssets .portfolio-income-strip strong{
+  display:block;
+  color:var(--text);
+  font-size:15px;
+  line-height:1.15;
+  letter-spacing:-.03em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#viewAssets .portfolio-income-strip>div:first-child{
+  background:linear-gradient(145deg,rgba(220,235,228,.90),rgba(230,238,231,.82));
+  border-color:rgba(91,145,111,.38);
+}
+
+#viewAssets .portfolio-income-strip>div:first-child strong{
+  color:#246D45;
+}
+
+@media(max-width:560px){
+  #viewAssets .portfolio-glance{gap:8px;padding:10px;border-radius:22px}
+  #viewAssets .portfolio-glance>div{padding:11px 12px}
+  #viewAssets .portfolio-glance__main{min-height:108px}
+  #viewAssets .portfolio-glance__main strong{font-size:31px}
+  #viewAssets .portfolio-glance__stat{min-height:72px}
+  #viewAssets .portfolio-glance__stat strong{font-size:15px}
+  #viewAssets .portfolio-income-strip{gap:7px;padding:0}
+  #viewAssets .portfolio-income-strip>div{padding:10px 8px 9px;border-radius:14px}
+  #viewAssets .portfolio-income-strip small{font-size:8px;line-height:1.15;min-height:19px}
+  #viewAssets .portfolio-income-strip strong{font-size:13px}
+}
