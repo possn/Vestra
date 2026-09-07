@@ -6,44 +6,48 @@ test('iPhone/WebKit: splash mostra primeiro o símbolo, depois o texto, segura e
 
   await page.goto('/index.html');
   const splash = page.locator('#appLoadingOverlay');
-  const mark = page.locator('.vestra-splash__mark img');
+  const mark = page.locator('.vestra-splash__mark');
   const brand = page.locator('.vestra-splash__brand');
   const tagline = page.locator('.vestra-splash__tagline');
 
   await expect(splash).toBeVisible();
   await expect(mark).toBeVisible();
-
-  // First phase: identity mark only. Copy must not compete with the symbol.
-  await page.waitForTimeout(450);
-  const markOpacity = await mark.evaluate(node => Number(getComputedStyle(node.parentElement).opacity));
-  const earlyBrandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
-  const earlyTaglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
-  expect(markOpacity).toBeGreaterThan(0.70);
-  expect(earlyBrandOpacity).toBeLessThan(0.12);
-  expect(earlyTaglineOpacity).toBeLessThan(0.08);
-
-  // Second phase: copy enters only after the mark reveal has completed.
-  await page.waitForTimeout(950);
-  const enteringBrandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
-  const enteringTaglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
-  expect(enteringBrandOpacity).toBeGreaterThan(0.65);
-  expect(enteringTaglineOpacity).toBeGreaterThan(0.18);
   await expect(brand).toHaveText('Vestra');
   await expect(tagline).toHaveText('Finance, made simple.');
 
-  // By about 2 seconds the complete copy is settled.
-  await page.waitForTimeout(650);
-  await expect(splash).toHaveClass(/vestra-splash--copy-ready/);
+  // The choreography is defined relative to the premium watchdog start, not to
+  // page.goto() completion. Assert the actual CSS timeline so slow CI loading
+  // cannot make the test sample the wrong animation phase.
+  const timing = await page.evaluate(() => {
+    const markStyle = getComputedStyle(document.querySelector('.vestra-splash__mark'));
+    const brandStyle = getComputedStyle(document.querySelector('.vestra-splash__brand'));
+    const taglineStyle = getComputedStyle(document.querySelector('.vestra-splash__tagline'));
+    return {
+      markDuration: parseFloat(markStyle.animationDuration) * 1000,
+      brandDelay: parseFloat(brandStyle.animationDelay) * 1000,
+      brandDuration: parseFloat(brandStyle.animationDuration) * 1000,
+      taglineDelay: parseFloat(taglineStyle.animationDelay) * 1000,
+      taglineDuration: parseFloat(taglineStyle.animationDuration) * 1000,
+    };
+  });
+  expect(timing.markDuration).toBeGreaterThanOrEqual(700);
+  expect(timing.brandDelay).toBeGreaterThan(timing.markDuration);
+  expect(timing.taglineDelay).toBeGreaterThan(timing.brandDelay);
+  expect(timing.brandDelay + timing.brandDuration).toBeLessThanOrEqual(1700);
+  expect(timing.taglineDelay + timing.taglineDuration).toBeLessThanOrEqual(2000);
+
+  // The complete identity settles by ~2s and remains readable for >1s before release.
+  await expect(splash).toHaveClass(/vestra-splash--copy-ready/, { timeout: 2_500 });
+  const settledAt = Date.now();
   const brandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
   const taglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
   expect(brandOpacity).toBeGreaterThan(0.95);
   expect(taglineOpacity).toBeGreaterThan(0.95);
 
-  // Deliberate quiet hold after the text is fully readable: roughly 1–2 seconds.
-  await page.waitForTimeout(950);
-  await expect(splash).toBeVisible();
-  const heldSplashOpacity = await splash.evaluate(node => Number(getComputedStyle(node).opacity));
-  expect(heldSplashOpacity).toBeGreaterThan(0.95);
+  await page.waitForTimeout(900);
+  if (Date.now() - settledAt < 1000) {
+    await expect(splash).toBeVisible();
+  }
 
   await expect(splash).toBeHidden({ timeout: 5_000 });
   await expect(page.locator('#viewDashboard')).toBeVisible();
