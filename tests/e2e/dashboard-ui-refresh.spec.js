@@ -9,6 +9,16 @@ test('iPhone/WebKit: history is compact by default and Dashboard shows portfolio
 
   await page.evaluate(() => {
     try {
+      // Keep the Dashboard out of its intentional first-run empty state. That
+      // state hides analytical cards, so a history-only fixture was asserting
+      // against UI that the product deliberately suppresses for empty users.
+      state.assets = [{
+        id: 'e2e-dashboard-cash',
+        name: 'E2E Dashboard Cash',
+        type: 'cash',
+        value: 725000,
+        currency: 'EUR',
+      }];
       state.history = [
         { dateISO:'2026-08-01', net:700000, assets:790000, liabilities:90000, passiveAnnual:15000, auto:true },
         { dateISO:'2026-08-07', net:710000, assets:800000, liabilities:90000, passiveAnnual:15100, auto:true },
