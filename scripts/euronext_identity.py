@@ -11,7 +11,7 @@ HTML-layout failures degrade to ``None`` and never block the pipeline.
 """
 from __future__ import annotations
 
-from io import StringIO
+from html.parser import HTMLParser
 import logging
 import re
 
@@ -33,6 +33,42 @@ SUFFIX_MARKET = {
 
 _CACHE: dict[str, str | None] = {}
 _LAST_DIAGNOSTICS: dict[str, int] = {}
+
+
+class _TableParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.tables: list[list[list[str]]] = []
+        self._table: list[list[str]] | None = None
+        self._row: list[str] | None = None
+        self._cell: list[str] | None = None
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag == "table":
+            self._table = []
+        elif tag == "tr" and self._table is not None:
+            self._row = []
+        elif tag in {"th", "td"} and self._row is not None:
+            self._cell = []
+
+    def handle_data(self, data):
+        if self._cell is not None:
+            self._cell.append(data)
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag in {"th", "td"} and self._cell is not None and self._row is not None:
+            self._row.append(" ".join("".join(self._cell).split()))
+            self._cell = None
+        elif tag == "tr" and self._row is not None and self._table is not None:
+            if self._row:
+                self._table.append(self._row)
+            self._row = None
+        elif tag == "table" and self._table is not None:
+            if self._table:
+                self.tables.append(self._table)
+            self._table = None
 
 
 def _session():
@@ -70,28 +106,34 @@ def _market_matches(actual: str, expected: str) -> bool:
 
 def _extract_exact_isin(body: str, symbol: str, expected_market: str) -> str | None:
     """Parse Euronext tables and accept one exact symbol+market identity only."""
+    parser = _TableParser()
     try:
-        import pandas as pd
-
-        tables = pd.read_html(StringIO(str(body or "")))
+        parser.feed(str(body or ""))
     except Exception:
         return None
 
     matches: set[str] = set()
-    for df in tables:
-        columns = {str(c): _norm_col(c) for c in df.columns}
-        symbol_col = next((raw for raw, norm in columns.items() if norm in {"symbol", "ticker"}), None)
-        isin_col = next((raw for raw, norm in columns.items() if norm == "isin"), None)
-        market_col = next((raw for raw, norm in columns.items() if norm == "market"), None)
-        if not symbol_col or not isin_col or not market_col:
+    for table in parser.tables:
+        if not table:
             continue
-        for _, row in df.iterrows():
-            returned_symbol = str(row.get(symbol_col) or "").strip().upper()
+        header = table[0]
+        normalized = [_norm_col(x) for x in header]
+        try:
+            symbol_idx = next(i for i, norm in enumerate(normalized) if norm in {"symbol", "ticker"})
+            isin_idx = next(i for i, norm in enumerate(normalized) if norm == "isin")
+            market_idx = next(i for i, norm in enumerate(normalized) if norm == "market")
+        except StopIteration:
+            continue
+        max_idx = max(symbol_idx, isin_idx, market_idx)
+        for row in table[1:]:
+            if len(row) <= max_idx:
+                continue
+            returned_symbol = str(row[symbol_idx] or "").strip().upper()
             if returned_symbol != symbol:
                 continue
-            if not _market_matches(str(row.get(market_col) or ""), expected_market):
+            if not _market_matches(row[market_idx], expected_market):
                 continue
-            isin = str(row.get(isin_col) or "").strip().upper()
+            isin = str(row[isin_idx] or "").strip().upper()
             if ISIN_RE.match(isin):
                 matches.add(isin)
 
