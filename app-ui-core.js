@@ -1,4 +1,4 @@
-/* Vestra UI core v1.4 — DOM, Chart infrastructure and launch watchdog. */
+/* Vestra UI core v1.5 — DOM, Chart infrastructure and launch watchdog. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -16,7 +16,7 @@ function $(id) { return document.getElementById(id) || NOOP_EL; }
 /* ─── PREMIUM LAUNCH WATCHDOG ───────────────────────────────
    The splash must never depend on app.js reaching the end of its bootstrap.
    If any later module fails, this guard still releases the UI. It also owns
-   the staged identity animation: mark first, then brand, then tagline.
+   the staged identity animation: mark first, then copy, then a deliberate hold.
 ────────────────────────────────────────────────────────────── */
 function installPremiumSplashWatchdog() {
   const splash = document.getElementById('appLoadingOverlay');
@@ -34,7 +34,7 @@ function installPremiumSplashWatchdog() {
       }
       .vestra-splash--premium .vestra-splash__mark{
         width:138px!important;height:138px!important;margin-bottom:0!important;
-        animation:vestraPremiumMarkIn .76s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumMarkIn .72s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium .vestra-splash__mark::after{
         inset:-18px!important;border-radius:42px!important;
@@ -48,12 +48,12 @@ function installPremiumSplashWatchdog() {
       .vestra-splash--premium .vestra-splash__brand{
         margin-top:24px!important;font-size:31px!important;font-weight:650!important;
         letter-spacing:-.035em!important;opacity:0;
-        animation:vestraPremiumBrandIn .68s .46s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumBrandIn .82s .82s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium .vestra-splash__tagline{
         margin-top:9px!important;font-size:15px!important;font-weight:600!important;
         letter-spacing:.02em!important;color:#55646b!important;opacity:0;
-        animation:vestraPremiumTaglineIn .64s .82s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumTaglineIn .76s 1.18s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__brand,
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__tagline{
@@ -88,11 +88,12 @@ function installPremiumSplashWatchdog() {
 
   splash.classList.add('vestra-splash--premium');
   const startedAt = performance.now();
-  // Full copy is now visible around 1.45s. Keep that complete identity readable
-  // for about two seconds even if app.js signals readiness much earlier.
-  const copyReadyMs = 1500;
-  const minimumVisibleMs = 3600;
-  const failsafeMs = 5600;
+  // Sequence contract:
+  // 0.00–0.72s mark only → 0.82–1.95s copy enters → 1.35s quiet hold → fade.
+  // This makes the identity readable instead of letting copy overlap the icon reveal.
+  const copyReadyMs = 1980;
+  const minimumVisibleMs = 3350;
+  const failsafeMs = 5400;
   let releasing = false;
   let releaseTimer = null;
 
@@ -127,13 +128,13 @@ function installPremiumSplashWatchdog() {
     splash.style.display = 'flex';
     splash.style.opacity = '1';
     splash.style.pointerEvents = 'auto';
-    splash.style.transition = 'opacity .52s cubic-bezier(.4,0,.2,1)';
+    splash.style.transition = 'opacity .44s cubic-bezier(.4,0,.2,1)';
     requestAnimationFrame(() => requestAnimationFrame(() => { splash.style.opacity = '0'; }));
     setTimeout(() => {
       splash.style.display = 'none';
       splash.style.pointerEvents = 'none';
       splash.classList.remove('vestra-splash--premium', 'vestra-splash--copy-ready');
-    }, 570);
+    }, 480);
   };
 
   const observer = new MutationObserver(() => {
@@ -143,7 +144,7 @@ function installPremiumSplashWatchdog() {
     const elapsed = performance.now() - startedAt;
     if (elapsed < minimumVisibleMs) {
       // app.js still contains the legacy early fade. Neutralise it until the
-      // mark → brand → tagline sequence has been visible long enough to read.
+      // mark → copy → hold sequence has completed.
       keepSplashVisible();
       if (!releaseTimer) releaseTimer = setTimeout(() => {
         releaseTimer = null;

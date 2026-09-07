@@ -1,12 +1,29 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: visual polish loads without hiding content and softens secondary cards', async ({ page }) => {
+test('iPhone/WebKit: visual polish loads without hiding expanded content and softens secondary cards', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => window.VestraUiVisualPolish?.version === '1.0');
+  await page.evaluate(() => {
+    // Analytical Dashboard cards are intentionally suppressed in the first-run
+    // empty state. Seed one local asset so this test exercises the expanded
+    // secondary-card styling rather than onboarding visibility rules.
+    try {
+      state.assets = [{
+        id: 'e2e-visual-polish-cash',
+        name: 'E2E Visual Polish Cash',
+        type: 'cash',
+        value: 1000,
+        currency: 'EUR',
+      }];
+      if (typeof renderDashboard === 'function') renderDashboard();
+    } catch (_) {}
+    document.getElementById('viewDashboard')?.classList.add('dash-secondary-open');
+    window.VestraDashboardUiRefresh?.refresh?.();
+  });
 
   const style = page.locator('#vestraUiVisualPolishStyle');
   await expect(style).toHaveCount(1);
