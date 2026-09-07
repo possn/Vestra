@@ -6724,7 +6724,7 @@ function rebuildBrokerGeneratedData() {
     }
   }
 
-  let events = (bd.events || []).slice().sort((a, b) => String(a.dateTime || a.date).localeCompare(String(b.dateTime || b.date)));
+  let events = (bd.events || []).map(e => (e && typeof e === "object" ? { ...e } : e)).sort((a, b) => String(a.dateTime || a.date).localeCompare(String(b.dateTime || b.date)));
 
   // v63b: Merge XTB withholding-tax rows into their dividend.
   // XTB emits the pair with adjacent transaction IDs (dividend id, WHT id±1) —
@@ -6761,7 +6761,7 @@ function rebuildBrokerGeneratedData() {
       if (j < 0) continue;
       const wht = parseNum(events[j].taxEUR);
       // XTB "Amount" on the Dividend row is already GROSS; only attach the tax.
-      e.taxEUR = (parseNum(e.taxEUR) || 0) + wht;
+      e.taxEUR = wht;
       e.notes = (e.notes || "") + (e.notes ? " · " : "") + `WHT: ${fmtEUR2(wht)}`;
       consumed.add(j);
     }
