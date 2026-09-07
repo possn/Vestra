@@ -1,10 +1,74 @@
-/* Vestra Portfolio Diagnostics v1.0 — diagnosis state, coverage semantics and measurable overlap. */
+/* Vestra Portfolio Diagnostics v1.1 — diagnosis state, coverage semantics and broker-data integrity. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(String(v).replace(',','.').replace(/[^0-9+\-.]/g,''));return Number.isFinite(x)?x:null;};
-  const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   let pending=false;
+
+  /* v1.1 — XTB withholding integrity guard.
+     Historical rebuildBrokerGeneratedData used a shallow array copy and then
+     attached WHT directly to the shared raw DIVIDEND objects. Every rebuild
+     therefore added the same withholding again. Keep raw broker events
+     immutable during rebuild and repair already-contaminated XTB dividends. */
+  const BROKER_WHT_INTEGRITY_VERSION=1;
+  const sourceKey=e=>t(e?.sourceHash)||t(e?.sourceName)||t(e?.broker)||'__xtb__';
+  const isXtb=e=>/\bXTB\b/i.test([e?.broker,e?.source,e?.sourceName,e?.fileName].map(t).join(' '));
+  const num=v=>{const x=Number(v);return Number.isFinite(x)?x:0;};
+  function repairXtbRawDividendTaxes(targetState){
+    const events=targetState?.brokerData?.events;
+    if(!Array.isArray(events)||!events.length)return false;
+    const whtSources=new Set();
+    for(const e of events){
+      if(!e||!isXtb(e)||e.type!=='DIVIDEND_ADJ')continue;
+      if(num(e.taxEUR)>0&&num(e.totalEUR)===0)whtSources.add(sourceKey(e));
+    }
+    if(!whtSources.size)return false;
+    let changed=false;
+    for(const e of events){
+      if(!e||!isXtb(e)||e.type!=='DIVIDEND'||!whtSources.has(sourceKey(e)))continue;
+      if(num(e.taxEUR)!==0){e.taxEUR=0;changed=true;}
+      const notes=t(e.notes);
+      if(/WHT:/i.test(notes)){
+        const clean=notes.replace(/(?:\s*·\s*)?WHT:\s*[^·]+/gi,'').replace(/\s*·\s*$/,'').trim();
+        if(clean!==notes){e.notes=clean;changed=true;}
+      }
+    }
+    return changed;
+  }
+  function installBrokerWhtIntegrityGuard(){
+    if(typeof loadStateAsync!=='function'||typeof rebuildBrokerGeneratedData!=='function')return;
+    if(window.__vestraBrokerWhtIntegrityInstalled)return;
+    window.__vestraBrokerWhtIntegrityInstalled=true;
+    const originalLoad=loadStateAsync;
+    loadStateAsync=async function(...args){
+      const loaded=await originalLoad.apply(this,args);
+      if(!loaded||typeof loaded!=='object')return loaded;
+      const changed=repairXtbRawDividendTaxes(loaded);
+      loaded.settings=loaded.settings||{};
+      const needsMigration=Number(loaded.settings.brokerWhtIntegrityVersion||0)!==BROKER_WHT_INTEGRITY_VERSION;
+      if(changed||needsMigration){
+        // Force one clean generated-data rebuild using the existing schema gate.
+        loaded.settings.brokerRebuildSchemaVersion=0;
+        loaded.settings.brokerWhtIntegrityVersion=BROKER_WHT_INTEGRITY_VERSION;
+      }
+      return loaded;
+    };
+    const originalRebuild=rebuildBrokerGeneratedData;
+    rebuildBrokerGeneratedData=function(...args){
+      const bd=(typeof state!=='undefined'&&state?.brokerData)||null;
+      if(!bd||!Array.isArray(bd.events))return originalRebuild.apply(this,args);
+      repairXtbRawDividendTaxes(state);
+      const rawEvents=bd.events;
+      // Clone every event object: the original rebuild is allowed to annotate
+      // working events, but must never mutate the persisted broker ledger.
+      bd.events=rawEvents.map(e=>e&&typeof e==='object'?{...e}:e);
+      try{return originalRebuild.apply(this,args);}
+      finally{bd.events=rawEvents;}
+    };
+    window.VestraBrokerWhtIntegrity=Object.freeze({version:'1.0',repair:repairXtbRawDividendTaxes});
+  }
+  try{installBrokerWhtIntegrityGuard();}catch(err){console.warn('[broker WHT integrity]',err);}
 
   function root(){
     const sh=document.getElementById('marketSheet'),c=document.getElementById('marketSheetContent');
@@ -95,5 +159,5 @@
   document.addEventListener('click',e=>{const btn=e.target.closest?.('[data-vpu-detail]');if(!btn)return;const c=root();if(!c)return;const dc=decisionCenter(c);if(!dc)return;const open=!dc.hidden;c.dataset.vpdDiagnosis=open?'1':'0';requestAnimationFrame(()=>{syncDiagnosis(c);if(open)dc.scrollIntoView?.({behavior:'smooth',block:'start'});});},true);
   function start(){style();apply();const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply,overlapModel,version:'1.0'});
+  window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply,overlapModel,version:'1.1'});
 })();
