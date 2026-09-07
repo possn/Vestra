@@ -15,13 +15,13 @@ class BrokerWithholdingIntegrityTests(unittest.TestCase):
         self.assertIn("/\\bXTB\\b/i", DIAGNOSTICS)
 
     def test_rebuild_never_mutates_persisted_broker_event_objects(self):
+        clone = "bd.events=rawEvents.map(e=>e&&typeof e==='object'?{...e}:e)"
+        guarded_call = "try{return originalRebuild.apply(this,args);}"
         self.assertIn("const rawEvents=bd.events", DIAGNOSTICS)
-        self.assertIn("bd.events=rawEvents.map(e=>e&&typeof e==='object'?{...e}:e)", DIAGNOSTICS)
+        self.assertIn(clone, DIAGNOSTICS)
+        self.assertIn(guarded_call, DIAGNOSTICS)
         self.assertIn("finally{bd.events=rawEvents;}", DIAGNOSTICS)
-        self.assertLess(
-            DIAGNOSTICS.index("bd.events=rawEvents.map"),
-            DIAGNOSTICS.index("originalRebuild.apply(this,args)"),
-        )
+        self.assertLess(DIAGNOSTICS.index(clone), DIAGNOSTICS.index(guarded_call))
 
     def test_existing_devices_are_forced_through_one_clean_rebuild(self):
         self.assertIn("BROKER_WHT_INTEGRITY_VERSION=1", DIAGNOSTICS)
