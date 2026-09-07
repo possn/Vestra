@@ -38,7 +38,7 @@
     if (typeof document === 'undefined') return;
     if (window.VestraDashboardUiRefresh || document.querySelector('script[data-vestra-dashboard-ui-refresh]')) return;
     const script = document.createElement('script');
-    script.src = 'dashboard-ui-refresh.js?v=1.0';
+    script.src = 'dashboard-ui-refresh.js?v=1.1';
     script.defer = true;
     script.dataset.vestraDashboardUiRefresh = '1';
     document.head.appendChild(script);
