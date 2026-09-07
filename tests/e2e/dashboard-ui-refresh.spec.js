@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: history is compact by default and Dashboard shows portfolio pulse', async ({ page }) => {
+test('iPhone/WebKit: history is compact by default and Dashboard shows portfolio pulse when secondary cards are expanded', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -17,6 +17,7 @@ test('iPhone/WebKit: history is compact by default and Dashboard shows portfolio
       ];
       if (typeof renderDashboard === 'function') renderDashboard();
     } catch (_) {}
+    document.getElementById('viewDashboard')?.classList.add('dash-secondary-open');
     window.VestraDashboardUiRefresh.refresh();
   });
 
