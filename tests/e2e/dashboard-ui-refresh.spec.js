@@ -60,7 +60,9 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(upcoming).toContainText('Próximos 30 dias');
   await expect(upcoming).toContainText('42');
   await expect(upcoming).toContainText('1 pagamento previsto');
-  await expect(page.locator('#viewDashboard .kpi-quick__grid > .kpi-quick__cell')).toHaveCount(6);
+  // The base Dashboard contains four quick KPI cells; this insight deliberately
+  // fills the previously empty fifth slot rather than creating a sixth tile.
+  await expect(page.locator('#viewDashboard .kpi-quick__grid > .kpi-quick__cell')).toHaveCount(5);
 
   const summary = page.locator('#snapshotHistorySummary');
   const table = page.locator('#snapshotTable');
