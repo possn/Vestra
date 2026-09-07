@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: splash mostra o símbolo, faz o texto entrar lentamente e abre após ~2s', async ({ page }) => {
+test('iPhone/WebKit: splash mostra primeiro o símbolo, depois o texto, segura e abre a app', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
 
@@ -15,7 +15,9 @@ test('iPhone/WebKit: splash mostra o símbolo, faz o texto entrar lentamente e a
   await expect(brand).toHaveText('Vestra');
   await expect(tagline).toHaveText('Finance, made simple.');
 
-  // Assert the CSS choreography rather than sampling one fragile CI timestamp.
+  // The choreography is defined relative to the premium watchdog start, not to
+  // page.goto() completion. Assert the actual CSS timeline so slow CI loading
+  // cannot make the test sample the wrong animation phase.
   const timing = await page.evaluate(() => {
     const markStyle = getComputedStyle(document.querySelector('.vestra-splash__mark'));
     const brandStyle = getComputedStyle(document.querySelector('.vestra-splash__brand'));
@@ -28,22 +30,26 @@ test('iPhone/WebKit: splash mostra o símbolo, faz o texto entrar lentamente e a
       taglineDuration: parseFloat(taglineStyle.animationDuration) * 1000,
     };
   });
-  expect(timing.markDuration).toBeGreaterThanOrEqual(400);
-  expect(timing.brandDelay).toBeGreaterThanOrEqual(400);
+  expect(timing.markDuration).toBeGreaterThanOrEqual(700);
+  expect(timing.brandDelay).toBeGreaterThan(timing.markDuration);
   expect(timing.taglineDelay).toBeGreaterThan(timing.brandDelay);
-  expect(timing.brandDuration).toBeGreaterThanOrEqual(700);
-  expect(timing.taglineDuration).toBeGreaterThanOrEqual(650);
-  expect(timing.brandDelay + timing.brandDuration).toBeLessThanOrEqual(1300);
-  expect(timing.taglineDelay + timing.taglineDuration).toBeLessThanOrEqual(1600);
+  expect(timing.brandDelay + timing.brandDuration).toBeLessThanOrEqual(1700);
+  expect(timing.taglineDelay + timing.taglineDuration).toBeLessThanOrEqual(2000);
 
-  // Full copy settles around 1.5s, then the whole splash releases at ~2.0s.
-  await expect(splash).toHaveClass(/vestra-splash--copy-ready/, { timeout: 2_000 });
+  // The complete identity settles by ~2s and remains readable for >1s before release.
+  await expect(splash).toHaveClass(/vestra-splash--copy-ready/, { timeout: 2_500 });
+  const settledAt = Date.now();
   const brandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
   const taglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
   expect(brandOpacity).toBeGreaterThan(0.95);
   expect(taglineOpacity).toBeGreaterThan(0.95);
 
-  await expect(splash).toBeHidden({ timeout: 3_000 });
+  await page.waitForTimeout(900);
+  if (Date.now() - settledAt < 1000) {
+    await expect(splash).toBeVisible();
+  }
+
+  await expect(splash).toBeHidden({ timeout: 5_000 });
   await expect(page.locator('#viewDashboard')).toBeVisible();
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
 });
