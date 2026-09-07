@@ -10,6 +10,7 @@ import datetime as dt, gzip, json, logging, re, time
 from urllib.parse import urljoin
 import requests, yfinance as yf
 from lse_identity import resolve_isin as resolve_lse_isin
+from euronext_identity import resolve_isin as resolve_euronext_isin
 from asset_types import is_equity_candidate
 from source_agreement import attach_esef_same_period_observation
 
@@ -44,6 +45,12 @@ def _yahoo_isin(t):
 def resolve_isin_with_source(t,s=None):
     x=_yahoo_isin(t)
     if x: return x,'Yahoo Finance'
+    try:
+        x=resolve_euronext_isin(t,s)
+    except Exception:
+        x=None
+    if x and ISIN_RE.match(str(x).upper()):
+        return str(x).upper(),'Euronext official equities list'
     if str(t or '').upper().endswith('.L'):
         try: x=resolve_lse_isin(t,s)
         except Exception: x=None
