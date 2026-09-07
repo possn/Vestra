@@ -24,14 +24,32 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         self.assertNotIn("fetch(", self.source)
         self.assertNotIn("stocks.json", self.source)
 
+    def test_passive_income_grid_has_a_real_30_day_dividend_insight(self):
+        self.assertIn("dashboardUpcomingDividendsTile", self.source)
+        self.assertIn("Próximos 30 dias", self.source)
+        self.assertIn("sem pagamentos previstos", self.source)
+        self.assertIn("_yahooDiv?.payDate", self.source)
+        self.assertIn("latestObservedPaymentFor", self.source)
+        self.assertIn("netAmount", self.source)
+        self.assertNotIn("_yahooDiv?.rate /", self.source)
+
+    def test_negative_return_is_presented_as_integrated_health_card_without_changing_trigger(self):
+        self.assertIn("negReturnAlert", self.source)
+        self.assertIn("dashboard-health-card", self.source)
+        self.assertIn("Saúde do património", self.source)
+        self.assertIn("annual >= -5", self.source)
+        self.assertIn("Abaixo da inflação", self.source)
+        self.assertNotIn("⚠️", self.source)
+
     def test_cashflow_icon_forces_text_presentation(self):
         self.assertIn("#navCashflow .navico", self.source)
         self.assertIn("↕︎", self.source)
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
-        self.assertIn("dashboard-ui-refresh.js?v=1.0", self.loader)
+        self.assertIn("dashboard-ui-refresh.js?v=1.1", self.loader)
         self.assertIn("version: '1.7'", self.loader)
+        self.assertIn("version: '1.1'", self.source)
 
 
 if __name__ == "__main__":
