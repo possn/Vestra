@@ -25,7 +25,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('display:none !important', self.dossier)
         self.assertIn("version: '1.2'", self.source)
         self.assertIn("version: '1.3'", self.dossier)
-        self.assertIn('right:max(calc(env(safe-area-inset-right) + 3px),3px) !important', self.dossier)
+        self.assertIn('right:max(calc(env(safe-area-inset-right) - 20px),-20px) !important', self.dossier)
 
     def test_politicians_state_is_cleared_before_normal_market_mode_switch(self):
         self.assertIn("[data-politicians-mode]", self.source)
