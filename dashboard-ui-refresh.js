@@ -1,12 +1,14 @@
-/* Vestra Dashboard UI Refresh v1.0 — compact history + portfolio pulse + mobile polish. */
+/* Vestra Dashboard UI Refresh v1.1 — compact history + portfolio pulse + passive-income insight + mobile polish. */
 (() => {
   'use strict';
 
   const STYLE_ID = 'vestraDashboardUiRefreshStyle';
   const PULSE_ID = 'dashboardPortfolioPulseCard';
   const HISTORY_SUMMARY_ID = 'snapshotHistorySummary';
+  const UPCOMING_TILE_ID = 'dashboardUpcomingDividendsTile';
   let historyOpen = false;
   let historyObserver = null;
+  let healthObserver = null;
 
   const text = value => String(value ?? '').trim();
   const num = value => {
@@ -38,10 +40,15 @@
   }
 
   function parseDay(value) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(text(value));
-    if (!m) return null;
-    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    return Number.isNaN(d.getTime()) ? null : d;
+    const raw = text(value);
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+    if (m) {
+      const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    if (!raw) return null;
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }
 
   function historyRows() {
@@ -84,6 +91,74 @@
     };
   }
 
+  function canonicalTicker(value) {
+    return text(value).toUpperCase().replace(/\s+/g, '');
+  }
+
+  function assetTicker(asset) {
+    return canonicalTicker(asset?.yahooTicker || asset?.ticker || asset?.symbol || '');
+  }
+
+  function dividendTicker(dividend) {
+    const notes = text(dividend?.notes);
+    const yahoo = /(?:^|·|\s)Yahoo=([^·\s]+)/i.exec(notes)?.[1];
+    const ticker = /(?:^|·|\s)Ticker=([^·\s]+)/i.exec(notes)?.[1];
+    return canonicalTicker(yahoo || ticker || dividend?.ticker || '');
+  }
+
+  function dividendNet(dividend) {
+    const explicit = num(dividend?.netAmount);
+    if (explicit !== null) return explicit;
+    const gross = num(dividend?.grossAmount ?? dividend?.amount);
+    const tax = num(dividend?.taxWithheld) || 0;
+    return gross === null ? null : gross - tax;
+  }
+
+  function latestObservedPaymentFor(asset) {
+    const s = getState();
+    const dividends = Array.isArray(s?.dividends) ? s.dividends : [];
+    const ticker = assetTicker(asset);
+    const assetId = text(asset?.id);
+    const assetName = text(asset?.name).toLowerCase();
+    const rows = dividends.map(dividend => ({
+      dividend,
+      date: parseDay(dividend?.date),
+      net: dividendNet(dividend),
+      ticker: dividendTicker(dividend),
+    })).filter(row => {
+      if (!row.date || row.net === null || row.net <= 0 || row.dividend?.isAdjustment) return false;
+      if (assetId && text(row.dividend?.assetId) === assetId) return true;
+      if (ticker && row.ticker === ticker) return true;
+      return assetName && text(row.dividend?.assetName).toLowerCase() === assetName;
+    }).sort((a, b) => b.date - a.date);
+    if (!rows.length) return null;
+    const latest = rows[0].date;
+    const samePaymentWindow = rows.filter(row => Math.abs(row.date - latest) <= 3 * 86400000);
+    return samePaymentWindow.reduce((sum, row) => sum + row.net, 0);
+  }
+
+  function upcomingDividendEstimate(now = new Date()) {
+    const s = getState();
+    const assets = Array.isArray(s?.assets) ? s.assets : [];
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const end = new Date(start); end.setDate(end.getDate() + 30);
+    const seen = new Set();
+    const upcoming = [];
+
+    for (const asset of assets) {
+      const payDate = parseDay(asset?._yahooDiv?.payDate);
+      if (!payDate || payDate < start || payDate > end) continue;
+      const key = assetTicker(asset) || text(asset?.id) || text(asset?.name).toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      upcoming.push({ asset, payDate, estimate: latestObservedPaymentFor(asset) });
+    }
+
+    const known = upcoming.filter(row => num(row.estimate) !== null && row.estimate > 0);
+    const total = known.length ? known.reduce((sum, row) => sum + row.estimate, 0) : null;
+    return { count: upcoming.length, knownCount: known.length, total, upcoming };
+  }
+
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
@@ -100,6 +175,19 @@
       .dashboard-pulse-value{font-size:16px;font-weight:900;letter-spacing:-.25px;color:var(--text,#17212b)}
       .dashboard-pulse-value.is-up{color:#14756f}.dashboard-pulse-value.is-down{color:#b24e56}
       .dashboard-pulse-sub{margin-top:9px;font-size:10px;color:var(--muted,#64748b)}
+
+      #${UPCOMING_TILE_ID}{border-color:rgba(23,123,120,.22)!important;background:linear-gradient(145deg,rgba(23,123,120,.045),rgba(255,255,255,.45))!important}
+      #${UPCOMING_TILE_ID} .kpi-quick__v{color:#126e6a}
+
+      #negReturnAlert.dashboard-health-card{display:block;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;margin:0 0 12px!important;color:var(--text,#17212b)!important}
+      .dashboard-health-card__body{padding:15px 16px;border-radius:18px;background:linear-gradient(145deg,rgba(178,78,86,.075),rgba(255,255,255,.72));border:1px solid rgba(178,78,86,.16);box-shadow:0 3px 14px rgba(28,45,54,.035)}
+      .dashboard-health-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+      .dashboard-health-card__kicker{font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#9f4851;margin-bottom:4px}
+      .dashboard-health-card__title{font-size:15px;font-weight:900;color:var(--text,#17212b)}
+      .dashboard-health-card__status{flex:0 0 auto;padding:6px 9px;border-radius:999px;background:rgba(178,78,86,.10);color:#9f4851;font-size:9px;font-weight:850}
+      .dashboard-health-card__metric{margin-top:11px;font-size:19px;font-weight:900;letter-spacing:-.3px;color:#a8454f}
+      .dashboard-health-card__sub{margin-top:3px;font-size:11px;font-weight:800;color:#9f4851}
+      .dashboard-health-card__copy{margin-top:7px;font-size:10.5px;line-height:1.45;color:var(--muted,#64748b)}
 
       .snapshot-history-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:11px 12px;border-radius:14px;background:rgba(23,123,120,.045);border:1px solid rgba(23,123,120,.09)}
       .snapshot-history-summary__main{min-width:0}
@@ -160,6 +248,46 @@
     else dashboard.prepend(card);
   }
 
+  function renderUpcomingDividendTile(now = new Date()) {
+    const grid = document.querySelector('#viewDashboard .kpi-quick__grid');
+    if (!grid) return;
+    let tile = document.getElementById(UPCOMING_TILE_ID);
+    if (!tile) {
+      tile = document.createElement('div');
+      tile.id = UPCOMING_TILE_ID;
+      tile.className = 'kpi-quick__cell dashboard-upcoming-dividends';
+      grid.appendChild(tile);
+    }
+    const estimate = upcomingDividendEstimate(now);
+    const value = estimate.total !== null ? fmtMoney(estimate.total) : '—';
+    let sub = 'sem pagamentos previstos';
+    if (estimate.count > 0 && estimate.total !== null) sub = `${estimate.count} ${estimate.count === 1 ? 'pagamento previsto' : 'pagamentos previstos'}`;
+    else if (estimate.count > 0) sub = `${estimate.count} ${estimate.count === 1 ? 'pagamento sem estimativa' : 'pagamentos sem estimativa'}`;
+    tile.innerHTML = `<div class="kpi-quick__k">Próximos 30 dias</div><div class="kpi-quick__v">${value}</div><div class="kpi-quick__s">${sub}</div>`;
+  }
+
+  function renderPortfolioHealth() {
+    const alert = document.getElementById('negReturnAlert');
+    if (!alert || alert.style.display === 'none') return;
+    let twr = null;
+    try { twr = typeof calcTWR === 'function' ? calcTWR() : null; } catch (_) {}
+    const annual = num(twr?.annualised);
+    if (annual === null || annual >= -5) return;
+    if (alert.dataset.dashboardHealthAnnual === String(annual) && alert.querySelector('.dashboard-health-card__body')) return;
+    alert.dataset.dashboardHealthAnnual = String(annual);
+    alert.className = 'dashboard-health-card';
+    alert.innerHTML = `
+      <div class="dashboard-health-card__body">
+        <div class="dashboard-health-card__head">
+          <div><div class="dashboard-health-card__kicker">Saúde do património</div><div class="dashboard-health-card__title">Retorno real sob pressão</div></div>
+          <div class="dashboard-health-card__status">Atenção</div>
+        </div>
+        <div class="dashboard-health-card__metric">TWR anualizado ${fmtPct(annual)}/ano</div>
+        <div class="dashboard-health-card__sub">Abaixo da inflação</div>
+        <div class="dashboard-health-card__copy">O portefólio está a perder valor em termos reais. Usa esta leitura como sinal para rever alocação, custos e posições com pior contribuição.</div>
+      </div>`;
+  }
+
   function historySummaryText(rows) {
     if (!rows.length) return 'Ainda sem registos';
     const latest = rows[rows.length - 1];
@@ -201,15 +329,23 @@
 
   function installObserver() {
     const table = document.getElementById('snapshotTable');
-    if (!table || historyObserver) return;
-    historyObserver = new MutationObserver(() => syncHistoryCompact());
-    historyObserver.observe(table, { childList: true, subtree: true });
+    if (table && !historyObserver) {
+      historyObserver = new MutationObserver(() => syncHistoryCompact());
+      historyObserver.observe(table, { childList: true, subtree: true });
+    }
+    const alert = document.getElementById('negReturnAlert');
+    if (alert && !healthObserver) {
+      healthObserver = new MutationObserver(() => queueMicrotask(renderPortfolioHealth));
+      healthObserver.observe(alert, { childList: true, attributes: true, attributeFilter: ['style'] });
+    }
   }
 
   function refresh() {
     ensureStyles();
     normalizeBottomNav();
     renderPulse();
+    renderUpcomingDividendTile();
+    renderPortfolioHealth();
     syncHistoryCompact();
     installObserver();
   }
@@ -226,5 +362,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, version: '1.0' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, version: '1.1' });
 })();
