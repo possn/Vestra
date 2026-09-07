@@ -17,6 +17,15 @@
     document.head.appendChild(style);
   }
 
+  function ensureStockThemesTools() {
+    if (window.VestraMarketStockThemesTools || document.querySelector('script[data-vestra-stock-themes-tools]')) return;
+    const script = document.createElement('script');
+    script.src = 'market-stock-themes-tools.js?v=1.0';
+    script.defer = true;
+    script.dataset.vestraStockThemesTools = '1';
+    document.head.appendChild(script);
+  }
+
   function clearPoliticiansActive() {
     document.querySelector('[data-politicians-mode]')?.classList.remove('is-active');
   }
@@ -28,6 +37,7 @@
 
   function boot() {
     ensureStyle();
+    ensureStockThemesTools();
     document.addEventListener('click', onClickCapture, true);
   }
 
@@ -36,6 +46,7 @@
 
   window.VestraMarketUiPolish = Object.freeze({
     ensureStyle,
+    ensureStockThemesTools,
     clearPoliticiansActive,
     version: '1.2',
   });
