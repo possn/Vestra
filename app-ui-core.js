@@ -1,4 +1,4 @@
-/* Vestra UI core v1.5 — DOM, Chart infrastructure and launch watchdog. */
+/* Vestra UI core v1.6 — DOM, Chart infrastructure and launch watchdog. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -29,12 +29,12 @@ function installPremiumSplashWatchdog() {
     style.textContent = `
       .vestra-splash.vestra-splash--premium{
         display:flex!important;opacity:1!important;
-        background:
-          radial-gradient(circle at 50% 42%,rgba(255,255,255,.96) 0,rgba(244,242,235,.98) 30%,rgba(224,227,222,.99) 66%,#d4d8d3 100%)!important;
+        background:#eef0ec!important;
+        backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
       }
       .vestra-splash--premium .vestra-splash__mark{
         width:138px!important;height:138px!important;margin-bottom:0!important;
-        animation:vestraPremiumMarkIn .72s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumMarkIn .46s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium .vestra-splash__mark::after{
         inset:-18px!important;border-radius:42px!important;
@@ -48,12 +48,12 @@ function installPremiumSplashWatchdog() {
       .vestra-splash--premium .vestra-splash__brand{
         margin-top:24px!important;font-size:31px!important;font-weight:650!important;
         letter-spacing:-.035em!important;opacity:0;
-        animation:vestraPremiumBrandIn .82s .82s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumBrandIn .82s .36s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium .vestra-splash__tagline{
         margin-top:9px!important;font-size:15px!important;font-weight:600!important;
         letter-spacing:.02em!important;color:#55646b!important;opacity:0;
-        animation:vestraPremiumTaglineIn .76s 1.18s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumTaglineIn .78s .72s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__brand,
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__tagline{
@@ -89,11 +89,11 @@ function installPremiumSplashWatchdog() {
   splash.classList.add('vestra-splash--premium');
   const startedAt = performance.now();
   // Sequence contract:
-  // 0.00–0.72s mark only → 0.82–1.95s copy enters → 1.35s quiet hold → fade.
-  // This makes the identity readable instead of letting copy overlap the icon reveal.
-  const copyReadyMs = 1980;
-  const minimumVisibleMs = 3350;
-  const failsafeMs = 5400;
+  // 0.00–0.46s mark → 0.36–1.50s copy enters slowly → readable hold → fade starts at 2.00s.
+  // The fade itself is deliberately softer so the launch does not disappear abruptly.
+  const copyReadyMs = 1500;
+  const minimumVisibleMs = 2000;
+  const failsafeMs = 4200;
   let releasing = false;
   let releaseTimer = null;
 
@@ -128,13 +128,13 @@ function installPremiumSplashWatchdog() {
     splash.style.display = 'flex';
     splash.style.opacity = '1';
     splash.style.pointerEvents = 'auto';
-    splash.style.transition = 'opacity .44s cubic-bezier(.4,0,.2,1)';
+    splash.style.transition = 'opacity .68s cubic-bezier(.4,0,.2,1)';
     requestAnimationFrame(() => requestAnimationFrame(() => { splash.style.opacity = '0'; }));
     setTimeout(() => {
       splash.style.display = 'none';
       splash.style.pointerEvents = 'none';
       splash.classList.remove('vestra-splash--premium', 'vestra-splash--copy-ready');
-    }, 480);
+    }, 720);
   };
 
   const observer = new MutationObserver(() => {
