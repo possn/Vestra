@@ -185,9 +185,13 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
     await expect(sheet).toHaveAttribute('data-ticker', ticker);
     await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
     await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
-    await expect(sheet.locator('.market-close-persistent')).toBeVisible();
 
-    await page.locator('.market-close-persistent').click();
+    // Dossier v1.2 contract: the external persistent close stays hidden while
+    // the real inline close lives beside the favourite button in the fixed group.
+    await expect(sheet.locator('.market-close-persistent')).toBeHidden();
+    const inlineClose = sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]').first();
+    await expect(inlineClose, `${ticker} inline dossier close missing`).toBeVisible();
+    await inlineClose.click();
     await expect(sheet).toBeHidden();
   }
 
