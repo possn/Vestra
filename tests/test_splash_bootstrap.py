@@ -13,23 +13,25 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('vestra:app-ready', UI)
         self.assertIn('setTimeout(() => releaseSplash', UI)
 
-    def test_premium_sequence_is_mark_then_brand_then_tagline(self):
-        self.assertIn('vestraPremiumMarkIn .72s', UI)
-        self.assertIn('vestraPremiumBrandIn .82s .82s', UI)
-        self.assertIn('vestraPremiumTaglineIn .76s 1.18s', UI)
-        self.assertIn('copyReadyMs = 1980', UI)
-        self.assertIn('minimumVisibleMs = 3350', UI)
-        self.assertIn('failsafeMs = 5400', UI)
+    def test_premium_sequence_is_mark_then_slow_copy_then_release(self):
+        self.assertIn('Vestra UI core v1.6', UI)
+        self.assertIn('vestraPremiumMarkIn .45s', UI)
+        self.assertIn('vestraPremiumBrandIn .78s .42s', UI)
+        self.assertIn('vestraPremiumTaglineIn .72s .78s', UI)
+        self.assertIn('copyReadyMs = 1500', UI)
+        self.assertIn('minimumVisibleMs = 2000', UI)
+        self.assertIn('failsafeMs = 3600', UI)
 
-    def test_copy_has_a_real_readable_hold_before_release(self):
-        self.assertIn('1.35s quiet hold', UI)
+    def test_copy_fades_in_slowly_and_splash_releases_at_two_seconds(self):
+        self.assertIn('copy fades in', UI)
+        self.assertIn('fade at 2.00s', UI)
         self.assertIn('vestra-splash--copy-ready', UI)
-        self.assertIn("splash.style.transition = 'opacity .44s", UI)
-        self.assertLess(1980, 3350)
-        self.assertGreaterEqual(3350 - 1980, 1000)
-        self.assertLessEqual(3350 - 1980, 2000)
+        self.assertIn("splash.style.transition = 'opacity .30s", UI)
+        self.assertLess(1500, 2000)
+        self.assertGreaterEqual(2000 - 1500, 400)
+        self.assertLessEqual(2000 - 1500, 800)
 
-    def test_legacy_early_fade_is_neutralised_until_copy_finishes(self):
+    def test_legacy_early_fade_is_neutralised_until_sequence_finishes(self):
         self.assertIn('keepSplashVisible', UI)
         self.assertIn("splash.style.opacity = '1'", UI)
         self.assertIn("splash.style.display = 'flex'", UI)
