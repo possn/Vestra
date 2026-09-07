@@ -32,8 +32,7 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   const card = page.locator('#dashboardWeeklyEventsCard');
   await expect(card).toBeVisible({ timeout: 15_000 });
   await expect(card.locator('.weekly-events-title')).toHaveText('Eventos da semana');
-  await expect(card.locator('.weekly-events-range')).toContainText('6 set');
-  await expect(card.locator('.weekly-events-range')).toContainText('12 set');
+  await expect(card.locator('.weekly-events-range')).toHaveText('6/09 – 12/09');
 
   const earnings = card.locator('[data-weekly-event-ticker]');
   await expect(earnings).toHaveCount(2);
