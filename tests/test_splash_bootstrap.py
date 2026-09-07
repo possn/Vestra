@@ -13,21 +13,26 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('vestra:app-ready', UI)
         self.assertIn('setTimeout(() => releaseSplash', UI)
 
-    def test_premium_sequence_is_mark_then_brand_then_tagline(self):
-        self.assertIn('vestraPremiumMarkIn .72s', UI)
-        self.assertIn('vestraPremiumBrandIn .82s .82s', UI)
-        self.assertIn('vestraPremiumTaglineIn .76s 1.18s', UI)
-        self.assertIn('copyReadyMs = 1980', UI)
-        self.assertIn('minimumVisibleMs = 3350', UI)
-        self.assertIn('failsafeMs = 5400', UI)
+    def test_splash_background_is_fully_opaque(self):
+        self.assertIn('background:#eef0ec!important', UI)
+        self.assertIn('backdrop-filter:none!important', UI)
+        self.assertIn('-webkit-backdrop-filter:none!important', UI)
 
-    def test_copy_has_a_real_readable_hold_before_release(self):
-        self.assertIn('1.35s quiet hold', UI)
-        self.assertIn('vestra-splash--copy-ready', UI)
-        self.assertIn("splash.style.transition = 'opacity .44s", UI)
-        self.assertLess(1980, 3350)
-        self.assertGreaterEqual(3350 - 1980, 1000)
-        self.assertLessEqual(3350 - 1980, 2000)
+    def test_copy_enters_early_and_progressively(self):
+        self.assertIn('Vestra UI core v1.6', UI)
+        self.assertIn('vestraPremiumMarkIn .46s', UI)
+        self.assertIn('vestraPremiumBrandIn .82s .36s', UI)
+        self.assertIn('vestraPremiumTaglineIn .78s .72s', UI)
+        self.assertIn('copyReadyMs = 1500', UI)
+        self.assertIn('minimumVisibleMs = 2000', UI)
+        self.assertIn('failsafeMs = 4200', UI)
+
+    def test_release_starts_at_two_seconds_and_fades_softly(self):
+        self.assertIn('fade starts at 2.00s', UI)
+        self.assertIn("splash.style.transition = 'opacity .68s", UI)
+        self.assertIn('}, 720);', UI)
+        self.assertLess(1500, 2000)
+        self.assertGreaterEqual(2000 - 1500, 400)
 
     def test_legacy_early_fade_is_neutralised_until_copy_finishes(self):
         self.assertIn('keepSplashVisible', UI)
