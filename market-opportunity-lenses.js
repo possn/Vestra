@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v1.1 — robust touch/click filtering, index-only. */
+/* Vestra Market Opportunity Lenses v1.2 — robust touch/click filtering, index-only. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -36,6 +36,16 @@
       button.setAttribute('aria-pressed',selected?'true':'false');
     });
   }
+  function setRowVisible(row, visible){
+    row.hidden=!visible;
+    if(visible){
+      if(row.dataset.vestraLensDisplay==='hidden') row.style.removeProperty('display');
+      delete row.dataset.vestraLensDisplay;
+    }else{
+      row.dataset.vestraLensDisplay='hidden';
+      row.style.setProperty('display','none','important');
+    }
+  }
   function apply(){
     const s=section(); if(!s) return;
     let bar=s.querySelector('.vestra-opportunity-lenses');
@@ -46,7 +56,7 @@
     }
     syncButtons(bar);
     const rows=[...s.querySelectorAll('.market-list .market-row')]; let shown=0;
-    rows.forEach(r=>{const ok=lensMatch(r,activeLens);r.hidden=!ok;if(ok)shown++;});
+    rows.forEach(r=>{const ok=lensMatch(r,activeLens);setRowVisible(r,ok);if(ok)shown++;});
     let empty=s.querySelector('.vestra-lens-empty');
     if(!shown&&activeLens!=='all'){
       if(!empty){empty=document.createElement('div');empty.className='vestra-lens-empty';s.querySelector('.market-list')?.appendChild(empty);}
@@ -80,5 +90,5 @@
     new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});}).observe(document.body,{childList:true,subtree:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({apply,select:lens=>{activeLens=t(lens)||'all';apply();},get active(){return activeLens;},version:'1.1'});
+  window.VestraMarketOpportunityLenses=Object.freeze({apply,select:lens=>{activeLens=t(lens)||'all';apply();},get active(){return activeLens;},version:'1.2'});
 })();
