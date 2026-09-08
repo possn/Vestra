@@ -1,8 +1,9 @@
-/* Vestra Market Opportunity Lenses v1.0 — lightweight, index-only. */
+/* Vestra Market Opportunity Lenses v1.1 — robust touch/click filtering, index-only. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
+  let activeLens='all';
 
   function section(){
     return [...document.querySelectorAll('.market-section')].find(x=>/Oportunidades agora|Melhores oportunidades/.test(t(x.querySelector('h3')?.textContent)))||null;
@@ -10,12 +11,6 @@
   function rowStock(row){
     const tk=t(row?.dataset?.marketTicker).toUpperCase();
     if(!tk) return null;
-    // market.js already exposes render rows from the lightweight index. We avoid
-    // loading a second copy of the market universe here. Scalars needed by the
-    // lenses are carried on the rendered row through the public ticker and can
-    // be resolved through the current VestraMarket search/open layer when data
-    // attributes have been enriched by later patches. If not available, use
-    // text-only classification and never trigger stocks.json.
     return row.__vestraStock || null;
   }
   function lensMatch(row, lens){
@@ -34,25 +29,56 @@
     if(lens==='value') return /underval|value|desconto|upside/.test(text);
     return true;
   }
+  function syncButtons(bar){
+    bar?.querySelectorAll('[data-vestra-lens]').forEach(button=>{
+      const selected=button.dataset.vestraLens===activeLens;
+      button.classList.toggle('is-active',selected);
+      button.setAttribute('aria-pressed',selected?'true':'false');
+    });
+  }
   function apply(){
     const s=section(); if(!s) return;
     let bar=s.querySelector('.vestra-opportunity-lenses');
     if(!bar){
-      bar=document.createElement('div');bar.className='vestra-opportunity-lenses';
-      bar.innerHTML='<button class="is-active" data-vestra-lens="all">Todos</button><button data-vestra-lens="emerging">A começar</button><button data-vestra-lens="recovery">Recuperação</button><button data-vestra-lens="value">Value + timing</button>';
+      bar=document.createElement('div');bar.className='vestra-opportunity-lenses';bar.setAttribute('role','group');bar.setAttribute('aria-label','Filtrar oportunidades');
+      bar.innerHTML='<button type="button" data-vestra-lens="all" aria-pressed="true">Todos</button><button type="button" data-vestra-lens="emerging" aria-pressed="false">A começar</button><button type="button" data-vestra-lens="recovery" aria-pressed="false">Recuperação</button><button type="button" data-vestra-lens="value" aria-pressed="false">Value + timing</button>';
       const guide=s.querySelector('.ux454-opportunity-guide');(guide||s.querySelector('.market-section__head'))?.insertAdjacentElement('afterend',bar);
     }
-    const lens=t(bar.querySelector('.is-active')?.dataset.vestraLens)||'all';
+    syncButtons(bar);
     const rows=[...s.querySelectorAll('.market-list .market-row')]; let shown=0;
-    rows.forEach(r=>{const ok=lensMatch(r,lens);r.hidden=!ok;if(ok)shown++;});
+    rows.forEach(r=>{const ok=lensMatch(r,activeLens);r.hidden=!ok;if(ok)shown++;});
     let empty=s.querySelector('.vestra-lens-empty');
-    if(!shown&&lens!=='all'){
+    if(!shown&&activeLens!=='all'){
       if(!empty){empty=document.createElement('div');empty.className='vestra-lens-empty';s.querySelector('.market-list')?.appendChild(empty);}
       empty.textContent='Sem candidatos fortes nesta lente neste momento.';
     }else empty?.remove();
   }
-  function style(){if(document.getElementById('vestra-opportunity-lenses-style'))return;const s=document.createElement('style');s.id='vestra-opportunity-lenses-style';s.textContent='.vestra-opportunity-lenses{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px;padding:1px 0 2px;scrollbar-width:none}.vestra-opportunity-lenses button{flex:0 0 auto;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:7px 10px;font-size:9px;font-weight:850;color:var(--text2)}.vestra-opportunity-lenses button.is-active{background:var(--accent,#168e89);color:#fff;border-color:transparent}.vestra-lens-empty{padding:18px;text-align:center;color:var(--text2);font-size:11px}';document.head.appendChild(s);}
-  document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-lens]');if(!b)return;e.preventDefault();const bar=b.closest('.vestra-opportunity-lenses');bar?.querySelectorAll('button').forEach(x=>x.classList.toggle('is-active',x===b));apply();});
-  function start(){style();apply();let pending=false;new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});}).observe(document.body,{childList:true,subtree:true});}
+  function selectLens(button){
+    const next=t(button?.dataset?.vestraLens)||'all';
+    if(!['all','emerging','recovery','value'].includes(next)) return;
+    activeLens=next;
+    apply();
+  }
+  function style(){
+    if(document.getElementById('vestra-opportunity-lenses-style'))return;
+    const s=document.createElement('style');s.id='vestra-opportunity-lenses-style';s.textContent=`
+      .vestra-opportunity-lenses{position:relative;z-index:3;display:flex;gap:6px;overflow-x:auto;margin:0 0 10px;padding:2px 0 3px;scrollbar-width:none;pointer-events:auto;-webkit-overflow-scrolling:touch}
+      .vestra-opportunity-lenses::-webkit-scrollbar{display:none}
+      .vestra-opportunity-lenses button{position:relative;z-index:4;flex:0 0 auto;appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:8px 11px;min-height:34px;font:inherit;font-size:9px;font-weight:850;color:var(--text2);cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+      .vestra-opportunity-lenses button.is-active{background:var(--accent,#168e89);color:#fff;border-color:transparent}
+      .ux454-opportunity-guide{pointer-events:none}
+      .vestra-lens-empty{padding:18px;text-align:center;color:var(--text2);font-size:11px}
+    `;document.head.appendChild(s);
+  }
+  document.addEventListener('click',e=>{
+    const b=e.target.closest?.('[data-vestra-lens]');if(!b)return;
+    e.preventDefault();e.stopPropagation();selectLens(b);
+  });
+  function start(){
+    style();apply();
+    let pending=false;
+    new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});}).observe(document.body,{childList:true,subtree:true});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  window.VestraMarketOpportunityLenses=Object.freeze({apply,select:lens=>{activeLens=t(lens)||'all';apply();},get active(){return activeLens;},version:'1.1'});
 })();
