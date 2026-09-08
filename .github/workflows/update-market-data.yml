@@ -48,7 +48,7 @@ jobs:
 
       - name: Validate enrichment modules
         run: |
-          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/yahoo_rate_limit.py scripts/yahoo_retry_hygiene.py scripts/run_market_pipeline.py scripts/sec_enrich.py scripts/sec_archives_enrich.py scripts/sec_archives_runtime.py scripts/sec_worker_fallback.py scripts/seed_sec_ticker_map.py scripts/sec_endpoint_probe.py scripts/sec_fund_identity.py scripts/capital_risk.py scripts/capital_risk_scan_order.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/insiders.py scripts/insider_runtime_metrics.py scripts/insider_archives_runtime.py scripts/insider_prices.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/extra_ticker_hygiene.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
+          python -m py_compile scripts/universe.py scripts/fundamentals.py scripts/yahoo_rate_limit.py scripts/yahoo_retry_hygiene.py scripts/run_market_pipeline.py scripts/sec_enrich.py scripts/sec_archives_enrich.py scripts/sec_archives_runtime.py scripts/sec_worker_fallback.py scripts/seed_sec_ticker_map.py scripts/sec_endpoint_probe.py scripts/sec_fund_identity.py scripts/capital_risk.py scripts/capital_risk_scan_order.py scripts/esef_enrich.py scripts/esef_enrich_v416.py scripts/lse_identity.py scripts/gap_retrieval.py scripts/quarterly_gap_retrieval.py scripts/insiders.py scripts/insider_runtime_metrics.py scripts/insider_archives_runtime.py scripts/insider_prices.py scripts/score.py scripts/score_audit.py scripts/score_forward_validation.py scripts/peer_benchmark.py scripts/score_peer_shadow.py scripts/score_benchmark_audit.py scripts/confidence.py scripts/low52_intelligence.py scripts/scanner.py scripts/congress.py scripts/run.py scripts/postprocess_market.py scripts/normalize_market_provenance.py scripts/build_market_shards.py scripts/coverage_audit.py scripts/esef_coverage_audit.py scripts/extra_ticker_hygiene.py scripts/provenance_audit.py scripts/coverage_guard.py scripts/sync_learned_universe.py
           if [ -f scripts/reliability_gate.py ]; then python -m py_compile scripts/reliability_gate.py; fi
           if [ -f scripts/opportunity_rank.py ]; then python -m py_compile scripts/opportunity_rank.py; fi
           if [ -f scripts/sector_native.py ]; then python -m py_compile scripts/sector_native.py; fi
@@ -73,13 +73,7 @@ jobs:
       - name: Run pipeline
         working-directory: scripts
         env:
-          # The 2026-09-05 production run showed repeated 429/401 bursts at
-          # three broad-fetch workers. Two workers trade a little raw parallelism
-          # for materially lower per-IP request pressure and fewer 60s cooldowns.
           FINSCANNER_FETCH_WORKERS: "2"
-          # Analyst workers fan each ticker into several Yahoo endpoints. Keep
-          # those endpoint calls below the level that produced Invalid Crumb
-          # storms in the same production run.
           FINSCANNER_ANALYST_ENDPOINT_CONCURRENCY: "2"
         run: python run_market_pipeline.py
 
@@ -102,6 +96,10 @@ jobs:
       - name: Build coverage audit
         working-directory: scripts
         run: python coverage_audit.py
+
+      - name: Build European ESEF identity coverage audit
+        working-directory: scripts
+        run: python esef_coverage_audit.py
 
       - name: Build extra ticker hygiene audit
         working-directory: scripts
@@ -144,9 +142,6 @@ jobs:
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          # Never publish any rejected market payload. Core payloads are already
-          # tracked; the new compact payloads can be either tracked or untracked
-          # during rollout, so restore/remove them individually before staging.
           git checkout -- data/stocks.json data/stocks-index.json data/dossiers-manifest.json data/dossiers 2>/dev/null || true
           for path in data/stocks-startup.json data/stocks-scanner.json; do
             if git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
@@ -161,7 +156,7 @@ jobs:
             git status --short -- data/stocks.json data/stocks-index.json data/stocks-startup.json data/stocks-scanner.json data/dossiers-manifest.json data/dossiers >&2
             exit 1
           fi
-          git add data/coverage_audit.json data/extra_ticker_hygiene.json data/provenance_audit.json data/coverage_guard.json data/pipeline_log.txt data/last_error.log data/sec_ticker_map.json data/sec_fund_ticker_map.json data/sec_fund_identity_audit.json 2>/dev/null || true
+          git add data/coverage_audit.json data/esef_coverage_audit.json data/extra_ticker_hygiene.json data/provenance_audit.json data/coverage_guard.json data/pipeline_log.txt data/last_error.log data/sec_ticker_map.json data/sec_fund_ticker_map.json data/sec_fund_identity_audit.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Guard bloqueou publicação e não há novos diagnósticos para gravar."
           else
@@ -184,6 +179,7 @@ jobs:
             data/pipeline_log.txt
             data/last_error.log
             data/coverage_audit.json
+            data/esef_coverage_audit.json
             data/extra_ticker_hygiene.json
             data/provenance_audit.json
             data/coverage_guard.json
