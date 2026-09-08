@@ -17,7 +17,7 @@ assert.strictEqual(typeof api.ensureDashboardUiRefresh, 'function');
 assert.strictEqual(typeof api.ensureMobileUiRefresh, 'function');
 assert.strictEqual(typeof api.ensureMarketUiPolish, 'function');
 assert.strictEqual(typeof api.ensureUiVisualPolish, 'function');
-assert(source.includes('market-etf-intelligence.js?v=1.0'), 'ETF intelligence companion must be cache-busted and reachable');
+assert(source.includes('market-etf-intelligence.js?v=1.2'), 'ETF intelligence companion must be cache-busted and reachable');
 assert(source.includes('dashboard-weekly-events.js?v=1.2'), 'weekly macro events companion must use the current cache-busted runtime');
 assert(source.includes('dashboard-ui-refresh.js?v=1.1'), 'dashboard UI refresh companion must be cache-busted and reachable');
 assert(source.includes('mobile-ui-refresh.js?v=1.0'), 'mobile UI refresh companion must be cache-busted and reachable');
