@@ -1,0 +1,53 @@
+name: Apply ESEF coverage audit integration
+
+on:
+  push:
+    branches:
+      - chore/esef-coverage-audit-20260908
+    paths:
+      - .github/workflows/apply-esef-coverage-audit.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: chore/esef-coverage-audit-20260908
+      - name: Integrate offline ESEF coverage audit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/update-market-data.yml')
+          text=p.read_text(encoding='utf-8')
+          old='''      - name: Build coverage audit\n        working-directory: scripts\n        run: python coverage_audit.py\n\n      - name: Build extra ticker hygiene audit\n'''
+          new='''      - name: Build coverage audit\n        working-directory: scripts\n        run: python coverage_audit.py\n\n      - name: Build European ESEF identity coverage audit\n        working-directory: scripts\n        run: python esef_coverage_audit.py\n\n      - name: Build extra ticker hygiene audit\n'''
+          if text.count(old) != 1:
+              raise SystemExit(f'coverage step anchor count={text.count(old)}')
+          text=text.replace(old,new,1)
+          old_compile='scripts/coverage_audit.py scripts/extra_ticker_hygiene.py'
+          new_compile='scripts/coverage_audit.py scripts/esef_coverage_audit.py scripts/extra_ticker_hygiene.py'
+          if text.count(old_compile) != 1:
+              raise SystemExit('compile anchor missing')
+          text=text.replace(old_compile,new_compile,1)
+          old_blocked='data/coverage_audit.json data/extra_ticker_hygiene.json'
+          new_blocked='data/coverage_audit.json data/esef_coverage_audit.json data/extra_ticker_hygiene.json'
+          if text.count(old_blocked) != 1:
+              raise SystemExit('blocked diagnostic anchor missing')
+          text=text.replace(old_blocked,new_blocked,1)
+          old_art='''            data/coverage_audit.json\n            data/extra_ticker_hygiene.json\n'''
+          new_art='''            data/coverage_audit.json\n            data/esef_coverage_audit.json\n            data/extra_ticker_hygiene.json\n'''
+          if text.count(old_art) != 1:
+              raise SystemExit('artifact anchor missing')
+          text=text.replace(old_art,new_art,1)
+          p.write_text(text,encoding='utf-8')
+          PY
+          rm .github/workflows/apply-esef-coverage-audit.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/update-market-data.yml .github/workflows/apply-esef-coverage-audit.yml
+          git commit -m "Integrate ESEF coverage audit into market builds"
+          git push origin HEAD:chore/esef-coverage-audit-20260908
