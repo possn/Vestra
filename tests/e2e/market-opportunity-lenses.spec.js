@@ -6,10 +6,14 @@ test('iPhone/WebKit: opportunity lenses are tappable and persist the selected fi
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses));
-  // Let the normal Market bootstrap finish before adding the isolated regression fixture.
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 7_000 });
 
   await page.evaluate(() => {
+    // This test owns an isolated opportunity section. The live opportunity renderer
+    // watches the same heading and would otherwise replace the fixture rows with the
+    // real ranked universe on its next MutationObserver pass.
+    window.VestraMarketStaticUniverse = { getStocks: () => [] };
+
     const fixture = document.createElement('section');
     fixture.id = 'lensFixture';
     fixture.className = 'market-section';
