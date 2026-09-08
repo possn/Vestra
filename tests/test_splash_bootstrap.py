@@ -48,7 +48,7 @@ class SplashBootstrapTests(unittest.TestCase):
         for asset in ('app-utils.js', 'app-storage.js', 'app-ui-core.js', 'app.js', 'market-static-universe.js', 'dashboard-weekly-events.js', 'market-dossier-controls.js', 'market-ui-polish.js'):
             self.assertIn(asset, SW)
         self.assertIn('event.respondWith(networkFirst(request))', SW)
-        self.assertIn('vestra-cache-v128', SW)
+        self.assertIn('vestra-cache-v129', SW)
 
 
 if __name__ == '__main__':
