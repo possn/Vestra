@@ -69,7 +69,7 @@
     if (typeof document === 'undefined') return;
     if (window.VestraMobileUiRefresh || document.querySelector('script[data-vestra-mobile-ui-refresh]')) return;
     const script = document.createElement('script');
-    script.src = 'mobile-ui-refresh.js?v=1.0';
+    script.src = 'mobile-ui-refresh.js?v=1.2';
     script.defer = true;
     script.dataset.vestraMobileUiRefresh = '1';
     document.head.appendChild(script);

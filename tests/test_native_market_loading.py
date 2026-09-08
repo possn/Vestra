@@ -82,8 +82,8 @@ class NativeMarketLoadingTests(unittest.TestCase):
 
     def test_service_worker_matches_native_market_generation(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v10.14', sw)
-        self.assertIn('vestra-cache-v128', sw)
+        self.assertIn('Vestra Service Worker v10.15', sw)
+        self.assertIn('vestra-cache-v129', sw)
         self.assertIn('staleWhileRevalidate', sw)
         self.assertIn('["script", "style", "worker", "manifest"]', sw)
         self.assertIn('./market-live-overlay.js', sw)
@@ -98,6 +98,8 @@ class NativeMarketLoadingTests(unittest.TestCase):
         self.assertIn('./portfolio-diagnostics.js', sw)
         self.assertIn('./vestra-ai-brief.js', sw)
         self.assertIn('./portfolio-dossier-routing.js', sw)
+        self.assertIn('./market-opportunity-lenses.js', sw)
+        self.assertIn('./mobile-ui-refresh.js', sw)
 
 
 if __name__ == '__main__':

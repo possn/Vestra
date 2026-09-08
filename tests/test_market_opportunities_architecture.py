@@ -65,13 +65,13 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v10.14', sw)
-        self.assertIn('vestra-cache-v128', sw)
+        self.assertIn('Vestra Service Worker v10.15', sw)
+        self.assertIn('vestra-cache-v129', sw)
         self.assertIn('staleWhileRevalidate', sw)
         for module in (
             './market-live-overlay.js','./market-opportunities.js','./vestra-portfolio-focus.js','./vestra-portfolio-hierarchy.js','./vestra-swap-lab.js',
             './market-company-brief.js','./market-metric-cleanup.js','./portfolio-collapsibles.js','./portfolio-card-classifier.js','./portfolio-diagnostics.js',
-            './vestra-ai-brief.js','./portfolio-dossier-routing.js',
+            './vestra-ai-brief.js','./portfolio-dossier-routing.js','./market-opportunity-lenses.js','./mobile-ui-refresh.js',
         ):
             self.assertIn(module, sw)
 

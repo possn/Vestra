@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.14 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v128";
+/* Vestra Service Worker v10.15 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v129";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -46,6 +46,7 @@ const APP_SHELL = [
   "./vestra-portfolio-hierarchy.js",
   "./vestra-swap-lab.js",
   "./market-opportunity-lenses.js",
+  "./mobile-ui-refresh.js",
   "./vestra-ai-brief.js",
   "./vestra-portfolio-ui.js",
   "./portfolio-diagnostics.js",
@@ -71,7 +72,9 @@ const APP_SHELL = [
 // also network-first because it is loaded dynamically and must not lag behind
 // the Dashboard visibility contract after a PWA update. Dossier control modules
 // are included so WebKit never mixes the old split-button geometry with the new
-// unified action group.
+// unified action group. Mobile drawer and opportunity lenses are network-first
+// because both are interaction-critical on iPhone and must not lag one launch
+// behind after a PWA update.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -94,7 +97,9 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "market-etf-intelligence.js",
   "dashboard-weekly-events.js",
   "market-dossier-controls.js",
-  "market-ui-polish.js"
+  "market-ui-polish.js",
+  "market-opportunity-lenses.js",
+  "mobile-ui-refresh.js"
 ]);
 
 self.addEventListener("install", event => {

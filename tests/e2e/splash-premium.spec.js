@@ -1,10 +1,13 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: splash é opaco, texto entra cedo e saída é suave', async ({ page }) => {
+test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece 2s e sai suavemente', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
 
-  await page.goto('/index.html');
+  // DOMContentLoaded is the correct observation point for launch choreography.
+  // Waiting for the full load event can include slow third-party resources and let
+  // the intentionally short splash finish before the first assertion on WebKit.
+  await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
   const splash = page.locator('#appLoadingOverlay');
   const mark = page.locator('.vestra-splash__mark');
   const brand = page.locator('.vestra-splash__brand');
@@ -30,25 +33,31 @@ test('iPhone/WebKit: splash é opaco, texto entra cedo e saída é suave', async
     };
   });
 
-  // O fundo tem de ser sólido: o Dashboard nunca pode ser visível por trás.
   expect(css.backgroundColor).toBe('rgb(238, 240, 236)');
-
-  // Copy starts much earlier than the previous 0.82s/1.18s delays, but still fades in slowly.
   expect(css.markDuration).toBeGreaterThanOrEqual(430);
   expect(css.brandDelay).toBeLessThanOrEqual(400);
-  expect(css.brandDuration).toBeGreaterThanOrEqual(780);
-  expect(css.taglineDelay).toBeLessThanOrEqual(760);
+  expect(css.brandDuration).toBeGreaterThanOrEqual(850);
+  expect(css.taglineDelay).toBeGreaterThanOrEqual(760);
+  expect(css.taglineDelay).toBeLessThanOrEqual(820);
   expect(css.taglineDelay).toBeGreaterThan(css.brandDelay);
-  expect(css.taglineDuration).toBeGreaterThanOrEqual(740);
+  expect(css.taglineDuration).toBeGreaterThanOrEqual(1100);
 
-  await expect(splash).toHaveClass(/vestra-splash--copy-ready/, { timeout: 2_000 });
+  // A tagline termina perto dos 2s; nesse momento o texto deve estar totalmente legível.
+  await expect(splash).toHaveClass(/vestra-splash--copy-ready/, { timeout: 2_400 });
+  const copyReadyAt = Date.now();
   const brandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
   const taglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
   expect(brandOpacity).toBeGreaterThan(0.95);
   expect(taglineOpacity).toBeGreaterThan(0.95);
 
-  // The release begins at ~2s but takes ~0.7s, avoiding the abrupt disappearance.
-  await expect(splash).toBeHidden({ timeout: 3_500 });
+  // Depois de ficar totalmente visível, a cópia permanece aproximadamente 2s antes do fade.
+  await page.waitForTimeout(1_650);
+  await expect(splash).toBeVisible();
+  expect(Date.now() - copyReadyAt).toBeGreaterThanOrEqual(1_600);
+
+  // On a cold WebKit run app readiness may arrive after the nominal 4s choreography;
+  // the watchdog is allowed to use its bounded failsafe, but the splash must still release.
+  await expect(splash).toBeHidden({ timeout: 4_000 });
   await expect(page.locator('#viewDashboard')).toBeVisible();
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
 });

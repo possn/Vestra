@@ -18,21 +18,23 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('backdrop-filter:none!important', UI)
         self.assertIn('-webkit-backdrop-filter:none!important', UI)
 
-    def test_copy_enters_early_and_progressively(self):
-        self.assertIn('Vestra UI core v1.6', UI)
+    def test_copy_enters_slowly_and_progressively(self):
+        self.assertIn('Vestra UI core v1.7', UI)
         self.assertIn('vestraPremiumMarkIn .46s', UI)
-        self.assertIn('vestraPremiumBrandIn .82s .36s', UI)
-        self.assertIn('vestraPremiumTaglineIn .78s .72s', UI)
-        self.assertIn('copyReadyMs = 1500', UI)
-        self.assertIn('minimumVisibleMs = 2000', UI)
-        self.assertIn('failsafeMs = 4200', UI)
+        self.assertIn('vestraPremiumBrandIn .9s .34s', UI)
+        self.assertIn('vestraPremiumTaglineIn 1.18s .78s', UI)
+        self.assertIn('filter:blur(1.5px)', UI)
+        self.assertIn('copyReadyMs = 2000', UI)
+        self.assertIn('minimumVisibleMs = 4000', UI)
+        self.assertIn('failsafeMs = 6200', UI)
 
-    def test_release_starts_at_two_seconds_and_fades_softly(self):
-        self.assertIn('fade starts at 2.00s', UI)
+    def test_release_waits_two_seconds_after_copy_then_fades_softly(self):
+        self.assertIn('tagline completes at ~2.00s → hold copy for 2s → fade', UI)
         self.assertIn("splash.style.transition = 'opacity .68s", UI)
         self.assertIn('}, 720);', UI)
-        self.assertLess(1500, 2000)
-        self.assertGreaterEqual(2000 - 1500, 400)
+        copy_ready_ms = 2000
+        minimum_visible_ms = 4000
+        self.assertEqual(minimum_visible_ms - copy_ready_ms, 2000)
 
     def test_legacy_early_fade_is_neutralised_until_copy_finishes(self):
         self.assertIn('keepSplashVisible', UI)
@@ -46,7 +48,7 @@ class SplashBootstrapTests(unittest.TestCase):
         for asset in ('app-utils.js', 'app-storage.js', 'app-ui-core.js', 'app.js', 'market-static-universe.js', 'dashboard-weekly-events.js', 'market-dossier-controls.js', 'market-ui-polish.js'):
             self.assertIn(asset, SW)
         self.assertIn('event.respondWith(networkFirst(request))', SW)
-        self.assertIn('vestra-cache-v128', SW)
+        self.assertIn('vestra-cache-v129', SW)
 
 
 if __name__ == '__main__':

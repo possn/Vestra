@@ -1,4 +1,4 @@
-/* Vestra UI core v1.6 — DOM, Chart infrastructure and launch watchdog. */
+/* Vestra UI core v1.7 — DOM, Chart infrastructure and launch watchdog. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -48,12 +48,12 @@ function installPremiumSplashWatchdog() {
       .vestra-splash--premium .vestra-splash__brand{
         margin-top:24px!important;font-size:31px!important;font-weight:650!important;
         letter-spacing:-.035em!important;opacity:0;
-        animation:vestraPremiumBrandIn .82s .36s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumBrandIn .9s .34s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium .vestra-splash__tagline{
         margin-top:9px!important;font-size:15px!important;font-weight:600!important;
         letter-spacing:.02em!important;color:#55646b!important;opacity:0;
-        animation:vestraPremiumTaglineIn .78s .72s cubic-bezier(.16,1,.3,1) both!important;
+        animation:vestraPremiumTaglineIn 1.18s .78s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__brand,
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__tagline{
@@ -69,8 +69,8 @@ function installPremiumSplashWatchdog() {
         to{opacity:1;transform:translateY(0);letter-spacing:-.035em}
       }
       @keyframes vestraPremiumTaglineIn{
-        from{opacity:0;transform:translateY(7px)}
-        to{opacity:1;transform:translateY(0)}
+        from{opacity:0;transform:translateY(7px);filter:blur(1.5px)}
+        to{opacity:1;transform:translateY(0);filter:blur(0)}
       }
       @keyframes vestraPremiumGlow{
         from{opacity:.36;transform:scale(.94)}
@@ -89,11 +89,10 @@ function installPremiumSplashWatchdog() {
   splash.classList.add('vestra-splash--premium');
   const startedAt = performance.now();
   // Sequence contract:
-  // 0.00–0.46s mark → 0.36–1.50s copy enters slowly → readable hold → fade starts at 2.00s.
-  // The fade itself is deliberately softer so the launch does not disappear abruptly.
-  const copyReadyMs = 1500;
-  const minimumVisibleMs = 2000;
-  const failsafeMs = 4200;
+  // 0.00–0.46s mark → brand enters → tagline completes at ~2.00s → hold copy for 2s → fade.
+  const copyReadyMs = 2000;
+  const minimumVisibleMs = 4000;
+  const failsafeMs = 6200;
   let releasing = false;
   let releaseTimer = null;
 
@@ -144,7 +143,7 @@ function installPremiumSplashWatchdog() {
     const elapsed = performance.now() - startedAt;
     if (elapsed < minimumVisibleMs) {
       // app.js still contains the legacy early fade. Neutralise it until the
-      // mark → copy → hold sequence has completed.
+      // mark → copy → 2 second dwell sequence has completed.
       keepSplashVisible();
       if (!releaseTimer) releaseTimer = setTimeout(() => {
         releaseTimer = null;
