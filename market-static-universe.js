@@ -39,6 +39,16 @@
     document.head.appendChild(script);
   }
 
+  function ensureAnalysisToolsRuntime() {
+    if (typeof document === 'undefined') return;
+    if (window.VestraMarketAnalysisToolsRuntime || document.querySelector('script[data-vestra-analysis-tools-runtime]')) return;
+    const script = document.createElement('script');
+    script.src = 'market-analysis-tools-runtime.js?v=1.0';
+    script.defer = true;
+    script.dataset.vestraAnalysisToolsRuntime = '1';
+    document.head.appendChild(script);
+  }
+
   function ensureWeeklyEventsCompanion() {
     if (typeof document === 'undefined') return;
     if (!document.getElementById('vestraWeeklyEventsVisibilityGuard')) {
@@ -184,6 +194,7 @@
 
   ensureEtfIntelligence();
   ensureScannerCompanion();
+  ensureAnalysisToolsRuntime();
   ensureWeeklyEventsCompanion();
   ensureDashboardUiRefresh();
   ensureMobileUiRefresh();
@@ -194,6 +205,7 @@
     getStocks,
     ensureEtfIntelligence,
     ensureScannerCompanion,
+    ensureAnalysisToolsRuntime,
     ensureWeeklyEventsCompanion,
     ensureDashboardUiRefresh,
     ensureMobileUiRefresh,
