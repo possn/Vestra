@@ -1,4 +1,4 @@
-/* Vestra Mobile UI Refresh v1.1 — compact topbar + reachable mobile drawer + useful More shortcuts. */
+/* Vestra Mobile UI Refresh v1.2 — compact topbar + reliable mobile drawer + useful More shortcuts. */
 (() => {
   'use strict';
 
@@ -21,7 +21,7 @@
       #viewSettings .more-group__body>.card{box-shadow:none;border-color:rgba(31,56,66,.075)}
       @media(max-width:720px){
         .topbar{padding:9px 12px;gap:7px;justify-content:flex-start}
-        .topbar #btnSidebarToggle{display:grid!important;place-items:center;width:42px;height:42px;min-width:42px;padding:0!important;border-radius:14px!important;font-size:19px!important;touch-action:manipulation}
+        .topbar #btnSidebarToggle{display:grid!important;place-items:center;width:42px;height:42px;min-width:42px;padding:0!important;border-radius:14px!important;font-size:19px!important;touch-action:manipulation;pointer-events:auto!important;position:relative;z-index:2}
         .topbar #btnSettingsNav{display:none!important}
         .topbar .brand{flex:1;min-width:0;gap:9px}
         .topbar .brand__icon{width:38px;height:38px;border-radius:12px}
@@ -29,6 +29,9 @@
         .topbar .brand__sub{display:none}
         .topbar #btnSearchToggle{width:42px;height:42px;min-width:42px;padding:0!important;display:grid;place-items:center;font-size:20px!important;border-radius:14px!important;touch-action:manipulation}
         .topbar .fab{width:42px;height:42px;min-width:42px;border-radius:14px;font-size:24px;box-shadow:0 5px 18px rgba(32,129,126,.22);touch-action:manipulation}
+        #sidebar.sidebar--open{transform:translate3d(0,0,0)!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+        #sidebarBackdrop:not([hidden]){display:block!important;pointer-events:auto!important}
+        body.sidebar-open{overflow:hidden}
         .more-shortcuts__grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
         .more-shortcut{min-height:68px;padding:10px 5px 9px;border-radius:15px}
       }
@@ -46,6 +49,38 @@
       }
     `;
     document.head.appendChild(style);
+  }
+
+  function setSidebarOpen(open) {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const toggle = document.getElementById('btnSidebarToggle');
+    if (!sidebar) return;
+    sidebar.classList.toggle('sidebar--open', Boolean(open));
+    if (backdrop) backdrop.hidden = !open;
+    if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.body.classList.toggle('sidebar-open', Boolean(open));
+  }
+
+  function ensureSidebarRuntime() {
+    const toggle = document.getElementById('btnSidebarToggle');
+    const close = document.getElementById('btnSidebarClose');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (!toggle || toggle.dataset.vestraMobileDrawer === '1') return;
+    toggle.dataset.vestraMobileDrawer = '1';
+    toggle.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      setSidebarOpen(true);
+    }, { passive:false });
+    close?.addEventListener('click', event => {
+      event.preventDefault();
+      setSidebarOpen(false);
+    }, { passive:false });
+    backdrop?.addEventListener('click', () => setSidebarOpen(false));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    });
   }
 
   function callView(view) {
@@ -99,6 +134,7 @@
 
   function refresh() {
     ensureStyles();
+    ensureSidebarRuntime();
     normalizeTopbarIcons();
     ensureShortcuts();
   }
@@ -114,5 +150,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true });
   else boot();
 
-  window.VestraMobileUiRefresh = Object.freeze({ refresh, version:'1.1' });
+  window.VestraMobileUiRefresh = Object.freeze({ refresh, setSidebarOpen, version:'1.2' });
 })();
