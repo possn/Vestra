@@ -28,6 +28,7 @@ const APP_SHELL = [
   "./market-portfolio-context.js",
   "./market-watch-snapshots.js",
   "./market-static-universe.js",
+  "./market-etf-intelligence.js",
   "./dashboard-weekly-events.js",
   "./market-dossier-signals.js",
   "./market-search-suggestions.js",
@@ -90,6 +91,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-financial-engine.js",
   "app.js",
   "market-static-universe.js",
+  "market-etf-intelligence.js",
   "dashboard-weekly-events.js",
   "market-dossier-controls.js",
   "market-ui-polish.js"
