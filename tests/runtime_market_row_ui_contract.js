@@ -5,7 +5,7 @@ const assert=require('assert');
 const context={window:{},Intl,Date,Number,Math};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('market-row-ui.js','utf8'),context,{filename:'market-row-ui.js'});
-assert.equal(context.window.VestraMarketRowUI?.version,'1.0');
+assert.equal(context.window.VestraMarketRowUI?.version,'1.1');
 
 const txt=v=>String(v??'').trim();
 const n=v=>{ if(v===null||v===undefined||v==='') return null; const x=Number(v); return Number.isFinite(x)?x:null; };
@@ -24,6 +24,7 @@ const api=context.window.VestraMarketRowUI.create({
 
 assert.equal(api.isFund({quote_type:'ETF',name:'Whatever'}),true);
 assert.equal(api.isFund({quote_type:'MUTUALFUND',name:'Whatever'}),true);
+assert.equal(api.isFund({quote_type:'FUND',name:'Whatever'}),true);
 assert.equal(api.isFund({name:'iShares Core MSCI World'}),true);
 assert.equal(api.isFund({quote_type:'EQUITY',name:'Microsoft Corporation'}),false);
 
@@ -41,10 +42,18 @@ assert(heldHtml.includes('☆'));
 assert(heldHtml.includes('class="changed"'));
 assert(heldHtml.includes('>82<'));
 
-const watchedHtml=api.renderRow({ticker:'VWCE.DE',name:'Vanguard FTSE All-World UCITS ETF',sector:'ETF',score:77});
+const watchedHtml=api.renderRow({ticker:'VWCE.DE',name:'Vanguard FTSE All-World UCITS ETF',sector:'ETF',score:77,etf_score:84,etf_score_coverage_pct:75});
 assert(watchedHtml.includes('★'));
 assert(watchedHtml.includes('is-active'));
 assert(watchedHtml.includes('class="changed"'));
+assert(watchedHtml.includes('>84<'));
+assert(watchedHtml.includes('title="ETF Score"'));
+assert(!watchedHtml.includes('>77<'));
+
+const pendingHtml=api.renderRow({ticker:'PEND',name:'Pending ETF',quote_type:'ETF',sector:'ETF',score:91,etf_score:null,etf_score_coverage_pct:38});
+assert(pendingHtml.includes('Por avaliar'));
+assert(pendingHtml.includes('dados 38%'));
+assert(pendingHtml.includes('>—<'));
 
 const displayScoreHtml=api.renderRow({ticker:'ABC',name:'ABC',sector:'Industrials',score:10},'Opportunity 88/100',88);
 assert(displayScoreHtml.includes('Opportunity 88/100'));

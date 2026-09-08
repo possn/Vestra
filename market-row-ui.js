@@ -1,4 +1,4 @@
-/* Vestra Market Row UI v1.0 */
+/* Vestra Market Row UI v1.1 */
 (() => {
   'use strict';
 
@@ -17,7 +17,7 @@
     function isFund(s){
       const q = text(s?.quote_type).toUpperCase();
       const name = text(s?.name).toUpperCase();
-      return q === 'ETF' || q === 'MUTUALFUND' || /\bETF\b|ISHARES|VANGUARD|XTRACKERS|SPDR|LYXOR|AMUNDI|WISDOMTREE|INVESCO/.test(name);
+      return q === 'ETF' || q === 'MUTUALFUND' || q === 'FUND' || /\bETF\b|ISHARES|VANGUARD|XTRACKERS|SPDR|LYXOR|AMUNDI|WISDOMTREE|INVESCO/.test(name);
     }
 
     function scoreClass(value){
@@ -33,19 +33,25 @@
     }
 
     function renderRow(s, meta='', displayScore=null){
+      const fund=isFund(s);
       const thesis = text(s?.thesis_type) || text(s?.sector) || 'Sem classificação';
-      const sub = meta || [text(s?.sector), thesis].filter(Boolean).join(' · ');
+      const scoreCoverage=number(s?.etf_score_coverage_pct);
+      const fundStatus = fund && number(s?.etf_score)==null
+        ? `Por avaliar${scoreCoverage!=null?` · dados ${Math.round(scoreCoverage)}%`:''}`
+        : '';
+      const sub = meta || [text(s?.sector), thesis, fundStatus].filter(Boolean).join(' · ');
       const ticker=text(s?.ticker);
       const held=inPortfolio(ticker), watched=isWatched(ticker);
-      const shownScore=displayScore ?? s?.score;
+      const shownScore=displayScore ?? (fund ? s?.etf_score : s?.score);
+      const scoreLabel=fund ? 'ETF Score' : 'Score';
       return `<div class="market-row" data-market-ticker="${escapeHtml(ticker)}">
       <div><div class="market-row__title"><span class="market-row__ticker">${escapeHtml(ticker)}</span>${held?'<span class="market-held-badge">Carteira</span>':''}<span class="market-row__name">${escapeHtml(s?.name||'')}</span></div><div class="market-row__meta">${escapeHtml(sub)}</div>${(held||watched)?changeBadge(s):''}</div>
-      <div class="market-row__end"><button class="market-watch ${watched?'is-active':''}" data-market-watch="${escapeHtml(ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}" title="${watched?'A acompanhar':'Acompanhar'}">${watched?'★':'☆'}</button><div class="market-score ${scoreClass(shownScore)}">${number(shownScore)==null?'—':Math.round(number(shownScore))}</div></div>
+      <div class="market-row__end"><button class="market-watch ${watched?'is-active':''}" data-market-watch="${escapeHtml(ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}" title="${watched?'A acompanhar':'Acompanhar'}">${watched?'★':'☆'}</button><div class="market-score ${scoreClass(shownScore)}" title="${escapeHtml(scoreLabel)}">${number(shownScore)==null?'—':Math.round(number(shownScore))}</div></div>
     </div>`;
     }
 
     return Object.freeze({ isFund, scoreClass, ageText, renderRow });
   }
 
-  window.VestraMarketRowUI = Object.freeze({ create, version:'1.0' });
+  window.VestraMarketRowUI = Object.freeze({ create, version:'1.1' });
 })();
