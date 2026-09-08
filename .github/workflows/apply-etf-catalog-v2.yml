@@ -1,0 +1,109 @@
+name: Apply ETF catalog coverage v2
+on:
+  push:
+    branches: [feature/etf-catalog-coverage-v2-20260908]
+    paths: [.github/workflows/apply-etf-catalog-v2.yml]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feature/etf-catalog-coverage-v2-20260908
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Apply focused patch
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'missing expected block in {path}: {old[:100]!r}')
+              if text.count(old) != 1:
+                  raise SystemExit(f'expected one match in {path}, got {text.count(old)}')
+              p.write_text(text.replace(old, new), encoding='utf-8')
+
+          # Compact fund evidence in the startup payload: AUM + precomputed top-10 concentration.
+          replace('scripts/build_market_shards.py',
+                  'import json\nimport os\nimport re\n',
+                  'import json\nimport math\nimport os\nimport re\n')
+          replace('scripts/build_market_shards.py',
+                  '    "expense_ratio", "fund_region", "fund_theme", "fund_style", "fund_ucits",\n',
+                  '    "expense_ratio", "fund_total_assets", "fund_region", "fund_theme", "fund_style", "fund_ucits",\n')
+          replace('scripts/build_market_shards.py',
+                  '    out["ticker"] = ticker\n    out["dossier_shard"] = shard_for(ticker)\n\n    # Preserve cheap 52-week range values even when the full history is omitted.\n',
+                  '''    out["ticker"] = ticker\n    out["dossier_shard"] = shard_for(ticker)\n\n    # Funds need concentration before dossier hydration, but the complete holdings\n    # list is intentionally kept out of the startup payload. Preserve only the\n    # top-10 aggregate needed by the fund-specific diversification score.\n    holdings = row.get("top_holdings")\n    if isinstance(holdings, list) and holdings:\n        weights = []\n        for holding in holdings[:10]:\n            if not isinstance(holding, dict):\n                continue\n            raw = next((holding.get(k) for k in ("holdingPercent", "weight", "pct", "percentage") if holding.get(k) is not None), None)\n            try:\n                value = float(raw)\n            except (TypeError, ValueError):\n                continue\n            if not math.isfinite(value) or value < 0:\n                continue\n            weights.append(value * 100 if abs(value) <= 1 else value)\n        if weights:\n            out["fund_top10_weight_pct"] = round(sum(weights), 6)\n\n    # Preserve cheap 52-week range values even when the full history is omitted.\n''')
+
+          # ETF intelligence can now score diversification from the compact aggregate.
+          replace('market-etf-intelligence.js',
+                  '/* Vestra ETF Intelligence v1.1 — fund-only scoring, separate from equity Score. */',
+                  '/* Vestra ETF Intelligence v1.2 — fund-only scoring, compact startup evidence. */')
+          replace('market-etf-intelligence.js',
+                  '''  function diversificationScore(row){\n    const holdings = Array.isArray(row?.top_holdings) ? row.top_holdings : [];\n    if(!holdings.length) return null;\n    const weights = holdings.map(h => ratioToPct(h?.holdingPercent ?? h?.weight ?? h?.pct ?? h?.percentage)).filter(v => v != null && v >= 0);\n    if(!weights.length) return null;\n    const top10 = weights.slice(0, 10).reduce((a,b) => a+b, 0);\n    if(top10 <= 20) return 100;\n    if(top10 <= 30) return 90;\n    if(top10 <= 40) return 78;\n    if(top10 <= 50) return 64;\n    if(top10 <= 65) return 48;\n    return 30;\n  }\n''',
+                  '''  function diversificationScore(row){\n    let top10 = number(row?.fund_top10_weight_pct);\n    if(top10 == null){\n      const holdings = Array.isArray(row?.top_holdings) ? row.top_holdings : [];\n      if(!holdings.length) return null;\n      const weights = holdings.map(h => ratioToPct(h?.holdingPercent ?? h?.weight ?? h?.pct ?? h?.percentage)).filter(v => v != null && v >= 0);\n      if(!weights.length) return null;\n      top10 = weights.slice(0, 10).reduce((a,b) => a+b, 0);\n    }\n    if(top10 < 0) return null;\n    if(top10 <= 20) return 100;\n    if(top10 <= 30) return 90;\n    if(top10 <= 40) return 78;\n    if(top10 <= 50) return 64;\n    if(top10 <= 65) return 48;\n    return 30;\n  }\n''')
+          replace('market-etf-intelligence.js',
+                  '      Array.isArray(row?.top_holdings) && row.top_holdings.length > 0,\n',
+                  '      number(row?.fund_top10_weight_pct) != null || (Array.isArray(row?.top_holdings) && row.top_holdings.length > 0),\n')
+          replace('market-etf-intelligence.js',
+                  "    version: '1.1',\n",
+                  "    version: '1.2',\n")
+          replace('market-static-universe.js',
+                  "script.src = 'market-etf-intelligence.js?v=1.0';",
+                  "script.src = 'market-etf-intelligence.js?v=1.2';")
+
+          # Make the complete ETF catalogue a first-class, progressive list.
+          replace('market.js',
+                  "    fundTheme: '',\n    watchlist: new Set(),",
+                  "    fundTheme: '',\n    fundLimit: 100,\n    watchlist: new Set(),")
+          replace('market.js',
+                  '  const ETF_THEMES=[\n',
+                  "  const ETF_THEMES=[\n    ['all','Todos os ETFs',/.+/i],\n")
+          replace('market.js',
+                  '      funds.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));\n',
+                  '      funds.sort((a,b)=>(n(b.etf_score)||-1)-(n(a.etf_score)||-1));\n')
+          replace('market.js',
+                  '''    const theme=available.find(x=>x.key===M.fundTheme);\n    funds=funds.filter(s=>fundMatchesTheme(s,M.fundTheme)).sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));\n    return `<section class="market-section market-etf-discovery"><div class="market-section__head"><div><h3>${esc(theme?.label||'ETFs')}</h3><p>ETFs classificados pela exposição temática disponível.</p></div><button type="button" class="market-etf-change-theme" data-market-fund-theme="">Mudar tema</button></div><div class="market-list">${funds.length?funds.map(s=>renderRow(s,[n(s.expense_ratio)!=null?`TER ${pct(s.expense_ratio)}`:'',txt(s.region)].filter(Boolean).join(' · '))).join(''):'<div class="market-empty">Sem ETFs encontrados neste tema.</div>'}</div></section>`;\n''',
+                  '''    const theme=available.find(x=>x.key===M.fundTheme);\n    funds=funds.filter(s=>fundMatchesTheme(s,M.fundTheme)).sort((a,b)=>(n(b.etf_score)||-1)-(n(a.etf_score)||-1));\n    const total=funds.length;\n    const visible=M.fundTheme==='all'?funds.slice(0,M.fundLimit):funds;\n    const more=M.fundTheme==='all'&&visible.length<total?`<button type="button" class="market-etf-change-theme" data-market-fund-more>Mostrar mais · ${visible.length} de ${total}</button>`:'';\n    const copy=M.fundTheme==='all'?'Catálogo completo, ordenado pelo ETF Score quando existe. Pesquisa continua disponível para qualquer fundo.':'ETFs classificados pela exposição temática disponível.';\n    return `<section class="market-section market-etf-discovery"><div class="market-section__head"><div><h3>${esc(theme?.label||'ETFs')}</h3><p>${copy}</p></div><button type="button" class="market-etf-change-theme" data-market-fund-theme="">Mudar tema</button></div><div class="market-list">${visible.length?visible.map(s=>renderRow(s,[n(s.expense_ratio)!=null?`TER ${pct(s.expense_ratio)}`:'',txt(s.region)].filter(Boolean).join(' · '))).join(''):'<div class="market-empty">Sem ETFs encontrados neste tema.</div>'}</div>${more}</section>`;\n''')
+          replace('market.js',
+                  "    const mode=e.target.closest('[data-market-mode]'); if(mode){const nextMode=mode.dataset.marketMode; if(nextMode==='funds'&&M.mode!=='funds') M.fundTheme=''; M.mode=nextMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}\n",
+                  "    const mode=e.target.closest('[data-market-mode]'); if(mode){const nextMode=mode.dataset.marketMode; if(nextMode==='funds'&&M.mode!=='funds'){ M.fundTheme=''; M.fundLimit=100; } M.mode=nextMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}\n")
+          replace('market.js',
+                  "    const fundTheme=e.target.closest('[data-market-fund-theme]'); if(fundTheme){M.fundTheme=fundTheme.dataset.marketFundTheme||'';renderPrimary();return;}\n",
+                  "    const fundTheme=e.target.closest('[data-market-fund-theme]'); if(fundTheme){M.fundTheme=fundTheme.dataset.marketFundTheme||'';M.fundLimit=100;renderPrimary();return;}\n    const fundMore=e.target.closest('[data-market-fund-more]'); if(fundMore){M.fundLimit+=100;renderPrimary();return;}\n")
+
+          # Regression tests: no holdings bloat, all-fund navigation, and ETF-only scoring.
+          p = Path('tests/test_market_index_payload.py')
+          text = p.read_text(encoding='utf-8')
+          marker = '    def test_columnar_startup_budget_is_production_grade(self):\n'
+          insertion = '''    def test_funds_keep_compact_aum_and_top10_concentration_without_holdings_list(self):\n        row = shards.index_row({\n            "ticker": "FUND",\n            "quote_type": "ETF",\n            "fund_total_assets": 5_000_000_000,\n            "top_holdings": [\n                {"holdingPercent": 0.08},\n                {"weight": 7.0},\n                {"pct": 0.05},\n            ],\n        })\n        self.assertEqual(row["fund_total_assets"], 5_000_000_000)\n        self.assertEqual(row["fund_top10_weight_pct"], 20.0)\n        self.assertNotIn("top_holdings", row)\n\n'''
+          if marker not in text: raise SystemExit('market index test marker missing')
+          p.write_text(text.replace(marker, insertion + marker, 1), encoding='utf-8')
+
+          p = Path('tests/test_market_etf_intelligence.py')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('assert "market-etf-intelligence.js?v=1.0" in src', 'assert "market-etf-intelligence.js?v=1.2" in src')
+          text += '''\n\ndef test_compact_etf_evidence_and_full_catalogue_are_first_class():\n    intel = (ROOT / "market-etf-intelligence.js").read_text(encoding="utf-8")\n    market = (ROOT / "market.js").read_text(encoding="utf-8")\n    shards = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")\n    assert "fund_top10_weight_pct" in intel\n    assert '"fund_total_assets"' in shards\n    assert 'out["fund_top10_weight_pct"]' in shards\n    assert "['all','Todos os ETFs',/.+/i]" in market\n    assert "data-market-fund-more" in market\n    assert "M.fundLimit+=100" in market\n    assert "n(b.etf_score)" in market\n'''
+          p.write_text(text, encoding='utf-8')
+
+          # Self-remove so the PR contains only product/test changes.
+          Path('.github/workflows/apply-etf-catalog-v2.yml').unlink()
+      - name: Validate focused tests
+        run: |
+          python tests/test_market_index_payload.py
+          python -m pytest -q tests/test_market_etf_intelligence.py
+          node --check market-etf-intelligence.js
+          node --check market-static-universe.js
+          node --check market.js
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Improve ETF catalogue coverage and browsing"
+          git push origin HEAD:feature/etf-catalog-coverage-v2-20260908
