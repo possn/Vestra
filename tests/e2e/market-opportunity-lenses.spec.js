@@ -36,7 +36,7 @@ test('iPhone/WebKit: opportunity lenses are tappable and persist the selected fi
   await expect(fixture.locator('[data-market-ticker="BBB"]')).toBeVisible();
 
   await fixture.evaluate(node => {
-    node.querySelector('.market-list').insertAdjacentHTML('beforeend', '<div class="market-row" data-market-ticker="CCC">CCC sem recuperação</div>');
+    node.querySelector('.market-list').insertAdjacentHTML('beforeend', '<div class="market-row" data-market-ticker="CCC">CCC empresa estável</div>');
   });
   await expect.poll(async () => page.evaluate(() => window.VestraMarketOpportunityLenses.active)).toBe('recovery');
   await expect(fixture.locator('[data-market-ticker="CCC"]')).toBeHidden();
