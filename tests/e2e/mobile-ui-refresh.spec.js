@@ -1,17 +1,23 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: mobile topbar is simple and More exposes key shortcuts', async ({ page }) => {
+test('iPhone/WebKit: portrait topbar exposes the sidebar and More keeps key shortcuts', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraMobileUiRefresh));
 
-  await expect(page.locator('#btnSidebarToggle')).toBeHidden();
+  await expect(page.locator('#btnSidebarToggle')).toBeVisible();
   await expect(page.locator('#btnSettingsNav')).toBeHidden();
   await expect(page.locator('#btnSearchToggle')).toBeVisible();
   await expect(page.locator('#btnFab')).toBeVisible();
   await expect(page.locator('.topbar .brand')).toBeVisible();
+
+  await page.locator('#btnSidebarToggle').click();
+  await expect(page.locator('#sidebar')).toHaveClass(/sidebar--open/);
+  await expect(page.locator('#btnSidebarToggle')).toHaveAttribute('aria-expanded', 'true');
+  await page.locator('#btnSidebarClose').click();
+  await expect(page.locator('#sidebar')).not.toHaveClass(/sidebar--open/);
 
   await page.locator('#navSettings').click();
   const shortcuts = page.locator('#vestraMoreShortcuts');
