@@ -28,6 +28,8 @@ const APP_SHELL = [
   "./market-portfolio-context.js",
   "./market-watch-snapshots.js",
   "./market-static-universe.js",
+  "./market-scanner-data.js",
+  "./market-analysis-tools-runtime.js",
   "./market-etf-intelligence.js",
   "./dashboard-weekly-events.js",
   "./market-dossier-signals.js",
@@ -72,9 +74,9 @@ const APP_SHELL = [
 // also network-first because it is loaded dynamically and must not lag behind
 // the Dashboard visibility contract after a PWA update. Dossier control modules
 // are included so WebKit never mixes the old split-button geometry with the new
-// unified action group. Mobile drawer and opportunity lenses are network-first
-// because both are interaction-critical on iPhone and must not lag one launch
-// behind after a PWA update.
+// unified action group. Mobile drawer, opportunity lenses and the promoted
+// market-analysis runtimes are network-first because they are interaction-critical
+// on iPhone and must not lag one launch behind after a PWA update.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -94,6 +96,8 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-financial-engine.js",
   "app.js",
   "market-static-universe.js",
+  "market-scanner-data.js",
+  "market-analysis-tools-runtime.js",
   "market-etf-intelligence.js",
   "dashboard-weekly-events.js",
   "market-dossier-controls.js",
