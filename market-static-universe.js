@@ -1,11 +1,32 @@
-/* Vestra Market static universe loader v1.7 */
+/* Vestra Market static universe loader v1.8 */
 (() => {
   'use strict';
 
   let sharedStocks = [];
+  let etfIntelligencePromise = null;
 
   function getStocks() {
     return sharedStocks;
+  }
+
+  function ensureEtfIntelligence() {
+    if (typeof document === 'undefined') return Promise.resolve(window.VestraEtfIntelligence || null);
+    if (window.VestraEtfIntelligence) return Promise.resolve(window.VestraEtfIntelligence);
+    if (etfIntelligencePromise) return etfIntelligencePromise;
+    const existing = document.querySelector('script[data-vestra-etf-intelligence]');
+    etfIntelligencePromise = new Promise(resolve => {
+      const script = existing || document.createElement('script');
+      if (!existing) {
+        script.src = 'market-etf-intelligence.js?v=1.0';
+        script.defer = true;
+        script.dataset.vestraEtfIntelligence = '1';
+        document.head.appendChild(script);
+      }
+      if (window.VestraEtfIntelligence) { resolve(window.VestraEtfIntelligence); return; }
+      script.addEventListener('load', () => resolve(window.VestraEtfIntelligence || null), { once: true });
+      script.addEventListener('error', () => resolve(null), { once: true });
+    });
+    return etfIntelligencePromise;
   }
 
   function ensureScannerCompanion() {
@@ -142,6 +163,9 @@
         state.byTicker = new Map(stocks.map(stock => [txt(stock?.ticker).toUpperCase(), stock]));
         sharedStocks = stocks;
 
+        await ensureEtfIntelligence();
+        try { window.VestraEtfIntelligence?.enrichStocks(stocks); } catch (_) {}
+
         beforeReady();
         state.loaded = true;
         onReady();
@@ -158,6 +182,7 @@
     return Object.freeze({ ensureLoaded });
   }
 
+  ensureEtfIntelligence();
   ensureScannerCompanion();
   ensureWeeklyEventsCompanion();
   ensureDashboardUiRefresh();
@@ -167,6 +192,7 @@
   window.VestraMarketStaticUniverse = Object.freeze({
     create,
     getStocks,
+    ensureEtfIntelligence,
     ensureScannerCompanion,
     ensureWeeklyEventsCompanion,
     ensureDashboardUiRefresh,
@@ -174,6 +200,6 @@
     ensureMarketUiPolish,
     ensureUiVisualPolish,
     unpackStartupPayload,
-    version: '1.7',
+    version: '1.8',
   });
 })();
