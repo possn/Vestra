@@ -71,6 +71,21 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertEqual(row["low52_price_low"], 95.0)
         self.assertEqual(row["low52_price_high"], 140.0)
 
+    def test_funds_keep_compact_aum_and_top10_concentration_without_holdings_list(self):
+        row = shards.index_row({
+            "ticker": "FUND",
+            "quote_type": "ETF",
+            "fund_total_assets": 5_000_000_000,
+            "top_holdings": [
+                {"holdingPercent": 0.08},
+                {"weight": 7.0},
+                {"pct": 0.05},
+            ],
+        })
+        self.assertEqual(row["fund_total_assets"], 5_000_000_000)
+        self.assertEqual(row["fund_top10_weight_pct"], 20.0)
+        self.assertNotIn("top_holdings", row)
+
     def test_columnar_startup_budget_is_production_grade(self):
         self.assertEqual(shards.MAX_COLUMNAR_BYTES, 2_250_000)
         self.assertEqual(shards.MAX_COLUMNAR_INDEX_RATIO, 0.35)

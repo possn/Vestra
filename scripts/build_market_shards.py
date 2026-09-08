@@ -8,6 +8,7 @@ Full evidence/history remains in dossier shards.
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 from collections import defaultdict
@@ -83,7 +84,7 @@ INDEX_KEYS = {
     "moat_score", "moat_label", "sector_native_score", "sector_native_label",
     "value_trap_risk_score", "value_trap_label",
     # fund list
-    "expense_ratio", "fund_region", "fund_theme", "fund_style", "fund_ucits",
+    "expense_ratio", "fund_total_assets", "fund_region", "fund_theme", "fund_style", "fund_ucits",
 }
 
 # Human-readable evidence belongs to the hydrated dossier, not the startup
@@ -108,6 +109,25 @@ def index_row(row: dict) -> dict:
     ticker = str(row.get("ticker") or "").upper()
     out["ticker"] = ticker
     out["dossier_shard"] = shard_for(ticker)
+
+    # Funds need concentration before dossier hydration, but the complete holdings
+    # list remains in the lazy dossier. Keep only the top-10 aggregate in startup.
+    holdings = row.get("top_holdings")
+    if isinstance(holdings, list) and holdings:
+        weights = []
+        for holding in holdings[:10]:
+            if not isinstance(holding, dict):
+                continue
+            raw = next((holding.get(k) for k in ("holdingPercent", "weight", "pct", "percentage") if holding.get(k) is not None), None)
+            try:
+                value = float(raw)
+            except (TypeError, ValueError):
+                continue
+            if not math.isfinite(value) or value < 0:
+                continue
+            weights.append(value * 100 if abs(value) <= 1 else value)
+        if weights:
+            out["fund_top10_weight_pct"] = round(sum(weights), 6)
 
     # Preserve cheap 52-week range values even when the full history is omitted.
     hist = row.get("price_history_1y") or []
