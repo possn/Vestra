@@ -4,7 +4,10 @@ test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece 2s e sai
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
 
-  await page.goto('/index.html');
+  // DOMContentLoaded is the correct observation point for launch choreography.
+  // Waiting for the full load event can include slow third-party resources and let
+  // the intentionally short splash finish before the first assertion on WebKit.
+  await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
   const splash = page.locator('#appLoadingOverlay');
   const mark = page.locator('.vestra-splash__mark');
   const brand = page.locator('.vestra-splash__brand');
