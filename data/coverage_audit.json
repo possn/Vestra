@@ -1,28 +1,35 @@
 {
   "schema_version": 5,
-  "generated_at": "2026-09-07T13:31:56+00:00",
+  "generated_at": "2026-09-08T06:33:21+00:00",
   "equities": {
     "count": 1706,
     "avg_coverage_pct": 79.1,
-    "lt50": 59,
-    "50_64": 196,
-    "65_79": 554,
-    "gte80": 897
+    "lt50": 60,
+    "50_64": 195,
+    "65_79": 552,
+    "gte80": 899
   },
   "asset_type_hygiene": {
     "states": {
-      "confirmed_equity": 1706,
-      "non_equity": 336
+      "confirmed_equity": 1702,
+      "non_equity": 336,
+      "unresolved": 4
     },
-    "authoritative_identity_recoveries": 9,
+    "authoritative_identity_recoveries": 10,
     "authoritative_identity_recoveries_by_evidence": {
       "known_asset_identity": 8,
-      "etf_catalog": 1
+      "etf_catalog": 2
     },
     "authoritative_identity_examples": [
       {
         "ticker": "IUSN.L",
         "region": "United Kingdom",
+        "quote_type": "ETF",
+        "identity_evidence": "etf_catalog"
+      },
+      {
+        "ticker": "LIT",
+        "region": "United States",
         "quote_type": "ETF",
         "identity_evidence": "etf_catalog"
       },
@@ -75,8 +82,61 @@
         "identity_evidence": "known_asset_identity"
       }
     ],
-    "unresolved_equity_candidate_count": 0,
-    "unresolved_equity_candidate_examples": []
+    "unresolved_equity_candidate_count": 4,
+    "unresolved_equity_candidate_examples": [
+      {
+        "ticker": "ANGI",
+        "name": "ANGI",
+        "region": "United States",
+        "coverage_pct": 66.7,
+        "sources": [
+          "Analyst feed",
+          "SEC Capital Structure",
+          "SEC EDGAR",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
+        "ticker": "ANIX",
+        "name": "ANIX",
+        "region": "United States",
+        "coverage_pct": 33.3,
+        "sources": [
+          "Analyst feed",
+          "SEC Capital Structure",
+          "SEC EDGAR",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
+        "ticker": "LIN",
+        "name": "LIN",
+        "region": "United States",
+        "coverage_pct": 66.7,
+        "sources": [
+          "Analyst feed",
+          "SEC EDGAR",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
+        "ticker": "TGT",
+        "name": "TGT",
+        "region": "United States",
+        "coverage_pct": 76.7,
+        "sources": [
+          "Analyst feed",
+          "SEC Capital Structure",
+          "SEC EDGAR",
+          "SEC Form 4",
+          "Yahoo Finance",
+          "Yahoo Statements (targeted)"
+        ]
+      }
+    ]
   },
   "by_region": {
     "Canada": {
@@ -97,10 +157,10 @@
     },
     "France": {
       "count": 47,
-      "avg_coverage_pct": 75.4,
+      "avg_coverage_pct": 75.1,
       "lt50": 1,
-      "50_64": 2,
-      "65_79": 36,
+      "50_64": 3,
+      "65_79": 35,
       "gte80": 8
     },
     "Germany": {
@@ -113,11 +173,11 @@
     },
     "Italy": {
       "count": 40,
-      "avg_coverage_pct": 77.7,
+      "avg_coverage_pct": 78.2,
       "lt50": 0,
       "50_64": 6,
-      "65_79": 16,
-      "gte80": 18
+      "65_79": 15,
+      "gte80": 19
     },
     "Netherlands": {
       "count": 26,
@@ -137,7 +197,7 @@
     },
     "Portugal": {
       "count": 9,
-      "avg_coverage_pct": 82.6,
+      "avg_coverage_pct": 83.0,
       "lt50": 0,
       "50_64": 0,
       "65_79": 3,
@@ -177,57 +237,57 @@
     },
     "United States": {
       "count": 1349,
-      "avg_coverage_pct": 80.3,
-      "lt50": 35,
-      "50_64": 175,
+      "avg_coverage_pct": 80.4,
+      "lt50": 36,
+      "50_64": 173,
       "65_79": 366,
-      "gte80": 773
+      "gte80": 774
     }
   },
   "by_score_model": {
     "bank": {
       "count": 91,
-      "avg_coverage_pct": 68.2,
+      "avg_coverage_pct": 68.1,
       "lt50": 3,
       "50_64": 30,
       "65_79": 42,
       "gte80": 16
     },
     "biotech": {
-      "count": 153,
-      "avg_coverage_pct": 74.1,
+      "count": 155,
+      "avg_coverage_pct": 74.3,
       "lt50": 1,
       "50_64": 40,
-      "65_79": 67,
-      "gte80": 45
+      "65_79": 68,
+      "gte80": 46
     },
     "energy": {
-      "count": 84,
-      "avg_coverage_pct": 87.1,
+      "count": 85,
+      "avg_coverage_pct": 87.4,
       "lt50": 1,
       "50_64": 4,
-      "65_79": 14,
-      "gte80": 65
+      "65_79": 13,
+      "gte80": 67
     },
     "general": {
-      "count": 982,
+      "count": 980,
       "avg_coverage_pct": 78.5,
-      "lt50": 54,
-      "50_64": 101,
-      "65_79": 313,
-      "gte80": 514
+      "lt50": 55,
+      "50_64": 100,
+      "65_79": 314,
+      "gte80": 511
     },
     "growth_tech": {
-      "count": 210,
-      "avg_coverage_pct": 83.0,
+      "count": 209,
+      "avg_coverage_pct": 83.1,
       "lt50": 0,
       "50_64": 14,
-      "65_79": 63,
+      "65_79": 62,
       "gte80": 133
     },
     "insurance": {
       "count": 50,
-      "avg_coverage_pct": 83.3,
+      "avg_coverage_pct": 83.4,
       "lt50": 0,
       "50_64": 1,
       "65_79": 18,
@@ -235,49 +295,49 @@
     },
     "reit": {
       "count": 70,
-      "avg_coverage_pct": 84.0,
+      "avg_coverage_pct": 84.3,
       "lt50": 0,
       "50_64": 5,
-      "65_79": 17,
-      "gte80": 48
+      "65_79": 16,
+      "gte80": 49
     },
     "utility": {
       "count": 66,
-      "avg_coverage_pct": 83.5,
+      "avg_coverage_pct": 83.9,
       "lt50": 0,
       "50_64": 1,
-      "65_79": 20,
-      "gte80": 45
+      "65_79": 19,
+      "gte80": 46
     }
   },
   "source_coverage": {
+    "Analyst feed": 1706,
     "Yahoo Finance": 1706,
-    "Analyst feed": 1622,
     "SEC Form 4": 1300,
-    "SEC EDGAR": 532,
+    "SEC EDGAR": 528,
     "SEC Capital Structure": 434,
-    "Official House/Senate disclosures / STOCK Act": 179,
-    "Yahoo Statements (targeted)": 65,
+    "Official House/Senate disclosures / STOCK Act": 186,
+    "Yahoo Statements (targeted)": 67,
     "ESEF / filings.xbrl.org": 22,
     "Yahoo Quarterly Statements (TTM)": 2
   },
   "score_reliability": {
     "robust": 1376,
     "limited_evidence": 238,
-    "insufficient_data": 59,
-    "moderate_evidence": 33
+    "insufficient_data": 60,
+    "moderate_evidence": 32
   },
   "opportunity_labels": {
     "Interessante": 574,
-    "Baixa prioridade": 507,
-    "Acompanhar": 283,
-    "Oportunidade forte": 226,
-    "Dados insuficientes": 114,
-    "Prioridade alta": 2
+    "Baixa prioridade": 509,
+    "Acompanhar": 281,
+    "Oportunidade forte": 229,
+    "Dados insuficientes": 112,
+    "Prioridade alta": 1
   },
   "opportunity_suppressed_reasons": {
-    "Score Vestra suprimido por evidência insuficiente": 59,
-    "Cobertura fundamental inferior a 55%": 41,
+    "Score Vestra suprimido por evidência insuficiente": 60,
+    "Cobertura fundamental inferior a 55%": 38,
     "Histórico de preço insuficiente para avaliar o momento": 10,
     "Confiança dos dados inferior a 50%": 4
   },
@@ -287,9 +347,9 @@
   },
   "gap_retrieval": {
     "annual": {
-      "rows_with_metadata": 65,
-      "rows_enriched": 65,
-      "avg_critical_coverage_gain_pp": 8.5
+      "rows_with_metadata": 67,
+      "rows_enriched": 67,
+      "avg_critical_coverage_gain_pp": 9.6
     },
     "quarterly_ttm": {
       "rows_with_metadata": 2,
@@ -300,33 +360,33 @@
   "most_missing_critical_metrics": [
     {
       "metric": "trailing_pe",
-      "missing": 549,
+      "missing": 550,
       "missing_pct": 32.2
     },
     {
       "metric": "earnings_growth",
-      "missing": 412,
-      "missing_pct": 24.2
+      "missing": 416,
+      "missing_pct": 24.4
     },
     {
       "metric": "roce_proxy",
-      "missing": 258,
-      "missing_pct": 15.1
+      "missing": 253,
+      "missing_pct": 14.8
     },
     {
       "metric": "enterprise_to_ebitda",
-      "missing": 236,
-      "missing_pct": 13.8
+      "missing": 234,
+      "missing_pct": 13.7
+    },
+    {
+      "metric": "forward_pe",
+      "missing": 205,
+      "missing_pct": 12.0
     },
     {
       "metric": "debt_to_equity",
       "missing": 203,
       "missing_pct": 11.9
-    },
-    {
-      "metric": "forward_pe",
-      "missing": 202,
-      "missing_pct": 11.8
     },
     {
       "metric": "revenue_growth",
@@ -365,32 +425,33 @@
     },
     {
       "metric": "price_to_book",
-      "missing": 33,
-      "missing_pct": 1.9
+      "missing": 36,
+      "missing_pct": 2.1
     },
     {
       "metric": "gross_margin",
-      "missing": 31,
+      "missing": 30,
       "missing_pct": 1.8
     },
     {
       "metric": "operating_margin",
-      "missing": 26,
-      "missing_pct": 1.5
+      "missing": 27,
+      "missing_pct": 1.6
     },
     {
       "metric": "profit_margin",
-      "missing": 25,
+      "missing": 26,
       "missing_pct": 1.5
     }
   ],
   "retrieval_priority": {
-    "rows_with_critical_gaps": 902,
+    "rows_with_critical_gaps": 900,
     "recommended_lane_impact": {
-      "sec_edgar": 436,
-      "annual_statement_gap": 323,
-      "esef": 116,
-      "quarterly_ttm_gap": 27
+      "sec_edgar": 438,
+      "annual_statement_gap": 316,
+      "esef": 115,
+      "quarterly_ttm_gap": 27,
+      "identity_unresolved": 4
     },
     "by_region": {
       "Canada": {
@@ -405,7 +466,7 @@
         "esef": 16
       },
       "Italy": {
-        "esef": 15,
+        "esef": 14,
         "annual_statement_gap": 1
       },
       "Netherlands": {
@@ -426,9 +487,10 @@
         "quarterly_ttm_gap": 1
       },
       "United States": {
-        "sec_edgar": 436,
-        "annual_statement_gap": 310,
-        "quarterly_ttm_gap": 24
+        "sec_edgar": 438,
+        "annual_statement_gap": 303,
+        "quarterly_ttm_gap": 24,
+        "identity_unresolved": 4
       }
     },
     "by_score_model": {
@@ -439,24 +501,25 @@
         "sec_edgar": 7
       },
       "biotech": {
-        "sec_edgar": 58,
-        "annual_statement_gap": 55,
+        "sec_edgar": 62,
+        "annual_statement_gap": 53,
         "quarterly_ttm_gap": 3,
         "esef": 1
       },
       "energy": {
-        "sec_edgar": 12,
+        "sec_edgar": 11,
         "annual_statement_gap": 11,
         "quarterly_ttm_gap": 2
       },
       "general": {
-        "sec_edgar": 269,
-        "annual_statement_gap": 150,
+        "sec_edgar": 270,
+        "annual_statement_gap": 145,
         "esef": 60,
-        "quarterly_ttm_gap": 8
+        "quarterly_ttm_gap": 8,
+        "identity_unresolved": 4
       },
       "growth_tech": {
-        "sec_edgar": 54,
+        "sec_edgar": 53,
         "annual_statement_gap": 43,
         "esef": 4,
         "quarterly_ttm_gap": 3
@@ -469,13 +532,13 @@
       "reit": {
         "sec_edgar": 13,
         "annual_statement_gap": 7,
-        "esef": 4,
-        "quarterly_ttm_gap": 3
+        "quarterly_ttm_gap": 3,
+        "esef": 3
       },
       "utility": {
         "esef": 6,
         "annual_statement_gap": 4,
-        "sec_edgar": 4,
+        "sec_edgar": 3,
         "quarterly_ttm_gap": 1
       }
     },
@@ -983,6 +1046,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1021,6 +1085,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1059,6 +1124,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1321,6 +1387,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -1392,6 +1459,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1461,6 +1529,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1494,6 +1563,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Capital Structure",
           "SEC EDGAR",
           "SEC Form 4",
@@ -1530,6 +1600,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1563,6 +1634,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1596,6 +1668,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1629,6 +1702,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -1663,6 +1737,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -1695,6 +1770,42 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
+        "ticker": "ANIX",
+        "name": "ANIX",
+        "region": "United States",
+        "quote_type": null,
+        "reported_quote_type": null,
+        "identity_state": "unresolved",
+        "identity_evidence": null,
+        "score_model": "general",
+        "coverage_pct": 33.3,
+        "critical_coverage_pct": 37.5,
+        "missing_critical_count": 10,
+        "missing_critical_metrics": [
+          "profit_margin",
+          "operating_margin",
+          "gross_margin",
+          "revenue_growth",
+          "free_cash_flow",
+          "debt_to_equity",
+          "trailing_pe",
+          "forward_pe",
+          "price_to_book",
+          "enterprise_to_ebitda"
+        ],
+        "recommended_retrieval_lane": "identity_unresolved",
+        "score_reliability": "insufficient_data",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "SEC Capital Structure",
+          "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -1758,6 +1869,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -1853,6 +1965,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -1881,6 +1994,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "Yahoo Finance"
         ]
       },
@@ -2099,6 +2213,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -2129,6 +2244,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -2159,6 +2275,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -2220,6 +2337,7 @@
         "score_reliability": "insufficient_data",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Capital Structure",
           "SEC EDGAR",
           "SEC Form 4",
@@ -2429,6 +2547,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -2485,6 +2604,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -2629,6 +2749,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -2951,36 +3072,6 @@
         ]
       },
       {
-        "ticker": "CHRS",
-        "name": "Coherus Oncology, Inc.",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "general",
-        "coverage_pct": 53.3,
-        "critical_coverage_pct": 62.5,
-        "missing_critical_count": 5,
-        "missing_critical_metrics": [
-          "gross_margin",
-          "free_cash_flow",
-          "debt_to_equity",
-          "trailing_pe",
-          "enterprise_to_ebitda"
-        ],
-        "recommended_retrieval_lane": "annual_statement_gap",
-        "score_reliability": "limited_evidence",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "SEC Capital Structure",
-          "SEC EDGAR",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
         "ticker": "NTDOY",
         "name": "Nintendo Co., Ltd.",
         "region": "United States",
@@ -3059,34 +3150,6 @@
         "evidence_state": "observed",
         "sources": [
           "Analyst feed",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
-        "ticker": "NRXP",
-        "name": "NRX Pharmaceuticals, Inc.",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "biotech",
-        "coverage_pct": 53.3,
-        "critical_coverage_pct": 62.5,
-        "missing_critical_count": 4,
-        "missing_critical_metrics": [
-          "revenue_growth",
-          "debt_to_equity",
-          "trailing_pe",
-          "roce_proxy"
-        ],
-        "recommended_retrieval_lane": "annual_statement_gap",
-        "score_reliability": "limited_evidence",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -3257,6 +3320,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Capital Structure",
           "SEC EDGAR",
           "SEC Form 4",
@@ -3456,6 +3520,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -3484,6 +3549,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -3540,6 +3606,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Capital Structure",
           "SEC Form 4",
           "Yahoo Finance"
@@ -3602,6 +3669,34 @@
         ]
       },
       {
+        "ticker": "NRXP",
+        "name": "NRX Pharmaceuticals, Inc.",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "biotech",
+        "coverage_pct": 63.3,
+        "critical_coverage_pct": 62.5,
+        "missing_critical_count": 4,
+        "missing_critical_metrics": [
+          "revenue_growth",
+          "debt_to_equity",
+          "trailing_pe",
+          "roce_proxy"
+        ],
+        "recommended_retrieval_lane": "annual_statement_gap",
+        "score_reliability": "limited_evidence",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "SEC EDGAR",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
         "ticker": "GUTS",
         "name": "Fractyl Health, Inc.",
         "region": "United States",
@@ -3622,6 +3717,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -3782,6 +3878,7 @@
         "score_reliability": "robust",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -4139,6 +4236,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -4219,6 +4317,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -4532,33 +4631,6 @@
         ]
       },
       {
-        "ticker": "CGTX",
-        "name": "Cognition Therapeutics, Inc.",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "biotech",
-        "coverage_pct": 56.7,
-        "critical_coverage_pct": 68.8,
-        "missing_critical_count": 3,
-        "missing_critical_metrics": [
-          "revenue_growth",
-          "trailing_pe",
-          "roce_proxy"
-        ],
-        "recommended_retrieval_lane": "annual_statement_gap",
-        "score_reliability": "limited_evidence",
-        "evidence_state": "observed",
-        "sources": [
-          "SEC Capital Structure",
-          "SEC EDGAR",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
         "ticker": "PNBK",
         "name": "Patriot National Bancorp Inc.",
         "region": "United States",
@@ -4611,6 +4683,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Capital Structure",
           "SEC Form 4",
           "Yahoo Finance"
@@ -4811,6 +4884,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -4831,34 +4905,6 @@
         "missing_critical_metrics": [
           "revenue_growth",
           "earnings_growth",
-          "trailing_pe",
-          "enterprise_to_ebitda"
-        ],
-        "recommended_retrieval_lane": "annual_statement_gap",
-        "score_reliability": "limited_evidence",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "SEC EDGAR",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
-        "ticker": "NTLA",
-        "name": "Intellia Therapeutics, Inc.",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "general",
-        "coverage_pct": 60.0,
-        "critical_coverage_pct": 68.8,
-        "missing_critical_count": 4,
-        "missing_critical_metrics": [
-          "gross_margin",
-          "debt_to_equity",
           "trailing_pe",
           "enterprise_to_ebitda"
         ],
@@ -5011,6 +5057,33 @@
         ]
       },
       {
+        "ticker": "CHPT",
+        "name": "ChargePoint Holdings, Inc.",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "general",
+        "coverage_pct": 60.0,
+        "critical_coverage_pct": 68.8,
+        "missing_critical_count": 3,
+        "missing_critical_metrics": [
+          "earnings_growth",
+          "debt_to_equity",
+          "trailing_pe"
+        ],
+        "recommended_retrieval_lane": "sec_edgar",
+        "score_reliability": "limited_evidence",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "SEC Capital Structure",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
         "ticker": "HURA",
         "name": "TuHURA Biosciences, Inc.",
         "region": "United States",
@@ -5031,6 +5104,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -5056,6 +5130,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -5602,6 +5677,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
@@ -5744,6 +5820,33 @@
         ]
       },
       {
+        "ticker": "CGTX",
+        "name": "Cognition Therapeutics, Inc.",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "biotech",
+        "coverage_pct": 63.3,
+        "critical_coverage_pct": 68.8,
+        "missing_critical_count": 3,
+        "missing_critical_metrics": [
+          "revenue_growth",
+          "earnings_growth",
+          "trailing_pe"
+        ],
+        "recommended_retrieval_lane": "sec_edgar",
+        "score_reliability": "limited_evidence",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "SEC Capital Structure",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
         "ticker": "CMPS",
         "name": "COMPASS Pathways Plc - American",
         "region": "United States",
@@ -5845,6 +5948,7 @@
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
+          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -7050,6 +7154,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -7097,6 +7202,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -7144,6 +7250,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -7282,7 +7389,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "esef",
-      "score_raw": 91.4,
+      "score_raw": 91.3,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -7374,7 +7481,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "esef",
-      "score_raw": 88.0,
+      "score_raw": 88.1,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -7469,6 +7576,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -7558,6 +7666,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -7640,10 +7749,11 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 11.9,
+      "score_raw": 12.0,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC Capital Structure",
         "SEC EDGAR",
         "SEC Form 4",
@@ -7690,6 +7800,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -7728,10 +7839,11 @@
         "enterprise_to_ebitda"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 16.9,
+      "score_raw": 17.0,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -7774,6 +7886,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -7816,6 +7929,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -7858,6 +7972,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -7901,6 +8016,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -7942,6 +8058,51 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
+        "SEC Form 4",
+        "Yahoo Finance"
+      ],
+      "gap_statement_enriched": false,
+      "gap_coverage_before": null,
+      "gap_coverage_after": null,
+      "quarterly_gap_enriched": false,
+      "quarterly_gap_coverage_before": null,
+      "quarterly_gap_coverage_after": null,
+      "opportunity_eligible": false,
+      "opportunity_score": null,
+      "opportunity_suppressed_reason": "Score Vestra suprimido por evidência insuficiente"
+    },
+    {
+      "ticker": "ANIX",
+      "name": "ANIX",
+      "region": "United States",
+      "quote_type": null,
+      "reported_quote_type": null,
+      "identity_state": "unresolved",
+      "identity_evidence": null,
+      "score_model": "general",
+      "coverage_pct": 33.3,
+      "critical_coverage_pct": 37.5,
+      "missing_critical_metrics": [
+        "profit_margin",
+        "operating_margin",
+        "gross_margin",
+        "revenue_growth",
+        "free_cash_flow",
+        "debt_to_equity",
+        "trailing_pe",
+        "forward_pe",
+        "price_to_book",
+        "enterprise_to_ebitda"
+      ],
+      "recommended_retrieval_lane": "identity_unresolved",
+      "score_raw": 43.8,
+      "score": null,
+      "score_reliability": "insufficient_data",
+      "sources": [
+        "Analyst feed",
+        "SEC Capital Structure",
+        "SEC EDGAR",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -8145,6 +8306,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC EDGAR",
         "SEC Form 4",
         "Yahoo Finance"
@@ -8348,6 +8510,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC Capital Structure",
         "SEC EDGAR",
         "SEC Form 4",
@@ -8548,6 +8711,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -8620,7 +8784,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 76.0,
+      "score_raw": 75.9,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -8701,6 +8865,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -8773,10 +8938,11 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 28.4,
+      "score_raw": 28.5,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC EDGAR",
         "SEC Form 4",
         "Yahoo Finance"
@@ -8816,6 +8982,7 @@
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC EDGAR",
         "SEC Form 4",
         "Yahoo Finance"
@@ -8890,10 +9057,11 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 29.3,
+      "score_raw": 29.4,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
+        "Analyst feed",
         "SEC EDGAR",
         "SEC Form 4",
         "Yahoo Finance"
@@ -9189,7 +9357,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "esef",
-      "score_raw": 71.9,
+      "score_raw": 72.0,
       "score": 59.0,
       "score_reliability": "limited_evidence",
       "sources": [
@@ -9225,8 +9393,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 50.7,
-      "score": 50.7,
+      "score_raw": 50.8,
+      "score": 50.8,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9262,8 +9430,8 @@
         "enterprise_to_ebitda"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 34.2,
-      "score": 34.2,
+      "score_raw": 34.3,
+      "score": 34.3,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9380,6 +9548,7 @@
       "score": 22.9,
       "score_reliability": "limited_evidence",
       "sources": [
+        "Analyst feed",
         "SEC EDGAR",
         "SEC Form 4",
         "Yahoo Finance"
@@ -9450,8 +9619,8 @@
         "enterprise_to_ebitda"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 31.3,
-      "score": 31.3,
+      "score_raw": 31.4,
+      "score": 31.4,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9485,8 +9654,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 44.1,
-      "score": 44.1,
+      "score_raw": 44.2,
+      "score": 44.2,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9520,8 +9689,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 41.4,
-      "score": 41.4,
+      "score_raw": 41.5,
+      "score": 41.5,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9557,7 +9726,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 68.3,
+      "score_raw": 68.5,
       "score": 59.0,
       "score_reliability": "limited_evidence",
       "sources": [
@@ -9594,8 +9763,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 30.9,
-      "score": 30.9,
+      "score_raw": 31.0,
+      "score": 31.0,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9631,50 +9800,11 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "esef",
-      "score_raw": 58.3,
-      "score": 58.3,
+      "score_raw": 58.4,
+      "score": 58.4,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
-        "Yahoo Finance"
-      ],
-      "gap_statement_enriched": false,
-      "gap_coverage_before": null,
-      "gap_coverage_after": null,
-      "quarterly_gap_enriched": false,
-      "quarterly_gap_coverage_before": null,
-      "quarterly_gap_coverage_after": null,
-      "opportunity_eligible": false,
-      "opportunity_score": null,
-      "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
-    },
-    {
-      "ticker": "CHRS",
-      "name": "Coherus Oncology, Inc.",
-      "region": "United States",
-      "quote_type": "EQUITY",
-      "reported_quote_type": "EQUITY",
-      "identity_state": "confirmed_equity",
-      "identity_evidence": null,
-      "score_model": "general",
-      "coverage_pct": 53.3,
-      "critical_coverage_pct": 62.5,
-      "missing_critical_metrics": [
-        "gross_margin",
-        "free_cash_flow",
-        "debt_to_equity",
-        "trailing_pe",
-        "enterprise_to_ebitda"
-      ],
-      "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 28.1,
-      "score": 28.1,
-      "score_reliability": "limited_evidence",
-      "sources": [
-        "Analyst feed",
-        "SEC Capital Structure",
-        "SEC EDGAR",
-        "SEC Form 4",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -9709,6 +9839,7 @@
       "score": 29.1,
       "score_reliability": "limited_evidence",
       "sources": [
+        "Analyst feed",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -9852,8 +9983,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 36.7,
-      "score": 36.7,
+      "score_raw": 36.8,
+      "score": 36.8,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9891,8 +10022,8 @@
         "enterprise_to_ebitda"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 41.4,
-      "score": 41.4,
+      "score_raw": 41.5,
+      "score": 41.5,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9963,10 +10094,11 @@
         "enterprise_to_ebitda"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 24.1,
-      "score": 24.1,
+      "score_raw": 24.2,
+      "score": 24.2,
       "score_reliability": "limited_evidence",
       "sources": [
+        "Analyst feed",
         "SEC EDGAR",
         "SEC Form 4",
         "Yahoo Finance"
@@ -10040,6 +10172,7 @@
       "score": 16.1,
       "score_reliability": "limited_evidence",
       "sources": [
+        "Analyst feed",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -10092,43 +10225,6 @@
       "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
     },
     {
-      "ticker": "NRXP",
-      "name": "NRX Pharmaceuticals, Inc.",
-      "region": "United States",
-      "quote_type": "EQUITY",
-      "reported_quote_type": "EQUITY",
-      "identity_state": "confirmed_equity",
-      "identity_evidence": null,
-      "score_model": "biotech",
-      "coverage_pct": 53.3,
-      "critical_coverage_pct": 62.5,
-      "missing_critical_metrics": [
-        "revenue_growth",
-        "debt_to_equity",
-        "trailing_pe",
-        "roce_proxy"
-      ],
-      "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 40.3,
-      "score": 40.3,
-      "score_reliability": "limited_evidence",
-      "sources": [
-        "Analyst feed",
-        "SEC EDGAR",
-        "SEC Form 4",
-        "Yahoo Finance"
-      ],
-      "gap_statement_enriched": false,
-      "gap_coverage_before": null,
-      "gap_coverage_after": null,
-      "quarterly_gap_enriched": false,
-      "quarterly_gap_coverage_before": null,
-      "quarterly_gap_coverage_after": null,
-      "opportunity_eligible": false,
-      "opportunity_score": null,
-      "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
-    },
-    {
       "ticker": "NTDOY",
       "name": "Nintendo Co., Ltd.",
       "region": "United States",
@@ -10147,7 +10243,7 @@
         "debt_to_equity"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 60.1,
+      "score_raw": 60.0,
       "score": 59.0,
       "score_reliability": "limited_evidence",
       "sources": [
@@ -10187,6 +10283,7 @@
       "score": 29.5,
       "score_reliability": "limited_evidence",
       "sources": [
+        "Analyst feed",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -10218,8 +10315,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 36.5,
-      "score": 36.5,
+      "score_raw": 36.3,
+      "score": 36.3,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -10402,6 +10499,7 @@
       "score": 9.4,
       "score_reliability": "limited_evidence",
       "sources": [
+        "Analyst feed",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -10433,8 +10531,8 @@
         "price_to_book"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 31.2,
-      "score": 31.2,
+      "score_raw": 31.5,
+      "score": 31.5,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -10452,26 +10550,65 @@
       "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
     },
     {
-      "ticker": "WCT",
-      "name": "Wellchange Holdings Company Lim",
+      "ticker": "AGAGF",
+      "name": "Argenta Silver Corp",
+      "region": "United States",
+      "quote_type": "EQUITY",
+      "reported_quote_type": "EQUITY",
+      "identity_state": "confirmed_equity",
+      "identity_evidence": null,
+      "score_model": "general",
+      "coverage_pct": 56.7,
+      "critical_coverage_pct": 62.5,
+      "missing_critical_metrics": [
+        "revenue_growth",
+        "earnings_growth",
+        "debt_to_equity",
+        "trailing_pe",
+        "forward_pe"
+      ],
+      "recommended_retrieval_lane": "sec_edgar",
+      "score_raw": 30.2,
+      "score": 30.2,
+      "score_reliability": "limited_evidence",
+      "sources": [
+        "Analyst feed",
+        "Yahoo Finance"
+      ],
+      "gap_statement_enriched": false,
+      "gap_coverage_before": null,
+      "gap_coverage_after": null,
+      "quarterly_gap_enriched": false,
+      "quarterly_gap_coverage_before": null,
+      "quarterly_gap_coverage_after": null,
+      "opportunity_eligible": true,
+      "opportunity_score": 25.8,
+      "opportunity_suppressed_reason": null
+    },
+    {
+      "ticker": "AIBZ",
+      "name": "Bitzero Holdings Inc.",
       "region": "United States",
       "quote_type": "EQUITY",
       "reported_quote_type": "EQUITY",
       "identity_state": "confirmed_equity",
       "identity_evidence": null,
       "score_model": "growth_tech",
-      "coverage_pct": 53.3,
-      "critical_coverage_pct": 75.0,
+      "coverage_pct": 56.7,
+      "critical_coverage_pct": 68.8,
       "missing_critical_metrics": [
         "earnings_growth",
         "trailing_pe",
-        "forward_pe"
+        "forward_pe",
+        "roce_proxy"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 18.5,
-      "score": 18.5,
+      "score_raw": 43.9,
+      "score": 43.9,
       "score_reliability": "limited_evidence",
       "sources": [
+        "Analyst feed",
+        "SEC Capital Structure",
         "SEC Form 4",
         "Yahoo Finance"
       ],
@@ -10483,7 +10620,7 @@
       "quarterly_gap_coverage_after": null,
       "opportunity_eligible": false,
       "opportunity_score": null,
-      "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
+      "opportunity_suppressed_reason": "Histórico de preço insuficiente para avaliar o momento"
     }
   ]
 }
