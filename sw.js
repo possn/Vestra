@@ -28,6 +28,8 @@ const APP_SHELL = [
   "./market-portfolio-context.js",
   "./market-watch-snapshots.js",
   "./market-static-universe.js",
+  "./market-scanner-data.js",
+  "./market-analysis-tools-runtime.js",
   "./dashboard-weekly-events.js",
   "./market-dossier-signals.js",
   "./market-search-suggestions.js",
@@ -70,7 +72,8 @@ const APP_SHELL = [
 // also network-first because it is loaded dynamically and must not lag behind
 // the Dashboard visibility contract after a PWA update. Dossier control modules
 // are included so WebKit never mixes the old split-button geometry with the new
-// unified action group.
+// unified action group. Market tool runtimes are also network-first because the
+// promoted buttons depend on their interaction controller.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -90,6 +93,8 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-financial-engine.js",
   "app.js",
   "market-static-universe.js",
+  "market-scanner-data.js",
+  "market-analysis-tools-runtime.js",
   "dashboard-weekly-events.js",
   "market-dossier-controls.js",
   "market-ui-polish.js"
