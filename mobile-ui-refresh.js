@@ -1,4 +1,4 @@
-/* Vestra Mobile UI Refresh v1.0 — simpler topbar + useful More hub shortcuts. */
+/* Vestra Mobile UI Refresh v1.1 — compact topbar + reachable mobile drawer + useful More shortcuts. */
 (() => {
   'use strict';
 
@@ -21,17 +21,29 @@
       #viewSettings .more-group__body>.card{box-shadow:none;border-color:rgba(31,56,66,.075)}
       @media(max-width:720px){
         .topbar{padding:9px 12px;gap:7px;justify-content:flex-start}
-        .topbar #btnSidebarToggle,.topbar #btnSettingsNav{display:none!important}
+        .topbar #btnSidebarToggle{display:grid!important;place-items:center;width:42px;height:42px;min-width:42px;padding:0!important;border-radius:14px!important;font-size:19px!important;touch-action:manipulation}
+        .topbar #btnSettingsNav{display:none!important}
         .topbar .brand{flex:1;min-width:0;gap:9px}
         .topbar .brand__icon{width:38px;height:38px;border-radius:12px}
         .topbar .brand__title{font-size:20px}
         .topbar .brand__sub{display:none}
-        .topbar #btnSearchToggle{width:42px;height:42px;padding:0!important;display:grid;place-items:center;font-size:20px!important;border-radius:14px!important}
-        .topbar .fab{width:42px;height:42px;border-radius:14px;font-size:24px;box-shadow:0 5px 18px rgba(32,129,126,.22)}
+        .topbar #btnSearchToggle{width:42px;height:42px;min-width:42px;padding:0!important;display:grid;place-items:center;font-size:20px!important;border-radius:14px!important;touch-action:manipulation}
+        .topbar .fab{width:42px;height:42px;min-width:42px;border-radius:14px;font-size:24px;box-shadow:0 5px 18px rgba(32,129,126,.22);touch-action:manipulation}
         .more-shortcuts__grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
         .more-shortcut{min-height:68px;padding:10px 5px 9px;border-radius:15px}
       }
-      @media(max-width:360px){.more-shortcuts__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:390px){
+        .topbar .brand{gap:7px}
+        .topbar .brand__title{font-size:18px}
+        .topbar .brand__icon{width:36px;height:36px}
+      }
+      @media(max-width:360px){
+        .topbar{gap:5px;padding-left:9px;padding-right:9px}
+        .topbar .brand__title{font-size:17px}
+        .topbar .brand__icon{width:34px;height:34px}
+        .topbar #btnSidebarToggle,.topbar #btnSearchToggle,.topbar .fab{width:40px;height:40px;min-width:40px}
+        .more-shortcuts__grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -102,5 +114,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true });
   else boot();
 
-  window.VestraMobileUiRefresh = Object.freeze({ refresh, version:'1.0' });
+  window.VestraMobileUiRefresh = Object.freeze({ refresh, version:'1.1' });
 })();
