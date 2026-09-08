@@ -1,4 +1,4 @@
-/* Vestra ETF Intelligence v1.0 — fund-only scoring, separate from equity Score. */
+/* Vestra ETF Intelligence v1.1 — fund-only scoring, separate from equity Score. */
 (() => {
   'use strict';
 
@@ -71,7 +71,6 @@
       score += dd <= 8 ? 18 : dd <= 15 ? 10 : dd <= 25 ? 0 : dd <= 35 ? -12 : -25;
     }
     if(r1y != null){
-      // Recent performance is deliberately only a small stabilising input.
       score += r1y >= -5 ? 5 : r1y >= -15 ? 0 : r1y >= -30 ? -7 : -14;
     }
     return clamp(score);
@@ -146,24 +145,49 @@
     return detail;
   }
 
+  function rankVisibleFundLists(stocks){
+    const byTicker = new Map(stocks.filter(isFund).map(row => [text(row?.ticker).toUpperCase(), row]));
+    document.querySelectorAll('.market-list').forEach(list => {
+      const rows = [...list.querySelectorAll(':scope > .market-row[data-market-ticker]')];
+      if(rows.length < 2) return;
+      if(!rows.every(el => byTicker.has(text(el.dataset.marketTicker).toUpperCase()))) return;
+      rows.sort((a,b) => {
+        const sa = number(byTicker.get(text(a.dataset.marketTicker).toUpperCase())?.etf_score);
+        const sb = number(byTicker.get(text(b.dataset.marketTicker).toUpperCase())?.etf_score);
+        if(sa == null && sb == null) return 0;
+        if(sa == null) return 1;
+        if(sb == null) return -1;
+        return sb-sa;
+      });
+      rows.forEach(row => list.appendChild(row));
+    });
+  }
+
   function annotateDiscovery(){
     const stocks = window.VestraMarketStaticUniverse?.getStocks?.() || [];
     if(!stocks.length) return;
     const funds = stocks.filter(isFund);
     const scored = funds.filter(x => number(x?.etf_score) != null).length;
-    const section = document.querySelector('.market-etf-discovery');
-    if(!section || section.querySelector('[data-etf-catalog-health]')) return;
-    const head = section.querySelector('.market-section__head');
-    if(!head) return;
-    const badge = document.createElement('div');
-    badge.dataset.etfCatalogHealth = '1';
-    badge.className = 'market-data-age';
-    badge.textContent = `${funds.length} no catálogo · ${scored} avaliados`;
-    head.appendChild(badge);
+    rankVisibleFundLists(stocks);
+    document.querySelectorAll('.market-etf-discovery').forEach(section => {
+      if(section.querySelector('[data-etf-catalog-health]')) return;
+      const head = section.querySelector('.market-section__head');
+      if(!head) return;
+      const badge = document.createElement('div');
+      badge.dataset.etfCatalogHealth = '1';
+      badge.className = 'market-data-age';
+      badge.textContent = `${funds.length} no catálogo · ${scored} avaliados`;
+      head.appendChild(badge);
+    });
   }
 
   if(typeof MutationObserver !== 'undefined' && typeof document !== 'undefined'){
-    const observer = new MutationObserver(() => annotateDiscovery());
+    let scheduled = false;
+    const observer = new MutationObserver(() => {
+      if(scheduled) return;
+      scheduled = true;
+      queueMicrotask(() => { scheduled = false; annotateDiscovery(); });
+    });
     const start = () => observer.observe(document.body, {subtree:true, childList:true});
     if(document.body) start(); else document.addEventListener('DOMContentLoaded', start, {once:true});
   }
@@ -173,6 +197,7 @@
     assess,
     enrichStocks,
     isFund,
-    version: '1.0',
+    rankVisibleFundLists,
+    version: '1.1',
   });
 })();
