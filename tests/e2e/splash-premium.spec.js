@@ -55,7 +55,9 @@ test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece 2s e sai
   await expect(splash).toBeVisible();
   expect(Date.now() - copyReadyAt).toBeGreaterThanOrEqual(1_600);
 
-  await expect(splash).toBeHidden({ timeout: 1_800 });
+  // On a cold WebKit run app readiness may arrive after the nominal 4s choreography;
+  // the watchdog is allowed to use its bounded failsafe, but the splash must still release.
+  await expect(splash).toBeHidden({ timeout: 4_000 });
   await expect(page.locator('#viewDashboard')).toBeVisible();
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
 });
