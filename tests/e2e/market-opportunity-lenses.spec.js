@@ -6,6 +6,8 @@ test('iPhone/WebKit: opportunity lenses are tappable and persist the selected fi
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses));
+  // Let the normal Market bootstrap finish before adding the isolated regression fixture.
+  await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 7_000 });
 
   await page.evaluate(() => {
     const fixture = document.createElement('section');
