@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v1.5 — tappable earnings + macro catalysts with result details. */
+/* Vestra Dashboard Weekly Events v1.6 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
 
-  const VERSION = '1.5';
+  const VERSION = '1.6';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -23,6 +23,13 @@
     ecb: ['ecb.europa.eu'],
     census: ['census.gov'],
   });
+  const OFFICIAL_METRIC_LABELS = Object.freeze({
+    headline_mom_pct: 'Headline MoM',
+    headline_yoy_pct: 'Headline YoY',
+    core_mom_pct: 'Core MoM',
+    core_yoy_pct: 'Core YoY',
+  });
+  const OFFICIAL_METRIC_SCHEMAS = new Set(['bls_cpi_v1', 'bls_ppi_v1']);
   let macroSnapshot = null;
   let macroLoading = null;
   let lastRenderedEvents = [];
@@ -91,6 +98,16 @@
     }
   }
 
+  function normaliseOfficialMetrics(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return Object.freeze({});
+    const out = {};
+    for (const key of Object.keys(OFFICIAL_METRIC_LABELS)) {
+      const parsed = number(value[key]);
+      if (parsed !== null) out[key] = parsed;
+    }
+    return Object.freeze(out);
+  }
+
   function collectEvents(stocks, portfolioTickers = new Set(), now = new Date(), windowDays = WINDOW_DAYS) {
     const start = localDay(now);
     const end = new Date(start);
@@ -139,6 +156,7 @@
       const eventEnd = parseCalendarDate(row?.date_end || row?.date);
       if (!eventStart || !eventEnd || eventStart > end || eventEnd < start) return null;
       const source = text(row?.source);
+      const resultMetricSchema = text(row?.result_metric_schema);
       return {
         kind: 'macro',
         id: `${source || 'macro'}:${text(row?.date)}:${text(row?.short_title) || index}`,
@@ -156,6 +174,8 @@
         unit: text(row?.unit), resultStatus: text(row?.result_status),
         resultSummary: text(row?.result_summary),
         resultReleasedAt: text(row?.result_released_at),
+        resultMetricSchema: OFFICIAL_METRIC_SCHEMAS.has(resultMetricSchema) ? resultMetricSchema : '',
+        resultMetrics: normaliseOfficialMetrics(row?.result_metrics),
       };
     }).filter(Boolean);
   }
@@ -212,8 +232,12 @@
     return text(event?.resultStatus) === 'official_release_summary' && text(event?.resultSummary) !== '';
   }
 
+  function hasStructuredOfficialMetrics(event) {
+    return OFFICIAL_METRIC_SCHEMAS.has(text(event?.resultMetricSchema)) && Object.keys(event?.resultMetrics || {}).length > 0;
+  }
+
   function hasMacroPublication(event) {
-    return hasMacroResult(event) || hasOfficialMacroSummary(event);
+    return hasMacroResult(event) || hasOfficialMacroSummary(event) || hasStructuredOfficialMetrics(event);
   }
 
   function hasMacroMetrics(event) {
@@ -223,6 +247,13 @@
   function formatResultValue(value, unit = '') {
     if (value === null || value === undefined || text(value) === '') return '—';
     return `${text(value)}${unit ? ` ${unit}` : ''}`;
+  }
+
+  function formatOfficialPercent(value) {
+    const parsed = number(value);
+    if (parsed === null) return '—';
+    const sign = parsed > 0 ? '+' : '';
+    return `${sign}${parsed.toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}%`;
   }
 
   function formatEPS(value) {
@@ -264,8 +295,8 @@
       .weekly-event--portfolio{border-color:rgba(23,123,120,.35);background:linear-gradient(180deg,rgba(23,123,120,.07),rgba(23,123,120,.025))}.weekly-event--macro{border-color:rgba(99,102,241,.28);background:linear-gradient(180deg,rgba(99,102,241,.075),rgba(99,102,241,.025))}.weekly-event--critical{border-color:rgba(180,83,9,.35);background:linear-gradient(180deg,rgba(245,158,11,.09),rgba(245,158,11,.025))}
       .weekly-event__day{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:#177B78;margin-bottom:7px;padding-right:14px}.weekly-event__ticker{font-size:14px;font-weight:900;line-height:1.15;margin-bottom:4px}.weekly-event__name{font-size:11px;color:var(--muted,#64748b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}.weekly-event__meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:9px;font-weight:800}.weekly-event__type,.weekly-event__portfolio,.weekly-event__critical{padding:3px 6px;border-radius:999px}.weekly-event__type{background:rgba(99,102,241,.10);color:#5558b9}.weekly-event__portfolio{background:rgba(23,123,120,.12);color:#116b68}.weekly-event__critical{background:rgba(245,158,11,.14);color:#9a5b08}.weekly-events-empty{padding:12px 0 4px;color:var(--muted,#64748b);font-size:12px}.weekly-events-foot{margin-top:8px;font-size:9px;line-height:1.35;color:var(--muted,#64748b);opacity:.8}
       .weekly-detail-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(12,22,31,.34);display:flex;align-items:flex-end;justify-content:center;padding:14px;backdrop-filter:blur(3px)}.weekly-detail-sheet{width:min(560px,100%);max-height:min(78vh,680px);overflow:auto;border-radius:24px 24px 18px 18px;background:var(--card,#fff);color:var(--text,#17212b);box-shadow:0 -12px 50px rgba(15,23,42,.18);padding:10px 18px calc(18px + env(safe-area-inset-bottom))}.weekly-detail-handle{width:40px;height:4px;border-radius:999px;background:var(--line,#d8dee6);margin:1px auto 14px}.weekly-detail-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.weekly-detail-title{font-size:21px;font-weight:900;letter-spacing:-.45px;line-height:1.08}.weekly-detail-sub{font-size:12px;color:var(--muted,#64748b);margin-top:5px}.weekly-detail-close{appearance:none;border:0;background:var(--soft,#f1f5f9);width:34px;height:34px;border-radius:50%;font-size:22px;color:inherit;cursor:pointer;flex:0 0 auto}
-      .weekly-detail-status{margin:16px 0 10px;padding:12px 13px;border-radius:14px;background:rgba(23,123,120,.08);font-size:12px;line-height:1.45}.weekly-detail-status--waiting{background:rgba(99,102,241,.08)}.weekly-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.weekly-detail-metric{border:1px solid var(--line,#e5e7eb);border-radius:13px;padding:10px}.weekly-detail-metric span{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--muted,#64748b);margin-bottom:5px}.weekly-detail-metric strong{font-size:16px}.weekly-detail-summary{margin:12px 0;padding:13px 14px;border:1px solid rgba(23,123,120,.24);border-radius:14px;background:rgba(23,123,120,.045)}.weekly-detail-summary__label{font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.4px;color:#177B78;margin-bottom:6px}.weekly-detail-summary__text{font-size:12px;line-height:1.55;color:var(--text,#17212b)}.weekly-detail-meta{display:grid;gap:8px;margin:14px 0;font-size:12px}.weekly-detail-meta-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line,#edf0f4);padding-bottom:7px}.weekly-detail-meta-row span{color:var(--muted,#64748b)}.weekly-detail-meta-row strong{text-align:right}.weekly-detail-action{appearance:none;display:block;box-sizing:border-box;width:100%;border:0;border-radius:14px;padding:13px 14px;background:#177B78;color:#fff;font-weight:850;font-size:13px;cursor:pointer;margin-top:6px;text-align:center;text-decoration:none}
-      @media (max-width:560px){.weekly-event{min-width:158px}.weekly-events-title{font-size:15px}.weekly-detail-backdrop{padding:0}.weekly-detail-sheet{border-radius:24px 24px 0 0}.weekly-detail-grid{grid-template-columns:repeat(3,minmax(82px,1fr));overflow-x:auto}}
+      .weekly-detail-status{margin:16px 0 10px;padding:12px 13px;border-radius:14px;background:rgba(23,123,120,.08);font-size:12px;line-height:1.45}.weekly-detail-status--waiting{background:rgba(99,102,241,.08)}.weekly-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.weekly-detail-grid--official{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-detail-metric{border:1px solid var(--line,#e5e7eb);border-radius:13px;padding:10px}.weekly-detail-metric span{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--muted,#64748b);margin-bottom:5px}.weekly-detail-metric strong{font-size:16px}.weekly-detail-summary{margin:12px 0;padding:13px 14px;border:1px solid rgba(23,123,120,.24);border-radius:14px;background:rgba(23,123,120,.045)}.weekly-detail-summary__label{font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.4px;color:#177B78;margin-bottom:6px}.weekly-detail-summary__text{font-size:12px;line-height:1.55;color:var(--text,#17212b)}.weekly-detail-meta{display:grid;gap:8px;margin:14px 0;font-size:12px}.weekly-detail-meta-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line,#edf0f4);padding-bottom:7px}.weekly-detail-meta-row span{color:var(--muted,#64748b)}.weekly-detail-meta-row strong{text-align:right}.weekly-detail-action{appearance:none;display:block;box-sizing:border-box;width:100%;border:0;border-radius:14px;padding:13px 14px;background:#177B78;color:#fff;font-weight:850;font-size:13px;cursor:pointer;margin-top:6px;text-align:center;text-decoration:none}
+      @media (max-width:560px){.weekly-event{min-width:158px}.weekly-events-title{font-size:15px}.weekly-detail-backdrop{padding:0}.weekly-detail-sheet{border-radius:24px 24px 0 0}.weekly-detail-grid{grid-template-columns:repeat(3,minmax(82px,1fr));overflow-x:auto}.weekly-detail-grid--official{grid-template-columns:repeat(2,minmax(118px,1fr))}}
     `;
     document.head.appendChild(style);
   }
@@ -300,6 +331,15 @@
     const body = document.createElement('div'); body.className = 'weekly-detail-summary__text'; body.textContent = text(summary);
     box.append(label, body); return box;
   }
+  function officialMetricGrid(event) {
+    if (!hasStructuredOfficialMetrics(event)) return null;
+    const grid = document.createElement('div'); grid.className = 'weekly-detail-grid weekly-detail-grid--official';
+    for (const [key, label] of Object.entries(OFFICIAL_METRIC_LABELS)) {
+      if (!Object.prototype.hasOwnProperty.call(event.resultMetrics, key)) continue;
+      grid.appendChild(metric(label, formatOfficialPercent(event.resultMetrics[key])));
+    }
+    return grid.childElementCount ? grid : null;
+  }
 
   function openDetail(event, now = new Date()) {
     if (!event) return;
@@ -316,15 +356,20 @@
     if (event.kind === 'macro') {
       const hasActual = hasMacroResult(event);
       const hasSummary = hasOfficialMacroSummary(event);
+      const hasOfficialMetrics = hasStructuredOfficialMetrics(event);
       const published = hasMacroPublication(event);
       const status = document.createElement('div');
       status.className = `weekly-detail-status${published ? '' : ' weekly-detail-status--waiting'}`;
       status.textContent = hasActual
         ? 'Resultado publicado. Os valores abaixo são os dados estruturados recebidos pelo snapshot Vestra.'
-        : hasSummary
-          ? 'Publicação oficial disponível. A Vestra validou a data da release e apresenta abaixo o resumo oficial, sem inferir uma métrica “Actual” ambígua.'
-          : 'Resultado ainda não publicado no snapshot Vestra. Este painel atualiza automaticamente quando a fonte oficial disponibilizar a publicação.';
+        : hasOfficialMetrics
+          ? 'Publicação oficial disponível. A Vestra apresenta separadamente as métricas BLS explicitamente identificadas na release, sem as converter num “Actual” genérico.'
+          : hasSummary
+            ? 'Publicação oficial disponível. A Vestra validou a data da release e apresenta abaixo o resumo oficial, sem inferir uma métrica “Actual” ambígua.'
+            : 'Resultado ainda não publicado no snapshot Vestra. Este painel atualiza automaticamente quando a fonte oficial disponibilizar a publicação.';
       sheet.appendChild(status);
+      const officialGrid = officialMetricGrid(event);
+      if (officialGrid) sheet.appendChild(officialGrid);
       if (hasSummary) sheet.appendChild(officialSummary(event.resultSummary));
       if (hasMacroMetrics(event)) {
         const grid = document.createElement('div'); grid.className = 'weekly-detail-grid';
@@ -333,7 +378,7 @@
       const meta = document.createElement('div'); meta.className = 'weekly-detail-meta';
       const fullDate = new Intl.DateTimeFormat('pt-PT',{weekday:'long',day:'numeric',month:'long'}).format(event.date);
       meta.append(detailMetaRow('Quando', `${fullDate}${event.timeLocal ? ` · ${event.timeLocal}` : ''}`), detailMetaRow('Região', event.region), detailMetaRow('Tipo', categoryLabel(event)), detailMetaRow('Fonte', sourceLabel(event.source)));
-      if (hasSummary && event.resultReleasedAt) meta.append(detailMetaRow('Publicação validada', event.resultReleasedAt));
+      if (published && event.resultReleasedAt) meta.append(detailMetaRow('Publicação validada', event.resultReleasedAt));
       sheet.appendChild(meta);
       if (event.sourceUrl) {
         const action = document.createElement('a');
@@ -378,5 +423,5 @@
   async function scheduleRender(){const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();await Promise.allSettled([marketLoad,loadMacroEvents()]);render();}
   document.addEventListener('click',event=>{const eventButton=event.target.closest?.('[data-weekly-event-index]');if(eventButton){const index=Number(eventButton.dataset.weeklyEventIndex);if(Number.isInteger(index)&&lastRenderedEvents[index])openDetail(lastRenderedEvents[index]);return;}const dossierButton=event.target.closest?.('[data-weekly-detail-ticker]');if(dossierButton){openTicker(dossierButton.dataset.weeklyDetailTicker);return;}if(event.target.closest?.('[data-weekly-detail-close]')){closeDetail();return;}const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)setTimeout(()=>render(),0);});
   window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
-  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,hasMacroResult,hasOfficialMacroSummary,hasMacroPublication,hasMacroMetrics,formatResultValue,formatEPS,formatSurprise,openDetail,render,version:VERSION});
+  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,version:VERSION});
 })();
