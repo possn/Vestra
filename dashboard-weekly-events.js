@@ -1,14 +1,28 @@
-/* Vestra Dashboard Weekly Events v1.3 — tappable earnings + macro catalysts with result details. */
+/* Vestra Dashboard Weekly Events v1.4 — tappable earnings + macro catalysts with result details. */
 (() => {
   'use strict';
 
-  const VERSION = '1.3';
+  const VERSION = '1.4';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
   const MAX_EVENTS = 12;
   const WINDOW_DAYS = 7;
   const MACRO_URL = 'data/macro-events.json';
+  const OFFICIAL_SOURCE_URLS = Object.freeze({
+    fed: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    bls: 'https://www.bls.gov/bls/newsrels.htm',
+    bea: 'https://www.bea.gov/news',
+    ecb: 'https://www.ecb.europa.eu/press/govcdec/mopo/html/index.en.html',
+    census: 'https://www.census.gov/economic-indicators/',
+  });
+  const OFFICIAL_SOURCE_HOSTS = Object.freeze({
+    fed: ['federalreserve.gov'],
+    bls: ['bls.gov'],
+    bea: ['bea.gov'],
+    ecb: ['ecb.europa.eu'],
+    census: ['census.gov'],
+  });
   let macroSnapshot = null;
   let macroLoading = null;
   let lastRenderedEvents = [];
@@ -60,6 +74,23 @@
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
 
+  function officialSourceUrl(source, candidate = '') {
+    const key = text(source).toLowerCase();
+    const fallback = OFFICIAL_SOURCE_URLS[key] || '';
+    const raw = text(candidate);
+    if (!raw) return fallback;
+    try {
+      const parsed = new URL(raw);
+      if (parsed.protocol !== 'https:') return fallback;
+      const hostname = parsed.hostname.toLowerCase();
+      const allowed = OFFICIAL_SOURCE_HOSTS[key] || [];
+      const validHost = allowed.some(host => hostname === host || hostname.endsWith(`.${host}`));
+      return validHost ? parsed.href : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   function collectEvents(stocks, portfolioTickers = new Set(), now = new Date(), windowDays = WINDOW_DAYS) {
     const start = localDay(now);
     const end = new Date(start);
@@ -107,16 +138,18 @@
       const eventStart = parseCalendarDate(row?.date);
       const eventEnd = parseCalendarDate(row?.date_end || row?.date);
       if (!eventStart || !eventEnd || eventStart > end || eventEnd < start) return null;
+      const source = text(row?.source);
       return {
         kind: 'macro',
-        id: `${text(row?.source) || 'macro'}:${text(row?.date)}:${text(row?.short_title) || index}`,
+        id: `${source || 'macro'}:${text(row?.date)}:${text(row?.short_title) || index}`,
         title: text(row?.title) || text(row?.short_title) || 'Evento macro',
         shortTitle: text(row?.short_title) || text(row?.title) || 'Macro',
         date: eventStart < start ? start : eventStart,
         dateEnd: eventEnd,
         region: text(row?.region), category: text(row?.category),
         importance: text(row?.importance) || 'high', timeLocal: text(row?.time_local),
-        source: text(row?.source),
+        source,
+        sourceUrl: officialSourceUrl(source, row?.source_url),
         actual: row?.actual ?? null,
         consensus: row?.consensus ?? row?.forecast ?? null,
         previous: row?.previous ?? null,
@@ -217,7 +250,7 @@
       .weekly-event--portfolio{border-color:rgba(23,123,120,.35);background:linear-gradient(180deg,rgba(23,123,120,.07),rgba(23,123,120,.025))}.weekly-event--macro{border-color:rgba(99,102,241,.28);background:linear-gradient(180deg,rgba(99,102,241,.075),rgba(99,102,241,.025))}.weekly-event--critical{border-color:rgba(180,83,9,.35);background:linear-gradient(180deg,rgba(245,158,11,.09),rgba(245,158,11,.025))}
       .weekly-event__day{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:#177B78;margin-bottom:7px;padding-right:14px}.weekly-event__ticker{font-size:14px;font-weight:900;line-height:1.15;margin-bottom:4px}.weekly-event__name{font-size:11px;color:var(--muted,#64748b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}.weekly-event__meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:9px;font-weight:800}.weekly-event__type,.weekly-event__portfolio,.weekly-event__critical{padding:3px 6px;border-radius:999px}.weekly-event__type{background:rgba(99,102,241,.10);color:#5558b9}.weekly-event__portfolio{background:rgba(23,123,120,.12);color:#116b68}.weekly-event__critical{background:rgba(245,158,11,.14);color:#9a5b08}.weekly-events-empty{padding:12px 0 4px;color:var(--muted,#64748b);font-size:12px}.weekly-events-foot{margin-top:8px;font-size:9px;line-height:1.35;color:var(--muted,#64748b);opacity:.8}
       .weekly-detail-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(12,22,31,.34);display:flex;align-items:flex-end;justify-content:center;padding:14px;backdrop-filter:blur(3px)}.weekly-detail-sheet{width:min(560px,100%);max-height:min(78vh,680px);overflow:auto;border-radius:24px 24px 18px 18px;background:var(--card,#fff);color:var(--text,#17212b);box-shadow:0 -12px 50px rgba(15,23,42,.18);padding:10px 18px calc(18px + env(safe-area-inset-bottom))}.weekly-detail-handle{width:40px;height:4px;border-radius:999px;background:var(--line,#d8dee6);margin:1px auto 14px}.weekly-detail-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.weekly-detail-title{font-size:21px;font-weight:900;letter-spacing:-.45px;line-height:1.08}.weekly-detail-sub{font-size:12px;color:var(--muted,#64748b);margin-top:5px}.weekly-detail-close{appearance:none;border:0;background:var(--soft,#f1f5f9);width:34px;height:34px;border-radius:50%;font-size:22px;color:inherit;cursor:pointer;flex:0 0 auto}
-      .weekly-detail-status{margin:16px 0 10px;padding:12px 13px;border-radius:14px;background:rgba(23,123,120,.08);font-size:12px;line-height:1.45}.weekly-detail-status--waiting{background:rgba(99,102,241,.08)}.weekly-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.weekly-detail-metric{border:1px solid var(--line,#e5e7eb);border-radius:13px;padding:10px}.weekly-detail-metric span{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--muted,#64748b);margin-bottom:5px}.weekly-detail-metric strong{font-size:16px}.weekly-detail-meta{display:grid;gap:8px;margin:14px 0;font-size:12px}.weekly-detail-meta-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line,#edf0f4);padding-bottom:7px}.weekly-detail-meta-row span{color:var(--muted,#64748b)}.weekly-detail-meta-row strong{text-align:right}.weekly-detail-action{appearance:none;width:100%;border:0;border-radius:14px;padding:13px 14px;background:#177B78;color:#fff;font-weight:850;font-size:13px;cursor:pointer;margin-top:6px}
+      .weekly-detail-status{margin:16px 0 10px;padding:12px 13px;border-radius:14px;background:rgba(23,123,120,.08);font-size:12px;line-height:1.45}.weekly-detail-status--waiting{background:rgba(99,102,241,.08)}.weekly-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.weekly-detail-metric{border:1px solid var(--line,#e5e7eb);border-radius:13px;padding:10px}.weekly-detail-metric span{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--muted,#64748b);margin-bottom:5px}.weekly-detail-metric strong{font-size:16px}.weekly-detail-meta{display:grid;gap:8px;margin:14px 0;font-size:12px}.weekly-detail-meta-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line,#edf0f4);padding-bottom:7px}.weekly-detail-meta-row span{color:var(--muted,#64748b)}.weekly-detail-meta-row strong{text-align:right}.weekly-detail-action{appearance:none;display:block;box-sizing:border-box;width:100%;border:0;border-radius:14px;padding:13px 14px;background:#177B78;color:#fff;font-weight:850;font-size:13px;cursor:pointer;margin-top:6px;text-align:center;text-decoration:none}
       @media (max-width:560px){.weekly-event{min-width:158px}.weekly-events-title{font-size:15px}.weekly-detail-backdrop{padding:0}.weekly-detail-sheet{border-radius:24px 24px 0 0}.weekly-detail-grid{grid-template-columns:repeat(3,minmax(82px,1fr));overflow-x:auto}}
     `;
     document.head.appendChild(style);
@@ -270,6 +303,15 @@
       const meta = document.createElement('div'); meta.className = 'weekly-detail-meta';
       const fullDate = new Intl.DateTimeFormat('pt-PT',{weekday:'long',day:'numeric',month:'long'}).format(event.date);
       meta.append(detailMetaRow('Quando', `${fullDate}${event.timeLocal ? ` · ${event.timeLocal}` : ''}`), detailMetaRow('Região', event.region), detailMetaRow('Tipo', categoryLabel(event)), detailMetaRow('Fonte', sourceLabel(event.source))); sheet.appendChild(meta);
+      if (event.sourceUrl) {
+        const action = document.createElement('a');
+        action.className = 'weekly-detail-action';
+        action.href = event.sourceUrl;
+        action.target = '_blank';
+        action.rel = 'noopener noreferrer';
+        action.textContent = 'Ver publicação oficial';
+        sheet.appendChild(action);
+      }
     } else {
       const status = document.createElement('div'); status.className = `weekly-detail-status${event.reported ? '' : ' weekly-detail-status--waiting'}`;
       status.textContent = event.reported ? 'Resultados publicados. Compara o EPS reportado com a estimativa e a surpresa do trimestre.' : 'Resultados ainda não publicados. A estimativa abaixo é a última disponível no snapshot Vestra.'; sheet.appendChild(status);
@@ -304,5 +346,5 @@
   async function scheduleRender(){const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();await Promise.allSettled([marketLoad,loadMacroEvents()]);render();}
   document.addEventListener('click',event=>{const eventButton=event.target.closest?.('[data-weekly-event-index]');if(eventButton){const index=Number(eventButton.dataset.weeklyEventIndex);if(Number.isInteger(index)&&lastRenderedEvents[index])openDetail(lastRenderedEvents[index]);return;}const dossierButton=event.target.closest?.('[data-weekly-detail-ticker]');if(dossierButton){openTicker(dossierButton.dataset.weeklyDetailTicker);return;}if(event.target.closest?.('[data-weekly-detail-close]')){closeDetail();return;}const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)setTimeout(()=>render(),0);});
   window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
-  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,hasMacroResult,formatResultValue,formatEPS,formatSurprise,openDetail,render,version:VERSION});
+  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,hasMacroResult,formatResultValue,formatEPS,formatSurprise,openDetail,render,version:VERSION});
 })();
