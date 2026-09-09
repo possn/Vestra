@@ -11,15 +11,35 @@ import logging
 import sec_archives_enrich
 
 
-def _archive_candidate_order(rows, priority=None):
-    """Return a copy ordered for bounded EDGAR fallback work.
+# Run #96 attempted 511 Archive candidates because priority holdings were exempt
+# from the 300 non-priority cap. Keep the new total below that observed workload
+# while reserving meaningful capacity for sparse scanner dossiers.
+ARCHIVE_TOTAL_CANDIDATE_BUDGET = 500
+ARCHIVE_PRIORITY_SHARE = 0.40
+ARCHIVE_MIN_MISSING = 2
 
-    Priority tickers remain first. Remaining rows are ranked by the number of
-    fundamental fields still missing, then by ticker for deterministic runs.
-    Objects themselves are not copied, so the Archives enricher can mutate the
-    canonical metrics objects without reordering the pipeline's returned list.
+
+def _is_archive_candidate(metrics_obj):
+    ticker = str(getattr(metrics_obj, "ticker", "") or "").upper()
+    if not ticker or "." in ticker:
+        return False
+    if not sec_archives_enrich.is_equity_candidate(getattr(metrics_obj, "quote_type", None)):
+        return False
+    if getattr(metrics_obj, "sec_edgar_enriched", False):
+        return False
+    return int(sec_archives_enrich._candidate_missing(metrics_obj)) >= ARCHIVE_MIN_MISSING
+
+
+def _archive_candidate_order(rows, priority=None):
+    """Return sparse US equity candidates ordered for bounded EDGAR fallback.
+
+    Priority tickers remain first, but a holding no longer bypasses the minimum
+    gap requirement merely because it is in the portfolio. Remaining rows are
+    ranked by missing fundamentals, then ticker for deterministic runs.
+    Objects themselves are not copied.
     """
     priority = {str(item).upper() for item in (priority or set())}
+    candidates = [row for row in (rows or []) if _is_archive_candidate(row)]
 
     def key(metrics_obj):
         ticker = str(getattr(metrics_obj, "ticker", "") or "").upper()
@@ -29,7 +49,74 @@ def _archive_candidate_order(rows, priority=None):
             ticker,
         )
 
-    return sorted(list(rows or []), key=key)
+    return sorted(candidates, key=key)
+
+
+def _balanced_archive_candidates(rows, priority=None, total_budget=ARCHIVE_TOTAL_CANDIDATE_BUDGET,
+                                 priority_share=ARCHIVE_PRIORITY_SHARE):
+    """Select a bounded mixture of sparse holdings and sparse scanner rows.
+
+    The portfolio keeps a reserved share, while the scanner keeps the rest.
+    Unused capacity is handed to the other pool, ranked by missing fundamentals.
+    Total selected work never exceeds ``total_budget``.
+    """
+    priority_set = {str(item).upper() for item in (priority or set())}
+    total_budget = max(0, int(total_budget))
+    priority_share = min(1.0, max(0.0, float(priority_share)))
+    if total_budget == 0:
+        return [], set()
+
+    eligible = [row for row in (rows or []) if _is_archive_candidate(row)]
+
+    def gap_key(metrics_obj):
+        return (
+            -int(sec_archives_enrich._candidate_missing(metrics_obj)),
+            str(getattr(metrics_obj, "ticker", "") or "").upper(),
+        )
+
+    priority_pool = sorted(
+        [row for row in eligible if str(getattr(row, "ticker", "") or "").upper() in priority_set],
+        key=gap_key,
+    )
+    scanner_pool = sorted(
+        [row for row in eligible if str(getattr(row, "ticker", "") or "").upper() not in priority_set],
+        key=gap_key,
+    )
+
+    priority_reserve = min(total_budget, int(round(total_budget * priority_share)))
+    scanner_reserve = total_budget - priority_reserve
+    selected_priority = priority_pool[:priority_reserve]
+    selected_scanner = scanner_pool[:scanner_reserve]
+
+    used_ids = {id(row) for row in selected_priority + selected_scanner}
+    remaining_slots = total_budget - len(used_ids)
+    if remaining_slots > 0:
+        overflow = sorted(
+            [row for row in eligible if id(row) not in used_ids],
+            key=gap_key,
+        )
+        for row in overflow[:remaining_slots]:
+            ticker = str(getattr(row, "ticker", "") or "").upper()
+            if ticker in priority_set:
+                selected_priority.append(row)
+            else:
+                selected_scanner.append(row)
+
+    selected = sorted(
+        selected_priority + selected_scanner,
+        key=lambda row: (
+            0 if str(getattr(row, "ticker", "") or "").upper() in priority_set else 1,
+            *gap_key(row),
+        ),
+    )
+    selected_priority_set = {
+        str(getattr(row, "ticker", "") or "").upper() for row in selected_priority
+    }
+    sec_archives_enrich.log.info(
+        "SEC Archives candidate selector: eligible=%d selected=%d priority=%d scanner=%d budget=%d",
+        len(eligible), len(selected), len(selected_priority), len(selected_scanner), total_budget,
+    )
+    return selected, selected_priority_set
 
 
 class _ReplayArchiveClient:
@@ -81,7 +168,7 @@ def _effective_nonpriority_cap(rows, cmap, filings, requested, priority=None):
         cik = cmap.get(ticker)
         if not cik:
             continue
-        if sec_archives_enrich._candidate_missing(metrics_obj) < 2:
+        if sec_archives_enrich._candidate_missing(metrics_obj) < ARCHIVE_MIN_MISSING:
             continue
 
         raw_slots += 1
@@ -112,8 +199,6 @@ def _budgeted_archive_enrich(rows, priority=None, max_nonpriority=None):
         try:
             index_texts.append(client.text(sec_archives_enrich.master_index_url(year, quarter), timeout=30))
         except Exception:
-            # Do not make the planning layer a new availability dependency. The
-            # normal enricher gets its usual budget and may retry/recover.
             planning_complete = False
             break
 
@@ -156,8 +241,13 @@ def install(module=None):
     def combined_enrich(raw, *args, **kwargs):
         rows = original(raw, *args, **kwargs)
         priority = kwargs.get("priority")
-        ordered = _archive_candidate_order(rows, priority=priority)
-        _budgeted_archive_enrich(ordered, priority=priority)
+        selected, selected_priority = _balanced_archive_candidates(rows, priority=priority)
+        scanner_count = max(0, len(selected) - len(selected_priority))
+        _budgeted_archive_enrich(
+            selected,
+            priority=selected_priority,
+            max_nonpriority=scanner_count,
+        )
         return rows
 
     module._vestra_companyfacts_enrich = original
