@@ -5,9 +5,10 @@ not consume the same retry budget as a transient 429, timeout or transport error
 During a real Yahoo throttle, yfinance can also fail the heavy ``info`` endpoint
 while ``fast_info``/history still recovers only price/identity. Those rows have no
 explicit ``error`` and used to look like successful full-fundamental fetches. This
-wrapper gives extremely sparse price-only rows one bounded retry after a recorded
-throttle incident, while preserving the usable fallback if the retry is worse.
-Nothing is persisted: every ticker is eligible for a fresh first attempt next run.
+wrapper gives extremely sparse price-only rows one bounded retry after a recent
+recorded throttle incident, while preserving the usable fallback if the retry is
+worse. Nothing is persisted: every ticker is eligible for a fresh first attempt
+on the next run.
 """
 from __future__ import annotations
 
@@ -62,7 +63,16 @@ def _throttle_incident_seen(module) -> bool:
         return False
     try:
         state = snapshot() or {}
-        return int(state.get("strike") or 0) > 0
+        if int(state.get("strike") or 0) <= 0:
+            return False
+        last = state.get("last_incident_at")
+        # Lightweight/fake coordinators used by unit tests may not expose timing.
+        # Production does, so a historical strike cannot poison later batches.
+        if last is None:
+            return True
+        quiet = float(getattr(coordinator, "quiet_reset_seconds", 120.0) or 120.0)
+        age = time.time() - float(last)
+        return 0.0 <= age <= quiet
     except Exception:
         return False
 
@@ -138,16 +148,17 @@ def install(module=None, *, sleeper=None):
             )
 
         # A silent price-only fallback is only suspicious when the shared Yahoo
-        # coordinator actually observed throttling during this pass. Retry each
-        # such row at most once, independent of the normal explicit-error passes.
+        # coordinator observed a *recent* throttle. Retry each such row at most
+        # once, independent of the normal explicit-error passes.
+        recent_throttle = _throttle_incident_seen(module)
         degraded_pending = {
             tk for tk in requested
-            if _throttle_incident_seen(module) and is_suspect_price_only_fallback(by_ticker.get(tk))
+            if recent_throttle and is_suspect_price_only_fallback(by_ticker.get(tk))
         }
         degraded_attempted: set[str] = set()
         if degraded_pending:
             module.log.info(
-                "Yahoo retry hygiene: %d price-only row(s) flagged after throttle for one recovery attempt",
+                "Yahoo retry hygiene: %d price-only row(s) flagged after recent throttle for one recovery attempt",
                 len(degraded_pending),
             )
 
