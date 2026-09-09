@@ -34,11 +34,14 @@ BLS_RELEASES = {
     },
 }
 
-MONTHS = (
-    "January|February|March|April|May|June|July|August|September|October|November|December"
-)
+_MONTH_NAMES = [
+    "january", "february", "march", "april", "may", "june",
+    "july", "august", "september", "october", "november", "december",
+]
+MONTH_INDEX = {name: index + 1 for index, name in enumerate(_MONTH_NAMES)}
+MONTHS_RE = "|".join(name.title() for name in _MONTH_NAMES)
 _RELEASE_DATE_RE = re.compile(
-    rf"(?:embargoed\s+until|for\s+release).*?\b({MONTHS})\s+(\d{{1,2}}),\s*(\d{{4}})",
+    rf"(?:embargoed\s+until|for\s+release).*?\b({MONTHS_RE})\s+(\d{{1,2}}),\s*(\d{{4}})",
     flags=re.I,
 )
 
@@ -73,10 +76,10 @@ def parse_bls_release(page: str, short_title: str) -> tuple[date, str] | None:
     if not date_match:
         return None
     try:
-        released = date.fromisoformat(
-            f"{int(date_match.group(3)):04d}-{date.fromisoformat('2000-01-01').replace(month=[
-                'january','february','march','april','may','june','july','august','september','october','november','december'
-            ].index(date_match.group(1).lower()) + 1).month:02d}-{int(date_match.group(2)):02d}"
+        released = date(
+            int(date_match.group(3)),
+            MONTH_INDEX[date_match.group(1).lower()],
+            int(date_match.group(2)),
         )
     except Exception:
         return None
