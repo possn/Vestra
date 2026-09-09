@@ -3,14 +3,17 @@ name: Update macro events
 on:
   schedule:
     - cron: "20 5 * * *"
+    - cron: "17 7-21/2 * * 1-5"
   workflow_dispatch: {}
   push:
     branches: [main]
     paths:
       - 'scripts/update_macro_events.py'
       - 'scripts/macro_calendar_transport.py'
+      - 'scripts/enrich_macro_results.py'
       - 'scripts/requirements-macro.txt'
       - 'tests/test_update_macro_events.py'
+      - 'tests/test_enrich_macro_results.py'
       - '.github/workflows/update-macro-events.yml'
 
 permissions:
@@ -40,11 +43,20 @@ jobs:
 
       - name: Validate refresher
         run: |
-          python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py
+          python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py scripts/enrich_macro_results.py
           python tests/test_update_macro_events.py
+          python tests/test_enrich_macro_results.py
+
+      - name: Preserve previous verified results
+        run: cp data/macro-events.json /tmp/vestra-macro-events-previous.json
 
       - name: Refresh official macro calendar
         run: PYTHONPATH=scripts python scripts/macro_calendar_transport.py
+
+      - name: Refresh official result summaries
+        env:
+          VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json
+        run: python scripts/enrich_macro_results.py
 
       - name: Validate published contract
         run: |
@@ -61,6 +73,12 @@ jobs:
           assert future, 'macro calendar has no future events'
           for e in events:
               assert e.get('date') and e.get('short_title') and e.get('source')
+              if e.get('result_status') == 'official_release_summary':
+                  assert e.get('source') == 'bls'
+                  assert e.get('short_title') in {'CPI EUA','PPI EUA'}
+                  assert e.get('result_summary')
+                  assert str(e.get('source_url','')).startswith('https://www.bls.gov/news.release/')
+                  assert 'actual' not in e or e.get('actual') is None
           print(f"Validated {len(events)} events; {len(future)} future")
           PY
 
