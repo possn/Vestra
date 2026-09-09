@@ -19,6 +19,11 @@
   const QUOTE_CACHE_TTL_MS = 60 * 1000;
   const QUOTE_ERROR_TTL_MS = 20 * 1000;
   const FX_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+  // A partial portfolio pass should not be treated like a fully fresh pass for a
+  // whole minute. Wait until the short-lived error cache has expired, then make
+  // one bounded retry while the app is still foregrounded. Successful quotes
+  // remain in the 60s cache, so the retry naturally concentrates on misses.
+  const PARTIAL_REFRESH_RETRY_MS = 25 * 1000;
 
   const cleanWorkerUrl = workerUrl => String(workerUrl||'').replace(/\/$/,'');
   const batchSupport = new Map();
@@ -26,6 +31,8 @@
   const quoteErrorCache = new Map();
   const quoteInflight = new Map();
   const fxCache = new Map();
+  let partialRetryTimer=null;
+  let partialRetryInFlight=false;
 
   function isTimeoutError(err) {
     const name=String(err?.name||'');
@@ -258,6 +265,45 @@
     return rates;
   }
 
+  async function readPersistedQuoteReport(){
+    const storage=window.VestraStorage;
+    if(typeof storage?.storageGet!=='function') return null;
+    try {
+      const raw=await storage.storageGet();
+      if(!raw) return null;
+      const parsed=JSON.parse(raw);
+      return parsed?.settings?.lastQuoteRefresh || null;
+    } catch(_) { return null; }
+  }
+
+  function clearPartialRetry(){
+    if(partialRetryTimer){ clearTimeout(partialRetryTimer); partialRetryTimer=null; }
+  }
+
+  function installPartialRefreshRetry(){
+    if(typeof document==='undefined') return;
+    document.addEventListener('quotesUpdated',async()=>{
+      if(partialRetryInFlight) return;
+      const report=await readPersistedQuoteReport();
+      if(!report || Number(report.failed||0)<=0){ clearPartialRetry(); return; }
+      if(partialRetryTimer) return;
+      partialRetryTimer=setTimeout(async()=>{
+        partialRetryTimer=null;
+        // Foreground retry only: if the PWA was backgrounded, the normal
+        // visibility/staleness gate will handle the next attempt safely.
+        if(typeof document!=='undefined' && document.hidden) return;
+        const refresh=window.refreshLiveQuotes;
+        if(typeof refresh!=='function') return;
+        partialRetryInFlight=true;
+        try { await refresh({manual:false,reason:'partial-retry'}); }
+        catch(_) {}
+        finally { partialRetryInFlight=false; }
+      },PARTIAL_REFRESH_RETRY_MS);
+    });
+  }
+
+  installPartialRefreshRetry();
+
   window.VestraMarketClient=Object.freeze({
     version:'1.5',
     FX_FALLBACK_LOCAL,
@@ -266,6 +312,7 @@
     BATCH_QUOTE_TIMEOUT_MS,
     BATCH_CHUNK_SIZE,
     BATCH_REQUEST_CONCURRENCY,
+    PARTIAL_REFRESH_RETRY_MS,
     cleanWorkerUrl,
     fetchQuote,
     fetchQuotesBatch,
