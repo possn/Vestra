@@ -12,11 +12,14 @@ import sec_archives_enrich
 
 
 # Run #96 attempted 511 Archive candidates because priority holdings were exempt
-# from the 300 non-priority cap. Keep the new total below that observed workload
-# while reserving meaningful capacity for sparse scanner dossiers.
+# from the 300 non-priority cap. Keep the balanced total below that observed
+# workload while reserving meaningful capacity for scanner dossiers. Run #98
+# showed that requiring two missing fields was too restrictive (313 eligible,
+# only 259 published SEC rows), so any genuine remaining fundamental gap is now
+# eligible; ranking + the 500-row ceiling still keep work bounded.
 ARCHIVE_TOTAL_CANDIDATE_BUDGET = 500
 ARCHIVE_PRIORITY_SHARE = 0.40
-ARCHIVE_MIN_MISSING = 2
+ARCHIVE_MIN_MISSING = 1
 
 
 def _is_archive_candidate(metrics_obj):
@@ -31,11 +34,11 @@ def _is_archive_candidate(metrics_obj):
 
 
 def _archive_candidate_order(rows, priority=None):
-    """Return sparse US equity candidates ordered for bounded EDGAR fallback.
+    """Return incomplete US equity candidates ordered for bounded EDGAR fallback.
 
-    Priority tickers remain first, but a holding no longer bypasses the minimum
-    gap requirement merely because it is in the portfolio. Remaining rows are
-    ranked by missing fundamentals, then ticker for deterministic runs.
+    Priority tickers remain first, but a fully covered holding does not consume
+    the budget merely because it is in the portfolio. Remaining rows are ranked
+    by missing fundamentals, then ticker for deterministic runs.
     Objects themselves are not copied.
     """
     priority = {str(item).upper() for item in (priority or set())}
@@ -54,7 +57,7 @@ def _archive_candidate_order(rows, priority=None):
 
 def _balanced_archive_candidates(rows, priority=None, total_budget=ARCHIVE_TOTAL_CANDIDATE_BUDGET,
                                  priority_share=ARCHIVE_PRIORITY_SHARE):
-    """Select a bounded mixture of sparse holdings and sparse scanner rows.
+    """Select a bounded mixture of incomplete holdings and scanner rows.
 
     The portfolio keeps a reserved share, while the scanner keeps the rest.
     Unused capacity is handed to the other pool, ranked by missing fundamentals.
