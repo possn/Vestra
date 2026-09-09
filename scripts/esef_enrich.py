@@ -31,7 +31,7 @@ log = logging.getLogger("esef_enrich")
 
 _DATA_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "stocks.json")
 _ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
-_LEI_RE = re.compile(r"^[A-Z0-9]{20}$")
+_LEI_RE = re.compile(r"^[A-Z0-9]{18}[0-9]{2}$")
 _ESEF_SOURCE = "ESEF / filings.xbrl.org"
 
 
@@ -70,8 +70,8 @@ def _attach_verified_identities(raw, cache):
         identity = cache.get(ticker)
         if not identity:
             continue
-        # Temporary private markers are consumed by the official adapter and do
-        # not become a new evidence source in the published dossier.
+        # Temporary private markers are consumed as a pair by the official
+        # adapter and do not become a new evidence source in the dossier.
         setattr(model, "_verified_esef_isin", identity[0])
         setattr(model, "_verified_esef_lei", identity[1])
         hits += 1
