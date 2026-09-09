@@ -16,7 +16,7 @@ class AppMarketClientTests(unittest.TestCase):
             "FX_FALLBACK_LOCAL",
             "MAX_QUOTE_CONCURRENCY = 600",
             "DEFAULT_QUOTE_TIMEOUT_MS = 12000",
-            "BATCH_QUOTE_TIMEOUT_MS = 12000",
+            "BATCH_QUOTE_TIMEOUT_MS = 14000",
             "BATCH_CHUNK_SIZE = 20",
             "BATCH_REQUEST_CONCURRENCY = 8",
             "DIRECT_FALLBACK_CONCURRENCY = 2",
@@ -69,6 +69,14 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("Cache-Control':'no-store'",router)
         self.assertIn("symbol !== ticker",router)
         self.assertIn("BATCH_ITEM_DEADLINE_MS = 6500",router)
+
+    def test_batch_browser_budget_exceeds_worker_degraded_ceiling(self):
+        client=read("app-market-client.js")
+        router=read("worker-router.js")
+        self.assertIn("BATCH_QUOTE_TIMEOUT_MS = 14000",client)
+        self.assertIn("EXACT_FETCH_TIMEOUT_MS = 3200",router)
+        self.assertIn("BATCH_ITEM_DEADLINE_MS = 6500",router)
+        self.assertGreater(14000, (2 * 3200) + 6500)
 
     def test_app_imports_client_without_duplicate_implementations(self):
         app=read("app.js")
