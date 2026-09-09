@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v1.2 — robust touch/click filtering, index-only. */
+/* Vestra Market Opportunity Lenses v1.3 — robust touch/click filtering, index-only. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -38,10 +38,13 @@
   }
   function setRowVisible(row, visible){
     row.hidden=!visible;
+    row.classList.toggle('vestra-lens-hidden',!visible);
     if(visible){
+      row.removeAttribute('data-vestra-lens-hidden');
       if(row.dataset.vestraLensDisplay==='hidden') row.style.removeProperty('display');
       delete row.dataset.vestraLensDisplay;
     }else{
+      row.setAttribute('data-vestra-lens-hidden','1');
       row.dataset.vestraLensDisplay='hidden';
       row.style.setProperty('display','none','important');
     }
@@ -77,6 +80,8 @@
       .vestra-opportunity-lenses button{position:relative;z-index:4;flex:0 0 auto;appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:8px 11px;min-height:34px;font:inherit;font-size:9px;font-weight:850;color:var(--text2);cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
       .vestra-opportunity-lenses button.is-active{background:var(--accent,#168e89);color:#fff;border-color:transparent}
       .ux454-opportunity-guide{pointer-events:none}
+      .market-section .market-list .market-row.vestra-lens-hidden,
+      .market-section .market-list .market-row[data-vestra-lens-hidden="1"]{display:none!important}
       .vestra-lens-empty{padding:18px;text-align:center;color:var(--text2);font-size:11px}
     `;document.head.appendChild(s);
   }
@@ -90,5 +95,5 @@
     new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});}).observe(document.body,{childList:true,subtree:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({apply,select:lens=>{activeLens=t(lens)||'all';apply();},get active(){return activeLens;},version:'1.2'});
+  window.VestraMarketOpportunityLenses=Object.freeze({apply,select:lens=>{activeLens=t(lens)||'all';apply();},get active(){return activeLens;},version:'1.3'});
 })();
