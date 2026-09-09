@@ -113,6 +113,24 @@ class YahooRetryHygieneTests(unittest.TestCase):
         self.assertIs(rows[0], improved)
         self.assertEqual(rows[0].sector, 'Technology')
 
+    def test_improved_retry_keeps_quote_and_identity_fallback_when_retry_lacks_them(self):
+        sparse = Row(
+            'MSFT', None,
+            current_price=500.0,
+            currency='USD',
+            retrieval_ticker='MSFT',
+        )
+        improved = Row('MSFT', None, sector='Technology', market_cap=3_000_000_000_000)
+        module, calls = self.make_module([[sparse], [improved]], strike=1)
+        wrapped = hygiene.install(module, sleeper=lambda _: None)
+        rows = wrapped(['MSFT'], retries=3)
+        self.assertEqual(len(calls), 2)
+        self.assertIs(rows[0], improved)
+        self.assertEqual(rows[0].current_price, 500.0)
+        self.assertEqual(rows[0].currency, 'USD')
+        self.assertEqual(rows[0].retrieval_ticker, 'MSFT')
+        self.assertEqual(rows[0].sector, 'Technology')
+
     def test_price_only_row_is_not_retried_without_recorded_throttle(self):
         sparse = Row('MSFT', None, current_price=500.0)
         module, calls = self.make_module([[sparse]], strike=0)
