@@ -23,12 +23,20 @@ def source_contract() -> dict:
     transport = re.search(r"quote_batch_transport:'([^']+)'", text)
     chunk = re.search(r"quote_batch_chunk_size:(\d+)", text)
     fallback = re.search(r"const BATCH_CHART_FALLBACK_CONCURRENCY\s*=\s*(\d+)", text)
+    item_deadline = re.search(r"const BATCH_ITEM_DEADLINE_MS\s*=\s*(\d+)", text)
+    total_deadline = re.search(r"const BATCH_FALLBACK_TOTAL_DEADLINE_MS\s*=\s*(\d+)", text)
     if not transport:
         raise RuntimeError("worker-router.js does not expose quote_batch_transport")
+    if not item_deadline:
+        raise RuntimeError("worker-router.js does not expose BATCH_ITEM_DEADLINE_MS")
+    if not total_deadline:
+        raise RuntimeError("worker-router.js does not expose BATCH_FALLBACK_TOTAL_DEADLINE_MS")
     return {
         "quote_batch_transport": transport.group(1),
         "quote_batch_chunk_size": int(chunk.group(1)) if chunk else None,
         "quote_batch_chart_fallback_concurrency": int(fallback.group(1)) if fallback else None,
+        "quote_batch_item_deadline_ms": int(item_deadline.group(1)),
+        "quote_batch_fallback_total_deadline_ms": int(total_deadline.group(1)),
     }
 
 
@@ -90,6 +98,8 @@ def main() -> int:
             "quote_batch_transport": health.get("quote_batch_transport"),
             "quote_batch_chunk_size": health.get("quote_batch_chunk_size"),
             "quote_batch_chart_fallback_concurrency": health.get("quote_batch_chart_fallback_concurrency"),
+            "quote_batch_item_deadline_ms": health.get("quote_batch_item_deadline_ms"),
+            "quote_batch_fallback_total_deadline_ms": health.get("quote_batch_fallback_total_deadline_ms"),
         },
         "probe_tickers": PROBE_TICKERS,
         "batch_elapsed_ms": elapsed_ms,
