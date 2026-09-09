@@ -84,6 +84,8 @@ jobs:
           assert {'fed','bls','bea','ecb','census'} <= set((p.get('source_status') or {}).keys())
           future = [e for e in events if e.get('date','') >= date.today().isoformat()]
           assert future, 'macro calendar has no future events'
+          allowed_metric_keys = {'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct'}
+          allowed_metric_schemas = {'bls_cpi_v1','bls_ppi_v1'}
           for e in events:
               assert e.get('date') and e.get('short_title') and e.get('source')
               if e.get('result_status') == 'official_release_summary':
@@ -92,6 +94,11 @@ jobs:
                   assert e.get('result_summary')
                   assert str(e.get('source_url','')).startswith('https://www.bls.gov/news.release/')
                   assert 'actual' not in e or e.get('actual') is None
+                  metrics = e.get('result_metrics') or {}
+                  if metrics:
+                      assert e.get('result_metric_schema') in allowed_metric_schemas
+                      assert set(metrics) <= allowed_metric_keys
+                      assert all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in metrics.values())
           print(f"Validated {len(events)} events; {len(future)} future")
           PY
 
