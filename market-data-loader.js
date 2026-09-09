@@ -1,4 +1,4 @@
-/* Vestra Market Data Loader v2.4 — instant navigation + bounded background hydration. */
+/* Vestra Market Data Loader v2.6 — instant navigation + bounded, exact-identity background hydration. */
 (() => {
   'use strict';
 
@@ -98,26 +98,17 @@
       if(!shard){
         const manifest=await loadManifest();
         shard=txt(manifest[key]);
-        if(!shard){
-          const base=key.replace(/\.[A-Z]+$/,'');
-          const candidate=Object.keys(manifest).find(k=>k.replace(/\.[A-Z]+$/,'')===base);
-          if(candidate) shard=txt(manifest[candidate]);
-        }
       }
-      if(!shard) throw new Error('ticker sem shard');
+      if(!shard) throw new Error('ticker sem shard exato');
       const rows=await loadShard(shard);
-      let full=rows[key];
-      if(!full){
-        const base=key.replace(/\.[A-Z]+$/,'');
-        const candidate=Object.keys(rows).find(k=>k.replace(/\.[A-Z]+$/,'')===base);
-        if(candidate) full=rows[candidate];
-      }
-      if(!full) throw new Error('ticker ausente no shard');
+      const full=rows[key];
+      if(!full) throw new Error('ticker exato ausente no shard');
       if(ref) return mergeHydrated(ref,full,{_dossierHydrated:true,_dossierHydrationError:''});
       return full;
     }catch(err){
       // Never download the ~54 MB full market file while the user is opening a dossier.
       // The startup index is a valid fallback and keeps navigation responsive on iOS.
+      // Never substitute another exchange/issuer just because it shares the same base ticker.
       if(ref){
         ref._dossierHydrationError=err?.message||'dossier indisponível';
         return ref;
@@ -226,8 +217,6 @@
       const c=txt(a?.class).toLowerCase();
       return !c.includes('cripto') && (c.includes('ações')||c.includes('acoes')||c.includes('etf')||c.includes('fund'));
     }).map(a=>tickerKey(a?.yahooTicker||a?.ticker||a?.symbol)).filter(Boolean))];
-    // Keep background enrichment gentle on Safari/iPhone. Shards are large and
-    // launching the whole portfolio at once can create a burst of network + JSON work.
     const queue=[...tickers];
     const workerCount=Math.min(2,queue.length);
     const workers=Array.from({length:workerCount},async()=>{
@@ -284,9 +273,6 @@
     }catch(_){ return Promise.resolve(false); }
   }
 
-  // Capture dossier-opening clicks before market.js' bubble listener. Watchlist
-  // controls are deliberately excluded: a star inside a ticker card is an action,
-  // not a request to navigate to that card's dossier.
   document.addEventListener('click',e=>{
     if(bypassClick) return;
     const watch=e.target.closest?.('[data-market-watch]');
@@ -311,8 +297,6 @@
     const portfolio=e.target.closest?.('[data-market-tool="portfolio"]');
     if(portfolio){
       e.preventDefault(); e.stopImmediatePropagation();
-      // Portfolio navigation must never wait for every company shard. Open first,
-      // then hydrate holdings opportunistically in the background.
       bypassClick=true;
       try{ portfolio.click(); } finally { bypassClick=false; }
       hydratePortfolio().catch(()=>{});
@@ -331,6 +315,6 @@
   window.VestraMarketData={
     hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,
     performance:()=>dossierPerf.map(x=>({...x})),
-    version:'2.5'
+    version:'2.6'
   };
 })();
