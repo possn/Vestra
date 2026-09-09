@@ -9,10 +9,11 @@ vm.createContext(context);
 vm.runInContext(source, context, { filename: 'market-portfolio-context.js' });
 
 assert(window.VestraMarketPortfolioContext, 'module must expose VestraMarketPortfolioContext');
-assert.strictEqual(window.VestraMarketPortfolioContext.version, '1.0');
+assert.strictEqual(window.VestraMarketPortfolioContext.version, '1.1');
 
 const assets = [
   { class: 'Ações', yahooTicker: 'SIE.DE', ticker: 'SIE', value: 1200 },
+  { class: 'Ações', yahooTicker: 'ADM', ticker: 'ADM', value: 800 },
   { class: 'ETF', ticker: 'VWCE.DE', marketValueEUR: 2500 },
   { class: 'Fund', symbol: 'FUND.L', value: 300 },
   { class: 'Cripto', ticker: 'ATOM', value: 900 },
@@ -33,14 +34,17 @@ assert.strictEqual(api.portfolioAssets(), assets);
 assert.strictEqual(api.researchEligibleAsset(assets[0]), true);
 assert.strictEqual(api.researchEligibleAsset(assets[1]), true);
 assert.strictEqual(api.researchEligibleAsset(assets[2]), true);
-assert.strictEqual(api.researchEligibleAsset(assets[3]), false, 'crypto must never be inferred as listed-company research');
-assert.strictEqual(api.researchEligibleAsset(assets[4]), false);
+assert.strictEqual(api.researchEligibleAsset(assets[3]), true);
+assert.strictEqual(api.researchEligibleAsset(assets[4]), false, 'crypto must never be inferred as listed-company research');
+assert.strictEqual(api.researchEligibleAsset(assets[5]), false);
 
 assert.strictEqual(api.assetTicker(assets[0]), 'SIE.DE', 'authoritative yahooTicker must win');
-assert.strictEqual(api.assetTicker(assets[2]), 'FUND.L', 'symbol remains fallback');
-assert.deepStrictEqual([...api.portfolioTickers()], ['SIE.DE', 'VWCE.DE', 'FUND.L']);
+assert.strictEqual(api.assetTicker(assets[3]), 'FUND.L', 'symbol remains fallback');
+assert.deepStrictEqual([...api.portfolioTickers()], ['SIE.DE', 'ADM', 'VWCE.DE', 'FUND.L']);
 assert.strictEqual(api.inPortfolio('SIE.DE'), true);
-assert.strictEqual(api.inPortfolio('SIE'), true, 'base ticker must match exchange-qualified holding');
+assert.strictEqual(api.inPortfolio('SIE'), false, 'exchange suffix is part of listed-instrument identity');
+assert.strictEqual(api.inPortfolio('ADM'), true, 'Archer-Daniels-Midland holding must match its exact US ticker');
+assert.strictEqual(api.inPortfolio('ADM.L'), false, 'Admiral Group must never inherit the ADM portfolio badge');
 assert.strictEqual(api.inPortfolio('ATOM'), false, 'crypto collision must stay excluded');
 assert.strictEqual(api.inPortfolio('MSFT'), false);
 

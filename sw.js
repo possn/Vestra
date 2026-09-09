@@ -78,7 +78,9 @@ const APP_SHELL = [
 // market-analysis runtimes are network-first because they are interaction-critical
 // on iPhone and must not lag one launch behind after a PWA update. Live dossier
 // overlay/data-loader are also network-first: stale copies can keep a ticker stuck
-// in an old loading path for one extra PWA launch after a runtime repair.
+// in an old loading path for one extra PWA launch after a runtime repair. Portfolio
+// identity context is network-first too so a corrected canonical ticker mapping is
+// not delayed by one launch on iPhone/WebKit.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -99,6 +101,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app.js",
   "market-live-overlay.js",
   "market-data-loader.js",
+  "market-portfolio-context.js",
   "market-static-universe.js",
   "market-scanner-data.js",
   "market-analysis-tools-runtime.js",

@@ -1,4 +1,4 @@
-/* Vestra Market Portfolio Context v1.0 — portfolio identity helpers for market research. */
+/* Vestra Market Portfolio Context v1.1 — exact portfolio identity helpers for market research. */
 (() => {
   'use strict';
 
@@ -44,8 +44,10 @@
 
     function inPortfolio(ticker) {
       const normalized = text(ticker).toUpperCase();
-      const base = normalized.replace(/\.[A-Z]+$/, '');
-      return [...portfolioTickers()].some(candidate => candidate === normalized || candidate.replace(/\.[A-Z]+$/, '') === base);
+      // Exchange suffixes are part of the instrument identity. Generic base-ticker
+      // matching can silently cross issuers (ADM = Archer-Daniels-Midland while
+      // ADM.L = Admiral Group), so portfolio badges require the canonical ticker.
+      return !!normalized && portfolioTickers().has(normalized);
     }
 
     return Object.freeze({
@@ -59,5 +61,5 @@
     });
   }
 
-  window.VestraMarketPortfolioContext = Object.freeze({ create, version: '1.0' });
+  window.VestraMarketPortfolioContext = Object.freeze({ create, version: '1.1' });
 })();
