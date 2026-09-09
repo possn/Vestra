@@ -1,12 +1,16 @@
 {
   "schema_version": 2,
-  "extra_ticker_count": 494,
+  "extra_ticker_count": 495,
   "states": {
-    "published_confirmed": 486,
-    "known_identity": 8
+    "published_confirmed": 484,
+    "known_identity": 8,
+    "sec_registered_identity": 2,
+    "unresolved": 1
   },
-  "unresolved_count": 0,
-  "unresolved_tickers": [],
+  "unresolved_count": 1,
+  "unresolved_tickers": [
+    "VIE.PA"
+  ],
   "review_families": [],
   "rows": [
     {
@@ -119,6 +123,12 @@
     },
     {
       "ticker": "AFL",
+      "state": "published_confirmed",
+      "quote_type": "EQUITY",
+      "evidence": "stocks_snapshot"
+    },
+    {
+      "ticker": "AG",
       "state": "published_confirmed",
       "quote_type": "EQUITY",
       "evidence": "stocks_snapshot"
@@ -1757,9 +1767,10 @@
     },
     {
       "ticker": "MWA",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "sec_registered_identity",
+      "quote_type": null,
+      "evidence": "sec_ticker_map",
+      "cik": 1350593
     },
     {
       "ticker": "NB",
@@ -2761,15 +2772,16 @@
     },
     {
       "ticker": "VIE.PA",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "unresolved",
+      "quote_type": null,
+      "evidence": null
     },
     {
       "ticker": "VKTX",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "sec_registered_identity",
+      "quote_type": null,
+      "evidence": "sec_ticker_map",
+      "cik": 1607678
     },
     {
       "ticker": "VLN",
