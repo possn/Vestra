@@ -1,4 +1,4 @@
-/* Vestra ETF Intelligence v1.1 — fund-only scoring, separate from equity Score. */
+/* Vestra ETF Intelligence v1.2 — fund-only scoring, compact startup evidence. */
 (() => {
   'use strict';
 
@@ -44,11 +44,15 @@
   }
 
   function diversificationScore(row){
-    const holdings = Array.isArray(row?.top_holdings) ? row.top_holdings : [];
-    if(!holdings.length) return null;
-    const weights = holdings.map(h => ratioToPct(h?.holdingPercent ?? h?.weight ?? h?.pct ?? h?.percentage)).filter(v => v != null && v >= 0);
-    if(!weights.length) return null;
-    const top10 = weights.slice(0, 10).reduce((a,b) => a+b, 0);
+    let top10 = number(row?.fund_top10_weight_pct);
+    if(top10 == null){
+      const holdings = Array.isArray(row?.top_holdings) ? row.top_holdings : [];
+      if(!holdings.length) return null;
+      const weights = holdings.map(h => ratioToPct(h?.holdingPercent ?? h?.weight ?? h?.pct ?? h?.percentage)).filter(v => v != null && v >= 0);
+      if(!weights.length) return null;
+      top10 = weights.slice(0, 10).reduce((a,b) => a+b, 0);
+    }
+    if(top10 < 0) return null;
     if(top10 <= 20) return 100;
     if(top10 <= 30) return 90;
     if(top10 <= 40) return 78;
@@ -94,7 +98,7 @@
     const checks = [
       number(row?.expense_ratio) != null,
       (number(row?.fund_total_assets) ?? number(row?.market_cap)) != null,
-      Array.isArray(row?.top_holdings) && row.top_holdings.length > 0,
+      number(row?.fund_top10_weight_pct) != null || (Array.isArray(row?.top_holdings) && row.top_holdings.length > 0),
       number(row?.current_price) != null,
       (number(row?.low52_price_high) ?? number(row?.fifty_two_week_high)) != null,
       Boolean(text(row?.fund_region ?? row?.region)),
@@ -198,6 +202,6 @@
     enrichStocks,
     isFund,
     rankVisibleFundLists,
-    version: '1.1',
+    version: '1.2',
   });
 })();
