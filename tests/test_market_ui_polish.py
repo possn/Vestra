@@ -10,6 +10,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         cls.source = (ROOT / 'market-ui-polish.js').read_text(encoding='utf-8')
         cls.dossier = (ROOT / 'market-dossier-controls.js').read_text(encoding='utf-8')
         cls.loader = (ROOT / 'market-static-universe.js').read_text(encoding='utf-8')
+        cls.analysis_tools = (ROOT / 'market-analysis-tools-runtime.js').read_text(encoding='utf-8')
 
     def test_dossier_geometry_has_one_owner_and_one_fixed_action_group(self):
         self.assertNotIn('right:max(calc(env(safe-area-inset-right) + 68px),68px)!important', self.source)
@@ -40,10 +41,22 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('localStorage', self.source)
         self.assertNotIn('indexedDB', self.source)
 
-    def test_companion_is_reachable_from_loader(self):
+    def test_companions_are_reachable_from_loader(self):
         self.assertIn('ensureMarketUiPolish', self.loader)
         self.assertIn('market-ui-polish.js?v=1.1', self.loader)
-        self.assertIn("version: '1.8'", self.loader)
+        self.assertIn('ensureAnalysisToolsRuntime', self.loader)
+        self.assertIn('market-analysis-tools-runtime.js?v=1.0', self.loader)
+        self.assertIn("version: '1.9'", self.loader)
+
+    def test_analysis_tools_have_searchable_compare_and_news_and_lazy_scanner(self):
+        self.assertIn('marketCompareSearch', self.analysis_tools)
+        self.assertIn('compareCandidates', self.analysis_tools)
+        self.assertIn('marketNewsSearch', self.analysis_tools)
+        self.assertIn('newsCandidates', self.analysis_tools)
+        self.assertIn('VestraMarketScannerData', self.analysis_tools)
+        self.assertIn('data-tool-scanner-strategy', self.analysis_tools)
+        self.assertIn('overflow-y:auto', self.analysis_tools)
+        self.assertIn("version:'1.0'", self.analysis_tools)
 
 
 if __name__ == '__main__':
