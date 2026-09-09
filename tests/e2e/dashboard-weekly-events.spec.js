@@ -34,18 +34,27 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   await expect(card.locator('.weekly-events-title')).toHaveText('Eventos da semana');
   await expect(card.locator('.weekly-events-range')).toHaveText('6/09 – 12/09');
 
-  const earnings = card.locator('[data-weekly-event-ticker]');
-  await expect(earnings).toHaveCount(2);
-  await expect(earnings.nth(0)).toHaveAttribute('data-weekly-event-ticker', 'NVDA');
-  await expect(earnings.nth(0)).toContainText('NVIDIA Corporation');
-  await expect(earnings.nth(0)).toContainText('No portefólio');
-  await expect(earnings.nth(1)).toHaveAttribute('data-weekly-event-ticker', 'AAPL');
-  await expect(card).toContainText('PPI EUA');
-  await expect(card).toContainText('CPI EUA');
+  // Weekly cards now use an index because the first tap opens the event detail;
+  // ticker identity is carried by the dossier action inside an earnings detail.
+  const events = card.locator('[data-weekly-event-index]');
+  await expect(events).toHaveCount(4);
+  await expect(events.nth(0)).toContainText('NVDA');
+  await expect(events.nth(0)).toContainText('NVIDIA Corporation');
+  await expect(events.nth(0)).toContainText('No portefólio');
+  await expect(events.nth(1)).toContainText('AAPL');
+  await expect(events.nth(1)).toContainText('Apple Inc.');
+  await expect(events.nth(2)).toContainText('PPI EUA');
+  await expect(events.nth(3)).toContainText('CPI EUA');
   await expect(card).toContainText('Inflação');
   await expect(card).toContainText('Impacto elevado');
   await expect(card).not.toContainText('FOMC');
   await expect(card).not.toContainText('ETF1');
+
+  await events.nth(0).click();
+  const detail = page.locator('#dashboardWeeklyEventDetail');
+  await expect(detail).toBeVisible();
+  await expect(detail).toContainText('NVIDIA Corporation');
+  await expect(detail.locator('[data-weekly-detail-ticker="NVDA"]')).toBeVisible();
 
   const order = await page.locator('#viewDashboard > .card').evaluateAll(nodes => nodes.map(node => node.id || node.className));
   const heroIndex = order.findIndex(value => String(value).includes('hero'));
