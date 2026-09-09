@@ -44,9 +44,19 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("dossiers-manifest.json", loader)
         self.assertIn("data/dossiers/", loader)
         self.assertNotIn("stocks.json?full=1", loader)
-        self.assertIn("version:'2.5'", loader)
+        self.assertIn("version:'2.6'", loader)
         self.assertIn("const result=rawOpen(ticker);", loader)
         self.assertIn("hydrateOpenDossier(ticker);", loader)
+
+    def test_dossier_hydration_requires_exact_ticker_identity(self):
+        loader = read("market-data-loader.js")
+        self.assertIn("shard=txt(manifest[key])", loader)
+        self.assertIn("const full=rows[key]", loader)
+        self.assertIn("ticker sem shard exato", loader)
+        self.assertIn("ticker exato ausente no shard", loader)
+        self.assertNotIn("Object.keys(manifest).find", loader)
+        self.assertNotIn("Object.keys(rows).find", loader)
+        self.assertNotIn("replace(/\\.[A-Z]+$/,'')", loader)
 
     def test_portfolio_tool_opens_before_background_hydration(self):
         loader = read("market-data-loader.js")
