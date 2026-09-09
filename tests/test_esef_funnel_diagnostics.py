@@ -3,6 +3,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / "scripts" / "esef_enrich_v416.py").read_text(encoding="utf-8")
+SHIM_SOURCE = (ROOT / "scripts" / "esef_enrich.py").read_text(encoding="utf-8")
 ENRICH_SOURCE = SOURCE.split("def enrich(raw,priority=None,max_nonpriority=220):", 1)[1]
 
 
@@ -12,6 +13,7 @@ class ESEFFunnelDiagnosticsTests(unittest.TestCase):
             "eligible", "attempted", "isin_resolved", "isin_missing",
             "lei_resolved", "lei_missing", "filing_found", "filing_missing",
             "report_parsed", "report_failed", "enriched",
+            "prior_isin_reused", "prior_lei_reused",
         ):
             self.assertIn(repr(key), ENRICH_SOURCE)
         self.assertIn("log.info('ESEF funnel %s'", ENRICH_SOURCE)
@@ -27,6 +29,21 @@ class ESEFFunnelDiagnosticsTests(unittest.TestCase):
         self.assertIn("diag['lei_missing']+=1\n            continue", ENRICH_SOURCE)
         self.assertIn("diag['filing_missing']+=1\n            continue", ENRICH_SOURCE)
         self.assertIn("diag['report_failed']+=1\n            continue", ENRICH_SOURCE)
+
+    def test_prior_identity_is_reused_only_after_exact_validation(self):
+        self.assertIn("prior_isin=str(getattr(m,'_verified_esef_isin','')", ENRICH_SOURCE)
+        self.assertIn("prior_lei=str(getattr(m,'_verified_esef_lei','')", ENRICH_SOURCE)
+        self.assertIn("if ISIN_RE.match(prior_isin):", ENRICH_SOURCE)
+        self.assertIn("if LEI_RE.match(prior_lei):", ENRICH_SOURCE)
+        self.assertIn("'Prior verified ESEF identity'", ENRICH_SOURCE)
+
+    def test_shim_seeds_cache_only_from_previously_published_esef_rows(self):
+        self.assertIn('_ESEF_SOURCE = "ESEF / filings.xbrl.org"', SHIM_SOURCE)
+        self.assertIn("_ESEF_SOURCE not in sources", SHIM_SOURCE)
+        self.assertIn("_ISIN_RE.match(isin)", SHIM_SOURCE)
+        self.assertIn("_LEI_RE.match(lei)", SHIM_SOURCE)
+        self.assertIn('out[ticker] = (isin, lei)', SHIM_SOURCE)
+        self.assertNotIn("name", SHIM_SOURCE.split("def _verified_identity_cache", 1)[1].split("def _attach_verified_identities", 1)[0])
 
 
 if __name__ == "__main__":
