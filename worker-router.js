@@ -8,6 +8,7 @@ const LEARNED_NAMESPACE = 'vestra-learned-universe-v2';
 const ALLOWED_TYPES = new Set(['EQUITY','ETF','MUTUALFUND']);
 const EXACT_FETCH_TIMEOUT_MS = 3200;
 const BATCH_ITEM_DEADLINE_MS = 6500;
+const BATCH_FALLBACK_TOTAL_DEADLINE_MS = 5000;
 const BATCH_CHART_FALLBACK_CONCURRENCY = 4;
 
 function txt(v){ return String(v ?? '').trim(); }
@@ -186,7 +187,7 @@ function quoteFromChartResult(result0, expectedTicker){
   };
 }
 
-async function fetchYahooExactChartIdentity(ticker){
+async function fetchYahooExactChartIdentity(ticker, timeoutMs=EXACT_FETCH_TIMEOUT_MS){
   const headers = quoteHeaders();
   const targets = [
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`,
@@ -194,7 +195,7 @@ async function fetchYahooExactChartIdentity(ticker){
   ];
   for (const target of targets) {
     try {
-      const response = await fetchWithTimeout(target,{headers});
+      const response = await fetchWithTimeout(target,{headers},timeoutMs);
       if (!response.ok) continue;
       const payload = await response.json().catch(()=>null);
       const quote = quoteFromChartResult(payload?.chart?.result?.[0],ticker);
@@ -254,18 +255,25 @@ async function fetchYahooBatchExactIdentity(tickers){
 
 async function fillMissingBatchQuotes(tickers, quotes){
   const missing = (tickers || []).filter(t=>!quotes[t]);
+  const deadlineAt = Date.now() + BATCH_FALLBACK_TOTAL_DEADLINE_MS;
   let cursor = 0;
   const workerCount = Math.min(BATCH_CHART_FALLBACK_CONCURRENCY,missing.length || 1);
   const workers = Array.from({length:workerCount},async()=>{
     while (true) {
+      const remaining = deadlineAt - Date.now();
+      if (remaining < 250) return;
       const idx = cursor++;
       if (idx >= missing.length) return;
       const ticker = missing[idx];
+      const itemDeadline = Math.min(BATCH_ITEM_DEADLINE_MS,remaining);
+      // Split the remaining budget across query1/query2 so one item cannot
+      // consume multiple full upstream timeouts and extend the whole batch.
+      const upstreamTimeout = Math.min(EXACT_FETCH_TIMEOUT_MS,Math.max(1000,Math.floor(itemDeadline/2)));
       try {
         const quote = await withDeadline(
-          fetchYahooExactChartIdentity(ticker),
-          BATCH_ITEM_DEADLINE_MS,
-          `Tempo limite da cotação exata (${Math.round(BATCH_ITEM_DEADLINE_MS/1000)}s)`
+          fetchYahooExactChartIdentity(ticker,upstreamTimeout),
+          itemDeadline,
+          `Tempo limite da cotação exata (${Math.round(itemDeadline/1000)}s)`
         );
         if (quote) quotes[ticker] = quote;
       } catch (_) {}
@@ -377,6 +385,7 @@ export default {
         learned_universe_storage:'durable_object_v2_exact_identity',
         quote_batch_transport:'exact_identity_multisymbol_v2',
         quote_batch_item_deadline_ms:BATCH_ITEM_DEADLINE_MS,
+        quote_batch_fallback_total_deadline_ms:BATCH_FALLBACK_TOTAL_DEADLINE_MS,
         quote_batch_chunk_size:20,
         quote_batch_chart_fallback_concurrency:BATCH_CHART_FALLBACK_CONCURRENCY,
         ai_brief_provider:'workers_ai',
