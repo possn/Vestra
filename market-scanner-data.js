@@ -1,6 +1,13 @@
-/* Vestra Market Scanner Data v1.1 — lazy strategy payload with rollout compatibility. */
+/* Vestra Market Scanner Data v1.2 — lazy strategy payload with rollout compatibility. */
 (() => {
   'use strict';
+
+  const LEGACY_STRATEGY_ALIASES = Object.freeze({
+    quality_at_fair_price: ['qarp'],
+    growth_at_reasonable_price: ['positive_revisions', 'turnarounds'],
+    deep_value: ['fallen_angels'],
+    low_52w: ['lows_intact', 'fallen_angels'],
+  });
 
   function create({
     resolveStock = () => null,
@@ -11,6 +18,28 @@
     let loading = null;
     let lastError = '';
 
+    function bestResult(results, keys) {
+      let best = null;
+      for (const key of keys || []) {
+        const candidate = results?.[key];
+        if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) continue;
+        const score = Number(candidate.score);
+        const bestScore = Number(best?.score);
+        if (!best || (Number.isFinite(score) && (!Number.isFinite(bestScore) || score > bestScore))) best = candidate;
+      }
+      return best;
+    }
+
+    function withCompatibilityAliases(results) {
+      const merged = { ...results };
+      for (const [alias, keys] of Object.entries(LEGACY_STRATEGY_ALIASES)) {
+        if (merged[alias]) continue;
+        const candidate = bestResult(results, keys);
+        if (candidate) merged[alias] = candidate;
+      }
+      return merged;
+    }
+
     function mergeTickers(tickers) {
       if (!tickers || typeof tickers !== 'object' || Array.isArray(tickers)) return 0;
       let merged = 0;
@@ -19,7 +48,7 @@
         const ticker = text(rawTicker).toUpperCase();
         const stock = resolveStock(ticker);
         if (!stock) continue;
-        stock.scanner_results = results;
+        stock.scanner_results = withCompatibilityAliases(results);
         merged += 1;
       }
       return merged;
@@ -99,5 +128,5 @@
     queueMicrotask(() => hydrateScanner(tool));
   });
 
-  window.VestraMarketScannerData = Object.freeze({ create, runtimeController, version: '1.1' });
+  window.VestraMarketScannerData = Object.freeze({ create, runtimeController, version: '1.2' });
 })();
