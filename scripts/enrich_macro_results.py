@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Attach compact official result summaries to matching Vestra macro events.
+"""Attach verified official BLS result summaries and explicit metrics to macro events.
 
-This is deliberately separate from the schedule refresher. It never invents an
-"actual" value: CPI/PPI releases contain several legitimate measures (MoM, YoY,
-headline/core), so the first safe contract is an official summary plus the exact
-release URL. A result is attached only when the release date parsed from the BLS
-page exactly matches the Vestra event date.
+CPI/PPI releases contain several legitimate measures. Vestra therefore keeps the
+release summary and, only where the BLS wording is explicit, stores four named
+percent changes. It never collapses those measures into a generic ``actual`` and
+never infers market consensus.
 """
 from __future__ import annotations
 
@@ -27,10 +26,12 @@ BLS_RELEASES = {
     "CPI EUA": {
         "url": "https://www.bls.gov/news.release/cpi.nr0.htm",
         "paragraph_prefix": "The Consumer Price Index for All Urban Consumers",
+        "metric_schema": "bls_cpi_v1",
     },
     "PPI EUA": {
         "url": "https://www.bls.gov/news.release/ppi.nr0.htm",
         "paragraph_prefix": "The Producer Price Index for final demand",
+        "metric_schema": "bls_ppi_v1",
     },
 }
 
@@ -45,7 +46,14 @@ _RELEASE_DATE_RE = re.compile(
     flags=re.I,
 )
 
-RESULT_FIELDS = ("result_summary", "result_status", "result_released_at", "source_url")
+RESULT_FIELDS = (
+    "result_summary", "result_status", "result_released_at", "source_url",
+    "result_metric_schema", "result_metrics",
+)
+
+_UP_VERBS = r"(?:increased|rose|advanced|moved up|edged up)"
+_DOWN_VERBS = r"(?:decreased|fell|declined|dropped|moved down|edged down)"
+_UNCHANGED = r"(?:was|were)?\s*unchanged"
 
 
 def _event_key(event: dict) -> tuple:
@@ -61,8 +69,81 @@ def _normalise(value: str) -> str:
     return " ".join(str(value or "").split()).strip()
 
 
-def parse_bls_release(page: str, short_title: str) -> tuple[date, str] | None:
-    """Return (official release date, compact first result paragraph), or None."""
+def _signed_percent(text: str, subject: str, tail: str = "") -> float | None:
+    """Parse an explicit directional percent change for one named subject."""
+    segment = _normalise(text)
+    suffix = rf"{tail}" if tail else ""
+    unchanged = re.search(rf"{subject}\s+{_UNCHANGED}{suffix}", segment, flags=re.I)
+    if unchanged:
+        return 0.0
+    match = re.search(
+        rf"{subject}\s+({_UP_VERBS}|{_DOWN_VERBS})\s+([0-9]+(?:\.[0-9]+)?)\s*(?:-|\s)percent{suffix}",
+        segment,
+        flags=re.I,
+    )
+    if not match:
+        return None
+    value = float(match.group(2))
+    verb = match.group(1).lower()
+    return -value if re.fullmatch(_DOWN_VERBS, verb, flags=re.I) else value
+
+
+def _extract_cpi_metrics(paragraphs: list[str]) -> dict:
+    text = " ".join(paragraphs)
+    metrics = {
+        "headline_mom_pct": _signed_percent(
+            text,
+            r"(?:The\s+)?Consumer Price Index for All Urban Consumers \(CPI-U\)",
+            r".*?\b(?:in|for)\s+[A-Z][a-z]+",
+        ),
+        "headline_yoy_pct": _signed_percent(
+            text,
+            r"(?:the\s+)?all items index",
+            r".*?(?:over the last 12 months|for the 12 months ending|over the year)",
+        ),
+        "core_mom_pct": _signed_percent(
+            text,
+            r"(?:The\s+)?(?:index for\s+)?all items less food and energy(?: index)?",
+            r".*?\b(?:in|for)\s+[A-Z][a-z]+",
+        ),
+        "core_yoy_pct": _signed_percent(
+            text,
+            r"(?:The\s+)?all items less food and energy index",
+            r".*?(?:over the year|for the 12 months ending|over the last 12 months)",
+        ),
+    }
+    return {key: value for key, value in metrics.items() if value is not None}
+
+
+def _extract_ppi_metrics(paragraphs: list[str]) -> dict:
+    text = " ".join(paragraphs)
+    metrics = {
+        "headline_mom_pct": _signed_percent(
+            text,
+            r"(?:The\s+)?Producer Price Index for final demand",
+            r".*?\b(?:in|for)\s+[A-Z][a-z]+",
+        ),
+        "headline_yoy_pct": _signed_percent(
+            text,
+            r"(?:the\s+)?index for final demand",
+            r".*?(?:for the 12 months ended|for the 12 months ending|over the last 12 months)",
+        ),
+        "core_mom_pct": _signed_percent(
+            text,
+            r"(?:Prices for\s+)?final demand less foods, energy, and trade services",
+            r".*?\b(?:in|for)\s+[A-Z][a-z]+",
+        ),
+        "core_yoy_pct": _signed_percent(
+            text,
+            r"(?:the\s+)?index for final demand less foods, energy, and trade services",
+            r".*?(?:for the 12 months ended|for the 12 months ending|over the last 12 months)",
+        ),
+    }
+    return {key: value for key, value in metrics.items() if value is not None}
+
+
+def parse_bls_release(page: str, short_title: str) -> tuple[date, str, dict] | None:
+    """Return exact release date, compact official summary and explicit metrics."""
     config = BLS_RELEASES.get(short_title)
     if not config or not page:
         return None
@@ -84,18 +165,15 @@ def parse_bls_release(page: str, short_title: str) -> tuple[date, str] | None:
     except Exception:
         return None
 
+    paragraphs = [_normalise(node.text_content()) for node in tree.xpath("//p")]
+    paragraphs = [value for value in paragraphs if value]
     prefix = config["paragraph_prefix"].lower()
-    summary = ""
-    for node in tree.xpath("//p"):
-        paragraph = _normalise(node.text_content())
-        if paragraph.lower().startswith(prefix):
-            summary = paragraph
-            break
+    summary = next((value for value in paragraphs if value.lower().startswith(prefix)), "")
     if not summary:
         return None
-    # Enough context for the headline result without turning the snapshot into a
-    # copy of the release. The exact publication remains available via source_url.
-    return released, summary[:900]
+
+    metrics = _extract_cpi_metrics(paragraphs) if short_title == "CPI EUA" else _extract_ppi_metrics(paragraphs)
+    return released, summary[:900], metrics
 
 
 def _load(path: Path) -> dict:
@@ -107,7 +185,7 @@ def _load(path: Path) -> dict:
 
 
 def carry_forward_verified_results(payload: dict, previous: dict) -> int:
-    """Keep previously verified summaries only for the exact same event identity."""
+    """Keep previously verified results only for the exact same event identity."""
     old = {
         _event_key(event): event
         for event in (previous.get("events") or [])
@@ -119,7 +197,7 @@ def carry_forward_verified_results(payload: dict, previous: dict) -> int:
         if not prior:
             continue
         for field in RESULT_FIELDS:
-            if prior.get(field) not in (None, ""):
+            if prior.get(field) not in (None, "", {}):
                 event[field] = prior[field]
         carried += 1
     return carried
@@ -127,8 +205,9 @@ def carry_forward_verified_results(payload: dict, previous: dict) -> int:
 
 def enrich_bls_results(payload: dict, session: requests.Session, today: date | None = None) -> dict:
     today = today or date.today()
-    fetched: dict[str, tuple[date, str] | None] = {}
+    fetched: dict[str, tuple[date, str, dict] | None] = {}
     matched = 0
+    structured = 0
     for event in payload.get("events") or []:
         if not isinstance(event, dict) or event.get("source") != "bls":
             continue
@@ -156,8 +235,12 @@ def enrich_bls_results(payload: dict, session: requests.Session, today: date | N
         event["result_status"] = "official_release_summary"
         event["result_released_at"] = event_date.isoformat()
         event["source_url"] = config["url"]
+        if parsed[2]:
+            event["result_metric_schema"] = config["metric_schema"]
+            event["result_metrics"] = parsed[2]
+            structured += 1
         matched += 1
-    return {"matched": matched, "fetched": len(fetched)}
+    return {"matched": matched, "structured": structured, "fetched": len(fetched)}
 
 
 def main() -> int:
@@ -176,9 +259,10 @@ def main() -> int:
         "bls": {
             "state": "checked",
             "matched": stats["matched"],
+            "structured": stats["structured"],
             "fetched_release_pages": stats["fetched"],
             "carried_forward": carried,
-            "contract": "official summary only; no ambiguous Actual/Consensus/Previous inference",
+            "contract": "official named metrics only; no consensus inference and no generic Actual coercion",
         }
     }
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
