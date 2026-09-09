@@ -11,7 +11,10 @@
   // browser->Worker traffic remains bounded and batched below.
   const MAX_QUOTE_CONCURRENCY = 600;
   const DEFAULT_QUOTE_TIMEOUT_MS = 12000;
-  const BATCH_QUOTE_TIMEOUT_MS = 12000;
+  // The production router can spend ~12.9s on a degraded exact-identity batch
+  // (two v7 attempts + bounded chart fallback). Keep the browser budget above
+  // that ceiling so WebKit does not abort a response the Worker is about to return.
+  const BATCH_QUOTE_TIMEOUT_MS = 14000;
   const BATCH_WINDOW_MS = 24;
   const BATCH_CHUNK_SIZE = 20;
   const BATCH_REQUEST_CONCURRENCY = 8;
