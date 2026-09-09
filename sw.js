@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.15 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v129";
+/* Vestra Service Worker v10.16 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v130";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -76,7 +76,9 @@ const APP_SHELL = [
 // are included so WebKit never mixes the old split-button geometry with the new
 // unified action group. Mobile drawer, opportunity lenses and the promoted
 // market-analysis runtimes are network-first because they are interaction-critical
-// on iPhone and must not lag one launch behind after a PWA update.
+// on iPhone and must not lag one launch behind after a PWA update. Live dossier
+// overlay/data-loader are also network-first: stale copies can keep a ticker stuck
+// in an old loading path for one extra PWA launch after a runtime repair.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -95,6 +97,8 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-return-assumptions.js",
   "app-financial-engine.js",
   "app.js",
+  "market-live-overlay.js",
+  "market-data-loader.js",
   "market-static-universe.js",
   "market-scanner-data.js",
   "market-analysis-tools-runtime.js",
