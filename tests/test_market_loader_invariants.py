@@ -44,7 +44,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("dossiers-manifest.json", loader)
         self.assertIn("data/dossiers/", loader)
         self.assertNotIn("stocks.json?full=1", loader)
-        self.assertIn("version:'2.6'", loader)
+        self.assertIn("version:'2.5'", loader)
         self.assertIn("const result=rawOpen(ticker);", loader)
         self.assertIn("hydrateOpenDossier(ticker);", loader)
 
