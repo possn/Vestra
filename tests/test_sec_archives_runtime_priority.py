@@ -65,11 +65,52 @@ class SecArchivesRuntimePriorityTests(unittest.TestCase):
         ordered = runtime._archive_candidate_order([mostly_complete, sparse, middle])
         self.assertEqual([row.ticker for row in ordered], ["AAA", "MMM", "ZZZ"])
 
-    def test_explicit_priority_precedes_gap_ranking(self):
+    def test_explicit_priority_precedes_gap_ranking_when_it_is_actually_sparse(self):
         sparse = Metrics("AAA")
         priority = Metrics("ZZZ", present={"roe", "roa", "profit_margin", "operating_margin", "gross_margin", "revenue_growth", "free_cash_flow", "current_ratio", "quick_ratio"})
         ordered = runtime._archive_candidate_order([sparse, priority], priority={"ZZZ"})
         self.assertEqual([row.ticker for row in ordered], ["ZZZ", "AAA"])
+
+    def test_well_covered_priority_holding_does_not_bypass_minimum_gap(self):
+        well_covered = Metrics(
+            "HOLD",
+            present={"roe", "roa", "profit_margin", "operating_margin", "gross_margin", "revenue_growth", "free_cash_flow", "current_ratio", "quick_ratio", "debt_to_equity"},
+        )
+        sparse_scanner = Metrics("SCAN")
+        ordered = runtime._archive_candidate_order(
+            [well_covered, sparse_scanner], priority={"HOLD"}
+        )
+        self.assertEqual([row.ticker for row in ordered], ["SCAN"])
+
+    def test_balanced_selector_reserves_scanner_capacity(self):
+        holdings = [Metrics(f"H{i:03d}") for i in range(20)]
+        scanner = [Metrics(f"S{i:03d}") for i in range(20)]
+        selected, selected_priority = runtime._balanced_archive_candidates(
+            holdings + scanner,
+            priority={row.ticker for row in holdings},
+            total_budget=10,
+            priority_share=0.4,
+        )
+        self.assertEqual(len(selected), 10)
+        self.assertEqual(len(selected_priority), 4)
+        self.assertEqual(sum(row.ticker.startswith("S") for row in selected), 6)
+
+    def test_unused_pool_capacity_is_reassigned_without_exceeding_total_budget(self):
+        holdings = [Metrics("HOLD")]
+        scanner = [Metrics(f"S{i:03d}") for i in range(20)]
+        selected, selected_priority = runtime._balanced_archive_candidates(
+            holdings + scanner,
+            priority={"HOLD"},
+            total_budget=10,
+            priority_share=0.4,
+        )
+        self.assertEqual(len(selected), 10)
+        self.assertEqual(selected_priority, {"HOLD"})
+        self.assertEqual(sum(row.ticker.startswith("S") for row in selected), 9)
+
+    def test_default_total_budget_is_below_observed_pre_balance_workload(self):
+        self.assertEqual(runtime.ARCHIVE_TOTAL_CANDIDATE_BUDGET, 500)
+        self.assertLess(runtime.ARCHIVE_TOTAL_CANDIDATE_BUDGET, 511)
 
     def test_runtime_keeps_pipeline_row_order_after_bounded_archive_pass(self):
         first = Metrics("ZZZ", present={"roe", "roa", "profit_margin", "operating_margin", "gross_margin", "revenue_growth", "free_cash_flow", "current_ratio", "quick_ratio"})
