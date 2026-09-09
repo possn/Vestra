@@ -10,13 +10,16 @@ vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraWeeklyEvents;
-assert(api && api.version === '1.1');
+assert(api && api.version === '1.2');
 assert.strictEqual(typeof api.collectEvents, 'function');
 assert.strictEqual(typeof api.collectMacroEvents, 'function');
 assert.strictEqual(typeof api.selectEvents, 'function');
 assert.strictEqual(typeof api.loadMacroEvents, 'function');
 assert.strictEqual(typeof api.parseCalendarDate, 'function');
 assert.strictEqual(typeof api.tickerMatchesPortfolio, 'function');
+assert.strictEqual(typeof api.hasMacroResult, 'function');
+assert.strictEqual(typeof api.formatResultValue, 'function');
+assert.strictEqual(typeof api.openDetail, 'function');
 
 const now = new Date(2026, 8, 6, 9, 0, 0);
 const stocks = [
@@ -28,7 +31,7 @@ const stocks = [
   { ticker:'ETF1', name:'Fund', quote_type:'ETF', market_cap:8_000_000_000, analyst_next_earnings_date:'2026-09-07' },
 ];
 const macro = { events:[
-  { date:'2026-09-10', short_title:'PPI EUA', title:'PPI EUA · agosto', category:'inflation', region:'EUA', importance:'high', source:'bls' },
+  { date:'2026-09-10', short_title:'PPI EUA', title:'PPI EUA · agosto', category:'inflation', region:'EUA', importance:'high', source:'bls', actual:'0.3', consensus:'0.2', previous:'0.1', unit:'%' },
   { date:'2026-09-11', short_title:'CPI EUA', title:'CPI EUA · agosto', category:'inflation', region:'EUA', importance:'high', source:'bls' },
   { date:'2026-09-15', short_title:'FOMC', title:'FOMC', category:'central_bank', region:'EUA', importance:'critical', source:'fed' },
 ] };
@@ -40,6 +43,15 @@ assert.strictEqual(collected.find(x => x.ticker === 'SMALL').inPortfolio, true);
 const macroCollected = api.collectMacroEvents(macro, now);
 assert.deepStrictEqual(Array.from(macroCollected, x => x.shortTitle), ['PPI EUA','CPI EUA']);
 assert.strictEqual(macroCollected.some(x => x.shortTitle === 'FOMC'), false, 'outside rolling 7-day window');
+const ppi = macroCollected.find(x => x.shortTitle === 'PPI EUA');
+const cpi = macroCollected.find(x => x.shortTitle === 'CPI EUA');
+assert.strictEqual(ppi.actual, '0.3');
+assert.strictEqual(ppi.consensus, '0.2');
+assert.strictEqual(ppi.previous, '0.1');
+assert.strictEqual(api.hasMacroResult(ppi), true);
+assert.strictEqual(api.hasMacroResult(cpi), false, 'missing result must stay missing');
+assert.strictEqual(api.formatResultValue(ppi.actual, ppi.unit), '0.3 %');
+assert.strictEqual(api.formatResultValue(null, '%'), '—');
 
 const selected = api.selectEvents(stocks, portfolio, now, 4, macro);
 assert.deepStrictEqual(Array.from(selected, x => x.kind === 'macro' ? x.shortTitle : x.ticker), ['NVDA','PPI EUA','CPI EUA','SMALL']);
@@ -52,5 +64,10 @@ assert.strictEqual(api.tickerMatchesPortfolio('AIR.PA', new Set(['AAPL'])), fals
 const plain = api.parseCalendarDate('2026-09-08');
 assert.strictEqual(plain.getFullYear(), 2026); assert.strictEqual(plain.getMonth(), 8); assert.strictEqual(plain.getDate(), 8);
 assert.strictEqual(api.parseCalendarDate(''), null); assert.strictEqual(api.parseCalendarDate('not-a-date'), null);
+
+assert(source.includes("dataset.weeklyEventIndex"), 'all weekly event cards expose the tappable detail contract');
+assert(source.includes("data-weekly-detail-ticker") || source.includes("dataset.weeklyDetailTicker"), 'earnings detail keeps dossier handoff');
+assert(source.includes('Actual') && source.includes('Consenso') && source.includes('Anterior'), 'macro detail exposes result triplet');
+assert(source.includes('Resultado ainda não publicado'), 'future/missing macro values are explicit rather than fabricated');
 
 console.log('dashboard weekly events runtime contract: ok');
