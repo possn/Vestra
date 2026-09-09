@@ -57,6 +57,19 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn('timeoutMs = 3500',w)
         self.assertIn('controller.abort()',w)
 
+    def test_production_router_owns_fresh_batch_quotes_contract(self):
+        router=read("worker-router.js")
+        self.assertIn("async function handleExactBatchQuotes(request)",router)
+        self.assertIn("url.pathname === '/quotes'",router)
+        self.assertIn("request.method === 'GET'",router)
+        self.assertIn("url.searchParams.get('tickers')",router)
+        self.assertIn(".slice(0,20)",router)
+        self.assertIn("fetchYahooBatchExactIdentity(tickers)",router)
+        self.assertIn("fillMissingBatchQuotes(tickers,quotes)",router)
+        self.assertIn("Cache-Control':'no-store'",router)
+        self.assertIn("symbol !== ticker",router)
+        self.assertIn("BATCH_ITEM_DEADLINE_MS = 6500",router)
+
     def test_app_imports_client_without_duplicate_implementations(self):
         app=read("app.js")
         self.assertIn("window.VestraMarketClient",app)
