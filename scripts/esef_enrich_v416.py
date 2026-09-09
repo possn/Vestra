@@ -2,8 +2,10 @@
 
 Uses documented /api/filings plus a public entity-page fallback. Identity is
 strict: ticker -> exact ISIN -> GLEIF LEI. Yahoo remains the first ISIN source;
-London-listed equities gain an official LSE TIDM->ISIN fallback. Only standard
-IFRS concepts are used and no fuzzy issuer matching is permitted.
+London-listed equities gain an official LSE TIDM->ISIN fallback. A previously
+published ESEF row may supply its already verified ISIN+LEI for the same exact
+ticker, avoiding needless daily identity re-resolution. Only standard IFRS
+concepts are used and no fuzzy issuer matching is permitted.
 """
 from __future__ import annotations
 import datetime as dt, gzip, json, logging, re, time
@@ -18,6 +20,7 @@ log=logging.getLogger('esef_enrich')
 BASE='https://filings.xbrl.org'; GLEIF='https://api.gleif.org/api/v1/lei-records'
 UA='Vestra/4.20 (+https://github.com/possn/Vestra)'
 ISIN_RE=re.compile(r'^[A-Z]{2}[A-Z0-9]{9}[0-9]$')
+LEI_RE=re.compile(r'^[A-Z0-9]{20}$')
 COUNTRY={'.L':'GB','.PA':'FR','.AS':'NL','.BR':'BE','.MC':'ES','.MI':'IT','.ST':'SE','.HE':'FI','.CO':'DK','.OL':'NO','.LS':'PT','.VI':'AT','.WA':'PL','.PR':'CZ','.AT':'GR','.SW':'CH','.DE':'DE'}
 ALLOWED={'concept','entity','period','unit','language'}
 C={
@@ -147,6 +150,7 @@ def enrich(raw,priority=None,max_nonpriority=220):
         'eligible':0,'attempted':0,'isin_resolved':0,'isin_missing':0,
         'lei_resolved':0,'lei_missing':0,'filing_found':0,'filing_missing':0,
         'report_parsed':0,'report_failed':0,'enriched':0,'same_period_observations':0,
+        'prior_isin_reused':0,'prior_lei_reused':0,
     }
     for m in raw:
         t=str(getattr(m,'ticker','') or '').upper(); c=country_for(t)
@@ -158,12 +162,24 @@ def enrich(raw,priority=None,max_nonpriority=220):
             non+=1
             if non>max_nonpriority: continue
         diag['attempted']+=1
-        isin,isin_source=resolve_isin_with_source(t,s)
+
+        prior_isin=str(getattr(m,'_verified_esef_isin','') or '').strip().upper()
+        prior_lei=str(getattr(m,'_verified_esef_lei','') or '').strip().upper()
+        if ISIN_RE.match(prior_isin):
+            isin,isin_source=prior_isin,'Prior verified ESEF identity'
+            diag['prior_isin_reused']+=1
+        else:
+            isin,isin_source=resolve_isin_with_source(t,s)
         if not isin:
             diag['isin_missing']+=1
             continue
         diag['isin_resolved']+=1
-        lei=resolve_lei(s,isin)
+
+        if LEI_RE.match(prior_lei):
+            lei=prior_lei
+            diag['prior_lei_reused']+=1
+        else:
+            lei=resolve_lei(s,isin)
         if not lei:
             diag['lei_missing']+=1
             continue
