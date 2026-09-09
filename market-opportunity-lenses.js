@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v1.3 — robust touch/click filtering, index-only. */
+/* Vestra Market Opportunity Lenses v1.4 — robust touch/click filtering, index-only. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -13,6 +13,12 @@
     if(!tk) return null;
     return row.__vestraStock || null;
   }
+  function low52Above(s){
+    const direct=n(s?.low52_above_low_pct);
+    if(direct!=null) return direct;
+    const current=n(s?.current_price), low=n(s?.low52_price_low)??n(s?.fifty_two_week_low);
+    return current!=null&&current>0&&low!=null&&low>0?(current/low-1)*100:null;
+  }
   function lensMatch(row, lens){
     if(lens==='all') return true;
     const s=rowStock(row);
@@ -20,10 +26,15 @@
     if(s){
       const est=t(s.estimate_signal), rec=t(s.recovery_status), val=t(s.valuation_signal);
       const opp=n(s.opportunity_timing_score), fv=n(s.fair_value_upside_pct), pt=n(s.analyst_price_target_upside_pct);
+      if(lens==='low52'){
+        const above=low52Above(s);
+        return above!=null&&above>=-0.5&&above<=5;
+      }
       if(lens==='emerging') return (opp!=null&&opp>=65)||/timing|momentum|a começar|emerg/.test(text);
       if(lens==='recovery') return ['confirmed','recovering'].includes(rec)||est==='improving'||/recuper|melhorar/.test(text);
       if(lens==='value') return ((fv!=null&&fv>=10)||(pt!=null&&pt>=12)||val==='undervalued')&&(opp==null||opp>=50);
     }
+    if(lens==='low52') return false;
     if(lens==='emerging') return /timing|a começar|emerg/.test(text);
     if(lens==='recovery') return /recuper|melhorar/.test(text);
     if(lens==='value') return /underval|value|desconto|upside/.test(text);
@@ -54,7 +65,7 @@
     let bar=s.querySelector('.vestra-opportunity-lenses');
     if(!bar){
       bar=document.createElement('div');bar.className='vestra-opportunity-lenses';bar.setAttribute('role','group');bar.setAttribute('aria-label','Filtrar oportunidades');
-      bar.innerHTML='<button type="button" data-vestra-lens="all" aria-pressed="true">Todos</button><button type="button" data-vestra-lens="emerging" aria-pressed="false">A começar</button><button type="button" data-vestra-lens="recovery" aria-pressed="false">Recuperação</button><button type="button" data-vestra-lens="value" aria-pressed="false">Value + timing</button>';
+      bar.innerHTML='<button type="button" data-vestra-lens="all" aria-pressed="true">Todos</button><button type="button" data-vestra-lens="low52" aria-pressed="false">Mínimos 52s</button><button type="button" data-vestra-lens="emerging" aria-pressed="false">A começar</button><button type="button" data-vestra-lens="recovery" aria-pressed="false">Recuperação</button><button type="button" data-vestra-lens="value" aria-pressed="false">Value + timing</button>';
       const guide=s.querySelector('.ux454-opportunity-guide');(guide||s.querySelector('.market-section__head'))?.insertAdjacentElement('afterend',bar);
     }
     syncButtons(bar);
@@ -63,12 +74,12 @@
     let empty=s.querySelector('.vestra-lens-empty');
     if(!shown&&activeLens!=='all'){
       if(!empty){empty=document.createElement('div');empty.className='vestra-lens-empty';s.querySelector('.market-list')?.appendChild(empty);}
-      empty.textContent='Sem candidatos fortes nesta lente neste momento.';
+      empty.textContent=activeLens==='low52'?'Sem empresas até 5% do mínimo de 52 semanas.':'Sem candidatos fortes nesta lente neste momento.';
     }else empty?.remove();
   }
   function selectLens(button){
     const next=t(button?.dataset?.vestraLens)||'all';
-    if(!['all','emerging','recovery','value'].includes(next)) return;
+    if(!['all','low52','emerging','recovery','value'].includes(next)) return;
     activeLens=next;
     apply();
   }
@@ -95,5 +106,5 @@
     new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});}).observe(document.body,{childList:true,subtree:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({apply,select:lens=>{activeLens=t(lens)||'all';apply();},get active(){return activeLens;},version:'1.3'});
+  window.VestraMarketOpportunityLenses=Object.freeze({apply,select:lens=>{activeLens=t(lens)||'all';apply();},get active(){return activeLens;},version:'1.4'});
 })();
