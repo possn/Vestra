@@ -5,18 +5,19 @@ const assert = require('assert');
 const source = fs.readFileSync('dashboard-weekly-events.js', 'utf8');
 const document = { readyState:'loading', addEventListener:()=>{}, getElementById:()=>null, head:{appendChild:()=>{}} };
 const windowObj = { addEventListener:()=>{}, VestraMarketStaticUniverse:{getStocks:()=>[]} };
-const context = { window:windowObj, document, console, Date, Intl, Set, Promise, fetch:async()=>({ok:false}), setTimeout:()=>0, clearTimeout:()=>{} };
+const context = { window:windowObj, document, console, Date, Intl, Set, Promise, URL, fetch:async()=>({ok:false}), setTimeout:()=>0, clearTimeout:()=>{} };
 vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraWeeklyEvents;
-assert(api && api.version === '1.3');
+assert(api && api.version === '1.4');
 assert.strictEqual(typeof api.collectEvents, 'function');
 assert.strictEqual(typeof api.collectMacroEvents, 'function');
 assert.strictEqual(typeof api.selectEvents, 'function');
 assert.strictEqual(typeof api.loadMacroEvents, 'function');
 assert.strictEqual(typeof api.parseCalendarDate, 'function');
 assert.strictEqual(typeof api.tickerMatchesPortfolio, 'function');
+assert.strictEqual(typeof api.officialSourceUrl, 'function');
 assert.strictEqual(typeof api.hasMacroResult, 'function');
 assert.strictEqual(typeof api.formatResultValue, 'function');
 assert.strictEqual(typeof api.formatEPS, 'function');
@@ -34,8 +35,8 @@ const stocks = [
   { ticker:'ETF1', name:'Fund', quote_type:'ETF', market_cap:8_000_000_000, analyst_next_earnings_date:'2026-09-07' },
 ];
 const macro = { events:[
-  { date:'2026-09-10', short_title:'PPI EUA', title:'PPI EUA · agosto', category:'inflation', region:'EUA', importance:'high', source:'bls', actual:'0.3', consensus:'0.2', previous:'0.1', unit:'%' },
-  { date:'2026-09-11', short_title:'CPI EUA', title:'CPI EUA · agosto', category:'inflation', region:'EUA', importance:'high', source:'bls' },
+  { date:'2026-09-10', short_title:'PPI EUA', title:'PPI EUA · agosto', category:'inflation', region:'EUA', importance:'high', source:'bls', source_url:'https://www.bls.gov/news.release/ppi.nr0.htm', actual:'0.3', consensus:'0.2', previous:'0.1', unit:'%' },
+  { date:'2026-09-11', short_title:'CPI EUA', title:'CPI EUA · agosto', category:'inflation', region:'EUA', importance:'high', source:'bls', source_url:'https://evil.example/fake-cpi' },
   { date:'2026-09-15', short_title:'FOMC', title:'FOMC', category:'central_bank', region:'EUA', importance:'critical', source:'fed' },
 ] };
 
@@ -63,10 +64,19 @@ const cpi = macroCollected.find(x => x.shortTitle === 'CPI EUA');
 assert.strictEqual(ppi.actual, '0.3');
 assert.strictEqual(ppi.consensus, '0.2');
 assert.strictEqual(ppi.previous, '0.1');
+assert.strictEqual(ppi.sourceUrl, 'https://www.bls.gov/news.release/ppi.nr0.htm');
+assert.strictEqual(cpi.sourceUrl, 'https://www.bls.gov/bls/newsrels.htm', 'untrusted source_url falls back to official source landing page');
 assert.strictEqual(api.hasMacroResult(ppi), true);
 assert.strictEqual(api.hasMacroResult(cpi), false, 'missing result must stay missing');
 assert.strictEqual(api.formatResultValue(ppi.actual, ppi.unit), '0.3 %');
 assert.strictEqual(api.formatResultValue(null, '%'), '—');
+
+assert.strictEqual(api.officialSourceUrl('ecb'), 'https://www.ecb.europa.eu/press/govcdec/mopo/html/index.en.html');
+assert.strictEqual(api.officialSourceUrl('bls', 'https://download.bls.gov/pub/time.series/cu/'), 'https://download.bls.gov/pub/time.series/cu/');
+assert.strictEqual(api.officialSourceUrl('bls', 'http://www.bls.gov/news.release/cpi.nr0.htm'), 'https://www.bls.gov/bls/newsrels.htm', 'non-https URL rejected');
+assert.strictEqual(api.officialSourceUrl('bls', 'javascript:alert(1)'), 'https://www.bls.gov/bls/newsrels.htm', 'unsafe scheme rejected');
+assert.strictEqual(api.officialSourceUrl('bls', 'https://bls.gov.evil.example/fake'), 'https://www.bls.gov/bls/newsrels.htm', 'suffix spoof rejected');
+assert.strictEqual(api.officialSourceUrl('unknown', 'https://example.com/'), '', 'unknown source cannot inject an external URL');
 
 const selected = api.selectEvents(stocks, portfolio, now, 4, macro);
 assert.deepStrictEqual(Array.from(selected, x => x.kind === 'macro' ? x.shortTitle : x.ticker), ['NVDA','PPI EUA','CPI EUA','SMALL']);
@@ -86,5 +96,7 @@ assert(source.includes('Actual') && source.includes('Consenso') && source.includ
 assert(source.includes('EPS actual') && source.includes('Estimativa') && source.includes('Surpresa'), 'earnings detail exposes reported result triplet');
 assert(source.includes('Resultado ainda não publicado'), 'future/missing macro values are explicit rather than fabricated');
 assert(source.includes('Resultados ainda não publicados'), 'future earnings values are explicit rather than fabricated');
+assert(source.includes('Ver publicação oficial'), 'macro detail exposes official publication link');
+assert(source.includes("rel = 'noopener noreferrer'"), 'official publication link is isolated from the app context');
 
 console.log('dashboard weekly events runtime contract: ok');
