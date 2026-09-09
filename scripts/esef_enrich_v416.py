@@ -20,7 +20,7 @@ log=logging.getLogger('esef_enrich')
 BASE='https://filings.xbrl.org'; GLEIF='https://api.gleif.org/api/v1/lei-records'
 UA='Vestra/4.20 (+https://github.com/possn/Vestra)'
 ISIN_RE=re.compile(r'^[A-Z]{2}[A-Z0-9]{9}[0-9]$')
-LEI_RE=re.compile(r'^[A-Z0-9]{20}$')
+LEI_RE=re.compile(r'^[A-Z0-9]{18}[0-9]{2}$')
 COUNTRY={'.L':'GB','.PA':'FR','.AS':'NL','.BR':'BE','.MC':'ES','.MI':'IT','.ST':'SE','.HE':'FI','.CO':'DK','.OL':'NO','.LS':'PT','.VI':'AT','.WA':'PL','.PR':'CZ','.AT':'GR','.SW':'CH','.DE':'DE'}
 ALLOWED={'concept','entity','period','unit','language'}
 C={
@@ -165,20 +165,21 @@ def enrich(raw,priority=None,max_nonpriority=220):
 
         prior_isin=str(getattr(m,'_verified_esef_isin','') or '').strip().upper()
         prior_lei=str(getattr(m,'_verified_esef_lei','') or '').strip().upper()
-        if ISIN_RE.match(prior_isin):
+        prior_pair_valid=bool(ISIN_RE.match(prior_isin) and LEI_RE.match(prior_lei))
+        if prior_pair_valid:
             isin,isin_source=prior_isin,'Prior verified ESEF identity'
+            lei=prior_lei
             diag['prior_isin_reused']+=1
+            diag['prior_lei_reused']+=1
         else:
             isin,isin_source=resolve_isin_with_source(t,s)
+            lei=None
         if not isin:
             diag['isin_missing']+=1
             continue
         diag['isin_resolved']+=1
 
-        if LEI_RE.match(prior_lei):
-            lei=prior_lei
-            diag['prior_lei_reused']+=1
-        else:
+        if lei is None:
             lei=resolve_lei(s,isin)
         if not lei:
             diag['lei_missing']+=1
