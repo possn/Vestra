@@ -12,13 +12,28 @@ import yahoo_retry_hygiene as hygiene
 
 
 class Row:
-    def __init__(self, ticker, error=None):
+    def __init__(self, ticker, error=None, **kwargs):
         self.ticker = ticker
         self.error = error
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+class Coordinator:
+    def __init__(self, strike=0, last_incident_at=None, quiet_reset_seconds=120):
+        self.strike = strike
+        self.last_incident_at = last_incident_at
+        self.quiet_reset_seconds = quiet_reset_seconds
+
+    def snapshot(self):
+        state = {'strike': self.strike}
+        if self.last_incident_at is not None:
+            state['last_incident_at'] = self.last_incident_at
+        return state
 
 
 class YahooRetryHygieneTests(unittest.TestCase):
-    def make_module(self, scripted):
+    def make_module(self, scripted, *, strike=0, coordinator=None):
         calls = []
         queue = list(scripted)
 
@@ -34,7 +49,12 @@ class YahooRetryHygieneTests(unittest.TestCase):
             return queue.pop(0)
 
         log = types.SimpleNamespace(info=lambda *a, **k: None, warning=lambda *a, **k: None)
-        return types.SimpleNamespace(fetch_many=fetch_many, log=log), calls
+        module = types.SimpleNamespace(
+            fetch_many=fetch_many,
+            log=log,
+            _rate_limit_coordinator=coordinator or Coordinator(strike),
+        )
+        return module, calls
 
     def test_hard_error_classifier_is_narrow(self):
         self.assertTrue(hygiene.is_hard_symbol_error('possibly delisted; no timezone found'))
@@ -81,6 +101,71 @@ class YahooRetryHygieneTests(unittest.TestCase):
         self.assertIsNotNone(by_ticker['BAD'].error)
         self.assertIsNone(by_ticker['MSFT'].error)
         self.assertIsNone(by_ticker['AAPL'].error)
+
+    def test_price_only_row_after_throttle_gets_one_recovery_attempt(self):
+        sparse = Row('MSFT', None, current_price=500.0)
+        improved = Row('MSFT', None, current_price=501.0, market_cap=3_000_000_000_000, sector='Technology')
+        module, calls = self.make_module([[sparse], [improved]], strike=1)
+        wrapped = hygiene.install(module, sleeper=lambda _: None)
+        rows = wrapped(['MSFT'], retries=3)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(calls[1]['tickers'], ['MSFT'])
+        self.assertIs(rows[0], improved)
+        self.assertEqual(rows[0].sector, 'Technology')
+
+    def test_improved_retry_keeps_quote_and_identity_fallback_when_retry_lacks_them(self):
+        sparse = Row(
+            'MSFT', None,
+            current_price=500.0,
+            currency='USD',
+            retrieval_ticker='MSFT',
+        )
+        improved = Row('MSFT', None, sector='Technology', market_cap=3_000_000_000_000)
+        module, calls = self.make_module([[sparse], [improved]], strike=1)
+        wrapped = hygiene.install(module, sleeper=lambda _: None)
+        rows = wrapped(['MSFT'], retries=3)
+        self.assertEqual(len(calls), 2)
+        self.assertIs(rows[0], improved)
+        self.assertEqual(rows[0].current_price, 500.0)
+        self.assertEqual(rows[0].currency, 'USD')
+        self.assertEqual(rows[0].retrieval_ticker, 'MSFT')
+        self.assertEqual(rows[0].sector, 'Technology')
+
+    def test_price_only_row_is_not_retried_without_recorded_throttle(self):
+        sparse = Row('MSFT', None, current_price=500.0)
+        module, calls = self.make_module([[sparse]], strike=0)
+        wrapped = hygiene.install(module, sleeper=lambda _: None)
+        rows = wrapped(['MSFT'], retries=3)
+        self.assertEqual(len(calls), 1)
+        self.assertIs(rows[0], sparse)
+
+    def test_stale_throttle_does_not_poison_later_batch(self):
+        sparse = Row('MSFT', None, current_price=500.0)
+        stale = Coordinator(strike=3, last_incident_at=1.0, quiet_reset_seconds=120)
+        module, calls = self.make_module([[sparse]], coordinator=stale)
+        wrapped = hygiene.install(module, sleeper=lambda _: None)
+        rows = wrapped(['MSFT'], retries=3)
+        self.assertEqual(len(calls), 1)
+        self.assertIs(rows[0], sparse)
+
+    def test_failed_price_only_retry_preserves_usable_fallback(self):
+        sparse = Row('MSFT', None, current_price=500.0)
+        retry_error = Row('MSFT', 'Too Many Requests. Rate limited.')
+        module, calls = self.make_module([[sparse], [retry_error]], strike=1)
+        wrapped = hygiene.install(module, sleeper=lambda _: None)
+        rows = wrapped(['MSFT'], retries=3)
+        self.assertEqual(len(calls), 2)
+        self.assertIs(rows[0], sparse)
+        self.assertEqual(rows[0].current_price, 500.0)
+        self.assertIsNone(rows[0].error)
+
+    def test_etf_price_only_shape_is_not_treated_as_equity_degradation(self):
+        etf = Row('SPY', None, current_price=600.0, quote_type='ETF')
+        module, calls = self.make_module([[etf]], strike=1)
+        wrapped = hygiene.install(module, sleeper=lambda _: None)
+        rows = wrapped(['SPY'], retries=3)
+        self.assertEqual(len(calls), 1)
+        self.assertIs(rows[0], etf)
 
     def test_policy_is_not_persistent_across_runs(self):
         module1, calls1 = self.make_module([[Row('BAD', 'possibly delisted')]])
