@@ -34,7 +34,7 @@ test('iPhone/WebKit: Compare searches companies by name and produces a table', a
   await expect(page.locator('#marketCompareRuntimeResult th')).toHaveCount(3);
 });
 
-test('iPhone/WebKit: Scanner hydrates its lazy payload and remains scrollable', async ({ page }) => {
+test('iPhone/WebKit: Scanner hydrates lazy payload, renders repaired strategy tabs and remains scrollable', async ({ page }) => {
   await openMarket(page);
   await page.locator('[data-market-tool="scanner"]').first().click();
   const sheet = page.locator('#marketSheet');
@@ -42,7 +42,23 @@ test('iPhone/WebKit: Scanner hydrates its lazy payload and remains scrollable', 
   await expect(page.locator('.market-tool-runtime__chips')).toBeVisible({ timeout: 15000 });
   const overflow = await page.locator('#marketSheet .market-sheet__panel').evaluate(el => getComputedStyle(el).overflowY);
   expect(['auto','scroll']).toContain(overflow);
-  await expect(page.locator('[data-tool-scanner-strategy]').first()).toBeVisible();
+
+  const strategies = [
+    ['quality_at_fair_price', 'Qualidade + preço'],
+    ['growth_at_reasonable_price', 'Growth'],
+    ['deep_value', 'Value'],
+    ['low_52w', 'Mínimos 52s'],
+  ];
+
+  for (const [key, label] of strategies) {
+    const chip = page.locator(`[data-tool-scanner-strategy="${key}"]`);
+    await expect(chip, `${label} chip missing`).toBeVisible();
+    await chip.click();
+    await expect(chip, `${label} should become active`).toHaveClass(/is-active/);
+    const rows = page.locator('#marketScannerRuntimeRows .market-tool-runtime__row');
+    await expect.poll(() => rows.count(), { message: `${label} should render scanner candidates` }).toBeGreaterThan(0);
+    await expect(page.locator('#marketScannerRuntimeRows .market-empty'), `${label} must not fall back to an empty state`).toHaveCount(0);
+  }
 });
 
 test('iPhone/WebKit: News searches the full universe and opens the dossier News tab', async ({ page }) => {
