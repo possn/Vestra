@@ -14,6 +14,7 @@
     sector: 'all',
     region: 'all',
     fundTheme: '',
+    fundLimit: 100,
     watchlist: new Set(),
     previousSnapshot: null,
     currentSnapshot: null,
@@ -263,6 +264,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   const ETF_THEMES=[
+    ['all','Todos os ETFs',/.+/i],
     ['technology','Tecnologia',/technology|tech(?:nology)?|digital|software|cloud|internet|information technology|computing|saas|platform/i],
     ['semiconductors','Semicondutores',/semiconductor|chip|microchip|semicon|phlx semiconductor|integrated circuit|foundry|wafer|memory chip/i],
     ['ai_robotics','IA & Robótica',/artificial intelligence|machine learning|(^|[^a-z])ai([^a-z]|$)|robot|automation|robotics|autonomous systems/i],
@@ -308,7 +310,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
     if(qs){
       funds=funds.filter(s=>fundThemeText(s).toLowerCase().includes(qs));
-      funds.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
+      funds.sort((a,b)=>(n(b.etf_score)||-1)-(n(a.etf_score)||-1));
       return `<section class="market-section"><div class="market-section__head"><div><h3>ETFs · pesquisa</h3><p>Resultados para ${esc(M.query)}.</p></div><span class="market-data-age">${funds.length}</span></div><div class="market-list">${funds.length?funds.map(s=>renderRow(s,[n(s.expense_ratio)!=null?`TER ${pct(s.expense_ratio)}`:'',txt(s.region)].filter(Boolean).join(' · '))).join(''):'<div class="market-empty">Sem ETFs encontrados.</div>'}</div></section>`;
     }
 
@@ -317,8 +319,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
 
     const theme=available.find(x=>x.key===M.fundTheme);
-    funds=funds.filter(s=>fundMatchesTheme(s,M.fundTheme)).sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
-    return `<section class="market-section market-etf-discovery"><div class="market-section__head"><div><h3>${esc(theme?.label||'ETFs')}</h3><p>ETFs classificados pela exposição temática disponível.</p></div><button type="button" class="market-etf-change-theme" data-market-fund-theme="">Mudar tema</button></div><div class="market-list">${funds.length?funds.map(s=>renderRow(s,[n(s.expense_ratio)!=null?`TER ${pct(s.expense_ratio)}`:'',txt(s.region)].filter(Boolean).join(' · '))).join(''):'<div class="market-empty">Sem ETFs encontrados neste tema.</div>'}</div></section>`;
+    funds=funds.filter(s=>fundMatchesTheme(s,M.fundTheme)).sort((a,b)=>(n(b.etf_score)||-1)-(n(a.etf_score)||-1));
+    const total=funds.length;
+    const visible=M.fundTheme==='all'?funds.slice(0,M.fundLimit):funds;
+    const more=M.fundTheme==='all'&&visible.length<total?`<button type="button" class="market-etf-change-theme" data-market-fund-more>Mostrar mais · ${visible.length} de ${total}</button>`:'';
+    const copy=M.fundTheme==='all'?'Catálogo completo, ordenado pelo ETF Score quando existe. Pesquisa continua disponível para qualquer fundo.':'ETFs classificados pela exposição temática disponível.';
+    return `<section class="market-section market-etf-discovery"><div class="market-section__head"><div><h3>${esc(theme?.label||'ETFs')}</h3><p>${copy}</p></div><button type="button" class="market-etf-change-theme" data-market-fund-theme="">Mudar tema</button></div><div class="market-list">${visible.length?visible.map(s=>renderRow(s,[n(s.expense_ratio)!=null?`TER ${pct(s.expense_ratio)}`:'',txt(s.region)].filter(Boolean).join(' · '))).join(''):'<div class="market-empty">Sem ETFs encontrados neste tema.</div>'}</div>${more}</section>`;
   }
 
   function smartRank(s){
@@ -1548,9 +1554,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   document.addEventListener('click', e=>{
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
-    const mode=e.target.closest('[data-market-mode]'); if(mode){const nextMode=mode.dataset.marketMode; if(nextMode==='funds'&&M.mode!=='funds') M.fundTheme=''; M.mode=nextMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}
+    const mode=e.target.closest('[data-market-mode]'); if(mode){const nextMode=mode.dataset.marketMode; if(nextMode==='funds'&&M.mode!=='funds'){ M.fundTheme=''; M.fundLimit=100; } M.mode=nextMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}
     const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
-    const fundTheme=e.target.closest('[data-market-fund-theme]'); if(fundTheme){M.fundTheme=fundTheme.dataset.marketFundTheme||'';renderPrimary();return;}
+    const fundTheme=e.target.closest('[data-market-fund-theme]'); if(fundTheme){M.fundTheme=fundTheme.dataset.marketFundTheme||'';M.fundLimit=100;renderPrimary();return;}
+    const fundMore=e.target.closest('[data-market-fund-more]'); if(fundMore){M.fundLimit+=100;renderPrimary();return;}
     const watch=e.target.closest('[data-market-watch]'); if(watch){e.preventDefault();e.stopPropagation();toggleWatch(watch.dataset.marketWatch);return;}
     const row=e.target.closest('[data-market-ticker]'); if(row){ hideSearchSuggestions(); ensureLoaded().then(()=>openTicker(row.dataset.marketTicker)); }
     const saveTargets=e.target.closest('[data-target-save]');

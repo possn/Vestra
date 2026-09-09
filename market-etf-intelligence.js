@@ -1,8 +1,10 @@
-/* Vestra ETF Intelligence v1.1 — fund-only scoring, separate from equity Score. */
+/* Vestra ETF Intelligence v1.2 — fund-only scoring, compact startup evidence. */
 (() => {
   'use strict';
 
   const FUND_TYPES = new Set(['ETF', 'MUTUALFUND', 'FUND']);
+  const CATALOG_BATCH = 30;
+  let catalogLimit = CATALOG_BATCH;
 
   function text(v){ return String(v ?? '').trim(); }
   function number(v){
@@ -11,6 +13,7 @@
     return Number.isFinite(x) ? x : null;
   }
   function isFund(row){ return FUND_TYPES.has(text(row?.quote_type).toUpperCase()); }
+  function escapeHtml(v){ return text(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
   function ratioToPct(v){
     const x = number(v);
@@ -44,11 +47,15 @@
   }
 
   function diversificationScore(row){
-    const holdings = Array.isArray(row?.top_holdings) ? row.top_holdings : [];
-    if(!holdings.length) return null;
-    const weights = holdings.map(h => ratioToPct(h?.holdingPercent ?? h?.weight ?? h?.pct ?? h?.percentage)).filter(v => v != null && v >= 0);
-    if(!weights.length) return null;
-    const top10 = weights.slice(0, 10).reduce((a,b) => a+b, 0);
+    let top10 = number(row?.fund_top10_weight_pct);
+    if(top10 == null){
+      const holdings = Array.isArray(row?.top_holdings) ? row.top_holdings : [];
+      if(!holdings.length) return null;
+      const weights = holdings.map(h => ratioToPct(h?.holdingPercent ?? h?.weight ?? h?.pct ?? h?.percentage)).filter(v => v != null && v >= 0);
+      if(!weights.length) return null;
+      top10 = weights.slice(0, 10).reduce((a,b) => a+b, 0);
+    }
+    if(top10 < 0) return null;
     if(top10 <= 20) return 100;
     if(top10 <= 30) return 90;
     if(top10 <= 40) return 78;
@@ -94,7 +101,7 @@
     const checks = [
       number(row?.expense_ratio) != null,
       (number(row?.fund_total_assets) ?? number(row?.market_cap)) != null,
-      Array.isArray(row?.top_holdings) && row.top_holdings.length > 0,
+      number(row?.fund_top10_weight_pct) != null || (Array.isArray(row?.top_holdings) && row.top_holdings.length > 0),
       number(row?.current_price) != null,
       (number(row?.low52_price_high) ?? number(row?.fifty_two_week_high)) != null,
       Boolean(text(row?.fund_region ?? row?.region)),
@@ -151,7 +158,7 @@
       const rows = [...list.querySelectorAll(':scope > .market-row[data-market-ticker]')];
       if(rows.length < 2) return;
       if(!rows.every(el => byTicker.has(text(el.dataset.marketTicker).toUpperCase()))) return;
-      rows.sort((a,b) => {
+      const sorted = [...rows].sort((a,b) => {
         const sa = number(byTicker.get(text(a.dataset.marketTicker).toUpperCase())?.etf_score);
         const sb = number(byTicker.get(text(b.dataset.marketTicker).toUpperCase())?.etf_score);
         if(sa == null && sb == null) return 0;
@@ -159,8 +166,86 @@
         if(sb == null) return -1;
         return sb-sa;
       });
-      rows.forEach(row => list.appendChild(row));
+      if(sorted.every((row,index) => row === rows[index])) return;
+      sorted.forEach(row => list.appendChild(row));
     });
+  }
+
+  function scoreClass(value){
+    const x = number(value);
+    return x == null ? 'market-score--soft' : x >= 70 ? '' : x >= 55 ? 'market-score--soft' : 'market-score--risk';
+  }
+
+  function catalogRow(row){
+    const ticker = text(row?.ticker);
+    const score = number(row?.etf_score);
+    const ter = ratioToPct(row?.expense_ratio);
+    const coverage = number(row?.etf_score_coverage_pct);
+    const meta = [
+      ter != null ? `TER ${ter.toFixed(2)}%` : '',
+      text(row?.fund_region ?? row?.region),
+      score == null ? `Por avaliar${coverage != null ? ` · dados ${Math.round(coverage)}%` : ''}` : '',
+    ].filter(Boolean).join(' · ');
+    return `<div class="market-row" data-market-ticker="${escapeHtml(ticker)}">
+      <div><div class="market-row__title"><span class="market-row__ticker">${escapeHtml(ticker)}</span><span class="market-row__name">${escapeHtml(row?.name || '')}</span></div><div class="market-row__meta">${escapeHtml(meta)}</div></div>
+      <div class="market-row__end"><div class="market-score ${scoreClass(score)}" title="ETF Score">${score == null ? '—' : Math.round(score)}</div></div>
+    </div>`;
+  }
+
+  function renderFullCatalog(){
+    if(typeof document === 'undefined') return;
+    const root = document.getElementById('marketPrimary');
+    const stocks = window.VestraMarketStaticUniverse?.getStocks?.() || [];
+    if(!root || !stocks.length) return;
+    const funds = stocks.filter(isFund).sort((a,b) => {
+      const sa = number(a?.etf_score), sb = number(b?.etf_score);
+      if(sa == null && sb == null) return text(a?.ticker).localeCompare(text(b?.ticker));
+      if(sa == null) return 1;
+      if(sb == null) return -1;
+      return sb-sa;
+    });
+    const visible = funds.slice(0, catalogLimit);
+    const more = visible.length < funds.length
+      ? `<button type="button" class="market-etf-catalog-more" data-vestra-etf-all-more>Mostrar mais · ${visible.length} de ${funds.length}</button>`
+      : '';
+    root.innerHTML = `<section class="market-section market-etf-discovery" data-vestra-etf-all-catalog>
+      <div class="market-section__head"><div><h3>Todos os ETFs</h3><p>Catálogo completo, ordenado pelo ETF Score quando existe. Carregamento progressivo otimizado para iPhone.</p></div><button type="button" class="market-etf-change-theme" data-vestra-etf-all-back>Mudar tema</button></div>
+      <div class="market-list">${visible.length ? visible.map(catalogRow).join('') : '<div class="market-empty">Sem ETFs encontrados.</div>'}</div>${more}
+    </section>`;
+  }
+
+  function closestElement(target, selector){
+    return target && typeof target.closest === 'function' ? target.closest(selector) : null;
+  }
+
+  function installCatalogInteraction(){
+    if(typeof document === 'undefined') return;
+    document.addEventListener('click', event => {
+      const target = event.target;
+      const all = closestElement(target, '[data-market-fund-theme="all"]');
+      if(all){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        catalogLimit = CATALOG_BATCH;
+        renderFullCatalog();
+        return;
+      }
+      const more = closestElement(target, '[data-vestra-etf-all-more]');
+      if(more){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        catalogLimit += CATALOG_BATCH;
+        renderFullCatalog();
+        return;
+      }
+      const back = closestElement(target, '[data-vestra-etf-all-back]');
+      if(back){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const fundsMode = document.querySelector('[data-market-mode="funds"]');
+        if(fundsMode && typeof fundsMode.click === 'function') fundsMode.click();
+      }
+    }, true);
   }
 
   function annotateDiscovery(){
@@ -191,6 +276,7 @@
     const start = () => observer.observe(document.body, {subtree:true, childList:true});
     if(document.body) start(); else document.addEventListener('DOMContentLoaded', start, {once:true});
   }
+  installCatalogInteraction();
   if(typeof window !== 'undefined') window.addEventListener('vestra:market-ready', annotateDiscovery);
 
   window.VestraEtfIntelligence = Object.freeze({
@@ -198,6 +284,7 @@
     enrichStocks,
     isFund,
     rankVisibleFundLists,
-    version: '1.1',
+    renderFullCatalog,
+    version: '1.2',
   });
 })();

@@ -20,7 +20,7 @@ def test_market_loader_enriches_before_first_render():
     ready = src.index("beforeReady();")
     render = src.index("onReady();")
     assert enrich < ready < render
-    assert "market-etf-intelligence.js?v=1.0" in src
+    assert "market-etf-intelligence.js?v=1.2" in src
 
 
 def test_fund_rows_use_etf_score_and_show_pending_coverage():
