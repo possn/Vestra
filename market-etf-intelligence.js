@@ -158,7 +158,7 @@
       const rows = [...list.querySelectorAll(':scope > .market-row[data-market-ticker]')];
       if(rows.length < 2) return;
       if(!rows.every(el => byTicker.has(text(el.dataset.marketTicker).toUpperCase()))) return;
-      rows.sort((a,b) => {
+      const sorted = [...rows].sort((a,b) => {
         const sa = number(byTicker.get(text(a.dataset.marketTicker).toUpperCase())?.etf_score);
         const sb = number(byTicker.get(text(b.dataset.marketTicker).toUpperCase())?.etf_score);
         if(sa == null && sb == null) return 0;
@@ -166,7 +166,8 @@
         if(sb == null) return -1;
         return sb-sa;
       });
-      rows.forEach(row => list.appendChild(row));
+      if(sorted.every((row,index) => row === rows[index])) return;
+      sorted.forEach(row => list.appendChild(row));
     });
   }
 
