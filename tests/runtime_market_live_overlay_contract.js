@@ -53,7 +53,8 @@ function makeSheet(ticker = 'MSFT') {
 (async () => {
   const moduleApi = loadModule();
   assert(moduleApi, 'module must expose VestraMarketLiveOverlay');
-  assert.strictEqual(moduleApi.version, '1.0');
+  assert.strictEqual(moduleApi.version, '1.1');
+  assert.strictEqual(moduleApi.timeoutMs, 4500);
 
   const { sheet, fields } = makeSheet('MSFT');
   const loadingSet = new Set();
@@ -123,6 +124,18 @@ function makeSheet(ticker = 'MSFT') {
   assert.strictEqual(pendingFetches, 1);
   release();
   await first;
+
+  const timeoutLoading = new Set();
+  const timeoutOverlay = moduleApi.create({
+    getWorkerBase: () => 'https://worker.example',
+    getSheet: () => makeSheet('SLOW').sheet,
+    loadingSet: timeoutLoading,
+    text: value => String(value ?? '').trim(),
+    timeoutMs: 5,
+    fetchImpl: async () => new Promise(() => {})
+  });
+  assert.strictEqual(await timeoutOverlay.enrichTickerLive({ ticker: 'SLOW', current_price: 8 }), null);
+  assert.strictEqual(timeoutLoading.size, 0, 'timeout must release live loading gate for retry');
 
   const fallbackStock = { ticker: 'FAIL', current_price: 7 };
   const fallbackOverlay = moduleApi.create({
