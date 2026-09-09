@@ -1,6 +1,8 @@
-/* Vestra Market Live Overlay v1.0 — live dossier enrichment without rerendering the open sheet. */
+/* Vestra Market Live Overlay v1.1 — bounded live dossier enrichment without rerendering the open sheet. */
 (() => {
   'use strict';
+
+  const LIVE_TIMEOUT_MS = 4500;
 
   function create(options = {}) {
     const getWorkerBase = typeof options.getWorkerBase === 'function' ? options.getWorkerBase : () => '';
@@ -12,6 +14,9 @@
     const formatNum = typeof options.formatNum === 'function' ? options.formatNum : () => '—';
     const formatPct = typeof options.formatPct === 'function' ? options.formatPct : () => '—';
     const fetchImpl = typeof options.fetchImpl === 'function' ? options.fetchImpl : (...args) => fetch(...args);
+    const timeoutMs = Number.isFinite(Number(options.timeoutMs)) && Number(options.timeoutMs) > 0
+      ? Number(options.timeoutMs)
+      : LIVE_TIMEOUT_MS;
 
     function compactLiveBadge(stock) {
       if (!stock?._liveUpdated) return '';
@@ -60,13 +65,32 @@
       return true;
     }
 
+    async function fetchWithDeadline(url) {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      let timer = null;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          try { controller?.abort(); } catch (_) {}
+          reject(new Error('live quote timeout'));
+        }, timeoutMs);
+      });
+      try {
+        return await Promise.race([
+          fetchImpl(url, { cache: 'no-store', ...(controller ? { signal: controller.signal } : {}) }),
+          timeout,
+        ]);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    }
+
     async function enrichTickerLive(stock) {
       const base = text(getWorkerBase()).replace(/\/$/, '');
       const ticker = text(stock?.ticker).toUpperCase();
       if (!base || !ticker || loadingSet.has(ticker)) return null;
       loadingSet.add(ticker);
       try {
-        const response = await fetchImpl(`${base}/market?ticker=${encodeURIComponent(ticker)}`, { cache: 'no-store' });
+        const response = await fetchWithDeadline(`${base}/market?ticker=${encodeURIComponent(ticker)}`);
         if (!response.ok) throw new Error(`market ${response.status}`);
         const live = await response.json();
         if (!live || live.error) return null;
@@ -92,5 +116,9 @@
     return Object.freeze({ compactLiveBadge, refreshOpenDossierLiveFields, enrichTickerLive });
   }
 
-  window.VestraMarketLiveOverlay = Object.freeze({ create, version: '1.0' });
+  window.VestraMarketLiveOverlay = Object.freeze({
+    create,
+    version: '1.1',
+    timeoutMs: LIVE_TIMEOUT_MS,
+  });
 })();
