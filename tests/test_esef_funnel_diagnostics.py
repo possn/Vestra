@@ -30,12 +30,14 @@ class ESEFFunnelDiagnosticsTests(unittest.TestCase):
         self.assertIn("diag['filing_missing']+=1\n            continue", ENRICH_SOURCE)
         self.assertIn("diag['report_failed']+=1\n            continue", ENRICH_SOURCE)
 
-    def test_prior_identity_is_reused_only_after_exact_validation(self):
+    def test_prior_identity_is_reused_only_as_a_complete_valid_pair(self):
         self.assertIn("prior_isin=str(getattr(m,'_verified_esef_isin','')", ENRICH_SOURCE)
         self.assertIn("prior_lei=str(getattr(m,'_verified_esef_lei','')", ENRICH_SOURCE)
-        self.assertIn("if ISIN_RE.match(prior_isin):", ENRICH_SOURCE)
-        self.assertIn("if LEI_RE.match(prior_lei):", ENRICH_SOURCE)
-        self.assertIn("'Prior verified ESEF identity'", ENRICH_SOURCE)
+        self.assertIn("prior_pair_valid=bool(ISIN_RE.match(prior_isin) and LEI_RE.match(prior_lei))", ENRICH_SOURCE)
+        self.assertIn("if prior_pair_valid:", ENRICH_SOURCE)
+        self.assertIn("isin,isin_source=prior_isin,'Prior verified ESEF identity'", ENRICH_SOURCE)
+        self.assertIn("lei=prior_lei", ENRICH_SOURCE)
+        self.assertIn("if lei is None:\n            lei=resolve_lei(s,isin)", ENRICH_SOURCE)
 
     def test_shim_seeds_cache_only_from_previously_published_esef_rows(self):
         self.assertIn('_ESEF_SOURCE = "ESEF / filings.xbrl.org"', SHIM_SOURCE)
@@ -43,6 +45,7 @@ class ESEFFunnelDiagnosticsTests(unittest.TestCase):
         self.assertIn("_ISIN_RE.match(isin)", SHIM_SOURCE)
         self.assertIn("_LEI_RE.match(lei)", SHIM_SOURCE)
         self.assertIn('out[ticker] = (isin, lei)', SHIM_SOURCE)
+        self.assertIn('re.compile(r"^[A-Z0-9]{18}[0-9]{2}$")', SHIM_SOURCE)
         self.assertNotIn("name", SHIM_SOURCE.split("def _verified_identity_cache", 1)[1].split("def _attach_verified_identities", 1)[0])
 
 
