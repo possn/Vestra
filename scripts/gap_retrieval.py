@@ -101,24 +101,93 @@ def _yahoo_symbol(ticker):
     return t[:-3]+"-USD" if t.endswith(".CC") else t
 
 
-def enrich(raw, priority=None, max_rows=220, threshold=68.0):
-    """Deep-fill only sparse equity rows.
+def _select_candidates(
+    raw,
+    priority=None,
+    max_rows=220,
+    threshold=68.0,
+    priority_threshold=85.0,
+    priority_share=0.60,
+):
+    """Select a bounded mix of portfolio and global sparse dossiers.
 
-    Priority holdings are attempted first. Non-priority rows are processed only
-    while critical coverage is below `threshold`, keeping requests bounded.
+    Portfolio holdings remain first-class, but no longer monopolise the entire
+    daily Yahoo statement budget merely because they are holdings. Priority rows
+    must still be meaningfully incomplete (below ``priority_threshold``), while
+    non-priority scanner rows use the stricter ``threshold``. A fixed share is
+    reserved for each pool; unused capacity flows to the other pool so the total
+    request ceiling never increases.
+
+    Returns ``(selected, priority_count, scanner_count)`` where each selected row
+    is ``(coverage, model)`` sorted by lowest coverage within its pool.
     """
     priority=set(priority or [])
-    candidates=[]
+    max_rows=max(0,int(max_rows or 0))
+    if max_rows<=0:
+        return [],0,0
+    share=max(0.0,min(1.0,float(priority_share)))
+
+    priority_candidates=[]
+    scanner_candidates=[]
     for m in raw:
         if is_explicit_non_equity(getattr(m,"quote_type",None)) or getattr(m,"error",None):
             continue
+        ticker=str(getattr(m,"ticker","") or "").upper()
+        if not ticker:
+            continue
         cov=_coverage(m)
-        if cov < threshold or str(getattr(m,"ticker","") or "").upper() in priority:
-            candidates.append((0 if str(getattr(m,"ticker","") or "").upper() in priority else 1,cov,m))
-    candidates.sort(key=lambda x:(x[0],x[1]))
+        if ticker in priority:
+            if cov < priority_threshold:
+                priority_candidates.append((cov,m))
+        elif cov < threshold:
+            scanner_candidates.append((cov,m))
+
+    priority_candidates.sort(key=lambda x:x[0])
+    scanner_candidates.sort(key=lambda x:x[0])
+
+    priority_budget=min(len(priority_candidates),int(round(max_rows*share)))
+    scanner_budget=min(len(scanner_candidates),max_rows-priority_budget)
+
+    # Let either pool consume unused reserved capacity without ever exceeding the
+    # original max_rows request ceiling.
+    remaining=max_rows-priority_budget-scanner_budget
+    if remaining>0:
+        extra_priority=min(remaining,len(priority_candidates)-priority_budget)
+        priority_budget+=extra_priority
+        remaining-=extra_priority
+    if remaining>0:
+        extra_scanner=min(remaining,len(scanner_candidates)-scanner_budget)
+        scanner_budget+=extra_scanner
+
+    selected=priority_candidates[:priority_budget]+scanner_candidates[:scanner_budget]
+    return selected,priority_budget,scanner_budget
+
+
+def enrich(
+    raw,
+    priority=None,
+    max_rows=220,
+    threshold=68.0,
+    priority_threshold=85.0,
+    priority_share=0.60,
+):
+    """Deep-fill a bounded mix of sparse portfolio and scanner equity rows.
+
+    The total request ceiling remains ``max_rows``. Portfolio holdings receive a
+    larger coverage threshold and a reserved share, while the global scanner gets
+    guaranteed capacity for its lowest-coverage dossiers.
+    """
+    candidates,selected_priority,selected_scanner=_select_candidates(
+        raw,
+        priority=priority,
+        max_rows=max_rows,
+        threshold=threshold,
+        priority_threshold=priority_threshold,
+        priority_share=priority_share,
+    )
 
     attempted=filled=0
-    for _,before,m in candidates[:max_rows]:
+    for before,m in candidates:
         ticker=str(getattr(m,"ticker","") or "").upper()
         if not ticker: continue
         attempted+=1
@@ -231,5 +300,8 @@ def enrich(raw, priority=None, max_rows=220, threshold=68.0):
         except Exception as exc:
             log.debug("Gap retrieval %s: %s",ticker,exc)
 
-    log.info("Targeted gap retrieval: attempted %d, enriched %d",attempted,filled)
+    log.info(
+        "Targeted gap retrieval: selected priority=%d scanner=%d, attempted %d, enriched %d",
+        selected_priority,selected_scanner,attempted,filled,
+    )
     return raw
