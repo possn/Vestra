@@ -51,9 +51,8 @@ RESULT_FIELDS = (
     "result_metric_schema", "result_metrics",
 )
 
-_UP_VERBS = r"(?:increased|rose|advanced|moved up|edged up)"
-_DOWN_VERBS = r"(?:decreased|fell|declined|dropped|moved down|edged down)"
-_UNCHANGED = r"(?:was|were)?\s*unchanged"
+_UP_VERBS = r"increased|rose|advanced|moved up|edged up|inched up"
+_DOWN_VERBS = r"decreased|fell|declined|dropped|moved down|edged down"
 
 
 def _event_key(event: dict) -> tuple:
@@ -69,75 +68,54 @@ def _normalise(value: str) -> str:
     return " ".join(str(value or "").split()).strip()
 
 
-def _signed_percent(text: str, subject: str, tail: str = "") -> float | None:
-    """Parse an explicit directional percent change for one named subject."""
+def _change_for_subject(text: str, subject: str) -> float | None:
+    """Parse the first explicit change immediately following an exact subject."""
     segment = _normalise(text)
-    suffix = rf"{tail}" if tail else ""
-    unchanged = re.search(rf"{subject}\s+{_UNCHANGED}{suffix}", segment, flags=re.I)
-    if unchanged:
-        return 0.0
     match = re.search(
-        rf"{subject}\s+({_UP_VERBS}|{_DOWN_VERBS})\s+([0-9]+(?:\.[0-9]+)?)\s*(?:-|\s)percent{suffix}",
+        rf"{subject}\s+(?:(was|were)\s+)?(unchanged|{_UP_VERBS}|{_DOWN_VERBS})(?:\s+([0-9]+(?:\.[0-9]+)?)\s*(?:-|\s)percent)?",
         segment,
         flags=re.I,
     )
     if not match:
         return None
-    value = float(match.group(2))
-    verb = match.group(1).lower()
+    verb = match.group(2).lower()
+    if verb == "unchanged":
+        return 0.0
+    if match.group(3) is None:
+        return None
+    value = float(match.group(3))
     return -value if re.fullmatch(_DOWN_VERBS, verb, flags=re.I) else value
 
 
+def _paragraph_starting(paragraphs: list[str], prefix: str) -> str:
+    key = prefix.lower()
+    return next((value for value in paragraphs if value.lower().startswith(key)), "")
+
+
 def _extract_cpi_metrics(paragraphs: list[str]) -> dict:
+    headline = _paragraph_starting(paragraphs, "The Consumer Price Index for All Urban Consumers")
+    core_month = _paragraph_starting(paragraphs, "The index for all items less food and energy")
     text = " ".join(paragraphs)
     metrics = {
-        "headline_mom_pct": _signed_percent(
-            text,
-            r"(?:The\s+)?Consumer Price Index for All Urban Consumers \(CPI-U\)",
-            r".*?\b(?:in|for)\s+[A-Z][a-z]+",
+        "headline_mom_pct": _change_for_subject(
+            headline, r"The Consumer Price Index for All Urban Consumers \(CPI-U\)"
         ),
-        "headline_yoy_pct": _signed_percent(
-            text,
-            r"(?:the\s+)?all items index",
-            r".*?(?:over the last 12 months|for the 12 months ending|over the year)",
-        ),
-        "core_mom_pct": _signed_percent(
-            text,
-            r"(?:The\s+)?(?:index for\s+)?all items less food and energy(?: index)?",
-            r".*?\b(?:in|for)\s+[A-Z][a-z]+",
-        ),
-        "core_yoy_pct": _signed_percent(
-            text,
-            r"(?:The\s+)?all items less food and energy index",
-            r".*?(?:over the year|for the 12 months ending|over the last 12 months)",
-        ),
+        "headline_yoy_pct": _change_for_subject(text, r"\bthe all items index"),
+        "core_mom_pct": _change_for_subject(core_month, r"The index for all items less food and energy"),
+        "core_yoy_pct": _change_for_subject(text, r"\bThe all items less food and energy index"),
     }
     return {key: value for key, value in metrics.items() if value is not None}
 
 
 def _extract_ppi_metrics(paragraphs: list[str]) -> dict:
+    headline = _paragraph_starting(paragraphs, "The Producer Price Index for final demand")
+    core_month = _paragraph_starting(paragraphs, "Prices for final demand less foods, energy, and trade services")
     text = " ".join(paragraphs)
     metrics = {
-        "headline_mom_pct": _signed_percent(
-            text,
-            r"(?:The\s+)?Producer Price Index for final demand",
-            r".*?\b(?:in|for)\s+[A-Z][a-z]+",
-        ),
-        "headline_yoy_pct": _signed_percent(
-            text,
-            r"(?:the\s+)?index for final demand",
-            r".*?(?:for the 12 months ended|for the 12 months ending|over the last 12 months)",
-        ),
-        "core_mom_pct": _signed_percent(
-            text,
-            r"(?:Prices for\s+)?final demand less foods, energy, and trade services",
-            r".*?\b(?:in|for)\s+[A-Z][a-z]+",
-        ),
-        "core_yoy_pct": _signed_percent(
-            text,
-            r"(?:the\s+)?index for final demand less foods, energy, and trade services",
-            r".*?(?:for the 12 months ended|for the 12 months ending|over the last 12 months)",
-        ),
+        "headline_mom_pct": _change_for_subject(headline, r"The Producer Price Index for final demand"),
+        "headline_yoy_pct": _change_for_subject(text, r"\bthe index for final demand"),
+        "core_mom_pct": _change_for_subject(core_month, r"Prices for final demand less foods, energy, and trade services"),
+        "core_yoy_pct": _change_for_subject(text, r"\bthe index for final demand less foods, energy, and trade services"),
     }
     return {key: value for key, value in metrics.items() if value is not None}
 
@@ -167,8 +145,7 @@ def parse_bls_release(page: str, short_title: str) -> tuple[date, str, dict] | N
 
     paragraphs = [_normalise(node.text_content()) for node in tree.xpath("//p")]
     paragraphs = [value for value in paragraphs if value]
-    prefix = config["paragraph_prefix"].lower()
-    summary = next((value for value in paragraphs if value.lower().startswith(prefix)), "")
+    summary = _paragraph_starting(paragraphs, config["paragraph_prefix"])
     if not summary:
         return None
 
