@@ -31,7 +31,16 @@ class MarketIndexPayloadTests(unittest.TestCase):
             self.assertNotIn(key, row)
         self.assertEqual(row["ticker"], "AAPL")
         self.assertEqual(row["score"], 82.0)
-        self.assertEqual(row["dossier_shard"], "A")
+        self.assertEqual(row["dossier_shard"], "A0")
+
+    def test_dossier_shards_are_deterministic_and_split_each_prefix(self):
+        self.assertEqual(shards.SHARD_BUCKETS, 4)
+        self.assertEqual(shards.shard_for("AAPL"), "A0")
+        self.assertEqual(shards.shard_for("MSFT"), "M3")
+        self.assertEqual(shards.shard_for("air.pa"), "A3")
+        self.assertRegex(shards.shard_for("BRK-B"), r"^B[0-3]$")
+        sample = {shards.shard_for(f"A{i}") for i in range(40)}
+        self.assertGreaterEqual(len(sample), 3, "a busy prefix should distribute across multiple buckets")
 
     def test_scanner_results_move_to_lazy_payload(self):
         scanner_results = {

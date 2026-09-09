@@ -11,6 +11,7 @@ import json
 import math
 import os
 import re
+import zlib
 from collections import defaultdict
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -30,6 +31,13 @@ MAX_INDEX_BYTES = 7_250_000
 MAX_INDEX_RATIO = 0.15
 MAX_COLUMNAR_BYTES = 2_250_000
 MAX_COLUMNAR_INDEX_RATIO = 0.35
+
+# Full dossier payloads used to be grouped only by the first ticker character.
+# A/C/M-class shards can reach several MB and JSON.parse then competes with the
+# open dossier on Safari/iPhone. Keep the human-readable prefix but distribute
+# each prefix across a small deterministic set of buckets. The manifest remains
+# authoritative, so the browser loader needs no routing change.
+SHARD_BUCKETS = 4
 
 # Explicit pre-dossier contract. Anything not listed here belongs to a lazy
 # payload or dossier shard. Keeping this list explicit prevents new enrichment
@@ -100,8 +108,11 @@ DETAIL_ONLY_SCALAR_KEYS = {
 
 
 def shard_for(ticker: str) -> str:
-    c = (ticker or "_").strip().upper()[:1]
-    return c if re.match(r"[A-Z0-9]", c) else "_"
+    raw = (ticker or "_").strip().upper() or "_"
+    c = raw[:1]
+    prefix = c if re.match(r"[A-Z0-9]", c) else "_"
+    bucket = zlib.crc32(raw.encode("utf-8")) % SHARD_BUCKETS
+    return f"{prefix}{bucket}"
 
 
 def index_row(row: dict) -> dict:
@@ -262,9 +273,12 @@ def main() -> None:
             "tickers": scanner_tickers,
         }, f, ensure_ascii=False, separators=(",", ":"))
 
+    shard_sizes = {}
     for key, values in sorted(shards.items()):
-        with open(os.path.join(SHARD_DIR, f"{key}.json"), "w", encoding="utf-8") as f:
+        path = os.path.join(SHARD_DIR, f"{key}.json")
+        with open(path, "w", encoding="utf-8") as f:
             json.dump({"schema_version": schema_version, "generated_at": generated_at, "shard": key, "stocks": values}, f, ensure_ascii=False, separators=(",", ":"))
+        shard_sizes[key] = os.path.getsize(path)
 
     with open(MANIFEST, "w", encoding="utf-8") as f:
         json.dump({
@@ -272,6 +286,7 @@ def main() -> None:
             "generated_at": generated_at,
             "ticker_count": len(manifest),
             "duplicate_rows_dropped": duplicate_count,
+            "shard_buckets_per_prefix": SHARD_BUCKETS,
             "tickers": manifest,
         }, f, ensure_ascii=False, separators=(",", ":"))
 
@@ -282,9 +297,11 @@ def main() -> None:
     ratio = (idx_size / src_size) if src_size else 0
     columnar_index_ratio = (columnar_size / idx_size) if idx_size else 0
     saving_ratio = 1 - columnar_index_ratio if idx_size else 0
+    max_shard_name, max_shard_size = max(shard_sizes.items(), key=lambda item: item[1], default=("", 0))
     print(
         f"market shards: {len(index_rows)} unique rows, {len(shards)} shards; "
         f"dropped {duplicate_count} duplicate rows; "
+        f"largest shard {max_shard_name or 'n/a'} {max_shard_size/1_000_000:.2f} MB; "
         f"index {idx_size/1_000_000:.2f} MB ({ratio:.1%} of source); "
         f"columnar {columnar_size/1_000_000:.2f} MB ({saving_ratio:.1%} smaller); "
         f"lazy scanner {scanner_size/1_000_000:.2f} MB vs source {src_size/1_000_000:.2f} MB"
