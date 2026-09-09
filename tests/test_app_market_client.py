@@ -109,6 +109,19 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("const STALE_MS = QUOTE_AUTO_REFRESH_STALE_MS",app)
         self.assertIn("if (!needsRefresh) return;",app)
 
+    def test_partial_refresh_gets_one_short_foreground_retry(self):
+        client=read("app-market-client.js")
+        self.assertIn("const PARTIAL_REFRESH_RETRY_MS = 25 * 1000",client)
+        self.assertIn("const QUOTE_ERROR_TTL_MS = 20 * 1000",client)
+        self.assertIn("document.addEventListener('quotesUpdated'",client)
+        self.assertIn("readPersistedQuoteReport",client)
+        self.assertIn("Number(report.failed||0)<=0",client)
+        self.assertIn("if(partialRetryInFlight) return",client)
+        self.assertIn("if(partialRetryTimer) return",client)
+        self.assertIn("document.hidden",client)
+        self.assertIn("refresh({manual:false,reason:'partial-retry'})",client)
+        self.assertIn("PARTIAL_REFRESH_RETRY_MS",client)
+
     def test_client_loads_before_app_and_is_cached(self):
         index=read("index.html")
         self.assertLess(index.index('src="app-market-client.js'),index.index('src="app.js'))
