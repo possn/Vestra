@@ -40,6 +40,60 @@ class GapRetrievalMissingSemanticsTests(unittest.TestCase):
         self.assertIsNone(gap_retrieval._enterprise_value(None, 40.0, 10.0))
         self.assertIsNone(gap_retrieval._enterprise_value(10.0, 0.0, 20.0))
 
+    def _row_with_coverage(self, ticker, present_count, quote_type="EQUITY"):
+        row = types.SimpleNamespace(ticker=ticker, quote_type=quote_type, error=None)
+        for index, key in enumerate(gap_retrieval.CRITICAL):
+            setattr(row, key, 1.0 if index < present_count else None)
+        return row
+
+    def test_selection_reserves_scanner_capacity_without_raising_total_budget(self):
+        # 13/17 = 76.5%: eligible as priority (<85), not as scanner (<68).
+        priority_rows = [self._row_with_coverage(f"P{i}", 13) for i in range(100)]
+        # 6/17 = 35.3%: clearly sparse global scanner rows.
+        scanner_rows = [self._row_with_coverage(f"S{i}", 6) for i in range(100)]
+        priority = {row.ticker for row in priority_rows}
+
+        selected, selected_priority, selected_scanner = gap_retrieval._select_candidates(
+            priority_rows + scanner_rows,
+            priority=priority,
+            max_rows=50,
+            priority_share=0.60,
+        )
+
+        self.assertEqual(len(selected), 50)
+        self.assertEqual(selected_priority, 30)
+        self.assertEqual(selected_scanner, 20)
+        selected_tickers = {row.ticker for _, row in selected}
+        self.assertEqual(sum(t in priority for t in selected_tickers), 30)
+
+    def test_selection_reallocates_unused_scanner_capacity_to_priority(self):
+        priority_rows = [self._row_with_coverage(f"P{i}", 13) for i in range(100)]
+        scanner_rows = [self._row_with_coverage(f"S{i}", 6) for i in range(5)]
+        priority = {row.ticker for row in priority_rows}
+
+        selected, selected_priority, selected_scanner = gap_retrieval._select_candidates(
+            priority_rows + scanner_rows,
+            priority=priority,
+            max_rows=50,
+            priority_share=0.60,
+        )
+
+        self.assertEqual(len(selected), 50)
+        self.assertEqual(selected_priority, 45)
+        self.assertEqual(selected_scanner, 5)
+
+    def test_high_coverage_priority_does_not_consume_gap_budget(self):
+        # 15/17 = 88.2%: above the priority threshold, so a holding with only a
+        # small residual gap no longer displaces a materially sparse scanner row.
+        rich = self._row_with_coverage("RICH", 15)
+        sparse = self._row_with_coverage("SPARSE", 3)
+        selected, selected_priority, selected_scanner = gap_retrieval._select_candidates(
+            [rich, sparse], priority={"RICH"}, max_rows=1
+        )
+        self.assertEqual(selected_priority, 0)
+        self.assertEqual(selected_scanner, 1)
+        self.assertEqual(selected[0][1].ticker, "SPARSE")
+
     def test_source_contains_no_partial_component_zero_fallbacks(self):
         annual = "".join((SCRIPTS / "gap_retrieval.py").read_text(encoding="utf-8").split())
         quarterly = "".join((SCRIPTS / "quarterly_gap_retrieval.py").read_text(encoding="utf-8").split())
