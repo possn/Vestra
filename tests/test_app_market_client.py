@@ -69,14 +69,24 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertIn("Cache-Control':'no-store'",router)
         self.assertIn("symbol !== ticker",router)
         self.assertIn("BATCH_ITEM_DEADLINE_MS = 6500",router)
+        self.assertIn("BATCH_FALLBACK_TOTAL_DEADLINE_MS = 5000",router)
 
-    def test_batch_browser_budget_exceeds_worker_degraded_ceiling(self):
+    def test_batch_browser_budget_exceeds_bounded_worker_path(self):
         client=read("app-market-client.js")
         router=read("worker-router.js")
         self.assertIn("BATCH_QUOTE_TIMEOUT_MS = 14000",client)
         self.assertIn("EXACT_FETCH_TIMEOUT_MS = 3200",router)
-        self.assertIn("BATCH_ITEM_DEADLINE_MS = 6500",router)
-        self.assertGreater(14000, (2 * 3200) + 6500)
+        self.assertIn("BATCH_FALLBACK_TOTAL_DEADLINE_MS = 5000",router)
+        self.assertGreater(14000, (2 * 3200) + 5000)
+
+    def test_batch_chart_fallback_has_one_shared_deadline(self):
+        router=read("worker-router.js")
+        self.assertIn("const deadlineAt = Date.now() + BATCH_FALLBACK_TOTAL_DEADLINE_MS",router)
+        self.assertIn("const remaining = deadlineAt - Date.now()",router)
+        self.assertIn("if (remaining < 250) return",router)
+        self.assertIn("Math.floor(itemDeadline/2)",router)
+        self.assertIn("fetchYahooExactChartIdentity(ticker,upstreamTimeout)",router)
+        self.assertIn("quote_batch_fallback_total_deadline_ms:BATCH_FALLBACK_TOTAL_DEADLINE_MS",router)
 
     def test_app_imports_client_without_duplicate_implementations(self):
         app=read("app.js")
