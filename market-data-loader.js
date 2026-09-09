@@ -1,4 +1,4 @@
-/* Vestra Market Data Loader v2.6 — instant navigation + bounded, exact-identity background hydration. */
+/* Vestra Market Data Loader v2.5 — instant navigation + bounded, exact-identity background hydration. */
 (() => {
   'use strict';
 
@@ -315,6 +315,6 @@
   window.VestraMarketData={
     hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,
     performance:()=>dossierPerf.map(x=>({...x})),
-    version:'2.6'
+    version:'2.5'
   };
 })();
