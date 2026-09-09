@@ -48,6 +48,19 @@ INFO_OBSERVATION_FIELDS = (
     "enterprise_to_ebitda",
 )
 
+# When a retry improves fundamentals, never throw away quote/identity evidence
+# already observed by the fast fallback in the same run. These are not new
+# fundamental observations and do not alter missing-data semantics.
+FALLBACK_PRESERVE_FIELDS = (
+    "current_price",
+    "currency",
+    "name",
+    "quote_type",
+    "retrieval_ticker",
+    "ticker_successor_effective_date",
+    "ticker_successor_source",
+)
+
 
 def is_hard_symbol_error(error) -> bool:
     text = str(error or "").strip().lower()
@@ -100,6 +113,15 @@ def is_suspect_price_only_fallback(row) -> bool:
     return _info_observation_count(row) == 0
 
 
+def _preserve_minimum_fallback(original_row, retry_row):
+    if original_row is None or retry_row is None:
+        return retry_row
+    for field in FALLBACK_PRESERVE_FIELDS:
+        if getattr(retry_row, field, None) is None and getattr(original_row, field, None) is not None:
+            setattr(retry_row, field, getattr(original_row, field))
+    return retry_row
+
+
 def _prefer_retry(original_row, retry_row):
     """Use the retry only if it is strictly more useful than the fallback row."""
     if retry_row is None or getattr(retry_row, "error", None):
@@ -107,7 +129,7 @@ def _prefer_retry(original_row, retry_row):
     if original_row is None or getattr(original_row, "error", None):
         return retry_row
     if _info_observation_count(retry_row) > _info_observation_count(original_row):
-        return retry_row
+        return _preserve_minimum_fallback(original_row, retry_row)
     return original_row
 
 
