@@ -213,12 +213,15 @@
     </section>`;
   }
 
+  function closestElement(target, selector){
+    return target && typeof target.closest === 'function' ? target.closest(selector) : null;
+  }
+
   function installCatalogInteraction(){
     if(typeof document === 'undefined') return;
     document.addEventListener('click', event => {
-      const target = event.target instanceof Element ? event.target : null;
-      if(!target) return;
-      const all = target.closest('[data-market-fund-theme="all"]');
+      const target = event.target;
+      const all = closestElement(target, '[data-market-fund-theme="all"]');
       if(all){
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -226,7 +229,7 @@
         renderFullCatalog();
         return;
       }
-      const more = target.closest('[data-vestra-etf-all-more]');
+      const more = closestElement(target, '[data-vestra-etf-all-more]');
       if(more){
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -234,12 +237,12 @@
         renderFullCatalog();
         return;
       }
-      const back = target.closest('[data-vestra-etf-all-back]');
+      const back = closestElement(target, '[data-vestra-etf-all-back]');
       if(back){
         event.preventDefault();
         event.stopImmediatePropagation();
         const fundsMode = document.querySelector('[data-market-mode="funds"]');
-        if(fundsMode instanceof HTMLElement) fundsMode.click();
+        if(fundsMode && typeof fundsMode.click === 'function') fundsMode.click();
       }
     }, true);
   }
