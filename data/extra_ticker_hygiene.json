@@ -2,14 +2,17 @@
   "schema_version": 2,
   "extra_ticker_count": 496,
   "states": {
-    "published_confirmed": 486,
+    "published_confirmed": 481,
     "known_identity": 8,
-    "unresolved": 2
+    "sec_registered_identity": 3,
+    "unresolved": 3,
+    "corporate_successor": 1
   },
-  "unresolved_count": 2,
+  "unresolved_count": 3,
   "unresolved_tickers": [
-    "BAS.DE",
-    "ISAG.L"
+    "ISAG.L",
+    "VOD.L",
+    "VOW.DE"
   ],
   "review_families": [],
   "rows": [
@@ -231,9 +234,10 @@
     },
     {
       "ticker": "ALLY",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "sec_registered_identity",
+      "quote_type": null,
+      "evidence": "sec_ticker_map",
+      "cik": 40729
     },
     {
       "ticker": "ALUM.MI",
@@ -429,9 +433,9 @@
     },
     {
       "ticker": "BAS.DE",
-      "state": "unresolved",
-      "quote_type": null,
-      "evidence": null
+      "state": "published_confirmed",
+      "quote_type": "EQUITY",
+      "evidence": "stocks_snapshot"
     },
     {
       "ticker": "BAX",
@@ -717,9 +721,10 @@
     },
     {
       "ticker": "CRML",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "sec_registered_identity",
+      "quote_type": null,
+      "evidence": "sec_ticker_map",
+      "cik": 1951089
     },
     {
       "ticker": "CRSP",
@@ -1311,9 +1316,11 @@
     },
     {
       "ticker": "IINN",
-      "state": "published_confirmed",
+      "state": "corporate_successor",
       "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "evidence": "ticker_successor",
+      "retrieval_ticker": "QTEX",
+      "effective_date": "2026-05-20"
     },
     {
       "ticker": "IIPR",
@@ -2795,15 +2802,15 @@
     },
     {
       "ticker": "VOD.L",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "unresolved",
+      "quote_type": null,
+      "evidence": null
     },
     {
       "ticker": "VOW.DE",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "unresolved",
+      "quote_type": null,
+      "evidence": null
     },
     {
       "ticker": "VOW3.DE",
@@ -2975,9 +2982,10 @@
     },
     {
       "ticker": "YOU",
-      "state": "published_confirmed",
-      "quote_type": "EQUITY",
-      "evidence": "stocks_snapshot"
+      "state": "sec_registered_identity",
+      "quote_type": null,
+      "evidence": "sec_ticker_map",
+      "cik": 1856314
     },
     {
       "ticker": "ZPRR.DE",
