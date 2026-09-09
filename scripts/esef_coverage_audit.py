@@ -25,6 +25,7 @@ COUNTRY = {
 }
 
 EQUITY_TYPES = {"EQUITY", "STOCK", "COMMON_STOCK", "COMMON STOCK"}
+ESEF_SOURCE = "ESEF / filings.xbrl.org"
 
 
 def _rows(payload) -> list[dict]:
@@ -51,6 +52,15 @@ def is_equity(row: dict) -> bool:
     return not any(token in text for token in ("ETF", "FUND", "MUTUAL", "INDEX"))
 
 
+def _source_names(row: dict) -> set[str]:
+    raw = row.get("data_sources") or []
+    if isinstance(raw, str):
+        return {raw.strip()} if raw.strip() else set()
+    if isinstance(raw, (list, tuple, set)):
+        return {str(item).strip() for item in raw if str(item).strip()}
+    return set()
+
+
 def build_audit(rows: Iterable[dict]) -> dict:
     per_suffix = defaultdict(Counter)
     source_counts = Counter()
@@ -68,7 +78,12 @@ def build_audit(rows: Iterable[dict]) -> dict:
 
         isin = str(row.get("isin") or "").strip().upper()
         lei = str(row.get("lei") or "").strip().upper()
-        enriched = bool(row.get("esef_enriched"))
+        sources = _source_names(row)
+        # The transient runtime marker is not guaranteed to survive canonical
+        # serialization. Persisted provenance is therefore authoritative for the
+        # offline audit: a row that cites ESEF was enriched by that lane even if
+        # ``esef_enriched`` itself was dropped before publication.
+        enriched = bool(row.get("esef_enriched")) or ESEF_SOURCE in sources
         filing = bool(row.get("esef_period_end") or row.get("esef_retrieval_path") or enriched)
 
         if isin:
