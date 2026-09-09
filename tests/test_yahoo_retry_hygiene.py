@@ -20,15 +20,20 @@ class Row:
 
 
 class Coordinator:
-    def __init__(self, strike=0):
+    def __init__(self, strike=0, last_incident_at=None, quiet_reset_seconds=120):
         self.strike = strike
+        self.last_incident_at = last_incident_at
+        self.quiet_reset_seconds = quiet_reset_seconds
 
     def snapshot(self):
-        return {'strike': self.strike}
+        state = {'strike': self.strike}
+        if self.last_incident_at is not None:
+            state['last_incident_at'] = self.last_incident_at
+        return state
 
 
 class YahooRetryHygieneTests(unittest.TestCase):
-    def make_module(self, scripted, *, strike=0):
+    def make_module(self, scripted, *, strike=0, coordinator=None):
         calls = []
         queue = list(scripted)
 
@@ -47,7 +52,7 @@ class YahooRetryHygieneTests(unittest.TestCase):
         module = types.SimpleNamespace(
             fetch_many=fetch_many,
             log=log,
-            _rate_limit_coordinator=Coordinator(strike),
+            _rate_limit_coordinator=coordinator or Coordinator(strike),
         )
         return module, calls
 
@@ -111,6 +116,15 @@ class YahooRetryHygieneTests(unittest.TestCase):
     def test_price_only_row_is_not_retried_without_recorded_throttle(self):
         sparse = Row('MSFT', None, current_price=500.0)
         module, calls = self.make_module([[sparse]], strike=0)
+        wrapped = hygiene.install(module, sleeper=lambda _: None)
+        rows = wrapped(['MSFT'], retries=3)
+        self.assertEqual(len(calls), 1)
+        self.assertIs(rows[0], sparse)
+
+    def test_stale_throttle_does_not_poison_later_batch(self):
+        sparse = Row('MSFT', None, current_price=500.0)
+        stale = Coordinator(strike=3, last_incident_at=1.0, quiet_reset_seconds=120)
+        module, calls = self.make_module([[sparse]], coordinator=stale)
         wrapped = hygiene.install(module, sleeper=lambda _: None)
         rows = wrapped(['MSFT'], retries=3)
         self.assertEqual(len(calls), 1)
