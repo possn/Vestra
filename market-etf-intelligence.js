@@ -206,7 +206,7 @@
     });
     const visible = funds.slice(0, catalogLimit);
     const more = visible.length < funds.length
-      ? `<button type="button" class="market-etf-change-theme" data-vestra-etf-all-more>Mostrar mais · ${visible.length} de ${funds.length}</button>`
+      ? `<button type="button" class="market-etf-catalog-more" data-vestra-etf-all-more>Mostrar mais · ${visible.length} de ${funds.length}</button>`
       : '';
     root.innerHTML = `<section class="market-section market-etf-discovery" data-vestra-etf-all-catalog>
       <div class="market-section__head"><div><h3>Todos os ETFs</h3><p>Catálogo completo, ordenado pelo ETF Score quando existe. Carregamento progressivo otimizado para iPhone.</p></div><button type="button" class="market-etf-change-theme" data-vestra-etf-all-back>Mudar tema</button></div>
