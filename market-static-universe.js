@@ -17,7 +17,7 @@
     etfIntelligencePromise = new Promise(resolve => {
       const script = existing || document.createElement('script');
       if (!existing) {
-        script.src = 'market-etf-intelligence.js?v=1.0';
+        script.src = 'market-etf-intelligence.js?v=1.2';
         script.defer = true;
         script.dataset.vestraEtfIntelligence = '1';
         document.head.appendChild(script);
