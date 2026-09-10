@@ -22,17 +22,27 @@ test('iPhone/WebKit: opportunity lenses are tappable and persist the selected fi
       <div class="market-list">
         <div class="market-row" data-market-ticker="AAA">AAA empresa estável</div>
         <div class="market-row" data-market-ticker="BBB">BBB recuperação confirmada</div>
+        <div class="market-row" data-market-ticker="CCC">CCC junto do mínimo anual</div>
       </div>`;
     document.body.prepend(fixture);
-    const [a,b] = fixture.querySelectorAll('.market-row');
-    a.__vestraStock = { ticker:'AAA', estimate_signal:'stable', recovery_status:'', opportunity_timing_score:52 };
-    b.__vestraStock = { ticker:'BBB', estimate_signal:'improving', recovery_status:'confirmed', opportunity_timing_score:58 };
+    const [a,b,c] = fixture.querySelectorAll('.market-row');
+    a.__vestraStock = { ticker:'AAA', estimate_signal:'stable', recovery_status:'', opportunity_timing_score:52, low52_above_low_pct:11.2 };
+    b.__vestraStock = { ticker:'BBB', estimate_signal:'improving', recovery_status:'confirmed', opportunity_timing_score:58, low52_above_low_pct:7.1 };
+    c.__vestraStock = { ticker:'CCC', estimate_signal:'stable', recovery_status:'', opportunity_timing_score:56, low52_above_low_pct:3.2 };
     window.VestraMarketOpportunityLenses.select('all');
   });
 
   const fixture = page.locator('#lensFixture');
   const bar = fixture.locator('.vestra-opportunity-lenses');
   await expect(bar).toBeVisible();
+
+  const low52 = bar.locator('[data-vestra-lens="low52"]');
+  await low52.tap();
+  await expect(low52).toHaveClass(/is-active/);
+  await expect(low52).toHaveAttribute('aria-pressed', 'true');
+  await expect(fixture.locator('[data-market-ticker="AAA"]')).toBeHidden();
+  await expect(fixture.locator('[data-market-ticker="BBB"]')).toBeHidden();
+  await expect(fixture.locator('[data-market-ticker="CCC"]')).toBeVisible();
 
   const recovery = bar.locator('[data-vestra-lens="recovery"]');
   await recovery.tap();
@@ -42,16 +52,16 @@ test('iPhone/WebKit: opportunity lenses are tappable and persist the selected fi
   await expect(fixture.locator('[data-market-ticker="BBB"]')).toBeVisible();
 
   await fixture.evaluate(node => {
-    node.querySelector('.market-list').insertAdjacentHTML('beforeend', '<div class="market-row" data-market-ticker="CCC">CCC empresa estável</div>');
+    node.querySelector('.market-list').insertAdjacentHTML('beforeend', '<div class="market-row" data-market-ticker="DDD">DDD empresa estável</div>');
   });
   await expect.poll(async () => page.evaluate(() => window.VestraMarketOpportunityLenses.active)).toBe('recovery');
-  await expect(fixture.locator('[data-market-ticker="CCC"]')).toBeHidden();
+  await expect(fixture.locator('[data-market-ticker="DDD"]')).toBeHidden();
 
   const all = bar.locator('[data-vestra-lens="all"]');
   await all.tap();
   await expect(all).toHaveClass(/is-active/);
   await expect(fixture.locator('[data-market-ticker="AAA"]')).toBeVisible();
-  await expect(fixture.locator('[data-market-ticker="CCC"]')).toBeVisible();
+  await expect(fixture.locator('[data-market-ticker="DDD"]')).toBeVisible();
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
