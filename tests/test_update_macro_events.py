@@ -40,6 +40,29 @@ class MacroCalendarTests(unittest.TestCase):
         self.assertEqual(events[0]['time_local'], '08:30 ET')
         self.assertEqual(events[2]['importance'], 'critical')
 
+    def test_fed_parser_stops_at_next_fomc_year_heading(self):
+        page = '''<html><body>
+        <h4>2026 FOMC Meetings</h4>
+        <div>September 15-16*</div> <div>October 27-28</div> <div>December 8-9*</div>
+        <h4>2025 FOMC Meetings</h4>
+        <div>September 16-17*</div> <div>October 28-29</div> <div>December 9-10*</div>
+        <h4>2024 FOMC Meetings</h4>
+        <div>September 17-18*</div> <div>December 17-18*</div>
+        <h4>2027 FOMC Meetings</h4>
+        <div>January 26-27</div> <div>March 16-17*</div>
+        <p>Note: dates are tentative.</p>
+        </body></html>'''
+        events = mod.fed_events(_Session(page))
+        pairs = [(e['date'], e['date_end']) for e in events]
+        self.assertIn(('2026-09-15', '2026-09-16'), pairs)
+        self.assertIn(('2026-10-27', '2026-10-28'), pairs)
+        self.assertIn(('2026-12-08', '2026-12-09'), pairs)
+        self.assertNotIn(('2026-09-16', '2026-09-17'), pairs,
+                         'historical 2025 meetings must never be reinterpreted as 2026')
+        self.assertNotIn(('2026-09-17', '2026-09-18'), pairs,
+                         'historical 2024 meetings must never be reinterpreted as 2026')
+        self.assertIn(('2027-01-26', '2027-01-27'), pairs)
+
     def test_validate_events_is_fail_closed_and_deduplicates(self):
         today = date(2026, 9, 6)
         event = {
