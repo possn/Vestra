@@ -1,7 +1,8 @@
-/* Vestra App Update Manager v1.3 — iOS-safe forced refresh with deterministic exclusive button ownership. */
+/* Vestra App Update Manager v1.4 — iOS-safe forced refresh with deterministic exclusive button ownership. */
 (() => {
   'use strict';
   let busy = false;
+  let captureInstalled = false;
 
   function forceFreshReload() {
     if (busy) return;
@@ -37,24 +38,40 @@
     }, 40);
   }
 
+  function isUpdateButton(target) {
+    if (!target) return false;
+    if (target.id === 'btnForceUpdate') return true;
+    return Boolean(target.closest?.('#btnForceUpdate'));
+  }
+
+  function installCaptureGuard() {
+    if (captureInstalled) return false;
+    captureInstalled = true;
+
+    // This listener runs before target listeners. It is the final containment
+    // layer for the historical app.js update handler: even if app.js attaches
+    // that handler again, replaces the node, or runs after our DOM reclaim,
+    // the destructive listener never receives the click.
+    document.addEventListener('click', event => {
+      if (!isUpdateButton(event.target)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      forceFreshReload();
+    }, true);
+    return true;
+  }
+
   function install(force = false) {
     const current = document.getElementById('btnForceUpdate');
     if (!current) return false;
     if (!force && current.dataset.vestraSafeUpdateOwner === '1') return false;
 
     // app.js historically attached a destructive target listener to this button.
-    // Replacing the node removes every previously attached listener without
-    // depending on capture-phase ordering or propagation interception. A forced
-    // reinstall is deliberately performed after the main app setup so even a
-    // listener attached after an early dynamic load is removed deterministically.
+    // Replacing the node removes every previously attached listener. The capture
+    // guard above remains authoritative even if a later listener is attached.
     const button = current.cloneNode(true);
     button.dataset.vestraSafeUpdateOwner = '1';
     current.replaceWith(button);
-    button.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      forceFreshReload();
-    });
     return true;
   }
 
@@ -62,6 +79,7 @@
     setTimeout(() => install(true), 0);
   }
 
+  installCaptureGuard();
   install();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', reclaimAfterAppSetup, { once: true });
@@ -71,7 +89,7 @@
   window.addEventListener('vestra:app-ready', reclaimAfterAppSetup, { once: true });
 
   window.VestraAppUpdateManager = Object.freeze({
-    version: '1.3',
+    version: '1.4',
     install,
     forceFreshReload,
   });
