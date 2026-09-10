@@ -3,6 +3,8 @@ const vm = require('vm');
 const assert = require('assert');
 
 const source = fs.readFileSync('sw.js', 'utf8');
+const updateManagerMentions = source.match(/app-update-manager\.js/g) || [];
+assert(updateManagerMentions.length >= 2, 'safe update manager must be in both APP_SHELL and BOOTSTRAP_NETWORK_FIRST');
 
 function buildRuntime({ freshResponse, fetchError, cachedResponse }) {
   const puts = [];

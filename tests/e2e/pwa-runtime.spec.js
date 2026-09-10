@@ -63,7 +63,7 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   expect(pwa.cacheName).toMatch(/^vestra-cache-/);
   expect(pwa.hasAppShell).toBeTruthy();
   expect(pwa.hasMarketRuntime).toBeTruthy();
-  expect(pwa.updateManagerVersion).toBe('1.3');
+  expect(pwa.updateManagerVersion).toBe('1.4');
   expect(pwa.safeUpdateOwner).toBe('1');
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });

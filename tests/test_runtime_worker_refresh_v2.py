@@ -19,17 +19,17 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         self.assertIn("workerUrl: CANONICAL_WORKER_URL", text)
         self.assertIn("version: '1.1'", text)
 
-    def test_update_replaces_legacy_handler_without_overlay(self):
+    def test_update_contains_legacy_handler_without_overlay(self):
         text = UPDATE.read_text(encoding="utf-8")
         self.assertIn("document.getElementById('btnForceUpdate')", text)
         self.assertIn("current.cloneNode(true)", text)
         self.assertIn("current.replaceWith(button)", text)
-        self.assertIn("button.addEventListener('click'", text)
-        self.assertIn("version: '1.3'", text)
+        self.assertIn("document.addEventListener('click'", text)
+        self.assertIn("}, true);", text)
+        self.assertIn("version: '1.4'", text)
         self.assertIn("stopImmediatePropagation", text)
         self.assertIn("DOMContentLoaded', reclaimAfterAppSetup", text)
         self.assertIn("vestra:app-ready', reclaimAfterAppSetup", text)
-        self.assertNotIn("document.addEventListener('click'", text)
         self.assertNotIn("appLoadingOverlay", text)
         self.assertNotIn("getRegistrations", text)
         self.assertNotIn(".unregister(", text)
@@ -38,7 +38,7 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
     def test_bootstrap_bumps_runtime_modules(self):
         text = BOOT.read_text(encoding="utf-8")
         self.assertIn("app-runtime-bridge.js?v=1.1", text)
-        self.assertIn("app-update-manager.js?v=1.3", text)
+        self.assertIn("app-update-manager.js?v=1.4", text)
         self.assertIn("market-learned-universe.js?v=2.0", text)
         self.assertIn("market-global-search.js?v=1.2", text)
         self.assertIn("market-data-health.js?v=1.1", text)
