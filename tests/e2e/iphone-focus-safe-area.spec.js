@@ -101,13 +101,42 @@ test('iPhone/WebKit: focus, constrained viewport and safe-area chrome stay usabl
 
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
-  const panelGeometry = await sheet.locator('.market-sheet__panel').evaluate(el => {
-    const r = el.getBoundingClientRect();
-    return { top: r.top, bottom: r.bottom, innerHeight: window.innerHeight };
+
+  // Since v3.7 the dossier deliberately has one vertical scroll owner: the
+  // fixed #marketSheet viewport. The inner panel is allowed to grow with the
+  // dossier content, so its bottom can be far below the visible viewport.
+  const dossierGeometry = await sheet.evaluate(el => {
+    const sheetRect = el.getBoundingClientRect();
+    const panel = el.querySelector('.market-sheet__panel');
+    const panelRect = panel?.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return {
+      sheetTop: sheetRect.top,
+      sheetBottom: sheetRect.bottom,
+      innerHeight: window.innerHeight,
+      overflowY: style.overflowY,
+      clientHeight: el.clientHeight,
+      scrollHeight: el.scrollHeight,
+      panelTop: panelRect?.top ?? 0,
+      panelBottom: panelRect?.bottom ?? 0,
+    };
   });
-  expect(panelGeometry.top).toBeGreaterThanOrEqual(-1);
-  expect(panelGeometry.bottom).toBeLessThanOrEqual(panelGeometry.innerHeight + 1);
+  expect(dossierGeometry.sheetTop).toBeGreaterThanOrEqual(-1);
+  expect(dossierGeometry.sheetBottom).toBeLessThanOrEqual(dossierGeometry.innerHeight + 1);
+  expect(['auto', 'scroll']).toContain(dossierGeometry.overflowY);
+  expect(dossierGeometry.scrollHeight).toBeGreaterThanOrEqual(dossierGeometry.clientHeight);
+  expect(dossierGeometry.panelTop).toBeGreaterThanOrEqual(-1);
+  expect(dossierGeometry.panelBottom).toBeGreaterThanOrEqual(dossierGeometry.innerHeight - 1);
   await assertNoHorizontalOverflow(page);
+
+  const close = page.locator('.market-close-persistent');
+  await expect(close).toBeVisible();
+  const closeGeometry = await close.evaluate(el => {
+    const r = el.getBoundingClientRect();
+    return { top: r.top, right: r.right, innerWidth: window.innerWidth };
+  });
+  expect(closeGeometry.top).toBeGreaterThanOrEqual(0);
+  expect(closeGeometry.right).toBeLessThanOrEqual(closeGeometry.innerWidth + 1);
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
