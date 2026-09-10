@@ -104,7 +104,10 @@ def fed_events(s: requests.Session) -> list[dict]:
     out: list[dict] = []
     months = "|".join(MONTHS)
     for year in range(today.year, today.year + 3):
-        match = re.search(rf"{year}\s+FOMC Meetings(.*?)(?={(year + 1)}\s+FOMC Meetings|Note:|$)", txt, flags=re.I)
+        # The Fed page orders the current year, historical years, then the future
+        # year. Stop at the next FOMC heading of *any* year, otherwise historical
+        # month/day pairs get reinterpreted as meetings in the current year.
+        match = re.search(rf"{year}\s+FOMC Meetings(.*?)(?=\d{{4}}\s+FOMC Meetings|Note:|$)", txt, flags=re.I)
         if not match:
             continue
         section = match.group(1)
