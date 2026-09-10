@@ -47,6 +47,14 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
     };
     localStorage.setItem('PF_STATE_V6', JSON.stringify(initialState));
 
+    // Observe the real Vestra bootstrap event from the earliest possible point.
+    // setView exists before late lifecycle listeners are attached, so waiting only
+    // for setView can dispatch visibilitychange too early in WebKit.
+    window.__vestraAppReady = false;
+    document.addEventListener('vestra:app-ready', () => {
+      window.__vestraAppReady = true;
+    }, { once: true });
+
     // WebKit does not expose a CDP visibility override. Shadow the document
     // properties before Vestra registers its listener so the test can exercise
     // the real visibilitychange path deterministically.
@@ -91,7 +99,7 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
   });
 
   await page.goto('/index.html');
-  await page.waitForFunction(() => typeof window.setView === 'function');
+  await page.waitForFunction(() => typeof window.setView === 'function' && window.__vestraAppReady === true);
 
   // The persisted timestamp is fresh on boot, so startup must not hit the quote worker.
   await page.waitForTimeout(350);
