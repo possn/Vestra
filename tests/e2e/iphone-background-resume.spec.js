@@ -47,13 +47,20 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
     };
     localStorage.setItem('PF_STATE_V6', JSON.stringify(initialState));
 
-    // Track registration of the real lifecycle listeners. This gives WebKit a
-    // deterministic readiness signal without relying on a synthetic app-ready
-    // event that Vestra does not emit.
-    window.__vestraVisibilityListenerRegistrations = 0;
+    // Track the app.js lifecycle listener specifically. Several independently
+    // loaded modules also listen to visibilitychange, so a simple listener count
+    // can become ready before the quote-resume handler itself is attached.
+    window.__vestraQuoteResumeListenerReady = false;
     const originalDocumentAddEventListener = document.addEventListener.bind(document);
     document.addEventListener = function(type, listener, options) {
-      if (type === 'visibilitychange') window.__vestraVisibilityListenerRegistrations += 1;
+      if (type === 'visibilitychange') {
+        try {
+          const source = Function.prototype.toString.call(listener);
+          if (source.includes('autoRefreshQuotesIfStale')) {
+            window.__vestraQuoteResumeListenerReady = true;
+          }
+        } catch (_) {}
+      }
       return originalDocumentAddEventListener(type, listener, options);
     };
 
@@ -103,7 +110,7 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
   await page.goto('/index.html');
   await page.waitForFunction(() => (
     typeof window.setView === 'function'
-    && window.__vestraVisibilityListenerRegistrations >= 2
+    && window.__vestraQuoteResumeListenerReady === true
   ));
 
   // The persisted timestamp is fresh on boot, so startup must not hit the quote worker.
