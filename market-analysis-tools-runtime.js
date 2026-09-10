@@ -10,7 +10,7 @@
     return Number.isFinite(n) ? n : null;
   };
   const esc = value => text(value).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'
   }[c]));
   const pct = value => num(value) == null ? '—' : `${(Math.abs(num(value)) <= 1 ? num(value) * 100 : num(value)).toFixed(1)}%`;
   const fmt = value => num(value) == null ? '—' : new Intl.NumberFormat('pt-PT',{maximumFractionDigits:1}).format(num(value));
@@ -61,7 +61,7 @@
   }
 
   function header(kicker, title, subtitle) {
-    return `<div class="market-detail-head market-tool-runtime__head"><div><div class="market-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p>${esc(subtitle)}</p></div><button type="button" class="market-close" data-tool-runtime-close aria-label="Fechar">×</button></div>`;
+    return `<div class="market-detail-head market-tool-runtime__head"><div><div class="market-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p>${esc(subtitle)}</p></div></div>`;
   }
 
   function stockRow(stock, meta='') {
@@ -221,7 +221,6 @@
       openTool(tool.dataset.marketTool);
       return;
     }
-    if (event.target.closest?.('[data-tool-runtime-close]')) { event.preventDefault(); closeSheet(); return; }
     const suggestion = event.target.closest?.('[data-compare-add]');
     if (suggestion) {
       const stock = stocks().find(s => text(s?.ticker).toUpperCase() === text(suggestion.dataset.compareAdd).toUpperCase());
