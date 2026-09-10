@@ -1,4 +1,4 @@
-/* Vestra Market Scanner Data v1.2 — lazy strategy payload with rollout compatibility. */
+/* Vestra Market Scanner Data v1.3 — lazy strategy payload with rollout compatibility. */
 (() => {
   'use strict';
 
@@ -6,7 +6,10 @@
     quality_at_fair_price: ['qarp'],
     growth_at_reasonable_price: ['positive_revisions', 'turnarounds'],
     deep_value: ['fallen_angels'],
-    low_52w: ['lows_intact', 'fallen_angels'],
+    // "Mínimos 52s" is intentionally strict: only the dedicated lows_intact
+    // strategy may satisfy this UI tab. Fallen Angels can extend materially
+    // farther from the 52-week low and must not be relabelled as a near-low hit.
+    low_52w: ['lows_intact'],
   });
 
   function create({
@@ -128,5 +131,5 @@
     queueMicrotask(() => hydrateScanner(tool));
   });
 
-  window.VestraMarketScannerData = Object.freeze({ create, runtimeController, version: '1.2' });
+  window.VestraMarketScannerData = Object.freeze({ create, runtimeController, version: '1.3' });
 })();
