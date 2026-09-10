@@ -43,7 +43,7 @@
     if (typeof document === 'undefined') return;
     if (window.VestraMarketAnalysisToolsRuntime || document.querySelector('script[data-vestra-analysis-tools-runtime]')) return;
     const script = document.createElement('script');
-    script.src = 'market-analysis-tools-runtime.js?v=1.0';
+    script.src = 'market-analysis-tools-runtime.js?v=1.1';
     script.defer = true;
     script.dataset.vestraAnalysisToolsRuntime = '1';
     document.head.appendChild(script);
