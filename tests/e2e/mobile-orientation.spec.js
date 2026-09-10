@@ -1,5 +1,18 @@
 const { test, expect } = require('@playwright/test');
 
+async function isolateExternalSearch(page) {
+  // The local WebKit origin cannot call Yahoo's autocomplete directly because
+  // of CORS. This endpoint is secondary to the local canonical market index, so
+  // keep the orientation journey deterministic without hiding Vestra JS errors.
+  await page.route('https://query1.finance.yahoo.com/v1/finance/search**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ quotes: [], news: [], lists: [] })
+    });
+  });
+}
+
 async function assertNoHorizontalOverflow(page) {
   const geometry = await page.evaluate(() => ({
     innerWidth: window.innerWidth,
@@ -13,6 +26,7 @@ async function assertNoHorizontalOverflow(page) {
 test('iPhone/WebKit: portrait -> landscape -> portrait keeps Market and dossier usable', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
+  await isolateExternalSearch(page);
 
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMobileUiRefresh);
