@@ -4,11 +4,16 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
   const quoteRequests = [];
   const pageErrors = [];
   const autoRefreshLogs = [];
+  const initialTime = Date.now();
   page.on('pageerror', error => pageErrors.push(error.message));
   page.on('console', message => {
     const text = message.text();
     if (text.includes('[AutoRefresh]')) autoRefreshLogs.push(text);
   });
+
+  // Freeze Date.now/new Date consistently while leaving timers running. This
+  // models wall-clock time advancing while an installed PWA is backgrounded.
+  await page.clock.setFixedTime(initialTime);
 
   await page.addInitScript(() => {
     const now = Date.now();
@@ -148,7 +153,7 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
   expect(fixtureState.hidden).toBe(false);
   expect(fixtureState.workerUrl).toBe('/__resume-worker');
   expect(fixtureState.assetTickers).toContain('MSFT');
-  expect(fixtureState.lastQuoteRefreshTs).toBeGreaterThan(0);
+  expect(fixtureState.lastQuoteRefreshTs).toBe(initialTime);
 
   // The persisted timestamp is fresh on boot, so startup must not hit the quote worker.
   await page.waitForTimeout(350);
@@ -157,10 +162,12 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
   await page.evaluate(() => {
     window.__vestraTestVisibility = 'hidden';
     document.dispatchEvent(new Event('visibilitychange'));
+  });
 
-    const realNow = Date.now.bind(Date);
-    Date.now = () => realNow() + 61_000;
+  await page.clock.setFixedTime(initialTime + 61_000);
+  expect(await page.evaluate(() => Date.now())).toBe(initialTime + 61_000);
 
+  await page.evaluate(() => {
     window.__vestraTestVisibility = 'visible';
     document.dispatchEvent(new Event('visibilitychange'));
     // A second foreground signal in the same lifecycle turn must not launch a
