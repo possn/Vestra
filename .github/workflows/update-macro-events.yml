@@ -11,18 +11,22 @@ on:
       - 'scripts/update_macro_events.py'
       - 'scripts/macro_calendar_transport.py'
       - 'scripts/enrich_macro_results.py'
+      - 'scripts/enrich_policy_decisions.py'
       - 'scripts/requirements-macro.txt'
       - 'tests/test_update_macro_events.py'
       - 'tests/test_enrich_macro_results.py'
+      - 'tests/test_enrich_policy_decisions.py'
       - '.github/workflows/update-macro-events.yml'
   pull_request:
     paths:
       - 'scripts/update_macro_events.py'
       - 'scripts/macro_calendar_transport.py'
       - 'scripts/enrich_macro_results.py'
+      - 'scripts/enrich_policy_decisions.py'
       - 'scripts/requirements-macro.txt'
       - 'tests/test_update_macro_events.py'
       - 'tests/test_enrich_macro_results.py'
+      - 'tests/test_enrich_policy_decisions.py'
       - '.github/workflows/update-macro-events.yml'
 
 permissions:
@@ -52,9 +56,10 @@ jobs:
 
       - name: Validate refresher
         run: |
-          python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py scripts/enrich_macro_results.py
+          python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py scripts/enrich_macro_results.py scripts/enrich_policy_decisions.py
           python tests/test_update_macro_events.py
           python tests/test_enrich_macro_results.py
+          python tests/test_enrich_policy_decisions.py
 
       - name: Preserve previous verified results
         if: github.event_name != 'pull_request'
@@ -64,11 +69,17 @@ jobs:
         if: github.event_name != 'pull_request'
         run: PYTHONPATH=scripts python scripts/macro_calendar_transport.py
 
-      - name: Refresh official result summaries
+      - name: Refresh official BLS result summaries
         if: github.event_name != 'pull_request'
         env:
           VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json
         run: python scripts/enrich_macro_results.py
+
+      - name: Normalize policy decision days and refresh ECB results
+        if: github.event_name != 'pull_request'
+        env:
+          VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json
+        run: python scripts/enrich_policy_decisions.py
 
       - name: Validate published contract
         if: github.event_name != 'pull_request'
@@ -84,17 +95,29 @@ jobs:
           assert {'fed','bls','bea','ecb','census'} <= set((p.get('source_status') or {}).keys())
           future = [e for e in events if e.get('date','') >= date.today().isoformat()]
           assert future, 'macro calendar has no future events'
-          allowed_metric_keys = {'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct'}
-          allowed_metric_schemas = {'bls_cpi_v1','bls_ppi_v1'}
+          allowed_metric_keys = {
+              'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct',
+              'deposit_facility_pct','main_refinancing_pct','marginal_lending_pct',
+          }
+          allowed_metric_schemas = {'bls_cpi_v1','bls_ppi_v1','ecb_rates_v1'}
           for e in events:
               assert e.get('date') and e.get('short_title') and e.get('source')
+              if e.get('source') in {'ecb','fed'} and e.get('meeting_start'):
+                  assert e.get('date') >= e.get('meeting_start')
+                  assert 'date_end' not in e
               if e.get('result_status') == 'official_release_summary':
-                  assert e.get('source') == 'bls'
-                  assert e.get('short_title') in {'CPI EUA','PPI EUA'}
+                  assert e.get('source') in {'bls','ecb'}
                   assert e.get('result_summary')
-                  assert str(e.get('source_url','')).startswith('https://www.bls.gov/news.release/')
-                  assert 'actual' not in e or e.get('actual') is None
                   metrics = e.get('result_metrics') or {}
+                  if e.get('source') == 'bls':
+                      assert e.get('short_title') in {'CPI EUA','PPI EUA'}
+                      assert str(e.get('source_url','')).startswith('https://www.bls.gov/news.release/')
+                      assert 'actual' not in e or e.get('actual') is None
+                  else:
+                      assert e.get('short_title') == 'BCE'
+                      assert str(e.get('source_url','')).startswith('https://www.ecb.europa.eu/')
+                      assert e.get('result_metric_schema') == 'ecb_rates_v1'
+                      assert set(metrics) == {'deposit_facility_pct','main_refinancing_pct','marginal_lending_pct'}
                   if metrics:
                       assert e.get('result_metric_schema') in allowed_metric_schemas
                       assert set(metrics) <= allowed_metric_keys
