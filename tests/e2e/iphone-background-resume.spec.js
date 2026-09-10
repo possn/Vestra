@@ -32,7 +32,7 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
       assets: [{
         id: 'resume-msft',
         class: 'Ações/ETFs',
-        name: 'Microsoft',
+        name: 'Synthetic resume fixture',
         ticker: 'MSFT',
         yahooTicker: 'MSFT',
         qty: 1,
