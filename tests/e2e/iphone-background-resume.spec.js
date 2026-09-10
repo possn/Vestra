@@ -35,6 +35,7 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
         name: 'Synthetic resume fixture',
         ticker: 'MSFT',
         yahooTicker: 'MSFT',
+        isin: 'US5949181045',
         qty: 1,
         value: 300,
         currency: 'USD',
