@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.15 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v129";
+/* Vestra Service Worker v10.16 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v130";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -133,8 +133,12 @@ async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
     const fresh = await fetch(request, { cache: "no-store" });
-    if (fresh && fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
-    return fresh;
+    if (fresh && fresh.ok) {
+      cache.put(request, fresh.clone()).catch(() => {});
+      return fresh;
+    }
+    const cached = await cache.match(request);
+    return cached || fresh || new Response("Offline", { status: 503 });
   } catch (_) {
     const cached = await cache.match(request);
     return cached || new Response("Offline", { status: 503 });
