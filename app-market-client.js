@@ -305,6 +305,14 @@
     });
   }
 
+  // app.js uses assetLooksQuoteEligible only as a coarse foreground gate before
+  // entering refreshLiveQuotesCore(), where the canonical identity-safe filter is
+  // defined and applied. Keep this global bridge deliberately permissive so the
+  // gate cannot create false negatives; the core still decides what can be quoted.
+  if(typeof window.assetLooksQuoteEligible!=='function'){
+    window.assetLooksQuoteEligible=asset=>!!asset;
+  }
+
   installPartialRefreshRetry();
 
   window.VestraMarketClient=Object.freeze({
