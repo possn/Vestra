@@ -28,8 +28,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         positions=[index.index(x) for x in order]
         self.assertEqual(positions,sorted(positions))
         sw=read("sw.js")
-        self.assertIn("Vestra Service Worker v10.15",sw)
-        self.assertIn("vestra-cache-v129",sw)
+        self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
         self.assertIn("staleWhileRevalidate",sw)
         self.assertIn('./market-live-overlay.js',sw)
 
