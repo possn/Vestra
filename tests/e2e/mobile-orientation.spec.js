@@ -56,14 +56,20 @@ test('iPhone/WebKit: portrait -> landscape -> portrait keeps Market and dossier 
   await expect(valuationTab).toHaveClass(/is-active/);
   await assertNoHorizontalOverflow(page);
 
-  // Returning to portrait must restore a functional drawer and preserve the
-  // dossier rather than resetting the Market view.
+  // The dossier intentionally covers the topbar. First prove that rotation kept
+  // it alive, then close it and verify the portrait drawer is usable again.
+  const groupedClose = sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]');
+  await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await expect(groupedClose).toBeVisible();
+  await groupedClose.click();
+  await expect(sheet).toBeHidden();
+  await expect(page.locator('#viewMarket')).toBeVisible();
+
   await page.locator('#btnSidebarToggle').click();
   await expect(page.locator('#sidebar')).toHaveClass(/sidebar--open/);
   await expect(page.locator('#sidebarBackdrop')).toBeVisible();
   await page.locator('#btnSidebarClose').click();
   await expect(page.locator('#sidebar')).not.toHaveClass(/sidebar--open/);
-  await expect(sheet).toBeVisible();
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
