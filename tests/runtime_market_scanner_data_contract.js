@@ -15,7 +15,7 @@ vm.runInThisContext(source, { filename: 'market-scanner-data.js' });
 
 async function main() {
   assert(window.VestraMarketScannerData, 'scanner data API missing');
-  assert.strictEqual(window.VestraMarketScannerData.version, '1.2');
+  assert.strictEqual(window.VestraMarketScannerData.version, '1.3');
 
   const stock = { ticker: 'MSFT', score: 82 };
   const stocks = new Map([['MSFT', stock]]);
@@ -62,7 +62,7 @@ async function main() {
     'Growth lens should use the strongest existing growth/revision signal');
   assert.strictEqual(stock.scanner_results.deep_value, stock.scanner_results.fallen_angels);
   assert.strictEqual(stock.scanner_results.low_52w, stock.scanner_results.lows_intact,
-    '52-week-low lens should prefer the stricter lows_intact signal when available');
+    '52-week-low lens must use the dedicated strict lows_intact signal');
 
   const partial = { ticker: 'ADBE', score: 70 };
   stocks.set('ADBE', partial);
@@ -76,8 +76,18 @@ async function main() {
   assert.strictEqual(partial.scanner_results.quality_at_fair_price.score, 83.8);
   assert.strictEqual(partial.scanner_results.growth_at_reasonable_price.score, 76.2);
   assert.strictEqual(partial.scanner_results.deep_value.score, 69.5);
-  assert.strictEqual(partial.scanner_results.low_52w.score, 69.5,
-    '52-week-low lens should fall back to the broader fallen-angels signal');
+  assert.strictEqual(partial.scanner_results.low_52w, undefined,
+    '52-week-low lens must stay empty when only the broader fallen-angels signal exists');
+
+  const nearLow = { ticker: 'AD', score: 68 };
+  stocks.set('AD', nearLow);
+  controller.mergeTickers({
+    AD: {
+      fallen_angels: { score: 62.4, label: 'Fallen Angels' },
+      lows_intact: { score: 74.0, label: 'Mínimos 52s · fundamentos intactos' },
+    },
+  });
+  assert.strictEqual(nearLow.scanner_results.low_52w, nearLow.scanner_results.lows_intact);
 
   await controller.load();
   assert.strictEqual(calls.length, 1, 'loaded scanner payload must be cached in memory');
