@@ -37,6 +37,7 @@ const APP_SHELL = [
   "./market-search-suggestions.js",
   "./market-row-ui.js",
   "./market-data-loader.js",
+  "./market-data-health.js",
   "./market-company-brief.js",
   "./market-metric-cleanup.js",
   "./market-dossier-controls.js",
@@ -73,17 +74,18 @@ const APP_SHELL = [
 // beside a fresh copy of another can make app.js fail before DOMContentLoaded,
 // leaving the launch overlay permanently visible. The safe update manager is
 // network-first so the button cannot remain one launch behind its containment
-// contract after a deployment. The weekly-events pair is also network-first
-// because it is loaded dynamically and must not lag behind the Dashboard
-// visibility contract after a PWA update. Dossier control modules are included
-// so WebKit never mixes the old split-button geometry with the new unified action
-// group. Mobile drawer, opportunity lenses and the promoted market-analysis
-// runtimes are network-first because they are interaction-critical on iPhone and
-// must not lag one launch behind after a PWA update. Live dossier overlay/data-
-// loader are also network-first: stale copies can keep a ticker stuck in an old
-// loading path for one extra PWA launch after a runtime repair. Portfolio identity
-// context is network-first too so a corrected canonical ticker mapping is not
-// delayed by one launch on iPhone/WebKit.
+// contract after a deployment. Market data health is network-first too because
+// its live-quote freshness semantics must agree with the current quote runtime.
+// The weekly-events pair is also network-first because it is loaded dynamically
+// and must not lag behind the Dashboard visibility contract after a PWA update.
+// Dossier control modules are included so WebKit never mixes the old split-button
+// geometry with the new unified action group. Mobile drawer, opportunity lenses
+// and the promoted market-analysis runtimes are network-first because they are
+// interaction-critical on iPhone and must not lag one launch behind after a PWA
+// update. Live dossier overlay/data-loader are also network-first: stale copies
+// can keep a ticker stuck in an old loading path for one extra PWA launch after a
+// runtime repair. Portfolio identity context is network-first too so a corrected
+// canonical ticker mapping is not delayed by one launch on iPhone/WebKit.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -105,6 +107,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-update-manager.js",
   "market-live-overlay.js",
   "market-data-loader.js",
+  "market-data-health.js",
   "market-portfolio-context.js",
   "market-static-universe.js",
   "market-scanner-data.js",
