@@ -6,6 +6,7 @@ const APP_SHELL = [
   "./styles.css",
   "./market.css",
   "./app.js",
+  "./app-update-manager.js",
   "./app-utils.js",
   "./app-feedback.js",
   "./app-storage.js",
@@ -70,17 +71,19 @@ const APP_SHELL = [
 
 // These files must always agree with one another. Serving a stale copy of one
 // beside a fresh copy of another can make app.js fail before DOMContentLoaded,
-// leaving the launch overlay permanently visible. The weekly-events pair is
-// also network-first because it is loaded dynamically and must not lag behind
-// the Dashboard visibility contract after a PWA update. Dossier control modules
-// are included so WebKit never mixes the old split-button geometry with the new
-// unified action group. Mobile drawer, opportunity lenses and the promoted
-// market-analysis runtimes are network-first because they are interaction-critical
-// on iPhone and must not lag one launch behind after a PWA update. Live dossier
-// overlay/data-loader are also network-first: stale copies can keep a ticker stuck
-// in an old loading path for one extra PWA launch after a runtime repair. Portfolio
-// identity context is network-first too so a corrected canonical ticker mapping is
-// not delayed by one launch on iPhone/WebKit.
+// leaving the launch overlay permanently visible. The safe update manager is
+// network-first so the button cannot remain one launch behind its containment
+// contract after a deployment. The weekly-events pair is also network-first
+// because it is loaded dynamically and must not lag behind the Dashboard
+// visibility contract after a PWA update. Dossier control modules are included
+// so WebKit never mixes the old split-button geometry with the new unified action
+// group. Mobile drawer, opportunity lenses and the promoted market-analysis
+// runtimes are network-first because they are interaction-critical on iPhone and
+// must not lag one launch behind after a PWA update. Live dossier overlay/data-
+// loader are also network-first: stale copies can keep a ticker stuck in an old
+// loading path for one extra PWA launch after a runtime repair. Portfolio identity
+// context is network-first too so a corrected canonical ticker mapping is not
+// delayed by one launch on iPhone/WebKit.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -99,6 +102,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-return-assumptions.js",
   "app-financial-engine.js",
   "app.js",
+  "app-update-manager.js",
   "market-live-overlay.js",
   "market-data-loader.js",
   "market-portfolio-context.js",
