@@ -145,6 +145,7 @@ jobs:
           node --check tests/runtime_market_search_suggestions_contract.js
           node --check tests/runtime_market_row_ui_contract.js
           node --check tests/runtime_service_worker_contract.js
+          node --check tests/runtime_app_update_manager_contract.js
           node --check politicians.js
           node --check worker.js
           node --check worker-router.js
@@ -196,6 +197,8 @@ jobs:
         run: node tests/runtime_market_row_ui_contract.js
       - name: Runtime · service worker network fallback
         run: node tests/runtime_service_worker_contract.js
+      - name: Runtime · safe app update ownership
+        run: node tests/runtime_app_update_manager_contract.js
       - name: Runtime · Worker AI brief
         run: node --experimental-default-type=module tests/runtime_worker_ai_brief_contract.mjs
       - name: Runtime · SEC ticker map resilience
