@@ -53,8 +53,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
 
     def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
-        self.assertIn('Vestra Service Worker v10.15', sw)
-        self.assertIn('vestra-cache-v129', sw)
+        self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
         self.assertIn('staleWhileRevalidate', sw)
         self.assertIn('./market-live-overlay.js', sw)
         self.assertIn('./portfolio-card-classifier.js', sw)

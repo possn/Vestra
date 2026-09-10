@@ -1,4 +1,4 @@
-/* Vestra App Update Manager v1.2 — iOS-safe forced refresh with exclusive button ownership. */
+/* Vestra App Update Manager v1.3 — iOS-safe forced refresh with deterministic exclusive button ownership. */
 (() => {
   'use strict';
   let busy = false;
@@ -37,28 +37,41 @@
     }, 40);
   }
 
-  function install() {
+  function install(force = false) {
     const current = document.getElementById('btnForceUpdate');
     if (!current) return false;
-    if (current.dataset.vestraSafeUpdateOwner === '1') return false;
+    if (!force && current.dataset.vestraSafeUpdateOwner === '1') return false;
 
     // app.js historically attached a destructive target listener to this button.
     // Replacing the node removes every previously attached listener without
-    // depending on capture-phase ordering or propagation interception.
+    // depending on capture-phase ordering or propagation interception. A forced
+    // reinstall is deliberately performed after the main app setup so even a
+    // listener attached after an early dynamic load is removed deterministically.
     const button = current.cloneNode(true);
     button.dataset.vestraSafeUpdateOwner = '1';
     current.replaceWith(button);
     button.addEventListener('click', event => {
       event.preventDefault();
+      event.stopImmediatePropagation();
       forceFreshReload();
     });
     return true;
   }
 
+  function reclaimAfterAppSetup() {
+    setTimeout(() => install(true), 0);
+  }
+
   install();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', reclaimAfterAppSetup, { once: true });
+  } else {
+    reclaimAfterAppSetup();
+  }
+  window.addEventListener('vestra:app-ready', reclaimAfterAppSetup, { once: true });
 
   window.VestraAppUpdateManager = Object.freeze({
-    version: '1.2',
+    version: '1.3',
     install,
     forceFreshReload,
   });

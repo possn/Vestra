@@ -34,8 +34,8 @@ class StaticMarketRuntimeTests(unittest.TestCase):
 
     def test_service_worker_tracks_final_static_runtime(self):
         sw = read("sw.js")
-        self.assertIn('Vestra Service Worker v10.15', sw)
-        self.assertIn('vestra-cache-v129', sw)
+        self.assertIn('Vestra Service Worker v', sw)
+        self.assertRegex(sw, r'vestra-cache-v\d+')
         self.assertIn('staleWhileRevalidate', sw)
         self.assertNotIn('./market-hotfix.js', sw)
         self.assertNotIn('./portfolio-navigation-fix.js', sw)

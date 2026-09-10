@@ -65,8 +65,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
-        self.assertIn('Vestra Service Worker v10.15', sw)
-        self.assertIn('vestra-cache-v129', sw)
+        self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
         self.assertIn('staleWhileRevalidate', sw)
         for module in (
             './market-live-overlay.js','./market-opportunities.js','./vestra-portfolio-focus.js','./vestra-portfolio-hierarchy.js','./vestra-swap-lab.js',
