@@ -3,7 +3,12 @@ const { test, expect } = require('@playwright/test');
 test('iPhone/WebKit: foreground resume refreshes stale quotes once without disturbing the app', async ({ page }) => {
   const quoteRequests = [];
   const pageErrors = [];
+  const autoRefreshLogs = [];
   page.on('pageerror', error => pageErrors.push(error.message));
+  page.on('console', message => {
+    const text = message.text();
+    if (text.includes('[AutoRefresh]')) autoRefreshLogs.push(text);
+  });
 
   await page.addInitScript(() => {
     const now = Date.now();
@@ -47,27 +52,36 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
     };
     localStorage.setItem('PF_STATE_V6', JSON.stringify(initialState));
 
-    // Track the app.js lifecycle listener specifically. Several independently
-    // loaded modules also listen to visibilitychange, so a simple listener count
-    // can become ready before the quote-resume handler itself is attached.
+    // Track and wrap the app.js lifecycle listener specifically. Several
+    // independently loaded modules also listen to visibilitychange, so a simple
+    // listener count can become ready before the quote-resume handler itself.
     window.__vestraQuoteResumeListenerReady = false;
+    window.__vestraQuoteResumeListenerInvocations = 0;
+    window.__vestraQuoteResumeLastVisibility = null;
     const originalDocumentAddEventListener = document.addEventListener.bind(document);
     document.addEventListener = function(type, listener, options) {
+      let registeredListener = listener;
       if (type === 'visibilitychange') {
         try {
           const source = Function.prototype.toString.call(listener);
           if (source.includes('autoRefreshQuotesIfStale')) {
             window.__vestraQuoteResumeListenerReady = true;
+            registeredListener = function(event) {
+              window.__vestraQuoteResumeListenerInvocations += 1;
+              window.__vestraQuoteResumeLastVisibility = document.visibilityState;
+              return listener.call(this, event);
+            };
           }
         } catch (_) {}
       }
-      return originalDocumentAddEventListener(type, listener, options);
+      return originalDocumentAddEventListener(type, registeredListener, options);
     };
 
-    // WebKit does not expose a CDP visibility override. Shadow the document
-    // properties before Vestra registers its listener so the test can exercise
-    // the real visibilitychange path deterministically.
+    // WebKit has no CDP visibility override. Shadow the document properties
+    // before Vestra registers its listener and expose whether that actually
+    // succeeded, so the test never silently exercises the wrong lifecycle state.
     window.__vestraTestVisibility = 'visible';
+    window.__vestraVisibilityOverrideInstalled = false;
     try {
       Object.defineProperty(document, 'visibilityState', {
         configurable: true,
@@ -77,6 +91,9 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
         configurable: true,
         get: () => window.__vestraTestVisibility === 'hidden',
       });
+      window.__vestraVisibilityOverrideInstalled = (
+        document.visibilityState === 'visible' && document.hidden === false
+      );
     } catch (_) {}
   });
 
@@ -113,6 +130,25 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
     && window.__vestraQuoteResumeListenerReady === true
   ));
 
+  const fixtureState = await page.evaluate(async () => {
+    const raw = await window.VestraStorage.storageGet();
+    const persisted = raw ? JSON.parse(raw) : null;
+    return {
+      overrideInstalled: window.__vestraVisibilityOverrideInstalled,
+      visibilityState: document.visibilityState,
+      hidden: document.hidden,
+      workerUrl: persisted?.settings?.workerUrl || '',
+      lastQuoteRefreshTs: Number(persisted?.settings?.lastQuoteRefreshTs || 0),
+      assetTickers: (persisted?.assets || []).map(asset => asset.yahooTicker || asset.ticker || ''),
+    };
+  });
+  expect(fixtureState.overrideInstalled, `visibility fixture: ${JSON.stringify(fixtureState)}`).toBe(true);
+  expect(fixtureState.visibilityState).toBe('visible');
+  expect(fixtureState.hidden).toBe(false);
+  expect(fixtureState.workerUrl).toBe('/__resume-worker');
+  expect(fixtureState.assetTickers).toContain('MSFT');
+  expect(fixtureState.lastQuoteRefreshTs).toBeGreaterThan(0);
+
   // The persisted timestamp is fresh on boot, so startup must not hit the quote worker.
   await page.waitForTimeout(350);
   expect(quoteRequests).toHaveLength(0);
@@ -130,6 +166,17 @@ test('iPhone/WebKit: foreground resume refreshes stale quotes once without distu
     // second live refresh while the first one is already in flight.
     document.dispatchEvent(new Event('visibilitychange'));
   });
+
+  await expect.poll(
+    () => page.evaluate(() => window.__vestraQuoteResumeListenerInvocations),
+    { timeout: 2_000 }
+  ).toBe(3);
+  expect(await page.evaluate(() => window.__vestraQuoteResumeLastVisibility)).toBe('visible');
+
+  await expect.poll(
+    () => autoRefreshLogs.filter(text => text.includes('Cotações desactualizadas')).length,
+    { timeout: 2_000, message: 'foreground listener ran, but stale-quote gate did not request a refresh' }
+  ).toBeGreaterThan(0);
 
   await expect.poll(() => quoteRequests.length, { timeout: 5_000 }).toBe(1);
 
