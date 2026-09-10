@@ -10,7 +10,7 @@
     return Number.isFinite(n) ? n : null;
   };
   const esc = value => text(value).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
   const pct = value => num(value) == null ? '—' : `${(Math.abs(num(value)) <= 1 ? num(value) * 100 : num(value)).toFixed(1)}%`;
   const fmt = value => num(value) == null ? '—' : new Intl.NumberFormat('pt-PT',{maximumFractionDigits:1}).format(num(value));
