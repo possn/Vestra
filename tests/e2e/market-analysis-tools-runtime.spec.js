@@ -78,11 +78,16 @@ test('iPhone/WebKit: News searches the full universe and opens the dossier News 
   await expect(page.locator('#marketDetailBody')).not.toBeEmpty({ timeout: 10000 });
 });
 
-test('iPhone/WebKit: Theses tool opens and closes without trapping the sheet', async ({ page }) => {
+test('iPhone/WebKit: market tools expose one persistent close control and close cleanly', async ({ page }) => {
   await openMarket(page);
   await page.locator('[data-market-tool="theses"]').first().click();
-  await expect(page.locator('#marketSheet')).toBeVisible();
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
   await expect(page.getByRole('heading', { name: 'O que está a mudar' })).toBeVisible();
-  await page.locator('[data-tool-runtime-close]').click();
-  await expect(page.locator('#marketSheet')).toBeHidden();
+  await expect(sheet.locator('[data-tool-runtime-close]')).toHaveCount(0);
+  const close = sheet.locator('[data-market-close]');
+  await expect(close).toHaveCount(1);
+  await expect(close).toBeVisible();
+  await close.click();
+  await expect(sheet).toBeHidden();
 });

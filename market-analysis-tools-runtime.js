@@ -61,7 +61,7 @@
   }
 
   function header(kicker, title, subtitle) {
-    return `<div class="market-detail-head market-tool-runtime__head"><div><div class="market-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p>${esc(subtitle)}</p></div><button type="button" class="market-close" data-tool-runtime-close aria-label="Fechar">×</button></div>`;
+    return `<div class="market-detail-head market-tool-runtime__head"><div><div class="market-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p>${esc(subtitle)}</p></div></div>`;
   }
 
   function stockRow(stock, meta='') {
