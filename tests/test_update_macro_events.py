@@ -43,13 +43,13 @@ class MacroCalendarTests(unittest.TestCase):
     def test_fed_parser_stops_at_next_fomc_year_heading(self):
         page = '''<html><body>
         <h4>2026 FOMC Meetings</h4>
-        <div>September 15-16*</div><div>October 27-28</div><div>December 8-9*</div>
+        <div>September 15-16*</div> <div>October 27-28</div> <div>December 8-9*</div>
         <h4>2025 FOMC Meetings</h4>
-        <div>September 16-17*</div><div>October 28-29</div><div>December 9-10*</div>
+        <div>September 16-17*</div> <div>October 28-29</div> <div>December 9-10*</div>
         <h4>2024 FOMC Meetings</h4>
-        <div>September 17-18*</div><div>December 17-18*</div>
+        <div>September 17-18*</div> <div>December 17-18*</div>
         <h4>2027 FOMC Meetings</h4>
-        <div>January 26-27</div><div>March 16-17*</div>
+        <div>January 26-27</div> <div>March 16-17*</div>
         <p>Note: dates are tentative.</p>
         </body></html>'''
         events = mod.fed_events(_Session(page))
