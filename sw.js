@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.16 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v130";
+/* Vestra Service Worker v10.17 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v131";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -79,13 +79,13 @@ const APP_SHELL = [
 // The weekly-events pair is also network-first because it is loaded dynamically
 // and must not lag behind the Dashboard visibility contract after a PWA update.
 // Dossier control modules are included so WebKit never mixes the old split-button
-// geometry with the new unified action group. Mobile drawer, opportunity lenses
-// and the promoted market-analysis runtimes are network-first because they are
-// interaction-critical on iPhone and must not lag one launch behind after a PWA
-// update. Live dossier overlay/data-loader are also network-first: stale copies
-// can keep a ticker stuck in an old loading path for one extra PWA launch after a
-// runtime repair. Portfolio identity context is network-first too so a corrected
-// canonical ticker mapping is not delayed by one launch on iPhone/WebKit.
+// geometry with the new unified action group. Mobile drawer, opportunity engine,
+// opportunity lenses and the promoted market-analysis runtimes are network-first
+// because they are interaction-critical on iPhone and must not lag one launch
+// behind after a PWA update. Live dossier overlay/data-loader are also network-first:
+// stale copies can keep a ticker stuck in an old loading path for one extra PWA
+// launch after a runtime repair. Portfolio identity context is network-first too
+// so a corrected canonical ticker mapping is not delayed by one launch on iPhone/WebKit.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js",
   "app-feedback.js",
@@ -116,6 +116,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "dashboard-weekly-events.js",
   "market-dossier-controls.js",
   "market-ui-polish.js",
+  "market-opportunities.js",
   "market-opportunity-lenses.js",
   "mobile-ui-refresh.js"
 ]);
@@ -141,7 +142,7 @@ async function networkFirst(request) {
   try {
     const fresh = await fetch(request, { cache: "no-store" });
     if (fresh && fresh.ok) {
-      cache.put(request, fresh.clone()).catch(() => {});
+      try { await cache.put(request, fresh.clone()); } catch (_) {}
       return fresh;
     }
     const cached = await cache.match(request);

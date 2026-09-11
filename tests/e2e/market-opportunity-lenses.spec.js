@@ -1,67 +1,72 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: opportunity lenses are tappable and persist the selected filter', async ({ page }) => {
+const candidate = (ticker, extra = {}) => ({
+  ticker,
+  name: `${ticker} Corp`,
+  quote_type: 'EQUITY',
+  score: 70,
+  data_coverage_pct: 80,
+  confidence_score: 75,
+  critical_metric_coverage_pct: 70,
+  score_reliability: 'good',
+  risk_gate: 'low',
+  opportunity_timing_score: 60,
+  ...extra,
+});
+
+test('iPhone/WebKit: each opportunity lens ranks the full universe independently', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/index.html');
-  await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses));
+  await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 7_000 });
 
-  await page.evaluate(() => {
-    // This test owns an isolated opportunity section. The live opportunity renderer
-    // watches the same heading and would otherwise replace the fixture rows with the
-    // real ranked universe on its next MutationObserver pass.
-    window.VestraMarketStaticUniverse = { getStocks: () => [] };
-
+  await page.evaluate((rows) => {
+    window.VestraMarketStaticUniverse = { getStocks: () => rows };
     const fixture = document.createElement('section');
     fixture.id = 'lensFixture';
     fixture.className = 'market-section';
     fixture.innerHTML = `
-      <div class="market-section__head"><div><h3>Oportunidades agora</h3></div></div>
-      <div class="market-list">
-        <div class="market-row" data-market-ticker="AAA">AAA empresa estável</div>
-        <div class="market-row" data-market-ticker="BBB">BBB recuperação confirmada</div>
-        <div class="market-row" data-market-ticker="CCC">CCC junto do mínimo anual</div>
-      </div>`;
+      <div class="market-section__head"><div><h3>Oportunidades agora</h3><p></p></div></div>
+      <div class="market-list"></div>`;
     document.body.prepend(fixture);
-    const [a,b,c] = fixture.querySelectorAll('.market-row');
-    a.__vestraStock = { ticker:'AAA', estimate_signal:'stable', recovery_status:'', opportunity_timing_score:52, low52_above_low_pct:11.2 };
-    b.__vestraStock = { ticker:'BBB', estimate_signal:'improving', recovery_status:'confirmed', opportunity_timing_score:58, low52_above_low_pct:7.1 };
-    c.__vestraStock = { ticker:'CCC', estimate_signal:'stable', recovery_status:'', opportunity_timing_score:56, low52_above_low_pct:3.2 };
     window.VestraMarketOpportunityLenses.select('all');
-  });
+  }, [
+    candidate('EARLY', { estimate_signal: 'improving', recovery_status: '', thesis_direction: 'up', opportunity_timing_score: 68 }),
+    candidate('RECOV', { estimate_signal: 'improving', recovery_status: 'confirmed', opportunity_timing_score: 66 }),
+    candidate('LOW52', { low52_above_low_pct: 2.1, opportunity_timing_score: 55 }),
+    candidate('VALUE', { fair_value_upside_pct: 34, valuation_signal: 'undervalued', opportunity_timing_score: 57 }),
+  ]);
 
   const fixture = page.locator('#lensFixture');
   const bar = fixture.locator('.vestra-opportunity-lenses');
   await expect(bar).toBeVisible();
 
-  const low52 = bar.locator('[data-vestra-lens="low52"]');
-  await low52.tap();
-  await expect(low52).toHaveClass(/is-active/);
-  await expect(low52).toHaveAttribute('aria-pressed', 'true');
-  await expect(fixture.locator('[data-market-ticker="AAA"]')).toBeHidden();
-  await expect(fixture.locator('[data-market-ticker="BBB"]')).toBeHidden();
-  await expect(fixture.locator('[data-market-ticker="CCC"]')).toBeVisible();
+  const select = async (lens, ticker) => {
+    const button = bar.locator(`[data-vestra-lens="${lens}"]`);
+    await button.tap();
+    await expect(button).toHaveClass(/is-active/);
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
+    await expect(fixture.locator(`[data-market-ticker="${ticker}"]`)).toBeVisible();
+    return fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
+  };
 
-  const recovery = bar.locator('[data-vestra-lens="recovery"]');
-  await recovery.tap();
-  await expect(recovery).toHaveClass(/is-active/);
-  await expect(recovery).toHaveAttribute('aria-pressed', 'true');
-  await expect(fixture.locator('[data-market-ticker="AAA"]')).toBeHidden();
-  await expect(fixture.locator('[data-market-ticker="BBB"]')).toBeVisible();
+  const low52 = await select('low52', 'LOW52');
+  expect(low52).toEqual(['LOW52']);
 
-  await fixture.evaluate(node => {
-    node.querySelector('.market-list').insertAdjacentHTML('beforeend', '<div class="market-row" data-market-ticker="DDD">DDD empresa estável</div>');
-  });
-  await expect.poll(async () => page.evaluate(() => window.VestraMarketOpportunityLenses.active)).toBe('recovery');
-  await expect(fixture.locator('[data-market-ticker="DDD"]')).toBeHidden();
+  const emerging = await select('emerging', 'EARLY');
+  expect(emerging).toContain('EARLY');
+  expect(emerging).not.toContain('RECOV');
 
-  const all = bar.locator('[data-vestra-lens="all"]');
-  await all.tap();
-  await expect(all).toHaveClass(/is-active/);
-  await expect(fixture.locator('[data-market-ticker="AAA"]')).toBeVisible();
-  await expect(fixture.locator('[data-market-ticker="DDD"]')).toBeVisible();
+  const recovery = await select('recovery', 'RECOV');
+  expect(recovery).toContain('RECOV');
+  expect(recovery).not.toContain('EARLY');
 
+  const value = await select('value', 'VALUE');
+  expect(value).toContain('VALUE');
+  expect(value).not.toEqual(recovery);
+
+  expect(new Set([low52.join(','), emerging.join(','), recovery.join(','), value.join(',')]).size).toBeGreaterThan(2);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
