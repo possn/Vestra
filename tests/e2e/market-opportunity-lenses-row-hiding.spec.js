@@ -1,34 +1,34 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: filtered opportunity rows are actually hidden from layout', async ({ page }) => {
+test('iPhone/WebKit: an empty opportunity lens clears previous rows instead of leaving stale candidates', async ({ page }) => {
   await page.goto('/index.html');
-  await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses));
+  await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 7_000 });
 
   await page.evaluate(() => {
-    window.VestraMarketStaticUniverse = { getStocks: () => [] };
+    const rows = [{
+      ticker: 'RECOV', name: 'Recovery Corp', quote_type: 'EQUITY',
+      score: 72, data_coverage_pct: 82, confidence_score: 78,
+      critical_metric_coverage_pct: 72, score_reliability: 'good', risk_gate: 'low',
+      opportunity_timing_score: 66, estimate_signal: 'improving', recovery_status: 'confirmed'
+    }];
+    window.VestraMarketStaticUniverse = { getStocks: () => rows };
     const fixture = document.createElement('section');
-    fixture.id = 'lensRowHidingFixture';
+    fixture.id = 'lensEmptyFixture';
     fixture.className = 'market-section';
     fixture.innerHTML = `
-      <div class="market-section__head"><div><h3>Oportunidades agora</h3></div></div>
-      <div class="market-list">
-        <div class="market-row" data-market-ticker="AAA">AAA empresa estável</div>
-        <div class="market-row" data-market-ticker="BBB">BBB recuperação confirmada</div>
-      </div>`;
+      <div class="market-section__head"><div><h3>Oportunidades agora</h3><p></p></div></div>
+      <div class="market-list"></div>`;
     document.body.prepend(fixture);
-    const [a, b] = fixture.querySelectorAll('.market-row');
-    a.__vestraStock = { ticker:'AAA', estimate_signal:'stable', recovery_status:'', opportunity_timing_score:52 };
-    b.__vestraStock = { ticker:'BBB', estimate_signal:'improving', recovery_status:'confirmed', opportunity_timing_score:58 };
     window.VestraMarketOpportunityLenses.select('recovery');
   });
 
-  const fixture = page.locator('#lensRowHidingFixture');
-  const stable = fixture.locator('[data-market-ticker="AAA"]');
-  const recovery = fixture.locator('[data-market-ticker="BBB"]');
+  const fixture = page.locator('#lensEmptyFixture');
+  await expect(fixture.locator('[data-market-ticker="RECOV"]')).toBeVisible();
 
-  await expect(stable).toHaveClass(/vestra-lens-hidden/);
-  await expect(stable).toHaveAttribute('data-vestra-lens-hidden', '1');
-  await expect(stable).toBeHidden();
-  await expect(recovery).toBeVisible();
+  await fixture.locator('[data-vestra-lens="low52"]').tap();
+  await expect(fixture.locator('[data-market-ticker="RECOV"]')).toHaveCount(0);
+  await expect(fixture.locator('.market-row')).toHaveCount(0);
+  await expect(fixture.locator('.vestra-lens-empty')).toBeVisible();
+  await expect(fixture.locator('.vestra-lens-empty')).toContainText('mínimo de 52 semanas');
 });

@@ -48,6 +48,25 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("sharedStocks = stocks", universe)
         self.assertIn("window.VestraMarketOpportunities", source)
 
+    def test_strategy_lenses_rank_from_full_universe_not_current_twelve_rows(self):
+        source = read('market-opportunities.js')
+        lenses = read('market-opportunity-lenses.js')
+        self.assertIn("universe.filter(s=>lensEligible(s,activeLens))", source)
+        self.assertIn("rows.sort((a,b)=>lensScore(b,activeLens)-lensScore(a,activeLens)", source)
+        self.assertIn("function lensEligible(s,lens)", source)
+        self.assertIn("function lensScore(s,lens)", source)
+        self.assertIn("above>=-0.5&&above<=5", source)
+        self.assertIn("!['confirmed','recovering'].includes(rec)", source)
+        self.assertIn("window.VestraMarketOpportunities?.selectLens?.(activeLens)", lenses)
+        self.assertNotIn("function lensMatch(row, lens)", lenses)
+        self.assertNotIn("querySelectorAll('.market-list .market-row')", lenses)
+
+    def test_empty_lens_clears_previous_rows_instead_of_leaving_stale_candidates(self):
+        source = read('market-opportunities.js')
+        self.assertNotIn("if(!rows.length)return", source)
+        self.assertIn("list.innerHTML=rows.map(s=>row(s,activeLens)).join('')", source)
+        self.assertIn("||'empty'", source)
+
     def test_canonical_opportunities_own_podium_and_guide(self):
         source = read('market-opportunities.js')
         self.assertIn('function decorate(section)', source)

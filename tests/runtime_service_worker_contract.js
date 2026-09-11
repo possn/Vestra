@@ -5,6 +5,9 @@ const assert = require('assert');
 const source = fs.readFileSync('sw.js', 'utf8');
 const updateManagerMentions = source.match(/app-update-manager\.js/g) || [];
 assert(updateManagerMentions.length >= 2, 'safe update manager must be in both APP_SHELL and BOOTSTRAP_NETWORK_FIRST');
+assert(source.includes('"market-opportunities.js"'), 'opportunity engine must be network-first');
+assert(source.includes('"market-opportunity-lenses.js"'), 'opportunity lenses must be network-first with the engine');
+assert(source.includes('await cache.put(request, fresh.clone())'), 'network-first must persist a healthy response before returning it');
 
 function buildRuntime({ freshResponse, fetchError, cachedResponse }) {
   const puts = [];
