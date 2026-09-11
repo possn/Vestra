@@ -1,10 +1,12 @@
 """Audit top-level JavaScript runtime reachability for the Vestra PWA.
 
-This is deliberately conservative: it discovers direct local <script src>
-entries in index.html, then follows literal .js references only from already-
-reachable JS. External CDN scripts are ignored. Service Worker and Cloudflare
-Worker entrypoints are classified separately. Unreferenced files are reported,
-not deleted automatically.
+The audit discovers direct local <script src> entries in index.html, then follows
+only explicit JavaScript loading mechanisms from already-reachable modules:
+script ``.src`` assignments, loader/ensure function calls, and ES module imports.
+A filename that merely appears in an arbitrary string literal is not considered a
+runtime edge. External CDN scripts are ignored. Service Worker and Cloudflare
+Worker entrypoints are classified separately. Unreferenced files are reported and
+make the audit fail closed; nothing is deleted automatically.
 """
 from __future__ import annotations
 
@@ -17,13 +19,34 @@ INDEX = ROOT / "index.html"
 WRANGLER = ROOT / "wrangler.toml"
 
 SCRIPT_SRC_RE = re.compile(r'<script\b[^>]*\bsrc=["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']', re.I)
-JS_LITERAL_RE = re.compile(r'["\']([A-Za-z0-9_./-]+\.js)(?:\?[^"\']*)?["\']')
+SCRIPT_ASSIGN_RE = re.compile(r'\b[A-Za-z_$][\w$]*\.src\s*=\s*["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']', re.I)
+LOADER_CALL_RE = re.compile(
+    r'\b(?:load|ensure|inject|append)[A-Za-z0-9_$]*\s*\([^;\n]*?["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']',
+    re.I,
+)
+IMPORT_RE = re.compile(
+    r'^\s*(?:import\b|export\b)[^\n"\']*["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']',
+    re.I | re.M,
+)
+DYNAMIC_IMPORT_RE = re.compile(r'\bimport\s*\(\s*["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']\s*\)', re.I)
 EXTERNAL_RE = re.compile(r'^(?:https?:)?//', re.I)
 WRANGLER_MAIN_RE = re.compile(r'^\s*main\s*=\s*["\']([^"\']+\.js)["\']', re.I | re.M)
 
 
 def _basename(ref: str) -> str:
     return ref.split("/")[-1].split("?")[0]
+
+
+def runtime_refs(text: str) -> list[str]:
+    """Return explicit local JS runtime references in source order, deduplicated."""
+    refs: list[str] = []
+    for pattern in (SCRIPT_ASSIGN_RE, LOADER_CALL_RE, IMPORT_RE, DYNAMIC_IMPORT_RE):
+        for match in pattern.finditer(text):
+            ref = match.group(1)
+            if EXTERNAL_RE.match(ref):
+                continue
+            refs.append(_basename(ref))
+    return list(dict.fromkeys(refs))
 
 
 def _special_entrypoints() -> dict[str, str]:
@@ -41,8 +64,7 @@ def _special_entrypoints() -> dict[str, str]:
         while queue:
             current = queue.pop(0)
             text = (ROOT / current).read_text(encoding="utf-8", errors="replace")
-            for ref in JS_LITERAL_RE.findall(text):
-                target = _basename(ref)
+            for target in runtime_refs(text):
                 if target in seen or not (ROOT / target).exists():
                     continue
                 seen.add(target)
@@ -73,8 +95,7 @@ def dynamic_reachable(seed: list[str]) -> tuple[set[str], dict[str, list[str]], 
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
         refs = []
-        for ref in JS_LITERAL_RE.findall(text):
-            target = _basename(ref)
+        for target in runtime_refs(text):
             if target == name:
                 continue
             candidate = ROOT / target
@@ -115,7 +136,7 @@ def build_report() -> dict:
 def main() -> int:
     report = build_report()
     print(json.dumps(report, indent=2, ensure_ascii=False))
-    return 1 if report["missing_direct"] else 0
+    return 1 if report["missing_direct"] or report["unreferenced"] else 0
 
 
 if __name__ == "__main__":
