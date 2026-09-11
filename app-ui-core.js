@@ -1,4 +1,4 @@
-/* Vestra UI core v1.7 — DOM, Chart infrastructure and launch watchdog. */
+/* Vestra UI core v1.8 — DOM, Chart infrastructure and launch watchdog. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -177,6 +177,8 @@ function prepareChartCanvas(canvas, fallbackHeight = 220) {
   const wrap = canvas.closest ? canvas.closest(".chartWrap") : null;
   if (wrap) {
     wrap.style.position = "relative";
+    wrap.style.width = "100%";
+    wrap.style.minWidth = "0";
     wrap.style.minHeight = `${height}px`;
     wrap.style.height = `${height}px`;
     wrap.style.maxHeight = `${height}px`;
@@ -185,12 +187,62 @@ function prepareChartCanvas(canvas, fallbackHeight = 220) {
   }
   canvas.style.setProperty("display", "block", "important");
   canvas.style.setProperty("width", "100%", "important");
+  canvas.style.setProperty("min-width", "0", "important");
   canvas.style.setProperty("height", `${height}px`, "important");
   canvas.style.maxHeight = `${height}px`;
   canvas.dataset.chartHeightApplied = String(height);
   canvas.setAttribute("height", String(height));
   return canvas;
 }
+
+let chartStabilizeToken = 0;
+function resizeVisibleCharts(root = document) {
+  if (typeof Chart === "undefined") return 0;
+  const scope = root && typeof root.querySelectorAll === "function" ? root : document;
+  let resized = 0;
+  scope.querySelectorAll(".chartWrap canvas").forEach(canvas => {
+    const wrap = canvas.closest ? canvas.closest(".chartWrap") : null;
+    if (!wrap) return;
+    const wrapWidth = Math.round(wrap.getBoundingClientRect?.().width || wrap.clientWidth || 0);
+    if (wrapWidth < 2) return;
+    prepareChartCanvas(canvas);
+    const chart = typeof Chart.getChart === "function" ? Chart.getChart(canvas) : null;
+    if (chart && typeof chart.resize === "function") {
+      chart.resize();
+      resized += 1;
+    }
+  });
+  return resized;
+}
+
+function scheduleChartStabilization(root = document) {
+  const token = ++chartStabilizeToken;
+  const run = () => {
+    if (token !== chartStabilizeToken) return;
+    try { resizeVisibleCharts(root); } catch (_) {}
+  };
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  } else {
+    setTimeout(run, 0);
+  }
+  setTimeout(run, 140);
+  setTimeout(run, 420);
+  return token;
+}
+
+function installChartReflowGuards() {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  const schedule = () => scheduleChartStabilization(document);
+  window.addEventListener("resize", schedule, { passive: true });
+  window.addEventListener("orientationchange", schedule, { passive: true });
+  window.addEventListener("pageshow", schedule);
+  window.addEventListener("vestra:app-ready", schedule);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") schedule();
+  });
+}
+
 function buildNiceAxis(maxValue, targetSteps = 4) {
   const v = Math.max(1, Number(maxValue) || 0);
   const rawStep = v / Math.max(2, targetSteps);
@@ -215,6 +267,7 @@ function ensureChartCtx(id, fallbackHeight = 220) {
 
 function ensureAllChartCanvasesReady() {
   document.querySelectorAll(".chartWrap canvas").forEach(c => prepareChartCanvas(c));
+  scheduleChartStabilization(document);
 }
 
 function renderChartUnavailable(canvasId, message = "Gráfico indisponível") {
@@ -239,5 +292,12 @@ function clearChartUnavailable(canvasId) {
   if (note) note.remove();
 }
 
-  window.VestraUiCore = Object.freeze({ NOOP_EL, $, resolveChartHeight, prepareChartCanvas, buildNiceAxis, ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable, clearChartUnavailable, installPremiumSplashWatchdog });
+try { installChartReflowGuards(); } catch (_) {}
+
+  window.VestraUiCore = Object.freeze({
+    NOOP_EL, $, resolveChartHeight, prepareChartCanvas, buildNiceAxis,
+    ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable,
+    clearChartUnavailable, resizeVisibleCharts, scheduleChartStabilization,
+    installPremiumSplashWatchdog
+  });
 })();
