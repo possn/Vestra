@@ -11,10 +11,12 @@ on:
       - 'scripts/update_macro_events.py'
       - 'scripts/macro_calendar_transport.py'
       - 'scripts/enrich_macro_results.py'
+      - 'scripts/enrich_macro_results_api.py'
       - 'scripts/enrich_policy_decisions.py'
       - 'scripts/requirements-macro.txt'
       - 'tests/test_update_macro_events.py'
       - 'tests/test_enrich_macro_results.py'
+      - 'tests/test_enrich_macro_results_api.py'
       - 'tests/test_enrich_policy_decisions.py'
       - '.github/workflows/update-macro-events.yml'
   pull_request:
@@ -22,10 +24,12 @@ on:
       - 'scripts/update_macro_events.py'
       - 'scripts/macro_calendar_transport.py'
       - 'scripts/enrich_macro_results.py'
+      - 'scripts/enrich_macro_results_api.py'
       - 'scripts/enrich_policy_decisions.py'
       - 'scripts/requirements-macro.txt'
       - 'tests/test_update_macro_events.py'
       - 'tests/test_enrich_macro_results.py'
+      - 'tests/test_enrich_macro_results_api.py'
       - 'tests/test_enrich_policy_decisions.py'
       - '.github/workflows/update-macro-events.yml'
 
@@ -56,9 +60,10 @@ jobs:
 
       - name: Validate refresher
         run: |
-          python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py scripts/enrich_macro_results.py scripts/enrich_policy_decisions.py
+          python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py scripts/enrich_macro_results.py scripts/enrich_macro_results_api.py scripts/enrich_policy_decisions.py
           python tests/test_update_macro_events.py
           python tests/test_enrich_macro_results.py
+          python tests/test_enrich_macro_results_api.py
           python tests/test_enrich_policy_decisions.py
 
       - name: Preserve previous verified results
@@ -74,6 +79,10 @@ jobs:
         env:
           VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json
         run: python scripts/enrich_macro_results.py
+
+      - name: Fill missing CPI/PPI metrics from official BLS API
+        if: github.event_name != 'pull_request'
+        run: python scripts/enrich_macro_results_api.py
 
       - name: Normalize policy decision days and refresh ECB results
         if: github.event_name != 'pull_request'
@@ -113,6 +122,8 @@ jobs:
                       assert e.get('short_title') in {'CPI EUA','PPI EUA'}
                       assert str(e.get('source_url','')).startswith('https://www.bls.gov/news.release/')
                       assert 'actual' not in e or e.get('actual') is None
+                      if e.get('result_transport') == 'bls_public_api':
+                          assert set(metrics) == {'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct'}
                   else:
                       assert e.get('short_title') == 'BCE'
                       assert str(e.get('source_url','')).startswith('https://www.ecb.europa.eu/')
