@@ -1,13 +1,11 @@
-/* Vestra Market static universe loader v1.9 */
+/* Vestra Market static universe loader v1.10 */
 (() => {
   'use strict';
 
   let sharedStocks = [];
   let etfIntelligencePromise = null;
 
-  function getStocks() {
-    return sharedStocks;
-  }
+  function getStocks() { return sharedStocks; }
 
   function ensureEtfIntelligence() {
     if (typeof document === 'undefined') return Promise.resolve(window.VestraEtfIntelligence || null);
@@ -59,9 +57,19 @@
     }
     if (window.VestraWeeklyEvents || document.querySelector('script[data-vestra-weekly-events]')) return;
     const script = document.createElement('script');
-    script.src = 'dashboard-weekly-events.js?v=1.2';
+    script.src = 'dashboard-weekly-events.js?v=1.6';
     script.defer = true;
     script.dataset.vestraWeeklyEvents = '1';
+    document.head.appendChild(script);
+  }
+
+  function ensureWeeklyEventsNavigation() {
+    if (typeof document === 'undefined') return;
+    if (window.VestraWeeklyEventsNavigation || document.querySelector('script[data-vestra-weekly-events-navigation]')) return;
+    const script = document.createElement('script');
+    script.src = 'dashboard-weekly-events-navigation.js?v=1.0';
+    script.defer = true;
+    script.dataset.vestraWeeklyEventsNavigation = '1';
     document.head.appendChild(script);
   }
 
@@ -107,9 +115,7 @@
 
   function announceReady(stocks) {
     try {
-      if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
-        window.dispatchEvent(new CustomEvent('vestra:market-ready', { detail: { count: stocks.length } }));
-      }
+      if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent('vestra:market-ready', { detail: { count: stocks.length } }));
     } catch (_) {}
   }
 
@@ -127,28 +133,16 @@
     }).filter(Boolean);
     if (!stocks.length) return null;
     const data = { ...payload, stocks };
-    delete data.layout;
-    delete data.fields;
-    delete data.rows;
+    delete data.layout; delete data.fields; delete data.rows;
     return data;
   }
 
-  function create({
-    state,
-    text,
-    fetchImpl = (...args) => fetch(...args),
-    beforeReady = () => {},
-    onReady = () => {},
-    onError = () => {},
-  } = {}) {
+  function create({ state, text, fetchImpl = (...args) => fetch(...args), beforeReady = () => {}, onReady = () => {}, onError = () => {} } = {}) {
     if (!state) throw new Error('VestraMarketStaticUniverse: state is required');
     const txt = typeof text === 'function' ? text : (v => String(v ?? '').trim());
 
     async function loadFirstAvailable() {
-      const candidates = [
-        ['data/stocks-startup.json', true],
-        ['data/stocks-index.json', false],
-      ];
+      const candidates = [['data/stocks-startup.json', true], ['data/stocks-index.json', false]];
       let lastStatus = 0;
       for (const [url, packed] of candidates) {
         const response = await fetchImpl(url, { cache: 'no-store' });
@@ -164,31 +158,18 @@
     async function ensureLoaded() {
       if (state.loaded) return;
       if (state.loading) return state.loading;
-
       state.loading = (async () => {
         const data = await loadFirstAvailable();
         const stocks = data.stocks;
-        state.data = data;
-        state.stocks = stocks;
+        state.data = data; state.stocks = stocks;
         state.byTicker = new Map(stocks.map(stock => [txt(stock?.ticker).toUpperCase(), stock]));
         sharedStocks = stocks;
-
         await ensureEtfIntelligence();
         try { window.VestraEtfIntelligence?.enrichStocks(stocks); } catch (_) {}
-
-        beforeReady();
-        state.loaded = true;
-        onReady();
-        announceReady(stocks);
-      })().catch(error => {
-        onError(error);
-      }).finally(() => {
-        state.loading = null;
-      });
-
+        beforeReady(); state.loaded = true; onReady(); announceReady(stocks);
+      })().catch(error => { onError(error); }).finally(() => { state.loading = null; });
       return state.loading;
     }
-
     return Object.freeze({ ensureLoaded });
   }
 
@@ -196,22 +177,15 @@
   ensureScannerCompanion();
   ensureAnalysisToolsRuntime();
   ensureWeeklyEventsCompanion();
+  ensureWeeklyEventsNavigation();
   ensureDashboardUiRefresh();
   ensureMobileUiRefresh();
   ensureMarketUiPolish();
   ensureUiVisualPolish();
   window.VestraMarketStaticUniverse = Object.freeze({
-    create,
-    getStocks,
-    ensureEtfIntelligence,
-    ensureScannerCompanion,
-    ensureAnalysisToolsRuntime,
-    ensureWeeklyEventsCompanion,
-    ensureDashboardUiRefresh,
-    ensureMobileUiRefresh,
-    ensureMarketUiPolish,
-    ensureUiVisualPolish,
-    unpackStartupPayload,
-    version: '1.9',
+    create, getStocks, ensureEtfIntelligence, ensureScannerCompanion, ensureAnalysisToolsRuntime,
+    ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh,
+    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, unpackStartupPayload,
+    version: '1.10',
   });
 })();
