@@ -44,10 +44,10 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   const health = page.locator('#vestraDataHealth');
   await expect(health).toBeVisible({ timeout: 15_000 });
   const healthSummary = health.locator('summary');
-  // Freshness health now distinguishes the static build from live quote state.
-  // A clean browser profile legitimately starts at "Atualização pendente" until
-  // the first live quote refresh has been persisted.
-  await expect(healthSummary).toContainText(/Atualização pendente|Cotações (?:atualizadas|antigas|parciais)|Atenção às cotações|Estado das cotações indisponível/);
+  // Freshness health distinguishes the published reference build from live quote
+  // state. A clean browser profile can legitimately start in reference-only mode
+  // until the first live quote refresh has been persisted.
+  await expect(healthSummary).toContainText(/Dados de referência atualizados|Atualização pendente|Cotações (?:atualizadas|antigas|parciais)|Atenção às cotações|Estado das cotações indisponível/);
   await expect(healthSummary).not.toContainText('Dados ·');
   await healthSummary.click();
   await expect(health).toContainText('Universo verificado');
@@ -95,7 +95,6 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
   await expect(page.locator('.market-etf-theme-grid')).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('#marketPrimary .market-row[data-market-ticker]')).toHaveCount(0);
 
-  // The product now requires an exposure choice before showing fund names.
   const firstTheme = page.locator('[data-market-fund-theme]:not([data-market-fund-theme=""])').first();
   await expect(firstTheme).toBeVisible();
   await firstTheme.click();
@@ -124,8 +123,6 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
 test('iPhone/WebKit: global ticker opens live and persists locally across reload', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
-  // Must not collide with any published/legacy catalogue row. The test verifies
-  // the live learned path itself, not whether a stale static row can be found.
   const ticker = 'E2EVS';
 
   await isolateExternalSearch(page);
@@ -133,9 +130,6 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
 
-  // The browser owns the user journey and IndexedDB persistence. The central
-  // POST contract is covered deterministically by runtime_learned_universe_contract.js,
-  // while the production verifier owns real Worker network/CORS behaviour.
   await page.evaluate(testTicker => {
     const nativeFetch = window.fetch.bind(window);
     window.fetch = async (input, init = {}) => {
@@ -221,11 +215,6 @@ test('iPhone/WebKit: portfolio alternative card opens dossier and watch star sta
   await expect(sheet).toHaveAttribute('data-tool', 'portfolio');
   await expect(sheet).toHaveAttribute('data-ticker', '');
 
-  // The ranking dataset legitimately changes every refresh, so an eligible same-sector
-  // alternative is not guaranteed on every CI run. Keep the real Portfolio sheet and
-  // real event listeners, and inject one deterministic production-shaped card. Mark it
-  // as already handled by the collapsible layer so no absolute toggle is added over the
-  // watch star while all other portfolio observers still see a valid market-detail-card.
   const installFixture = async () => {
     await page.evaluate(() => {
       document.getElementById('e2ePortfolioAlternative')?.remove();
@@ -244,14 +233,10 @@ test('iPhone/WebKit: portfolio alternative card opens dossier and watch star sta
   let alternative = page.locator('#e2ePortfolioAlternative .market-row[data-market-ticker="MSFT"]');
   await expect(alternative).toBeVisible();
 
-  // Star is an independent action. The lazy dossier listener must ignore it even
-  // though its parent row carries data-market-ticker.
   await alternative.locator('[data-market-watch="MSFT"]').click();
   await expect(sheet).toHaveAttribute('data-tool', 'portfolio');
   await expect(sheet).toHaveAttribute('data-ticker', '');
 
-  // Watchlist updates may re-render Portfolio Intelligence, so reinstall the same
-  // fixture before testing the card body navigation.
   await installFixture();
   alternative = page.locator('#e2ePortfolioAlternative .market-row[data-market-ticker="MSFT"]');
   await alternative.click({ position: { x: 32, y: 22 } });
