@@ -137,7 +137,10 @@ test('iPhone/WebKit: focus, constrained viewport and safe-area chrome stay usabl
   expect(dossierGeometry.panelBottom).toBeGreaterThanOrEqual(dossierGeometry.innerHeight - 1);
   await assertNoHorizontalOverflow(page);
 
-  const close = page.locator('.market-close-persistent');
+  // The dossier has more than one close-control implementation. Mobile UI
+  // hardening may hide the persistent variant when the header action is the
+  // active one, so validate the control the user can actually see and tap.
+  const close = sheet.locator('[data-market-close]:visible').first();
   await expect(close).toBeVisible();
   const closeGeometry = await close.evaluate(el => {
     const r = el.getBoundingClientRect();
