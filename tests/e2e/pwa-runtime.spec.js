@@ -25,8 +25,8 @@ async function readPwaState(page) {
         };
       });
     } catch (error) {
-      // On first install the app intentionally reloads after controllerchange.
-      // WebKit can destroy the evaluate context in that narrow lifecycle window.
+      // On first install the canonical index bootstrap can reload after
+      // controllerchange. WebKit can destroy the evaluate context there.
       if (!/Execution context was destroyed|navigation/i.test(String(error?.message || error)) || attempt === 2) throw error;
       await page.waitForLoadState('load');
       await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 10_000 });
@@ -63,7 +63,7 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   expect(pwa.cacheName).toMatch(/^vestra-cache-/);
   expect(pwa.hasAppShell).toBeTruthy();
   expect(pwa.hasMarketRuntime).toBeTruthy();
-  expect(pwa.updateManagerVersion).toBe('1.4');
+  expect(pwa.updateManagerVersion).toBe('1.5');
   expect(pwa.safeUpdateOwner).toBe('1');
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });

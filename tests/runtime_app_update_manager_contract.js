@@ -3,9 +3,11 @@ const vm = require('vm');
 const assert = require('assert');
 
 const source = fs.readFileSync('app-update-manager.js', 'utf8');
+const indexSource = fs.readFileSync('index.html', 'utf8');
 
-assert(source.includes("version: '1.4'"), 'safe update manager version must be 1.4');
-assert(source.includes('getRegistration()'), 'safe update path must update the existing service worker registration');
+assert(source.includes("version: '1.5'"), 'safe update manager version must be 1.5');
+assert(!source.includes('serviceWorker'), 'safe update manager must not own the service-worker lifecycle');
+assert(!source.includes('getRegistration()'), 'safe update manager must not trigger a parallel registration update');
 assert(!source.includes('getRegistrations()'), 'safe update path must not enumerate registrations for removal');
 assert(!source.includes('.unregister('), 'safe update path must never unregister service workers');
 assert(!source.includes('caches.delete'), 'safe update path must never delete application caches');
@@ -14,6 +16,8 @@ assert(source.includes("addEventListener('vestra:app-ready', reclaimAfterAppSetu
 assert(source.includes("document.addEventListener('click'"), 'manager must install a document-level click guard');
 assert(source.includes("}, true);"), 'update click guard must run in capture phase');
 assert(source.includes('stopImmediatePropagation()'), 'capture guard must block legacy target listeners');
+assert(indexSource.includes('navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });'), 'index bootstrap must remain the canonical update checker');
+assert(indexSource.includes("navigator.serviceWorker.addEventListener('controllerchange'"), 'index bootstrap must remain the canonical controllerchange owner');
 
 function makeButton(owner = false) {
   const listeners = [];
@@ -32,9 +36,6 @@ function makeButton(owner = false) {
 const runtime = {
   currentButton: makeButton(false),
   timers: [],
-  registrationChecks: 0,
-  registrationsEnumerated: 0,
-  cacheDeletes: 0,
   replacedUrl: '',
 };
 const windowListeners = [];
@@ -45,21 +46,7 @@ const context = {
   Date,
   confirm: () => true,
   setTimeout(fn) { runtime.timers.push(fn); return runtime.timers.length; },
-  caches: {
-    async delete() { runtime.cacheDeletes += 1; throw new Error('safe update must not delete caches'); },
-  },
-  navigator: {
-    serviceWorker: {
-      async getRegistration() {
-        runtime.registrationChecks += 1;
-        return { update: async () => {} };
-      },
-      async getRegistrations() {
-        runtime.registrationsEnumerated += 1;
-        throw new Error('safe update must not enumerate registrations');
-      },
-    },
-  },
+  navigator: {},
   document: {
     readyState: 'loading',
     getElementById(id) { return id === 'btnForceUpdate' ? runtime.currentButton : null; },
@@ -107,9 +94,6 @@ if (!event.stopped) {
 assert.strictEqual(event.defaultPrevented, true, 'safe guard must prevent the legacy button action');
 assert.strictEqual(event.stopped, true, 'safe guard must stop propagation before target listeners');
 assert.strictEqual(legacyRan, false, 'legacy destructive target listener must be unreachable');
-assert.strictEqual(runtime.registrationChecks, 1, 'safe click must check only the existing registration');
-assert.strictEqual(runtime.registrationsEnumerated, 0, 'safe click must never enumerate registrations');
-assert.strictEqual(runtime.cacheDeletes, 0, 'safe click must never delete caches');
 
 // DOMContentLoaded reclaim must still replace a node contaminated by a late
 // target listener, providing a second independent containment layer.

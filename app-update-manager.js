@@ -1,4 +1,4 @@
-/* Vestra App Update Manager v1.4 — iOS-safe forced refresh with deterministic exclusive button ownership. */
+/* Vestra App Update Manager v1.5 — iOS-safe navigation with deterministic exclusive button ownership. */
 (() => {
   'use strict';
   let busy = false;
@@ -8,20 +8,13 @@
     if (busy) return;
     if (!confirm(
       'Forçar actualização?\n\n' +
-      'Isto procura a versão mais recente da Vestra sem apagar os teus dados locais.'
+      'Isto recarrega a Vestra sem apagar os teus dados locais.'
     )) return;
     busy = true;
 
-    // Ask the existing registration to check for a newer worker, but never
-    // unregister it and never clear application caches or local data.
-    try {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration()
-          .then(reg => reg?.update?.())
-          .catch(() => {});
-      }
-    } catch (_) {}
-
+    // Service-worker lifecycle ownership stays in the canonical bootstrap in
+    // index.html. This manager owns only the user action and must not trigger a
+    // second registration.update()/controllerchange path that can race reloads.
     const url = new URL(window.location.href);
     url.searchParams.set('_v', String(Date.now()));
 
@@ -89,7 +82,7 @@
   window.addEventListener('vestra:app-ready', reclaimAfterAppSetup, { once: true });
 
   window.VestraAppUpdateManager = Object.freeze({
-    version: '1.4',
+    version: '1.5',
     install,
     forceFreshReload,
   });
