@@ -43,7 +43,7 @@ class LearnedUniverseTests(unittest.TestCase):
         self.assertIn("learnedApi()?.upsert", global_js)
         self.assertIn("market-learned-universe.js?v=2.0", boot)
         self.assertIn("market-global-search.js?v=1.2", boot)
-        self.assertIn("app-update-manager.js?v=1.4", boot)
+        self.assertIn("app-update-manager.js?v=1.5", boot)
         self.assertLess(boot.index('loadAppUpdateManager();'), boot.index('loadLearnedUniverse();'))
 
     def test_pipeline_sync_runs_before_heavy_pipeline(self):
