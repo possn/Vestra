@@ -21,7 +21,9 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "macro-events.json"
 API_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
-TIMEOUT = 25
+TIMEOUT = 8
+LAST_FETCH_DIAGNOSTICS: list[str] = []
+LAST_FETCH_TRANSPORT = ""
 
 SERIES = {
     "CPI EUA": {
@@ -181,6 +183,9 @@ def _release_url(short_title: str, event_date: date, today: date) -> str:
 
 
 def fetch_metrics(session: requests.Session, short_title: str, event_date: date) -> tuple[dict, str, str, list[str]] | None:
+    global LAST_FETCH_DIAGNOSTICS, LAST_FETCH_TRANSPORT
+    LAST_FETCH_DIAGNOSTICS = []
+    LAST_FETCH_TRANSPORT = ""
     config = SERIES.get(short_title)
     if not config:
         return None
@@ -193,9 +198,6 @@ def fetch_metrics(session: requests.Session, short_title: str, event_date: date)
     diagnostics = [post_diag]
     transport = "post"
 
-    # Some shared CI networks receive an empty/error multi-series POST while the
-    # documented single-series GET endpoint remains available. Try each official
-    # series independently before failing closed.
     if set(series_ids) - set(data):
         get_data, get_diags = _get_series_fallback(session, series_ids, start_year, end_year)
         diagnostics.extend(get_diags)
@@ -203,6 +205,8 @@ def fetch_metrics(session: requests.Session, short_title: str, event_date: date)
             data = get_data
             transport = "get"
 
+    LAST_FETCH_DIAGNOSTICS = diagnostics[:]
+    LAST_FETCH_TRANSPORT = transport
     ref_key = _period_key(ref_year, ref_month)
     prev_key = _period_key(prev_year, prev_month)
     year_ago_key = _period_key(ref_year - 1, ref_month)
@@ -219,23 +223,19 @@ def fetch_metrics(session: requests.Session, short_title: str, event_date: date)
             if key not in values:
                 missing.append(f"{series_id}:{key[0]}-{key[1]}")
     if missing:
-        diagnostics.append("missing=" + ",".join(missing))
+        LAST_FETCH_DIAGNOSTICS.append("missing=" + ",".join(missing))
         return None
 
-    headline_mom = _pct_change(data[config["headline_sa"]][ref_key], data[config["headline_sa"]][prev_key])
-    headline_yoy = _pct_change(data[config["headline_nsa"]][ref_key], data[config["headline_nsa"]][year_ago_key])
-    core_mom = _pct_change(data[config["core_sa"]][ref_key], data[config["core_sa"]][prev_key])
-    core_yoy = _pct_change(data[config["core_nsa"]][ref_key], data[config["core_nsa"]][year_ago_key])
     metrics = {
-        "headline_mom_pct": headline_mom,
-        "headline_yoy_pct": headline_yoy,
-        "core_mom_pct": core_mom,
-        "core_yoy_pct": core_yoy,
+        "headline_mom_pct": _pct_change(data[config["headline_sa"]][ref_key], data[config["headline_sa"]][prev_key]),
+        "headline_yoy_pct": _pct_change(data[config["headline_nsa"]][ref_key], data[config["headline_nsa"]][year_ago_key]),
+        "core_mom_pct": _pct_change(data[config["core_sa"]][ref_key], data[config["core_sa"]][prev_key]),
+        "core_yoy_pct": _pct_change(data[config["core_nsa"]][ref_key], data[config["core_nsa"]][year_ago_key]),
     }
     if any(value is None for value in metrics.values()):
-        diagnostics.append("invalid_pct_change")
+        LAST_FETCH_DIAGNOSTICS.append("invalid_pct_change")
         return None
-    return metrics, _summary(short_title, ref_year, ref_month, metrics), transport, diagnostics
+    return metrics, _summary(short_title, ref_year, ref_month, metrics), transport, LAST_FETCH_DIAGNOSTICS[:]
 
 
 def enrich_api_fallback(payload: dict, session: requests.Session, today: date | None = None) -> dict:
@@ -261,16 +261,10 @@ def enrich_api_fallback(payload: dict, session: requests.Session, today: date | 
         attempted += 1
         fetched = fetch_metrics(session, short_title, event_date)
         if not fetched:
-            # Run a diagnostic-only fetch path so CI logs reveal whether the
-            # endpoint, series, or target month is missing without dumping data.
-            config_ids = [config["headline_sa"], config["headline_nsa"], config["core_sa"], config["core_nsa"]]
-            ref_year, _ = _reference_month(event_date)
-            data, post_diag = _post_series(session, config_ids, ref_year - 1, ref_year)
-            diag = [post_diag]
-            if set(config_ids) - set(data):
-                _, get_diags = _get_series_fallback(session, config_ids, ref_year - 1, ref_year)
-                diag.extend(get_diags)
-            failures.append(f"{short_title}@{event_date.isoformat()}:" + "|".join(diag))
+            failures.append(
+                f"{short_title}@{event_date.isoformat()}:transport={LAST_FETCH_TRANSPORT or 'none'}|" +
+                "|".join(LAST_FETCH_DIAGNOSTICS or ["no_diagnostic"])
+            )
             continue
         metrics, summary, transport, diagnostics = fetched
         transports[transport] = transports.get(transport, 0) + 1
