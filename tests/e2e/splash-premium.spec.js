@@ -1,8 +1,26 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece 2s e sai suavemente', async ({ page }) => {
+test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece legível e sai suavemente', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+
+  // Record the real copy-ready transition in page time. Using Date.now() after a
+  // Playwright assertion is racy on WebKit because polling can observe the class
+  // hundreds of milliseconds after it was actually added.
+  await page.addInitScript(() => {
+    window.__vestraSplashTimeline = { copyReadyAt: null };
+    document.addEventListener('DOMContentLoaded', () => {
+      const splash = document.getElementById('appLoadingOverlay');
+      if (!splash) return;
+      const record = () => {
+        if (splash.classList.contains('vestra-splash--copy-ready') && window.__vestraSplashTimeline.copyReadyAt == null) {
+          window.__vestraSplashTimeline.copyReadyAt = performance.now();
+        }
+      };
+      record();
+      new MutationObserver(record).observe(splash, { attributes: true, attributeFilter: ['class'] });
+    }, { once: true });
+  });
 
   // DOMContentLoaded is the correct observation point for launch choreography.
   // Waiting for the full load event can include slow third-party resources and let
@@ -44,19 +62,24 @@ test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece 2s e sai
 
   // A tagline termina perto dos 2s; nesse momento o texto deve estar totalmente legível.
   await expect(splash).toHaveClass(/vestra-splash--copy-ready/, { timeout: 2_400 });
-  const copyReadyAt = Date.now();
   const brandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
   const taglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
   expect(brandOpacity).toBeGreaterThan(0.95);
   expect(taglineOpacity).toBeGreaterThan(0.95);
 
-  // Depois de ficar totalmente visível, a cópia permanece aproximadamente 2s antes do fade.
-  await page.waitForTimeout(1_650);
-  await expect(splash).toBeVisible();
-  expect(Date.now() - copyReadyAt).toBeGreaterThanOrEqual(1_600);
+  // Prove a retenção a partir do instante real em que a classe foi aplicada,
+  // não do instante tardio em que o runner acabou de a observar.
+  const remainingHoldMs = await page.evaluate(() => {
+    const copyReadyAt = window.__vestraSplashTimeline?.copyReadyAt;
+    if (!Number.isFinite(copyReadyAt)) return null;
+    return Math.max(0, 1600 - (performance.now() - copyReadyAt));
+  });
+  expect(remainingHoldMs).not.toBeNull();
+  if (remainingHoldMs > 0) await page.waitForTimeout(remainingHoldMs);
+  await expect(splash).toBeVisible({ timeout: 500 });
 
-  // On a cold WebKit run app readiness may arrive after the nominal 4s choreography;
-  // the watchdog is allowed to use its bounded failsafe, but the splash must still release.
+  // On a cold WebKit run app readiness may arrive after the nominal choreography;
+  // the watchdog is allowed to use its bounded failsafe, but the splash must release.
   await expect(splash).toBeHidden({ timeout: 4_000 });
   await expect(page.locator('#viewDashboard')).toBeVisible();
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
