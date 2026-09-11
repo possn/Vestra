@@ -1,4 +1,4 @@
-/* Vestra Market Company Brief v1.8 — canonical dossier/company description repair + runtime diagnostics bootstrap. */
+/* Vestra Market Company Brief v1.9 — canonical dossier/company description repair + runtime diagnostics bootstrap. */
 (() => {
 'use strict';
 const t=v=>String(v??'').trim();
@@ -9,7 +9,6 @@ function style(){if(document.getElementById('vestra-market-company-brief-style')
 function loadScript(id,src,ready,onload){if(ready||document.getElementById(id)){if(onload)onload();return;}const s=document.createElement('script');s.id=id;s.src=src;s.defer=true;if(onload)s.addEventListener('load',onload,{once:true});document.head.appendChild(s)}
 function loadResearchDiagnostics(){loadScript('vestra-model-validation-script','market-model-validation.js?v=1.0',window.VestraModelValidation)}
 function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.3',window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
-function loadQuoteRefreshPerformance(){loadScript('vestra-quote-refresh-performance-script','quote-refresh-performance.js?v=1.0',window.VestraQuoteRefreshPerformance)}
 function loadDossierControls(){loadScript('vestra-market-dossier-controls-script','market-dossier-controls.js?v=1.1',window.VestraMarketDossierControls)}
 function loadGlobalMarketSearch(){loadScript('vestra-global-market-search-script','market-global-search.js?v=1.2',window.VestraGlobalMarketSearch)}
 function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','market-learned-universe.js?v=2.0',window.VestraLearnedUniverse,loadGlobalMarketSearch)}
@@ -18,9 +17,8 @@ function loadDataHealth(){loadScript('vestra-market-data-health-script','market-
 function loadRuntimeBridge(){loadScript('vestra-runtime-bridge-script','app-runtime-bridge.js?v=1.1',window.VestraRuntimeBridge,()=>{loadAppUpdateManager();loadLearnedUniverse();})}
 function start(){style();loadResearchDiagnostics();loadDataHealth();repair();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;repair()})});mo.observe(document.body,{childList:true,subtree:true})}
 loadCanonicalQuoteRepair();
-loadQuoteRefreshPerformance();
 loadDossierControls();
 loadRuntimeBridge();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.8'});
+window.VestraMarketCompanyBrief=Object.freeze({brief,refresh:repair,version:'1.9'});
 })();
