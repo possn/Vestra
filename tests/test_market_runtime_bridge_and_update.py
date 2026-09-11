@@ -10,6 +10,7 @@ BOOTSTRAP = ROOT / 'market-company-brief.js'
 GLOBAL = ROOT / 'market-global-search.js'
 LEARNED = ROOT / 'market-learned-universe.js'
 APP = ROOT / 'app.js'
+INDEX = ROOT / 'index.html'
 
 
 class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
@@ -39,22 +40,24 @@ class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
         boot = BOOTSTRAP.read_text(encoding='utf-8')
         self.assertIn("app-runtime-bridge.js?v=1.1", boot)
         self.assertIn('loadRuntimeBridge()', boot)
-        self.assertIn("app-update-manager.js?v=1.4", boot)
+        self.assertIn("app-update-manager.js?v=1.5", boot)
         self.assertIn('loadAppUpdateManager();loadLearnedUniverse();', boot)
         self.assertIn('window.VestraLearnedUniverse,loadGlobalMarketSearch', boot)
         self.assertLess(boot.index('loadAppUpdateManager();'), boot.index('loadLearnedUniverse();'))
 
-    def test_force_update_contains_legacy_listener_and_never_wipes_runtime(self):
+    def test_force_update_is_navigation_only_and_never_wipes_runtime(self):
         text = UPDATE.read_text(encoding='utf-8')
         app = APP.read_text(encoding='utf-8')
-        self.assertIn('reg?.update?.()', text)
+        index = INDEX.read_text(encoding='utf-8')
+        self.assertNotIn('serviceWorker', text)
+        self.assertNotIn('getRegistration()', text)
         self.assertIn('window.location.replace', text)
         self.assertIn("document.getElementById('btnForceUpdate')", text)
         self.assertIn('current.cloneNode(true)', text)
         self.assertIn('current.replaceWith(button)', text)
         self.assertIn("document.addEventListener('click'", text)
         self.assertIn("}, true);", text)
-        self.assertIn("version: '1.4'", text)
+        self.assertIn("version: '1.5'", text)
         self.assertIn('stopImmediatePropagation', text)
         self.assertIn("DOMContentLoaded', reclaimAfterAppSetup", text)
         self.assertIn("vestra:app-ready', reclaimAfterAppSetup", text)
@@ -62,6 +65,8 @@ class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
         self.assertNotIn('.unregister()', text)
         self.assertNotIn('caches.delete', text)
         self.assertNotIn('getRegistrations()', text)
+        self.assertIn('navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });', index)
+        self.assertIn("navigator.serviceWorker.addEventListener('controllerchange'", index)
         # The historical implementation remains in the monolith for now, but
         # document capture intercepts the click before its target listener and
         # DOM reclaim independently replaces any contaminated button node.
