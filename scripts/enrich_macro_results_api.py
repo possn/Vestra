@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Fallback CPI/PPI enrichment through the official BLS Public Data API.
 
-The release HTML endpoints can occasionally reject requests from shared CI
-networks even when the pages are publicly available. This fallback uses the
-machine-oriented BLS API only when the release-page enrichment left a past CPI
-or PPI event without verified structured metrics.
+The release HTML endpoints can reject requests from shared CI networks. This
+fallback uses the machine-oriented BLS API only when release-page enrichment
+left a past CPI/PPI event without verified structured metrics.
 
 It deliberately does not infer consensus or a generic ``actual``. Monthly
 changes use seasonally-adjusted BLS series; 12-month changes use the matching
@@ -13,6 +12,7 @@ not-seasonally-adjusted series, mirroring the named measures in BLS releases.
 from __future__ import annotations
 
 import json
+import os
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -57,9 +57,7 @@ def _reference_month(release_date: date) -> tuple[int, int]:
 
 
 def _previous_month(year: int, month: int) -> tuple[int, int]:
-    if month == 1:
-        return year - 1, 12
-    return year, month - 1
+    return (year - 1, 12) if month == 1 else (year, month - 1)
 
 
 def _period_key(year: int, month: int) -> tuple[str, str]:
@@ -89,6 +87,66 @@ def _series_values(payload: dict) -> dict[str, dict[tuple[str, str], float]]:
         if series_id:
             out[series_id] = values
     return out
+
+
+def _payload_status(body: object) -> tuple[bool, str]:
+    if not isinstance(body, dict):
+        return False, "non_json_object"
+    status = str(body.get("status") or "").upper()
+    message = body.get("message")
+    if isinstance(message, list):
+        message = "; ".join(str(item) for item in message if item)
+    message = str(message or "").strip()
+    if status != "REQUEST_SUCCEEDED":
+        return False, f"api_status={status or 'missing'}{': ' + message[:180] if message else ''}"
+    return True, "ok"
+
+
+def _post_series(session: requests.Session, series_ids: list[str], start_year: int, end_year: int) -> tuple[dict, str]:
+    payload = {"seriesid": series_ids, "startyear": str(start_year), "endyear": str(end_year)}
+    try:
+        response = session.post(API_URL, json=payload, timeout=TIMEOUT)
+        status_code = int(getattr(response, "status_code", 0) or 0)
+        response.raise_for_status()
+        body = response.json()
+    except Exception as exc:
+        return {}, f"post_http={getattr(locals().get('response', None), 'status_code', 'error')}:{type(exc).__name__}"
+    ok, reason = _payload_status(body)
+    if not ok:
+        return {}, f"post_{reason}"
+    data = _series_values(body)
+    if not data:
+        return {}, f"post_http={status_code}:empty_series"
+    return data, f"post_http={status_code}:ok"
+
+
+def _get_one_series(session: requests.Session, series_id: str, start_year: int, end_year: int) -> tuple[dict, str]:
+    url = f"{API_URL}{series_id}"
+    params = {"startyear": str(start_year), "endyear": str(end_year)}
+    try:
+        response = session.get(url, params=params, timeout=TIMEOUT)
+        status_code = int(getattr(response, "status_code", 0) or 0)
+        response.raise_for_status()
+        body = response.json()
+    except Exception as exc:
+        return {}, f"get_{series_id}_http={getattr(locals().get('response', None), 'status_code', 'error')}:{type(exc).__name__}"
+    ok, reason = _payload_status(body)
+    if not ok:
+        return {}, f"get_{series_id}_{reason}"
+    data = _series_values(body)
+    if series_id not in data:
+        return {}, f"get_{series_id}_http={status_code}:missing_series"
+    return {series_id: data[series_id]}, f"get_{series_id}_http={status_code}:ok"
+
+
+def _get_series_fallback(session: requests.Session, series_ids: list[str], start_year: int, end_year: int) -> tuple[dict, list[str]]:
+    combined: dict[str, dict[tuple[str, str], float]] = {}
+    diagnostics: list[str] = []
+    for series_id in series_ids:
+        data, diagnostic = _get_one_series(session, series_id, start_year, end_year)
+        diagnostics.append(diagnostic)
+        combined.update(data)
+    return combined, diagnostics
 
 
 def _pct_change(current: float, prior: float) -> float | None:
@@ -122,37 +180,52 @@ def _release_url(short_title: str, event_date: date, today: date) -> str:
     return f"https://www.bls.gov/news.release/archives/{config['release']}_{event_date:%m%d%Y}.htm"
 
 
-def fetch_metrics(session: requests.Session, short_title: str, event_date: date) -> tuple[dict, str] | None:
+def fetch_metrics(session: requests.Session, short_title: str, event_date: date) -> tuple[dict, str, str, list[str]] | None:
     config = SERIES.get(short_title)
     if not config:
         return None
     ref_year, ref_month = _reference_month(event_date)
     prev_year, prev_month = _previous_month(ref_year, ref_month)
     series_ids = [config["headline_sa"], config["headline_nsa"], config["core_sa"], config["core_nsa"]]
-    request_payload = {
-        "seriesid": series_ids,
-        "startyear": str(ref_year - 1),
-        "endyear": str(ref_year),
-    }
-    try:
-        response = session.post(API_URL, json=request_payload, timeout=TIMEOUT)
-        response.raise_for_status()
-        body = response.json()
-    except Exception:
-        return None
-    if str(body.get("status") or "").upper() != "REQUEST_SUCCEEDED":
-        return None
-    data = _series_values(body)
+    start_year, end_year = ref_year - 1, ref_year
+
+    data, post_diag = _post_series(session, series_ids, start_year, end_year)
+    diagnostics = [post_diag]
+    transport = "post"
+
+    # Some shared CI networks receive an empty/error multi-series POST while the
+    # documented single-series GET endpoint remains available. Try each official
+    # series independently before failing closed.
+    if set(series_ids) - set(data):
+        get_data, get_diags = _get_series_fallback(session, series_ids, start_year, end_year)
+        diagnostics.extend(get_diags)
+        if len(get_data) >= len(data):
+            data = get_data
+            transport = "get"
+
     ref_key = _period_key(ref_year, ref_month)
     prev_key = _period_key(prev_year, prev_month)
     year_ago_key = _period_key(ref_year - 1, ref_month)
-    try:
-        headline_mom = _pct_change(data[config["headline_sa"]][ref_key], data[config["headline_sa"]][prev_key])
-        headline_yoy = _pct_change(data[config["headline_nsa"]][ref_key], data[config["headline_nsa"]][year_ago_key])
-        core_mom = _pct_change(data[config["core_sa"]][ref_key], data[config["core_sa"]][prev_key])
-        core_yoy = _pct_change(data[config["core_nsa"]][ref_key], data[config["core_nsa"]][year_ago_key])
-    except (KeyError, TypeError):
+    required = {
+        config["headline_sa"]: (ref_key, prev_key),
+        config["headline_nsa"]: (ref_key, year_ago_key),
+        config["core_sa"]: (ref_key, prev_key),
+        config["core_nsa"]: (ref_key, year_ago_key),
+    }
+    missing = []
+    for series_id, keys in required.items():
+        values = data.get(series_id, {})
+        for key in keys:
+            if key not in values:
+                missing.append(f"{series_id}:{key[0]}-{key[1]}")
+    if missing:
+        diagnostics.append("missing=" + ",".join(missing))
         return None
+
+    headline_mom = _pct_change(data[config["headline_sa"]][ref_key], data[config["headline_sa"]][prev_key])
+    headline_yoy = _pct_change(data[config["headline_nsa"]][ref_key], data[config["headline_nsa"]][year_ago_key])
+    core_mom = _pct_change(data[config["core_sa"]][ref_key], data[config["core_sa"]][prev_key])
+    core_yoy = _pct_change(data[config["core_nsa"]][ref_key], data[config["core_nsa"]][year_ago_key])
     metrics = {
         "headline_mom_pct": headline_mom,
         "headline_yoy_pct": headline_yoy,
@@ -160,14 +233,16 @@ def fetch_metrics(session: requests.Session, short_title: str, event_date: date)
         "core_yoy_pct": core_yoy,
     }
     if any(value is None for value in metrics.values()):
+        diagnostics.append("invalid_pct_change")
         return None
-    return metrics, _summary(short_title, ref_year, ref_month, metrics)
+    return metrics, _summary(short_title, ref_year, ref_month, metrics), transport, diagnostics
 
 
 def enrich_api_fallback(payload: dict, session: requests.Session, today: date | None = None) -> dict:
     today = today or date.today()
-    matched = 0
-    attempted = 0
+    matched = attempted = 0
+    transports = {"post": 0, "get": 0}
+    failures: list[str] = []
     for event in payload.get("events") or []:
         if not isinstance(event, dict) or event.get("source") != "bls":
             continue
@@ -186,17 +261,29 @@ def enrich_api_fallback(payload: dict, session: requests.Session, today: date | 
         attempted += 1
         fetched = fetch_metrics(session, short_title, event_date)
         if not fetched:
+            # Run a diagnostic-only fetch path so CI logs reveal whether the
+            # endpoint, series, or target month is missing without dumping data.
+            config_ids = [config["headline_sa"], config["headline_nsa"], config["core_sa"], config["core_nsa"]]
+            ref_year, _ = _reference_month(event_date)
+            data, post_diag = _post_series(session, config_ids, ref_year - 1, ref_year)
+            diag = [post_diag]
+            if set(config_ids) - set(data):
+                _, get_diags = _get_series_fallback(session, config_ids, ref_year - 1, ref_year)
+                diag.extend(get_diags)
+            failures.append(f"{short_title}@{event_date.isoformat()}:" + "|".join(diag))
             continue
-        metrics, summary = fetched
+        metrics, summary, transport, diagnostics = fetched
+        transports[transport] = transports.get(transport, 0) + 1
         event["result_status"] = "official_release_summary"
         event["result_summary"] = summary
         event["result_released_at"] = event_date.isoformat()
         event["result_metric_schema"] = config["schema"]
         event["result_metrics"] = metrics
         event["source_url"] = _release_url(short_title, event_date, today)
-        event["result_transport"] = "bls_public_api"
+        event["result_transport"] = f"bls_public_api_{transport}"
+        event["result_transport_diagnostic"] = diagnostics[0] if diagnostics else "ok"
         matched += 1
-    return {"attempted": attempted, "matched": matched}
+    return {"attempted": attempted, "matched": matched, "transports": transports, "failures": failures[:6]}
 
 
 def main() -> int:
@@ -217,6 +304,8 @@ def main() -> int:
     }
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(json.dumps(enrichment["bls_api_fallback"], ensure_ascii=False))
+    if os.environ.get("VESTRA_REQUIRE_BLS_API_MATCH") == "1" and stats["attempted"] and not stats["matched"]:
+        return 2
     return 0
 
 
