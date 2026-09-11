@@ -81,6 +81,8 @@ jobs:
         run: python scripts/enrich_macro_results.py
 
       - name: Fill missing CPI/PPI metrics from official BLS API
+        env:
+          VESTRA_REQUIRE_BLS_API_MATCH: ${{ github.event_name == 'pull_request' && '1' || '0' }}
         run: python scripts/enrich_macro_results_api.py
 
       - name: Normalize policy decision days and refresh ECB results
@@ -121,7 +123,7 @@ jobs:
                       assert e.get('short_title') in {'CPI EUA','PPI EUA'}
                       assert str(e.get('source_url','')).startswith('https://www.bls.gov/news.release/')
                       assert 'actual' not in e or e.get('actual') is None
-                      if e.get('result_transport') == 'bls_public_api':
+                      if str(e.get('result_transport','')).startswith('bls_public_api_'):
                           assert set(metrics) == {'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct'}
                   else:
                       assert e.get('short_title') == 'BCE'
