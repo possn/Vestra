@@ -1,54 +1,427 @@
-/* Vestra Dashboard Weekly Events v1.7 — navigable weekly earnings + macro catalysts. */
+/* Vestra Dashboard Weekly Events v1.6 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
-  const VERSION='1.7', CARD_ID='dashboardWeeklyEventsCard', STYLE_ID='dashboardWeeklyEventsStyle', DETAIL_ID='dashboardWeeklyEventDetail';
-  const MAX_EVENTS=12, WINDOW_DAYS=7, MAX_WEEK_OFFSET=52, MACRO_URL='data/macro-events.json';
-  const OFFICIAL_SOURCE_URLS=Object.freeze({fed:'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',bls:'https://www.bls.gov/bls/newsrels.htm',bea:'https://www.bea.gov/news',ecb:'https://www.ecb.europa.eu/press/govcdec/mopo/html/index.en.html',census:'https://www.census.gov/economic-indicators/'});
-  const OFFICIAL_SOURCE_HOSTS=Object.freeze({fed:['federalreserve.gov'],bls:['bls.gov'],bea:['bea.gov'],ecb:['ecb.europa.eu'],census:['census.gov']});
-  const OFFICIAL_METRIC_LABELS=Object.freeze({headline_mom_pct:'Headline MoM',headline_yoy_pct:'Headline YoY',core_mom_pct:'Core MoM',core_yoy_pct:'Core YoY'});
-  const OFFICIAL_METRIC_SCHEMAS=new Set(['bls_cpi_v1','bls_ppi_v1']);
-  let macroSnapshot=null, macroLoading=null, lastRenderedEvents=[], weekOffset=0;
-  const text=v=>String(v??'').trim();
-  const number=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
-  const tickerKey=v=>text(v).toUpperCase();
-  const localDay=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
-  const shiftedWeek=(now,offset=weekOffset)=>{const d=localDay(now);d.setDate(d.getDate()+Number(offset||0)*7);return d;};
-  function parseCalendarDate(value){const raw=text(value);if(!raw)return null;const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(raw);if(m){const d=new Date(+m[1],+m[2]-1,+m[3]);return Number.isNaN(d.getTime())?null:d;}const d=new Date(raw);return Number.isNaN(d.getTime())?null:localDay(d);}
-  function portfolioContext(){return window.VestraMarketPortfolioContext?.create({getAssets:()=>{try{return(typeof state!=='undefined'&&state&&Array.isArray(state.assets))?state.assets:[];}catch(_){return[];}},text,number})||null;}
-  function portfolioTickerSet(context=portfolioContext()){try{return context?.portfolioTickers?.()||new Set();}catch(_){return new Set();}}
-  function tickerMatchesPortfolio(ticker,tickers){const k=tickerKey(ticker);return !!k&&[...(tickers||[])].some(v=>tickerKey(v)===k);}
-  function dateISO(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-  function officialSourceUrl(source,candidate=''){const key=text(source).toLowerCase(),fallback=OFFICIAL_SOURCE_URLS[key]||'',raw=text(candidate);if(!raw)return fallback;try{const u=new URL(raw);if(u.protocol!=='https:')return fallback;const host=u.hostname.toLowerCase(),allowed=OFFICIAL_SOURCE_HOSTS[key]||[];return allowed.some(x=>host===x||host.endsWith(`.${x}`))?u.href:fallback;}catch(_){return fallback;}}
-  function normaliseOfficialMetrics(value){if(!value||typeof value!=='object'||Array.isArray(value))return Object.freeze({});const out={};for(const k of Object.keys(OFFICIAL_METRIC_LABELS)){const n=number(value[k]);if(n!==null)out[k]=n;}return Object.freeze(out);}
-  function collectEvents(stocks,portfolioTickers=new Set(),now=new Date(),windowDays=WINDOW_DAYS){const start=localDay(now),end=new Date(start);end.setDate(end.getDate()+Math.max(1,Number(windowDays)||WINDOW_DAYS)-1);const out=[];for(const stock of(Array.isArray(stocks)?stocks:[])){const ticker=tickerKey(stock?.ticker),qt=tickerKey(stock?.quote_type);if(!ticker||['ETF','FUND','MUTUALFUND','CRYPTO'].includes(qt))continue;const common={kind:'earnings',ticker,name:text(stock?.name)||ticker,title:text(stock?.name)||ticker,marketCap:number(stock?.market_cap)||0,inPortfolio:tickerMatchesPortfolio(ticker,portfolioTickers)};const latest=parseCalendarDate(stock?.analyst_latest_earnings_date);if(latest&&latest>=start&&latest<=end)out.push({...common,date:latest,dateISO:dateISO(latest),source:'analyst_latest_earnings_date',reported:true,epsEstimate:number(stock?.analyst_latest_eps_estimate),epsActual:number(stock?.analyst_latest_eps_actual),epsSurprisePct:number(stock?.analyst_latest_eps_surprise_pct)});const upcoming=parseCalendarDate(stock?.analyst_next_earnings_date);if(upcoming&&upcoming>=start&&upcoming<=end&&(!latest||dateISO(latest)!==dateISO(upcoming)))out.push({...common,date:upcoming,dateISO:dateISO(upcoming),source:'analyst_next_earnings_date',reported:false,epsEstimate:number(stock?.analyst_eps_next_q),epsActual:null,epsSurprisePct:null});}return out;}
-  function collectMacroEvents(snapshot,now=new Date(),windowDays=WINDOW_DAYS){const start=localDay(now),end=new Date(start);end.setDate(end.getDate()+Math.max(1,Number(windowDays)||WINDOW_DAYS)-1);const rows=Array.isArray(snapshot)?snapshot:(snapshot?.events||[]);return rows.map((row,index)=>{const eventStart=parseCalendarDate(row?.date),eventEnd=parseCalendarDate(row?.date_end||row?.date);if(!eventStart||!eventEnd||eventStart>end||eventEnd<start)return null;const source=text(row?.source),schema=text(row?.result_metric_schema);return{kind:'macro',id:`${source||'macro'}:${text(row?.date)}:${text(row?.short_title)||index}`,title:text(row?.title)||text(row?.short_title)||'Evento macro',shortTitle:text(row?.short_title)||text(row?.title)||'Macro',date:eventStart<start?start:eventStart,dateEnd:eventEnd,region:text(row?.region),category:text(row?.category),importance:text(row?.importance)||'high',timeLocal:text(row?.time_local),source,sourceUrl:officialSourceUrl(source,row?.source_url),actual:row?.actual??null,consensus:row?.consensus??row?.forecast??null,previous:row?.previous??null,unit:text(row?.unit),resultStatus:text(row?.result_status),resultSummary:text(row?.result_summary),resultReleasedAt:text(row?.result_released_at),resultMetricSchema:OFFICIAL_METRIC_SCHEMAS.has(schema)?schema:'',resultMetrics:normaliseOfficialMetrics(row?.result_metrics)};}).filter(Boolean);}
-  function selectEvents(stocks,portfolioTickers=new Set(),now=new Date(),limit=MAX_EVENTS,macro=macroSnapshot){const macros=collectMacroEvents(macro,now),earnings=collectEvents(stocks,portfolioTickers,now),owned=earnings.filter(x=>x.inPortfolio).sort((a,b)=>a.date-b.date||b.marketCap-a.marketCap),market=earnings.filter(x=>!x.inPortfolio).sort((a,b)=>b.marketCap-a.marketCap||a.date-b.date),cap=Math.max(1,Number(limit)||MAX_EVENTS),selected=[],push=e=>{if(selected.length<cap)selected.push(e);};macros.sort((a,b)=>a.date-b.date||(a.importance==='critical'?-1:1)).forEach(push);owned.forEach(push);market.forEach(push);return selected.sort((a,b)=>a.date-b.date||(a.kind!==b.kind?(a.kind==='macro'?-1:1):(a.inPortfolio!==b.inPortfolio?(a.inPortfolio?-1:1):(b.marketCap||0)-(a.marketCap||0))));}
-  function dayLabel(date,now=new Date()){const today=localDay(now),target=localDay(date),diff=Math.round((target-today)/86400000);if(diff===0)return'Hoje';if(diff===1)return'Amanhã';if(diff===-1)return'Ontem';const w=new Intl.DateTimeFormat('pt-PT',{weekday:'short'}).format(target).replace('.',''),c=new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}).format(target).replace('.','');return`${w} · ${c}`;}
-  function categoryLabel(e){if(e.kind==='earnings')return'Resultados';return({central_bank:'Banco central',inflation:'Inflação',labour:'Emprego',growth:'Crescimento',activity:'Atividade'})[e.category]||'Macro';}
-  function sourceLabel(s){return({fed:'Federal Reserve',bls:'U.S. BLS',bea:'U.S. BEA',ecb:'Banco Central Europeu',census:'U.S. Census'})[text(s)]||text(s)||'Vestra';}
-  function hasMacroResult(e){return e?.actual!==null&&e?.actual!==undefined&&text(e.actual)!=='';}
-  function hasOfficialMacroSummary(e){return text(e?.resultStatus)==='official_release_summary'&&text(e?.resultSummary)!=='';}
-  function hasStructuredOfficialMetrics(e){return OFFICIAL_METRIC_SCHEMAS.has(text(e?.resultMetricSchema))&&Object.keys(e?.resultMetrics||{}).length>0;}
-  function hasMacroPublication(e){return hasMacroResult(e)||hasOfficialMacroSummary(e)||hasStructuredOfficialMetrics(e);}
-  function hasMacroMetrics(e){return[e?.actual,e?.consensus,e?.previous].some(v=>v!==null&&v!==undefined&&text(v)!=='');}
-  function formatResultValue(v,u=''){return v===null||v===undefined||text(v)===''?'—':`${text(v)}${u?` ${u}`:''}`;}
-  function formatOfficialPercent(v){const n=number(v);return n===null?'—':`${n>0?'+':''}${n.toLocaleString('pt-PT',{minimumFractionDigits:1,maximumFractionDigits:2})}%`;}
-  function formatEPS(v){const n=number(v);return n===null?'—':n.toLocaleString('pt-PT',{maximumFractionDigits:4});}
-  function formatSurprise(v){const n=number(v);return n===null?'—':`${(n*100).toLocaleString('pt-PT',{maximumFractionDigits:1,minimumFractionDigits:1})}%`;}
-  async function loadMacroEvents(fetchImpl=(...args)=>fetch(...args),force=false){if(macroSnapshot&&!force)return macroSnapshot;if(macroLoading)return macroLoading;macroLoading=(async()=>{try{const r=await fetchImpl(`${MACRO_URL}?v=${Date.now()}`,{cache:'no-store'});if(!r.ok)return macroSnapshot;const p=await r.json();if(!p||!Array.isArray(p.events))return macroSnapshot;macroSnapshot=p;return p;}catch(_){return macroSnapshot;}finally{macroLoading=null;}})();return macroLoading;}
-  function ensureStyles(){if(document.getElementById(STYLE_ID))return;const s=document.createElement('style');s.id=STYLE_ID;s.textContent=`.weekly-events-card{overflow:hidden}.weekly-events-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.weekly-events-heading{min-width:0}.weekly-events-kicker{font-size:10px;font-weight:800;letter-spacing:.55px;text-transform:uppercase;color:var(--muted,#64748b);margin-bottom:3px}.weekly-events-title{font-size:16px;font-weight:850;color:var(--text,#17212b)}.weekly-events-nav{display:flex;align-items:center;gap:5px}.weekly-events-nav button{appearance:none;border:1px solid var(--line,#e5e7eb);background:var(--card,#fff);color:inherit;width:32px;height:32px;border-radius:10px;font-size:19px;line-height:1;cursor:pointer}.weekly-events-nav button:disabled{opacity:.3}.weekly-events-range{font-size:10px;color:var(--muted,#64748b);white-space:nowrap;min-width:72px;text-align:center}.weekly-events-list{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x proximity;padding:1px 2px 5px;-webkit-overflow-scrolling:touch;scrollbar-width:none}.weekly-events-list::-webkit-scrollbar{display:none}.weekly-event{appearance:none;border:1px solid var(--line,#e5e7eb);background:var(--card,#fff);border-radius:14px;padding:11px 12px;min-width:168px;max-width:220px;text-align:left;scroll-snap-align:start;color:inherit;cursor:pointer}.weekly-event--portfolio{border-color:rgba(23,123,120,.35);background:rgba(23,123,120,.05)}.weekly-event--macro{border-color:rgba(99,102,241,.28);background:rgba(99,102,241,.05)}.weekly-event__day{font-size:10px;font-weight:800;text-transform:uppercase;color:#177B78;margin-bottom:7px}.weekly-event__ticker{font-size:14px;font-weight:900;margin-bottom:4px}.weekly-event__name{font-size:11px;color:var(--muted,#64748b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}.weekly-event__meta{display:flex;gap:5px;flex-wrap:wrap;font-size:9px;font-weight:800}.weekly-event__meta span{padding:3px 6px;border-radius:999px;background:rgba(99,102,241,.1)}.weekly-events-empty{padding:12px 0;color:var(--muted,#64748b);font-size:12px}.weekly-events-foot{margin-top:8px;font-size:9px;color:var(--muted,#64748b)}.weekly-detail-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(12,22,31,.34);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}.weekly-detail-sheet{width:min(560px,100%);max-height:78vh;overflow:auto;border-radius:24px 24px 0 0;background:var(--card,#fff);color:var(--text,#17212b);padding:10px 18px calc(18px + env(safe-area-inset-bottom))}.weekly-detail-handle{width:40px;height:4px;border-radius:999px;background:var(--line,#d8dee6);margin:1px auto 14px}.weekly-detail-head{display:flex;justify-content:space-between;gap:14px}.weekly-detail-title{font-size:21px;font-weight:900}.weekly-detail-sub{font-size:12px;color:var(--muted,#64748b);margin-top:5px}.weekly-detail-close{border:0;background:var(--soft,#f1f5f9);width:34px;height:34px;border-radius:50%;font-size:22px}.weekly-detail-status{margin:16px 0 10px;padding:12px 13px;border-radius:14px;background:rgba(23,123,120,.08);font-size:12px;line-height:1.45}.weekly-detail-status--waiting{background:rgba(99,102,241,.08)}.weekly-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.weekly-detail-grid--official{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-detail-metric{border:1px solid var(--line,#e5e7eb);border-radius:13px;padding:10px}.weekly-detail-metric span{display:block;font-size:9px;color:var(--muted,#64748b);margin-bottom:5px}.weekly-detail-metric strong{font-size:16px}.weekly-detail-summary{margin:12px 0;padding:13px;border:1px solid rgba(23,123,120,.24);border-radius:14px}.weekly-detail-summary__label{font-size:9px;font-weight:850;color:#177B78;margin-bottom:6px}.weekly-detail-summary__text{font-size:12px;line-height:1.55}.weekly-detail-meta{display:grid;gap:8px;margin:14px 0;font-size:12px}.weekly-detail-meta-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line,#edf0f4);padding-bottom:7px}.weekly-detail-meta-row span{color:var(--muted,#64748b)}.weekly-detail-meta-row strong{text-align:right}.weekly-detail-action{display:block;box-sizing:border-box;width:100%;border:0;border-radius:14px;padding:13px;background:#177B78;color:#fff;font-weight:850;font-size:13px;text-align:center;text-decoration:none}`;document.head.appendChild(s);}
-  function ensureCard(){const d=document.getElementById('viewDashboard');if(!d)return null;let c=document.getElementById(CARD_ID);if(c)return c;c=document.createElement('div');c.id=CARD_ID;c.className='card dash-secondary weekly-events-card';const hero=d.querySelector('.card.hero');if(hero)hero.insertAdjacentElement('afterend',c);else d.prepend(c);return c;}
-  function closeDetail(){document.getElementById(DETAIL_ID)?.remove?.();}
-  function detailMetaRow(label,value){const r=document.createElement('div');r.className='weekly-detail-meta-row';const a=document.createElement('span');a.textContent=label;const b=document.createElement('strong');b.textContent=value||'—';r.append(a,b);return r;}
-  function metric(label,value){const b=document.createElement('div');b.className='weekly-detail-metric';const l=document.createElement('span');l.textContent=label;const v=document.createElement('strong');v.textContent=value;b.append(l,v);return b;}
-  function officialSummary(summary){const b=document.createElement('div');b.className='weekly-detail-summary';const l=document.createElement('div');l.className='weekly-detail-summary__label';l.textContent='Resumo oficial';const t=document.createElement('div');t.className='weekly-detail-summary__text';t.textContent=text(summary);b.append(l,t);return b;}
-  function officialMetricGrid(e){if(!hasStructuredOfficialMetrics(e))return null;const g=document.createElement('div');g.className='weekly-detail-grid weekly-detail-grid--official';for(const[k,label]of Object.entries(OFFICIAL_METRIC_LABELS))if(Object.prototype.hasOwnProperty.call(e.resultMetrics,k))g.appendChild(metric(label,formatOfficialPercent(e.resultMetrics[k])));return g.childElementCount?g:null;}
-  function openDetail(e){if(!e)return;ensureStyles();closeDetail();const backdrop=document.createElement('div');backdrop.id=DETAIL_ID;backdrop.className='weekly-detail-backdrop';backdrop.dataset.weeklyDetailBackdrop='1';const sheet=document.createElement('section');sheet.className='weekly-detail-sheet';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');const handle=document.createElement('div');handle.className='weekly-detail-handle';const head=document.createElement('div');head.className='weekly-detail-head';const copy=document.createElement('div'),title=document.createElement('div'),sub=document.createElement('div');title.className='weekly-detail-title';title.textContent=e.kind==='macro'?e.shortTitle:e.ticker;sub.className='weekly-detail-sub';sub.textContent=e.kind==='macro'?e.title:e.name;copy.append(title,sub);const close=document.createElement('button');close.type='button';close.className='weekly-detail-close';close.dataset.weeklyDetailClose='1';close.textContent='×';head.append(copy,close);sheet.append(handle,head);if(e.kind==='macro'){const published=hasMacroPublication(e),status=document.createElement('div');status.className=`weekly-detail-status${published?'':' weekly-detail-status--waiting'}`;status.textContent=hasMacroResult(e)?'Resultado publicado. Os valores abaixo são os dados estruturados recebidos pelo snapshot Vestra.':hasStructuredOfficialMetrics(e)?'Publicação oficial disponível. A Vestra apresenta as métricas oficiais explicitamente identificadas na release.':hasOfficialMacroSummary(e)?'Publicação oficial disponível. A Vestra validou a release e apresenta o resumo oficial.':'Resultado ainda não publicado no snapshot Vestra. Este painel atualiza automaticamente quando a fonte oficial disponibilizar a publicação.';sheet.appendChild(status);const og=officialMetricGrid(e);if(og)sheet.appendChild(og);if(hasOfficialMacroSummary(e))sheet.appendChild(officialSummary(e.resultSummary));if(hasMacroMetrics(e)){const g=document.createElement('div');g.className='weekly-detail-grid';g.append(metric('Actual',formatResultValue(e.actual,e.unit)),metric('Consenso',formatResultValue(e.consensus,e.unit)),metric('Anterior',formatResultValue(e.previous,e.unit)));sheet.appendChild(g);}const m=document.createElement('div');m.className='weekly-detail-meta';const fd=new Intl.DateTimeFormat('pt-PT',{weekday:'long',day:'numeric',month:'long'}).format(e.date);m.append(detailMetaRow('Quando',`${fd}${e.timeLocal?` · ${e.timeLocal}`:''}`),detailMetaRow('Região',e.region),detailMetaRow('Tipo',categoryLabel(e)),detailMetaRow('Fonte',sourceLabel(e.source)));if(published&&e.resultReleasedAt)m.append(detailMetaRow('Publicação validada',e.resultReleasedAt));sheet.appendChild(m);if(e.sourceUrl){const a=document.createElement('a');a.className='weekly-detail-action';a.href=e.sourceUrl;a.target='_blank';a.rel = 'noopener noreferrer';a.textContent='Ver publicação oficial';sheet.appendChild(a);}}else{const status=document.createElement('div');status.className=`weekly-detail-status${e.reported?'':' weekly-detail-status--waiting'}`;status.textContent=e.reported?'Resultados publicados. Compara o EPS reportado com a estimativa e a surpresa do trimestre.':'Resultados ainda não publicados. A estimativa abaixo é a última disponível no snapshot Vestra.';sheet.appendChild(status);const g=document.createElement('div');g.className='weekly-detail-grid';g.append(metric('EPS actual',formatEPS(e.epsActual)),metric('Estimativa',formatEPS(e.epsEstimate)),metric('Surpresa',formatSurprise(e.epsSurprisePct)));sheet.appendChild(g);const m=document.createElement('div');m.className='weekly-detail-meta';m.append(detailMetaRow('Empresa',e.name),detailMetaRow('Ticker',e.ticker),detailMetaRow('Data',new Intl.DateTimeFormat('pt-PT',{weekday:'long',day:'numeric',month:'long'}).format(e.date)),detailMetaRow('Estado',e.inPortfolio?'No portefólio':'Mercado'));sheet.appendChild(m);const a=document.createElement('button');a.type='button';a.className='weekly-detail-action';a.dataset.weeklyDetailTicker=e.ticker;a.textContent='Abrir dossier da empresa';sheet.appendChild(a);}backdrop.appendChild(sheet);document.body.appendChild(backdrop);}
-  function render(options={}){ensureStyles();const card=ensureCard();if(!card)return[];const stocks=options.stocks||window.VestraMarketStaticUniverse?.getStocks?.()||[],tickers=options.portfolioTickers||portfolioTickerSet(),baseNow=options.now||new Date(),offset=Number.isFinite(Number(options.weekOffset))?Number(options.weekOffset):weekOffset,now=shiftedWeek(baseNow,offset),macro=options.macroEvents||macroSnapshot,events=selectEvents(stocks,tickers,now,options.limit||MAX_EVENTS,macro);lastRenderedEvents=events.slice();const start=localDay(now),end=new Date(start);end.setDate(end.getDate()+6);const fmt=new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}),range=`${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;card.replaceChildren();const head=document.createElement('div');head.className='weekly-events-head';const heading=document.createElement('div');heading.className='weekly-events-heading';heading.innerHTML='<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>';const nav=document.createElement('div');nav.className='weekly-events-nav';const prev=document.createElement('button');prev.type='button';prev.dataset.weeklyNav='prev';prev.setAttribute('aria-label','Semana anterior');prev.textContent='‹';prev.disabled=offset<=-MAX_WEEK_OFFSET;const rangeEl=document.createElement('div');rangeEl.className='weekly-events-range';rangeEl.textContent=offset===0?`Agora · ${range}`:range;const next=document.createElement('button');next.type='button';next.dataset.weeklyNav='next';next.setAttribute('aria-label','Semana seguinte');next.textContent='›';next.disabled=offset>=MAX_WEEK_OFFSET;nav.append(prev,rangeEl,next);head.append(heading,nav);card.appendChild(head);if(!events.length){const empty=document.createElement('div');empty.className='weekly-events-empty';empty.textContent='Sem eventos macro ou resultados relevantes nesta semana.';card.appendChild(empty);}else{const list=document.createElement('div');list.className='weekly-events-list';events.forEach((e,i)=>{const item=document.createElement('button');item.type='button';item.dataset.weeklyEventIndex=String(i);item.className=`weekly-event${e.inPortfolio?' weekly-event--portfolio':''}${e.kind==='macro'?' weekly-event--macro':''}`;const day=document.createElement('div');day.className='weekly-event__day';day.textContent=dayLabel(e.date,baseNow);const title=document.createElement('div');title.className='weekly-event__ticker';title.textContent=e.kind==='macro'?e.shortTitle:e.ticker;const name=document.createElement('div');name.className='weekly-event__name';name.textContent=e.kind==='macro'?`${e.region}${e.timeLocal?` · ${e.timeLocal}`:''}`:e.name;const meta=document.createElement('div');meta.className='weekly-event__meta';const type=document.createElement('span');type.textContent=categoryLabel(e);meta.appendChild(type);if(e.inPortfolio){const owned=document.createElement('span');owned.textContent='No portefólio';meta.appendChild(owned);}item.append(day,title,name,meta);list.appendChild(item);});card.appendChild(list);}const foot=document.createElement('div');foot.className='weekly-events-foot';foot.textContent='‹ › navega por semanas · Toca num evento para ver detalhes e resultados · Macro: Fed, BLS, BEA, BCE e U.S. Census.';card.appendChild(foot);return events;}
-  function setWeekOffset(value){weekOffset=Math.max(-MAX_WEEK_OFFSET,Math.min(MAX_WEEK_OFFSET,Number(value)||0));return render();}
-  function openTicker(ticker){const key=tickerKey(ticker);if(!key)return;closeDetail();try{if(typeof setView==='function')setView('market');}catch(_){}setTimeout(()=>{try{const r=window.VestraMarketData?.openDossier?.(key,{origin:'dashboard-weekly-events'});if(r?.catch)r.catch(()=>{});}catch(_){}},0);}
+
+  const VERSION = '1.6';
+  const CARD_ID = 'dashboardWeeklyEventsCard';
+  const STYLE_ID = 'dashboardWeeklyEventsStyle';
+  const DETAIL_ID = 'dashboardWeeklyEventDetail';
+  const MAX_EVENTS = 12;
+  const WINDOW_DAYS = 7;
+  const MACRO_URL = 'data/macro-events.json';
+  const OFFICIAL_SOURCE_URLS = Object.freeze({
+    fed: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    bls: 'https://www.bls.gov/bls/newsrels.htm',
+    bea: 'https://www.bea.gov/news',
+    ecb: 'https://www.ecb.europa.eu/press/govcdec/mopo/html/index.en.html',
+    census: 'https://www.census.gov/economic-indicators/',
+  });
+  const OFFICIAL_SOURCE_HOSTS = Object.freeze({
+    fed: ['federalreserve.gov'],
+    bls: ['bls.gov'],
+    bea: ['bea.gov'],
+    ecb: ['ecb.europa.eu'],
+    census: ['census.gov'],
+  });
+  const OFFICIAL_METRIC_LABELS = Object.freeze({
+    headline_mom_pct: 'Headline MoM',
+    headline_yoy_pct: 'Headline YoY',
+    core_mom_pct: 'Core MoM',
+    core_yoy_pct: 'Core YoY',
+  });
+  const OFFICIAL_METRIC_SCHEMAS = new Set(['bls_cpi_v1', 'bls_ppi_v1']);
+  let macroSnapshot = null;
+  let macroLoading = null;
+  let lastRenderedEvents = [];
+
+  const text = value => String(value ?? '').trim();
+  const number = value => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const tickerKey = value => text(value).toUpperCase();
+  const localDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  function parseCalendarDate(value) {
+    const raw = text(value);
+    if (!raw) return null;
+    const plain = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+    if (plain) {
+      const date = new Date(Number(plain[1]), Number(plain[2]) - 1, Number(plain[3]));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? null : localDay(date);
+  }
+
+  function portfolioContext() {
+    return window.VestraMarketPortfolioContext?.create({
+      getAssets: () => {
+        try { return (typeof state !== 'undefined' && state && Array.isArray(state.assets)) ? state.assets : []; }
+        catch (_) { return []; }
+      },
+      text,
+      number,
+    }) || null;
+  }
+
+  function portfolioTickerSet(context = portfolioContext()) {
+    try { return context?.portfolioTickers?.() || new Set(); }
+    catch (_) { return new Set(); }
+  }
+
+  function tickerMatchesPortfolio(ticker, tickers) {
+    const normalized = tickerKey(ticker);
+    if (!normalized) return false;
+    return [...(tickers || [])].some(value => tickerKey(value) === normalized);
+  }
+
+  function dateISO(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  function officialSourceUrl(source, candidate = '') {
+    const key = text(source).toLowerCase();
+    const fallback = OFFICIAL_SOURCE_URLS[key] || '';
+    const raw = text(candidate);
+    if (!raw) return fallback;
+    try {
+      const parsed = new URL(raw);
+      if (parsed.protocol !== 'https:') return fallback;
+      const hostname = parsed.hostname.toLowerCase();
+      const allowed = OFFICIAL_SOURCE_HOSTS[key] || [];
+      const validHost = allowed.some(host => hostname === host || hostname.endsWith(`.${host}`));
+      return validHost ? parsed.href : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function normaliseOfficialMetrics(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return Object.freeze({});
+    const out = {};
+    for (const key of Object.keys(OFFICIAL_METRIC_LABELS)) {
+      const parsed = number(value[key]);
+      if (parsed !== null) out[key] = parsed;
+    }
+    return Object.freeze(out);
+  }
+
+  function collectEvents(stocks, portfolioTickers = new Set(), now = new Date(), windowDays = WINDOW_DAYS) {
+    const start = localDay(now);
+    const end = new Date(start);
+    end.setDate(end.getDate() + Math.max(1, Number(windowDays) || WINDOW_DAYS) - 1);
+    const out = [];
+    for (const stock of (Array.isArray(stocks) ? stocks : [])) {
+      const ticker = tickerKey(stock?.ticker);
+      const quoteType = tickerKey(stock?.quote_type);
+      if (!ticker || ['ETF','FUND','MUTUALFUND','CRYPTO'].includes(quoteType)) continue;
+      const common = {
+        kind: 'earnings', ticker, name: text(stock?.name) || ticker,
+        title: text(stock?.name) || ticker, marketCap: number(stock?.market_cap) || 0,
+        inPortfolio: tickerMatchesPortfolio(ticker, portfolioTickers),
+      };
+      const latest = parseCalendarDate(stock?.analyst_latest_earnings_date);
+      if (latest && latest >= start && latest <= end) {
+        out.push({
+          ...common, date: latest, dateISO: dateISO(latest), source: 'analyst_latest_earnings_date',
+          reported: true,
+          epsEstimate: number(stock?.analyst_latest_eps_estimate),
+          epsActual: number(stock?.analyst_latest_eps_actual),
+          epsSurprisePct: number(stock?.analyst_latest_eps_surprise_pct),
+        });
+      }
+      const upcoming = parseCalendarDate(stock?.analyst_next_earnings_date);
+      if (upcoming && upcoming >= start && upcoming <= end && (!latest || dateISO(latest) !== dateISO(upcoming))) {
+        out.push({
+          ...common, date: upcoming, dateISO: dateISO(upcoming), source: 'analyst_next_earnings_date',
+          reported: false,
+          epsEstimate: number(stock?.analyst_eps_next_q),
+          epsActual: null,
+          epsSurprisePct: null,
+        });
+      }
+    }
+    return out;
+  }
+
+  function collectMacroEvents(snapshot, now = new Date(), windowDays = WINDOW_DAYS) {
+    const start = localDay(now);
+    const end = new Date(start);
+    end.setDate(end.getDate() + Math.max(1, Number(windowDays) || WINDOW_DAYS) - 1);
+    const rows = Array.isArray(snapshot) ? snapshot : (snapshot?.events || []);
+    return rows.map((row, index) => {
+      const eventStart = parseCalendarDate(row?.date);
+      const eventEnd = parseCalendarDate(row?.date_end || row?.date);
+      if (!eventStart || !eventEnd || eventStart > end || eventEnd < start) return null;
+      const source = text(row?.source);
+      const resultMetricSchema = text(row?.result_metric_schema);
+      return {
+        kind: 'macro',
+        id: `${source || 'macro'}:${text(row?.date)}:${text(row?.short_title) || index}`,
+        title: text(row?.title) || text(row?.short_title) || 'Evento macro',
+        shortTitle: text(row?.short_title) || text(row?.title) || 'Macro',
+        date: eventStart < start ? start : eventStart,
+        dateEnd: eventEnd,
+        region: text(row?.region), category: text(row?.category),
+        importance: text(row?.importance) || 'high', timeLocal: text(row?.time_local),
+        source,
+        sourceUrl: officialSourceUrl(source, row?.source_url),
+        actual: row?.actual ?? null,
+        consensus: row?.consensus ?? row?.forecast ?? null,
+        previous: row?.previous ?? null,
+        unit: text(row?.unit), resultStatus: text(row?.result_status),
+        resultSummary: text(row?.result_summary),
+        resultReleasedAt: text(row?.result_released_at),
+        resultMetricSchema: OFFICIAL_METRIC_SCHEMAS.has(resultMetricSchema) ? resultMetricSchema : '',
+        resultMetrics: normaliseOfficialMetrics(row?.result_metrics),
+      };
+    }).filter(Boolean);
+  }
+
+  function selectEvents(stocks, portfolioTickers = new Set(), now = new Date(), limit = MAX_EVENTS, macro = macroSnapshot) {
+    const macroEvents = collectMacroEvents(macro, now);
+    const earnings = collectEvents(stocks, portfolioTickers, now);
+    const portfolioEarnings = earnings.filter(x => x.inPortfolio).sort((a,b)=>a.date-b.date || b.marketCap-a.marketCap);
+    const marketEarnings = earnings.filter(x => !x.inPortfolio).sort((a,b)=>b.marketCap-a.marketCap || a.date-b.date);
+    const cap = Math.max(1, Number(limit) || MAX_EVENTS);
+    const selected = [];
+    const push = event => { if (selected.length < cap) selected.push(event); };
+    macroEvents.sort((a,b)=>a.date-b.date || (a.importance === 'critical' ? -1 : 1)).forEach(push);
+    portfolioEarnings.forEach(push);
+    marketEarnings.forEach(push);
+    return selected.sort((a,b) => {
+      if (a.date.getTime() !== b.date.getTime()) return a.date - b.date;
+      if (a.kind !== b.kind) return a.kind === 'macro' ? -1 : 1;
+      if (a.inPortfolio !== b.inPortfolio) return a.inPortfolio ? -1 : 1;
+      return (b.marketCap || 0) - (a.marketCap || 0);
+    });
+  }
+
+  function dayLabel(date, now = new Date()) {
+    const today = localDay(now);
+    const target = localDay(date);
+    const diff = Math.round((target - today) / 86400000);
+    if (diff === 0) return 'Hoje';
+    if (diff === 1) return 'Amanhã';
+    const weekday = new Intl.DateTimeFormat('pt-PT', { weekday: 'short' }).format(target).replace('.', '');
+    const calendar = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short' }).format(target).replace('.', '');
+    return `${weekday} · ${calendar}`;
+  }
+
+  function categoryLabel(event) {
+    if (event.kind === 'earnings') return 'Resultados';
+    if (event.category === 'central_bank') return 'Banco central';
+    if (event.category === 'inflation') return 'Inflação';
+    if (event.category === 'labour') return 'Emprego';
+    if (event.category === 'growth') return 'Crescimento';
+    if (event.category === 'activity') return 'Atividade';
+    return 'Macro';
+  }
+
+  function sourceLabel(source) {
+    return ({ fed:'Federal Reserve', bls:'U.S. BLS', bea:'U.S. BEA', ecb:'Banco Central Europeu', census:'U.S. Census' })[text(source)] || text(source) || 'Vestra';
+  }
+
+  function hasMacroResult(event) {
+    return event?.actual !== null && event?.actual !== undefined && text(event.actual) !== '';
+  }
+
+  function hasOfficialMacroSummary(event) {
+    return text(event?.resultStatus) === 'official_release_summary' && text(event?.resultSummary) !== '';
+  }
+
+  function hasStructuredOfficialMetrics(event) {
+    return OFFICIAL_METRIC_SCHEMAS.has(text(event?.resultMetricSchema)) && Object.keys(event?.resultMetrics || {}).length > 0;
+  }
+
+  function hasMacroPublication(event) {
+    return hasMacroResult(event) || hasOfficialMacroSummary(event) || hasStructuredOfficialMetrics(event);
+  }
+
+  function hasMacroMetrics(event) {
+    return [event?.actual, event?.consensus, event?.previous].some(value => value !== null && value !== undefined && text(value) !== '');
+  }
+
+  function formatResultValue(value, unit = '') {
+    if (value === null || value === undefined || text(value) === '') return '—';
+    return `${text(value)}${unit ? ` ${unit}` : ''}`;
+  }
+
+  function formatOfficialPercent(value) {
+    const parsed = number(value);
+    if (parsed === null) return '—';
+    const sign = parsed > 0 ? '+' : '';
+    return `${sign}${parsed.toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}%`;
+  }
+
+  function formatEPS(value) {
+    const parsed = number(value);
+    return parsed === null ? '—' : parsed.toLocaleString('pt-PT', { maximumFractionDigits: 4 });
+  }
+
+  function formatSurprise(value) {
+    const parsed = number(value);
+    if (parsed === null) return '—';
+    return `${(parsed * 100).toLocaleString('pt-PT', { maximumFractionDigits: 1, minimumFractionDigits: 1 })}%`;
+  }
+
+  async function loadMacroEvents(fetchImpl = (...args) => fetch(...args)) {
+    if (macroSnapshot) return macroSnapshot;
+    if (macroLoading) return macroLoading;
+    macroLoading = (async () => {
+      try {
+        const response = await fetchImpl(MACRO_URL, { cache: 'no-store' });
+        if (!response.ok) return null;
+        const payload = await response.json();
+        if (!payload || !Array.isArray(payload.events)) return null;
+        macroSnapshot = payload;
+        return macroSnapshot;
+      } catch (_) { return null; }
+      finally { macroLoading = null; }
+    })();
+    return macroLoading;
+  }
+
+  function ensureStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      .weekly-events-card{overflow:hidden}.weekly-events-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.weekly-events-kicker{font-size:10px;font-weight:800;letter-spacing:.55px;text-transform:uppercase;color:var(--muted,#64748b);margin-bottom:3px}.weekly-events-title{font-size:16px;font-weight:850;letter-spacing:-.2px;color:var(--text,#17212b)}.weekly-events-range{font-size:11px;color:var(--muted,#64748b);white-space:nowrap;padding-top:2px}
+      .weekly-events-list{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x proximity;padding:1px 2px 5px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}.weekly-events-list::-webkit-scrollbar{display:none}
+      .weekly-event{appearance:none;border:1px solid var(--line,#e5e7eb);background:var(--card,#fff);border-radius:14px;padding:11px 12px;min-width:168px;max-width:220px;text-align:left;scroll-snap-align:start;color:inherit;box-shadow:0 1px 2px rgba(15,23,42,.025);cursor:pointer;position:relative}.weekly-event::after{content:'›';position:absolute;right:10px;top:9px;font-size:17px;line-height:1;color:var(--muted,#64748b);opacity:.55}.weekly-event:active{transform:scale(.985)}
+      .weekly-event--portfolio{border-color:rgba(23,123,120,.35);background:linear-gradient(180deg,rgba(23,123,120,.07),rgba(23,123,120,.025))}.weekly-event--macro{border-color:rgba(99,102,241,.28);background:linear-gradient(180deg,rgba(99,102,241,.075),rgba(99,102,241,.025))}.weekly-event--critical{border-color:rgba(180,83,9,.35);background:linear-gradient(180deg,rgba(245,158,11,.09),rgba(245,158,11,.025))}
+      .weekly-event__day{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:#177B78;margin-bottom:7px;padding-right:14px}.weekly-event__ticker{font-size:14px;font-weight:900;line-height:1.15;margin-bottom:4px}.weekly-event__name{font-size:11px;color:var(--muted,#64748b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}.weekly-event__meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:9px;font-weight:800}.weekly-event__type,.weekly-event__portfolio,.weekly-event__critical{padding:3px 6px;border-radius:999px}.weekly-event__type{background:rgba(99,102,241,.10);color:#5558b9}.weekly-event__portfolio{background:rgba(23,123,120,.12);color:#116b68}.weekly-event__critical{background:rgba(245,158,11,.14);color:#9a5b08}.weekly-events-empty{padding:12px 0 4px;color:var(--muted,#64748b);font-size:12px}.weekly-events-foot{margin-top:8px;font-size:9px;line-height:1.35;color:var(--muted,#64748b);opacity:.8}
+      .weekly-detail-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(12,22,31,.34);display:flex;align-items:flex-end;justify-content:center;padding:14px;backdrop-filter:blur(3px)}.weekly-detail-sheet{width:min(560px,100%);max-height:min(78vh,680px);overflow:auto;border-radius:24px 24px 18px 18px;background:var(--card,#fff);color:var(--text,#17212b);box-shadow:0 -12px 50px rgba(15,23,42,.18);padding:10px 18px calc(18px + env(safe-area-inset-bottom))}.weekly-detail-handle{width:40px;height:4px;border-radius:999px;background:var(--line,#d8dee6);margin:1px auto 14px}.weekly-detail-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.weekly-detail-title{font-size:21px;font-weight:900;letter-spacing:-.45px;line-height:1.08}.weekly-detail-sub{font-size:12px;color:var(--muted,#64748b);margin-top:5px}.weekly-detail-close{appearance:none;border:0;background:var(--soft,#f1f5f9);width:34px;height:34px;border-radius:50%;font-size:22px;color:inherit;cursor:pointer;flex:0 0 auto}
+      .weekly-detail-status{margin:16px 0 10px;padding:12px 13px;border-radius:14px;background:rgba(23,123,120,.08);font-size:12px;line-height:1.45}.weekly-detail-status--waiting{background:rgba(99,102,241,.08)}.weekly-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.weekly-detail-grid--official{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-detail-metric{border:1px solid var(--line,#e5e7eb);border-radius:13px;padding:10px}.weekly-detail-metric span{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--muted,#64748b);margin-bottom:5px}.weekly-detail-metric strong{font-size:16px}.weekly-detail-summary{margin:12px 0;padding:13px 14px;border:1px solid rgba(23,123,120,.24);border-radius:14px;background:rgba(23,123,120,.045)}.weekly-detail-summary__label{font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.4px;color:#177B78;margin-bottom:6px}.weekly-detail-summary__text{font-size:12px;line-height:1.55;color:var(--text,#17212b)}.weekly-detail-meta{display:grid;gap:8px;margin:14px 0;font-size:12px}.weekly-detail-meta-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line,#edf0f4);padding-bottom:7px}.weekly-detail-meta-row span{color:var(--muted,#64748b)}.weekly-detail-meta-row strong{text-align:right}.weekly-detail-action{appearance:none;display:block;box-sizing:border-box;width:100%;border:0;border-radius:14px;padding:13px 14px;background:#177B78;color:#fff;font-weight:850;font-size:13px;cursor:pointer;margin-top:6px;text-align:center;text-decoration:none}
+      @media (max-width:560px){.weekly-event{min-width:158px}.weekly-events-title{font-size:15px}.weekly-detail-backdrop{padding:0}.weekly-detail-sheet{border-radius:24px 24px 0 0}.weekly-detail-grid{grid-template-columns:repeat(3,minmax(82px,1fr));overflow-x:auto}.weekly-detail-grid--official{grid-template-columns:repeat(2,minmax(118px,1fr))}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureCard() {
+    const dashboard = document.getElementById('viewDashboard');
+    if (!dashboard) return null;
+    let card = document.getElementById(CARD_ID);
+    if (card) return card;
+    card = document.createElement('div'); card.id = CARD_ID; card.className = 'card dash-secondary weekly-events-card';
+    const hero = dashboard.querySelector('.card.hero');
+    if (hero) hero.insertAdjacentElement('afterend', card); else dashboard.prepend(card);
+    return card;
+  }
+
+  function closeDetail() { document.getElementById(DETAIL_ID)?.remove?.(); }
+  function detailMetaRow(label, value) {
+    const row = document.createElement('div'); row.className = 'weekly-detail-meta-row';
+    const left = document.createElement('span'); left.textContent = label;
+    const right = document.createElement('strong'); right.textContent = value || '—';
+    row.append(left, right); return row;
+  }
+  function metric(label, value) {
+    const box = document.createElement('div'); box.className = 'weekly-detail-metric';
+    const l = document.createElement('span'); l.textContent = label;
+    const v = document.createElement('strong'); v.textContent = value;
+    box.append(l,v); return box;
+  }
+  function officialSummary(summary) {
+    const box = document.createElement('div'); box.className = 'weekly-detail-summary';
+    const label = document.createElement('div'); label.className = 'weekly-detail-summary__label'; label.textContent = 'Resumo oficial';
+    const body = document.createElement('div'); body.className = 'weekly-detail-summary__text'; body.textContent = text(summary);
+    box.append(label, body); return box;
+  }
+  function officialMetricGrid(event) {
+    if (!hasStructuredOfficialMetrics(event)) return null;
+    const grid = document.createElement('div'); grid.className = 'weekly-detail-grid weekly-detail-grid--official';
+    for (const [key, label] of Object.entries(OFFICIAL_METRIC_LABELS)) {
+      if (!Object.prototype.hasOwnProperty.call(event.resultMetrics, key)) continue;
+      grid.appendChild(metric(label, formatOfficialPercent(event.resultMetrics[key])));
+    }
+    return grid.childElementCount ? grid : null;
+  }
+
+  function openDetail(event, now = new Date()) {
+    if (!event) return;
+    ensureStyles(); closeDetail();
+    const backdrop = document.createElement('div'); backdrop.id = DETAIL_ID; backdrop.className = 'weekly-detail-backdrop'; backdrop.dataset.weeklyDetailBackdrop = '1';
+    const sheet = document.createElement('section'); sheet.className = 'weekly-detail-sheet'; sheet.setAttribute('role','dialog'); sheet.setAttribute('aria-modal','true');
+    const handle = document.createElement('div'); handle.className = 'weekly-detail-handle';
+    const head = document.createElement('div'); head.className = 'weekly-detail-head';
+    const copy = document.createElement('div'); const title = document.createElement('div'); title.className = 'weekly-detail-title'; title.textContent = event.kind === 'macro' ? event.shortTitle : event.ticker;
+    const sub = document.createElement('div'); sub.className = 'weekly-detail-sub'; sub.textContent = event.kind === 'macro' ? event.title : event.name; copy.append(title, sub);
+    const close = document.createElement('button'); close.type = 'button'; close.className = 'weekly-detail-close'; close.dataset.weeklyDetailClose = '1'; close.setAttribute('aria-label','Fechar'); close.textContent = '×';
+    head.append(copy, close); sheet.append(handle, head);
+
+    if (event.kind === 'macro') {
+      const hasActual = hasMacroResult(event);
+      const hasSummary = hasOfficialMacroSummary(event);
+      const hasOfficialMetrics = hasStructuredOfficialMetrics(event);
+      const published = hasMacroPublication(event);
+      const status = document.createElement('div');
+      status.className = `weekly-detail-status${published ? '' : ' weekly-detail-status--waiting'}`;
+      status.textContent = hasActual
+        ? 'Resultado publicado. Os valores abaixo são os dados estruturados recebidos pelo snapshot Vestra.'
+        : hasOfficialMetrics
+          ? 'Publicação oficial disponível. A Vestra apresenta separadamente as métricas BLS explicitamente identificadas na release, sem as converter num “Actual” genérico.'
+          : hasSummary
+            ? 'Publicação oficial disponível. A Vestra validou a data da release e apresenta abaixo o resumo oficial, sem inferir uma métrica “Actual” ambígua.'
+            : 'Resultado ainda não publicado no snapshot Vestra. Este painel atualiza automaticamente quando a fonte oficial disponibilizar a publicação.';
+      sheet.appendChild(status);
+      const officialGrid = officialMetricGrid(event);
+      if (officialGrid) sheet.appendChild(officialGrid);
+      if (hasSummary) sheet.appendChild(officialSummary(event.resultSummary));
+      if (hasMacroMetrics(event)) {
+        const grid = document.createElement('div'); grid.className = 'weekly-detail-grid';
+        grid.append(metric('Actual', formatResultValue(event.actual,event.unit)), metric('Consenso', formatResultValue(event.consensus,event.unit)), metric('Anterior', formatResultValue(event.previous,event.unit))); sheet.appendChild(grid);
+      }
+      const meta = document.createElement('div'); meta.className = 'weekly-detail-meta';
+      const fullDate = new Intl.DateTimeFormat('pt-PT',{weekday:'long',day:'numeric',month:'long'}).format(event.date);
+      meta.append(detailMetaRow('Quando', `${fullDate}${event.timeLocal ? ` · ${event.timeLocal}` : ''}`), detailMetaRow('Região', event.region), detailMetaRow('Tipo', categoryLabel(event)), detailMetaRow('Fonte', sourceLabel(event.source)));
+      if (published && event.resultReleasedAt) meta.append(detailMetaRow('Publicação validada', event.resultReleasedAt));
+      sheet.appendChild(meta);
+      if (event.sourceUrl) {
+        const action = document.createElement('a');
+        action.className = 'weekly-detail-action';
+        action.href = event.sourceUrl;
+        action.target = '_blank';
+        action.rel = 'noopener noreferrer';
+        action.textContent = 'Ver publicação oficial';
+        sheet.appendChild(action);
+      }
+    } else {
+      const status = document.createElement('div'); status.className = `weekly-detail-status${event.reported ? '' : ' weekly-detail-status--waiting'}`;
+      status.textContent = event.reported ? 'Resultados publicados. Compara o EPS reportado com a estimativa e a surpresa do trimestre.' : 'Resultados ainda não publicados. A estimativa abaixo é a última disponível no snapshot Vestra.'; sheet.appendChild(status);
+      const grid = document.createElement('div'); grid.className = 'weekly-detail-grid';
+      grid.append(metric('EPS actual', formatEPS(event.epsActual)), metric('Estimativa', formatEPS(event.epsEstimate)), metric('Surpresa', formatSurprise(event.epsSurprisePct))); sheet.appendChild(grid);
+      const meta = document.createElement('div'); meta.className = 'weekly-detail-meta';
+      const fullDate = new Intl.DateTimeFormat('pt-PT',{weekday:'long',day:'numeric',month:'long'}).format(event.date);
+      meta.append(detailMetaRow('Empresa', event.name), detailMetaRow('Ticker', event.ticker), detailMetaRow('Data', fullDate), detailMetaRow('Estado', event.inPortfolio ? 'No portefólio' : 'Mercado')); sheet.appendChild(meta);
+      const action = document.createElement('button'); action.type = 'button'; action.className = 'weekly-detail-action'; action.dataset.weeklyDetailTicker = event.ticker; action.textContent = 'Abrir dossier da empresa'; sheet.appendChild(action);
+    }
+    backdrop.appendChild(sheet); document.body.appendChild(backdrop);
+  }
+
+  function render(options = {}) {
+    ensureStyles(); const card = ensureCard(); if (!card) return [];
+    const stocks = options.stocks || window.VestraMarketStaticUniverse?.getStocks?.() || [];
+    const tickers = options.portfolioTickers || portfolioTickerSet(); const now = options.now || new Date(); const macro = options.macroEvents || macroSnapshot;
+    const events = selectEvents(stocks, tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
+    const start = localDay(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
+    card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
+    if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos macro ou resultados relevantes nos próximos 7 dias.'; card.appendChild(empty); }
+    else {
+      const list=document.createElement('div'); list.className='weekly-events-list';
+      events.forEach((event,index)=>{ const item=document.createElement('button'); item.type='button'; item.dataset.weeklyEventIndex=String(index); item.className=`weekly-event${event.inPortfolio?' weekly-event--portfolio':''}${event.kind==='macro'?' weekly-event--macro':''}${event.importance==='critical'?' weekly-event--critical':''}`; const day=document.createElement('div'); day.className='weekly-event__day'; day.textContent=dayLabel(event.date,now); const title=document.createElement('div'); title.className='weekly-event__ticker'; title.textContent=event.kind==='macro'?event.shortTitle:event.ticker; const name=document.createElement('div'); name.className='weekly-event__name'; name.textContent=event.kind==='macro'?`${event.region}${event.timeLocal?` · ${event.timeLocal}`:''}`:event.name; const meta=document.createElement('div'); meta.className='weekly-event__meta'; const type=document.createElement('span'); type.className='weekly-event__type'; type.textContent=categoryLabel(event); meta.appendChild(type); if(event.importance==='critical'){const high=document.createElement('span');high.className='weekly-event__critical';high.textContent='Impacto elevado';meta.appendChild(high);} if(event.inPortfolio){const owned=document.createElement('span');owned.className='weekly-event__portfolio';owned.textContent='No portefólio';meta.appendChild(owned);} item.title=event.title||event.name||event.ticker||''; item.append(day,title,name,meta); list.appendChild(item); }); card.appendChild(list);
+    }
+    const foot=document.createElement('div'); foot.className='weekly-events-foot'; foot.textContent='Toca num evento para ver detalhes e resultados · Macro: Fed, BLS, BEA, BCE e U.S. Census · Datas podem sofrer alterações.'; card.appendChild(foot); return events;
+  }
+
+  function openTicker(ticker) {
+    const key=tickerKey(ticker); if(!key)return; closeDetail(); try{if(typeof setView==='function')setView('market');}catch(_){} setTimeout(()=>{try{const result=window.VestraMarketData?.openDossier?.(key,{origin:'dashboard-weekly-events'});if(result?.catch)result.catch(()=>{});}catch(_){}},0);
+  }
   async function scheduleRender(){const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();await Promise.allSettled([marketLoad,loadMacroEvents()]);render();}
-  document.addEventListener('click',event=>{const nav=event.target.closest?.('[data-weekly-nav]');if(nav){weekOffset+=nav.dataset.weeklyNav==='prev'?-1:1;weekOffset=Math.max(-MAX_WEEK_OFFSET,Math.min(MAX_WEEK_OFFSET,weekOffset));render();return;}const eventButton=event.target.closest?.('[data-weekly-event-index]');if(eventButton){const i=Number(eventButton.dataset.weeklyEventIndex);if(Number.isInteger(i)&&lastRenderedEvents[i])openDetail(lastRenderedEvents[i]);return;}const dossierButton=event.target.closest?.('[data-weekly-detail-ticker]');if(dossierButton){openTicker(dossierButton.dataset.weeklyDetailTicker);return;}if(event.target.closest?.('[data-weekly-detail-close]')){closeDetail();return;}const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}if(event.target.closest?.('.sidenavbtn[data-view="dashboard"]'))setTimeout(()=>render(),0);});
-  window.addEventListener?.('vestra:market-ready',()=>render());if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
-  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,setWeekOffset,getWeekOffset:()=>weekOffset,version:VERSION});
+  document.addEventListener('click',event=>{const eventButton=event.target.closest?.('[data-weekly-event-index]');if(eventButton){const index=Number(eventButton.dataset.weeklyEventIndex);if(Number.isInteger(index)&&lastRenderedEvents[index])openDetail(lastRenderedEvents[index]);return;}const dossierButton=event.target.closest?.('[data-weekly-detail-ticker]');if(dossierButton){openTicker(dossierButton.dataset.weeklyDetailTicker);return;}if(event.target.closest?.('[data-weekly-detail-close]')){closeDetail();return;}const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)setTimeout(()=>render(),0);});
+  window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
+  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,version:VERSION});
 })();
