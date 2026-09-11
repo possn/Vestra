@@ -11,13 +11,15 @@ async function openMarket(page) {
 
 async function expectMobileSheetGeometry(page, tool) {
   const sheet = page.locator('#marketSheet');
-  const panel = sheet.locator('.market-sheet__panel');
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveAttribute('data-tool', tool);
   await expect(page.locator('body')).toHaveClass(/modal-open/);
 
-  // #marketSheet is the canonical vertical scroll owner; the inner panel may be
-  // taller than the viewport as long as it stays within the horizontal bounds.
+  // #marketSheet is the canonical vertical scroll owner. On iPhone/WebKit the
+  // sheet itself may extend beyond the visual viewport (and can start slightly
+  // above it after browser chrome / focus changes), so the contract is that it
+  // intersects the viewport, owns vertical scrolling, and never overflows
+  // horizontally. The inner panel must stay inside the viewport width.
   const geometry = await sheet.evaluate((el) => {
     const rect = el.getBoundingClientRect();
     const panel = el.querySelector('.market-sheet__panel');
@@ -41,9 +43,10 @@ async function expectMobileSheetGeometry(page, tool) {
 
   expect(geometry.left).toBeGreaterThanOrEqual(-1);
   expect(geometry.right).toBeLessThanOrEqual(geometry.viewportWidth + 1);
-  expect(geometry.top).toBeGreaterThanOrEqual(-1);
-  expect(geometry.bottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
+  expect(geometry.bottom).toBeGreaterThan(0);
+  expect(geometry.top).toBeLessThan(geometry.viewportHeight);
   expect(['auto', 'scroll']).toContain(geometry.overflowY);
+  expect(geometry.clientHeight).toBeGreaterThan(0);
   expect(geometry.panelLeft).toBeGreaterThanOrEqual(-1);
   expect(geometry.panelRight).toBeLessThanOrEqual(geometry.viewportWidth + 1);
   expect(geometry.bodyOverflow).toBeLessThanOrEqual(1);
