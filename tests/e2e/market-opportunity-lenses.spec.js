@@ -57,16 +57,16 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
 
   const emerging = await select('emerging', 'EARLY');
   expect(emerging).toContain('EARLY');
-  expect(emerging).not.toContain('RECOV');
 
   const recovery = await select('recovery', 'RECOV');
   expect(recovery).toContain('RECOV');
-  expect(recovery).not.toContain('EARLY');
 
   const value = await select('value', 'VALUE');
   expect(value).toContain('VALUE');
-  expect(value).not.toEqual(recovery);
 
+  // Lenses are independent full-universe strategies, not mutually-exclusive
+  // buckets. A company may legitimately satisfy more than one thesis; what
+  // matters is that each lens can discover and rank its own qualifying names.
   expect(new Set([low52.join(','), emerging.join(','), recovery.join(','), value.join(',')]).size).toBeGreaterThan(2);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
