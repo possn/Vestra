@@ -81,7 +81,6 @@ jobs:
         run: python scripts/enrich_macro_results.py
 
       - name: Fill missing CPI/PPI metrics from official BLS API
-        if: github.event_name != 'pull_request'
         run: python scripts/enrich_macro_results_api.py
 
       - name: Normalize policy decision days and refresh ECB results
