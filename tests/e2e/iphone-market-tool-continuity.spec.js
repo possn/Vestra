@@ -16,6 +16,8 @@ async function expectMobileSheetGeometry(page, tool) {
   await expect(sheet).toHaveAttribute('data-tool', tool);
   await expect(page.locator('body')).toHaveClass(/modal-open/);
 
+  // #marketSheet is the canonical vertical scroll owner; the inner panel may be
+  // taller than the viewport as long as it stays within the horizontal bounds.
   const geometry = await sheet.evaluate((el) => {
     const rect = el.getBoundingClientRect();
     const panel = el.querySelector('.market-sheet__panel');
