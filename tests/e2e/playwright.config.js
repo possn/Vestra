@@ -7,6 +7,7 @@ module.exports = defineConfig({
   testDir: '.',
   // Run the complete local iPhone/WebKit regression surface. Production has
   // its own dedicated config and smoke spec, so keep that one out here.
+  // Reachability-audit changes intentionally exercise this browser gate too.
   testMatch: '*.spec.js',
   testIgnore: 'production-smoke.spec.js',
   outputDir: path.join(repoRoot, 'test-results'),
