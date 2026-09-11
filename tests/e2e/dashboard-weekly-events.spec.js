@@ -64,3 +64,55 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   await expect(card).toBeVisible();
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+test('iPhone/WebKit: CPI structured BLS metrics render as published results instead of pending', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  await page.goto('/index.html');
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+
+  await page.evaluate(() => {
+    window.VestraWeeklyEvents.render({
+      now: new Date(2026, 8, 11, 14, 0, 0),
+      portfolioTickers: new Set(),
+      stocks: [],
+      macroEvents: {
+        events: [{
+          date:'2026-09-11',
+          short_title:'CPI EUA',
+          title:'CPI EUA',
+          category:'inflation',
+          region:'EUA',
+          importance:'high',
+          source:'bls',
+          time_local:'7:30 AM CT',
+          result_status:'official_release_summary',
+          result_summary:'BLS Public Data API · August 2026: headline +0.4% MoM / +3.4% YoY; core +0.3% MoM / +2.4% YoY.',
+          result_released_at:'2026-09-11',
+          result_metric_schema:'bls_cpi_v1',
+          result_metrics:{ headline_mom_pct:0.4, headline_yoy_pct:3.4, core_mom_pct:0.3, core_yoy_pct:2.4 },
+          result_transport:'bls_public_api',
+          source_url:'https://www.bls.gov/news.release/cpi.nr0.htm',
+        }]
+      }
+    });
+  });
+
+  const event = page.locator('#dashboardWeeklyEventsCard [data-weekly-event-index]').first();
+  await expect(event).toContainText('CPI EUA');
+  await event.click();
+
+  const detail = page.locator('#dashboardWeeklyEventDetail');
+  await expect(detail).toBeVisible();
+  await expect(detail).toContainText('Headline MoM');
+  await expect(detail).toContainText('+0,4%');
+  await expect(detail).toContainText('Headline YoY');
+  await expect(detail).toContainText('+3,4%');
+  await expect(detail).toContainText('Core MoM');
+  await expect(detail).toContainText('+0,3%');
+  await expect(detail).toContainText('Core YoY');
+  await expect(detail).toContainText('+2,4%');
+  await expect(detail).not.toContainText('Resultado ainda não publicado');
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
