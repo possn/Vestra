@@ -93,6 +93,27 @@ def _paragraph_starting(paragraphs: list[str], prefix: str) -> str:
     return next((value for value in paragraphs if value.lower().startswith(key)), "")
 
 
+def _release_blocks(tree) -> list[str]:
+    """Return semantic release blocks from both modern <p> and archived <pre> BLS pages.
+
+    Several BLS archive pages render the release body inside one or more ``pre``
+    elements instead of normal paragraphs. Restricting parsing to ``//p`` made
+    those exact-date archive fallbacks look empty even though the official release
+    had been fetched successfully.
+    """
+    blocks: list[str] = []
+    seen: set[str] = set()
+    for node in tree.xpath("//p|//pre"):
+        raw = str(node.text_content() or "")
+        pieces = re.split(r"(?:\r?\n)\s*(?:\r?\n)+", raw) if str(node.tag).lower() == "pre" else [raw]
+        for piece in pieces:
+            value = _normalise(piece)
+            if value and value not in seen:
+                blocks.append(value)
+                seen.add(value)
+    return blocks
+
+
 def _extract_cpi_metrics(paragraphs: list[str]) -> dict:
     headline = _paragraph_starting(paragraphs, "The Consumer Price Index for All Urban Consumers")
     core_month = _paragraph_starting(paragraphs, "The index for all items less food and energy")
@@ -135,8 +156,7 @@ def parse_bls_release(page: str, short_title: str) -> tuple[date, str, dict] | N
         released = date(int(match.group(3)), MONTH_INDEX[match.group(1).lower()], int(match.group(2)))
     except Exception:
         return None
-    paragraphs = [_normalise(node.text_content()) for node in tree.xpath("//p")]
-    paragraphs = [value for value in paragraphs if value]
+    paragraphs = _release_blocks(tree)
     summary = _paragraph_starting(paragraphs, config["paragraph_prefix"])
     if not summary:
         return None
