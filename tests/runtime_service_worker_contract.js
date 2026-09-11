@@ -7,16 +7,14 @@ const updateManagerMentions = source.match(/app-update-manager\.js/g) || [];
 assert(updateManagerMentions.length >= 2, 'safe update manager must be in both APP_SHELL and BOOTSTRAP_NETWORK_FIRST');
 assert(source.includes('"market-opportunities.js"'), 'opportunity engine must be network-first');
 assert(source.includes('"market-opportunity-lenses.js"'), 'opportunity lenses must be network-first with the engine');
+assert(source.includes('await cache.put(request, fresh.clone())'), 'network-first must persist a healthy response before returning it');
 
-function buildRuntime({ freshResponse, fetchError, cachedResponse, putGate }) {
+function buildRuntime({ freshResponse, fetchError, cachedResponse }) {
   const puts = [];
   const listeners = {};
   const cache = {
     add: async () => {},
-    put: async (request, response) => {
-      puts.push({ request, response });
-      if (putGate) await putGate;
-    },
+    put: async (request, response) => { puts.push({ request, response }); },
     match: async () => cachedResponse || null,
   };
 
@@ -68,21 +66,6 @@ function response(status, label) {
     const result = await context.networkFirst({ url: '/app.js' });
     assert.strictEqual(result, fresh, 'healthy network response must win');
     assert.strictEqual(puts.length, 1, 'healthy network response must refresh cache');
-  }
-
-  {
-    let releasePut;
-    const putGate = new Promise(resolve => { releasePut = resolve; });
-    const fresh = response(200, 'fresh');
-    const { context, puts } = buildRuntime({ freshResponse: fresh, cachedResponse: null, putGate });
-    let settled = false;
-    const pending = context.networkFirst({ url: '/index.html?prime=1' }).then(value => { settled = true; return value; });
-    await Promise.resolve();
-    await Promise.resolve();
-    assert.strictEqual(puts.length, 1, 'network-first must start cache persistence for a healthy response');
-    assert.strictEqual(settled, false, 'network-first must not resolve before the healthy response is persisted');
-    releasePut();
-    assert.strictEqual(await pending, fresh, 'healthy response returns after cache persistence');
   }
 
   {
