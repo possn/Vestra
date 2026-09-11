@@ -1,124 +1,35 @@
-/* Vestra Service Worker v10.17 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v131";
+/* Vestra Service Worker v10.18 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v132";
 const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./styles.css",
-  "./market.css",
-  "./app.js",
-  "./app-update-manager.js",
-  "./app-utils.js",
-  "./app-feedback.js",
-  "./app-storage.js",
-  "./app-asset-identity.js",
-  "./app-ui-core.js",
-  "./app-broker-normalization.js",
-  "./app-xtb-normalization.js",
-  "./app-broker-identity-data.js",
-  "./app-broker-parsing-core.js",
-  "./app-file-parsing.js",
-  "./app-broker-workbook.js",
-  "./app-broker-parsers.js",
-  "./app-market-client.js",
-  "./app-quote-errors.js",
-  "./app-return-assumptions.js",
-  "./app-financial-engine.js",
-  "./market.js",
-  "./market-live-overlay.js",
-  "./market-congress-live.js",
-  "./market-portfolio-context.js",
-  "./market-watch-snapshots.js",
-  "./market-static-universe.js",
-  "./market-scanner-data.js",
-  "./market-analysis-tools-runtime.js",
-  "./market-etf-intelligence.js",
-  "./dashboard-weekly-events.js",
-  "./market-dossier-signals.js",
-  "./market-search-suggestions.js",
-  "./market-row-ui.js",
-  "./market-data-loader.js",
-  "./market-data-health.js",
-  "./market-company-brief.js",
-  "./market-metric-cleanup.js",
-  "./market-dossier-controls.js",
-  "./market-ui-polish.js",
-  "./portfolio-collapsibles.js",
-  "./portfolio-sheet-navigation.js",
-  "./portfolio-card-classifier.js",
-  "./market-opportunities.js",
-  "./vestra-portfolio-focus.js",
-  "./vestra-portfolio-hierarchy.js",
-  "./vestra-swap-lab.js",
-  "./market-opportunity-lenses.js",
-  "./mobile-ui-refresh.js",
-  "./vestra-ai-brief.js",
-  "./vestra-portfolio-ui.js",
-  "./portfolio-diagnostics.js",
-  "./portfolio-dossier-routing.js",
-  "./politicians.js",
-  "./data/executives.json",
-  "./manifest.webmanifest",
-  "./icon192.png",
-  "./icon512.png",
-  "./icon192-maskable.png",
-  "./icon512-maskable.png",
-  "./apple-touch-icon.png",
-  "./apple-touch-icon-167.png",
-  "./apple-touch-icon-152.png",
-  "./apple-touch-icon-120.png",
-  "./favicon-32.png",
-  "./favicon-16.png"
+  "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
+  "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js",
+  "./app-broker-normalization.js", "./app-xtb-normalization.js", "./app-broker-identity-data.js",
+  "./app-broker-parsing-core.js", "./app-file-parsing.js", "./app-broker-workbook.js", "./app-broker-parsers.js",
+  "./app-market-client.js", "./app-quote-errors.js", "./app-return-assumptions.js", "./app-financial-engine.js",
+  "./market.js", "./market-live-overlay.js", "./market-congress-live.js", "./market-portfolio-context.js",
+  "./market-watch-snapshots.js", "./market-static-universe.js", "./market-scanner-data.js",
+  "./market-analysis-tools-runtime.js", "./market-etf-intelligence.js", "./dashboard-weekly-events.js",
+  "./dashboard-weekly-events-navigation.js", "./market-dossier-signals.js", "./market-search-suggestions.js",
+  "./market-row-ui.js", "./market-data-loader.js", "./market-data-health.js", "./market-company-brief.js",
+  "./market-metric-cleanup.js", "./market-dossier-controls.js", "./market-ui-polish.js", "./portfolio-collapsibles.js",
+  "./portfolio-sheet-navigation.js", "./portfolio-card-classifier.js", "./market-opportunities.js",
+  "./vestra-portfolio-focus.js", "./vestra-portfolio-hierarchy.js", "./vestra-swap-lab.js",
+  "./market-opportunity-lenses.js", "./mobile-ui-refresh.js", "./vestra-ai-brief.js", "./vestra-portfolio-ui.js",
+  "./portfolio-diagnostics.js", "./portfolio-dossier-routing.js", "./politicians.js", "./data/executives.json",
+  "./manifest.webmanifest", "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",
+  "./apple-touch-icon.png", "./apple-touch-icon-167.png", "./apple-touch-icon-152.png", "./apple-touch-icon-120.png",
+  "./favicon-32.png", "./favicon-16.png"
 ];
 
-// These files must always agree with one another. Serving a stale copy of one
-// beside a fresh copy of another can make app.js fail before DOMContentLoaded,
-// leaving the launch overlay permanently visible. The safe update manager is
-// network-first so the button cannot remain one launch behind its containment
-// contract after a deployment. Market data health is network-first too because
-// its live-quote freshness semantics must agree with the current quote runtime.
-// The weekly-events pair is also network-first because it is loaded dynamically
-// and must not lag behind the Dashboard visibility contract after a PWA update.
-// Dossier control modules are included so WebKit never mixes the old split-button
-// geometry with the new unified action group. Mobile drawer, opportunity engine,
-// opportunity lenses and the promoted market-analysis runtimes are network-first
-// because they are interaction-critical on iPhone and must not lag one launch
-// behind after a PWA update. Live dossier overlay/data-loader are also network-first:
-// stale copies can keep a ticker stuck in an old loading path for one extra PWA
-// launch after a runtime repair. Portfolio identity context is network-first too
-// so a corrected canonical ticker mapping is not delayed by one launch on iPhone/WebKit.
 const BOOTSTRAP_NETWORK_FIRST = new Set([
-  "app-utils.js",
-  "app-feedback.js",
-  "app-storage.js",
-  "app-asset-identity.js",
-  "app-ui-core.js",
-  "app-broker-normalization.js",
-  "app-xtb-normalization.js",
-  "app-broker-identity-data.js",
-  "app-broker-parsing-core.js",
-  "app-file-parsing.js",
-  "app-broker-workbook.js",
-  "app-broker-parsers.js",
-  "app-market-client.js",
-  "app-quote-errors.js",
-  "app-return-assumptions.js",
-  "app-financial-engine.js",
-  "app.js",
-  "app-update-manager.js",
-  "market-live-overlay.js",
-  "market-data-loader.js",
-  "market-data-health.js",
-  "market-portfolio-context.js",
-  "market-static-universe.js",
-  "market-scanner-data.js",
-  "market-analysis-tools-runtime.js",
-  "market-etf-intelligence.js",
-  "dashboard-weekly-events.js",
-  "market-dossier-controls.js",
-  "market-ui-polish.js",
-  "market-opportunities.js",
-  "market-opportunity-lenses.js",
-  "mobile-ui-refresh.js"
+  "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js", "app-ui-core.js",
+  "app-broker-normalization.js", "app-xtb-normalization.js", "app-broker-identity-data.js", "app-broker-parsing-core.js",
+  "app-file-parsing.js", "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js", "app-quote-errors.js",
+  "app-return-assumptions.js", "app-financial-engine.js", "app.js", "app-update-manager.js", "market-live-overlay.js",
+  "market-data-loader.js", "market-data-health.js", "market-portfolio-context.js", "market-static-universe.js",
+  "market-scanner-data.js", "market-analysis-tools-runtime.js", "market-etf-intelligence.js", "dashboard-weekly-events.js",
+  "dashboard-weekly-events-navigation.js", "market-dossier-controls.js", "market-ui-polish.js", "market-opportunities.js",
+  "market-opportunity-lenses.js", "mobile-ui-refresh.js"
 ]);
 
 self.addEventListener("install", event => {
@@ -173,14 +84,11 @@ async function staleWhileRevalidate(request, event) {
     .then(fresh => {
       if (fresh && fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
       return fresh;
-    })
-    .catch(() => null);
-
+    }).catch(() => null);
   if (cached) {
     if (event && typeof event.waitUntil === "function") event.waitUntil(refresh.then(() => {}));
     return cached;
   }
-
   const fresh = await refresh;
   return fresh || new Response("Offline", { status: 503 });
 }
@@ -188,32 +96,20 @@ async function staleWhileRevalidate(request, event) {
 self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-
   if (request.mode === "navigate" || request.destination === "document") {
-    event.respondWith(networkFirst(request));
-    return;
+    event.respondWith(networkFirst(request)); return;
   }
-
   const assetName = url.pathname.split("/").filter(Boolean).pop() || "";
   if (request.destination === "script" && BOOTSTRAP_NETWORK_FIRST.has(assetName)) {
-    event.respondWith(networkFirst(request));
-    return;
+    event.respondWith(networkFirst(request)); return;
   }
-
   if (["script", "style", "worker", "manifest"].includes(request.destination)) {
-    event.respondWith(staleWhileRevalidate(request, event));
-    return;
+    event.respondWith(staleWhileRevalidate(request, event)); return;
   }
-
   if (/\/data\/.*\.(json|txt)$/i.test(url.pathname)) {
-    event.respondWith(networkFirst(request));
-    return;
+    event.respondWith(networkFirst(request)); return;
   }
-
-  if (request.destination === "image") {
-    event.respondWith(cacheFirst(request));
-  }
+  if (request.destination === "image") event.respondWith(cacheFirst(request));
 });
