@@ -19,7 +19,7 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('-webkit-backdrop-filter:none!important', UI)
 
     def test_copy_enters_slowly_and_progressively(self):
-        self.assertIn('Vestra UI core v1.7', UI)
+        self.assertIn('Vestra UI core v1.8', UI)
         self.assertIn('vestraPremiumMarkIn .46s', UI)
         self.assertIn('vestraPremiumBrandIn .9s .34s', UI)
         self.assertIn('vestraPremiumTaglineIn 1.18s .78s', UI)
