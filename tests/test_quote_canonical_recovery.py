@@ -137,13 +137,13 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
         """)
         subprocess.run(["node", "-e", script], check=True, cwd=ROOT)
 
-    def test_bootstrap_loads_identity_guard_and_quote_fast_lane(self):
+    def test_bootstrap_loads_identity_guard_without_parallel_quote_fast_lane(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("loadCanonicalQuoteRepair();", text)
         self.assertIn("quote-canonical-repair.js?v=2.3", text)
         self.assertIn("window.VestraAssetIdentityGuard", text)
-        self.assertIn("loadQuoteRefreshPerformance();", text)
-        self.assertIn("quote-refresh-performance.js?v=1.0", text)
+        self.assertNotIn("loadQuoteRefreshPerformance", text)
+        self.assertNotIn("quote-refresh-performance.js", text)
 
 
 if __name__ == "__main__":

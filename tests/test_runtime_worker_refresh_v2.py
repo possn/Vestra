@@ -35,7 +35,7 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         self.assertNotIn(".unregister(", text)
         self.assertNotIn("caches.keys", text)
 
-    def test_bootstrap_bumps_runtime_modules(self):
+    def test_bootstrap_loads_current_runtime_modules(self):
         text = BOOT.read_text(encoding="utf-8")
         self.assertIn("app-runtime-bridge.js?v=1.1", text)
         self.assertIn("app-update-manager.js?v=1.4", text)
@@ -44,7 +44,8 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         self.assertIn("market-data-health.js?v=1.2", text)
         self.assertIn("loadDataHealth();", text)
         self.assertLess(text.index("loadAppUpdateManager();"), text.index("loadLearnedUniverse();"))
-        self.assertIn("version:'1.8'", text)
+        self.assertIn("window.VestraMarketCompanyBrief=Object.freeze", text)
+        self.assertNotIn("quote-refresh-performance.js", text)
 
 
 if __name__ == "__main__":

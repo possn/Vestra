@@ -37,7 +37,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("market-data-health.js?v=1.2", text)
         self.assertIn("loadLearnedUniverse();", text)
         self.assertIn("loadDataHealth();", text)
-        self.assertIn("version:'1.8'", text)
+        self.assertIn("window.VestraMarketCompanyBrief=Object.freeze", text)
 
 
 if __name__ == "__main__":
