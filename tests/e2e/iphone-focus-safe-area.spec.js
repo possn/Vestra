@@ -105,6 +105,9 @@ test('iPhone/WebKit: focus, constrained viewport and safe-area chrome stay usabl
   // Since v3.7 the dossier deliberately has one vertical scroll owner: the
   // fixed #marketSheet viewport. The inner panel is allowed to grow with the
   // dossier content, so its bottom can be far below the visible viewport.
+  // Mobile WebKit can keep a layout viewport taller than window.innerHeight
+  // after dynamic viewport changes, so the fixed sheet must cover the visible
+  // viewport; it does not need to end exactly at innerHeight.
   const dossierGeometry = await sheet.evaluate(el => {
     const sheetRect = el.getBoundingClientRect();
     const panel = el.querySelector('.market-sheet__panel');
@@ -112,7 +115,10 @@ test('iPhone/WebKit: focus, constrained viewport and safe-area chrome stay usabl
     const style = getComputedStyle(el);
     return {
       sheetTop: sheetRect.top,
+      sheetLeft: sheetRect.left,
+      sheetRight: sheetRect.right,
       sheetBottom: sheetRect.bottom,
+      innerWidth: window.innerWidth,
       innerHeight: window.innerHeight,
       overflowY: style.overflowY,
       clientHeight: el.clientHeight,
@@ -122,7 +128,9 @@ test('iPhone/WebKit: focus, constrained viewport and safe-area chrome stay usabl
     };
   });
   expect(dossierGeometry.sheetTop).toBeGreaterThanOrEqual(-1);
-  expect(dossierGeometry.sheetBottom).toBeLessThanOrEqual(dossierGeometry.innerHeight + 1);
+  expect(dossierGeometry.sheetLeft).toBeGreaterThanOrEqual(-1);
+  expect(dossierGeometry.sheetRight).toBeLessThanOrEqual(dossierGeometry.innerWidth + 1);
+  expect(dossierGeometry.sheetBottom).toBeGreaterThanOrEqual(dossierGeometry.innerHeight - 1);
   expect(['auto', 'scroll']).toContain(dossierGeometry.overflowY);
   expect(dossierGeometry.scrollHeight).toBeGreaterThanOrEqual(dossierGeometry.clientHeight);
   expect(dossierGeometry.panelTop).toBeGreaterThanOrEqual(-1);
