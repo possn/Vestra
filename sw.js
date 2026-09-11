@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.18 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v132";
+/* Vestra Service Worker v10.19 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v133";
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js",

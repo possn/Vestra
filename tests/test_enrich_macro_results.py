@@ -51,6 +51,21 @@ PPI_PAGE = '''<html><body>
 <p>Prices for final demand less foods, energy, and trade services rose 0.4 percent in August after inching up 0.1 percent in July. For the 12 months ended in August, the index for final demand less foods, energy, and trade services advanced 4.2 percent.</p>
 </body></html>'''
 
+PPI_ARCHIVE_PRE_PAGE = '''<html><body><pre>
+Transmission of material in this release is embargoed until
+8:30 a.m. (ET) Thursday, September 10, 2026
+
+PRODUCER PRICE INDEXES - AUGUST 2026
+
+The Producer Price Index for final demand moved up 0.4 percent in August, seasonally adjusted,
+the U.S. Bureau of Labor Statistics reported today. On an unadjusted basis, the index for final
+demand increased 5.4 percent for the 12 months ended in August.
+
+Prices for final demand less foods, energy, and trade services rose 0.3 percent in August after
+moving up 0.4 percent in July. For the 12 months ended in August, the index for final demand less
+foods, energy, and trade services advanced 4.7 percent.
+</pre></body></html>'''
+
 
 @unittest.skipUnless(DEPS_AVAILABLE, 'macro result dependencies are installed only in the dedicated workflow')
 class MacroResultTests(unittest.TestCase):
@@ -66,6 +81,12 @@ class MacroResultTests(unittest.TestCase):
         parsed = mod.parse_bls_release(PPI_PAGE, 'PPI EUA')
         self.assertEqual(parsed[0], date(2026, 9, 10))
         self.assertEqual(parsed[2], {'headline_mom_pct':0.0,'headline_yoy_pct':4.7,'core_mom_pct':0.4,'core_yoy_pct':4.2})
+
+    def test_archive_preformatted_release_is_parsed_and_structured(self):
+        parsed = mod.parse_bls_release(PPI_ARCHIVE_PRE_PAGE, 'PPI EUA')
+        self.assertEqual(parsed[0], date(2026, 9, 10))
+        self.assertTrue(parsed[1].startswith('The Producer Price Index for final demand'))
+        self.assertEqual(parsed[2], {'headline_mom_pct':0.4,'headline_yoy_pct':5.4,'core_mom_pct':0.3,'core_yoy_pct':4.7})
 
     def test_exact_current_canonical_attaches_without_archive(self):
         cpi_url = mod.BLS_RELEASES['CPI EUA']['url']
@@ -92,6 +113,16 @@ class MacroResultTests(unittest.TestCase):
         self.assertEqual(current['result_released_at'], '2026-09-11')
         self.assertEqual(current['result_metrics']['headline_mom_pct'], 0.2)
         self.assertEqual(session.calls, [cpi_url, archive])
+
+    def test_preformatted_archive_fallback_attaches_official_ppi(self):
+        ppi_url = mod.BLS_RELEASES['PPI EUA']['url']
+        archive = mod.bls_archive_url('PPI EUA', date(2026,9,10))
+        payload = {'events':[{'date':'2026-09-10','short_title':'PPI EUA','source':'bls'}]}
+        session = _Session({ppi_url:OLD_CPI_PAGE, archive:PPI_ARCHIVE_PRE_PAGE})
+        stats = mod.enrich_bls_results(payload, session, today=date(2026,9,11))
+        self.assertEqual(stats, {'matched':1,'structured':1,'fetched':2,'archive_fallbacks':1})
+        self.assertEqual(payload['events'][0]['result_metrics']['headline_yoy_pct'], 5.4)
+        self.assertEqual(payload['events'][0]['source_url'], archive)
 
     def test_wrong_date_archive_fails_closed(self):
         cpi_url = mod.BLS_RELEASES['CPI EUA']['url']
@@ -131,6 +162,7 @@ class MacroResultStaticTests(unittest.TestCase):
         self.assertIn('https://www.bls.gov/news.release/cpi.nr0.htm', source)
         self.assertIn('https://www.bls.gov/news.release/ppi.nr0.htm', source)
         self.assertIn('https://www.bls.gov/news.release/archives/', source)
+        self.assertIn('//p|//pre', source)
         self.assertIn('no consensus inference and no generic Actual coercion', source)
         self.assertNotIn('fred.stlouisfed.org', source)
 
