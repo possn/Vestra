@@ -28,7 +28,7 @@ assert(source.includes('dashboard-weekly-events-navigation.js?v=1.0'), 'weekly h
 assert(source.includes('dashboard-ui-refresh.js?v=1.4'));
 assert(source.includes('mobile-ui-refresh.js?v=1.4'));
 assert(source.includes('market-ui-polish.js?v=1.1'));
-assert(source.includes('ui-visual-polish.js?v=1.0'));
+assert(source.includes('ui-visual-polish.js?v=1.1'));
 assert(source.includes('vestraWeeklyEventsVisibilityGuard'));
 assert.deepStrictEqual(Array.from(api.getStocks()), []);
 assert(!source.includes("['data/stocks.json'"));
@@ -48,7 +48,7 @@ assert.strictEqual(api.unpackStartupPayload({layout:'unknown', fields:[], rows:[
 
 (async () => {
   const calls = []; const events = [];
-  const state = { loaded:false, loading:null, data:null, stocks:[], byTicker:new Map() };
+  const state = { loaded:false, loading:null,data:null,stocks:[],byTicker:new Map() };
   const loader = api.create({
     state, text:v=>String(v ?? '').trim(),
     fetchImpl:async (url, init)=>{ calls.push([url, init]); return {ok:true,status:200,json:async()=>packed}; },
