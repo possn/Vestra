@@ -8,6 +8,7 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.source = (ROOT / "dashboard-ui-refresh.js").read_text(encoding="utf-8")
+        cls.styles = (ROOT / "dashboard-ui-refresh.css").read_text(encoding="utf-8")
         cls.loader = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
         cls.utils = (ROOT / "app-utils.js").read_text(encoding="utf-8")
         cls.dividend_normalization = (ROOT / "app-broker-normalization.js").read_text(encoding="utf-8")
@@ -46,6 +47,15 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         self.assertNotIn("function dividendNet(dividend)", self.source)
         self.assertIn("function getDividendNet(d)", self.dividend_normalization)
 
+    def test_dashboard_static_styles_live_outside_runtime_javascript(self):
+        self.assertIn("link.rel = 'stylesheet'", self.source)
+        self.assertIn("dashboard-ui-refresh.css?v=1.0", self.source)
+        self.assertNotIn("style.textContent = `", self.source)
+        self.assertIn(".dashboard-pulse-card", self.styles)
+        self.assertIn("#dashboardUpcomingDividendsTile", self.styles)
+        self.assertIn(".dashboard-health-card__body", self.styles)
+        self.assertIn(".snapshot-history-summary", self.styles)
+
     def test_passive_income_grid_has_a_real_30_day_dividend_insight(self):
         self.assertIn("dashboardUpcomingDividendsTile", self.source)
         self.assertIn("Próximos 30 dias", self.source)
@@ -69,9 +79,9 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
-        self.assertIn("dashboard-ui-refresh.js?v=1.3", self.loader)
+        self.assertIn("dashboard-ui-refresh.js?v=1.4", self.loader)
         self.assertIn("version: '1.9'", self.loader)
-        self.assertIn("version: '1.3'", self.source)
+        self.assertIn("version: '1.4'", self.source)
 
 
 if __name__ == "__main__":
