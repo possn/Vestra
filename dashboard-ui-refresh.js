@@ -1,4 +1,4 @@
-/* Vestra Dashboard UI Refresh v1.1 — compact history + portfolio pulse + passive-income insight + mobile polish. */
+/* Vestra Dashboard UI Refresh v1.2 — compact history + portfolio pulse + passive-income insight + mobile polish. */
 (() => {
   'use strict';
 
@@ -10,11 +10,13 @@
   let historyObserver = null;
   let healthObserver = null;
 
-  const text = value => String(value ?? '').trim();
-  const num = value => {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
-  };
+  const shared = window.VestraUtils;
+  if (!shared || typeof shared.text !== 'function' || typeof shared.finiteOrNull !== 'function' ||
+      typeof shared.parseLocalDay !== 'function' || typeof shared.formatMoney !== 'function' ||
+      typeof shared.formatPercent !== 'function' || typeof shared.canonicalTicker !== 'function') {
+    throw new Error('VestraDashboardUiRefresh requires VestraUtils presentation helpers');
+  }
+  const { text, finiteOrNull: num, parseLocalDay: parseDay, canonicalTicker } = shared;
 
   function getState() {
     try { return (typeof state !== 'undefined' && state) ? state : null; }
@@ -26,29 +28,11 @@
   }
 
   function fmtMoney(value) {
-    const n = num(value);
-    if (n === null) return '—';
-    try { return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: currency(), maximumFractionDigits: 0 }).format(n); }
-    catch (_) { return `${Math.round(n).toLocaleString('pt-PT')} ${currency()}`; }
+    return shared.formatMoney(value, { currency: currency(), locale: 'pt-PT', maximumFractionDigits: 0 });
   }
 
   function fmtPct(value) {
-    const n = num(value);
-    if (n === null) return '—';
-    const sign = n > 0 ? '+' : '';
-    return `${sign}${n.toLocaleString('pt-PT', { maximumFractionDigits: 1, minimumFractionDigits: 1 })}%`;
-  }
-
-  function parseDay(value) {
-    const raw = text(value);
-    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
-    if (m) {
-      const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-      return Number.isNaN(d.getTime()) ? null : d;
-    }
-    if (!raw) return null;
-    const d = new Date(raw);
-    return Number.isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return shared.formatPercent(value, { locale: 'pt-PT', maximumFractionDigits: 1, minimumFractionDigits: 1, sign: true });
   }
 
   function historyRows() {
@@ -89,10 +73,6 @@
       thirty: changeVs(latest, b30),
       drawdown90,
     };
-  }
-
-  function canonicalTicker(value) {
-    return text(value).toUpperCase().replace(/\s+/g, '');
   }
 
   function assetTicker(asset) {
@@ -362,5 +342,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, version: '1.1' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, version: '1.2' });
 })();
