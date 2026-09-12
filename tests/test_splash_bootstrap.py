@@ -3,6 +3,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 UI = (ROOT / 'app-ui-core.js').read_text(encoding='utf-8')
+BASE = (ROOT / 'styles.css').read_text(encoding='utf-8')
 SW = (ROOT / 'sw.js').read_text(encoding='utf-8')
 
 
@@ -26,24 +27,26 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('display:flex!important;opacity:0!important;pointer-events:none!important', UI)
         self.assertIn('beat any stale inline opacity/display writes', UI)
 
-    def test_copy_enters_slowly_and_progressively(self):
-        self.assertIn('Vestra UI core v1.9', UI)
-        self.assertIn('vestraPremiumMarkIn .46s', UI)
-        self.assertIn('vestraPremiumBrandIn .9s .34s', UI)
-        self.assertIn('vestraPremiumTaglineIn 1.18s .78s', UI)
-        self.assertIn('filter:blur(1.5px)', UI)
+    def test_base_styles_own_single_entrance_animation(self):
+        self.assertIn('Vestra UI core v2.0', UI)
+        self.assertIn('animation:vestraMarkIn .72s', BASE)
+        self.assertIn('animation:vestraCopyIn .55s .14s', BASE)
+        self.assertIn('animation:vestraCopyIn .55s .22s', BASE)
+        self.assertIn('animation:vestraGlow 1.7s', BASE)
+        self.assertNotIn('vestraPremiumMarkIn', UI)
+        self.assertNotIn('vestraPremiumBrandIn', UI)
+        self.assertNotIn('vestraPremiumTaglineIn', UI)
+        self.assertNotIn('vestraPremiumGlow', UI)
+        self.assertIn('must not replace the\n   animation-name after parse', UI)
+        self.assertIn('Do not swap animation names here', UI)
+
+    def test_release_keeps_single_fade_owner_and_existing_hold_contract(self):
         self.assertIn('copyReadyMs = 2000', UI)
         self.assertIn('minimumVisibleMs = 4000', UI)
         self.assertIn('failsafeMs = 6200', UI)
-
-    def test_release_waits_two_seconds_after_copy_then_uses_one_fade_owner(self):
-        self.assertIn('tagline completes at ~2.00s → hold copy for 2s → fade', UI)
         self.assertIn('transition:opacity .68s cubic-bezier(.4,0,.2,1)!important', UI)
         self.assertIn("splash.classList.add('vestra-splash--leaving')", UI)
         self.assertIn('}, 720);', UI)
-        copy_ready_ms = 2000
-        minimum_visible_ms = 4000
-        self.assertEqual(minimum_visible_ms - copy_ready_ms, 2000)
 
     def test_bootstrap_scripts_are_network_first(self):
         self.assertIn('BOOTSTRAP_NETWORK_FIRST', SW)
