@@ -5,7 +5,7 @@
   function ensureStockThemesTools() {
     if (window.VestraMarketStockThemesTools || document.querySelector('script[data-vestra-stock-themes-tools]')) return;
     const script = document.createElement('script');
-    script.src = 'market-stock-themes-tools.js?v=1.0';
+    script.src = 'market-stock-themes-tools.js?v=1.4';
     script.defer = true;
     script.dataset.vestraStockThemesTools = '1';
     document.head.appendChild(script);
