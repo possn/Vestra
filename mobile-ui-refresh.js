@@ -1,4 +1,4 @@
-/* Vestra Mobile UI Refresh v1.2 — compact topbar + reliable mobile drawer + useful More shortcuts. */
+/* Vestra Mobile UI Refresh v1.3 — compact topbar + presentation-only mobile polish + useful More shortcuts. */
 (() => {
   'use strict';
 
@@ -49,38 +49,6 @@
       }
     `;
     document.head.appendChild(style);
-  }
-
-  function setSidebarOpen(open) {
-    const sidebar = document.getElementById('sidebar');
-    const backdrop = document.getElementById('sidebarBackdrop');
-    const toggle = document.getElementById('btnSidebarToggle');
-    if (!sidebar) return;
-    sidebar.classList.toggle('sidebar--open', Boolean(open));
-    if (backdrop) backdrop.hidden = !open;
-    if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    document.body.classList.toggle('sidebar-open', Boolean(open));
-  }
-
-  function ensureSidebarRuntime() {
-    const toggle = document.getElementById('btnSidebarToggle');
-    const close = document.getElementById('btnSidebarClose');
-    const backdrop = document.getElementById('sidebarBackdrop');
-    if (!toggle || toggle.dataset.vestraMobileDrawer === '1') return;
-    toggle.dataset.vestraMobileDrawer = '1';
-    toggle.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setSidebarOpen(true);
-    }, { passive:false });
-    close?.addEventListener('click', event => {
-      event.preventDefault();
-      setSidebarOpen(false);
-    }, { passive:false });
-    backdrop?.addEventListener('click', () => setSidebarOpen(false));
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') setSidebarOpen(false);
-    });
   }
 
   function callView(view) {
@@ -134,7 +102,6 @@
 
   function refresh() {
     ensureStyles();
-    ensureSidebarRuntime();
     normalizeTopbarIcons();
     ensureShortcuts();
   }
@@ -150,5 +117,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true });
   else boot();
 
-  window.VestraMobileUiRefresh = Object.freeze({ refresh, setSidebarOpen, version:'1.2' });
+  // Sidebar state and event wiring are intentionally owned by app.js (wireSidebar).
+  // This module is presentation-only so iPhone/WebKit never receives duplicate drawer listeners.
+  window.VestraMobileUiRefresh = Object.freeze({ refresh, version:'1.3' });
 })();
