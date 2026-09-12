@@ -43,7 +43,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
 
     def test_companions_are_reachable_from_loader(self):
         self.assertIn('ensureMarketUiPolish', self.loader)
-        self.assertIn('market-ui-polish.js?v=1.1', self.loader)
+        self.assertIn('market-ui-polish.js?v=1.2', self.loader)
         self.assertIn('ensureAnalysisToolsRuntime', self.loader)
         self.assertIn('market-analysis-tools-runtime.js?v=1.0', self.loader)
         self.assertIn("version: '1.9'", self.loader)
