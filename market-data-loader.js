@@ -263,14 +263,11 @@
   function openDossier(ticker,options={}){
     const tk=tickerKey(ticker);
     if(!tk) return Promise.resolve(false);
-    markDossierOpen(tk);
     const nav=window.VestraNavigation;
-    if(nav?.openCompany) return Promise.resolve(nav.openCompany(tk,options));
-    try{
-      const result=window.VestraMarket?.openTicker?.(tk);
-      if(!window.VestraMarket?.__lazyDossiersInstalled) hydrateOpenDossier(tk);
-      return Promise.resolve(result).then(()=>true,()=>false);
-    }catch(_){ return Promise.resolve(false); }
+    if(!nav?.openCompany) return Promise.resolve(false);
+    markDossierOpen(tk);
+    try{ return Promise.resolve(nav.openCompany(tk,options)); }
+    catch(_){ return Promise.resolve(false); }
   }
 
   document.addEventListener('click',e=>{
