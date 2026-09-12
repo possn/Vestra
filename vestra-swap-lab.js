@@ -98,25 +98,15 @@
     const options=cs.map((c,i)=>`<button type="button" class="${i===0?'is-active':''}" data-ux456-pair="${esc(c.source)}|${esc(c.target)}"><b>${esc(c.source)}</b><span>→</span><strong>${esc(c.target)}</strong></button>`).join('');
     lab.innerHTML=`<div class="ux456-pair-picker"><small>ESCOLHER TROCA</small><div>${options}</div></div><div class="ux456-comparison-host">${comparisonHTML(cs[0].source,cs[0].target)}</div>`;
   }
-  function polishOverlap(){
-    const root=document.getElementById('marketSheetContent');const card=root?.querySelector('[data-ux-kind="overlap"]');if(!card)return;
-    card.style.setProperty('padding-right','16px');
-    const head=card.querySelector('.market-perspective-head');if(head)head.style.setProperty('padding-right','58px');
-    const toggle=card.querySelector(':scope > .market-collapse-toggle');if(toggle){toggle.style.right='12px';toggle.style.top='12px';}
-  }
   function addStyle(){
     if(document.getElementById('vestra-ux-v456-style'))return;
-    const s=document.createElement('style');s.id='vestra-ux-v456-style';s.textContent=`
-      .ux456-swaplab{margin:10px 0 14px;padding:12px;border:1px solid #ddd6f3;border-radius:18px;background:linear-gradient(145deg,#fbf9ff,#f5f1ff)}.ux456-pair-picker>small{font-size:8px;font-weight:900;letter-spacing:.12em;color:#6a55aa}.ux456-pair-picker>div{display:flex;gap:6px;overflow-x:auto;padding:7px 0 2px;scrollbar-width:none}.ux456-pair-picker button{flex:0 0 auto;border:1px solid #ddd6f3;background:white;color:#263b42;border-radius:999px;padding:7px 9px;font-size:10px;font-weight:800}.ux456-pair-picker button.is-active{background:#7664b7;color:white;border-color:#7664b7}.ux456-pair-picker button span{opacity:.55;margin:0 3px}
-      .ux456-compare-panel{margin-top:10px;padding:12px;border-radius:16px;background:white;border:1px solid #e5e0f4}.ux456-compare-head{display:flex;justify-content:space-between;gap:10px;align-items:start}.ux456-compare-head>div{display:grid;gap:2px}.ux456-compare-head small{font-size:8px;letter-spacing:.1em;font-weight:900;color:#6a55aa}.ux456-compare-head strong{font-size:15px}.ux456-compare-head strong span{color:#8a7bc2}.ux456-verdict{font-size:8.5px;font-weight:850;padding:5px 7px;border-radius:999px;text-align:center;max-width:126px}.ux456-verdict.is-good{background:#e4f6ef;color:#167b60}.ux456-verdict.is-neutral{background:#edf1f3;color:#5f747b}.ux456-verdict.is-bad{background:#fbe9e5;color:#b35344}
-      .ux456-company-pair{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:11px 0;padding:9px;border-radius:13px;background:#f8f7fb}.ux456-company-pair>div{display:grid;gap:2px}.ux456-company-pair small{font-size:7.5px;font-weight:900;letter-spacing:.1em;color:#839198}.ux456-company-pair b{font-size:10px;line-height:1.25}.ux456-company-pair i{font-style:normal;color:#8c7dc2;font-weight:900}
-      .ux456-metrics{display:grid;gap:1px;border:1px solid #edf0f1;border-radius:13px;overflow:hidden}.ux456-metric{display:grid;grid-template-columns:minmax(90px,1fr) 54px 18px 54px;align-items:center;gap:4px;padding:8px 9px;background:#fff;border-bottom:1px solid #edf0f1;font-size:10px}.ux456-metric:last-child{border-bottom:0}.ux456-metric span{color:#6c7f86}.ux456-metric b,.ux456-metric strong{text-align:right}.ux456-metric i{text-align:center;font-style:normal;color:#a2afb4}.ux456-metric strong.is-better{color:#168a69}.ux456-metric strong.is-worse{color:#bc5d4c}
-      .ux456-verdict-copy{display:grid;gap:3px;margin-top:10px;padding:10px;border-radius:13px}.ux456-verdict-copy.is-good{background:#eef9f5}.ux456-verdict-copy.is-neutral{background:#f3f6f7}.ux456-verdict-copy.is-bad{background:#fff2ef}.ux456-verdict-copy b{font-size:11px}.ux456-verdict-copy span{font-size:9.5px;color:#526970}.ux456-verdict-copy small{font-size:8px;color:#839198;margin-top:2px}.ux456-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.ux456-actions button{border:1px solid #d9dde0;background:#fff;border-radius:999px;padding:7px 9px;font-size:9.5px;font-weight:800;color:#27434b}.ux456-actions button:last-child{background:#7664b7;color:white;border-color:#7664b7}
-      [data-ux-kind="swap"]>.market-collapse-toggle,[data-ux-kind="overlap"]>.market-collapse-toggle{z-index:5!important}.ux454-swap-head{padding-right:46px!important}.ux454-overlap-head{padding-right:46px!important}
-      @media(max-width:620px){.ux456-compare-head{display:grid}.ux456-verdict{justify-self:start;max-width:none}.ux456-metric{grid-template-columns:minmax(82px,1fr) 48px 14px 48px;font-size:9.5px}.ux456-company-pair b{font-size:9px}}
-    `;document.head.appendChild(s);
+    const link=document.createElement('link');
+    link.id='vestra-ux-v456-style';
+    link.rel='stylesheet';
+    link.href='vestra-swap-lab.css?v=1.0';
+    document.head.appendChild(link);
   }
-  function apply(){installSwapLab();polishOverlap();}
+  function apply(){installSwapLab();}
   document.addEventListener('click',e=>{
     const pair=e.target.closest?.('[data-ux456-pair]');
     if(pair&&pair.closest('.ux456-pair-picker')){
