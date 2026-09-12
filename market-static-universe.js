@@ -55,7 +55,7 @@
   function ensureDashboardUiRefresh() { loadCompanion('VestraDashboardUiRefresh','script[data-vestra-dashboard-ui-refresh]','dashboard-ui-refresh.js?v=1.4','vestraDashboardUiRefresh'); }
   function ensureMobileUiRefresh() { loadCompanion('VestraMobileUiRefresh','script[data-vestra-mobile-ui-refresh]','mobile-ui-refresh.js?v=1.4','vestraMobileUiRefresh'); }
   function ensureMarketUiPolish() { loadCompanion('VestraMarketUiPolish','script[data-vestra-market-ui-polish]','market-ui-polish.js?v=1.1&stockthemes=2','vestraMarketUiPolish'); }
-  function ensureUiVisualPolish() { loadCompanion('VestraUiVisualPolish','script[data-vestra-ui-visual-polish]','ui-visual-polish.js?v=1.0','vestraUiVisualPolish'); }
+  function ensureUiVisualPolish() { loadCompanion('VestraUiVisualPolish','script[data-vestra-ui-visual-polish]','ui-visual-polish.js?v=1.1','vestraUiVisualPolish'); }
 
   function announceReady(stocks) {
     try {
