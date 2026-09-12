@@ -37,7 +37,7 @@
     document.head.appendChild(script);
   }
 
-  function ensureScannerCompanion() { loadCompanion('VestraMarketScannerData','script[data-vestra-scanner-data]','market-scanner-data.js?v=1.1','vestraScannerData'); }
+  function ensureScannerCompanion() { loadCompanion('VestraMarketScannerData','script[data-vestra-scanner-data]','market-scanner-data.js?v=1.3','vestraScannerData'); }
   function ensureAnalysisToolsRuntime() { loadCompanion('VestraMarketAnalysisToolsRuntime','script[data-vestra-analysis-tools-runtime]','market-analysis-tools-runtime.js?v=1.0','vestraAnalysisToolsRuntime'); }
 
   function ensureWeeklyEventsCompanion() {
@@ -48,7 +48,7 @@
       style.textContent = '#viewDashboard:not(.dash-secondary-open) #dashboardWeeklyEventsCard{display:block!important}';
       document.head.appendChild(style);
     }
-    loadCompanion('VestraWeeklyEvents','script[data-vestra-weekly-events]','dashboard-weekly-events.js?v=1.2','vestraWeeklyEvents');
+    loadCompanion('VestraWeeklyEvents','script[data-vestra-weekly-events]','dashboard-weekly-events.js?v=1.6','vestraWeeklyEvents');
   }
 
   function ensureWeeklyEventsNavigation() { loadCompanion('VestraWeeklyEventsNavigation','script[data-vestra-weekly-events-navigation]','dashboard-weekly-events-navigation.js?v=1.0','vestraWeeklyEventsNavigation'); }

@@ -16,7 +16,7 @@ class MarketScannerLazyPayloadTests(unittest.TestCase):
     def test_dynamic_module_is_reachable_from_market_shell(self):
         shell = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
         module = (ROOT / "market-scanner-data.js").read_text(encoding="utf-8")
-        self.assertIn("market-scanner-data.js?v=1.1", shell)
+        self.assertIn("market-scanner-data.js?v=1.3", shell)
         self.assertIn("data/stocks-scanner.json", module)
         self.assertIn("cache: 'no-store'", module)
 
