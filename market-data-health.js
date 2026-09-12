@@ -145,27 +145,11 @@
 
   function ensureStyle() {
     if (document.getElementById('vestra-data-health-style')) return;
-    const style = document.createElement('style');
-    style.id = 'vestra-data-health-style';
-    style.textContent = `
-      .vestra-data-health{margin:0 0 10px;border:1px solid var(--line);border-radius:13px;background:var(--card);overflow:hidden}
-      .vestra-data-health summary{list-style:none;display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-size:11px;font-weight:750;color:var(--text2)}
-      .vestra-data-health summary::-webkit-details-marker{display:none}
-      .vestra-data-health__dot{width:7px;height:7px;border-radius:999px;background:#7c8a8e;flex:0 0 auto}
-      .vestra-data-health[data-state="ok"] .vestra-data-health__dot{background:#1a9b73}
-      .vestra-data-health[data-state="stale"] .vestra-data-health__dot{background:#c8902f}
-      .vestra-data-health[data-state="bad"] .vestra-data-health__dot{background:#c65151}
-      .vestra-data-health__label{color:var(--text);font-weight:800}
-      .vestra-data-health__age{margin-left:auto;font-weight:650;white-space:nowrap}
-      .vestra-data-health__chev{font-size:9px;transition:transform .15s ease}
-      .vestra-data-health[open] .vestra-data-health__chev{transform:rotate(180deg)}
-      .vestra-data-health__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 12px 12px}
-      .vestra-data-health__item{padding:9px 10px;border-radius:10px;background:var(--card2)}
-      .vestra-data-health__item small{display:block;font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--text2);margin-bottom:3px}
-      .vestra-data-health__item strong{display:block;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      @media (min-width:760px){.vestra-data-health__grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
-    `;
-    document.head.appendChild(style);
+    const link = document.createElement('link');
+    link.id = 'vestra-data-health-style';
+    link.rel = 'stylesheet';
+    link.href = 'market-data-health.css?v=1.0';
+    document.head.appendChild(link);
   }
 
   function quoteResultLabel(data) {
