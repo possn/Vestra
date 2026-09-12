@@ -4,7 +4,9 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 GLOBAL = ROOT / "market-global-search.js"
+GLOBAL_CSS = ROOT / "market-global-search.css"
 BOOTSTRAP = ROOT / "market-company-brief.js"
+SW = ROOT / "sw.js"
 
 
 class GlobalMarketSearchTests(unittest.TestCase):
@@ -30,14 +32,26 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("próximo pipeline diário promove-a para o universo oficial", text)
         self.assertNotIn("score: 50", text)
 
-    def test_bootstrap_loads_module(self):
+    def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=2.0", text)
-        self.assertIn("market-global-search.js?v=1.2", text)
+        self.assertIn("market-global-search.js?v=1.3", text)
         self.assertIn("market-data-health.js?v=1.2", text)
         self.assertIn("loadLearnedUniverse();", text)
         self.assertIn("loadDataHealth();", text)
         self.assertIn("window.VestraMarketCompanyBrief=Object.freeze", text)
+
+    def test_presentation_has_static_css_owner_and_offline_reachability(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        css = GLOBAL_CSS.read_text(encoding="utf-8")
+        sw = SW.read_text(encoding="utf-8")
+        self.assertIn("market-global-search.css?v=1.0", text)
+        self.assertNotIn("document.createElement('style')", text)
+        self.assertNotIn('style.textContent', text)
+        self.assertIn('.vestra-global-search{', css)
+        self.assertIn('.vestra-global-search__row{', css)
+        self.assertIn('"./market-global-search.css"', sw)
+        self.assertIn("version:'1.3'", text)
 
 
 if __name__ == "__main__":

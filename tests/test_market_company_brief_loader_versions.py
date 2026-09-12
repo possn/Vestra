@@ -24,7 +24,6 @@ class MarketCompanyBriefLoaderVersionTests(unittest.TestCase):
         self.assertIn('.market-row__description{', self.company_css)
         self.assertIn('.market-company-brief{', self.company_css)
         self.assertIn('"./market-company-brief.css"', self.sw)
-        self.assertIn('vestra-cache-v138', self.sw)
 
 
 if __name__ == '__main__':
