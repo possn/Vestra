@@ -7,7 +7,7 @@ test('iPhone/WebKit: Ideias coexist with a separate broad stock-theme browser', 
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
-  await page.waitForFunction(() => window.VestraMarketStockThemesTools?.version === '1.3');
+  await page.waitForFunction(() => window.VestraMarketStockThemesTools?.version === '1.4');
 
   const ideas = page.locator('[data-market-mode="discover"]');
   await expect(ideas.locator('strong')).toHaveText('Ideias');
