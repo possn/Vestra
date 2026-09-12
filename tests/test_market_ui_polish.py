@@ -16,6 +16,9 @@ class MarketUiPolishContractTests(unittest.TestCase):
     def test_dossier_geometry_has_one_owner_and_one_fixed_action_group(self):
         self.assertNotIn('right:max(calc(env(safe-area-inset-right) + 68px),68px)!important', self.source)
         self.assertNotIn('#marketSheet .market-close-persistent,', self.source)
+        self.assertNotIn('market-detail-actions', self.source)
+        self.assertNotIn("document.createElement('style')", self.source)
+        self.assertNotIn('style.textContent', self.source)
         self.assertIn("market-dossier-controls.css?v=1.0", self.dossier)
         self.assertNotIn("document.createElement('style')", self.dossier)
         self.assertNotIn('style.textContent', self.dossier)
@@ -28,7 +31,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('height:46px!important', self.dossier_css)
         self.assertIn('> .market-close-persistent', self.dossier_css)
         self.assertIn('display:none!important', self.dossier_css)
-        self.assertIn("version: '1.2'", self.source)
+        self.assertIn("version: '1.3'", self.source)
         self.assertIn("version: '1.4'", self.dossier)
         self.assertIn('right:max(calc(env(safe-area-inset-right) - 20px),-20px)!important', self.dossier_css)
 
@@ -47,7 +50,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
 
     def test_companions_are_reachable_from_loader(self):
         self.assertIn('ensureMarketUiPolish', self.loader)
-        self.assertIn('market-ui-polish.js?v=1.2', self.loader)
+        self.assertIn('market-ui-polish.js?v=1.3', self.loader)
         self.assertIn('ensureAnalysisToolsRuntime', self.loader)
         self.assertIn('market-analysis-tools-runtime.js?v=1.0', self.loader)
         self.assertIn("version: '1.9'", self.loader)

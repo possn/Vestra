@@ -27,7 +27,7 @@ assert(source.includes('dashboard-weekly-events.js?v=1.8'));
 assert(source.includes('dashboard-weekly-events-navigation.js?v=1.1'), 'weekly history navigation must be a reachable runtime companion');
 assert(source.includes('dashboard-ui-refresh.js?v=1.4'));
 assert(source.includes('mobile-ui-refresh.js?v=1.4'));
-assert(source.includes('market-ui-polish.js?v=1.2'));
+assert(source.includes('market-ui-polish.js?v=1.3'));
 assert(source.includes('ui-visual-polish.js?v=1.1'));
 assert(!source.includes('vestraWeeklyEventsVisibilityGuard'));
 assert.deepStrictEqual(Array.from(api.getStocks()), []);
