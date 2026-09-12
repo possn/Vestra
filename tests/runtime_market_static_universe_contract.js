@@ -22,7 +22,7 @@ assert.strictEqual(typeof api.ensureMarketUiPolish, 'function');
 assert.strictEqual(typeof api.ensureUiVisualPolish, 'function');
 assert(source.includes('market-etf-intelligence.js?v=1.2'));
 assert(source.includes('market-scanner-data.js?v=1.3'));
-assert(source.includes('market-analysis-tools-runtime.js?v=1.0'));
+assert(source.includes('market-analysis-tools-runtime.js?v=1.1'));
 assert(source.includes('dashboard-weekly-events.js?v=1.8'));
 assert(source.includes('dashboard-weekly-events-navigation.js?v=1.1'), 'weekly history navigation must be a reachable runtime companion');
 assert(source.includes('dashboard-ui-refresh.js?v=1.4'));

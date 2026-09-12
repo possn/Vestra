@@ -52,7 +52,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('ensureMarketUiPolish', self.loader)
         self.assertIn('market-ui-polish.js?v=1.3', self.loader)
         self.assertIn('ensureAnalysisToolsRuntime', self.loader)
-        self.assertIn('market-analysis-tools-runtime.js?v=1.0', self.loader)
+        self.assertIn('market-analysis-tools-runtime.js?v=1.1', self.loader)
         self.assertIn("version: '1.9'", self.loader)
 
     def test_analysis_tools_have_searchable_compare_and_news_and_lazy_scanner(self):
@@ -63,7 +63,10 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('VestraMarketScannerData', self.analysis_tools)
         self.assertIn('data-tool-scanner-strategy', self.analysis_tools)
         self.assertIn('overflow-y:auto', self.analysis_tools)
-        self.assertIn("version:'1.0'", self.analysis_tools)
+        self.assertIn('window.VestraNavigation', self.analysis_tools)
+        self.assertIn("nav.openCompany(ticker, { origin: 'market' })", self.analysis_tools)
+        self.assertNotIn('VestraMarket?.openTicker', self.analysis_tools)
+        self.assertIn("version:'1.1'", self.analysis_tools)
 
 
 if __name__ == '__main__':
