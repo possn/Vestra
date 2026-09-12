@@ -53,14 +53,11 @@
   }
   function style(){
     if(document.getElementById('vestra-opportunity-lenses-style'))return;
-    const s=document.createElement('style');s.id='vestra-opportunity-lenses-style';s.textContent=`
-      .vestra-opportunity-lenses{position:relative;z-index:3;display:flex;gap:6px;overflow-x:auto;margin:0 0 10px;padding:2px 0 3px;scrollbar-width:none;pointer-events:auto;-webkit-overflow-scrolling:touch}
-      .vestra-opportunity-lenses::-webkit-scrollbar{display:none}
-      .vestra-opportunity-lenses button{position:relative;z-index:4;flex:0 0 auto;appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:8px 11px;min-height:34px;font:inherit;font-size:9px;font-weight:850;color:var(--text2);cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-      .vestra-opportunity-lenses button.is-active{background:var(--accent,#168e89);color:#fff;border-color:transparent}
-      .ux454-opportunity-guide{pointer-events:none}
-      .vestra-lens-empty{padding:18px;text-align:center;color:var(--text2);font-size:11px}
-    `;document.head.appendChild(s);
+    const link=document.createElement('link');
+    link.id='vestra-opportunity-lenses-style';
+    link.rel='stylesheet';
+    link.href='market-opportunity-lenses.css?v=1.0';
+    document.head.appendChild(link);
   }
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('[data-vestra-lens]');if(!b)return;
