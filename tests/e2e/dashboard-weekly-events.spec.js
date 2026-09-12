@@ -116,3 +116,45 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
   await expect(detail).not.toContainText('Resultado ainda não publicado');
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+test('iPhone/WebKit: reported company earnings replace a stale pending event on the same date', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  await page.goto('/index.html');
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+
+  await page.evaluate(() => {
+    window.VestraWeeklyEvents.render({
+      now: new Date(2026, 8, 10, 22, 0, 0),
+      portfolioTickers: new Set(),
+      macroEvents: { events: [] },
+      stocks: [{
+        ticker:'ADBE',
+        name:'Adobe Inc.',
+        quote_type:'EQUITY',
+        market_cap:150_000_000_000,
+        analyst_next_earnings_date:'2026-09-10',
+        analyst_eps_next_q:4.86,
+        analyst_latest_earnings_date:'2026-09-10',
+        analyst_latest_eps_estimate:4.86,
+        analyst_latest_eps_actual:5.31,
+        analyst_latest_eps_surprise_pct:0.0926,
+      }],
+    });
+  });
+
+  const events = page.locator('#dashboardWeeklyEventsCard [data-weekly-event-index]');
+  await expect(events).toHaveCount(1);
+  await expect(events.first()).toContainText('ADBE');
+  await events.first().click();
+
+  const detail = page.locator('#dashboardWeeklyEventDetail');
+  await expect(detail).toBeVisible();
+  await expect(detail).toContainText('Resultados publicados');
+  await expect(detail).toContainText('5,31');
+  await expect(detail).toContainText('4,86');
+  await expect(detail).toContainText('9,3%');
+  await expect(detail).not.toContainText('Resultados ainda não publicados');
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
