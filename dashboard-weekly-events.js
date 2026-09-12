@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v1.6 — tappable earnings + macro catalysts with verified result details. */
+/* Vestra Dashboard Weekly Events v1.7 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
 
-  const VERSION = '1.6';
+  const VERSION = '1.7';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -286,19 +286,11 @@
 
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      .weekly-events-card{overflow:hidden}.weekly-events-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.weekly-events-kicker{font-size:10px;font-weight:800;letter-spacing:.55px;text-transform:uppercase;color:var(--muted,#64748b);margin-bottom:3px}.weekly-events-title{font-size:16px;font-weight:850;letter-spacing:-.2px;color:var(--text,#17212b)}.weekly-events-range{font-size:11px;color:var(--muted,#64748b);white-space:nowrap;padding-top:2px}
-      .weekly-events-list{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x proximity;padding:1px 2px 5px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}.weekly-events-list::-webkit-scrollbar{display:none}
-      .weekly-event{appearance:none;border:1px solid var(--line,#e5e7eb);background:var(--card,#fff);border-radius:14px;padding:11px 12px;min-width:168px;max-width:220px;text-align:left;scroll-snap-align:start;color:inherit;box-shadow:0 1px 2px rgba(15,23,42,.025);cursor:pointer;position:relative}.weekly-event::after{content:'›';position:absolute;right:10px;top:9px;font-size:17px;line-height:1;color:var(--muted,#64748b);opacity:.55}.weekly-event:active{transform:scale(.985)}
-      .weekly-event--portfolio{border-color:rgba(23,123,120,.35);background:linear-gradient(180deg,rgba(23,123,120,.07),rgba(23,123,120,.025))}.weekly-event--macro{border-color:rgba(99,102,241,.28);background:linear-gradient(180deg,rgba(99,102,241,.075),rgba(99,102,241,.025))}.weekly-event--critical{border-color:rgba(180,83,9,.35);background:linear-gradient(180deg,rgba(245,158,11,.09),rgba(245,158,11,.025))}
-      .weekly-event__day{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:#177B78;margin-bottom:7px;padding-right:14px}.weekly-event__ticker{font-size:14px;font-weight:900;line-height:1.15;margin-bottom:4px}.weekly-event__name{font-size:11px;color:var(--muted,#64748b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}.weekly-event__meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:9px;font-weight:800}.weekly-event__type,.weekly-event__portfolio,.weekly-event__critical{padding:3px 6px;border-radius:999px}.weekly-event__type{background:rgba(99,102,241,.10);color:#5558b9}.weekly-event__portfolio{background:rgba(23,123,120,.12);color:#116b68}.weekly-event__critical{background:rgba(245,158,11,.14);color:#9a5b08}.weekly-events-empty{padding:12px 0 4px;color:var(--muted,#64748b);font-size:12px}.weekly-events-foot{margin-top:8px;font-size:9px;line-height:1.35;color:var(--muted,#64748b);opacity:.8}
-      .weekly-detail-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(12,22,31,.34);display:flex;align-items:flex-end;justify-content:center;padding:14px;backdrop-filter:blur(3px)}.weekly-detail-sheet{width:min(560px,100%);max-height:min(78vh,680px);overflow:auto;border-radius:24px 24px 18px 18px;background:var(--card,#fff);color:var(--text,#17212b);box-shadow:0 -12px 50px rgba(15,23,42,.18);padding:10px 18px calc(18px + env(safe-area-inset-bottom))}.weekly-detail-handle{width:40px;height:4px;border-radius:999px;background:var(--line,#d8dee6);margin:1px auto 14px}.weekly-detail-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.weekly-detail-title{font-size:21px;font-weight:900;letter-spacing:-.45px;line-height:1.08}.weekly-detail-sub{font-size:12px;color:var(--muted,#64748b);margin-top:5px}.weekly-detail-close{appearance:none;border:0;background:var(--soft,#f1f5f9);width:34px;height:34px;border-radius:50%;font-size:22px;color:inherit;cursor:pointer;flex:0 0 auto}
-      .weekly-detail-status{margin:16px 0 10px;padding:12px 13px;border-radius:14px;background:rgba(23,123,120,.08);font-size:12px;line-height:1.45}.weekly-detail-status--waiting{background:rgba(99,102,241,.08)}.weekly-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}.weekly-detail-grid--official{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-detail-metric{border:1px solid var(--line,#e5e7eb);border-radius:13px;padding:10px}.weekly-detail-metric span{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--muted,#64748b);margin-bottom:5px}.weekly-detail-metric strong{font-size:16px}.weekly-detail-summary{margin:12px 0;padding:13px 14px;border:1px solid rgba(23,123,120,.24);border-radius:14px;background:rgba(23,123,120,.045)}.weekly-detail-summary__label{font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.4px;color:#177B78;margin-bottom:6px}.weekly-detail-summary__text{font-size:12px;line-height:1.55;color:var(--text,#17212b)}.weekly-detail-meta{display:grid;gap:8px;margin:14px 0;font-size:12px}.weekly-detail-meta-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line,#edf0f4);padding-bottom:7px}.weekly-detail-meta-row span{color:var(--muted,#64748b)}.weekly-detail-meta-row strong{text-align:right}.weekly-detail-action{appearance:none;display:block;box-sizing:border-box;width:100%;border:0;border-radius:14px;padding:13px 14px;background:#177B78;color:#fff;font-weight:850;font-size:13px;cursor:pointer;margin-top:6px;text-align:center;text-decoration:none}
-      @media (max-width:560px){.weekly-event{min-width:158px}.weekly-events-title{font-size:15px}.weekly-detail-backdrop{padding:0}.weekly-detail-sheet{border-radius:24px 24px 0 0}.weekly-detail-grid{grid-template-columns:repeat(3,minmax(82px,1fr));overflow-x:auto}.weekly-detail-grid--official{grid-template-columns:repeat(2,minmax(118px,1fr))}}
-    `;
-    document.head.appendChild(style);
+    const link = document.createElement('link');
+    link.id = STYLE_ID;
+    link.rel = 'stylesheet';
+    link.href = 'dashboard-weekly-events.css?v=1.0';
+    document.head.appendChild(link);
   }
 
   function ensureCard() {

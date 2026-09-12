@@ -3,6 +3,7 @@ const vm = require('vm');
 const assert = require('assert');
 
 const source = fs.readFileSync('dashboard-weekly-events.js', 'utf8');
+const styles = fs.readFileSync('dashboard-weekly-events.css', 'utf8');
 const document = { readyState:'loading', addEventListener:()=>{}, getElementById:()=>null, head:{appendChild:()=>{}} };
 const windowObj = { addEventListener:()=>{}, VestraMarketStaticUniverse:{getStocks:()=>[]} };
 const context = { window:windowObj, document, console, Date, Intl, Set, Promise, URL, fetch:async()=>({ok:false}), setTimeout:()=>0, clearTimeout:()=>{} };
@@ -10,7 +11,7 @@ vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraWeeklyEvents;
-assert(api && api.version === '1.6');
+assert(api && api.version === '1.7');
 assert.strictEqual(typeof api.collectEvents, 'function');
 assert.strictEqual(typeof api.collectMacroEvents, 'function');
 assert.strictEqual(typeof api.selectEvents, 'function');
@@ -25,6 +26,13 @@ assert.strictEqual(typeof api.formatEPS, 'function');
 assert.strictEqual(typeof api.formatSurprise, 'function');
 assert.strictEqual(typeof api.openDetail, 'function');
 assert.strictEqual(typeof api.render, 'function');
+assert(source.includes("document.createElement('link')"));
+assert(source.includes("dashboard-weekly-events.css?v=1.0"));
+assert(!source.includes('style.textContent'));
+assert(styles.includes('#viewDashboard:not(.dash-secondary-open) #dashboardWeeklyEventsCard{display:block!important}'));
+assert(styles.includes('.weekly-events-card{overflow:hidden}'));
+assert(styles.includes('.weekly-detail-sheet{'));
+assert(styles.includes('@media (max-width:560px)'));
 
 const now = new Date(2026,8,6,9,0,0);
 const stocks = [

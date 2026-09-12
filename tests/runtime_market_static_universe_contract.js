@@ -23,13 +23,13 @@ assert.strictEqual(typeof api.ensureUiVisualPolish, 'function');
 assert(source.includes('market-etf-intelligence.js?v=1.2'));
 assert(source.includes('market-scanner-data.js?v=1.3'));
 assert(source.includes('market-analysis-tools-runtime.js?v=1.0'));
-assert(source.includes('dashboard-weekly-events.js?v=1.6'));
+assert(source.includes('dashboard-weekly-events.js?v=1.7'));
 assert(source.includes('dashboard-weekly-events-navigation.js?v=1.0'), 'weekly history navigation must be a reachable runtime companion');
 assert(source.includes('dashboard-ui-refresh.js?v=1.4'));
 assert(source.includes('mobile-ui-refresh.js?v=1.4'));
 assert(source.includes('market-ui-polish.js?v=1.2'));
 assert(source.includes('ui-visual-polish.js?v=1.1'));
-assert(source.includes('vestraWeeklyEventsVisibilityGuard'));
+assert(!source.includes('vestraWeeklyEventsVisibilityGuard'));
 assert.deepStrictEqual(Array.from(api.getStocks()), []);
 assert(!source.includes("['data/stocks.json'"));
 
