@@ -61,6 +61,19 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn('Sobreposição · mostra onde várias posições estão a comprar a mesma exposição.', s)
         self.assertIn('window.VestraPortfolioCardClassifier', s)
 
+    def test_portfolio_dossier_routing_delegates_navigation_exclusively(self):
+        s = read('portfolio-dossier-routing.js')
+        self.assertIn('window.VestraNavigation', s)
+        self.assertIn('nav.openCompany', s)
+        self.assertIn("origin:'portfolio'", s)
+        self.assertNotIn('VestraMarketData?.hydrateTicker', s)
+        self.assertNotIn('VestraMarket?.openTicker', s)
+        self.assertNotIn('Promise.resolve(hydrate', s)
+
+    def test_browser_e2e_covers_portfolio_runtime_changes(self):
+        workflow = read('.github/workflows/browser-e2e.yml')
+        self.assertGreaterEqual(workflow.count("- 'portfolio*.js'"), 2)
+
     def test_service_worker_caches_all_canonical_modules(self):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
