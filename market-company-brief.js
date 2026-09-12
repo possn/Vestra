@@ -9,7 +9,7 @@ function style(){if(document.getElementById('vestra-market-company-brief-style')
 function loadScript(id,src,ready,onload){if(ready||document.getElementById(id)){if(onload)onload();return;}const s=document.createElement('script');s.id=id;s.src=src;s.defer=true;if(onload)s.addEventListener('load',onload,{once:true});document.head.appendChild(s)}
 function loadResearchDiagnostics(){loadScript('vestra-model-validation-script','market-model-validation.js?v=1.0',window.VestraModelValidation)}
 function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.3',window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
-function loadDossierControls(){loadScript('vestra-market-dossier-controls-script','market-dossier-controls.js?v=1.1',window.VestraMarketDossierControls)}
+function loadDossierControls(){loadScript('vestra-market-dossier-controls-script','market-dossier-controls.js?v=1.4',window.VestraMarketDossierControls)}
 function loadGlobalMarketSearch(){loadScript('vestra-global-market-search-script','market-global-search.js?v=1.2',window.VestraGlobalMarketSearch)}
 function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','market-learned-universe.js?v=2.0',window.VestraLearnedUniverse,loadGlobalMarketSearch)}
 function loadAppUpdateManager(){loadScript('vestra-app-update-manager-script','app-update-manager.js?v=1.5',window.VestraAppUpdateManager)}
