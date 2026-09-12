@@ -87,7 +87,7 @@ test('iPhone/WebKit: Dashboard shows a clean empty upcoming state and integrates
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('/index.html');
-  await page.waitForFunction(() => window.VestraDashboardUiRefresh?.version === '1.1');
+  await page.waitForFunction(() => window.VestraDashboardUiRefresh?.version === '1.2');
 
   await page.evaluate(() => {
     state.assets = [{ id:'e2e-cash', name:'Cash', type:'cash', class:'Depósitos', value:1000, currency:'EUR' }];

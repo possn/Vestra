@@ -1,6 +1,12 @@
-/* Vestra shared application utilities v1.0 — pure helpers only. */
+/* Vestra shared application utilities v1.1 — pure helpers only. */
 (() => {
   'use strict';
+
+  const text = (value) => String(value ?? '').trim();
+  const finiteOrNull = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
 
   const normStr = (s) => String(s || '')
     .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -11,6 +17,7 @@
 
   const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
   const isoToday = () => new Date().toISOString().slice(0, 10);
+  const canonicalTicker = (value) => text(value).toUpperCase().replace(/\s+/g, '');
 
   function safeClone(obj){
     try { if (typeof structuredClone === 'function') return structuredClone(obj); } catch (_) {}
@@ -71,9 +78,36 @@
     return null;
   }
 
+  function parseLocalDay(value){
+    const raw = text(value);
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+    if (match) {
+      const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    if (!raw) return null;
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? null : new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
   function formatNumber(n,maxFrac=4){
     const v=Number(n); if(!Number.isFinite(v)) return '0';
     return new Intl.NumberFormat('pt-PT',{maximumFractionDigits:maxFrac,minimumFractionDigits:0}).format(v);
+  }
+
+  function formatMoney(value, { currency='EUR', locale='pt-PT', maximumFractionDigits=0 } = {}){
+    const n = finiteOrNull(value);
+    if (n === null) return '—';
+    const unit = text(currency) || 'EUR';
+    try { return new Intl.NumberFormat(locale, { style:'currency', currency:unit, maximumFractionDigits }).format(n); }
+    catch (_) { return `${Math.round(n).toLocaleString(locale)} ${unit}`; }
+  }
+
+  function formatPercent(value, { locale='pt-PT', maximumFractionDigits=1, minimumFractionDigits=1, sign=true } = {}){
+    const n = finiteOrNull(value);
+    if (n === null) return '—';
+    const prefix = sign && n > 0 ? '+' : '';
+    return `${prefix}${n.toLocaleString(locale, { maximumFractionDigits, minimumFractionDigits })}%`;
   }
 
   function normalizeClassName(s) {
@@ -95,5 +129,9 @@
     return "none";
   }
 
-  window.VestraUtils = Object.freeze({normStr,escapeHtml,uid,isoToday,safeClone,parseNum,parseQty,normalizeDate,formatNumber,normalizeClassName,normalizeYieldType});
+  window.VestraUtils = Object.freeze({
+    text, finiteOrNull, normStr, escapeHtml, uid, isoToday, safeClone,
+    parseNum, parseQty, normalizeDate, parseLocalDay, formatNumber,
+    formatMoney, formatPercent, canonicalTicker, normalizeClassName, normalizeYieldType
+  });
 })();
