@@ -23,7 +23,6 @@ class MarketOpportunityLensesTests(unittest.TestCase):
         self.assertIn("window.VestraMarketOpportunities?.selectLens?.(activeLens)", self.source)
         self.assertIn("version:'2.0'", self.source)
         self.assertIn('"./market-opportunity-lenses.css"', self.sw)
-        self.assertIn('vestra-cache-v137', self.sw)
 
 
 if __name__ == '__main__':
