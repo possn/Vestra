@@ -1,4 +1,4 @@
-/* Vestra Mobile UI Refresh v1.3 — compact topbar + presentation-only mobile polish + useful More shortcuts. */
+/* Vestra Mobile UI Refresh v1.4 — compact topbar + presentation-only mobile polish + useful More shortcuts. */
 (() => {
   'use strict';
 
@@ -7,48 +7,11 @@
 
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      .more-shortcuts{margin:0 0 16px}
-      .more-shortcuts__label{font-size:10px;font-weight:850;letter-spacing:.6px;text-transform:uppercase;color:var(--muted,#728694);margin:0 4px 8px}
-      .more-shortcuts__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-      .more-shortcut{appearance:none;border:1px solid rgba(31,56,66,.09);background:rgba(251,252,252,.78);border-radius:17px;padding:12px 7px 10px;color:var(--text,#132536);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:72px;box-shadow:0 2px 10px rgba(28,45,54,.025);font:inherit;cursor:pointer;transition:transform .16s ease,background .16s ease,border-color .16s ease}
-      .more-shortcut:active{transform:scale(.97);background:rgba(23,123,120,.06);border-color:rgba(23,123,120,.18)}
-      .more-shortcut__icon{width:27px;height:27px;border-radius:9px;display:grid;place-items:center;background:rgba(23,123,120,.09);color:#157571;font-size:15px;font-weight:850;line-height:1}
-      .more-shortcut__label{font-size:10px;font-weight:800;white-space:nowrap}
-      #viewSettings .more-group{border-color:rgba(31,56,66,.09)!important;box-shadow:none!important}
-      #viewSettings .more-group__body>.card{box-shadow:none;border-color:rgba(31,56,66,.075)}
-      @media(max-width:720px){
-        .topbar{padding:9px 12px;gap:7px;justify-content:flex-start}
-        .topbar #btnSidebarToggle{display:grid!important;place-items:center;width:42px;height:42px;min-width:42px;padding:0!important;border-radius:14px!important;font-size:19px!important;touch-action:manipulation;pointer-events:auto!important;position:relative;z-index:2}
-        .topbar #btnSettingsNav{display:none!important}
-        .topbar .brand{flex:1;min-width:0;gap:9px}
-        .topbar .brand__icon{width:38px;height:38px;border-radius:12px}
-        .topbar .brand__title{font-size:20px}
-        .topbar .brand__sub{display:none}
-        .topbar #btnSearchToggle{width:42px;height:42px;min-width:42px;padding:0!important;display:grid;place-items:center;font-size:20px!important;border-radius:14px!important;touch-action:manipulation}
-        .topbar .fab{width:42px;height:42px;min-width:42px;border-radius:14px;font-size:24px;box-shadow:0 5px 18px rgba(32,129,126,.22);touch-action:manipulation}
-        #sidebar.sidebar--open{transform:translate3d(0,0,0)!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
-        #sidebarBackdrop:not([hidden]){display:block!important;pointer-events:auto!important}
-        body.sidebar-open{overflow:hidden}
-        .more-shortcuts__grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-        .more-shortcut{min-height:68px;padding:10px 5px 9px;border-radius:15px}
-      }
-      @media(max-width:390px){
-        .topbar .brand{gap:7px}
-        .topbar .brand__title{font-size:18px}
-        .topbar .brand__icon{width:36px;height:36px}
-      }
-      @media(max-width:360px){
-        .topbar{gap:5px;padding-left:9px;padding-right:9px}
-        .topbar .brand__title{font-size:17px}
-        .topbar .brand__icon{width:34px;height:34px}
-        .topbar #btnSidebarToggle,.topbar #btnSearchToggle,.topbar .fab{width:40px;height:40px;min-width:40px}
-        .more-shortcuts__grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-      }
-    `;
-    document.head.appendChild(style);
+    const link = document.createElement('link');
+    link.id = STYLE_ID;
+    link.rel = 'stylesheet';
+    link.href = 'mobile-ui-refresh.css?v=1.0';
+    document.head.appendChild(link);
   }
 
   function callView(view) {
@@ -119,5 +82,5 @@
 
   // Sidebar state and event wiring are intentionally owned by app.js (wireSidebar).
   // This module is presentation-only so iPhone/WebKit never receives duplicate drawer listeners.
-  window.VestraMobileUiRefresh = Object.freeze({ refresh, version:'1.3' });
+  window.VestraMobileUiRefresh = Object.freeze({ refresh, version:'1.4' });
 })();
