@@ -6,7 +6,7 @@ async function openMarket(page) {
   await page.evaluate(() => window.setView('market'));
   await expect(page.locator('#marketSearch')).toBeVisible();
   await expect(page.locator('[data-politicians-mode]')).toBeVisible({ timeout: 10_000 });
-  await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.2');
+  await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.3');
 }
 
 test('iPhone/WebKit: Políticos perde seleção ao escolher outro modo de mercado', async ({ page }) => {
