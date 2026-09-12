@@ -58,14 +58,21 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn('.market-collapse-toolbar{', css)
         self.assertIn('window.VestraPortfolioCollapsibles', s)
 
-    def test_classifier_preserves_all_portfolio_kinds_shortcuts_and_hints(self):
+    def test_classifier_preserves_all_portfolio_kinds_shortcuts_hints_and_static_styles(self):
         s = read('portfolio-card-classifier.js')
+        css = read('portfolio-card-classifier.css')
         for kind in ('research','priority','map','reinforce','review','overlap','swap','scenario','target','history','risk','stress'):
             self.assertIn(f"kind:'{kind}'", s)
         for token in ('data-ux-jump="priority"','data-ux-jump="swap"','data-ux-jump="overlap"','data-ux-jump="risk"'):
             self.assertIn(token, s)
         self.assertIn('Trocas inteligentes · compara alternativas sem assumir que vender é obrigatório.', s)
         self.assertIn('Sobreposição · mostra onde várias posições estão a comprar a mesma exposição.', s)
+        self.assertIn("portfolio-card-classifier.css?v=1.0", s)
+        self.assertIn("link.rel='stylesheet'", s)
+        self.assertNotIn("document.createElement('style')", s)
+        self.assertNotIn('s.textContent=', s)
+        self.assertIn('.ux-portfolio-shortcuts{', css)
+        self.assertIn('[data-ux-tone="violet"].is-collapsed', css)
         self.assertIn('window.VestraPortfolioCardClassifier', s)
 
     def test_portfolio_dossier_routing_delegates_navigation_exclusively(self):
@@ -107,7 +114,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
         self.assertIn('staleWhileRevalidate', sw)
-        for module in ('./market-live-overlay.js', './market-company-brief.js', './market-metric-cleanup.js', './market-dossier-controls.css', './portfolio-collapsibles.js', './portfolio-collapsibles.css', './portfolio-sheet-navigation.css', './portfolio-card-classifier.js', './portfolio-diagnostics.js', './vestra-ai-brief.js', './portfolio-dossier-routing.js', './market-opportunity-lenses.js', './mobile-ui-refresh.js'):
+        for module in ('./market-live-overlay.js', './market-company-brief.js', './market-metric-cleanup.js', './market-dossier-controls.css', './portfolio-collapsibles.js', './portfolio-collapsibles.css', './portfolio-sheet-navigation.css', './portfolio-card-classifier.js', './portfolio-card-classifier.css', './portfolio-diagnostics.js', './vestra-ai-brief.js', './portfolio-dossier-routing.js', './market-opportunity-lenses.js', './mobile-ui-refresh.js'):
             self.assertIn(module, sw)
 
 
