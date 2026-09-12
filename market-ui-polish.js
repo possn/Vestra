@@ -1,21 +1,6 @@
-/* Vestra Market UI polish v1.2 — exclusive market mode state; dossier geometry owned by dossier-controls. */
+/* Vestra Market UI polish v1.3 — exclusive market mode state; dossier geometry owned by dossier-controls. */
 (() => {
   'use strict';
-
-  const STYLE_ID = 'vestraMarketUiPolishStyle';
-
-  function ensureStyle() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      /* Dossier button geometry intentionally lives only in
-         market-dossier-controls.js. Keeping this module out of positioning
-         avoids competing fixed coordinates on real iPhone/WebKit builds. */
-      #marketSheet[hidden] #marketSheetContent .market-detail-actions{display:none!important}
-    `;
-    document.head.appendChild(style);
-  }
 
   function ensureStockThemesTools() {
     if (window.VestraMarketStockThemesTools || document.querySelector('script[data-vestra-stock-themes-tools]')) return;
@@ -36,7 +21,6 @@
   }
 
   function boot() {
-    ensureStyle();
     ensureStockThemesTools();
     document.addEventListener('click', onClickCapture, true);
   }
@@ -45,9 +29,8 @@
   else boot();
 
   window.VestraMarketUiPolish = Object.freeze({
-    ensureStyle,
     ensureStockThemesTools,
     clearPoliticiansActive,
-    version: '1.2',
+    version: '1.3',
   });
 })();
