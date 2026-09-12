@@ -1,4 +1,4 @@
-/* Vestra UI core v1.9 — DOM, Chart infrastructure and canonical launch lifecycle. */
+/* Vestra UI core v2.0 — DOM, Chart infrastructure and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -15,9 +15,10 @@ function $(id) { return document.getElementById(id) || NOOP_EL; }
 
 /* ─── PREMIUM LAUNCH LIFECYCLE ──────────────────────────────
    app-ui-core.js is the effective owner of splash visibility and release.
-   The premium class uses !important visibility rules, so legacy inline style
-   writes from app.js cannot dismiss the splash early. No MutationObserver is
-   needed: the lifecycle is deterministic and driven by app-ready + failsafe.
+   The base stylesheet owns the single entrance animation because it starts
+   before deferred JavaScript executes. Premium styles must not replace the
+   animation-name after parse: doing that restarts the entrance on iOS/PWA.
+   The premium class still owns containment, timing and the single fade-out.
 ────────────────────────────────────────────────────────────── */
 function installPremiumSplashWatchdog() {
   const splash = document.getElementById('appLoadingOverlay');
@@ -40,12 +41,11 @@ function installPremiumSplashWatchdog() {
       }
       .vestra-splash--premium .vestra-splash__mark{
         width:138px!important;height:138px!important;margin-bottom:0!important;
-        animation:vestraPremiumMarkIn .46s cubic-bezier(.16,1,.3,1) both!important;
       }
       .vestra-splash--premium .vestra-splash__mark::after{
         inset:-18px!important;border-radius:42px!important;
         background:radial-gradient(circle,rgba(32,129,126,.18),rgba(196,171,114,.09) 42%,transparent 72%)!important;
-        filter:blur(10px)!important;animation:vestraPremiumGlow 2.1s ease-in-out infinite alternate!important;
+        filter:blur(10px)!important;
       }
       .vestra-splash--premium .vestra-splash__mark img{
         width:122px!important;height:122px!important;border-radius:29px!important;
@@ -53,40 +53,15 @@ function installPremiumSplashWatchdog() {
       }
       .vestra-splash--premium .vestra-splash__brand{
         margin-top:24px!important;font-size:31px!important;font-weight:650!important;
-        letter-spacing:-.035em!important;opacity:0;
-        animation:vestraPremiumBrandIn .9s .34s cubic-bezier(.16,1,.3,1) both!important;
+        letter-spacing:-.035em!important;
       }
       .vestra-splash--premium .vestra-splash__tagline{
         margin-top:9px!important;font-size:15px!important;font-weight:600!important;
-        letter-spacing:.02em!important;color:#55646b!important;opacity:0;
-        animation:vestraPremiumTaglineIn 1.18s .78s cubic-bezier(.16,1,.3,1) both!important;
+        letter-spacing:.02em!important;color:#55646b!important;
       }
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__brand,
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__tagline{
         opacity:1!important;transform:none!important;filter:none!important;
-      }
-      @keyframes vestraPremiumMarkIn{
-        0%{opacity:0;transform:scale(.78) translateY(8px);filter:blur(3px)}
-        60%{opacity:1;filter:blur(0)}
-        100%{opacity:1;transform:scale(1) translateY(0)}
-      }
-      @keyframes vestraPremiumBrandIn{
-        from{opacity:0;transform:translateY(9px);letter-spacing:.015em}
-        to{opacity:1;transform:translateY(0);letter-spacing:-.035em}
-      }
-      @keyframes vestraPremiumTaglineIn{
-        from{opacity:0;transform:translateY(7px);filter:blur(1.5px)}
-        to{opacity:1;transform:translateY(0);filter:blur(0)}
-      }
-      @keyframes vestraPremiumGlow{
-        from{opacity:.36;transform:scale(.94)}
-        to{opacity:.86;transform:scale(1.06)}
-      }
-      @media(prefers-reduced-motion:reduce){
-        .vestra-splash--premium .vestra-splash__mark,
-        .vestra-splash--premium .vestra-splash__brand,
-        .vestra-splash--premium .vestra-splash__tagline,
-        .vestra-splash--premium .vestra-splash__mark::after{animation-duration:.01ms!important;animation-delay:0ms!important}
       }
     `;
     document.head.appendChild(style);
@@ -95,8 +70,8 @@ function installPremiumSplashWatchdog() {
   splash.classList.add('vestra-splash--premium');
   splash.classList.remove('vestra-splash--leaving');
   const startedAt = performance.now();
-  // Sequence contract:
-  // 0.00–0.46s mark → brand enters → tagline completes at ~2.00s → hold copy for 2s → fade.
+  // Entrance is already in flight from styles.css before this deferred module runs.
+  // Do not swap animation names here; only settle copy, hold, then fade once.
   const copyReadyMs = 2000;
   const minimumVisibleMs = 4000;
   const failsafeMs = 6200;
