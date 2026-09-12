@@ -1,4 +1,4 @@
-/* Vestra UI core v1.8 — DOM, Chart infrastructure and launch watchdog. */
+/* Vestra UI core v1.9 — DOM, Chart infrastructure and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -13,10 +13,11 @@ const NOOP_EL = {
 
 function $(id) { return document.getElementById(id) || NOOP_EL; }
 
-/* ─── PREMIUM LAUNCH WATCHDOG ───────────────────────────────
-   The splash must never depend on app.js reaching the end of its bootstrap.
-   If any later module fails, this guard still releases the UI. It also owns
-   the staged identity animation: mark first, then copy, then a deliberate hold.
+/* ─── PREMIUM LAUNCH LIFECYCLE ──────────────────────────────
+   app-ui-core.js is the effective owner of splash visibility and release.
+   The premium class uses !important visibility rules, so legacy inline style
+   writes from app.js cannot dismiss the splash early. No MutationObserver is
+   needed: the lifecycle is deterministic and driven by app-ready + failsafe.
 ────────────────────────────────────────────────────────────── */
 function installPremiumSplashWatchdog() {
   const splash = document.getElementById('appLoadingOverlay');
@@ -29,8 +30,13 @@ function installPremiumSplashWatchdog() {
     style.textContent = `
       .vestra-splash.vestra-splash--premium{
         display:flex!important;opacity:1!important;
+        pointer-events:auto!important;transition:none!important;
         background:#eef0ec!important;
         backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+      }
+      .vestra-splash.vestra-splash--premium.vestra-splash--leaving{
+        display:flex!important;opacity:0!important;pointer-events:none!important;
+        transition:opacity .68s cubic-bezier(.4,0,.2,1)!important;
       }
       .vestra-splash--premium .vestra-splash__mark{
         width:138px!important;height:138px!important;margin-bottom:0!important;
@@ -87,6 +93,7 @@ function installPremiumSplashWatchdog() {
   }
 
   splash.classList.add('vestra-splash--premium');
+  splash.classList.remove('vestra-splash--leaving');
   const startedAt = performance.now();
   // Sequence contract:
   // 0.00–0.46s mark → brand enters → tagline completes at ~2.00s → hold copy for 2s → fade.
@@ -100,20 +107,11 @@ function installPremiumSplashWatchdog() {
     if (!releasing) splash.classList.add('vestra-splash--copy-ready');
   }, copyReadyMs);
 
-  const keepSplashVisible = () => {
-    if (releasing) return;
-    splash.style.transition = 'none';
-    splash.style.display = 'flex';
-    splash.style.opacity = '1';
-    splash.style.pointerEvents = 'auto';
-  };
-
   const releaseSplash = () => {
     if (releasing) return;
     const elapsed = performance.now() - startedAt;
     const remaining = Math.max(0, minimumVisibleMs - elapsed);
     if (remaining > 0) {
-      keepSplashVisible();
       if (!releaseTimer) releaseTimer = setTimeout(() => {
         releaseTimer = null;
         releaseSplash();
@@ -122,38 +120,20 @@ function installPremiumSplashWatchdog() {
     }
     releasing = true;
     clearTimeout(copyReadyTimer);
-    observer.disconnect();
+    if (releaseTimer) clearTimeout(releaseTimer);
     splash.classList.add('vestra-splash--copy-ready');
-    splash.style.display = 'flex';
-    splash.style.opacity = '1';
-    splash.style.pointerEvents = 'auto';
-    splash.style.transition = 'opacity .68s cubic-bezier(.4,0,.2,1)';
-    requestAnimationFrame(() => requestAnimationFrame(() => { splash.style.opacity = '0'; }));
+    // The leaving class is the only effective fade owner. Its !important rules
+    // beat any stale inline opacity/display writes that app.js may have queued.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      splash.classList.add('vestra-splash--leaving');
+    }));
     setTimeout(() => {
       splash.style.display = 'none';
+      splash.style.opacity = '0';
       splash.style.pointerEvents = 'none';
-      splash.classList.remove('vestra-splash--premium', 'vestra-splash--copy-ready');
+      splash.classList.remove('vestra-splash--premium', 'vestra-splash--copy-ready', 'vestra-splash--leaving');
     }, 720);
   };
-
-  const observer = new MutationObserver(() => {
-    if (releasing) return;
-    const appTriedToHide = splash.style.opacity === '0' || splash.style.display === 'none';
-    if (!appTriedToHide) return;
-    const elapsed = performance.now() - startedAt;
-    if (elapsed < minimumVisibleMs) {
-      // app.js still contains the legacy early fade. Neutralise it until the
-      // mark → copy → 2 second dwell sequence has completed.
-      keepSplashVisible();
-      if (!releaseTimer) releaseTimer = setTimeout(() => {
-        releaseTimer = null;
-        releaseSplash();
-      }, Math.max(0, minimumVisibleMs - elapsed));
-      return;
-    }
-    releaseSplash();
-  });
-  observer.observe(splash, { attributes: true, attributeFilter: ['style'] });
 
   window.addEventListener('vestra:app-ready', releaseSplash, { once: true });
   setTimeout(() => releaseSplash(), failsafeMs);
