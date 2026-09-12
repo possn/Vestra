@@ -67,13 +67,21 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("list.innerHTML=rows.map(s=>row(s,activeLens)).join('')", source)
         self.assertIn("||'empty'", source)
 
-    def test_canonical_opportunities_own_podium_and_guide(self):
+    def test_canonical_opportunities_own_podium_guide_and_static_styles(self):
         source = read('market-opportunities.js')
+        css = read('market-opportunities.css')
         self.assertIn('function decorate(section)', source)
         self.assertIn('ux454-opportunity-guide', source)
         self.assertIn('ux454-podium-1', source)
         self.assertIn('ux454-rank', source)
+        self.assertIn('data-market-ticker', source)
         self.assertEqual(source.count('new MutationObserver'), 1)
+        self.assertIn("market-opportunities.css?v=1.0", source)
+        self.assertIn("link.rel='stylesheet'", source)
+        self.assertNotIn("document.createElement('style')", source)
+        self.assertNotIn('s.textContent=', source)
+        for selector in ('.ux453-opp{', '.ux454-opportunity-guide{', '.ux454-podium-1{', '.ux454-rank{'):
+            self.assertIn(selector, css)
 
     def test_portfolio_focus_keeps_existing_state_key_and_css_contract(self):
         source = read('vestra-portfolio-focus.js')
@@ -87,7 +95,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
         self.assertIn('staleWhileRevalidate', sw)
         for module in (
-            './market-live-overlay.js','./market-opportunities.js','./vestra-portfolio-focus.js','./vestra-portfolio-hierarchy.js','./vestra-swap-lab.js',
+            './market-live-overlay.js','./market-opportunities.js','./market-opportunities.css','./vestra-portfolio-focus.js','./vestra-portfolio-hierarchy.js','./vestra-swap-lab.js',
             './market-company-brief.js','./market-metric-cleanup.js','./portfolio-collapsibles.js','./portfolio-card-classifier.js','./portfolio-diagnostics.js',
             './vestra-ai-brief.js','./portfolio-dossier-routing.js','./market-opportunity-lenses.js','./mobile-ui-refresh.js',
         ):
