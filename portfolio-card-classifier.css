@@ -1,0 +1,22 @@
+.ux-portfolio .market-collapse-toolbar{background:linear-gradient(135deg,rgba(23,123,120,.09),rgba(89,113,190,.06));border:0;padding:9px 10px;position:sticky;top:0;z-index:5;backdrop-filter:blur(10px)}
+.ux-portfolio .market-detail-card[data-collapsible="1"].is-collapsed{min-height:74px;padding:13px 52px 12px 50px!important;border-left:4px solid rgba(23,123,120,.25);box-shadow:0 3px 12px rgba(19,41,52,.035)}
+.ux-portfolio .market-detail-card[data-collapsible="1"].is-collapsed .market-perspective-head{min-height:44px;align-items:center}
+.ux-portfolio .market-detail-card[data-collapsible="1"].is-collapsed .market-perspective-head small{font-size:9px;letter-spacing:.13em}
+.ux-portfolio .market-detail-card[data-collapsible="1"].is-collapsed h4{font-size:16px;line-height:1.15}
+.ux-card-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:27px;height:27px;border-radius:9px;display:grid;place-items:center;background:rgba(23,123,120,.08);font-weight:900;color:#177b78}
+.market-detail-card:not(.is-collapsed)>.ux-card-icon{display:none}
+[data-ux-tone="violet"].is-collapsed{border-left-color:#8c78c5!important}
+[data-ux-tone="violet"] .ux-card-icon{color:#705bb0;background:#f1edfb}
+[data-ux-tone="teal"].is-collapsed{border-left-color:#1e9a95!important}
+[data-ux-tone="blue"].is-collapsed{border-left-color:#5b86c4!important}
+[data-ux-tone="green"].is-collapsed{border-left-color:#49a878!important}
+[data-ux-tone="coral"].is-collapsed{border-left-color:#da806f!important}
+[data-ux-tone="amber"].is-collapsed{border-left-color:#d6a34a!important}
+[data-ux-tone="purple"].is-collapsed{border-left-color:#9a78c9!important}
+.ux-portfolio-shortcuts{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:0 0 12px}
+.ux-portfolio-shortcuts button{border:0;border-radius:13px;padding:10px 5px;background:linear-gradient(145deg,var(--card),var(--soft));color:var(--text);font-size:10px;font-weight:800;box-shadow:0 3px 12px rgba(19,41,52,.05)}
+.ux-section-hint{font-size:11px;color:var(--text2);padding:8px 0 2px}
+.is-collapsed>.ux-section-hint{display:none!important}
+[data-ux-kind="swap"]:not(.is-collapsed),[data-ux-kind="scenario"]:not(.is-collapsed){background:linear-gradient(145deg,var(--card),rgba(143,112,199,.06))}
+[data-ux-kind="overlap"]:not(.is-collapsed){background:linear-gradient(145deg,var(--card),rgba(216,163,74,.07))}
+@media(max-width:420px){.ux-portfolio-shortcuts{grid-template-columns:repeat(2,1fr)}.ux-portfolio .market-detail-card[data-collapsible="1"].is-collapsed{min-height:68px}}
