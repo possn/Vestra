@@ -1,4 +1,4 @@
-/* Vestra weekly events navigation companion v1.0 */
+/* Vestra weekly events navigation companion v1.1 */
 (() => {
   'use strict';
 
@@ -26,7 +26,6 @@
     button.textContent = text;
     button.setAttribute('aria-label', label);
     button.disabled = disabled;
-    button.style.cssText = 'appearance:none;border:1px solid var(--line,#e5e7eb);background:var(--card,#fff);color:inherit;border-radius:10px;min-width:34px;height:34px;padding:0 10px;font-weight:850;cursor:pointer';
     return button;
   }
 
@@ -35,14 +34,10 @@
     const head = card?.querySelector?.('.weekly-events-head');
     if (!card || !head || head.querySelector('[data-weekly-week-nav]')) return false;
 
-    head.style.flexWrap = 'wrap';
     const nav = document.createElement('div');
     nav.dataset.weeklyWeekNav = '1';
-    nav.style.cssText = 'display:flex;align-items:center;gap:6px;margin-left:auto;justify-content:flex-end';
     const previous = makeButton('prev', 'Semana anterior', '‹', weekOffset <= -MAX_WEEK_OFFSET);
     const current = makeButton('today', 'Voltar à semana atual', labelForOffset(), weekOffset === 0);
-    current.style.minWidth = '92px';
-    current.style.fontSize = '10px';
     const next = makeButton('next', 'Semana seguinte', '›', weekOffset >= MAX_WEEK_OFFSET);
     nav.append(previous, current, next);
     head.appendChild(nav);
@@ -93,5 +88,6 @@
     reset,
     getWeekOffset: () => weekOffset,
     maxWeekOffset: MAX_WEEK_OFFSET,
+    version: '1.1',
   });
 })();
