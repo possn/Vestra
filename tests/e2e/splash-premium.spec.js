@@ -1,14 +1,24 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece legível e sai suavemente', async ({ page }) => {
+test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothly', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
 
-  // Record the real copy-ready transition in page time. Using Date.now() after a
-  // Playwright assertion is racy on WebKit because polling can observe the class
-  // hundreds of milliseconds after it was actually added.
+  // Observe launch choreography from the earliest possible page time. The regression
+  // we are guarding against changed animation-name after the deferred UI module ran,
+  // causing WebKit/iOS to start a second visual entrance.
   await page.addInitScript(() => {
-    window.__vestraSplashTimeline = { copyReadyAt: null };
+    window.__vestraSplashTimeline = { copyReadyAt: null, animationStarts: [] };
+    document.addEventListener('animationstart', event => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest('#appLoadingOverlay')) return;
+      window.__vestraSplashTimeline.animationStarts.push({
+        name: event.animationName,
+        at: performance.now(),
+        className: target.className || '',
+      });
+    }, true);
     document.addEventListener('DOMContentLoaded', () => {
       const splash = document.getElementById('appLoadingOverlay');
       if (!splash) return;
@@ -22,9 +32,6 @@ test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece legível
     }, { once: true });
   });
 
-  // DOMContentLoaded is the correct observation point for launch choreography.
-  // Waiting for the full load event can include slow third-party resources and let
-  // the intentionally short splash finish before the first assertion on WebKit.
   await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
   const splash = page.locator('#appLoadingOverlay');
   const mark = page.locator('.vestra-splash__mark');
@@ -43,32 +50,52 @@ test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece legível
     const taglineStyle = getComputedStyle(document.querySelector('.vestra-splash__tagline'));
     return {
       backgroundColor: splashStyle.backgroundColor,
+      markAnimation: markStyle.animationName,
       markDuration: parseFloat(markStyle.animationDuration) * 1000,
+      brandAnimation: brandStyle.animationName,
       brandDelay: parseFloat(brandStyle.animationDelay) * 1000,
       brandDuration: parseFloat(brandStyle.animationDuration) * 1000,
+      taglineAnimation: taglineStyle.animationName,
       taglineDelay: parseFloat(taglineStyle.animationDelay) * 1000,
       taglineDuration: parseFloat(taglineStyle.animationDuration) * 1000,
     };
   });
 
   expect(css.backgroundColor).toBe('rgb(238, 240, 236)');
-  expect(css.markDuration).toBeGreaterThanOrEqual(430);
-  expect(css.brandDelay).toBeLessThanOrEqual(400);
-  expect(css.brandDuration).toBeGreaterThanOrEqual(850);
-  expect(css.taglineDelay).toBeGreaterThanOrEqual(760);
-  expect(css.taglineDelay).toBeLessThanOrEqual(820);
+  expect(css.markAnimation).toContain('vestraMarkIn');
+  expect(css.markAnimation).not.toContain('vestraPremium');
+  expect(css.markDuration).toBeGreaterThanOrEqual(700);
+  expect(css.markDuration).toBeLessThanOrEqual(760);
+  expect(css.brandAnimation).toContain('vestraCopyIn');
+  expect(css.brandAnimation).not.toContain('vestraPremium');
+  expect(css.brandDelay).toBeGreaterThanOrEqual(120);
+  expect(css.brandDelay).toBeLessThanOrEqual(180);
+  expect(css.brandDuration).toBeGreaterThanOrEqual(520);
+  expect(css.brandDuration).toBeLessThanOrEqual(580);
+  expect(css.taglineAnimation).toContain('vestraCopyIn');
+  expect(css.taglineAnimation).not.toContain('vestraPremium');
+  expect(css.taglineDelay).toBeGreaterThanOrEqual(200);
+  expect(css.taglineDelay).toBeLessThanOrEqual(250);
   expect(css.taglineDelay).toBeGreaterThan(css.brandDelay);
-  expect(css.taglineDuration).toBeGreaterThanOrEqual(1100);
+  expect(css.taglineDuration).toBeGreaterThanOrEqual(520);
+  expect(css.taglineDuration).toBeLessThanOrEqual(580);
 
-  // A tagline termina perto dos 2s; nesse momento o texto deve estar totalmente legível.
+  // Let all entrance starts fire, then prove that no second premium family appeared
+  // and that the mark itself started exactly once.
+  await page.waitForTimeout(900);
+  const starts = await page.evaluate(() => window.__vestraSplashTimeline?.animationStarts || []);
+  const names = starts.map(item => item.name);
+  expect(names.some(name => String(name).startsWith('vestraPremium'))).toBe(false);
+  expect(names.filter(name => name === 'vestraMarkIn')).toHaveLength(1);
+  expect(names.filter(name => name === 'vestraCopyIn')).toHaveLength(2);
+
+  // app-ui-core owns the hold/release contract without replacing animation names.
   await expect(splash).toHaveClass(/vestra-splash--copy-ready/, { timeout: 2_400 });
   const brandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
   const taglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
   expect(brandOpacity).toBeGreaterThan(0.95);
   expect(taglineOpacity).toBeGreaterThan(0.95);
 
-  // Prove a retenção a partir do instante real em que a classe foi aplicada,
-  // não do instante tardio em que o runner acabou de a observar.
   const remainingHoldMs = await page.evaluate(() => {
     const copyReadyAt = window.__vestraSplashTimeline?.copyReadyAt;
     if (!Number.isFinite(copyReadyAt)) return null;
@@ -78,8 +105,6 @@ test('iPhone/WebKit: splash é opaco, texto entra lentamente, permanece legível
   if (remainingHoldMs > 0) await page.waitForTimeout(remainingHoldMs);
   await expect(splash).toBeVisible({ timeout: 500 });
 
-  // On a cold WebKit run app readiness may arrive after the nominal choreography;
-  // the watchdog is allowed to use its bounded failsafe, but the splash must release.
   await expect(splash).toBeHidden({ timeout: 4_000 });
   await expect(page.locator('#viewDashboard')).toBeVisible();
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
