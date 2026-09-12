@@ -9,6 +9,7 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source = (ROOT / "dashboard-ui-refresh.js").read_text(encoding="utf-8")
         cls.loader = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
+        cls.utils = (ROOT / "app-utils.js").read_text(encoding="utf-8")
 
     def test_history_is_collapsed_by_default(self):
         self.assertIn("let historyOpen = false", self.source)
@@ -23,6 +24,19 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         self.assertIn("Máximo 90d", self.source)
         self.assertNotIn("fetch(", self.source)
         self.assertNotIn("stocks.json", self.source)
+
+    def test_dashboard_reuses_shared_presentation_helpers(self):
+        self.assertIn("const shared = window.VestraUtils", self.source)
+        self.assertIn("finiteOrNull: num", self.source)
+        self.assertIn("parseLocalDay: parseDay", self.source)
+        self.assertIn("canonicalTicker", self.source)
+        self.assertIn("shared.formatMoney", self.source)
+        self.assertIn("shared.formatPercent", self.source)
+        self.assertNotIn("const text = value =>", self.source)
+        self.assertNotIn("function parseDay(value)", self.source)
+        self.assertNotIn("function canonicalTicker(value)", self.source)
+        for helper in ("finiteOrNull", "parseLocalDay", "formatMoney", "formatPercent", "canonicalTicker"):
+            self.assertIn(helper, self.utils)
 
     def test_passive_income_grid_has_a_real_30_day_dividend_insight(self):
         self.assertIn("dashboardUpcomingDividendsTile", self.source)
@@ -47,9 +61,9 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
-        self.assertIn("dashboard-ui-refresh.js?v=1.1", self.loader)
+        self.assertIn("dashboard-ui-refresh.js?v=1.2", self.loader)
         self.assertIn("version: '1.9'", self.loader)
-        self.assertIn("version: '1.1'", self.source)
+        self.assertIn("version: '1.2'", self.source)
 
 
 if __name__ == "__main__":
