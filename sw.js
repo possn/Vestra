@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.22 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v136";
+/* Vestra Service Worker v10.23 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v137";
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js",
@@ -14,7 +14,7 @@ const APP_SHELL = [
   "./market-metric-cleanup.js", "./market-dossier-controls.js", "./market-dossier-controls.css", "./market-ui-polish.js", "./portfolio-collapsibles.js",
   "./portfolio-sheet-navigation.js", "./portfolio-sheet-navigation.css", "./portfolio-card-classifier.js", "./market-opportunities.js",
   "./vestra-portfolio-focus.js", "./vestra-portfolio-hierarchy.js", "./vestra-swap-lab.js",
-  "./market-opportunity-lenses.js", "./mobile-ui-refresh.js", "./vestra-ai-brief.js", "./vestra-portfolio-ui.js",
+  "./market-opportunity-lenses.js", "./market-opportunity-lenses.css", "./mobile-ui-refresh.js", "./vestra-ai-brief.js", "./vestra-portfolio-ui.js",
   "./portfolio-diagnostics.js", "./portfolio-dossier-routing.js", "./politicians.js", "./data/executives.json",
   "./manifest.webmanifest", "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",
   "./apple-touch-icon.png", "./apple-touch-icon-167.png", "./apple-touch-icon-152.png", "./apple-touch-icon-120.png",
