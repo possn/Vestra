@@ -1,4 +1,4 @@
-/* Vestra Dashboard UI Refresh v1.3 — compact history + portfolio pulse + passive-income insight + mobile polish. */
+/* Vestra Dashboard UI Refresh v1.4 — compact history + portfolio pulse + passive-income insight + mobile polish. */
 (() => {
   'use strict';
 
@@ -139,53 +139,11 @@
 
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      .dashboard-pulse-card{overflow:hidden;background:linear-gradient(155deg,rgba(255,255,255,.92),rgba(23,123,120,.035));border-color:rgba(23,123,120,.13)!important}
-      .dashboard-pulse-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}
-      .dashboard-pulse-kicker{font-size:10px;font-weight:850;letter-spacing:.55px;text-transform:uppercase;color:#177B78;margin-bottom:3px}
-      .dashboard-pulse-title{font-size:16px;font-weight:850;letter-spacing:-.25px;color:var(--text,#17212b)}
-      .dashboard-pulse-date{font-size:10px;color:var(--muted,#64748b);padding-top:2px;white-space:nowrap}
-      .dashboard-pulse-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-      .dashboard-pulse-metric{padding:11px 10px;border-radius:14px;background:rgba(255,255,255,.62);border:1px solid rgba(15,23,42,.055)}
-      .dashboard-pulse-label{font-size:10px;font-weight:750;color:var(--muted,#64748b);margin-bottom:4px}
-      .dashboard-pulse-value{font-size:16px;font-weight:900;letter-spacing:-.25px;color:var(--text,#17212b)}
-      .dashboard-pulse-value.is-up{color:#14756f}.dashboard-pulse-value.is-down{color:#b24e56}
-      .dashboard-pulse-sub{margin-top:9px;font-size:10px;color:var(--muted,#64748b)}
-
-      #${UPCOMING_TILE_ID}{border-color:rgba(23,123,120,.22)!important;background:linear-gradient(145deg,rgba(23,123,120,.045),rgba(255,255,255,.45))!important}
-      #${UPCOMING_TILE_ID} .kpi-quick__v{color:#126e6a}
-
-      #negReturnAlert.dashboard-health-card{display:block;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;margin:0 0 12px!important;color:var(--text,#17212b)!important}
-      .dashboard-health-card__body{padding:15px 16px;border-radius:18px;background:linear-gradient(145deg,rgba(178,78,86,.075),rgba(255,255,255,.72));border:1px solid rgba(178,78,86,.16);box-shadow:0 3px 14px rgba(28,45,54,.035)}
-      .dashboard-health-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-      .dashboard-health-card__kicker{font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#9f4851;margin-bottom:4px}
-      .dashboard-health-card__title{font-size:15px;font-weight:900;color:var(--text,#17212b)}
-      .dashboard-health-card__status{flex:0 0 auto;padding:6px 9px;border-radius:999px;background:rgba(178,78,86,.10);color:#9f4851;font-size:9px;font-weight:850}
-      .dashboard-health-card__metric{margin-top:11px;font-size:19px;font-weight:900;letter-spacing:-.3px;color:#a8454f}
-      .dashboard-health-card__sub{margin-top:3px;font-size:11px;font-weight:800;color:#9f4851}
-      .dashboard-health-card__copy{margin-top:7px;font-size:10.5px;line-height:1.45;color:var(--muted,#64748b)}
-
-      .snapshot-history-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:11px 12px;border-radius:14px;background:rgba(23,123,120,.045);border:1px solid rgba(23,123,120,.09)}
-      .snapshot-history-summary__main{min-width:0}
-      .snapshot-history-summary__title{font-size:12px;font-weight:850;color:var(--text,#17212b);margin-bottom:2px}
-      .snapshot-history-summary__sub{font-size:11px;color:var(--muted,#64748b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .snapshot-history-summary__btn{appearance:none;border:0;background:rgba(23,123,120,.10);color:#126e6a;font-size:11px;font-weight:850;border-radius:999px;padding:8px 10px;white-space:nowrap}
-      #snapshotTable[hidden]{display:none!important}
-
-      #viewDashboard .card:not(.hero),#viewCashflow .card{border-color:rgba(31,56,66,.10);box-shadow:0 3px 14px rgba(28,45,54,.035)}
-      #viewDashboard .card,#viewCashflow .card{border-radius:20px}
-      .bottomnav{background:rgba(248,250,248,.90)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top-color:rgba(31,56,66,.08)!important}
-      .bottomnav .navbtn{border-radius:16px;transition:transform .18s ease,background .18s ease,color .18s ease}
-      .bottomnav .navbtn--active{background:rgba(23,123,120,.075);transform:translateY(-1px)}
-      .bottomnav .navico{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI Symbol",sans-serif;font-weight:650}
-      @media(max-width:560px){
-        .dashboard-pulse-grid{gap:6px}.dashboard-pulse-metric{padding:10px 8px}.dashboard-pulse-value{font-size:15px}
-        #viewDashboard .card,#viewCashflow .card{border-radius:18px}
-      }
-    `;
-    document.head.appendChild(style);
+    const link = document.createElement('link');
+    link.id = STYLE_ID;
+    link.rel = 'stylesheet';
+    link.href = 'dashboard-ui-refresh.css?v=1.0';
+    document.head.appendChild(link);
   }
 
   function pulseValueClass(value) {
@@ -340,5 +298,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, version: '1.3' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, version: '1.4' });
 })();
