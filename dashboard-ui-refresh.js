@@ -1,4 +1,4 @@
-/* Vestra Dashboard UI Refresh v1.2 — compact history + portfolio pulse + passive-income insight + mobile polish. */
+/* Vestra Dashboard UI Refresh v1.3 — compact history + portfolio pulse + passive-income insight + mobile polish. */
 (() => {
   'use strict';
 
@@ -17,6 +17,12 @@
     throw new Error('VestraDashboardUiRefresh requires VestraUtils presentation helpers');
   }
   const { text, finiteOrNull: num, parseLocalDay: parseDay, canonicalTicker } = shared;
+
+  const dividendNormalization = window.VestraBrokerNormalization;
+  if (!dividendNormalization || typeof dividendNormalization.getDividendNet !== 'function') {
+    throw new Error('VestraDashboardUiRefresh requires VestraBrokerNormalization.getDividendNet');
+  }
+  const { getDividendNet } = dividendNormalization;
 
   function getState() {
     try { return (typeof state !== 'undefined' && state) ? state : null; }
@@ -86,14 +92,6 @@
     return canonicalTicker(yahoo || ticker || dividend?.ticker || '');
   }
 
-  function dividendNet(dividend) {
-    const explicit = num(dividend?.netAmount);
-    if (explicit !== null) return explicit;
-    const gross = num(dividend?.grossAmount ?? dividend?.amount);
-    const tax = num(dividend?.taxWithheld) || 0;
-    return gross === null ? null : gross - tax;
-  }
-
   function latestObservedPaymentFor(asset) {
     const s = getState();
     const dividends = Array.isArray(s?.dividends) ? s.dividends : [];
@@ -103,7 +101,7 @@
     const rows = dividends.map(dividend => ({
       dividend,
       date: parseDay(dividend?.date),
-      net: dividendNet(dividend),
+      net: getDividendNet(dividend),
       ticker: dividendTicker(dividend),
     })).filter(row => {
       if (!row.date || row.net === null || row.net <= 0 || row.dividend?.isAdjustment) return false;
@@ -342,5 +340,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, version: '1.2' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, version: '1.3' });
 })();
