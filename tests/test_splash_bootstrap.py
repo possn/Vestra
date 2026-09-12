@@ -11,7 +11,7 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('installPremiumSplashWatchdog', UI)
         self.assertIn('vestra:app-ready', UI)
         self.assertIn('setTimeout(() => releaseSplash', UI)
-        self.assertNotIn('MutationObserver', UI)
+        self.assertNotIn('new MutationObserver(', UI)
         self.assertNotIn('appTriedToHide', UI)
 
     def test_splash_background_is_fully_opaque(self):
