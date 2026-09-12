@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.4 — instant dossier open + portfolio close/return rules. */
+/* Vestra Portfolio Sheet Navigation v1.5 — instant dossier open + portfolio close/return rules. */
 (() => {
   'use strict';
-  const VERSION='1.4';
+  const VERSION='1.5';
   let pending=false;
   let openingFromPortfolio=false;
   let navigationSequence=0;
@@ -145,12 +145,13 @@
     }
   }
 
-  function style(){
-    if(document.getElementById('vestra-portfolio-sheet-navigation-style'))return;
-    const s=document.createElement('style');
-    s.id='vestra-portfolio-sheet-navigation-style';
-    s.textContent='#marketSheet:not([hidden]) #marketSheetContent .market-detail-head [data-market-close]{display:none!important}';
-    document.head.appendChild(s);
+  function ensureStyles(){
+    if(document.getElementById('vestra-portfolio-sheet-navigation-style')) return;
+    const link=document.createElement('link');
+    link.id='vestra-portfolio-sheet-navigation-style';
+    link.rel='stylesheet';
+    link.href='portfolio-sheet-navigation.css?v=1.0';
+    document.head.appendChild(link);
   }
 
   document.addEventListener('click',e=>{
@@ -195,7 +196,7 @@
   },true);
 
   function start(){
-    style(); repair();
+    ensureStyles(); repair();
     const mo=new MutationObserver(()=>{
       if(pending)return;
       pending=true;
