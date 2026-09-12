@@ -23,7 +23,7 @@ test('iPhone/WebKit: favorito e fechar são um único grupo fixo compacto', asyn
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.4');
-  await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.2');
+  await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.3');
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
   const watch = actions.locator('[data-market-watch]');
