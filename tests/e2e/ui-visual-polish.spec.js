@@ -6,7 +6,7 @@ test('iPhone/WebKit: visual polish loads without hiding expanded content and sof
 
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
-  await page.waitForFunction(() => window.VestraUiVisualPolish?.version === '1.0');
+  await page.waitForFunction(() => window.VestraUiVisualPolish?.version === '1.1');
   await page.evaluate(() => {
     // Analytical Dashboard cards are intentionally suppressed in the first-run
     // empty state. Seed one local asset so this test exercises the expanded
@@ -27,6 +27,12 @@ test('iPhone/WebKit: visual polish loads without hiding expanded content and sof
 
   const style = page.locator('#vestraUiVisualPolishStyle');
   await expect(style).toHaveCount(1);
+  await expect(style).toHaveAttribute('rel', 'stylesheet');
+  await expect(style).toHaveAttribute('href', /ui-visual-polish\.css\?v=1\.0$/);
+  await page.waitForFunction(() => {
+    const link = document.getElementById('vestraUiVisualPolishStyle');
+    return Boolean(link?.sheet && link.sheet.cssRules?.length);
+  });
 
   const secondary = page.locator('#viewDashboard .card:not(.hero):not(#dashboardWeeklyEventsCard)').first();
   await expect(secondary).toBeVisible();
@@ -39,7 +45,11 @@ test('iPhone/WebKit: visual polish loads without hiding expanded content and sof
   expect(metrics.boxShadow).toBe('none');
   expect(parseFloat(metrics.borderRadius)).toBeGreaterThanOrEqual(16);
 
-  const focusRulePresent = await style.evaluate(el => el.textContent.includes(':focus-visible'));
+  const focusRulePresent = await page.evaluate(() => {
+    const link = document.getElementById('vestraUiVisualPolishStyle');
+    const rules = link?.sheet?.cssRules ? Array.from(link.sheet.cssRules) : [];
+    return rules.some(rule => rule.cssText.includes(':focus-visible'));
+  });
   expect(focusRulePresent).toBe(true);
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
