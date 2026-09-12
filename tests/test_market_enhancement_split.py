@@ -70,9 +70,11 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('VestraMarket?.openTicker', s)
         self.assertNotIn('Promise.resolve(hydrate', s)
 
-    def test_browser_e2e_covers_portfolio_runtime_changes(self):
+    def test_browser_e2e_covers_all_top_level_runtime_js_and_css(self):
         workflow = read('.github/workflows/browser-e2e.yml')
-        self.assertGreaterEqual(workflow.count("- 'portfolio*.js'"), 2)
+        self.assertGreaterEqual(workflow.count("- '*.js'"), 2)
+        self.assertGreaterEqual(workflow.count("- '*.css'"), 2)
+        self.assertNotIn("- 'portfolio*.js'", workflow)
 
     def test_service_worker_caches_all_canonical_modules(self):
         sw = read('sw.js')
