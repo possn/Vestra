@@ -120,7 +120,12 @@ def extract_snapshot(earnings_dates, earnings_estimate=None, now: datetime | Non
         actual = _number(_row_value(row, ("Reported EPS", "reportedEPS", "epsActual")))
         estimate = _number(_row_value(row, ("EPS Estimate", "epsEstimate", "epsEstimateCurrent")))
         surprise = _number(_row_value(row, ("Surprise(%)", "surprisePercent", "surprisePct")))
-        if surprise is not None and abs(surprise) > 2:
+        # Yahoo/yfinance labels this field as a percentage (for example 0.71
+        # means +0.71%), while Vestra stores surprise as a decimal fraction
+        # because the UI multiplies it by 100. Always convert the supplied
+        # percentage instead of using a magnitude heuristic: small beats such
+        # as +0.71% would otherwise be rendered incorrectly as +71.0%.
+        if surprise is not None:
             surprise /= 100.0
         if surprise is None and actual is not None and estimate not in (None, 0):
             surprise = actual / estimate - 1.0
@@ -204,6 +209,7 @@ def main() -> int:
     candidates = candidate_tickers(payload)
     attempted = matched = updated = 0
     failures = []
+    reported = []
     for ticker in candidates[:80]:
         attempted += 1
         try:
@@ -214,6 +220,14 @@ def main() -> int:
         if not snapshot:
             continue
         matched += 1
+        if snapshot.get("analyst_latest_earnings_date"):
+            reported.append({
+                "ticker": ticker,
+                "date": snapshot.get("analyst_latest_earnings_date"),
+                "actual": snapshot.get("analyst_latest_eps_actual"),
+                "estimate": snapshot.get("analyst_latest_eps_estimate"),
+                "surprise_pct": snapshot.get("analyst_latest_eps_surprise_pct"),
+            })
         row = by_ticker.get(ticker)
         if row is not None and apply_snapshot(row, snapshot):
             updated += 1
@@ -232,6 +246,7 @@ def main() -> int:
         "matched": matched,
         "updated": updated,
         "failures": failures[:10],
+        "reported": reported[:40],
         "contract": "near-term earnings only; preserve last verified values on fetch failure",
     }, ensure_ascii=False))
     return 0
