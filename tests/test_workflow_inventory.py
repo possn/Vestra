@@ -9,6 +9,7 @@ ACTIVE_WORKFLOWS = {
     'browser-e2e.yml',
     'capital-risk-regression.yml',
     'production-smoke.yml',
+    'refresh-weekly-earnings.yml',
     'runtime-js-syntax.yml',
     'sec-connectivity-probe.yml',
     'sec-fund-identity.yml',
