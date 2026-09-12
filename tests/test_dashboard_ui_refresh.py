@@ -10,6 +10,7 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         cls.source = (ROOT / "dashboard-ui-refresh.js").read_text(encoding="utf-8")
         cls.loader = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
         cls.utils = (ROOT / "app-utils.js").read_text(encoding="utf-8")
+        cls.dividend_normalization = (ROOT / "app-broker-normalization.js").read_text(encoding="utf-8")
 
     def test_history_is_collapsed_by_default(self):
         self.assertIn("let historyOpen = false", self.source)
@@ -38,13 +39,20 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         for helper in ("finiteOrNull", "parseLocalDay", "formatMoney", "formatPercent", "canonicalTicker"):
             self.assertIn(helper, self.utils)
 
+    def test_dashboard_reuses_canonical_dividend_net_normalization(self):
+        self.assertIn("window.VestraBrokerNormalization", self.source)
+        self.assertIn("getDividendNet", self.source)
+        self.assertIn("net: getDividendNet(dividend)", self.source)
+        self.assertNotIn("function dividendNet(dividend)", self.source)
+        self.assertIn("function getDividendNet(d)", self.dividend_normalization)
+
     def test_passive_income_grid_has_a_real_30_day_dividend_insight(self):
         self.assertIn("dashboardUpcomingDividendsTile", self.source)
         self.assertIn("Próximos 30 dias", self.source)
         self.assertIn("sem pagamentos previstos", self.source)
         self.assertIn("_yahooDiv?.payDate", self.source)
         self.assertIn("latestObservedPaymentFor", self.source)
-        self.assertIn("netAmount", self.source)
+        self.assertIn("getDividendNet", self.source)
         self.assertNotIn("_yahooDiv?.rate /", self.source)
 
     def test_negative_return_is_presented_as_integrated_health_card_without_changing_trigger(self):
@@ -61,9 +69,9 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
-        self.assertIn("dashboard-ui-refresh.js?v=1.2", self.loader)
+        self.assertIn("dashboard-ui-refresh.js?v=1.3", self.loader)
         self.assertIn("version: '1.9'", self.loader)
-        self.assertIn("version: '1.2'", self.source)
+        self.assertIn("version: '1.3'", self.source)
 
 
 if __name__ == "__main__":
