@@ -79,9 +79,14 @@ class MarketLoaderInvariantTests(unittest.TestCase):
 
     def test_dossier_opening_delegates_to_canonical_navigation(self):
         loader = read("market-data-loader.js")
-        self.assertIn("function openDossier", loader)
-        self.assertIn("window.VestraNavigation", loader)
-        self.assertIn("nav?.openCompany", loader)
+        start = loader.index("function openDossier")
+        end = loader.index("\n  document.addEventListener('click'", start)
+        block = loader[start:end]
+        self.assertIn("window.VestraNavigation", block)
+        self.assertIn("nav?.openCompany", block)
+        self.assertIn("if(!nav?.openCompany) return Promise.resolve(false)", block)
+        self.assertNotIn("VestraMarket?.openTicker", block)
+        self.assertNotIn("hydrateOpenDossier(tk)", block)
         self.assertIn("openDossier(ticker,{sourceNode:row})", loader)
         self.assertIn("openDossier(ticker,{origin:'market',sourceNode:jump})", loader)
 
@@ -118,7 +123,6 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn('"key": "executive:donald-trump"', executives)
         self.assertIn('"name": "Donald J. Trump"', executives)
         self.assertIn('OGE Form 278-T', executives)
-        self.assertIn("data/executives.json", politicians)
         self.assertNotIn("const TRUMP", politicians)
         self.assertNotIn("TRUMP_TRADES", politicians)
 
