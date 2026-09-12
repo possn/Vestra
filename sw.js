@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.31 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v145";
+/* Vestra Service Worker v10.32 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v146";
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js",
@@ -13,7 +13,7 @@ const APP_SHELL = [
   "./market-row-ui.js", "./market-data-loader.js", "./market-data-health.js", "./market-company-brief.js", "./market-company-brief.css",
   "./market-metric-cleanup.js", "./market-dossier-controls.js", "./market-dossier-controls.css", "./market-ui-polish.js", "./portfolio-collapsibles.js", "./portfolio-collapsibles.css",
   "./portfolio-sheet-navigation.js", "./portfolio-sheet-navigation.css", "./portfolio-card-classifier.js", "./portfolio-card-classifier.css", "./market-opportunities.js",
-  "./vestra-portfolio-focus.js", "./vestra-portfolio-hierarchy.js", "./vestra-swap-lab.js",
+  "./vestra-portfolio-focus.js", "./vestra-portfolio-focus.css", "./vestra-portfolio-hierarchy.js", "./vestra-swap-lab.js",
   "./market-opportunity-lenses.js", "./market-opportunity-lenses.css", "./mobile-ui-refresh.js", "./vestra-ai-brief.js", "./vestra-ai-brief.css", "./vestra-portfolio-ui.js", "./vestra-portfolio-ui.css",
   "./portfolio-diagnostics.js", "./portfolio-diagnostics.css", "./portfolio-dossier-routing.js", "./politicians.js", "./market-global-search.css", "./market-stock-themes-tools.css", "./data/executives.json",
   "./manifest.webmanifest", "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",
