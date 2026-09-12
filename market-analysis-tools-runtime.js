@@ -1,4 +1,4 @@
-/* Vestra Market analysis tools runtime v1.1 */
+/* Vestra Market analysis tools runtime v1.2 */
 (() => {
   'use strict';
 
@@ -207,16 +207,11 @@
 
   function installStyles() {
     if (document.getElementById('vestraMarketAnalysisToolsRuntimeStyles')) return;
-    const style = document.createElement('style');
-    style.id = 'vestraMarketAnalysisToolsRuntimeStyles';
-    style.textContent = `
-      #marketSheet.market-sheet--tool-runtime>.market-sheet__panel{max-height:min(88dvh,760px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;padding-bottom:max(24px,env(safe-area-inset-bottom))}
-      .market-tool-runtime__head{position:sticky;top:0;z-index:3;background:var(--card);padding-top:4px;padding-bottom:10px}
-      .market-tool-runtime__search{position:relative;margin:4px 0 10px}.market-tool-runtime__search input{width:100%;min-height:48px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:var(--text);padding:0 14px;font:inherit}
-      .market-tool-runtime__suggestions{display:grid;gap:6px;margin-top:7px}.market-tool-runtime__suggestion{width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:12px;padding:9px 10px}.market-tool-runtime__suggestion span{min-width:0}.market-tool-runtime__suggestion strong,.market-tool-runtime__suggestion small{display:block}.market-tool-runtime__suggestion small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .market-tool-runtime__selected-wrap{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;margin-bottom:10px}.market-tool-runtime__selected{border:1px solid rgba(32,129,126,.3);background:rgba(32,129,126,.09);color:var(--text);border-radius:999px;padding:7px 10px;font-weight:800}.market-tool-runtime__go{width:100%;margin-bottom:12px}.market-tool-runtime__muted,.market-tool-runtime__note{color:var(--muted);font-size:11px;line-height:1.4}.market-tool-runtime__note{margin:2px 0 10px}.market-tool-runtime__chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}.market-tool-runtime__chips .market-chip{flex:0 0 auto}.market-tool-runtime__row{width:100%;text-align:left}.market-tool-runtime__table{overflow-x:auto}.market-tool-runtime__loading{padding:20px;color:var(--muted);text-align:center}
-    `;
-    document.head.appendChild(style);
+    const link = document.createElement('link');
+    link.id = 'vestraMarketAnalysisToolsRuntimeStyles';
+    link.rel = 'stylesheet';
+    link.href = 'market-analysis-tools-runtime.css?v=1.0';
+    document.head.appendChild(link);
   }
 
   document.addEventListener('click', event => {
@@ -272,5 +267,5 @@
   }, true);
 
   installStyles();
-  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.1' });
+  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.2' });
 })();

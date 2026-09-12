@@ -12,6 +12,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         cls.dossier_css = (ROOT / 'market-dossier-controls.css').read_text(encoding='utf-8')
         cls.loader = (ROOT / 'market-static-universe.js').read_text(encoding='utf-8')
         cls.analysis_tools = (ROOT / 'market-analysis-tools-runtime.js').read_text(encoding='utf-8')
+        cls.analysis_tools_css = (ROOT / 'market-analysis-tools-runtime.css').read_text(encoding='utf-8')
 
     def test_dossier_geometry_has_one_owner_and_one_fixed_action_group(self):
         self.assertNotIn('right:max(calc(env(safe-area-inset-right) + 68px),68px)!important', self.source)
@@ -52,7 +53,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('ensureMarketUiPolish', self.loader)
         self.assertIn('market-ui-polish.js?v=1.3', self.loader)
         self.assertIn('ensureAnalysisToolsRuntime', self.loader)
-        self.assertIn('market-analysis-tools-runtime.js?v=1.1', self.loader)
+        self.assertIn('market-analysis-tools-runtime.js?v=1.2', self.loader)
         self.assertIn("version: '1.9'", self.loader)
 
     def test_analysis_tools_have_searchable_compare_and_news_and_lazy_scanner(self):
@@ -62,11 +63,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('newsCandidates', self.analysis_tools)
         self.assertIn('VestraMarketScannerData', self.analysis_tools)
         self.assertIn('data-tool-scanner-strategy', self.analysis_tools)
-        self.assertIn('overflow-y:auto', self.analysis_tools)
         self.assertIn('window.VestraNavigation', self.analysis_tools)
         self.assertIn("nav.openCompany(ticker, { origin: 'market' })", self.analysis_tools)
         self.assertNotIn('VestraMarket?.openTicker', self.analysis_tools)
-        self.assertIn("version:'1.1'", self.analysis_tools)
+        self.assertIn("market-analysis-tools-runtime.css?v=1.0", self.analysis_tools)
+        self.assertNotIn("document.createElement('style')", self.analysis_tools)
+        self.assertNotIn('style.textContent', self.analysis_tools)
+        self.assertIn('overflow-y:auto', self.analysis_tools_css)
+        self.assertIn('.market-tool-runtime__search', self.analysis_tools_css)
+        self.assertIn('.market-tool-runtime__chips', self.analysis_tools_css)
+        self.assertIn("version:'1.2'", self.analysis_tools)
 
 
 if __name__ == '__main__':
