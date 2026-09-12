@@ -70,6 +70,15 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('VestraMarket?.openTicker', s)
         self.assertNotIn('Promise.resolve(hydrate', s)
 
+    def test_portfolio_sheet_navigation_uses_static_stylesheet(self):
+        js = read('portfolio-sheet-navigation.js')
+        css = read('portfolio-sheet-navigation.css')
+        self.assertIn("portfolio-sheet-navigation.css?v=1.0", js)
+        self.assertIn("link.rel='stylesheet'", js)
+        self.assertNotIn("document.createElement('style')", js)
+        self.assertNotIn('s.textContent=', js)
+        self.assertIn('#marketSheet:not([hidden]) #marketSheetContent .market-detail-head [data-market-close]', css)
+
     def test_browser_e2e_covers_all_top_level_runtime_js_and_css(self):
         workflow = read('.github/workflows/browser-e2e.yml')
         self.assertGreaterEqual(workflow.count("- '*.js'"), 2)
@@ -80,7 +89,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
         self.assertIn('staleWhileRevalidate', sw)
-        for module in ('./market-live-overlay.js', './market-company-brief.js', './market-metric-cleanup.js', './portfolio-collapsibles.js', './portfolio-card-classifier.js', './portfolio-diagnostics.js', './vestra-ai-brief.js', './portfolio-dossier-routing.js', './market-opportunity-lenses.js', './mobile-ui-refresh.js'):
+        for module in ('./market-live-overlay.js', './market-company-brief.js', './market-metric-cleanup.js', './portfolio-collapsibles.js', './portfolio-sheet-navigation.css', './portfolio-card-classifier.js', './portfolio-diagnostics.js', './vestra-ai-brief.js', './portfolio-dossier-routing.js', './market-opportunity-lenses.js', './mobile-ui-refresh.js'):
             self.assertIn(module, sw)
 
 
