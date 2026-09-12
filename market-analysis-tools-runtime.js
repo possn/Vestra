@@ -1,4 +1,4 @@
-/* Vestra Market analysis tools runtime v1.0 */
+/* Vestra Market analysis tools runtime v1.1 */
 (() => {
   'use strict';
 
@@ -179,8 +179,12 @@
   async function openTicker(ticker, news=false) {
     closeSheet();
     await ensureMarket();
-    try { await window.VestraMarket?.openTicker?.(ticker); } catch (_) { return; }
-    if (!news) return;
+    const nav = window.VestraNavigation;
+    if (!nav?.openCompany) return false;
+    let opened = false;
+    try { opened = await nav.openCompany(ticker, { origin: 'market' }); } catch (_) { return false; }
+    if (!opened) return false;
+    if (!news) return true;
     let attempts = 0;
     const selectNews = () => {
       const tab = document.querySelector('#marketSheet [data-detail-tab="news"]');
@@ -188,6 +192,7 @@
       if (++attempts < 20) setTimeout(selectNews, 60);
     };
     setTimeout(selectNews, 60);
+    return true;
   }
 
   async function openTool(tool) {
@@ -267,5 +272,5 @@
   }, true);
 
   installStyles();
-  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.0' });
+  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.1' });
 })();
