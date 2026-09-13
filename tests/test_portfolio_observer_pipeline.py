@@ -20,6 +20,9 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
             self.assertNotIn("new MutationObserver", source, name)
         hierarchy=read("vestra-portfolio-hierarchy.js")
         self.assertEqual(hierarchy.count("new MutationObserver"),1)
+        self.assertIn("const sh=document.getElementById('marketSheet');if(!sh)return",hierarchy)
+        self.assertIn("mo.observe(sh,{childList:true,subtree:true})",hierarchy)
+        self.assertNotIn("mo.observe(document.body",hierarchy)
 
     def test_hierarchy_refreshes_decorators_in_pipeline_order(self):
         hierarchy=read("vestra-portfolio-hierarchy.js")

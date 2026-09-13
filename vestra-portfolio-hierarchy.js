@@ -157,9 +157,11 @@
     window.VestraPortfolioDossierRouting?.decorate?.();
   }
   function start(){
-    style();apply();let pending=false;
+    style();apply();
+    const sh=document.getElementById('marketSheet');if(!sh)return;
+    let pending=false;
     const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});
-    mo.observe(document.body,{childList:true,subtree:true});
+    mo.observe(sh,{childList:true,subtree:true});
   }
   document.addEventListener('click',e=>{
     const open=e.target.closest?.('[data-ux454-open-swap]');
