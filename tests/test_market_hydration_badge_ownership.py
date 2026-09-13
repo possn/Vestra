@@ -27,19 +27,28 @@ class MarketHydrationBadgeOwnershipTests(unittest.TestCase):
         self.assertIn("return request===dossierHydrationSeq && !!dossierSheetFor(ticker);", text)
         self.assertGreaterEqual(text.count("if(!ownsDossierHydration(request,key))"), 2)
 
-        success_guard = text.index("if(!ownsDossierHydration(request,key)) return stock;")
-        refresh = text.index("refreshOpenDossier(key,stock);", success_guard)
-        perf_delete = text.index("dossierOpenMarks.delete(key);", refresh)
-        self.assertLess(success_guard, refresh)
-        self.assertLess(refresh, perf_delete)
+        success_guard = text.index("if(!ownsDossierHydration(request,key)){")
+        stale_release = text.index("releaseDossierOpenMark(key,openMark);", success_guard)
+        stale_return = text.index("return stock;", stale_release)
+        refresh = text.index("refreshOpenDossier(key,stock);", stale_return)
+        owned_release = text.index("releaseDossierOpenMark(key,openMark);", refresh)
+        self.assertLess(success_guard, stale_release)
+        self.assertLess(stale_release, stale_return)
+        self.assertLess(stale_return, refresh)
+        self.assertLess(refresh, owned_release)
 
     def test_stale_hydration_failure_cannot_change_current_badge_or_perf_mark(self):
         text = LOADER.read_text(encoding="utf-8")
-        catch_guard = text.index("if(!ownsDossierHydration(request,key)) return resolveIndexStock(key);")
-        partial_badge = text.index("setHydrationBadge(key,'partial');", catch_guard)
-        perf_delete = text.index("dossierOpenMarks.delete(key);", partial_badge)
-        self.assertLess(catch_guard, partial_badge)
-        self.assertLess(partial_badge, perf_delete)
+        catch_start = text.index("}).catch(err=>{")
+        catch_guard = text.index("if(!ownsDossierHydration(request,key)){", catch_start)
+        stale_release = text.index("releaseDossierOpenMark(key,openMark);", catch_guard)
+        stale_return = text.index("return resolveIndexStock(key);", stale_release)
+        partial_badge = text.index("setHydrationBadge(key,'partial');", stale_return)
+        owned_release = text.index("releaseDossierOpenMark(key,openMark);", partial_badge)
+        self.assertLess(catch_guard, stale_release)
+        self.assertLess(stale_release, stale_return)
+        self.assertLess(stale_return, partial_badge)
+        self.assertLess(partial_badge, owned_release)
 
 
 if __name__ == "__main__":
