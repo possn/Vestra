@@ -32,6 +32,14 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("próximo pipeline diário promove-a para o universo oficial", text)
         self.assertNotIn("score: 50", text)
 
+    def test_remote_dossier_ignores_stale_async_responses(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        self.assertIn("let remoteOpenSeq = 0;", text)
+        self.assertIn("const request=++remoteOpenSeq;", text)
+        self.assertIn("request===remoteOpenSeq", text)
+        self.assertIn("txt(sh.dataset.ticker).toUpperCase()===ticker", text)
+        self.assertGreaterEqual(text.count("if(!ownsRemoteOpen(request,sh,ticker))return;"), 4)
+
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=2.0", text)
