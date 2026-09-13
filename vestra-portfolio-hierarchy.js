@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.4 — canonical final hierarchy from UX 4.54/4.55/4.57. */
+/* Vestra Portfolio Hierarchy v1.5 — canonical final hierarchy from UX 4.54/4.55/4.57. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -101,14 +101,18 @@
     let panel=swap.querySelector('.ux455-swap-summary');
     if(!panel){panel=document.createElement('div');panel.className='ux455-swap-summary';const head=swap.querySelector('.ux454-swap-head');head?head.insertAdjacentElement('afterend',panel):swap.prepend(panel);}
     const best=[...alts].sort((a,b)=>(b.delta??-999)-(a.delta??-999))[0];
-    panel.innerHTML=`<div><small>MELHOR MELHORIA DETETADA</small><strong>${best.source?best.source+' → ':''}${best.ticker}</strong><span>${best.delta!=null?`+${best.delta} pontos de Score Vestra`:''}${best.name?` · ${best.name}`:''}</span></div><button type="button" data-ux455-simulate>Ver impacto</button>`;
+    const signature=JSON.stringify([best.source,best.ticker,best.delta,best.name]);
+    if(panel.dataset.signature!==signature){
+      panel.dataset.signature=signature;
+      panel.innerHTML=`<div><small>MELHOR MELHORIA DETETADA</small><strong>${best.source?best.source+' → ':''}${best.ticker}</strong><span>${best.delta!=null?`+${best.delta} pontos de Score Vestra`:''}${best.name?` · ${best.name}`:''}</span></div><button type="button" data-ux455-simulate>Ver impacto</button>`;
+    }
     rows.forEach((row,i)=>{
       if(row.querySelector('.ux455-swap-tag'))return;
       const a=alts[i]||parseAlternative(row),tag=document.createElement('div');tag.className='ux455-swap-tag';
       const strength=a.delta==null?'Comparar':a.delta>=25?'Melhoria forte':a.delta>=12?'Melhoria relevante':'Melhoria moderada';
       tag.innerHTML=`<span>${strength}</span>${a.delta!=null?`<b>+${a.delta}</b>`:''}`;row.appendChild(tag);
     });
-    const button=swap.querySelector('[data-ux454-open-swap]');if(button){button.textContent='Ver comparação';button.dataset.ux455Simulate='1';}
+    const button=swap.querySelector('[data-ux454-open-swap]');if(button){if(button.textContent!=='Ver comparação')button.textContent='Ver comparação';button.dataset.ux455Simulate='1';}
     if(scenario)scenario.classList.add('ux455-scenario');
   }
   function overlapCard(c){
@@ -148,6 +152,8 @@
     const c=root();if(!c)return;
     decorateBase(c);repairHierarchy(c);fixHeaderCollisions(c);swapLab(c);overlapCard(c);dedupeSurfaces(c);
     window.VestraSwapLab?.refresh?.();
+    window.VestraPortfolioUI?.refresh?.();
+    window.VestraPortfolioDiagnostics?.refresh?.();
   }
   function start(){
     style();apply();let pending=false;
@@ -161,5 +167,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.4'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.5'});
 })();
