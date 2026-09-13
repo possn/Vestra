@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.4 — iPhone-safe unified fixed action group. */
+/* Vestra Market Dossier Controls v1.5 — iPhone-safe unified fixed action group. */
 (() => {
   'use strict';
 
@@ -46,7 +46,7 @@
     const sheet = document.getElementById('marketSheet');
     if (!sheet) return;
     sheet.querySelectorAll('[data-market-close], [data-market-watch]').forEach(button => {
-      if (button instanceof HTMLButtonElement) button.type = 'button';
+      if (button instanceof HTMLButtonElement && button.type !== 'button') button.type = 'button';
     });
     sheet.querySelectorAll('[data-market-close]').forEach(button => {
       if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', 'Fechar dossier');
@@ -56,11 +56,6 @@
   function start() {
     installStyle();
     normalizeButtons();
-    const sheet = document.getElementById('marketSheet');
-    if (sheet) {
-      const observer = new MutationObserver(normalizeButtons);
-      observer.observe(sheet, { childList: true, subtree: true });
-    }
     // Capture phase keeps closing independent from the large delegated market handler.
     document.addEventListener('click', closeMarketSheet, true);
   }
@@ -69,7 +64,7 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.4',
+    version: '1.5',
     closeMarketSheet,
     installStyle,
     normalizeButtons,
