@@ -20,12 +20,18 @@
 
   function markDossierOpen(ticker){
     const key=tickerKey(ticker); if(!key) return;
-    dossierOpenMarks.set(key,{startedAt:performance.now(),sheetMs:null});
+    const mark={startedAt:performance.now(),sheetMs:null};
+    dossierOpenMarks.set(key,mark);
     requestAnimationFrame(()=>{
-      const mark=dossierOpenMarks.get(key); if(!mark||mark.sheetMs!=null) return;
+      if(dossierOpenMarks.get(key)!==mark || mark.sheetMs!=null) return;
       const sh=dossierSheetFor(key);
       if(sh) mark.sheetMs=Math.round(performance.now()-mark.startedAt);
     });
+  }
+
+  function releaseDossierOpenMark(ticker,mark){
+    const key=tickerKey(ticker);
+    if(key && mark && dossierOpenMarks.get(key)===mark) dossierOpenMarks.delete(key);
   }
 
   const txt = v => String(v ?? '').trim();
@@ -189,11 +195,15 @@
     if(!key) return Promise.resolve(null);
     const request=++dossierHydrationSeq;
     const hydrationStartedAt=performance.now();
+    const openMark=dossierOpenMarks.get(key)||null;
     setHydrationBadge(key,'loading');
     return hydrateTicker(key).then(stock=>{
-      if(!ownsDossierHydration(request,key)) return stock;
+      if(!ownsDossierHydration(request,key)){
+        releaseDossierOpenMark(key,openMark);
+        return stock;
+      }
       refreshOpenDossier(key,stock);
-      const mark=dossierOpenMarks.get(key)||{};
+      const mark=openMark||{};
       recordDossierPerf({
         ticker:key,
         sheetMs:mark.sheetMs,
@@ -201,12 +211,15 @@
         complete:!!stock?._dossierHydrated,
         error:txt(stock?._dossierHydrationError)
       });
-      dossierOpenMarks.delete(key);
+      releaseDossierOpenMark(key,openMark);
       return stock;
     }).catch(err=>{
-      if(!ownsDossierHydration(request,key)) return resolveIndexStock(key);
+      if(!ownsDossierHydration(request,key)){
+        releaseDossierOpenMark(key,openMark);
+        return resolveIndexStock(key);
+      }
       setHydrationBadge(key,'partial');
-      const mark=dossierOpenMarks.get(key)||{};
+      const mark=openMark||{};
       recordDossierPerf({
         ticker:key,
         sheetMs:mark.sheetMs,
@@ -214,7 +227,7 @@
         complete:false,
         error:txt(err?.message)||'hydration failed'
       });
-      dossierOpenMarks.delete(key);
+      releaseDossierOpenMark(key,openMark);
       return resolveIndexStock(key);
     });
   }
