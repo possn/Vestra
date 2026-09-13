@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.38 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v152";
+/* Vestra Service Worker v10.39 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v153";
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js",
@@ -30,7 +30,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "market-data-loader.js", "market-data-health.js", "market-portfolio-context.js", "market-static-universe.js",
   "market-scanner-data.js", "market-analysis-tools-runtime.js", "market-etf-intelligence.js", "dashboard-weekly-events.js",
   "dashboard-weekly-events-navigation.js", "market-dossier-controls.js", "market-ui-polish.js", "market-opportunities.js",
-  "market-opportunity-lenses.js", "mobile-ui-refresh.js"
+  "market-opportunity-lenses.js", "mobile-ui-refresh.js", "vestra-ai-brief.js"
 ]);
 
 self.addEventListener("install", event => {
