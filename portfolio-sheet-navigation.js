@@ -198,12 +198,14 @@
 
   function start(){
     ensureStyles(); repair();
+    const sh=sheet();
+    if(!sh) return;
     const mo=new MutationObserver(()=>{
       if(pending)return;
       pending=true;
       requestAnimationFrame(()=>{pending=false;repair();});
     });
-    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']});
+    mo.observe(sh,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']});
   }
 
   window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany});
