@@ -70,7 +70,12 @@ class NativeMarketLoadingTests(unittest.TestCase):
         self.assertNotIn("fetch('./data/stocks-index.json'", swap)
         self.assertNotIn("fetch('./data/stocks.json'", swap)
         self.assertNotIn('function load()', swap)
-        self.assertIn('new MutationObserver', swap)
+        self.assertNotIn('new MutationObserver', swap)
+        self.assertIn('refresh:apply', swap)
+
+        hierarchy = read('vestra-portfolio-hierarchy.js')
+        self.assertEqual(hierarchy.count('new MutationObserver'), 1)
+        self.assertIn('VestraSwapLab?.refresh?.()', hierarchy)
 
         ai = read('vestra-ai-brief.js')
         self.assertIn('window.VestraMarketStaticUniverse', ai)
