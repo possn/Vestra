@@ -12,7 +12,7 @@ class VestraAiBriefStyleTests(unittest.TestCase):
     def test_ai_brief_uses_static_stylesheet_without_changing_evidence_runtime(self):
         js = read('vestra-ai-brief.js')
         css = read('vestra-ai-brief.css')
-        self.assertIn("const VERSION='1.1'", js)
+        self.assertIn("const VERSION='1.2'", js)
         self.assertIn("vestra-ai-brief.css?v=1.0", js)
         self.assertIn("link.rel='stylesheet'", js)
         self.assertNotIn("document.createElement('style')", js)
