@@ -37,7 +37,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             self.assertIn(token, s)
         self.assertEqual(s.count('new MutationObserver'), 1)
 
-    def test_swap_lab_preserves_v456_contract(self):
+    def test_swap_lab_preserves_v456_contract_under_hierarchy_observer(self):
         s=read('vestra-swap-lab.js')
         for token in (
             "cmp('qualidade',n(a?.score),n(b?.score),true,3)",
@@ -46,10 +46,13 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             "cmp('ROE',n(a?.roe),n(b?.roe),true,0.02)",
             "cmp('FCF yield',n(a?.free_cash_flow_yield_pct),n(b?.free_cash_flow_yield_pct),true,1)",
             "cmp('Forward P/E',n(a?.forward_pe),n(b?.forward_pe),false,2)",
-            'ux456-swaplab','data-ux456-impact','window.VestraSwapLab',
+            'ux456-swaplab','data-ux456-impact','window.VestraSwapLab','refresh:apply',
         ):
             self.assertIn(token, s)
-        self.assertEqual(s.count('new MutationObserver'), 1)
+        self.assertEqual(s.count('new MutationObserver'), 0)
+        hierarchy=read('vestra-portfolio-hierarchy.js')
+        self.assertEqual(hierarchy.count('new MutationObserver'), 1)
+        self.assertIn('VestraSwapLab?.refresh?.()', hierarchy)
 
     def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
