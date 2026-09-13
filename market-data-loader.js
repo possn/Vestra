@@ -140,18 +140,19 @@
     let badge=head.querySelector('.market-dossier-hydration');
     if(state==='loading'){
       if(!badge){ badge=document.createElement('span'); badge.className='market-live-badge market-dossier-hydration'; head.appendChild(badge); }
+      badge.dataset.hydrationGeneration=String((Number(badge.dataset.hydrationGeneration)||0)+1);
       badge.textContent='◌ A carregar detalhe…';
       badge.setAttribute('aria-live','polite');
       return;
     }
     if(!badge) return;
-    if(state==='ready'){
-      badge.textContent='✓ Dossier completo';
-      setTimeout(()=>{ if(badge?.isConnected) badge.remove(); },1400);
-    }else{
-      badge.textContent='Detalhe parcial';
-      setTimeout(()=>{ if(badge?.isConnected) badge.remove(); },1800);
-    }
+    const generation=badge.dataset.hydrationGeneration||'';
+    const label=state==='ready'?'✓ Dossier completo':'Detalhe parcial';
+    const delay=state==='ready'?1400:1800;
+    badge.textContent=label;
+    setTimeout(()=>{
+      if(badge?.isConnected && badge.dataset.hydrationGeneration===generation && badge.textContent===label) badge.remove();
+    },delay);
   }
 
   function dossierSparkSvg(history){
