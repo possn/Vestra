@@ -12,7 +12,7 @@ function loadResearchDiagnostics(){loadScript('vestra-model-validation-script','
 function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.3',window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
 function loadDossierControls(){loadScript('vestra-market-dossier-controls-script','market-dossier-controls.js?v=1.5',window.VestraMarketDossierControls,()=>window.VestraMarketDossierControls?.normalizeButtons?.())}
 function loadGlobalMarketSearch(){loadScript('vestra-global-market-search-script','market-global-search.js?v=1.3',window.VestraGlobalMarketSearch)}
-function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','market-learned-universe.js?v=2.0',window.VestraLearnedUniverse,loadGlobalMarketSearch)}
+function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','market-learned-universe.js?v=2.1',window.VestraLearnedUniverse,loadGlobalMarketSearch)}
 function loadAppUpdateManager(){loadScript('vestra-app-update-manager-script','app-update-manager.js?v=1.5',window.VestraAppUpdateManager)}
 function loadDataHealth(){loadScript('vestra-market-data-health-script','market-data-health.js?v=1.2',window.VestraMarketDataHealth)}
 function loadRuntimeBridge(){loadScript('vestra-runtime-bridge-script','app-runtime-bridge.js?v=1.1',window.VestraRuntimeBridge,()=>{loadAppUpdateManager();loadLearnedUniverse();})}
