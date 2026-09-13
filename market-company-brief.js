@@ -16,7 +16,7 @@ function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','mark
 function loadAppUpdateManager(){loadScript('vestra-app-update-manager-script','app-update-manager.js?v=1.5',window.VestraAppUpdateManager)}
 function loadDataHealth(){loadScript('vestra-market-data-health-script','market-data-health.js?v=1.2',window.VestraMarketDataHealth)}
 function loadRuntimeBridge(){loadScript('vestra-runtime-bridge-script','app-runtime-bridge.js?v=1.1',window.VestraRuntimeBridge,()=>{loadAppUpdateManager();loadLearnedUniverse();})}
-function start(){style();loadResearchDiagnostics();loadDataHealth();refreshDossier();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;refreshDossier()})});mo.observe(document.body,{childList:true,subtree:true})}
+function start(){style();loadResearchDiagnostics();loadDataHealth();refreshDossier();const sh=document.getElementById('marketSheet');if(!sh)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;refreshDossier()})});mo.observe(sh,{childList:true,subtree:true})}
 loadCanonicalQuoteRepair();
 loadDossierControls();
 loadRuntimeBridge();

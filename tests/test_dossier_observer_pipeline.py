@@ -9,13 +9,16 @@ def read(path: str) -> str:
 
 
 class DossierObserverPipelineTests(unittest.TestCase):
-    def test_company_brief_owns_shared_dossier_normalizer_observer(self):
+    def test_company_brief_owns_shared_sheet_scoped_dossier_normalizer_observer(self):
         company = read('market-company-brief.js')
         metric = read('market-metric-cleanup.js')
         controls = read('market-dossier-controls.js')
         self.assertEqual(company.count('new MutationObserver'), 1)
         self.assertEqual(metric.count('new MutationObserver'), 0)
         self.assertEqual(controls.count('new MutationObserver'), 0)
+        self.assertIn("const sh=document.getElementById('marketSheet');if(!sh)return", company)
+        self.assertIn("mo.observe(sh,{childList:true,subtree:true})", company)
+        self.assertNotIn("mo.observe(document.body,{childList:true,subtree:true})", company)
         self.assertIn('window.VestraMarketMetricCleanup?.refresh?.()', company)
         self.assertIn('window.VestraMarketDossierControls?.normalizeButtons?.()', company)
         self.assertIn('refresh:refreshDossier', company)
