@@ -86,7 +86,9 @@
   }
 
   async function storageClear(){
-    if (idbAvailable()) await idbDel(DB_KEY);
+    if (idbAvailable()) {
+      try { await idbDel(DB_KEY); } catch (_) {}
+    }
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
   }
 
