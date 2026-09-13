@@ -1,10 +1,9 @@
-/* Vestra Portfolio Diagnostics v1.0 — diagnosis state, coverage semantics and measurable overlap. */
+/* Vestra Portfolio Diagnostics v1.1 — diagnosis state, coverage semantics and measurable overlap. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(String(v).replace(',','.').replace(/[^0-9+\-.]/g,''));return Number.isFinite(x)?x:null;};
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let pending=false;
 
   function root(){
     const sh=document.getElementById('marketSheet'),c=document.getElementById('marketSheetContent');
@@ -23,25 +22,26 @@
     const positionCoverage=positions>0&&research!=null?Math.round(research/positions*100):null;
     return {positions,research,positionCoverage,valueCoverage,valueBox};
   }
+  function setText(el,value){if(el&&el.textContent!==value)el.textContent=value;}
   function syncCoverage(c){
     const m=coverage(c); if(!m.positions)return;
-    if(m.valueBox){const l=m.valueBox.querySelector('small');if(l)l.textContent='Cobertura por valor';}
+    if(m.valueBox){const l=m.valueBox.querySelector('small');setText(l,'Cobertura por valor');}
     const hero=[...c.querySelectorAll('.vpu-grid>div')].find(x=>t(x.querySelector('small')?.textContent)==='Cobertura');
     if(hero&&m.positionCoverage!=null){
       const strong=hero.querySelector('strong'),sub=hero.querySelector('span');
-      if(strong)strong.textContent=`${m.positionCoverage}%`;
-      if(sub)sub.textContent=`${Math.round(m.research||0)}/${Math.round(m.positions)} posições · ${m.valueCoverage==null?'—':Math.round(m.valueCoverage)+'%'} do valor`;
+      setText(strong,`${m.positionCoverage}%`);
+      setText(sub,`${Math.round(m.research||0)}/${Math.round(m.positions)} posições · ${m.valueCoverage==null?'—':Math.round(m.valueCoverage)+'%'} do valor`);
     }
     const health=[...c.querySelectorAll('.vpu-health-row')].find(x=>t(x.querySelector('span')?.textContent).startsWith('Cobertura'));
     if(health&&m.positionCoverage!=null){
       const label=health.querySelector('span'),b=health.querySelector('b'),bar=health.querySelector('.vpu-track i');
-      if(label)label.textContent='Cobertura posições'; if(b)b.textContent=`${m.positionCoverage}%`;
-      if(bar){bar.style.width=`${Math.max(0,Math.min(100,m.positionCoverage))}%`;bar.className=m.positionCoverage>=70?'is-good':m.positionCoverage>=40?'is-warn':'is-bad';}
+      setText(label,'Cobertura posições');setText(b,`${m.positionCoverage}%`);
+      if(bar){const width=`${Math.max(0,Math.min(100,m.positionCoverage))}%`,cls=m.positionCoverage>=70?'is-good':m.positionCoverage>=40?'is-warn':'is-bad';if(bar.style.width!==width)bar.style.width=width;if(bar.className!==cls)bar.className=cls;}
     }
   }
   function syncDiagnosis(c){
     const dc=decisionCenter(c),btn=c.querySelector('[data-vpu-detail]'); if(!dc||!btn)return;
-    const open=c.dataset.vpdDiagnosis==='1'; dc.hidden=!open; btn.textContent=open?'Ocultar diagnóstico':'Ver diagnóstico';
+    const open=c.dataset.vpdDiagnosis==='1'; if(dc.hidden===open)dc.hidden=!open; setText(btn,open?'Ocultar diagnóstico':'Ver diagnóstico');
   }
   function assetValue(a){const x=n(a?.value??a?.marketValueEUR);return x??0;}
   function eligible(a){const cls=t(a?.class).toLowerCase();return !cls.includes('cripto')&&(cls.includes('ações')||cls.includes('acoes')||cls.includes('etf')||cls.includes('fund'));}
@@ -84,6 +84,9 @@
     let host=card.querySelector('.vpd-overlap-results');if(!host){host=document.createElement('div');host.className='vpd-overlap-results';const anchor=card.querySelector('.ux455-overlap-note')||card.querySelector('.ux454-overlap-head');anchor?anchor.insertAdjacentElement('afterend',host):card.prepend(host);}
     [...card.children].forEach(x=>{if(x===host||x.matches?.('.ux454-overlap-head,.ux455-overlap-note,.market-collapse-toggle,.ux454-purpose,.ux-section-hint'))return;if(x.tagName==='H4'||x.matches?.('.market-case-note,.market-case-list'))x.style.display='none';});
     const coverageText=model.allEtfs.length?`${model.etfs.length}/${model.allEtfs.length} ETFs com holdings detalhados`:'Sem ETFs identificados nesta parte da carteira';
+    const signature=JSON.stringify([coverageText,...model.items.map(x=>[x.type,x.title,x.detail,x.impact.toFixed(4)])]);
+    if(host.dataset.signature===signature)return;
+    host.dataset.signature=signature;
     if(model.items.length){
       host.innerHTML=`<div class="vpd-overlap-head"><div><small>TOP OVERLAP DETETADO</small><strong>${model.items.length} sinais mensuráveis</strong></div><span>${esc(coverageText)}</span></div><div class="vpd-overlap-list">${model.items.map(x=>`<div class="vpd-overlap-row"><div><small>${esc(x.type)}</small><strong>${esc(x.title)}</strong><span>${esc(x.detail)}</span></div><b>${x.impact.toFixed(2)}%</b></div>`).join('')}</div><p class="vpd-overlap-foot">Impacto = exposição duplicada estimada sobre a parte analisável da carteira. Mostramos os maiores sinais mesmo abaixo dos antigos cortes de 5%/2%.</p>`;
     }else{
@@ -93,7 +96,7 @@
   function style(){if(document.getElementById('vestra-portfolio-diagnostics-style'))return;const link=document.createElement('link');link.id='vestra-portfolio-diagnostics-style';link.rel='stylesheet';link.href='portfolio-diagnostics.css?v=1.0';document.head.appendChild(link);}
   function apply(){const c=root();if(!c)return;syncCoverage(c);syncDiagnosis(c);syncOverlap(c);}
   document.addEventListener('click',e=>{const btn=e.target.closest?.('[data-vpu-detail]');if(!btn)return;const c=root();if(!c)return;const dc=decisionCenter(c);if(!dc)return;const open=!dc.hidden;c.dataset.vpdDiagnosis=open?'1':'0';requestAnimationFrame(()=>{syncDiagnosis(c);if(open)dc.scrollIntoView?.({behavior:'smooth',block:'start'});});},true);
-  function start(){style();apply();const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});mo.observe(document.body,{childList:true,subtree:true});}
+  function start(){style();apply();}
+  window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply,overlapModel,version:'1.1'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply,overlapModel,version:'1.0'});
 })();

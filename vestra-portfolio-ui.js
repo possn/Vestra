@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v1.1 — canonical portfolio landing + analysis tabs. */
+/* Vestra Portfolio UI v1.2 — canonical portfolio landing + analysis tabs. */
 (() => {
   'use strict';
 
@@ -9,7 +9,7 @@
   };
   const t=v=>String(v??'').trim();
   const num=v=>{const m=t(v).replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null;};
-  let active='decide', pending=false;
+  let active='decide';
 
   function root(){
     const sh=document.getElementById('marketSheet'), c=document.getElementById('marketSheetContent');
@@ -52,11 +52,15 @@
     return `<div class="vpu-health-row"><div><span>${label}</span><b>${value||'—'}${value&&String(value).includes('%')?'':'/100'}</b></div><div class="vpu-track"><i class="is-${tone(value,reverse)}" style="width:${x}%"></i></div></div>`;
   }
   function ensureHero(c){
-    let hero=c.querySelector('.vpu-overview'); const m=metrics(c), st=status(m);
-    if(!hero){ hero=document.createElement('section'); hero.className='vpu-overview'; const dc=decisionCenter(c); const anchor=dc||c.querySelector('.ux454-nav-title,.market-collapse-toolbar'); if(anchor)anchor.insertAdjacentElement('beforebegin',hero); else c.prepend(hero); }
+    let hero=c.querySelector('.vpu-overview'), created=false; const m=metrics(c), st=status(m);
+    if(!hero){ hero=document.createElement('section'); hero.className='vpu-overview'; created=true; const dc=decisionCenter(c); const anchor=dc||c.querySelector('.ux454-nav-title,.market-collapse-toolbar'); if(anchor)anchor.insertAdjacentElement('beforebegin',hero); else c.prepend(hero); }
     const cov=num(m.coverage), covText=m.coverage||'—';
-    hero.innerHTML=`<div class="vpu-kicker">VISÃO GLOBAL DA CARTEIRA</div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail>Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>total</span></div><div><small>Com research</small><strong>${m.research||'—'}</strong><span>analisáveis</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>research</span></div><div><small>Convicção</small><strong>${m.conviction||'—'}</strong><span>/100</span></div><div><small>Risco</small><strong>${m.risk||'—'}</strong><span>/100</span></div><div><small>Rever</small><strong>${m.review||0}</strong><span>posições</span></div></div><div class="vpu-actions"><button data-vpu-jump="reinforce">↗ Reforçar <b>${m.reinforce||0}</b></button><button data-vpu-jump="review">! Rever <b>${m.review||0}</b></button><button data-vpu-jump="swap">⇄ Trocas <b>${m.swaps||0}</b></button><button data-vpu-jump="risk">◇ Risco <b>${m.risk||'—'}</b></button></div><div class="vpu-snapshot"><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Leitura em 5 segundos</strong></div><span>${m.positions||'—'} posições · ${m.research||'—'} com research</span></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risco',m.risk,true)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></div>`;
-    const dc=decisionCenter(c); if(dc) dc.hidden=true;
+    const signature=JSON.stringify([m.positions,m.research,m.coverage,m.conviction,m.risk,m.reinforce,m.review,m.swaps,st.title,st.tone,st.sub]);
+    if(hero.dataset.signature!==signature){
+      hero.dataset.signature=signature;
+      hero.innerHTML=`<div class="vpu-kicker">VISÃO GLOBAL DA CARTEIRA</div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail>Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>total</span></div><div><small>Com research</small><strong>${m.research||'—'}</strong><span>analisáveis</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>research</span></div><div><small>Convicção</small><strong>${m.conviction||'—'}</strong><span>/100</span></div><div><small>Risco</small><strong>${m.risk||'—'}</strong><span>/100</span></div><div><small>Rever</small><strong>${m.review||0}</strong><span>posições</span></div></div><div class="vpu-actions"><button data-vpu-jump="reinforce">↗ Reforçar <b>${m.reinforce||0}</b></button><button data-vpu-jump="review">! Rever <b>${m.review||0}</b></button><button data-vpu-jump="swap">⇄ Trocas <b>${m.swaps||0}</b></button><button data-vpu-jump="risk">◇ Risco <b>${m.risk||'—'}</b></button></div><div class="vpu-snapshot"><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Leitura em 5 segundos</strong></div><span>${m.positions||'—'} posições · ${m.research||'—'} com research</span></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risco',m.risk,true)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></div>`;
+    }
+    if(created){const dc=decisionCenter(c); if(dc)dc.hidden=true;}
     return hero;
   }
   function classify(cardEl){
@@ -78,13 +82,15 @@
     const c=root(); if(!c)return; c.classList.add('vpu-portfolio');
     const hero=ensureHero(c), reveal=ensureExplore(c,hero), tabs=ensureTabs(c,reveal);
     c.querySelectorAll('.ux455-group-label,.ux454-group-label,.ux454-nav-title,.market-collapse-toolbar,.ux-portfolio-shortcuts,.ux453-focusbar,.ux460-overview,.ux461-reveal,.v479-portfolio-tabs').forEach(x=>{if(!x.closest('.vpu-overview,.vpu-reveal,.vpu-tabs-shell'))x.style.display='none';});
-    let expanded=c.dataset.vpuExpanded==='1';
+    const expanded=c.dataset.vpuExpanded==='1';
     tabs.hidden=!expanded;
     const meta=GROUPS[active]||GROUPS.decide;
     tabs.querySelectorAll('[data-vpu-tab]').forEach(b=>{const on=b.dataset.vpuTab===active;b.classList.toggle('is-active',on);b.setAttribute('aria-selected',on?'true':'false');});
-    tabs.querySelector('.vpu-tab-intro strong').textContent=meta.title; tabs.querySelector('.vpu-tab-intro span').textContent=meta.sub;
+    const introTitle=tabs.querySelector('.vpu-tab-intro strong'),introSub=tabs.querySelector('.vpu-tab-intro span');
+    if(introTitle&&introTitle.textContent!==meta.title)introTitle.textContent=meta.title;
+    if(introSub&&introSub.textContent!==meta.sub)introSub.textContent=meta.sub;
     c.querySelectorAll('.market-detail-card[data-collapsible="1"],[data-ux-kind]').forEach(el=>{const g=classify(el);if(!g)return;el.classList.toggle('vpu-hidden',!expanded||g!==active);});
-    const btn=reveal.querySelector('[data-vpu-toggle]'); if(btn)btn.textContent=expanded?'Fechar navegação':'Explorar';
+    const btn=reveal.querySelector('[data-vpu-toggle]'),label=expanded?'Fechar navegação':'Explorar'; if(btn&&btn.textContent!==label)btn.textContent=label;
   }
   function jump(kind){ const c=root(), target=card(kind,c); if(!target)return; c.dataset.vpuExpanded='1'; active=classify(target)||active; try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{} apply(); if(target.classList.contains('is-collapsed'))target.querySelector('[data-collapse-toggle],.market-collapse-toggle')?.click(); setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30); }
   function style(){ if(document.getElementById('vestra-portfolio-ui-style'))return; const link=document.createElement('link'); link.id='vestra-portfolio-ui-style'; link.rel='stylesheet'; link.href='vestra-portfolio-ui.css?v=1.0'; document.head.appendChild(link); }
@@ -94,6 +100,7 @@
     const q=e.target.closest?.('[data-vpu-toggle]'); if(q){const c=root();if(!c)return;c.dataset.vpuExpanded=c.dataset.vpuExpanded==='1'?'0':'1';apply();return;}
     const tab=e.target.closest?.('[data-vpu-tab]'); if(tab){active=tab.dataset.vpuTab||'decide';try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{}apply();return;}
   },true);
-  function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{} apply(); const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});}); mo.observe(document.body,{childList:true,subtree:true}); }
+  function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{} apply();}
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.2'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
