@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.5 — canonical final hierarchy from UX 4.54/4.55/4.57. */
+/* Vestra Portfolio Hierarchy v1.6 — canonical final hierarchy from UX 4.54/4.55/4.57. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -154,6 +154,7 @@
     window.VestraSwapLab?.refresh?.();
     window.VestraPortfolioUI?.refresh?.();
     window.VestraPortfolioDiagnostics?.refresh?.();
+    window.VestraPortfolioDossierRouting?.decorate?.();
   }
   function start(){
     style();apply();let pending=false;
@@ -167,5 +168,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.5'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.6'});
 })();
