@@ -51,7 +51,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
 
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
-        self.assertIn("market-learned-universe.js?v=2.0", text)
+        self.assertIn("market-learned-universe.js?v=2.1", text)
         self.assertIn("market-global-search.js?v=1.3", text)
         self.assertIn("market-data-health.js?v=1.2", text)
         self.assertIn("loadLearnedUniverse();", text)
