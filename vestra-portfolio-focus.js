@@ -1,4 +1,4 @@
-/* Vestra Portfolio Focus v1.0 — essential/all portfolio view only. */
+/* Vestra Portfolio Focus v1.1 — essential/all portfolio view only. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -28,8 +28,8 @@
   }
 
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-ux-focus]');if(!b)return;e.preventDefault();e.stopPropagation();setFocus(b.dataset.uxFocus);});
-  function start(){style();portfolioFocus();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;portfolioFocus();});});mo.observe(document.body,{childList:true,subtree:true});}
+  function start(){style();portfolioFocus();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioFocus=Object.freeze({refresh:portfolioFocus,setFocus,focusMode});
+  window.VestraPortfolioFocus=Object.freeze({refresh:portfolioFocus,setFocus,focusMode,version:'1.1'});
 })();
