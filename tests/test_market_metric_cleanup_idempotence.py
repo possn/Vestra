@@ -13,7 +13,7 @@ class MarketMetricCleanupIdempotenceTests(unittest.TestCase):
         js = (ROOT / "market-metric-cleanup.js").read_text(encoding="utf-8")
         self.assertIn("x!=null&&x<=0&&v.textContent!=='—'", js)
         self.assertIn("window.VestraMarketMetricCleanup", js)
-        self.assertIn("version:'1.1'", js)
+        self.assertIn("version:'1.2'", js)
 
 
 if __name__ == "__main__":
