@@ -68,9 +68,12 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("host.dataset.signature",diagnostics)
         self.assertIn("function setText(el,value)",diagnostics)
 
-    def test_navigation_observer_remains_separate_for_sheet_state(self):
+    def test_navigation_observer_remains_separate_and_sheet_scoped(self):
         nav=read("portfolio-sheet-navigation.js")
         self.assertEqual(nav.count("new MutationObserver"),1)
+        self.assertIn("const sh=sheet();",nav)
+        self.assertIn("mo.observe(sh,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']})",nav)
+        self.assertNotIn("mo.observe(document.body",nav)
         self.assertIn("attributeFilter:['hidden','class']",nav)
         self.assertIn("prepareDossierOrigin(origin)",nav)
 
