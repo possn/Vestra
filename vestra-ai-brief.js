@@ -1,9 +1,10 @@
-/* Vestra AI Brief v1.1 — deterministic evidence brief + safe Worker AI handoff. */
+/* Vestra AI Brief v1.2 — deterministic evidence brief + bounded safe Worker AI handoff. */
 (() => {
 'use strict';
-const VERSION='1.1';
+const VERSION='1.2';
 const CANONICAL_WORKER_URL='https://delicate-bar-cc80.pedrossnunes.workers.dev';
 const SESSION_KEY='vestra.ai.brief.session.v1';
+const AI_TIMEOUT_MS=12000;
 const t=v=>String(v??'').trim();
 const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null};
 const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -56,19 +57,21 @@ function localHTML(s){const e=evidence(s);return `<div class="ai459-grid"><secti
 function normalizeAI(d){const x=d?.brief||d?.analysis||d;if(!x||typeof x!=='object')return null;return {thesis:t(x.thesis),whyNow:t(x.why_now||x.whyNow),risks:Array.isArray(x.risks)?x.risks.join(' · '):t(x.risks),change:t(x.what_changes_the_thesis||x.change),catalysts:Array.isArray(x.catalysts)?x.catalysts.join(' · '):t(x.catalysts)}}
 async function runAI(card,s){
  const base=workerBase(),out=card.querySelector('.ai459-content'),btn=card.querySelector('[data-ai459-run]');
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),AI_TIMEOUT_MS);
  btn.disabled=true;btn.textContent='A analisar…';card.querySelector('.ai459-status').textContent='A cruzar apenas evidência Vestra';
  try{
-  const r=await fetch(`${base}/ai-brief`,{method:'POST',headers:{'content-type':'application/json','x-vestra-session':aiSession()},body:JSON.stringify({type:'company_brief',version:'1',data:payload(s)})});
+  const r=await fetch(`${base}/ai-brief`,{method:'POST',headers:{'content-type':'application/json','x-vestra-session':aiSession()},body:JSON.stringify({type:'company_brief',version:'1',data:payload(s)}),signal:controller.signal});
   if(!r.ok)throw new Error(`HTTP ${r.status}`);
   const d=normalizeAI(await r.json());if(!d||!d.thesis)throw new Error('Resposta inválida');
   out.innerHTML=`<div class="ai459-grid"><section><small>TESE</small><p>${esc(d.thesis)}</p></section><section><small>PORQUÊ AGORA</small><p>${esc(d.whyNow||d.catalysts||'—')}</p></section><section><small>RISCOS</small><p>${esc(d.risks||'—')}</p></section><section><small>O QUE MUDA A TESE</small><p>${esc(d.change||'—')}</p></section></div>`;
   card.dataset.ai459='live';card.querySelector('.ai459-status').textContent='Vestra AI · evidência atual';btn.textContent='Atualizar IA';
- }catch(e){card.querySelector('.ai459-status').textContent='Vestra AI indisponível agora · mantém-se o brief local';btn.textContent='Analisar com IA'}finally{btn.disabled=false}
+ }catch(e){card.querySelector('.ai459-status').textContent=e?.name==='AbortError'?'Vestra AI demorou demasiado · conteúdo atual mantido':'Vestra AI indisponível agora · conteúdo atual mantido';btn.textContent='Analisar com IA'}finally{clearTimeout(timeout);btn.disabled=false}
 }
 function install(){const sh=document.getElementById('marketSheet'),host=document.getElementById('marketSheetContent');if(!sh||sh.hidden||!t(sh.dataset.ticker)||!host)return;const s=stock(sh.dataset.ticker);if(!s)return;if(host.querySelector('.ai459-card'))return;const card=document.createElement('div');card.className='market-detail-card ai459-card';card.innerHTML=`<div class="ai459-head"><div><small>VESTRA BRIEF</small><h4>Leitura executiva</h4></div><button type="button" data-ai459-run>✦ Analisar com IA</button></div><div class="ai459-content">${localHTML(s)}</div><div class="ai459-foot"><span class="ai459-status">Brief local · sem inventar métricas</span><small>A IA interpreta o evidence layer; não altera Score Vestra nem cria recomendação automática.</small></div>`;const tabs=host.querySelector('.market-tabs,.market-detail-tabs,[data-market-tabs]');if(tabs)tabs.insertAdjacentElement('beforebegin',card);else{const metrics=host.querySelector('.market-metrics');metrics?metrics.insertAdjacentElement('afterend',card):host.appendChild(card)}}
 function style(){if(document.getElementById('vestra-ai-v459-style'))return;const link=document.createElement('link');link.id='vestra-ai-v459-style';link.rel='stylesheet';link.href='vestra-ai-brief.css?v=1.0';document.head.appendChild(link)}
 function start(){style();install();const sh=document.getElementById('marketSheet');if(!sh)return;let pending=false;new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;install()})}).observe(sh,{childList:true,subtree:true})}
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-ai459-run]');if(!b)return;e.preventDefault();e.stopPropagation();const sh=document.getElementById('marketSheet'),s=stock(sh?.dataset.ticker);const card=b.closest('.ai459-card');if(s&&card)runAI(card,s)});
-window.VestraAiBrief={version:VERSION,evidence,payload,install,workerBase};
+window.VestraAiBrief={version:VERSION,evidence,payload,install,workerBase,timeoutMs:AI_TIMEOUT_MS};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
