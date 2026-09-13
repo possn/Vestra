@@ -12,6 +12,7 @@
 
   let timer = null;
   let seq = 0;
+  let remoteOpenSeq = 0;
   const cache = new Map();
   const learnedPosted = new Set();
 
@@ -127,27 +128,37 @@
   }
 
   function remoteMetric(label,value){ return `<div class="market-detail-kpi"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`; }
+  function ownsRemoteOpen(request,sh,ticker){
+    return request===remoteOpenSeq && !sh.hidden && txt(sh.dataset.ticker).toUpperCase()===ticker;
+  }
 
   async function openRemoteTicker(ticker){
     const base=workerBase(); if(!base) return;
+    ticker=txt(ticker).toUpperCase(); if(!validTickerQuery(ticker))return;
     const sh=document.getElementById('marketSheet'), content=document.getElementById('marketSheetContent');
     if(!sh||!content)return;
+    const request=++remoteOpenSeq;
     sh.dataset.ticker=ticker; sh.dataset.tool='remote-live';
     document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
     sh.hidden=false; sh.setAttribute('aria-hidden','false');
     content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER LIVE</div><h2>${esc(ticker)}</h2><p>A obter dados globais…</p></div><button class="market-close" data-market-close>×</button></div><div class="market-detail-card"><p>Esta empresa não faz parte do catálogo diário pré-enriquecido. O dossier está a ser construído ao vivo.</p></div>`;
     try{
       const r=await fetch(`${base}/market?ticker=${encodeURIComponent(ticker)}`,{cache:'no-store'});
+      if(!ownsRemoteOpen(request,sh,ticker))return;
       if(!r.ok)throw new Error(`HTTP ${r.status}`);
-      const d=await r.json(); if(!d||d.error)throw new Error(d?.error||'Sem dados');
+      const d=await r.json();
+      if(!ownsRemoteOpen(request,sh,ticker))return;
+      if(!d||d.error)throw new Error(d?.error||'Sem dados');
       const c=txt(d.currency)||'USD';
       await learn({ticker:txt(d.ticker||ticker).toUpperCase(),name:txt(d.name||ticker),exchange:txt(d.exchange),currency:c,quote_type:txt(d.quote_type||'EQUITY'),sector:txt(d.sector),industry:txt(d.industry),country:txt(d.country)},'worker-market');
+      if(!ownsRemoteOpen(request,sh,ticker))return;
       const target=n(d.analyst_price_target_mean); const upside=n(d.analyst_price_target_upside_pct);
       content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER GLOBAL · LIVE</div><h2>${esc(d.ticker||ticker)}</h2><p>${esc(d.name||'')}</p><span class="market-live-badge">● Live</span></div><button class="market-close" data-market-close>×</button></div>
       <div class="market-detail-card"><h4>Visão rápida</h4><div class="market-detail-grid">${remoteMetric('Preço',money(d.current_price,c))}${remoteMetric('Market cap',compact(d.market_cap))}${remoteMetric('Forward P/E',num(d.forward_pe))}${remoteMetric('P/B',num(d.price_to_book))}${remoteMetric('ROE',pct(d.roe))}${remoteMetric('FCF yield',pct(d.fcf_yield))}</div><p>${esc([d.sector,d.industry,d.country,d.exchange].filter(Boolean).join(' · '))}</p></div>
       <div class="market-detail-card"><h4>Crescimento e rentabilidade</h4><div class="market-detail-grid">${remoteMetric('Receitas',pct(d.revenue_growth))}${remoteMetric('Lucros',pct(d.earnings_growth))}${remoteMetric('Margem operacional',pct(d.operating_margin))}${remoteMetric('Margem líquida',pct(d.profit_margin))}${remoteMetric('Dívida / capital',num(d.debt_to_equity))}${remoteMetric('Current ratio',num(d.current_ratio))}</div></div>
       <div class="market-detail-card"><h4>Valuation e expectativas</h4><div class="market-detail-grid">${remoteMetric('52w máximo',money(d.fifty_two_week_high,c))}${remoteMetric('52w mínimo',money(d.fifty_two_week_low,c))}${remoteMetric('Target analistas',target==null?'—':money(target,c))}${remoteMetric('Upside consenso',upside==null?'—':pct(upside))}</div><p>Não tem ainda Score Vestra pré-calculado. Após validação, fica guardada localmente e no catálogo central aprendido; o próximo pipeline diário promove-a para o universo oficial e passa a poder calcular Score Vestra, peers e valuation completos.</p></div>`;
     }catch(e){
+      if(!ownsRemoteOpen(request,sh,ticker))return;
       content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER GLOBAL</div><h2>${esc(ticker)}</h2><p>Não foi possível carregar este ativo.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-detail-card"><p>${esc(e?.message||'Sem dados')}</p></div>`;
     }
   }
