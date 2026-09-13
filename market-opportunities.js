@@ -171,7 +171,7 @@
 
   function style(){if(document.getElementById('vestra-market-opportunities-style'))return;const link=document.createElement('link');link.id='vestra-market-opportunities-style';link.rel='stylesheet';link.href='market-opportunities.css?v=1.0';document.head.appendChild(link);}
 
-  function start(){style();opportunities();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(document.body,{childList:true,subtree:true});}
+  function start(){style();opportunities();const root=document.getElementById('marketPrimary');if(!root)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(root,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
   window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,score,low52Above,lensEligible,lensScore,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.2'});
