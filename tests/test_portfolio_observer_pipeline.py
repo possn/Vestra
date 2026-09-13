@@ -12,6 +12,8 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
             "classifier": read("portfolio-card-classifier.js"),
             "focus": read("vestra-portfolio-focus.js"),
             "swap": read("vestra-swap-lab.js"),
+            "portfolio_ui": read("vestra-portfolio-ui.js"),
+            "diagnostics": read("portfolio-diagnostics.js"),
         }
         for name, source in modules.items():
             self.assertNotIn("new MutationObserver", source, name)
@@ -25,18 +27,40 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         focus=hierarchy.index("VestraPortfolioFocus?.refresh")
         root=hierarchy.index("const c=root()",collapsibles)
         swap=hierarchy.index("VestraSwapLab?.refresh",root)
+        ui=hierarchy.index("VestraPortfolioUI?.refresh",swap)
+        diagnostics=hierarchy.index("VestraPortfolioDiagnostics?.refresh",ui)
         self.assertLess(collapsibles,classifier)
         self.assertLess(classifier,focus)
         self.assertLess(focus,root)
         self.assertLess(root,swap)
+        self.assertLess(swap,ui)
+        self.assertLess(ui,diagnostics)
 
-    def test_focus_and_swap_keep_explicit_refresh_contracts(self):
+    def test_decorators_keep_explicit_refresh_contracts(self):
         focus=read("vestra-portfolio-focus.js")
         swap=read("vestra-swap-lab.js")
+        ui=read("vestra-portfolio-ui.js")
+        diagnostics=read("portfolio-diagnostics.js")
         self.assertIn("refresh:portfolioFocus",focus)
         self.assertIn("refresh:apply",swap)
+        self.assertIn("window.VestraPortfolioUI=Object.freeze({refresh:apply",ui)
+        self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("version:'1.1'",focus)
         self.assertIn("version:'1.1'",swap)
+        self.assertIn("version:'1.2'",ui)
+        self.assertIn("version:'1.1'",diagnostics)
+
+    def test_childlist_writers_are_idempotent(self):
+        hierarchy=read("vestra-portfolio-hierarchy.js")
+        ui=read("vestra-portfolio-ui.js")
+        diagnostics=read("portfolio-diagnostics.js")
+        self.assertIn("panel.dataset.signature",hierarchy)
+        self.assertIn("if(button.textContent!=='Ver comparação')",hierarchy)
+        self.assertIn("hero.dataset.signature",ui)
+        self.assertIn("introTitle.textContent!==meta.title",ui)
+        self.assertIn("btn.textContent!==label",ui)
+        self.assertIn("host.dataset.signature",diagnostics)
+        self.assertIn("function setText(el,value)",diagnostics)
 
     def test_navigation_observer_remains_separate_for_sheet_state(self):
         nav=read("portfolio-sheet-navigation.js")
@@ -46,13 +70,13 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
 
     def test_static_bundle_keeps_canonical_order(self):
         index=read("index.html")
-        order=["portfolio-collapsibles.js","portfolio-card-classifier.js","vestra-portfolio-focus.js","vestra-portfolio-hierarchy.js","vestra-swap-lab.js"]
+        order=["portfolio-collapsibles.js","portfolio-card-classifier.js","vestra-portfolio-focus.js","vestra-portfolio-hierarchy.js","vestra-swap-lab.js","vestra-portfolio-ui.js","portfolio-diagnostics.js"]
         positions=[index.index(x) for x in order]
         self.assertEqual(positions,sorted(positions))
         sw=read("sw.js")
         self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
         self.assertIn("staleWhileRevalidate",sw)
-        for name in ("./vestra-portfolio-focus.js","./vestra-portfolio-hierarchy.js","./vestra-swap-lab.js"):
+        for name in ("./vestra-portfolio-focus.js","./vestra-portfolio-hierarchy.js","./vestra-swap-lab.js","./vestra-portfolio-ui.js","./portfolio-diagnostics.js"):
             self.assertIn(name,sw)
 
 if __name__=='__main__': unittest.main(verbosity=2)
