@@ -1,4 +1,4 @@
-/* Vestra Learned Universe v2.0 — persistent local catalogue of globally discovered instruments. */
+/* Vestra Learned Universe v2.1 — persistent local catalogue of globally discovered instruments. */
 (() => {
   'use strict';
 
@@ -102,6 +102,6 @@
   async function pendingPromotion() { await load(); return rows.filter(r => r.promotion_status === 'pending').map(r => ({...r})); }
 
   window.VestraLearnedUniverse = Object.freeze({
-    version: '2.0', DB_KEY, load, upsert, search, list, pendingPromotion,
+    version: '2.1', DB_KEY, load, upsert, search, list, pendingPromotion,
   });
 })();
