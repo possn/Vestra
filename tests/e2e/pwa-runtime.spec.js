@@ -65,5 +65,10 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   expect(pwa.hasMarketRuntime).toBeTruthy();
   expect(pwa.updateManagerVersion).toBe('1.5');
   expect(pwa.safeUpdateOwner).toBe('1');
-  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+
+  // WebKit can emit this transient pageerror when controllerchange replaces the
+  // execution context during first install. readPwaState explicitly recovers from
+  // that navigation; keep every other browser error fatal.
+  const unexpectedPageErrors = pageErrors.filter(message => message !== 'Context is stopped');
+  expect(unexpectedPageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
