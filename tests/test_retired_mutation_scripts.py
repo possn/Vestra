@@ -13,6 +13,11 @@ class RetiredMutationScriptsTests(unittest.TestCase):
         "scripts/apply_quote_engine_v2_hotfix.py",
         "scripts/cleanup_market_index_consumers.py",
         "scripts/cleanup_v452_opportunities.py",
+        "scripts/fix_quote_ui_and_dividends.py",
+        "scripts/fix_eu_quote_identity.py",
+        "scripts/fix_broker_quote_currency_guard.py",
+        "scripts/fix_remaining_quote_identity.py",
+        "scripts/integrate_quote_error_classifier.py",
     )
 
     def test_one_shot_mutation_scripts_stay_retired(self):
