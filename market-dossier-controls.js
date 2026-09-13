@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.5 — iPhone-safe unified fixed action group. */
+/* Vestra Market Dossier Controls v1.6 — iPhone-safe unified fixed action group. */
 (() => {
   'use strict';
 
@@ -19,10 +19,16 @@
     const sheet = document.getElementById('marketSheet');
     if (!sheet || sheet.hidden || !sheet.contains(close)) return false;
 
+    const returnView = String(sheet.dataset.returnView || '').trim();
+    // Dossiers opened from Portfolio have a dedicated close owner in
+    // portfolio-sheet-navigation.js. This generic capture handler may be
+    // registered first because dossier controls are loaded dynamically; do not
+    // hide the sheet or erase returnView before the portfolio handler runs.
+    if (returnView === 'portfolio' || sheet.dataset.tool === 'ticker-from-portfolio') return false;
+
     event.preventDefault();
     event.stopPropagation();
 
-    const returnView = String(sheet.dataset.returnView || '').trim();
     sheet.hidden = true;
     sheet.setAttribute('aria-hidden', 'true');
     sheet.dataset.liveReady = '0';
@@ -64,7 +70,7 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.5',
+    version: '1.6',
     closeMarketSheet,
     installStyle,
     normalizeButtons,
