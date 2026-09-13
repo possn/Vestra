@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.3 — canonical final hierarchy from UX 4.54/4.55/4.57. */
+/* Vestra Portfolio Hierarchy v1.4 — canonical final hierarchy from UX 4.54/4.55/4.57. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -144,8 +144,10 @@
   function apply(){
     window.VestraPortfolioCollapsibles?.refresh?.();
     window.VestraPortfolioCardClassifier?.refresh?.();
+    window.VestraPortfolioFocus?.refresh?.();
     const c=root();if(!c)return;
     decorateBase(c);repairHierarchy(c);fixHeaderCollisions(c);swapLab(c);overlapCard(c);dedupeSurfaces(c);
+    window.VestraSwapLab?.refresh?.();
   }
   function start(){
     style();apply();let pending=false;
@@ -159,5 +161,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.4'});
 })();
