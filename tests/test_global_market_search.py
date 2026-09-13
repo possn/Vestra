@@ -40,6 +40,15 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("txt(sh.dataset.ticker).toUpperCase()===ticker", text)
         self.assertGreaterEqual(text.count("if(!ownsRemoteOpen(request,sh,ticker))return;"), 4)
 
+    def test_enter_validation_cannot_open_after_search_context_changes(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        self.assertIn("let enterOpenSeq = 0;", text)
+        self.assertIn("function invalidatePendingEnterOpen(){ enterOpenSeq += 1; }", text)
+        self.assertIn("const enterRequest=++enterOpenSeq", text)
+        self.assertIn("enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q", text)
+        self.assertIn("if(e.target?.id==='marketSearch'){invalidatePendingEnterOpen();schedule(e.target.value);}", text)
+        self.assertIn("async function openRemoteTicker(ticker){\n    invalidatePendingEnterOpen();", text)
+
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=2.0", text)
