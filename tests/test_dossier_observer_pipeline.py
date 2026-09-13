@@ -31,10 +31,13 @@ class DossierObserverPipelineTests(unittest.TestCase):
         self.assertIn('normalizeButtons,', controls)
         self.assertIn("market-dossier-controls.js?v=1.5", company)
 
-    def test_ai_brief_keeps_separate_dossier_lifecycle(self):
+    def test_ai_brief_keeps_separate_sheet_scoped_dossier_lifecycle(self):
         ai = read('vestra-ai-brief.js')
         self.assertEqual(ai.count('new MutationObserver'), 1)
         self.assertIn("if(!sh||sh.hidden||!t(sh.dataset.ticker)||!host)return", ai)
+        self.assertIn("const sh=document.getElementById('marketSheet');if(!sh)return", ai)
+        self.assertIn(".observe(sh,{childList:true,subtree:true})", ai)
+        self.assertNotIn(".observe(document.body,{childList:true,subtree:true})", ai)
         self.assertIn('install()', ai)
 
 
