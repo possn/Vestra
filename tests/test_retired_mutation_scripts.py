@@ -24,8 +24,8 @@ class RetiredMutationScriptsTests(unittest.TestCase):
         for relative in self.RETIRED:
             self.assertFalse((ROOT / relative).exists(), relative)
 
-    def test_staged_app_refactor_mutators_stay_retired(self):
-        offenders = sorted(path.name for path in (ROOT / "scripts").glob("refactor_app_stage*.py"))
+    def test_refactor_mutators_stay_retired(self):
+        offenders = sorted(path.name for path in (ROOT / "scripts").glob("refactor_*.py"))
         self.assertEqual(offenders, [])
 
     def test_patch_mutators_stay_retired(self):
