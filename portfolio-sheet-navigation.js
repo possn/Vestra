@@ -2,6 +2,7 @@
 (() => {
   'use strict';
   const VERSION='1.5';
+  // Normal companion navigation is guarded to flow through VestraNavigation.openCompany().
   let pending=false;
   let openingFromPortfolio=false;
   let navigationSequence=0;
