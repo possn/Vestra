@@ -9,6 +9,7 @@
   const dossierOpenMarks = new Map();
   let manifestPromise = null;
   let bypassClick = false;
+  let dossierHydrationSeq = 0;
 
   function recordDossierPerf(entry){
     const row={ts:new Date().toISOString(),...entry};
@@ -134,6 +135,10 @@
     return sh;
   }
 
+  function ownsDossierHydration(request,ticker){
+    return request===dossierHydrationSeq && !!dossierSheetFor(ticker);
+  }
+
   function setHydrationBadge(ticker,state){
     const sh=dossierSheetFor(ticker); if(!sh) return;
     const head=sh.querySelector('.market-detail-head > div:first-child'); if(!head) return;
@@ -182,9 +187,11 @@
   function hydrateOpenDossier(ticker){
     const key=tickerKey(ticker);
     if(!key) return Promise.resolve(null);
+    const request=++dossierHydrationSeq;
     const hydrationStartedAt=performance.now();
     setHydrationBadge(key,'loading');
     return hydrateTicker(key).then(stock=>{
+      if(!ownsDossierHydration(request,key)) return stock;
       refreshOpenDossier(key,stock);
       const mark=dossierOpenMarks.get(key)||{};
       recordDossierPerf({
@@ -197,6 +204,7 @@
       dossierOpenMarks.delete(key);
       return stock;
     }).catch(err=>{
+      if(!ownsDossierHydration(request,key)) return resolveIndexStock(key);
       setHydrationBadge(key,'partial');
       const mark=dossierOpenMarks.get(key)||{};
       recordDossierPerf({
