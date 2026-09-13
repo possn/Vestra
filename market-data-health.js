@@ -7,6 +7,7 @@
     learned: './data/learned_tickers.json',
   });
   const QUOTE_STALE_MS = 60 * 1000;
+  let refreshGeneration = 0;
 
   const text = value => String(value ?? '').trim();
   const number = value => Number.isFinite(Number(value)) ? Number(value) : null;
@@ -198,6 +199,7 @@
   async function refresh() {
     const view = document.getElementById('viewMarket');
     if (!view) return null;
+    const generation = ++refreshGeneration;
     ensureStyle();
     const [guard, learned, quote] = await Promise.all([
       loadJson(DATA_URLS.guard),
@@ -205,7 +207,7 @@
       persistedQuoteSnapshot(),
     ]);
     const data = model(guard, learned, new Date(), quote.report, quote.ts);
-    render(view, data);
+    if (generation === refreshGeneration) render(view, data);
     return data;
   }
 
