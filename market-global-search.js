@@ -13,6 +13,7 @@
   let timer = null;
   let seq = 0;
   let remoteOpenSeq = 0;
+  let enterOpenSeq = 0;
   const cache = new Map();
   const learnedPosted = new Set();
 
@@ -22,6 +23,7 @@
 
   function learnedApi(){ return window.VestraLearnedUniverse || null; }
   function validTickerQuery(q){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/i.test(txt(q)); }
+  function invalidatePendingEnterOpen(){ enterOpenSeq += 1; }
 
   async function learnCentral(row){
     const ticker = txt(row?.ticker || row?.symbol).toUpperCase();
@@ -133,6 +135,7 @@
   }
 
   async function openRemoteTicker(ticker){
+    invalidatePendingEnterOpen();
     const base=workerBase(); if(!base) return;
     ticker=txt(ticker).toUpperCase(); if(!validTickerQuery(ticker))return;
     const sh=document.getElementById('marketSheet'), content=document.getElementById('marketSheetContent');
@@ -172,10 +175,10 @@
     document.head.appendChild(link);
   }
 
-  document.addEventListener('input',e=>{if(e.target?.id==='marketSearch')schedule(e.target.value);});
+  document.addEventListener('input',e=>{if(e.target?.id==='marketSearch'){invalidatePendingEnterOpen();schedule(e.target.value);}});
   document.addEventListener('focusin',e=>{if(e.target?.id==='marketSearch')schedule(e.target.value);});
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase());});
-  document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const q=txt(e.target.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;setTimeout(async()=>{const rows=await validateExactTicker(q);if(rows[0])openRemoteTicker(rows[0].ticker);},0);});
+  document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker);},0);});
   style();
   window.VestraGlobalMarketSearch=Object.freeze({version:'1.3',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
 })();
