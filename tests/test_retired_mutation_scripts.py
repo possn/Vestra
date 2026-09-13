@@ -18,6 +18,14 @@ class RetiredMutationScriptsTests(unittest.TestCase):
         "scripts/fix_broker_quote_currency_guard.py",
         "scripts/fix_remaining_quote_identity.py",
         "scripts/integrate_quote_error_classifier.py",
+        "scripts/cleanup_v452_politicians.py",
+        "scripts/cleanup_v453_v454_politicians.py",
+        "scripts/consolidate_portfolio_sheet_navigation.py",
+        "scripts/harden_politicians_snapshot_ui.py",
+        "scripts/harden_worker_cors.py",
+        "scripts/promote_static_market_runtime.py",
+        "scripts/remove_market_fetch_interceptor.py",
+        "scripts/remove_worker_congress.py",
     )
 
     def test_one_shot_mutation_scripts_stay_retired(self):
