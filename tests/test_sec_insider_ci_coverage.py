@@ -15,9 +15,11 @@ CRITICAL = (
 
 
 class SecInsiderCiCoverageTests(unittest.TestCase):
-    def test_architecture_ci_triggers_and_compiles_critical_modules(self):
+    def test_architecture_ci_triggers_and_compiles_all_scripts(self):
+        self.assertGreaterEqual(ARCH.count("- 'scripts/**'"), 2)
+        self.assertIn("python -m compileall -q scripts tests", ARCH)
         for path in CRITICAL:
-            self.assertGreaterEqual(ARCH.count(path), 3, path)
+            self.assertTrue((ROOT / path).exists(), path)
 
     def test_production_preflight_compiles_critical_modules(self):
         for path in CRITICAL:
