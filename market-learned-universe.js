@@ -13,7 +13,7 @@
   let loading = null;
   let rows = [];
 
-  function normalizeRow(input, source='live') {
+  function normalizeRow(input, source='live', preserveLastSeen=false) {
     const ticker = txt(input?.ticker || input?.symbol).toUpperCase();
     if (!ticker) return null;
     const now = new Date().toISOString();
@@ -28,7 +28,7 @@
       country: txt(input?.country),
       source: txt(source) || 'live',
       first_seen: txt(input?.first_seen) || now,
-      last_seen: now,
+      last_seen: preserveLastSeen && txt(input?.last_seen) ? txt(input.last_seen) : now,
       validation_count: Math.max(1, Number(input?.validation_count || 1) || 1),
       promotion_status: txt(input?.promotion_status) || 'pending',
     };
@@ -42,7 +42,7 @@
         const raw = await window.VestraStorage?.idbGet?.(DB_KEY);
         const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
         const list = Array.isArray(parsed?.rows) ? parsed.rows : [];
-        rows = list.map(r => normalizeRow(r, r?.source || 'persisted')).filter(Boolean).slice(0, MAX_ROWS);
+        rows = list.map(r => normalizeRow(r, r?.source || 'persisted', true)).filter(Boolean).slice(0, MAX_ROWS);
       } catch (_) {
         rows = [];
       }
