@@ -11,6 +11,7 @@ class AiBriefWorkerHandoffTests(unittest.TestCase):
         cls.router = (ROOT / "worker-router.js").read_text(encoding="utf-8")
         cls.worker_ai = (ROOT / "worker-ai-brief.js").read_text(encoding="utf-8")
         cls.wrangler = (ROOT / "wrangler.toml").read_text(encoding="utf-8")
+        cls.service_worker = (ROOT / "sw.js").read_text(encoding="utf-8")
 
     def test_frontend_uses_canonical_worker_fallback_and_session_header(self):
         self.assertIn("CANONICAL_WORKER_URL='https://delicate-bar-cc80.pedrossnunes.workers.dev'", self.frontend)
@@ -26,6 +27,21 @@ class AiBriefWorkerHandoffTests(unittest.TestCase):
         self.assertNotIn("fetch('./data/stocks.json'", self.frontend)
         self.assertNotIn("function load()", self.frontend)
         self.assertIn("s=stock(sh?.dataset.ticker)", self.frontend)
+
+    def test_frontend_ai_request_has_bounded_deadline_and_recovers_button(self):
+        self.assertIn("const AI_TIMEOUT_MS=12000", self.frontend)
+        self.assertIn("const controller=new AbortController()", self.frontend)
+        self.assertIn("setTimeout(()=>controller.abort(),AI_TIMEOUT_MS)", self.frontend)
+        self.assertIn("signal:controller.signal", self.frontend)
+        self.assertIn("finally{clearTimeout(timeout);btn.disabled=false}", self.frontend)
+        self.assertIn("e?.name==='AbortError'", self.frontend)
+        self.assertIn("timeoutMs:AI_TIMEOUT_MS", self.frontend)
+
+    def test_ai_runtime_is_network_first_so_installed_pwas_receive_fix(self):
+        self.assertIn('"vestra-ai-brief.js"', self.service_worker)
+        network_first = self.service_worker.split("const BOOTSTRAP_NETWORK_FIRST = new Set([", 1)[1].split("]);", 1)[0]
+        self.assertIn('"vestra-ai-brief.js"', network_first)
+        self.assertIn('const CACHE_NAME = "vestra-cache-v153"', self.service_worker)
 
     def test_router_owns_post_route_before_market_worker(self):
         ai_route = self.router.index("if (url.pathname === '/ai-brief')")
