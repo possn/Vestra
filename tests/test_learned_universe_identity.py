@@ -22,7 +22,7 @@ class LearnedUniverseIdentityTests(unittest.TestCase):
         source = (ROOT / "market-learned-universe.js").read_text(encoding="utf-8")
         self.assertIn("market_learned_universe_v2", source)
         self.assertIn("const SCHEMA_VERSION = 2", source)
-        self.assertIn("version: '2.0'", source)
+        self.assertIn("version: '2.1'", source)
 
     def test_only_legacy_learned_and_unresolved_rows_are_retired(self):
         with tempfile.TemporaryDirectory() as tmp:
