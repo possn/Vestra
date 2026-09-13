@@ -120,7 +120,10 @@ def extract_snapshot(earnings_dates, earnings_estimate=None, now: datetime | Non
         actual = _number(_row_value(row, ("Reported EPS", "reportedEPS", "epsActual")))
         estimate = _number(_row_value(row, ("EPS Estimate", "epsEstimate", "epsEstimateCurrent")))
         surprise = _number(_row_value(row, ("Surprise(%)", "surprisePercent", "surprisePct")))
-        if surprise is not None and abs(surprise) > 2:
+        # Yahoo/yfinance exposes this field as a percentage (for example 0.71
+        # means +0.71%), while Vestra stores it as a decimal fraction because
+        # the Dashboard multiplies the stored value by 100 for presentation.
+        if surprise is not None:
             surprise /= 100.0
         if surprise is None and actual is not None and estimate not in (None, 0):
             surprise = actual / estimate - 1.0
