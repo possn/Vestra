@@ -1,6 +1,6 @@
-/* Vestra Portfolio Dossier Routing v1.2 — canonical row discovery; navigation delegated to VestraNavigation. */
+/* Vestra Portfolio Dossier Routing v1.3 — canonical row discovery; navigation delegated to VestraNavigation. */
 (()=>{'use strict';
-const VERSION='1.2';
+const VERSION='1.3';
 const t=v=>String(v??'').trim();
 function root(){const sh=document.getElementById('marketSheet'),c=document.getElementById('marketSheetContent');return(!sh||sh.hidden||t(sh.dataset.tool)!=='portfolio'||!c)?null:c}
 const looksTicker=v=>/^[A-Z0-9][A-Z0-9.\-]{0,14}$/i.test(t(v))&&!/^(EUR|USD|GBP|JPY|CHF|CNY)$/i.test(t(v));
@@ -15,6 +15,6 @@ document.addEventListener('click',e=>{const c=root();if(!c||!c.contains(e.target
   e.preventDefault();e.stopImmediatePropagation();openTicker(tk,row)
 },true);
 document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=root();if(!c||!c.contains(e.target))return;const row=e.target.closest?.('.portfolio-dossier-link');if(!row||isControl(e.target,row))return;const tk=t(row.dataset.marketTicker)||tickerFrom(row);if(!tk)return;e.preventDefault();openTicker(tk,row)},true);
-function start(){decorate();let pending=false;new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;decorate()})}).observe(document.body,{childList:true,subtree:true})}
+function start(){decorate()}
 window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();})();
