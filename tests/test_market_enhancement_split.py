@@ -41,7 +41,9 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         s = read('market-metric-cleanup.js')
         for label in ("'P/E'", "'Forward P/E'", "'EV/EBITDA'", "'PEG'"):
             self.assertIn(label, s)
-        self.assertIn("if(x!=null&&x<=0)v.textContent='—'", s)
+        self.assertIn("if(!z||!/[0-9]/.test(z))return null", s)
+        self.assertIn("x!=null&&x<=0&&v.textContent!=='—'", s)
+        self.assertIn("v.textContent='—'", s)
         self.assertIn('window.VestraMarketMetricCleanup', s)
 
     def test_collapsibles_preserve_storage_controls_and_static_styles(self):
