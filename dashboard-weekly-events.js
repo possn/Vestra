@@ -1,14 +1,15 @@
-/* Vestra Dashboard Weekly Events v1.8 — tappable earnings + macro catalysts with verified result details. */
+/* Vestra Dashboard Weekly Events v1.9 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
 
-  const VERSION = '1.8';
+  const VERSION = '1.9';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
   const MAX_EVENTS = 12;
   const WINDOW_DAYS = 7;
   const MACRO_URL = 'data/macro-events.json';
+  const MACRO_FETCH_TIMEOUT_MS = 5000;
   const OFFICIAL_SOURCE_URLS = Object.freeze({
     fed: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
     bls: 'https://www.bls.gov/bls/newsrels.htm',
@@ -267,19 +268,31 @@
     return `${(parsed * 100).toLocaleString('pt-PT', { maximumFractionDigits: 1, minimumFractionDigits: 1 })}%`;
   }
 
-  async function loadMacroEvents(fetchImpl = (...args) => fetch(...args)) {
+  async function loadMacroEvents(fetchImpl = (...args) => fetch(...args), timeoutMs = MACRO_FETCH_TIMEOUT_MS) {
     if (macroSnapshot) return macroSnapshot;
     if (macroLoading) return macroLoading;
+    let timeoutId = null;
     macroLoading = (async () => {
       try {
-        const response = await fetchImpl(MACRO_URL, { cache: 'no-store' });
-        if (!response.ok) return null;
-        const payload = await response.json();
-        if (!payload || !Array.isArray(payload.events)) return null;
+        const request = (async () => {
+          try {
+            const response = await fetchImpl(MACRO_URL, { cache: 'no-store' });
+            if (!response.ok) return null;
+            const payload = await response.json();
+            return payload && Array.isArray(payload.events) ? payload : null;
+          } catch (_) { return null; }
+        })();
+        const timeout = new Promise(resolve => {
+          timeoutId = setTimeout(() => resolve(null), Math.max(1, Number(timeoutMs) || MACRO_FETCH_TIMEOUT_MS));
+        });
+        const payload = await Promise.race([request, timeout]);
+        if (!payload) return null;
         macroSnapshot = payload;
         return macroSnapshot;
-      } catch (_) { return null; }
-      finally { macroLoading = null; }
+      } finally {
+        if (timeoutId !== null) clearTimeout(timeoutId);
+        macroLoading = null;
+      }
     })();
     return macroLoading;
   }
@@ -420,5 +433,5 @@
   async function scheduleRender(){const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();await Promise.allSettled([marketLoad,loadMacroEvents()]);render();}
   document.addEventListener('click',event=>{const eventButton=event.target.closest?.('[data-weekly-event-index]');if(eventButton){const index=Number(eventButton.dataset.weeklyEventIndex);if(Number.isInteger(index)&&lastRenderedEvents[index])openDetail(lastRenderedEvents[index]);return;}const dossierButton=event.target.closest?.('[data-weekly-detail-ticker]');if(dossierButton){openTicker(dossierButton.dataset.weeklyDetailTicker);return;}if(event.target.closest?.('[data-weekly-detail-close]')){closeDetail();return;}const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)setTimeout(()=>render(),0);});
   window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
-  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,version:VERSION});
+  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
 })();
