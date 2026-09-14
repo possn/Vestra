@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v1.4 — global search with local + central learned universe. */
+/* Vestra Global Market Search v1.5 — global search with local + central learned universe. */
 (() => {
   'use strict';
 
@@ -65,7 +65,7 @@
 
   async function learn(row, source){
     try { await learnedApi()?.upsert?.(row, source); } catch (_) {}
-    await learnCentral(row);
+    void learnCentral(row);
     return row;
   }
 
@@ -198,5 +198,5 @@
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase());});
   document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker);},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'1.4',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'1.5',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
 })();
