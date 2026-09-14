@@ -8,9 +8,10 @@ vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraMarketStaticUniverse;
-assert(api && api.version === '1.10');
+assert(api && api.version === '1.11');
 assert.strictEqual(api.dataFetchTimeoutMs, 8000);
 assert.strictEqual(api.etfIntelligenceLoadTimeoutMs, 8000);
+assert.strictEqual(api.companionLoadTimeoutMs, 8000);
 assert.strictEqual(typeof api.getStocks, 'function');
 assert.strictEqual(typeof api.unpackStartupPayload, 'function');
 assert.strictEqual(typeof api.ensureEtfIntelligence, 'function');
