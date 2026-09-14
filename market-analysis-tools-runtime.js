@@ -1,4 +1,4 @@
-/* Vestra Market analysis tools runtime v1.2 */
+/* Vestra Market analysis tools runtime v1.3 */
 (() => {
   'use strict';
 
@@ -19,6 +19,7 @@
   let scannerStrategy = 'best_opportunities';
   let newsCache = null;
   let scannerReady = false;
+  let toolRequestGeneration = 0;
 
   function stocks() {
     const rows = window.VestraMarketStaticUniverse?.getStocks?.();
@@ -33,6 +34,11 @@
 
   async function ensureMarket() {
     try { await window.VestraMarket?.ensureLoaded?.(); } catch (_) {}
+  }
+
+  function ownsToolRequest(generation, tool, content) {
+    const sheet = document.getElementById('marketSheet');
+    return generation === toolRequestGeneration && !!sheet && !sheet.hidden && sheet.dataset.tool === tool && content?.isConnected && content === document.getElementById('marketSheetContent');
   }
 
   function openSheet(tool) {
@@ -51,6 +57,7 @@
   }
 
   function closeSheet() {
+    toolRequestGeneration += 1;
     const sheet = document.getElementById('marketSheet');
     if (!sheet) return;
     sheet.hidden = true;
@@ -132,11 +139,11 @@
     }).join('') : `<div class="market-empty"><strong>Sem resultados nesta estratégia.</strong><span>O universo foi carregado, mas esta estratégia não tem candidatos válidos agora.</span></div>`;
   }
 
-  async function renderScanner(content) {
+  async function renderScanner(content, generation) {
     content.innerHTML = `${header('SCANNER VESTRA','Estratégias inteligentes','Filtra o universo por sinais já calculados pela Vestra.')}
       <div class="market-tool-runtime__loading">A carregar estratégias…</div>`;
     const ok = await ensureScanner();
-    if (!content.isConnected) return;
+    if (!ownsToolRequest(generation, 'scanner', content)) return;
     if (!ok) {
       content.innerHTML = `${header('SCANNER VESTRA','Estratégias inteligentes','Filtra o universo por sinais já calculados pela Vestra.')}<div class="market-empty market-empty--error"><strong>Scanner indisponível.</strong><span>Não foi possível carregar o payload do scanner. Tenta novamente.</span><button type="button" class="btn btn--outline btn--sm" data-tool-runtime-retry="scanner">Tentar novamente</button></div>`;
       return;
@@ -196,11 +203,13 @@
   }
 
   async function openTool(tool) {
+    const generation = ++toolRequestGeneration;
     await ensureMarket();
+    if (generation !== toolRequestGeneration) return;
     const content = openSheet(tool);
     if (!content) return;
     if (tool === 'compare') { compareSelected = []; renderCompare(content); }
-    else if (tool === 'scanner') await renderScanner(content);
+    else if (tool === 'scanner') await renderScanner(content, generation);
     else if (tool === 'theses') renderTheses(content);
     else if (tool === 'news') await renderNews(content);
   }
@@ -244,7 +253,11 @@
       return;
     }
     const retry = event.target.closest?.('[data-tool-runtime-retry="scanner"]');
-    if (retry) { renderScanner(document.getElementById('marketSheetContent')); return; }
+    if (retry) {
+      const generation = ++toolRequestGeneration;
+      renderScanner(document.getElementById('marketSheetContent'), generation);
+      return;
+    }
     const open = event.target.closest?.('[data-tool-open-ticker]');
     if (open) { openTicker(open.dataset.toolOpenTicker, false); return; }
     const openNews = event.target.closest?.('[data-tool-open-news]');
@@ -267,5 +280,5 @@
   }, true);
 
   installStyles();
-  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.2' });
+  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.3' });
 })();
