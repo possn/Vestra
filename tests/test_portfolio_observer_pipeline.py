@@ -57,7 +57,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("version:'1.1'",swap)
         self.assertIn("version:'1.2'",ui)
         self.assertIn("version:'1.1'",diagnostics)
-        self.assertIn("const VERSION='1.3'",routing)
+        self.assertIn("const VERSION='1.4'",routing)
 
     def test_childlist_writers_are_idempotent(self):
         hierarchy=read("vestra-portfolio-hierarchy.js")
