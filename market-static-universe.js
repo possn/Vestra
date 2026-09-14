@@ -2,6 +2,7 @@
 (() => {
   'use strict';
 
+  const DATA_FETCH_TIMEOUT_MS = 8000;
   let sharedStocks = [];
   let etfIntelligencePromise = null;
 
@@ -78,18 +79,46 @@
     return data;
   }
 
-  function create({ state, text, fetchImpl = (...args) => fetch(...args), beforeReady = () => {}, onReady = () => {}, onError = () => {} } = {}) {
+  function create({ state, text, fetchImpl = (...args) => fetch(...args), fetchTimeoutMs = DATA_FETCH_TIMEOUT_MS, beforeReady = () => {}, onReady = () => {}, onError = () => {} } = {}) {
     if (!state) throw new Error('VestraMarketStaticUniverse: state is required');
     const txt = typeof text === 'function' ? text : (v => String(v ?? '').trim());
+    async function fetchCandidate(url, packed) {
+      const controller = typeof AbortController === 'function' ? new AbortController() : null;
+      const request = (async () => {
+        try {
+          const init = { cache: 'no-store' };
+          if (controller) init.signal = controller.signal;
+          const response = await fetchImpl(url, init);
+          const status = Number(response?.status) || 0;
+          if (!response?.ok) return { status, data: null };
+          const raw = await response.json();
+          const data = packed ? unpackStartupPayload(raw) : raw;
+          return { status, data };
+        } catch (_) {
+          return { status: 0, data: null };
+        }
+      })();
+      if (typeof setTimeout !== 'function') return request;
+      let timeoutId = null;
+      const timeout = new Promise(resolve => {
+        timeoutId = setTimeout(() => {
+          try { controller?.abort(); } catch (_) {}
+          resolve({ status: 0, data: null });
+        }, Math.max(1, Number(fetchTimeoutMs) || DATA_FETCH_TIMEOUT_MS));
+      });
+      try {
+        return await Promise.race([request, timeout]);
+      } finally {
+        if (timeoutId !== null && typeof clearTimeout === 'function') clearTimeout(timeoutId);
+      }
+    }
     async function loadFirstAvailable() {
       const candidates = [['data/stocks-startup.json', true], ['data/stocks-index.json', false]];
       let lastStatus = 0;
       for (const [url, packed] of candidates) {
-        const response = await fetchImpl(url, { cache: 'no-store' });
-        lastStatus = response.status;
-        if (!response.ok) continue;
-        const raw = await response.json();
-        const data = packed ? unpackStartupPayload(raw) : raw;
+        const result = await fetchCandidate(url, packed);
+        if (result.status) lastStatus = result.status;
+        const data = result.data;
         if (data && Array.isArray(data.stocks) && data.stocks.length) return data;
       }
       throw new Error(`market data ${lastStatus || 'unavailable'}`);
@@ -118,6 +147,7 @@
   window.VestraMarketStaticUniverse = Object.freeze({
     create, getStocks, ensureEtfIntelligence, ensureScannerCompanion, ensureAnalysisToolsRuntime,
     ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh,
-    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, unpackStartupPayload, version: '1.9',
+    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, unpackStartupPayload,
+    dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, version: '1.9',
   });
 })();

@@ -3,12 +3,13 @@ const vm = require('vm');
 const assert = require('assert');
 
 const source = fs.readFileSync('market-static-universe.js', 'utf8');
-const context = { window: {}, console };
+const context = { window: {}, console, setTimeout, clearTimeout, AbortController };
 vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraMarketStaticUniverse;
 assert(api && api.version === '1.9');
+assert.strictEqual(api.dataFetchTimeoutMs, 8000);
 assert.strictEqual(typeof api.getStocks, 'function');
 assert.strictEqual(typeof api.unpackStartupPayload, 'function');
 assert.strictEqual(typeof api.ensureEtfIntelligence, 'function');
@@ -73,6 +74,34 @@ assert.strictEqual(api.unpackStartupPayload({layout:'unknown', fields:[], rows:[
   assert.deepStrictEqual(fallbackCalls,['data/stocks-startup.json','data/stocks-index.json']);
   assert.strictEqual(fallbackState.loaded,true); assert.strictEqual(fallbackState.stocks[0].ticker,'AAPL');
 
+  const networkCalls=[]; const networkState={loaded:false,loading:null,data:null,stocks:[],byTicker:new Map()};
+  const networkFallback=api.create({
+    state:networkState,
+    fetchImpl:async url=>{
+      networkCalls.push(url);
+      if(url==='data/stocks-startup.json') throw new Error('offline');
+      return {ok:true,status:200,json:async()=>({stocks:[{ticker:'NVDA'}]})};
+    },
+  });
+  await networkFallback.ensureLoaded();
+  assert.deepStrictEqual(networkCalls,['data/stocks-startup.json','data/stocks-index.json']);
+  assert.strictEqual(networkState.loaded,true); assert.strictEqual(networkState.stocks[0].ticker,'NVDA');
+
+  const timeoutCalls=[]; const timeoutState={loaded:false,loading:null,data:null,stocks:[],byTicker:new Map()};
+  const timeoutFallback=api.create({
+    state:timeoutState,
+    fetchTimeoutMs:10,
+    fetchImpl:async url=>{
+      timeoutCalls.push(url);
+      if(url==='data/stocks-startup.json') return new Promise(()=>{});
+      return {ok:true,status:200,json:async()=>({stocks:[{ticker:'ASML'}]})};
+    },
+  });
+  await timeoutFallback.ensureLoaded();
+  assert.deepStrictEqual(timeoutCalls,['data/stocks-startup.json','data/stocks-index.json']);
+  assert.strictEqual(timeoutState.loaded,true); assert.strictEqual(timeoutState.stocks[0].ticker,'ASML');
+  assert.strictEqual(timeoutState.loading,null);
+
   const invalidCalls=[]; const invalidState={loaded:false,loading:null,data:null,stocks:[],byTicker:new Map()};
   const invalidResponses=[{ok:true,status:200,json:async()=>({layout:'wrong',fields:[],rows:[]})},{ok:false,status:404,json:async()=>({})}];
   let invalidError='';
@@ -84,6 +113,6 @@ assert.strictEqual(api.unpackStartupPayload({layout:'unknown', fields:[], rows:[
   const failed=api.create({state:failedState,fetchImpl:async()=>({ok:false,status:503,json:async()=>({})}),onError:err=>{errorMessage=err.message;}});
   await failed.ensureLoaded(); assert.strictEqual(errorMessage,'market data 503');
   assert.strictEqual(failedState.loaded,false); assert.strictEqual(failedState.loading,null);
-  assert.strictEqual(api.getStocks(),fallbackState.stocks);
+  assert.strictEqual(api.getStocks(),timeoutState.stocks);
   console.log('market static universe runtime contract: ok');
 })().catch(err=>{console.error(err);process.exit(1);});
