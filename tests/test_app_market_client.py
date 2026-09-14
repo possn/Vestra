@@ -47,6 +47,16 @@ class AppMarketClientTests(unittest.TestCase):
         self.assertNotIn("AbortSignal.timeout",s)
         self.assertNotIn("method:'POST'",s)
 
+    def test_fetch_timeout_is_bounded_even_if_abort_does_not_settle_fetch(self):
+        s=read("app-market-client.js")
+        self.assertIn("const request=fetch(url,{...options,signal:controller.signal});",s)
+        self.assertIn("const timeout=new Promise((_,reject)=>",s)
+        self.assertIn("reject(new Error('Tempo limite do Worker'))",s)
+        self.assertIn("Promise.race([request,timeout])",s)
+        self.assertIn("try { controller.abort(); } catch(_) {}",s)
+        self.assertIn("if(timer!==null) clearTimeout(timer)",s)
+        self.assertIn("version:'1.6'",s)
+
     def test_worker_batch_endpoint_matches_client_contract(self):
         w=read("worker.js")
         self.assertIn('if (url.pathname === "/quotes")',w)

@@ -1,4 +1,4 @@
-/* Vestra Market Client v1.5 — identity-safe batching, quote dedupe and FX caching. */
+/* Vestra Market Client v1.6 — identity-safe batching, quote dedupe and FX caching. */
 (() => {
   'use strict';
 
@@ -52,9 +52,17 @@
 
   async function fetchWithTimeout(url, options={}, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
     const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(), Math.max(1000, Number(timeoutMs)||DEFAULT_QUOTE_TIMEOUT_MS));
-    try { return await fetch(url,{...options,signal:controller.signal}); }
-    finally { clearTimeout(timer); }
+    const deadlineMs=Math.max(1000, Number(timeoutMs)||DEFAULT_QUOTE_TIMEOUT_MS);
+    let timer=null;
+    const request=fetch(url,{...options,signal:controller.signal});
+    const timeout=new Promise((_,reject)=>{
+      timer=setTimeout(()=>{
+        try { controller.abort(); } catch(_) {}
+        reject(new Error('Tempo limite do Worker'));
+      },deadlineMs);
+    });
+    try { return await Promise.race([request,timeout]); }
+    finally { if(timer!==null) clearTimeout(timer); }
   }
 
   async function fetchQuoteDirect(ticker, workerUrl, timeoutMs=DEFAULT_QUOTE_TIMEOUT_MS) {
@@ -316,7 +324,7 @@
   installPartialRefreshRetry();
 
   window.VestraMarketClient=Object.freeze({
-    version:'1.5',
+    version:'1.6',
     FX_FALLBACK_LOCAL,
     MAX_QUOTE_CONCURRENCY,
     DEFAULT_QUOTE_TIMEOUT_MS,
