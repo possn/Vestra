@@ -154,8 +154,15 @@
   function opportunities(lens=activeLens){
     activeLens=LENSES.has(t(lens))?t(lens):'all';
     const universe=stocks();
-    const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section||!universe.length)return [];
-    const list=section.querySelector('.market-list');if(!list)return[];const active=section.querySelector('[data-market-sector].is-active');const sec=t(active?.dataset.marketSector)||'all';
+    const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
+    const list=section.querySelector('.market-list');if(!list)return[];
+    if(!universe.length){
+      list.innerHTML='';
+      list.dataset.ux453=`empty-universe:${activeLens}`;
+      decorate(section);
+      return [];
+    }
+    const active=section.querySelector('[data-market-sector].is-active');const sec=t(active?.dataset.marketSector)||'all';
     let rows=universe.filter(s=>lensEligible(s,activeLens));if(sec!=='all')rows=rows.filter(s=>t(s?.sector)===sec);rows.sort((a,b)=>lensScore(b,activeLens)-lensScore(a,activeLens)||(score(b)||0)-(score(a)||0));rows=rows.slice(0,12);
     const sig=(rows.map(s=>`${t(s.ticker)}:${Math.round(lensScore(s,activeLens))}`).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
