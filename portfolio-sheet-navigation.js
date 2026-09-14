@@ -42,14 +42,20 @@
   }
 
   async function openCompany(ticker,options={}){
-    const tk=normalizeTicker(ticker);
-    if(!tk) return false;
     const origin=txt(options.origin)||inferOrigin(options.sourceNode);
+    const tk=normalizeTicker(ticker);
+    if(!tk){
+      if(origin==='portfolio') openingFromPortfolio=false;
+      return false;
+    }
     const request=++navigationSequence;
 
     try{
       const api=window.VestraMarket;
-      if(!api?.openTicker) return false;
+      if(!api?.openTicker){
+        if(origin==='portfolio') openingFromPortfolio=false;
+        return false;
+      }
 
       // Establish the navigation state synchronously before dossier rendering.
       prepareDossierOrigin(origin);
