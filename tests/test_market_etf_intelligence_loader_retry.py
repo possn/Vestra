@@ -29,7 +29,7 @@ class MarketEtfIntelligenceLoaderRetryTests(unittest.TestCase):
 
     def test_market_loading_still_awaits_optional_intelligence_only_within_deadline(self):
         self.assertIn("await ensureEtfIntelligence();", SOURCE)
-        self.assertIn("version: '1.10'", SOURCE)
+        self.assertIn("version: '1.11'", SOURCE)
 
 
 if __name__ == '__main__':

@@ -1,9 +1,10 @@
-/* Vestra Market static universe loader v1.10 */
+/* Vestra Market static universe loader v1.11 */
 (() => {
   'use strict';
 
   const DATA_FETCH_TIMEOUT_MS = 8000;
   const ETF_INTELLIGENCE_LOAD_TIMEOUT_MS = 8000;
+  const COMPANION_LOAD_TIMEOUT_MS = 8000;
   let sharedStocks = [];
   let etfIntelligencePromise = null;
 
@@ -60,13 +61,41 @@
     if (typeof document === 'undefined') return;
     if (window[globalName] || document.querySelector(selector)) return;
     const script = document.createElement('script');
+    let settled = false;
+    let timeoutId = null;
+    const cleanup = () => {
+      if (timeoutId !== null && typeof clearTimeout === 'function') clearTimeout(timeoutId);
+      script.removeEventListener('load', onLoad);
+      script.removeEventListener('error', onError);
+    };
+    const retry = () => {
+      if (attempt < 1 && typeof setTimeout === 'function') {
+        setTimeout(() => loadCompanion(globalName, selector, src, datasetKey, attempt + 1), 1000);
+      }
+    };
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (script.isConnected) script.remove();
+      retry();
+    };
+    const onLoad = () => {
+      if (settled) return;
+      if (!window[globalName]) { fail(); return; }
+      settled = true;
+      cleanup();
+    };
+    const onError = () => fail();
+
     script.src = src;
     script.defer = true;
     script.dataset[datasetKey] = '1';
-    script.addEventListener('error', () => {
-      if (script.isConnected) script.remove();
-      if (attempt < 1) setTimeout(() => loadCompanion(globalName, selector, src, datasetKey, attempt + 1), 1000);
-    }, { once: true });
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+    if (typeof setTimeout === 'function') {
+      timeoutId = setTimeout(fail, COMPANION_LOAD_TIMEOUT_MS);
+    }
     document.head.appendChild(script);
   }
 
@@ -172,6 +201,7 @@
     create, getStocks, ensureEtfIntelligence, ensureScannerCompanion, ensureAnalysisToolsRuntime,
     ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh,
     ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, unpackStartupPayload,
-    dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, etfIntelligenceLoadTimeoutMs: ETF_INTELLIGENCE_LOAD_TIMEOUT_MS, version: '1.10',
+    dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, etfIntelligenceLoadTimeoutMs: ETF_INTELLIGENCE_LOAD_TIMEOUT_MS,
+    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.11',
   });
 })();
