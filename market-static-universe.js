@@ -1,8 +1,9 @@
-/* Vestra Market static universe loader v1.9 */
+/* Vestra Market static universe loader v1.10 */
 (() => {
   'use strict';
 
   const DATA_FETCH_TIMEOUT_MS = 8000;
+  const ETF_INTELLIGENCE_LOAD_TIMEOUT_MS = 8000;
   let sharedStocks = [];
   let etfIntelligencePromise = null;
 
@@ -15,19 +16,42 @@
     const existing = document.querySelector('script[data-vestra-etf-intelligence]');
     etfIntelligencePromise = new Promise(resolve => {
       const script = existing || document.createElement('script');
-      const finish = value => { etfIntelligencePromise = null; resolve(value); };
+      let settled = false;
+      let timeoutId = null;
+      const cleanup = () => {
+        if (timeoutId !== null && typeof clearTimeout === 'function') clearTimeout(timeoutId);
+        script.removeEventListener('load', onLoad);
+        script.removeEventListener('error', onError);
+      };
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        etfIntelligencePromise = null;
+        resolve(value || null);
+      };
+      const discardAndFinish = () => {
+        if (script.isConnected) script.remove();
+        finish(null);
+      };
+      const onLoad = () => {
+        const api = window.VestraEtfIntelligence || null;
+        if (!api) { discardAndFinish(); return; }
+        finish(api);
+      };
+      const onError = () => discardAndFinish();
+
+      script.addEventListener('load', onLoad, { once: true });
+      script.addEventListener('error', onError, { once: true });
+      if (typeof setTimeout === 'function') {
+        timeoutId = setTimeout(discardAndFinish, ETF_INTELLIGENCE_LOAD_TIMEOUT_MS);
+      }
       if (!existing) {
         script.src = 'market-etf-intelligence.js?v=1.2';
         script.defer = true;
         script.dataset.vestraEtfIntelligence = '1';
         document.head.appendChild(script);
       }
-      if (window.VestraEtfIntelligence) { finish(window.VestraEtfIntelligence); return; }
-      script.addEventListener('load', () => finish(window.VestraEtfIntelligence || null), { once: true });
-      script.addEventListener('error', () => {
-        if (script.isConnected) script.remove();
-        finish(null);
-      }, { once: true });
     });
     return etfIntelligencePromise;
   }
@@ -148,6 +172,6 @@
     create, getStocks, ensureEtfIntelligence, ensureScannerCompanion, ensureAnalysisToolsRuntime,
     ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh,
     ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, unpackStartupPayload,
-    dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, version: '1.9',
+    dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, etfIntelligenceLoadTimeoutMs: ETF_INTELLIGENCE_LOAD_TIMEOUT_MS, version: '1.10',
   });
 })();
