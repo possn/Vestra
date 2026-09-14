@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.0 — IndexedDB with localStorage fallback. */
+/* Vestra persistence layer v1.1 — IndexedDB with bounded localStorage fallback. */
 (() => {
   'use strict';
 
@@ -6,28 +6,64 @@
   const DB_NAME = 'pf_v6';
   const DB_STORE = 'kv';
   const DB_KEY = 'state';
+  const IDB_OPEN_TIMEOUT_MS = 1500;
 
   function idbAvailable(){ return typeof indexedDB !== 'undefined' && indexedDB; }
+
+  function idbFailure(message, cause){
+    const error = new Error(message);
+    if (cause !== undefined) error.cause = cause;
+    return error;
+  }
 
   let _idbConn = null;
   function idbOpen(){
     if (_idbConn) return _idbConn;
+
     _idbConn = new Promise((res, rej) => {
-      try {
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = () => {
-          if (!req.result.objectStoreNames.contains(DB_STORE)) req.result.createObjectStore(DB_STORE);
-        };
-        req.onsuccess = () => {
-          const db = req.result;
-          db.onclose = () => { _idbConn = null; };
-          res(db);
-        };
-        req.onerror = () => { _idbConn = null; rej(req.error); };
-      } catch (e) {
+      let settled = false;
+      let timer = null;
+
+      const rejectOpen = (error) => {
+        if (settled) return;
+        settled = true;
+        if (timer !== null) clearTimeout(timer);
         _idbConn = null;
-        rej(e);
+        rej(error);
+      };
+
+      let req;
+      try {
+        req = indexedDB.open(DB_NAME, 1);
+      } catch (error) {
+        rejectOpen(error);
+        return;
       }
+
+      timer = setTimeout(() => {
+        rejectOpen(idbFailure(`IndexedDB open timed out after ${IDB_OPEN_TIMEOUT_MS}ms`));
+      }, IDB_OPEN_TIMEOUT_MS);
+
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(DB_STORE)) req.result.createObjectStore(DB_STORE);
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        if (settled) {
+          try { db.close(); } catch (_) {}
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        db.onclose = () => { _idbConn = null; };
+        db.onversionchange = () => {
+          try { db.close(); } catch (_) {}
+          _idbConn = null;
+        };
+        res(db);
+      };
+      req.onerror = () => rejectOpen(req.error || idbFailure('IndexedDB open failed'));
+      req.onblocked = () => rejectOpen(idbFailure('IndexedDB open blocked by another connection'));
     });
     return _idbConn;
   }
@@ -38,7 +74,8 @@
       const tx = db.transaction(DB_STORE, 'readonly');
       const req = tx.objectStore(DB_STORE).get(key);
       req.onsuccess = () => res(req.result);
-      req.onerror = () => rej(req.error);
+      req.onerror = () => rej(req.error || idbFailure('IndexedDB read failed'));
+      tx.onabort = () => rej(tx.error || idbFailure('IndexedDB read transaction aborted'));
     });
   }
 
@@ -48,7 +85,8 @@
       const tx = db.transaction(DB_STORE, 'readwrite');
       tx.objectStore(DB_STORE).put(value, key);
       tx.oncomplete = () => res(true);
-      tx.onerror = () => rej(tx.error);
+      tx.onerror = () => rej(tx.error || idbFailure('IndexedDB write failed'));
+      tx.onabort = () => rej(tx.error || idbFailure('IndexedDB write transaction aborted'));
     });
   }
 
@@ -59,6 +97,7 @@
       tx.objectStore(DB_STORE).delete(key);
       tx.oncomplete = () => res(true);
       tx.onerror = () => res(false);
+      tx.onabort = () => res(false);
     });
   }
 
@@ -93,7 +132,7 @@
   }
 
   const api = Object.freeze({
-    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY,
+    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, IDB_OPEN_TIMEOUT_MS,
     idbAvailable, idbOpen, idbGet, idbSet, idbDel,
     requestPersistentStorage, storageGet, storageSet, storageClear,
   });
