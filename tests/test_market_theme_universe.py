@@ -19,7 +19,7 @@ class MarketThemeUniverseTests(unittest.TestCase):
         self.assertIn("ideasLabel.textContent = 'Ideias'", STOCKS)
         self.assertIn("stocksButton.dataset.marketStockBrowser = '1'", STOCKS)
         self.assertIn("label.textContent = 'Ações'", STOCKS)
-        self.assertIn("version: '1.4'", STOCKS)
+        self.assertIn("version: '1.5'", STOCKS)
         self.assertIn('stock?.theme, stock?.stock_theme, stock?.style', STOCKS)
 
     def test_stock_theme_results_keep_unscored_companies(self):
@@ -33,7 +33,7 @@ class MarketThemeUniverseTests(unittest.TestCase):
         self.assertNotIn('style.textContent', STOCKS)
         self.assertIn('.market-stock-theme-grid{', STOCKS_CSS)
         self.assertIn('.market-analysis-tools__grid{', STOCKS_CSS)
-        self.assertIn("market-stock-themes-tools.js?v=1.4", POLISH)
+        self.assertIn("market-stock-themes-tools.js?v=1.5", POLISH)
         self.assertNotIn("market-stock-themes-tools.js?v=1.0", POLISH)
         self.assertIn('"./market-stock-themes-tools.css"', SW)
 

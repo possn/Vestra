@@ -1,4 +1,4 @@
-/* Vestra Market stock theme discovery + tool hierarchy v1.4 */
+/* Vestra Market stock theme discovery + tool hierarchy v1.5 */
 (() => {
   'use strict';
 
@@ -109,7 +109,10 @@
     const root = document.getElementById('marketPrimary');
     if (!root || !isStocksMode() || hasSearch()) return;
     const rows = stocks();
-    if (!rows.length) return;
+    if (!rows.length) {
+      root.querySelector('.market-stock-discovery')?.remove();
+      return;
+    }
 
     const themes = availableThemes(rows);
     if (!selectedTheme) {
@@ -271,6 +274,6 @@
   window.VestraMarketStockThemesTools = Object.freeze({
     render: queueRender,
     getSelectedTheme: () => selectedTheme,
-    version: '1.4',
+    version: '1.5',
   });
 })();
