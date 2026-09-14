@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v1.5 — global search with local + central learned universe. */
+/* Vestra Global Market Search v1.6 — global search with local + central learned universe. */
 (() => {
   'use strict';
 
@@ -10,6 +10,7 @@
   const num = v => n(v)==null?'—':new Intl.NumberFormat('pt-PT',{maximumFractionDigits:2}).format(n(v));
   const compact = v => n(v)==null?'—':new Intl.NumberFormat('pt-PT',{notation:'compact',maximumFractionDigits:1}).format(n(v));
   const REMOTE_FETCH_TIMEOUT_MS = 12000;
+  const SEARCH_FETCH_TIMEOUT_MS = 6000;
 
   let timer = null;
   let seq = 0;
@@ -26,7 +27,7 @@
   function validTickerQuery(q){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/i.test(txt(q)); }
   function invalidatePendingEnterOpen(){ enterOpenSeq += 1; }
 
-  async function fetchRemoteWithDeadline(url,options={}){
+  async function fetchRemoteWithDeadline(url,options={},timeoutMs=REMOTE_FETCH_TIMEOUT_MS,timeoutMessage='Timeout a carregar dados globais.'){
     const controller=typeof AbortController==='function'?new AbortController():null;
     let timeoutId=null;
     try{
@@ -34,8 +35,8 @@
       const timeout=new Promise((_,reject)=>{
         timeoutId=setTimeout(()=>{
           try{controller?.abort();}catch(_){}
-          reject(new Error('Timeout a carregar dados globais.'));
-        },REMOTE_FETCH_TIMEOUT_MS);
+          reject(new Error(timeoutMessage));
+        },timeoutMs);
       });
       return await Promise.race([request,timeout]);
     }finally{
@@ -76,7 +77,7 @@
     const key = `exact:${ticker}`;
     if (cache.has(key)) return cache.get(key);
     try {
-      const r = await fetch(`${base}/quote?ticker=${encodeURIComponent(ticker)}`, {cache:'no-store'});
+      const r = await fetchRemoteWithDeadline(`${base}/quote?ticker=${encodeURIComponent(ticker)}`, {cache:'no-store'}, SEARCH_FETCH_TIMEOUT_MS, 'Timeout a validar ticker.');
       if (!r.ok) return [];
       const d = await r.json();
       if (!d || d.error || n(d.price)==null) return [];
@@ -95,7 +96,7 @@
     if (cache.has(key)) return cache.get(key);
     try {
       const u = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(text)}&quotesCount=8&newsCount=0&listsCount=0`;
-      const r = await fetch(u, {cache:'no-store'});
+      const r = await fetchRemoteWithDeadline(u, {cache:'no-store'}, SEARCH_FETCH_TIMEOUT_MS, 'Timeout na pesquisa global.');
       if (!r.ok) return [];
       const d = await r.json();
       const rows = (d?.quotes||[]).filter(x=>['EQUITY','ETF','MUTUALFUND'].includes(txt(x.quoteType).toUpperCase())).map(x=>({
@@ -198,5 +199,5 @@
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase());});
   document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker);},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'1.5',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'1.6',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
 })();
