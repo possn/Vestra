@@ -40,6 +40,18 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("txt(sh.dataset.ticker).toUpperCase()===ticker", text)
         self.assertGreaterEqual(text.count("if(!ownsRemoteOpen(request,sh,ticker))return;"), 4)
 
+    def test_remote_dossier_fetch_has_a_bounded_deadline(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        self.assertIn("const REMOTE_FETCH_TIMEOUT_MS = 12000;", text)
+        self.assertIn("async function fetchRemoteWithDeadline", text)
+        self.assertIn("typeof AbortController==='function'", text)
+        self.assertIn("Promise.race([request,timeout])", text)
+        self.assertIn("controller?.abort()", text)
+        self.assertIn("new Error('Timeout a carregar dados globais.')", text)
+        self.assertIn("await fetchRemoteWithDeadline(`${base}/market?ticker=", text)
+        self.assertNotIn("await fetch(`${base}/market?ticker=", text)
+        self.assertIn("if(!ownsRemoteOpen(request,sh,ticker))return;\n      content.innerHTML=", text)
+
     def test_enter_validation_cannot_open_after_search_context_changes(self):
         text = GLOBAL.read_text(encoding="utf-8")
         self.assertIn("let enterOpenSeq = 0;", text)
@@ -52,7 +64,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=2.1", text)
-        self.assertIn("market-global-search.js?v=1.3", text)
+        self.assertIn("market-global-search.js?v=1.4", text)
         self.assertIn("market-data-health.js?v=1.2", text)
         self.assertIn("loadLearnedUniverse();", text)
         self.assertIn("loadDataHealth();", text)
@@ -68,7 +80,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn('.vestra-global-search{', css)
         self.assertIn('.vestra-global-search__row{', css)
         self.assertIn('"./market-global-search.css"', sw)
-        self.assertIn("version:'1.3'", text)
+        self.assertIn("version:'1.4'", text)
 
 
 if __name__ == "__main__":

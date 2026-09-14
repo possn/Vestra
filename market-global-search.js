@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v1.3 — global search with local + central learned universe. */
+/* Vestra Global Market Search v1.4 — global search with local + central learned universe. */
 (() => {
   'use strict';
 
@@ -9,6 +9,7 @@
   const pct = v => n(v)==null?'—':`${(Math.abs(n(v))<=1?n(v)*100:n(v)).toFixed(1)}%`;
   const num = v => n(v)==null?'—':new Intl.NumberFormat('pt-PT',{maximumFractionDigits:2}).format(n(v));
   const compact = v => n(v)==null?'—':new Intl.NumberFormat('pt-PT',{notation:'compact',maximumFractionDigits:1}).format(n(v));
+  const REMOTE_FETCH_TIMEOUT_MS = 12000;
 
   let timer = null;
   let seq = 0;
@@ -24,6 +25,23 @@
   function learnedApi(){ return window.VestraLearnedUniverse || null; }
   function validTickerQuery(q){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/i.test(txt(q)); }
   function invalidatePendingEnterOpen(){ enterOpenSeq += 1; }
+
+  async function fetchRemoteWithDeadline(url,options={}){
+    const controller=typeof AbortController==='function'?new AbortController():null;
+    let timeoutId=null;
+    try{
+      const request=fetch(url,controller?{...options,signal:controller.signal}:options);
+      const timeout=new Promise((_,reject)=>{
+        timeoutId=setTimeout(()=>{
+          try{controller?.abort();}catch(_){}
+          reject(new Error('Timeout a carregar dados globais.'));
+        },REMOTE_FETCH_TIMEOUT_MS);
+      });
+      return await Promise.race([request,timeout]);
+    }finally{
+      if(timeoutId!==null)clearTimeout(timeoutId);
+    }
+  }
 
   async function learnCentral(row){
     const ticker = txt(row?.ticker || row?.symbol).toUpperCase();
@@ -146,7 +164,7 @@
     sh.hidden=false; sh.setAttribute('aria-hidden','false');
     content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER LIVE</div><h2>${esc(ticker)}</h2><p>A obter dados globais…</p></div><button class="market-close" data-market-close>×</button></div><div class="market-detail-card"><p>Esta empresa não faz parte do catálogo diário pré-enriquecido. O dossier está a ser construído ao vivo.</p></div>`;
     try{
-      const r=await fetch(`${base}/market?ticker=${encodeURIComponent(ticker)}`,{cache:'no-store'});
+      const r=await fetchRemoteWithDeadline(`${base}/market?ticker=${encodeURIComponent(ticker)}`,{cache:'no-store'});
       if(!ownsRemoteOpen(request,sh,ticker))return;
       if(!r.ok)throw new Error(`HTTP ${r.status}`);
       const d=await r.json();
@@ -180,5 +198,5 @@
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase());});
   document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker);},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'1.3',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'1.4',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
 })();
