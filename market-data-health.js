@@ -1,4 +1,4 @@
-/* Vestra Market Data Health v1.2 — distinguish published dataset health from live quote freshness. */
+/* Vestra Market Data Health v1.3 — distinguish published dataset health from live quote freshness. */
 (() => {
   'use strict';
 
@@ -7,18 +7,37 @@
     learned: './data/learned_tickers.json',
   });
   const QUOTE_STALE_MS = 60 * 1000;
+  const DATA_FETCH_TIMEOUT_MS = 5000;
   let refreshGeneration = 0;
 
   const text = value => String(value ?? '').trim();
   const number = value => Number.isFinite(Number(value)) ? Number(value) : null;
 
-  async function loadJson(url) {
+  async function loadJson(url, fetchImpl = (...args) => fetch(...args), timeoutMs = DATA_FETCH_TIMEOUT_MS) {
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    let timeoutId = null;
+    const request = (async () => {
+      try {
+        const options = { cache: 'no-store' };
+        if (controller) options.signal = controller.signal;
+        const response = await fetchImpl(url, options);
+        if (!response.ok) return null;
+        return await response.json();
+      } catch (_) {
+        return null;
+      }
+    })();
+    const timeout = new Promise(resolve => {
+      const delay = Math.max(1, Number(timeoutMs) || DATA_FETCH_TIMEOUT_MS);
+      timeoutId = setTimeout(() => {
+        try { controller?.abort(); } catch (_) {}
+        resolve(null);
+      }, delay);
+    });
     try {
-      const response = await fetch(url, { cache: 'no-store' });
-      if (!response.ok) return null;
-      return await response.json();
-    } catch (_) {
-      return null;
+      return await Promise.race([request, timeout]);
+    } finally {
+      if (timeoutId !== null) clearTimeout(timeoutId);
     }
   }
 
@@ -224,8 +243,9 @@
   else start();
 
   window.VestraMarketDataHealth = Object.freeze({
-    version: '1.2',
+    version: '1.3',
     quoteStaleMs: QUOTE_STALE_MS,
+    fetchTimeoutMs: DATA_FETCH_TIMEOUT_MS,
     refresh,
     model,
     ageLabel,

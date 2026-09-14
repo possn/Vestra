@@ -33,8 +33,9 @@ vm.runInContext(source, sandbox, { filename: 'market-data-health.js' });
 
 const api = window.VestraMarketDataHealth;
 assert(api, 'VestraMarketDataHealth was not exported');
-assert.strictEqual(api.version, '1.2');
+assert.strictEqual(api.version, '1.3');
 assert.strictEqual(api.quoteStaleMs, 60 * 1000);
+assert.strictEqual(api.fetchTimeoutMs, 5000);
 
 const now = new Date('2026-08-31T18:30:00Z');
 const guard = { generated_at: '2026-08-31T17:30:00Z', ok: true, violation_count: 0, rows_checked: 1699 };
