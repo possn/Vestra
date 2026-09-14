@@ -5,6 +5,7 @@ const vm = require('vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'market-global-search.js'), 'utf8');
 const calls = [];
+let fetchMode = 'ok';
 
 const document = {
   addEventListener() {},
@@ -23,6 +24,7 @@ const window = {
 
 async function fetchStub(url, options = {}) {
   calls.push({ url: String(url), options });
+  if (fetchMode === 'stall') return await new Promise(() => {});
   return { ok: true, status: 200, async json() { return {}; } };
 }
 
@@ -69,6 +71,16 @@ vm.runInContext(source, sandbox, { filename: 'market-global-search.js' });
   const invalid = await api.learnCentral({ ticker: 'bad ticker!' });
   assert.strictEqual(invalid, false, 'invalid ticker must not be posted');
   assert.strictEqual(calls.length, 1, 'invalid ticker must not reach fetch');
+
+  fetchMode = 'stall';
+  const timedOut = await api.learnCentral({ ticker: 'RETRY' }, 10);
+  assert.strictEqual(timedOut, false, 'stalled central POST must resolve false after its deadline');
+  assert.strictEqual(calls.length, 2, 'stalled POST must be attempted once');
+
+  fetchMode = 'ok';
+  const retried = await api.learnCentral({ ticker: 'RETRY' }, 10);
+  assert.strictEqual(retried, true, 'ticker must become retryable after a timed-out POST');
+  assert.strictEqual(calls.length, 3, 'retry must emit a fresh POST after timeout cleanup');
 
   console.log('learned-universe central POST contract: ok');
 })().catch(error => {
