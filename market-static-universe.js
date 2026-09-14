@@ -27,13 +27,17 @@
     return etfIntelligencePromise;
   }
 
-  function loadCompanion(globalName, selector, src, datasetKey) {
+  function loadCompanion(globalName, selector, src, datasetKey, attempt = 0) {
     if (typeof document === 'undefined') return;
     if (window[globalName] || document.querySelector(selector)) return;
     const script = document.createElement('script');
     script.src = src;
     script.defer = true;
     script.dataset[datasetKey] = '1';
+    script.addEventListener('error', () => {
+      if (script.isConnected) script.remove();
+      if (attempt < 1) setTimeout(() => loadCompanion(globalName, selector, src, datasetKey, attempt + 1), 1000);
+    }, { once: true });
     document.head.appendChild(script);
   }
 
