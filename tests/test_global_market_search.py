@@ -47,10 +47,19 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("typeof AbortController==='function'", text)
         self.assertIn("Promise.race([request,timeout])", text)
         self.assertIn("controller?.abort()", text)
-        self.assertIn("new Error('Timeout a carregar dados globais.')", text)
+        self.assertIn("Timeout a carregar dados globais.", text)
         self.assertIn("await fetchRemoteWithDeadline(`${base}/market?ticker=", text)
         self.assertNotIn("await fetch(`${base}/market?ticker=", text)
         self.assertIn("if(!ownsRemoteOpen(request,sh,ticker))return;\n      content.innerHTML=", text)
+
+    def test_search_validation_fetches_have_short_deadlines(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        self.assertIn("const SEARCH_FETCH_TIMEOUT_MS = 6000;", text)
+        self.assertIn("`${base}/quote?ticker=${encodeURIComponent(ticker)}`", text)
+        self.assertIn("SEARCH_FETCH_TIMEOUT_MS, 'Timeout a validar ticker.'", text)
+        self.assertIn("SEARCH_FETCH_TIMEOUT_MS, 'Timeout na pesquisa global.'", text)
+        self.assertNotIn("await fetch(`${base}/quote?ticker=", text)
+        self.assertNotIn("const r = await fetch(u, {cache:'no-store'});", text)
 
     def test_enter_validation_cannot_open_after_search_context_changes(self):
         text = GLOBAL.read_text(encoding="utf-8")
@@ -64,7 +73,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=2.1", text)
-        self.assertIn("market-global-search.js?v=1.5", text)
+        self.assertIn("market-global-search.js?v=1.6", text)
         self.assertIn("market-data-health.js?v=1.3", text)
         self.assertIn("loadLearnedUniverse();", text)
         self.assertIn("loadDataHealth();", text)
@@ -80,7 +89,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn('.vestra-global-search{', css)
         self.assertIn('.vestra-global-search__row{', css)
         self.assertIn('"./market-global-search.css"', sw)
-        self.assertIn("version:'1.5'", text)
+        self.assertIn("version:'1.6'", text)
 
 
 if __name__ == "__main__":
