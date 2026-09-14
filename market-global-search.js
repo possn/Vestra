@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v1.6 — global search with local + central learned universe. */
+/* Vestra Global Market Search v1.7 — global search with local + central learned universe. */
 (() => {
   'use strict';
 
@@ -11,6 +11,7 @@
   const compact = v => n(v)==null?'—':new Intl.NumberFormat('pt-PT',{notation:'compact',maximumFractionDigits:1}).format(n(v));
   const REMOTE_FETCH_TIMEOUT_MS = 12000;
   const SEARCH_FETCH_TIMEOUT_MS = 6000;
+  const LEARN_FETCH_TIMEOUT_MS = 8000;
 
   let timer = null;
   let seq = 0;
@@ -44,18 +45,18 @@
     }
   }
 
-  async function learnCentral(row){
+  async function learnCentral(row, timeoutMs=LEARN_FETCH_TIMEOUT_MS){
     const ticker = txt(row?.ticker || row?.symbol).toUpperCase();
     const base = workerBase();
     if (!base || !validTickerQuery(ticker) || learnedPosted.has(ticker)) return false;
     learnedPosted.add(ticker);
     try {
-      const response = await fetch(`${base}/learned-universe`,{
+      const response = await fetchRemoteWithDeadline(`${base}/learned-universe`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({ticker}),
         cache:'no-store',
-      });
+      }, timeoutMs, 'Timeout a guardar ticker aprendido.');
       if (!response.ok) throw new Error(`learn ${response.status}`);
       return true;
     } catch (_) {
@@ -199,5 +200,5 @@
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase());});
   document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker);},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'1.6',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'1.7',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
 })();

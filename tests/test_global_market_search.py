@@ -61,6 +61,15 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertNotIn("await fetch(`${base}/quote?ticker=", text)
         self.assertNotIn("const r = await fetch(u, {cache:'no-store'});", text)
 
+    def test_central_learning_fetch_has_deadline_and_retry_cleanup(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        self.assertIn("const LEARN_FETCH_TIMEOUT_MS = 8000;", text)
+        self.assertIn("async function learnCentral(row, timeoutMs=LEARN_FETCH_TIMEOUT_MS)", text)
+        self.assertIn("await fetchRemoteWithDeadline(`${base}/learned-universe`", text)
+        self.assertIn("timeoutMs, 'Timeout a guardar ticker aprendido.'", text)
+        self.assertIn("learnedPosted.delete(ticker);", text)
+        self.assertNotIn("const response = await fetch(`${base}/learned-universe`", text)
+
     def test_enter_validation_cannot_open_after_search_context_changes(self):
         text = GLOBAL.read_text(encoding="utf-8")
         self.assertIn("let enterOpenSeq = 0;", text)
@@ -73,7 +82,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=2.1", text)
-        self.assertIn("market-global-search.js?v=1.6", text)
+        self.assertIn("market-global-search.js?v=1.7", text)
         self.assertIn("market-data-health.js?v=1.3", text)
         self.assertIn("loadLearnedUniverse();", text)
         self.assertIn("loadDataHealth();", text)
@@ -89,7 +98,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn('.vestra-global-search{', css)
         self.assertIn('.vestra-global-search__row{', css)
         self.assertIn('"./market-global-search.css"', sw)
-        self.assertIn("version:'1.6'", text)
+        self.assertIn("version:'1.7'", text)
 
 
 if __name__ == "__main__":
