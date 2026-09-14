@@ -14,15 +14,19 @@
     const existing = document.querySelector('script[data-vestra-etf-intelligence]');
     etfIntelligencePromise = new Promise(resolve => {
       const script = existing || document.createElement('script');
+      const finish = value => { etfIntelligencePromise = null; resolve(value); };
       if (!existing) {
         script.src = 'market-etf-intelligence.js?v=1.2';
         script.defer = true;
         script.dataset.vestraEtfIntelligence = '1';
         document.head.appendChild(script);
       }
-      if (window.VestraEtfIntelligence) { resolve(window.VestraEtfIntelligence); return; }
-      script.addEventListener('load', () => resolve(window.VestraEtfIntelligence || null), { once: true });
-      script.addEventListener('error', () => resolve(null), { once: true });
+      if (window.VestraEtfIntelligence) { finish(window.VestraEtfIntelligence); return; }
+      script.addEventListener('load', () => finish(window.VestraEtfIntelligence || null), { once: true });
+      script.addEventListener('error', () => {
+        if (script.isConnected) script.remove();
+        finish(null);
+      }, { once: true });
     });
     return etfIntelligencePromise;
   }
