@@ -1,4 +1,4 @@
-/* Vestra Service Worker v10.42 — fast static shell + fresh market data. */
+/* Vestra Service Worker v10.43 — fast static shell + fresh market data. */
 const CACHE_NAME = "vestra-cache-v155";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
@@ -35,11 +35,17 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "market-opportunity-lenses.js", "mobile-ui-refresh.js", "vestra-ai-brief.js"
 ]);
 
+async function precacheAsset(cache, asset) {
+  const fresh = await fetchWithTimeout(asset, { cache: "no-store" });
+  if (!fresh || !fresh.ok) throw new Error(`Precache failed: ${asset}`);
+  await cache.put(asset, fresh.clone());
+}
+
 self.addEventListener("install", event => {
   self.skipWaiting();
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await Promise.allSettled(APP_SHELL.map(asset => cache.add(asset)));
+    await Promise.allSettled(APP_SHELL.map(asset => precacheAsset(cache, asset)));
   })());
 });
 
