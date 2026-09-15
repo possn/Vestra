@@ -8,14 +8,20 @@ assert(updateManagerMentions.length >= 2, 'safe update manager must be in both A
 assert(source.includes('"market-opportunities.js"'), 'opportunity engine must be network-first');
 assert(source.includes('"market-opportunity-lenses.js"'), 'opportunity lenses must be network-first with the engine');
 assert(source.includes('await cache.put(request, fresh.clone())'), 'network-first must persist a healthy response before returning it');
+assert(source.includes('cache.match(request, { ignoreSearch: true })'), 'versioned requests must be able to reuse unversioned app-shell entries');
 
-function buildRuntime({ freshResponse, fetchError, cachedResponse }) {
+function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCachedResponse }) {
   const puts = [];
+  const matches = [];
   const listeners = {};
   const cache = {
     add: async () => {},
     put: async (request, response) => { puts.push({ request, response }); },
-    match: async () => cachedResponse || null,
+    match: async (request, options = {}) => {
+      matches.push({ request, options });
+      if (options.ignoreSearch) return versionlessCachedResponse || cachedResponse || null;
+      return cachedResponse || null;
+    },
   };
 
   const context = {
@@ -46,7 +52,7 @@ function buildRuntime({ freshResponse, fetchError, cachedResponse }) {
 
   vm.createContext(context);
   vm.runInContext(source, context, { filename: 'sw.js' });
-  return { context, puts };
+  return { context, puts, matches };
 }
 
 function response(status, label) {
@@ -82,6 +88,28 @@ function response(status, label) {
     const { context } = buildRuntime({ fetchError: new Error('offline'), cachedResponse: cached });
     const result = await context.networkFirst({ url: '/app.js' });
     assert.strictEqual(result, cached, 'network exception must fall back to cached copy');
+  }
+
+  {
+    const versionless = response(200, 'precache-app-js');
+    const { context, matches } = buildRuntime({ fetchError: new Error('offline'), versionlessCachedResponse: versionless });
+    const result = await context.networkFirst({ url: '/app.js?v=20260827v21' });
+    assert.strictEqual(result, versionless, 'network-first must reuse the unversioned precache for a versioned offline request');
+    assert(matches.some(entry => entry.options.ignoreSearch === true), 'network-first must retry cache lookup ignoring the version query');
+  }
+
+  {
+    const versionless = response(200, 'precache-icon');
+    const { context } = buildRuntime({ fetchError: new Error('offline'), versionlessCachedResponse: versionless });
+    const result = await context.cacheFirst({ url: '/icon192.png?v=1' });
+    assert.strictEqual(result, versionless, 'cache-first must reuse the unversioned precache for a versioned request');
+  }
+
+  {
+    const versionless = response(200, 'precache-style');
+    const { context } = buildRuntime({ fetchError: new Error('offline'), versionlessCachedResponse: versionless });
+    const result = await context.staleWhileRevalidate({ url: '/styles.css?v=20260827v8' });
+    assert.strictEqual(result, versionless, 'stale-while-revalidate must reuse the unversioned precache for a versioned offline request');
   }
 
   {
