@@ -3,6 +3,7 @@
   'use strict';
 
   const originalFetch = window.fetch.bind(window);
+  const MARKET_DATA_FETCH_TIMEOUT_MS = 5000;
   const shardCache = new Map();
   const tickerHydrationCache = new Map();
   const dossierPerf = [];
@@ -48,10 +49,29 @@
     'net_income_latest','eps_latest','price_history_1y','updated','source','_liveUpdated'
   ];
 
+  async function fetchWithTimeout(url,options={},timeoutMs=MARKET_DATA_FETCH_TIMEOUT_MS){
+    const controller=typeof AbortController==='function'?new AbortController():null;
+    const fetchOptions={...options};
+    if(controller) fetchOptions.signal=controller.signal;
+    let timeoutId=null;
+    const deadline=Math.max(1,Number(timeoutMs)||MARKET_DATA_FETCH_TIMEOUT_MS);
+    const timeout=new Promise((_,reject)=>{
+      timeoutId=setTimeout(()=>{
+        try{ controller?.abort(); }catch(_){}
+        reject(new Error(`market data timeout after ${deadline}ms`));
+      },deadline);
+    });
+    try{
+      return await Promise.race([originalFetch(url,fetchOptions),timeout]);
+    }finally{
+      if(timeoutId!==null) clearTimeout(timeoutId);
+    }
+  }
+
   async function loadManifest(){
     if(manifestPromise) return manifestPromise;
     manifestPromise=(async()=>{
-      const r=await originalFetch('data/dossiers-manifest.json',{cache:'no-store'});
+      const r=await fetchWithTimeout('data/dossiers-manifest.json',{cache:'no-store'});
       if(!r.ok) throw new Error(`dossiers-manifest ${r.status}`);
       const d=await r.json();
       return d?.tickers || {};
@@ -63,7 +83,7 @@
     const key=txt(name).toUpperCase()||'_';
     if(shardCache.has(key)) return shardCache.get(key);
     const work=(async()=>{
-      const r=await originalFetch(`data/dossiers/${encodeURIComponent(key)}.json`,{cache:'no-store'});
+      const r=await fetchWithTimeout(`data/dossiers/${encodeURIComponent(key)}.json`,{cache:'no-store'});
       if(!r.ok) throw new Error(`dossier shard ${key} ${r.status}`);
       const d=await r.json();
       return d?.stocks || {};
