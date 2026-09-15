@@ -17,6 +17,7 @@ assert(source.includes("document.addEventListener('click'"), 'manager must insta
 assert(source.includes("}, true);"), 'update click guard must run in capture phase');
 assert(source.includes('stopImmediatePropagation()'), 'capture guard must block legacy target listeners');
 assert(!source.includes('install(true)'), 'owned update button must never be force-replaced on lifecycle retries');
+assert(!source.includes('}, 40);'), 'safe update navigation must not be deferred outside the user gesture');
 assert(indexSource.includes('navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });'), 'index bootstrap must remain the canonical update checker');
 assert(indexSource.includes("navigator.serviceWorker.addEventListener('controllerchange'"), 'index bootstrap must remain the canonical controllerchange owner');
 
@@ -95,6 +96,7 @@ if (!event.stopped) {
 assert.strictEqual(event.defaultPrevented, true, 'safe guard must prevent the legacy button action');
 assert.strictEqual(event.stopped, true, 'safe guard must stop propagation before target listeners');
 assert.strictEqual(legacyRan, false, 'legacy destructive target listener must be unreachable');
+assert(runtime.replacedUrl.includes('_v='), 'safe update must navigate synchronously with a cache-busted URL');
 
 // Lifecycle retries must be idempotent once ownership is established. The
 // capture guard already contains any late target listener, so replacing the
@@ -108,6 +110,5 @@ windowListeners.find(x => x.type === 'vestra:app-ready').handler();
 while (runtime.timers.length) runtime.timers.shift()();
 assert.strictEqual(runtime.currentButton, firstOwned, 'app-ready retry must preserve an already-owned button');
 assert.strictEqual(firstOwned.listeners.length, 1, 'late target listener state must not be discarded by forced cloning');
-assert(runtime.replacedUrl.includes('_v='), 'safe update must finish with a cache-busted navigation');
 
 console.log('runtime_app_update_manager_contract: ok');
