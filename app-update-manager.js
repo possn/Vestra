@@ -18,17 +18,16 @@
     const url = new URL(window.location.href);
     url.searchParams.set('_v', String(Date.now()));
 
-    // Do not show the Vestra splash/overlay here. In standalone iOS PWAs the
-    // navigation can be delayed or suspended; keeping the current UI visible
-    // avoids the apparent permanent freeze seen with the old implementation.
-    setTimeout(() => {
-      try {
-        window.location.replace(url.toString());
-      } catch (_) {
-        window.location.href = url.toString();
-      }
-      setTimeout(() => { busy = false; }, 1200);
-    }, 40);
+    // Navigate while still inside the user gesture. Standalone iOS/WebKit can
+    // suspend or drop a navigation that is deferred to a later timer tick.
+    // Keeping this synchronous also leaves the current UI visible until the
+    // browser commits the replacement navigation.
+    try {
+      window.location.replace(url.toString());
+    } catch (_) {
+      window.location.href = url.toString();
+    }
+    setTimeout(() => { busy = false; }, 1200);
   }
 
   function isUpdateButton(target) {
