@@ -25,6 +25,8 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
     def test_more_sector_select_is_bridged_into_canonical_sector_contract(self):
         self.assertIn('function bridgeMoreSectorSelection()', self.source)
         self.assertIn("s.querySelector('[data-market-sector-select]')", self.source)
+        self.assertIn("s.querySelectorAll('[data-market-sector].is-active')", self.source)
+        self.assertIn("if(node!==label)node.classList.remove('is-active')", self.source)
         self.assertIn("label.dataset.marketSector=selected", self.source)
         self.assertIn("label.classList.add('is-active')", self.source)
         self.assertIn("delete label.dataset.marketSector", self.source)
@@ -39,7 +41,7 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertIn('lensEligible(s,lens)', self.opportunities)
         self.assertIn('lensScore(b,lens)-lensScore(a,lens)', self.opportunities)
         self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", self.opportunities)
-        self.assertIn("version:'2.2'", self.source)
+        self.assertIn("version:'2.3'", self.source)
 
 
 if __name__ == '__main__':
