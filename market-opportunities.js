@@ -115,23 +115,64 @@
     }
     return score(s)||0;
   }
-  function rankLens(universe,lens,{limit=12,sector='all'}={}){
+  function rankedCandidates(universe,lens,sector='all'){
     let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
     if(sector!=='all')ranked=ranked.filter(s=>t(s?.sector)===sector);
     ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)||(score(b)||0)-(score(a)||0));
-    if(lens!=='all')return ranked.slice(0,limit);
-    const recoveryCap=Math.min(5,limit),selected=[],deferred=[];
+    return ranked;
+  }
+  function rankLens(universe,lens,{limit=12,sector='all'}={}){
+    if(lens!=='all')return rankedCandidates(universe,lens,sector).slice(0,limit);
+
+    const archetypes=['low52','emerging','recovery','value'];
+    const buckets=archetypes.map(type=>({type,rows:rankedCandidates(universe,type,sector),index:0}));
+    const selected=[],seen=new Set();
+    const recoveryCap=Math.min(5,limit);
     let recoveryCount=0;
-    for(const candidate of ranked){
+    let progressed=true;
+
+    while(selected.length<limit&&progressed){
+      progressed=false;
+      for(const bucket of buckets){
+        while(bucket.index<bucket.rows.length){
+          const candidate=bucket.rows[bucket.index++];
+          const key=t(candidate?.ticker).toUpperCase();
+          if(!key||seen.has(key))continue;
+          const isRecovery=lensEligible(candidate,'recovery');
+          if(isRecovery&&recoveryCount>=recoveryCap)continue;
+          selected.push(candidate);seen.add(key);if(isRecovery)recoveryCount++;
+          progressed=true;
+          break;
+        }
+        if(selected.length>=limit)break;
+      }
+    }
+
+    const general=rankedCandidates(universe,'all',sector);
+    for(const candidate of general){
       if(selected.length>=limit)break;
-      if(lensEligible(candidate,'recovery')&&recoveryCount>=recoveryCap){deferred.push(candidate);continue;}
-      selected.push(candidate);
-      if(lensEligible(candidate,'recovery'))recoveryCount++;
+      const key=t(candidate?.ticker).toUpperCase();
+      if(!key||seen.has(key))continue;
+      const isRecovery=lensEligible(candidate,'recovery');
+      if(isRecovery&&recoveryCount>=recoveryCap)continue;
+      selected.push(candidate);seen.add(key);if(isRecovery)recoveryCount++;
     }
+
     if(selected.length<limit){
-      for(const candidate of deferred){if(selected.length>=limit)break;selected.push(candidate);}
+      const fallback=[];
+      for(const bucket of buckets)fallback.push(...bucket.rows);
+      fallback.push(...general);
+      fallback.sort((a,b)=>(score(b)||0)-(score(a)||0));
+      for(const candidate of fallback){
+        if(selected.length>=limit)break;
+        const key=t(candidate?.ticker).toUpperCase();
+        if(!key||seen.has(key))continue;
+        selected.push(candidate);seen.add(key);
+      }
     }
-    return selected;
+
+    selected.sort((a,b)=>(score(b)||0)-(score(a)||0));
+    return selected.slice(0,limit);
   }
   function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
   function reason(s){const p=stats(s),b=[];if(t(s?.estimate_signal)==='improving')b.push('estimativas ↑');if(['confirmed','recovering'].includes(t(s?.recovery_status)))b.push('recuperação confirmada');if(p.accel!=null&&p.accel>2)b.push('aceleração recente');if(p.room!=null&&p.room>=5&&p.room<=30)b.push(`${p.room.toFixed(0)}% abaixo do máximo`);const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);if(fv!=null&&fv>8)b.push(`upside +${fv.toFixed(0)}%`);else if(pt!=null&&pt>10)b.push(`target +${pt.toFixed(0)}%`);return b.slice(0,3).join(' · ')||'qualidade e timing alinhados';}
@@ -166,7 +207,7 @@
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
     if(lens==='recovery')return ['Recuperação','Empresas com recuperação operacional ou de estimativas já confirmada.'];
     if(lens==='value')return ['Value + timing','Desconto ou upside relevante, mas apenas com timing mínimo aceitável.'];
-    return ['Oportunidades agora','Empresas robustas com pelo menos 2 confirmações independentes de timing — shortlist equilibrada entre diferentes tipos de oportunidade.'];
+    return ['Oportunidades agora','Visão transversal: os melhores setups de mínimos, arranque, recuperação e value + timing, sem deixar um único arquétipo dominar a shortlist.'];
   }
 
   function opportunities(lens=activeLens){
