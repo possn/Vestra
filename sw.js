@@ -1,5 +1,6 @@
-/* Vestra Service Worker v10.40 — fast static shell + fresh market data. */
+/* Vestra Service Worker v10.41 — fast static shell + fresh market data. */
 const CACHE_NAME = "vestra-cache-v154";
+const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js",
@@ -55,10 +56,28 @@ async function matchCached(cache, request) {
   return cache.match(request, { ignoreSearch: true });
 }
 
+async function fetchWithTimeout(request, options = {}, timeoutMs = NETWORK_TIMEOUT_MS) {
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const fetchOptions = { ...options };
+  if (controller) fetchOptions.signal = controller.signal;
+  let timeoutId = null;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      try { if (controller) controller.abort(); } catch (_) {}
+      reject(new Error("Network timeout"));
+    }, Math.max(1, Number(timeoutMs) || NETWORK_TIMEOUT_MS));
+  });
+  try {
+    return await Promise.race([fetch(request, fetchOptions), timeout]);
+  } finally {
+    if (timeoutId !== null) clearTimeout(timeoutId);
+  }
+}
+
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
-    const fresh = await fetch(request, { cache: "no-store" });
+    const fresh = await fetchWithTimeout(request, { cache: "no-store" });
     if (fresh && fresh.ok) {
       try { await cache.put(request, fresh.clone()); } catch (_) {}
       return fresh;
@@ -76,7 +95,7 @@ async function cacheFirst(request) {
   const cached = await matchCached(cache, request);
   if (cached) return cached;
   try {
-    const fresh = await fetch(request);
+    const fresh = await fetchWithTimeout(request);
     if (fresh && fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
     return fresh;
   } catch (_) {
@@ -87,7 +106,7 @@ async function cacheFirst(request) {
 async function staleWhileRevalidate(request, event) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await matchCached(cache, request);
-  const refresh = fetch(request, { cache: "no-store" })
+  const refresh = fetchWithTimeout(request, { cache: "no-store" })
     .then(fresh => {
       if (fresh && fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
       return fresh;

@@ -9,11 +9,15 @@ assert(source.includes('"market-opportunities.js"'), 'opportunity engine must be
 assert(source.includes('"market-opportunity-lenses.js"'), 'opportunity lenses must be network-first with the engine');
 assert(source.includes('await cache.put(request, fresh.clone())'), 'network-first must persist a healthy response before returning it');
 assert(source.includes('cache.match(request, { ignoreSearch: true })'), 'versioned requests must be able to reuse unversioned app-shell entries');
+assert(source.includes('const NETWORK_TIMEOUT_MS = 5000;'), 'service-worker network waits must be bounded');
+assert(source.includes('async function fetchWithTimeout('), 'bounded fetch ownership must be centralized');
+assert(source.includes('controller.abort()'), 'timed-out fetches must abort when AbortController is available');
 
-function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCachedResponse }) {
+function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCachedResponse, hangFetch = false, immediateTimeout = false }) {
   const puts = [];
   const matches = [];
   const listeners = {};
+  let fetchCalls = 0;
   const cache = {
     add: async () => {},
     put: async (request, response) => { puts.push({ request, response }); },
@@ -29,6 +33,9 @@ function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCa
     URL,
     Set,
     Promise,
+    AbortController: global.AbortController,
+    setTimeout: immediateTimeout ? (fn => { fn(); return 1; }) : setTimeout,
+    clearTimeout: immediateTimeout ? (() => {}) : clearTimeout,
     Response: global.Response || class Response {
       constructor(body, init = {}) { this.body = body; this.status = init.status || 200; this.ok = this.status >= 200 && this.status < 300; }
       clone() { return this; }
@@ -39,6 +46,8 @@ function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCa
       delete: async () => true,
     },
     fetch: async () => {
+      fetchCalls += 1;
+      if (hangFetch) return await new Promise(() => {});
       if (fetchError) throw fetchError;
       return freshResponse;
     },
@@ -52,7 +61,7 @@ function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCa
 
   vm.createContext(context);
   vm.runInContext(source, context, { filename: 'sw.js' });
-  return { context, puts, matches };
+  return { context, puts, matches, getFetchCalls: () => fetchCalls };
 }
 
 function response(status, label) {
@@ -88,6 +97,14 @@ function response(status, label) {
     const { context } = buildRuntime({ fetchError: new Error('offline'), cachedResponse: cached });
     const result = await context.networkFirst({ url: '/app.js' });
     assert.strictEqual(result, cached, 'network exception must fall back to cached copy');
+  }
+
+  {
+    const cached = response(200, 'cached-after-timeout');
+    const { context, getFetchCalls } = buildRuntime({ hangFetch: true, immediateTimeout: true, cachedResponse: cached });
+    const result = await context.networkFirst({ url: '/app.js?v=slow-network' });
+    assert.strictEqual(result, cached, 'hung network-first request must converge to cache after its deadline');
+    assert.strictEqual(getFetchCalls(), 1, 'timeout fallback must not create duplicate network requests');
   }
 
   {
