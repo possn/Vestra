@@ -42,6 +42,18 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn("classList.remove('is-active')", self.source)
         self.assertIn("document.addEventListener('click', onClickCapture, true)", self.source)
 
+    def test_stock_themes_loader_is_bounded_and_retryable(self):
+        self.assertIn('const STOCK_THEMES_LOAD_TIMEOUT_MS = 8000', self.source)
+        self.assertIn('let stockThemesLoadPromise = null', self.source)
+        self.assertIn("script.addEventListener('load', onLoad, { once: true })", self.source)
+        self.assertIn("script.addEventListener('error', onError, { once: true })", self.source)
+        self.assertIn('timeoutId = setTimeout(fail, STOCK_THEMES_LOAD_TIMEOUT_MS)', self.source)
+        self.assertIn('if (script.isConnected) script.remove()', self.source)
+        self.assertIn('if (attempt < 1', self.source)
+        self.assertIn('setTimeout(() => ensureStockThemesTools(attempt + 1), 1000)', self.source)
+        self.assertIn('stockThemesLoadPromise = null', self.source)
+        self.assertNotIn("if (window.VestraMarketStockThemesTools || document.querySelector('script[data-vestra-stock-themes-tools]')) return;", self.source)
+
     def test_no_market_data_or_financial_semantics_changed(self):
         self.assertNotIn('fetch(', self.source)
         self.assertNotIn('score', self.source.lower())
