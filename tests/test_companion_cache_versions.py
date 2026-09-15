@@ -15,6 +15,7 @@ STATIC_UNIVERSE_COMPANIONS = (
     "dashboard-weekly-events.js",
     "dashboard-weekly-events-navigation.js",
     "dashboard-ui-refresh.js",
+    "dashboard-daily-news.js",
     "mobile-ui-refresh.js",
     "market-ui-polish.js",
     "ui-visual-polish.js",

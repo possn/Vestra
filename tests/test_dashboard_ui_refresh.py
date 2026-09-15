@@ -80,7 +80,7 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
         self.assertIn("dashboard-ui-refresh.js?v=1.4", self.loader)
-        self.assertIn("version: '1.11'", self.loader)
+        self.assertIn("version: '1.12'", self.loader)
         self.assertIn("version: '1.4'", self.source)
 
 

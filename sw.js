@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.46 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v158";
+/* Vestra Service Worker v10.47 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v159";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
@@ -10,7 +10,7 @@ const APP_SHELL = [
   "./market.js", "./market-live-overlay.js", "./market-congress-live.js", "./market-portfolio-context.js",
   "./market-watch-snapshots.js", "./market-static-universe.js", "./market-scanner-data.js",
   "./market-analysis-tools-runtime.js", "./market-analysis-tools-runtime.css", "./market-etf-intelligence.js", "./dashboard-weekly-events.js",
-  "./dashboard-weekly-events-navigation.js", "./dashboard-ui-refresh.js", "./ui-visual-polish.js", "./market-dossier-signals.js", "./market-search-suggestions.js",
+  "./dashboard-weekly-events-navigation.js", "./dashboard-ui-refresh.js", "./dashboard-daily-news.js", "./dashboard-daily-news.css", "./ui-visual-polish.js", "./market-dossier-signals.js", "./market-search-suggestions.js",
   "./market-row-ui.js", "./market-data-loader.js", "./market-data-health.js", "./market-data-health.css", "./market-company-brief.js", "./market-company-brief.css",
   "./market-metric-cleanup.js", "./market-dossier-controls.js", "./market-dossier-controls.css", "./market-ui-polish.js", "./market-stock-themes-tools.js", "./portfolio-collapsibles.js", "./portfolio-collapsibles.css",
   "./portfolio-sheet-navigation.js", "./portfolio-sheet-navigation.css", "./portfolio-card-classifier.js", "./portfolio-card-classifier.css", "./market-opportunities.js", "./market-opportunities.css",
