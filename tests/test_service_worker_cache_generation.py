@@ -10,10 +10,17 @@ class ServiceWorkerCacheGenerationTests(unittest.TestCase):
         cls.source = (ROOT / "sw.js").read_text(encoding="utf-8")
 
     def test_bounded_precache_install_uses_a_fresh_cache_generation(self):
-        self.assertIn('const CACHE_NAME = "vestra-cache-v157";', self.source)
-        self.assertNotIn('const CACHE_NAME = "vestra-cache-v156";', self.source)
+        self.assertIn('const CACHE_NAME = "vestra-cache-v158";', self.source)
+        self.assertNotIn('const CACHE_NAME = "vestra-cache-v157";', self.source)
         self.assertIn('const cache = await caches.open(CACHE_NAME);', self.source)
         self.assertIn('APP_SHELL.map(asset => precacheAsset(cache, asset))', self.source)
+
+    def test_install_fails_closed_if_any_shell_asset_fails(self):
+        install_start = self.source.index('self.addEventListener("install"')
+        activate_start = self.source.index('self.addEventListener("activate"')
+        install_block = self.source[install_start:activate_start]
+        self.assertIn('await Promise.all(APP_SHELL.map(asset => precacheAsset(cache, asset)))', install_block)
+        self.assertNotIn('Promise.allSettled', install_block)
 
     def test_previous_generation_survives_until_activate_cleanup(self):
         install_start = self.source.index('self.addEventListener("install"')

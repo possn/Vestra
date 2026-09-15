@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.45 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v157";
+/* Vestra Service Worker v10.46 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v158";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
@@ -45,7 +45,7 @@ self.addEventListener("install", event => {
   self.skipWaiting();
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await Promise.allSettled(APP_SHELL.map(asset => precacheAsset(cache, asset)));
+    await Promise.all(APP_SHELL.map(asset => precacheAsset(cache, asset)));
   })());
 });
 
