@@ -1,4 +1,4 @@
-/* Vestra Dashboard Daily News v1.0 — compact market + portfolio-aware daily briefing. */
+/* Vestra Dashboard Daily News v1.1 — compact market + portfolio-aware daily briefing. */
 (() => {
   'use strict';
 
@@ -10,6 +10,18 @@
 
   const text = value => String(value ?? '').trim();
   const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+
+  function safeNewsUrl(value) {
+    const raw = text(value);
+    if (!raw) return '';
+    try {
+      const base = typeof document !== 'undefined' ? document.baseURI : undefined;
+      const url = new URL(raw, base);
+      return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+    } catch (_) {
+      return '';
+    }
+  }
 
   function portfolioTickers() {
     const rows = (() => { try { return Array.isArray(state?.assets) ? state.assets : []; } catch (_) { return []; } })();
@@ -85,7 +97,11 @@
     const body = rows.length ? rows.map(({ item, hits }) => {
       const badge = hits.length ? `CARTEIRA · ${esc(hits.slice(0, 2).map(x => text(x).split('.')[0]).join(', '))}` : 'MERCADO';
       const meta = [text(item?.source), timeLabel(item)].filter(Boolean).join(' · ');
-      return `<a class="vestra-daily-news-item" href="${esc(item?.link)}" target="_blank" rel="noopener noreferrer"><span class="vestra-daily-news-badge${hits.length ? ' is-portfolio' : ''}">${badge}</span><strong>${esc(item?.title)}</strong><small>${esc(meta)}</small></a>`;
+      const content = `<span class="vestra-daily-news-badge${hits.length ? ' is-portfolio' : ''}">${badge}</span><strong>${esc(item?.title)}</strong><small>${esc(meta)}</small>`;
+      const href = safeNewsUrl(item?.link);
+      return href
+        ? `<a class="vestra-daily-news-item" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${content}</a>`
+        : `<div class="vestra-daily-news-item is-disabled">${content}</div>`;
     }).join('') : '<div class="vestra-daily-news-empty">Sem notícias relevantes atualizadas neste momento.</div>';
     return `<section class="vestra-daily-news-card" id="vestraDailyNewsCard"><div class="vestra-daily-news-head"><div><span class="vestra-daily-news-kicker">HOJE</span><h3>Notícias do dia</h3><p>O que pode mexer com os mercados e com a tua carteira.</p></div>${freshness ? `<small>Dados ${esc(freshness)}</small>` : ''}</div><div class="vestra-daily-news-list">${body}</div></section>`;
   }
@@ -168,5 +184,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
 
-  window.VestraDashboardDailyNews = Object.freeze({ load, refresh: () => load(true), render, rankedItems, version: '1.0' });
+  window.VestraDashboardDailyNews = Object.freeze({ load, refresh: () => load(true), render, rankedItems, safeNewsUrl, version: '1.1' });
 })();
