@@ -12,6 +12,9 @@ assert(source.includes('cache.match(request, { ignoreSearch: true })'), 'version
 assert(source.includes('const NETWORK_TIMEOUT_MS = 5000;'), 'service-worker network waits must be bounded');
 assert(source.includes('async function fetchWithTimeout('), 'bounded fetch ownership must be centralized');
 assert(source.includes('controller.abort()'), 'timed-out fetches must abort when AbortController is available');
+for (const dependency of ['app-runtime-bridge.js', 'quote-canonical-repair.js', 'market-global-search.js', 'market-learned-universe.js']) {
+  assert(source.includes(`"./${dependency}"`), `${dependency} must be precached because market-company-brief loads it dynamically`);
+}
 
 function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCachedResponse, hangFetch = false, immediateTimeout = false }) {
   const puts = [];
