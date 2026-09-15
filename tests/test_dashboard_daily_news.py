@@ -47,7 +47,7 @@ class DashboardDailyNewsTests(unittest.TestCase):
 
     def test_card_mount_targets_the_live_dashboard_structure(self):
         self.assertIn('id="viewDashboard"', self.index)
-        self.assertIn('kpi-grid kpi-quick', self.index)
+        self.assertIn('class="card kpi-quick"', self.index)
         self.assertIn("document.getElementById('viewDashboard')", self.runtime)
         self.assertIn("dashboard.querySelector('.kpi-quick')", self.runtime)
         self.assertIn("mount.parent.insertBefore(next, mount.before)", self.runtime)
