@@ -23,6 +23,13 @@ class RuntimeJsReachabilityTests(unittest.TestCase):
         self.assertIn('market-company-brief.js', report['direct'])
         self.assertIn('market-model-validation.js', report['dynamic'])
 
+    def test_dynamic_runtime_modules_are_precached_for_offline_pwa(self):
+        report = audit.build_report()
+        sw = (ROOT / 'sw.js').read_text(encoding='utf-8')
+        shell_block = sw.split('const APP_SHELL = [', 1)[1].split('];', 1)[0]
+        missing = [name for name in report['dynamic'] if f'"./{name}"' not in shell_block and f"'./{name}'" not in shell_block]
+        self.assertEqual(missing, [], f'dynamic runtime modules missing from APP_SHELL: {missing}')
+
     def test_worker_entrypoints_are_classified_separately(self):
         report = audit.build_report()
         self.assertEqual(report['special'].get('sw.js'), 'service_worker')
