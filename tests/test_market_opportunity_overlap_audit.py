@@ -22,6 +22,12 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
         for lens, tickers in report['ranked'].items():
             self.assertLessEqual(len(tickers), 12, lens)
             self.assertEqual(len(tickers), len(set(tickers)), lens)
+        self.assertEqual(len(report['ranked']['all']), 12)
+        self.assertLessEqual(
+            report['pairs']['all__recovery']['overlap_of_top_n_pct'],
+            50.0,
+            'general shortlist must not be dominated by the recovery lens',
+        )
         print('OPPORTUNITY_OVERLAP_AUDIT=' + json.dumps(report, sort_keys=True))
 
 
