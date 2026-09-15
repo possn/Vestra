@@ -11,6 +11,9 @@ assert(source.includes('await cache.put(request, fresh.clone())'), 'network-firs
 assert(source.includes('cache.match(request, { ignoreSearch: true })'), 'versioned requests must be able to reuse unversioned app-shell entries');
 assert(source.includes('const NETWORK_TIMEOUT_MS = 5000;'), 'service-worker network waits must be bounded');
 assert(source.includes('async function fetchWithTimeout('), 'bounded fetch ownership must be centralized');
+assert(source.includes('async function precacheAsset('), 'install precache must use the bounded fetch path');
+assert(source.includes('APP_SHELL.map(asset => precacheAsset(cache, asset))'), 'every app-shell asset must use bounded precache');
+assert(!source.includes('cache.add(asset)'), 'install must not use unbounded cache.add fetches');
 assert(source.includes('controller.abort()'), 'timed-out fetches must abort when AbortController is available');
 for (const dependency of ['app-runtime-bridge.js', 'quote-canonical-repair.js', 'market-global-search.js', 'market-learned-universe.js']) {
   assert(source.includes(`"./${dependency}"`), `${dependency} must be precached because market-company-brief loads it dynamically`);
@@ -64,7 +67,7 @@ function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCa
 
   vm.createContext(context);
   vm.runInContext(source, context, { filename: 'sw.js' });
-  return { context, puts, matches, getFetchCalls: () => fetchCalls };
+  return { context, cache, listeners, puts, matches, getFetchCalls: () => fetchCalls };
 }
 
 function response(status, label) {
@@ -77,6 +80,21 @@ function response(status, label) {
 }
 
 (async () => {
+  {
+    const { context, cache, puts, getFetchCalls } = buildRuntime({ hangFetch: true, immediateTimeout: true });
+    await assert.rejects(context.precacheAsset(cache, './app.js'), /Network timeout/, 'hung install precache must reject after its deadline');
+    assert.strictEqual(getFetchCalls(), 1, 'bounded precache must issue only one network request');
+    assert.strictEqual(puts.length, 0, 'timed-out precache must not write a partial response');
+  }
+
+  {
+    const fresh = response(200, 'precache-fresh');
+    const { context, cache, puts } = buildRuntime({ freshResponse: fresh });
+    await context.precacheAsset(cache, './app.js');
+    assert.strictEqual(puts.length, 1, 'healthy precache response must be persisted');
+    assert.strictEqual(puts[0].request, './app.js', 'precache must store the requested shell asset key');
+  }
+
   {
     const fresh = response(200, 'fresh');
     const cached = response(200, 'cached');
