@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.11 */
+/* Vestra Market static universe loader v1.12 */
 (() => {
   'use strict';
 
@@ -104,6 +104,7 @@
   function ensureWeeklyEventsCompanion() { loadCompanion('VestraWeeklyEvents','script[data-vestra-weekly-events]','dashboard-weekly-events.js?v=1.9','vestraWeeklyEvents'); }
   function ensureWeeklyEventsNavigation() { loadCompanion('VestraWeeklyEventsNavigation','script[data-vestra-weekly-events-navigation]','dashboard-weekly-events-navigation.js?v=1.1','vestraWeeklyEventsNavigation'); }
   function ensureDashboardUiRefresh() { loadCompanion('VestraDashboardUiRefresh','script[data-vestra-dashboard-ui-refresh]','dashboard-ui-refresh.js?v=1.4','vestraDashboardUiRefresh'); }
+  function ensureDashboardDailyNews() { loadCompanion('VestraDashboardDailyNews','script[data-vestra-dashboard-daily-news]','dashboard-daily-news.js?v=1.0','vestraDashboardDailyNews'); }
   function ensureMobileUiRefresh() { loadCompanion('VestraMobileUiRefresh','script[data-vestra-mobile-ui-refresh]','mobile-ui-refresh.js?v=1.4','vestraMobileUiRefresh'); }
   function ensureMarketUiPolish() { loadCompanion('VestraMarketUiPolish','script[data-vestra-market-ui-polish]','market-ui-polish.js?v=1.3&stockthemes=2','vestraMarketUiPolish'); }
   function ensureUiVisualPolish() { loadCompanion('VestraUiVisualPolish','script[data-vestra-ui-visual-polish]','ui-visual-polish.js?v=1.1','vestraUiVisualPolish'); }
@@ -195,13 +196,13 @@
   }
 
   ensureEtfIntelligence(); ensureScannerCompanion(); ensureAnalysisToolsRuntime();
-  ensureWeeklyEventsCompanion(); ensureWeeklyEventsNavigation(); ensureDashboardUiRefresh();
+  ensureWeeklyEventsCompanion(); ensureWeeklyEventsNavigation(); ensureDashboardUiRefresh(); ensureDashboardDailyNews();
   ensureMobileUiRefresh(); ensureMarketUiPolish(); ensureUiVisualPolish();
   window.VestraMarketStaticUniverse = Object.freeze({
     create, getStocks, ensureEtfIntelligence, ensureScannerCompanion, ensureAnalysisToolsRuntime,
-    ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh,
+    ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh, ensureDashboardDailyNews,
     ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, unpackStartupPayload,
     dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, etfIntelligenceLoadTimeoutMs: ETF_INTELLIGENCE_LOAD_TIMEOUT_MS,
-    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.11',
+    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.12',
   });
 })();
