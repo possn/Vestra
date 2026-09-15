@@ -69,9 +69,6 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   const value = await select('value', 'VALUE');
   expect(value).toContain('VALUE');
 
-  // Lenses are independent full-universe strategies, not mutually-exclusive
-  // buckets. A company may legitimately satisfy more than one thesis; what
-  // matters is that each lens can discover and rank its own qualifying names.
   expect(new Set([low52.join(','), emerging.join(','), recovery.join(','), value.join(',')]).size).toBeGreaterThan(2);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
@@ -127,8 +124,6 @@ test('iPhone/WebKit: More-sector selection restricts opportunity shortlist and c
   tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
   expect(tickers).toEqual(['COMM1']);
 
-  // Model the canonical sector owner activating a normal sector before the
-  // delegated click refresh runs. The stale More value must not reactivate it.
   await page.evaluate(() => {
     const fixture = document.querySelector('#moreSectorFixture');
     const more = fixture.querySelector('.market-sector-more');
@@ -140,7 +135,7 @@ test('iPhone/WebKit: More-sector selection restricts opportunity shortlist and c
 
   await expect(dropdown).toHaveValue('');
   await expect(more).not.toHaveClass(/is-active/);
-  await expect(more).not.toHaveAttribute('data-market-sector');
+  expect(await more.getAttribute('data-market-sector')).toBeNull();
   await expect(all).toHaveClass(/is-active/);
   await expect(fixture.locator('[data-market-ticker="TECH1"]')).toBeVisible();
   tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
