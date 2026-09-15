@@ -48,6 +48,7 @@ class AiBriefWorkerHandoffTests(unittest.TestCase):
         delegate = self.router.index("return marketWorker.fetch(request,env,ctx);")
         self.assertLess(ai_route, delegate)
         self.assertIn("'ai_brief'", self.router)
+        self.assertIn("ai_brief_provider:'workers_ai'", self.router)
 
     def test_cloudflare_bindings_are_declared(self):
         self.assertIn('[ai]\nbinding = "AI"', self.wrangler)
