@@ -106,20 +106,23 @@
     return `<section class="vestra-daily-news-card" id="vestraDailyNewsCard"><div class="vestra-daily-news-head"><div><span class="vestra-daily-news-kicker">HOJE</span><h3>Notícias do dia</h3><p>O que pode mexer com os mercados e com a tua carteira.</p></div>${freshness ? `<small>Dados ${esc(freshness)}</small>` : ''}</div><div class="vestra-daily-news-list">${body}</div></section>`;
   }
 
-  function dashboardAnchor() {
-    return document.getElementById('quickTools') || document.getElementById('passiveIncomeSection') || document.getElementById('portfolioEvolutionCard');
+  function dashboardMount() {
+    const dashboard = document.getElementById('viewDashboard');
+    if (!dashboard) return null;
+    return { parent: dashboard, before: dashboard.querySelector('.kpi-quick') };
   }
 
   function render() {
-    const anchor = dashboardAnchor();
-    if (!anchor || !payload) return false;
+    const mount = dashboardMount();
+    if (!mount || !payload) return false;
     const existing = document.getElementById('vestraDailyNewsCard');
     const shell = document.createElement('div');
     shell.innerHTML = cardHtml();
     const next = shell.firstElementChild;
     if (!next) return false;
     if (existing) existing.replaceWith(next);
-    else anchor.parentNode?.insertBefore(next, anchor);
+    else if (mount.before) mount.parent.insertBefore(next, mount.before);
+    else mount.parent.appendChild(next);
     return true;
   }
 
