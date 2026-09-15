@@ -329,7 +329,7 @@
     if(jump?.dataset.decisionValue){
       const ticker=tickerKey(jump.dataset.decisionValue);
       e.preventDefault(); e.stopImmediatePropagation();
-      openDossier(ticker,{origin:'market',sourceNode:e.target});
+      openDossier(ticker,{origin:'market',sourceNode:jump});
       return;
     }
 
