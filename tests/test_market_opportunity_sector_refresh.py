@@ -24,9 +24,11 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
 
     def test_canonical_engine_still_owns_sector_filtering_and_lens_math(self):
         self.assertIn("section.querySelector('[data-market-sector].is-active')", self.opportunities)
-        self.assertIn("if(sec!=='all')rows=rows.filter", self.opportunities)
-        self.assertIn('lensEligible(s,activeLens)', self.opportunities)
-        self.assertIn('lensScore(b,activeLens)-lensScore(a,activeLens)', self.opportunities)
+        self.assertIn("if(sector!=='all')ranked=ranked.filter", self.opportunities)
+        self.assertIn('function rankedCandidates(universe,lens,sector=', self.opportunities)
+        self.assertIn('lensEligible(s,lens)', self.opportunities)
+        self.assertIn('lensScore(b,lens)-lensScore(a,lens)', self.opportunities)
+        self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", self.opportunities)
         self.assertIn("version:'2.1'", self.source)
 
 
