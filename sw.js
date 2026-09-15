@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.39 — fast static shell + fresh market data. */
-const CACHE_NAME = "vestra-cache-v153";
+/* Vestra Service Worker v10.40 — fast static shell + fresh market data. */
+const CACHE_NAME = "vestra-cache-v154";
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js", "./app-update-manager.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js",
@@ -49,6 +49,12 @@ self.addEventListener("activate", event => {
   })());
 });
 
+async function matchCached(cache, request) {
+  const exact = await cache.match(request);
+  if (exact) return exact;
+  return cache.match(request, { ignoreSearch: true });
+}
+
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
@@ -57,17 +63,17 @@ async function networkFirst(request) {
       try { await cache.put(request, fresh.clone()); } catch (_) {}
       return fresh;
     }
-    const cached = await cache.match(request);
+    const cached = await matchCached(cache, request);
     return cached || fresh || new Response("Offline", { status: 503 });
   } catch (_) {
-    const cached = await cache.match(request);
+    const cached = await matchCached(cache, request);
     return cached || new Response("Offline", { status: 503 });
   }
 }
 
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
+  const cached = await matchCached(cache, request);
   if (cached) return cached;
   try {
     const fresh = await fetch(request);
@@ -80,7 +86,7 @@ async function cacheFirst(request) {
 
 async function staleWhileRevalidate(request, event) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
+  const cached = await matchCached(cache, request);
   const refresh = fetch(request, { cache: "no-store" })
     .then(fresh => {
       if (fresh && fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
