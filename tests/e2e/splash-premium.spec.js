@@ -105,7 +105,10 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
   if (remainingHoldMs > 0) await page.waitForTimeout(remainingHoldMs);
   await expect(splash).toBeVisible({ timeout: 500 });
 
-  await expect(splash).toBeHidden({ timeout: 4_000 });
+  // The watchdog's nominal hide point is ~6.92s after install. WebKit CI can
+  // defer timers while parsing/executing the large app shell, so keep enough
+  // scheduling margin while still proving the splash always exits.
+  await expect(splash).toBeHidden({ timeout: 6_000 });
   await expect(page.locator('#viewDashboard')).toBeVisible();
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
 });
