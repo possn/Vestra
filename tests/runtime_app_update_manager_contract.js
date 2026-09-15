@@ -5,17 +5,18 @@ const assert = require('assert');
 const source = fs.readFileSync('app-update-manager.js', 'utf8');
 const indexSource = fs.readFileSync('index.html', 'utf8');
 
-assert(source.includes("version: '1.5'"), 'safe update manager version must be 1.5');
+assert(source.includes("version: '1.6'"), 'safe update manager version must be 1.6');
 assert(!source.includes('serviceWorker'), 'safe update manager must not own the service-worker lifecycle');
 assert(!source.includes('getRegistration()'), 'safe update manager must not trigger a parallel registration update');
 assert(!source.includes('getRegistrations()'), 'safe update path must not enumerate registrations for removal');
 assert(!source.includes('.unregister('), 'safe update path must never unregister service workers');
 assert(!source.includes('caches.delete'), 'safe update path must never delete application caches');
-assert(source.includes("addEventListener('DOMContentLoaded', reclaimAfterAppSetup"), 'manager must reclaim ownership after DOM setup');
-assert(source.includes("addEventListener('vestra:app-ready', reclaimAfterAppSetup"), 'manager must reclaim ownership after the app-ready lifecycle');
+assert(source.includes("addEventListener('DOMContentLoaded', reclaimAfterAppSetup"), 'manager must retry ownership after DOM setup');
+assert(source.includes("addEventListener('vestra:app-ready', reclaimAfterAppSetup"), 'manager must retry ownership after the app-ready lifecycle');
 assert(source.includes("document.addEventListener('click'"), 'manager must install a document-level click guard');
 assert(source.includes("}, true);"), 'update click guard must run in capture phase');
 assert(source.includes('stopImmediatePropagation()'), 'capture guard must block legacy target listeners');
+assert(!source.includes('install(true)'), 'owned update button must never be force-replaced on lifecycle retries');
 assert(indexSource.includes('navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });'), 'index bootstrap must remain the canonical update checker');
 assert(indexSource.includes("navigator.serviceWorker.addEventListener('controllerchange'"), 'index bootstrap must remain the canonical controllerchange owner');
 
@@ -65,8 +66,8 @@ vm.createContext(context);
 vm.runInContext(source, context, { filename: 'app-update-manager.js' });
 
 assert.strictEqual(runtime.currentButton.dataset.vestraSafeUpdateOwner, '1', 'initial install must own update button');
-assert(documentListeners.some(x => x.type === 'DOMContentLoaded'), 'DOMContentLoaded reclaim must be registered');
-assert(windowListeners.some(x => x.type === 'vestra:app-ready'), 'app-ready reclaim must be registered');
+assert(documentListeners.some(x => x.type === 'DOMContentLoaded'), 'DOMContentLoaded ownership retry must be registered');
+assert(windowListeners.some(x => x.type === 'vestra:app-ready'), 'app-ready ownership retry must be registered');
 
 const guard = documentListeners.find(x => x.type === 'click');
 assert(guard, 'capture click guard must be registered');
@@ -95,12 +96,18 @@ assert.strictEqual(event.defaultPrevented, true, 'safe guard must prevent the le
 assert.strictEqual(event.stopped, true, 'safe guard must stop propagation before target listeners');
 assert.strictEqual(legacyRan, false, 'legacy destructive target listener must be unreachable');
 
-// DOMContentLoaded reclaim must still replace a node contaminated by a late
-// target listener, providing a second independent containment layer.
+// Lifecycle retries must be idempotent once ownership is established. The
+// capture guard already contains any late target listener, so replacing the
+// button again would only discard legitimate state/listeners.
 documentListeners.find(x => x.type === 'DOMContentLoaded').handler();
 while (runtime.timers.length) runtime.timers.shift()();
-assert.notStrictEqual(runtime.currentButton, firstOwned, 'post-setup reclaim must replace the contaminated node');
-assert.strictEqual(runtime.currentButton.dataset.vestraSafeUpdateOwner, '1', 'reclaimed button must remain safe-owned');
+assert.strictEqual(runtime.currentButton, firstOwned, 'DOMContentLoaded retry must preserve an already-owned button');
+assert.strictEqual(runtime.currentButton.dataset.vestraSafeUpdateOwner, '1', 'owned button must remain safe-owned');
+
+windowListeners.find(x => x.type === 'vestra:app-ready').handler();
+while (runtime.timers.length) runtime.timers.shift()();
+assert.strictEqual(runtime.currentButton, firstOwned, 'app-ready retry must preserve an already-owned button');
+assert.strictEqual(firstOwned.listeners.length, 1, 'late target listener state must not be discarded by forced cloning');
 assert(runtime.replacedUrl.includes('_v='), 'safe update must finish with a cache-busted navigation');
 
 console.log('runtime_app_update_manager_contract: ok');
