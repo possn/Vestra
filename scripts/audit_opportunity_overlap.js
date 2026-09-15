@@ -23,15 +23,13 @@ const source = fs.readFileSync('market-opportunities.js', 'utf8');
 vm.runInThisContext(source, { filename: 'market-opportunities.js' });
 const api = global.window.VestraMarketOpportunities;
 if (!api) throw new Error('VestraMarketOpportunities API unavailable');
+if (typeof api.rankLens !== 'function') throw new Error('canonical rankLens API unavailable');
 
 const lenses = ['all', 'low52', 'emerging', 'recovery', 'value'];
 const topN = Number(process.argv[2] || 12);
 const ranked = {};
 for (const lens of lenses) {
-  ranked[lens] = stocks
-    .filter(stock => api.lensEligible(stock, lens))
-    .sort((a, b) => api.lensScore(b, lens) - api.lensScore(a, lens) || api.score(b) - api.score(a))
-    .slice(0, topN)
+  ranked[lens] = api.rankLens(stocks, lens, { limit: topN })
     .map(stock => String(stock?.ticker || '').trim())
     .filter(Boolean);
 }
