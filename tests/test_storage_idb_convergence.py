@@ -108,10 +108,117 @@ class StorageIndexedDbConvergenceTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
 
-    def test_all_transaction_modes_handle_abort(self):
+    def test_hung_read_transaction_times_out_and_reads_local_storage(self):
+        result = self.run_node(
+            """
+            let openRequest;
+            let aborts = 0;
+            const db = {
+              objectStoreNames: { contains() { return true; } },
+              close() {},
+              transaction() {
+                const tx = {
+                  error: null,
+                  abort() { aborts += 1; if (tx.onabort) tx.onabort(); },
+                  objectStore() { return { get() { return {}; } }; },
+                };
+                return tx;
+              },
+            };
+            const fastTimeout = (fn, ms) => setTimeout(fn, ms === 1500 ? 5 : ms);
+            const context = {
+              window: {},
+              navigator: {},
+              localStorage: { getItem() { return 'transaction-fallback'; } },
+              indexedDB: {
+                open() {
+                  openRequest = { result: db };
+                  Promise.resolve().then(() => openRequest.onsuccess && openRequest.onsuccess());
+                  return openRequest;
+                }
+              },
+              Promise,
+              Object,
+              Error,
+              setTimeout: fastTimeout,
+              clearTimeout,
+              console,
+            };
+            vm.createContext(context);
+            vm.runInContext(source, context);
+            (async () => {
+              const value = await context.window.VestraStorage.storageGet();
+              if (value !== 'transaction-fallback') {
+                throw new Error(`hung read transaction did not fall back: ${value}`);
+              }
+              if (aborts !== 1) throw new Error(`hung transaction was not aborted exactly once: ${aborts}`);
+            })().catch((error) => {
+              console.error(error);
+              process.exit(1);
+            });
+            """
+        )
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+
+    def test_hung_write_transaction_times_out_and_writes_local_storage(self):
+        result = self.run_node(
+            """
+            let openRequest;
+            let fallbackValue = null;
+            let aborts = 0;
+            const db = {
+              objectStoreNames: { contains() { return true; } },
+              close() {},
+              transaction() {
+                const tx = {
+                  error: null,
+                  abort() { aborts += 1; if (tx.onabort) tx.onabort(); },
+                  objectStore() { return { put() {} }; },
+                };
+                return tx;
+              },
+            };
+            const fastTimeout = (fn, ms) => setTimeout(fn, ms === 1500 ? 5 : ms);
+            const context = {
+              window: {},
+              navigator: {},
+              localStorage: { setItem(key, value) { fallbackValue = `${key}:${value}`; } },
+              indexedDB: {
+                open() {
+                  openRequest = { result: db };
+                  Promise.resolve().then(() => openRequest.onsuccess && openRequest.onsuccess());
+                  return openRequest;
+                }
+              },
+              Promise,
+              Object,
+              Error,
+              setTimeout: fastTimeout,
+              clearTimeout,
+              console,
+            };
+            vm.createContext(context);
+            vm.runInContext(source, context);
+            (async () => {
+              await context.window.VestraStorage.storageSet('payload');
+              if (fallbackValue !== 'PF_STATE_V6:payload') {
+                throw new Error(`hung write transaction did not fall back: ${fallbackValue}`);
+              }
+              if (aborts !== 1) throw new Error(`hung transaction was not aborted exactly once: ${aborts}`);
+            })().catch((error) => {
+              console.error(error);
+              process.exit(1);
+            });
+            """
+        )
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+
+    def test_all_transaction_modes_handle_abort_and_timeout(self):
         source = (ROOT / "app-storage.js").read_text(encoding="utf-8")
         self.assertGreaterEqual(source.count("tx.onabort"), 3)
         self.assertIn("db.onversionchange", source)
+        self.assertIn("const IDB_TRANSACTION_TIMEOUT_MS = 1500", source)
+        self.assertIn("armTransactionTimeout", source)
 
 
 if __name__ == "__main__":
