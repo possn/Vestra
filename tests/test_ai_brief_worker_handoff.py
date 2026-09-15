@@ -41,7 +41,7 @@ class AiBriefWorkerHandoffTests(unittest.TestCase):
         self.assertIn('"vestra-ai-brief.js"', self.service_worker)
         network_first = self.service_worker.split("const BOOTSTRAP_NETWORK_FIRST = new Set([", 1)[1].split("]);", 1)[0]
         self.assertIn('"vestra-ai-brief.js"', network_first)
-        self.assertIn('const CACHE_NAME = "vestra-cache-v155"', self.service_worker)
+        self.assertIn('const CACHE_NAME = "vestra-cache-v156"', self.service_worker)
 
     def test_router_owns_post_route_before_market_worker(self):
         ai_route = self.router.index("if (url.pathname === '/ai-brief')")
