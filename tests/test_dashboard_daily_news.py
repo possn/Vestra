@@ -14,6 +14,7 @@ class DashboardDailyNewsTests(unittest.TestCase):
         cls.loader = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
         cls.news = (ROOT / "scripts" / "news.py").read_text(encoding="utf-8")
         cls.sw = (ROOT / "sw.js").read_text(encoding="utf-8")
+        cls.index = (ROOT / "index.html").read_text(encoding="utf-8")
 
     def test_dashboard_uses_compact_digest_not_full_news_archive(self):
         self.assertIn("fetchWithTimeout('data/dashboard-news.json')", self.runtime)
@@ -43,6 +44,17 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
         self.assertIn("dashboard-daily-news.css?v=1.0", self.runtime)
         self.assertIn("version: '1.1'", self.runtime)
+
+    def test_card_mount_targets_the_live_dashboard_structure(self):
+        self.assertIn('id="viewDashboard"', self.index)
+        self.assertIn('kpi-grid kpi-quick', self.index)
+        self.assertIn("document.getElementById('viewDashboard')", self.runtime)
+        self.assertIn("dashboard.querySelector('.kpi-quick')", self.runtime)
+        self.assertIn("mount.parent.insertBefore(next, mount.before)", self.runtime)
+        self.assertIn("mount.parent.appendChild(next)", self.runtime)
+        self.assertNotIn("getElementById('quickTools')", self.runtime)
+        self.assertNotIn("getElementById('passiveIncomeSection')", self.runtime)
+        self.assertNotIn("getElementById('portfolioEvolutionCard')", self.runtime)
 
     def test_card_stays_compact_and_has_external_link_hardening(self):
         self.assertIn('id="vestraDailyNewsCard"', self.runtime)
