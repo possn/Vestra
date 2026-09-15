@@ -14,13 +14,18 @@ const candidate = (ticker, extra = {}) => ({
   ...extra,
 });
 
+async function waitForLaunch(page) {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
+  // Splash contract is 6.2s failsafe + 0.72s fade; leave scheduling headroom on CI WebKit.
+  await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 10_000 });
+}
+
 test('iPhone/WebKit: each opportunity lens ranks the full universe independently', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
-  await page.goto('/index.html');
-  await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
-  await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 7_000 });
+  await waitForLaunch(page);
 
   await page.evaluate((rows) => {
     window.VestraMarketStaticUniverse = { getStocks: () => rows };
@@ -68,5 +73,57 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   // buckets. A company may legitimately satisfy more than one thesis; what
   // matters is that each lens can discover and rank its own qualifying names.
   expect(new Set([low52.join(','), emerging.join(','), recovery.join(','), value.join(',')]).size).toBeGreaterThan(2);
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
+
+test('iPhone/WebKit: More-sector selection restricts opportunity shortlist', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  await waitForLaunch(page);
+
+  await page.evaluate((rows) => {
+    window.VestraMarketStaticUniverse = { getStocks: () => rows };
+    document.querySelector('#moreSectorFixture')?.remove();
+    const fixture = document.createElement('section');
+    fixture.id = 'moreSectorFixture';
+    fixture.className = 'market-section';
+    fixture.innerHTML = `
+      <div class="market-section__head"><div><h3>Oportunidades agora</h3><p></p></div></div>
+      <div class="market-sector-row">
+        <button type="button" data-market-sector="all" class="is-active">Todos</button>
+        <label class="market-sector-more"><span>Mais setores</span>
+          <select data-market-sector-select>
+            <option value="">Mais setores</option>
+            <option value="Energy">Energy</option>
+            <option value="Communication Services">Communication Services</option>
+          </select>
+        </label>
+      </div>
+      <div class="market-list"></div>`;
+    document.body.prepend(fixture);
+    window.VestraMarketOpportunityLenses.select('emerging');
+  }, [
+    candidate('ENERGY1', { sector: 'Energy', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 72 }),
+    candidate('COMM1', { sector: 'Communication Services', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 71 }),
+    candidate('TECH1', { sector: 'Technology', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 70 }),
+  ]);
+
+  const fixture = page.locator('#moreSectorFixture');
+  const dropdown = fixture.locator('[data-market-sector-select]');
+
+  await dropdown.selectOption('Energy');
+  await expect(fixture.locator('.market-sector-more')).toHaveClass(/is-active/);
+  await expect(fixture.locator('.market-sector-more')).toHaveAttribute('data-market-sector', 'Energy');
+  await expect(fixture.locator('[data-market-ticker="ENERGY1"]')).toBeVisible();
+  let tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
+  expect(tickers).toEqual(['ENERGY1']);
+
+  await dropdown.selectOption('Communication Services');
+  await expect(fixture.locator('.market-sector-more')).toHaveAttribute('data-market-sector', 'Communication Services');
+  await expect(fixture.locator('[data-market-ticker="COMM1"]')).toBeVisible();
+  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
+  expect(tickers).toEqual(['COMM1']);
+
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
