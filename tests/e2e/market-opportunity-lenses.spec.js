@@ -76,7 +76,7 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: More-sector selection restricts opportunity shortlist', async ({ page }) => {
+test('iPhone/WebKit: More-sector selection restricts opportunity shortlist and can exit to canonical sector', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -111,19 +111,40 @@ test('iPhone/WebKit: More-sector selection restricts opportunity shortlist', asy
 
   const fixture = page.locator('#moreSectorFixture');
   const dropdown = fixture.locator('[data-market-sector-select]');
+  const more = fixture.locator('.market-sector-more');
+  const all = fixture.locator('[data-market-sector="all"]');
 
   await dropdown.selectOption('Energy');
-  await expect(fixture.locator('.market-sector-more')).toHaveClass(/is-active/);
-  await expect(fixture.locator('.market-sector-more')).toHaveAttribute('data-market-sector', 'Energy');
+  await expect(more).toHaveClass(/is-active/);
+  await expect(more).toHaveAttribute('data-market-sector', 'Energy');
   await expect(fixture.locator('[data-market-ticker="ENERGY1"]')).toBeVisible();
   let tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
   expect(tickers).toEqual(['ENERGY1']);
 
   await dropdown.selectOption('Communication Services');
-  await expect(fixture.locator('.market-sector-more')).toHaveAttribute('data-market-sector', 'Communication Services');
+  await expect(more).toHaveAttribute('data-market-sector', 'Communication Services');
   await expect(fixture.locator('[data-market-ticker="COMM1"]')).toBeVisible();
   tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
   expect(tickers).toEqual(['COMM1']);
+
+  // Model the canonical sector owner activating a normal sector before the
+  // delegated click refresh runs. The stale More value must not reactivate it.
+  await page.evaluate(() => {
+    const fixture = document.querySelector('#moreSectorFixture');
+    const more = fixture.querySelector('.market-sector-more');
+    const all = fixture.querySelector('[data-market-sector="all"]');
+    more.classList.remove('is-active');
+    all.classList.add('is-active');
+    all.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+
+  await expect(dropdown).toHaveValue('');
+  await expect(more).not.toHaveClass(/is-active/);
+  await expect(more).not.toHaveAttribute('data-market-sector');
+  await expect(all).toHaveClass(/is-active/);
+  await expect(fixture.locator('[data-market-ticker="TECH1"]')).toBeVisible();
+  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
+  expect(new Set(tickers)).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1']));
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
