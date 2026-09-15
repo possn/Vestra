@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.1 — IndexedDB with bounded localStorage fallback. */
+/* Vestra persistence layer v1.2 — IndexedDB with bounded localStorage fallback. */
 (() => {
   'use strict';
 
@@ -7,6 +7,7 @@
   const DB_STORE = 'kv';
   const DB_KEY = 'state';
   const IDB_OPEN_TIMEOUT_MS = 1500;
+  const IDB_TRANSACTION_TIMEOUT_MS = 1500;
 
   function idbAvailable(){ return typeof indexedDB !== 'undefined' && indexedDB; }
 
@@ -14,6 +15,13 @@
     const error = new Error(message);
     if (cause !== undefined) error.cause = cause;
     return error;
+  }
+
+  function armTransactionTimeout(tx, settle, label){
+    return setTimeout(() => {
+      try { tx.abort(); } catch (_) {}
+      settle(idbFailure(`IndexedDB ${label} timed out after ${IDB_TRANSACTION_TIMEOUT_MS}ms`));
+    }, IDB_TRANSACTION_TIMEOUT_MS);
   }
 
   let _idbConn = null;
@@ -73,9 +81,19 @@
     return new Promise((res, rej) => {
       const tx = db.transaction(DB_STORE, 'readonly');
       const req = tx.objectStore(DB_STORE).get(key);
-      req.onsuccess = () => res(req.result);
-      req.onerror = () => rej(req.error || idbFailure('IndexedDB read failed'));
-      tx.onabort = () => rej(tx.error || idbFailure('IndexedDB read transaction aborted'));
+      let settled = false;
+      let timer = null;
+      const settle = (error, value) => {
+        if (settled) return;
+        settled = true;
+        if (timer !== null) clearTimeout(timer);
+        if (error) rej(error); else res(value);
+      };
+      timer = armTransactionTimeout(tx, error => settle(error), 'read');
+      req.onsuccess = () => settle(null, req.result);
+      req.onerror = () => settle(req.error || idbFailure('IndexedDB read failed'));
+      tx.onerror = () => settle(tx.error || idbFailure('IndexedDB read transaction failed'));
+      tx.onabort = () => settle(tx.error || idbFailure('IndexedDB read transaction aborted'));
     });
   }
 
@@ -83,10 +101,19 @@
     const db = await idbOpen();
     return new Promise((res, rej) => {
       const tx = db.transaction(DB_STORE, 'readwrite');
+      let settled = false;
+      let timer = null;
+      const settle = (error) => {
+        if (settled) return;
+        settled = true;
+        if (timer !== null) clearTimeout(timer);
+        if (error) rej(error); else res(true);
+      };
+      timer = armTransactionTimeout(tx, settle, 'write');
       tx.objectStore(DB_STORE).put(value, key);
-      tx.oncomplete = () => res(true);
-      tx.onerror = () => rej(tx.error || idbFailure('IndexedDB write failed'));
-      tx.onabort = () => rej(tx.error || idbFailure('IndexedDB write transaction aborted'));
+      tx.oncomplete = () => settle(null);
+      tx.onerror = () => settle(tx.error || idbFailure('IndexedDB write failed'));
+      tx.onabort = () => settle(tx.error || idbFailure('IndexedDB write transaction aborted'));
     });
   }
 
@@ -94,10 +121,19 @@
     const db = await idbOpen();
     return new Promise(res => {
       const tx = db.transaction(DB_STORE, 'readwrite');
+      let settled = false;
+      let timer = null;
+      const settle = (ok) => {
+        if (settled) return;
+        settled = true;
+        if (timer !== null) clearTimeout(timer);
+        res(ok);
+      };
+      timer = armTransactionTimeout(tx, () => settle(false), 'delete');
       tx.objectStore(DB_STORE).delete(key);
-      tx.oncomplete = () => res(true);
-      tx.onerror = () => res(false);
-      tx.onabort = () => res(false);
+      tx.oncomplete = () => settle(true);
+      tx.onerror = () => settle(false);
+      tx.onabort = () => settle(false);
     });
   }
 
@@ -132,7 +168,7 @@
   }
 
   const api = Object.freeze({
-    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, IDB_OPEN_TIMEOUT_MS,
+    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
     idbAvailable, idbOpen, idbGet, idbSet, idbDel,
     requestPersistentStorage, storageGet, storageSet, storageClear,
   });
