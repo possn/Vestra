@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v2.0 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v2.1 — strategy controls over independent full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -51,6 +51,12 @@
     window.VestraMarketOpportunities?.selectLens?.(activeLens);
     requestAnimationFrame(refreshUi);
   }
+  function refreshAfterSectorSelection(){
+    requestAnimationFrame(()=>{
+      window.VestraMarketOpportunities?.refresh?.(activeLens);
+      refreshUi();
+    });
+  }
   function style(){
     if(document.getElementById('vestra-opportunity-lenses-style'))return;
     const link=document.createElement('link');
@@ -60,8 +66,9 @@
     document.head.appendChild(link);
   }
   document.addEventListener('click',e=>{
-    const b=e.target.closest?.('[data-vestra-lens]');if(!b)return;
-    e.preventDefault();e.stopPropagation();selectLens(b.dataset.vestraLens);
+    const b=e.target.closest?.('[data-vestra-lens]');
+    if(b){e.preventDefault();e.stopPropagation();selectLens(b.dataset.vestraLens);return;}
+    if(e.target.closest?.('[data-market-sector]'))refreshAfterSectorSelection();
   });
   function start(){
     style();
@@ -72,5 +79,5 @@
     window.addEventListener('vestra:market-ready',refreshUi);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.0'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.1'});
 })();
