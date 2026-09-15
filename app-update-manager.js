@@ -1,4 +1,4 @@
-/* Vestra App Update Manager v1.5 — iOS-safe navigation with deterministic exclusive button ownership. */
+/* Vestra App Update Manager v1.6 — iOS-safe navigation with deterministic exclusive button ownership. */
 (() => {
   'use strict';
   let busy = false;
@@ -43,8 +43,8 @@
 
     // This listener runs before target listeners. It is the final containment
     // layer for the historical app.js update handler: even if app.js attaches
-    // that handler again, replaces the node, or runs after our DOM reclaim,
-    // the destructive listener never receives the click.
+    // that handler after ownership has been claimed, the destructive listener
+    // never receives the click.
     document.addEventListener('click', event => {
       if (!isUpdateButton(event.target)) return;
       event.preventDefault();
@@ -54,14 +54,16 @@
     return true;
   }
 
-  function install(force = false) {
+  function install() {
     const current = document.getElementById('btnForceUpdate');
     if (!current) return false;
-    if (!force && current.dataset.vestraSafeUpdateOwner === '1') return false;
+    if (current.dataset.vestraSafeUpdateOwner === '1') return false;
 
     // app.js historically attached a destructive target listener to this button.
-    // Replacing the node removes every previously attached listener. The capture
-    // guard above remains authoritative even if a later listener is attached.
+    // Replacing the node once removes any listener that predates this manager.
+    // After ownership is established, the capture guard is sufficient for any
+    // later listener, so repeated DOM replacement would only discard legitimate
+    // button state/listeners added by other modules.
     const button = current.cloneNode(true);
     button.dataset.vestraSafeUpdateOwner = '1';
     current.replaceWith(button);
@@ -69,7 +71,7 @@
   }
 
   function reclaimAfterAppSetup() {
-    setTimeout(() => install(true), 0);
+    setTimeout(() => install(), 0);
   }
 
   installCaptureGuard();
@@ -82,7 +84,7 @@
   window.addEventListener('vestra:app-ready', reclaimAfterAppSetup, { once: true });
 
   window.VestraAppUpdateManager = Object.freeze({
-    version: '1.5',
+    version: '1.6',
     install,
     forceFreshReload,
   });
