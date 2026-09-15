@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v2.2 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v2.3 — strategy controls over independent full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -47,6 +47,7 @@
     if(!label)return;
     const selected=t(select?.value);
     if(selected){
+      s.querySelectorAll('[data-market-sector].is-active').forEach(node=>{if(node!==label)node.classList.remove('is-active');});
       label.dataset.marketSector=selected;
       label.classList.add('is-active');
     }else{
@@ -99,5 +100,5 @@
     window.addEventListener('vestra:market-ready',()=>{bridgeMoreSectorSelection();refreshUi();});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.2'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.3'});
 })();
