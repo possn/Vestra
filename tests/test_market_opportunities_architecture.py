@@ -51,8 +51,10 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_strategy_lenses_rank_from_full_universe_not_current_twelve_rows(self):
         source = read('market-opportunities.js')
         lenses = read('market-opportunity-lenses.js')
-        self.assertIn("universe.filter(s=>lensEligible(s,activeLens))", source)
-        self.assertIn("rows.sort((a,b)=>lensScore(b,activeLens)-lensScore(a,activeLens)", source)
+        self.assertIn("function rankLens(universe,lens", source)
+        self.assertIn(".filter(s=>lensEligible(s,lens))", source)
+        self.assertIn("ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)", source)
+        self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", source)
         self.assertIn("function lensEligible(s,lens)", source)
         self.assertIn("function lensScore(s,lens)", source)
         self.assertIn("above>=-0.5&&above<=5", source)
