@@ -21,7 +21,11 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertIn("s.querySelector('[data-market-sector-select]')", self.source)
         self.assertIn("select.style.pointerEvents='auto'", self.source)
         self.assertNotIn("select.style.pointerEvents='none'", self.source)
-        self.assertNotIn('marketSectorRecall', self.source)
+        # Cleanup of stale DOM left by older cached builds is allowed, but the
+        # v2.7 control must not read or recreate the old recall mechanism.
+        self.assertNotIn('dataset.marketSectorRecall=', self.source)
+        self.assertNotIn('dataset.marketSectorRecall||', self.source)
+        self.assertNotIn('[data-market-sector-recall]', self.source)
         self.assertNotIn("document.addEventListener('pointerdown'", self.source)
 
     def test_more_sector_bridge_exists_only_during_canonical_refresh(self):
