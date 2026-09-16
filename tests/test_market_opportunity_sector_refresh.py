@@ -22,11 +22,17 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertIn("select.style.pointerEvents='auto'", self.source)
         self.assertNotIn("select.style.pointerEvents='none'", self.source)
         # Cleanup of stale DOM left by older cached builds is allowed, but the
-        # v2.7 control must not read or recreate the old recall mechanism.
+        # v2.8 control must not read or recreate the old recall mechanism.
         self.assertNotIn('dataset.marketSectorRecall=', self.source)
         self.assertNotIn('dataset.marketSectorRecall||', self.source)
         self.assertNotIn('[data-market-sector-recall]', self.source)
         self.assertNotIn("document.addEventListener('pointerdown'", self.source)
+
+    def test_more_sector_clears_competing_canonical_active_state_before_bridge(self):
+        self.assertIn("s.querySelectorAll('[data-market-sector].is-active').forEach", self.source)
+        self.assertIn("if(node!==label)node.classList.remove('is-active')", self.source)
+        sync = self.source.split('function syncMoreSectorVisual(){', 1)[1].split('function withMoreSectorBridge', 1)[0]
+        self.assertLess(sync.index("classList.remove('is-active')"), sync.index("label.classList.toggle('is-active'"))
 
     def test_more_sector_bridge_exists_only_during_canonical_refresh(self):
         self.assertIn('function withMoreSectorBridge(callback)', self.source)
@@ -49,7 +55,7 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertIn('lensEligible(s,lens)', self.opportunities)
         self.assertIn('lensScore(b,lens)-lensScore(a,lens)', self.opportunities)
         self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", self.opportunities)
-        self.assertIn("version:'2.7'", self.source)
+        self.assertIn("version:'2.8'", self.source)
 
 
 if __name__ == '__main__':
