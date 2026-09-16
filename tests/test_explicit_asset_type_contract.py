@@ -14,10 +14,16 @@ class ExplicitAssetTypeContractTests(unittest.TestCase):
     def test_explicit_non_equity_set_is_complete(self):
         self.assertEqual(
             asset_types.NON_EQUITY_TYPES,
-            frozenset({"ETF", "CRYPTO", "MUTUALFUND", "FUND"}),
+            frozenset({"ETF", "CRYPTO", "MUTUALFUND", "FUND", "PREFERRED"}),
         )
-        for value in ("ETF", "crypto", " MutualFund ", "fund"):
+        for value in ("ETF", "crypto", " MutualFund ", "fund", "preferred"):
             self.assertTrue(asset_types.is_explicit_non_equity(value), value)
+
+    def test_preferred_ticker_identity_is_narrow(self):
+        for ticker in ("DUK-PA", "JPM-PD", "MS-PI", "USB-PP", "ALL-PH"):
+            self.assertTrue(asset_types.is_preferred_ticker(ticker), ticker)
+        for ticker in ("DUK", "BRK-B", "BF-B", "PARA", "PFE"):
+            self.assertFalse(asset_types.is_preferred_ticker(ticker), ticker)
 
     def test_unknown_identity_remains_candidate_not_asserted_non_equity(self):
         for value in (None, "", "UNKNOWN", "EQUITY"):
