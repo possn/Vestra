@@ -77,6 +77,7 @@ test('iPhone/WebKit: More sectors remains a live native select across repeated c
     const fixture = document.createElement('section');
     fixture.id = 'moreSectorFixture';
     fixture.className = 'market-section';
+    fixture.style.cssText = 'position:fixed;left:8px;right:8px;top:96px;z-index:2147483647;max-height:70vh;overflow:auto;background:#fff;';
     fixture.innerHTML = `
       <div class="market-section__head"><div><h3>Oportunidades agora</h3><p></p></div></div>
       <div class="market-sector-row">
