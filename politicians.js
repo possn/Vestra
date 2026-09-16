@@ -1,14 +1,16 @@
-/* Vestra Politicians v2.1 — Congress + Executive disclosures, leaders and favourites. */
-(() => {
+/* Vestra Politicians v2.2 — Congress + Executive disclosures, leaders, favourites and name search. */
+(()=>{
   'use strict';
-  const VERSION='2.1';
+  const VERSION='2.2';
   const FAV_KEY='vestra-politician-favourites-v2';
   const t=v=>String(v??'').trim();
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const searchText=v=>t(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   let recentTrades=[];
   let memberDirectory=[];
   let selected='all';
   let view='all';
+  let searchQuery='';
   let feedMeta={};
   let executiveMeta={};
   let loading=null;
@@ -76,7 +78,31 @@
   function selectorHTML(){
     const f=favs();const executives=memberDirectory.filter(x=>x.chamber==='Executive');const congress=memberDirectory.filter(x=>x.chamber!=='Executive');
     const opts=arr=>arr.map(x=>`<option value="${esc(x.key)}" ${selected===x.key?'selected':''}>${f.has(x.key)?'★ ':''}${esc(x.name)}${x.chamber?` · ${esc(x.chamber)}`:''}${x.count?` · ${x.count} trades`:''}</option>`).join('');
-    return `<select data-politician-select><option value="all" ${selected==='all'?'selected':''}>Todos · ranking global</option>${executives.length?`<optgroup label="Executivo">${opts(executives)}</optgroup>`:''}<optgroup label="Congresso">${opts(congress)}</optgroup></select>`;
+    return `<select data-politician-select aria-label="Lista completa de políticos"><option value="all" ${selected==='all'?'selected':''}>Todos · ranking global</option>${executives.length?`<optgroup label="Executivo">${opts(executives)}</optgroup>`:''}<optgroup label="Congresso">${opts(congress)}</optgroup></select>`;
+  }
+  function searchMembers(query){
+    const q=searchText(query);if(!q)return [];
+    return memberDirectory.map(m=>{const name=searchText(m.name);const hay=searchText(`${m.name} ${m.role||''} ${m.chamber||''}`);let rank=3;if(name===q)rank=0;else if(name.startsWith(q))rank=1;else if(name.split(/\s+/).some(part=>part.startsWith(q)))rank=2;return {m,rank,hit:hay.includes(q)};}).filter(x=>x.hit).sort((a,b)=>a.rank-b.rank||a.m.name.localeCompare(b.m.name)).slice(0,10).map(x=>x.m);
+  }
+  function searchResultsHTML(query){
+    const q=t(query);if(!q)return '';
+    const rows=searchMembers(q);
+    if(!rows.length)return `<div class="politician-search-empty">Sem resultados para “${esc(q)}”.</div>`;
+    return rows.map(m=>`<button type="button" class="politician-search-result" data-politician-search-result="${esc(m.key)}"><span><strong>${esc(m.name)}</strong><small>${esc(m.role||m.chamber||'Responsável público')}</small></span><em>${m.count?`${m.count} trades`:'Abrir'}</em></button>`).join('');
+  }
+  function pickerHTML(){
+    return `<div class="politician-search"><label for="politicianNameSearch">Pesquisar por nome</label><div class="politician-search-field"><span aria-hidden="true">⌕</span><input id="politicianNameSearch" data-politician-search type="search" inputmode="search" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Ex.: nome ou apelido" value="${esc(searchQuery)}"></div><div class="politician-search-results" data-politician-search-results ${searchQuery?'':'hidden'}>${searchResultsHTML(searchQuery)}</div></div><label class="politician-select-label"><span>Ou escolher na lista</span>${selectorHTML()}</label>`;
+  }
+  function updateSearchResults(input){
+    searchQuery=t(input?.value);
+    const box=input?.closest?.('.politician-search')?.querySelector?.('[data-politician-search-results]');
+    if(!box)return;
+    box.innerHTML=searchResultsHTML(searchQuery);
+    box.hidden=!searchQuery;
+  }
+  function openSearchResult(key){
+    const member=memberDirectory.find(m=>m.key===key);if(!member)return;
+    selected=member.key;view='all';searchQuery='';render();
   }
   function favouriteCards(){
     const f=favs();const members=memberDirectory.filter(m=>f.has(m.key));
@@ -105,14 +131,16 @@
     if(view==='favourites')body=favouriteCards();
     else if(selected==='all')body=globalView();
     else {const m=memberDirectory.find(x=>x.key===selected);body=m?memberView(m):globalView();}
-    root.innerHTML=`<section class="market-section politicians-section"><div class="market-section__head"><div><h3>Políticos</h3><p>Top 10 compras e vendas · Congresso + Executivo · ${esc(coverage)}.</p></div><span class="market-data-age">${generated?esc(ageLabel(generated)):''}</span></div><div class="politician-view-tabs"><button type="button" data-politician-view="all" class="${view==='all'?'is-active':''}">Todos</button><button type="button" data-politician-view="favourites" class="${view==='favourites'?'is-active':''}">★ Favoritos <span>${favs().size}</span></button></div><div class="politician-picker"><label><span>Escolher político</span>${selectorHTML()}</label></div><div id="politicianProfile">${body}</div><p class="market-source-credit">Congresso: House Clerk + Senate eFD · Executivo: OGE/White House. Rankings usam o ponto médio do intervalo divulgado; não são recomendações de investimento.</p></section>`;
+    root.innerHTML=`<section class="market-section politicians-section"><div class="market-section__head"><div><h3>Políticos</h3><p>Top 10 compras e vendas · Congresso + Executivo · ${esc(coverage)}.</p></div><span class="market-data-age">${generated?esc(ageLabel(generated)):''}</span></div><div class="politician-view-tabs"><button type="button" data-politician-view="all" class="${view==='all'?'is-active':''}">Todos</button><button type="button" data-politician-view="favourites" class="${view==='favourites'?'is-active':''}">★ Favoritos <span>${favs().size}</span></button></div><div class="politician-picker">${pickerHTML()}</div><div id="politicianProfile">${body}</div><p class="market-source-credit">Congresso: House Clerk + Senate eFD · Executivo: OGE/White House. Rankings usam o ponto médio do intervalo divulgado; não são recomendações de investimento.</p></section>`;
   }
 
   async function openPoliticians(){const root=document.getElementById('marketPrimary');if(!root)return;document.querySelectorAll('.market-mode').forEach(x=>x.classList.remove('is-active'));document.querySelector('[data-politicians-mode]')?.classList.add('is-active');root.innerHTML='<div class="market-loader"><span></span><div>A carregar divulgações políticas…</div></div>';try{await loadBase();await render();}catch(e){root.innerHTML=`<div class="market-empty market-empty--error"><strong>Dados políticos indisponíveis</strong><br><span>${esc(e?.message||'Não foi possível carregar o snapshot Vestra.')}</span></div>`;}}
   function installButton(){const grid=document.querySelector('.market-mode-grid');if(!grid||grid.querySelector('[data-politicians-mode]'))return;const btn=document.createElement('button');btn.className='market-mode';btn.type='button';btn.dataset.politiciansMode='1';btn.innerHTML='<span class="market-mode__icon">♜</span><strong>Políticos</strong>';const smart=grid.querySelector('[data-market-mode="smart"]');smart?.insertAdjacentElement('afterend',btn)||grid.appendChild(btn);}
-  function addStyle(){if(document.getElementById('vestra-politicians-style-v21'))return;const link=document.createElement('link');link.id='vestra-politicians-style-v21';link.rel='stylesheet';link.href='politicians.css?v=1.0';document.head.appendChild(link);}
-  document.addEventListener('click',e=>{const b=e.target.closest?.('[data-politicians-mode]');if(b){e.preventDefault();e.stopPropagation();openPoliticians();return;}const fav=e.target.closest?.('[data-politician-favourite]');if(fav){e.preventDefault();toggleFavourite(fav.dataset.politicianFavourite);return;}const v=e.target.closest?.('[data-politician-view]');if(v){e.preventDefault();view=v.dataset.politicianView||'all';render();return;}const open=e.target.closest?.('[data-politician-open]');if(open){e.preventDefault();selected=open.dataset.politicianOpen||'all';view='all';render();return;}});
-  document.addEventListener('change',async e=>{if(!e.target.matches?.('[data-politician-select]'))return;selected=e.target.value||'all';view='all';await render();});
+  function addStyle(){if(document.getElementById('vestra-politicians-style-v22'))return;const link=document.createElement('link');link.id='vestra-politicians-style-v22';link.rel='stylesheet';link.href='politicians.css?v=1.1';document.head.appendChild(link);}
+  document.addEventListener('click',e=>{const b=e.target.closest?.('[data-politicians-mode]');if(b){e.preventDefault();e.stopPropagation();openPoliticians();return;}const searchResult=e.target.closest?.('[data-politician-search-result]');if(searchResult){e.preventDefault();openSearchResult(searchResult.dataset.politicianSearchResult);return;}const fav=e.target.closest?.('[data-politician-favourite]');if(fav){e.preventDefault();toggleFavourite(fav.dataset.politicianFavourite);return;}const v=e.target.closest?.('[data-politician-view]');if(v){e.preventDefault();view=v.dataset.politicianView||'all';render();return;}const open=e.target.closest?.('[data-politician-open]');if(open){e.preventDefault();selected=open.dataset.politicianOpen||'all';searchQuery='';view='all';render();return;}});
+  document.addEventListener('input',e=>{if(e.target.matches?.('[data-politician-search]'))updateSearchResults(e.target);});
+  document.addEventListener('keydown',e=>{if(!e.target.matches?.('[data-politician-search]')||e.key!=='Enter')return;const first=e.target.closest?.('.politician-search')?.querySelector?.('[data-politician-search-result]');if(first){e.preventDefault();openSearchResult(first.dataset.politicianSearchResult);}});
+  document.addEventListener('change',async e=>{if(!e.target.matches?.('[data-politician-select]'))return;selected=e.target.value||'all';searchQuery='';view='all';await render();});
   function start(){addStyle();installButton();let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;installButton();});});mo.observe(document.body,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
