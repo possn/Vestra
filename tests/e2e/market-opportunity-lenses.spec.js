@@ -123,40 +123,33 @@ test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', 
   const all = fixture.locator('[data-market-sector="all"]');
   const technology = fixture.locator('[data-market-sector="Technology"]');
   const healthcare = fixture.locator('[data-market-sector="Healthcare"]');
+  const rowTickers = () => fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
 
   await dropdown.selectOption('Communication Services');
   await expect(more).toHaveClass(/is-active/);
-  await expect(fixture.locator('[data-market-ticker="COMM1"]')).toBeVisible();
+  await expect.poll(rowTickers).toEqual(['COMM1']);
 
   await all.tap();
   await expect(dropdown).toHaveValue('');
   await expect(more).not.toHaveClass(/is-active/);
   await expect(more).toHaveAttribute('data-market-sector-recall', 'Communication Services');
-  await expect(fixture.locator('[data-market-ticker="TECH1"]')).toBeVisible();
+  await expect.poll(rowTickers).toEqual(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']);
 
   await technology.tap();
-  await expect(fixture.locator('[data-market-ticker="TECH1"]')).toBeVisible();
-  let tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
-  expect(tickers).toEqual(['TECH1']);
+  await expect.poll(rowTickers).toEqual(['TECH1']);
 
   await healthcare.tap();
-  await expect(fixture.locator('[data-market-ticker="HEALTH1"]')).toBeVisible();
-  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
-  expect(tickers).toEqual(['HEALTH1']);
+  await expect.poll(rowTickers).toEqual(['HEALTH1']);
 
   await all.tap();
-  await expect(fixture.locator('[data-market-ticker="COMM1"]')).toBeVisible();
-  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
-  expect(new Set(tickers)).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']));
+  await expect.poll(async () => new Set(await rowTickers())).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']));
 
   await expect(dropdown).toHaveCSS('pointer-events', 'none');
   await more.tap();
   await expect(dropdown).toHaveValue('Communication Services');
   await expect(more).toHaveClass(/is-active/);
   await expect(more).toHaveAttribute('data-market-sector', 'Communication Services');
-  await expect(fixture.locator('[data-market-ticker="COMM1"]')).toBeVisible();
-  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
-  expect(tickers).toEqual(['COMM1']);
+  await expect.poll(rowTickers).toEqual(['COMM1']);
 
   const tapLog = await page.evaluate(() => window.__sectorTapLog);
   expect(tapLog).toEqual(['all', 'Technology', 'Healthcare', 'all']);
