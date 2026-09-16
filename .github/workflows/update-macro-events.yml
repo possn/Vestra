@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "20 5 * * *"
     - cron: "40 7-21 * * 1-5"
+    # FOMC statements are released at 14:00 ET on Wednesdays. Poll this
+    # decision window every 10 minutes so the investor calendar does not wait
+    # for the next hourly refresh after an official statement appears.
+    - cron: "5,15,25,35,45,55 17-20 * * 3"
   workflow_dispatch: {}
   push:
     branches: [main]
@@ -85,7 +89,7 @@ jobs:
           VESTRA_REQUIRE_FRED_BLS_MATCH: ${{ github.event_name == 'pull_request' && '1' || '0' }}
         run: python scripts/enrich_macro_results_fred.py
 
-      - name: Normalize policy decision days and refresh ECB results
+      - name: Normalize policy decision days and refresh ECB/FOMC results
         if: github.event_name != 'pull_request'
         env:
           VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json
@@ -108,15 +112,16 @@ jobs:
           allowed_metric_keys = {
               'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct',
               'deposit_facility_pct','main_refinancing_pct','marginal_lending_pct',
+              'target_lower_pct','target_upper_pct',
           }
-          allowed_metric_schemas = {'bls_cpi_v1','bls_ppi_v1','ecb_rates_v1'}
+          allowed_metric_schemas = {'bls_cpi_v1','bls_ppi_v1','ecb_rates_v1','fed_funds_target_v1'}
           for e in events:
               assert e.get('date') and e.get('short_title') and e.get('source')
               if e.get('source') in {'ecb','fed'} and e.get('meeting_start'):
                   assert e.get('date') >= e.get('meeting_start')
                   assert 'date_end' not in e
               if e.get('result_status') == 'official_release_summary':
-                  assert e.get('source') in {'bls','ecb'}
+                  assert e.get('source') in {'bls','ecb','fed'}
                   assert e.get('result_summary')
                   metrics = e.get('result_metrics') or {}
                   if e.get('source') == 'bls':
@@ -125,11 +130,16 @@ jobs:
                       assert 'actual' not in e or e.get('actual') is None
                       if e.get('result_transport') == 'fred_bls_mirror':
                           assert set(metrics) == {'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct'}
-                  else:
+                  elif e.get('source') == 'ecb':
                       assert e.get('short_title') == 'BCE'
                       assert str(e.get('source_url','')).startswith('https://www.ecb.europa.eu/')
                       assert e.get('result_metric_schema') == 'ecb_rates_v1'
                       assert set(metrics) == {'deposit_facility_pct','main_refinancing_pct','marginal_lending_pct'}
+                  else:
+                      assert e.get('short_title') == 'FOMC'
+                      assert str(e.get('source_url','')).startswith('https://www.federalreserve.gov/newsevents/pressreleases/monetary')
+                      assert e.get('result_metric_schema') == 'fed_funds_target_v1'
+                      assert set(metrics) == {'target_lower_pct','target_upper_pct'}
                   if metrics:
                       assert e.get('result_metric_schema') in allowed_metric_schemas
                       assert set(metrics) <= allowed_metric_keys

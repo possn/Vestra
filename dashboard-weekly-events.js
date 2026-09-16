@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v1.9 — tappable earnings + macro catalysts with verified result details. */
+/* Vestra Dashboard Weekly Events v2.0 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
 
-  const VERSION = '1.9';
+  const VERSION = '2.0';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -29,8 +29,10 @@
     headline_yoy_pct: 'Headline YoY',
     core_mom_pct: 'Core MoM',
     core_yoy_pct: 'Core YoY',
+    target_lower_pct: 'Fed funds · mínimo',
+    target_upper_pct: 'Fed funds · máximo',
   });
-  const OFFICIAL_METRIC_SCHEMAS = new Set(['bls_cpi_v1', 'bls_ppi_v1']);
+  const OFFICIAL_METRIC_SCHEMAS = new Set(['bls_cpi_v1', 'bls_ppi_v1', 'fed_funds_target_v1']);
   let macroSnapshot = null;
   let macroLoading = null;
   let lastRenderedEvents = [];
@@ -268,8 +270,8 @@
     return `${(parsed * 100).toLocaleString('pt-PT', { maximumFractionDigits: 1, minimumFractionDigits: 1 })}%`;
   }
 
-  async function loadMacroEvents(fetchImpl = (...args) => fetch(...args), timeoutMs = MACRO_FETCH_TIMEOUT_MS) {
-    if (macroSnapshot) return macroSnapshot;
+  async function loadMacroEvents(fetchImpl = (...args) => fetch(...args), timeoutMs = MACRO_FETCH_TIMEOUT_MS, force = false) {
+    if (macroSnapshot && !force) return macroSnapshot;
     if (macroLoading) return macroLoading;
     let timeoutId = null;
     macroLoading = (async () => {
@@ -286,7 +288,7 @@
           timeoutId = setTimeout(() => resolve(null), Math.max(1, Number(timeoutMs) || MACRO_FETCH_TIMEOUT_MS));
         });
         const payload = await Promise.race([request, timeout]);
-        if (!payload) return null;
+        if (!payload) return macroSnapshot;
         macroSnapshot = payload;
         return macroSnapshot;
       } finally {
@@ -295,6 +297,12 @@
       }
     })();
     return macroLoading;
+  }
+
+  async function refreshMacroEvents() {
+    const latest = await loadMacroEvents((...args) => fetch(...args), MACRO_FETCH_TIMEOUT_MS, true);
+    if (latest) render();
+    return latest;
   }
 
   function ensureStyles() {
@@ -368,10 +376,10 @@
       status.textContent = hasActual
         ? 'Resultado publicado. Os valores abaixo são os dados estruturados recebidos pelo snapshot Vestra.'
         : hasOfficialMetrics
-          ? 'Publicação oficial disponível. A Vestra apresenta separadamente as métricas BLS explicitamente identificadas na release, sem as converter num “Actual” genérico.'
+          ? 'Publicação oficial disponível. A Vestra apresenta abaixo as métricas explicitamente identificadas na fonte oficial.'
           : hasSummary
             ? 'Publicação oficial disponível. A Vestra validou a data da release e apresenta abaixo o resumo oficial, sem inferir uma métrica “Actual” ambígua.'
-            : 'Resultado ainda não publicado no snapshot Vestra. Este painel atualiza automaticamente quando a fonte oficial disponibilizar a publicação.';
+            : 'Resultado ainda não publicado no snapshot Vestra. Este painel volta a consultar o snapshot ao abrir o evento e quando a app regressa ao primeiro plano.';
       sheet.appendChild(status);
       const officialGrid = officialMetricGrid(event);
       if (officialGrid) sheet.appendChild(officialGrid);
@@ -431,7 +439,29 @@
     return true;
   }
   async function scheduleRender(){const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();await Promise.allSettled([marketLoad,loadMacroEvents()]);render();}
-  document.addEventListener('click',event=>{const eventButton=event.target.closest?.('[data-weekly-event-index]');if(eventButton){const index=Number(eventButton.dataset.weeklyEventIndex);if(Number.isInteger(index)&&lastRenderedEvents[index])openDetail(lastRenderedEvents[index]);return;}const dossierButton=event.target.closest?.('[data-weekly-detail-ticker]');if(dossierButton){openTicker(dossierButton.dataset.weeklyDetailTicker);return;}if(event.target.closest?.('[data-weekly-detail-close]')){closeDetail();return;}const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)setTimeout(()=>render(),0);});
+  document.addEventListener('click',event=>{
+    const eventButton=event.target.closest?.('[data-weekly-event-index]');
+    if(eventButton){
+      const index=Number(eventButton.dataset.weeklyEventIndex);
+      const selected=Number.isInteger(index)?lastRenderedEvents[index]:null;
+      if(selected){
+        openDetail(selected);
+        if(selected.kind==='macro'){
+          const id=selected.id;
+          void refreshMacroEvents().then(()=>{
+            const fresh=lastRenderedEvents.find(item=>item.kind==='macro'&&item.id===id);
+            if(fresh&&document.getElementById(DETAIL_ID))openDetail(fresh);
+          });
+        }
+      }
+      return;
+    }
+    const dossierButton=event.target.closest?.('[data-weekly-detail-ticker]');if(dossierButton){openTicker(dossierButton.dataset.weeklyDetailTicker);return;}
+    if(event.target.closest?.('[data-weekly-detail-close]')){closeDetail();return;}
+    const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}
+    const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)void refreshMacroEvents();
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void refreshMacroEvents();});
   window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
-  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
+  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
 })();
