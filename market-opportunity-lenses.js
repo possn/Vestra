@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v2.3 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v2.4 — strategy controls over independent full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -55,6 +55,15 @@
       label.classList.remove('is-active');
     }
   }
+  function clearMoreSectorSelectionForCanonicalClick(target){
+    const s=section();if(!s)return;
+    const sector=target?.closest?.('[data-market-sector]');
+    if(!sector||sector.closest?.('.market-sector-more'))return;
+    const select=s.querySelector('[data-market-sector-select]');
+    const label=select?.closest?.('.market-sector-more');
+    if(select&&t(select.value))select.value='';
+    if(label){delete label.dataset.marketSector;label.classList.remove('is-active');}
+  }
   function refreshUi(){
     const s=section();if(!s)return;
     syncButtons(ensureBar(s));
@@ -85,7 +94,8 @@
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('[data-vestra-lens]');
     if(b){e.preventDefault();e.stopPropagation();selectLens(b.dataset.vestraLens);return;}
-    if(e.target.closest?.('[data-market-sector]'))refreshAfterSectorSelection();
+    const sector=e.target.closest?.('[data-market-sector]');
+    if(sector){clearMoreSectorSelectionForCanonicalClick(sector);refreshAfterSectorSelection();}
   });
   document.addEventListener('change',e=>{
     if(e.target.matches?.('[data-market-sector-select]'))refreshAfterSectorSelection();
@@ -100,5 +110,5 @@
     window.addEventListener('vestra:market-ready',()=>{bridgeMoreSectorSelection();refreshUi();});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.3'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.4'});
 })();
