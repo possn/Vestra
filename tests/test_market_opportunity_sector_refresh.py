@@ -42,13 +42,14 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertIn('delete label.dataset.marketSector', self.source)
         self.assertIn("label.classList.remove('is-active')", self.source)
 
-    def test_inactive_more_sector_remembers_and_reactivates_last_selection(self):
+    def test_inactive_more_sector_uses_click_recall_without_capture_pointer_block(self):
         self.assertIn("let lastMoreSector=''", self.source)
         self.assertIn('label.dataset.marketSectorRecall=lastMoreSector', self.source)
         self.assertIn('function recallMoreSectorSelection(target)', self.source)
-        self.assertIn("document.addEventListener('pointerdown',e=>{", self.source)
-        self.assertIn("e.target.closest?.('[data-market-sector-select]')", self.source)
-        self.assertIn("e.preventDefault();e.stopPropagation();", self.source)
+        self.assertNotIn("document.addEventListener('pointerdown'", self.source)
+        self.assertIn("e.target.closest?.('.market-sector-more[data-market-sector-recall]')", self.source)
+        self.assertIn("select.style.pointerEvents='none'", self.source)
+        self.assertIn("select.style.pointerEvents='auto'", self.source)
         self.assertIn("select.dispatchEvent(new Event('change',{bubbles:true}))", self.source)
 
     def test_canonical_engine_still_owns_sector_filtering_and_lens_math(self):
@@ -58,7 +59,7 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertIn('lensEligible(s,lens)', self.opportunities)
         self.assertIn('lensScore(b,lens)-lensScore(a,lens)', self.opportunities)
         self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", self.opportunities)
-        self.assertIn("version:'2.5'", self.source)
+        self.assertIn("version:'2.6'", self.source)
 
 
 if __name__ == '__main__':

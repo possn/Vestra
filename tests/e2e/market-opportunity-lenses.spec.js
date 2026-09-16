@@ -73,7 +73,7 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: More-sector selection can exit and be recalled with one tap', async ({ page }) => {
+test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -81,6 +81,7 @@ test('iPhone/WebKit: More-sector selection can exit and be recalled with one tap
 
   await page.evaluate((rows) => {
     window.VestraMarketStaticUniverse = { getStocks: () => rows };
+    window.__sectorTapLog = [];
     document.querySelector('#moreSectorFixture')?.remove();
     const fixture = document.createElement('section');
     fixture.id = 'moreSectorFixture';
@@ -89,6 +90,8 @@ test('iPhone/WebKit: More-sector selection can exit and be recalled with one tap
       <div class="market-section__head"><div><h3>Oportunidades agora</h3><p></p></div></div>
       <div class="market-sector-row">
         <button type="button" data-market-sector="all" class="is-active">Todos</button>
+        <button type="button" data-market-sector="Technology">Technology</button>
+        <button type="button" data-market-sector="Healthcare">Healthcare</button>
         <label class="market-sector-more"><span>Mais setores</span>
           <select data-market-sector-select>
             <option value="">Mais setores</option>
@@ -98,52 +101,56 @@ test('iPhone/WebKit: More-sector selection can exit and be recalled with one tap
         </label>
       </div>
       <div class="market-list"></div>`;
+    fixture.querySelectorAll('[data-market-sector]').forEach(button => {
+      button.addEventListener('click', () => {
+        fixture.querySelectorAll('[data-market-sector].is-active').forEach(node => node.classList.remove('is-active'));
+        button.classList.add('is-active');
+        window.__sectorTapLog.push(button.dataset.marketSector);
+      });
+    });
     document.body.prepend(fixture);
     window.VestraMarketOpportunityLenses.select('emerging');
   }, [
     candidate('ENERGY1', { sector: 'Energy', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 72 }),
     candidate('COMM1', { sector: 'Communication Services', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 71 }),
     candidate('TECH1', { sector: 'Technology', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 70 }),
+    candidate('HEALTH1', { sector: 'Healthcare', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 69 }),
   ]);
 
   const fixture = page.locator('#moreSectorFixture');
   const dropdown = fixture.locator('[data-market-sector-select]');
   const more = fixture.locator('.market-sector-more');
   const all = fixture.locator('[data-market-sector="all"]');
-
-  await dropdown.selectOption('Energy');
-  await expect(more).toHaveClass(/is-active/);
-  await expect(more).toHaveAttribute('data-market-sector', 'Energy');
-  await expect(fixture.locator('[data-market-ticker="ENERGY1"]')).toBeVisible();
-  let tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
-  expect(tickers).toEqual(['ENERGY1']);
+  const technology = fixture.locator('[data-market-sector="Technology"]');
+  const healthcare = fixture.locator('[data-market-sector="Healthcare"]');
 
   await dropdown.selectOption('Communication Services');
-  await expect(more).toHaveAttribute('data-market-sector', 'Communication Services');
+  await expect(more).toHaveClass(/is-active/);
   await expect(fixture.locator('[data-market-ticker="COMM1"]')).toBeVisible();
-  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
-  expect(tickers).toEqual(['COMM1']);
 
-  await page.evaluate(() => {
-    const fixture = document.querySelector('#moreSectorFixture');
-    const more = fixture.querySelector('.market-sector-more');
-    const all = fixture.querySelector('[data-market-sector="all"]');
-    more.classList.remove('is-active');
-    all.classList.add('is-active');
-    all.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-  });
-
+  await all.tap();
   await expect(dropdown).toHaveValue('');
   await expect(more).not.toHaveClass(/is-active/);
-  expect(await more.getAttribute('data-market-sector')).toBeNull();
   await expect(more).toHaveAttribute('data-market-sector-recall', 'Communication Services');
-  await expect(more.locator('span')).toHaveText('Communication Services');
-  await expect(all).toHaveClass(/is-active/);
   await expect(fixture.locator('[data-market-ticker="TECH1"]')).toBeVisible();
-  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
-  expect(new Set(tickers)).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1']));
 
-  await dropdown.tap();
+  await technology.tap();
+  await expect(fixture.locator('[data-market-ticker="TECH1"]')).toBeVisible();
+  let tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
+  expect(tickers).toEqual(['TECH1']);
+
+  await healthcare.tap();
+  await expect(fixture.locator('[data-market-ticker="HEALTH1"]')).toBeVisible();
+  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
+  expect(tickers).toEqual(['HEALTH1']);
+
+  await all.tap();
+  await expect(fixture.locator('[data-market-ticker="COMM1"]')).toBeVisible();
+  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
+  expect(new Set(tickers)).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']));
+
+  await expect(dropdown).toHaveCSS('pointer-events', 'none');
+  await more.tap();
   await expect(dropdown).toHaveValue('Communication Services');
   await expect(more).toHaveClass(/is-active/);
   await expect(more).toHaveAttribute('data-market-sector', 'Communication Services');
@@ -151,5 +158,7 @@ test('iPhone/WebKit: More-sector selection can exit and be recalled with one tap
   tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
   expect(tickers).toEqual(['COMM1']);
 
+  const tapLog = await page.evaluate(() => window.__sectorTapLog);
+  expect(tapLog).toEqual(['all', 'Technology', 'Healthcare', 'all']);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });

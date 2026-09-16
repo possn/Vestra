@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v2.5 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v2.6 — strategy controls over independent full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -49,6 +49,7 @@
     const selected=t(select?.value);
     if(selected){
       lastMoreSector=selected;
+      select.style.pointerEvents='auto';
       delete label.dataset.marketSectorRecall;
       s.querySelectorAll('[data-market-sector].is-active').forEach(node=>{if(node!==label)node.classList.remove('is-active');});
       label.dataset.marketSector=selected;
@@ -59,7 +60,11 @@
       if(lastMoreSector){
         label.dataset.marketSectorRecall=lastMoreSector;
         const text=label.querySelector('span');if(text)text.textContent=lastMoreSector;
-      }else delete label.dataset.marketSectorRecall;
+        select.style.pointerEvents='none';
+      }else{
+        delete label.dataset.marketSectorRecall;
+        select.style.pointerEvents='auto';
+      }
     }
   }
   function clearMoreSectorSelectionForCanonicalClick(target){
@@ -69,12 +74,16 @@
     const select=s.querySelector('[data-market-sector-select]');
     const label=select?.closest?.('.market-sector-more');
     if(select&&t(select.value)){lastMoreSector=t(select.value);select.value='';}
-    if(label){delete label.dataset.marketSector;label.classList.remove('is-active');if(lastMoreSector)label.dataset.marketSectorRecall=lastMoreSector;}
+    if(label){
+      delete label.dataset.marketSector;
+      label.classList.remove('is-active');
+      if(lastMoreSector){label.dataset.marketSectorRecall=lastMoreSector;if(select)select.style.pointerEvents='none';}
+    }
   }
   function recallMoreSectorSelection(target){
-    const select=target?.closest?.('[data-market-sector-select]');
+    const label=target?.closest?.('.market-sector-more');
+    const select=label?.querySelector?.('[data-market-sector-select]');
     if(!select||t(select.value))return false;
-    const label=select.closest?.('.market-sector-more');
     const recalled=t(label?.dataset.marketSectorRecall||lastMoreSector);
     if(!recalled||![...select.options].some(option=>t(option.value)===recalled))return false;
     select.value=recalled;
@@ -108,17 +117,14 @@
     link.href='market-opportunity-lenses.css?v=1.0';
     document.head.appendChild(link);
   }
-  document.addEventListener('pointerdown',e=>{
-    const select=e.target.closest?.('[data-market-sector-select]');
-    if(!select||t(select.value))return;
-    const label=select.closest?.('.market-sector-more');
-    if(!t(label?.dataset.marketSectorRecall||lastMoreSector))return;
-    e.preventDefault();e.stopPropagation();
-    recallMoreSectorSelection(select);
-  },true);
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('[data-vestra-lens]');
     if(b){e.preventDefault();e.stopPropagation();selectLens(b.dataset.vestraLens);return;}
+    const recall=e.target.closest?.('.market-sector-more[data-market-sector-recall]');
+    if(recall&&!recall.classList.contains('is-active')){
+      e.preventDefault();e.stopPropagation();
+      if(recallMoreSectorSelection(recall))return;
+    }
     const sector=e.target.closest?.('[data-market-sector]');
     if(sector){clearMoreSectorSelectionForCanonicalClick(sector);refreshAfterSectorSelection();}
   });
@@ -135,5 +141,5 @@
     window.addEventListener('vestra:market-ready',()=>{bridgeMoreSectorSelection();refreshUi();});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.5'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.6'});
 })();
