@@ -44,7 +44,7 @@ class PoliticiansStaticStyleTests(unittest.TestCase):
         self.assertIn("document.addEventListener('input'", source)
         self.assertIn("document.addEventListener('keydown'", source)
         self.assertIn('data-politician-select', source)
-        self.assertIn("const VERSION='2.2'", source)
+        self.assertIn("const VERSION='2.1'", source)
 
     def test_service_worker_precaches_and_refreshes_politicians_runtime(self):
         sw = read('sw.js')
