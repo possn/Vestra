@@ -73,7 +73,7 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: More-sector selection restricts opportunity shortlist and can exit to canonical sector', async ({ page }) => {
+test('iPhone/WebKit: More-sector selection can exit and be recalled with one tap', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -136,10 +136,20 @@ test('iPhone/WebKit: More-sector selection restricts opportunity shortlist and c
   await expect(dropdown).toHaveValue('');
   await expect(more).not.toHaveClass(/is-active/);
   expect(await more.getAttribute('data-market-sector')).toBeNull();
+  await expect(more).toHaveAttribute('data-market-sector-recall', 'Communication Services');
+  await expect(more.locator('span')).toHaveText('Communication Services');
   await expect(all).toHaveClass(/is-active/);
   await expect(fixture.locator('[data-market-ticker="TECH1"]')).toBeVisible();
   tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
   expect(new Set(tickers)).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1']));
+
+  await dropdown.tap();
+  await expect(dropdown).toHaveValue('Communication Services');
+  await expect(more).toHaveClass(/is-active/);
+  await expect(more).toHaveAttribute('data-market-sector', 'Communication Services');
+  await expect(fixture.locator('[data-market-ticker="COMM1"]')).toBeVisible();
+  tickers = await fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
+  expect(tickers).toEqual(['COMM1']);
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
