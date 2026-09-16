@@ -65,7 +65,7 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: More sectors can be reopened and changed repeatedly', async ({ page }) => {
+test('iPhone/WebKit: More sectors remains a live native select across repeated changes', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await waitForLaunch(page);
@@ -119,48 +119,59 @@ test('iPhone/WebKit: More sectors can be reopened and changed repeatedly', async
   const technology = fixture.locator('[data-market-sector="Technology"]');
   const rowTickers = () => fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
 
-  // WebKit's headless driver cannot operate the native iOS picker attached to
-  // the transparent select. Seed the picker result by dispatching the exact
-  // bubbling change event that iOS emits, while separately exercising the
-  // visible More chip and canonical buttons with real taps.
-  const chooseMore = async (value) => {
+  const assertLiveNativeSelect = async () => {
+    await expect(more).toBeVisible();
     await expect(dropdown).toBeEnabled();
     await expect(dropdown).toHaveCSS('pointer-events', 'auto');
-    await more.tap();
+    const hit = await dropdown.evaluate(select => {
+      const r = select.getBoundingClientRect();
+      const target = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return {
+        width: r.width,
+        height: r.height,
+        connected: select.isConnected,
+        targetIsSelectOrInsideLabel: target === select || Boolean(target?.closest?.('.market-sector-more')),
+      };
+    });
+    expect(hit.connected).toBe(true);
+    expect(hit.width).toBeGreaterThan(0);
+    expect(hit.height).toBeGreaterThan(0);
+    expect(hit.targetIsSelectOrInsideLabel).toBe(true);
+  };
+
+  // Headless WebKit cannot drive the native iOS picker itself reliably. The
+  // production contract we need is that the native select stays hittable; the
+  // picker result is represented by the same bubbling change event iOS emits.
+  const chooseMore = async (value) => {
+    await assertLiveNativeSelect();
     await dropdown.evaluate((select, next) => {
       select.value = next;
       select.dispatchEvent(new Event('change', { bubbles: true }));
     }, value);
+    await assertLiveNativeSelect();
   };
 
   await chooseMore('Energy');
   await expect(more).toHaveClass(/is-active/);
   await expect(more).not.toHaveAttribute('data-market-sector', /.+/);
-  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
   await expect.poll(rowTickers).toEqual(['ENERGY1']);
 
   await chooseMore('Communication Services');
   await expect(dropdown).toHaveValue('Communication Services');
   await expect(more).not.toHaveAttribute('data-market-sector', /.+/);
-  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
   await expect.poll(rowTickers).toEqual(['COMM1']);
 
   await technology.tap();
   await expect(dropdown).toHaveValue('');
   await expect(more).not.toHaveClass(/is-active/);
-  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
+  await assertLiveNativeSelect();
   await expect.poll(rowTickers).toEqual(['TECH1']);
 
   await chooseMore('Energy');
   await expect.poll(rowTickers).toEqual(['ENERGY1']);
   await all.tap();
+  await assertLiveNativeSelect();
   await expect.poll(async () => new Set(await rowTickers())).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']));
-
-  // A second real tap after multiple transitions verifies that the More chip
-  // itself has not become inert or been covered by a stale canonical layer.
-  await more.tap();
-  await expect(dropdown).toBeEnabled();
-  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
 
   const tapLog = await page.evaluate(() => window.__sectorTapLog);
   expect(tapLog).toEqual(['Technology', 'all']);
