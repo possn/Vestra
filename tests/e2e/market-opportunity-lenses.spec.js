@@ -17,14 +17,12 @@ const candidate = (ticker, extra = {}) => ({
 async function waitForLaunch(page) {
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
-  // Splash contract is 6.2s failsafe + 0.72s fade; leave scheduling headroom on CI WebKit.
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 10_000 });
 }
 
 test('iPhone/WebKit: each opportunity lens ranks the full universe independently', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
-
   await waitForLaunch(page);
 
   await page.evaluate((rows) => {
@@ -59,24 +57,19 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
 
   const low52 = await select('low52', 'LOW52');
   expect(low52).toEqual(['LOW52']);
-
   const emerging = await select('emerging', 'EARLY');
   expect(emerging).toContain('EARLY');
-
   const recovery = await select('recovery', 'RECOV');
   expect(recovery).toContain('RECOV');
-
   const value = await select('value', 'VALUE');
   expect(value).toContain('VALUE');
-
   expect(new Set([low52.join(','), emerging.join(','), recovery.join(','), value.join(',')]).size).toBeGreaterThan(2);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', async ({ page }) => {
+test('iPhone/WebKit: More-sector picker can be reopened repeatedly after canonical sector taps', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
-
   await waitForLaunch(page);
 
   await page.evaluate((rows) => {
@@ -92,8 +85,8 @@ test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', 
         <button type="button" data-market-sector="all" class="is-active">Todos</button>
         <button type="button" data-market-sector="Technology">Technology</button>
         <button type="button" data-market-sector="Healthcare">Healthcare</button>
-        <label class="market-sector-more"><span>Mais setores</span>
-          <select data-market-sector-select>
+        <label class="market-sector-more"><span>Mais <span aria-hidden="true">⌄</span></span>
+          <select data-market-sector-select aria-label="Mais setores">
             <option value="">Mais setores</option>
             <option value="Energy">Energy</option>
             <option value="Communication Services">Communication Services</option>
@@ -120,6 +113,7 @@ test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', 
   const fixture = page.locator('#moreSectorFixture');
   const dropdown = fixture.locator('[data-market-sector-select]');
   const more = fixture.locator('.market-sector-more');
+  const moreLabel = more.locator('span').first();
   const all = fixture.locator('[data-market-sector="all"]');
   const technology = fixture.locator('[data-market-sector="Technology"]');
   const healthcare = fixture.locator('[data-market-sector="Healthcare"]');
@@ -127,31 +121,42 @@ test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', 
 
   await dropdown.selectOption('Communication Services');
   await expect(more).toHaveClass(/is-active/);
+  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
   await expect.poll(rowTickers).toEqual(['COMM1']);
 
-  await all.tap();
-  await expect(dropdown).toHaveValue('');
-  await expect(more).not.toHaveClass(/is-active/);
-  await expect(more).toHaveAttribute('data-market-sector-recall', 'Communication Services');
-  await expect.poll(rowTickers).toEqual(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']);
+  // The native picker must remain usable while a More-sector is active.
+  await dropdown.selectOption('Energy');
+  await expect(dropdown).toHaveValue('Energy');
+  await expect(more).toHaveAttribute('data-market-sector', 'Energy');
+  await expect.poll(rowTickers).toEqual(['ENERGY1']);
 
   await technology.tap();
+  await expect(dropdown).toHaveValue('');
+  await expect(more).not.toHaveClass(/is-active/);
+  await expect(more).not.toHaveAttribute('data-market-sector-recall', /.+/);
+  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
+  await expect(moreLabel).toContainText('Mais');
   await expect.poll(rowTickers).toEqual(['TECH1']);
 
+  // After a canonical sector, the full native option list must be usable again.
+  await dropdown.selectOption('Communication Services');
+  await expect(dropdown).toHaveValue('Communication Services');
+  await expect(more).toHaveClass(/is-active/);
+  await expect.poll(rowTickers).toEqual(['COMM1']);
+
   await healthcare.tap();
+  await expect(dropdown).toHaveValue('');
+  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
   await expect.poll(rowTickers).toEqual(['HEALTH1']);
 
   await all.tap();
   await expect.poll(async () => new Set(await rowTickers())).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']));
+  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
 
-  await expect(dropdown).toHaveCSS('pointer-events', 'none');
-  await more.tap();
-  await expect(dropdown).toHaveValue('Communication Services');
-  await expect(more).toHaveClass(/is-active/);
-  await expect(more).toHaveAttribute('data-market-sector', 'Communication Services');
-  await expect.poll(rowTickers).toEqual(['COMM1']);
+  await dropdown.selectOption('Energy');
+  await expect.poll(rowTickers).toEqual(['ENERGY1']);
 
   const tapLog = await page.evaluate(() => window.__sectorTapLog);
-  expect(tapLog).toEqual(['all', 'Technology', 'Healthcare', 'all']);
+  expect(tapLog).toEqual(['Technology', 'Healthcare', 'all']);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
