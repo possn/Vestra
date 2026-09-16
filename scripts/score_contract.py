@@ -1,19 +1,26 @@
 """Identity-safe boundary around the frozen Vestra scoring engine.
 
 The core score implementation in score.py is intentionally left untouched.
-Explicit FUND/MUTUALFUND rows are removed from the cross-sectional equity input
-and re-attached as neutral, non-scored rows. If a transient fetch loses the
-quote type entirely, exact deterministic identity evidence may recover a known
-ETF, or an exact ticker match to a previously published explicit fund may carry
-that fund identity forward. Conflicting explicit current types always win;
-missing/unknown identities without evidence remain in the legacy candidate path.
+Explicit FUND/MUTUALFUND rows and canonical preferred-share issues are removed
+from the cross-sectional common-equity input and re-attached as neutral,
+non-scored rows. If a transient fetch loses the quote type entirely, exact
+deterministic identity evidence may recover a known ETF, or an exact ticker
+match to a previously published explicit fund may carry that fund identity
+forward. Conflicting explicit current types always win except where a provider
+uses the broad EQUITY label for a ticker whose canonical ``-P<series>`` identity
+unambiguously denotes a preferred issue.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from asset_types import is_fund_type, is_explicit_non_equity, normalized_quote_type
+from asset_types import (
+    is_fund_type,
+    is_explicit_non_equity,
+    is_preferred_ticker,
+    normalized_quote_type,
+)
 from known_asset_identity import exact_identity_override
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,6 +129,15 @@ def score_universe(raw, previous_path=STOCKS_SNAPSHOT):
         current_type = normalized_quote_type(getattr(r, "quote_type", None))
         previous = previous_funds.get(ticker)
         override = exact_identity_override(ticker)
+
+        # Provider feeds commonly label preferred issues as generic EQUITY. The
+        # canonical ticker itself carries the instrument subtype, so isolate it
+        # before common-equity cross-sectional scoring. Explicit unrelated
+        # non-equity identities (ETF/CRYPTO/FUND) are never overwritten.
+        if is_preferred_ticker(ticker) and current_type in {"", "EQUITY", "PREFERRED"}:
+            setattr(r, "quote_type", "PREFERRED")
+            neutral_rows.append((r, None, "PREFERRED"))
+            continue
 
         # Deterministic overrides are allowed only when the live provider lost
         # the type entirely. Explicit current identity always wins.
