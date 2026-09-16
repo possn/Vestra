@@ -21,7 +21,7 @@ class MarketOpportunityLensesTests(unittest.TestCase):
 
     def test_runtime_behavior_and_offline_reachability_are_preserved(self):
         self.assertIn("window.VestraMarketOpportunities?.selectLens?.(activeLens)", self.source)
-        self.assertIn("version:'2.6'", self.source)
+        self.assertIn("version:'2.7'", self.source)
         self.assertIn('"./market-opportunity-lenses.css"', self.sw)
 
 
