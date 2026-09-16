@@ -1,7 +1,7 @@
-/* Vestra Politicians v2.2 — Congress + Executive disclosures, leaders, favourites and name search. */
+/* Vestra Politicians v2.1 — Congress + Executive disclosures, leaders, favourites and name search. */
 (()=>{
   'use strict';
-  const VERSION='2.2';
+  const VERSION='2.1';
   const FAV_KEY='vestra-politician-favourites-v2';
   const t=v=>String(v??'').trim();
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
