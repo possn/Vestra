@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Normalize central-bank calendar events to decision day and enrich ECB decisions.
+"""Normalize central-bank events to decision day and enrich official ECB/Fed results.
 
 The official calendars describe two-day Governing Council/FOMC meetings. For an
 investor-facing catalyst calendar the actionable event is the decision, published
-on day 2. This module therefore preserves the meeting start as context while
-placing the event on decision day. ECB results are attached only from the exact
-official monetary-policy release for that date.
+on day 2. This module preserves the meeting start as context while placing the
+event on decision day. Results are attached only from the exact official release.
 """
 from __future__ import annotations
 
@@ -24,7 +23,10 @@ OUTPUT = ROOT / "data" / "macro-events.json"
 UA = "Vestra/1.0 policy-decisions (+https://github.com/possn/Vestra)"
 TIMEOUT = 20
 ECB_INDEX = "https://www.ecb.europa.eu/press/govcdec/mopo/html/index.en.html"
+FED_INDEX = "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+FED_RELEASE_ROOT = "https://www.federalreserve.gov/newsevents/pressreleases/"
 ECB_SCHEMA = "ecb_rates_v1"
+FED_SCHEMA = "fed_funds_target_v1"
 ECB_METRIC_KEYS = (
     "deposit_facility_pct",
     "main_refinancing_pct",
@@ -82,18 +84,18 @@ def _event_key(event: dict) -> tuple[str, str, str]:
     )
 
 
-def carry_forward_ecb_results(payload: dict, previous: dict) -> int:
+def carry_forward_results(payload: dict, previous: dict, source: str, schema: str) -> int:
     old = {
         _event_key(event): event
         for event in (previous.get("events") or [])
         if isinstance(event, dict)
-        and event.get("source") == "ecb"
-        and event.get("result_metric_schema") == ECB_SCHEMA
+        and event.get("source") == source
+        and event.get("result_metric_schema") == schema
         and event.get("result_status") == "official_release_summary"
     }
     carried = 0
     for event in payload.get("events") or []:
-        if not isinstance(event, dict) or event.get("source") != "ecb":
+        if not isinstance(event, dict) or event.get("source") != source:
             continue
         prior = old.get(_event_key(event))
         if not prior:
@@ -103,6 +105,14 @@ def carry_forward_ecb_results(payload: dict, previous: dict) -> int:
                 event[field] = prior[field]
         carried += 1
     return carried
+
+
+def carry_forward_ecb_results(payload: dict, previous: dict) -> int:
+    return carry_forward_results(payload, previous, "ecb", ECB_SCHEMA)
+
+
+def carry_forward_fed_results(payload: dict, previous: dict) -> int:
+    return carry_forward_results(payload, previous, "fed", FED_SCHEMA)
 
 
 def find_ecb_release_url(index_page: str, event_date: date) -> str:
@@ -117,6 +127,21 @@ def find_ecb_release_url(index_page: str, event_date: date) -> str:
         if re.search(rf"ecb\.mp{stamp}~[A-Za-z0-9]+\.en\.html(?:$|[?#])", raw):
             return urljoin(ECB_INDEX, raw)
     return ""
+
+
+def find_fed_release_url(index_page: str, event_date: date) -> str:
+    """Find the official FOMC statement link for event_date on the Fed calendar."""
+    stamp = event_date.strftime("%Y%m%d")
+    try:
+        tree = html.fromstring(index_page)
+    except Exception:
+        tree = None
+    if tree is not None:
+        for href in tree.xpath("//a/@href"):
+            raw = str(href or "")
+            if re.search(rf"monetary{stamp}a\.htm(?:l)?(?:$|[?#])", raw, re.I):
+                return urljoin(FED_INDEX, raw)
+    return urljoin(FED_RELEASE_ROOT, f"monetary{stamp}a.htm")
 
 
 def parse_ecb_release(page: str) -> tuple[str, dict] | None:
@@ -145,6 +170,31 @@ def parse_ecb_release(page: str) -> tuple[str, dict] | None:
         f"Refinanciamento principal {rates[1]:.2f}% · "
         f"Facilidade marginal {rates[2]:.2f}%"
     )
+    return summary, metrics
+
+
+def parse_fed_release(page: str) -> tuple[str, dict] | None:
+    """Extract the official federal-funds target range from an FOMC statement."""
+    try:
+        tree = html.fromstring(page)
+        text = " ".join(tree.text_content().split())
+    except Exception:
+        return None
+    match = re.search(
+        r"target range for the federal funds rate.{0,240}?"
+        r"(?:to|at)\s+(\d+(?:\.\d+)?)\s*(?:percent|%)?\s*to\s*"
+        r"(\d+(?:\.\d+)?)\s*(?:percent|%)",
+        text,
+        re.I,
+    )
+    if not match:
+        return None
+    lower = float(match.group(1))
+    upper = float(match.group(2))
+    if lower < 0 or upper < lower or upper > 30:
+        return None
+    metrics = {"target_lower_pct": lower, "target_upper_pct": upper}
+    summary = f"Federal funds target range {lower:.2f}%–{upper:.2f}%"
     return summary, metrics
 
 
@@ -195,6 +245,53 @@ def enrich_ecb_results(payload: dict, session: requests.Session, today: date | N
     return {"matched": matched, "fetched_index": 1, "fetched_releases": fetched_releases}
 
 
+def enrich_fed_results(payload: dict, session: requests.Session, today: date | None = None) -> dict:
+    today = today or date.today()
+    candidates = []
+    for event in payload.get("events") or []:
+        if not isinstance(event, dict) or event.get("source") != "fed":
+            continue
+        try:
+            event_date = date.fromisoformat(str(event.get("date") or ""))
+        except Exception:
+            continue
+        if event_date <= today:
+            candidates.append((event, event_date))
+    if not candidates:
+        return {"matched": 0, "fetched_index": 0, "fetched_releases": 0}
+
+    try:
+        response = session.get(FED_INDEX, timeout=TIMEOUT)
+        response.raise_for_status()
+        index_page = response.text
+        fetched_index = 1
+    except Exception:
+        index_page = ""
+        fetched_index = 1
+
+    matched = 0
+    fetched_releases = 0
+    for event, event_date in candidates:
+        release_url = find_fed_release_url(index_page, event_date)
+        try:
+            response = session.get(release_url, timeout=TIMEOUT)
+            response.raise_for_status()
+            fetched_releases += 1
+            parsed = parse_fed_release(response.text)
+        except Exception:
+            parsed = None
+        if not parsed:
+            continue
+        event["result_summary"] = parsed[0]
+        event["result_status"] = "official_release_summary"
+        event["result_released_at"] = event_date.isoformat()
+        event["source_url"] = release_url
+        event["result_metric_schema"] = FED_SCHEMA
+        event["result_metrics"] = parsed[1]
+        matched += 1
+    return {"matched": matched, "fetched_index": fetched_index, "fetched_releases": fetched_releases}
+
+
 def main() -> int:
     payload = _load(OUTPUT)
     if not isinstance(payload.get("events"), list):
@@ -205,22 +302,34 @@ def main() -> int:
     previous = _load(Path(previous_path)) if previous_path else {}
     if previous:
         normalize_decision_days(previous)
-    carried = carry_forward_ecb_results(payload, previous) if previous else 0
+    carried_ecb = carry_forward_ecb_results(payload, previous) if previous else 0
+    carried_fed = carry_forward_fed_results(payload, previous) if previous else 0
 
     session = requests.Session()
     session.headers.update({"User-Agent": UA, "Accept-Language": "en-US,en;q=0.8"})
-    stats = enrich_ecb_results(payload, session)
-    payload.setdefault("result_enrichment", {})["ecb"] = {
+    ecb_stats = enrich_ecb_results(payload, session)
+    fed_stats = enrich_fed_results(payload, session)
+    enrichment = payload.setdefault("result_enrichment", {})
+    enrichment["ecb"] = {
         "state": "checked",
-        "matched": stats["matched"],
-        "fetched_index": stats["fetched_index"],
-        "fetched_releases": stats["fetched_releases"],
-        "carried_forward": carried,
+        "matched": ecb_stats["matched"],
+        "fetched_index": ecb_stats["fetched_index"],
+        "fetched_releases": ecb_stats["fetched_releases"],
+        "carried_forward": carried_ecb,
         "decision_day_normalized": normalized,
         "contract": "decision-day only; exact official ECB release; three named policy rates",
     }
+    enrichment["fed"] = {
+        "state": "checked",
+        "matched": fed_stats["matched"],
+        "fetched_index": fed_stats["fetched_index"],
+        "fetched_releases": fed_stats["fetched_releases"],
+        "carried_forward": carried_fed,
+        "decision_day_normalized": normalized,
+        "contract": "decision-day only; exact official Federal Reserve FOMC statement; target range",
+    }
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    print(json.dumps(payload["result_enrichment"]["ecb"], ensure_ascii=False))
+    print(json.dumps({"ecb": enrichment["ecb"], "fed": enrichment["fed"]}, ensure_ascii=False))
     return 0
 
 
