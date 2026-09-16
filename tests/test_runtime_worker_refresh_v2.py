@@ -27,7 +27,7 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         self.assertIn("current.replaceWith(button)", text)
         self.assertIn("document.addEventListener('click'", text)
         self.assertIn("}, true);", text)
-        self.assertIn("version: '1.5'", text)
+        self.assertIn("version: '1.6'", text)
         self.assertIn("stopImmediatePropagation", text)
         self.assertIn("DOMContentLoaded', reclaimAfterAppSetup", text)
         self.assertIn("vestra:app-ready', reclaimAfterAppSetup", text)
@@ -46,7 +46,7 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
     def test_bootstrap_loads_current_runtime_modules(self):
         text = BOOT.read_text(encoding="utf-8")
         self.assertIn("app-runtime-bridge.js?v=1.1", text)
-        self.assertIn("app-update-manager.js?v=1.5", text)
+        self.assertIn("app-update-manager.js?v=1.6", text)
         self.assertIn("market-learned-universe.js?v=2.1", text)
         self.assertIn("market-global-search.js?v=1.7", text)
         self.assertIn("market-data-health.js?v=1.3", text)
