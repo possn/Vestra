@@ -1,10 +1,9 @@
-/* Vestra Market Opportunity Lenses v2.6 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v2.8 — strategy controls over independent full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
   const LENSES=new Set(['all','low52','emerging','recovery','value']);
   let activeLens='all';
-  let lastMoreSector='';
 
   function section(){
     return [...document.querySelectorAll('.market-section')].find(x=>/Oportunidades agora|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)))||null;
@@ -41,71 +40,45 @@
       empty.textContent=emptyCopy(activeLens);
     }else empty?.remove();
   }
-  function bridgeMoreSectorSelection(){
+  function syncMoreSectorVisual(){
     const s=section();if(!s)return;
     const select=s.querySelector('[data-market-sector-select]');
     const label=select?.closest?.('.market-sector-more');
     if(!label)return;
     const selected=t(select?.value);
-    if(selected){
-      lastMoreSector=selected;
-      select.style.pointerEvents='auto';
-      delete label.dataset.marketSectorRecall;
-      s.querySelectorAll('[data-market-sector].is-active').forEach(node=>{if(node!==label)node.classList.remove('is-active');});
-      label.dataset.marketSector=selected;
-      label.classList.add('is-active');
-    }else{
-      delete label.dataset.marketSector;
-      label.classList.remove('is-active');
-      if(lastMoreSector){
-        label.dataset.marketSectorRecall=lastMoreSector;
-        const text=label.querySelector('span');if(text)text.textContent=lastMoreSector;
-        select.style.pointerEvents='none';
-      }else{
-        delete label.dataset.marketSectorRecall;
-        select.style.pointerEvents='auto';
-      }
-    }
+    if(selected)s.querySelectorAll('[data-market-sector].is-active').forEach(node=>{if(node!==label)node.classList.remove('is-active');});
+    label.classList.toggle('is-active',Boolean(selected));
+    const text=label.querySelector('span');if(text)text.textContent=selected||'Mais';
+    delete label.dataset.marketSector;
+    delete label.dataset.marketSectorRecall;
+    if(select)select.style.pointerEvents='auto';
   }
-  function clearMoreSectorSelectionForCanonicalClick(target){
-    const s=section();if(!s)return;
-    const sector=target?.closest?.('[data-market-sector]');
-    if(!sector||sector.closest?.('.market-sector-more'))return;
-    const select=s.querySelector('[data-market-sector-select]');
+  function withMoreSectorBridge(callback){
+    const s=section();
+    const select=s?.querySelector('[data-market-sector-select]');
     const label=select?.closest?.('.market-sector-more');
-    if(select&&t(select.value)){lastMoreSector=t(select.value);select.value='';}
-    if(label){
-      delete label.dataset.marketSector;
-      label.classList.remove('is-active');
-      if(lastMoreSector){label.dataset.marketSectorRecall=lastMoreSector;if(select)select.style.pointerEvents='none';}
-    }
-  }
-  function recallMoreSectorSelection(target){
-    const label=target?.closest?.('.market-sector-more');
-    const select=label?.querySelector?.('[data-market-sector-select]');
-    if(!select||t(select.value))return false;
-    const recalled=t(label?.dataset.marketSectorRecall||lastMoreSector);
-    if(!recalled||![...select.options].some(option=>t(option.value)===recalled))return false;
-    select.value=recalled;
-    select.dispatchEvent(new Event('change',{bubbles:true}));
-    return true;
+    const selected=t(select?.value);
+    if(!label||!selected)return callback();
+    label.dataset.marketSector=selected;
+    try{return callback();}
+    finally{delete label.dataset.marketSector;}
   }
   function refreshUi(){
     const s=section();if(!s)return;
     syncButtons(ensureBar(s));
+    syncMoreSectorVisual();
     syncEmpty(s);
   }
   function selectLens(value){
     const next=t(value)||'all';if(!LENSES.has(next))return;
     activeLens=next;
-    bridgeMoreSectorSelection();
-    window.VestraMarketOpportunities?.selectLens?.(activeLens);
+    withMoreSectorBridge(()=>window.VestraMarketOpportunities?.selectLens?.(activeLens));
     requestAnimationFrame(refreshUi);
   }
   function refreshAfterSectorSelection(){
     requestAnimationFrame(()=>{
-      bridgeMoreSectorSelection();
-      window.VestraMarketOpportunities?.refresh?.(activeLens);
+      syncMoreSectorVisual();
+      withMoreSectorBridge(()=>window.VestraMarketOpportunities?.refresh?.(activeLens));
       refreshUi();
     });
   }
@@ -120,13 +93,8 @@
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('[data-vestra-lens]');
     if(b){e.preventDefault();e.stopPropagation();selectLens(b.dataset.vestraLens);return;}
-    const recall=e.target.closest?.('.market-sector-more[data-market-sector-recall]');
-    if(recall&&!recall.classList.contains('is-active')){
-      e.preventDefault();e.stopPropagation();
-      if(recallMoreSectorSelection(recall))return;
-    }
     const sector=e.target.closest?.('[data-market-sector]');
-    if(sector){clearMoreSectorSelectionForCanonicalClick(sector);refreshAfterSectorSelection();}
+    if(sector)refreshAfterSectorSelection();
   });
   document.addEventListener('change',e=>{
     if(e.target.matches?.('[data-market-sector-select]'))refreshAfterSectorSelection();
@@ -134,12 +102,11 @@
   function start(){
     style();
     const canonical=window.VestraMarketOpportunities?.activeLens;if(LENSES.has(canonical))activeLens=canonical;
-    bridgeMoreSectorSelection();
     refreshUi();
     let pending=false;
-    new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;bridgeMoreSectorSelection();refreshUi();});}).observe(document.body,{childList:true,subtree:true});
-    window.addEventListener('vestra:market-ready',()=>{bridgeMoreSectorSelection();refreshUi();});
+    new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;refreshUi();});}).observe(document.body,{childList:true,subtree:true});
+    window.addEventListener('vestra:market-ready',refreshUi);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.6'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.8'});
 })();
