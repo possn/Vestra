@@ -119,13 +119,27 @@ test('iPhone/WebKit: More sectors can be reopened and changed repeatedly', async
   const technology = fixture.locator('[data-market-sector="Technology"]');
   const rowTickers = () => fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
 
-  await dropdown.selectOption('Energy');
+  // WebKit's headless driver cannot operate the native iOS picker attached to
+  // the transparent select. Seed the picker result by dispatching the exact
+  // bubbling change event that iOS emits, while separately exercising the
+  // visible More chip and canonical buttons with real taps.
+  const chooseMore = async (value) => {
+    await expect(dropdown).toBeEnabled();
+    await expect(dropdown).toHaveCSS('pointer-events', 'auto');
+    await more.tap();
+    await dropdown.evaluate((select, next) => {
+      select.value = next;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }, value);
+  };
+
+  await chooseMore('Energy');
   await expect(more).toHaveClass(/is-active/);
   await expect(more).not.toHaveAttribute('data-market-sector', /.+/);
   await expect(dropdown).toHaveCSS('pointer-events', 'auto');
   await expect.poll(rowTickers).toEqual(['ENERGY1']);
 
-  await dropdown.selectOption('Communication Services');
+  await chooseMore('Communication Services');
   await expect(dropdown).toHaveValue('Communication Services');
   await expect(more).not.toHaveAttribute('data-market-sector', /.+/);
   await expect(dropdown).toHaveCSS('pointer-events', 'auto');
@@ -137,10 +151,16 @@ test('iPhone/WebKit: More sectors can be reopened and changed repeatedly', async
   await expect(dropdown).toHaveCSS('pointer-events', 'auto');
   await expect.poll(rowTickers).toEqual(['TECH1']);
 
-  await dropdown.selectOption('Energy');
+  await chooseMore('Energy');
   await expect.poll(rowTickers).toEqual(['ENERGY1']);
   await all.tap();
   await expect.poll(async () => new Set(await rowTickers())).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']));
+
+  // A second real tap after multiple transitions verifies that the More chip
+  // itself has not become inert or been covered by a stale canonical layer.
+  await more.tap();
+  await expect(dropdown).toBeEnabled();
+  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
 
   const tapLog = await page.evaluate(() => window.__sectorTapLog);
   expect(tapLog).toEqual(['Technology', 'all']);
