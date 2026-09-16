@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v2.8 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v2.9 — strategy controls over independent full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -56,12 +56,15 @@
   function withMoreSectorBridge(callback){
     const s=section();
     const select=s?.querySelector('[data-market-sector-select]');
-    const label=select?.closest?.('.market-sector-more');
     const selected=t(select?.value);
-    if(!label||!selected)return callback();
-    label.dataset.marketSector=selected;
+    if(!s||!selected)return callback();
+    const bridge=document.createElement('span');
+    bridge.hidden=true;
+    bridge.className='is-active';
+    bridge.dataset.marketSector=selected;
+    s.prepend(bridge);
     try{return callback();}
-    finally{delete label.dataset.marketSector;}
+    finally{bridge.remove();}
   }
   function refreshUi(){
     const s=section();if(!s)return;
@@ -108,5 +111,5 @@
     window.addEventListener('vestra:market-ready',refreshUi);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.8'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.9'});
 })();
