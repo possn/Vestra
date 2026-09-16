@@ -44,7 +44,10 @@ test('iPhone/WebKit: politician picker supports live name search', async ({ page
   });
 
   await waitForLaunch(page);
-  await page.locator('[data-politicians-mode]').tap();
+  await page.evaluate(() => window.setView?.('market'));
+  const politiciansMode = page.locator('[data-politicians-mode]');
+  await expect(politiciansMode).toBeVisible();
+  await politiciansMode.tap();
   await expect(page.locator('.politicians-section')).toBeVisible();
 
   const search = page.locator('[data-politician-search]');
