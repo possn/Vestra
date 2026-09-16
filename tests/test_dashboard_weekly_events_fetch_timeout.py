@@ -26,13 +26,21 @@ class DashboardWeeklyEventsFetchTimeoutTests(unittest.TestCase):
             self.runtime.index("macroSnapshot = payload;"),
         )
 
+    def test_force_refresh_bypasses_session_snapshot_but_preserves_last_good_data(self):
+        self.assertIn("force = false", self.runtime)
+        self.assertIn("if (macroSnapshot && !force) return macroSnapshot;", self.runtime)
+        self.assertIn("if (!payload) return macroSnapshot;", self.runtime)
+        self.assertIn("async function refreshMacroEvents()", self.runtime)
+        self.assertIn("MACRO_FETCH_TIMEOUT_MS, true", self.runtime)
+        self.assertIn("document.addEventListener('visibilitychange'", self.runtime)
+
     def test_schedule_render_cannot_wait_forever_on_macro_snapshot(self):
         self.assertIn("Promise.allSettled([marketLoad,loadMacroEvents()])", self.runtime)
         self.assertIn("macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS", self.runtime)
 
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("const VERSION = '1.9';", self.runtime)
-        self.assertIn("dashboard-weekly-events.js?v=1.9", self.loader)
+        self.assertIn("const VERSION = '2.0';", self.runtime)
+        self.assertIn("dashboard-weekly-events.js?v=2.0", self.loader)
 
 
 if __name__ == "__main__":
