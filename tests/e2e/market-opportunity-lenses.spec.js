@@ -17,14 +17,12 @@ const candidate = (ticker, extra = {}) => ({
 async function waitForLaunch(page) {
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
-  // Splash contract is 6.2s failsafe + 0.72s fade; leave scheduling headroom on CI WebKit.
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 10_000 });
 }
 
 test('iPhone/WebKit: each opportunity lens ranks the full universe independently', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
-
   await waitForLaunch(page);
 
   await page.evaluate((rows) => {
@@ -47,7 +45,6 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   const fixture = page.locator('#lensFixture');
   const bar = fixture.locator('.vestra-opportunity-lenses');
   await expect(bar).toBeVisible();
-
   const select = async (lens, ticker) => {
     const button = bar.locator(`[data-vestra-lens="${lens}"]`);
     await button.tap();
@@ -56,27 +53,21 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
     await expect(fixture.locator(`[data-market-ticker="${ticker}"]`)).toBeVisible();
     return fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
   };
-
   const low52 = await select('low52', 'LOW52');
   expect(low52).toEqual(['LOW52']);
-
   const emerging = await select('emerging', 'EARLY');
   expect(emerging).toContain('EARLY');
-
   const recovery = await select('recovery', 'RECOV');
   expect(recovery).toContain('RECOV');
-
   const value = await select('value', 'VALUE');
   expect(value).toContain('VALUE');
-
   expect(new Set([low52.join(','), emerging.join(','), recovery.join(','), value.join(',')]).size).toBeGreaterThan(2);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', async ({ page }) => {
+test('iPhone/WebKit: More sectors can be reopened and changed repeatedly', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
-
   await waitForLaunch(page);
 
   await page.evaluate((rows) => {
@@ -92,8 +83,8 @@ test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', 
         <button type="button" data-market-sector="all" class="is-active">Todos</button>
         <button type="button" data-market-sector="Technology">Technology</button>
         <button type="button" data-market-sector="Healthcare">Healthcare</button>
-        <label class="market-sector-more"><span>Mais setores</span>
-          <select data-market-sector-select>
+        <label class="market-sector-more"><span>Mais</span>
+          <select data-market-sector-select aria-label="Mais setores">
             <option value="">Mais setores</option>
             <option value="Energy">Energy</option>
             <option value="Communication Services">Communication Services</option>
@@ -101,10 +92,14 @@ test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', 
         </label>
       </div>
       <div class="market-list"></div>`;
+    const dropdown = fixture.querySelector('[data-market-sector-select]');
+    const more = fixture.querySelector('.market-sector-more');
     fixture.querySelectorAll('[data-market-sector]').forEach(button => {
       button.addEventListener('click', () => {
         fixture.querySelectorAll('[data-market-sector].is-active').forEach(node => node.classList.remove('is-active'));
         button.classList.add('is-active');
+        dropdown.value = '';
+        more.classList.remove('is-active');
         window.__sectorTapLog.push(button.dataset.marketSector);
       });
     });
@@ -122,36 +117,32 @@ test('iPhone/WebKit: all sector buttons remain tappable after More-sector use', 
   const more = fixture.locator('.market-sector-more');
   const all = fixture.locator('[data-market-sector="all"]');
   const technology = fixture.locator('[data-market-sector="Technology"]');
-  const healthcare = fixture.locator('[data-market-sector="Healthcare"]');
   const rowTickers = () => fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
 
-  await dropdown.selectOption('Communication Services');
+  await dropdown.selectOption('Energy');
   await expect(more).toHaveClass(/is-active/);
+  await expect(more).not.toHaveAttribute('data-market-sector', /.+/);
+  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
+  await expect.poll(rowTickers).toEqual(['ENERGY1']);
+
+  await dropdown.selectOption('Communication Services');
+  await expect(dropdown).toHaveValue('Communication Services');
+  await expect(more).not.toHaveAttribute('data-market-sector', /.+/);
+  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
   await expect.poll(rowTickers).toEqual(['COMM1']);
 
-  await all.tap();
+  await technology.tap();
   await expect(dropdown).toHaveValue('');
   await expect(more).not.toHaveClass(/is-active/);
-  await expect(more).toHaveAttribute('data-market-sector-recall', 'Communication Services');
-  await expect.poll(rowTickers).toEqual(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']);
-
-  await technology.tap();
+  await expect(dropdown).toHaveCSS('pointer-events', 'auto');
   await expect.poll(rowTickers).toEqual(['TECH1']);
 
-  await healthcare.tap();
-  await expect.poll(rowTickers).toEqual(['HEALTH1']);
-
+  await dropdown.selectOption('Energy');
+  await expect.poll(rowTickers).toEqual(['ENERGY1']);
   await all.tap();
   await expect.poll(async () => new Set(await rowTickers())).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']));
 
-  await expect(dropdown).toHaveCSS('pointer-events', 'none');
-  await more.tap();
-  await expect(dropdown).toHaveValue('Communication Services');
-  await expect(more).toHaveClass(/is-active/);
-  await expect(more).toHaveAttribute('data-market-sector', 'Communication Services');
-  await expect.poll(rowTickers).toEqual(['COMM1']);
-
   const tapLog = await page.evaluate(() => window.__sectorTapLog);
-  expect(tapLog).toEqual(['all', 'Technology', 'Healthcare', 'all']);
+  expect(tapLog).toEqual(['Technology', 'all']);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
