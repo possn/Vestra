@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v2.7 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v2.8 — strategy controls over independent full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -46,6 +46,7 @@
     const label=select?.closest?.('.market-sector-more');
     if(!label)return;
     const selected=t(select?.value);
+    if(selected)s.querySelectorAll('[data-market-sector].is-active').forEach(node=>{if(node!==label)node.classList.remove('is-active');});
     label.classList.toggle('is-active',Boolean(selected));
     const text=label.querySelector('span');if(text)text.textContent=selected||'Mais';
     delete label.dataset.marketSector;
@@ -107,5 +108,5 @@
     window.addEventListener('vestra:market-ready',refreshUi);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.7'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.8'});
 })();
