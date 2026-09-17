@@ -68,7 +68,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("requestAnimationFrame(()=>requestAnimationFrame(()=>", lenses)
         self.assertIn("document.addEventListener('change',deferNativeSectorCommit,true)", lenses)
         self.assertIn("deferredSectorEvents.add(commit)", lenses)
-        self.assertIn("select.dispatchEvent(commit)", lenses)
+        self.assertIn("live.dispatchEvent(commit)", lenses)
         self.assertNotIn("window.VestraMarketOpportunities?.refresh?.(activeLens,selected)", lenses)
         self.assertNotIn("refreshAfterSectorSelection", lenses)
         self.assertIn("if(e.target.matches('[data-market-sector-select]') && e.target.value){ M.sector=e.target.value; renderPrimary(); }", market)
