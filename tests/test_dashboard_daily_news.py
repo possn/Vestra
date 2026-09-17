@@ -38,7 +38,7 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn(".catch(() => null)", self.runtime)
 
     def test_companion_is_versioned_reachable_and_offline_capable(self):
-        self.assertIn("dashboard-daily-news.js?v=1.1", self.loader)
+        self.assertIn("dashboard-daily-news.js?v=1.2", self.loader)
         self.assertIn("ensureDashboardDailyNews()", self.loader)
         self.assertIn('"./dashboard-daily-news.js"', self.sw)
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
