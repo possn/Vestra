@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: Dashboard renders the daily news card in the live dashboard structure', async ({ page }) => {
+test('iPhone/WebKit: Dashboard keeps daily news links stable and tappable', async ({ page }) => {
   await page.route('**/data/dashboard-news.json', async route => {
     await route.fulfill({
       status: 200,
@@ -30,6 +30,9 @@ test('iPhone/WebKit: Dashboard renders the daily news card in the live dashboard
       }),
     });
   });
+  await page.context().route('https://example.com/markets', async route => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Market story</title><p>Opened</p>' });
+  });
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraDashboardDailyNews));
@@ -54,4 +57,22 @@ test('iPhone/WebKit: Dashboard renders the daily news card in the live dashboard
     return Boolean(cardNode && quick && cardNode.parentElement === node && cardNode.nextElementSibling === quick);
   });
   expect(placement).toBe(true);
+
+  await validLink.evaluate(node => { node.__vestraTapProbe = 'stable'; });
+  await dashboard.evaluate(node => {
+    const mutation = document.createElement('span');
+    mutation.hidden = true;
+    node.appendChild(mutation);
+    mutation.remove();
+  });
+  await page.waitForTimeout(150);
+  expect(await validLink.evaluate(node => node.__vestraTapProbe || '')).toBe('stable');
+
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    validLink.tap(),
+  ]);
+  await popup.waitForLoadState('domcontentloaded');
+  expect(popup.url()).toBe('https://example.com/markets');
+  await popup.close();
 });
