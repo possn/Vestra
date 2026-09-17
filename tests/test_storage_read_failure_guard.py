@@ -10,12 +10,17 @@ class StorageReadFailureGuardTests(unittest.TestCase):
         cls.source = (ROOT / 'app-storage.js').read_text(encoding='utf-8')
 
     def test_failed_primary_read_blocks_state_writes_without_valid_fallback(self):
+        self.assertIn("let _stateReadAttempted = false", self.source)
         self.assertIn("let _stateReadTrusted = false", self.source)
         self.assertIn("function blockStateWrites(error)", self.source)
         self.assertIn("blockStateWrites(error)", self.source)
-        self.assertIn("if (!_stateReadTrusted)", self.source)
-        self.assertIn("State write blocked because the current session did not complete a trusted state read", self.source)
+        self.assertIn("if (_stateReadAttempted && !_stateReadTrusted)", self.source)
+        self.assertIn("State write blocked because the current session had a failed state read", self.source)
         self.assertIn("return false", self.source)
+
+    def test_direct_write_before_any_read_keeps_existing_storage_api_contract(self):
+        self.assertIn("writeBlocked: _stateReadAttempted && !_stateReadTrusted", self.source)
+        self.assertNotIn("if (!_stateReadTrusted)", self.source)
 
     def test_successful_empty_read_is_still_trusted_for_first_run(self):
         primary = self.source.split('async function storageGet(){', 1)[1].split('async function storageSet(raw){', 1)[0]
