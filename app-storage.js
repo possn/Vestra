@@ -8,6 +8,7 @@
   const DB_KEY = 'state';
   const IDB_OPEN_TIMEOUT_MS = 1500;
   const IDB_TRANSACTION_TIMEOUT_MS = 1500;
+  let _readTrusted = true;
 
   function idbAvailable(){ return typeof indexedDB !== 'undefined' && indexedDB; }
 
@@ -173,21 +174,35 @@
     const idbScore = stateRichness(idbValue);
     const legacyScore = stateRichness(legacyValue);
 
-    // Recovery rule: an empty/near-empty IndexedDB state must never hide a richer
-    // legacy PF_STATE_V6 copy. Reading the legacy copy is intentionally read-only;
-    // it is not written back until the normal app has loaded a trusted state.
-    if (legacyValue && legacyScore > 0 && idbScore <= 0) return legacyValue;
-    if (idbValue) return idbValue;
-    if (legacyValue) return legacyValue;
-    if (idbError) throw idbError;
+    if (legacyValue && legacyScore > 0 && idbScore <= 0) {
+      _readTrusted = true;
+      return legacyValue;
+    }
+    if (idbValue) {
+      _readTrusted = true;
+      return idbValue;
+    }
+    if (legacyValue) {
+      _readTrusted = true;
+      return legacyValue;
+    }
+    if (idbError) {
+      _readTrusted = false;
+      throw idbError;
+    }
+    _readTrusted = true;
     return null;
   }
 
   async function storageSet(raw){
-    if (idbAvailable()) {
-      try { await idbSet(DB_KEY, raw); return; } catch (_) {}
+    if (!_readTrusted) {
+      console.warn('[storage] write blocked because the current state followed a failed read');
+      return false;
     }
-    try { localStorage.setItem(STORAGE_KEY, raw); } catch (_) {}
+    if (idbAvailable()) {
+      try { await idbSet(DB_KEY, raw); return true; } catch (_) {}
+    }
+    try { localStorage.setItem(STORAGE_KEY, raw); return true; } catch (_) { return false; }
   }
 
   async function storageClear(){
@@ -201,6 +216,7 @@
     STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
     idbAvailable, idbOpen, idbGet, idbSet, idbDel, stateRichness,
     requestPersistentStorage, storageGet, storageSet, storageClear,
+    isReadTrusted: () => _readTrusted,
     version: '1.3',
   });
 
