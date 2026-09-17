@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.2 — IndexedDB with bounded localStorage fallback. */
+/* Vestra persistence layer v1.3 — IndexedDB with recovery-aware localStorage fallback. */
 (() => {
   'use strict';
 
@@ -15,6 +15,22 @@
     const error = new Error(message);
     if (cause !== undefined) error.cause = cause;
     return error;
+  }
+
+  function stateRichness(raw){
+    if (!raw || typeof raw !== 'string') return -1;
+    try {
+      const p = JSON.parse(raw);
+      if (!p || typeof p !== 'object') return -1;
+      const broker = p.brokerData && typeof p.brokerData === 'object' ? p.brokerData : {};
+      return [
+        p.assets, p.liabilities, p.transactions, p.bankTransactions,
+        p.dividends, p.divSummaries, p.history,
+        broker.files, broker.events, broker.positions,
+      ].reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0);
+    } catch (_) {
+      return -1;
+    }
   }
 
   function armTransactionTimeout(tx, settle, label){
@@ -144,13 +160,27 @@
   }
 
   async function storageGet(){
+    let idbValue = null;
+    let idbError = null;
     if (idbAvailable()) {
-      try {
-        const v = await idbGet(DB_KEY);
-        if (v) return v;
-      } catch (_) {}
+      try { idbValue = await idbGet(DB_KEY); }
+      catch (error) { idbError = error; }
     }
-    try { return localStorage.getItem(STORAGE_KEY); } catch (_) { return null; }
+
+    let legacyValue = null;
+    try { legacyValue = localStorage.getItem(STORAGE_KEY); } catch (_) {}
+
+    const idbScore = stateRichness(idbValue);
+    const legacyScore = stateRichness(legacyValue);
+
+    // Recovery rule: an empty/near-empty IndexedDB state must never hide a richer
+    // legacy PF_STATE_V6 copy. Reading the legacy copy is intentionally read-only;
+    // it is not written back until the normal app has loaded a trusted state.
+    if (legacyValue && legacyScore > 0 && idbScore <= 0) return legacyValue;
+    if (idbValue) return idbValue;
+    if (legacyValue) return legacyValue;
+    if (idbError) throw idbError;
+    return null;
   }
 
   async function storageSet(raw){
@@ -169,8 +199,9 @@
 
   const api = Object.freeze({
     STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
-    idbAvailable, idbOpen, idbGet, idbSet, idbDel,
+    idbAvailable, idbOpen, idbGet, idbSet, idbDel, stateRichness,
     requestPersistentStorage, storageGet, storageSet, storageClear,
+    version: '1.3',
   });
 
   window.VestraStorage = api;
