@@ -51,7 +51,7 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
 
     def test_canonical_engine_accepts_explicit_sector_override_and_owns_filtering(self):
         self.assertIn("function opportunities(lens=activeLens,sectorOverride='')", self.opportunities)
-        self.assertIn("const sec=t(sectorOverride)||t(active?.dataset.marketSector)||'all'", self.opportunities)
+        self.assertIn("const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all'", self.opportunities)
         self.assertIn("function selectLens(lens,sectorOverride='')", self.opportunities)
         self.assertIn('return opportunities(activeLens,sectorOverride)', self.opportunities)
         self.assertIn("if(sector!=='all')ranked=ranked.filter", self.opportunities)
