@@ -43,7 +43,7 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn('"./dashboard-daily-news.js"', self.sw)
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
         self.assertIn("dashboard-daily-news.css?v=1.0", self.runtime)
-        self.assertIn("version: '1.1'", self.runtime)
+        self.assertIn("version: '1.2'", self.runtime)
 
     def test_news_runtime_is_network_first_so_interaction_fixes_are_not_stale(self):
         network_first = self.sw.split('const BOOTSTRAP_NETWORK_FIRST = new Set([', 1)[1].split(']);', 1)[0]
@@ -76,6 +76,24 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn("['http:', 'https:'].includes(url.protocol)", self.runtime)
         self.assertIn('class="vestra-daily-news-item is-disabled"', self.runtime)
         self.assertIn(".vestra-daily-news-card{", self.css)
+
+    def test_outbound_news_records_short_lived_return_context_without_hijacking_navigation(self):
+        self.assertIn("const NEWS_RETURN_KEY = 'vestra:daily-news-return-v1'", self.runtime)
+        self.assertIn("const NEWS_RETURN_TTL_MS = 30 * 60 * 1000", self.runtime)
+        self.assertIn("function rememberNewsReturn()", self.runtime)
+        self.assertIn("localStorage.setItem(NEWS_RETURN_KEY, JSON.stringify(context))", self.runtime)
+        self.assertIn("a.vestra-daily-news-item[href]", self.runtime)
+        self.assertIn("rememberNewsReturn()", self.runtime)
+        self.assertNotIn("event.preventDefault()", self.runtime)
+        self.assertNotIn("window.open(", self.runtime)
+
+    def test_return_context_restores_scroll_and_is_cleared_on_live_resume(self):
+        self.assertIn("function restoreNewsReturnContext()", self.runtime)
+        self.assertIn("window.__vestraDailyNewsReturnContext", self.runtime)
+        self.assertIn("window.scrollTo(0, scrollY)", self.runtime)
+        self.assertIn("window.addEventListener?.('focus', clearPendingNewsReturn)", self.runtime)
+        self.assertIn("window.addEventListener?.('pageshow', clearPendingNewsReturn)", self.runtime)
+        self.assertIn("document.visibilityState === 'visible'", self.runtime)
 
     def test_outbound_news_url_sanitizer_rejects_script_and_data_schemes(self):
         source = json.dumps(self.runtime)
