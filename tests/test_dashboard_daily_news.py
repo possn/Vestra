@@ -38,12 +38,12 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn(".catch(() => null)", self.runtime)
 
     def test_companion_is_versioned_reachable_and_offline_capable(self):
-        self.assertIn("dashboard-daily-news.js?v=1.3", self.loader)
+        self.assertIn("dashboard-daily-news.js?v=1.2", self.loader)
         self.assertIn("ensureDashboardDailyNews()", self.loader)
         self.assertIn('"./dashboard-daily-news.js"', self.sw)
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
         self.assertIn("dashboard-daily-news.css?v=1.0", self.runtime)
-        self.assertIn("version: '1.3'", self.runtime)
+        self.assertIn("version: '1.2'", self.runtime)
 
     def test_news_runtime_is_network_first_so_interaction_fixes_are_not_stale(self):
         network_first = self.sw.split('const BOOTSTRAP_NETWORK_FIRST = new Set([', 1)[1].split(']);', 1)[0]
@@ -87,20 +87,13 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertNotIn("event.preventDefault()", self.runtime)
         self.assertNotIn("window.open(", self.runtime)
 
-    def test_return_marker_survives_transient_focus_and_clears_only_after_live_hidden_visible_resume(self):
-        self.assertIn("let outboundNewsWasHidden = false", self.runtime)
-        self.assertIn("function handleVisibilityChange()", self.runtime)
-        self.assertIn("document.visibilityState === 'hidden'", self.runtime)
-        self.assertIn("outboundNewsWasHidden = true", self.runtime)
-        self.assertIn("document.visibilityState === 'visible' && outboundNewsWasHidden", self.runtime)
-        self.assertIn("document.addEventListener('visibilitychange', handleVisibilityChange)", self.runtime)
-        self.assertNotIn("window.addEventListener?.('focus', clearPendingNewsReturn)", self.runtime)
-        self.assertNotIn("window.addEventListener?.('pageshow', clearPendingNewsReturn)", self.runtime)
-
-    def test_return_context_restores_scroll(self):
+    def test_return_context_restores_scroll_and_is_cleared_on_live_resume(self):
         self.assertIn("function restoreNewsReturnContext()", self.runtime)
         self.assertIn("window.__vestraDailyNewsReturnContext", self.runtime)
         self.assertIn("window.scrollTo(0, scrollY)", self.runtime)
+        self.assertIn("window.addEventListener?.('focus', clearPendingNewsReturn)", self.runtime)
+        self.assertIn("window.addEventListener?.('pageshow', clearPendingNewsReturn)", self.runtime)
+        self.assertIn("document.visibilityState === 'visible'", self.runtime)
 
     def test_outbound_news_url_sanitizer_rejects_script_and_data_schemes(self):
         source = json.dumps(self.runtime)
