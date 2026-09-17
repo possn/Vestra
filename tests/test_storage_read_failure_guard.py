@@ -29,22 +29,29 @@ class StorageReadFailureGuardTests(unittest.TestCase):
 
     def test_preserved_state_is_considered_only_when_primary_is_empty(self):
         self.assertIn("function stateRichness(raw)", self.source)
+        self.assertIn("function richestState(candidates)", self.source)
         self.assertIn("const primaryScore = stateRichness(primary)", self.source)
         self.assertIn("const backupScore = stateRichness(backup)", self.source)
+        self.assertIn("const recoveryScore = stateRichness(recovery)", self.source)
         self.assertIn("const localScore = stateRichness(localValue)", self.source)
-        self.assertIn("if (primaryScore <= 0)", self.source)
-        self.assertIn("recoveryCandidates", self.source)
+        recovery = self.source.split("if (primaryScore <= 0)", 1)[1].split("if (primary)", 1)[0]
+        self.assertIn("const recovered = richestState([", recovery)
+        self.assertIn("{ source: 'indexeddb-recovery', value: recovery, score: recoveryScore }", recovery)
+        self.assertIn("{ source: 'indexeddb-backup', value: backup, score: backupScore }", recovery)
+        self.assertIn("{ source: 'localstorage', value: localValue, score: localScore }", recovery)
+        self.assertIn("markStateReadTrusted(recovered.source)", recovery)
+        self.assertIn("return recovered.value", recovery)
         self.assertIn(".sort((a, b) => b.score - a.score)", self.source)
-        self.assertIn("markStateReadTrusted(recovered.source)", self.source)
 
     def test_valid_nonempty_primary_remains_authoritative(self):
         recovery = self.source.split("if (primaryScore <= 0)", 1)[1].split("if (primary)", 1)[0]
-        self.assertIn("recoveryCandidates", recovery)
+        self.assertIn("const recovered = richestState([", recovery)
         after_recovery = self.source.split("if (primaryScore <= 0)", 1)[1]
         self.assertIn("if (primary)", after_recovery)
         self.assertIn("markStateReadTrusted('indexeddb')", after_recovery)
         self.assertNotIn("backupScore > primaryScore", self.source)
         self.assertNotIn("localScore > primaryScore", self.source)
+        self.assertNotIn("recoveryScore > primaryScore", self.source)
 
     def test_previous_indexeddb_state_is_saved_as_recovery_backup_before_replace(self):
         self.assertIn("const DB_BACKUP_KEY = 'state_backup'", self.source)
