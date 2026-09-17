@@ -19,12 +19,14 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertNotIn('refreshAfterSectorSelection', self.source)
         self.assertNotIn("VestraMarketOpportunities?.refresh?.", self.source)
 
-    def test_native_picker_change_is_deferred_before_canonical_commit(self):
+    def test_native_picker_change_is_deferred_to_the_current_live_select(self):
         self.assertIn('function deferNativeSectorCommit(event)', self.source)
         self.assertIn('event.stopImmediatePropagation()', self.source)
         self.assertIn('requestAnimationFrame(()=>requestAnimationFrame(()=>', self.source)
+        self.assertIn("section()?.querySelector('[data-market-sector-select]')", self.source)
+        self.assertIn('live.value=selected', self.source)
         self.assertIn("new Event('change',{bubbles:true})", self.source)
-        self.assertIn('select.dispatchEvent(commit)', self.source)
+        self.assertIn('live.dispatchEvent(commit)', self.source)
         self.assertIn("document.addEventListener('change',deferNativeSectorCommit,true)", self.source)
 
     def test_visual_bridge_keeps_native_select_tappable_without_owning_sector(self):
