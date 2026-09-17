@@ -221,7 +221,7 @@
       decorate(section);
       return [];
     }
-    const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||'all';
+    const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all';
     const rows=rankLens(universe,activeLens,{limit:12,sector:sec});
     const sig=(rows.map(s=>`${t(s.ticker)}:${Math.round(lensScore(s,activeLens))}`).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
