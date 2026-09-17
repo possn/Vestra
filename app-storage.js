@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.4 — IndexedDB with backups, recovery and read-failure write guard. */
+/* Vestra persistence layer v1.5 — IndexedDB with durable rescue snapshots, mirrored fallback and read-failure write guard. */
 (() => {
   'use strict';
 
@@ -7,6 +7,7 @@
   const DB_STORE = 'kv';
   const DB_KEY = 'state';
   const DB_BACKUP_KEY = 'state_backup';
+  const DB_RECOVERY_KEY = 'state_recovery';
   const IDB_OPEN_TIMEOUT_MS = 1500;
   const IDB_TRANSACTION_TIMEOUT_MS = 1500;
 
@@ -37,6 +38,12 @@
     } catch (_) {
       return -1;
     }
+  }
+
+  function richestState(candidates){
+    return candidates
+      .filter(candidate => candidate && candidate.value && candidate.score > 0)
+      .sort((a, b) => b.score - a.score)[0] || null;
   }
 
   function markStateReadTrusted(source = ''){
@@ -194,15 +201,30 @@
     catch (error) { return { ok: false, value: null, error }; }
   }
 
+  function localStorageSetSafely(raw, existingValue = null){
+    try {
+      const rawScore = stateRichness(raw);
+      const existingScore = stateRichness(existingValue);
+      // Never allow a zero/empty runtime state to erase a richer redundant copy.
+      if (rawScore <= 0 && existingScore > 0) return true;
+      localStorage.setItem(STORAGE_KEY, raw);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   async function storageGet(){
     let primary = null;
     let backup = null;
+    let recovery = null;
     let idbError = null;
 
     if (idbAvailable()) {
       try {
         primary = await idbGet(DB_KEY);
         try { backup = await idbGet(DB_BACKUP_KEY); } catch (_) {}
+        try { recovery = await idbGet(DB_RECOVERY_KEY); } catch (_) {}
       } catch (error) {
         idbError = error;
       }
@@ -212,18 +234,18 @@
     const localValue = fallback.ok ? fallback.value : null;
     const primaryScore = stateRichness(primary);
     const backupScore = stateRichness(backup);
+    const recoveryScore = stateRichness(recovery);
     const localScore = stateRichness(localValue);
 
-    // Recovery is conservative: a valid non-empty primary is always authoritative.
-    // Preserved copies are considered only when primary is absent/empty.
+    // A valid non-empty primary is authoritative. If primary is absent/empty,
+    // choose the richest preserved copy, including the non-degrading rescue snapshot.
     if (primaryScore <= 0) {
-      const recoveryCandidates = [
+      const recovered = richestState([
+        { source: 'indexeddb-recovery', value: recovery, score: recoveryScore },
         { source: 'indexeddb-backup', value: backup, score: backupScore },
         { source: 'localstorage', value: localValue, score: localScore },
-      ].filter(candidate => candidate.value && candidate.score > 0)
-        .sort((a, b) => b.score - a.score);
-      if (recoveryCandidates.length) {
-        const recovered = recoveryCandidates[0];
+      ]);
+      if (recovered) {
         markStateReadTrusted(recovered.source);
         return recovered.value;
       }
@@ -232,6 +254,10 @@
     if (primary) {
       markStateReadTrusted('indexeddb');
       return primary;
+    }
+    if (recovery) {
+      markStateReadTrusted('indexeddb-recovery');
+      return recovery;
     }
     if (backup) {
       markStateReadTrusted('indexeddb-backup');
@@ -261,18 +287,52 @@
       return false;
     }
 
+    const fallback = localStorageGet();
+    const localValue = fallback.ok ? fallback.value : null;
+    const rawScore = stateRichness(raw);
+
     if (idbAvailable()) {
       try {
         let previous = null;
+        let backup = null;
+        let recovery = null;
         try { previous = await idbGet(DB_KEY); } catch (_) {}
-        if (previous && previous !== raw) {
+        try { backup = await idbGet(DB_BACKUP_KEY); } catch (_) {}
+        try { recovery = await idbGet(DB_RECOVERY_KEY); } catch (_) {}
+
+        const previousScore = stateRichness(previous);
+        const backupScore = stateRichness(backup);
+        const recoveryScore = stateRichness(recovery);
+        const localScore = stateRichness(localValue);
+
+        // Keep the ordinary previous-state backup, but never degrade a rich backup
+        // with an empty/poorer state created by a runtime regression.
+        if (previous && previous !== raw && previousScore > 0 && previousScore >= backupScore) {
           try { await idbSet(DB_BACKUP_KEY, previous); } catch (_) {}
         }
+
+        // Rescue snapshot is monotonic by structural richness. It is intentionally
+        // separate from the ordinary backup so repeated empty writes cannot destroy it.
+        const rescue = richestState([
+          { source: 'incoming', value: raw, score: rawScore },
+          { source: 'previous', value: previous, score: previousScore },
+          { source: 'backup', value: backup, score: backupScore },
+          { source: 'recovery', value: recovery, score: recoveryScore },
+          { source: 'localstorage', value: localValue, score: localScore },
+        ]);
+        if (rescue && rescue.value !== recovery) {
+          try { await idbSet(DB_RECOVERY_KEY, rescue.value); } catch (_) {}
+        }
+
         await idbSet(DB_KEY, raw);
+        // Maintain a second storage-engine copy, but never overwrite a rich copy
+        // with a suspicious empty state.
+        localStorageSetSafely(raw, localValue);
         return true;
       } catch (_) {}
     }
-    try { localStorage.setItem(STORAGE_KEY, raw); return true; } catch (_) { return false; }
+
+    return localStorageSetSafely(raw, localValue);
   }
 
   async function storageGetBackup(){
@@ -280,19 +340,26 @@
     try { return await idbGet(DB_BACKUP_KEY) || null; } catch (_) { return null; }
   }
 
+  async function storageGetRecovery(){
+    if (!idbAvailable()) return null;
+    try { return await idbGet(DB_RECOVERY_KEY) || null; } catch (_) { return null; }
+  }
+
   async function storageClear(){
     if (idbAvailable()) {
       try { await idbDel(DB_KEY); } catch (_) {}
+      try { await idbDel(DB_BACKUP_KEY); } catch (_) {}
+      try { await idbDel(DB_RECOVERY_KEY); } catch (_) {}
     }
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
     markStateReadTrusted('cleared');
   }
 
   const api = Object.freeze({
-    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, DB_BACKUP_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
-    idbAvailable, idbOpen, idbGet, idbSet, idbDel, stateRichness,
-    requestPersistentStorage, storageGet, storageSet, storageGetBackup, storageClear, persistenceStatus,
-    version: '1.4',
+    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
+    idbAvailable, idbOpen, idbGet, idbSet, idbDel, stateRichness, richestState,
+    requestPersistentStorage, storageGet, storageSet, storageGetBackup, storageGetRecovery, storageClear, persistenceStatus,
+    version: '1.5',
   });
 
   window.VestraStorage = api;
@@ -301,6 +368,7 @@
     storageGet,
     storageSet,
     storageGetBackup,
+    storageGetRecovery,
     storageClear,
   });
 })();
