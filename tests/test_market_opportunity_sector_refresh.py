@@ -13,7 +13,7 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
 
     def test_market_js_is_the_single_canonical_sector_owner(self):
         self.assertIn("const sec=e.target.closest('[data-market-sector]')", self.market)
-        self.assertIn("M.sector=sec.dataset.marketSector||'all'", self.market)
+        self.assertIn("M.sector=sec.dataset.marketSector;renderPrimary()", self.market)
         self.assertIn("if(e.target.matches('[data-market-sector-select]') && e.target.value){ M.sector=e.target.value; renderPrimary(); }", self.market)
         self.assertNotIn('refreshAfterSectorSelection', self.source)
         self.assertNotIn("window.VestraMarketOpportunities?.refresh?.(activeLens,selected)", self.source)
