@@ -56,6 +56,13 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertNotIn("getElementById('passiveIncomeSection')", self.runtime)
         self.assertNotIn("getElementById('portfolioEvolutionCard')", self.runtime)
 
+    def test_render_is_idempotent_so_ios_taps_keep_the_same_anchor_node(self):
+        self.assertIn("let renderedMarkup = ''", self.runtime)
+        self.assertIn("const markup = cardHtml()", self.runtime)
+        self.assertIn("if (existing && markup === renderedMarkup) return true", self.runtime)
+        self.assertIn("renderedMarkup = markup", self.runtime)
+        self.assertIn("new MutationObserver(queueRender)", self.runtime)
+
     def test_card_stays_compact_and_has_external_link_hardening(self):
         self.assertIn('id="vestraDailyNewsCard"', self.runtime)
         self.assertIn('target="_blank" rel="noopener noreferrer"', self.runtime)
