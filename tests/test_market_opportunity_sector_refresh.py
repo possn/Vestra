@@ -22,7 +22,7 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertIn("select.style.pointerEvents='auto'", self.source)
         self.assertNotIn("select.style.pointerEvents='none'", self.source)
         # Cleanup of stale DOM left by older cached builds is allowed, but the
-        # v2.9 control must not read or recreate the old recall mechanism.
+        # control must not read or recreate the old recall mechanism.
         self.assertNotIn('dataset.marketSectorRecall=', self.source)
         self.assertNotIn('dataset.marketSectorRecall||', self.source)
         self.assertNotIn('[data-market-sector-recall]', self.source)
@@ -34,14 +34,14 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         sync = self.source.split('function syncMoreSectorVisual(){', 1)[1].split('function withMoreSectorBridge', 1)[0]
         self.assertLess(sync.index("classList.remove('is-active')"), sync.index("label.classList.toggle('is-active'"))
 
-    def test_more_sector_bridge_is_transient_proxy_during_canonical_refresh(self):
+    def test_more_sector_bridge_is_transient_attribute_during_canonical_refresh(self):
         self.assertIn('function withMoreSectorBridge(callback)', self.source)
-        self.assertIn("const bridge=document.createElement('span')", self.source)
-        self.assertIn("bridge.className='is-active'", self.source)
-        self.assertIn('bridge.dataset.marketSector=selected', self.source)
-        self.assertIn('s.prepend(bridge)', self.source)
-        self.assertIn('finally{bridge.remove();}', self.source)
-        self.assertNotIn('label.dataset.marketSector=selected', self.source)
+        self.assertIn("const label=select?.closest?.('.market-sector-more')", self.source)
+        self.assertIn('label.dataset.marketSector=selected', self.source)
+        self.assertIn('finally{delete label.dataset.marketSector;}', self.source)
+        bridge = self.source.split('function withMoreSectorBridge(callback){', 1)[1].split('function refreshUi', 1)[0]
+        self.assertNotIn("document.createElement('span')", bridge)
+        self.assertNotIn('prepend(', bridge)
         self.assertIn('withMoreSectorBridge(()=>window.VestraMarketOpportunities?.refresh?.(activeLens))', self.source)
         self.assertIn('withMoreSectorBridge(()=>window.VestraMarketOpportunities?.selectLens?.(activeLens))', self.source)
 
