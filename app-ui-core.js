@@ -1,4 +1,4 @@
-/* Vestra UI core v2.0 — DOM, Chart infrastructure and canonical launch lifecycle. */
+/* Vestra UI core v2.1 — DOM, Chart infrastructure and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -13,6 +13,48 @@ const NOOP_EL = {
 
 function $(id) { return document.getElementById(id) || NOOP_EL; }
 
+const DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1';
+const DAILY_NEWS_RETURN_TTL_MS = 30 * 60 * 1000;
+
+function consumeDailyNewsReturnContext() {
+  let context = null;
+  try {
+    const raw = localStorage.getItem(DAILY_NEWS_RETURN_KEY);
+    if (raw) context = JSON.parse(raw);
+    localStorage.removeItem(DAILY_NEWS_RETURN_KEY);
+  } catch (_) {
+    try { localStorage.removeItem(DAILY_NEWS_RETURN_KEY); } catch (_) {}
+    return null;
+  }
+  if (!context || typeof context !== 'object') return null;
+  const age = Date.now() - Number(context.ts || 0);
+  if (!Number.isFinite(age) || age < 0 || age > DAILY_NEWS_RETURN_TTL_MS) return null;
+  const normalized = {
+    ts: Number(context.ts),
+    scrollY: Math.max(0, Number(context.scrollY || 0)),
+  };
+  window.__vestraDailyNewsReturnContext = normalized;
+  return normalized;
+}
+
+function suppressSplashForNewsReturn(splash) {
+  const context = consumeDailyNewsReturnContext();
+  if (!context) return false;
+  splash.dataset.premiumWatchdog = '1';
+  splash.dataset.newsReturnSkip = '1';
+  if (!document.getElementById('vestraNewsReturnSplashStyles')) {
+    const style = document.createElement('style');
+    style.id = 'vestraNewsReturnSplashStyles';
+    style.textContent = '#appLoadingOverlay[data-news-return-skip="1"]{display:none!important;opacity:0!important;pointer-events:none!important;transition:none!important}';
+    document.head.appendChild(style);
+  }
+  splash.style.display = 'none';
+  splash.style.opacity = '0';
+  splash.style.pointerEvents = 'none';
+  splash.setAttribute('aria-hidden', 'true');
+  return true;
+}
+
 /* ─── PREMIUM LAUNCH LIFECYCLE ──────────────────────────────
    app-ui-core.js is the effective owner of splash visibility and release.
    The base stylesheet owns the single entrance animation because it starts
@@ -23,6 +65,7 @@ function $(id) { return document.getElementById(id) || NOOP_EL; }
 function installPremiumSplashWatchdog() {
   const splash = document.getElementById('appLoadingOverlay');
   if (!splash || splash.dataset.premiumWatchdog === '1') return;
+  if (suppressSplashForNewsReturn(splash)) return;
   splash.dataset.premiumWatchdog = '1';
 
   if (!document.getElementById('vestraPremiumSplashStyles')) {
@@ -253,6 +296,6 @@ try { installChartReflowGuards(); } catch (_) {}
     NOOP_EL, $, resolveChartHeight, prepareChartCanvas, buildNiceAxis,
     ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable,
     clearChartUnavailable, resizeVisibleCharts, scheduleChartStabilization,
-    installPremiumSplashWatchdog
+    installPremiumSplashWatchdog, consumeDailyNewsReturnContext
   });
 })();
