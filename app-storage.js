@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.2 — IndexedDB with bounded localStorage fallback. */
+/* Vestra persistence layer v1.3 — IndexedDB with bounded localStorage fallback and read-failure write guard. */
 (() => {
   'use strict';
 
@@ -6,8 +6,13 @@
   const DB_NAME = 'pf_v6';
   const DB_STORE = 'kv';
   const DB_KEY = 'state';
+  const DB_BACKUP_KEY = 'state_backup';
   const IDB_OPEN_TIMEOUT_MS = 1500;
   const IDB_TRANSACTION_TIMEOUT_MS = 1500;
+
+  let _stateReadAttempted = false;
+  let _stateReadTrusted = false;
+  let _stateReadFailure = '';
 
   function idbAvailable(){ return typeof indexedDB !== 'undefined' && indexedDB; }
 
@@ -15,6 +20,27 @@
     const error = new Error(message);
     if (cause !== undefined) error.cause = cause;
     return error;
+  }
+
+  function markStateReadTrusted(){
+    _stateReadAttempted = true;
+    _stateReadTrusted = true;
+    _stateReadFailure = '';
+  }
+
+  function blockStateWrites(error){
+    _stateReadAttempted = true;
+    _stateReadTrusted = false;
+    _stateReadFailure = String(error?.message || error || 'storage read failed');
+  }
+
+  function persistenceStatus(){
+    return Object.freeze({
+      readAttempted: _stateReadAttempted,
+      readTrusted: _stateReadTrusted,
+      writeBlocked: _stateReadAttempted && !_stateReadTrusted,
+      readFailure: _stateReadFailure,
+    });
   }
 
   function armTransactionTimeout(tx, settle, label){
@@ -143,21 +169,63 @@
     } catch (_) {}
   }
 
+  function localStorageGet(){
+    try { return { ok: true, value: localStorage.getItem(STORAGE_KEY) }; }
+    catch (error) { return { ok: false, value: null, error }; }
+  }
+
   async function storageGet(){
     if (idbAvailable()) {
       try {
-        const v = await idbGet(DB_KEY);
-        if (v) return v;
-      } catch (_) {}
+        const value = await idbGet(DB_KEY);
+        markStateReadTrusted();
+        if (value) return value;
+        const fallback = localStorageGet();
+        if (fallback.ok && fallback.value) return fallback.value;
+        return null;
+      } catch (error) {
+        const fallback = localStorageGet();
+        if (fallback.ok && fallback.value) {
+          markStateReadTrusted();
+          return fallback.value;
+        }
+        blockStateWrites(error);
+        return null;
+      }
     }
-    try { return localStorage.getItem(STORAGE_KEY); } catch (_) { return null; }
+
+    const fallback = localStorageGet();
+    if (fallback.ok) {
+      markStateReadTrusted();
+      return fallback.value;
+    }
+    blockStateWrites(fallback.error || idbFailure('localStorage read failed'));
+    return null;
   }
 
   async function storageSet(raw){
-    if (idbAvailable()) {
-      try { await idbSet(DB_KEY, raw); return; } catch (_) {}
+    if (_stateReadAttempted && !_stateReadTrusted) {
+      console.error('[VestraStorage] State write blocked because the current session had a failed state read.', _stateReadFailure || 'read failed');
+      return false;
     }
-    try { localStorage.setItem(STORAGE_KEY, raw); } catch (_) {}
+
+    if (idbAvailable()) {
+      try {
+        let previous = null;
+        try { previous = await idbGet(DB_KEY); } catch (_) {}
+        if (previous && previous !== raw) {
+          try { await idbSet(DB_BACKUP_KEY, previous); } catch (_) {}
+        }
+        await idbSet(DB_KEY, raw);
+        return true;
+      } catch (_) {}
+    }
+    try { localStorage.setItem(STORAGE_KEY, raw); return true; } catch (_) { return false; }
+  }
+
+  async function storageGetBackup(){
+    if (!idbAvailable()) return null;
+    try { return await idbGet(DB_BACKUP_KEY) || null; } catch (_) { return null; }
   }
 
   async function storageClear(){
@@ -165,12 +233,13 @@
       try { await idbDel(DB_KEY); } catch (_) {}
     }
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    markStateReadTrusted();
   }
 
   const api = Object.freeze({
-    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
+    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, DB_BACKUP_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
     idbAvailable, idbOpen, idbGet, idbSet, idbDel,
-    requestPersistentStorage, storageGet, storageSet, storageClear,
+    requestPersistentStorage, storageGet, storageSet, storageGetBackup, storageClear, persistenceStatus,
   });
 
   window.VestraStorage = api;
@@ -178,6 +247,7 @@
     requestPersistentStorage,
     storageGet,
     storageSet,
+    storageGetBackup,
     storageClear,
   });
 })();
