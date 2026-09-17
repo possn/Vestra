@@ -45,6 +45,12 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn("dashboard-daily-news.css?v=1.0", self.runtime)
         self.assertIn("version: '1.1'", self.runtime)
 
+    def test_news_runtime_is_network_first_so_interaction_fixes_are_not_stale(self):
+        network_first = self.sw.split('const BOOTSTRAP_NETWORK_FIRST = new Set([', 1)[1].split(']);', 1)[0]
+        self.assertIn('"dashboard-daily-news.js"', network_first)
+        self.assertIn('if (request.destination === "script" && BOOTSTRAP_NETWORK_FIRST.has(assetName))', self.sw)
+        self.assertIn('event.respondWith(networkFirst(request)); return;', self.sw)
+
     def test_card_mount_targets_the_live_dashboard_structure(self):
         self.assertIn('id="viewDashboard"', self.index)
         self.assertIn('class="card kpi-quick"', self.index)
