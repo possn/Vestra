@@ -62,7 +62,9 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("function opportunities(lens=activeLens,sectorOverride='')", source)
         self.assertIn("const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all'", source)
         self.assertIn("window.VestraMarketOpportunities?.selectLens?.(activeLens,moreSectorValue())", lenses)
-        self.assertIn("window.VestraMarketOpportunities?.refresh?.(activeLens,moreSectorValue())", lenses)
+        self.assertIn("window.VestraMarketOpportunities?.refresh?.(activeLens,selected)", lenses)
+        self.assertIn("refreshAfterSectorSelection(e.target.value)", lenses)
+        self.assertIn("refreshAfterSectorSelection(sector.dataset.marketSector)", lenses)
         self.assertNotIn("function lensMatch(row, lens)", lenses)
         self.assertNotIn("querySelectorAll('.market-list .market-row')", lenses)
 
