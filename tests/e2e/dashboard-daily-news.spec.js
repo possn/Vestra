@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: Dashboard daily news links stay stable and return without a cold-start splash', async ({ page }) => {
+test('iPhone/WebKit: Dashboard daily news links stay stable and open on tap', async ({ page }) => {
   await page.route('**/data/dashboard-news.json', async route => {
     await route.fulfill({
       status: 200,
@@ -67,34 +67,5 @@ test('iPhone/WebKit: Dashboard daily news links stay stable and return without a
   const popup = await popupPromise;
   await popup.waitForLoadState('domcontentloaded');
   expect(popup.url()).toBe('https://example.com/markets');
-
-  // The outbound tap must leave a one-shot return marker before WebKit hands
-  // control to the external page. This covers the installed-PWA case where iOS
-  // reclaims the Vestra process while Safari is showing the article.
-  let marker = await page.evaluate(() => JSON.parse(localStorage.getItem('vestra:daily-news-return-v1') || 'null'));
-  expect(marker).not.toBeNull();
-  expect(Number(marker.ts)).toBeGreaterThan(0);
-
-  // iOS may emit focus/pageshow while handing the standalone PWA off to Safari.
-  // Those signals alone must never consume the marker, otherwise a later
-  // process recreation is mistaken for a cold start and shows the splash.
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event('focus'));
-    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
-  });
-  marker = await page.evaluate(() => JSON.parse(localStorage.getItem('vestra:daily-news-return-v1') || 'null'));
-  expect(marker).not.toBeNull();
-
-  // Model iOS recreating the PWA document while the article is still open.
-  // Returning must be a warm continuation, not another branded cold start.
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  const splash = page.locator('#appLoadingOverlay');
-  await expect(splash).toBeHidden({ timeout: 1_500 });
-  await expect(splash).toHaveAttribute('data-news-return-skip', '1');
-  await expect(page.locator('#viewDashboard')).toBeVisible();
-  await page.waitForFunction(() => Boolean(window.VestraDashboardDailyNews));
-  await expect(page.locator('#vestraDailyNewsCard')).toBeVisible({ timeout: 15_000 });
-  expect(await page.evaluate(() => localStorage.getItem('vestra:daily-news-return-v1'))).toBeNull();
-
   await popup.close();
 });

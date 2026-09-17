@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.3 — IndexedDB with bounded localStorage fallback and read-failure write guard. */
+/* Vestra persistence layer v1.4 — IndexedDB with backups, recovery and read-failure write guard. */
 (() => {
   'use strict';
 
@@ -13,6 +13,7 @@
   let _stateReadAttempted = false;
   let _stateReadTrusted = false;
   let _stateReadFailure = '';
+  let _recoverySource = '';
 
   function idbAvailable(){ return typeof indexedDB !== 'undefined' && indexedDB; }
 
@@ -22,16 +23,34 @@
     return error;
   }
 
-  function markStateReadTrusted(){
+  function stateRichness(raw){
+    if (!raw || typeof raw !== 'string') return -1;
+    try {
+      const p = JSON.parse(raw);
+      if (!p || typeof p !== 'object') return -1;
+      const broker = p.brokerData && typeof p.brokerData === 'object' ? p.brokerData : {};
+      return [
+        p.assets, p.liabilities, p.transactions, p.bankTransactions,
+        p.dividends, p.divSummaries, p.history,
+        broker.files, broker.events, broker.positions,
+      ].reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0);
+    } catch (_) {
+      return -1;
+    }
+  }
+
+  function markStateReadTrusted(source = ''){
     _stateReadAttempted = true;
     _stateReadTrusted = true;
     _stateReadFailure = '';
+    _recoverySource = source;
   }
 
   function blockStateWrites(error){
     _stateReadAttempted = true;
     _stateReadTrusted = false;
     _stateReadFailure = String(error?.message || error || 'storage read failed');
+    _recoverySource = '';
   }
 
   function persistenceStatus(){
@@ -40,6 +59,7 @@
       readTrusted: _stateReadTrusted,
       writeBlocked: _stateReadAttempted && !_stateReadTrusted,
       readFailure: _stateReadFailure,
+      recoverySource: _recoverySource,
     });
   }
 
@@ -175,31 +195,63 @@
   }
 
   async function storageGet(){
+    let primary = null;
+    let backup = null;
+    let idbError = null;
+
     if (idbAvailable()) {
       try {
-        const value = await idbGet(DB_KEY);
-        markStateReadTrusted();
-        if (value) return value;
-        const fallback = localStorageGet();
-        if (fallback.ok && fallback.value) return fallback.value;
-        return null;
+        primary = await idbGet(DB_KEY);
+        try { backup = await idbGet(DB_BACKUP_KEY); } catch (_) {}
       } catch (error) {
-        const fallback = localStorageGet();
-        if (fallback.ok && fallback.value) {
-          markStateReadTrusted();
-          return fallback.value;
-        }
-        blockStateWrites(error);
-        return null;
+        idbError = error;
       }
     }
 
     const fallback = localStorageGet();
-    if (fallback.ok) {
-      markStateReadTrusted();
-      return fallback.value;
+    const localValue = fallback.ok ? fallback.value : null;
+    const primaryScore = stateRichness(primary);
+    const backupScore = stateRichness(backup);
+    const localScore = stateRichness(localValue);
+
+    // Recovery is conservative: a valid non-empty primary is always authoritative.
+    // Preserved copies are considered only when primary is absent/empty.
+    if (primaryScore <= 0) {
+      const recoveryCandidates = [
+        { source: 'indexeddb-backup', value: backup, score: backupScore },
+        { source: 'localstorage', value: localValue, score: localScore },
+      ].filter(candidate => candidate.value && candidate.score > 0)
+        .sort((a, b) => b.score - a.score);
+      if (recoveryCandidates.length) {
+        const recovered = recoveryCandidates[0];
+        markStateReadTrusted(recovered.source);
+        return recovered.value;
+      }
     }
-    blockStateWrites(fallback.error || idbFailure('localStorage read failed'));
+
+    if (primary) {
+      markStateReadTrusted('indexeddb');
+      return primary;
+    }
+    if (backup) {
+      markStateReadTrusted('indexeddb-backup');
+      return backup;
+    }
+    if (localValue) {
+      markStateReadTrusted('localstorage');
+      return localValue;
+    }
+
+    if (idbError) {
+      blockStateWrites(idbError);
+      return null;
+    }
+    if (!fallback.ok) {
+      blockStateWrites(fallback.error || idbFailure('localStorage read failed'));
+      return null;
+    }
+
+    markStateReadTrusted('empty');
     return null;
   }
 
@@ -233,13 +285,14 @@
       try { await idbDel(DB_KEY); } catch (_) {}
     }
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
-    markStateReadTrusted();
+    markStateReadTrusted('cleared');
   }
 
   const api = Object.freeze({
     STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, DB_BACKUP_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
-    idbAvailable, idbOpen, idbGet, idbSet, idbDel,
+    idbAvailable, idbOpen, idbGet, idbSet, idbDel, stateRichness,
     requestPersistentStorage, storageGet, storageSet, storageGetBackup, storageClear, persistenceStatus,
+    version: '1.4',
   });
 
   window.VestraStorage = api;

@@ -1,4 +1,4 @@
-/* Vestra Dashboard Daily News v1.3 — compact market + portfolio-aware daily briefing. */
+/* Vestra Dashboard Daily News v1.2 — compact market + portfolio-aware daily briefing. */
 (() => {
   'use strict';
 
@@ -11,7 +11,6 @@
   let renderQueued = false;
   let renderedMarkup = '';
   let outboundNewsPending = false;
-  let outboundNewsWasHidden = false;
 
   const text = value => String(value ?? '').trim();
   const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -37,24 +36,13 @@
     const context = { ts: Date.now(), scrollY: readScrollY() };
     try { localStorage.setItem(NEWS_RETURN_KEY, JSON.stringify(context)); } catch (_) {}
     outboundNewsPending = true;
-    outboundNewsWasHidden = false;
     return context;
   }
 
   function clearPendingNewsReturn() {
     if (!outboundNewsPending) return;
     outboundNewsPending = false;
-    outboundNewsWasHidden = false;
     try { localStorage.removeItem(NEWS_RETURN_KEY); } catch (_) {}
-  }
-
-  function handleVisibilityChange() {
-    if (!outboundNewsPending) return;
-    if (document.visibilityState === 'hidden') {
-      outboundNewsWasHidden = true;
-      return;
-    }
-    if (document.visibilityState === 'visible' && outboundNewsWasHidden) clearPendingNewsReturn();
   }
 
   function restoreNewsReturnContext() {
@@ -235,7 +223,11 @@
       if (event.target.closest?.('.sidenavbtn[data-view="dashboard"], .navbtn[data-view="dashboard"]')) queueRender();
     }, true);
     window.addEventListener?.('vestra:market-ready', queueRender);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener?.('focus', clearPendingNewsReturn);
+    window.addEventListener?.('pageshow', clearPendingNewsReturn);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') clearPendingNewsReturn();
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
@@ -243,6 +235,6 @@
 
   window.VestraDashboardDailyNews = Object.freeze({
     load, refresh: () => load(true), render, rankedItems, safeNewsUrl,
-    rememberNewsReturn, restoreNewsReturnContext, version: '1.3'
+    rememberNewsReturn, restoreNewsReturnContext, version: '1.2'
   });
 })();

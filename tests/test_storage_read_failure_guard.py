@@ -13,7 +13,7 @@ class StorageReadFailureGuardTests(unittest.TestCase):
         self.assertIn("let _stateReadAttempted = false", self.source)
         self.assertIn("let _stateReadTrusted = false", self.source)
         self.assertIn("function blockStateWrites(error)", self.source)
-        self.assertIn("blockStateWrites(error)", self.source)
+        self.assertIn("blockStateWrites(idbError)", self.source)
         self.assertIn("if (_stateReadAttempted && !_stateReadTrusted)", self.source)
         self.assertIn("State write blocked because the current session had a failed state read", self.source)
         self.assertIn("return false", self.source)
@@ -24,13 +24,27 @@ class StorageReadFailureGuardTests(unittest.TestCase):
 
     def test_successful_empty_read_is_still_trusted_for_first_run(self):
         primary = self.source.split('async function storageGet(){', 1)[1].split('async function storageSet(raw){', 1)[0]
-        self.assertIn("const value = await idbGet(DB_KEY)", primary)
-        self.assertIn("markStateReadTrusted()", primary)
+        self.assertIn("markStateReadTrusted('empty')", primary)
         self.assertIn("return null", primary)
 
-    def test_valid_local_storage_fallback_unlocks_writes(self):
-        self.assertIn("if (fallback.ok && fallback.value)", self.source)
-        self.assertIn("markStateReadTrusted();\n          return fallback.value", self.source)
+    def test_preserved_state_is_considered_only_when_primary_is_empty(self):
+        self.assertIn("function stateRichness(raw)", self.source)
+        self.assertIn("const primaryScore = stateRichness(primary)", self.source)
+        self.assertIn("const backupScore = stateRichness(backup)", self.source)
+        self.assertIn("const localScore = stateRichness(localValue)", self.source)
+        self.assertIn("if (primaryScore <= 0)", self.source)
+        self.assertIn("recoveryCandidates", self.source)
+        self.assertIn(".sort((a, b) => b.score - a.score)", self.source)
+        self.assertIn("markStateReadTrusted(recovered.source)", self.source)
+
+    def test_valid_nonempty_primary_remains_authoritative(self):
+        recovery = self.source.split("if (primaryScore <= 0)", 1)[1].split("if (primary)", 1)[0]
+        self.assertIn("recoveryCandidates", recovery)
+        after_recovery = self.source.split("if (primaryScore <= 0)", 1)[1]
+        self.assertIn("if (primary)", after_recovery)
+        self.assertIn("markStateReadTrusted('indexeddb')", after_recovery)
+        self.assertNotIn("backupScore > primaryScore", self.source)
+        self.assertNotIn("localScore > primaryScore", self.source)
 
     def test_previous_indexeddb_state_is_saved_as_recovery_backup_before_replace(self):
         self.assertIn("const DB_BACKUP_KEY = 'state_backup'", self.source)
