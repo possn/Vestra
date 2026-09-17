@@ -94,13 +94,14 @@ test('iPhone/WebKit: More sectors defers canonical rerender until the native pic
       <div class="market-list"></div>`;
     document.body.prepend(fixture);
 
-    const dropdown = fixture.querySelector('[data-market-sector-select]');
-    // Mimics market.js as the single canonical owner. The bridge under test must
-    // suppress the original native change and let only its deferred commit reach
-    // this bubble listener.
-    dropdown.addEventListener('change', () => {
-      window.__sectorCommitLog.push({ value: dropdown.value, connected: dropdown.isConnected, at: performance.now() });
-      window.VestraMarketOpportunities.refresh('emerging', dropdown.value || 'all');
+    // Mimic market.js's delegated canonical ownership. A native change must be
+    // suppressed in capture; only the deferred change on whichever select is
+    // currently connected may reach this owner.
+    document.addEventListener('change', event => {
+      const select = event.target;
+      if (!select?.matches?.('#moreSectorFixture [data-market-sector-select]')) return;
+      window.__sectorCommitLog.push({ value: select.value, connected: select.isConnected, at: performance.now() });
+      window.VestraMarketOpportunities.refresh('emerging', select.value || 'all');
     });
     window.VestraMarketOpportunityLenses.select('emerging');
   }, [
@@ -136,23 +137,23 @@ test('iPhone/WebKit: More sectors defers canonical rerender until the native pic
 
   const chooseMore = async (value) => {
     await assertLiveNativeSelect();
+    const beforeCommits = await page.evaluate(() => window.__sectorCommitLog.length);
     const immediate = await dropdown.evaluate((select, next) => {
       window.__sectorOriginalNode = select;
       select.value = next;
       select.dispatchEvent(new Event('change', { bubbles: true }));
       return {
         connected: select.isConnected,
-        sameNode: document.querySelector('[data-market-sector-select]') === select,
-        commits: window.__sectorCommitLog.length,
+        sameNode: document.querySelector('#moreSectorFixture [data-market-sector-select]') === select,
       };
     }, value);
     // The native event must not synchronously reach the canonical owner or
     // replace the select while WebKit is dismissing the picker.
     expect(immediate.connected).toBe(true);
     expect(immediate.sameNode).toBe(true);
-    expect(immediate.commits).toBe(0);
+    expect(await page.evaluate(() => window.__sectorCommitLog.length)).toBe(beforeCommits);
 
-    await expect.poll(() => page.evaluate(() => window.__sectorCommitLog.length)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => window.__sectorCommitLog.length)).toBeGreaterThan(beforeCommits);
     const lastCommit = await page.evaluate(() => window.__sectorCommitLog.at(-1));
     expect(lastCommit.value).toBe(value);
     expect(lastCommit.connected).toBe(true);
