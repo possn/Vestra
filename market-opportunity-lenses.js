@@ -29,7 +29,7 @@
     if(lens==='low52')return 'Sem empresas robustas até 5% do mínimo de 52 semanas com os dados atuais.';
     if(lens==='emerging')return 'Sem setups iniciais com qualidade e timing suficientes neste momento.';
     if(lens==='recovery')return 'Sem recuperações suficientemente confirmadas neste momento.';
-    if(lens==='value')return 'Sem candidatos com desconto/upside e timing mínimo neste momento.';
+    if(lens==='value')return 'Sem candidatos com desconto/upside e timing mínimo aceitável neste momento.';
     return '';
   }
   function syncEmpty(s){
@@ -76,17 +76,20 @@
     const selected=t(select.value);
     if(!selected)return;
 
-    // market.js is the canonical owner of M.sector and renderPrimary(). Let it
-    // handle exactly one change event, but not the native picker event itself.
-    // Replacing the <select> synchronously while WebKit is dismissing its native
-    // picker can leave the next tap attached to a detached control on iPhone.
+    // market.js remains the canonical owner of M.sector/renderPrimary(). The
+    // native picker event must finish before any rerender can replace its node.
+    // A different live <select> may exist by commit time, so dispatch on the
+    // current DOM control instead of retaining a potentially detached element.
     event.stopImmediatePropagation();
     syncMoreSectorVisual();
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      if(!select.isConnected)return;
+      const live=section()?.querySelector('[data-market-sector-select]');
+      if(!live?.isConnected)return;
+      live.value=selected;
+      syncMoreSectorVisual();
       const commit=new Event('change',{bubbles:true});
       deferredSectorEvents.add(commit);
-      select.dispatchEvent(commit);
+      live.dispatchEvent(commit);
     }));
   }
   function style(){
