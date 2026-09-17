@@ -1,8 +1,9 @@
-/* Vestra Market Opportunity Lenses v2.9 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v3.0 — strategy controls over independent full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
   const LENSES=new Set(['all','low52','emerging','recovery','value']);
+  const deferredSectorEvents=new WeakSet();
   let activeLens='all';
 
   function section(){
@@ -28,7 +29,7 @@
     if(lens==='low52')return 'Sem empresas robustas até 5% do mínimo de 52 semanas com os dados atuais.';
     if(lens==='emerging')return 'Sem setups iniciais com qualidade e timing suficientes neste momento.';
     if(lens==='recovery')return 'Sem recuperações suficientemente confirmadas neste momento.';
-    if(lens==='value')return 'Sem candidatos com desconto/upside e timing mínimo neste momento.';
+    if(lens==='value')return 'Sem candidatos com desconto/upside e timing mínimo aceitável neste momento.';
     return '';
   }
   function syncEmpty(s){
@@ -69,11 +70,27 @@
     window.VestraMarketOpportunities?.selectLens?.(activeLens,moreSectorValue());
     requestAnimationFrame(refreshUi);
   }
-  function refreshAfterSectorSelection(value){
-    const selected=t(value)||'all';
+  function deferNativeSectorCommit(event){
+    const select=event.target;
+    if(!select?.matches?.('[data-market-sector-select]')||deferredSectorEvents.has(event))return;
+    const selected=t(select.value);
+    if(!selected)return;
+
+    // market.js remains the canonical owner of M.sector/renderPrimary(). The
+    // native picker event must finish before any rerender can replace its node.
+    // A different live <select> may exist by commit time, so dispatch on the
+    // current DOM control instead of retaining a potentially detached element.
+    event.stopImmediatePropagation();
     syncMoreSectorVisual();
-    window.VestraMarketOpportunities?.refresh?.(activeLens,selected);
-    requestAnimationFrame(refreshUi);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const live=section()?.querySelector('[data-market-sector-select]');
+      if(!live?.isConnected)return;
+      live.value=selected;
+      syncMoreSectorVisual();
+      const commit=new Event('change',{bubbles:true});
+      deferredSectorEvents.add(commit);
+      live.dispatchEvent(commit);
+    }));
   }
   function style(){
     if(document.getElementById('vestra-opportunity-lenses-style'))return;
@@ -86,12 +103,8 @@
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('[data-vestra-lens]');
     if(b){e.preventDefault();e.stopPropagation();selectLens(b.dataset.vestraLens);return;}
-    const sector=e.target.closest?.('[data-market-sector]');
-    if(sector)refreshAfterSectorSelection(sector.dataset.marketSector);
   });
-  document.addEventListener('change',e=>{
-    if(e.target.matches?.('[data-market-sector-select]'))refreshAfterSectorSelection(e.target.value);
-  });
+  document.addEventListener('change',deferNativeSectorCommit,true);
   function start(){
     style();
     const canonical=window.VestraMarketOpportunities?.activeLens;if(LENSES.has(canonical))activeLens=canonical;
@@ -101,5 +114,5 @@
     window.addEventListener('vestra:market-ready',refreshUi);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'2.9'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'3.0'});
 })();

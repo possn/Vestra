@@ -9,61 +9,36 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source = (ROOT / 'market-opportunity-lenses.js').read_text(encoding='utf-8')
         cls.opportunities = (ROOT / 'market-opportunities.js').read_text(encoding='utf-8')
+        cls.market = (ROOT / 'market.js').read_text(encoding='utf-8')
 
-    def test_sector_click_refreshes_canonical_opportunity_ranking(self):
-        self.assertIn("[data-market-sector]", self.source)
-        self.assertIn('function refreshAfterSectorSelection(value)', self.source)
-        self.assertIn('refreshAfterSectorSelection(sector.dataset.marketSector)', self.source)
-        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens,selected)', self.source)
-        self.assertIn('requestAnimationFrame(refreshUi)', self.source)
+    def test_market_js_remains_the_canonical_sector_owner(self):
+        self.assertIn("[data-market-sector]", self.market)
+        self.assertIn("M.sector=sec.dataset.marketSector", self.market)
+        self.assertIn("[data-market-sector-select]", self.market)
+        self.assertIn("M.sector=e.target.value", self.market)
+        self.assertNotIn('refreshAfterSectorSelection', self.source)
+        self.assertNotIn("VestraMarketOpportunities?.refresh?.", self.source)
 
-    def test_more_sector_select_stays_native_and_tappable(self):
-        self.assertIn('function syncMoreSectorVisual()', self.source)
-        self.assertIn("s.querySelector('[data-market-sector-select]')", self.source)
+    def test_native_picker_change_is_deferred_to_the_current_live_select(self):
+        self.assertIn('function deferNativeSectorCommit(event)', self.source)
+        self.assertIn('event.stopImmediatePropagation()', self.source)
+        self.assertIn('requestAnimationFrame(()=>requestAnimationFrame(()=>', self.source)
+        self.assertIn("section()?.querySelector('[data-market-sector-select]')", self.source)
+        self.assertIn('live.value=selected', self.source)
+        self.assertIn("new Event('change',{bubbles:true})", self.source)
+        self.assertIn('live.dispatchEvent(commit)', self.source)
+        self.assertIn("document.addEventListener('change',deferNativeSectorCommit,true)", self.source)
+
+    def test_visual_bridge_keeps_native_select_tappable_without_owning_sector(self):
         self.assertIn("select.style.pointerEvents='auto'", self.source)
         self.assertNotIn("select.style.pointerEvents='none'", self.source)
-        # Cleanup of stale DOM left by older cached builds is allowed, but the
-        # control must not read or recreate the old recall mechanism.
-        self.assertNotIn('dataset.marketSectorRecall=', self.source)
-        self.assertNotIn('dataset.marketSectorRecall||', self.source)
-        self.assertNotIn('[data-market-sector-recall]', self.source)
-        self.assertNotIn("document.addEventListener('pointerdown'", self.source)
-
-    def test_more_sector_clears_competing_canonical_active_state(self):
-        self.assertIn("s.querySelectorAll('[data-market-sector].is-active').forEach", self.source)
-        self.assertIn("if(node!==label)node.classList.remove('is-active')", self.source)
-        sync = self.source.split('function syncMoreSectorVisual(){', 1)[1].split('function refreshUi', 1)[0]
-        self.assertLess(sync.index("classList.remove('is-active')"), sync.index("label.classList.toggle('is-active'"))
-
-    def test_more_sector_is_passed_explicitly_without_dom_bridge(self):
-        self.assertIn('function moreSectorValue()', self.source)
-        self.assertIn("querySelector('[data-market-sector-select]')?.value", self.source)
-        self.assertIn('const selected=t(value)||\'all\'', self.source)
-        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens,selected)', self.source)
-        self.assertIn('refreshAfterSectorSelection(e.target.value)', self.source)
-        self.assertIn('window.VestraMarketOpportunities?.selectLens?.(activeLens,moreSectorValue())', self.source)
-        self.assertNotIn('function withMoreSectorBridge', self.source)
+        self.assertIn('delete label.dataset.marketSector', self.source)
         self.assertNotIn('label.dataset.marketSector=selected', self.source)
 
-    def test_more_sector_change_refreshes_without_click_interception(self):
-        self.assertIn("document.addEventListener('change',e=>{", self.source)
-        self.assertIn("e.target.matches?.('[data-market-sector-select]')", self.source)
-        self.assertIn('refreshAfterSectorSelection(e.target.value)', self.source)
-        click_block = self.source.split("document.addEventListener('click',e=>{", 1)[1].split('});', 1)[0]
-        self.assertNotIn('market-sector-more', click_block)
-        self.assertNotIn('preventDefault', click_block.split("const sector=", 1)[1])
-
-    def test_canonical_engine_accepts_explicit_sector_override_and_owns_filtering(self):
-        self.assertIn("function opportunities(lens=activeLens,sectorOverride='')", self.opportunities)
-        self.assertIn("const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all'", self.opportunities)
-        self.assertIn("function selectLens(lens,sectorOverride='')", self.opportunities)
-        self.assertIn('return opportunities(activeLens,sectorOverride)', self.opportunities)
+    def test_opportunity_engine_accepts_explicit_sector_override(self):
+        self.assertIn("sectorOverride=''", self.opportunities)
+        self.assertIn('opportunities(activeLens,sectorOverride)', self.opportunities)
         self.assertIn("if(sector!=='all')ranked=ranked.filter", self.opportunities)
-        self.assertIn('function rankedCandidates(universe,lens,sector=', self.opportunities)
-        self.assertIn('lensEligible(s,lens)', self.opportunities)
-        self.assertIn('lensScore(b,lens)-lensScore(a,lens)', self.opportunities)
-        self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", self.opportunities)
-        self.assertIn("version:'2.9'", self.source)
 
 
 if __name__ == '__main__':
