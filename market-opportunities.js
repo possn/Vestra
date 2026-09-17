@@ -210,7 +210,7 @@
     return ['Oportunidades agora','Visão transversal: os melhores setups de mínimos, arranque, recuperação e value + timing, sem deixar um único arquétipo dominar a shortlist.'];
   }
 
-  function opportunities(lens=activeLens){
+  function opportunities(lens=activeLens,sectorOverride=''){
     activeLens=LENSES.has(t(lens))?t(lens):'all';
     const universe=stocks();
     const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
@@ -221,7 +221,7 @@
       decorate(section);
       return [];
     }
-    const active=section.querySelector('[data-market-sector].is-active');const sec=t(active?.dataset.marketSector)||'all';
+    const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||'all';
     const rows=rankLens(universe,activeLens,{limit:12,sector:sec});
     const sig=(rows.map(s=>`${t(s.ticker)}:${Math.round(lensScore(s,activeLens))}`).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
@@ -233,7 +233,7 @@
     decorate(section);
     return rows;
   }
-  function selectLens(lens){activeLens=LENSES.has(t(lens))?t(lens):'all';return opportunities(activeLens);}
+  function selectLens(lens,sectorOverride=''){activeLens=LENSES.has(t(lens))?t(lens):'all';return opportunities(activeLens,sectorOverride);}
 
   function style(){if(document.getElementById('vestra-market-opportunities-style'))return;const link=document.createElement('link');link.id='vestra-market-opportunities-style';link.rel='stylesheet';link.href='market-opportunities.css?v=1.0';document.head.appendChild(link);}
 
