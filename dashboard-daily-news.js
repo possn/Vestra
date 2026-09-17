@@ -7,6 +7,7 @@
   let payload = null;
   let loadPromise = null;
   let renderQueued = false;
+  let renderedMarkup = '';
 
   const text = value => String(value ?? '').trim();
   const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -115,14 +116,17 @@
   function render() {
     const mount = dashboardMount();
     if (!mount || !payload) return false;
+    const markup = cardHtml();
     const existing = document.getElementById('vestraDailyNewsCard');
+    if (existing && markup === renderedMarkup) return true;
     const shell = document.createElement('div');
-    shell.innerHTML = cardHtml();
+    shell.innerHTML = markup;
     const next = shell.firstElementChild;
     if (!next) return false;
     if (existing) existing.replaceWith(next);
     else if (mount.before) mount.parent.insertBefore(next, mount.before);
     else mount.parent.appendChild(next);
+    renderedMarkup = markup;
     return true;
   }
 
