@@ -56,6 +56,13 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertNotIn("getElementById('passiveIncomeSection')", self.runtime)
         self.assertNotIn("getElementById('portfolioEvolutionCard')", self.runtime)
 
+    def test_render_is_idempotent_so_mobile_tap_targets_are_not_replaced(self):
+        self.assertIn("existing.parentElement === mount.parent", self.runtime)
+        self.assertIn("existing.nextElementSibling === mount.before", self.runtime)
+        self.assertIn("existing.isEqualNode(next)", self.runtime)
+        self.assertIn("if (existing && correctlyPlaced && existing.isEqualNode(next)) return true", self.runtime)
+        self.assertIn("new MutationObserver(queueRender)", self.runtime)
+
     def test_card_stays_compact_and_has_external_link_hardening(self):
         self.assertIn('id="vestraDailyNewsCard"', self.runtime)
         self.assertIn('target="_blank" rel="noopener noreferrer"', self.runtime)
