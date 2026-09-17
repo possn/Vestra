@@ -63,7 +63,7 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   expect(pwa.cacheName).toMatch(/^vestra-cache-/);
   expect(pwa.hasAppShell).toBeTruthy();
   expect(pwa.hasMarketRuntime).toBeTruthy();
-  expect(pwa.updateManagerVersion).toBe('1.5');
+  expect(pwa.updateManagerVersion).toBe('1.6');
   expect(pwa.safeUpdateOwner).toBe('1');
 
   // WebKit can emit this transient pageerror when controllerchange replaces the
