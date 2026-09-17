@@ -40,6 +40,9 @@
       empty.textContent=emptyCopy(activeLens);
     }else empty?.remove();
   }
+  function moreSectorValue(){
+    return t(section()?.querySelector('[data-market-sector-select]')?.value);
+  }
   function syncMoreSectorVisual(){
     const s=section();if(!s)return;
     const select=s.querySelector('[data-market-sector-select]');
@@ -53,16 +56,6 @@
     delete label.dataset.marketSectorRecall;
     if(select)select.style.pointerEvents='auto';
   }
-  function withMoreSectorBridge(callback){
-    const s=section();
-    const select=s?.querySelector('[data-market-sector-select]');
-    const label=select?.closest?.('.market-sector-more');
-    const selected=t(select?.value);
-    if(!label||!selected)return callback();
-    label.dataset.marketSector=selected;
-    try{return callback();}
-    finally{delete label.dataset.marketSector;}
-  }
   function refreshUi(){
     const s=section();if(!s)return;
     syncButtons(ensureBar(s));
@@ -72,13 +65,14 @@
   function selectLens(value){
     const next=t(value)||'all';if(!LENSES.has(next))return;
     activeLens=next;
-    withMoreSectorBridge(()=>window.VestraMarketOpportunities?.selectLens?.(activeLens));
+    syncMoreSectorVisual();
+    window.VestraMarketOpportunities?.selectLens?.(activeLens,moreSectorValue());
     requestAnimationFrame(refreshUi);
   }
   function refreshAfterSectorSelection(){
     requestAnimationFrame(()=>{
       syncMoreSectorVisual();
-      withMoreSectorBridge(()=>window.VestraMarketOpportunities?.refresh?.(activeLens));
+      window.VestraMarketOpportunities?.refresh?.(activeLens,moreSectorValue());
       refreshUi();
     });
   }
