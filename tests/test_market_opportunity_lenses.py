@@ -25,7 +25,7 @@ class MarketOpportunityLensesTests(unittest.TestCase):
         self.assertIn("event.stopImmediatePropagation()", self.source)
         self.assertIn("requestAnimationFrame(()=>requestAnimationFrame(()=>", self.source)
         self.assertIn("deferredSectorEvents.add(commit)", self.source)
-        self.assertIn("select.dispatchEvent(commit)", self.source)
+        self.assertIn("live.dispatchEvent(commit)", self.source)
         self.assertIn("document.addEventListener('change',deferNativeSectorCommit,true)", self.source)
         self.assertNotIn("window.VestraMarketOpportunities?.refresh?.(activeLens,selected)", self.source)
         self.assertNotIn("refreshAfterSectorSelection", self.source)
