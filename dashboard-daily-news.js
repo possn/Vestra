@@ -9,7 +9,7 @@
   let renderQueued = false;
 
   const text = value => String(value ?? '').trim();
-  const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
 
   function safeNewsUrl(value) {
     const raw = text(value);
@@ -120,6 +120,10 @@
     shell.innerHTML = cardHtml();
     const next = shell.firstElementChild;
     if (!next) return false;
+    const correctlyPlaced = Boolean(existing && existing.parentElement === mount.parent && (
+      mount.before ? existing.nextElementSibling === mount.before : existing === mount.parent.lastElementChild
+    ));
+    if (existing && correctlyPlaced && existing.isEqualNode(next)) return true;
     if (existing) existing.replaceWith(next);
     else if (mount.before) mount.parent.insertBefore(next, mount.before);
     else mount.parent.appendChild(next);
