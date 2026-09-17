@@ -69,12 +69,11 @@
     window.VestraMarketOpportunities?.selectLens?.(activeLens,moreSectorValue());
     requestAnimationFrame(refreshUi);
   }
-  function refreshAfterSectorSelection(){
-    requestAnimationFrame(()=>{
-      syncMoreSectorVisual();
-      window.VestraMarketOpportunities?.refresh?.(activeLens,moreSectorValue());
-      refreshUi();
-    });
+  function refreshAfterSectorSelection(value){
+    const selected=t(value)||'all';
+    syncMoreSectorVisual();
+    window.VestraMarketOpportunities?.refresh?.(activeLens,selected);
+    requestAnimationFrame(refreshUi);
   }
   function style(){
     if(document.getElementById('vestra-opportunity-lenses-style'))return;
@@ -88,10 +87,10 @@
     const b=e.target.closest?.('[data-vestra-lens]');
     if(b){e.preventDefault();e.stopPropagation();selectLens(b.dataset.vestraLens);return;}
     const sector=e.target.closest?.('[data-market-sector]');
-    if(sector)refreshAfterSectorSelection();
+    if(sector)refreshAfterSectorSelection(sector.dataset.marketSector);
   });
   document.addEventListener('change',e=>{
-    if(e.target.matches?.('[data-market-sector-select]'))refreshAfterSectorSelection();
+    if(e.target.matches?.('[data-market-sector-select]'))refreshAfterSectorSelection(e.target.value);
   });
   function start(){
     style();
