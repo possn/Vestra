@@ -1,4 +1,4 @@
-/* Vestra Dashboard Daily News v1.2 — compact market + portfolio-aware daily briefing. */
+/* Vestra Dashboard Daily News v1.3 — compact market + portfolio-aware daily briefing. */
 (() => {
   'use strict';
 
@@ -6,11 +6,13 @@
   const MAX_VISIBLE = 5;
   const NEWS_RETURN_KEY = 'vestra:daily-news-return-v1';
   const NEWS_RETURN_TTL_MS = 30 * 60 * 1000;
+  const NEWS_RETURN_RESUME_GRACE_MS = 30 * 1000;
   let payload = null;
   let loadPromise = null;
   let renderQueued = false;
   let renderedMarkup = '';
   let outboundNewsPending = false;
+  let pendingReturnCleanupTimer = null;
 
   const text = value => String(value ?? '').trim();
   const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -35,14 +37,33 @@
   function rememberNewsReturn() {
     const context = { ts: Date.now(), scrollY: readScrollY() };
     try { localStorage.setItem(NEWS_RETURN_KEY, JSON.stringify(context)); } catch (_) {}
+    if (pendingReturnCleanupTimer !== null) {
+      clearTimeout(pendingReturnCleanupTimer);
+      pendingReturnCleanupTimer = null;
+    }
     outboundNewsPending = true;
     return context;
   }
 
   function clearPendingNewsReturn() {
+    if (pendingReturnCleanupTimer !== null) {
+      clearTimeout(pendingReturnCleanupTimer);
+      pendingReturnCleanupTimer = null;
+    }
     if (!outboundNewsPending) return;
     outboundNewsPending = false;
     try { localStorage.removeItem(NEWS_RETURN_KEY); } catch (_) {}
+  }
+
+  function schedulePendingNewsReturnCleanup() {
+    if (!outboundNewsPending || pendingReturnCleanupTimer !== null) return;
+    // iOS/WebKit may emit focus/pageshow before it decides to reload a suspended
+    // standalone PWA. Keep the return marker alive through that short window so
+    // a real reload can consume it in app-ui-core and suppress the launch splash.
+    pendingReturnCleanupTimer = setTimeout(() => {
+      pendingReturnCleanupTimer = null;
+      clearPendingNewsReturn();
+    }, NEWS_RETURN_RESUME_GRACE_MS);
   }
 
   function restoreNewsReturnContext() {
@@ -157,6 +178,13 @@
     shell.innerHTML = markup;
     const next = shell.firstElementChild;
     if (!next) return false;
+    const correctlyPlaced = Boolean(existing && existing.parentElement === mount.parent && (
+      mount.before ? existing.nextElementSibling === mount.before : existing === mount.parent.lastElementChild
+    ));
+    if (existing && correctlyPlaced && existing.isEqualNode(next)) {
+      renderedMarkup = markup;
+      return true;
+    }
     if (existing) existing.replaceWith(next);
     else if (mount.before) mount.parent.insertBefore(next, mount.before);
     else mount.parent.appendChild(next);
@@ -222,11 +250,10 @@
       if (newsLink && safeNewsUrl(newsLink.getAttribute('href'))) rememberNewsReturn();
       if (event.target.closest?.('.sidenavbtn[data-view="dashboard"], .navbtn[data-view="dashboard"]')) queueRender();
     }, true);
-    window.addEventListener?.('vestra:market-ready', queueRender);
-    window.addEventListener?.('focus', clearPendingNewsReturn);
-    window.addEventListener?.('pageshow', clearPendingNewsReturn);
+    window.addEventListener?.('focus', schedulePendingNewsReturnCleanup);
+    window.addEventListener?.('pageshow', schedulePendingNewsReturnCleanup);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') clearPendingNewsReturn();
+      if (document.visibilityState === 'visible') schedulePendingNewsReturnCleanup();
     });
   }
 
@@ -235,6 +262,7 @@
 
   window.VestraDashboardDailyNews = Object.freeze({
     load, refresh: () => load(true), render, rankedItems, safeNewsUrl,
-    rememberNewsReturn, restoreNewsReturnContext, version: '1.2'
+    rememberNewsReturn, restoreNewsReturnContext, clearPendingNewsReturn,
+    schedulePendingNewsReturnCleanup, version: '1.3'
   });
 })();

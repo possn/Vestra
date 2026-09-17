@@ -38,12 +38,12 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn(".catch(() => null)", self.runtime)
 
     def test_companion_is_versioned_reachable_and_offline_capable(self):
-        self.assertIn("dashboard-daily-news.js?v=1.2", self.loader)
+        self.assertIn("dashboard-daily-news.js?v=1.3", self.loader)
         self.assertIn("ensureDashboardDailyNews()", self.loader)
         self.assertIn('"./dashboard-daily-news.js"', self.sw)
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
         self.assertIn("dashboard-daily-news.css?v=1.0", self.runtime)
-        self.assertIn("version: '1.2'", self.runtime)
+        self.assertIn("version: '1.3'", self.runtime)
 
     def test_news_runtime_is_network_first_so_interaction_fixes_are_not_stale(self):
         network_first = self.sw.split('const BOOTSTRAP_NETWORK_FIRST = new Set([', 1)[1].split(']);', 1)[0]
@@ -66,7 +66,9 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn("let renderedMarkup = ''", self.runtime)
         self.assertIn("const markup = cardHtml()", self.runtime)
         self.assertIn("if (existing && markup === renderedMarkup) return true", self.runtime)
-        self.assertIn("renderedMarkup = markup", self.runtime)
+        self.assertIn("existing.parentElement === mount.parent", self.runtime)
+        self.assertIn("existing.nextElementSibling === mount.before", self.runtime)
+        self.assertIn("existing.isEqualNode(next)", self.runtime)
         self.assertIn("new MutationObserver(queueRender)", self.runtime)
 
     def test_card_stays_compact_and_has_external_link_hardening(self):
@@ -87,13 +89,21 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertNotIn("event.preventDefault()", self.runtime)
         self.assertNotIn("window.open(", self.runtime)
 
-    def test_return_context_restores_scroll_and_is_cleared_on_live_resume(self):
+    def test_return_context_survives_early_ios_resume_events_before_reload(self):
+        self.assertIn("const NEWS_RETURN_RESUME_GRACE_MS = 30 * 1000", self.runtime)
+        self.assertIn("function schedulePendingNewsReturnCleanup()", self.runtime)
+        self.assertIn("window.addEventListener?.('focus', schedulePendingNewsReturnCleanup)", self.runtime)
+        self.assertIn("window.addEventListener?.('pageshow', schedulePendingNewsReturnCleanup)", self.runtime)
+        self.assertIn("document.visibilityState === 'visible'", self.runtime)
+        self.assertIn("setTimeout(() =>", self.runtime)
+        self.assertIn("NEWS_RETURN_RESUME_GRACE_MS", self.runtime)
+        self.assertNotIn("window.addEventListener?.('focus', clearPendingNewsReturn)", self.runtime)
+        self.assertNotIn("window.addEventListener?.('pageshow', clearPendingNewsReturn)", self.runtime)
+
+    def test_return_context_restores_scroll_after_real_reload(self):
         self.assertIn("function restoreNewsReturnContext()", self.runtime)
         self.assertIn("window.__vestraDailyNewsReturnContext", self.runtime)
         self.assertIn("window.scrollTo(0, scrollY)", self.runtime)
-        self.assertIn("window.addEventListener?.('focus', clearPendingNewsReturn)", self.runtime)
-        self.assertIn("window.addEventListener?.('pageshow', clearPendingNewsReturn)", self.runtime)
-        self.assertIn("document.visibilityState === 'visible'", self.runtime)
 
     def test_outbound_news_url_sanitizer_rejects_script_and_data_schemes(self):
         source = json.dumps(self.runtime)

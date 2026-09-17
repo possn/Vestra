@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: Dashboard daily news links stay stable and open on tap', async ({ page }) => {
+test('iPhone/WebKit: Dashboard daily news links stay stable and return without relaunch splash', async ({ page }) => {
   await page.route('**/data/dashboard-news.json', async route => {
     await route.fulfill({
       status: 200,
@@ -59,6 +59,12 @@ test('iPhone/WebKit: Dashboard daily news links stay stable and open on tap', as
   expect(placement).toBe(true);
 
   await validLink.evaluate(node => { window.__vestraDailyNewsLinkNode = node; });
+  await dashboard.evaluate(node => {
+    const mutation = document.createElement('span');
+    mutation.hidden = true;
+    node.appendChild(mutation);
+    mutation.remove();
+  });
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await expect.poll(() => validLink.evaluate(node => node === window.__vestraDailyNewsLinkNode)).toBe(true);
 
@@ -68,4 +74,21 @@ test('iPhone/WebKit: Dashboard daily news links stay stable and open on tap', as
   await popup.waitForLoadState('domcontentloaded');
   expect(popup.url()).toBe('https://example.com/markets');
   await popup.close();
+
+  // iOS can emit focus/pageshow first and reload the standalone PWA immediately
+  // afterwards. The return marker must survive those resume events long enough
+  // for the next boot to consume it and suppress the launch splash.
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('focus'));
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+  });
+  const markerBeforeReload = await page.evaluate(() => localStorage.getItem('vestra:daily-news-return-v1'));
+  expect(markerBeforeReload).not.toBeNull();
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => Boolean(window.VestraDashboardDailyNews));
+  const splash = page.locator('#appLoadingOverlay');
+  await expect(splash).toHaveAttribute('data-news-return-skip', '1');
+  await expect(splash).toBeHidden({ timeout: 1_500 });
+  expect(await page.evaluate(() => localStorage.getItem('vestra:daily-news-return-v1'))).toBeNull();
 });
