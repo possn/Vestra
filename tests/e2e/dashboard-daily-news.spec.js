@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: Dashboard renders the daily news card in the live dashboard structure', async ({ page }) => {
+test('iPhone/WebKit: Dashboard daily news links stay stable and open on tap', async ({ page }) => {
   await page.route('**/data/dashboard-news.json', async route => {
     await route.fulfill({
       status: 200,
@@ -30,6 +30,9 @@ test('iPhone/WebKit: Dashboard renders the daily news card in the live dashboard
       }),
     });
   });
+  await page.context().route('https://example.com/markets', async route => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: '<title>Market story</title><p>ok</p>' });
+  });
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraDashboardDailyNews));
@@ -54,4 +57,15 @@ test('iPhone/WebKit: Dashboard renders the daily news card in the live dashboard
     return Boolean(cardNode && quick && cardNode.parentElement === node && cardNode.nextElementSibling === quick);
   });
   expect(placement).toBe(true);
+
+  await validLink.evaluate(node => { window.__vestraDailyNewsLinkNode = node; });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await expect.poll(() => validLink.evaluate(node => node === window.__vestraDailyNewsLinkNode)).toBe(true);
+
+  const popupPromise = page.waitForEvent('popup');
+  await validLink.tap();
+  const popup = await popupPromise;
+  await popup.waitForLoadState('domcontentloaded');
+  expect(popup.url()).toBe('https://example.com/markets');
+  await popup.close();
 });
