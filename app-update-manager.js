@@ -1,4 +1,4 @@
-/* Vestra App Update Manager v1.5 — iOS-safe navigation with deterministic exclusive button ownership. */
+/* Vestra App Update Manager v1.6 — iOS-safe navigation with deterministic exclusive button ownership. */
 (() => {
   'use strict';
   let busy = false;
@@ -54,14 +54,15 @@
     return true;
   }
 
-  function install(force = false) {
+  function install() {
     const current = document.getElementById('btnForceUpdate');
     if (!current) return false;
-    if (!force && current.dataset.vestraSafeUpdateOwner === '1') return false;
+    if (current.dataset.vestraSafeUpdateOwner === '1') return false;
 
     // app.js historically attached a destructive target listener to this button.
-    // Replacing the node removes every previously attached listener. The capture
-    // guard above remains authoritative even if a later listener is attached.
+    // Replacing the node once removes every listener that predates safe ownership.
+    // Once marked, the capture guard contains any later legacy target listener, so
+    // cloning again would only discard legitimate state/listeners from other code.
     const button = current.cloneNode(true);
     button.dataset.vestraSafeUpdateOwner = '1';
     current.replaceWith(button);
@@ -69,7 +70,7 @@
   }
 
   function reclaimAfterAppSetup() {
-    setTimeout(() => install(true), 0);
+    setTimeout(() => install(), 0);
   }
 
   installCaptureGuard();
@@ -82,7 +83,7 @@
   window.addEventListener('vestra:app-ready', reclaimAfterAppSetup, { once: true });
 
   window.VestraAppUpdateManager = Object.freeze({
-    version: '1.5',
+    version: '1.6',
     install,
     forceFreshReload,
   });
