@@ -38,7 +38,7 @@
     return Object.freeze({
       readAttempted: _stateReadAttempted,
       readTrusted: _stateReadTrusted,
-      writeBlocked: !_stateReadTrusted,
+      writeBlocked: _stateReadAttempted && !_stateReadTrusted,
       readFailure: _stateReadFailure,
     });
   }
@@ -204,8 +204,8 @@
   }
 
   async function storageSet(raw){
-    if (!_stateReadTrusted) {
-      console.error('[VestraStorage] State write blocked because the current session did not complete a trusted state read.', _stateReadFailure || 'read not completed');
+    if (_stateReadAttempted && !_stateReadTrusted) {
+      console.error('[VestraStorage] State write blocked because the current session had a failed state read.', _stateReadFailure || 'read failed');
       return false;
     }
 
