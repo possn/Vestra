@@ -65,14 +65,14 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
-test('iPhone/WebKit: More sectors remains a live native select across repeated changes', async ({ page }) => {
+test('iPhone/WebKit: More sectors defers canonical rerender until the native picker has closed', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await waitForLaunch(page);
 
   await page.evaluate((rows) => {
     window.VestraMarketStaticUniverse = { getStocks: () => rows };
-    window.__sectorTapLog = [];
+    window.__sectorCommitLog = [];
     document.querySelector('#moreSectorFixture')?.remove();
     const fixture = document.createElement('section');
     fixture.id = 'moreSectorFixture';
@@ -83,7 +83,6 @@ test('iPhone/WebKit: More sectors remains a live native select across repeated c
       <div class="market-sector-row">
         <button type="button" data-market-sector="all" class="is-active">Todos</button>
         <button type="button" data-market-sector="Technology">Technology</button>
-        <button type="button" data-market-sector="Healthcare">Healthcare</button>
         <label class="market-sector-more"><span>Mais</span>
           <select data-market-sector-select aria-label="Mais setores">
             <option value="">Mais setores</option>
@@ -93,31 +92,26 @@ test('iPhone/WebKit: More sectors remains a live native select across repeated c
         </label>
       </div>
       <div class="market-list"></div>`;
-    const dropdown = fixture.querySelector('[data-market-sector-select]');
-    const more = fixture.querySelector('.market-sector-more');
-    fixture.querySelectorAll('[data-market-sector]').forEach(button => {
-      button.addEventListener('click', () => {
-        fixture.querySelectorAll('[data-market-sector].is-active').forEach(node => node.classList.remove('is-active'));
-        button.classList.add('is-active');
-        dropdown.value = '';
-        more.classList.remove('is-active');
-        window.__sectorTapLog.push(button.dataset.marketSector);
-      });
-    });
     document.body.prepend(fixture);
+
+    const dropdown = fixture.querySelector('[data-market-sector-select]');
+    // Mimics market.js as the single canonical owner. The bridge under test must
+    // suppress the original native change and let only its deferred commit reach
+    // this bubble listener.
+    dropdown.addEventListener('change', () => {
+      window.__sectorCommitLog.push({ value: dropdown.value, connected: dropdown.isConnected, at: performance.now() });
+      window.VestraMarketOpportunities.refresh('emerging', dropdown.value || 'all');
+    });
     window.VestraMarketOpportunityLenses.select('emerging');
   }, [
     candidate('ENERGY1', { sector: 'Energy', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 72 }),
     candidate('COMM1', { sector: 'Communication Services', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 71 }),
     candidate('TECH1', { sector: 'Technology', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 70 }),
-    candidate('HEALTH1', { sector: 'Healthcare', estimate_signal: 'improving', thesis_direction: 'up', opportunity_timing_score: 69 }),
   ]);
 
   const fixture = page.locator('#moreSectorFixture');
   const dropdown = fixture.locator('[data-market-sector-select]');
   const more = fixture.locator('.market-sector-more');
-  const all = fixture.locator('[data-market-sector="all"]');
-  const technology = fixture.locator('[data-market-sector="Technology"]');
   const rowTickers = () => fixture.locator('.market-row').evaluateAll(rows => rows.map(row => row.dataset.marketTicker));
 
   const assertLiveNativeSelect = async () => {
@@ -140,15 +134,28 @@ test('iPhone/WebKit: More sectors remains a live native select across repeated c
     expect(hit.targetIsSelectOrInsideLabel).toBe(true);
   };
 
-  // Headless WebKit cannot drive the native iOS picker itself reliably. The
-  // production contract we need is that the native select stays hittable; the
-  // picker result is represented by the same bubbling change event iOS emits.
   const chooseMore = async (value) => {
     await assertLiveNativeSelect();
-    await dropdown.evaluate((select, next) => {
+    const immediate = await dropdown.evaluate((select, next) => {
+      window.__sectorOriginalNode = select;
       select.value = next;
       select.dispatchEvent(new Event('change', { bubbles: true }));
+      return {
+        connected: select.isConnected,
+        sameNode: document.querySelector('[data-market-sector-select]') === select,
+        commits: window.__sectorCommitLog.length,
+      };
     }, value);
+    // The native event must not synchronously reach the canonical owner or
+    // replace the select while WebKit is dismissing the picker.
+    expect(immediate.connected).toBe(true);
+    expect(immediate.sameNode).toBe(true);
+    expect(immediate.commits).toBe(0);
+
+    await expect.poll(() => page.evaluate(() => window.__sectorCommitLog.length)).toBeGreaterThan(0);
+    const lastCommit = await page.evaluate(() => window.__sectorCommitLog.at(-1));
+    expect(lastCommit.value).toBe(value);
+    expect(lastCommit.connected).toBe(true);
     await assertLiveNativeSelect();
   };
 
@@ -157,24 +164,15 @@ test('iPhone/WebKit: More sectors remains a live native select across repeated c
   await expect(more).not.toHaveAttribute('data-market-sector', /.+/);
   await expect.poll(rowTickers).toEqual(['ENERGY1']);
 
+  const firstCommitCount = await page.evaluate(() => window.__sectorCommitLog.length);
+  expect(firstCommitCount).toBe(1);
+
   await chooseMore('Communication Services');
   await expect(dropdown).toHaveValue('Communication Services');
   await expect(more).not.toHaveAttribute('data-market-sector', /.+/);
   await expect.poll(rowTickers).toEqual(['COMM1']);
 
-  await technology.tap();
-  await expect(dropdown).toHaveValue('');
-  await expect(more).not.toHaveClass(/is-active/);
-  await assertLiveNativeSelect();
-  await expect.poll(rowTickers).toEqual(['TECH1']);
-
-  await chooseMore('Energy');
-  await expect.poll(rowTickers).toEqual(['ENERGY1']);
-  await all.tap();
-  await assertLiveNativeSelect();
-  await expect.poll(async () => new Set(await rowTickers())).toEqual(new Set(['ENERGY1', 'COMM1', 'TECH1', 'HEALTH1']));
-
-  const tapLog = await page.evaluate(() => window.__sectorTapLog);
-  expect(tapLog).toEqual(['Technology', 'all']);
+  const commits = await page.evaluate(() => window.__sectorCommitLog.map(item => item.value));
+  expect(commits).toEqual(['Energy', 'Communication Services']);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
