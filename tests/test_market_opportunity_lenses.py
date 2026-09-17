@@ -21,7 +21,9 @@ class MarketOpportunityLensesTests(unittest.TestCase):
 
     def test_runtime_behavior_and_offline_reachability_are_preserved(self):
         self.assertIn("window.VestraMarketOpportunities?.selectLens?.(activeLens,moreSectorValue())", self.source)
-        self.assertIn("window.VestraMarketOpportunities?.refresh?.(activeLens,moreSectorValue())", self.source)
+        self.assertIn("window.VestraMarketOpportunities?.refresh?.(activeLens,selected)", self.source)
+        self.assertIn("refreshAfterSectorSelection(e.target.value)", self.source)
+        self.assertIn("refreshAfterSectorSelection(sector.dataset.marketSector)", self.source)
         self.assertIn("version:'2.9'", self.source)
         self.assertIn('"./market-opportunity-lenses.css"', self.sw)
 

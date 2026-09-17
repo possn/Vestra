@@ -12,9 +12,10 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
 
     def test_sector_click_refreshes_canonical_opportunity_ranking(self):
         self.assertIn("[data-market-sector]", self.source)
-        self.assertIn('refreshAfterSectorSelection()', self.source)
-        self.assertIn('requestAnimationFrame(()=>{', self.source)
-        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens,moreSectorValue())', self.source)
+        self.assertIn('function refreshAfterSectorSelection(value)', self.source)
+        self.assertIn('refreshAfterSectorSelection(sector.dataset.marketSector)', self.source)
+        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens,selected)', self.source)
+        self.assertIn('requestAnimationFrame(refreshUi)', self.source)
 
     def test_more_sector_select_stays_native_and_tappable(self):
         self.assertIn('function syncMoreSectorVisual()', self.source)
@@ -37,7 +38,9 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
     def test_more_sector_is_passed_explicitly_without_dom_bridge(self):
         self.assertIn('function moreSectorValue()', self.source)
         self.assertIn("querySelector('[data-market-sector-select]')?.value", self.source)
-        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens,moreSectorValue())', self.source)
+        self.assertIn('const selected=t(value)||\'all\'', self.source)
+        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens,selected)', self.source)
+        self.assertIn('refreshAfterSectorSelection(e.target.value)', self.source)
         self.assertIn('window.VestraMarketOpportunities?.selectLens?.(activeLens,moreSectorValue())', self.source)
         self.assertNotIn('function withMoreSectorBridge', self.source)
         self.assertNotIn('label.dataset.marketSector=selected', self.source)
@@ -45,6 +48,7 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
     def test_more_sector_change_refreshes_without_click_interception(self):
         self.assertIn("document.addEventListener('change',e=>{", self.source)
         self.assertIn("e.target.matches?.('[data-market-sector-select]')", self.source)
+        self.assertIn('refreshAfterSectorSelection(e.target.value)', self.source)
         click_block = self.source.split("document.addEventListener('click',e=>{", 1)[1].split('});', 1)[0]
         self.assertNotIn('market-sector-more', click_block)
         self.assertNotIn('preventDefault', click_block.split("const sector=", 1)[1])
