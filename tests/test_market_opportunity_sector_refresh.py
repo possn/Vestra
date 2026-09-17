@@ -14,52 +14,52 @@ class MarketOpportunitySectorRefreshTests(unittest.TestCase):
         self.assertIn("[data-market-sector]", self.source)
         self.assertIn('refreshAfterSectorSelection()', self.source)
         self.assertIn('requestAnimationFrame(()=>{', self.source)
-        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens)', self.source)
+        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens,moreSectorValue())', self.source)
 
-    def test_refresh_runs_after_sector_owner_updates_active_class(self):
-        click_block = self.source.split("document.addEventListener('click',e=>{", 1)[1].split('});', 1)[0]
-        self.assertIn("e.target.closest?.('[data-market-sector]')", click_block)
-        self.assertIn('clearMoreSectorSelectionForCanonicalClick(sector)', click_block)
-        self.assertIn('refreshAfterSectorSelection()', click_block)
-        self.assertNotIn('classList.toggle', click_block)
-
-    def test_more_sector_select_is_bridged_into_canonical_sector_contract(self):
-        self.assertIn('function bridgeMoreSectorSelection()', self.source)
+    def test_more_sector_select_stays_native_and_tappable(self):
+        self.assertIn('function syncMoreSectorVisual()', self.source)
         self.assertIn("s.querySelector('[data-market-sector-select]')", self.source)
-        self.assertIn("s.querySelectorAll('[data-market-sector].is-active')", self.source)
+        self.assertIn("select.style.pointerEvents='auto'", self.source)
+        self.assertNotIn("select.style.pointerEvents='none'", self.source)
+        # Cleanup of stale DOM left by older cached builds is allowed, but the
+        # control must not read or recreate the old recall mechanism.
+        self.assertNotIn('dataset.marketSectorRecall=', self.source)
+        self.assertNotIn('dataset.marketSectorRecall||', self.source)
+        self.assertNotIn('[data-market-sector-recall]', self.source)
+        self.assertNotIn("document.addEventListener('pointerdown'", self.source)
+
+    def test_more_sector_clears_competing_canonical_active_state(self):
+        self.assertIn("s.querySelectorAll('[data-market-sector].is-active').forEach", self.source)
         self.assertIn("if(node!==label)node.classList.remove('is-active')", self.source)
-        self.assertIn("label.dataset.marketSector=selected", self.source)
-        self.assertIn("label.classList.add('is-active')", self.source)
-        self.assertIn("delete label.dataset.marketSector", self.source)
+        sync = self.source.split('function syncMoreSectorVisual(){', 1)[1].split('function refreshUi', 1)[0]
+        self.assertLess(sync.index("classList.remove('is-active')"), sync.index("label.classList.toggle('is-active'"))
+
+    def test_more_sector_is_passed_explicitly_without_dom_bridge(self):
+        self.assertIn('function moreSectorValue()', self.source)
+        self.assertIn("querySelector('[data-market-sector-select]')?.value", self.source)
+        self.assertIn('window.VestraMarketOpportunities?.refresh?.(activeLens,moreSectorValue())', self.source)
+        self.assertIn('window.VestraMarketOpportunities?.selectLens?.(activeLens,moreSectorValue())', self.source)
+        self.assertNotIn('function withMoreSectorBridge', self.source)
+        self.assertNotIn('label.dataset.marketSector=selected', self.source)
+
+    def test_more_sector_change_refreshes_without_click_interception(self):
         self.assertIn("document.addEventListener('change',e=>{", self.source)
         self.assertIn("e.target.matches?.('[data-market-sector-select]')", self.source)
-        self.assertIn('bridgeMoreSectorSelection();', self.source)
+        click_block = self.source.split("document.addEventListener('click',e=>{", 1)[1].split('});', 1)[0]
+        self.assertNotIn('market-sector-more', click_block)
+        self.assertNotIn('preventDefault', click_block.split("const sector=", 1)[1])
 
-    def test_canonical_sector_click_clears_stale_more_sector_value(self):
-        self.assertIn('function clearMoreSectorSelectionForCanonicalClick(target)', self.source)
-        self.assertIn("sector.closest?.('.market-sector-more')", self.source)
-        self.assertIn("lastMoreSector=t(select.value);select.value=''", self.source)
-        self.assertIn('delete label.dataset.marketSector', self.source)
-        self.assertIn("label.classList.remove('is-active')", self.source)
-
-    def test_inactive_more_sector_uses_click_recall_without_capture_pointer_block(self):
-        self.assertIn("let lastMoreSector=''", self.source)
-        self.assertIn('label.dataset.marketSectorRecall=lastMoreSector', self.source)
-        self.assertIn('function recallMoreSectorSelection(target)', self.source)
-        self.assertNotIn("document.addEventListener('pointerdown'", self.source)
-        self.assertIn("e.target.closest?.('.market-sector-more[data-market-sector-recall]')", self.source)
-        self.assertIn("select.style.pointerEvents='none'", self.source)
-        self.assertIn("select.style.pointerEvents='auto'", self.source)
-        self.assertIn("select.dispatchEvent(new Event('change',{bubbles:true}))", self.source)
-
-    def test_canonical_engine_still_owns_sector_filtering_and_lens_math(self):
-        self.assertIn("section.querySelector('[data-market-sector].is-active')", self.opportunities)
+    def test_canonical_engine_accepts_explicit_sector_override_and_owns_filtering(self):
+        self.assertIn("function opportunities(lens=activeLens,sectorOverride='')", self.opportunities)
+        self.assertIn("const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all'", self.opportunities)
+        self.assertIn("function selectLens(lens,sectorOverride='')", self.opportunities)
+        self.assertIn('return opportunities(activeLens,sectorOverride)', self.opportunities)
         self.assertIn("if(sector!=='all')ranked=ranked.filter", self.opportunities)
         self.assertIn('function rankedCandidates(universe,lens,sector=', self.opportunities)
         self.assertIn('lensEligible(s,lens)', self.opportunities)
         self.assertIn('lensScore(b,lens)-lensScore(a,lens)', self.opportunities)
         self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", self.opportunities)
-        self.assertIn("version:'2.6'", self.source)
+        self.assertIn("version:'2.9'", self.source)
 
 
 if __name__ == '__main__':
