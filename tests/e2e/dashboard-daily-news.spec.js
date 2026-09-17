@@ -71,9 +71,19 @@ test('iPhone/WebKit: Dashboard daily news links stay stable and return without a
   // The outbound tap must leave a one-shot return marker before WebKit hands
   // control to the external page. This covers the installed-PWA case where iOS
   // reclaims the Vestra process while Safari is showing the article.
-  const marker = await page.evaluate(() => JSON.parse(localStorage.getItem('vestra:daily-news-return-v1') || 'null'));
+  let marker = await page.evaluate(() => JSON.parse(localStorage.getItem('vestra:daily-news-return-v1') || 'null'));
   expect(marker).not.toBeNull();
   expect(Number(marker.ts)).toBeGreaterThan(0);
+
+  // iOS may emit focus/pageshow while handing the standalone PWA off to Safari.
+  // Those signals alone must never consume the marker, otherwise a later
+  // process recreation is mistaken for a cold start and shows the splash.
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('focus'));
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+  });
+  marker = await page.evaluate(() => JSON.parse(localStorage.getItem('vestra:daily-news-return-v1') || 'null'));
+  expect(marker).not.toBeNull();
 
   // Model iOS recreating the PWA document while the article is still open.
   // Returning must be a warm continuation, not another branded cold start.
