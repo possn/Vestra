@@ -56,15 +56,12 @@
   function withMoreSectorBridge(callback){
     const s=section();
     const select=s?.querySelector('[data-market-sector-select]');
+    const label=select?.closest?.('.market-sector-more');
     const selected=t(select?.value);
-    if(!s||!selected)return callback();
-    const bridge=document.createElement('span');
-    bridge.hidden=true;
-    bridge.className='is-active';
-    bridge.dataset.marketSector=selected;
-    s.prepend(bridge);
+    if(!label||!selected)return callback();
+    label.dataset.marketSector=selected;
     try{return callback();}
-    finally{bridge.remove();}
+    finally{delete label.dataset.marketSector;}
   }
   function refreshUi(){
     const s=section();if(!s)return;
