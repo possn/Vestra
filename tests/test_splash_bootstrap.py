@@ -28,7 +28,7 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('beat any stale inline opacity/display writes', UI)
 
     def test_base_styles_own_single_entrance_animation(self):
-        self.assertIn('Vestra UI core v2.0', UI)
+        self.assertIn('Vestra UI core v2.1', UI)
         self.assertIn('animation:vestraMarkIn .72s', BASE)
         self.assertIn('animation:vestraCopyIn .55s .14s', BASE)
         self.assertIn('animation:vestraCopyIn .55s .22s', BASE)
@@ -47,6 +47,17 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('transition:opacity .68s cubic-bezier(.4,0,.2,1)!important', UI)
         self.assertIn("splash.classList.add('vestra-splash--leaving')", UI)
         self.assertIn('}, 720);', UI)
+
+    def test_recent_daily_news_return_skips_cold_start_splash_once(self):
+        self.assertIn("DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1'", UI)
+        self.assertIn('DAILY_NEWS_RETURN_TTL_MS = 30 * 60 * 1000', UI)
+        self.assertIn('function consumeDailyNewsReturnContext()', UI)
+        self.assertIn('localStorage.removeItem(DAILY_NEWS_RETURN_KEY)', UI)
+        self.assertIn('window.__vestraDailyNewsReturnContext = normalized', UI)
+        self.assertIn('function suppressSplashForNewsReturn(splash)', UI)
+        self.assertIn("splash.dataset.newsReturnSkip = '1'", UI)
+        self.assertIn('#appLoadingOverlay[data-news-return-skip="1"]', UI)
+        self.assertIn('if (suppressSplashForNewsReturn(splash)) return', UI)
 
     def test_bootstrap_scripts_are_network_first(self):
         self.assertIn('BOOTSTRAP_NETWORK_FIRST', SW)
