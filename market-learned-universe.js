@@ -1,11 +1,11 @@
-/* Vestra Learned Universe v2.1 — persistent local catalogue of globally discovered instruments. */
+/* Vestra Learned Universe v3.0 — exact-identity local catalogue of globally discovered instruments. */
 (() => {
   'use strict';
 
-  // v2 intentionally starts from a clean local catalogue. v1 could persist
-  // symbols that passed a permissive upstream fallback without exact identity.
-  const DB_KEY = 'market_learned_universe_v2';
-  const SCHEMA_VERSION = 2;
+  // v3 intentionally starts from a clean local catalogue. Earlier browser
+  // generations could persist a row before exact provider identity was proven.
+  const DB_KEY = 'market_learned_universe_v3';
+  const SCHEMA_VERSION = 3;
   const MAX_ROWS = 500;
   const txt = v => String(v ?? '').trim();
 
@@ -19,6 +19,8 @@
     const now = new Date().toISOString();
     return {
       ticker,
+      provider_symbol: txt(input?.provider_symbol || ticker).toUpperCase(),
+      identity_verified: input?.identity_verified === true,
       name: txt(input?.name || input?.longname || input?.shortname || ticker),
       exchange: txt(input?.exchange),
       currency: txt(input?.currency).toUpperCase(),
@@ -66,7 +68,7 @@
   async function upsert(input, source='live') {
     await load();
     const next = normalizeRow(input, source);
-    if (!next) return null;
+    if (!next || next.identity_verified !== true || next.provider_symbol !== next.ticker) return null;
     const i = rows.findIndex(r => r.ticker === next.ticker);
     if (i >= 0) {
       const prev = rows[i];
@@ -102,6 +104,6 @@
   async function pendingPromotion() { await load(); return rows.filter(r => r.promotion_status === 'pending').map(r => ({...r})); }
 
   window.VestraLearnedUniverse = Object.freeze({
-    version: '2.1', DB_KEY, load, upsert, search, list, pendingPromotion,
+    version: '3.0', DB_KEY, load, upsert, search, list, pendingPromotion,
   });
 })();
