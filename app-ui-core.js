@@ -65,6 +65,8 @@ try { installSafeUpdateGuard(); } catch (_) {}
 const EXTERNAL_RETURN_KEY = 'vestra:external-return-v1';
 const DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1'; // legacy compatibility
 const EXTERNAL_RETURN_TTL_MS = 30 * 60 * 1000;
+const EXTERNAL_RETURN_RESUME_GRACE_MS = 30 * 1000;
+let externalReturnCleanupTimer = null;
 
 function rememberExternalReturnContext(options = {}) {
   const doc = document.scrollingElement || document.documentElement || document.body;
@@ -75,7 +77,21 @@ function rememberExternalReturnContext(options = {}) {
     scrollY: Math.max(0, Number(options.scrollY ?? window.scrollY ?? doc?.scrollTop ?? 0)),
   };
   try { localStorage.setItem(EXTERNAL_RETURN_KEY, JSON.stringify(context)); } catch (_) {}
+  if (externalReturnCleanupTimer !== null) {
+    clearTimeout(externalReturnCleanupTimer);
+    externalReturnCleanupTimer = null;
+  }
   return context;
+}
+
+function scheduleExternalReturnCleanup(delayMs = EXTERNAL_RETURN_RESUME_GRACE_MS) {
+  if (externalReturnCleanupTimer !== null) return false;
+  externalReturnCleanupTimer = setTimeout(() => {
+    externalReturnCleanupTimer = null;
+    try { localStorage.removeItem(EXTERNAL_RETURN_KEY); } catch (_) {}
+    try { localStorage.removeItem(DAILY_NEWS_RETURN_KEY); } catch (_) {}
+  }, Math.max(0, Number(delayMs) || EXTERNAL_RETURN_RESUME_GRACE_MS));
+  return true;
 }
 
 function consumeDailyNewsReturnContext() {
@@ -383,7 +399,7 @@ try { installChartReflowGuards(); } catch (_) {}
     ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable,
     clearChartUnavailable, resizeVisibleCharts, scheduleChartStabilization,
     installPremiumSplashWatchdog, consumeDailyNewsReturnContext,
-    rememberExternalReturnContext, restoreExternalReturnContext,
+    rememberExternalReturnContext, restoreExternalReturnContext, scheduleExternalReturnCleanup,
     installSafeUpdateGuard, forceFreshReload
   });
 })();
