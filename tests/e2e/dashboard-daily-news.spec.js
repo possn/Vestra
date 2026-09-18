@@ -118,6 +118,13 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
   // Cold resume: reproduce iOS discarding the PWA while Safari was in front.
   // The external-return shield must cover the pre-hydration HTML until the
   // persisted portfolio has been read and rendered again.
+  // Service-worker fulfilled scripts bypass Playwright page.route(), so make
+  // this one cold-return probe network-backed before holding app.js. The
+  // production guard itself is still exercised exactly as shipped.
+  await page.evaluate(async () => {
+    const registrations = await navigator.serviceWorker?.getRegistrations?.() || [];
+    await Promise.all(registrations.map(registration => registration.unregister()));
+  });
   holdAppJs = true;
   heldAppJs = new Promise(resolve => { releaseHeldAppJs = resolve; });
   await page.reload({ waitUntil: 'commit' });
