@@ -24,6 +24,14 @@ class WorkerMarketLiveOverlayTests(unittest.TestCase):
         self.assertIn("data.quote_updated = quote.updated", block)
         self.assertIn("market_cache_ttl_seconds: MARKET_CACHE_TTL", worker)
 
+    def test_worker_market_payload_declares_exact_provider_identity(self):
+        worker = read("worker.js")
+        self.assertIn("quote47:", worker)
+        self.assertIn("market46:", worker)
+        self.assertIn("provider_symbol:", worker)
+        self.assertIn("retrieval_ticker:", worker)
+        self.assertIn("String(quote?.provider_symbol || canonical)", worker)
+
     def test_sparse_market_detail_uses_statement_and_chart_fallbacks(self):
         worker = read("worker.js")
         self.assertIn("'annualDilutedAverageShares','quarterlyDilutedAverageShares'", worker)
@@ -35,6 +43,12 @@ class WorkerMarketLiveOverlayTests(unittest.TestCase):
         self.assertIn("historyLow", worker)
         self.assertIn("Math.max(...highValues)", worker)
         self.assertIn("Math.min(...lowValues)", worker)
+
+    def test_global_live_overlay_rejects_mismatched_identity(self):
+        overlay = read("market-live-overlay.js")
+        self.assertIn("stock?._remoteGlobal || stock?.identity_verified === true", overlay)
+        self.assertIn("provider !== ticker || canonical !== ticker || retrieval !== ticker", overlay)
+        self.assertIn("version: '1.2'", overlay)
 
     def test_frontend_live_badge_uses_quote_timestamp_before_fundamental_timestamp(self):
         overlay = read("market-live-overlay.js")
