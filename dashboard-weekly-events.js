@@ -1,4 +1,4 @@
-/* Vestra Dashboard Weekly Events v2.0 — tappable earnings + macro catalysts with verified result details. */
+/* Vestra Dashboard Weekly Events v2.1 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
 
