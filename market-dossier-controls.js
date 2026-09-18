@@ -57,6 +57,17 @@
     sheet.querySelectorAll('[data-market-close]').forEach(button => {
       if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', 'Fechar dossier');
     });
+
+    // Keep the watch star in the same fixed-coordinate owner as the persistent X.
+    // WebKit can establish a fixed-position containing block for descendants of
+    // the sticky/backdrop-filter dossier header, so leaving the star nested there
+    // makes identical top/right rules render at different coordinates.
+    const nestedWatch = sheet.querySelector('#marketSheetContent .market-detail-actions .market-watch--detail');
+    const directWatch = sheet.querySelector(':scope > .market-watch--detail');
+    if (nestedWatch && nestedWatch !== directWatch) {
+      directWatch?.remove();
+      sheet.appendChild(nestedWatch);
+    }
   }
 
   function start() {
