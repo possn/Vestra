@@ -13,7 +13,7 @@ class MarketCompanyBriefLoaderVersionTests(unittest.TestCase):
         cls.sw = (ROOT / 'sw.js').read_text(encoding='utf-8')
 
     def test_dossier_controls_fallback_tracks_canonical_version(self):
-        self.assertIn("market-dossier-controls.js?v=1.7", self.company)
+        self.assertIn("market-dossier-controls.js?v=1.8", self.company)
         self.assertIn("version: '1.7'", self.dossier)
         self.assertNotIn("market-dossier-controls.js?v=1.5", self.company)
 
