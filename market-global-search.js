@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v1.8 — global search with local + central learned universe. */
+/* Vestra Global Market Search v1.9 — canonical global dossiers with exact provider identity. */
 (() => {
   'use strict';
 
@@ -27,6 +27,13 @@
   function learnedApi(){ return window.VestraLearnedUniverse || null; }
   function validTickerQuery(q){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/i.test(txt(q)); }
   function invalidatePendingEnterOpen(){ enterOpenSeq += 1; }
+  function exactProviderIdentity(ticker,payload){
+    const requested=txt(ticker).toUpperCase();
+    const canonical=txt(payload?.ticker).toUpperCase();
+    const provider=txt(payload?.provider_symbol).toUpperCase();
+    const retrieval=txt(payload?.retrieval_ticker||canonical).toUpperCase();
+    return !!requested && canonical===requested && provider===requested && retrieval===requested;
+  }
 
   async function fetchRemoteWithDeadline(url,options={},timeoutMs=REMOTE_FETCH_TIMEOUT_MS,timeoutMessage='Timeout a carregar dados globais.'){
     const controller=typeof AbortController==='function'?new AbortController():null;
@@ -48,7 +55,8 @@
   async function learnCentral(row, timeoutMs=LEARN_FETCH_TIMEOUT_MS){
     const ticker = txt(row?.ticker || row?.symbol).toUpperCase();
     const base = workerBase();
-    if (!base || !validTickerQuery(ticker) || learnedPosted.has(ticker)) return false;
+    const provider = txt(row?.provider_symbol).toUpperCase();
+    if (!base || !validTickerQuery(ticker) || provider!==ticker || row?.identity_verified!==true || learnedPosted.has(ticker)) return false;
     learnedPosted.add(ticker);
     try {
       const response = await fetchRemoteWithDeadline(`${base}/learned-universe`,{
@@ -81,12 +89,21 @@
       const r = await fetchRemoteWithDeadline(`${base}/quote?ticker=${encodeURIComponent(ticker)}`, {cache:'no-store'}, SEARCH_FETCH_TIMEOUT_MS, 'Timeout a validar ticker.');
       if (!r.ok) return [];
       const d = await r.json();
-      if (!d || d.error || n(d.price)==null) return [];
+      if (!d || d.error || n(d.price)==null || !exactProviderIdentity(ticker,d)) return [];
       const type = txt(d.quote_type).toUpperCase();
       if (type && !['EQUITY','ETF','MUTUALFUND'].includes(type)) return [];
-      const out = [{ticker:txt(d.ticker||ticker).toUpperCase(),name:txt(d.name||ticker),exchange:txt(d.exchange),quote_type:type||'EQUITY',currency:txt(d.currency),price:n(d.price)}];
+      const out = [{
+        ticker,
+        provider_symbol:ticker,
+        identity_verified:true,
+        name:txt(d.name||ticker),
+        exchange:txt(d.exchange),
+        quote_type:type||'EQUITY',
+        currency:txt(d.currency),
+        price:n(d.price)
+      }];
       cache.set(key,out);
-      await learn(out[0],'worker-quote');
+      await learn(out[0],'worker-quote-exact');
       return out;
     } catch (_) { return []; }
   }
@@ -163,17 +180,25 @@
     if(!market?.upsertRemoteStock || !nav?.openCompany) return false;
 
     const request=++remoteOpenSeq;
+    const exactRows=await validateExactTicker(ticker);
+    if(request!==remoteOpenSeq) return false;
+    const exact=exactRows.find(row=>txt(row?.ticker).toUpperCase()===ticker && row?.identity_verified===true && txt(row?.provider_symbol).toUpperCase()===ticker);
+    if(!exact) return false;
+
     try{ await market.ensureLoaded?.(); }catch(_){}
     if(request!==remoteOpenSeq) return false;
 
-    market.upsertRemoteStock({
+    const staged=market.upsertRemoteStock({
+      ...exact,
       ticker,
-      name:ticker,
-      quote_type:'EQUITY',
+      provider_symbol:ticker,
+      identity_verified:true,
+      current_price:n(exact.price),
       _remoteLoading:true,
       _remoteGlobal:true,
-      source:'global-search-live',
+      source:'global-search-exact',
     });
+    if(!staged) return false;
     await nav.openCompany(ticker,{origin:'market',sourceNode:options.sourceNode||null});
     document.querySelector('.vestra-global-search')?.remove();
 
@@ -183,10 +208,13 @@
       if(!r.ok)throw new Error('HTTP '+r.status);
       const d=await r.json();
       if(!d||d.error)throw new Error(d?.error||'Sem dados');
-      const canonicalTicker=txt(d.ticker||ticker).toUpperCase()||ticker;
+      if(!exactProviderIdentity(ticker,d)) throw new Error('Identidade global não confirmada');
+      const canonicalTicker=ticker;
       const row=market.upsertRemoteStock({
         ...d,
         ticker:canonicalTicker,
+        provider_symbol:ticker,
+        identity_verified:true,
         name:txt(d.name)||canonicalTicker,
         quote_type:txt(d.quote_type||'EQUITY').toUpperCase(),
         _remoteLoading:false,
@@ -196,6 +224,8 @@
       });
       await learn({
         ticker:canonicalTicker,
+        provider_symbol:ticker,
+        identity_verified:true,
         name:txt(row?.name||canonicalTicker),
         exchange:txt(row?.exchange),
         currency:txt(row?.currency),
@@ -239,5 +269,5 @@
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase(),{sourceNode:b});});
   document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker,{sourceNode:input});},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'1.8',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'1.9',validateExactTicker,openRemoteTicker,runSearch,learnCentral,exactProviderIdentity});
 })();
