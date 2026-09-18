@@ -15,6 +15,19 @@ class DashboardDailyNewsTests(unittest.TestCase):
         cls.news = (ROOT / "scripts" / "news.py").read_text(encoding="utf-8")
         cls.sw = (ROOT / "sw.js").read_text(encoding="utf-8")
         cls.index = (ROOT / "index.html").read_text(encoding="utf-8")
+        cls.feed_refresh = (ROOT / "scripts" / "refresh_dashboard_news.py").read_text(encoding="utf-8")
+        cls.feed_workflow = (ROOT / ".github" / "workflows" / "update-dashboard-feeds.yml").read_text(encoding="utf-8")
+
+    def test_dashboard_feed_has_independent_lightweight_refresh(self):
+        self.assertIn('from news import _build_dashboard_digest', self.feed_refresh)
+        self.assertIn('COMPANY_RETENTION_HOURS = 36', self.feed_refresh)
+        self.assertIn('name: Update dashboard feeds', self.feed_workflow)
+        self.assertIn('cron: "*/30 * * * *"', self.feed_workflow)
+        self.assertIn('cron: "20 * * * *"', self.feed_workflow)
+        self.assertIn('PYTHONPATH=scripts python scripts/refresh_dashboard_news.py', self.feed_workflow)
+        self.assertIn('PYTHONPATH=scripts python scripts/macro_calendar_transport.py', self.feed_workflow)
+        self.assertIn('PUBLISH_SUPERSEDE_COMMIT_PREFIX="Actualização notícias Dashboard ("', self.feed_workflow)
+        self.assertIn('PUBLISH_SUPERSEDE_COMMIT_PREFIX="Actualização calendário Dashboard ("', self.feed_workflow)
 
     def test_dashboard_uses_compact_digest_not_full_news_archive(self):
         self.assertIn("fetchWithTimeout('data/dashboard-news.json')", self.runtime)
