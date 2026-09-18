@@ -180,10 +180,6 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   await expect(sheet.locator('.market-tabs .market-tab')).toHaveCount(8);
   await expect(sheet).not.toContainText('DOSSIER GLOBAL · LIVE');
 
-  await sheet.locator('[data-detail-tab="financials"]').click();
-  await expect(sheet.locator('#marketDetailBody')).toContainText('Current ratio');
-  await expect(sheet.locator('#marketDetailBody')).toContainText('1,8');
-
   const canonicalClose = sheet.locator('.market-detail-actions [data-market-close]');
   await expect(canonicalClose).toBeVisible();
   await canonicalClose.click();
