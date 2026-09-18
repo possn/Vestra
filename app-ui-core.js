@@ -64,8 +64,8 @@ try { installSafeUpdateGuard(); } catch (_) {}
 
 const EXTERNAL_RETURN_KEY = 'vestra:external-return-v1';
 const DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1'; // legacy compatibility
-const EXTERNAL_RETURN_TTL_MS = 30 * 60 * 1000;
-const DAILY_NEWS_RETURN_TTL_MS = EXTERNAL_RETURN_TTL_MS; // compatibility contract
+const DAILY_NEWS_RETURN_TTL_MS = 30 * 60 * 1000; // legacy compatibility contract
+const EXTERNAL_RETURN_TTL_MS = DAILY_NEWS_RETURN_TTL_MS
 const EXTERNAL_RETURN_RESUME_GRACE_MS = 30 * 1000;
 let externalReturnCleanupTimer = null;
 
