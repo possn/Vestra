@@ -549,12 +549,53 @@ body.is-scrolling .passivebar { transform: translateX(-50%) translateY(140%); op
 .sidebar__divider { height: 1px; background: var(--line); margin: 10px 4px; }
 
 @media (min-width: 900px) {
+  :root {
+    --desktop-sidebar-w: 260px;
+    --desktop-content-max: 680px;
+    --desktop-gutter: 24px;
+  }
   .sidebar-toggle { display: none; }
-  .sidebar { transform: translateX(0); box-shadow: none; }
+  .sidebar {
+    transform: translateX(0);
+    box-shadow: none;
+    width: var(--desktop-sidebar-w);
+  }
   .sidebar-backdrop { display: none !important; }
-  .passivebar { left: calc(50% + 130px); }
-  .topbar { padding-left: calc(260px + 16px); }
-  .main { margin-left: 260px; max-width: 680px; }
+
+  /* Desktop is a true two-column layout: the fixed sidebar owns its column,
+     and every centered surface is sized inside the remaining viewport.
+     The previous 260px + 680px rule overflowed narrow laptop windows and made
+     the sidebar appear to cover/crop the app. */
+  .topbar {
+    width: calc(100% - var(--desktop-sidebar-w));
+    margin-left: var(--desktop-sidebar-w);
+    padding-left: 16px;
+  }
+  .main {
+    width: min(
+      var(--desktop-content-max),
+      calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
+    );
+    max-width: none;
+    margin-left: calc(
+      var(--desktop-sidebar-w) +
+      max(
+        var(--desktop-gutter),
+        (100vw - var(--desktop-sidebar-w) - var(--desktop-content-max)) / 2
+      )
+    );
+    margin-right: 0;
+  }
+  .passivebar {
+    width: min(
+      var(--desktop-content-max),
+      calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
+    );
+    left: calc(
+      var(--desktop-sidebar-w) +
+      (100vw - var(--desktop-sidebar-w)) / 2
+    );
+  }
 }
 
 /* ─── BOTTOM NAV ───
