@@ -11854,6 +11854,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { wire(); } catch (e) { console.error("Falha no binding dos botões", e); }
   _setMsg("A renderizar…");
   try { renderAll(); } catch (e) { console.error("Falha no render inicial", e); }
+  // Canonical hydration boundary: from this point the persisted portfolio has
+  // been loaded/reconciled and the first real render has completed. External
+  // return lifecycle must never expose the pre-hydration Dashboard.
+  window.__vestraAppHydrated = true;
+  try { document.body.dataset.appHydrated = "1"; } catch (_) {}
+  try { window.dispatchEvent(new CustomEvent("vestra:app-ready", { detail: { hydrated: true, view: currentView } })); } catch (_) {}
   try { reportActiveSwVersion(); } catch (_) {}
   try { renderStaleXtbImportBanner(); } catch (_) {}
   try { setupFixedBarSpacing(); } catch (_) {}
