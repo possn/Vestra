@@ -18,11 +18,11 @@ class LearnedUniverseIdentityTests(unittest.TestCase):
         self.assertIn("exactIdentity.symbol !== ticker", source)
         self.assertIn("canonical !== ticker || retrieval !== ticker", source)
 
-    def test_local_catalogue_uses_clean_v2_storage_key(self):
+    def test_local_catalogue_uses_clean_v3_storage_key(self):
         source = (ROOT / "market-learned-universe.js").read_text(encoding="utf-8")
-        self.assertIn("market_learned_universe_v2", source)
-        self.assertIn("const SCHEMA_VERSION = 2", source)
-        self.assertIn("version: '2.1'", source)
+        self.assertIn("market_learned_universe_v3", source)
+        self.assertIn("const SCHEMA_VERSION = 3", source)
+        self.assertIn("version: '3.0'", source)\n        self.assertIn("provider_symbol", source)\n        self.assertIn("identity_verified", source)\n        self.assertIn("next.identity_verified !== true || next.provider_symbol !== next.ticker", source)
 
     def test_only_legacy_learned_and_unresolved_rows_are_retired(self):
         with tempfile.TemporaryDirectory() as tmp:
