@@ -77,7 +77,7 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
   // Keep app.js pending briefly so the synchronous head guard is observable
   // before hydration. This reproduces the cold-resume window in which iOS can
   // otherwise paint the static dashboard shell with €0 values.
-  await page.route('**/app.js?v=20260918v2', async route => {
+  await page.route('**/app.js?v=20260918v1', async route => {
     await new Promise(resolve => setTimeout(resolve, 180));
     await route.continue();
   });
