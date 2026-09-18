@@ -60,7 +60,7 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(sheet.locator('.market-tabs')).toBeVisible();
   await expect(sheet.locator('#marketSheetContent svg').first()).toBeVisible();
 
-  const watchStar = sheet.locator('#marketSheetContent .market-watch--detail');
+  const watchStar = sheet.locator(':scope > .market-watch--detail');
   const frozenClose = sheet.locator(':scope > .market-close-persistent');
   await expect(watchStar).toBeVisible();
   await expect(frozenClose).toBeVisible();
