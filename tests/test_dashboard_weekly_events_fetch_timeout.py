@@ -33,6 +33,10 @@ class DashboardWeeklyEventsFetchTimeoutTests(unittest.TestCase):
         self.assertIn("async function refreshMacroEvents()", self.runtime)
         self.assertIn("MACRO_FETCH_TIMEOUT_MS, true", self.runtime)
         self.assertIn("document.addEventListener('visibilitychange'", self.runtime)
+        self.assertIn("window.addEventListener?.('focus',resumeWeeklyEvents)", self.runtime)
+        self.assertIn("window.addEventListener?.('pageshow',resumeWeeklyEvents)", self.runtime)
+        self.assertIn("VestraWeeklyEventsNavigation", self.runtime)
+        self.assertIn("nav?.shiftedDate", self.runtime)
 
     def test_schedule_render_cannot_wait_forever_on_macro_snapshot(self):
         self.assertIn("Promise.allSettled([marketLoad,loadMacroEvents()])", self.runtime)
