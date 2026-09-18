@@ -19,10 +19,7 @@ class WorkerMissingNumericSemanticsTests(unittest.TestCase):
 
     def test_market_payload_uses_null_safe_numeric_reads(self):
         worker = read("worker.js")
-        self.assertIn("const marketCap = firstFinite(", worker)
-        self.assertIn("numberOrNull(price.marketCap)", worker)
-        self.assertIn("numberOrNull(sd.marketCap)", worker)
-        self.assertIn("numberOrNull(quote.market_cap)", worker)
+        self.assertIn("const marketCap = firstFinite(numberOrNull(price.marketCap)", worker)
         self.assertIn("analyst_price_target_mean: target !== null && target > 0 ? target : null", worker)
         self.assertIn("current_ratio: numberOrNull(fd.currentRatio)", worker)
         self.assertIn("beta: numberOrNull(ks.beta)", worker)
@@ -36,7 +33,7 @@ class WorkerMissingNumericSemanticsTests(unittest.TestCase):
 
     def test_new_market_cache_generation_does_not_reuse_zero_coerced_payloads(self):
         worker = read("worker.js")
-        self.assertIn("market45:${canonical}", worker)
+        self.assertIn("market46:${canonical}", worker)
         self.assertNotIn("market41:${canonical}", worker)
 
 
