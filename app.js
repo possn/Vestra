@@ -11747,11 +11747,8 @@ function recordQuoteRefreshTimestamp() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   // Show loading overlay immediately — before any async work
-  const _splash = document.getElementById("appLoadingOverlay");
   const _splashMsg = document.getElementById("appLoadingMsg");
   const _setMsg = m => { if (_splashMsg) _splashMsg.textContent = m; };
-  const _splashStartedAt = performance.now();
-  if (_splash) { _splash.style.display = "flex"; _splash.style.opacity = "1"; }
 
   try { await requestPersistentStorage(); } catch (e) { console.error("Persistent storage init falhou", e); }
   _setMsg("A carregar dados…");
@@ -11849,17 +11846,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { renderStaleXtbImportBanner(); } catch (_) {}
   try { setupFixedBarSpacing(); } catch (_) {}
   try { updateQuoteButtonStaleness(); } catch (_) {} // v64t: mostrar logo se as cotações já estão desactualizadas ao abrir a app
-  // Keep the identity splash visible long enough to actually read the tagline.
-  // Fast devices previously dismissed it before "Finance, made simple." was perceptible.
-  if (_splash) {
-    const elapsed = performance.now() - _splashStartedAt;
-    const wait = Math.max(0, 1050 - elapsed);
-    setTimeout(() => {
-      _splash.style.transition = "opacity 0.32s ease";
-      _splash.style.opacity = "0";
-      setTimeout(() => { if (_splash) _splash.style.display = "none"; }, 340);
-    }, wait);
-  }
+  // Splash visibility/release is owned exclusively by app-ui-core.js.
+  // app.js only publishes hydration progress and the vestra:app-ready boundary.
   // Deferred non-critical tasks
   setTimeout(() => {
     try { autoSnapshotIfNeeded(); } catch (e) { console.error("Falha no auto snapshot", e); }
@@ -11881,9 +11869,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 // pagehide/visibilitychange can arrive while storageGet() is still pending;
 // writing DEFAULT_STATE at that point would replace the primary snapshot and
 // force a later recovery from backup.
+let lifecycleExitSavePromise = null;
 function saveStateOnLifecycleExit() {
   if (window.__vestraAppHydrated !== true) return false;
-  void saveStateAsync();
+  if (lifecycleExitSavePromise) return true;
+  lifecycleExitSavePromise = Promise.resolve(saveStateAsync())
+    .catch(e => console.warn("Falha ao guardar estado no lifecycle exit", e))
+    .finally(() => { lifecycleExitSavePromise = null; });
   return true;
 }
 
