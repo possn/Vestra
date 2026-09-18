@@ -37,4 +37,35 @@ test('desktop: fixed sidebar reserves its own column without covering app conten
   // Narrow desktop windows must shrink the content surface rather than crop it.
   expect(mainBox.width).toBeLessThan(680);
   expect(mainBox.width).toBeGreaterThan(500);
+
+  // Search belongs to the desktop content column, never underneath the sidebar.
+  await page.locator('#btnSearchToggle').click();
+  const searchBar = page.locator('#searchBar');
+  await expect(searchBar).toBeVisible();
+  const searchBox = await searchBar.boundingBox();
+  expect(searchBox.x).toBeGreaterThanOrEqual(sidebarRight);
+  expect(searchBox.x + searchBox.width).toBeLessThanOrEqual(920);
+
+  // Modal panels and transient toast use the same content-column centre.
+  await page.evaluate(() => {
+    document.getElementById('modalItem')?.setAttribute('aria-hidden', 'false');
+    const toast = document.getElementById('toastEl');
+    if (toast) {
+      toast.textContent = 'Teste';
+      toast.classList.add('toast--show');
+    }
+  });
+
+  const modal = page.locator('#modalItem .modal__panel');
+  const toast = page.locator('#toastEl');
+  await expect(modal).toBeVisible();
+  const [modalBox, toastBox] = await Promise.all([
+    modal.boundingBox(),
+    toast.boundingBox(),
+  ]);
+
+  expect(modalBox.x).toBeGreaterThanOrEqual(sidebarRight + 20);
+  expect(modalBox.x + modalBox.width).toBeLessThanOrEqual(920);
+  expect(toastBox.x).toBeGreaterThanOrEqual(sidebarRight);
+  expect(toastBox.x + toastBox.width).toBeLessThanOrEqual(920);
 });
