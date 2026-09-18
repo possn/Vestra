@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.7 — iPhone-safe unified fixed action group. */
+/* Vestra Market Dossier Controls v1.8 — frozen fixed star + close action pair. */
 (() => {
   'use strict';
 
@@ -9,7 +9,7 @@
     const link = document.createElement('link');
     link.id = STYLE_ID;
     link.rel = 'stylesheet';
-    link.href = 'market-dossier-controls.css?v=1.1';
+    link.href = 'market-dossier-controls.css?v=1.2';
     document.head.appendChild(link);
   }
 
@@ -57,11 +57,24 @@
     sheet.querySelectorAll('[data-market-close]').forEach(button => {
       if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', 'Fechar dossier');
     });
+
+    // Keep the watch star in the same fixed-coordinate owner as the persistent X.
+    // WebKit can establish a fixed-position containing block for descendants of
+    // the sticky/backdrop-filter dossier header, so leaving the star nested there
+    // makes identical top/right rules render at different coordinates.
+    const nestedWatch = sheet.querySelector('#marketSheetContent .market-detail-actions .market-watch--detail');
+    const directWatch = sheet.querySelector(':scope > .market-watch--detail');
+    if (nestedWatch && nestedWatch !== directWatch) {
+      directWatch?.remove();
+      sheet.appendChild(nestedWatch);
+    }
   }
 
   function start() {
     installStyle();
     normalizeButtons();
+    // Dossier mutation ownership stays in market-company-brief.js. That single
+    // sheet-scoped observer calls normalizeButtons() after every dossier render.
     // Capture phase keeps closing independent from the large delegated market handler.
     document.addEventListener('click', closeMarketSheet, true);
   }
@@ -70,7 +83,7 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.7',
+    version: '1.8',
     closeMarketSheet,
     installStyle,
     normalizeButtons,

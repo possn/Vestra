@@ -22,26 +22,26 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
 
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
-  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.7');
+  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.8');
   await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.3');
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
-  const watch = actions.locator('[data-market-watch]');
+  const watch = sheet.locator(':scope > .market-watch--detail');
   const close = actions.locator('[data-market-close]');
   const persistentClose = sheet.locator(':scope > .market-close-persistent');
-  await expect(actions).toBeVisible();
   await expect(watch).toBeVisible();
   await expect(close).toBeHidden();
   await expect(persistentClose).toBeVisible();
 
   const geometry = await page.evaluate(() => {
-    const actions = document.querySelector('#marketSheetContent .market-detail-actions');
-    const watch = actions.querySelector('[data-market-watch]').getBoundingClientRect();
+    const watch = document.querySelector('#marketSheet > .market-watch--detail').getBoundingClientRect();
     const persistent = document.querySelector('#marketSheet > .market-close-persistent').getBoundingClientRect();
-    const style = getComputedStyle(actions);
+    const watchStyle = getComputedStyle(document.querySelector('#marketSheet > .market-watch--detail'));
     return {
-      position: style.position,
-      flexDirection: style.flexDirection,
+      watchPosition: watchStyle.position,
+      watchLeft: watch.left,
+      watchTop: watch.top,
+      watchRight: watch.right,
       watchWidth: watch.width,
       watchHeight: watch.height,
       persistentLeft: persistent.left,
@@ -52,21 +52,27 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
     };
   });
 
-  expect(geometry.position).toBe('fixed');
-  expect(geometry.flexDirection).toBe('row');
-  expect(geometry.watchWidth).toBeGreaterThanOrEqual(45);
+  expect(geometry.watchPosition).toBe('fixed');
+  expect(geometry.watchWidth).toBeGreaterThanOrEqual(44);
   expect(Math.abs(geometry.watchWidth - geometry.watchHeight)).toBeLessThanOrEqual(1);
   expect(geometry.persistentWidth).toBeGreaterThanOrEqual(40);
   expect(geometry.persistentLeft).toBeGreaterThanOrEqual(0);
   expect(geometry.persistentRight).toBeLessThanOrEqual(geometry.viewportWidth);
   expect(geometry.persistentTop).toBeGreaterThanOrEqual(0);
 
-  const beforeScroll = await actions.boundingBox();
+  const [beforeWatch, beforeClose] = await Promise.all([watch.boundingBox(), persistentClose.boundingBox()]);
+  expect(Math.abs(beforeWatch.y - beforeClose.y)).toBeLessThanOrEqual(2);
+  const gapBefore = beforeClose.x - (beforeWatch.x + beforeWatch.width);
+  expect(gapBefore).toBeGreaterThanOrEqual(6);
+  expect(gapBefore).toBeLessThanOrEqual(12);
+
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
   await page.waitForTimeout(100);
-  const afterScroll = await actions.boundingBox();
-  expect(Math.abs(afterScroll.y - beforeScroll.y)).toBeLessThanOrEqual(1);
-  expect(Math.abs(afterScroll.x - beforeScroll.x)).toBeLessThanOrEqual(1);
+  const [afterWatch, afterClose] = await Promise.all([watch.boundingBox(), persistentClose.boundingBox()]);
+  expect(Math.abs(afterWatch.y - beforeWatch.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(afterWatch.x - beforeWatch.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(afterClose.y - beforeClose.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(afterClose.x - beforeClose.x)).toBeLessThanOrEqual(1);
 
   await persistentClose.click();
   await expect(sheet).toBeHidden();

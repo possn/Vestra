@@ -12,6 +12,16 @@ class LifecycleSingleOwnerTests(unittest.TestCase):
         self.assertNotIn('const _splashStartedAt = performance.now()', app)
         self.assertIn('Splash visibility/release is owned exclusively by app-ui-core.js.', app)
 
+    def test_initial_hydration_forces_real_view_render_before_ready(self):
+        app = (ROOT / "app.js").read_text(encoding="utf-8")
+        self.assertIn("const sync = !!(opts && opts.sync);", app)
+        self.assertIn("scheduleRenderView(currentView, { force: true, sync });", app)
+        self.assertIn("renderAll({ force: true, sync: true });", app)
+        self.assertLess(
+            app.index("renderAll({ force: true, sync: true });"),
+            app.index("window.__vestraAppHydrated = true"),
+        )
+
     def test_lifecycle_exit_saves_are_coalesced(self):
         app = (ROOT / "app.js").read_text(encoding="utf-8")
         self.assertIn("let lifecycleExitSavePromise = null;", app)
