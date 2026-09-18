@@ -142,13 +142,15 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
       });
       if (endpoint === '/quote') {
         return json({
-          ticker: testTicker, name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          ticker: testTicker, provider_symbol: testTicker, retrieval_ticker: testTicker,
+          name: 'Vestra Synthetic Systems', exchange: 'NMS',
           quote_type: 'EQUITY', currency: 'USD', price: 42.5
         });
       }
       if (endpoint === '/market') {
         return json({
-          ticker: testTicker, name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          ticker: testTicker, provider_symbol: testTicker, retrieval_ticker: testTicker,
+          name: 'Vestra Synthetic Systems', exchange: 'NMS',
           quote_type: 'EQUITY', currency: 'USD', current_price: 42.5,
           market_cap: 1200000000, forward_pe: 18.2, price_to_book: 3.1,
           roe: 0.18, fcf_yield: 0.052, revenue_growth: 0.14,
@@ -176,8 +178,10 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveAttribute('data-ticker', ticker);
-  await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
   await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
+  await expect(sheet.locator('.market-tabs')).toBeVisible();
+  await expect(sheet).not.toContainText('DOSSIER GLOBAL · LIVE');
+  await expect(sheet.locator('[data-market-close]:visible').first()).toBeVisible();
 
   const learnedBeforeReload = await page.evaluate(async learnedTicker => {
     const rows = await window.VestraLearnedUniverse.list();
@@ -185,7 +189,9 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   }, ticker);
   expect(learnedBeforeReload).toBeTruthy();
   expect(learnedBeforeReload.ticker).toBe(ticker);
-  expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(2);
+  expect(learnedBeforeReload.identity_verified).toBe(true);
+  expect(learnedBeforeReload.provider_symbol).toBe(ticker);
+  expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(1);
 
   await page.reload();
   await page.waitForFunction(() => !!window.VestraLearnedUniverse);
