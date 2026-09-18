@@ -60,6 +60,18 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(sheet.locator('.market-tabs')).toBeVisible();
   await expect(sheet.locator('#marketSheetContent svg').first()).toBeVisible();
 
+  const watchStar = sheet.locator('#marketSheetContent .market-watch--detail');
+  const frozenClose = sheet.locator(':scope > .market-close-persistent');
+  await expect(watchStar).toBeVisible();
+  await expect(frozenClose).toBeVisible();
+  const [watchBox, closeBox] = await Promise.all([watchStar.boundingBox(), frozenClose.boundingBox()]);
+  expect(watchBox).toBeTruthy();
+  expect(closeBox).toBeTruthy();
+  expect(Math.abs(watchBox.y - closeBox.y)).toBeLessThanOrEqual(2);
+  const actionGap = closeBox.x - (watchBox.x + watchBox.width);
+  expect(actionGap).toBeGreaterThanOrEqual(6);
+  expect(actionGap).toBeLessThanOrEqual(12);
+
   const valuationTab = sheet.locator('[data-detail-tab="valuation"]');
   await valuationTab.click();
   await expect(valuationTab).toHaveClass(/is-active/);
