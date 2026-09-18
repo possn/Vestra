@@ -2,8 +2,7 @@ name: Update macro events
 
 on:
   schedule:
-    - cron: "20 5 * * *"
-    - cron: "40 7-21 * * 1-5"
+    - cron: "20 * * * *"
     # FOMC statements are released at 14:00 ET on Wednesdays. Poll this
     # decision window every 10 minutes so the investor calendar does not wait
     # for the next hourly refresh after an official statement appears.
