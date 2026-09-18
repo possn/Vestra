@@ -1,19 +1,14 @@
-/* Vestra Dashboard Daily News v1.3 — compact market + portfolio-aware daily briefing. */
+/* Vestra Dashboard Daily News v1.4 — compact market + portfolio-aware daily briefing. */
 (() => {
   'use strict';
 
   const FETCH_TIMEOUT_MS = 5000;
   const MAX_VISIBLE = 5;
   const NEWS_RETURN_KEY = 'vestra:daily-news-return-v1';
-  const EXTERNAL_RETURN_KEY = 'vestra:external-return-v1';
-  const NEWS_RETURN_TTL_MS = 30 * 60 * 1000;
-  const NEWS_RETURN_RESUME_GRACE_MS = 30 * 1000;
   let payload = null;
   let loadPromise = null;
   let renderQueued = false;
   let renderedMarkup = '';
-  let outboundNewsPending = false;
-  let pendingReturnCleanupTimer = null;
 
   const text = value => String(value ?? '').trim();
   const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -36,48 +31,16 @@
   }
 
   function rememberNewsReturn() {
-    const context = window.VestraUiCore?.rememberExternalReturnContext?.({
+    return window.VestraUiCore?.rememberExternalReturnContext?.({
       kind: 'news',
       view: 'dashboard',
       scrollY: readScrollY(),
-    }) || { ts: Date.now(), kind: 'news', view: 'dashboard', scrollY: readScrollY() };
-    try { localStorage.setItem(NEWS_RETURN_KEY, JSON.stringify(context)); } catch (_) {}
-    if (pendingReturnCleanupTimer !== null) {
-      clearTimeout(pendingReturnCleanupTimer);
-      pendingReturnCleanupTimer = null;
-    }
-    outboundNewsPending = true;
-    return context;
-  }
-
-  function clearPendingNewsReturn() {
-    if (pendingReturnCleanupTimer !== null) {
-      clearTimeout(pendingReturnCleanupTimer);
-      pendingReturnCleanupTimer = null;
-    }
-    if (!outboundNewsPending) return;
-    outboundNewsPending = false;
-    try { localStorage.removeItem(NEWS_RETURN_KEY); } catch (_) {}
-    try { localStorage.removeItem(EXTERNAL_RETURN_KEY); } catch (_) {}
-  }
-
-  function schedulePendingNewsReturnCleanup() {
-    if (!outboundNewsPending || pendingReturnCleanupTimer !== null) return;
-    // iOS/WebKit may emit focus/pageshow before it decides to reload a suspended
-    // standalone PWA. Keep the return marker alive through that short window so
-    // a real reload can consume it in app-ui-core and suppress the launch splash.
-    pendingReturnCleanupTimer = setTimeout(() => {
-      pendingReturnCleanupTimer = null;
-      clearPendingNewsReturn();
-    }, NEWS_RETURN_RESUME_GRACE_MS);
+    }) || null;
   }
 
   function restoreNewsReturnContext() {
-    const context = window.__vestraDailyNewsReturnContext;
-    if (!context || typeof context !== 'object') return false;
-    try { delete window.__vestraDailyNewsReturnContext; } catch (_) { window.__vestraDailyNewsReturnContext = null; }
-    const age = Date.now() - Number(context.ts || 0);
-    if (!Number.isFinite(age) || age < 0 || age > NEWS_RETURN_TTL_MS) return false;
+    const context = window.__vestraExternalReturnContext || window.__vestraDailyNewsReturnContext;
+    if (!context || typeof context !== 'object' || context.kind !== 'news') return false;
     const scrollY = Math.max(0, Number(context.scrollY || 0));
     requestAnimationFrame(() => requestAnimationFrame(() => {
       try { window.scrollTo(0, scrollY); } catch (_) {}
@@ -225,7 +188,8 @@
     if (payload && !force) { queueRender(); return payload; }
     if (loadPromise) return loadPromise;
     loadPromise = (async () => {
-      const response = await fetchWithTimeout('data/dashboard-news.json');
+      const feedUrl = force ? `data/dashboard-news.json?_v=${Date.now()}` : 'data/dashboard-news.json';
+      const response = await fetchWithTimeout(feedUrl);
       if (!response?.ok) throw new Error(`dashboard news ${response?.status || 'unavailable'}`);
       const next = await response.json();
       if (!next || !Array.isArray(next.items)) throw new Error('dashboard news invalid payload');
@@ -257,7 +221,6 @@
       if (event.target.closest?.('.sidenavbtn[data-view="dashboard"], .navbtn[data-view="dashboard"]')) queueRender();
     }, true);
     const resume = () => {
-      schedulePendingNewsReturnCleanup();
       void load(true);
       queueRender();
     };
@@ -273,7 +236,6 @@
 
   window.VestraDashboardDailyNews = Object.freeze({
     load, refresh: () => load(true), render, rankedItems, safeNewsUrl,
-    rememberNewsReturn, restoreNewsReturnContext, clearPendingNewsReturn,
-    schedulePendingNewsReturnCleanup, version: '1.3'
+    rememberNewsReturn, restoreNewsReturnContext, version: '1.4'
   });
 })();
