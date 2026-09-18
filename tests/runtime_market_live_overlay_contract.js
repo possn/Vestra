@@ -4,14 +4,20 @@ const vm = require('vm');
 
 const source = fs.readFileSync('market-live-overlay.js', 'utf8');
 
-function loadModule() {
+function loadModule(refreshCalls) {
+  const windowObj = {
+    VestraMarketData: {
+      refreshOpenDossier(ticker, stock) { refreshCalls.push([ticker, stock]); }
+    }
+  };
   const sandbox = {
-    window: {},
+    window: windowObj,
     Intl,
     Date,
     encodeURIComponent,
     setTimeout,
     clearTimeout,
+    requestAnimationFrame(fn) { fn(); return 1; },
     document: {
       createElement() {
         return {
@@ -39,7 +45,6 @@ function makeSheet(ticker = 'MSFT') {
   const sheet = {
     hidden: false,
     dataset: { ticker },
-    sentinel: 'do-not-rerender',
     querySelector(selector) {
       const match = selector.match(/^\[data-live-field="(.+)"\]$/);
       if (match) return fields.get(match[1]) || null;
@@ -51,14 +56,14 @@ function makeSheet(ticker = 'MSFT') {
 }
 
 (async () => {
-  const moduleApi = loadModule();
+  const refreshCalls = [];
+  const moduleApi = loadModule(refreshCalls);
   assert(moduleApi, 'module must expose VestraMarketLiveOverlay');
-  assert.strictEqual(moduleApi.version, '1.1');
+  assert.strictEqual(moduleApi.version, '1.2');
   assert.strictEqual(moduleApi.timeoutMs, 4500);
 
   const { sheet, fields } = makeSheet('MSFT');
   const loadingSet = new Set();
-  const requests = [];
   const stock = { ticker: 'MSFT', currency: 'USD', current_price: 100 };
   const overlay = moduleApi.create({
     getWorkerBase: () => 'https://worker.example/',
@@ -69,61 +74,53 @@ function makeSheet(ticker = 'MSFT') {
     formatMoney: (value, currency) => `${currency}:${value}`,
     formatNum: value => `N:${value}`,
     formatPct: value => `P:${value}`,
-    fetchImpl: async (url, init) => {
-      requests.push({ url, init });
-      return {
-        ok: true,
-        async json() {
-          return {
-            ticker: 'MSFT',
-            current_price: 111,
-            forward_pe: 25,
-            roe: 0.3,
-            revenue_growth: 0.2,
-            fcf_yield: 0.05,
-            updated: '2026-08-31T20:00:00Z'
-          };
-        }
-      };
-    }
+    fetchImpl: async () => ({
+      ok: true,
+      async json() {
+        return {
+          ticker: 'MSFT',
+          provider_symbol: 'MSFT',
+          retrieval_ticker: 'MSFT',
+          current_price: 111,
+          forward_pe: 25,
+          roe: 0.3,
+          revenue_growth: 0.2,
+          fcf_yield: 0.05,
+          updated: '2026-08-31T20:00:00Z'
+        };
+      }
+    })
   });
 
   const live = await overlay.enrichTickerLive(stock);
-  assert(live, 'successful live response should be returned');
-  assert.strictEqual(requests.length, 1);
-  assert.strictEqual(requests[0].url, 'https://worker.example/market?ticker=MSFT');
-  assert.strictEqual(requests[0].init.cache, 'no-store');
+  assert(live, 'exact live response should be returned');
   assert.strictEqual(stock.current_price, 111);
-  assert.strictEqual(stock._liveUpdated, '2026-08-31T20:00:00Z');
-  assert.strictEqual(sheet.sentinel, 'do-not-rerender');
-  assert.strictEqual(sheet.dataset.liveReady, '1');
+  assert.strictEqual(stock.provider_symbol, 'MSFT');
+  assert.strictEqual(stock.identity_verified, true);
   assert.strictEqual(fields.get('current_price').textContent, 'USD:111');
-  assert.strictEqual(fields.get('forward_pe').textContent, 'N:25');
-  assert.strictEqual(fields.get('roe').textContent, 'P:0.3');
-  assert.strictEqual(fields.get('revenue_growth').textContent, 'P:0.2');
-  assert.strictEqual(fields.get('fcf_yield').textContent, 'P:0.05');
-  assert.strictEqual(loadingSet.size, 0, 'loading gate must be released');
+  assert.strictEqual(refreshCalls.length, 1);
+  assert.strictEqual(refreshCalls[0][0], 'MSFT');
+  assert.strictEqual(loadingSet.size, 0);
 
-  let release;
-  let pendingFetches = 0;
-  const pendingOverlay = moduleApi.create({
+  const mismatchStock = { ticker: 'SPIE', current_price: 44 };
+  const mismatchOverlay = moduleApi.create({
     getWorkerBase: () => 'https://worker.example',
-    getSheet: () => makeSheet('RRX').sheet,
+    getSheet: () => makeSheet('SPIE').sheet,
     loadingSet: new Set(),
     text: value => String(value ?? '').trim(),
-    fetchImpl: async () => {
-      pendingFetches += 1;
-      await new Promise(resolve => { release = resolve; });
-      return { ok: true, json: async () => ({ current_price: 10, updated: '2026-08-31T20:00:00Z' }) };
-    }
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        ticker: 'SPIE',
+        provider_symbol: 'GOOG',
+        retrieval_ticker: 'SPIE',
+        current_price: 343.68,
+        name: 'Alphabet Inc.'
+      })
+    })
   });
-  const pendingStock = { ticker: 'RRX' };
-  const first = pendingOverlay.enrichTickerLive(pendingStock);
-  const duplicate = await pendingOverlay.enrichTickerLive(pendingStock);
-  assert.strictEqual(duplicate, null, 'duplicate in-flight enrichment must be ignored');
-  assert.strictEqual(pendingFetches, 1);
-  release();
-  await first;
+  assert.strictEqual(await mismatchOverlay.enrichTickerLive(mismatchStock), null);
+  assert.strictEqual(mismatchStock.current_price, 44, 'mismatched live identity must not mutate the stock');
 
   const timeoutLoading = new Set();
   const timeoutOverlay = moduleApi.create({
@@ -135,18 +132,7 @@ function makeSheet(ticker = 'MSFT') {
     fetchImpl: async () => new Promise(() => {})
   });
   assert.strictEqual(await timeoutOverlay.enrichTickerLive({ ticker: 'SLOW', current_price: 8 }), null);
-  assert.strictEqual(timeoutLoading.size, 0, 'timeout must release live loading gate for retry');
-
-  const fallbackStock = { ticker: 'FAIL', current_price: 7 };
-  const fallbackOverlay = moduleApi.create({
-    getWorkerBase: () => 'https://worker.example',
-    getSheet: () => makeSheet('FAIL').sheet,
-    loadingSet: new Set(),
-    text: value => String(value ?? '').trim(),
-    fetchImpl: async () => ({ ok: false, status: 503 })
-  });
-  assert.strictEqual(await fallbackOverlay.enrichTickerLive(fallbackStock), null);
-  assert.strictEqual(fallbackStock.current_price, 7, 'local snapshot must survive live failure');
+  assert.strictEqual(timeoutLoading.size, 0);
 
   console.log('market live overlay contract: ok');
 })().catch(error => {

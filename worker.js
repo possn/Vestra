@@ -1,6 +1,6 @@
 /**
  * Cloudflare Worker — Proxy de Cotações (Yahoo Finance)
- * Versão 4.6 — null-safe quote + fundamentals semantics
+ * Versão 4.7 — exact provider identity + null-safe market semantics
  */
 
 const QUOTE_CACHE_TTL = 60; // quotes: align with browser freshness
@@ -88,15 +88,19 @@ function positiveNumber(...vals) {
 }
 
 async function fetchYahooQuoteCore(ticker, ctx) {
-  const cacheKey = `quote46:${ticker.toUpperCase()}`;
+  const cacheKey = `quote47:${ticker.toUpperCase()}`;
   const cache = caches.default;
   const cacheUrl = `https://cache.internal/${cacheKey}`;
 
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
-    data._cached = true;
-    return data;
+    const provider = String(data?.provider_symbol || '').trim().toUpperCase();
+    if (provider === ticker.toUpperCase()) {
+      data._cached = true;
+      return data;
+    }
+    try { ctx.waitUntil(cache.delete(cacheUrl)); } catch (_) {}
   }
 
   const headers = {
@@ -112,7 +116,8 @@ async function fetchYahooQuoteCore(ticker, ctx) {
   for (const url of quoteUrls) {
     try {
       const d = await fetchJsonMaybe(url, { headers });
-      const q = d?.quoteResponse?.result?.[0];
+      const wanted = ticker.toUpperCase();
+      const q = (d?.quoteResponse?.result || []).find(item => String(item?.symbol || '').trim().toUpperCase() === wanted);
       const rawPrice = positiveNumber(
         q?.regularMarketPrice, q?.postMarketPrice, q?.preMarketPrice,
         q?.regularMarketPreviousClose, q?.regularMarketOpen, q?.bid, q?.ask
@@ -121,6 +126,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
         const { price, ccy } = normCcy(rawPrice, q.currency);
         const result = {
           ticker: ticker.toUpperCase(),
+          provider_symbol: String(q?.symbol || ticker).trim().toUpperCase(),
           price,
           currency: ccy,
           name: q.shortName || q.longName || ticker,
@@ -162,6 +168,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
       const json = await fetchJsonMaybe(url, { headers, cf: { cacheTtl: QUOTE_CACHE_TTL, cacheEverything: false } });
       const result0 = json?.chart?.result?.[0];
       const meta = result0?.meta;
+      if (String(meta?.symbol || '').trim().toUpperCase() !== ticker.toUpperCase()) continue;
       const closes = result0?.indicators?.quote?.[0]?.close || [];
       const lastClose = [...closes].reverse().find(v => Number.isFinite(v) && v > 0);
       const rawPrice = positiveNumber(meta?.regularMarketPrice, meta?.previousClose, lastClose);
@@ -169,6 +176,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
         const { price, ccy } = normCcy(rawPrice, meta.currency);
         const result = {
           ticker: ticker.toUpperCase(),
+          provider_symbol: String(meta?.symbol || ticker).trim().toUpperCase(),
           price,
           currency: ccy,
           name: meta.shortName || meta.symbol || ticker,
@@ -197,6 +205,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
     try {
       const qsJson = await fetchJsonMaybe(url, { headers });
       const priceNode = qsJson?.quoteSummary?.result?.[0]?.price;
+      if (String(priceNode?.symbol || '').trim().toUpperCase() !== ticker.toUpperCase()) continue;
       const rawPrice = positiveNumber(
         priceNode?.regularMarketPrice?.raw,
         priceNode?.regularMarketPreviousClose?.raw,
@@ -207,6 +216,7 @@ async function fetchYahooQuoteCore(ticker, ctx) {
         const { price, ccy } = normCcy(rawPrice, priceNode?.currency);
         const result = {
           ticker: ticker.toUpperCase(),
+          provider_symbol: String(priceNode?.symbol || ticker).trim().toUpperCase(),
           price,
           currency: ccy,
           name: priceNode?.shortName || priceNode?.longName || ticker,
@@ -233,11 +243,14 @@ async function fetchYahooQuoteCore(ticker, ctx) {
       const prevCloseMatch = html.match(/"regularMarketPreviousClose":\{"raw":([0-9]+(?:\.[0-9]+)?)/);
       const ccyMatch = html.match(/"currency":"([A-Z]{3,4})"/);
       const nameMatch = html.match(/"shortName":"([^"]+)"/) || html.match(/<title>([^<]+?) \(/i);
+      const symbolMatch = html.match(/"symbol":"([^"]+)"/);
+      const providerSymbol = String(symbolMatch?.[1] || '').trim().toUpperCase();
       const rawPrice = positiveNumber(rawPriceMatch ? Number(rawPriceMatch[1]) : null, prevCloseMatch ? Number(prevCloseMatch[1]) : null);
-      if (rawPrice) {
+      if (rawPrice && providerSymbol === ticker.toUpperCase()) {
         const { price, ccy } = normCcy(rawPrice, ccyMatch ? ccyMatch[1] : "USD");
         const result = {
           ticker: ticker.toUpperCase(),
+          provider_symbol: providerSymbol,
           price,
           currency: ccy,
           name: nameMatch ? String(nameMatch[1]).replace(/\u002F/g, '/').trim() : ticker,
@@ -346,8 +359,7 @@ async function fetchYahooFundamentalTimeseries(ticker, headers) {
     'annualCashCashEquivalentsAndShortTermInvestments','quarterlyCashCashEquivalentsAndShortTermInvestments',
     'annualStockholdersEquity','quarterlyStockholdersEquity',
     'annualGrossProfit','quarterlyGrossProfit',
-    'annualOperatingIncome','quarterlyOperatingIncome',
-    'annualDilutedAverageShares','quarterlyDilutedAverageShares'
+    'annualOperatingIncome','quarterlyOperatingIncome'
   ];
   let json = null;
   for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
@@ -375,10 +387,14 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const canonical = normalizeInputTicker(requested);
   const successor = successorMetadata(requested);
   const cache = caches.default;
-  const cacheUrl = `https://cache.internal/market45:${canonical}`;
+  const cacheUrl = `https://cache.internal/market46:${canonical}`;
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
+    const cachedProvider = String(data?.provider_symbol || '').trim().toUpperCase();
+    if (cachedProvider !== canonical) {
+      try { ctx.waitUntil(cache.delete(cacheUrl)); } catch (_) {}
+    } else {
     // Fundamentals may stay cached for 30 minutes, but price-sensitive fields must
     // inherit the 60-second quote freshness contract. This prevents /market from
     // showing an older price than /quote in an open dossier.
@@ -416,6 +432,7 @@ async function fetchYahooMarketDetail(ticker, ctx) {
     }
     data._cached = true;
     return data;
+    }
   }
 
   const headers = {
@@ -431,7 +448,9 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
     try {
       const data = await fetchJsonMaybe(`https://${host}/v10/finance/quoteSummary/${encodeURIComponent(canonical)}?modules=${modules}`, { headers });
-      if (data?.quoteSummary?.result?.[0]) { qs = data.quoteSummary.result[0]; break; }
+      const candidate = data?.quoteSummary?.result?.[0] || null;
+      const providerSymbol = String(candidate?.price?.symbol || '').trim().toUpperCase();
+      if (candidate && providerSymbol === canonical) { qs = candidate; break; }
     } catch (_) {}
   }
 
@@ -463,40 +482,27 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const cashAnnual = firstFinite(latestTimeseriesValue(ts.annualCashCashEquivalentsAndShortTermInvestments), latestTimeseriesValue(ts.quarterlyCashCashEquivalentsAndShortTermInvestments));
   const grossAnnual = firstFinite(latestTimeseriesValue(ts.annualGrossProfit), latestTimeseriesValue(ts.quarterlyGrossProfit));
   const opIncomeAnnual = firstFinite(latestTimeseriesValue(ts.annualOperatingIncome), latestTimeseriesValue(ts.quarterlyOperatingIncome));
-  const dilutedShares = firstFinite(latestTimeseriesValue(ts.quarterlyDilutedAverageShares), latestTimeseriesValue(ts.annualDilutedAverageShares));
 
   let history = [];
-  let historyHigh = null;
-  let historyLow = null;
   try {
     const cj = await fetchJsonMaybe(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(canonical)}?interval=1d&range=1y`, { headers });
     const r = cj?.chart?.result?.[0];
+    if (String(r?.meta?.symbol || '').trim().toUpperCase() !== canonical) throw new Error('chart identity mismatch');
     const ts = r?.timestamp || [];
-    const quoteSeries = r?.indicators?.quote?.[0] || {};
-    const closes = quoteSeries.close || [];
-    const highs = quoteSeries.high || [];
-    const lows = quoteSeries.low || [];
+    const closes = r?.indicators?.quote?.[0]?.close || [];
     history = ts.map((t,i)=>{
       const close = numberOrNull(closes[i]);
       return close !== null && close > 0 ? {date:new Date(t*1000).toISOString().slice(0,10),close} : null;
     }).filter(Boolean);
-    const highValues = highs.map(numberOrNull).filter(v=>v!==null && v>0);
-    const lowValues = lows.map(numberOrNull).filter(v=>v!==null && v>0);
-    if (highValues.length) historyHigh = Math.max(...highValues);
-    if (lowValues.length) historyLow = Math.min(...lowValues);
   } catch (_) {}
 
-  const current = numberOrNull(quote.price);
-  const marketCap = firstFinite(
-    numberOrNull(price.marketCap),
-    numberOrNull(sd.marketCap),
-    numberOrNull(quote.market_cap),
-    current !== null && Number.isFinite(dilutedShares) && dilutedShares > 0 ? current * dilutedShares : null
-  );
+  const marketCap = firstFinite(numberOrNull(price.marketCap), numberOrNull(sd.marketCap), numberOrNull(quote.market_cap));
   const fcf = numberOrNull(fd.freeCashflow);
   const target = numberOrNull(fd.targetMeanPrice);
+  const current = numberOrNull(quote.price);
   const result = {
     ticker: successor ? requested : canonical,
+    provider_symbol: String(quote?.provider_symbol || canonical).trim().toUpperCase(),
     retrieval_ticker: successor ? canonical : null,
     ticker_successor_effective_date: successor?.effective_date || null,
     name: raw(price.longName) || raw(price.shortName) || quote.name || canonical,
@@ -511,10 +517,10 @@ async function fetchYahooMarketDetail(ticker, ctx) {
     market_cap: marketCap,
     trailing_pe: firstFinite(numberOrNull(sd.trailingPE), numberOrNull(ks.trailingPE), numberOrNull(quote.trailing_pe)),
     forward_pe: firstFinite(numberOrNull(sd.forwardPE), numberOrNull(ks.forwardPE), numberOrNull(quote.forward_pe)),
-    price_to_book: firstFinite(numberOrNull(ks.priceToBook), numberOrNull(quote.price_to_book), marketCap !== null && Number.isFinite(equityAnnual) && equityAnnual > 0 ? marketCap/equityAnnual : null),
+    price_to_book: firstFinite(numberOrNull(ks.priceToBook), numberOrNull(quote.price_to_book)),
     enterprise_to_ebitda: numberOrNull(ks.enterpriseToEbitda),
     dividend_yield: pctRaw(sd.dividendYield),
-    roe: firstFinite(pctRaw(fd.returnOnEquity), Number.isFinite(niAnnual) && Number.isFinite(equityAnnual) && equityAnnual !== 0 ? niAnnual/equityAnnual*100 : null),
+    roe: pctRaw(fd.returnOnEquity),
     roa: pctRaw(fd.returnOnAssets),
     revenue_growth: firstFinite(pctRaw(fd.revenueGrowth), growthPct(revAnnual, revPrev)),
     earnings_growth: firstFinite(pctRaw(fd.earningsGrowth), growthPct(niAnnual, niPrev)),
@@ -542,8 +548,8 @@ async function fetchYahooMarketDetail(ticker, ctx) {
     analyst_strong_sell: Number(rt.strongSell || 0),
     analyst_eps_next_y_growth: pctRaw(nextYear?.growth),
     analyst_next_earnings_date: isoFromUnix(ce?.earnings?.earningsDate?.[0]),
-    fifty_two_week_high: firstFinite(numberOrNull(sd.fiftyTwoWeekHigh), numberOrNull(quote.fifty_two_week_high), historyHigh),
-    fifty_two_week_low: firstFinite(numberOrNull(sd.fiftyTwoWeekLow), numberOrNull(quote.fifty_two_week_low), historyLow),
+    fifty_two_week_high: firstFinite(numberOrNull(sd.fiftyTwoWeekHigh), numberOrNull(quote.fifty_two_week_high)),
+    fifty_two_week_low: firstFinite(numberOrNull(sd.fiftyTwoWeekLow), numberOrNull(quote.fifty_two_week_low)),
     beta: numberOrNull(ks.beta),
     revenue_latest: revAnnual,
     net_income_latest: niAnnual,
@@ -629,7 +635,7 @@ export default {
       if (url.pathname === "/health") {
         return new Response(JSON.stringify({
           service: "Vestra Market Proxy",
-          version: "4.6",
+          version: "4.7",
           build_id: String(env?.BUILD_ID || "unknown"),
           capabilities: ["quote", "quotes", "market"],
           quote_cache_ttl_seconds: QUOTE_CACHE_TTL,
@@ -640,7 +646,7 @@ export default {
 
       if (url.pathname === "/" || url.pathname === "") {
         return new Response(JSON.stringify({
-          service: "Vestra Market Proxy v4.6",
+          service: "Vestra Market Proxy v4.7",
           build_id: String(env?.BUILD_ID || "unknown"),
           endpoints: ["/health", "/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT"]
         }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });

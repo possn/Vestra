@@ -15,12 +15,16 @@ class GlobalMarketSearchTests(unittest.TestCase):
         subprocess.run(["node", "--check", str(GLOBAL)], check=True, cwd=ROOT)
         subprocess.run(["node", "--check", str(MARKET)], check=True, cwd=ROOT)
 
-    def test_exact_unknown_ticker_uses_worker_quote_and_market(self):
+    def test_exact_unknown_ticker_requires_provider_identity(self):
         text = GLOBAL.read_text(encoding="utf-8")
         self.assertIn("/quote?ticker=", text)
         self.assertIn("/market?ticker=", text)
-        self.assertIn("validateExactTicker", text)
-        self.assertIn("openRemoteTicker", text)
+        self.assertIn("function exactProviderIdentity(ticker,payload)", text)
+        self.assertIn("provider===requested", text)
+        self.assertIn("canonical===requested", text)
+        self.assertIn("retrieval===requested", text)
+        self.assertIn("identity_verified:true", text)
+        self.assertIn("Provider identity mismatch", text)
 
     def test_name_search_is_separate_from_daily_catalogue(self):
         text = GLOBAL.read_text(encoding="utf-8")
@@ -35,7 +39,8 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("nav?.openCompany", text)
         self.assertIn("market.upsertRemoteStock({", text)
         self.assertIn("await nav.openCompany(ticker,{origin:'market'", text)
-        self.assertIn("market.openTicker(canonicalTicker)", text)
+        self.assertIn("market.openTicker(ticker)", text)
+        self.assertIn("provider_symbol:ticker", text)
         self.assertIn("function upsertRemoteStock(row={})", market)
         self.assertIn("_remoteTransient:true", market)
         self.assertIn("_dossierHydrated:true", market)
@@ -86,8 +91,8 @@ class GlobalMarketSearchTests(unittest.TestCase):
 
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
-        self.assertIn("market-learned-universe.js?v=2.1", text)
-        self.assertIn("market-global-search.js?v=1.8", text)
+        self.assertIn("market-learned-universe.js?v=3.0", text)
+        self.assertIn("market-global-search.js?v=1.9", text)
         self.assertIn("market-data-health.js?v=1.3", text)
 
     def test_presentation_has_static_css_owner_and_offline_reachability(self):
@@ -99,7 +104,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn('.vestra-global-search{', css)
         self.assertIn('.vestra-global-search__row{', css)
         self.assertIn('"./market-global-search.css"', sw)
-        self.assertIn("version:'1.8'", text)
+        self.assertIn("version:'1.9'", text)
 
 
 if __name__ == "__main__":

@@ -130,40 +130,44 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
 
-  await page.evaluate(testTicker => {
-    const nativeFetch = window.fetch.bind(window);
-    window.fetch = async (input, init = {}) => {
-      const url = new URL(typeof input === 'string' ? input : input.url, window.location.href);
-      if (!url.pathname.startsWith('/__worker_test__/')) return nativeFetch(input, init);
-      const endpoint = url.pathname.replace('/__worker_test__', '');
-      const json = payload => new Response(JSON.stringify(payload), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (endpoint === '/quote') {
-        return json({
-          ticker: testTicker, name: 'Vestra Synthetic Systems', exchange: 'NMS',
-          quote_type: 'EQUITY', currency: 'USD', price: 42.5
-        });
-      }
-      if (endpoint === '/market') {
-        return json({
-          ticker: testTicker, name: 'Vestra Synthetic Systems', exchange: 'NMS',
-          quote_type: 'EQUITY', currency: 'USD', current_price: 42.5,
-          market_cap: 1200000000, forward_pe: 18.2, price_to_book: 3.1,
-          roe: 0.18, fcf_yield: 0.052, revenue_growth: 0.14,
-          earnings_growth: 0.17, operating_margin: 0.21, profit_margin: 0.16,
-          debt_to_equity: 0.4, current_ratio: 1.8, fifty_two_week_high: 55,
-          fifty_two_week_low: 38, sector: 'Technology', industry: 'Software',
-          country: 'United States'
-        });
-      }
-      if (endpoint === '/learned-universe') return json({ ok: true });
-      return new Response('not found', { status: 404 });
-    };
-    window.state.settings.workerUrl = `${window.location.origin}/__worker_test__`;
-    window.setView('market');
-  }, ticker);
+  await page.route(/\/quote\?ticker=E2EVS(?:&|$)/, async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ticker, provider_symbol: ticker, retrieval_ticker: ticker,
+        name: 'Vestra Synthetic Systems', exchange: 'NMS',
+        quote_type: 'EQUITY', currency: 'USD', price: 42.5
+      }),
+    });
+  });
+
+  await page.route(/\/market\?ticker=E2EVS(?:&|$)/, async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ticker, provider_symbol: ticker, retrieval_ticker: ticker,
+        name: 'Vestra Synthetic Systems', exchange: 'NMS',
+        quote_type: 'EQUITY', currency: 'USD', current_price: 42.5,
+        market_cap: 1200000000, forward_pe: 18.2, price_to_book: 3.1,
+        roe: 0.18, fcf_yield: 0.052, revenue_growth: 0.14,
+        earnings_growth: 0.17, operating_margin: 0.21, profit_margin: 0.16,
+        debt_to_equity: 0.4, current_ratio: 1.8, fifty_two_week_high: 55,
+        fifty_two_week_low: 38, sector: 'Technology', industry: 'Software',
+        country: 'United States'
+      }),
+    });
+  });
+
+  await page.route(/\/learned-universe$/, async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.evaluate(() => window.setView('market'));
 
   const search = page.locator('#marketSearch');
   await expect(search).toBeVisible();
@@ -187,6 +191,8 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   }, ticker);
   expect(learnedBeforeReload).toBeTruthy();
   expect(learnedBeforeReload.ticker).toBe(ticker);
+  expect(learnedBeforeReload.provider_symbol).toBe(ticker);
+  expect(learnedBeforeReload.identity_verified).toBe(true);
   expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(1);
 
   await page.reload();

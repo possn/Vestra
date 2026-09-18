@@ -4,12 +4,31 @@ test('iPhone/WebKit: global ticker uses canonical dossier and can return to Mark
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
+  await page.route('**/quote?ticker=ECVT', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ticker: 'ECVT',
+        provider_symbol: 'ECVT',
+        retrieval_ticker: 'ECVT',
+        name: 'Ecovyst Inc.',
+        exchange: 'NYQ',
+        quote_type: 'EQUITY',
+        currency: 'USD',
+        price: 10.64
+      }),
+    });
+  });
+
   await page.route('**/market?ticker=ECVT', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
         ticker: 'ECVT',
+        provider_symbol: 'ECVT',
+        retrieval_ticker: 'ECVT',
         name: 'Ecovyst Inc.',
         current_price: 10.64,
         currency: 'USD',
