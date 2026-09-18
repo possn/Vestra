@@ -73,6 +73,19 @@
   function start() {
     installStyle();
     normalizeButtons();
+    const sheet = document.getElementById('marketSheet');
+    if (sheet && typeof MutationObserver === 'function') {
+      let queued = false;
+      const observer = new MutationObserver(() => {
+        if (queued) return;
+        queued = true;
+        queueMicrotask(() => {
+          queued = false;
+          normalizeButtons();
+        });
+      });
+      observer.observe(sheet, { childList: true, subtree: true });
+    }
     // Capture phase keeps closing independent from the large delegated market handler.
     document.addEventListener('click', closeMarketSheet, true);
   }
