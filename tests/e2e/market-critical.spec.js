@@ -176,8 +176,12 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveAttribute('data-ticker', ticker);
-  await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
+  await expect(sheet.locator('.market-kicker').first()).toHaveText('Technology');
   await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
+  await expect(sheet.locator('.market-tabs')).toBeVisible();
+  await expect(sheet).not.toHaveAttribute('data-tool', 'remote-live');
+  const close = sheet.locator('.market-detail-actions [data-market-close]');
+  await expect(close).toBeVisible();
 
   const learnedBeforeReload = await page.evaluate(async learnedTicker => {
     const rows = await window.VestraLearnedUniverse.list();
@@ -186,6 +190,11 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   expect(learnedBeforeReload).toBeTruthy();
   expect(learnedBeforeReload.ticker).toBe(ticker);
   expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(2);
+
+  await close.click();
+  await expect(sheet).toBeHidden();
+  await expect(search).toBeVisible();
+  await expect(page.locator('html')).not.toHaveClass(/modal-open/);
 
   await page.reload();
   await page.waitForFunction(() => !!window.VestraLearnedUniverse);
