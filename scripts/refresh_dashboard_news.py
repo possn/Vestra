@@ -11,7 +11,8 @@ from news import _build_dashboard_digest
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "dashboard-news.json"
 MAX_ITEMS = 40
-COMPANY_RETENTION_HOURS = 36
+COMPANY_RETENTION_HOURS = 12
+MAX_RETAINED_COMPANY_ITEMS = 12
 
 
 def published_ts(value: str) -> float:
@@ -43,7 +44,12 @@ def previous_company_items(now_ts: float) -> list[dict]:
         age_hours = max(0.0, (now_ts - ts) / 3600.0)
         if age_hours <= COMPANY_RETENTION_HOURS:
             kept.append(item)
-    return kept
+    kept.sort(key=lambda item: published_ts(str(item.get("published") or "")), reverse=True)
+    return kept[:MAX_RETAINED_COMPANY_ITEMS]
+
+
+def dedupe_key(item: dict) -> str:
+    return " ".join(str(item.get("title") or "").lower().split())
 
 
 def main() -> int:
@@ -53,24 +59,46 @@ def main() -> int:
         raise RuntimeError("dashboard news refresh returned no market items")
 
     now = datetime.now(timezone.utc)
+    retained_company = previous_company_items(now.timestamp())
+
+    # Fresh market headlines must never be displaced by retained company news.
+    # Keep a small, recent company tail for portfolio relevance, then sort the
+    # combined pool by publication time so the client can rank a genuinely
+    # current candidate set.
     combined = []
     seen = set()
-    for item in [*previous_company_items(now.timestamp()), *fresh]:
-        key = " ".join(str(item.get("title") or "").lower().split())
+    for item in [*fresh, *retained_company]:
+        key = dedupe_key(item)
         if not key or key in seen:
             continue
         seen.add(key)
         combined.append(item)
-        if len(combined) >= MAX_ITEMS:
-            break
+
+    combined.sort(
+        key=lambda item: (
+            published_ts(str(item.get("published") or "")),
+            float(item.get("impact_score") or 0),
+        ),
+        reverse=True,
+    )
+    combined = combined[:MAX_ITEMS]
 
     if not combined:
         raise RuntimeError("dashboard news refresh produced an empty digest")
+
     payload["generated_at"] = now.isoformat().replace("+00:00", "Z")
-    payload["note"] = "Lightweight market refresh plus recent company headlines retained from the last full market build."
+    payload["note"] = (
+        "Lightweight fresh-market refresh plus a bounded recent company tail; "
+        "fresh headlines cannot be displaced by retained items."
+    )
     payload["items"] = combined
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    print(json.dumps({"generated_at": payload["generated_at"], "items": len(combined)}, ensure_ascii=False))
+    print(json.dumps({
+        "generated_at": payload["generated_at"],
+        "items": len(combined),
+        "fresh_market_items": len(fresh),
+        "retained_company_items": len(retained_company),
+    }, ensure_ascii=False))
     return 0
 
 
