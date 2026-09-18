@@ -68,6 +68,9 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
 test('iPhone/WebKit: CPI structured BLS metrics render as published results instead of pending', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
+  await page.context().route('https://www.bls.gov/news.release/cpi.nr0.htm', async route => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: '<title>BLS CPI</title><p>official</p>' });
+  });
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
@@ -114,6 +117,23 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
   await expect(detail).toContainText('Core YoY');
   await expect(detail).toContainText('+2,4%');
   await expect(detail).not.toContainText('Resultado ainda não publicado');
+
+  const official = detail.locator('a.weekly-detail-action');
+  await expect(official).toHaveAttribute('href', 'https://www.bls.gov/news.release/cpi.nr0.htm');
+  const popupPromise = page.waitForEvent('popup');
+  await official.tap();
+  const popup = await popupPromise;
+  await popup.waitForLoadState('domcontentloaded');
+  await popup.close();
+
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('focus'));
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+  });
+  await expect(detail).toBeVisible();
+  await expect(page.locator('#appLoadingOverlay')).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem('vestra:external-return-v1'))).not.toBeNull();
+
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
