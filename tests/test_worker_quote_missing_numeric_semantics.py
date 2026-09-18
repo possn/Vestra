@@ -9,7 +9,7 @@ class WorkerQuoteMissingNumericSemanticsTests(unittest.TestCase):
         cls.worker=(ROOT/'worker.js').read_text(encoding='utf-8')
 
     def test_quote_cache_generation_is_invalidated(self):
-        self.assertIn('quote46:${ticker.toUpperCase()}', self.worker)
+        self.assertIn('quote47:${ticker.toUpperCase()}', self.worker)
         self.assertNotIn('quote41:${ticker.toUpperCase()}', self.worker)
 
     def test_missing_quote_change_is_null_not_zero(self):
@@ -24,9 +24,9 @@ class WorkerQuoteMissingNumericSemanticsTests(unittest.TestCase):
         self.assertNotIn('q.trailingAnnualDividendRate : 0', self.worker)
         self.assertNotIn('q.trailingAnnualDividendYield : 0', self.worker)
 
-    def test_worker_version_is_46(self):
-        self.assertIn('Versão 4.6', self.worker)
-        self.assertIn('version: "4.6"', self.worker)
+    def test_worker_version_is_47(self):
+        self.assertIn('Versão 4.7', self.worker)
+        self.assertIn('version: "4.7"', self.worker)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
