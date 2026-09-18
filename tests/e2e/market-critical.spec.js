@@ -142,13 +142,15 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
       });
       if (endpoint === '/quote') {
         return json({
-          ticker: testTicker, name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          ticker: testTicker, provider_symbol: testTicker, retrieval_ticker: testTicker,
+          name: 'Vestra Synthetic Systems', exchange: 'NMS',
           quote_type: 'EQUITY', currency: 'USD', price: 42.5
         });
       }
       if (endpoint === '/market') {
         return json({
-          ticker: testTicker, name: 'Vestra Synthetic Systems', exchange: 'NMS',
+          ticker: testTicker, provider_symbol: testTicker, retrieval_ticker: testTicker,
+          name: 'Vestra Synthetic Systems', exchange: 'NMS',
           quote_type: 'EQUITY', currency: 'USD', current_price: 42.5,
           market_cap: 1200000000, forward_pe: 18.2, price_to_book: 3.1,
           roe: 0.18, fcf_yield: 0.052, revenue_growth: 0.14,
@@ -187,6 +189,8 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   }, ticker);
   expect(learnedBeforeReload).toBeTruthy();
   expect(learnedBeforeReload.ticker).toBe(ticker);
+  expect(learnedBeforeReload.provider_symbol).toBe(ticker);
+  expect(learnedBeforeReload.identity_verified).toBe(true);
   expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(1);
 
   await page.reload();
