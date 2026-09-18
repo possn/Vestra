@@ -168,6 +168,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function upsertRemoteStock(row={}){
     const ticker=txt(row.ticker||row.symbol).toUpperCase();
     if(!ticker) return null;
+    if(row?._remoteGlobal){
+      const provider=txt(row.provider_symbol).toUpperCase();
+      if(row.identity_verified!==true || provider!==ticker) return null;
+    }
     const existing=M.byTicker.get(ticker);
     const stock=existing||{ticker};
     const incoming={...row,ticker};
