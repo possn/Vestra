@@ -106,11 +106,17 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertNotIn("event.preventDefault()", self.runtime)
         self.assertNotIn("window.open(", self.runtime)
 
-    def test_resume_force_refresh_is_cache_busted_without_owning_navigation(self):
+    def test_resume_force_refresh_is_edge_triggered_and_cache_busted(self):
+        self.assertIn("let wasBackgrounded = false", self.runtime)
+        self.assertIn("let outboundNewsPending = false", self.runtime)
+        self.assertIn("let resumeRefreshPending = false", self.runtime)
+        self.assertIn("if (!wasBackgrounded && !outboundNewsPending) return false", self.runtime)
+        self.assertIn("if (resumeRefreshPending) return true", self.runtime)
         self.assertIn("window.addEventListener?.('focus', resume)", self.runtime)
         self.assertIn("window.addEventListener?.('pageshow', resume)", self.runtime)
-        self.assertIn("void load(true)", self.runtime)
+        self.assertIn("document.visibilityState === 'hidden'", self.runtime)
         self.assertIn("document.visibilityState === 'visible'", self.runtime)
+        self.assertIn("void load(true)", self.runtime)
         self.assertIn("data/dashboard-news.json?_v=", self.runtime)
 
     def test_news_runtime_has_no_duplicate_return_restoration_owner(self):
