@@ -21,8 +21,8 @@ class GlobalMarketSearchNonblockingLearningTests(unittest.TestCase):
         self.assertNotIn("content.innerHTML=", GLOBAL)
 
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("version:'1.8'", GLOBAL)
-        self.assertIn("market-global-search.js?v=1.8", BOOT)
+        self.assertIn("version:'1.9'", GLOBAL)
+        self.assertIn("market-global-search.js?v=1.9", BOOT)
 
 
 if __name__ == "__main__":
