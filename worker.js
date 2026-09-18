@@ -88,13 +88,15 @@ function positiveNumber(...vals) {
 }
 
 async function fetchYahooQuoteCore(ticker, ctx) {
-  const cacheKey = `quote46:${ticker.toUpperCase()}`;
+  const cacheKey = `quote47:${ticker.toUpperCase()}`;
   const cache = caches.default;
   const cacheUrl = `https://cache.internal/${cacheKey}`;
 
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
+    data.provider_symbol = String(data.provider_symbol || '').trim().toUpperCase() || null;
+    data.retrieval_ticker = String(data.retrieval_ticker || ticker).trim().toUpperCase();
     data._cached = true;
     return data;
   }
@@ -121,6 +123,8 @@ async function fetchYahooQuoteCore(ticker, ctx) {
         const { price, ccy } = normCcy(rawPrice, q.currency);
         const result = {
           ticker: ticker.toUpperCase(),
+          provider_symbol: String(q.symbol || '').trim().toUpperCase() || null,
+          retrieval_ticker: ticker.toUpperCase(),
           price,
           currency: ccy,
           name: q.shortName || q.longName || ticker,
@@ -169,6 +173,8 @@ async function fetchYahooQuoteCore(ticker, ctx) {
         const { price, ccy } = normCcy(rawPrice, meta.currency);
         const result = {
           ticker: ticker.toUpperCase(),
+          provider_symbol: String(meta.symbol || '').trim().toUpperCase() || null,
+          retrieval_ticker: ticker.toUpperCase(),
           price,
           currency: ccy,
           name: meta.shortName || meta.symbol || ticker,
@@ -207,6 +213,8 @@ async function fetchYahooQuoteCore(ticker, ctx) {
         const { price, ccy } = normCcy(rawPrice, priceNode?.currency);
         const result = {
           ticker: ticker.toUpperCase(),
+          provider_symbol: String(priceNode?.symbol || '').trim().toUpperCase() || null,
+          retrieval_ticker: ticker.toUpperCase(),
           price,
           currency: ccy,
           name: priceNode?.shortName || priceNode?.longName || ticker,
@@ -232,12 +240,15 @@ async function fetchYahooQuoteCore(ticker, ctx) {
       const rawPriceMatch = html.match(/"regularMarketPrice":\{"raw":([0-9]+(?:\.[0-9]+)?)/);
       const prevCloseMatch = html.match(/"regularMarketPreviousClose":\{"raw":([0-9]+(?:\.[0-9]+)?)/);
       const ccyMatch = html.match(/"currency":"([A-Z]{3,4})"/);
+      const symbolMatch = html.match(/"symbol":"([^"]+)"/);
       const nameMatch = html.match(/"shortName":"([^"]+)"/) || html.match(/<title>([^<]+?) \(/i);
       const rawPrice = positiveNumber(rawPriceMatch ? Number(rawPriceMatch[1]) : null, prevCloseMatch ? Number(prevCloseMatch[1]) : null);
       if (rawPrice) {
         const { price, ccy } = normCcy(rawPrice, ccyMatch ? ccyMatch[1] : "USD");
         const result = {
           ticker: ticker.toUpperCase(),
+          provider_symbol: symbolMatch ? String(symbolMatch[1]).trim().toUpperCase() : null,
+          retrieval_ticker: ticker.toUpperCase(),
           price,
           currency: ccy,
           name: nameMatch ? String(nameMatch[1]).replace(/\u002F/g, '/').trim() : ticker,
@@ -375,7 +386,7 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const canonical = normalizeInputTicker(requested);
   const successor = successorMetadata(requested);
   const cache = caches.default;
-  const cacheUrl = `https://cache.internal/market45:${canonical}`;
+  const cacheUrl = `https://cache.internal/market46:${canonical}`;
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
@@ -407,8 +418,11 @@ async function fetchYahooMarketDetail(ticker, ctx) {
         const marketCap = numberOrNull(data.market_cap);
         data.fcf_yield = fcf !== null && marketCap !== null && marketCap > 0 ? (fcf / marketCap) * 100 : null;
         data.quote_updated = quote.updated || new Date().toISOString();
+        data.provider_symbol = String(quote?.provider_symbol || canonical).trim().toUpperCase() || null;
+        data.retrieval_ticker = canonical;
       }
     } catch (_) {}
+    if (!data.retrieval_ticker) data.retrieval_ticker = canonical;
     if (successor) {
       data.ticker = requested;
       data.retrieval_ticker = canonical;
@@ -497,7 +511,8 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const target = numberOrNull(fd.targetMeanPrice);
   const result = {
     ticker: successor ? requested : canonical,
-    retrieval_ticker: successor ? canonical : null,
+    provider_symbol: String(quote?.provider_symbol || canonical).trim().toUpperCase() || null,
+    retrieval_ticker: canonical,
     ticker_successor_effective_date: successor?.effective_date || null,
     name: raw(price.longName) || raw(price.shortName) || quote.name || canonical,
     current_price: current,
