@@ -1,0 +1,123 @@
+name: Update dashboard feeds
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+    - cron: "20 * * * *"
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'scripts/refresh_dashboard_news.py'
+      - '.github/workflows/update-dashboard-feeds.yml'
+      - 'scripts/update_macro_events.py'
+      - 'scripts/macro_calendar_transport.py'
+      - 'scripts/enrich_macro_results.py'
+      - 'scripts/enrich_macro_results_fred.py'
+      - 'scripts/enrich_policy_decisions.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-dashboard-feeds
+  cancel-in-progress: false
+
+jobs:
+  news:
+    if: github.event_name != 'schedule' || github.event.schedule == '*/30 * * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install news dependency
+        run: pip install requests
+      - name: Refresh compact Dashboard news
+        run: PYTHONPATH=scripts python scripts/refresh_dashboard_news.py
+      - name: Validate news payload
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          p=json.loads(Path('data/dashboard-news.json').read_text())
+          assert p.get('generated_at')
+          assert len(p.get('items') or []) >= 5
+          ts=datetime.fromisoformat(p['generated_at'].replace('Z','+00:00'))
+          age=(datetime.now(timezone.utc)-ts).total_seconds()
+          assert 0 <= age < 900, f'stale dashboard news payload: {age}s'
+          print(f"Validated {len(p['items'])} dashboard headlines")
+          PY
+      - name: Publish dashboard news
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/dashboard-news.json
+          if git diff --cached --quiet; then
+            echo "Dashboard news unchanged."
+          else
+            git commit -m "Actualização notícias Dashboard ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            PUBLISH_SUPERSEDE_COMMIT_PREFIX="Actualização notícias Dashboard ("               bash scripts/publish_with_retry.sh origin main
+          fi
+
+  macro:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 * * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: scripts/requirements-macro.txt
+      - name: Install macro dependencies
+        run: pip install -r scripts/requirements-macro.txt
+      - name: Validate macro refresher
+        run: |
+          python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py scripts/enrich_macro_results.py scripts/enrich_macro_results_fred.py scripts/enrich_policy_decisions.py
+          python tests/test_update_macro_events.py
+      - name: Preserve previous verified results
+        run: cp data/macro-events.json /tmp/vestra-macro-events-previous.json
+      - name: Refresh official macro calendar
+        run: PYTHONPATH=scripts python scripts/macro_calendar_transport.py
+      - name: Refresh official result summaries
+        env:
+          VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json
+        run: python scripts/enrich_macro_results.py
+      - name: Fill BLS metrics via FRED mirror
+        run: python scripts/enrich_macro_results_fred.py
+      - name: Refresh policy decisions
+        env:
+          VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json
+        run: python scripts/enrich_policy_decisions.py
+      - name: Validate macro payload
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import date, datetime, timezone
+          from pathlib import Path
+          p=json.loads(Path('data/macro-events.json').read_text())
+          assert p.get('schema_version') == 2
+          assert {'fed','bls','bea','ecb','census'} <= set((p.get('source_status') or {}).keys())
+          events=p.get('events') or []
+          assert events
+          assert any(e.get('date','') >= date.today().isoformat() for e in events)
+          ts=datetime.fromisoformat(p['generated_at'].replace('Z','+00:00'))
+          age=(datetime.now(timezone.utc)-ts).total_seconds()
+          assert 0 <= age < 1800, f'stale macro payload: {age}s'
+          print(f"Validated {len(events)} macro events")
+          PY
+      - name: Publish macro calendar
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/macro-events.json
+          if git diff --cached --quiet; then
+            echo "Macro calendar unchanged."
+          else
+            git commit -m "Actualização calendário Dashboard ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            PUBLISH_SUPERSEDE_COMMIT_PREFIX="Actualização calendário Dashboard ("               bash scripts/publish_with_retry.sh origin main
+          fi

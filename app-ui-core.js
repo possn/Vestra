@@ -62,33 +62,87 @@ function installSafeUpdateGuard() {
 
 try { installSafeUpdateGuard(); } catch (_) {}
 
-const DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1';
-const DAILY_NEWS_RETURN_TTL_MS = 30 * 60 * 1000;
+const EXTERNAL_RETURN_KEY = 'vestra:external-return-v1';
+const DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1'; // legacy compatibility
+const DAILY_NEWS_RETURN_TTL_MS = 30 * 60 * 1000; // legacy compatibility contract
+const EXTERNAL_RETURN_TTL_MS = DAILY_NEWS_RETURN_TTL_MS
+const EXTERNAL_RETURN_RESUME_GRACE_MS = 30 * 1000;
+let externalReturnCleanupTimer = null;
+
+function rememberExternalReturnContext(options = {}) {
+  const doc = document.scrollingElement || document.documentElement || document.body;
+  const context = {
+    ts: Date.now(),
+    kind: String(options.kind || 'external'),
+    view: String(options.view || document.body?.dataset?.view || 'dashboard'),
+    scrollY: Math.max(0, Number(options.scrollY ?? window.scrollY ?? doc?.scrollTop ?? 0)),
+  };
+  try { localStorage.setItem(EXTERNAL_RETURN_KEY, JSON.stringify(context)); } catch (_) {}
+  if (externalReturnCleanupTimer !== null) {
+    clearTimeout(externalReturnCleanupTimer);
+    externalReturnCleanupTimer = null;
+  }
+  return context;
+}
+
+function scheduleExternalReturnCleanup(delayMs = EXTERNAL_RETURN_RESUME_GRACE_MS) {
+  if (externalReturnCleanupTimer !== null) return false;
+  externalReturnCleanupTimer = setTimeout(() => {
+    externalReturnCleanupTimer = null;
+    try { localStorage.removeItem(EXTERNAL_RETURN_KEY); } catch (_) {}
+    try { localStorage.removeItem(DAILY_NEWS_RETURN_KEY); } catch (_) {}
+  }, Math.max(0, Number(delayMs) || EXTERNAL_RETURN_RESUME_GRACE_MS));
+  return true;
+}
 
 function consumeDailyNewsReturnContext() {
   let context = null;
   try {
-    const raw = localStorage.getItem(DAILY_NEWS_RETURN_KEY);
+    const raw = localStorage.getItem(EXTERNAL_RETURN_KEY) || localStorage.getItem(DAILY_NEWS_RETURN_KEY);
     if (raw) context = JSON.parse(raw);
+    localStorage.removeItem(EXTERNAL_RETURN_KEY);
     localStorage.removeItem(DAILY_NEWS_RETURN_KEY);
   } catch (_) {
+    try { localStorage.removeItem(EXTERNAL_RETURN_KEY); } catch (_) {}
     try { localStorage.removeItem(DAILY_NEWS_RETURN_KEY); } catch (_) {}
     return null;
   }
   if (!context || typeof context !== 'object') return null;
   const age = Date.now() - Number(context.ts || 0);
-  if (!Number.isFinite(age) || age < 0 || age > DAILY_NEWS_RETURN_TTL_MS) return null;
+  if (!Number.isFinite(age) || age < 0 || age > EXTERNAL_RETURN_TTL_MS) return null;
   const normalized = {
     ts: Number(context.ts),
+    kind: String(context.kind || 'news'),
+    view: String(context.view || 'dashboard'),
     scrollY: Math.max(0, Number(context.scrollY || 0)),
   };
+  window.__vestraExternalReturnContext = normalized;
   window.__vestraDailyNewsReturnContext = normalized;
   return normalized;
+}
+
+function restoreExternalReturnContext(context) {
+  if (!context) return false;
+  const apply = () => {
+    try {
+      if (context.view && typeof window.setView === 'function') window.setView(context.view);
+    } catch (_) {}
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try { window.scrollTo(0, Math.max(0, Number(context.scrollY || 0))); } catch (_) {}
+    }));
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(apply, 0), { once: true });
+  } else {
+    setTimeout(apply, 0);
+  }
+  return true;
 }
 
 function suppressSplashForNewsReturn(splash) {
   const context = consumeDailyNewsReturnContext();
   if (!context) return false;
+  restoreExternalReturnContext(context);
   splash.dataset.premiumWatchdog = '1';
   splash.dataset.newsReturnSkip = '1';
   if (!document.getElementById('vestraNewsReturnSplashStyles')) {
@@ -346,6 +400,7 @@ try { installChartReflowGuards(); } catch (_) {}
     ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable,
     clearChartUnavailable, resizeVisibleCharts, scheduleChartStabilization,
     installPremiumSplashWatchdog, consumeDailyNewsReturnContext,
+    rememberExternalReturnContext, restoreExternalReturnContext, scheduleExternalReturnCleanup,
     installSafeUpdateGuard, forceFreshReload
   });
 })();

@@ -1683,9 +1683,13 @@
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });
-    let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) return; refreshing = true; location.reload();
+      // A controller swap means the new worker is active. Do not reload the
+      // visible PWA here: on iPhone this can fire while returning from Safari
+      // and would look like a full app restart. The next natural navigation or
+      // cold launch will use the new shell.
+      window.__vestraServiceWorkerUpdated = true;
+      try { window.dispatchEvent(new Event('vestra:service-worker-updated')); } catch (_) {}
     });
   }
 </script>

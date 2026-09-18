@@ -301,7 +301,12 @@
 
   async function refreshMacroEvents() {
     const latest = await loadMacroEvents((...args) => fetch(...args), MACRO_FETCH_TIMEOUT_MS, true);
-    if (latest) render();
+    if (latest) {
+      const nav = window.VestraWeeklyEventsNavigation;
+      const now = nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date();
+      render({ now });
+      window.dispatchEvent?.(new CustomEvent('vestra:weekly-data-refreshed'));
+    }
     return latest;
   }
 
@@ -440,6 +445,14 @@
   }
   async function scheduleRender(){const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();await Promise.allSettled([marketLoad,loadMacroEvents()]);render();}
   document.addEventListener('click',event=>{
+    const officialLink=event.target.closest?.('a.weekly-detail-action[href]');
+    if(officialLink){
+      window.VestraUiCore?.rememberExternalReturnContext?.({
+        kind:'weekly-official',
+        view:'dashboard',
+        scrollY:Math.max(0,Number(window.scrollY||document.scrollingElement?.scrollTop||0)),
+      });
+    }
     const eventButton=event.target.closest?.('[data-weekly-event-index]');
     if(eventButton){
       const index=Number(eventButton.dataset.weeklyEventIndex);
@@ -461,7 +474,13 @@
     const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}
     const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)void refreshMacroEvents();
   });
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void refreshMacroEvents();});
+  const resumeWeeklyEvents=()=>{
+    window.VestraUiCore?.scheduleExternalReturnCleanup?.();
+    void refreshMacroEvents();
+  };
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')resumeWeeklyEvents();});
+  window.addEventListener?.('focus',resumeWeeklyEvents);
+  window.addEventListener?.('pageshow',resumeWeeklyEvents);
   window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
   window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
 })();

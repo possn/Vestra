@@ -78,6 +78,7 @@
     : null;
   if (observer && document.documentElement) observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener?.('vestra:market-ready', () => setTimeout(decorate, 0));
+  window.addEventListener?.('vestra:weekly-data-refreshed', () => setTimeout(decorate, 0));
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(decorate, 0), { once: true });
   else setTimeout(decorate, 0);
 

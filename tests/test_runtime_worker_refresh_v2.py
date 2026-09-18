@@ -37,6 +37,8 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
         text = INDEX.read_text(encoding="utf-8")
         self.assertIn("navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });", text)
         self.assertIn("navigator.serviceWorker.addEventListener('controllerchange'", text)
+        self.assertNotIn("location.reload()", text)
+        self.assertIn("__vestraServiceWorkerUpdated", text)
         self.assertLess(text.index('src="app-ui-core.js'), text.index('src="app.js'))
         self.assertNotIn("app-update-manager.js", text)
 
