@@ -13,19 +13,16 @@ class GlobalMarketSearchNonblockingLearningTests(unittest.TestCase):
         self.assertIn("void learnCentral(row);", GLOBAL)
         self.assertNotIn("await learnCentral(row);", GLOBAL)
 
-    def test_remote_dossier_still_rechecks_ownership_after_local_learning(self):
-        marker = "await learn({ticker:txt(d.ticker||ticker).toUpperCase()"
-        start = GLOBAL.index(marker)
-        tail = GLOBAL[start:]
-        self.assertIn("if(!ownsRemoteOpen(request,sh,ticker))return;", tail)
-        self.assertLess(
-            tail.index("if(!ownsRemoteOpen(request,sh,ticker))return;"),
-            tail.index("content.innerHTML=`<div class=\"market-detail-head\"")
-        )
+    def test_remote_result_rechecks_ownership_before_canonical_refresh(self):
+        self.assertIn("const request=++remoteOpenSeq", GLOBAL)
+        self.assertIn("if(request!==remoteOpenSeq) return false", GLOBAL)
+        self.assertIn("if(ownsRemoteOpen(request,ticker) || ownsRemoteOpen(request,canonicalTicker))", GLOBAL)
+        self.assertIn("market.openTicker(canonicalTicker)", GLOBAL)
+        self.assertNotIn("content.innerHTML=", GLOBAL)
 
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("version:'1.7'", GLOBAL)
-        self.assertIn("market-global-search.js?v=1.7", BOOT)
+        self.assertIn("version:'1.8'", GLOBAL)
+        self.assertIn("market-global-search.js?v=1.8", BOOT)
 
 
 if __name__ == "__main__":

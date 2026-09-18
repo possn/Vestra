@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v1.7 — global search with local + central learned universe. */
+/* Vestra Global Market Search v1.8 — global search with local + central learned universe. */
 (() => {
   'use strict';
 
@@ -149,40 +149,79 @@
     timer=setTimeout(()=>runSearch(text),160);
   }
 
-  function remoteMetric(label,value){ return `<div class="market-detail-kpi"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`; }
-  function ownsRemoteOpen(request,sh,ticker){
-    return request===remoteOpenSeq && !sh.hidden && txt(sh.dataset.ticker).toUpperCase()===ticker;
+  function ownsRemoteOpen(request,ticker){
+    const sh=document.getElementById('marketSheet');
+    return request===remoteOpenSeq && !!sh && !sh.hidden && txt(sh.dataset.ticker).toUpperCase()===ticker;
   }
 
-  async function openRemoteTicker(ticker){
+  async function openRemoteTicker(ticker,options={}){
     invalidatePendingEnterOpen();
-    const base=workerBase(); if(!base) return;
-    ticker=txt(ticker).toUpperCase(); if(!validTickerQuery(ticker))return;
-    const sh=document.getElementById('marketSheet'), content=document.getElementById('marketSheetContent');
-    if(!sh||!content)return;
+    const base=workerBase(); if(!base) return false;
+    ticker=txt(ticker).toUpperCase(); if(!validTickerQuery(ticker))return false;
+    const market=window.VestraMarket;
+    const nav=window.VestraNavigation;
+    if(!market?.upsertRemoteStock || !nav?.openCompany) return false;
+
     const request=++remoteOpenSeq;
-    sh.dataset.ticker=ticker; sh.dataset.tool='remote-live';
-    document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
-    sh.hidden=false; sh.setAttribute('aria-hidden','false');
-    content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER LIVE</div><h2>${esc(ticker)}</h2><p>A obter dados globais…</p></div><button class="market-close" data-market-close>×</button></div><div class="market-detail-card"><p>Esta empresa não faz parte do catálogo diário pré-enriquecido. O dossier está a ser construído ao vivo.</p></div>`;
+    try{ await market.ensureLoaded?.(); }catch(_){}
+    if(request!==remoteOpenSeq) return false;
+
+    market.upsertRemoteStock({
+      ticker,
+      name:ticker,
+      quote_type:'EQUITY',
+      _remoteLoading:true,
+      _remoteGlobal:true,
+      source:'global-search-live',
+    });
+    await nav.openCompany(ticker,{origin:'market',sourceNode:options.sourceNode||null});
+    document.querySelector('.vestra-global-search')?.remove();
+
     try{
-      const r=await fetchRemoteWithDeadline(`${base}/market?ticker=${encodeURIComponent(ticker)}`,{cache:'no-store'});
-      if(!ownsRemoteOpen(request,sh,ticker))return;
-      if(!r.ok)throw new Error(`HTTP ${r.status}`);
+      const r=await fetchRemoteWithDeadline(base+'/market?ticker='+encodeURIComponent(ticker),{cache:'no-store'});
+      if(request!==remoteOpenSeq) return false;
+      if(!r.ok)throw new Error('HTTP '+r.status);
       const d=await r.json();
-      if(!ownsRemoteOpen(request,sh,ticker))return;
       if(!d||d.error)throw new Error(d?.error||'Sem dados');
-      const c=txt(d.currency)||'USD';
-      await learn({ticker:txt(d.ticker||ticker).toUpperCase(),name:txt(d.name||ticker),exchange:txt(d.exchange),currency:c,quote_type:txt(d.quote_type||'EQUITY'),sector:txt(d.sector),industry:txt(d.industry),country:txt(d.country)},'worker-market');
-      if(!ownsRemoteOpen(request,sh,ticker))return;
-      const target=n(d.analyst_price_target_mean); const upside=n(d.analyst_price_target_upside_pct);
-      content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER GLOBAL · LIVE</div><h2>${esc(d.ticker||ticker)}</h2><p>${esc(d.name||'')}</p><span class="market-live-badge">● Live</span></div><button class="market-close" data-market-close>×</button></div>
-      <div class="market-detail-card"><h4>Visão rápida</h4><div class="market-detail-grid">${remoteMetric('Preço',money(d.current_price,c))}${remoteMetric('Market cap',compact(d.market_cap))}${remoteMetric('Forward P/E',num(d.forward_pe))}${remoteMetric('P/B',num(d.price_to_book))}${remoteMetric('ROE',pct(d.roe))}${remoteMetric('FCF yield',pct(d.fcf_yield))}</div><p>${esc([d.sector,d.industry,d.country,d.exchange].filter(Boolean).join(' · '))}</p></div>
-      <div class="market-detail-card"><h4>Crescimento e rentabilidade</h4><div class="market-detail-grid">${remoteMetric('Receitas',pct(d.revenue_growth))}${remoteMetric('Lucros',pct(d.earnings_growth))}${remoteMetric('Margem operacional',pct(d.operating_margin))}${remoteMetric('Margem líquida',pct(d.profit_margin))}${remoteMetric('Dívida / capital',num(d.debt_to_equity))}${remoteMetric('Current ratio',num(d.current_ratio))}</div></div>
-      <div class="market-detail-card"><h4>Valuation e expectativas</h4><div class="market-detail-grid">${remoteMetric('52w máximo',money(d.fifty_two_week_high,c))}${remoteMetric('52w mínimo',money(d.fifty_two_week_low,c))}${remoteMetric('Target analistas',target==null?'—':money(target,c))}${remoteMetric('Upside consenso',upside==null?'—':pct(upside))}</div><p>Não tem ainda Score Vestra pré-calculado. Após validação, fica guardada localmente e no catálogo central aprendido; o próximo pipeline diário promove-a para o universo oficial e passa a poder calcular Score Vestra, peers e valuation completos.</p></div>`;
+      const canonicalTicker=txt(d.ticker||ticker).toUpperCase()||ticker;
+      const row=market.upsertRemoteStock({
+        ...d,
+        ticker:canonicalTicker,
+        name:txt(d.name)||canonicalTicker,
+        quote_type:txt(d.quote_type||'EQUITY').toUpperCase(),
+        _remoteLoading:false,
+        _remoteGlobal:true,
+        _liveUpdated:d.quote_updated||d.updated||new Date().toISOString(),
+        source:d.source||'worker-market',
+      });
+      await learn({
+        ticker:canonicalTicker,
+        name:txt(row?.name||canonicalTicker),
+        exchange:txt(row?.exchange),
+        currency:txt(row?.currency),
+        quote_type:txt(row?.quote_type||'EQUITY'),
+        sector:txt(row?.sector),
+        industry:txt(row?.industry),
+        country:txt(row?.country)
+      },'worker-market');
+
+      if(ownsRemoteOpen(request,ticker) || ownsRemoteOpen(request,canonicalTicker)){
+        market.openTicker(canonicalTicker);
+      }
+      return true;
     }catch(e){
-      if(!ownsRemoteOpen(request,sh,ticker))return;
-      content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">DOSSIER GLOBAL</div><h2>${esc(ticker)}</h2><p>Não foi possível carregar este ativo.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-detail-card"><p>${esc(e?.message||'Sem dados')}</p></div>`;
+      if(request!==remoteOpenSeq) return false;
+      market.upsertRemoteStock({
+        ticker,
+        name:ticker,
+        quote_type:'EQUITY',
+        _remoteLoading:false,
+        _remoteGlobal:true,
+        _remoteError:txt(e?.message)||'Sem dados',
+        source:'global-search-error',
+      });
+      if(ownsRemoteOpen(request,ticker)) market.openTicker(ticker);
+      return false;
     }
   }
 
@@ -197,8 +236,8 @@
 
   document.addEventListener('input',e=>{if(e.target?.id==='marketSearch'){invalidatePendingEnterOpen();schedule(e.target.value);}});
   document.addEventListener('focusin',e=>{if(e.target?.id==='marketSearch')schedule(e.target.value);});
-  document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase());});
-  document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker);},0);});
+  document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase(),{sourceNode:b});});
+  document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker,{sourceNode:input});},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'1.7',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'1.8',validateExactTicker,openRemoteTicker,runSearch,learnCentral});
 })();

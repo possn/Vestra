@@ -165,6 +165,27 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }) || null;
   async function ensureLoaded(){ return staticUniverse?.ensureLoaded(); }
 
+  function upsertRemoteStock(row={}){
+    const ticker=txt(row.ticker||row.symbol).toUpperCase();
+    if(!ticker) return null;
+    const existing=M.byTicker.get(ticker);
+    const stock=existing||{ticker};
+    const incoming={...row,ticker};
+    if(n(incoming.current_price)==null && n(incoming.price)!=null) incoming.current_price=n(incoming.price);
+    if(incoming.quote_type) incoming.quote_type=txt(incoming.quote_type).toUpperCase();
+    if(!incoming.name) incoming.name=existing?.name||ticker;
+    Object.assign(stock,incoming,{
+      ticker,
+      _remoteTransient:true,
+      _dossierHydrated:true,
+      _dossierHydrationError:'',
+      _remoteLoading:!!incoming._remoteLoading,
+    });
+    if(!existing) M.stocks.push(stock);
+    M.byTicker.set(ticker,stock);
+    return stock;
+  }
+
   function bestStocks(){
     return M.stocks.filter(s=>!isFund(s) && n(s.score)!=null && n(s.data_coverage_pct)>=65 && txt(s.zombie)!=='yes')
       .sort((a,b)=>{
@@ -1642,7 +1663,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   });
 
   loadWatchlist();
-  window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,toggleWatch};
+  window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,upsertRemoteStock,toggleWatch};
 
   // v6.1 — Decision Center is a navigation surface, not a passive summary.
   document.addEventListener('click', e=>{

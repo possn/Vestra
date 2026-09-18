@@ -24,6 +24,18 @@ class WorkerMarketLiveOverlayTests(unittest.TestCase):
         self.assertIn("data.quote_updated = quote.updated", block)
         self.assertIn("market_cache_ttl_seconds: MARKET_CACHE_TTL", worker)
 
+    def test_sparse_market_detail_uses_statement_and_chart_fallbacks(self):
+        worker = read("worker.js")
+        self.assertIn("'annualDilutedAverageShares','quarterlyDilutedAverageShares'", worker)
+        self.assertIn("const dilutedShares = firstFinite(", worker)
+        self.assertIn("current * dilutedShares", worker)
+        self.assertIn("marketCap/equityAnnual", worker)
+        self.assertIn("niAnnual/equityAnnual*100", worker)
+        self.assertIn("historyHigh", worker)
+        self.assertIn("historyLow", worker)
+        self.assertIn("Math.max(...highValues)", worker)
+        self.assertIn("Math.min(...lowValues)", worker)
+
     def test_frontend_live_badge_uses_quote_timestamp_before_fundamental_timestamp(self):
         overlay = read("market-live-overlay.js")
         compact = "".join(overlay.split())

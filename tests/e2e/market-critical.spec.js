@@ -176,8 +176,10 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveAttribute('data-ticker', ticker);
-  await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
   await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
+  await expect(sheet).not.toHaveAttribute('data-tool', 'remote-live');
+  expect(await sheet.locator('[data-detail-tab]').count()).toBeGreaterThanOrEqual(7);
+  await expect(sheet).not.toContainText('DOSSIER GLOBAL · LIVE');
 
   const learnedBeforeReload = await page.evaluate(async learnedTicker => {
     const rows = await window.VestraLearnedUniverse.list();
