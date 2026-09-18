@@ -142,6 +142,7 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
   await isolateExternalSearch(page);
   await page.goto('index.html', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => typeof window.setView === 'function');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true);
   await page.evaluate(() => window.setView('market'));
   await expect(page.locator('#viewMarket')).toBeVisible();
 
@@ -186,12 +187,13 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
     await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
     await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
-    // Dossier v1.2 contract: the external persistent close stays hidden while
-    // the real inline close lives beside the favourite button in the fixed group.
-    await expect(sheet.locator('.market-close-persistent')).toBeHidden();
+    // Canonical dossier contract: the persistent close is the single visible
+    // close owner on iPhone, so it remains reachable independently of content.
+    const persistentClose = sheet.locator(':scope > .market-close-persistent[data-market-close]');
+    await expect(persistentClose, `${ticker} persistent dossier close missing`).toBeVisible();
     const inlineClose = sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]').first();
-    await expect(inlineClose, `${ticker} inline dossier close missing`).toBeVisible();
-    await inlineClose.click();
+    await expect(inlineClose).toBeHidden();
+    await persistentClose.click();
     await expect(sheet).toBeHidden();
   }
 
