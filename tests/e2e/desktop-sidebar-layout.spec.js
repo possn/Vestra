@@ -8,10 +8,12 @@ test('desktop: fixed sidebar reserves its own column without covering app conten
   const sidebar = page.locator('#sidebar');
   const main = page.locator('main.main');
   const topbar = page.locator('.topbar');
+  const sidebarClose = page.locator('#btnSidebarClose');
 
   await expect(sidebar).toBeVisible();
   await expect(main).toBeVisible();
   await expect(topbar).toBeVisible();
+  await expect(sidebarClose).toBeHidden();
 
   const [sidebarBox, mainBox, topbarBox] = await Promise.all([
     sidebar.boundingBox(),
