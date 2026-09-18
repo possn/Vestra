@@ -28,7 +28,7 @@ class DossierObserverPipelineTests(unittest.TestCase):
         controls = read('market-dossier-controls.js')
         company = read('market-company-brief.js')
         self.assertIn("version:'1.2'", metric)
-        self.assertIn("version: '1.6'", controls)
+        self.assertIn("version: '1.7'", controls)
         self.assertIn("version:'2.1'", company)
         self.assertIn('refresh:repair', metric)
         self.assertIn('normalizeButtons,', controls)
