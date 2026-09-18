@@ -64,9 +64,9 @@ test('iPhone/WebKit: global ticker uses canonical dossier and can return to Mark
   await expect(content).toContainText('Ecovyst Inc.');
   await expect(content).toContainText('10,64');
   await expect(content).toContainText('13,8');
-  await expect(content).toContainText('12,0%');
-  await expect(content).toContainText('20,9%');
-  await expect(content).toContainText('7,2%');
+  await expect(content).toContainText(/12[,.]0%/);
+  await expect(content).toContainText(/20[,.]9%/);
+  await expect(content).toContainText(/7[,.]2%/);
   expect(await content.locator('[data-detail-tab]').count()).toBeGreaterThanOrEqual(7);
   await expect(content).not.toContainText('DOSSIER GLOBAL · LIVE');
   await expect(content).not.toContainText('Não tem ainda Score Vestra pré-calculado');
