@@ -53,7 +53,7 @@ function makeSheet(ticker = 'MSFT') {
 (async () => {
   const moduleApi = loadModule();
   assert(moduleApi, 'module must expose VestraMarketLiveOverlay');
-  assert.strictEqual(moduleApi.version, '1.1');
+  assert.strictEqual(moduleApi.version, '1.2');
   assert.strictEqual(moduleApi.timeoutMs, 4500);
 
   const { sheet, fields } = makeSheet('MSFT');
@@ -124,6 +124,28 @@ function makeSheet(ticker = 'MSFT') {
   assert.strictEqual(pendingFetches, 1);
   release();
   await first;
+
+  const guardedStock = { ticker: 'SPIE.PA', currency: 'EUR', current_price: 44, _remoteGlobal: true, identity_verified: true };
+  const guardedOverlay = moduleApi.create({
+    getWorkerBase: () => 'https://worker.example',
+    getSheet: () => makeSheet('SPIE.PA').sheet,
+    loadingSet: new Set(),
+    text: value => String(value ?? '').trim(),
+    fetchImpl: async () => ({
+      ok: true,
+      async json() {
+        return {
+          ticker: 'SPIE.PA',
+          provider_symbol: 'GOOG',
+          retrieval_ticker: 'SPIE.PA',
+          current_price: 343.68,
+          updated: '2026-08-31T20:00:00Z'
+        };
+      }
+    })
+  });
+  assert.strictEqual(await guardedOverlay.enrichTickerLive(guardedStock), null, 'mismatched provider identity must be rejected');
+  assert.strictEqual(guardedStock.current_price, 44, 'mismatched live data must not mutate the global stock');
 
   const timeoutLoading = new Set();
   const timeoutOverlay = moduleApi.create({
