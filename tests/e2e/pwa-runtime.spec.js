@@ -98,3 +98,82 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   const unexpectedPageErrors = pageErrors.filter(message => message !== 'Context is stopped');
   expect(unexpectedPageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+test('iPhone/WebKit: a global live ticker opens the canonical dossier and can always close', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  const livePayload = {
+    ticker: 'ECVT',
+    name: 'Ecovyst Inc.',
+    quote_type: 'EQUITY',
+    exchange: 'NYQ',
+    currency: 'USD',
+    sector: 'Basic Materials',
+    industry: 'Specialty Chemicals',
+    country: 'United States',
+    current_price: 10.64,
+    market_cap: 1450000000,
+    forward_pe: 12.3,
+    price_to_book: 2.1,
+    roe: 0.11,
+    fcf_yield: 0.06,
+    revenue_growth: 0.209,
+    earnings_growth: -0.969,
+    operating_margin: 0.108,
+    profit_margin: -0.098,
+    debt_to_equity: 71.38,
+    current_ratio: 1.7,
+    quick_ratio: 1.2,
+    free_cash_flow: 118000000,
+    operating_cash_flow: 164000000,
+    fifty_two_week_high: 13.4,
+    fifty_two_week_low: 8.2,
+    analyst_price_target_mean: 14.0,
+    analyst_price_target_upside_pct: 0.315,
+    analyst_next_earnings_date: '2026-11-04',
+    data_coverage_pct: 58,
+    data_confidence: 'medium',
+    quote_updated: '2026-09-18T09:20:00Z'
+  };
+
+  await page.route('**/market?ticker=ECVT', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(livePayload) });
+  });
+  await page.route('**/learned-universe', async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+  });
+
+  await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => Boolean(window.VestraMarket?.openLiveStock && window.VestraGlobalMarketSearch?.openRemoteTicker));
+  await page.evaluate(() => { if (typeof setView === 'function') setView('market'); });
+
+  const opened = await page.evaluate(() => window.VestraGlobalMarketSearch.openRemoteTicker('ECVT'));
+  expect(opened).toBeTruthy();
+
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet).toHaveAttribute('data-ticker', 'ECVT');
+  await expect(sheet.locator('.market-detail-head h2')).toHaveText('ECVT');
+  await expect(sheet).toContainText('Ecovyst Inc.');
+
+  // A live/global ticker must use the same canonical dossier as the daily universe.
+  await expect(sheet.locator('.market-tabs .market-tab')).toHaveCount(8);
+  await expect(sheet).not.toContainText('DOSSIER GLOBAL · LIVE');
+  await expect(sheet.locator('[data-live-field="current_price"]')).toContainText('10,64');
+  await expect(sheet.locator('[data-live-field="forward_pe"]')).toContainText('12,3');
+
+  await sheet.locator('[data-detail-tab="financials"]').tap();
+  await expect(sheet.locator('#marketDetailBody')).toContainText('Current ratio');
+  await expect(sheet.locator('#marketDetailBody')).toContainText('1,7');
+  await expect(sheet.locator('#marketDetailBody')).toContainText('Free cash flow');
+
+  const close = sheet.locator('.market-detail-actions [data-market-close]');
+  await expect(close).toBeVisible();
+  await expect(close).toHaveAttribute('aria-label', 'Fechar dossier');
+  await close.tap();
+  await expect(sheet).toBeHidden();
+  await expect(page.locator('#viewMarket')).toBeVisible();
+
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
