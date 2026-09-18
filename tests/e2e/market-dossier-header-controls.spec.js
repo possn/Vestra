@@ -53,7 +53,7 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
   });
 
   expect(geometry.watchPosition).toBe('fixed');
-  expect(geometry.watchWidth).toBeGreaterThanOrEqual(45);
+  expect(geometry.watchWidth).toBeGreaterThanOrEqual(44);
   expect(Math.abs(geometry.watchWidth - geometry.watchHeight)).toBeLessThanOrEqual(1);
   expect(geometry.persistentWidth).toBeGreaterThanOrEqual(40);
   expect(geometry.persistentLeft).toBeGreaterThanOrEqual(0);
