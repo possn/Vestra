@@ -1,4 +1,4 @@
-/* Vestra Market Live Overlay v1.1 — bounded live dossier enrichment without rerendering the open sheet. */
+/* Vestra Market Live Overlay v1.2 — exact-identity live enrichment with canonical dossier refresh. */
 (() => {
   'use strict';
 
@@ -94,16 +94,26 @@
         if (!response.ok) throw new Error(`market ${response.status}`);
         const live = await response.json();
         if (!live || live.error) return null;
+        const providerSymbol = text(live.provider_symbol).toUpperCase();
+        const canonicalTicker = text(live.ticker).toUpperCase();
+        const retrievalTicker = text(live.retrieval_ticker || canonicalTicker).toUpperCase();
+        if (providerSymbol !== ticker || canonicalTicker !== ticker || retrievalTicker !== ticker) return null;
         const merge = {};
         for (const [key, value] of Object.entries(live)) {
           if (value !== null && value !== undefined && value !== '') merge[key] = value;
         }
         Object.assign(stock, merge, {
+          provider_symbol: ticker,
+          identity_verified: true,
           _liveUpdated: live.quote_updated || live.updated || new Date().toISOString(),
         });
-        // Safari/iPhone contract: never rebuild the open dossier after async data arrives.
-        // Only mutate the small live badge and the explicitly marked live fields.
         refreshOpenDossierBadge(stock);
+        // The canonical dossier owns all rendering. Refreshing through the data
+        // loader preserves scroll and updates the active tab after full live data
+        // arrives, including externally discovered stocks.
+        requestAnimationFrame(() => {
+          try { window.VestraMarketData?.refreshOpenDossier?.(ticker, stock); } catch (_) {}
+        });
         return live;
       } catch (_) {
         // The local snapshot remains the canonical fallback when live enrichment fails.
@@ -118,7 +128,7 @@
 
   window.VestraMarketLiveOverlay = Object.freeze({
     create,
-    version: '1.1',
+    version: '1.2',
     timeoutMs: LIVE_TIMEOUT_MS,
   });
 })();
