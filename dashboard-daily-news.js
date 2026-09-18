@@ -38,16 +38,6 @@
     }) || null;
   }
 
-  function restoreNewsReturnContext() {
-    const context = window.__vestraExternalReturnContext || window.__vestraDailyNewsReturnContext;
-    if (!context || typeof context !== 'object' || context.kind !== 'news') return false;
-    const scrollY = Math.max(0, Number(context.scrollY || 0));
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      try { window.scrollTo(0, scrollY); } catch (_) {}
-    }));
-    return true;
-  }
-
   function portfolioTickers() {
     const rows = (() => { try { return Array.isArray(state?.assets) ? state.assets : []; } catch (_) { return []; } })();
     const tickers = new Set();
@@ -212,7 +202,6 @@
   function start() {
     style();
     load();
-    restoreNewsReturnContext();
     const observer = typeof MutationObserver === 'function' ? new MutationObserver(queueRender) : null;
     if (observer && document.body) observer.observe(document.body, { childList: true, subtree: true });
     document.addEventListener('click', event => {
@@ -236,6 +225,6 @@
 
   window.VestraDashboardDailyNews = Object.freeze({
     load, refresh: () => load(true), render, rankedItems, safeNewsUrl,
-    rememberNewsReturn, restoreNewsReturnContext, version: '1.4'
+    rememberNewsReturn, version: '1.4'
   });
 })();
