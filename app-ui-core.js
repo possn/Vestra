@@ -1,4 +1,4 @@
-/* Vestra UI core v2.2 — DOM, Chart infrastructure, safe update action and canonical launch lifecycle. */
+/* Vestra UI core v2.3 — DOM, Chart infrastructure, safe update action and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
