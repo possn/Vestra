@@ -15,9 +15,8 @@ function $(id) { return document.getElementById(id) || NOOP_EL; }
 
 /* ─── SAFE APP UPDATE ACTION ────────────────────────────────
    app-ui-core.js executes before app.js and owns global DOM/lifecycle guards.
-   app.js still contains a historical destructive target listener for
-   #btnForceUpdate. The capture guard below always runs first and prevents that
-   listener from unregistering service workers or deleting application caches.
+   The capture guard keeps the update action on the non-destructive reload path
+   even if cached markup or an older runtime still wires a legacy target handler.
    Service-worker lifecycle ownership remains in index.html.
 ────────────────────────────────────────────────────────────── */
 let safeUpdateBusy = false;
