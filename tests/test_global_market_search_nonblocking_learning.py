@@ -13,19 +13,20 @@ class GlobalMarketSearchNonblockingLearningTests(unittest.TestCase):
         self.assertIn("void learnCentral(row);", GLOBAL)
         self.assertNotIn("await learnCentral(row);", GLOBAL)
 
-    def test_remote_dossier_still_rechecks_ownership_after_local_learning(self):
-        marker = "await learn({ticker:txt(d.ticker||ticker).toUpperCase()"
-        start = GLOBAL.index(marker)
-        tail = GLOBAL[start:]
-        self.assertIn("if(!ownsRemoteOpen(request,sh,ticker))return;", tail)
+    def test_exact_validation_precedes_canonical_dossier_handoff(self):
+        self.assertIn("const exactRows=await validateExactTicker(ticker);", GLOBAL)
+        self.assertIn("row?.identity_verified===true", GLOBAL)
+        self.assertIn("const stock=market.upsertExternalStock({", GLOBAL)
+        self.assertIn("await nav.openCompany(ticker,{origin:'market'", GLOBAL)
         self.assertLess(
-            tail.index("if(!ownsRemoteOpen(request,sh,ticker))return;"),
-            tail.index("content.innerHTML=`<div class=\"market-detail-head\"")
+            GLOBAL.index("const exactRows=await validateExactTicker(ticker);"),
+            GLOBAL.index("const stock=market.upsertExternalStock({")
         )
 
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("version:'1.7'", GLOBAL)
-        self.assertIn("market-global-search.js?v=1.7", BOOT)
+        self.assertIn("version:'1.8'", GLOBAL)
+        self.assertIn("market-global-search.js?v=1.8", BOOT)
+        self.assertIn("market-learned-universe.js?v=3.0", BOOT)
 
 
 if __name__ == "__main__":

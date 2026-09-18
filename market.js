@@ -420,6 +420,28 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return true;
   }
 
+  function upsertExternalStock(input){
+    const ticker=txt(input?.ticker).toUpperCase();
+    const provider=txt(input?.provider_symbol).toUpperCase();
+    if(!ticker || provider!==ticker || input?.identity_verified!==true) return null;
+    const existing=M.byTicker.get(ticker);
+    const normalized={
+      ...(existing||{}),
+      ...(input||{}),
+      ticker,
+      provider_symbol:provider,
+      _externalLive:true,
+      _dossierHydrated:true,
+    };
+    if(existing){
+      Object.assign(existing,normalized);
+      return existing;
+    }
+    M.stocks.push(normalized);
+    M.byTicker.set(ticker,normalized);
+    return normalized;
+  }
+
   function sparkSvg(history){
     const arr=(Array.isArray(history)?history:[]).map(x=>typeof x==='number'?x:n(x.close??x.price)).filter(Number.isFinite);
     if(arr.length<2) return '';
@@ -1642,7 +1664,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   });
 
   loadWatchlist();
-  window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,toggleWatch};
+  window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,upsertExternalStock,toggleWatch};
 
   // v6.1 — Decision Center is a navigation surface, not a passive summary.
   document.addEventListener('click', e=>{

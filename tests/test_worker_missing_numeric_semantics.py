@@ -33,7 +33,7 @@ class WorkerMissingNumericSemanticsTests(unittest.TestCase):
 
     def test_new_market_cache_generation_does_not_reuse_zero_coerced_payloads(self):
         worker = read("worker.js")
-        self.assertIn("market45:${canonical}", worker)
+        self.assertIn("market46:${canonical}", worker)
         self.assertNotIn("market41:${canonical}", worker)
 
 
