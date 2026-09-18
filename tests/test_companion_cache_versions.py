@@ -26,7 +26,6 @@ COMPANY_BRIEF_COMPANIONS = (
     "market-dossier-controls.js",
     "market-global-search.js",
     "market-learned-universe.js",
-    "app-update-manager.js",
     "market-data-health.js",
     "app-runtime-bridge.js",
 )
