@@ -83,6 +83,15 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   });
   expect(safeCaptureOwnsClick).toBeTruthy();
 
+  const survivesControllerSwapWithoutReload = await page.evaluate(async () => {
+    window.__vestraControllerSwapSentinel = 'alive';
+    navigator.serviceWorker.dispatchEvent(new Event('controllerchange'));
+    await new Promise(resolve => setTimeout(resolve, 250));
+    return window.__vestraControllerSwapSentinel === 'alive' &&
+      window.__vestraServiceWorkerUpdated === true;
+  });
+  expect(survivesControllerSwapWithoutReload).toBeTruthy();
+
   // WebKit can emit this transient pageerror when controllerchange replaces the
   // execution context during first install. readPwaState explicitly recovers from
   // that navigation; keep every other browser error fatal.
