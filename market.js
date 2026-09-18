@@ -786,6 +786,42 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     renderDetailTab(s,active);
   }
 
+  function adoptLiveStock(payload){
+    const ticker=txt(payload?.ticker||payload?.symbol).toUpperCase();
+    if(!ticker) return null;
+    const existing=M.byTicker.get(ticker)||null;
+    const live={};
+    for(const [key,value] of Object.entries(payload||{})){
+      if(value!==null&&value!==undefined&&value!=='') live[key]=value;
+    }
+    live.ticker=ticker;
+    if(!live.name) live.name=txt(existing?.name)||ticker;
+    if(!live.quote_type) live.quote_type=txt(existing?.quote_type)||'EQUITY';
+    if(!live.current_price && n(live.price)!=null) live.current_price=n(live.price);
+    live._liveUpdated=txt(live.quote_updated||live.updated)||new Date().toISOString();
+    live._liveOnly=true;
+    const stock=existing?Object.assign(existing,live):live;
+    if(!existing){
+      M.stocks.push(stock);
+      M.byTicker.set(ticker,stock);
+    }
+    return stock;
+  }
+
+  async function openLiveStock(payload,options={}){
+    await ensureLoaded();
+    const stock=adoptLiveStock(payload);
+    if(!stock) return false;
+    openTicker(stock.ticker);
+    const sh=$m('marketSheet');
+    if(sh){
+      sh.dataset.tool='live-stock';
+      sh.dataset.returnView=txt(options.returnView||'market');
+    }
+    try{ window.VestraMarketCompanyBrief?.refresh?.(); }catch(_){}
+    return true;
+  }
+
   function openTicker(ticker){
     const s=M.byTicker.get(txt(ticker).toUpperCase()); if(!s) return;
     hideSearchSuggestions();
@@ -1642,7 +1678,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   });
 
   loadWatchlist();
-  window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,toggleWatch};
+  window.VestraMarket={ensureLoaded,openTicker,openLiveStock,openPortfolioAsset,resolvePortfolioStock,toggleWatch};
 
   // v6.1 — Decision Center is a navigation surface, not a passive summary.
   document.addEventListener('click', e=>{
