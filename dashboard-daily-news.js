@@ -204,18 +204,39 @@
     load();
     const observer = typeof MutationObserver === 'function' ? new MutationObserver(queueRender) : null;
     if (observer && document.body) observer.observe(document.body, { childList: true, subtree: true });
+    let wasBackgrounded = false;
+    let outboundNewsPending = false;
+    let resumeRefreshPending = false;
+
     document.addEventListener('click', event => {
       const newsLink = event.target.closest?.('a.vestra-daily-news-item[href]');
-      if (newsLink && safeNewsUrl(newsLink.getAttribute('href'))) rememberNewsReturn();
+      if (newsLink && safeNewsUrl(newsLink.getAttribute('href'))) {
+        rememberNewsReturn();
+        outboundNewsPending = true;
+      }
       if (event.target.closest?.('.sidenavbtn[data-view="dashboard"], .navbtn[data-view="dashboard"]')) queueRender();
     }, true);
+
     const resume = () => {
-      void load(true);
-      queueRender();
+      if (!wasBackgrounded && !outboundNewsPending) return false;
+      if (resumeRefreshPending) return true;
+      wasBackgrounded = false;
+      outboundNewsPending = false;
+      resumeRefreshPending = true;
+      void load(true).finally(() => {
+        resumeRefreshPending = false;
+        queueRender();
+      });
+      return true;
     };
+
     window.addEventListener?.('focus', resume);
     window.addEventListener?.('pageshow', resume);
     document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        wasBackgrounded = true;
+        return;
+      }
       if (document.visibilityState === 'visible') resume();
     });
   }
