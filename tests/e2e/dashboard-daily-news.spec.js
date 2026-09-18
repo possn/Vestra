@@ -74,6 +74,14 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
     await route.fulfill({ status: 200, contentType: 'text/html', body: '<title>Market story</title><p>ok</p>' });
   });
 
+  // Keep app.js pending briefly so the synchronous head guard is observable
+  // before hydration. This reproduces the cold-resume window in which iOS can
+  // otherwise paint the static dashboard shell with €0 values.
+  await page.route('**/app.js?v=20260918v1', async route => {
+    await new Promise(resolve => setTimeout(resolve, 180));
+    await route.continue();
+  });
+
   await page.goto('/index.html');
   await page.waitForFunction(() => window.__vestraAppHydrated === true);
   await page.waitForFunction(() => Boolean(window.VestraDashboardDailyNews));
@@ -106,7 +114,29 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
   // Cold resume: reproduce iOS discarding the PWA while Safari was in front.
   // The external-return shield must cover the pre-hydration HTML until the
   // persisted portfolio has been read and rendered again.
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'commit' });
+  await page.waitForFunction(
+    () => document.documentElement?.dataset?.externalReturnBootstrap === '1',
+    null,
+    { timeout: 1_000 }
+  );
+  const preHydrationGuard = await page.evaluate(() => {
+    const html = document.documentElement;
+    const splash = document.getElementById('appLoadingOverlay');
+    const kpi = document.getElementById('kpiNet');
+    const splashStyle = splash ? getComputedStyle(splash) : null;
+    const kpiStyle = kpi ? getComputedStyle(kpi) : null;
+    return {
+      marker: html?.dataset?.externalReturnBootstrap || '',
+      splashVisible: !!splashStyle && splashStyle.display !== 'none' && Number(splashStyle.opacity || 0) > 0,
+      dashboardHidden: !kpi || kpiStyle?.visibility === 'hidden' || kpi.closest('body > *')?.style?.visibility === 'hidden',
+    };
+  });
+  expect(preHydrationGuard.marker).toBe('1');
+  expect(preHydrationGuard.splashVisible).toBe(true);
+  expect(preHydrationGuard.dashboardHidden).toBe(true);
+
+  await page.waitForLoadState('domcontentloaded');
   await page.waitForFunction(() => window.__vestraAppHydrated === true);
 
   await expect(page.locator('#kpiNet')).not.toHaveText('0 €');

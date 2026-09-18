@@ -19,6 +19,40 @@
 <link href="styles.css?v=20260827v8" rel="stylesheet"/>
 <link href="portfolio-glance-polish.css?v=1.0" rel="stylesheet"/>
 <link href="market.css?v=20260821v4" rel="stylesheet"/>
+<script>
+  // iOS standalone PWAs can be discarded while Safari is showing an external
+  // article. Mark a known external-return boot synchronously, before deferred
+  // JavaScript or the first body paint, so the static €0 dashboard can never
+  // flash while IndexedDB/localStorage state is still hydrating.
+  (() => {
+    try {
+      const keys = ['vestra:external-return-v1', 'vestra:daily-news-return-v1'];
+      let context = null;
+      for (const key of keys) {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        const age = Date.now() - Number(parsed?.ts || 0);
+        if (parsed && typeof parsed === 'object' && Number.isFinite(age) && age >= 0 && age <= 30 * 60 * 1000) {
+          context = parsed;
+          break;
+        }
+      }
+      if (context) {
+        document.documentElement.dataset.externalReturnBootstrap = '1';
+        window.__vestraExternalReturnBootstrapContext = context;
+      }
+    } catch (_) {}
+  })();
+</script>
+<style>
+  html[data-external-return-bootstrap="1"] body > :not(#appLoadingOverlay){visibility:hidden!important}
+  html[data-external-return-bootstrap="1"] #appLoadingOverlay{
+    display:flex!important;opacity:1!important;pointer-events:auto!important;
+    background:var(--bg,#f5f6f3)!important;transition:none!important
+  }
+  html[data-external-return-bootstrap="1"] #appLoadingOverlay > *{visibility:hidden!important}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
@@ -40,7 +74,7 @@
 <script defer="" src="app-feedback.js?v=1.0"></script>
 <script defer="" src="app-storage.js?v=1.0"></script>
 <script defer="" src="app-asset-identity.js?v=20260829v2"></script>
-<script defer="" src="app-ui-core.js?v=2.3"></script>
+<script defer="" src="app-ui-core.js?v=2.4"></script>
 <script defer="" src="app-broker-normalization.js?v=1.1"></script>
 <script defer="" src="app-xtb-normalization.js?v=1.0"></script>
 <script defer="" src="app-broker-identity-data.js?v=1.0"></script>

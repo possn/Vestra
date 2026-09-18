@@ -11821,7 +11821,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   // return lifecycle must never expose the pre-hydration Dashboard.
   window.__vestraAppHydrated = true;
   try { document.body.dataset.appHydrated = "1"; } catch (_) {}
+
+  // Fallback for external-return boots when an older cached app-ui-core was
+  // restored by iOS. The synchronous head guard owns pre-paint shielding; the
+  // current app-ui-core normally consumes/restores the context. Only restore
+  // here when that module did not claim it, then clear the one-shot marker.
+  const _bootstrapReturnContext = window.__vestraExternalReturnBootstrapContext;
+  const _externalReturnWasClaimed = !!window.__vestraExternalReturnContext;
+  if (_bootstrapReturnContext && !_externalReturnWasClaimed) {
+    try {
+      if (_bootstrapReturnContext.view && typeof setView === "function") setView(String(_bootstrapReturnContext.view));
+    } catch (_) {}
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try { window.scrollTo(0, Math.max(0, Number(_bootstrapReturnContext.scrollY || 0))); } catch (_) {}
+    }));
+  }
+
   try { window.dispatchEvent(new CustomEvent("vestra:app-ready", { detail: { hydrated: true, view: currentView } })); } catch (_) {}
+
+  if (document.documentElement?.dataset?.externalReturnBootstrap === "1") {
+    try { delete document.documentElement.dataset.externalReturnBootstrap; } catch (_) {}
+    try { localStorage.removeItem("vestra:external-return-v1"); } catch (_) {}
+    try { localStorage.removeItem("vestra:daily-news-return-v1"); } catch (_) {}
+    try { window.__vestraExternalReturnBootstrapContext = null; } catch (_) {}
+  }
   try { reportActiveSwVersion(); } catch (_) {}
   try { renderStaleXtbImportBanner(); } catch (_) {}
   try { setupFixedBarSpacing(); } catch (_) {}
