@@ -75,6 +75,7 @@ function rememberExternalReturnContext(options = {}) {
     ts: Date.now(),
     kind: String(options.kind || 'external'),
     view: String(options.view || document.body?.dataset?.view || 'dashboard'),
+    detailId: String(options.detailId || ''),
     scrollY: Math.max(0, Number(options.scrollY ?? window.scrollY ?? doc?.scrollTop ?? 0)),
   };
   try { localStorage.setItem(EXTERNAL_RETURN_KEY, JSON.stringify(context)); } catch (_) {}
@@ -114,6 +115,7 @@ function consumeDailyNewsReturnContext() {
     ts: Number(context.ts),
     kind: String(context.kind || 'news'),
     view: String(context.view || 'dashboard'),
+    detailId: String(context.detailId || ''),
     scrollY: Math.max(0, Number(context.scrollY || 0)),
   };
   window.__vestraExternalReturnContext = normalized;
