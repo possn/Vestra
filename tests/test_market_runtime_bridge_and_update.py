@@ -5,7 +5,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE = ROOT / 'app-runtime-bridge.js'
-UPDATE = ROOT / 'app-update-manager.js'
+UI_CORE = ROOT / 'app-ui-core.js'
 BOOTSTRAP = ROOT / 'market-company-brief.js'
 GLOBAL = ROOT / 'market-global-search.js'
 LEARNED = ROOT / 'market-learned-universe.js'
@@ -15,7 +15,7 @@ INDEX = ROOT / 'index.html'
 
 class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
     def test_new_modules_are_valid_javascript(self):
-        for path in (BRIDGE, UPDATE, BOOTSTRAP, GLOBAL, LEARNED):
+        for path in (BRIDGE, UI_CORE, BOOTSTRAP, GLOBAL, LEARNED):
             subprocess.run(['node', '--check', str(path)], check=True, cwd=ROOT)
 
     def test_runtime_bridge_exposes_lexical_state_read_only(self):
@@ -40,36 +40,32 @@ class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
         boot = BOOTSTRAP.read_text(encoding='utf-8')
         self.assertIn("app-runtime-bridge.js?v=1.1", boot)
         self.assertIn('loadRuntimeBridge()', boot)
-        self.assertIn("app-update-manager.js?v=1.6", boot)
-        self.assertIn('loadAppUpdateManager();loadLearnedUniverse();', boot)
+        self.assertNotIn('app-update-manager.js', boot)
+        self.assertNotIn('loadAppUpdateManager', boot)
+        self.assertIn('loadLearnedUniverse();', boot)
         self.assertIn('window.VestraLearnedUniverse,loadGlobalMarketSearch', boot)
-        self.assertLess(boot.index('loadAppUpdateManager();'), boot.index('loadLearnedUniverse();'))
 
     def test_force_update_is_navigation_only_and_never_wipes_runtime(self):
-        text = UPDATE.read_text(encoding='utf-8')
+        text = UI_CORE.read_text(encoding='utf-8')
         app = APP.read_text(encoding='utf-8')
         index = INDEX.read_text(encoding='utf-8')
         self.assertNotIn('serviceWorker', text)
         self.assertNotIn('getRegistration()', text)
         self.assertIn('window.location.replace', text)
-        self.assertIn("document.getElementById('btnForceUpdate')", text)
-        self.assertIn('current.cloneNode(true)', text)
-        self.assertIn('current.replaceWith(button)', text)
+        self.assertIn('function installSafeUpdateGuard()', text)
         self.assertIn("document.addEventListener('click'", text)
         self.assertIn("}, true);", text)
-        self.assertIn("version: '1.6'", text)
         self.assertIn('stopImmediatePropagation', text)
-        self.assertIn("DOMContentLoaded', reclaimAfterAppSetup", text)
-        self.assertIn("vestra:app-ready', reclaimAfterAppSetup", text)
-        self.assertNotIn('appLoadingOverlay', text)
         self.assertNotIn('.unregister()', text)
         self.assertNotIn('caches.delete', text)
         self.assertNotIn('getRegistrations()', text)
         self.assertIn('navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });', index)
         self.assertIn("navigator.serviceWorker.addEventListener('controllerchange'", index)
+        self.assertLess(index.index('src="app-ui-core.js'), index.index('src="app.js'))
+        self.assertNotIn('app-update-manager.js', index)
         # The historical implementation remains in the monolith for now, but
-        # document capture intercepts the click before its target listener and
-        # DOM reclaim independently replaces any contaminated button node.
+        # app-ui-core installs a document capture guard before app.js executes,
+        # so the legacy target listener cannot wipe registrations or caches.
         self.assertIn('getRegistrations()', app)
         self.assertIn('caches.delete', app)
         self.assertIn('if ($("btnForceUpdate")) $("btnForceUpdate").addEventListener("click", forceAppUpdate);', app)

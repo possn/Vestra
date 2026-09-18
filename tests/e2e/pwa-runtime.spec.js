@@ -20,8 +20,9 @@ async function readPwaState(page) {
           cacheName: vestraCacheName,
           hasAppShell: cachedUrls.includes('app.js'),
           hasMarketRuntime: cachedUrls.includes('market-analysis-tools-runtime.js'),
-          updateManagerVersion: window.VestraAppUpdateManager?.version || '',
-          safeUpdateOwner: updateButton?.dataset?.vestraSafeUpdateOwner || '',
+          safeUpdateApiReady: typeof window.VestraUiCore?.installSafeUpdateGuard === 'function' &&
+            typeof window.VestraUiCore?.forceFreshReload === 'function',
+          updateButtonPresent: Boolean(updateButton),
         };
       });
     } catch (error) {
@@ -63,8 +64,24 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   expect(pwa.cacheName).toMatch(/^vestra-cache-/);
   expect(pwa.hasAppShell).toBeTruthy();
   expect(pwa.hasMarketRuntime).toBeTruthy();
-  expect(pwa.updateManagerVersion).toBe('1.6');
-  expect(pwa.safeUpdateOwner).toBe('1');
+  expect(pwa.safeUpdateApiReady).toBeTruthy();
+  expect(pwa.updateButtonPresent).toBeTruthy();
+
+  // Prove the loaded UI-core capture guard owns the real update button in
+  // WebKit: a target listener added after app bootstrap must never receive the
+  // click. Returning false from confirm keeps this ownership probe navigation-free.
+  const safeCaptureOwnsClick = await page.evaluate(() => {
+    const button = document.getElementById('btnForceUpdate');
+    if (!button) return false;
+    let targetRan = false;
+    const originalConfirm = window.confirm;
+    window.confirm = () => false;
+    button.addEventListener('click', () => { targetRan = true; }, { once: true });
+    button.click();
+    window.confirm = originalConfirm;
+    return !targetRan;
+  });
+  expect(safeCaptureOwnsClick).toBeTruthy();
 
   // WebKit can emit this transient pageerror when controllerchange replaces the
   // execution context during first install. readPwaState explicitly recovers from

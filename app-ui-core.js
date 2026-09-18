@@ -1,4 +1,4 @@
-/* Vestra UI core v2.1 — DOM, Chart infrastructure and canonical launch lifecycle. */
+/* Vestra UI core v2.2 — DOM, Chart infrastructure, safe update action and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -12,6 +12,55 @@ const NOOP_EL = {
 };
 
 function $(id) { return document.getElementById(id) || NOOP_EL; }
+
+/* ─── SAFE APP UPDATE ACTION ────────────────────────────────
+   app-ui-core.js executes before app.js and owns global DOM/lifecycle guards.
+   app.js still contains a historical destructive target listener for
+   #btnForceUpdate. The capture guard below always runs first and prevents that
+   listener from unregistering service workers or deleting application caches.
+   Service-worker lifecycle ownership remains in index.html.
+────────────────────────────────────────────────────────────── */
+let safeUpdateBusy = false;
+let safeUpdateCaptureInstalled = false;
+
+function forceFreshReload() {
+  if (safeUpdateBusy) return;
+  if (!confirm(
+    'Forçar actualização?\n\n' +
+    'Isto recarrega a Vestra sem apagar os teus dados locais.'
+  )) return;
+  safeUpdateBusy = true;
+  const url = new URL(window.location.href);
+  url.searchParams.set('_v', String(Date.now()));
+  setTimeout(() => {
+    try {
+      window.location.replace(url.toString());
+    } catch (_) {
+      window.location.href = url.toString();
+    }
+    setTimeout(() => { safeUpdateBusy = false; }, 1200);
+  }, 40);
+}
+
+function isUpdateButton(target) {
+  if (!target) return false;
+  if (target.id === 'btnForceUpdate') return true;
+  return Boolean(target.closest?.('#btnForceUpdate'));
+}
+
+function installSafeUpdateGuard() {
+  if (safeUpdateCaptureInstalled) return false;
+  safeUpdateCaptureInstalled = true;
+  document.addEventListener('click', event => {
+    if (!isUpdateButton(event.target)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    forceFreshReload();
+  }, true);
+  return true;
+}
+
+try { installSafeUpdateGuard(); } catch (_) {}
 
 const DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1';
 const DAILY_NEWS_RETURN_TTL_MS = 30 * 60 * 1000;
@@ -296,6 +345,7 @@ try { installChartReflowGuards(); } catch (_) {}
     NOOP_EL, $, resolveChartHeight, prepareChartCanvas, buildNiceAxis,
     ensureChartCtx, ensureAllChartCanvasesReady, renderChartUnavailable,
     clearChartUnavailable, resizeVisibleCharts, scheduleChartStabilization,
-    installPremiumSplashWatchdog, consumeDailyNewsReturnContext
+    installPremiumSplashWatchdog, consumeDailyNewsReturnContext,
+    installSafeUpdateGuard, forceFreshReload
   });
 })();
