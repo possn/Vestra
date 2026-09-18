@@ -49,11 +49,14 @@ test('desktop: fixed sidebar reserves its own column without covering app conten
   // Modal panels and transient toast use the same content-column centre.
   await page.evaluate(() => {
     document.getElementById('modalItem')?.setAttribute('aria-hidden', 'false');
-    const toast = document.getElementById('toastEl');
-    if (toast) {
-      toast.textContent = 'Teste';
-      toast.classList.add('toast--show');
+    let toast = document.getElementById('toastEl');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toastEl';
+      document.body.appendChild(toast);
     }
+    toast.textContent = 'Teste';
+    toast.classList.add('toast--show');
   });
 
   const modal = page.locator('#modalItem .modal__panel');
