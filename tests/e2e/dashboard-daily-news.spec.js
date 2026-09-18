@@ -147,6 +147,18 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
   await page.waitForLoadState('domcontentloaded');
   await page.waitForFunction(() => window.__vestraAppHydrated === true);
 
+  const hydrationBoundary = await page.evaluate(() => ({
+    net: document.getElementById('kpiNet')?.textContent?.trim() || '',
+    overlayHidden: (() => {
+      const overlay = document.getElementById('appLoadingOverlay');
+      if (!overlay) return true;
+      const style = getComputedStyle(overlay);
+      return style.display === 'none' || Number(style.opacity || 0) === 0;
+    })(),
+  }));
+  expect(hydrationBoundary.net).not.toBe('0 €');
+  expect(hydrationBoundary.net).not.toBe('');
+  expect(hydrationBoundary.overlayHidden).toBe(true);
   await expect(page.locator('#kpiNet')).not.toHaveText('0 €');
   expect(await page.evaluate(() => window.__preHydrationPortfolioExposed)).toBe(false);
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 1_500 });
