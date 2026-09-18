@@ -13,16 +13,23 @@ class GlobalMarketSearchNonblockingLearningTests(unittest.TestCase):
         self.assertIn("void learnCentral(row);", GLOBAL)
         self.assertNotIn("await learnCentral(row);", GLOBAL)
 
-    def test_remote_result_rechecks_ownership_before_canonical_refresh(self):
+    def test_exact_validation_precedes_canonical_dossier_handoff(self):
         self.assertIn("const request=++remoteOpenSeq", GLOBAL)
+        self.assertIn("const exactRows=await validateExactTicker(ticker);", GLOBAL)
+        self.assertIn("row?.identity_verified===true", GLOBAL)
         self.assertIn("if(request!==remoteOpenSeq) return false", GLOBAL)
-        self.assertIn("if(ownsRemoteOpen(request,ticker) || ownsRemoteOpen(request,canonicalTicker))", GLOBAL)
-        self.assertIn("market.openTicker(canonicalTicker)", GLOBAL)
+        self.assertIn("if(!exactProviderIdentity(ticker,d))", GLOBAL)
+        self.assertIn("if(ownsRemoteOpen(request,ticker)) market.openTicker(ticker)", GLOBAL)
         self.assertNotIn("content.innerHTML=", GLOBAL)
+        self.assertLess(
+            GLOBAL.index("const exactRows=await validateExactTicker(ticker);"),
+            GLOBAL.index("await nav.openCompany(ticker,{origin:'market'")
+        )
 
     def test_runtime_and_loader_versions_match(self):
         self.assertIn("version:'1.9'", GLOBAL)
         self.assertIn("market-global-search.js?v=1.9", BOOT)
+        self.assertIn("market-learned-universe.js?v=3.0", BOOT)
 
 
 if __name__ == "__main__":
