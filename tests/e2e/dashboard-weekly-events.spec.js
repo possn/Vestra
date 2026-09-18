@@ -71,18 +71,46 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
   await page.context().route('https://www.bls.gov/news.release/cpi.nr0.htm', async route => {
     await route.fulfill({ status: 200, contentType: 'text/html', body: '<title>BLS CPI</title><p>official</p>' });
   });
+  await page.route('**/data/macro-events.json', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        schema_version: 2,
+        generated_at: '2026-09-18T07:00:00Z',
+        source_status: { bls:{state:'fresh'}, fed:{state:'fresh'}, bea:{state:'fresh'}, ecb:{state:'fresh'}, census:{state:'fresh'} },
+        events: [{
+          date:'2026-09-18',
+          short_title:'CPI EUA',
+          title:'CPI EUA',
+          category:'inflation',
+          region:'EUA',
+          importance:'high',
+          source:'bls',
+          time_local:'7:30 AM CT',
+          result_status:'official_release_summary',
+          result_summary:'BLS Public Data API · headline +0.4% MoM / +3.4% YoY; core +0.3% MoM / +2.4% YoY.',
+          result_released_at:'2026-09-18',
+          result_metric_schema:'bls_cpi_v1',
+          result_metrics:{ headline_mom_pct:0.4, headline_yoy_pct:3.4, core_mom_pct:0.3, core_yoy_pct:2.4 },
+          result_transport:'bls_public_api',
+          source_url:'https://www.bls.gov/news.release/cpi.nr0.htm',
+        }]
+      }),
+    });
+  });
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
 
   await page.evaluate(() => {
     window.VestraWeeklyEvents.render({
-      now: new Date(2026, 8, 11, 14, 0, 0),
+      now: new Date(2026, 8, 18, 14, 0, 0),
       portfolioTickers: new Set(),
       stocks: [],
       macroEvents: {
         events: [{
-          date:'2026-09-11',
+          date:'2026-09-18',
           short_title:'CPI EUA',
           title:'CPI EUA',
           category:'inflation',
@@ -92,7 +120,7 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
           time_local:'7:30 AM CT',
           result_status:'official_release_summary',
           result_summary:'BLS Public Data API · August 2026: headline +0.4% MoM / +3.4% YoY; core +0.3% MoM / +2.4% YoY.',
-          result_released_at:'2026-09-11',
+          result_released_at:'2026-09-18',
           result_metric_schema:'bls_cpi_v1',
           result_metrics:{ headline_mom_pct:0.4, headline_yoy_pct:3.4, core_mom_pct:0.3, core_yoy_pct:2.4 },
           result_transport:'bls_public_api',
@@ -132,7 +160,20 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
   });
   await expect(detail).toBeVisible();
   await expect(page.locator('#appLoadingOverlay')).toBeHidden();
-  expect(await page.evaluate(() => localStorage.getItem('vestra:external-return-v1'))).not.toBeNull();
+
+  const savedReturn = JSON.parse(await page.evaluate(() => localStorage.getItem('vestra:external-return-v1')));
+  expect(savedReturn.kind).toBe('weekly-official');
+  expect(savedReturn.detailId).toContain('bls:2026-09-18:CPI EUA');
+
+  // Reproduce a real iOS cold-resume after Safari has discarded the PWA.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  const restoredDetail = page.locator('#dashboardWeeklyEventDetail');
+  await expect(restoredDetail).toBeVisible({ timeout: 10_000 });
+  await expect(restoredDetail).toContainText('CPI EUA');
+  await expect(page.locator('#appLoadingOverlay')).toHaveAttribute('data-news-return-skip', '1');
+  await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 1_500 });
+  expect(await page.evaluate(() => localStorage.getItem('vestra:external-return-v1'))).toBeNull();
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
