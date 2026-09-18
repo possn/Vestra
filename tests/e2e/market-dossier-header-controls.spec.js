@@ -10,7 +10,7 @@ async function openMarket(page) {
   await expect(page.locator('#marketSearch')).toBeVisible();
 }
 
-test('iPhone/WebKit: favorito e fechar são um único grupo fixo compacto', async ({ page }) => {
+test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
@@ -22,7 +22,7 @@ test('iPhone/WebKit: favorito e fechar são um único grupo fixo compacto', asyn
 
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
-  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.6');
+  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.7');
   await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.3');
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
@@ -31,44 +31,35 @@ test('iPhone/WebKit: favorito e fechar são um único grupo fixo compacto', asyn
   const persistentClose = sheet.locator(':scope > .market-close-persistent');
   await expect(actions).toBeVisible();
   await expect(watch).toBeVisible();
-  await expect(close).toBeVisible();
-  await expect(persistentClose).toBeHidden();
+  await expect(close).toBeHidden();
+  await expect(persistentClose).toBeVisible();
 
   const geometry = await page.evaluate(() => {
     const actions = document.querySelector('#marketSheetContent .market-detail-actions');
     const watch = actions.querySelector('[data-market-watch]').getBoundingClientRect();
-    const close = actions.querySelector('[data-market-close]').getBoundingClientRect();
-    const group = actions.getBoundingClientRect();
+    const persistent = document.querySelector('#marketSheet > .market-close-persistent').getBoundingClientRect();
     const style = getComputedStyle(actions);
     return {
       position: style.position,
       flexDirection: style.flexDirection,
-      watchTop: watch.top,
-      closeTop: close.top,
-      watchHeight: watch.height,
-      closeHeight: close.height,
-      watchRight: watch.right,
-      closeLeft: close.left,
-      closeRight: close.right,
-      viewportWidth: window.innerWidth,
-      gap: close.left - watch.right,
       watchWidth: watch.width,
-      closeWidth: close.width,
-      groupWidth: group.width,
+      watchHeight: watch.height,
+      persistentLeft: persistent.left,
+      persistentRight: persistent.right,
+      persistentTop: persistent.top,
+      persistentWidth: persistent.width,
+      viewportWidth: window.innerWidth,
     };
   });
 
   expect(geometry.position).toBe('fixed');
   expect(geometry.flexDirection).toBe('row');
-  expect(Math.abs(geometry.watchTop - geometry.closeTop)).toBeLessThanOrEqual(1);
-  expect(Math.abs(geometry.watchHeight - geometry.closeHeight)).toBeLessThanOrEqual(1);
   expect(geometry.watchWidth).toBeGreaterThanOrEqual(45);
-  expect(geometry.closeWidth).toBeGreaterThanOrEqual(45);
-  expect(geometry.gap).toBeGreaterThanOrEqual(7);
-  expect(geometry.gap).toBeLessThanOrEqual(9);
-  expect(geometry.groupWidth).toBeLessThanOrEqual(102);
-  expect(geometry.viewportWidth - geometry.closeRight).toBeLessThanOrEqual(10);
-  expect(geometry.viewportWidth - geometry.closeRight).toBeGreaterThanOrEqual(0);
+  expect(Math.abs(geometry.watchWidth - geometry.watchHeight)).toBeLessThanOrEqual(1);
+  expect(geometry.persistentWidth).toBeGreaterThanOrEqual(40);
+  expect(geometry.persistentLeft).toBeGreaterThanOrEqual(0);
+  expect(geometry.persistentRight).toBeLessThanOrEqual(geometry.viewportWidth);
+  expect(geometry.persistentTop).toBeGreaterThanOrEqual(0);
 
   const beforeScroll = await actions.boundingBox();
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
@@ -77,7 +68,7 @@ test('iPhone/WebKit: favorito e fechar são um único grupo fixo compacto', asyn
   expect(Math.abs(afterScroll.y - beforeScroll.y)).toBeLessThanOrEqual(1);
   expect(Math.abs(afterScroll.x - beforeScroll.x)).toBeLessThanOrEqual(1);
 
-  await close.click();
+  await persistentClose.click();
   await expect(sheet).toBeHidden();
   await expect(sheet).toHaveAttribute('aria-hidden', 'true');
 

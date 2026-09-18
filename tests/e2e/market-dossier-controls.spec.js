@@ -33,9 +33,10 @@ test('iPhone/WebKit: dossier close is independent and favorite stays circular', 
 
   const sheet = await openMsftDossier(page);
   const favorite = sheet.locator('.market-watch--detail');
-  const close = sheet.locator('.market-detail-actions [data-market-close]');
+  const close = sheet.locator(':scope > .market-close-persistent');
   await expect(favorite).toBeVisible();
   await expect(close).toBeVisible();
+  await expect(sheet.locator('.market-detail-actions [data-market-close]')).toBeHidden();
 
   const geometry = await favorite.evaluate(el => {
     const box = el.getBoundingClientRect();
@@ -50,8 +51,13 @@ test('iPhone/WebKit: dossier close is independent and favorite stays circular', 
   expect(Math.abs(geometry.width - geometry.height)).toBeLessThan(0.5);
   expect(geometry.width).toBeGreaterThanOrEqual(40);
   expect(geometry.flexShrink).toBe('0');
-  const closeEdge = await close.evaluate(el => ({ right: el.getBoundingClientRect().right, viewport: window.innerWidth }));
-  expect(closeEdge.viewport - closeEdge.right).toBeLessThanOrEqual(8);
+  const closeEdge = await close.evaluate(el => {
+    const box = el.getBoundingClientRect();
+    return { right: box.right, left: box.left, top: box.top, viewport: window.innerWidth };
+  });
+  expect(closeEdge.right).toBeLessThanOrEqual(closeEdge.viewport);
+  expect(closeEdge.left).toBeGreaterThanOrEqual(0);
+  expect(closeEdge.top).toBeGreaterThanOrEqual(0);
 
   await close.click();
   await expect(sheet).toBeHidden();

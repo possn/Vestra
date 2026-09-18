@@ -346,7 +346,8 @@ async function fetchYahooFundamentalTimeseries(ticker, headers) {
     'annualCashCashEquivalentsAndShortTermInvestments','quarterlyCashCashEquivalentsAndShortTermInvestments',
     'annualStockholdersEquity','quarterlyStockholdersEquity',
     'annualGrossProfit','quarterlyGrossProfit',
-    'annualOperatingIncome','quarterlyOperatingIncome'
+    'annualOperatingIncome','quarterlyOperatingIncome',
+    'annualDilutedAverageShares','quarterlyDilutedAverageShares'
   ];
   let json = null;
   for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
@@ -462,23 +463,38 @@ async function fetchYahooMarketDetail(ticker, ctx) {
   const cashAnnual = firstFinite(latestTimeseriesValue(ts.annualCashCashEquivalentsAndShortTermInvestments), latestTimeseriesValue(ts.quarterlyCashCashEquivalentsAndShortTermInvestments));
   const grossAnnual = firstFinite(latestTimeseriesValue(ts.annualGrossProfit), latestTimeseriesValue(ts.quarterlyGrossProfit));
   const opIncomeAnnual = firstFinite(latestTimeseriesValue(ts.annualOperatingIncome), latestTimeseriesValue(ts.quarterlyOperatingIncome));
+  const dilutedShares = firstFinite(latestTimeseriesValue(ts.quarterlyDilutedAverageShares), latestTimeseriesValue(ts.annualDilutedAverageShares));
 
   let history = [];
+  let historyHigh = null;
+  let historyLow = null;
   try {
     const cj = await fetchJsonMaybe(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(canonical)}?interval=1d&range=1y`, { headers });
     const r = cj?.chart?.result?.[0];
     const ts = r?.timestamp || [];
-    const closes = r?.indicators?.quote?.[0]?.close || [];
+    const quoteSeries = r?.indicators?.quote?.[0] || {};
+    const closes = quoteSeries.close || [];
+    const highs = quoteSeries.high || [];
+    const lows = quoteSeries.low || [];
     history = ts.map((t,i)=>{
       const close = numberOrNull(closes[i]);
       return close !== null && close > 0 ? {date:new Date(t*1000).toISOString().slice(0,10),close} : null;
     }).filter(Boolean);
+    const highValues = highs.map(numberOrNull).filter(v=>v!==null && v>0);
+    const lowValues = lows.map(numberOrNull).filter(v=>v!==null && v>0);
+    if (highValues.length) historyHigh = Math.max(...highValues);
+    if (lowValues.length) historyLow = Math.min(...lowValues);
   } catch (_) {}
 
-  const marketCap = firstFinite(numberOrNull(price.marketCap), numberOrNull(sd.marketCap), numberOrNull(quote.market_cap));
+  const current = numberOrNull(quote.price);
+  const marketCap = firstFinite(
+    numberOrNull(price.marketCap),
+    numberOrNull(sd.marketCap),
+    numberOrNull(quote.market_cap),
+    current !== null && Number.isFinite(dilutedShares) && dilutedShares > 0 ? current * dilutedShares : null
+  );
   const fcf = numberOrNull(fd.freeCashflow);
   const target = numberOrNull(fd.targetMeanPrice);
-  const current = numberOrNull(quote.price);
   const result = {
     ticker: successor ? requested : canonical,
     retrieval_ticker: successor ? canonical : null,
@@ -495,10 +511,10 @@ async function fetchYahooMarketDetail(ticker, ctx) {
     market_cap: marketCap,
     trailing_pe: firstFinite(numberOrNull(sd.trailingPE), numberOrNull(ks.trailingPE), numberOrNull(quote.trailing_pe)),
     forward_pe: firstFinite(numberOrNull(sd.forwardPE), numberOrNull(ks.forwardPE), numberOrNull(quote.forward_pe)),
-    price_to_book: firstFinite(numberOrNull(ks.priceToBook), numberOrNull(quote.price_to_book)),
+    price_to_book: firstFinite(numberOrNull(ks.priceToBook), numberOrNull(quote.price_to_book), marketCap !== null && Number.isFinite(equityAnnual) && equityAnnual > 0 ? marketCap/equityAnnual : null),
     enterprise_to_ebitda: numberOrNull(ks.enterpriseToEbitda),
     dividend_yield: pctRaw(sd.dividendYield),
-    roe: pctRaw(fd.returnOnEquity),
+    roe: firstFinite(pctRaw(fd.returnOnEquity), Number.isFinite(niAnnual) && Number.isFinite(equityAnnual) && equityAnnual !== 0 ? niAnnual/equityAnnual*100 : null),
     roa: pctRaw(fd.returnOnAssets),
     revenue_growth: firstFinite(pctRaw(fd.revenueGrowth), growthPct(revAnnual, revPrev)),
     earnings_growth: firstFinite(pctRaw(fd.earningsGrowth), growthPct(niAnnual, niPrev)),
@@ -526,8 +542,8 @@ async function fetchYahooMarketDetail(ticker, ctx) {
     analyst_strong_sell: Number(rt.strongSell || 0),
     analyst_eps_next_y_growth: pctRaw(nextYear?.growth),
     analyst_next_earnings_date: isoFromUnix(ce?.earnings?.earningsDate?.[0]),
-    fifty_two_week_high: firstFinite(numberOrNull(sd.fiftyTwoWeekHigh), numberOrNull(quote.fifty_two_week_high)),
-    fifty_two_week_low: firstFinite(numberOrNull(sd.fiftyTwoWeekLow), numberOrNull(quote.fifty_two_week_low)),
+    fifty_two_week_high: firstFinite(numberOrNull(sd.fiftyTwoWeekHigh), numberOrNull(quote.fifty_two_week_high), historyHigh),
+    fifty_two_week_low: firstFinite(numberOrNull(sd.fiftyTwoWeekLow), numberOrNull(quote.fifty_two_week_low), historyLow),
     beta: numberOrNull(ks.beta),
     revenue_latest: revAnnual,
     net_income_latest: niAnnual,

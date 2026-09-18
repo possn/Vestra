@@ -19,7 +19,10 @@ class WorkerMissingNumericSemanticsTests(unittest.TestCase):
 
     def test_market_payload_uses_null_safe_numeric_reads(self):
         worker = read("worker.js")
-        self.assertIn("const marketCap = firstFinite(numberOrNull(price.marketCap)", worker)
+        self.assertIn("const marketCap = firstFinite(", worker)
+        self.assertIn("numberOrNull(price.marketCap)", worker)
+        self.assertIn("numberOrNull(sd.marketCap)", worker)
+        self.assertIn("numberOrNull(quote.market_cap)", worker)
         self.assertIn("analyst_price_target_mean: target !== null && target > 0 ? target : null", worker)
         self.assertIn("current_ratio: numberOrNull(fd.currentRatio)", worker)
         self.assertIn("beta: numberOrNull(ks.beta)", worker)

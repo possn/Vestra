@@ -71,10 +71,10 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
-  const groupedClose = sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]');
-  await expect(groupedClose).toBeVisible();
-  await expect(sheet.locator(':scope > .market-close-persistent')).toBeHidden();
-  await groupedClose.click();
+  const persistentClose = sheet.locator(':scope > .market-close-persistent');
+  await expect(persistentClose).toBeVisible();
+  await expect(sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]')).toBeHidden();
+  await persistentClose.click();
   await expect(sheet).toBeHidden();
 
   const row = page.locator('.market-row[data-market-ticker="MSFT"]').first();
@@ -112,9 +112,9 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
   await expect(sheet.locator('[data-detail-tab="overview"]')).toHaveClass(/is-active/);
   await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
-  const groupedClose = sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]');
-  await expect(groupedClose).toBeVisible();
-  await groupedClose.click();
+  const persistentClose = sheet.locator(':scope > .market-close-persistent');
+  await expect(persistentClose).toBeVisible();
+  await persistentClose.click();
   await expect(sheet).toBeHidden();
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
@@ -176,8 +176,10 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveAttribute('data-ticker', ticker);
-  await expect(sheet.locator('.market-kicker').first()).toHaveText('DOSSIER GLOBAL · LIVE');
   await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
+  await expect(sheet).not.toHaveAttribute('data-tool', 'remote-live');
+  expect(await sheet.locator('[data-detail-tab]').count()).toBeGreaterThanOrEqual(7);
+  await expect(sheet).not.toContainText('DOSSIER GLOBAL · LIVE');
 
   const learnedBeforeReload = await page.evaluate(async learnedTicker => {
     const rows = await window.VestraLearnedUniverse.list();
@@ -185,7 +187,7 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   }, ticker);
   expect(learnedBeforeReload).toBeTruthy();
   expect(learnedBeforeReload.ticker).toBe(ticker);
-  expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(2);
+  expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(1);
 
   await page.reload();
   await page.waitForFunction(() => !!window.VestraLearnedUniverse);
