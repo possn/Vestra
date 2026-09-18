@@ -11,7 +11,7 @@ vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraWeeklyEvents;
-assert(api && api.version === '1.8');
+assert(api && api.version === '2.1');
 assert.strictEqual(typeof api.collectEvents, 'function');
 assert.strictEqual(typeof api.collectMacroEvents, 'function');
 assert.strictEqual(typeof api.selectEvents, 'function');
@@ -72,6 +72,9 @@ assert.deepStrictEqual(Array.from(selected,x=>x.kind==='macro'?x.shortTitle:x.ti
 assert.strictEqual(api.tickerMatchesPortfolio('AIR.PA',new Set(['AIR'])),false);
 assert.strictEqual(api.tickerMatchesPortfolio('AIR.PA',new Set(['AIR.PA'])),true);
 assert.strictEqual(api.parseCalendarDate(''),null);
+assert(source.includes("if(!wasBackgrounded&&!outboundOfficialPending)return false"));
+assert(source.includes("if(weeklyRefreshPending)return true"));
+assert(source.includes("document.visibilityState==='hidden'"));
 assert(source.includes('Resultado ainda não publicado'));
 assert(source.includes('Ver publicação oficial'));
 assert(source.includes('EPS actual'));
