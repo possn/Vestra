@@ -103,6 +103,16 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertLess(html.find("market-live-overlay.js"), html.find("market.js"))
         self.assertIn('"./market-live-overlay.js"', sw)
 
+    def test_lifecycle_persistence_is_blocked_until_hydration(self):
+        app = read("app.js")
+        self.assertIn("function saveStateOnLifecycleExit()", app)
+        self.assertIn("if (window.__vestraAppHydrated !== true) return false", app)
+        self.assertIn('window.addEventListener("pagehide", saveStateOnLifecycleExit)', app)
+        self.assertIn('window.addEventListener("beforeunload", saveStateOnLifecycleExit)', app)
+        self.assertIn('saveStateOnLifecycleExit();', app)
+        self.assertNotIn('window.addEventListener("pagehide", () => saveStateAsync())', app)
+        self.assertNotIn('window.addEventListener("beforeunload", () => saveStateAsync())', app)
+
     def test_storage_contract_is_stable(self):
         storage = read("app-storage.js")
         expected = {

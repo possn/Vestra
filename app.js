@@ -11853,18 +11853,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   window._allocPreset = _allocPreset;
 });
 
-// Guarantee state is saved when app goes to background or is closed
-// Critical for iOS PWA where the process can be killed without warning
+// Guarantee state is saved when app goes to background or is closed,
+// but never before the persisted state has finished hydrating. On iOS a
+// pagehide/visibilitychange can arrive while storageGet() is still pending;
+// writing DEFAULT_STATE at that point would replace the primary snapshot and
+// force a later recovery from backup.
+function saveStateOnLifecycleExit() {
+  if (window.__vestraAppHydrated !== true) return false;
+  void saveStateAsync();
+  return true;
+}
+
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
-    saveStateAsync();
+    saveStateOnLifecycleExit();
   } else if (document.visibilityState === "visible") {
     try { renderQuoteSyncStatus(); } catch (_) {}
     setTimeout(() => { try { autoRefreshQuotesIfStale(); } catch (_) {} }, 100);
   }
 });
-window.addEventListener("pagehide", () => saveStateAsync());
-window.addEventListener("beforeunload", () => saveStateAsync());
+window.addEventListener("pagehide", saveStateOnLifecycleExit);
+window.addEventListener("beforeunload", saveStateOnLifecycleExit);
 
 /* ═══════════════════════════════════════════════════════════════
    PATRIMÓNIO FAMILIAR — v15 ADDITIONS
