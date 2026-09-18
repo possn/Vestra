@@ -9492,43 +9492,6 @@ function setupFixedBarSpacing() {
   }
 }
 
-async function forceAppUpdate() {
-  if (!confirm(
-    "Forçar actualização?\n\n" +
-    "Isto substitui a versão da app guardada no telemóvel pela mais recente do GitHub.\n" +
-    "Os teus dados (activos, dividendos, imports) NÃO são apagados — só ficam guardados no IndexedDB, que não é tocado.\n\n" +
-    "A app vai fechar e reabrir de seguida."
-  )) return;
-  // v64w: "bloqueia" — não havia feedback visual nenhum durante isto, por
-  // isso parecia preso mesmo quando estava só a trabalhar em silêncio.
-  // Mostra logo o overlay de arranque com uma mensagem própria, e nunca
-  // deixa a operação demorar mais do que 4s antes de avançar de qualquer forma.
-  const overlay = document.getElementById("appLoadingOverlay");
-  const msgEl = document.getElementById("appLoadingMsg");
-  if (overlay) { overlay.style.display = "flex"; overlay.style.opacity = "1"; }
-  if (msgEl) msgEl.textContent = "A actualizar a app…";
-  const withTimeout = (p, ms) => Promise.race([
-    p, new Promise(resolve => setTimeout(resolve, ms))
-  ]);
-  try {
-    await withTimeout((async () => {
-      if ("serviceWorker" in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map(r => r.unregister()));
-      }
-      if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-      }
-    })(), 4000);
-  } catch (e) {
-    console.error("[forceAppUpdate]", e);
-  }
-  const url = new URL(window.location.href);
-  url.searchParams.set("_v", String(Date.now())); // cache-busting for the HTML itself
-  window.location.href = url.toString();
-}
-
 function hardResetBrokerData() {
   const bd = ensureBrokerData();
   const nGen = (state.assets || []).filter(a => a && a.generatedFromBroker).length;
@@ -10238,7 +10201,6 @@ function wire() {
   $("btnExportJSON").addEventListener("click", exportJSON);
   if ($("btnDiagnose")) $("btnDiagnose").addEventListener("click", showAssetDiagnostic);
   if ($("btnHardReset")) $("btnHardReset").addEventListener("click", hardResetBrokerData);
-  if ($("btnForceUpdate")) $("btnForceUpdate").addEventListener("click", forceAppUpdate);
   // v64r: "Importar JSON" dependia de um <input type="file" id="jsonInput">
   // que já não existia no HTML (removido nalguma limpeza anterior) — o botão
   // reagia ao toque mas `$("jsonInput")` devolvia o NOOP_EL de segurança,

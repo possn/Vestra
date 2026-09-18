@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v2.0 — tappable earnings + macro catalysts with verified result details. */
+/* Vestra Dashboard Weekly Events v2.1 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
 
-  const VERSION = '2.0';
+  const VERSION = '2.1';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -463,6 +463,7 @@
   document.addEventListener('click',event=>{
     const officialLink=event.target.closest?.('a.weekly-detail-action[href]');
     if(officialLink){
+      outboundOfficialPending=true;
       window.VestraUiCore?.rememberExternalReturnContext?.({
         kind:'weekly-official',
         view:'dashboard',
@@ -491,10 +492,22 @@
     const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}
     const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)void refreshMacroEvents();
   });
+  let wasBackgrounded=false;
+  let outboundOfficialPending=false;
+  let weeklyRefreshPending=false;
   const resumeWeeklyEvents=()=>{
-    void refreshMacroEvents();
+    if(!wasBackgrounded&&!outboundOfficialPending)return false;
+    if(weeklyRefreshPending)return true;
+    wasBackgrounded=false;
+    outboundOfficialPending=false;
+    weeklyRefreshPending=true;
+    void refreshMacroEvents().finally(()=>{weeklyRefreshPending=false;});
+    return true;
   };
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')resumeWeeklyEvents();});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden'){wasBackgrounded=true;return;}
+    if(document.visibilityState==='visible')resumeWeeklyEvents();
+  });
   window.addEventListener?.('focus',resumeWeeklyEvents);
   window.addEventListener?.('pageshow',resumeWeeklyEvents);
   window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
