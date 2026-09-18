@@ -19,9 +19,11 @@ class LearnedUniverseLastSeenTests(unittest.TestCase):
               window: {{
                 VestraStorage: {{
                   idbGet: async () => ({{
-                    schema_version: 2,
+                    schema_version: 3,
                     rows: [{{
                       ticker: 'OLD',
+                      provider_symbol: 'OLD',
+                      identity_verified: true,
                       name: 'Old Corp',
                       exchange: 'NMS',
                       currency: 'USD',
@@ -62,6 +64,8 @@ class LearnedUniverseLastSeenTests(unittest.TestCase):
               const before = loaded[0].last_seen;
               const updated = await api.upsert({{
                 ticker: 'OLD',
+                provider_symbol: 'OLD',
+                identity_verified: true,
                 name: 'Old Corp',
                 last_seen: '2000-01-01T00:00:00.000Z'
               }}, 'worker-market');
