@@ -42,7 +42,7 @@ class LearnedUniverseTests(unittest.TestCase):
         self.assertIn("method:'POST'", global_js)
         self.assertIn("learnedApi()?.upsert", global_js)
         self.assertIn("market-learned-universe.js?v=2.1", boot)
-        self.assertIn("market-global-search.js?v=1.7", boot)
+        self.assertIn("market-global-search.js?v=1.8", boot)
         self.assertNotIn("app-update-manager.js", boot)
         self.assertNotIn("loadAppUpdateManager", boot)
         self.assertIn("loadLearnedUniverse();", boot)
