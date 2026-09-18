@@ -162,6 +162,8 @@ function installPremiumSplashWatchdog() {
   splash.classList.add('vestra-splash--premium');
   splash.classList.remove('vestra-splash--leaving');
   const startedAt = performance.now();
+  // Entrance is already in flight from styles.css before this deferred module runs.
+  // Do not swap animation names here; only settle copy, hold, then fade once.
   const copyReadyMs = 2000;
   const minimumVisibleMs = 4000;
   const failsafeMs = 6200;
