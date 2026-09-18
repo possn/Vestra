@@ -65,12 +65,10 @@ class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
         self.assertIn("__vestraServiceWorkerUpdated", index)
         self.assertLess(index.index('src="app-ui-core.js'), index.index('src="app.js'))
         self.assertNotIn('app-update-manager.js', index)
-        # The historical implementation remains in the monolith for now, but
-        # app-ui-core installs a document capture guard before app.js executes,
-        # so the legacy target listener cannot wipe registrations or caches.
-        self.assertIn('getRegistrations()', app)
-        self.assertIn('caches.delete', app)
-        self.assertIn('if ($("btnForceUpdate")) $("btnForceUpdate").addEventListener("click", forceAppUpdate);', app)
+        self.assertNotIn('function forceAppUpdate()', app)
+        self.assertNotIn('getRegistrations()', app)
+        self.assertNotIn('caches.delete', app)
+        self.assertNotIn('addEventListener("click", forceAppUpdate)', app)
 
 
 if __name__ == '__main__':
