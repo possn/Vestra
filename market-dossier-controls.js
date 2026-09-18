@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.7 — iPhone-safe unified fixed action group. */
+/* Vestra Market Dossier Controls v1.8 — frozen fixed star + close action pair. */
 (() => {
   'use strict';
 
@@ -9,7 +9,7 @@
     const link = document.createElement('link');
     link.id = STYLE_ID;
     link.rel = 'stylesheet';
-    link.href = 'market-dossier-controls.css?v=1.1';
+    link.href = 'market-dossier-controls.css?v=1.2';
     document.head.appendChild(link);
   }
 
@@ -70,7 +70,7 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.7',
+    version: '1.8',
     closeMarketSheet,
     installStyle,
     normalizeButtons,
