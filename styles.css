@@ -605,27 +605,6 @@ body.is-scrolling .passivebar { transform: translateX(-50%) translateY(140%); op
     width: calc(100% - var(--desktop-sidebar-w));
     margin-left: var(--desktop-sidebar-w);
   }
-  .modal__box,
-  .modal__panel {
-    left: calc(
-      var(--desktop-sidebar-w) +
-      (100vw - var(--desktop-sidebar-w)) / 2
-    );
-    width: min(
-      var(--desktop-content-max),
-      calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
-    );
-  }
-  #toastEl {
-    left: calc(
-      var(--desktop-sidebar-w) +
-      (100vw - var(--desktop-sidebar-w)) / 2
-    );
-    max-width: min(
-      var(--desktop-content-max),
-      calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
-    );
-  }
 }
 
 /* ─── BOTTOM NAV ───
@@ -1741,3 +1720,30 @@ body{
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Desktop fixed-sidebar overlay alignment.
+   Kept at the end so base modal/toast declarations cannot override it. */
+@media (min-width: 900px) {
+  .modal__box,
+  .modal__panel {
+    left: calc(
+      var(--desktop-sidebar-w) +
+      (100vw - var(--desktop-sidebar-w)) / 2
+    );
+    width: min(
+      var(--desktop-content-max),
+      calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
+    );
+  }
+  #toastEl {
+    left: calc(
+      var(--desktop-sidebar-w) +
+      (100vw - var(--desktop-sidebar-w)) / 2
+    );
+    max-width: min(
+      var(--desktop-content-max),
+      calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
+    );
+  }
+}
+
