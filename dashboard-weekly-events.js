@@ -474,7 +474,10 @@
     const backdrop=event.target.closest?.('[data-weekly-detail-backdrop]');if(backdrop&&event.target===backdrop){closeDetail();return;}
     const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)void refreshMacroEvents();
   });
-  const resumeWeeklyEvents=()=>{void refreshMacroEvents();};
+  const resumeWeeklyEvents=()=>{
+    window.VestraUiCore?.scheduleExternalReturnCleanup?.();
+    void refreshMacroEvents();
+  };
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')resumeWeeklyEvents();});
   window.addEventListener?.('focus',resumeWeeklyEvents);
   window.addEventListener?.('pageshow',resumeWeeklyEvents);
