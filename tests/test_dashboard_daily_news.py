@@ -113,10 +113,10 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn("document.visibilityState === 'visible'", self.runtime)
         self.assertIn("data/dashboard-news.json?_v=", self.runtime)
 
-    def test_return_context_restores_scroll_from_canonical_external_context(self):
-        self.assertIn("function restoreNewsReturnContext()", self.runtime)
-        self.assertIn("window.__vestraExternalReturnContext", self.runtime)
-        self.assertIn("window.scrollTo(0, scrollY)", self.runtime)
+    def test_news_runtime_has_no_duplicate_return_restoration_owner(self):
+        self.assertNotIn("restoreNewsReturnContext", self.runtime)
+        self.assertNotIn("window.__vestraExternalReturnContext", self.runtime)
+        self.assertNotIn("window.__vestraDailyNewsReturnContext", self.runtime)
 
     def test_outbound_news_url_sanitizer_rejects_script_and_data_schemes(self):
         source = json.dumps(self.runtime)
