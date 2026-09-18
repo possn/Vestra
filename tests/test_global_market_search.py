@@ -26,10 +26,13 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("PESQUISA GLOBAL · LIVE", text)
         self.assertNotIn("stocks-index.json", text)
 
-    def test_remote_dossier_does_not_fake_vestra_score(self):
+    def test_remote_search_routes_into_canonical_dossier_owner(self):
         text = GLOBAL.read_text(encoding="utf-8")
-        self.assertIn("Não tem ainda Score Vestra pré-calculado", text)
-        self.assertIn("próximo pipeline diário promove-a para o universo oficial", text)
+        self.assertIn("market?.openLiveStock", text)
+        self.assertIn("origin:'global-search'", text)
+        self.assertNotIn("DOSSIER GLOBAL · LIVE", text)
+        self.assertNotIn("marketSheetContent", text)
+        self.assertNotIn("content.innerHTML", text)
         self.assertNotIn("score: 50", text)
 
     def test_remote_dossier_ignores_stale_async_responses(self):
@@ -37,8 +40,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("let remoteOpenSeq = 0;", text)
         self.assertIn("const request=++remoteOpenSeq;", text)
         self.assertIn("request===remoteOpenSeq", text)
-        self.assertIn("txt(sh.dataset.ticker).toUpperCase()===ticker", text)
-        self.assertGreaterEqual(text.count("if(!ownsRemoteOpen(request,sh,ticker))return;"), 4)
+        self.assertGreaterEqual(text.count("if(!ownsRemoteOpen(request,ticker))return false;"), 3)
 
     def test_remote_dossier_fetch_has_a_bounded_deadline(self):
         text = GLOBAL.read_text(encoding="utf-8")
@@ -50,7 +52,8 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("Timeout a carregar dados globais.", text)
         self.assertIn("await fetchRemoteWithDeadline(`${base}/market?ticker=", text)
         self.assertNotIn("await fetch(`${base}/market?ticker=", text)
-        self.assertIn("if(!ownsRemoteOpen(request,sh,ticker))return;\n      content.innerHTML=", text)
+        self.assertIn("await market.openLiveStock(row,{returnView:'market',origin:'global-search'});", text)
+        self.assertNotIn("content.innerHTML", text)
 
     def test_search_validation_fetches_have_short_deadlines(self):
         text = GLOBAL.read_text(encoding="utf-8")
@@ -82,7 +85,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=2.1", text)
-        self.assertIn("market-global-search.js?v=1.7", text)
+        self.assertIn("market-global-search.js?v=1.8", text)
         self.assertIn("market-data-health.js?v=1.3", text)
         self.assertIn("loadLearnedUniverse();", text)
         self.assertIn("loadDataHealth();", text)
@@ -98,7 +101,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn('.vestra-global-search{', css)
         self.assertIn('.vestra-global-search__row{', css)
         self.assertIn('"./market-global-search.css"', sw)
-        self.assertIn("version:'1.7'", text)
+        self.assertIn("version:'1.8'", text)
 
 
 if __name__ == "__main__":
