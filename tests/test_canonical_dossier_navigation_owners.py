@@ -14,7 +14,6 @@ class CanonicalDossierNavigationOwnershipTests(unittest.TestCase):
             'market.js',
             'portfolio-sheet-navigation.js',
             'market-data-loader.js',
-            'market-global-search.js',  # remote-live lookup outside the catalog
         }
         patterns = {
             'VestraMarket.openTicker': re.compile(r'VestraMarket\s*\?*\.\s*openTicker'),

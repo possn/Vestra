@@ -346,6 +346,15 @@
     if(e.key!=='Enter' || e.target?.id!=='marketSearch') return;
     const ticker=tickerKey(e.target.value);
     if(!ticker) return;
+    let local=null;
+    try{
+      local=window.VestraMarket?.resolvePortfolioStock?.({
+        ticker,yahooTicker:ticker,symbol:ticker,class:'Ações'
+      })||null;
+    }catch(_){}
+    // Unknown/global tickers belong to market-global-search. Do not consume
+    // Enter before that owner can validate and register the company.
+    if(!local) return;
     e.preventDefault(); e.stopImmediatePropagation();
     openDossier(ticker,{origin:'market',sourceNode:e.target});
   },true);
