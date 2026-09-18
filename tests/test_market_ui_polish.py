@@ -26,7 +26,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('.market-detail-actions{', self.dossier_css)
         self.assertIn('position:fixed!important', self.dossier_css)
         self.assertIn('gap:8px!important', self.dossier_css)
-        self.assertIn('.market-detail-actions .market-watch--detail{', self.dossier_css)
+        self.assertIn('> .market-watch--detail{', self.dossier_css)
         self.assertIn('.market-detail-actions .market-close{', self.dossier_css)
         self.assertIn('width:44px!important', self.dossier_css)
         self.assertIn('height:44px!important', self.dossier_css)
@@ -36,7 +36,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('pointer-events:auto!important', self.dossier_css)
         self.assertIn("version: '1.3'", self.source)
         self.assertIn("version: '1.8'", self.dossier)
-        self.assertIn('right:max(calc(env(safe-area-inset-right) + 68px),68px)!important', self.dossier_css)
+        self.assertIn('right:max(calc(env(safe-area-inset-right) + 66px),66px)!important', self.dossier_css)
         self.assertIn('.market-detail-actions .market-close{\n  display:none!important', self.dossier_css)
 
     def test_politicians_state_is_cleared_before_normal_market_mode_switch(self):
