@@ -22,7 +22,7 @@
   max-width:none!important;
   overflow:visible!important;
 }
-#marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-watch--detail{
+#marketSheet[data-ticker]:not([data-ticker=""]) > .market-watch--detail{
   position:fixed!important;
   z-index:9999!important;
   top:max(calc(env(safe-area-inset-top) + 10px),14px)!important;
@@ -52,11 +52,12 @@
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px)
 }
-#marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-watch--detail{font-size:21px!important}
+#marketSheet[data-ticker]:not([data-ticker=""]) > .market-watch--detail{font-size:21px!important}
 #marketSheet[data-ticker]:not([data-ticker=""]) #marketSheetContent .market-detail-actions .market-close{
   display:none!important;
   visibility:hidden!important;
   pointer-events:none!important;
 }
 #marketSheet[hidden] > .market-close-persistent,
+#marketSheet[hidden] > .market-watch--detail,
 #marketSheet[hidden] #marketSheetContent .market-detail-actions{display:none!important}
