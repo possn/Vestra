@@ -1,4 +1,4 @@
-/* Vestra Market Live Overlay v1.1 — bounded live dossier enrichment without rerendering the open sheet. */
+/* Vestra Market Live Overlay v1.2 — bounded live enrichment with exact identity for global dossiers. */
 (() => {
   'use strict';
 
@@ -94,11 +94,18 @@
         if (!response.ok) throw new Error(`market ${response.status}`);
         const live = await response.json();
         if (!live || live.error) return null;
+        if (stock?._remoteGlobal || stock?.identity_verified === true) {
+          const provider = text(live.provider_symbol).toUpperCase();
+          const canonical = text(live.ticker).toUpperCase();
+          const retrieval = text(live.retrieval_ticker || canonical).toUpperCase();
+          if (provider !== ticker || canonical !== ticker || retrieval !== ticker) return null;
+        }
         const merge = {};
         for (const [key, value] of Object.entries(live)) {
           if (value !== null && value !== undefined && value !== '') merge[key] = value;
         }
         Object.assign(stock, merge, {
+          ...(stock?._remoteGlobal ? { provider_symbol:ticker, identity_verified:true } : {}),
           _liveUpdated: live.quote_updated || live.updated || new Date().toISOString(),
         });
         // Safari/iPhone contract: never rebuild the open dossier after async data arrives.
@@ -118,7 +125,7 @@
 
   window.VestraMarketLiveOverlay = Object.freeze({
     create,
-    version: '1.1',
+    version: '1.2',
     timeoutMs: LIVE_TIMEOUT_MS,
   });
 })();
