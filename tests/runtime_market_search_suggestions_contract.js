@@ -5,7 +5,7 @@ const assert=require('assert');
 const context={window:{}};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('market-search-suggestions.js','utf8'),context,{filename:'market-search-suggestions.js'});
-assert.equal(context.window.VestraMarketSearchSuggestions?.version,'1.1');
+assert.equal(context.window.VestraMarketSearchSuggestions?.version,'1.2');
 
 const stocks=[
   {ticker:'MSFT',name:'Microsoft Corporation',sector:'Technology',score:91},
