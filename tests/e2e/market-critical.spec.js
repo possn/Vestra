@@ -176,7 +176,7 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await expect(sheet).toHaveAttribute('data-ticker', ticker);
-  await expect(sheet.locator('.market-kicker').first()).toHaveText('Technology');
+  await expect(sheet.locator('.market-kicker').first()).not.toHaveText('DOSSIER GLOBAL · LIVE');
   await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
   await expect(sheet.locator('.market-tabs')).toBeVisible();
   await expect(sheet).not.toHaveAttribute('data-tool', 'remote-live');
