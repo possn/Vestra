@@ -5,7 +5,7 @@ const assert=require('assert');
 const context={window:{}};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('market-search-suggestions.js','utf8'),context,{filename:'market-search-suggestions.js'});
-assert.equal(context.window.VestraMarketSearchSuggestions?.version,'1.0');
+assert.equal(context.window.VestraMarketSearchSuggestions?.version,'1.1');
 
 const stocks=[
   {ticker:'MSFT',name:'Microsoft Corporation',sector:'Technology',score:91},
@@ -42,6 +42,7 @@ query='vwce';
 api.render();
 assert.equal(box.hidden,false);
 assert(box.innerHTML.includes('VWCE.DE'));
+assert(!box.innerHTML.includes('vestra-global-search'));
 assert(box.innerHTML.includes('ETF/Fundo'));
 
 query='does-not-exist';
