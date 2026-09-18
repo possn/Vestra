@@ -5,6 +5,7 @@
   const FETCH_TIMEOUT_MS = 5000;
   const MAX_VISIBLE = 5;
   const NEWS_RETURN_KEY = 'vestra:daily-news-return-v1';
+  const EXTERNAL_RETURN_KEY = 'vestra:external-return-v1';
   const NEWS_RETURN_TTL_MS = 30 * 60 * 1000;
   const NEWS_RETURN_RESUME_GRACE_MS = 30 * 1000;
   let payload = null;
@@ -35,7 +36,11 @@
   }
 
   function rememberNewsReturn() {
-    const context = { ts: Date.now(), scrollY: readScrollY() };
+    const context = window.VestraUiCore?.rememberExternalReturnContext?.({
+      kind: 'news',
+      view: 'dashboard',
+      scrollY: readScrollY(),
+    }) || { ts: Date.now(), kind: 'news', view: 'dashboard', scrollY: readScrollY() };
     try { localStorage.setItem(NEWS_RETURN_KEY, JSON.stringify(context)); } catch (_) {}
     if (pendingReturnCleanupTimer !== null) {
       clearTimeout(pendingReturnCleanupTimer);
@@ -53,6 +58,7 @@
     if (!outboundNewsPending) return;
     outboundNewsPending = false;
     try { localStorage.removeItem(NEWS_RETURN_KEY); } catch (_) {}
+    try { localStorage.removeItem(EXTERNAL_RETURN_KEY); } catch (_) {}
   }
 
   function schedulePendingNewsReturnCleanup() {
@@ -250,10 +256,15 @@
       if (newsLink && safeNewsUrl(newsLink.getAttribute('href'))) rememberNewsReturn();
       if (event.target.closest?.('.sidenavbtn[data-view="dashboard"], .navbtn[data-view="dashboard"]')) queueRender();
     }, true);
-    window.addEventListener?.('focus', schedulePendingNewsReturnCleanup);
-    window.addEventListener?.('pageshow', schedulePendingNewsReturnCleanup);
+    const resume = () => {
+      schedulePendingNewsReturnCleanup();
+      void load(true);
+      queueRender();
+    };
+    window.addEventListener?.('focus', resume);
+    window.addEventListener?.('pageshow', resume);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') schedulePendingNewsReturnCleanup();
+      if (document.visibilityState === 'visible') resume();
     });
   }
 
