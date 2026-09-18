@@ -73,19 +73,8 @@
   function start() {
     installStyle();
     normalizeButtons();
-    const sheet = document.getElementById('marketSheet');
-    if (sheet && typeof MutationObserver === 'function') {
-      let queued = false;
-      const observer = new MutationObserver(() => {
-        if (queued) return;
-        queued = true;
-        queueMicrotask(() => {
-          queued = false;
-          normalizeButtons();
-        });
-      });
-      observer.observe(sheet, { childList: true, subtree: true });
-    }
+    // Dossier mutation ownership stays in market-company-brief.js. That single
+    // sheet-scoped observer calls normalizeButtons() after every dossier render.
     // Capture phase keeps closing independent from the large delegated market handler.
     document.addEventListener('click', closeMarketSheet, true);
   }
