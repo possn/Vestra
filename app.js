@@ -901,6 +901,7 @@ function getDisplayedPassiveAnnual(totals) {
 
 function renderAll(opts = {}) {
   const force = !!(opts && opts.force);
+  const sync = !!(opts && opts.sync);
   invalidateRenderCache(); // v18: garantir cálculos frescos
   ensureAllChartCanvasesReady();
   // v18: updatePassiveBar e renderBrokerImportStatus removidos daqui —
@@ -912,7 +913,7 @@ function renderAll(opts = {}) {
 
   // v18: usar requestAnimationFrame (async) em vez de sync
   // Permite ao browser pintar o esqueleto antes de bloquear no render de dados
-  scheduleRenderView(currentView, { force: true, sync: false });
+  scheduleRenderView(currentView, { force: true, sync });
 }
 
 /* ─── DASHBOARD ───────────────────────────────────────────── */
@@ -11812,7 +11813,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { ensureAllChartCanvasesReady(); } catch (e) { console.error("Falha ao preparar gráficos", e); }
   try { wire(); } catch (e) { console.error("Falha no binding dos botões", e); }
   _setMsg("A renderizar…");
-  try { renderAll(); } catch (e) { console.error("Falha no render inicial", e); }
+  try { renderAll({ force: true, sync: true }); } catch (e) { console.error("Falha no render inicial", e); }
   // Canonical hydration boundary: from this point the persisted portfolio has
   // been loaded/reconciled and the first real render has completed. External
   // return lifecycle must never expose the pre-hydration Dashboard.
