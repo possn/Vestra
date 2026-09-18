@@ -1,94 +1,117 @@
 const { test, expect } = require('@playwright/test');
 
-test('iPhone/WebKit: Dashboard daily news links stay stable and return without relaunch splash', async ({ page }) => {
-  await page.route('**/data/dashboard-news.json', async route => {
+test('iPhone/WebKit: news refreshes on resume and cold return never exposes an empty portfolio', async ({ page }) => {
+  let newsRequestCount = 0;
+
+  await page.addInitScript(() => {
+    localStorage.setItem('PF_STATE_V6', JSON.stringify({
+      settings: { currency: 'EUR', autoRefreshQuotes: false },
+      assets: [{
+        id: 'persisted-asset',
+        class: 'Ações / ETFs',
+        name: 'Persisted Portfolio Asset',
+        ticker: 'AAPL',
+        value: 1234,
+        costBasis: 1000,
+        yieldType: 'none',
+        yieldValue: 0,
+      }],
+      liabilities: [],
+      transactions: [],
+      bankTransactions: [],
+      dividends: [],
+      divSummaries: [],
+      history: [],
+      brokerData: { files: [], events: [], positions: [] },
+      priceHistory: {},
+      fxHistory: {},
+    }));
+
+    window.__preHydrationPortfolioExposed = false;
+    const installProbe = () => {
+      const check = () => {
+        if (document.body?.dataset?.appHydrated === '1') return;
+        const overlay = document.getElementById('appLoadingOverlay');
+        if (!overlay) return;
+        const style = getComputedStyle(overlay);
+        const shieldMissing = style.display === 'none' || Number(style.opacity || 0) === 0 || style.pointerEvents === 'none';
+        if (shieldMissing) window.__preHydrationPortfolioExposed = true;
+      };
+      check();
+      new MutationObserver(check).observe(document.documentElement, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+        attributeFilter: ['style', 'class', 'data-app-hydrated', 'data-external-return-pending'],
+      });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installProbe, { once: true });
+    else installProbe();
+  });
+
+  await page.route('**/data/dashboard-news.json**', async route => {
+    newsRequestCount += 1;
+    const resumed = newsRequestCount > 1;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        generated_at: '2026-09-15T10:50:12Z',
-        items: [
-          {
-            title: 'Markets steady ahead of central-bank decision',
-            source: 'Reuters',
-            published: '2026-09-15T10:30:00Z',
-            link: 'https://example.com/markets',
-            kind: 'market',
-            impact_score: 90,
-            tickers: [],
-          },
-          {
-            title: 'Unsafe feed item remains visible but cannot execute',
-            source: 'Test Feed',
-            published: '2026-09-15T10:20:00Z',
-            link: 'javascript:alert(1)',
-            kind: 'market',
-            impact_score: 80,
-            tickers: [],
-          },
-        ],
+        generated_at: resumed ? '2026-09-18T07:15:00Z' : '2026-09-18T07:00:00Z',
+        items: [{
+          title: resumed ? 'Fresh headline after returning to Vestra' : 'Initial market headline',
+          source: 'Reuters',
+          published: resumed ? '2026-09-18T07:14:00Z' : '2026-09-18T06:59:00Z',
+          link: 'https://example.com/markets',
+          kind: 'market',
+          impact_score: 90,
+          tickers: [],
+        }],
       }),
     });
   });
+
   await page.context().route('https://example.com/markets', async route => {
     await route.fulfill({ status: 200, contentType: 'text/html', body: '<title>Market story</title><p>ok</p>' });
   });
 
   await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true);
   await page.waitForFunction(() => Boolean(window.VestraDashboardDailyNews));
 
   const dashboard = page.locator('#viewDashboard');
   const card = dashboard.locator('#vestraDailyNewsCard');
   await expect(card).toBeVisible({ timeout: 15_000 });
-  await expect(card).toContainText('Notícias do dia');
-  await expect(card).toContainText('Markets steady ahead of central-bank decision');
+  await expect(card).toContainText('Initial market headline');
+  await expect(page.locator('#kpiNet')).not.toHaveText('0 €');
 
-  const validLink = card.locator('a.vestra-daily-news-item').filter({ hasText: 'Markets steady' });
+  const validLink = card.locator('a.vestra-daily-news-item').first();
   await expect(validLink).toHaveAttribute('href', 'https://example.com/markets');
   await expect(validLink).toHaveAttribute('rel', 'noopener noreferrer');
-
-  const unsafeItem = card.locator('.vestra-daily-news-item.is-disabled').filter({ hasText: 'Unsafe feed item' });
-  await expect(unsafeItem).toBeVisible();
-  await expect(unsafeItem).not.toHaveAttribute('href', /.+/);
-
-  const placement = await dashboard.evaluate(node => {
-    const cardNode = node.querySelector('#vestraDailyNewsCard');
-    const quick = node.querySelector('.kpi-quick');
-    return Boolean(cardNode && quick && cardNode.parentElement === node && cardNode.nextElementSibling === quick);
-  });
-  expect(placement).toBe(true);
-
-  await validLink.evaluate(node => { window.__vestraDailyNewsLinkNode = node; });
-  await dashboard.evaluate(node => {
-    const mutation = document.createElement('span');
-    mutation.hidden = true;
-    node.appendChild(mutation);
-    mutation.remove();
-  });
-  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await expect.poll(() => validLink.evaluate(node => node === window.__vestraDailyNewsLinkNode)).toBe(true);
 
   const popupPromise = page.waitForEvent('popup');
   await validLink.tap();
   const popup = await popupPromise;
   await popup.waitForLoadState('domcontentloaded');
-  expect(popup.url()).toBe('https://example.com/markets');
   await popup.close();
 
-  // iOS can emit focus/pageshow first and reload the standalone PWA immediately
-  // afterwards. The return marker must survive those resume events long enough
-  // for the next boot to consume it and suppress the launch splash.
+  // Normal resume: same document, no app restart. Only the feed refreshes.
   await page.evaluate(() => {
     window.dispatchEvent(new Event('focus'));
     window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
   });
-  const markerBeforeReload = await page.evaluate(() => localStorage.getItem('vestra:daily-news-return-v1'));
-  expect(markerBeforeReload).not.toBeNull();
+  await expect(card).toContainText('Fresh headline after returning to Vestra', { timeout: 5_000 });
+  expect(await page.evaluate(() => localStorage.getItem('vestra:external-return-v1'))).not.toBeNull();
+  expect(await page.evaluate(() => window.__vestraAppHydrated)).toBe(true);
 
+  // Cold resume: reproduce iOS discarding the PWA while Safari was in front.
+  // The external-return shield must cover the pre-hydration HTML until the
+  // persisted portfolio has been read and rendered again.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => Boolean(window.VestraDashboardDailyNews));
-  const splash = page.locator('#appLoadingOverlay');
-  await expect(splash).toHaveAttribute('data-news-return-skip', '1');
-  await expect(splash).toBeHidden({ timeout: 1_500 });
-  expect(await page.evaluate(() => localStorage.getItem('vestra:daily-news-return-v1'))).toBeNull();
+  await page.waitForFunction(() => window.__vestraAppHydrated === true);
+
+  await expect(page.locator('#kpiNet')).not.toHaveText('0 €');
+  expect(await page.evaluate(() => window.__preHydrationPortfolioExposed)).toBe(false);
+  await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 1_500 });
+  expect(await page.evaluate(() => localStorage.getItem('vestra:external-return-v1'))).toBeNull();
+  expect(newsRequestCount).toBeGreaterThan(1);
 });

@@ -492,7 +492,6 @@
     const dashboardNav=event.target.closest?.('.sidenavbtn[data-view="dashboard"]');if(dashboardNav)void refreshMacroEvents();
   });
   const resumeWeeklyEvents=()=>{
-    window.VestraUiCore?.scheduleExternalReturnCleanup?.();
     void refreshMacroEvents();
   };
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')resumeWeeklyEvents();});

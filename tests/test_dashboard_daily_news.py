@@ -20,7 +20,10 @@ class DashboardDailyNewsTests(unittest.TestCase):
 
     def test_dashboard_feed_has_independent_lightweight_refresh(self):
         self.assertIn('from news import _build_dashboard_digest', self.feed_refresh)
-        self.assertIn('COMPANY_RETENTION_HOURS = 36', self.feed_refresh)
+        self.assertIn('COMPANY_RETENTION_HOURS = 12', self.feed_refresh)
+        self.assertIn('MAX_RETAINED_COMPANY_ITEMS = 12', self.feed_refresh)
+        self.assertIn('for item in [*fresh, *retained_company]', self.feed_refresh)
+        self.assertIn('combined.sort(', self.feed_refresh)
         self.assertIn('name: Update dashboard news', self.feed_workflow)
         self.assertIn('cron: "*/30 * * * *"', self.feed_workflow)
         self.assertIn('PYTHONPATH=scripts python scripts/refresh_dashboard_news.py', self.feed_workflow)
@@ -28,7 +31,8 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn('PUBLISH_SUPERSEDE_COMMIT_PREFIX="Actualização notícias Dashboard ("', self.feed_workflow)
 
     def test_dashboard_uses_compact_digest_not_full_news_archive(self):
-        self.assertIn("fetchWithTimeout('data/dashboard-news.json')", self.runtime)
+        self.assertIn("const feedUrl = force ? `data/dashboard-news.json?_v=${Date.now()}` : 'data/dashboard-news.json'", self.runtime)
+        self.assertIn("fetchWithTimeout(feedUrl)", self.runtime)
         self.assertNotIn("data/news.json", self.runtime)
         self.assertIn("DASHBOARD_MAX_ITEMS = 40", self.news)
         self.assertIn('"items":selected', self.news)
@@ -49,12 +53,12 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn(".catch(() => null)", self.runtime)
 
     def test_companion_is_versioned_reachable_and_offline_capable(self):
-        self.assertIn("dashboard-daily-news.js?v=1.3", self.loader)
+        self.assertIn("dashboard-daily-news.js?v=1.4", self.loader)
         self.assertIn("ensureDashboardDailyNews()", self.loader)
         self.assertIn('"./dashboard-daily-news.js"', self.sw)
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
         self.assertIn("dashboard-daily-news.css?v=1.0", self.runtime)
-        self.assertIn("version: '1.3'", self.runtime)
+        self.assertIn("version: '1.4'", self.runtime)
 
     def test_news_runtime_is_network_first_so_interaction_fixes_are_not_stale(self):
         network_first = self.sw.split('const BOOTSTRAP_NETWORK_FIRST = new Set([', 1)[1].split(']);', 1)[0]
@@ -90,34 +94,29 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn('class="vestra-daily-news-item is-disabled"', self.runtime)
         self.assertIn(".vestra-daily-news-card{", self.css)
 
-    def test_outbound_news_records_short_lived_return_context_without_hijacking_navigation(self):
-        self.assertIn("const NEWS_RETURN_KEY = 'vestra:daily-news-return-v1'", self.runtime)
-        self.assertIn("const NEWS_RETURN_TTL_MS = 30 * 60 * 1000", self.runtime)
+    def test_outbound_news_delegates_return_lifecycle_to_ui_core(self):
         self.assertIn("function rememberNewsReturn()", self.runtime)
-        self.assertIn("localStorage.setItem(NEWS_RETURN_KEY, JSON.stringify(context))", self.runtime)
-        self.assertIn("rememberExternalReturnContext", self.runtime)
-        self.assertIn("const EXTERNAL_RETURN_KEY = 'vestra:external-return-v1'", self.runtime)
+        self.assertIn("VestraUiCore?.rememberExternalReturnContext", self.runtime)
+        self.assertIn("kind: 'news'", self.runtime)
         self.assertIn("a.vestra-daily-news-item[href]", self.runtime)
-        self.assertIn("rememberNewsReturn()", self.runtime)
+        self.assertNotIn("localStorage.setItem", self.runtime)
+        self.assertNotIn("schedulePendingNewsReturnCleanup", self.runtime)
+        self.assertNotIn("clearPendingNewsReturn", self.runtime)
+        self.assertNotIn("NEWS_RETURN_RESUME_GRACE_MS", self.runtime)
         self.assertNotIn("event.preventDefault()", self.runtime)
         self.assertNotIn("window.open(", self.runtime)
 
-    def test_return_context_survives_early_ios_resume_events_before_reload(self):
-        self.assertIn("const NEWS_RETURN_RESUME_GRACE_MS = 30 * 1000", self.runtime)
-        self.assertIn("function schedulePendingNewsReturnCleanup()", self.runtime)
+    def test_resume_force_refresh_is_cache_busted_without_owning_navigation(self):
         self.assertIn("window.addEventListener?.('focus', resume)", self.runtime)
         self.assertIn("window.addEventListener?.('pageshow', resume)", self.runtime)
         self.assertIn("void load(true)", self.runtime)
         self.assertIn("document.visibilityState === 'visible'", self.runtime)
-        self.assertIn("setTimeout(() =>", self.runtime)
-        self.assertIn("NEWS_RETURN_RESUME_GRACE_MS", self.runtime)
-        self.assertNotIn("window.addEventListener?.('focus', clearPendingNewsReturn)", self.runtime)
-        self.assertNotIn("window.addEventListener?.('pageshow', clearPendingNewsReturn)", self.runtime)
+        self.assertIn("data/dashboard-news.json?_v=", self.runtime)
 
-    def test_return_context_restores_scroll_after_real_reload(self):
-        self.assertIn("function restoreNewsReturnContext()", self.runtime)
-        self.assertIn("window.__vestraDailyNewsReturnContext", self.runtime)
-        self.assertIn("window.scrollTo(0, scrollY)", self.runtime)
+    def test_news_runtime_has_no_duplicate_return_restoration_owner(self):
+        self.assertNotIn("restoreNewsReturnContext", self.runtime)
+        self.assertNotIn("window.__vestraExternalReturnContext", self.runtime)
+        self.assertNotIn("window.__vestraDailyNewsReturnContext", self.runtime)
 
     def test_outbound_news_url_sanitizer_rejects_script_and_data_schemes(self):
         source = json.dumps(self.runtime)

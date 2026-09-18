@@ -28,7 +28,7 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('beat any stale inline opacity/display writes', UI)
 
     def test_base_styles_own_single_entrance_animation(self):
-        self.assertIn('Vestra UI core v2.2', UI)
+        self.assertIn('Vestra UI core v2.3', UI)
         self.assertIn('animation:vestraMarkIn .72s', BASE)
         self.assertIn('animation:vestraCopyIn .55s .14s', BASE)
         self.assertIn('animation:vestraCopyIn .55s .22s', BASE)
@@ -48,16 +48,19 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn("splash.classList.add('vestra-splash--leaving')", UI)
         self.assertIn('}, 720);', UI)
 
-    def test_recent_daily_news_return_skips_cold_start_splash_once(self):
+    def test_external_return_uses_hydration_shield_instead_of_exposing_empty_dashboard(self):
+        self.assertIn("EXTERNAL_RETURN_KEY = 'vestra:external-return-v1'", UI)
         self.assertIn("DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1'", UI)
         self.assertIn('DAILY_NEWS_RETURN_TTL_MS = 30 * 60 * 1000', UI)
+        self.assertIn('function consumeExternalReturnContext()', UI)
         self.assertIn('function consumeDailyNewsReturnContext()', UI)
-        self.assertIn('localStorage.removeItem(DAILY_NEWS_RETURN_KEY)', UI)
-        self.assertIn('window.__vestraDailyNewsReturnContext = normalized', UI)
-        self.assertIn('function suppressSplashForNewsReturn(splash)', UI)
-        self.assertIn("splash.dataset.newsReturnSkip = '1'", UI)
-        self.assertIn('#appLoadingOverlay[data-news-return-skip="1"]', UI)
-        self.assertIn('if (suppressSplashForNewsReturn(splash)) return', UI)
+        self.assertIn('function armExternalReturnResume(splash)', UI)
+        self.assertIn("splash.dataset.externalReturnPending = '1'", UI)
+        self.assertIn('#appLoadingOverlay[data-external-return-pending="1"]', UI)
+        self.assertIn("window.addEventListener('vestra:app-ready', release, { once: true })", UI)
+        self.assertIn('restoreExternalReturnContext(context)', UI)
+        self.assertIn('if (armExternalReturnResume(splash)) return', UI)
+        self.assertNotIn('suppressSplashForNewsReturn', UI)
 
     def test_bootstrap_scripts_are_network_first(self):
         self.assertIn('BOOTSTRAP_NETWORK_FIRST', SW)
