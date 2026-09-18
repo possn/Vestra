@@ -74,11 +74,15 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
     await route.fulfill({ status: 200, contentType: 'text/html', body: '<title>Market story</title><p>ok</p>' });
   });
 
-  // Keep app.js pending briefly so the synchronous head guard is observable
-  // before hydration. This reproduces the cold-resume window in which iOS can
-  // otherwise paint the static dashboard shell with €0 values.
+  // Hold app.js only during the cold-return probe so the synchronous head
+  // guard can be inspected deterministically before hydration clears it.
+  // A fixed delay is racy on fast CI runners because app.js may hydrate
+  // between waitForFunction() and the following evaluate().
+  let holdAppJs = false;
+  let releaseHeldAppJs = null;
+  let heldAppJs = Promise.resolve();
   await page.route('**/app.js?v=20260918v1', async route => {
-    await new Promise(resolve => setTimeout(resolve, 180));
+    if (holdAppJs) await heldAppJs;
     await route.continue();
   });
 
@@ -114,6 +118,8 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
   // Cold resume: reproduce iOS discarding the PWA while Safari was in front.
   // The external-return shield must cover the pre-hydration HTML until the
   // persisted portfolio has been read and rendered again.
+  holdAppJs = true;
+  heldAppJs = new Promise(resolve => { releaseHeldAppJs = resolve; });
   await page.reload({ waitUntil: 'commit' });
   await page.waitForFunction(
     () => document.documentElement?.dataset?.externalReturnBootstrap === '1',
@@ -136,6 +142,8 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
   expect(preHydrationGuard.splashVisible).toBe(true);
   expect(preHydrationGuard.dashboardHidden).toBe(true);
 
+  holdAppJs = false;
+  releaseHeldAppJs?.();
   await page.waitForLoadState('domcontentloaded');
   await page.waitForFunction(() => window.__vestraAppHydrated === true);
 
