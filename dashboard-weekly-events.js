@@ -402,6 +402,7 @@
         const action = document.createElement('a');
         action.className = 'weekly-detail-action';
         action.href = event.sourceUrl;
+        action.dataset.weeklyReturnEventId = event.id || '';
         action.target = '_blank';
         action.rel = 'noopener noreferrer';
         action.textContent = 'Ver publicação oficial';
@@ -443,13 +444,29 @@
     void nav.openCompany(key,{origin:'market'});
     return true;
   }
-  async function scheduleRender(){const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();await Promise.allSettled([marketLoad,loadMacroEvents()]);render();}
+  function restoreExternalWeeklyDetail() {
+    const context = window.__vestraExternalReturnContext;
+    if (!context || context.kind !== 'weekly-official' || !context.detailId) return false;
+    const selected = lastRenderedEvents.find(item => item.kind === 'macro' && item.id === context.detailId);
+    if (!selected) return false;
+    openDetail(selected);
+    context.detailId = '';
+    return true;
+  }
+
+  async function scheduleRender(){
+    const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();
+    await Promise.allSettled([marketLoad,loadMacroEvents()]);
+    render();
+    restoreExternalWeeklyDetail();
+  }
   document.addEventListener('click',event=>{
     const officialLink=event.target.closest?.('a.weekly-detail-action[href]');
     if(officialLink){
       window.VestraUiCore?.rememberExternalReturnContext?.({
         kind:'weekly-official',
         view:'dashboard',
+        detailId:String(officialLink.dataset.weeklyReturnEventId||''),
         scrollY:Math.max(0,Number(window.scrollY||document.scrollingElement?.scrollTop||0)),
       });
     }
@@ -482,5 +499,5 @@
   window.addEventListener?.('focus',resumeWeeklyEvents);
   window.addEventListener?.('pageshow',resumeWeeklyEvents);
   window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
-  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
+  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,restoreExternalWeeklyDetail,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
 })();
