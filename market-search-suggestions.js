@@ -1,4 +1,4 @@
-/* Vestra Market Search Suggestions v1.1 — local suggestions preserve global results. */
+/* Vestra Market Search Suggestions v1.2 — local rerenders preserve global results; explicit hide clears all. */
 (() => {
   'use strict';
 
@@ -52,12 +52,8 @@
 
     function hide(){
       const box=getBox(); if(!box) return;
-      const host=localHost(box,false);
-      if(host){
-        if(host===box) host.innerHTML='';
-        else host.remove?.();
-      }
-      box.hidden=!globalHost(box);
+      box.hidden=true;
+      box.innerHTML='';
     }
 
     function render(){
@@ -78,5 +74,5 @@
     return Object.freeze({ matches, hide, render });
   }
 
-  window.VestraMarketSearchSuggestions = Object.freeze({ create, version:'1.1' });
+  window.VestraMarketSearchSuggestions = Object.freeze({ create, version:'1.2' });
 })();

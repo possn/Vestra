@@ -32,6 +32,13 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("PESQUISA GLOBAL · LIVE", text)
         self.assertNotIn("stocks-index.json", text)
 
+    def test_removed_parallel_dossier_formatters_do_not_return(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        self.assertNotIn("const money =", text)
+        self.assertNotIn("const pct =", text)
+        self.assertNotIn("const num =", text)
+        self.assertNotIn("const compact =", text)
+
     def test_remote_search_delegates_to_canonical_dossier_owner(self):
         text = GLOBAL.read_text(encoding="utf-8")
         market = MARKET.read_text(encoding="utf-8")

@@ -5,10 +5,6 @@
   const txt = v => String(v ?? '').trim();
   const esc = v => txt(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const n = v => { if (v === null || v === undefined || v === '') return null; const x = Number(v); return Number.isFinite(x) ? x : null; };
-  const money = (v,c='USD') => n(v)==null?'—':new Intl.NumberFormat('pt-PT',{style:'currency',currency:c||'USD',maximumFractionDigits:2}).format(n(v));
-  const pct = v => n(v)==null?'—':`${(Math.abs(n(v))<=1?n(v)*100:n(v)).toFixed(1)}%`;
-  const num = v => n(v)==null?'—':new Intl.NumberFormat('pt-PT',{maximumFractionDigits:2}).format(n(v));
-  const compact = v => n(v)==null?'—':new Intl.NumberFormat('pt-PT',{notation:'compact',maximumFractionDigits:1}).format(n(v));
   const REMOTE_FETCH_TIMEOUT_MS = 12000;
   const SEARCH_FETCH_TIMEOUT_MS = 6000;
   const LEARN_FETCH_TIMEOUT_MS = 8000;
