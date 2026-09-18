@@ -13,19 +13,23 @@ class GlobalMarketSearchNonblockingLearningTests(unittest.TestCase):
         self.assertIn("void learnCentral(row);", GLOBAL)
         self.assertNotIn("await learnCentral(row);", GLOBAL)
 
-    def test_remote_dossier_still_rechecks_ownership_after_local_learning(self):
-        marker = "await learn({ticker:txt(d.ticker||ticker).toUpperCase()"
+    def test_global_open_rechecks_request_ownership_before_canonical_navigation(self):
+        marker = "const stock=market?.registerExternalStock?.(stockData);"
         start = GLOBAL.index(marker)
         tail = GLOBAL[start:]
-        self.assertIn("if(!ownsRemoteOpen(request,sh,ticker))return;", tail)
+        self.assertIn("if(request!==remoteOpenSeq) return false;", tail)
+        self.assertIn("const nav=window.VestraNavigation;", tail)
+        self.assertIn("await nav.openCompany(stock.ticker,{origin:'market'});", tail)
         self.assertLess(
-            tail.index("if(!ownsRemoteOpen(request,sh,ticker))return;"),
-            tail.index("content.innerHTML=`<div class=\"market-detail-head\"")
+            tail.index("if(request!==remoteOpenSeq) return false;"),
+            tail.index("const nav=window.VestraNavigation;")
         )
+        self.assertNotIn("content.innerHTML", tail)
+        self.assertNotIn("remote-live", tail)
 
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("version:'1.7'", GLOBAL)
-        self.assertIn("market-global-search.js?v=1.7", BOOT)
+        self.assertIn("version:'1.8'", GLOBAL)
+        self.assertIn("market-global-search.js?v=1.8", BOOT)
 
 
 if __name__ == "__main__":
