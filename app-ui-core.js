@@ -187,6 +187,8 @@ function installPremiumSplashWatchdog() {
     clearTimeout(copyReadyTimer);
     if (releaseTimer) clearTimeout(releaseTimer);
     splash.classList.add('vestra-splash--copy-ready');
+    // The leaving class is the only effective fade owner. Its !important rules
+    // beat any stale inline opacity/display writes that app.js may have queued.
     requestAnimationFrame(() => requestAnimationFrame(() => {
       splash.classList.add('vestra-splash--leaving');
     }));
