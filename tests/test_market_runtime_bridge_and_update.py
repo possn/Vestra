@@ -61,6 +61,8 @@ class MarketRuntimeBridgeAndUpdateTests(unittest.TestCase):
         self.assertNotIn('getRegistrations()', text)
         self.assertIn('navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });', index)
         self.assertIn("navigator.serviceWorker.addEventListener('controllerchange'", index)
+        self.assertNotIn("location.reload()", index)
+        self.assertIn("__vestraServiceWorkerUpdated", index)
         self.assertLess(index.index('src="app-ui-core.js'), index.index('src="app.js'))
         self.assertNotIn('app-update-manager.js', index)
         # The historical implementation remains in the monolith for now, but
