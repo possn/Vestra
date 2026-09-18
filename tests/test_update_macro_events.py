@@ -84,6 +84,16 @@ class MacroCalendarTests(unittest.TestCase):
 
 
 class MacroCalendarStaticTests(unittest.TestCase):
+    def test_macro_workflow_is_single_owner_with_hourly_baseline_refresh(self):
+        workflow = (ROOT / '.github' / 'workflows' / 'update-macro-events.yml').read_text(encoding='utf-8')
+        dashboard_workflow = (ROOT / '.github' / 'workflows' / 'update-dashboard-feeds.yml').read_text(encoding='utf-8')
+        self.assertIn('cron: "20 * * * *"', workflow)
+        self.assertIn('5,15,25,35,45,55 17-20 * * 3', workflow)
+        self.assertIn('PYTHONPATH=scripts python scripts/macro_calendar_transport.py', workflow)
+        self.assertNotIn('macro_calendar_transport.py', dashboard_workflow)
+        self.assertNotIn('enrich_macro_results.py', dashboard_workflow)
+        self.assertNotIn('Publish macro calendar', dashboard_workflow)
+
     def test_refresher_source_declares_official_catalog_and_fail_closed_fallback(self):
         source = (ROOT / 'scripts' / 'update_macro_events.py').read_text(encoding='utf-8')
         for token in ('federalreserve.gov', 'bls.gov', 'bea.gov', 'ecb.europa.eu', 'census.gov'):
