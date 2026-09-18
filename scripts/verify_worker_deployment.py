@@ -26,6 +26,7 @@ import requests
 
 DEFAULT_ORIGIN = "https://possn.github.io"
 DEFAULT_TICKERS = ["MSFT", "AAPL"]
+IDENTITY_PROBES = ["SPIE.PA"]
 ROOT = Path(__file__).resolve().parents[1]
 WORKER_SOURCE = ROOT / "worker.js"
 
@@ -93,6 +94,8 @@ def market_summary(payload: Any) -> dict[str, Any] | None:
         return None
     return {
         "ticker": payload.get("ticker"),
+        "provider_symbol": payload.get("provider_symbol"),
+        "retrieval_ticker": payload.get("retrieval_ticker"),
         "current_price": payload.get("current_price"),
         "_cached": payload.get("_cached"),
         "updated": payload.get("updated"),
@@ -163,12 +166,40 @@ def main() -> int:
         try:
             url = f"{base}/quote?{urlencode({'ticker': ticker})}"
             resp, payload, elapsed = get_json(session, url, origin=args.origin, timeout=args.timeout)
-            ok = resp.ok and isinstance(payload, dict) and finite_positive(payload.get("price"))
-            checks.append(Check(f"GET /quote {ticker}", ok, f"HTTP {resp.status_code}, {elapsed} ms"))
+            tk = ticker.upper()
+            exact_identity = (
+                isinstance(payload, dict)
+                and str(payload.get("ticker") or "").upper() == tk
+                and str(payload.get("provider_symbol") or "").upper() == tk
+                and str(payload.get("retrieval_ticker") or tk).upper() == tk
+            )
+            ok = resp.ok and isinstance(payload, dict) and finite_positive(payload.get("price")) and exact_identity
+            checks.append(Check(f"GET /quote {ticker}", ok, f"HTTP {resp.status_code}, {elapsed} ms, exact={exact_identity}"))
             if isinstance(payload, dict):
-                single_quotes[ticker.upper()] = payload
+                single_quotes[tk] = payload
         except Exception as exc:
             checks.append(Check(f"GET /quote {ticker}", False, repr(exc)))
+
+    for ticker in IDENTITY_PROBES:
+        try:
+            url = f"{base}/quote?{urlencode({'ticker': ticker})}"
+            resp, payload, elapsed = get_json(session, url, origin=args.origin, timeout=args.timeout)
+            tk = ticker.upper()
+            ok = (
+                resp.ok
+                and isinstance(payload, dict)
+                and finite_positive(payload.get("price"))
+                and str(payload.get("ticker") or "").upper() == tk
+                and str(payload.get("provider_symbol") or "").upper() == tk
+                and str(payload.get("retrieval_ticker") or tk).upper() == tk
+            )
+            checks.append(Check(
+                f"exact identity probe {tk}",
+                ok,
+                f"HTTP {resp.status_code}, {elapsed} ms, ticker={payload.get('ticker') if isinstance(payload, dict) else None!r}, provider={payload.get('provider_symbol') if isinstance(payload, dict) else None!r}",
+            ))
+        except Exception as exc:
+            checks.append(Check(f"exact identity probe {ticker}", False, repr(exc)))
 
     try:
         joined = ",".join(tickers)
@@ -202,8 +233,14 @@ def main() -> int:
         resp1, market1, elapsed1 = get_json(session, url, origin=args.origin, timeout=args.timeout)
         time.sleep(1.0)
         resp2, market2, elapsed2 = get_json(session, url, origin=args.origin, timeout=args.timeout)
-        ok = resp1.ok and resp2.ok and isinstance(market1, dict) and isinstance(market2, dict)
-        checks.append(Check(f"GET /market {probe}", ok, f"HTTP {resp2.status_code}, {elapsed2} ms"))
+        exact_market_identity = (
+            isinstance(market2, dict)
+            and str(market2.get("ticker") or "").upper() == probe.upper()
+            and str(market2.get("provider_symbol") or "").upper() == probe.upper()
+            and str(market2.get("retrieval_ticker") or probe).upper() == probe.upper()
+        )
+        ok = resp1.ok and resp2.ok and isinstance(market1, dict) and isinstance(market2, dict) and exact_market_identity
+        checks.append(Check(f"GET /market {probe}", ok, f"HTTP {resp2.status_code}, {elapsed2} ms, exact={exact_market_identity}"))
 
         quote = single_quotes.get(probe.upper()) or {}
         q_price = float(quote["price"]) if finite_positive(quote.get("price")) else None
