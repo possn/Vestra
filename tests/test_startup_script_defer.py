@@ -28,7 +28,7 @@ class StartupScriptDeferTests(unittest.TestCase):
         chart = self.index.index("chart.umd.min.js")
         app = self.index.index("app.js?v=20260918v1")
         self.assertLess(chart, app)
-        self.assertIn('defer="" fetchpriority="high"', self.index[self.index("<script", app - 80):app + 120])
+        self.assertIn('defer="" fetchpriority="high"', self.index[self.index.index("<script", app - 80):app + 120])
 
 
 if __name__ == "__main__":
