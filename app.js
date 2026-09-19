@@ -734,6 +734,17 @@ function switchCashflowPane(pane) {
   if (impBtn) impBtn.classList.toggle("seg__btn--active", !showBalanco);
 }
 
+async function ensureMarketRuntimeReady({ loadData = false } = {}) {
+  let api = window.VestraMarket || null;
+  if (!api?.ensureLoaded) {
+    const loader = window.VestraMarketRuntime;
+    if (!loader?.ensure) throw new Error("Carregador de Mercado indisponível.");
+    api = await loader.ensure();
+  }
+  if (loadData) await api?.ensureLoaded?.();
+  return api || null;
+}
+
 function setView(view) {
   const prevView = currentView;
   currentView = view;
@@ -754,6 +765,15 @@ function setView(view) {
   for (const b of _navEls) b.classList.toggle("navbtn--active", b.dataset.view === _navView);
   for (const b of _sideNavEls) b.classList.toggle("sidenavbtn--active", b.dataset.view === _navView);
   try { window.scrollTo(0, 0); } catch (_) {}
+  if (view === "market") {
+    void ensureMarketRuntimeReady({ loadData: true }).catch(err => {
+      console.error("Falha a carregar runtime de Mercado", err);
+      const root = document.getElementById("marketPrimary");
+      if (root && currentView === "market") {
+        root.innerHTML = '<div class="market-empty market-empty--error"><strong>Mercado indisponível</strong><br><span>Não foi possível carregar o runtime agora.</span><br><button class="btn btn--outline btn--sm" onclick="setView(\'market\')" style="margin-top:12px">Tentar novamente</button></div>';
+      }
+    });
+  }
   // Phase 2 (deferred): render content after browser has painted the new tab frame.
   // Using double-RAF ensures one paint cycle completes before heavy DOM work starts,
   // making the tab feel instantly responsive even when render takes >100ms.
@@ -1759,7 +1779,13 @@ function renderItems() {
     </div><div class="item__v">${fmtEUR(parseNum(it.value))}</div>`;
     const openResearch = async ev=>{
       ev.preventDefault(); ev.stopPropagation();
-      const ok = window.VestraMarket?.openPortfolioAsset ? await window.VestraMarket.openPortfolioAsset(it) : false;
+      let market = window.VestraMarket || null;
+      try {
+        if (!market?.openPortfolioAsset) market = await ensureMarketRuntimeReady();
+      } catch (err) {
+        console.error("Falha a carregar Mercado para dossier", err);
+      }
+      const ok = market?.openPortfolioAsset ? await market.openPortfolioAsset(it) : false;
       if(!ok) toast('Ainda não há dossier Vestra para este instrumento.');
     };
     const researchBtn=row.querySelector('.item__research');
