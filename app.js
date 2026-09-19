@@ -1785,10 +1785,14 @@ function renderPortfolioSectorBox() {
       const ticker = String(btn.dataset.sectorResearch || "").trim();
       if (!ticker) return;
       try {
-        const api = window.VestraMarket?.openTicker
+        const api = window.VestraMarket?.openPortfolioAsset
           ? window.VestraMarket
           : await window.VestraMarketLoader?.ensure?.();
-        if (api?.openTicker) api.openTicker(ticker);
+        const asset = (state.assets || []).find(a =>
+          String(a.yahooTicker || a.ticker || a.symbol || "").trim().toUpperCase() === ticker.toUpperCase()
+        );
+        if (api?.openPortfolioAsset && asset) await api.openPortfolioAsset(asset);
+        else if (api?.openTicker) api.openTicker(ticker);
         else toast("Ainda não há dossier Vestra para este instrumento.");
       } catch (err) {
         console.error("Falha ao abrir dossier pela box de sectores", err);
