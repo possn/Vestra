@@ -68,8 +68,9 @@ test('iPhone/WebKit: global ticker uses canonical dossier and can return to Mark
   });
 
   await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarketLoader);
+  await page.evaluate(() => window.setView('market'));
   await page.waitForFunction(() => Boolean(window.VestraGlobalMarketSearch && window.VestraNavigation && window.VestraMarket));
-  await page.evaluate(() => window.setView?.('market'));
 
   const opened = await page.evaluate(() => window.VestraGlobalMarketSearch.openRemoteTicker('ECVT'));
   expect(opened).toBeTruthy();
