@@ -51,7 +51,10 @@
     const request=++navigationSequence;
 
     try{
-      const api=window.VestraMarket;
+      let api=window.VestraMarket;
+      if(!api?.openTicker){
+        try{ api=await window.VestraMarketLoader?.ensure?.(); }catch(_){}
+      }
       if(!api?.openTicker){
         if(origin==='portfolio') openingFromPortfolio=false;
         return false;
