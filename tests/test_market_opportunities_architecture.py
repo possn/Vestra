@@ -11,12 +11,16 @@ def read(path: str) -> str:
 class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_hotfix_loads_canonical_modules_not_legacy_opportunity_overlays(self):
         hotfix = read('index.html')
-        self.assertIn("market-opportunities.js?v=1.1", hotfix)
+        universe = read('market-static-universe.js')
+        self.assertNotIn('src="market-opportunities.js', hotfix)
+        self.assertNotIn('src="market-opportunity-lenses.js', hotfix)
+        self.assertIn("market-opportunities.js?v=1.2", universe)
+        self.assertIn("market-opportunity-lenses.js?v=3.0", universe)
         self.assertIn("vestra-portfolio-focus.js?v=1.0", hotfix)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
         self.assertNotIn("vestra-ux-v453.js", hotfix)
         self.assertNotIn("vestra-ux-v454.js", hotfix)
-        self.assertLess(hotfix.index('market-opportunities.js'), hotfix.index('market-opportunity-lenses.js'))
+        self.assertLess(universe.index('ensureMarketOpportunities();'), universe.index('ensureMarketOpportunityLenses();'))
 
     def test_canonical_opportunity_engine_keeps_v453_contract(self):
         source = read('market-opportunities.js')
