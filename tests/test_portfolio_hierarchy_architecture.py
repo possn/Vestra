@@ -11,20 +11,35 @@ def read(path: str) -> str:
 class PortfolioHierarchyArchitectureTests(unittest.TestCase):
     def test_hotfix_uses_canonical_hierarchy_and_swap_lab(self):
         h=read('index.html')
+        loader=read('market-static-universe.js')
         self.assertNotIn('market-hotfix.js', h)
         self.assertIn("portfolio-card-classifier.js?v=1.2", h)
-        self.assertIn("vestra-portfolio-hierarchy.js?v=1.3", h)
-        self.assertIn("vestra-swap-lab.js?v=1.0", h)
-        self.assertIn("portfolio-diagnostics.js?v=1.0", h)
-        self.assertIn("vestra-ai-brief.js?v=1.0", h)
-        self.assertIn("portfolio-dossier-routing.js?v=1.0", h)
+        for direct in (
+            'src="vestra-portfolio-hierarchy.js',
+            'src="vestra-swap-lab.js',
+            'src="vestra-portfolio-ui.js',
+            'src="portfolio-diagnostics.js',
+            'src="portfolio-dossier-routing.js',
+            'src="vestra-ai-brief.js',
+        ):
+            self.assertNotIn(direct, h)
+        expected = (
+            "vestra-portfolio-focus.js?v=1.1",
+            "vestra-swap-lab.js?v=1.1",
+            "vestra-portfolio-ui.js?v=1.2",
+            "portfolio-diagnostics.js?v=1.1",
+            "portfolio-dossier-routing.js?v=1.4",
+            "vestra-portfolio-hierarchy.js?v=1.6",
+            "vestra-ai-brief.js?v=1.2",
+        )
+        for module in expected:
+            self.assertIn(module, loader)
         for legacy in ('vestra-ux-v452.js','vestra-ux-v454.js','vestra-ux-v455.js','vestra-ux-v456.js','vestra-ux-v457.js','market-enhancements.js','vestra-portfolio-nav-fix-v464.js','vestra-portfolio-tabs-v479.js','vestra-portfolio-dossier-routing-v482.js'):
             self.assertNotIn(legacy, h)
+            self.assertNotIn(legacy, loader)
         self.assertLess(h.index('portfolio-collapsibles.js'), h.index('portfolio-card-classifier.js'))
-        self.assertLess(h.index('portfolio-card-classifier.js'), h.index('vestra-portfolio-hierarchy.js'))
-        self.assertLess(h.index('vestra-portfolio-hierarchy.js'), h.index('vestra-swap-lab.js'))
-        self.assertLess(h.index('vestra-portfolio-ui.js'), h.index('portfolio-diagnostics.js'))
-        self.assertLess(h.index('portfolio-diagnostics.js'), h.index('portfolio-dossier-routing.js'))
+        positions = [loader.index(module) for module in expected]
+        self.assertEqual(positions, sorted(positions))
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
         s=read('vestra-portfolio-hierarchy.js')
