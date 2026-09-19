@@ -20,8 +20,10 @@ class RuntimeJsReachabilityTests(unittest.TestCase):
 
     def test_model_validation_is_reachable_dynamically(self):
         report = audit.build_report()
-        self.assertIn('market-company-brief.js', report['direct'])
+        self.assertIn('market-company-brief.js', report['dynamic'])
         self.assertIn('market-model-validation.js', report['dynamic'])
+        self.assertIn('market-company-brief.js', report['edges'].get('market-static-universe.js', []))
+        self.assertIn('market-model-validation.js', report['edges'].get('market-company-brief.js', []))
 
     def test_dynamic_runtime_modules_are_precached_for_offline_pwa(self):
         report = audit.build_report()
