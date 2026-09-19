@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.14 */
+/* Vestra Market static universe loader v1.15 */
 (() => {
   'use strict';
 
@@ -109,6 +109,10 @@
   function ensureMarketUiPolish() { loadCompanion('VestraMarketUiPolish','script[data-vestra-market-ui-polish]','market-ui-polish.js?v=1.3&stockthemes=2','vestraMarketUiPolish'); }
   function ensureUiVisualPolish() { loadCompanion('VestraUiVisualPolish','script[data-vestra-ui-visual-polish]','ui-visual-polish.js?v=1.1','vestraUiVisualPolish'); }
   function ensurePoliticiansCompanion() { loadCompanion('VestraPoliticians','script[data-vestra-politicians]','politicians.js?v=2.1','vestraPoliticians'); }
+  function ensureMarketOpportunities() { loadCompanion('VestraMarketOpportunities','script[data-vestra-market-opportunities]','market-opportunities.js?v=1.2','vestraMarketOpportunities'); }
+  function ensureMarketOpportunityLenses() { loadCompanion('VestraMarketOpportunityLenses','script[data-vestra-market-opportunity-lenses]','market-opportunity-lenses.js?v=3.0','vestraMarketOpportunityLenses'); }
+  function ensureMarketMetals() { loadCompanion('VestraMetals','script[data-vestra-market-metals]','market-metals.js?v=1.0','vestraMarketMetals'); }
+  function ensureMarketCompanyBrief() { loadCompanion('VestraMarketCompanyBrief','script[data-vestra-market-company-brief]','market-company-brief.js?v=2.1','vestraMarketCompanyBrief'); }
 
   function ensureMarketCompanions() {
     // Market-only helpers are deliberately deferred until Market is first used.
@@ -118,6 +122,10 @@
     ensureAnalysisToolsRuntime();
     ensureMarketUiPolish();
     ensurePoliticiansCompanion();
+    ensureMarketOpportunities();
+    ensureMarketOpportunityLenses();
+    ensureMarketMetals();
+    ensureMarketCompanyBrief();
     return ensureEtfIntelligence();
   }
 
@@ -215,8 +223,10 @@
   window.VestraMarketStaticUniverse = Object.freeze({
     create, getStocks, ensureEtfIntelligence, ensureScannerCompanion, ensureAnalysisToolsRuntime,
     ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh, ensureDashboardDailyNews,
-    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, ensurePoliticiansCompanion, ensureMarketCompanions, unpackStartupPayload,
+    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, ensurePoliticiansCompanion,
+    ensureMarketOpportunities, ensureMarketOpportunityLenses, ensureMarketMetals, ensureMarketCompanyBrief,
+    ensureMarketCompanions, unpackStartupPayload,
     dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, etfIntelligenceLoadTimeoutMs: ETF_INTELLIGENCE_LOAD_TIMEOUT_MS,
-    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.14',
+    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.15',
   });
 })();
