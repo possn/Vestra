@@ -58,6 +58,8 @@ test('iPhone/WebKit: SPIE.PA keeps exact provider identity in the canonical doss
   });
 
   await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarketLoader);
+  await page.evaluate(() => window.setView('market'));
   await page.waitForFunction(() => Boolean(
     window.VestraGlobalMarketSearch &&
     window.VestraMarket?.upsertRemoteStock &&
