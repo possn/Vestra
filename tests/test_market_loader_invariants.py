@@ -12,10 +12,14 @@ def read(path: str) -> str:
 class MarketLoaderInvariantTests(unittest.TestCase):
     def test_base_bundle_precedes_static_market_modules(self):
         index = read("index.html")
+        runtime_loader = read("app-market-runtime-loader.js")
         self.assertLess(index.index('src="app-utils.js'), index.index('src="app.js'))
-        self.assertLess(index.index('src="app.js'), index.index('src="market.js'))
-        self.assertLess(index.index('src="market.js'), index.index('src="market-data-loader.js'))
+        self.assertLess(index.index('src="app.js'), index.index('src="market-live-overlay.js'))
+        self.assertLess(index.index('src="market-row-ui.js'), index.index('src="app-market-runtime-loader.js'))
+        self.assertLess(index.index('src="app-market-runtime-loader.js'), index.index('src="market-data-loader.js'))
         self.assertLess(index.index('src="market-data-loader.js'), index.index('src="politicians.js'))
+        self.assertIn("script.src = 'market.js?v=20260831v2'", runtime_loader)
+        self.assertNotIn('src="market.js', index)
         self.assertNotIn('src="market-hotfix.js', index)
 
     def test_static_market_bundle_does_not_reload_base_utils(self):
