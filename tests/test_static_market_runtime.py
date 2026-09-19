@@ -7,11 +7,13 @@ def read(path):
     return (ROOT / path).read_text(encoding="utf-8")
 
 class StaticMarketRuntimeTests(unittest.TestCase):
-    def test_index_owns_market_module_order_without_dynamic_loader(self):
+    def test_index_owns_market_auxiliary_order_with_lazy_core(self):
         index = read("index.html")
+        loader = read("market-runtime-loader.js")
         self.assertNotIn('src="market-hotfix.js', index)
+        self.assertNotIn('src="market.js', index)
         order = [
-            'market-live-overlay.js', 'market.js', 'market-data-loader.js', 'market-company-brief.js',
+            'market-live-overlay.js', 'market-runtime-loader.js', 'market-data-loader.js', 'market-company-brief.js',
             'market-metric-cleanup.js', 'portfolio-collapsibles.js',
             'portfolio-sheet-navigation.js', 'portfolio-card-classifier.js',
             'market-opportunities.js', 'vestra-portfolio-focus.js',
@@ -24,12 +26,13 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
         for name in order:
             self.assertEqual(index.count(f'src="{name}'), 1, name)
+        self.assertIn("script.src = 'market.js?v=20260831v2';", loader)
         self.assertNotIn('portfolio-navigation-fix.js', index)
         self.assertNotIn('market-close-controller.js', index)
 
     def test_every_static_market_script_is_deferred(self):
         index = read("index.html")
-        for name in ('market-live-overlay.js','market-data-loader.js','portfolio-sheet-navigation.js','market-opportunities.js','vestra-portfolio-ui.js','portfolio-diagnostics.js','politicians.js'):
+        for name in ('market-live-overlay.js','market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js','market-opportunities.js','vestra-portfolio-ui.js','portfolio-diagnostics.js','politicians.js'):
             self.assertIn(f'<script defer="" src="{name}', index)
 
     def test_service_worker_tracks_final_static_runtime(self):
@@ -40,7 +43,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertNotIn('./market-hotfix.js', sw)
         self.assertNotIn('./portfolio-navigation-fix.js', sw)
         self.assertNotIn('./market-close-controller.js', sw)
-        for name in ('./market-live-overlay.js','./market-data-loader.js','./portfolio-sheet-navigation.js','./vestra-ai-brief.js','./portfolio-dossier-routing.js'):
+        for name in ('./market.js','./market-runtime-loader.js','./market-live-overlay.js','./market-data-loader.js','./portfolio-sheet-navigation.js','./vestra-ai-brief.js','./portfolio-dossier-routing.js'):
             self.assertIn(name, sw)
 
 if __name__ == '__main__':
