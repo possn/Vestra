@@ -1,9 +1,9 @@
-/* Vestra Market Runtime Loader v1.0 — defer heavy market UI until first use. */
+/* Vestra Market Runtime Loader v1.1 — defer heavy market UI until first use. */
 (() => {
   'use strict';
 
   const MODULE_TIMEOUT_MS = 8000;
-  const MODULES = Object.freeze([
+  const CORE_MODULES = Object.freeze([
     'market-live-overlay.js?v=1.2',
     'market-congress-live.js?v=1.0',
     'market-portfolio-context.js?v=1.0',
@@ -12,8 +12,10 @@
     'market-search-suggestions.js?v=1.2',
     'market-row-ui.js?v=1.0',
     'market.js?v=20260831v2',
-    'market-metals.js?v=1.0',
     'market-data-loader.js?v=2.5',
+  ]);
+  const ENHANCEMENT_MODULES = Object.freeze([
+    'market-metals.js?v=1.0',
     'market-company-brief.js?v=1.0',
     'market-metric-cleanup.js?v=1.0',
     'portfolio-collapsibles.js?v=1.2',
@@ -29,8 +31,10 @@
     'portfolio-dossier-routing.js?v=1.0',
     'politicians.js?v=2.1',
   ]);
+  const MODULES = Object.freeze([...CORE_MODULES, ...ENHANCEMENT_MODULES]);
 
   let runtimePromise = null;
+  let enhancementsPromise = null;
 
   function modulePath(src) {
     return String(src || '').split('?')[0];
@@ -86,20 +90,39 @@
     });
   }
 
-  async function loadAll() {
-    for (const src of MODULES) await loadModule(src);
+  async function loadSequence(modules) {
+    for (const src of modules) await loadModule(src);
+  }
+
+  function ensureEnhancements() {
+    if (!enhancementsPromise) {
+      enhancementsPromise = loadSequence(ENHANCEMENT_MODULES).catch(error => {
+        enhancementsPromise = null;
+        console.warn('[MarketRuntime] enhancement load failed', error);
+        return false;
+      });
+    }
+    return enhancementsPromise;
+  }
+
+  async function loadCore() {
+    await loadSequence(CORE_MODULES);
     const api = window.VestraMarket;
     if (!api?.ensureLoaded || !api?.openTicker) throw new Error('Runtime de Mercado incompleto.');
     try { window.dispatchEvent(new CustomEvent('vestra:market-runtime-ready')); } catch (_) {}
+    // Decorations are intentionally not on the critical path. Every enhancement
+    // is late-load safe and repairs the current DOM when it starts.
+    setTimeout(() => { void ensureEnhancements(); }, 0);
     return api;
   }
 
   function ensure() {
     if (window.VestraMarket?.ensureLoaded && window.VestraMarket?.openTicker) {
+      void ensureEnhancements();
       return Promise.resolve(window.VestraMarket);
     }
     if (!runtimePromise) {
-      runtimePromise = loadAll().catch(error => {
+      runtimePromise = loadCore().catch(error => {
         runtimePromise = null;
         throw error;
       });
@@ -109,8 +132,11 @@
 
   window.VestraMarketRuntime = Object.freeze({
     ensure,
+    ensureEnhancements,
     modules: MODULES,
+    coreModules: CORE_MODULES,
+    enhancementModules: ENHANCEMENT_MODULES,
     moduleTimeoutMs: MODULE_TIMEOUT_MS,
-    version: '1.0',
+    version: '1.1',
   });
 })();
