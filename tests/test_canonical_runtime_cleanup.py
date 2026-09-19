@@ -18,10 +18,14 @@ def read(path: str) -> str:
 class CanonicalRuntimeCleanupTests(unittest.TestCase):
     def test_loader_uses_canonical_ai_and_routing_without_versioned_nav_overlays(self):
         h = read('index.html')
-        self.assertIn("vestra-ai-brief.js?v=1.0", h)
-        self.assertIn("portfolio-dossier-routing.js?v=1.0", h)
+        runtime = read('market-runtime-loader.js')
+        self.assertIn("vestra-ai-brief.js?v=1.0", runtime)
+        self.assertIn("portfolio-dossier-routing.js?v=1.0", runtime)
+        self.assertNotIn('src="vestra-ai-brief.js', h)
+        self.assertNotIn('src="portfolio-dossier-routing.js', h)
         for legacy in LEGACY_RUNTIME_FILES:
             self.assertNotIn(legacy, h)
+            self.assertNotIn(legacy, runtime)
 
     def test_retired_runtime_overlays_do_not_exist_at_repository_root(self):
         for legacy in LEGACY_RUNTIME_FILES:
