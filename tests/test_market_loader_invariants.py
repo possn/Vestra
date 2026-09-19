@@ -15,7 +15,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertLess(index.index('src="app-utils.js'), index.index('src="app.js'))
         self.assertLess(index.index('src="app.js'), index.index('src="market-runtime-loader.js'))
         self.assertLess(index.index('src="market-runtime-loader.js'), index.index('src="market-data-loader.js'))
-        self.assertLess(index.index('src="market-data-loader.js'), index.index('src="politicians.js'))
+        self.assertNotIn('src="politicians.js', index)
         self.assertNotIn('src="market.js', index)
         self.assertNotIn('src="market-hotfix.js', index)
 
@@ -59,7 +59,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertNotIn("ensureMarketUiPolish();", tail)
         self.assertIn("const etfReady = ensureMarketCompanions();", universe)
         self.assertIn("await etfReady;", universe)
-        self.assertIn("market-static-universe.js?v=1.13", index)
+        self.assertIn("market-static-universe.js?v=1.14", index)
 
     def test_dossier_hydration_requires_exact_ticker_identity(self):
         loader = read("market-data-loader.js")
@@ -124,7 +124,10 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         index = read("index.html")
         politicians = read("politicians.js")
         self.assertIn("const VERSION='2.1';", politicians)
-        self.assertIn("politicians.js?v=2.1", index)
+        universe = read("market-static-universe.js")
+        self.assertNotIn('src="politicians.js', index)
+        self.assertIn("politicians.js?v=2.1", universe)
+        self.assertIn("ensurePoliticiansCompanion", universe)
         self.assertIn("data/executives.json", politicians)
         self.assertIn("TOP 10 COMPRAS", politicians)
         self.assertIn("TOP 10 VENDAS", politicians)
