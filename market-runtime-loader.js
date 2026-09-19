@@ -95,15 +95,9 @@
       return Promise.resolve(window.VestraMarketCompanyBrief);
     }
     if (!enhancementsPromise) {
-      enhancementsPromise = loadHelper(
-        'VestraMarketMetricCleanup',
-        'market-metric-cleanup.js?v=1.0'
-      ).then(metric => {
+      enhancementsPromise = loadHelper('VestraMarketMetricCleanup', 'market-metric-cleanup.js?v=1.0').then(metric => {
         if (!metric) return null;
-        return loadHelper(
-          'VestraMarketCompanyBrief',
-          'market-company-brief.js?v=1.0'
-        );
+        return loadHelper('VestraMarketCompanyBrief', 'market-company-brief.js?v=1.0');
       }).catch(err => {
         enhancementsPromise = null;
         throw err;
