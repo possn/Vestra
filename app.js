@@ -1782,8 +1782,10 @@ function portfolioEquitySector(asset) {
   if (isEtf) return inferEtfSector(asset);
 
   try {
-    const fallback = canonicalEquitySectorLabel(getTickerMeta(asset)?.sector);
+    const fallbackRaw = String(getTickerMeta(asset)?.sector || "").trim();
+    const fallback = canonicalEquitySectorLabel(fallbackRaw);
     if (fallback) return fallback;
+    if (fallbackRaw.toUpperCase() === "ETF") return inferEtfSector(asset);
   } catch (_) {}
 
   return "Sector por identificar";
