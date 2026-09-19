@@ -51,11 +51,16 @@
     const request=++navigationSequence;
 
     try{
-      const api=window.VestraMarket;
+      let api=window.VestraMarket;
+      if(!api?.openTicker){
+        const loader=window.VestraMarketRuntime;
+        if(loader?.ensure) api=await loader.ensure();
+      }
       if(!api?.openTicker){
         if(origin==='portfolio') openingFromPortfolio=false;
         return false;
       }
+      try{ await api.ensureLoaded?.(); }catch(_){}
 
       // Establish the navigation state synchronously before dossier rendering.
       prepareDossierOrigin(origin);
