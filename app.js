@@ -1700,6 +1700,97 @@ function renderPortfolioGlance() {
   }
 }
 
+function normalizePortfolioEquityClass(asset) {
+  return String(asset?.class || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function isPortfolioEquityAsset(asset) {
+  if (!asset || parseNum(asset.value) <= 0) return false;
+  const meta = asset.meta || {};
+  const quoteType = String(meta.quoteType || meta.quote_type || "").trim().toUpperCase();
+  if (quoteType === "EQUITY" || quoteType === "ETF") return true;
+  if (quoteType === "CRYPTOCURRENCY" || quoteType === "MUTUALFUND" || quoteType === "FUND") return false;
+
+  const cls = normalizePortfolioEquityClass(asset);
+  return cls === "acoes/etfs" || cls === "acoes" || cls === "acao" ||
+         cls === "etf" || cls === "etfs";
+}
+
+function canonicalEquitySectorLabel(raw) {
+  const key = String(raw || "").trim().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (!key) return "";
+  const aliases = new Map([
+    ["technology","Tecnologia"],["tecnologia","Tecnologia"],
+    ["healthcare","Saúde"],["health care","Saúde"],["saude","Saúde"],
+    ["financial services","Financeiro / Bancos"],["financials","Financeiro / Bancos"],
+    ["financeiros","Financeiro / Bancos"],["financeiro","Financeiro / Bancos"],["banks","Financeiro / Bancos"],["banking","Financeiro / Bancos"],
+    ["consumer cyclical","Consumo discricionário"],["consumer discretionary","Consumo discricionário"],["consumo ciclico","Consumo discricionário"],["consumo discricionario","Consumo discricionário"],
+    ["consumer defensive","Consumo básico"],["consumer staples","Consumo básico"],["consumo basico","Consumo básico"],["consumo defensivo","Consumo básico"],
+    ["industrials","Industriais"],["industrial","Industriais"],["industriais","Industriais"],
+    ["basic materials","Materiais"],["materials","Materiais"],["materiais","Materiais"],["mat. basicos","Materiais"],["materiais basicos","Materiais"],
+    ["communication services","Comunicação / Serviços"],["communications","Comunicação / Serviços"],["comunicacoes","Comunicação / Serviços"],["comunicacao","Comunicação / Serviços"],
+    ["energy","Energia"],["energia","Energia"],
+    ["utilities","Utilities"],["utilidades","Utilities"],
+    ["real estate","Imobiliário"],["imobiliario","Imobiliário"],
+  ]);
+  return aliases.get(key) || "";
+}
+
+function inferEtfSector(asset) {
+  const hay = [
+    asset?.name, asset?.ticker, asset?.yahooTicker, asset?.symbol,
+    asset?.meta?.industry, asset?.meta?.category, asset?.meta?.fundFamily
+  ].filter(Boolean).join(" ").toLowerCase()
+   .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  if (/semiconductor|technology|tecnolog|software|cyber|cloud|artificial intelligence|\bai\b/.test(hay)) return "Tecnologia";
+  if (/healthcare|health care|biotech|pharma|medical/.test(hay)) return "Saúde";
+  if (/financial|bank|insurance|fintech/.test(hay)) return "Financeiro / Bancos";
+  if (/consumer discretionary|retail|leisure|travel|automotive|autos?\b/.test(hay)) return "Consumo discricionário";
+  if (/consumer staples|food|beverage|grocery|staples/.test(hay)) return "Consumo básico";
+  if (/industrial|aerospace|defen[cs]e|infrastructure|robotics/.test(hay)) return "Industriais";
+  if (/materials|material|mining|miners|metals|copper|lithium|rare earth/.test(hay)) return "Materiais";
+  if (/communication|telecom|media/.test(hay)) return "Comunicação / Serviços";
+  if (/energy|oil|gas|uranium|nuclear|solar|clean energy/.test(hay)) return "Energia";
+  if (/utilities|utility|water/.test(hay)) return "Utilities";
+  if (/real estate|property|reit/.test(hay)) return "Imobiliário";
+  return "ETF diversificado";
+}
+
+function portfolioEquitySector(asset) {
+  const meta = asset?.meta || {};
+  const direct = canonicalEquitySectorLabel(meta.sector);
+  if (direct) return direct;
+
+  const industry = String(meta.industry || "").trim();
+  const fromIndustry = canonicalEquitySectorLabel(industry);
+  if (fromIndustry) return fromIndustry;
+  if (/bank|credit services|capital markets|insurance|asset management/i.test(industry)) return "Financeiro / Bancos";
+  if (/software|semiconductor|information technology|electronic/i.test(industry)) return "Tecnologia";
+  if (/biotech|pharma|medical|health/i.test(industry)) return "Saúde";
+  if (/mining|metal|chemical|materials/i.test(industry)) return "Materiais";
+
+  const quoteType = String(meta.quoteType || meta.quote_type || "").trim().toUpperCase();
+  const cls = normalizePortfolioEquityClass(asset);
+  const isEtf = quoteType === "ETF" || cls === "etf" || cls === "etfs" ||
+    /\betf\b/i.test(String(asset?.class || ""));
+  if (isEtf) return inferEtfSector(asset);
+
+  try {
+    const fallbackRaw = String(getTickerMeta(asset)?.sector || "").trim();
+    const fallback = canonicalEquitySectorLabel(fallbackRaw);
+    if (fallback) return fallback;
+    if (fallbackRaw.toUpperCase() === "ETF") return inferEtfSector(asset);
+  } catch (_) {}
+
+  return "Sector por identificar";
+}
+
 function renderPortfolioSectorBox() {
   const card = document.getElementById("portfolioSectorCard");
   const root = document.getElementById("portfolioSectorSummary");
@@ -1711,24 +1802,17 @@ function renderPortfolioSectorBox() {
   }
   card.hidden = false;
 
-  const assets = (state.assets || []).filter(a => parseNum(a.value) > 0);
-  const eligible = assets.filter(a => {
-    const cls = String(a.class || "").toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return /acoes|etf|fund|cripto/.test(cls);
-  });
-  const portfolioTotal = assets.reduce((s,a) => s + parseNum(a.value), 0) || 1;
-  const analysedTotal = eligible.reduce((s,a) => s + parseNum(a.value), 0);
+  const eligible = (state.assets || []).filter(isPortfolioEquityAsset);
+  const equityTotal = eligible.reduce((s,a) => s + parseNum(a.value), 0);
 
-  if (!eligible.length || analysedTotal <= 0) {
-    root.innerHTML = '<div class="portfolio-sector-empty">Sem ações, ETFs/fundos ou cripto com valor para agrupar por sector.</div>';
+  if (!eligible.length || equityTotal <= 0) {
+    root.innerHTML = '<div class="portfolio-sector-empty">Sem ações ou ETFs com valor para analisar por sector.</div>';
     return;
   }
 
   const grouped = new Map();
   for (const asset of eligible) {
-    let sector = "Outros";
-    try { sector = getTickerMeta(asset)?.sector || "Outros"; } catch (_) {}
+    const sector = portfolioEquitySector(asset);
     const list = grouped.get(sector) || [];
     list.push(asset);
     grouped.set(sector, list);
@@ -1739,40 +1823,39 @@ function renderPortfolioSectorBox() {
     const value = list.reduce((s,a) => s + parseNum(a.value), 0);
     return {
       sector, list, value,
-      pctAnalysed: value / analysedTotal * 100,
-      pctPortfolio: value / portfolioTotal * 100,
+      pctEquities: value / equityTotal * 100,
     };
   }).sort((a,b) => b.value - a.value);
 
   const esc = escapeHtml;
   root.innerHTML = '<div class="portfolio-sector-overview">' +
     rows.map((row, idx) => {
-      const concentration = row.pctAnalysed >= 30
+      const concentration = row.pctEquities >= 30
         ? '<span class="portfolio-sector-risk">Concentração</span>' : '';
       const assetsHtml = row.list.map(asset => {
         const value = parseNum(asset.value);
         const inSector = row.value > 0 ? value / row.value * 100 : 0;
-        const inPortfolio = value / portfolioTotal * 100;
+        const inEquities = value / equityTotal * 100;
         const ticker = String(asset.yahooTicker || asset.ticker || asset.symbol || "").trim();
         const gl = calcGainLoss(asset);
         const gain = gl ? (gl.gainPct >= 0 ? '+' : '') + fmtPct(gl.gainPct) : '—';
         const gainClass = gl ? (gl.gainPct >= 0 ? 'is-positive' : 'is-negative') : '';
-        const research = /a[cç][oõ]es|etf|fund/i.test(String(asset.class || "")) && ticker
+        const research = ticker
           ? '<button type="button" class="portfolio-sector-research" data-sector-research="' + esc(ticker) + '" title="Abrir dossier Vestra">Dossier ↗</button>'
           : '';
         return '<div class="portfolio-sector-asset">' +
           '<div class="portfolio-sector-asset__main"><strong>' + esc(asset.name || ticker || '—') + '</strong>' +
           '<span>' + esc(ticker || asset.class || '') + ' · ' + inSector.toFixed(1) + '% do sector</span></div>' +
           '<div class="portfolio-sector-asset__metrics"><strong>' + fmtEUR(value) + '</strong>' +
-          '<span>' + inPortfolio.toFixed(1) + '% carteira · <em class="' + gainClass + '">' + gain + '</em></span></div>' +
+          '<span>' + inEquities.toFixed(1) + '% ações + ETFs · <em class="' + gainClass + '">' + gain + '</em></span></div>' +
           research +
           '</div>';
       }).join('');
 
       return '<details class="portfolio-sector-group" ' + (idx === 0 ? 'open' : '') + '>' +
         '<summary><div class="portfolio-sector-title"><span class="portfolio-sector-dot" style="--sector-index:' + idx + '"></span>' +
-        '<div><strong>' + esc(row.sector) + '</strong><small>' + row.list.length + (row.list.length === 1 ? ' activo' : ' activos') + '</small></div></div>' +
-        '<div class="portfolio-sector-total"><strong>' + row.pctAnalysed.toFixed(1) + '%</strong><small>' + fmtEUR(row.value) + ' · ' + row.pctPortfolio.toFixed(1) + '% carteira</small></div>' +
+        '<div><strong>' + esc(row.sector) + '</strong><small>' + row.list.length + (row.list.length === 1 ? ' posição' : ' posições') + '</small></div></div>' +
+        '<div class="portfolio-sector-total"><strong>' + row.pctEquities.toFixed(1) + '%</strong><small>' + fmtEUR(row.value) + ' · ações + ETFs</small></div>' +
         concentration + '<span class="portfolio-sector-chevron">›</span></summary>' +
         '<div class="portfolio-sector-assets">' + assetsHtml + '</div></details>';
     }).join('') +
@@ -4669,11 +4752,7 @@ function legendRow(label, value, pct, color) {
 }
 
 function renderPortfolioCharts() {
-  const EQUITY_CLS = new Set(["ações/etfs","acoes/etfs","cripto"]);
-  const equityAssets = state.assets.filter(a => {
-    const c = (a.class||"").toLowerCase().replace(/ç/g,"c").replace(/ã/g,"a").replace(/õ/g,"o");
-    return EQUITY_CLS.has(c) && parseNum(a.value) > 0;
-  });
+  const equityAssets = state.assets.filter(isPortfolioEquityAsset);
 
   const sectorWrap = document.getElementById("sectorChartWrap");
   const geoWrap    = document.getElementById("geoChartWrap");
@@ -4696,8 +4775,7 @@ function renderPortfolioCharts() {
   // ── SECTOR ──────────────────────────────────────
   const bySector = {};
   for (const a of equityAssets) {
-    const { sector } = getTickerMeta(a);
-    const key = sector || "Outros";
+    const key = portfolioEquitySector(a);
     bySector[key] = (bySector[key] || 0) + parseNum(a.value);
   }
   const sEntries = Object.entries(bySector).sort((a,b) => b[1]-a[1]);
