@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.60 — lazy Excel loader joins the offline shell. */
-const CACHE_NAME = "vestra-cache-v173";
+/* Vestra Service Worker v10.61 — portfolio sector explorer joins the offline shell. */
+const CACHE_NAME = "vestra-cache-v174";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
@@ -16,7 +16,7 @@ const APP_SHELL = [
   "./portfolio-sheet-navigation.js", "./portfolio-sheet-navigation.css", "./portfolio-card-classifier.js", "./portfolio-card-classifier.css", "./market-opportunities.js", "./market-opportunities.css",
   "./market-metals.js", "./market-metals.css", "./market-model-validation.js", "./market-model-validation.css",
   "./quote-canonical-repair.js", "./market-global-search.js", "./market-learned-universe.js",
-  "./vestra-portfolio-focus.js", "./vestra-portfolio-focus.css", "./vestra-portfolio-hierarchy.js", "./vestra-portfolio-hierarchy.css", "./vestra-swap-lab.js", "./vestra-swap-lab.css",
+  "./vestra-portfolio-focus.js", "./vestra-portfolio-focus.css", "./vestra-portfolio-hierarchy.js", "./vestra-portfolio-hierarchy.css", "./vestra-swap-lab.js", "./vestra-swap-lab.css", "./portfolio-sector-explorer.js", "./portfolio-sector-explorer.css",
   "./market-opportunity-lenses.js", "./market-opportunity-lenses.css", "./mobile-ui-refresh.js", "./vestra-ai-brief.js", "./vestra-ai-brief.css", "./vestra-portfolio-ui.js", "./vestra-portfolio-ui.css",
   "./portfolio-diagnostics.js", "./portfolio-diagnostics.css", "./portfolio-dossier-routing.js", "./politicians.js", "./politicians.css", "./market-global-search.css", "./market-stock-themes-tools.css", "./data/executives.json",
   "./manifest.webmanifest", "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",
@@ -32,7 +32,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "market-data-loader.js", "market-data-health.js", "market-portfolio-context.js", "market-static-universe.js",
   "market-scanner-data.js", "market-analysis-tools-runtime.js", "market-etf-intelligence.js", "dashboard-weekly-events.js",
   "dashboard-weekly-events-navigation.js", "dashboard-daily-news.js", "market-dossier-controls.js", "market-ui-polish.js", "market-opportunities.js",
-  "market-opportunity-lenses.js", "mobile-ui-refresh.js", "vestra-ai-brief.js", "politicians.js"
+  "market-opportunity-lenses.js", "mobile-ui-refresh.js", "vestra-ai-brief.js", "portfolio-sector-explorer.js", "politicians.js"
 ]);
 
 async function precacheAsset(cache, asset) {
