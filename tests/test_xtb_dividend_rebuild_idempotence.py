@@ -8,7 +8,7 @@ APP = (ROOT / "app.js").read_text(encoding="utf-8")
 class XtbDividendRebuildIdempotenceTests(unittest.TestCase):
     def test_rebuild_clones_raw_broker_events_before_annotation(self):
         self.assertIn(
-            'let events = (bd.events || []).map(e => (e && typeof e === "object" ? { ...e } : e)).sort(',
+            'let events = rebuildEvents.map(e => (e && typeof e === "object" ? { ...e } : e)).sort(',
             APP,
         )
         self.assertNotIn(

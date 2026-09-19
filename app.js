@@ -384,7 +384,7 @@ function migrateDividendRecords() {
   return changed;
 }
 
-const BROKER_REBUILD_SCHEMA_VERSION = 45; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
+const BROKER_REBUILD_SCHEMA_VERSION = 46; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
 
 function getReturnSettings() {
   return normalizeReturnSettings((state && state.settings && state.settings.returnDefaults) || {}, parseNum);
@@ -6549,6 +6549,62 @@ if (![parseXTBNormalizeAction, xtbTickerToYahoo, xtbSymbolCurrency].every(fn => 
 
 
 
+const CANONICAL_BROKER_SPLITS = Object.freeze([
+  // New Fortress Energy: 1-for-50 reverse split. Trading resumed split-adjusted
+  // on 2026-09-14. Historical broker ledgers imported before the corporate
+  // action still contain pre-split quantities, while live quotes are post-split.
+  { ticker: "NFE", effectiveDate: "2026-09-14", eventWindowStart: "2026-09-11", eventWindowEnd: "2026-09-14", numerator: 1, denominator: 50 }
+]);
+
+function canonicalBrokerSplitMatches(record, action) {
+  if (!record || !action) return false;
+  const target = String(action.ticker || "").trim().toUpperCase();
+  if (!target) return false;
+  const candidates = [
+    record.ticker,
+    record.yahooTicker,
+    typeof inferYahooTickerFromIdentity === "function" ? inferYahooTickerFromIdentity(record) : ""
+  ];
+  return candidates.some(value => canonicalBrokerTickerBase(value || "") === target || String(value || "").trim().toUpperCase() === target);
+}
+
+function normalizeCanonicalBrokerCorporateActions(eventsInput, positionsInput) {
+  const events = (eventsInput || []).map(e => (e && typeof e === "object" ? { ...e } : e));
+  const positions = (positionsInput || []).map(p => (p && typeof p === "object" ? { ...p } : p));
+
+  for (const action of CANONICAL_BROKER_SPLITS) {
+    const hasExplicitSplit = events.some(e => {
+      if (!e || (e.type !== "SPLIT_OPEN" && e.type !== "SPLIT_CLOSE")) return false;
+      if (!canonicalBrokerSplitMatches(e, action)) return false;
+      const d = String(e.dateTime || e.date || "").slice(0, 10);
+      return d >= action.eventWindowStart && d <= action.eventWindowEnd;
+    });
+    if (hasExplicitSplit) continue;
+
+    const factor = parseNum(action.numerator) / parseNum(action.denominator);
+    if (!(factor > 0) || factor === 1) continue;
+
+    for (const e of events) {
+      if (!e || !canonicalBrokerSplitMatches(e, action)) continue;
+      const d = String(e.dateTime || e.date || "").slice(0, 10);
+      if (!d || d >= action.effectiveDate) continue;
+      if (!["BUY", "SELL", "STOCK_DISTRIBUTION"].includes(e.type)) continue;
+      const q = parseNum(e.qty);
+      if (q > 0) e.qty = q * factor;
+    }
+
+    for (const p of positions) {
+      if (!p || !canonicalBrokerSplitMatches(p, action)) continue;
+      const d = String(p.snapshotDate || "").slice(0, 10);
+      if (!d || d >= action.effectiveDate) continue;
+      const q = parseNum(p.qty);
+      if (q > 0) p.qty = q * factor;
+    }
+  }
+
+  return { events, positions };
+}
+
 function rebuildBrokerGeneratedData() {
   const bd = ensureBrokerData();
   state.assets = (state.assets || []).filter(a => !a.generatedFromBroker);
@@ -6587,13 +6643,17 @@ function rebuildBrokerGeneratedData() {
     }
   }
 
+  const corporateActionInput = normalizeCanonicalBrokerCorporateActions(bd.events || [], bd.positions || []);
+  const rebuildEvents = corporateActionInput.events;
+  const rebuildPositions = corporateActionInput.positions;
+
   // v6.6.9: BUY/SELL events are the authoritative ledger for a security+source.
   // Older imports could also leave a reconstructed non-snapshot bd.positions row for the
   // same instrument. Adding both created phantom holdings after a position was fully closed
   // (confirmed with the real XTB export: OD7F.DE / WTI has 45.4323 bought and 45.4323 sold,
   // and is absent from Open Positions). Never seed the same ledger twice.
   const eventLedgerKeys = new Set();
-  for (const e of (bd.events || [])) {
+  for (const e of rebuildEvents) {
     if (!e || (e.type !== "BUY" && e.type !== "SELL")) continue;
     const sec = makeBrokerSecurityKey(e);
     const src = String(e.sourceName || "").trim();
@@ -6667,7 +6727,7 @@ function rebuildBrokerGeneratedData() {
     return prev;
   };
 
-  for (const p of (bd.positions || [])) {
+  for (const p of rebuildPositions) {
     const cls = p.class || brokerPositionClassFromTicker(p.ticker);
     const isSnapshot = p.positionKind === "market_snapshot" || p.positionKind === "cost_snapshot";
     const pLedgerKey = `${makeBrokerSecurityKey(p)}|${String(p.sourceName || "").trim()}`;
@@ -6725,7 +6785,7 @@ function rebuildBrokerGeneratedData() {
     }
   }
 
-  let events = (bd.events || []).map(e => (e && typeof e === "object" ? { ...e } : e)).sort((a, b) => String(a.dateTime || a.date).localeCompare(String(b.dateTime || b.date)));
+  let events = rebuildEvents.map(e => (e && typeof e === "object" ? { ...e } : e)).sort((a, b) => String(a.dateTime || a.date).localeCompare(String(b.dateTime || b.date)));
 
   // v63b: Merge XTB withholding-tax rows into their dividend.
   // XTB emits the pair with adjacent transaction IDs (dividend id, WHT id±1) —

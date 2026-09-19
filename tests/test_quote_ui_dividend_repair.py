@@ -32,7 +32,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     a=read('app.js')
     self.assertIn('for (const e of events) {',a)
     self.assertIn('const net = e.type === "DIVIDEND_ADJ" ? rawNet : Math.max(0, rawNet);',a)
-    self.assertIn('const BROKER_REBUILD_SCHEMA_VERSION = 45;',a)
+    self.assertIn('const BROKER_REBUILD_SCHEMA_VERSION = 46;',a)
   def test_real_t212_semantics_examples(self):
     pfe_gross=5.23; pfe_tax_usd=1.00; pfe_fx=0.924978
     self.assertAlmostEqual(pfe_gross-pfe_tax_usd*pfe_fx,4.305022,places=6)
