@@ -100,7 +100,9 @@ class RuntimeRegressionTests(unittest.TestCase):
         for field in ("current_price", "forward_pe", "roe", "revenue_growth", "fcf_yield"):
             self.assertIn(field, overlay)
         self.assertNotIn("marketSheetContent", overlay)
-        self.assertLess(html.find("market-live-overlay.js"), html.find("market.js"))
+        runtime_loader = read("app-market-runtime-loader.js")
+        self.assertLess(html.find("market-live-overlay.js"), html.find("app-market-runtime-loader.js"))
+        self.assertIn("script.src = 'market.js?v=20260831v2'", runtime_loader)
         self.assertIn('"./market-live-overlay.js"', sw)
 
     def test_lifecycle_persistence_is_blocked_until_hydration(self):
