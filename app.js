@@ -173,27 +173,19 @@ if (![ $, resolveChartHeight, prepareChartCanvas, buildNiceAxis, ensureChartCtx,
   throw new Error("VestraUiCore não foi carregado antes de app.js");
 }
 
-/* ─── BROKER WORKBOOK READERS — moved to app-broker-workbook.js ─ */
-const { fileToText } = window.VestraBrokerWorkbook || {};
-if (typeof fileToText !== 'function') {
-  throw new Error('VestraBrokerWorkbook não foi carregado antes de app.js');
+/* ─── BROKER IMPORT RUNTIME — lazy, only when the user imports files ─ */
+async function ensureBrokerWorkbookRuntime() {
+  if (window.VestraBrokerWorkbook?.fileToText) return window.VestraBrokerWorkbook;
+  const loader = window.VestraBrokerImportLoader;
+  if (!loader?.ensureWorkbook) throw new Error('Carregador de importação não disponível.');
+  return loader.ensureWorkbook();
 }
 
-/* ─── BROKER PARSERS — moved to app-broker-parsers.js ───── */
-const {
-  estimateEURFactorFromRow,
-  parseBrokerLedgerRows,
-  parseBrokerPositionRows,
-  parseXTBTradesRows,
-  parseXTBPositionsRows,
-  parseXTBCashRows,
-  parseBrokerImportFile,
-  parseTrading212HoldingsPdf,
-} = window.VestraBrokerParsers || {};
-if (![estimateEURFactorFromRow, parseBrokerLedgerRows, parseBrokerPositionRows,
-      parseXTBTradesRows, parseXTBPositionsRows, parseXTBCashRows,
-      parseBrokerImportFile, parseTrading212HoldingsPdf].every(fn => typeof fn === 'function')) {
-  throw new Error('VestraBrokerParsers não foi carregado antes de app.js');
+async function ensureBrokerParsersRuntime() {
+  if (window.VestraBrokerParsers?.parseBrokerImportFile) return window.VestraBrokerParsers;
+  const loader = window.VestraBrokerImportLoader;
+  if (!loader?.ensureParsers) throw new Error('Carregador de parsers de corretora não disponível.');
+  return loader.ensureParsers();
 }
 
 /* ─── MARKET CLIENT — moved to app-market-client.js ───────── */
@@ -7701,6 +7693,15 @@ function renderBrokerImportStatus() {
 async function importBrokerFiles(files) {
   const fileArr = Array.from(files || []);
   if (!fileArr.length) throw new Error("Sem ficheiros.");
+  const {
+    parseBrokerLedgerRows,
+    parseBrokerPositionRows,
+    parseXTBTradesRows,
+    parseXTBPositionsRows,
+    parseXTBCashRows,
+    parseBrokerImportFile,
+    parseTrading212HoldingsPdf,
+  } = await ensureBrokerParsersRuntime();
   const bd = ensureBrokerData();
   let addedFiles = 0, replacedFiles = 0, addedEvents = 0, addedPositions = 0, unknownFiles = 0;
   // v63b: purge XTB events written by a pre-v63b import before ingesting anything.
@@ -8063,6 +8064,7 @@ function autoCategorise(desc, dir) {
 
 async function importBankFile(file) {
   if (!file) throw new Error("Sem ficheiro.");
+  const { fileToText } = await ensureBrokerWorkbookRuntime();
   const name = file.name.toLowerCase();
   let text = "";
   let parsed = [];
