@@ -69,7 +69,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('market-ui-polish.js?v=1.3', self.loader)
         self.assertIn('ensureAnalysisToolsRuntime', self.loader)
         self.assertIn('market-analysis-tools-runtime.js?v=1.3', self.loader)
-        self.assertIn("version: '1.15'", self.loader)
+        self.assertIn("version: '1.16'", self.loader)
 
     def test_analysis_tools_have_searchable_compare_and_news_and_lazy_scanner(self):
         self.assertIn('marketCompareSearch', self.analysis_tools)
