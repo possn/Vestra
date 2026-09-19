@@ -8275,45 +8275,62 @@ async function ensurePdfJsLoaded(timeoutMs = 7000) {
   if (typeof pdfjsLib !== "undefined" && pdfjsLib && typeof pdfjsLib.getDocument === "function") {
     return pdfjsLib;
   }
-  if (!__pfPdfJsPromise) {
-    __pfPdfJsPromise = new Promise((resolve, reject) => {
-      const existing = document.querySelector('script[data-pf-pdfjs="1"], script[src*="pdf.min.js"]');
-      if (existing) {
-        const check = () => {
-          if (typeof pdfjsLib !== "undefined" && pdfjsLib && typeof pdfjsLib.getDocument === "function") {
-            resolve(pdfjsLib);
-          } else {
-            setTimeout(check, 100);
-          }
-        };
-        check();
+  if (__pfPdfJsPromise) return __pfPdfJsPromise;
+
+  __pfPdfJsPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-pf-pdfjs="1"]');
+    const s = existing || document.createElement("script");
+    let settled = false;
+    let timeoutId = null;
+
+    const cleanup = () => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      s.removeEventListener("load", onLoad);
+      s.removeEventListener("error", onError);
+    };
+    const finish = (error = null) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (error) {
+        if (s.isConnected && !(typeof pdfjsLib !== "undefined" && pdfjsLib?.getDocument)) s.remove();
+        __pfPdfJsPromise = null;
+        reject(error);
         return;
       }
-      const s = document.createElement("script");
+      resolve(pdfjsLib);
+    };
+    const onLoad = () => {
+      if (typeof pdfjsLib === "undefined" || !pdfjsLib || typeof pdfjsLib.getDocument !== "function") {
+        finish(new Error("pdf.js carregado sem API válida"));
+        return;
+      }
+      try {
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+        }
+      } catch (_) {}
+      finish();
+    };
+    const onError = () => finish(new Error("Falha a carregar pdf.js"));
+
+    s.addEventListener("load", onLoad, { once: true });
+    s.addEventListener("error", onError, { once: true });
+    timeoutId = setTimeout(
+      () => finish(new Error("Timeout a carregar pdf.js")),
+      Math.max(1, Number(timeoutMs) || 7000)
+    );
+
+    if (!existing) {
       s.src = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
       s.async = true;
       s.dataset.pfPdfjs = "1";
-      s.onload = () => {
-        if (typeof pdfjsLib !== "undefined" && pdfjsLib && typeof pdfjsLib.getDocument === "function") {
-          try {
-            if (pdfjsLib.GlobalWorkerOptions) {
-              pdfjsLib.GlobalWorkerOptions.workerSrc =
-                "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-            }
-          } catch (_) {}
-          resolve(pdfjsLib);
-        } else {
-          reject(new Error("pdf.js carregado sem API válida"));
-        }
-      };
-      s.onerror = () => reject(new Error("Falha a carregar pdf.js"));
       document.head.appendChild(s);
-    });
-  }
-  return Promise.race([
-    __pfPdfJsPromise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout a carregar pdf.js")), timeoutMs))
-  ]);
+    }
+  });
+
+  return __pfPdfJsPromise;
 }
 
 async function extractTextFromPDF(file) {
