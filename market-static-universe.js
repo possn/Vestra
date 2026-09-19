@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.12 */
+/* Vestra Market static universe loader v1.13 */
 (() => {
   'use strict';
 
@@ -109,6 +109,16 @@
   function ensureMarketUiPolish() { loadCompanion('VestraMarketUiPolish','script[data-vestra-market-ui-polish]','market-ui-polish.js?v=1.3&stockthemes=2','vestraMarketUiPolish'); }
   function ensureUiVisualPolish() { loadCompanion('VestraUiVisualPolish','script[data-vestra-ui-visual-polish]','ui-visual-polish.js?v=1.1','vestraUiVisualPolish'); }
 
+  function ensureMarketCompanions() {
+    // Market-only helpers are deliberately deferred until Market is first used.
+    // Dashboard startup should not pay network/parse/execute cost for scanner,
+    // analysis tools, ETF enrichment or market-only visual polish.
+    ensureScannerCompanion();
+    ensureAnalysisToolsRuntime();
+    ensureMarketUiPolish();
+    return ensureEtfIntelligence();
+  }
+
   function announceReady(stocks) {
     try {
       if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent('vestra:market-ready', { detail: { count: stocks.length } }));
@@ -181,12 +191,13 @@
       if (state.loaded) return;
       if (state.loading) return state.loading;
       state.loading = (async () => {
+        const etfReady = ensureMarketCompanions();
         const data = await loadFirstAvailable();
         const stocks = data.stocks;
         state.data = data; state.stocks = stocks;
         state.byTicker = new Map(stocks.map(stock => [txt(stock?.ticker).toUpperCase(), stock]));
         sharedStocks = stocks;
-        await ensureEtfIntelligence();
+        await etfReady;
         try { window.VestraEtfIntelligence?.enrichStocks(stocks); } catch (_) {}
         beforeReady(); state.loaded = true; onReady(); announceReady(stocks);
       })().catch(error => { onError(error); }).finally(() => { state.loading = null; });
@@ -195,14 +206,15 @@
     return Object.freeze({ ensureLoaded });
   }
 
-  ensureEtfIntelligence(); ensureScannerCompanion(); ensureAnalysisToolsRuntime();
+  // Dashboard/mobile companions remain eager because they affect the initial
+  // visible shell. Market-only companions start inside ensureLoaded().
   ensureWeeklyEventsCompanion(); ensureWeeklyEventsNavigation(); ensureDashboardUiRefresh(); ensureDashboardDailyNews();
-  ensureMobileUiRefresh(); ensureMarketUiPolish(); ensureUiVisualPolish();
+  ensureMobileUiRefresh(); ensureUiVisualPolish();
   window.VestraMarketStaticUniverse = Object.freeze({
     create, getStocks, ensureEtfIntelligence, ensureScannerCompanion, ensureAnalysisToolsRuntime,
     ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh, ensureDashboardDailyNews,
-    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, unpackStartupPayload,
+    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, ensureMarketCompanions, unpackStartupPayload,
     dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, etfIntelligenceLoadTimeoutMs: ETF_INTELLIGENCE_LOAD_TIMEOUT_MS,
-    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.12',
+    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.13',
   });
 })();
