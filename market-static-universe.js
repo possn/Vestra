@@ -185,21 +185,14 @@
       return Promise.resolve(window.VestraPortfolioHierarchy);
     }
     if (portfolioSheetSuitePromise) return portfolioSheetSuitePromise;
-    portfolioSheetSuitePromise = loadOrderedCompanion(
-      'VestraPortfolioFocus','script[data-vestra-portfolio-focus]','vestra-portfolio-focus.js?v=1.1','vestraPortfolioFocus'
-    ).then(api => api && loadOrderedCompanion(
-      'VestraSwapLab','script[data-vestra-swap-lab]','vestra-swap-lab.js?v=1.1','vestraSwapLab'
-    )).then(api => api && loadOrderedCompanion(
-      'VestraPortfolioUI','script[data-vestra-portfolio-ui]','vestra-portfolio-ui.js?v=1.2','vestraPortfolioUi'
-    )).then(api => api && loadOrderedCompanion(
-      'VestraPortfolioDiagnostics','script[data-vestra-portfolio-diagnostics]','portfolio-diagnostics.js?v=1.1','vestraPortfolioDiagnostics'
-    )).then(api => api && loadOrderedCompanion(
-      'VestraPortfolioDossierRouting','script[data-vestra-portfolio-dossier-routing]','portfolio-dossier-routing.js?v=1.4','vestraPortfolioDossierRouting'
-    )).then(api => api && loadOrderedCompanion(
-      'VestraPortfolioHierarchy','script[data-vestra-portfolio-hierarchy]','vestra-portfolio-hierarchy.js?v=1.6','vestraPortfolioHierarchy'
-    )).then(api => api && loadOrderedCompanion(
-      'VestraAiBrief','script[data-vestra-ai-brief]','vestra-ai-brief.js?v=1.2','vestraAiBrief'
-    )).finally(() => { portfolioSheetSuitePromise = null; });
+    portfolioSheetSuitePromise = loadOrderedCompanion('VestraPortfolioFocus','script[data-vestra-portfolio-focus]','vestra-portfolio-focus.js?v=1.1','vestraPortfolioFocus')
+      .then(api => api && loadOrderedCompanion('VestraSwapLab','script[data-vestra-swap-lab]','vestra-swap-lab.js?v=1.1','vestraSwapLab'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioUI','script[data-vestra-portfolio-ui]','vestra-portfolio-ui.js?v=1.2','vestraPortfolioUi'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioDiagnostics','script[data-vestra-portfolio-diagnostics]','portfolio-diagnostics.js?v=1.1','vestraPortfolioDiagnostics'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioDossierRouting','script[data-vestra-portfolio-dossier-routing]','portfolio-dossier-routing.js?v=1.4','vestraPortfolioDossierRouting'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioHierarchy','script[data-vestra-portfolio-hierarchy]','vestra-portfolio-hierarchy.js?v=1.6','vestraPortfolioHierarchy'))
+      .then(api => api && loadOrderedCompanion('VestraAiBrief','script[data-vestra-ai-brief]','vestra-ai-brief.js?v=1.2','vestraAiBrief'))
+      .finally(() => { portfolioSheetSuitePromise = null; });
     return portfolioSheetSuitePromise;
   }
 
