@@ -1,10 +1,11 @@
-/* Vestra Market runtime loader v1.1 — defer market core + pure helpers until first use. */
+/* Vestra Market runtime loader v1.2 — defer market core, pure helpers and dossier enhancements until first use. */
 (() => {
   'use strict';
 
   const SRC = 'market.js?v=20260831v2';
   const TIMEOUT_MS = 12000;
   let helpersPromise = null;
+  let enhancementsPromise = null;
   let loadPromise = null;
 
   function loadHelper(globalName, src) {
@@ -89,6 +90,28 @@
     return helpersPromise;
   }
 
+  function ensureDossierEnhancements() {
+    if (window.VestraMarketMetricCleanup && window.VestraMarketCompanyBrief) {
+      return Promise.resolve(window.VestraMarketCompanyBrief);
+    }
+    if (!enhancementsPromise) {
+      enhancementsPromise = loadHelper(
+        'VestraMarketMetricCleanup',
+        'market-metric-cleanup.js?v=1.0'
+      ).then(metric => {
+        if (!metric) return null;
+        return loadHelper(
+          'VestraMarketCompanyBrief',
+          'market-company-brief.js?v=1.0'
+        );
+      }).catch(err => {
+        enhancementsPromise = null;
+        throw err;
+      });
+    }
+    return enhancementsPromise;
+  }
+
   function loadCore() {
     if (window.VestraMarket?.ensureLoaded) return Promise.resolve(window.VestraMarket);
     return new Promise((resolve, reject) => {
@@ -116,7 +139,7 @@
           return;
         }
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.1' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.2' } }));
         } catch (_) {}
         resolve(window.VestraMarket);
       };
@@ -155,6 +178,14 @@
     if (!loadPromise) {
       loadPromise = ensureHelpers()
         .then(loadCore)
+        .then(api => {
+          // Dossier decoration is not required for the first Market paint.
+          // Start it only after the real Market core exists and never block core/data readiness.
+          void ensureDossierEnhancements().catch(err => {
+            console.warn('Falha a carregar enhancements de dossier', err);
+          });
+          return api;
+        })
         .catch(err => {
           loadPromise = null;
           throw err;
@@ -169,8 +200,9 @@
   window.VestraMarketLoader = Object.freeze({
     ensure,
     ensureHelpers,
+    ensureDossierEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.1',
+    version: '1.2',
   });
 })();
