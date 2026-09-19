@@ -20,19 +20,22 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'vestra-portfolio-hierarchy.js', 'vestra-swap-lab.js',
             'market-opportunity-lenses.js', 'vestra-ai-brief.js',
             'vestra-portfolio-ui.js', 'portfolio-diagnostics.js',
-            'portfolio-dossier-routing.js', 'politicians.js',
+            'portfolio-dossier-routing.js',
         ]
         positions = [index.index(f'src="{name}') for name in order]
         self.assertEqual(positions, sorted(positions))
         for name in order:
             self.assertEqual(index.count(f'src="{name}'), 1, name)
         self.assertIn("script.src = 'market.js?v=20260831v2';", loader)
+        universe = read("market-static-universe.js")
+        self.assertIn("politicians.js?v=2.1", universe)
+        self.assertNotIn('src="politicians.js', index)
         self.assertNotIn('portfolio-navigation-fix.js', index)
         self.assertNotIn('market-close-controller.js', index)
 
     def test_every_static_market_script_is_deferred(self):
         index = read("index.html")
-        for name in ('market-live-overlay.js','market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js','market-opportunities.js','vestra-portfolio-ui.js','portfolio-diagnostics.js','politicians.js'):
+        for name in ('market-live-overlay.js','market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js','market-opportunities.js','vestra-portfolio-ui.js','portfolio-diagnostics.js'):
             self.assertIn(f'<script defer="" src="{name}', index)
 
     def test_service_worker_tracks_final_static_runtime(self):
