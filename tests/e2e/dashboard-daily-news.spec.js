@@ -81,7 +81,7 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
   let holdAppJs = false;
   let releaseHeldAppJs = null;
   let heldAppJs = Promise.resolve();
-  await page.route(/\\/app\\.js(?:\\?.*)?$/, async route => {
+  await page.route(/\/app\.js(?:\?.*)?$/, async route => {
     if (holdAppJs) await heldAppJs;
     await route.continue();
   });
