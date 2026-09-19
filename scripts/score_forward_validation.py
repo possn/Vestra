@@ -263,15 +263,63 @@ def validation_status(cohort_count):
     return "multiple_cohorts_available"
 
 
+def peer_shadow_comparison(vals):
+    peer_vals = [x for x in vals if num(x.get("peer_shadow_score")) is not None]
+    production = metric_pack(peer_vals, "score")
+    candidate = metric_pack(peer_vals, "peer_shadow_score")
+
+    groups = defaultdict(list)
+    for row in peer_vals:
+        groups[str(row.get("cohort_date"))].append(row)
+
+    cohorts = []
+    candidate_ics = []
+    production_ics = []
+    candidate_spreads = []
+    production_spreads = []
+    for date, rows in sorted(groups.items()):
+        prod = metric_pack(rows, "score")
+        peer = metric_pack(rows, "peer_shadow_score")
+        p_ic = num(prod.get("rank_information_coefficient"))
+        c_ic = num(peer.get("rank_information_coefficient"))
+        p_spread = num(prod.get("top_minus_bottom_pct"))
+        c_spread = num(peer.get("top_minus_bottom_pct"))
+        if p_ic is not None:
+            production_ics.append(p_ic)
+        if c_ic is not None:
+            candidate_ics.append(c_ic)
+        if p_spread is not None:
+            production_spreads.append(p_spread)
+        if c_spread is not None:
+            candidate_spreads.append(c_spread)
+        cohorts.append({
+            "cohort_date": date,
+            "n": len(rows),
+            "production": prod,
+            "peer_shadow": peer,
+            "rank_ic_delta": round(c_ic - p_ic, 4) if c_ic is not None and p_ic is not None else None,
+            "top_minus_bottom_delta_pct": round(c_spread - p_spread, 2) if c_spread is not None and p_spread is not None else None,
+        })
+
+    return {
+        "eligible_n": len(peer_vals),
+        "cohort_count": len(cohorts),
+        "production_same_subset": production,
+        "peer_shadow": candidate,
+        "median_production_cohort_rank_ic": round(statistics.median(production_ics), 4) if production_ics else None,
+        "median_peer_shadow_cohort_rank_ic": round(statistics.median(candidate_ics), 4) if candidate_ics else None,
+        "median_production_cohort_top_minus_bottom_pct": round(statistics.median(production_spreads), 2) if production_spreads else None,
+        "median_peer_shadow_cohort_top_minus_bottom_pct": round(statistics.median(candidate_spreads), 2) if candidate_spreads else None,
+        "positive_peer_shadow_ic_cohorts": sum(1 for x in candidate_ics if x > 0),
+        "positive_peer_shadow_spread_cohorts": sum(1 for x in candidate_spreads if x > 0),
+        "cohorts": cohorts,
+    }
+
+
 def summarize_horizon(vals, expected_matured_cohorts=0):
     cohorts = cohort_summaries(vals)
     pack = metric_pack(vals)
-    peer_vals = [x for x in vals if num(x.get("peer_shadow_score")) is not None]
-    pack["peer_shadow_comparison"] = {
-        "eligible_n": len(peer_vals),
-        "production_same_subset": metric_pack(peer_vals, "score") if peer_vals else metric_pack([], "score"),
-        "peer_shadow": metric_pack(peer_vals, "peer_shadow_score") if peer_vals else metric_pack([], "peer_shadow_score"),
-    }
+    pack["peer_shadow_comparison"] = peer_shadow_comparison(vals)
     cohort_ics = [num(x.get("rank_information_coefficient")) for x in cohorts]
     cohort_ics = [x for x in cohort_ics if x is not None]
     cohort_spreads = [num(x.get("top_minus_bottom_pct")) for x in cohorts]
