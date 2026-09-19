@@ -28,8 +28,10 @@ class MarketEtfIntelligenceLoaderRetryTests(unittest.TestCase):
         self.assertIn("if (etfIntelligencePromise) return etfIntelligencePromise;", SOURCE)
 
     def test_market_loading_still_awaits_optional_intelligence_only_within_deadline(self):
-        self.assertIn("await ensureEtfIntelligence();", SOURCE)
-        self.assertIn("version: '1.12'", SOURCE)
+        self.assertIn("const etfReady = ensureMarketCompanions();", SOURCE)
+        self.assertIn("return ensureEtfIntelligence();", SOURCE)
+        self.assertIn("await etfReady;", SOURCE)
+        self.assertIn("version: '1.13'", SOURCE)
 
 
 if __name__ == '__main__':
