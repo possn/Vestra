@@ -2,8 +2,9 @@ const { test, expect } = require('@playwright/test');
 
 test('iPhone/WebKit: an empty opportunity lens clears previous rows instead of leaving stale candidates', async ({ page }) => {
   await page.goto('/index.html');
+  await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 10_000 });
+  await page.locator('#navMarket').tap();
   await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
-  await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 7_000 });
 
   await page.evaluate(() => {
     const rows = [{
