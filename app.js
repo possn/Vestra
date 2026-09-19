@@ -754,6 +754,14 @@ function setView(view) {
   for (const b of _navEls) b.classList.toggle("navbtn--active", b.dataset.view === _navView);
   for (const b of _sideNavEls) b.classList.toggle("sidenavbtn--active", b.dataset.view === _navView);
   try { window.scrollTo(0, 0); } catch (_) {}
+  if (view === "market") {
+    // Load the heavy market core only when Market is actually opened.
+    window.VestraMarketLoader?.ensure?.({ loadData: true }).catch(err => {
+      console.error("Falha ao carregar Mercado", err);
+      toast("Não foi possível carregar o Mercado.");
+    });
+  }
+
   // Phase 2 (deferred): render content after browser has painted the new tab frame.
   // Using double-RAF ensures one paint cycle completes before heavy DOM work starts,
   // making the tab feel instantly responsive even when render takes >100ms.
@@ -1759,8 +1767,16 @@ function renderItems() {
     </div><div class="item__v">${fmtEUR(parseNum(it.value))}</div>`;
     const openResearch = async ev=>{
       ev.preventDefault(); ev.stopPropagation();
-      const ok = window.VestraMarket?.openPortfolioAsset ? await window.VestraMarket.openPortfolioAsset(it) : false;
-      if(!ok) toast('Ainda não há dossier Vestra para este instrumento.');
+      try {
+        const api = window.VestraMarket?.openPortfolioAsset
+          ? window.VestraMarket
+          : await window.VestraMarketLoader?.ensure?.();
+        const ok = api?.openPortfolioAsset ? await api.openPortfolioAsset(it) : false;
+        if(!ok) toast('Ainda não há dossier Vestra para este instrumento.');
+      } catch (err) {
+        console.error('Falha ao abrir dossier Vestra', err);
+        toast('Não foi possível carregar o dossier Vestra.');
+      }
     };
     const researchBtn=row.querySelector('.item__research');
     if(researchBtn) researchBtn.addEventListener('click', openResearch);

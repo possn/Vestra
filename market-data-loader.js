@@ -1,4 +1,4 @@
-/* Vestra Market Data Loader v2.5 — instant navigation + bounded, exact-identity background hydration. */
+/* Vestra Market Data Loader v2.6 — instant navigation + bounded, exact-identity background hydration. */
 (() => {
   'use strict';
 
@@ -302,6 +302,12 @@
     const id=setInterval(()=>{ if(installApiWrapper()||++tries>80) clearInterval(id); },50);
   }
 
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('vestra:market-core-ready', () => {
+      installApiWrapper();
+    });
+  }
+
   function openDossier(ticker,options={}){
     const tk=tickerKey(ticker);
     if(!tk) return Promise.resolve(false);
@@ -354,6 +360,6 @@
   window.VestraMarketData={
     hydrateTicker,hydratePortfolio,loadManifest,openDossier,refreshOpenDossier,hydrateOpenDossier,
     performance:()=>dossierPerf.map(x=>({...x})),
-    version:'2.5'
+    version:'2.6'
   };
 })();

@@ -225,8 +225,9 @@ test('iPhone/WebKit: portfolio alternative card opens dossier and watch star sta
 
   await isolateExternalSearch(page);
   await page.goto('/index.html');
-  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarket?.__lazyDossiersInstalled);
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarketLoader);
   await page.evaluate(() => window.setView('market'));
+  await page.waitForFunction(() => !!window.VestraMarket?.__lazyDossiersInstalled);
   await expect(page.locator('#viewMarket')).toBeVisible();
   await page.locator('.market-portfolio-access').click();
 

@@ -13,16 +13,17 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_base_bundle_precedes_static_market_modules(self):
         index = read("index.html")
         self.assertLess(index.index('src="app-utils.js'), index.index('src="app.js'))
-        self.assertLess(index.index('src="app.js'), index.index('src="market.js'))
-        self.assertLess(index.index('src="market.js'), index.index('src="market-data-loader.js'))
+        self.assertLess(index.index('src="app.js'), index.index('src="market-runtime-loader.js'))
+        self.assertLess(index.index('src="market-runtime-loader.js'), index.index('src="market-data-loader.js'))
         self.assertLess(index.index('src="market-data-loader.js'), index.index('src="politicians.js'))
+        self.assertNotIn('src="market.js', index)
         self.assertNotIn('src="market-hotfix.js', index)
 
     def test_static_market_bundle_does_not_reload_base_utils(self):
         index = read("index.html")
         self.assertEqual(index.count('src="app-utils.js'), 1)
-        self.assertIn('market-data-loader.js?v=2.5', index)
-        self.assertIn('portfolio-sheet-navigation.js?v=1.3', index)
+        self.assertIn('market-data-loader.js?v=2.6', index)
+        self.assertIn('portfolio-sheet-navigation.js?v=1.5', index)
 
     def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
         market = read("market.js")
@@ -44,7 +45,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("dossiers-manifest.json", loader)
         self.assertIn("data/dossiers/", loader)
         self.assertNotIn("stocks.json?full=1", loader)
-        self.assertIn("version:'2.5'", loader)
+        self.assertIn("version:'2.6'", loader)
         self.assertIn("const result=rawOpen(ticker);", loader)
         self.assertIn("hydrateOpenDossier(ticker);", loader)
 
