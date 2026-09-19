@@ -16,6 +16,8 @@ class LazyMarketCoreTests(unittest.TestCase):
     def test_market_core_is_not_in_initial_html(self):
         self.assertNotIn('src="market.js?v=20260831v2"', self.index)
         self.assertIn('src="market-runtime-loader.js?v=1.0"', self.index)
+        self.assertIn('portfolio-sheet-navigation.js?v=1.5', self.index)
+        self.assertIn('market-data-loader.js?v=2.6', self.index)
 
     def test_loader_is_single_flight_bounded_and_does_not_fake_market_api(self):
         self.assertIn("if (!loadPromise)", self.loader)
