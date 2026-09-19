@@ -455,7 +455,7 @@
     // weekly window. Rebuild only the saved event's own calendar day so the
     // exact official detail can still be restored without changing the card's
     // current-week contents.
-    const match = /^[^:]+:(\\d{4}-\\d{2}-\\d{2}):/.exec(id);
+    const match = /^[^:]+:(\d{4}-\d{2}-\d{2}):/.exec(id);
     const eventDay = match ? parseCalendarDate(match[1]) : null;
     if (!eventDay) return null;
     return collectMacroEvents(snapshot, eventDay, 1).find(item => item.id === id) || null;
