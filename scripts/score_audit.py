@@ -122,6 +122,21 @@ def weighted_dimensions(dimensions, weights):
     return sum(v * w for v, w in parts) / total if total else None
 
 
+def apply_score_cap(value, row):
+    """Mirror score.py's structural Risk Gate before reconstruction comparison."""
+    value = num(value)
+    if value is None:
+        return None
+    cap = num((row or {}).get("score_cap"))
+    return min(value, cap) if cap is not None else value
+
+
+def raw_score(row):
+    """Use pre-confidence score when available; legacy snapshots fall back to score."""
+    raw = num((row or {}).get("score_raw"))
+    return raw if raw is not None else num((row or {}).get("score"))
+
+
 def top_set(scored, frac=.10):
     valid = [(ticker, score) for ticker, score in scored if score is not None]
     valid.sort(key=lambda x: x[1], reverse=True)
@@ -161,8 +176,26 @@ def model_audit(model, rows):
                 })
     correlations.sort(key=lambda x: abs(x.get("spearman") or 0), reverse=True)
 
-    baseline = [(str(r.get("ticker")), weighted_dimensions(r.get("score_dimensions"), weights)) for r in rows]
-    production_vs_reconstructed = spearman_pairs([(r.get("score"), dict(baseline).get(str(r.get("ticker")))) for r in rows])
+    # score_dimensions reconstruct the structural factor score before the Risk
+    # Gate cap. Compare like with like: apply score_cap, then compare against
+    # score_raw (the pre-confidence score), not the evidence-moderated public
+    # score. Confidence moderation is measured separately below.
+    baseline = [
+        (
+            str(r.get("ticker")),
+            apply_score_cap(weighted_dimensions(r.get("score_dimensions"), weights), r),
+        )
+        for r in rows
+    ]
+    baseline_map = dict(baseline)
+    raw_vs_reconstructed = spearman_pairs([
+        (raw_score(r), baseline_map.get(str(r.get("ticker"))))
+        for r in rows
+    ])
+    published_vs_raw = spearman_pairs([
+        (r.get("score"), raw_score(r))
+        for r in rows
+    ])
     baseline_top = top_set(baseline)
     sensitivity = []
     for name in names:
@@ -187,8 +220,10 @@ def model_audit(model, rows):
         "n": len(rows),
         "weights": weights,
         "mean_production_score": round(mean([num(r.get("score")) for r in rows]) or 0, 2),
+        "mean_raw_score": round(mean([raw_score(r) for r in rows]) or 0, 2),
         "mean_data_coverage_pct": round(mean([num(r.get("data_coverage_pct")) for r in rows]) or 0, 2),
-        "production_vs_reconstructed_rank_spearman": round(production_vs_reconstructed, 4) if production_vs_reconstructed is not None else None,
+        "raw_vs_reconstructed_rank_spearman": round(raw_vs_reconstructed, 4) if raw_vs_reconstructed is not None else None,
+        "published_vs_raw_rank_spearman": round(published_vs_raw, 4) if published_vs_raw is not None else None,
         "dimension_coverage": dimension_coverage,
         "effective_dimension_count_distribution": dict(sorted(effective.items())),
         "dimension_correlations": correlations,
@@ -204,7 +239,7 @@ def main():
         r for r in (payload.get("stocks") or [])
         if isinstance(r, dict)
         and str(r.get("quote_type") or "").upper() not in {"ETF", "CRYPTO", "FUND", "MUTUALFUND"}
-        and num(r.get("score")) is not None
+        and (num(r.get("score_raw")) is not None or num(r.get("score")) is not None)
         and str(r.get("pipeline_status") or "") not in {"equity_catalog_only", "equity_carried_forward"}
     ]
 
@@ -239,7 +274,7 @@ def main():
             flags.append({"type": "dimension_redundancy", "score_model": model["score_model"], "severity": "review", "count": model["redundant_pair_count"]})
         if model.get("material_sensitivity_count", 0):
             flags.append({"type": "weight_sensitivity", "score_model": model["score_model"], "severity": "review", "count": model["material_sensitivity_count"]})
-        rho = model.get("production_vs_reconstructed_rank_spearman")
+        rho = model.get("raw_vs_reconstructed_rank_spearman")
         if rho is not None and rho < .98:
             flags.append({"type": "reconstruction_mismatch", "score_model": model["score_model"], "severity": "investigate", "rank_spearman": rho})
     skewed = [x for x in sector_bias if x["universe_n"] >= 20 and (x["top_decile_representation_ratio"] or 0) >= 2]
@@ -257,6 +292,7 @@ def main():
             "redundancy_threshold": "absolute Spearman >= 0.75",
             "material_sensitivity": "rank Spearman < 0.95 or top-decile Jaccard < 0.75",
             "sector_bias_note": "descriptive concentration only; not causal evidence",
+            "reconstruction_parity": "reconstruct score_dimensions, apply structural score_cap, compare with score_raw; public score moderation by evidence confidence is reported separately",
         },
         "model_audits": model_results,
         "sector_top_decile_bias": sector_bias,
