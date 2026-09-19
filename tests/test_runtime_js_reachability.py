@@ -20,7 +20,8 @@ class RuntimeJsReachabilityTests(unittest.TestCase):
 
     def test_model_validation_is_reachable_dynamically(self):
         report = audit.build_report()
-        self.assertIn('market-company-brief.js', report['direct'])
+        self.assertIn('market-runtime-loader.js', report['direct'])
+        self.assertIn('market-company-brief.js', report['dynamic'])
         self.assertIn('market-model-validation.js', report['dynamic'])
 
     def test_dynamic_runtime_modules_are_precached_for_offline_pwa(self):
@@ -55,6 +56,16 @@ class RuntimeJsReachabilityTests(unittest.TestCase):
             audit.runtime_refs(text),
             ['dynamic-a.js', 'dynamic-b.js', 'dynamic-c.js', 'dynamic-d.js'],
         )
+
+    def test_declarative_runtime_module_arrays_are_explicit_edges(self):
+        text = """
+        const CORE_MODULES = Object.freeze([
+          'market-a.js?v=1',
+          'market-b.js?v=2',
+        ]);
+        const note = 'ghost-runtime.js';
+        """
+        self.assertEqual(audit.runtime_refs(text), ['market-a.js', 'market-b.js'])
 
     def test_audit_fails_closed_when_an_orphan_is_reported(self):
         original = audit.build_report
