@@ -227,9 +227,17 @@ def reit_shadow(ctx):
         ctx.p("reit_p_ffo_proxy", invert=True, positive_only=True),
         ctx.p("price_to_book", invert=True, positive_only=True),
     ])
+    payout = n(ctx.row.get("reit_ffo_payout_proxy"))
+    payout_score = ctx.value(
+        "reit_ffo_payout_proxy",
+        payout if payout is not None and payout >= 0 else None,
+        [n(x.get("reit_ffo_payout_proxy")) if n(x.get("reit_ffo_payout_proxy")) is not None and n(x.get("reit_ffo_payout_proxy")) >= 0 else None for x in ctx.peers],
+        [n(x.get("reit_ffo_payout_proxy")) if n(x.get("reit_ffo_payout_proxy")) is not None and n(x.get("reit_ffo_payout_proxy")) >= 0 else None for x in ctx.all_rows],
+        invert=True,
+    )
     distribution = avg([
         ctx.income(),
-        ctx.p("reit_ffo_payout_proxy", invert=True),
+        payout_score,
     ])
     growth = ctx.growth()
     stability = ctx.stability()
