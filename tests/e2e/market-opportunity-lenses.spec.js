@@ -16,8 +16,9 @@ const candidate = (ticker, extra = {}) => ({
 
 async function waitForLaunch(page) {
   await page.goto('/index.html');
-  await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 10_000 });
+  await page.locator('#navMarket').tap();
+  await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
 }
 
 test('iPhone/WebKit: each opportunity lens ranks the full universe independently', async ({ page }) => {
