@@ -109,27 +109,84 @@ def _fundamental_source_context(row: dict):
     return count, evidence_state
 
 
-_CRITICAL = (
+_CRITICAL_GENERAL = (
     "roe", "roa", "profit_margin", "operating_margin", "gross_margin",
     "revenue_growth", "earnings_growth", "free_cash_flow", "operating_cash_flow",
     "current_ratio", "debt_to_equity", "trailing_pe", "forward_pe",
     "enterprise_to_ebitda", "price_to_book", "roce_proxy",
 )
-_POSITIVE_ONLY = {"trailing_pe", "forward_pe", "enterprise_to_ebitda", "price_to_book"}
+
+# Reliability must use evidence that is economically relevant to the active
+# scoring model. The raw score remains unchanged; this only decides whether the
+# published score has enough model-native evidence to be trusted.
+_CRITICAL_BY_MODEL = {
+    "general": _CRITICAL_GENERAL,
+    "growth_tech": (
+        "roe", "roa", "gross_margin", "operating_margin",
+        "revenue_growth", "earnings_growth", "free_cash_flow",
+        "operating_cash_flow", "debt_to_equity", "forward_pe",
+        "diluted_shares_yoy", "roce_proxy",
+    ),
+    "bank": (
+        "roe", "roa", "profit_margin", "efficiency_ratio_proxy",
+        "provision_to_revenue", "equity_to_assets", "net_interest_income_yoy",
+        "revenue_growth", "earnings_growth", "price_to_book",
+        "trailing_pe", "forward_pe", "dividend_yield",
+    ),
+    "reit": (
+        "reit_ffo_per_share_proxy", "reit_p_ffo_proxy",
+        "reit_net_debt_to_ebitda", "reit_ffo_payout_proxy",
+        "roe", "profit_margin", "revenue_growth", "earnings_growth",
+        "price_to_book", "dividend_yield",
+    ),
+    "insurance": (
+        "roe", "roa", "profit_margin", "insurance_claims_to_revenue",
+        "insurance_operating_ratio_proxy", "insurance_equity_to_assets",
+        "debt_to_equity", "revenue_growth", "earnings_growth",
+        "price_to_book", "trailing_pe", "dividend_yield",
+    ),
+    "utility": (
+        "roe", "operating_margin", "roce_proxy", "debt_to_equity",
+        "dividend_yield", "payout_ratio", "forward_pe", "trailing_pe",
+        "price_to_book", "revenue_growth", "earnings_growth",
+        "operating_cash_flow",
+    ),
+    "energy": (
+        "roe", "operating_margin", "roce_proxy", "debt_to_equity",
+        "total_cash", "total_debt", "free_cash_flow", "operating_cash_flow",
+        "trailing_pe", "forward_pe", "enterprise_to_ebitda",
+        "revenue_growth", "earnings_growth",
+    ),
+    "biotech": (
+        "total_cash", "total_debt", "free_cash_flow", "market_cap",
+        "diluted_shares_yoy", "revenue_growth", "earnings_growth",
+        "gross_margin", "roa", "beta",
+    ),
+}
+_POSITIVE_ONLY = {
+    "trailing_pe", "forward_pe", "enterprise_to_ebitda", "price_to_book",
+    "reit_p_ffo_proxy", "market_cap",
+}
 
 
-def _critical_coverage(row: dict) -> float:
+def _critical_fields(row: dict):
+    model = str(row.get("score_model") or "general").strip().lower()
+    return model, _CRITICAL_BY_MODEL.get(model, _CRITICAL_GENERAL)
+
+
+def _critical_coverage(row: dict) -> tuple[float, str, int]:
+    model, fields = _critical_fields(row)
     present = 0
-    for key in _CRITICAL:
+    for key in fields:
         v = _n(row.get(key))
         if v is None:
             continue
-        # A zero multiple is not a meaningful observed valuation. Treat it as
-        # missing rather than allowing a provider placeholder to inflate coverage.
+        # A zero multiple / market cap is not a meaningful observed valuation.
+        # Treat provider placeholders as missing rather than inflating coverage.
         if key in _POSITIVE_ONLY and v <= 0:
             continue
         present += 1
-    return present / len(_CRITICAL) * 100.0
+    return present / len(fields) * 100.0, model, len(fields)
 
 
 def assess(row: dict) -> dict:
@@ -144,7 +201,7 @@ def assess(row: dict) -> dict:
 
     coverage = _n(row.get("data_coverage_pct"))
     coverage_score = max(0.0, min(100.0, coverage if coverage is not None else 0.0))
-    critical_coverage = _critical_coverage(row)
+    critical_coverage, critical_model, critical_field_count = _critical_coverage(row)
     source_score, has_official, source_count = _source_score(row)
     fundamental_source_count, evidence_state = _fundamental_source_context(row)
     freshness_score, age_days = _freshness_score(row)
@@ -239,6 +296,8 @@ def assess(row: dict) -> dict:
         "confidence_reasons": reasons[:4],
         "fundamental_age_days": age_days,
         "critical_metric_coverage_pct": round(critical_coverage, 1),
+        "critical_metric_model": critical_model,
+        "critical_metric_field_count": critical_field_count,
         "score_raw": raw_factor,
         "score": round(public_factor, 1) if public_factor is not None else None,
         "score_reliability": reliability,
