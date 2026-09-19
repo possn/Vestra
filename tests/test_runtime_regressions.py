@@ -46,7 +46,7 @@ class RuntimeRegressionTests(unittest.TestCase):
             "app-broker-identity-data.js", "app-broker-parsing-core.js", "app-file-parsing.js",
             "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js",
             "app-quote-errors.js", "app-return-assumptions.js", "app-financial-engine.js",
-            "app.js", "market.js", "market-data-loader.js", "market-data-health.js",
+            "app.js", "market-runtime-loader.js", "market.js", "market-data-loader.js", "market-data-health.js",
             "market-global-search.js", "market-learned-universe.js", "politicians.js", "worker.js",
         ]
         for module in modules:
@@ -91,7 +91,7 @@ class RuntimeRegressionTests(unittest.TestCase):
     def test_market_live_overlay_does_not_rerender_open_dossier(self):
         market = read("market.js")
         overlay = read("market-live-overlay.js")
-        html = read("index.html")
+        runtime = read("market-runtime-loader.js")
         sw = read("sw.js")
         self.assertIn("VestraMarketLiveOverlay?.create", market)
         self.assertIn("marketLiveOverlay?.enrichTickerLive", market)
@@ -100,7 +100,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         for field in ("current_price", "forward_pe", "roe", "revenue_growth", "fcf_yield"):
             self.assertIn(field, overlay)
         self.assertNotIn("marketSheetContent", overlay)
-        self.assertLess(html.find("market-live-overlay.js"), html.find("market.js"))
+        self.assertLess(runtime.find("market-live-overlay.js"), runtime.find("market.js"))
         self.assertIn('"./market-live-overlay.js"', sw)
 
     def test_lifecycle_persistence_is_blocked_until_hydration(self):
