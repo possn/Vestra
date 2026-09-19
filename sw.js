@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.58 — never serve stale CSS before checking the network. */
-const CACHE_NAME = "vestra-cache-v171";
+/* Vestra Service Worker v10.59 — respect versioned runtime URLs before stale cache fallback. */
+const CACHE_NAME = "vestra-cache-v172";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
@@ -112,12 +112,32 @@ async function cacheFirst(request) {
 
 async function staleWhileRevalidate(request, event) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await matchCached(cache, request);
+  const exact = await cache.match(request);
+  const hasVersionQuery = (() => {
+    try { return new URL(request.url).search.length > 0; } catch (_) { return false; }
+  })();
   const refresh = fetchWithTimeout(request, { cache: "no-store" })
     .then(fresh => {
       if (fresh && fresh.ok) cache.put(request, fresh.clone()).catch(() => {});
       return fresh;
     }).catch(() => null);
+
+  if (exact) {
+    if (event && typeof event.waitUntil === "function") event.waitUntil(refresh.then(() => {}));
+    return exact;
+  }
+
+  // A versioned runtime URL is an explicit request for a new generation.
+  // Do not satisfy it immediately from an older ignoreSearch cache entry.
+  // Try the network first; only fall back to the unversioned precache offline.
+  if (hasVersionQuery) {
+    const fresh = await refresh;
+    if (fresh) return fresh;
+    const fallback = await cache.match(request, { ignoreSearch: true });
+    return fallback || new Response("Offline", { status: 503 });
+  }
+
+  const cached = await matchCached(cache, request);
   if (cached) {
     if (event && typeof event.waitUntil === "function") event.waitUntil(refresh.then(() => {}));
     return cached;
