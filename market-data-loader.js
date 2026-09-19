@@ -302,6 +302,10 @@
     const id=setInterval(()=>{ if(installApiWrapper()||++tries>80) clearInterval(id); },50);
   }
 
+  window.addEventListener('vestra:market-core-ready', () => {
+    installApiWrapper();
+  });
+
   function openDossier(ticker,options={}){
     const tk=tickerKey(ticker);
     if(!tk) return Promise.resolve(false);
