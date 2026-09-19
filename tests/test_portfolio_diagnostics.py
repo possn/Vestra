@@ -34,9 +34,14 @@ class PortfolioDiagnosticsTests(unittest.TestCase):
 
     def test_diagnostics_load_after_portfolio_ui_and_are_cached(self):
         h = read('index.html')
+        loader = read('market-static-universe.js')
         sw = read('sw.js')
-        self.assertLess(h.index('vestra-portfolio-ui.js'), h.index('portfolio-diagnostics.js'))
-        self.assertIn("portfolio-diagnostics.js?v=1.0", h)
+        self.assertNotIn('src="vestra-portfolio-ui.js', h)
+        self.assertNotIn('src="portfolio-diagnostics.js', h)
+        self.assertLess(
+            loader.index('vestra-portfolio-ui.js?v=1.2'),
+            loader.index('portfolio-diagnostics.js?v=1.1'),
+        )
         self.assertIn('./portfolio-diagnostics.js', sw)
 
 
