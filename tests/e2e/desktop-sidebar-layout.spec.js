@@ -1,5 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
+// Geometry tests must exercise the CSS from this checkout, not a previously
+// controlled shell cache. Service-worker cache behaviour has its own contracts.
+test.use({ serviceWorkers: 'block' });
+
 test('desktop: fixed sidebar reserves its own column without covering app content', async ({ page }) => {
   await page.setViewportSize({ width: 920, height: 820 });
   await page.goto('/index.html');
