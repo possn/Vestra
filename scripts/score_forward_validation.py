@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "data" / "stocks-index.json"
 HISTORY = ROOT / "data" / "score_validation_history.json"
 REPORT = ROOT / "data" / "score_validation_report.json"
+PEER_SHADOW = ROOT / "data" / "score_peer_shadow.json"
 HORIZONS = (28, 84, 168)
 MAX_HORIZON_LATENESS_DAYS = 10
 RETENTION_DAYS = 800
@@ -106,8 +107,22 @@ def current_rows():
     return out
 
 
-def make_snapshot(today, rows):
+def peer_shadow_scores():
+    payload = load_json(PEER_SHADOW, {})
+    out = {}
+    for row in payload.get("rows") or []:
+        if not isinstance(row, dict):
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        score = num(row.get("peer_shadow_score"))
+        if ticker and score is not None:
+            out[ticker] = score
+    return out
+
+
+def make_snapshot(today, rows, shadow_scores=None):
     observations = {}
+    shadow_scores = shadow_scores or {}
     for ticker, r in rows.items():
         observations[ticker] = {
             "price": num(r.get("current_price")),
@@ -115,6 +130,7 @@ def make_snapshot(today, rows):
             "score_model": str(r.get("score_model") or "general"),
             "confidence_score": num(r.get("confidence_score")),
             "risk_gate": str(r.get("risk_gate") or "clear"),
+            "peer_shadow_score": num(shadow_scores.get(ticker)),
             **{field: num(r.get(field)) for field in FIELDS},
         }
     return {"date": today.isoformat(), "observations": observations}
@@ -167,6 +183,7 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                     "score_model": old.get("score_model") or "general",
                     "confidence_score": num(old.get("confidence_score")),
                     "risk_gate": old.get("risk_gate") or "clear",
+                    "peer_shadow_score": num(old.get("peer_shadow_score")),
                     **{field: num(old.get(field)) for field in FIELDS},
                 }
                 outcomes.append(item)
@@ -181,8 +198,8 @@ def mean(values):
     return sum(vals) / len(vals) if vals else None
 
 
-def quintile_metrics(vals):
-    ordered = sorted(vals, key=lambda x: num(x.get("score")) if num(x.get("score")) is not None else -1e9, reverse=True)
+def quintile_metrics(vals, score_field="score"):
+    ordered = sorted(vals, key=lambda x: num(x.get(score_field)) if num(x.get(score_field)) is not None else -1e9, reverse=True)
     if not ordered:
         return None, None, None
     q = max(1, len(ordered) // 5)
@@ -194,9 +211,9 @@ def quintile_metrics(vals):
     return top_mean, bottom_mean, spread
 
 
-def metric_pack(vals):
-    ic = spearman([(x.get("score"), x.get("return_pct")) for x in vals])
-    top_mean, bottom_mean, spread = quintile_metrics(vals)
+def metric_pack(vals, score_field="score"):
+    ic = spearman([(x.get(score_field), x.get("return_pct")) for x in vals])
+    top_mean, bottom_mean, spread = quintile_metrics(vals, score_field)
     return {
         "n": len(vals),
         "rank_information_coefficient": round(ic, 4) if ic is not None else None,
@@ -249,6 +266,12 @@ def validation_status(cohort_count):
 def summarize_horizon(vals, expected_matured_cohorts=0):
     cohorts = cohort_summaries(vals)
     pack = metric_pack(vals)
+    peer_vals = [x for x in vals if num(x.get("peer_shadow_score")) is not None]
+    pack["peer_shadow_comparison"] = {
+        "eligible_n": len(peer_vals),
+        "production_same_subset": metric_pack(peer_vals, "score") if peer_vals else metric_pack([], "score"),
+        "peer_shadow": metric_pack(peer_vals, "peer_shadow_score") if peer_vals else metric_pack([], "peer_shadow_score"),
+    }
     cohort_ics = [num(x.get("rank_information_coefficient")) for x in cohorts]
     cohort_ics = [x for x in cohort_ics if x is not None]
     cohort_spreads = [num(x.get("top_minus_bottom_pct")) for x in cohorts]
@@ -300,7 +323,8 @@ def maturity_dates(today, snapshots, horizon):
 def main():
     today = dt.date.today()
     rows = current_rows()
-    history = load_json(HISTORY, {"schema_version": 2, "snapshots": [], "outcomes": []})
+    shadow_scores = peer_shadow_scores()
+    history = load_json(HISTORY, {"schema_version": 3, "snapshots": [], "outcomes": []})
     snapshots = history.setdefault("snapshots", [])
     outcomes = history.setdefault("outcomes", [])
 
@@ -312,7 +336,7 @@ def main():
             latest_date = None
 
     if latest_date is None or (today - latest_date).days >= 7:
-        snapshots.append(make_snapshot(today, rows))
+        snapshots.append(make_snapshot(today, rows, shadow_scores))
 
     cutoff = today - dt.timedelta(days=RETENTION_DAYS)
     snapshots[:] = [
@@ -336,7 +360,7 @@ def main():
         summary["next_pending_maturity_date"] = next_maturity.isoformat() if next_maturity else None
         report_horizons[str(horizon)] = summary
 
-    history["schema_version"] = 2
+    history["schema_version"] = 3
     history["updated_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     history["snapshot_count"] = len(snapshots)
     history["outcome_count"] = len(outcomes)
@@ -346,7 +370,7 @@ def main():
     )
 
     report = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
         "horizons_days": list(HORIZONS),
@@ -359,6 +383,7 @@ def main():
             "top_minus_bottom": "Mean return of the highest score quintile minus the lowest score quintile.",
             "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap.",
             "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
+            "peer_shadow": "Head-to-head specialist-model experiment. Production and peer-normalized candidate are compared on the exact same eligible rows; the candidate never changes the published score.",
         },
         "decision_rule": (
             "Do not optimize production weights from pooled n alone. Require multiple matured weekly cohorts, "
