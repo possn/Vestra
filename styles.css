@@ -597,6 +597,14 @@ body.is-scrolling .passivebar { transform: translateX(-50%) translateY(140%); op
       (100vw - var(--desktop-sidebar-w)) / 2
     );
   }
+
+  /* Any desktop surface that visually belongs to the app content column must
+     use the same available area as .main. This prevents search/modals/toasts
+     from sliding under the permanent sidebar on narrow laptop windows. */
+  .global-searchbar {
+    width: calc(100% - var(--desktop-sidebar-w));
+    margin-left: var(--desktop-sidebar-w);
+  }
 }
 
 /* ─── BOTTOM NAV ───
@@ -1712,3 +1720,20 @@ body{
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Desktop fixed-sidebar overlay alignment.
+   Keep this after all base modal/toast declarations. Use CSS arithmetic that
+   is safe in Safari/WebKit: sidebar=260px, half-sidebar shift=130px,
+   horizontal gutters=24px each => usable width = 100vw - 308px. */
+@media (min-width: 900px) {
+  .modal__box,
+  .modal__panel {
+    left: calc(50% + 130px);
+    width: min(680px, calc(100vw - 308px));
+  }
+  #toastEl {
+    left: calc(50% + 130px);
+    max-width: min(680px, calc(100vw - 308px));
+  }
+}
+
