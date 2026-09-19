@@ -13,7 +13,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertNotIn('src="market-hotfix.js', index)
         self.assertNotIn('src="market.js', index)
         order = [
-            'market-live-overlay.js', 'market-runtime-loader.js', 'market-data-loader.js', 'market-company-brief.js',
+            'market-runtime-loader.js', 'market-data-loader.js', 'market-company-brief.js',
             'market-metric-cleanup.js', 'portfolio-collapsibles.js',
             'portfolio-sheet-navigation.js', 'portfolio-card-classifier.js',
         ]
@@ -21,6 +21,17 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
         for name in order:
             self.assertEqual(index.count(f'src="{name}'), 1, name)
+        for lazy in (
+            'market-live-overlay.js?v=1.2',
+            'market-congress-live.js?v=1.0',
+            'market-portfolio-context.js?v=1.0',
+            'market-watch-snapshots.js?v=1.0',
+            'market-dossier-signals.js?v=1.0',
+            'market-search-suggestions.js?v=1.2',
+            'market-row-ui.js?v=1.0',
+        ):
+            self.assertIn(lazy, loader)
+            self.assertNotIn(f'src="{lazy.split("?")[0]}', index)
         self.assertIn("script.src = 'market.js?v=20260831v2';", loader)
         universe = read("market-static-universe.js")
         self.assertIn("politicians.js?v=2.1", universe)
@@ -56,7 +67,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
 
     def test_every_static_market_script_is_deferred(self):
         index = read("index.html")
-        for name in ('market-live-overlay.js','market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js'):
+        for name in ('market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js'):
             self.assertIn(f'<script defer="" src="{name}', index)
 
     def test_service_worker_tracks_final_static_runtime(self):
