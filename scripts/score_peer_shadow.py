@@ -327,24 +327,26 @@ def energy_shadow(ctx):
 
 
 def biotech_shadow(ctx):
-    def runway(x):
-        cash = n(x.get("net_cash"))
-        fcf = n(x.get("free_cash_flow"))
-        # net_cash is a conservative substitute for unavailable total_cash in
-        # the published row; positive FCF keeps the production 100-point rule.
-        if fcf is not None and fcf >= 0:
-            return None
-        return cash / abs(fcf) if cash is not None and cash > 0 and fcf is not None and fcf < 0 else None
-
-    fcf = n(ctx.row.get("free_cash_flow"))
-    if fcf is not None and fcf >= 0:
-        runway_score = 100.0
-    else:
-        runway_score = ctx.derived("cash_runway_proxy", runway)
-
-    net_cash = ctx.net_cash_to_cap()
-    dilution = ctx.p("diluted_shares_yoy", invert=True)
-    quality = avg([ctx.p("gross_margin"), ctx.p("roa")])
+    # These four native biotech pillars are already peer-ranked in production.
+    # Keep their emitted values exactly rather than rebuilding runway from an
+    # incomplete published cash decomposition. Only inherited global Growth and
+    # Stability are candidates for peer-first normalization here.
+    dims = ctx.row.get("score_dimensions") or {}
+    runway_score = n(dims.get("Cash Runway"))
+    net_cash = n(dims.get("Net Cash"))
+    dilution = n(dims.get("Dilution Discipline"))
+    quality = n(dims.get("Operating Quality"))
+    for metric, value in (
+        ("Cash Runway", runway_score),
+        ("Net Cash", net_cash),
+        ("Dilution Discipline", dilution),
+        ("Operating Quality", quality),
+    ):
+        ctx.scopes.append({
+            "metric": metric,
+            "scope": "production_peer_native",
+            "peer_observations": len(ctx.peers),
+        })
     growth = ctx.growth()
     stability = ctx.stability()
     score = weighted([
@@ -384,7 +386,6 @@ def growth_tech_shadow(ctx):
             plausible_fcf_yield(ctx.row),
             [plausible_fcf_yield(x) for x in ctx.peers],
             [plausible_fcf_yield(x) for x in ctx.all_rows],
-            invert=True,
         ),
     ])
     stability = ctx.stability()
