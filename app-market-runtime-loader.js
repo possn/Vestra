@@ -54,7 +54,7 @@
       }
 
       if (!existing) {
-        script.src = SRC;
+        script.src = 'market.js?v=20260831v2';
         script.async = true;
         script.dataset.vestraMarketRuntime = '1';
         document.head.appendChild(script);
