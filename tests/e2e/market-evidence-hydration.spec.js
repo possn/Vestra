@@ -15,8 +15,10 @@ test('iPhone/WebKit: hydrated dossier exposes evidence quality without startup p
   });
 
   await page.goto('/index.html');
-  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarket?.__lazyDossiersInstalled);
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarketLoader);
+  expect(await page.evaluate(() => Boolean(window.VestraMarket))).toBe(false);
   await page.evaluate(() => window.setView('market'));
+  await page.waitForFunction(() => !!window.VestraMarket?.__lazyDossiersInstalled);
 
   const search = page.locator('#marketSearch');
   await expect(search).toBeVisible();
