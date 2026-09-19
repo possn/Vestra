@@ -42,6 +42,11 @@ class DashboardWeeklyEventsFetchTimeoutTests(unittest.TestCase):
         self.assertIn("Promise.allSettled([marketLoad,loadMacroEvents()])", self.runtime)
         self.assertIn("macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS", self.runtime)
 
+    def test_saved_weekly_detail_extracts_calendar_date_with_digit_regex(self):
+        self.assertIn(r"const match = /^[^:]+:(\\d{4}-\\d{2}-\\d{2}):/.exec(id);", self.runtime)
+        self.assertNotIn(r"const match = /^[^:]+:(\\\\d{4}-\\\\d{2}-\\\\d{2}):/.exec(id);", self.runtime)
+        self.assertIn("collectMacroEvents(snapshot, eventDay, 1)", self.runtime)
+
     def test_runtime_and_loader_versions_match(self):
         self.assertIn("const VERSION = '2.2';", self.runtime)
         self.assertIn("dashboard-weekly-events.js?v=2.2", self.loader)
