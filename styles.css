@@ -1737,3 +1737,42 @@ body{
   }
 }
 
+
+
+/* Portfolio sector holdings box — main portfolio view */
+.portfolio-sector-card{margin-top:12px}
+.portfolio-sector-head{align-items:flex-start}
+.portfolio-sector-overview{display:flex;flex-direction:column;gap:8px}
+.portfolio-sector-group{border:1px solid var(--line);border-radius:14px;background:var(--card2);overflow:hidden}
+.portfolio-sector-group>summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto auto 20px;gap:10px;align-items:center;padding:12px 14px;cursor:pointer}
+.portfolio-sector-group>summary::-webkit-details-marker{display:none}
+.portfolio-sector-title{display:flex;align-items:center;gap:10px;min-width:0}
+.portfolio-sector-title>div{display:flex;flex-direction:column;min-width:0}
+.portfolio-sector-title strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.portfolio-sector-title small,.portfolio-sector-total small{font-size:10px;color:var(--muted)}
+.portfolio-sector-dot{width:9px;height:9px;border-radius:999px;flex:0 0 auto;background:var(--purple,#6366f1)}
+.portfolio-sector-total{text-align:right;display:flex;flex-direction:column}
+.portfolio-sector-total strong{font-size:14px}
+.portfolio-sector-risk{font-size:9px;font-weight:800;color:#b45309;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.28);border-radius:999px;padding:3px 7px}
+.portfolio-sector-chevron{font-size:20px;color:var(--muted);transition:transform .18s ease}
+.portfolio-sector-group[open] .portfolio-sector-chevron{transform:rotate(90deg)}
+.portfolio-sector-assets{border-top:1px solid var(--line);display:flex;flex-direction:column}
+.portfolio-sector-asset{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.portfolio-sector-asset:last-child{border-bottom:0}
+.portfolio-sector-asset__main,.portfolio-sector-asset__metrics{display:flex;flex-direction:column;min-width:0}
+.portfolio-sector-asset__main strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.portfolio-sector-asset__main span,.portfolio-sector-asset__metrics span{font-size:10px;color:var(--muted)}
+.portfolio-sector-asset__metrics{text-align:right}
+.portfolio-sector-asset__metrics strong{font-size:12px}
+.portfolio-sector-asset__metrics em{font-style:normal;font-weight:800}
+.portfolio-sector-asset__metrics em.is-positive{color:#059669}
+.portfolio-sector-asset__metrics em.is-negative{color:#dc2626}
+.portfolio-sector-research{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:9px;padding:6px 8px;font-size:10px;font-weight:800;cursor:pointer}
+.portfolio-sector-empty{padding:16px;text-align:center;color:var(--muted);font-size:12px}
+@media(max-width:640px){
+  .portfolio-sector-group>summary{grid-template-columns:minmax(0,1fr) auto 18px}
+  .portfolio-sector-risk{display:none}
+  .portfolio-sector-total small{max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .portfolio-sector-asset{grid-template-columns:minmax(0,1fr) auto}
+  .portfolio-sector-research{grid-column:1/-1;justify-self:end}
+}

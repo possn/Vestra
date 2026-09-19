@@ -1700,8 +1700,111 @@ function renderPortfolioGlance() {
   }
 }
 
+function renderPortfolioSectorBox() {
+  const card = document.getElementById("portfolioSectorCard");
+  const root = document.getElementById("portfolioSectorSummary");
+  if (!card || !root) return;
+
+  if (showingLiabs) {
+    card.hidden = true;
+    return;
+  }
+  card.hidden = false;
+
+  const assets = (state.assets || []).filter(a => parseNum(a.value) > 0);
+  const eligible = assets.filter(a => {
+    const cls = String(a.class || "").toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return /acoes|etf|fund|cripto/.test(cls);
+  });
+  const portfolioTotal = assets.reduce((s,a) => s + parseNum(a.value), 0) || 1;
+  const analysedTotal = eligible.reduce((s,a) => s + parseNum(a.value), 0);
+
+  if (!eligible.length || analysedTotal <= 0) {
+    root.innerHTML = '<div class="portfolio-sector-empty">Sem ações, ETFs/fundos ou cripto com valor para agrupar por sector.</div>';
+    return;
+  }
+
+  const grouped = new Map();
+  for (const asset of eligible) {
+    let sector = "Outros";
+    try { sector = getTickerMeta(asset)?.sector || "Outros"; } catch (_) {}
+    const list = grouped.get(sector) || [];
+    list.push(asset);
+    grouped.set(sector, list);
+  }
+
+  const rows = [...grouped.entries()].map(([sector, list]) => {
+    list.sort((a,b) => parseNum(b.value) - parseNum(a.value));
+    const value = list.reduce((s,a) => s + parseNum(a.value), 0);
+    return {
+      sector, list, value,
+      pctAnalysed: value / analysedTotal * 100,
+      pctPortfolio: value / portfolioTotal * 100,
+    };
+  }).sort((a,b) => b.value - a.value);
+
+  const esc = escapeHtml;
+  root.innerHTML = '<div class="portfolio-sector-overview">' +
+    rows.map((row, idx) => {
+      const concentration = row.pctAnalysed >= 30
+        ? '<span class="portfolio-sector-risk">Concentração</span>' : '';
+      const assetsHtml = row.list.map(asset => {
+        const value = parseNum(asset.value);
+        const inSector = row.value > 0 ? value / row.value * 100 : 0;
+        const inPortfolio = value / portfolioTotal * 100;
+        const ticker = String(asset.yahooTicker || asset.ticker || asset.symbol || "").trim();
+        const gl = calcGainLoss(asset);
+        const gain = gl ? (gl.gainPct >= 0 ? '+' : '') + fmtPct(gl.gainPct) : '—';
+        const gainClass = gl ? (gl.gainPct >= 0 ? 'is-positive' : 'is-negative') : '';
+        const research = /a[cç][oõ]es|etf|fund/i.test(String(asset.class || "")) && ticker
+          ? '<button type="button" class="portfolio-sector-research" data-sector-research="' + esc(ticker) + '" title="Abrir dossier Vestra">Dossier ↗</button>'
+          : '';
+        return '<div class="portfolio-sector-asset">' +
+          '<div class="portfolio-sector-asset__main"><strong>' + esc(asset.name || ticker || '—') + '</strong>' +
+          '<span>' + esc(ticker || asset.class || '') + ' · ' + inSector.toFixed(1) + '% do sector</span></div>' +
+          '<div class="portfolio-sector-asset__metrics"><strong>' + fmtEUR(value) + '</strong>' +
+          '<span>' + inPortfolio.toFixed(1) + '% carteira · <em class="' + gainClass + '">' + gain + '</em></span></div>' +
+          research +
+          '</div>';
+      }).join('');
+
+      return '<details class="portfolio-sector-group" ' + (idx === 0 ? 'open' : '') + '>' +
+        '<summary><div class="portfolio-sector-title"><span class="portfolio-sector-dot" style="--sector-index:' + idx + '"></span>' +
+        '<div><strong>' + esc(row.sector) + '</strong><small>' + row.list.length + (row.list.length === 1 ? ' activo' : ' activos') + '</small></div></div>' +
+        '<div class="portfolio-sector-total"><strong>' + row.pctAnalysed.toFixed(1) + '%</strong><small>' + fmtEUR(row.value) + ' · ' + row.pctPortfolio.toFixed(1) + '% carteira</small></div>' +
+        concentration + '<span class="portfolio-sector-chevron">›</span></summary>' +
+        '<div class="portfolio-sector-assets">' + assetsHtml + '</div></details>';
+    }).join('') +
+    '</div>';
+
+  root.querySelectorAll('[data-sector-research]').forEach(btn => {
+    btn.addEventListener('click', async ev => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const ticker = String(btn.dataset.sectorResearch || "").trim();
+      if (!ticker) return;
+      try {
+        const api = window.VestraMarket?.openPortfolioAsset
+          ? window.VestraMarket
+          : await window.VestraMarketLoader?.ensure?.();
+        const asset = (state.assets || []).find(a =>
+          String(a.yahooTicker || a.ticker || a.symbol || "").trim().toUpperCase() === ticker.toUpperCase()
+        );
+        if (api?.openPortfolioAsset && asset) await api.openPortfolioAsset(asset);
+        else if (api?.openTicker) api.openTicker(ticker);
+        else toast("Ainda não há dossier Vestra para este instrumento.");
+      } catch (err) {
+        console.error("Falha ao abrir dossier pela box de sectores", err);
+        toast("Não foi possível carregar o dossier Vestra.");
+      }
+    });
+  });
+}
+
 function renderItems() {
   renderPortfolioGlance();
+  renderPortfolioSectorBox();
   rebuildClassFilter();
   const list = $("itemsList");
   list.innerHTML = "";
@@ -10089,6 +10192,14 @@ function wire() {
   $("qClass").addEventListener("change", renderItems);
   $("qSort").addEventListener("change", renderItems);
   $("btnAddItem").addEventListener("click", () => openItemModal(showingLiabs ? "liab" : "asset"));
+  const btnSectorAnalysis = document.getElementById("btnPortfolioSectorAnalysis");
+  if (btnSectorAnalysis) btnSectorAnalysis.addEventListener("click", () => {
+    setView("analysis");
+    requestAnimationFrame(() => {
+      document.querySelector('.analysis-tab[data-tab="portfolio"]')?.click();
+      document.querySelector('#portfolioSubTabs [data-subtab="overview"]')?.click();
+    });
+  });
   $("btnSaveItem").addEventListener("click", saveItemFromModal);
   $("btnDeleteItem").addEventListener("click", deleteCurrentItem);
 
