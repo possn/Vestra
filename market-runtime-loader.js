@@ -116,10 +116,16 @@
     return api;
   }
 
+  function readyApi() {
+    const api = window.VestraMarket;
+    return api && api.__lazyRuntimeFacade !== true && api.ensureLoaded && api.openTicker ? api : null;
+  }
+
   function ensure() {
-    if (window.VestraMarket?.ensureLoaded && window.VestraMarket?.openTicker) {
+    const ready = readyApi();
+    if (ready) {
       void ensureEnhancements();
-      return Promise.resolve(window.VestraMarket);
+      return Promise.resolve(ready);
     }
     if (!runtimePromise) {
       runtimePromise = loadCore().catch(error => {
@@ -129,6 +135,17 @@
     }
     return runtimePromise;
   }
+
+  const lazyFacade = Object.freeze({
+    __lazyRuntimeFacade: true,
+    ensureLoaded: (...args) => ensure().then(api => api.ensureLoaded?.(...args)),
+    openTicker: (...args) => ensure().then(api => api.openTicker?.(...args)),
+    openPortfolioAsset: (...args) => ensure().then(api => api.openPortfolioAsset?.(...args)),
+    upsertRemoteStock: (...args) => ensure().then(api => api.upsertRemoteStock?.(...args)),
+    toggleWatch: (...args) => ensure().then(api => api.toggleWatch?.(...args)),
+    resolvePortfolioStock: (...args) => readyApi()?.resolvePortfolioStock?.(...args) || null,
+  });
+  if (!window.VestraMarket) window.VestraMarket = lazyFacade;
 
   window.VestraMarketRuntime = Object.freeze({
     ensure,
