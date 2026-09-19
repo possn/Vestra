@@ -48,6 +48,18 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("const result=rawOpen(ticker);", loader)
         self.assertIn("hydrateOpenDossier(ticker);", loader)
 
+    def test_market_only_companions_are_deferred_until_market_load(self):
+        universe = read("market-static-universe.js")
+        index = read("index.html")
+        tail = universe[universe.index("// Dashboard/mobile companions remain eager"):]
+        self.assertNotIn("ensureEtfIntelligence();", tail)
+        self.assertNotIn("ensureScannerCompanion();", tail)
+        self.assertNotIn("ensureAnalysisToolsRuntime();", tail)
+        self.assertNotIn("ensureMarketUiPolish();", tail)
+        self.assertIn("const etfReady = ensureMarketCompanions();", universe)
+        self.assertIn("await etfReady;", universe)
+        self.assertIn("market-static-universe.js?v=1.13", index)
+
     def test_dossier_hydration_requires_exact_ticker_identity(self):
         loader = read("market-data-loader.js")
         self.assertIn("shard=txt(manifest[key])", loader)
