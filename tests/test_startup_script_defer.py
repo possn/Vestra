@@ -26,7 +26,7 @@ class StartupScriptDeferTests(unittest.TestCase):
 
     def test_chartjs_stays_before_app_runtime(self):
         chart = self.index.index("chart.umd.min.js")
-        app = self.index.index("app.js?v=20260919v2")
+        app = self.index.index("app.js?v=20260919v3")
         self.assertLess(chart, app)
         self.assertIn('defer="" fetchpriority="high"', self.index[self.index.index("<script", app - 80):app + 120])
 
