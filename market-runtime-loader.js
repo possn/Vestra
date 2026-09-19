@@ -39,6 +39,9 @@
             reject(error);
             return;
           }
+          try {
+            window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.0' } }));
+          } catch (_) {}
           resolve(window.VestraMarket);
         };
         const onLoad = () => {
