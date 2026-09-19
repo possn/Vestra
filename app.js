@@ -738,6 +738,16 @@ function setView(view) {
   const prevView = currentView;
   currentView = view;
   document.body.dataset.view = view;
+  if (view === "market") {
+    const loader = window.VestraMarketRuntimeLoader;
+    if (window.VestraMarket?.ensureLoaded) {
+      Promise.resolve(window.VestraMarket.ensureLoaded()).catch(() => {});
+    } else if (loader?.ensure) {
+      loader.ensure()
+        .then(api => api?.ensureLoaded?.())
+        .catch(err => console.warn("Falha ao carregar Mercado", err));
+    }
+  }
   const passive = document.getElementById("passivebar");
   if (passive) passive.style.display = ["dashboard", "assets"].includes(view) ? "" : "none";
   requestAnimationFrame(() => { try { syncFixedBarHeights(); } catch (_) {} });
@@ -1759,6 +1769,9 @@ function renderItems() {
     </div><div class="item__v">${fmtEUR(parseNum(it.value))}</div>`;
     const openResearch = async ev=>{
       ev.preventDefault(); ev.stopPropagation();
+      if (!window.VestraMarket?.openPortfolioAsset) {
+        try { await window.VestraMarketRuntimeLoader?.ensure?.(); } catch (_) {}
+      }
       const ok = window.VestraMarket?.openPortfolioAsset ? await window.VestraMarket.openPortfolioAsset(it) : false;
       if(!ok) toast('Ainda não há dossier Vestra para este instrumento.');
     };
