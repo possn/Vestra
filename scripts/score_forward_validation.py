@@ -383,8 +383,32 @@ def main():
         except Exception:
             latest_date = None
 
-    if latest_date is None or (today - latest_date).days >= 7:
+    latest_snapshot = None
+    if latest_date is not None:
+        latest_snapshot = next(
+            (s for s in reversed(snapshots) if str(s.get("date") or "") == latest_date.isoformat()),
+            None,
+        )
+    latest_has_peer_shadow = bool(
+        latest_snapshot
+        and any(
+            num(obs.get("peer_shadow_score")) is not None
+            for obs in (latest_snapshot.get("observations") or {}).values()
+            if isinstance(obs, dict)
+        )
+    )
+    needs_peer_shadow_baseline = bool(shadow_scores) and not latest_has_peer_shadow
+
+    if latest_date is None or (today - latest_date).days >= 7 or (
+        needs_peer_shadow_baseline and latest_date != today
+    ):
         snapshots.append(make_snapshot(today, rows, shadow_scores))
+    elif needs_peer_shadow_baseline and latest_date == today and latest_snapshot:
+        # Same-day upgrade is still prospective: attach only the candidate that
+        # exists now to today's already-recorded observations, never to older dates.
+        for ticker, observation in (latest_snapshot.get("observations") or {}).items():
+            if isinstance(observation, dict):
+                observation["peer_shadow_score"] = num(shadow_scores.get(ticker))
 
     cutoff = today - dt.timedelta(days=RETENTION_DAYS)
     snapshots[:] = [
