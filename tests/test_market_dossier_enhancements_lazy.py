@@ -14,8 +14,8 @@ class LazyMarketDossierEnhancementTests(unittest.TestCase):
         self.assertIn('market-runtime-loader.js?v=1.2', INDEX)
 
     def test_cleanup_loads_before_company_brief(self):
-        cleanup = "loadHelper(\n        'VestraMarketMetricCleanup',\n        'market-metric-cleanup.js?v=1.0'"
-        brief = "loadHelper(\n          'VestraMarketCompanyBrief',\n          'market-company-brief.js?v=1.0'"
+        cleanup = "loadHelper('VestraMarketMetricCleanup', 'market-metric-cleanup.js?v=1.0')"
+        brief = "loadHelper('VestraMarketCompanyBrief', 'market-company-brief.js?v=1.0')"
         self.assertIn(cleanup, LOADER)
         self.assertIn(brief, LOADER)
         self.assertLess(LOADER.index(cleanup), LOADER.index(brief))
