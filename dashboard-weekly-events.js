@@ -305,6 +305,7 @@
       const nav = window.VestraWeeklyEventsNavigation;
       const now = nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date();
       render({ now });
+      restoreExternalWeeklyDetail();
       window.dispatchEvent?.(new CustomEvent('vestra:weekly-data-refreshed'));
     }
     return latest;
@@ -527,6 +528,11 @@
   });
   window.addEventListener?.('focus',resumeWeeklyEvents);
   window.addEventListener?.('pageshow',resumeWeeklyEvents);
-  window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
+  window.addEventListener?.('vestra:external-return-restored',()=> {
+    if (restoreExternalWeeklyDetail()) return;
+    void loadMacroEvents().then(() => restoreExternalWeeklyDetail());
+  });
+  window.addEventListener?.('vestra:market-ready',()=>{ render(); restoreExternalWeeklyDetail(); });
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
   window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,findMacroEventById,restoreExternalWeeklyDetail,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
 })();
