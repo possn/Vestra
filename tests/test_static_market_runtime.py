@@ -13,9 +13,9 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertNotIn('src="market-hotfix.js', index)
         self.assertNotIn('src="market.js', index)
         order = [
-            'market-runtime-loader.js', 'market-data-loader.js', 'market-company-brief.js',
-            'market-metric-cleanup.js', 'portfolio-collapsibles.js',
-            'portfolio-sheet-navigation.js', 'portfolio-card-classifier.js',
+            'market-runtime-loader.js', 'market-data-loader.js',
+            'portfolio-collapsibles.js', 'portfolio-sheet-navigation.js',
+            'portfolio-card-classifier.js',
         ]
         positions = [index.index(f'src="{name}') for name in order]
         self.assertEqual(positions, sorted(positions))
@@ -33,6 +33,9 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             self.assertIn(lazy, loader)
             self.assertNotIn(f'src="{lazy.split("?")[0]}', index)
         self.assertIn("script.src = 'market.js?v=20260831v2';", loader)
+        for lazy in ('market-metric-cleanup.js?v=1.0', 'market-company-brief.js?v=1.0'):
+            self.assertIn(lazy, loader)
+            self.assertNotIn(f'src="{lazy.split("?")[0]}', index)
         universe = read("market-static-universe.js")
         self.assertIn("politicians.js?v=2.1", universe)
         self.assertNotIn('src="politicians.js', index)
