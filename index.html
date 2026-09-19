@@ -16,7 +16,7 @@
 <link href="apple-touch-icon-167.png" rel="apple-touch-icon" sizes="167x167"/>
 <link crossorigin="" href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <link href="https://cdn.jsdelivr.net" rel="dns-prefetch"/>
-<link href="styles.css?v=20260827v8" rel="stylesheet"/>
+<link href="styles.css?v=20260919v1" rel="stylesheet"/>
 <link href="portfolio-glance-polish.css?v=1.0" rel="stylesheet"/>
 <link href="market.css?v=20260821v4" rel="stylesheet"/>
 <script>
@@ -41,6 +41,9 @@
       if (context) {
         document.documentElement.dataset.externalReturnBootstrap = '1';
         window.__vestraExternalReturnBootstrapContext = context;
+      }
+      if (localStorage.getItem('vestra:dashboard-privacy-v1') === '1') {
+        document.documentElement.dataset.dashboardPrivacy = 'hidden';
       }
     } catch (_) {}
   })();
@@ -86,7 +89,7 @@
 <script defer="" src="app-quote-errors.js?v=1.0"></script>
 <script defer="" src="app-return-assumptions.js?v=1.0"></script>
 <script defer="" src="app-financial-engine.js?v=1.2"></script>
-<script defer="" fetchpriority="high" src="app.js?v=20260918v1"></script>
+<script defer="" fetchpriority="high" src="app.js?v=20260919v1"></script>
 <script defer="" src="market-live-overlay.js?v=1.2"></script>
 <script defer="" src="market-congress-live.js?v=1.0"></script>
 <script defer="" src="market-portfolio-context.js?v=1.0"></script>
@@ -182,8 +185,11 @@
 <!-- Hero: Net Worth + variação -->
 <div class="card hero">
 <div class="hero__label">
-        Património líquido
-        <button class="info-btn" onclick="openTip('netWorth')" title="Saber mais">ℹ️</button>
+        <span>Património líquido</span>
+        <span class="hero__label-actions">
+          <button class="info-btn" onclick="openTip('netWorth')" title="Saber mais" aria-label="Saber mais sobre património líquido">ℹ️</button>
+          <button class="privacy-toggle" id="btnToggleNetWorthPrivacy" type="button" onclick="toggleDashboardPrivacy()" title="Ocultar valor do património" aria-label="Ocultar valor do património" aria-pressed="false">◉</button>
+        </span>
 </div>
 <div class="hero__value" id="kpiNet">0 €</div>
 <div class="hero__sub" id="kpiAP">Ativos 0 € | Passivos 0 €</div>
