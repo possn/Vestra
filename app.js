@@ -11778,6 +11778,21 @@ function updateQuoteButtonStaleness() {
   }
 }
 
+function scheduleWhenIdle(task, { timeoutMs = 1200, fallbackDelayMs = 450 } = {}) {
+  if (typeof task !== "function") return;
+  let ran = false;
+  const run = () => {
+    if (ran) return;
+    ran = true;
+    try { task(); } catch (e) { console.error("Falha em tarefa idle", e); }
+  };
+  if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(run, { timeout: Math.max(1, Number(timeoutMs) || 1200) });
+    return;
+  }
+  setTimeout(run, Math.max(0, Number(fallbackDelayMs) || 0));
+}
+
 function autoRefreshQuotesIfStale() {
   if (state.settings && state.settings.autoRefreshQuotes === false) return;
   const workerUrl = (state.settings && state.settings.workerUrl) || "";
@@ -11914,13 +11929,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   try { updateQuoteButtonStaleness(); } catch (_) {} // v64t: mostrar logo se as cotações já estão desactualizadas ao abrir a app
   // Splash visibility/release is owned exclusively by app-ui-core.js.
   // app.js only publishes hydration progress and the vestra:app-ready boundary.
-  // Deferred non-critical tasks
-  setTimeout(() => {
+  // Deferred non-critical tasks. Give the first painted frame priority over
+  // snapshots/notifications/network refresh so opening the PWA stays responsive.
+  scheduleWhenIdle(() => {
     try { autoSnapshotIfNeeded(); } catch (e) { console.error("Falha no auto snapshot", e); }
     try { checkAndNotifyMaturities(); } catch (e) { console.error("Falha nas notificações de vencimento", e); }
     // Auto-refresh quotes if stale (>1 min since last update or never updated today)
     try { autoRefreshQuotesIfStale(); } catch (e) { console.error("Falha no auto-refresh de cotações", e); }
-  }, 150);
+  }, { timeoutMs: 1200, fallbackDelayMs: 500 });
   window.openDividendBaseModal = openDividendBaseModal;
   window.setDividendYieldDisplayMode = setDividendYieldDisplayMode;
   window.applyPreferredDividendYieldToProjection = applyPreferredDividendYieldToProjection;
@@ -11950,7 +11966,10 @@ document.addEventListener("visibilitychange", () => {
     saveStateOnLifecycleExit();
   } else if (document.visibilityState === "visible") {
     try { renderQuoteSyncStatus(); } catch (_) {}
-    setTimeout(() => { try { autoRefreshQuotesIfStale(); } catch (_) {} }, 100);
+    scheduleWhenIdle(
+      () => { try { autoRefreshQuotesIfStale(); } catch (_) {} },
+      { timeoutMs: 700, fallbackDelayMs: 250 }
+    );
   }
 });
 window.addEventListener("pagehide", saveStateOnLifecycleExit);
