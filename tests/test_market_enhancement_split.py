@@ -11,11 +11,13 @@ def read(path: str) -> str:
 class MarketEnhancementSplitTests(unittest.TestCase):
     def test_hotfix_uses_canonical_modules_not_legacy_overlays(self):
         h = read('index.html')
+        universe = read('market-static-universe.js')
         self.assertNotIn('market-hotfix.js', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
+        self.assertNotIn('src="market-company-brief.js', h)
+        self.assertIn('market-company-brief.js?v=2.1', universe)
         for module in (
-            'market-company-brief.js?v=1.0',
             'market-metric-cleanup.js?v=1.0',
             'portfolio-collapsibles.js?v=1.2',
             'portfolio-card-classifier.js?v=1.2',
