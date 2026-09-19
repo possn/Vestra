@@ -23,8 +23,7 @@ class RuntimeRegressionTests(unittest.TestCase):
             "app-broker-identity-data.js",
             "app-broker-parsing-core.js",
             "app-file-parsing.js",
-            "app-broker-workbook.js",
-            "app-broker-parsers.js",
+            "app-broker-import-loader.js",
             "app-market-client.js",
             "app-quote-errors.js",
             "app-return-assumptions.js",
@@ -37,6 +36,15 @@ class RuntimeRegressionTests(unittest.TestCase):
             self.assertGreaterEqual(pos, 0, f"{script} missing from index.html")
             positions.append(pos)
         self.assertEqual(positions, sorted(positions), "app module dependency order changed")
+        self.assertNotIn("app-broker-workbook.js", html)
+        self.assertNotIn("app-broker-parsers.js", html)
+        loader = read("app-broker-import-loader.js")
+        self.assertIn("app-broker-workbook.js?v=1.0", loader)
+        self.assertIn("app-broker-parsers.js?v=1.0", loader)
+        self.assertLess(
+            loader.index("app-broker-workbook.js?v=1.0"),
+            loader.index("app-broker-parsers.js?v=1.0"),
+        )
 
     def test_all_app_modules_are_syntax_checked_by_ci(self):
         workflow = read(".github/workflows/architecture-invariants.yml")
@@ -44,7 +52,7 @@ class RuntimeRegressionTests(unittest.TestCase):
             "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js",
             "app-ui-core.js", "app-broker-normalization.js", "app-xtb-normalization.js",
             "app-broker-identity-data.js", "app-broker-parsing-core.js", "app-file-parsing.js",
-            "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js",
+            "app-broker-import-loader.js", "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js",
             "app-quote-errors.js", "app-return-assumptions.js", "app-financial-engine.js",
             "app.js", "market.js", "market-data-loader.js", "market-data-health.js",
             "market-global-search.js", "market-learned-universe.js", "politicians.js", "worker.js",
