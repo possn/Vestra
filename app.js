@@ -10192,6 +10192,14 @@ function wire() {
   $("qClass").addEventListener("change", renderItems);
   $("qSort").addEventListener("change", renderItems);
   $("btnAddItem").addEventListener("click", () => openItemModal(showingLiabs ? "liab" : "asset"));
+  const btnSectorAnalysis = document.getElementById("btnPortfolioSectorAnalysis");
+  if (btnSectorAnalysis) btnSectorAnalysis.addEventListener("click", () => {
+    setView("analysis");
+    requestAnimationFrame(() => {
+      document.querySelector('.analysis-tab[data-tab="portfolio"]')?.click();
+      document.querySelector('#portfolioSubTabs [data-subtab="overview"]')?.click();
+    });
+  });
   $("btnSaveItem").addEventListener("click", saveItemFromModal);
   $("btnDeleteItem").addEventListener("click", deleteCurrentItem);
 
