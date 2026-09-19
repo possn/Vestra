@@ -21,13 +21,14 @@ class LazyMarketDossierEnhancementTests(unittest.TestCase):
         self.assertLess(LOADER.index(cleanup), LOADER.index(brief))
 
     def test_enhancements_start_after_core_without_blocking_market_ready(self):
-        self.assertIn(".then(loadCore)", LOADER)
-        self.assertIn("void ensureDossierEnhancements().catch", LOADER)
-        block_start = LOADER.index(".then(loadCore)")
-        block_end = LOADER.index(".catch(err => {", block_start)
-        block = LOADER[block_start:block_end]
-        self.assertIn("return api;", block)
-        self.assertNotIn("await ensureDossierEnhancements", block)
+        core = LOADER.index(".then(loadCore)")
+        fire_and_forget = LOADER.index("void ensureDossierEnhancements().catch", core)
+        return_api = LOADER.index("return api;", fire_and_forget)
+        public_chain = LOADER.index("return loadPromise.then(api =>", return_api)
+        self.assertLess(core, fire_and_forget)
+        self.assertLess(fire_and_forget, return_api)
+        self.assertLess(return_api, public_chain)
+        self.assertNotIn("await ensureDossierEnhancements", LOADER[core:public_chain])
 
     def test_enhancements_remain_precached_offline(self):
         self.assertIn('"./market-company-brief.js"', SW)
