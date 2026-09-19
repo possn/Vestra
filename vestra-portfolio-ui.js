@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v1.2 — canonical portfolio landing + analysis tabs. */
+/* Vestra Portfolio UI v1.3 — canonical portfolio landing + lazy sector explorer. */
 (() => {
   'use strict';
 
@@ -10,10 +10,29 @@
   const t=v=>String(v??'').trim();
   const num=v=>{const m=t(v).replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null;};
   let active='decide';
+  let sectorExplorerPromise=null;
 
   function root(){
     const sh=document.getElementById('marketSheet'), c=document.getElementById('marketSheetContent');
     return (!sh || sh.hidden || t(sh.dataset.tool)!=='portfolio' || !c) ? null : c;
+  }
+
+  function ensureSectorExplorer(){
+    if(window.VestraPortfolioSectorExplorer){ window.VestraPortfolioSectorExplorer.refresh?.(); return Promise.resolve(window.VestraPortfolioSectorExplorer); }
+    if(sectorExplorerPromise)return sectorExplorerPromise;
+    sectorExplorerPromise=new Promise(resolve=>{
+      const existing=document.querySelector('script[data-vestra-portfolio-sector-explorer]');
+      const script=existing||document.createElement('script');
+      let settled=false,timeoutId=null;
+      const cleanup=()=>{if(timeoutId!==null)clearTimeout(timeoutId);script.removeEventListener('load',onLoad);script.removeEventListener('error',onError);};
+      const finish=value=>{if(settled)return;settled=true;cleanup();sectorExplorerPromise=null;resolve(value||null);};
+      const onLoad=()=>finish(window.VestraPortfolioSectorExplorer||null);
+      const onError=()=>{if(script.isConnected)script.remove();finish(null);};
+      script.addEventListener('load',onLoad,{once:true});script.addEventListener('error',onError,{once:true});
+      timeoutId=setTimeout(onError,8000);
+      if(!existing){script.src='portfolio-sector-explorer.js?v=1.0';script.defer=true;script.dataset.vestraPortfolioSectorExplorer='1';document.head.appendChild(script);}
+    });
+    return sectorExplorerPromise;
   }
   function card(kind,c){ return c?.querySelector(`[data-ux-kind="${kind}"]`) || null; }
   function text(c,rx){ if(!c)return ''; const el=[...c.querySelectorAll('small,strong,b,span,div,p')].find(x=>rx.test(t(x.textContent))); return t(el?.textContent); }
@@ -80,6 +99,7 @@
   }
   function apply(){
     const c=root(); if(!c)return; c.classList.add('vpu-portfolio');
+    void ensureSectorExplorer();
     const hero=ensureHero(c), reveal=ensureExplore(c,hero), tabs=ensureTabs(c,reveal);
     c.querySelectorAll('.ux455-group-label,.ux454-group-label,.ux454-nav-title,.market-collapse-toolbar,.ux-portfolio-shortcuts,.ux453-focusbar,.ux460-overview,.ux461-reveal,.v479-portfolio-tabs').forEach(x=>{if(!x.closest('.vpu-overview,.vpu-reveal,.vpu-tabs-shell'))x.style.display='none';});
     const expanded=c.dataset.vpuExpanded==='1';
@@ -101,6 +121,6 @@
     const tab=e.target.closest?.('[data-vpu-tab]'); if(tab){active=tab.dataset.vpuTab||'decide';try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{}apply();return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{} apply();}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.2'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,ensureSectorExplorer,version:'1.3'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
