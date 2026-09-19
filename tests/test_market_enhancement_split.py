@@ -11,6 +11,7 @@ def read(path: str) -> str:
 class MarketEnhancementSplitTests(unittest.TestCase):
     def test_hotfix_uses_canonical_modules_not_legacy_overlays(self):
         h = read('index.html')
+        runtime = read('market-runtime-loader.js')
         self.assertNotIn('market-hotfix.js', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
@@ -23,7 +24,8 @@ class MarketEnhancementSplitTests(unittest.TestCase):
             'vestra-ai-brief.js?v=1.0',
             'portfolio-dossier-routing.js?v=1.0',
         ):
-            self.assertIn(module, h)
+            self.assertIn(module, runtime)
+            self.assertNotIn(f'src="{module}', h)
 
     def test_company_brief_reuses_market_runtime_and_keeps_copy_fallbacks(self):
         s = read('market-company-brief.js')
