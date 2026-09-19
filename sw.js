@@ -1,9 +1,9 @@
-/* Vestra Service Worker v10.59 — respect versioned runtime URLs before stale cache fallback. */
-const CACHE_NAME = "vestra-cache-v172";
+/* Vestra Service Worker v10.60 — lazy Excel loader joins the offline shell. */
+const CACHE_NAME = "vestra-cache-v173";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
-  "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js",
+  "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js", "./app-xlsx-loader.js",
   "./app-broker-normalization.js", "./app-xtb-normalization.js", "./app-broker-identity-data.js",
   "./app-broker-parsing-core.js", "./app-file-parsing.js", "./app-broker-workbook.js", "./app-broker-parsers.js",
   "./app-market-client.js", "./app-quote-errors.js", "./app-return-assumptions.js", "./app-financial-engine.js", "./app-runtime-bridge.js",
@@ -25,7 +25,7 @@ const APP_SHELL = [
 ];
 
 const BOOTSTRAP_NETWORK_FIRST = new Set([
-  "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js", "app-ui-core.js",
+  "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js", "app-ui-core.js", "app-xlsx-loader.js",
   "app-broker-normalization.js", "app-xtb-normalization.js", "app-broker-identity-data.js", "app-broker-parsing-core.js",
   "app-file-parsing.js", "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js", "app-quote-errors.js",
   "app-return-assumptions.js", "app-financial-engine.js", "app.js", "market-live-overlay.js",

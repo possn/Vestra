@@ -317,7 +317,11 @@ async function parseBrokerImportFile(file) {
     return { format, text, rows: [], textLength: text.length };
   }
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-    if (typeof XLSX === "undefined") throw new Error("Biblioteca Excel não carregada.");
+    if (!window.XLSX) {
+      const loader = window.VestraXlsxLoader;
+      if (!loader?.ensure) throw new Error("Carregador Excel não disponível.");
+      await loader.ensure();
+    }
     const ab = await file.arrayBuffer();
     const wb = XLSX.read(ab, { type: "array", raw: false, cellDates: true });
     const blocks = workbookToBrokerBlocks(wb);

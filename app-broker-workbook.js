@@ -8,6 +8,13 @@
     throw new Error('Broker workbook dependencies were not loaded before app-broker-workbook.js');
   }
 
+  async function ensureXlsx() {
+    if (window.XLSX) return window.XLSX;
+    const loader = window.VestraXlsxLoader;
+    if (!loader?.ensure) throw new Error("Carregador Excel não disponível.");
+    return loader.ensure();
+  }
+
 async function fileToText(file) {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -20,7 +27,7 @@ async function fileToText(file) {
 async function fileToObjectRows(file) {
   const name = String(file?.name || "").toLowerCase();
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-    if (typeof XLSX === "undefined") throw new Error("Biblioteca Excel não carregada.");
+    await ensureXlsx();
     const ab = await file.arrayBuffer();
     const wb = XLSX.read(ab, { type: "array", raw: false, cellDates: true });
     const sheetName = wb.SheetNames[0];

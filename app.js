@@ -8966,9 +8966,10 @@ function reconcileBankStatementRows(rows, bankFmt = "generic") {
 
 async function extractTextFromXLSX(file) {
   try {
-    if (typeof XLSX === "undefined") {
-      toast("Biblioteca Excel não carregada. Tenta recarregar a página.");
-      return "";
+    if (!window.XLSX) {
+      const loader = window.VestraXlsxLoader;
+      if (!loader?.ensure) throw new Error("Carregador Excel não disponível.");
+      await loader.ensure();
     }
     const arrayBuffer = await file.arrayBuffer();
     const wb = XLSX.read(arrayBuffer, { type: "array", dateNF: "yyyy-mm-dd" });
@@ -8988,7 +8989,11 @@ async function parseXLSXBankRows(file) {
   // Keyword-based detection is unreliable (e.g. "Data valor" matches "valor" = amount keyword).
   // Instead: read raw numeric cells, identify columns by their value characteristics.
   try {
-    if (typeof XLSX === "undefined") return [];
+    if (!window.XLSX) {
+      const loader = window.VestraXlsxLoader;
+      if (!loader?.ensure) return [];
+      await loader.ensure();
+    }
     const arrayBuffer = await file.arrayBuffer();
     // raw:true preserves actual numeric values without string formatting
     const wb = XLSX.read(arrayBuffer, { type: "array", raw: true });
@@ -11995,8 +12000,18 @@ function exportPortfolioCSV() {
   toast("Portfólio CSV exportado.");
 }
 
-function exportPortfolioXLSX() {
-  if (typeof XLSX === "undefined") { toast("XLSX não disponível."); return; }
+async function exportPortfolioXLSX() {
+  try {
+    if (!window.XLSX) {
+      const loader = window.VestraXlsxLoader;
+      if (!loader?.ensure) throw new Error("Carregador Excel não disponível.");
+      await loader.ensure();
+    }
+  } catch (err) {
+    console.error("XLSX load error:", err);
+    toast("Não foi possível carregar o suporte Excel.");
+    return;
+  }
   const t = calcTotals();
   const assetRows = state.assets.map(a => ({ Tipo:"Ativo", Classe:a.class||"", Nome:a.name||"", "Valor EUR":parseNum(a.value), "Tipo Yield":a.yieldType||"none", "Yield Valor":parseNum(a.yieldValue), "Valorização Esperada %": hasExplicitAppreciationPct(a) ? parseNum(a.appreciationPct) : "", "Capitalização":a.compoundFreq||"", Vencimento:a.maturityDate||"", "Custo Aquis.":parseNum(a.costBasis||0), "Rend. Anual EUR":passiveFromItem(a), Notas:a.notes||"" }));
   const liabRows = state.liabilities.map(l => ({ Tipo:"Passivo", Classe:l.class||"", Nome:l.name||"", "Valor EUR":parseNum(l.value), "Tipo Yield":"","Yield Valor":"","Capitalização":"",Vencimento:"","Custo Aquis.":0,"Rend. Anual EUR":0, Notas:l.notes||"" }));
