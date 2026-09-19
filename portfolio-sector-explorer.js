@@ -141,9 +141,9 @@
       positions.sort((a,b)=>b.value-a.value);
       const value=positions.reduce((s,r)=>s+r.value,0);
       const cost=positions.reduce((s,r)=>s+(r.cost ?? 0),0);
-      const knownCost=positions.some(r=>r.cost!=null && r.cost>0);
-      const gain=knownCost?value-cost:null;
-      const gainPct=knownCost&&cost>0?gain/cost*100:null;
+      const completeCost=positions.every(r=>r.cost!=null && r.cost>0);
+      const gain=completeCost?value-cost:null;
+      const gainPct=completeCost&&cost>0?gain/cost*100:null;
       return {sector,positions,value,cost,gain,gainPct,weight:total>0?value/total*100:0};
     }).sort((a,b)=>b.value-a.value);
   }
