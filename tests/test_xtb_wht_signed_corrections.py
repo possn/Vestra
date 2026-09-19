@@ -30,7 +30,7 @@ class XtbWithholdingSignedCorrectionTests(unittest.TestCase):
         self.assertIn('Math.max(0, Math.min(parseNum(d.grossAmount), adjustedTax))', APP)
 
     def test_previous_idempotence_fix_remains(self):
-        self.assertIn('let events = (bd.events || []).map(e => (e && typeof e === "object" ? { ...e } : e)).sort(', APP)
+        self.assertIn('let events = rebuildEvents.map(e => (e && typeof e === "object" ? { ...e } : e)).sort(', APP)
         self.assertIn('e.taxEUR = wht;', APP)
 
 
