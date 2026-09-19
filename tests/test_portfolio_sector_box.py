@@ -15,14 +15,15 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         self.assertIn('id="portfolioSectorCard"', self.index)
         self.assertIn('id="portfolioSectorSummary"', self.index)
         self.assertIn('Sectores da carteira', self.index)
-        self.assertIn('Peso, valor e activos dentro de cada sector.', self.index)
+        self.assertIn('Só ações e ETFs · peso e valor por sector.', self.index)
 
     def test_sector_box_is_rendered_with_portfolio_items(self):
         self.assertIn("function renderPortfolioSectorBox()", self.app)
         self.assertIn("renderPortfolioSectorBox();", self.app)
-        self.assertIn("getTickerMeta(asset)?.sector", self.app)
-        self.assertIn("pctAnalysed", self.app)
-        self.assertIn("pctPortfolio", self.app)
+        self.assertIn("isPortfolioEquityAsset", self.app)
+        self.assertIn("portfolioEquitySector", self.app)
+        self.assertIn("pctEquities", self.app)
+        self.assertNotIn("pctAnalysed", self.app)
         self.assertIn("calcGainLoss(asset)", self.app)
 
     def test_sector_assets_keep_dossier_navigation(self):
