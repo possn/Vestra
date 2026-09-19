@@ -2,9 +2,9 @@
 
 The audit discovers direct local <script src> entries in index.html, then follows
 only explicit JavaScript loading mechanisms from already-reachable modules:
-script ``.src`` assignments, loader/ensure function calls, and ES module imports.
-A filename that merely appears in an arbitrary string literal is not considered a
-runtime edge. External CDN scripts are ignored. Service Worker and Cloudflare
+script ``.src`` assignments, loader/ensure function calls, ES module imports, and
+declarative `*_MODULES` runtime-loader arrays. A filename that merely appears in
+an arbitrary string literal is not considered a runtime edge. External CDN scripts are ignored. Service Worker and Cloudflare
 Worker entrypoints are classified separately. Unreferenced files are reported and
 make the audit fail closed; nothing is deleted automatically.
 """
@@ -31,6 +31,11 @@ IMPORT_RE = re.compile(
 DYNAMIC_IMPORT_RE = re.compile(r'\bimport\s*\(\s*["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']\s*\)', re.I)
 EXTERNAL_RE = re.compile(r'^(?:https?:)?//', re.I)
 WRANGLER_MAIN_RE = re.compile(r'^\s*main\s*=\s*["\']([^"\']+\.js)["\']', re.I | re.M)
+MODULE_LIST_RE = re.compile(
+    r'\b(?:const|let|var)\s+[A-Za-z_$][\w$]*_MODULES\s*=\s*(?:Object\.freeze\s*\()?\s*\[(.*?)\]\s*\)?\s*;',
+    re.I | re.S,
+)
+MODULE_LITERAL_RE = re.compile(r'["\']([^"\']+?\.js)(?:\?[^"\']*)?["\']', re.I)
 
 
 def _basename(ref: str) -> str:
@@ -42,6 +47,12 @@ def runtime_refs(text: str) -> list[str]:
     refs: list[str] = []
     for pattern in (SCRIPT_ASSIGN_RE, LOADER_CALL_RE, IMPORT_RE, DYNAMIC_IMPORT_RE):
         for match in pattern.finditer(text):
+            ref = match.group(1)
+            if EXTERNAL_RE.match(ref):
+                continue
+            refs.append(_basename(ref))
+    for block in MODULE_LIST_RE.finditer(text):
+        for match in MODULE_LITERAL_RE.finditer(block.group(1)):
             ref = match.group(1)
             if EXTERNAL_RE.match(ref):
                 continue
