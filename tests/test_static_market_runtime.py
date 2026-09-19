@@ -16,9 +16,9 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'market-live-overlay.js', 'market-runtime-loader.js', 'market-data-loader.js', 'market-company-brief.js',
             'market-metric-cleanup.js', 'portfolio-collapsibles.js',
             'portfolio-sheet-navigation.js', 'portfolio-card-classifier.js',
-            'market-opportunities.js', 'vestra-portfolio-focus.js',
+            'vestra-portfolio-focus.js',
             'vestra-portfolio-hierarchy.js', 'vestra-swap-lab.js',
-            'market-opportunity-lenses.js', 'vestra-ai-brief.js',
+            'vestra-ai-brief.js',
             'vestra-portfolio-ui.js', 'portfolio-diagnostics.js',
             'portfolio-dossier-routing.js',
         ]
@@ -30,12 +30,18 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         universe = read("market-static-universe.js")
         self.assertIn("politicians.js?v=2.1", universe)
         self.assertNotIn('src="politicians.js', index)
+        self.assertIn("market-metals.js?v=1.0", universe)
+        self.assertIn("market-opportunities.js?v=1.2", universe)
+        self.assertIn("market-opportunity-lenses.js?v=3.0", universe)
+        self.assertNotIn('src="market-metals.js', index)
+        self.assertNotIn('src="market-opportunities.js', index)
+        self.assertNotIn('src="market-opportunity-lenses.js', index)
         self.assertNotIn('portfolio-navigation-fix.js', index)
         self.assertNotIn('market-close-controller.js', index)
 
     def test_every_static_market_script_is_deferred(self):
         index = read("index.html")
-        for name in ('market-live-overlay.js','market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js','market-opportunities.js','vestra-portfolio-ui.js','portfolio-diagnostics.js'):
+        for name in ('market-live-overlay.js','market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js','vestra-portfolio-ui.js','portfolio-diagnostics.js'):
             self.assertIn(f'<script defer="" src="{name}', index)
 
     def test_service_worker_tracks_final_static_runtime(self):
