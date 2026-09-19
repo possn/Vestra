@@ -33,7 +33,8 @@ class LazyMarketPureHelpersTests(unittest.TestCase):
     def test_helper_load_is_parallel_single_flight_and_retryable(self):
         self.assertIn("function ensureHelpers()", LOADER)
         self.assertIn("Promise.all([", LOADER)
-        self.assertIn("if (helpersPromise) return helpersPromise;", LOADER)
+        self.assertIn("if (!helpersPromise) {", LOADER)
+        self.assertIn("return helpersPromise;", LOADER)
         self.assertIn("helpersPromise = null;", LOADER)
         self.assertIn("script.dataset.vestraMarketHelper = globalName;", LOADER)
 
