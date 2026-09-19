@@ -10,8 +10,8 @@ class ServiceWorkerCacheGenerationTests(unittest.TestCase):
         cls.source = (ROOT / "sw.js").read_text(encoding="utf-8")
 
     def test_bounded_precache_install_uses_a_fresh_cache_generation(self):
-        self.assertIn('const CACHE_NAME = "vestra-cache-v170";', self.source)
-        self.assertNotIn('const CACHE_NAME = "vestra-cache-v169";', self.source)
+        self.assertIn('const CACHE_NAME = "vestra-cache-v171";', self.source)
+        self.assertNotIn('const CACHE_NAME = "vestra-cache-v170";', self.source)
         self.assertIn('const cache = await caches.open(CACHE_NAME);', self.source)
         self.assertIn('APP_SHELL.map(asset => precacheAsset(cache, asset))', self.source)
 
@@ -30,6 +30,17 @@ class ServiceWorkerCacheGenerationTests(unittest.TestCase):
         self.assertNotIn('caches.delete(', install_block)
         self.assertIn('key === CACHE_NAME ? Promise.resolve() : caches.delete(key)', activate_block)
         self.assertIn('await self.clients.claim()', activate_block)
+
+
+    def test_styles_are_network_first_before_generic_static_asset_cache(self):
+        fetch_start = self.source.index('self.addEventListener("fetch"')
+        fetch_block = self.source[fetch_start:]
+        style_branch = 'if (request.destination === "style")'
+        generic_branch = 'if (["script", "worker", "manifest"].includes(request.destination))'
+        self.assertIn(style_branch, fetch_block)
+        self.assertIn('event.respondWith(networkFirst(request)); return;', fetch_block)
+        self.assertLess(fetch_block.index(style_branch), fetch_block.index(generic_branch))
+        self.assertNotIn('["script", "style", "worker", "manifest"]', fetch_block)
 
 
 if __name__ == "__main__":
