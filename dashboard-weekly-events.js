@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v2.1 — tappable earnings + macro catalysts with verified result details. */
+/* Vestra Dashboard Weekly Events v2.2 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
 
-  const VERSION = '2.1';
+  const VERSION = '2.2';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -444,10 +444,27 @@
     void nav.openCompany(key,{origin:'market'});
     return true;
   }
+  function findMacroEventById(snapshot, detailId) {
+    const id = text(detailId);
+    if (!id || !snapshot) return null;
+    const current = lastRenderedEvents.find(item => item.kind === 'macro' && item.id === id);
+    if (current) return current;
+
+    // A cold iOS/PWA resume can happen after midnight. In that case the event
+    // the user opened may already sit just outside the new forward-looking
+    // weekly window. Rebuild only the saved event's own calendar day so the
+    // exact official detail can still be restored without changing the card's
+    // current-week contents.
+    const match = /^[^:]+:(\\d{4}-\\d{2}-\\d{2}):/.exec(id);
+    const eventDay = match ? parseCalendarDate(match[1]) : null;
+    if (!eventDay) return null;
+    return collectMacroEvents(snapshot, eventDay, 1).find(item => item.id === id) || null;
+  }
+
   function restoreExternalWeeklyDetail() {
     const context = window.__vestraExternalReturnContext;
     if (!context || context.kind !== 'weekly-official' || !context.detailId) return false;
-    const selected = lastRenderedEvents.find(item => item.kind === 'macro' && item.id === context.detailId);
+    const selected = findMacroEventById(macroSnapshot, context.detailId);
     if (!selected) return false;
     openDetail(selected);
     context.detailId = '';
@@ -511,5 +528,5 @@
   window.addEventListener?.('focus',resumeWeeklyEvents);
   window.addEventListener?.('pageshow',resumeWeeklyEvents);
   window.addEventListener?.('vestra:market-ready',()=>render()); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
-  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,restoreExternalWeeklyDetail,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
+  window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,findMacroEventById,restoreExternalWeeklyDetail,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
 })();
