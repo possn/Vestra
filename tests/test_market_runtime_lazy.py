@@ -59,6 +59,13 @@ class LazyMarketRuntimeTests(unittest.TestCase):
         self.assertIn("if(loader?.ensure) api=await loader.ensure();", self.nav)
         self.assertIn("await api.ensureLoaded?.()", self.nav)
 
+    def test_lazy_facade_preserves_market_api_before_real_runtime_loads(self):
+        self.assertIn("__lazyRuntimeFacade: true", self.loader)
+        self.assertIn("if (!window.VestraMarket) window.VestraMarket = lazyFacade;", self.loader)
+        self.assertIn("api.__lazyRuntimeFacade !== true", self.loader)
+        self.assertIn("ensureLoaded: (...args) => ensure().then(api => api.ensureLoaded?.(...args))", self.loader)
+        self.assertIn("openPortfolioAsset: (...args) => ensure().then(api => api.openPortfolioAsset?.(...args))", self.loader)
+
     def test_loader_is_single_flight_and_retryable(self):
         self.assertIn("if (!runtimePromise)", self.loader)
         self.assertIn("runtimePromise = null;", self.loader)
