@@ -282,7 +282,7 @@ def main():
         flags.append({"type": "sector_concentration", "severity": "review", "sectors": [x["sector"] for x in skewed]})
 
     out = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "rows_analysed": len(rows),
         "methodology": {
@@ -301,7 +301,7 @@ def main():
         "next_step": "Combine cross-sectional stability with prospective 4/12/24-week rank IC and top-minus-bottom return spreads before changing production weights or normalization universes.",
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-    print(f"Score audit v2: {len(rows)} equities across {len(model_results)} score models; flags={len(flags)}")
+    print(f"Score audit v3: {len(rows)} equities across {len(model_results)} score models; flags={len(flags)}")
 
 
 if __name__ == "__main__":
