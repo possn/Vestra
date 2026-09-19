@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.56 — fresh desktop shell geometry. */
-const CACHE_NAME = "vestra-cache-v169";
+/* Vestra Service Worker v10.57 — restore saved weekly detail across midnight. */
+const CACHE_NAME = "vestra-cache-v170";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
