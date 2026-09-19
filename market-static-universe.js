@@ -1,4 +1,4 @@
-/* Vestra Market static universe loader v1.15 */
+/* Vestra Market static universe loader v1.16 */
 (() => {
   'use strict';
 
@@ -8,6 +8,7 @@
   let sharedStocks = [];
   let etfIntelligencePromise = null;
   let opportunitySuitePromise = null;
+  let portfolioSheetSuitePromise = null;
 
   function getStocks() { return sharedStocks; }
 
@@ -175,6 +176,26 @@
     return opportunitySuitePromise;
   }
 
+  function ensurePortfolioSheetSuite() {
+    if (
+      window.VestraPortfolioFocus && window.VestraSwapLab && window.VestraPortfolioUI &&
+      window.VestraPortfolioDiagnostics && window.VestraPortfolioDossierRouting &&
+      window.VestraPortfolioHierarchy && window.VestraAiBrief
+    ) {
+      return Promise.resolve(window.VestraPortfolioHierarchy);
+    }
+    if (portfolioSheetSuitePromise) return portfolioSheetSuitePromise;
+    portfolioSheetSuitePromise = loadOrderedCompanion('VestraPortfolioFocus','script[data-vestra-portfolio-focus]','vestra-portfolio-focus.js?v=1.1','vestraPortfolioFocus')
+      .then(api => api && loadOrderedCompanion('VestraSwapLab','script[data-vestra-swap-lab]','vestra-swap-lab.js?v=1.1','vestraSwapLab'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioUI','script[data-vestra-portfolio-ui]','vestra-portfolio-ui.js?v=1.2','vestraPortfolioUi'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioDiagnostics','script[data-vestra-portfolio-diagnostics]','portfolio-diagnostics.js?v=1.1','vestraPortfolioDiagnostics'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioDossierRouting','script[data-vestra-portfolio-dossier-routing]','portfolio-dossier-routing.js?v=1.4','vestraPortfolioDossierRouting'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioHierarchy','script[data-vestra-portfolio-hierarchy]','vestra-portfolio-hierarchy.js?v=1.6','vestraPortfolioHierarchy'))
+      .then(api => api && loadOrderedCompanion('VestraAiBrief','script[data-vestra-ai-brief]','vestra-ai-brief.js?v=1.2','vestraAiBrief'))
+      .finally(() => { portfolioSheetSuitePromise = null; });
+    return portfolioSheetSuitePromise;
+  }
+
   function ensureMarketCompanions() {
     // Market-only helpers are deliberately deferred until Market is first used.
     // Dashboard startup should not pay network/parse/execute cost for scanner,
@@ -185,6 +206,7 @@
     ensurePoliticiansCompanion();
     ensureMetalsCompanion();
     void ensureOpportunitySuite();
+    void ensurePortfolioSheetSuite();
     return ensureEtfIntelligence();
   }
 
@@ -282,8 +304,9 @@
   window.VestraMarketStaticUniverse = Object.freeze({
     create, getStocks, ensureEtfIntelligence, ensureScannerCompanion, ensureAnalysisToolsRuntime,
     ensureWeeklyEventsCompanion, ensureWeeklyEventsNavigation, ensureDashboardUiRefresh, ensureDashboardDailyNews,
-    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, ensurePoliticiansCompanion, ensureMetalsCompanion, ensureOpportunitySuite, ensureMarketCompanions, unpackStartupPayload,
+    ensureMobileUiRefresh, ensureMarketUiPolish, ensureUiVisualPolish, ensurePoliticiansCompanion, ensureMetalsCompanion,
+    ensureOpportunitySuite, ensurePortfolioSheetSuite, ensureMarketCompanions, unpackStartupPayload,
     dataFetchTimeoutMs: DATA_FETCH_TIMEOUT_MS, etfIntelligenceLoadTimeoutMs: ETF_INTELLIGENCE_LOAD_TIMEOUT_MS,
-    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.15',
+    companionLoadTimeoutMs: COMPANION_LOAD_TIMEOUT_MS, version: '1.16',
   });
 })();

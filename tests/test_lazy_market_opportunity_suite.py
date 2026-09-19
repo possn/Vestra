@@ -37,8 +37,8 @@ class LazyMarketOpportunitySuiteTests(unittest.TestCase):
         self.assertNotIn("ensureOpportunitySuite();", eager)
 
     def test_loader_version_is_bumped_for_clean_pwa_rollout(self):
-        self.assertIn("market-static-universe.js?v=1.15", INDEX)
-        self.assertIn("version: '1.15'", LOADER)
+        self.assertIn("market-static-universe.js?v=1.16", INDEX)
+        self.assertIn("version: '1.16'", LOADER)
 
 
 if __name__ == "__main__":

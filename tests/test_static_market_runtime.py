@@ -16,11 +16,6 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'market-live-overlay.js', 'market-runtime-loader.js', 'market-data-loader.js', 'market-company-brief.js',
             'market-metric-cleanup.js', 'portfolio-collapsibles.js',
             'portfolio-sheet-navigation.js', 'portfolio-card-classifier.js',
-            'vestra-portfolio-focus.js',
-            'vestra-portfolio-hierarchy.js', 'vestra-swap-lab.js',
-            'vestra-ai-brief.js',
-            'vestra-portfolio-ui.js', 'portfolio-diagnostics.js',
-            'portfolio-dossier-routing.js',
         ]
         positions = [index.index(f'src="{name}') for name in order]
         self.assertEqual(positions, sorted(positions))
@@ -33,15 +28,35 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertIn("market-metals.js?v=1.0", universe)
         self.assertIn("market-opportunities.js?v=1.2", universe)
         self.assertIn("market-opportunity-lenses.js?v=3.0", universe)
-        self.assertNotIn('src="market-metals.js', index)
-        self.assertNotIn('src="market-opportunities.js', index)
-        self.assertNotIn('src="market-opportunity-lenses.js', index)
+        for module in (
+            "vestra-portfolio-focus.js?v=1.1",
+            "vestra-swap-lab.js?v=1.1",
+            "vestra-portfolio-ui.js?v=1.2",
+            "portfolio-diagnostics.js?v=1.1",
+            "portfolio-dossier-routing.js?v=1.4",
+            "vestra-portfolio-hierarchy.js?v=1.6",
+            "vestra-ai-brief.js?v=1.2",
+        ):
+            self.assertIn(module, universe)
+        for direct in (
+            'src="market-metals.js',
+            'src="market-opportunities.js',
+            'src="market-opportunity-lenses.js',
+            'src="vestra-portfolio-focus.js',
+            'src="vestra-swap-lab.js',
+            'src="vestra-portfolio-ui.js',
+            'src="portfolio-diagnostics.js',
+            'src="portfolio-dossier-routing.js',
+            'src="vestra-portfolio-hierarchy.js',
+            'src="vestra-ai-brief.js',
+        ):
+            self.assertNotIn(direct, index)
         self.assertNotIn('portfolio-navigation-fix.js', index)
         self.assertNotIn('market-close-controller.js', index)
 
     def test_every_static_market_script_is_deferred(self):
         index = read("index.html")
-        for name in ('market-live-overlay.js','market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js','vestra-portfolio-ui.js','portfolio-diagnostics.js'):
+        for name in ('market-live-overlay.js','market-runtime-loader.js','market-data-loader.js','portfolio-sheet-navigation.js'):
             self.assertIn(f'<script defer="" src="{name}', index)
 
     def test_service_worker_tracks_final_static_runtime(self):
