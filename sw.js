@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.57 — restore saved weekly detail across midnight. */
-const CACHE_NAME = "vestra-cache-v170";
+/* Vestra Service Worker v10.58 — never serve stale CSS before checking the network. */
+const CACHE_NAME = "vestra-cache-v171";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
@@ -135,10 +135,17 @@ self.addEventListener("fetch", event => {
     event.respondWith(networkFirst(request)); return;
   }
   const assetName = url.pathname.split("/").filter(Boolean).pop() || "";
+  if (request.destination === "style") {
+    // Layout regressions are particularly visible in installed iOS PWAs. CSS
+    // version query strings must not be satisfied from an older ignoreSearch
+    // cache entry before the network has had a chance to return the new file.
+    // networkFirst still preserves full offline fallback through matchCached().
+    event.respondWith(networkFirst(request)); return;
+  }
   if (request.destination === "script" && BOOTSTRAP_NETWORK_FIRST.has(assetName)) {
     event.respondWith(networkFirst(request)); return;
   }
-  if (["script", "style", "worker", "manifest"].includes(request.destination)) {
+  if (["script", "worker", "manifest"].includes(request.destination)) {
     event.respondWith(staleWhileRevalidate(request, event)); return;
   }
   if (/\/data\/.*\.(json|txt)$/i.test(url.pathname)) {
