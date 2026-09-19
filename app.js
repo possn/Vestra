@@ -1349,19 +1349,35 @@ function wireBackupReminder() {
   });
 }
 
-function renderDashboard() {
-  applyDashboardEmptyState();
-  applyBackupReminder();
-  // v18: usar render cache — calcTotals/calcPortfolioYield/calcTWR/calcPortfolioRealMetrics
-  // calculados UMA vez por ciclo de render, partilhados por todas as sub-funções.
-  const rc = getRenderCache();
-  const t = rc.totals;
+const DASHBOARD_PRIVACY_KEY = "vestra:dashboard-privacy-v1";
 
-  // ── Hero ──────────────────────────────────────────────────
-  $("kpiNet").textContent = fmtEUR(t.net);
-  $("kpiAP").textContent = `Ativos ${fmtEUR(t.assetsTotal)} | Passivos ${fmtEUR(t.liabsTotal)}`;
+function dashboardPrivacyHidden() {
+  try { return localStorage.getItem(DASHBOARD_PRIVACY_KEY) === "1"; }
+  catch (_) { return document.documentElement?.dataset?.dashboardPrivacy === "hidden"; }
+}
 
-  // Variação MoM e YoY a partir do histórico
+function renderDashboardHero(t) {
+  const hidden = dashboardPrivacyHidden();
+  if (document.documentElement) {
+    if (hidden) document.documentElement.dataset.dashboardPrivacy = "hidden";
+    else delete document.documentElement.dataset.dashboardPrivacy;
+  }
+
+  const net = document.getElementById("kpiNet");
+  const ap = document.getElementById("kpiAP");
+  const btn = document.getElementById("btnToggleNetWorthPrivacy");
+  if (net) net.textContent = hidden ? "•••••• €" : fmtEUR(t.net);
+  if (ap) ap.textContent = hidden
+    ? "Ativos •••••• € | Passivos •••••• €"
+    : `Ativos ${fmtEUR(t.assetsTotal)} | Passivos ${fmtEUR(t.liabsTotal)}`;
+
+  if (btn) {
+    btn.textContent = hidden ? "◌" : "◉";
+    btn.title = hidden ? "Mostrar valor do património" : "Ocultar valor do património";
+    btn.setAttribute("aria-label", btn.title);
+    btn.setAttribute("aria-pressed", hidden ? "true" : "false");
+  }
+
   const h = state.history.slice().sort((a,b) => String(a.dateISO).localeCompare(String(b.dateISO)));
   const changesEl = document.getElementById("kpiChanges");
   if (changesEl && h.length >= 2) {
@@ -1377,9 +1393,12 @@ function renderDashboard() {
       const diff = val - ref, pct = diff / Math.abs(ref) * 100;
       const pos = diff >= 0;
       const arrow = pos ? "▲" : "▼";
+      const value = hidden
+        ? `${arrow} ${Math.abs(pct).toFixed(1)}%`
+        : `${arrow} ${fmtEUR(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%)`;
       return `<div class="hero-change-chip ${pos ? "hero-change-chip--up" : "hero-change-chip--down"}">
         <span class="hero-change-chip__label">${label}</span>
-        <span class="hero-change-chip__value">${arrow} ${fmtEUR(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%)</span>
+        <span class="hero-change-chip__value">${value}</span>
       </div>`;
     };
     if (prev) chips.push(chip("vs mês ant.", t.net, parseNum(prev.net)));
@@ -1389,6 +1408,24 @@ function renderDashboard() {
   } else if (changesEl) {
     changesEl.style.display = "none";
   }
+}
+
+function toggleDashboardPrivacy() {
+  const hidden = !dashboardPrivacyHidden();
+  try { localStorage.setItem(DASHBOARD_PRIVACY_KEY, hidden ? "1" : "0"); } catch (_) {}
+  renderDashboardHero(_rc?.totals || calcTotals());
+}
+
+function renderDashboard() {
+  applyDashboardEmptyState();
+  applyBackupReminder();
+  // v18: usar render cache — calcTotals/calcPortfolioYield/calcTWR/calcPortfolioRealMetrics
+  // calculados UMA vez por ciclo de render, partilhados por todas as sub-funções.
+  const rc = getRenderCache();
+  const t = rc.totals;
+
+  // ── Hero ──────────────────────────────────────────────────
+  renderDashboardHero(t);
 
   // ── KPIs secundários ──────────────────────────────────────
   const passiveAnnualDisplay = getDisplayedPassiveAnnual(t);
