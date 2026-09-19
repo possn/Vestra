@@ -1722,28 +1722,18 @@ body{
 }
 
 /* Desktop fixed-sidebar overlay alignment.
-   Kept at the end so base modal/toast declarations cannot override it. */
+   Keep this after all base modal/toast declarations. Use CSS arithmetic that
+   is safe in Safari/WebKit: sidebar=260px, half-sidebar shift=130px,
+   horizontal gutters=24px each => usable width = 100vw - 308px. */
 @media (min-width: 900px) {
   .modal__box,
   .modal__panel {
-    left: calc(
-      var(--desktop-sidebar-w) +
-      (100vw - var(--desktop-sidebar-w)) / 2
-    );
-    width: min(
-      var(--desktop-content-max),
-      calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
-    );
+    left: calc(50% + 130px);
+    width: min(680px, calc(100vw - 308px));
   }
   #toastEl {
-    left: calc(
-      var(--desktop-sidebar-w) +
-      (100vw - var(--desktop-sidebar-w)) / 2
-    );
-    max-width: min(
-      var(--desktop-content-max),
-      calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
-    );
+    left: calc(50% + 130px);
+    max-width: min(680px, calc(100vw - 308px));
   }
 }
 
