@@ -13,6 +13,9 @@ def test_portfolio_ui_text_helper_is_null_safe():
 
 
 def test_portfolio_runtime_cache_busters_are_current():
+    runtime = Path("market-runtime-loader.js").read_text()
     html = Path("index.html").read_text()
-    assert "vestra-portfolio-hierarchy.js?v=1.3" in html
-    assert "vestra-portfolio-ui.js?v=1.1" in html
+    assert "vestra-portfolio-hierarchy.js?v=1.3" in runtime
+    assert "vestra-portfolio-ui.js?v=1.1" in runtime
+    assert 'src="vestra-portfolio-hierarchy.js' not in html
+    assert 'src="vestra-portfolio-ui.js' not in html
