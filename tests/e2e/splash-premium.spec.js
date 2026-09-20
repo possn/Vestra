@@ -8,7 +8,7 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
   // we are guarding against changed animation-name after the deferred UI module ran,
   // causing WebKit/iOS to start a second visual entrance.
   await page.addInitScript(() => {
-    window.__vestraSplashTimeline = { copyReadyAt: null, animationStarts: [] };
+    window.__vestraSplashTimeline = { copyReadyAt: null, leavingAt: null, animationStarts: [] };
     document.addEventListener('animationstart', event => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -25,6 +25,9 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
       const record = () => {
         if (splash.classList.contains('vestra-splash--copy-ready') && window.__vestraSplashTimeline.copyReadyAt == null) {
           window.__vestraSplashTimeline.copyReadyAt = performance.now();
+        }
+        if (splash.classList.contains('vestra-splash--leaving') && window.__vestraSplashTimeline.leavingAt == null) {
+          window.__vestraSplashTimeline.leavingAt = performance.now();
         }
       };
       record();
@@ -90,25 +93,26 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
   expect(names.filter(name => name === 'vestraCopyIn')).toHaveLength(2);
 
   // app-ui-core owns the hold/release contract without replacing animation names.
-  await expect(splash).toHaveClass(/vestra-splash--copy-ready/, { timeout: 1_400 });
+  await expect.poll(
+    () => page.evaluate(() => window.__vestraSplashTimeline?.copyReadyAt),
+    { timeout: 1_400 }
+  ).not.toBeNull();
   const brandOpacity = await brand.evaluate(node => Number(getComputedStyle(node).opacity));
   const taglineOpacity = await tagline.evaluate(node => Number(getComputedStyle(node).opacity));
   expect(brandOpacity).toBeGreaterThan(0.95);
   expect(taglineOpacity).toBeGreaterThan(0.95);
 
-  const remainingHoldMs = await page.evaluate(() => {
-    const copyReadyAt = window.__vestraSplashTimeline?.copyReadyAt;
-    if (!Number.isFinite(copyReadyAt)) return null;
-    return Math.max(0, 500 - (performance.now() - copyReadyAt));
-  });
-  expect(remainingHoldMs).not.toBeNull();
-  if (remainingHoldMs > 0) await page.waitForTimeout(remainingHoldMs);
-  await expect(splash).toBeVisible({ timeout: 500 });
-
   // The watchdog's fallback hide point is ~4.56s after install. WebKit CI can
   // defer timers while parsing/executing the large app shell, so keep enough
   // scheduling margin while still proving the splash always exits.
   await expect(splash).toBeHidden({ timeout: 3_500 });
+  const releaseTiming = await page.evaluate(() => ({
+    copyReadyAt: window.__vestraSplashTimeline?.copyReadyAt,
+    leavingAt: window.__vestraSplashTimeline?.leavingAt,
+  }));
+  expect(releaseTiming.copyReadyAt).not.toBeNull();
+  expect(releaseTiming.leavingAt).not.toBeNull();
+  expect(releaseTiming.leavingAt - releaseTiming.copyReadyAt).toBeGreaterThanOrEqual(400);
   await expect(page.locator('#viewDashboard')).toBeVisible();
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
 });
