@@ -43,6 +43,11 @@ test('iPhone/WebKit: main portfolio restores sectors with holdings and hides the
   await expect(card).not.toContainText('Dinheiro');
   await expect(card).not.toContainText('Bitcoin');
   await expect(card).toContainText('ações + ETFs');
+  await expect(card.locator('.portfolio-sector-snapshot')).toBeVisible();
+  await expect(card.locator('.portfolio-sector-ring')).toContainText('100%');
+  await expect(card.locator('.portfolio-sector-mark')).toHaveCount(3);
+  await expect(card.locator('.portfolio-sector-weight')).toHaveCount(3);
+  expect(await card.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
 
   const first = card.locator('.portfolio-sector-group').first();
   await expect(first).toHaveAttribute('open', '');

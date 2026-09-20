@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.73 — reliable portfolio sector classification. */
-const CACHE_NAME = "vestra-cache-v186";
+/* Vestra Service Worker v10.74 — visual portfolio sector map. */
+const CACHE_NAME = "vestra-cache-v187";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

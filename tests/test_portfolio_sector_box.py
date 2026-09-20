@@ -31,6 +31,10 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         self.assertIn("portfolioSectorTickerCandidates", self.app)
         self.assertIn('a.sector === "Sector por identificar"', self.app)
         self.assertIn("portfolio-sector-more", self.app)
+        self.assertIn("portfolio-sector-snapshot", self.app)
+        self.assertIn("portfolio-sector-ring", self.app)
+        self.assertIn("portfolio-sector-weight", self.app)
+        self.assertIn("sectorCoverage", self.app)
 
     def test_known_user_tickers_keep_correct_offline_fallbacks(self):
         self.assertIn('"NESN.SW": {s:"Consumo Básico"', self.app)
@@ -65,6 +69,10 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         self.assertIn(".portfolio-sector-asset", self.styles)
         self.assertIn(".portfolio-sector-distribution", self.styles)
         self.assertIn(".portfolio-sector-more", self.styles)
+        self.assertIn(".portfolio-sector-snapshot", self.styles)
+        self.assertIn(".portfolio-sector-ring", self.styles)
+        self.assertIn(".portfolio-sector-mark", self.styles)
+        self.assertIn(".portfolio-sector-weight", self.styles)
         self.assertIn("@media(max-width:640px)", self.styles)
 
 

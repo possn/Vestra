@@ -1740,27 +1740,33 @@ body{
 
 
 /* Portfolio sector holdings box — main portfolio view */
-.portfolio-sector-card{margin-top:12px}
+.portfolio-sector-card{margin-top:12px;overflow:hidden;background:linear-gradient(145deg,var(--card) 0%,var(--card) 64%,rgba(14,139,132,.055) 100%)}
 .portfolio-sector-head{align-items:flex-start}
-.portfolio-sector-overview{display:flex;flex-direction:column;gap:8px}
-.portfolio-sector-distribution{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--line);gap:2px;margin:0 2px 4px}
-.portfolio-sector-distribution__part{display:block;min-width:3px;background:#168b86}
-.portfolio-sector-distribution__part:nth-child(2){background:#4f78b8}.portfolio-sector-distribution__part:nth-child(3){background:#8b6bb4}.portfolio-sector-distribution__part:nth-child(4){background:#d08b45}.portfolio-sector-distribution__part:nth-child(5){background:#5b9d69}.portfolio-sector-distribution__part:nth-child(6){background:#b25f71}.portfolio-sector-distribution__part:nth-child(7){background:#71808b}.portfolio-sector-distribution__part:nth-child(8){background:#c2a43e}.portfolio-sector-distribution__part:nth-child(9){background:#559ca8}.portfolio-sector-distribution__part:nth-child(10){background:#936e55}.portfolio-sector-distribution__part:nth-child(n+11){background:#8b91a1}
-.portfolio-sector-group{border:1px solid var(--line);border-radius:14px;background:var(--card2);overflow:hidden}
-.portfolio-sector-group>summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto auto 20px;gap:10px;align-items:center;padding:12px 14px;cursor:pointer}
+.portfolio-sector-overview{display:flex;flex-direction:column;gap:10px}
+.portfolio-sector-snapshot{display:grid;grid-template-columns:104px minmax(0,1fr);align-items:center;gap:18px;padding:18px;border:1px solid rgba(14,139,132,.17);border-radius:20px;background:radial-gradient(circle at 8% 14%,rgba(34,197,184,.14),transparent 46%),linear-gradient(135deg,rgba(14,139,132,.08),rgba(72,92,130,.045))}
+.portfolio-sector-ring{width:92px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#0e8b84 calc(var(--sector-coverage) * 1%),rgba(88,112,122,.16) 0);box-shadow:0 10px 26px rgba(9,72,78,.12);position:relative}
+.portfolio-sector-ring::after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--card);box-shadow:inset 0 0 0 1px rgba(14,139,132,.1)}
+.portfolio-sector-ring>div{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;line-height:1}
+.portfolio-sector-ring strong{font-size:20px;letter-spacing:-.04em}.portfolio-sector-ring span{margin-top:5px;color:var(--muted);font-size:8px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
+.portfolio-sector-story{display:flex;flex-direction:column;min-width:0}.portfolio-sector-eyebrow{color:#0e8b84;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.16em}.portfolio-sector-story>strong{font-size:17px;letter-spacing:-.02em;margin-top:3px}.portfolio-sector-story p{font-size:11px;color:var(--muted);line-height:1.45;margin:5px 0 0}.portfolio-sector-story p b{color:var(--text)}
+.portfolio-sector-composition{display:flex;align-items:baseline;justify-content:space-between;padding:2px 2px 0}.portfolio-sector-composition span{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em}.portfolio-sector-composition small{font-size:9px;color:var(--muted)}
+.portfolio-sector-distribution{display:flex;height:15px;border:3px solid rgba(255,255,255,.64);border-radius:999px;overflow:hidden;background:var(--line);gap:2px;margin:0 1px 3px;box-shadow:0 4px 13px rgba(22,48,57,.1)}
+.portfolio-sector-distribution__part{display:block;min-width:3px;background:var(--sector-color);transition:filter .18s ease}.portfolio-sector-distribution__part:hover{filter:brightness(1.16)}
+.portfolio-sector-group{border:1px solid rgba(var(--sector-rgb),.2);border-radius:16px;background:linear-gradient(110deg,rgba(var(--sector-rgb),.07),var(--card2) 38%);overflow:hidden;box-shadow:0 4px 16px rgba(25,44,52,.035)}
+.portfolio-sector-group>summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto auto 20px;gap:10px;align-items:center;padding:12px 14px 10px;cursor:pointer}
 .portfolio-sector-group>summary::-webkit-details-marker{display:none}
 .portfolio-sector-title{display:flex;align-items:center;gap:10px;min-width:0}
 .portfolio-sector-title>div{display:flex;flex-direction:column;min-width:0}
 .portfolio-sector-title strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .portfolio-sector-title small,.portfolio-sector-total small{font-size:10px;color:var(--muted)}
-.portfolio-sector-dot{width:9px;height:9px;border-radius:999px;flex:0 0 auto;background:#168b86}
-.portfolio-sector-group:nth-of-type(3n+2) .portfolio-sector-dot{background:#4f78b8}.portfolio-sector-group:nth-of-type(3n) .portfolio-sector-dot{background:#8b6bb4}
+.portfolio-sector-mark{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto;color:#fff;background:var(--sector-color);box-shadow:0 5px 12px rgba(var(--sector-rgb),.22);font-size:9px;font-weight:950;letter-spacing:.04em}
 .portfolio-sector-total{text-align:right;display:flex;flex-direction:column}
-.portfolio-sector-total strong{font-size:14px}
+.portfolio-sector-total strong{font-size:15px;color:var(--sector-color)}
 .portfolio-sector-risk{font-size:9px;font-weight:800;color:#b45309;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.28);border-radius:999px;padding:3px 7px}
-.portfolio-sector-chevron{font-size:20px;color:var(--muted);transition:transform .18s ease}
+.portfolio-sector-chevron{grid-column:4;font-size:20px;color:var(--muted);transition:transform .18s ease}
 .portfolio-sector-group[open] .portfolio-sector-chevron{transform:rotate(90deg)}
-.portfolio-sector-assets{border-top:1px solid var(--line);display:flex;flex-direction:column}
+.portfolio-sector-weight{grid-column:1/-1;height:3px;border-radius:999px;overflow:hidden;background:rgba(var(--sector-rgb),.11)}.portfolio-sector-weight i{display:block;height:100%;border-radius:inherit;background:var(--sector-color)}
+.portfolio-sector-assets{border-top:1px solid rgba(var(--sector-rgb),.15);display:flex;flex-direction:column;background:rgba(255,255,255,.16)}
 .portfolio-sector-asset{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
 .portfolio-sector-asset:last-child{border-bottom:0}
 .portfolio-sector-asset__main,.portfolio-sector-asset__metrics{display:flex;flex-direction:column;min-width:0}
@@ -1778,7 +1784,11 @@ body{
 .portfolio-sector-more[open]>summary{border-bottom:1px solid var(--line)}
 .portfolio-sector-empty{padding:16px;text-align:center;color:var(--muted);font-size:12px}
 @media(max-width:640px){
+  .portfolio-sector-snapshot{grid-template-columns:82px minmax(0,1fr);gap:13px;padding:14px;border-radius:17px}
+  .portfolio-sector-ring{width:76px}.portfolio-sector-ring::after{inset:8px}.portfolio-sector-ring strong{font-size:17px}.portfolio-sector-ring span{font-size:7px}
+  .portfolio-sector-story>strong{font-size:15px}.portfolio-sector-story p{font-size:10px}
   .portfolio-sector-group>summary{grid-template-columns:minmax(0,1fr) auto 18px}
+  .portfolio-sector-chevron{grid-column:3}
   .portfolio-sector-risk{display:none}
   .portfolio-sector-total small{max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .portfolio-sector-asset{grid-template-columns:minmax(0,1fr) auto auto;padding:11px 12px;gap:8px}

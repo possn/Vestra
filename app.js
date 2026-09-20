@@ -1948,10 +1948,48 @@ function renderPortfolioSectorBox() {
   });
 
   const esc = escapeHtml;
+  const sectorPalette = [
+    { color:'#087f78', rgb:'8,127,120' },
+    { color:'#376fa8', rgb:'55,111,168' },
+    { color:'#7554a6', rgb:'117,84,166' },
+    { color:'#c46b2d', rgb:'196,107,45' },
+    { color:'#408653', rgb:'64,134,83' },
+    { color:'#a44764', rgb:'164,71,100' },
+    { color:'#526979', rgb:'82,105,121' },
+    { color:'#9a7a16', rgb:'154,122,22' },
+    { color:'#267f91', rgb:'38,127,145' },
+    { color:'#805b42', rgb:'128,91,66' },
+    { color:'#6d7282', rgb:'109,114,130' },
+  ];
+  const sectorMonograms = {
+    'Tecnologia':'TE', 'Comunicação / Serviços':'CO', 'Consumo discricionário':'CD',
+    'Consumo básico':'CB', 'Saúde':'SA', 'Financeiro / Bancos':'FI',
+    'Industriais':'IN', 'Energia':'EN', 'Materiais':'MA',
+    'Imobiliário':'IM', 'Utilities':'UT', 'ETF diversificado':'ETF',
+    'Sector por identificar':'?'
+  };
+  rows.forEach((row, idx) => {
+    row.visual = sectorPalette[idx % sectorPalette.length];
+    row.monogram = sectorMonograms[row.sector] || row.sector.slice(0, 2).toUpperCase();
+  });
+  const identifiedRows = rows.filter(row => row.sector !== 'Sector por identificar');
+  const unknownRow = rows.find(row => row.sector === 'Sector por identificar');
+  const sectorCoverage = Math.max(0, Math.min(100, 100 - (unknownRow?.pctEquities || 0)));
+  const leadSector = identifiedRows[0] || rows[0];
   const distribution = rows.map((row, idx) =>
-    '<span class="portfolio-sector-distribution__part" style="--sector-index:' + idx + ';width:' + row.pctEquities.toFixed(3) + '%" title="' + esc(row.sector) + ' · ' + row.pctEquities.toFixed(1) + '%"></span>'
+    '<span class="portfolio-sector-distribution__part" style="--sector-color:' + row.visual.color + ';width:' + row.pctEquities.toFixed(3) + '%" title="' + esc(row.sector) + ' · ' + row.pctEquities.toFixed(1) + '%"></span>'
   ).join('');
   root.innerHTML = '<div class="portfolio-sector-overview">' +
+    '<div class="portfolio-sector-snapshot">' +
+      '<div class="portfolio-sector-ring" style="--sector-coverage:' + sectorCoverage.toFixed(1) + '" role="img" aria-label="' + sectorCoverage.toFixed(1) + '% da carteira com sector identificado">' +
+        '<div><strong>' + sectorCoverage.toFixed(0) + '%</strong><span>classificado</span></div>' +
+      '</div>' +
+      '<div class="portfolio-sector-story"><span class="portfolio-sector-eyebrow">Mapa sectorial</span>' +
+        '<strong>' + identifiedRows.length + (identifiedRows.length === 1 ? ' sector mapeado' : ' sectores mapeados') + '</strong>' +
+        '<p>Maior exposição em <b>' + esc(leadSector.sector) + '</b>, com ' + leadSector.pctEquities.toFixed(1) + '% das ações e ETFs.</p>' +
+      '</div>' +
+    '</div>' +
+    '<div class="portfolio-sector-composition"><span>Composição</span><small>peso sobre ações + ETFs</small></div>' +
     '<div class="portfolio-sector-distribution" aria-label="Distribuição da carteira por sector">' + distribution + '</div>' +
     rows.map((row, idx) => {
       const concentration = row.pctEquities >= 30
@@ -1980,11 +2018,12 @@ function renderPortfolioSectorBox() {
         ? '<details class="portfolio-sector-more"><summary>Ver mais ' + (row.list.length - 6) + ' posições</summary><div>' + row.list.slice(6).map(assetHtml).join('') + '</div></details>'
         : '';
 
-      return '<details class="portfolio-sector-group" ' + (idx === 0 && row.sector !== "Sector por identificar" ? 'open' : '') + '>' +
-        '<summary><div class="portfolio-sector-title"><span class="portfolio-sector-dot" style="--sector-index:' + idx + '"></span>' +
+      return '<details class="portfolio-sector-group" style="--sector-color:' + row.visual.color + ';--sector-rgb:' + row.visual.rgb + '" ' + (idx === 0 && row.sector !== "Sector por identificar" ? 'open' : '') + '>' +
+        '<summary><div class="portfolio-sector-title"><span class="portfolio-sector-mark" aria-hidden="true">' + esc(row.monogram) + '</span>' +
         '<div><strong>' + esc(row.sector) + '</strong><small>' + row.list.length + (row.list.length === 1 ? ' posição' : ' posições') + '</small></div></div>' +
         '<div class="portfolio-sector-total"><strong>' + row.pctEquities.toFixed(1) + '%</strong><small>' + fmtEUR(row.value) + ' · ações + ETFs</small></div>' +
-        concentration + '<span class="portfolio-sector-chevron">›</span></summary>' +
+        concentration + '<span class="portfolio-sector-chevron">›</span>' +
+        '<span class="portfolio-sector-weight" aria-hidden="true"><i style="width:' + Math.min(100, row.pctEquities).toFixed(1) + '%"></i></span></summary>' +
         '<div class="portfolio-sector-assets">' + visibleAssets + remainingAssets + '</div></details>';
     }).join('') +
     '</div>';
