@@ -32,6 +32,17 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn("PESQUISA GLOBAL · LIVE", text)
         self.assertNotIn("stocks-index.json", text)
 
+    def test_verified_broker_alias_keeps_hon_hai_searchable(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        self.assertIn("function brokerAliasSearch(query)", text)
+        self.assertIn("ticker:'HHPD.IL'", text)
+        self.assertIn("broker_symbols:Object.freeze(['HHPD'])", text)
+        self.assertIn("'hon hai precision industry'", text)
+        self.assertIn("'foxconn'", text)
+        self.assertIn("const target=aliasTicker||q", text)
+        self.assertIn("const rows=await validateExactTicker(target)", text)
+        self.assertIn("brokerAliasSearch", text)
+
     def test_removed_parallel_dossier_formatters_do_not_return(self):
         text = GLOBAL.read_text(encoding="utf-8")
         self.assertNotIn("const money =", text)
@@ -99,7 +110,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=3.0", text)
-        self.assertIn("market-global-search.js?v=1.9", text)
+        self.assertIn("market-global-search.js?v=2.0", text)
         self.assertIn("market-data-health.js?v=1.3", text)
 
     def test_presentation_has_static_css_owner_and_offline_reachability(self):
@@ -111,7 +122,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn('.vestra-global-search{', css)
         self.assertIn('.vestra-global-search__row{', css)
         self.assertIn('"./market-global-search.css"', sw)
-        self.assertIn("version:'1.9'", text)
+        self.assertIn("version:'2.0'", text)
 
 
 if __name__ == "__main__":

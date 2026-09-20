@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v1.9 — exact provider identity + canonical live dossier. */
+/* Vestra Global Market Search v2.0 — broker aliases + exact provider identity. */
 (() => {
   'use strict';
 
@@ -8,6 +8,17 @@
   const REMOTE_FETCH_TIMEOUT_MS = 12000;
   const SEARCH_FETCH_TIMEOUT_MS = 6000;
   const LEARN_FETCH_TIMEOUT_MS = 8000;
+  const BROKER_SEARCH_ALIASES = Object.freeze([
+    Object.freeze({
+      ticker:'HHPD.IL',
+      broker_symbols:Object.freeze(['HHPD']),
+      terms:Object.freeze(['hon hai', 'hon hai precision industry', 'foxconn']),
+      name:'Hon Hai Precision Industry (Foxconn)',
+      exchange:'LSE IOB',
+      currency:'USD',
+      quote_type:'EQUITY',
+    }),
+  ]);
 
   let timer = null;
   let seq = 0;
@@ -22,6 +33,18 @@
 
   function learnedApi(){ return window.VestraLearnedUniverse || null; }
   function validTickerQuery(q){ return /^[A-Z0-9][A-Z0-9.\-]{0,14}$/i.test(txt(q)); }
+  function foldSearch(value){
+    return txt(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+  }
+  function brokerAliasSearch(query){
+    const key=foldSearch(query);
+    if(key.length<2)return [];
+    return BROKER_SEARCH_ALIASES.filter(alias=>{
+      if(foldSearch(alias.ticker)===key)return true;
+      if(alias.broker_symbols.some(symbol=>foldSearch(symbol)===key))return true;
+      return alias.terms.some(term=>foldSearch(term).includes(key)||key.includes(foldSearch(term)));
+    }).map(alias=>({...alias,provider_symbol:alias.ticker,identity_verified:false,_brokerAlias:true}));
+  }
   function invalidatePendingEnterOpen(){ enterOpenSeq += 1; }
   function exactProviderIdentity(ticker,payload){
     const requested=txt(ticker).toUpperCase();
@@ -147,12 +170,14 @@
 
   async function runSearch(q){
     const current = ++seq;
+    const aliases = brokerAliasSearch(q);
+    if (aliases.length) renderGlobalSuggestions(q,aliases);
     const learned = await learnedSearch(q);
     if (current !== seq || txt(document.getElementById('marketSearch')?.value) !== txt(q)) return;
-    if (learned.length) renderGlobalSuggestions(q,learned);
+    if (learned.length) renderGlobalSuggestions(q,[...aliases,...learned]);
     const [exact,names] = await Promise.all([validateExactTicker(q),yahooNameSearch(q)]);
     if (current !== seq || txt(document.getElementById('marketSearch')?.value) !== txt(q)) return;
-    renderGlobalSuggestions(q,[...learned,...exact,...names]);
+    renderGlobalSuggestions(q,[...aliases,...learned,...exact,...names]);
   }
 
   function schedule(q){
@@ -264,7 +289,7 @@
   document.addEventListener('input',e=>{if(e.target?.id==='marketSearch'){invalidatePendingEnterOpen();schedule(e.target.value);}});
   document.addEventListener('focusin',e=>{if(e.target?.id==='marketSearch')schedule(e.target.value);});
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase(),{sourceNode:b});});
-  document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const q=txt(input.value).toUpperCase();if(!validTickerQuery(q)||localExactPresent(q))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(q);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker,{sourceNode:input});},0);});
+  document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const raw=txt(input.value);const q=raw.toUpperCase();const aliasTicker=txt(brokerAliasSearch(raw)[0]?.ticker).toUpperCase();const target=aliasTicker||q;if(!validTickerQuery(target)||(!aliasTicker&&localExactPresent(q)))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(target);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker,{sourceNode:input});},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'1.9',validateExactTicker,openRemoteTicker,runSearch,learnCentral,exactProviderIdentity});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'2.0',validateExactTicker,openRemoteTicker,runSearch,learnCentral,exactProviderIdentity,brokerAliasSearch});
 })();

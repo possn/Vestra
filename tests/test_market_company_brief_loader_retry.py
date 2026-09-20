@@ -32,7 +32,7 @@ class MarketCompanyBriefLoaderRetryTests(unittest.TestCase):
         self.assertIn("()=>window.VestraRuntimeBridge", SOURCE)
 
     def test_runtime_version_and_existing_dependency_chain_are_preserved(self):
-        self.assertIn("market-global-search.js?v=1.9", SOURCE)
+        self.assertIn("market-global-search.js?v=2.0", SOURCE)
         self.assertIn("market-learned-universe.js?v=3.0", SOURCE)
         self.assertIn("app-runtime-bridge.js?v=1.1", SOURCE)
         self.assertIn("loadRuntimeBridge();", SOURCE)
