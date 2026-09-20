@@ -1,14 +1,18 @@
-/* Vestra broker parsing core v1.0 — pure identity, format and key helpers. */
+/* Vestra broker parsing core v1.2 — pure identity, format and key helpers. */
 (() => {
   'use strict';
 
   const { normStr, parseNum } = window.VestraUtils || {};
   const { ISIN_YAHOO_MAP } = window.VestraAssetIdentity || {};
+  const { normalizeRow } = window.VestraFileParsing || {};
   if (typeof normStr !== 'function' || typeof parseNum !== 'function') {
     throw new Error('VestraUtils não foi carregado antes de app-broker-parsing-core.js');
   }
   if (!ISIN_YAHOO_MAP || typeof ISIN_YAHOO_MAP !== 'object') {
     throw new Error('VestraAssetIdentity não foi carregado antes de app-broker-parsing-core.js');
+  }
+  if (typeof normalizeRow !== 'function') {
+    throw new Error('VestraFileParsing não foi carregado antes de app-broker-parsing-core.js');
   }
 
 function normalizeISIN(v) {
@@ -259,11 +263,11 @@ function detectBrokerRowsFormat(rows) {
   // XTB trade history CSV (closed trades)
   // EN cols: Symbol,Type,Open time,Close time,Open price,Close price,Volume,Profit,Commission,Swap
   // PT cols (after normKey accent strip): simbolo,tipo,data_de_abertura,data_de_fecho,preco_de_abertura,preco_de_fecho,volume,lucro,comissao,swap
-  const hasSymbolOrSimb = has("symbol","simbolo","instrumento");
+  const hasSymbolOrSimb = has("symbol","simbolo","ticker","instrument","instrumento","instrument_position");
   const hasOpenTime  = has("open_time","opentime","data_de_abertura","data_abertura","abertura",
-                          "hora_de_abertura","hora_abertura","hora de abertura","open_hour");
+                          "open_time_utc","hora_de_abertura","hora_abertura","hora de abertura","open_hour");
   const hasCloseTime = has("close_time","closetime","data_de_fecho","data_fecho","fecho",
-                          "hora_de_fecho","hora_fecho","hora de fecho","close_hour");
+                          "close_time_utc","hora_de_fecho","hora_fecho","hora de fecho","close_hour");
   const hasVolume    = has("volume","qty","quantity","quantidade");
   const hasProfit    = has("profit","lucro","resultado","pl","profit_loss");
   if (hasSymbolOrSimb && has("type","tipo") && hasOpenTime && hasCloseTime && hasVolume) return "xtb_trades";

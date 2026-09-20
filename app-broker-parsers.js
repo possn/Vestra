@@ -1,4 +1,4 @@
-/* Vestra broker parsers v1.0 — file/row transformation only. */
+/* Vestra broker parsers v1.1 — file/row transformation only. */
 (() => {
   'use strict';
 
@@ -118,11 +118,11 @@ function parseXTBTradesRows(rows, meta) {
   const events = [];
   for (const raw of (rows || [])) {
     const r = normalizeRow(raw);
-    const symbol   = String(r.symbol || r.simbolo || r.instrumento || r.ticker || "").trim();
+    const symbol   = String(r.symbol || r.simbolo || r.ticker || r.instrument || r.instrumento || "").trim();
     const typeRaw  = String(r.type || r.tipo || r.direction || r.direcao || "").trim();
-    const openTime = String(r.open_time || r.opentime || r.hora_de_abertura || r.hora_abertura ||
+    const openTime = String(r.open_time || r.open_time_utc || r.opentime || r.hora_de_abertura || r.hora_abertura ||
                              r.data_de_abertura || r.data_abertura || r.abertura || "").trim();
-    const closeTime= String(r.close_time || r.closetime || r.hora_de_fecho || r.hora_fecho ||
+    const closeTime= String(r.close_time || r.close_time_utc || r.closetime || r.hora_de_fecho || r.hora_fecho ||
                             r.data_de_fecho || r.data_fecho || r.fecho || "").trim();
     const openPx   = parseNumberSmart(r.open_price || r.openprice || r.preco_de_abertura || r.preco_abertura || r.preco_entrada);
     const closePx  = parseNumberSmart(r.close_price || r.closeprice || r.preco_de_fecho || r.preco_fecho || r.preco_saida);
@@ -181,7 +181,11 @@ function parseXTBPositionsRows(rows, meta) {
   const lotMap = new Map(); // key: symbol → aggregated lot data
   for (const raw of (rows || [])) {
     const r = normalizeRow(raw);
-    const symbol   = String(r.symbol || r.simbolo || r.instrumento || "").trim();
+    // Current XTB workbooks put a security summary before its individual lots.
+    // In that layout Instrument/Position is the lot id and Ticker is the identity;
+    // ignore the summary (blank Type) or quantity/value would be counted twice.
+    if (r.instrument_position && r.ticker && !String(r.type || r.tipo || "").trim()) continue;
+    const symbol   = String(r.symbol || r.simbolo || r.ticker || r.instrument || r.instrumento || r.instrument_position || "").trim();
     const vol      = parseNumberSmart(r.volume || r.qty || r.quantity);
     const openPx   = parseNumberSmart(r.open_price || r["open price"] || r.openprice || r.preco_de_abertura || r.preco_abertura || r.preco_entrada);
     const mktPx    = parseNumberSmart(r.market_price || r["market price"] || r.marketprice || r["current price"] || r.preco_atual || r.preco_de_mercado);
