@@ -1793,7 +1793,7 @@ function inferPortfolioSectorTheme(asset) {
   ].filter(Boolean).join(" ").toLowerCase()
    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-  if (/real estate|property|reit/.test(hay)) return "Imobiliário";
+  if (/real estate|propert(?:y|ies)|reit/.test(hay)) return "Imobiliário";
   if (/physical (?:gold|silver|platinum|palladium)|\b(?:copper|aluminium|aluminum|nickel|lithium)\b|rare earth|strategic metals|metal miners?|gold producers?|mining/.test(hay)) return "Materiais";
   if (/healthcare|health care|biotech|pharma|medical/.test(hay)) return "Saúde";
   if (/financial|bank|insurance|fintech/.test(hay)) return "Financeiro / Bancos";
