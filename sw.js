@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.67 — lazy portfolio analysis helpers. */
-const CACHE_NAME = "vestra-cache-v180";
+/* Vestra Service Worker v10.68 — lazy dossier data runtime. */
+const CACHE_NAME = "vestra-cache-v181";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

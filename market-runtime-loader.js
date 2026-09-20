@@ -1,4 +1,4 @@
-/* Vestra Market runtime loader v1.3 — defer market core + portfolio helpers until first use. */
+/* Vestra Market runtime loader v1.4 — defer market core + dossier data until first use. */
 (() => {
   'use strict';
 
@@ -94,6 +94,7 @@
       window.VestraMarketSearchSuggestions &&
       window.VestraMarketRowUI &&
       window.VestraNavigation &&
+      window.VestraMarketData &&
       window.VestraPortfolioCollapsibles &&
       window.VestraPortfolioCardClassifier
     ) return Promise.resolve();
@@ -107,6 +108,9 @@
         loadHelper('VestraMarketDossierSignals', 'market-dossier-signals.js?v=1.0'),
         loadHelper('VestraMarketSearchSuggestions', 'market-search-suggestions.js?v=1.2'),
         loadHelper('VestraMarketRowUI', 'market-row-ui.js?v=1.0'),
+        // Dossier data has no load-time dependency on navigation. Fetch it in
+        // parallel so it does not add another round trip before the core.
+        loadHelper('VestraMarketData', 'market-data-loader.js?v=2.6'),
         ensurePortfolioHelpers(),
       ]).catch(err => {
         helpersPromise = null;
@@ -129,6 +133,15 @@
         });
     }
     return enhancementsPromise;
+  }
+
+  function replayPendingSearch() {
+    // Market becomes visible immediately while its heavy core loads. A fast
+    // user can type before market.js installs the delegated input listener;
+    // replay that value once the listener exists instead of losing the query.
+    const search = document.getElementById?.('marketSearch');
+    if (!search?.value) return;
+    try { search.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
   }
 
   function loadCore() {
@@ -158,8 +171,9 @@
           return;
         }
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.3' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.4' } }));
         } catch (_) {}
+        replayPendingSearch();
         resolve(window.VestraMarket);
       };
       const onLoad = () => {
@@ -222,6 +236,6 @@
     ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.3',
+    version: '1.4',
   });
 })();
