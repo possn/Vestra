@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.74 — visual portfolio sector map. */
-const CACHE_NAME = "vestra-cache-v187";
+/* Vestra Service Worker v10.75 — exact broker aliases in global search. */
+const CACHE_NAME = "vestra-cache-v188";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

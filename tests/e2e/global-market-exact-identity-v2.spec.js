@@ -1,5 +1,50 @@
 const { test, expect } = require('@playwright/test');
 
+test('iPhone/WebKit: XTB HHPD and Foxconn resolve to the exact HHPD.IL identity', async ({ page }) => {
+  await page.route(/\/quote\?ticker=HHPD\.IL(?:&|$)/, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      ticker: 'HHPD.IL', provider_symbol: 'HHPD.IL', retrieval_ticker: 'HHPD.IL',
+      price: 15.82, currency: 'USD', name: 'Hon Hai Precision Industry Co., Ltd.',
+      exchange: 'IOB', quote_type: 'EQUITY',
+    }),
+  }));
+  await page.route(/\/market\?ticker=HHPD\.IL(?:&|$)/, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      ticker: 'HHPD.IL', provider_symbol: 'HHPD.IL', retrieval_ticker: 'HHPD.IL',
+      current_price: 15.82, currency: 'USD', name: 'Hon Hai Precision Industry Co., Ltd.',
+      exchange: 'IOB', quote_type: 'EQUITY', sector: 'Technology',
+      industry: 'Electronic Components', country: 'Taiwan',
+    }),
+  }));
+  await page.route(/\/learned-universe$/, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }),
+  }));
+
+  await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarketLoader);
+  await page.evaluate(() => window.setView('market'));
+  await page.waitForFunction(() => Boolean(window.VestraGlobalMarketSearch));
+
+  const search = page.locator('#marketSearch');
+  await search.fill('Foxconn');
+  const alias = page.locator('[data-vestra-global-ticker="HHPD.IL"]');
+  await expect(alias).toBeVisible();
+  await expect(alias).toContainText('Hon Hai Precision Industry');
+
+  await search.fill('HHPD');
+  await expect(alias).toBeVisible();
+  await alias.tap();
+
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet).toHaveAttribute('data-ticker', 'HHPD.IL');
+  await expect(sheet).toContainText('Hon Hai Precision Industry');
+});
+
 test('iPhone/WebKit: SPIE.PA keeps exact provider identity in the canonical dossier', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
