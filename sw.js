@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.69 — scope opportunity observer to Market. */
-const CACHE_NAME = "vestra-cache-v182";
+/* Vestra Service Worker v10.70 — lazy bank transaction categorisation. */
+const CACHE_NAME = "vestra-cache-v183";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

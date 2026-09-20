@@ -31,6 +31,13 @@ vm.runInContext(fs.readFileSync('app-broker-workbook.js', 'utf8'), context, {
 const workbook = context.window.VestraBrokerWorkbook;
 assert.ok(workbook, 'broker workbook API missing');
 
+assert.strictEqual(workbook.categoriseBankTransaction('Vencimento Setembro', 'in'), 'Salário');
+assert.strictEqual(workbook.categoriseBankTransaction('Pingo Doce Lisboa', 'out'), 'Supermercado');
+assert.strictEqual(workbook.categoriseBankTransaction('FARMÁCIA CENTRAL', 'out'), 'Saúde');
+assert.strictEqual(workbook.categoriseBankTransaction('MB WAY PARA JOÃO', 'out'), 'MB Way enviado');
+assert.strictEqual(workbook.categoriseBankTransaction('movimento desconhecido', 'in'), 'Outros recebimentos');
+assert.strictEqual(workbook.categoriseBankTransaction('movimento desconhecido', 'out'), 'Outras despesas');
+
 const closed = workbook.xtbWorkbookSheetToRows({ rows: [
   ['Account number', 'redacted'],
   ['Closed Positions'],
