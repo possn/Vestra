@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.83 — canonical stylesheet cleanup. */
-const CACHE_NAME = "vestra-cache-v196";
+/* Vestra Service Worker v10.84 — coalesced chart reflow scheduling. */
+const CACHE_NAME = "vestra-cache-v197";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

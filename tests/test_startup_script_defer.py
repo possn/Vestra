@@ -32,7 +32,7 @@ class StartupScriptDeferTests(unittest.TestCase):
 
     def test_chart_loader_stays_before_chart_consumers(self):
         loader = self.index.index("app-chart-loader.js?v=1.0")
-        ui_core = self.index.index("app-ui-core.js?v=2.6")
+        ui_core = self.index.index("app-ui-core.js?v=2.7")
         app = self.index.index("app.js?v=20260920v11")
         self.assertLess(loader, ui_core)
         self.assertLess(ui_core, app)
