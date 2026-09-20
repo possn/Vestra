@@ -33,7 +33,7 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
 
   await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
   expect(await sheet.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
-  await sheet.locator('[data-market-close]').click();
+  await sheet.locator('.market-close-persistent').click();
   await expect(sheet).toBeHidden();
   await expect(page.locator('body')).not.toHaveClass(/market-sheet-open/);
 
