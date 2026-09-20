@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.64 — portfolio sectors and iPhone sheet containment. */
-const CACHE_NAME = "vestra-cache-v177";
+/* Vestra Service Worker v10.65 — lazy broker identity authority. */
+const CACHE_NAME = "vestra-cache-v178";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

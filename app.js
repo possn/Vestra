@@ -181,6 +181,15 @@ async function ensureBrokerWorkbookRuntime() {
   return loader.ensureWorkbook();
 }
 
+async function ensureBrokerIdentityRuntime() {
+  if (window.VestraBrokerIdentityData?.BROKER_SECURITY_IDENTITY_BY_NAME) {
+    return window.VestraBrokerIdentityData;
+  }
+  const loader = window.VestraBrokerImportLoader;
+  if (!loader?.ensureIdentityData) throw new Error('Carregador de identidades de corretora não disponível.');
+  return loader.ensureIdentityData();
+}
+
 async function ensureBrokerParsersRuntime() {
   if (window.VestraBrokerParsers?.parseBrokerImportFile) return window.VestraBrokerParsers;
   const loader = window.VestraBrokerImportLoader;
@@ -6727,19 +6736,15 @@ if ([normalizeISIN, normalizeSecurityNameKey, getKnownBrokerYahooOverride, canon
 // Trading 212 (2023–2026) and XTB transaction/position exports.
 // Contains SECURITY IDENTITIES only — no quantities, values or account data.
 // It is used to repair legacy assets that lost ISIN/ticker metadata.
-const { BROKER_SECURITY_IDENTITY_BY_NAME } = window.VestraBrokerIdentityData || {};
-if (!BROKER_SECURITY_IDENTITY_BY_NAME || typeof BROKER_SECURITY_IDENTITY_BY_NAME !== "object") {
-  throw new Error("VestraBrokerIdentityData não foi carregado antes de app.js");
-}
-
-
 function repairBrokerIdentitiesFromHistory() {
   if (!state || !Array.isArray(state.assets)) return 0;
+  const identityMap = window.VestraBrokerIdentityData?.BROKER_SECURITY_IDENTITY_BY_NAME;
+  if (!identityMap || typeof identityMap !== "object") return 0;
   let fixed = 0;
   for (const a of state.assets) {
     if (!a || !a.name) continue;
     const key = normalizeSecurityNameKey(a.name);
-    const truth = BROKER_SECURITY_IDENTITY_BY_NAME[key];
+    const truth = identityMap[key];
     if (!truth) continue;
     const cls = String(a.class || "").toLowerCase();
     // Never turn crypto/deposits/property/etc. into equities just because names collide.
@@ -6755,6 +6760,18 @@ function repairBrokerIdentitiesFromHistory() {
   }
   if (fixed) console.info("[broker identity] repaired", fixed, "assets from authoritative broker history");
   return fixed;
+}
+
+async function ensureAndRepairBrokerIdentities({ persist = false } = {}) {
+  if (!state || !Array.isArray(state.assets) || !state.assets.length) return 0;
+  await ensureBrokerIdentityRuntime();
+  const identityFixes = repairBrokerIdentitiesFromHistory();
+  if (!identityFixes) return 0;
+  if (!state.settings) state.settings = {};
+  state.settings.lastQuoteRefreshTs = 0;
+  state.settings.lastQuoteRefreshDate = "";
+  if (persist) await saveStateAsync();
+  return identityFixes;
 }
 
 
@@ -7747,6 +7764,10 @@ function renderBrokerImportStatus() {
 async function importBrokerFiles(files) {
   const fileArr = Array.from(files || []);
   if (!fileArr.length) throw new Error("Sem ficheiros.");
+  const [brokerParsers] = await Promise.all([
+    ensureBrokerParsersRuntime(),
+    ensureBrokerIdentityRuntime(),
+  ]);
   const {
     parseBrokerLedgerRows,
     parseBrokerPositionRows,
@@ -7755,7 +7776,7 @@ async function importBrokerFiles(files) {
     parseXTBCashRows,
     parseBrokerImportFile,
     parseTrading212HoldingsPdf,
-  } = await ensureBrokerParsersRuntime();
+  } = brokerParsers;
   const bd = ensureBrokerData();
   let addedFiles = 0, replacedFiles = 0, addedEvents = 0, addedPositions = 0, unknownFiles = 0;
   // v63b: purge XTB events written by a pre-v63b import before ingesting anything.
@@ -10998,7 +11019,8 @@ async function refreshLiveQuotes(options = {}) {
 async function refreshLiveQuotesCore(options = {}) {
   const refreshStartedAt = performance.now();
   // v3.3: never resolve quotes from stale legacy names/tickers.
-  try { repairBrokerIdentitiesFromHistory(); } catch (_) {}
+  try { await ensureAndRepairBrokerIdentities({ persist: true }); }
+  catch (e) { console.warn("Broker identity repair failed before quote refresh", e); }
 
   const manual = options && options.manual === true;
   const silent = !manual;
@@ -12117,18 +12139,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   try {
     let changed = false;
-    // v3.3: repair ticker/ISIN/venue from the authoritative broker-history map.
-    // If anything changes, force the next automatic quote pass so contaminated
-    // values are replaced using the corrected identity.
-    try {
-      const identityFixes = repairBrokerIdentitiesFromHistory();
-      if (identityFixes) {
-        changed = true;
-        if (!state.settings) state.settings = {};
-        state.settings.lastQuoteRefreshTs = 0;
-        state.settings.lastQuoteRefreshDate = "";
-      }
-    } catch (e) { console.warn("Broker identity repair failed", e); }
     // One-time fix: reset any broker asset with value > 50× costBasis (stale Yahoo price)
     if (Array.isArray(state.assets)) {
       state.assets.forEach(a => {
@@ -12212,8 +12222,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   scheduleWhenIdle(() => {
     try { autoSnapshotIfNeeded(); } catch (e) { console.error("Falha no auto snapshot", e); }
     try { checkAndNotifyMaturities(); } catch (e) { console.error("Falha nas notificações de vencimento", e); }
-    // Auto-refresh quotes if stale (>1 min since last update or never updated today)
-    try { autoRefreshQuotesIfStale(); } catch (e) { console.error("Falha no auto-refresh de cotações", e); }
+    // Load the legacy identity authority after first paint, then refresh quotes.
+    // The same runtime remains available offline through the service-worker shell.
+    void ensureAndRepairBrokerIdentities({ persist: true })
+      .catch(e => console.warn("Broker identity repair failed after hydration", e))
+      .finally(() => {
+        try { autoRefreshQuotesIfStale(); } catch (e) { console.error("Falha no auto-refresh de cotações", e); }
+      });
   }, { timeoutMs: 1200, fallbackDelayMs: 500 });
   window.openDividendBaseModal = openDividendBaseModal;
   window.setDividendYieldDisplayMode = setDividendYieldDisplayMode;
