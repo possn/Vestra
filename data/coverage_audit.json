@@ -1,29 +1,41 @@
 {
   "schema_version": 5,
-  "generated_at": "2026-09-20T09:12:28+00:00",
+  "generated_at": "2026-09-20T12:15:30+00:00",
   "equities": {
-    "count": 1728,
+    "count": 1729,
     "avg_coverage_pct": 79.8,
-    "lt50": 50,
-    "50_64": 168,
-    "65_79": 585,
+    "lt50": 49,
+    "50_64": 166,
+    "65_79": 589,
     "gte80": 925
   },
   "asset_type_hygiene": {
     "states": {
-      "confirmed_equity": 1727,
+      "confirmed_equity": 1728,
       "non_equity": 337,
       "unresolved": 1
     },
-    "authoritative_identity_recoveries": 9,
+    "authoritative_identity_recoveries": 11,
     "authoritative_identity_recoveries_by_evidence": {
       "known_asset_identity": 8,
-      "etf_catalog": 1
+      "etf_catalog": 3
     },
     "authoritative_identity_examples": [
       {
+        "ticker": "IRBO",
+        "region": "United States",
+        "quote_type": "ETF",
+        "identity_evidence": "etf_catalog"
+      },
+      {
         "ticker": "IUSN.L",
         "region": "United Kingdom",
+        "quote_type": "ETF",
+        "identity_evidence": "etf_catalog"
+      },
+      {
+        "ticker": "SPLG",
+        "region": "United States",
         "quote_type": "ETF",
         "identity_evidence": "etf_catalog"
       },
@@ -109,7 +121,7 @@
     },
     "France": {
       "count": 47,
-      "avg_coverage_pct": 77.2,
+      "avg_coverage_pct": 77.3,
       "lt50": 0,
       "50_64": 2,
       "65_79": 37,
@@ -117,15 +129,15 @@
     },
     "Germany": {
       "count": 53,
-      "avg_coverage_pct": 79.7,
+      "avg_coverage_pct": 79.8,
       "lt50": 5,
       "50_64": 0,
-      "65_79": 11,
-      "gte80": 37
+      "65_79": 10,
+      "gte80": 38
     },
     "Italy": {
       "count": 40,
-      "avg_coverage_pct": 79.7,
+      "avg_coverage_pct": 79.4,
       "lt50": 0,
       "50_64": 5,
       "65_79": 16,
@@ -149,18 +161,18 @@
     },
     "Portugal": {
       "count": 9,
-      "avg_coverage_pct": 81.9,
+      "avg_coverage_pct": 83.7,
       "lt50": 0,
       "50_64": 0,
-      "65_79": 3,
-      "gte80": 6
+      "65_79": 2,
+      "gte80": 7
     },
     "Spain": {
       "count": 39,
-      "avg_coverage_pct": 82.5,
+      "avg_coverage_pct": 82.2,
       "lt50": 0,
-      "50_64": 1,
-      "65_79": 14,
+      "50_64": 2,
+      "65_79": 13,
       "gte80": 24
     },
     "Sweden": {
@@ -173,7 +185,7 @@
     },
     "Switzerland": {
       "count": 22,
-      "avg_coverage_pct": 80.9,
+      "avg_coverage_pct": 81.1,
       "lt50": 0,
       "50_64": 0,
       "65_79": 15,
@@ -181,93 +193,93 @@
     },
     "United Kingdom": {
       "count": 113,
-      "avg_coverage_pct": 65.6,
+      "avg_coverage_pct": 65.8,
       "lt50": 16,
-      "50_64": 7,
-      "65_79": 82,
+      "50_64": 6,
+      "65_79": 83,
       "gte80": 8
     },
     "United States": {
-      "count": 1370,
+      "count": 1371,
       "avg_coverage_pct": 80.9,
-      "lt50": 29,
-      "50_64": 152,
-      "65_79": 390,
-      "gte80": 799
+      "lt50": 28,
+      "50_64": 150,
+      "65_79": 396,
+      "gte80": 797
     }
   },
   "by_score_model": {
     "bank": {
-      "count": 92,
-      "avg_coverage_pct": 74.6,
+      "count": 93,
+      "avg_coverage_pct": 74.3,
       "lt50": 0,
-      "50_64": 10,
-      "65_79": 59,
-      "gte80": 23
+      "50_64": 11,
+      "65_79": 60,
+      "gte80": 22
     },
     "biotech": {
-      "count": 158,
+      "count": 156,
       "avg_coverage_pct": 73.9,
       "lt50": 1,
-      "50_64": 43,
+      "50_64": 42,
       "65_79": 70,
-      "gte80": 44
+      "gte80": 43
     },
     "energy": {
-      "count": 87,
-      "avg_coverage_pct": 87.4,
+      "count": 90,
+      "avg_coverage_pct": 86.2,
       "lt50": 1,
-      "50_64": 4,
-      "65_79": 13,
-      "gte80": 69
+      "50_64": 7,
+      "65_79": 12,
+      "gte80": 70
     },
     "general": {
-      "count": 996,
-      "avg_coverage_pct": 78.9,
-      "lt50": 48,
-      "50_64": 93,
-      "65_79": 328,
-      "gte80": 527
+      "count": 995,
+      "avg_coverage_pct": 79.0,
+      "lt50": 47,
+      "50_64": 89,
+      "65_79": 326,
+      "gte80": 533
     },
     "growth_tech": {
       "count": 204,
       "avg_coverage_pct": 83.9,
       "lt50": 0,
-      "50_64": 12,
-      "65_79": 59,
+      "50_64": 11,
+      "65_79": 60,
       "gte80": 133
     },
     "insurance": {
       "count": 52,
-      "avg_coverage_pct": 82.8,
+      "avg_coverage_pct": 82.7,
       "lt50": 0,
       "50_64": 2,
-      "65_79": 18,
-      "gte80": 32
+      "65_79": 19,
+      "gte80": 31
     },
     "reit": {
-      "count": 71,
-      "avg_coverage_pct": 84.7,
+      "count": 72,
+      "avg_coverage_pct": 84.6,
       "lt50": 0,
       "50_64": 3,
-      "65_79": 18,
+      "65_79": 19,
       "gte80": 50
     },
     "utility": {
-      "count": 68,
-      "avg_coverage_pct": 83.8,
+      "count": 67,
+      "avg_coverage_pct": 83.1,
       "lt50": 0,
       "50_64": 1,
-      "65_79": 20,
-      "gte80": 47
+      "65_79": 23,
+      "gte80": 43
     }
   },
   "source_coverage": {
-    "Yahoo Finance": 1728,
-    "Analyst feed": 1721,
+    "Yahoo Finance": 1729,
+    "Analyst feed": 1722,
     "SEC Form 4": 1312,
     "SEC Capital Structure": 461,
-    "SEC EDGAR": 315,
+    "SEC EDGAR": 310,
     "Official House/Senate disclosures / STOCK Act": 187,
     "Yahoo Statements (targeted)": 115,
     "Yahoo Quarterly Statements (TTM)": 94,
@@ -276,22 +288,22 @@
   "score_reliability": {
     "robust": 1444,
     "limited_evidence": 199,
-    "insufficient_data": 50,
-    "moderate_evidence": 35
+    "insufficient_data": 49,
+    "moderate_evidence": 37
   },
   "opportunity_labels": {
-    "Interessante": 573,
-    "Baixa prioridade": 527,
-    "Acompanhar": 315,
-    "Oportunidade forte": 220,
-    "Dados insuficientes": 92,
+    "Interessante": 574,
+    "Baixa prioridade": 528,
+    "Acompanhar": 317,
+    "Oportunidade forte": 218,
+    "Dados insuficientes": 91,
     "Prioridade alta": 1
   },
   "opportunity_suppressed_reasons": {
-    "Score Vestra suprimido por evidência insuficiente": 49,
-    "Cobertura fundamental inferior a 55%": 27,
-    "Histórico de preço insuficiente para avaliar o momento": 9,
-    "Confiança dos dados inferior a 50%": 4,
+    "Score Vestra suprimido por evidência insuficiente": 48,
+    "Cobertura fundamental inferior a 55%": 28,
+    "Histórico de preço insuficiente para avaliar o momento": 7,
+    "Confiança dos dados inferior a 50%": 5,
     "Cobertura de métricas críticas insuficiente": 2,
     "Linha sem atualização fundamental no run atual": 1
   },
@@ -303,59 +315,59 @@
     "annual": {
       "rows_with_metadata": 115,
       "rows_enriched": 115,
-      "avg_critical_coverage_gain_pp": 13.9
+      "avg_critical_coverage_gain_pp": 13.4
     },
     "quarterly_ttm": {
       "rows_with_metadata": 94,
       "rows_enriched": 94,
-      "avg_critical_coverage_gain_pp": 7.8
+      "avg_critical_coverage_gain_pp": 7.7
     }
   },
   "most_missing_critical_metrics": [
     {
       "metric": "trailing_pe",
-      "missing": 585,
-      "missing_pct": 33.9
+      "missing": 580,
+      "missing_pct": 33.5
     },
     {
       "metric": "earnings_growth",
-      "missing": 406,
-      "missing_pct": 23.5
+      "missing": 408,
+      "missing_pct": 23.6
     },
     {
       "metric": "roce_proxy",
-      "missing": 265,
+      "missing": 264,
       "missing_pct": 15.3
     },
     {
       "metric": "enterprise_to_ebitda",
-      "missing": 231,
-      "missing_pct": 13.4
+      "missing": 236,
+      "missing_pct": 13.6
     },
     {
       "metric": "forward_pe",
-      "missing": 199,
-      "missing_pct": 11.5
+      "missing": 190,
+      "missing_pct": 11.0
     },
     {
       "metric": "revenue_growth",
-      "missing": 180,
-      "missing_pct": 10.4
+      "missing": 176,
+      "missing_pct": 10.2
     },
     {
       "metric": "debt_to_equity",
-      "missing": 136,
-      "missing_pct": 7.9
+      "missing": 135,
+      "missing_pct": 7.8
     },
     {
       "metric": "quick_ratio",
-      "missing": 121,
-      "missing_pct": 7.0
+      "missing": 123,
+      "missing_pct": 7.1
     },
     {
       "metric": "current_ratio",
-      "missing": 118,
-      "missing_pct": 6.8
+      "missing": 119,
+      "missing_pct": 6.9
     },
     {
       "metric": "free_cash_flow",
@@ -373,17 +385,17 @@
       "missing_pct": 2.5
     },
     {
-      "metric": "price_to_book",
-      "missing": 43,
-      "missing_pct": 2.5
-    },
-    {
       "metric": "gross_margin",
-      "missing": 34,
+      "missing": 35,
       "missing_pct": 2.0
     },
     {
       "metric": "operating_margin",
+      "missing": 32,
+      "missing_pct": 1.9
+    },
+    {
+      "metric": "price_to_book",
       "missing": 32,
       "missing_pct": 1.9
     },
@@ -399,11 +411,11 @@
     }
   ],
   "retrieval_priority": {
-    "rows_with_critical_gaps": 929,
+    "rows_with_critical_gaps": 923,
     "recommended_lane_impact": {
-      "sec_edgar": 522,
-      "annual_statement_gap": 230,
-      "esef": 117,
+      "sec_edgar": 525,
+      "annual_statement_gap": 224,
+      "esef": 114,
       "quarterly_ttm_gap": 59,
       "identity_unresolved": 1
     },
@@ -427,13 +439,13 @@
         "esef": 7
       },
       "Portugal": {
-        "esef": 4
+        "esef": 3
       },
       "Spain": {
-        "esef": 15
+        "esef": 14
       },
       "Switzerland": {
-        "esef": 7
+        "esef": 6
       },
       "United Kingdom": {
         "esef": 41,
@@ -442,39 +454,40 @@
         "identity_unresolved": 1
       },
       "United States": {
-        "sec_edgar": 522,
-        "annual_statement_gap": 219,
+        "sec_edgar": 525,
+        "annual_statement_gap": 213,
         "quarterly_ttm_gap": 53
       }
     },
     "by_score_model": {
       "bank": {
         "quarterly_ttm_gap": 37,
+        "annual_statement_gap": 24,
         "esef": 23,
-        "annual_statement_gap": 23,
         "sec_edgar": 6
       },
       "biotech": {
-        "sec_edgar": 71,
-        "annual_statement_gap": 53,
+        "sec_edgar": 70,
+        "annual_statement_gap": 52,
         "quarterly_ttm_gap": 2,
         "esef": 1
       },
       "energy": {
-        "sec_edgar": 19,
+        "sec_edgar": 20,
         "annual_statement_gap": 7,
+        "esef": 1,
         "quarterly_ttm_gap": 1
       },
       "general": {
-        "sec_edgar": 312,
-        "annual_statement_gap": 110,
-        "esef": 61,
+        "sec_edgar": 314,
+        "annual_statement_gap": 105,
+        "esef": 58,
         "quarterly_ttm_gap": 13,
         "identity_unresolved": 1
       },
       "growth_tech": {
-        "sec_edgar": 68,
-        "annual_statement_gap": 26,
+        "sec_edgar": 69,
+        "annual_statement_gap": 25,
         "esef": 5,
         "quarterly_ttm_gap": 2
       },
@@ -491,7 +504,7 @@
       },
       "utility": {
         "sec_edgar": 6,
-        "esef": 6,
+        "esef": 5,
         "annual_statement_gap": 2,
         "quarterly_ttm_gap": 1
       }
@@ -1482,9 +1495,9 @@
         "identity_state": "confirmed_equity",
         "identity_evidence": null,
         "score_model": "biotech",
-        "coverage_pct": 36.7,
+        "coverage_pct": 40.0,
         "critical_coverage_pct": 30.0,
-        "missing_critical_count": 10,
+        "missing_critical_count": 9,
         "missing_critical_metrics": [
           "roe",
           "roa",
@@ -1493,7 +1506,6 @@
           "free_cash_flow",
           "debt_to_equity",
           "trailing_pe",
-          "price_to_book",
           "enterprise_to_ebitda",
           "roce_proxy"
         ],
@@ -1645,6 +1657,33 @@
         ]
       },
       {
+        "ticker": "HLOGF",
+        "name": "HELIUM ONE GLOBAL LTD.",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "energy",
+        "coverage_pct": 50.0,
+        "critical_coverage_pct": 38.5,
+        "missing_critical_count": 5,
+        "missing_critical_metrics": [
+          "revenue_growth",
+          "earnings_growth",
+          "debt_to_equity",
+          "trailing_pe",
+          "forward_pe"
+        ],
+        "recommended_retrieval_lane": "sec_edgar",
+        "score_reliability": "limited_evidence",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "Yahoo Finance"
+        ]
+      },
+      {
         "ticker": "FRMI",
         "name": "Fermi Inc.",
         "region": "United States",
@@ -1760,6 +1799,36 @@
         "sources": [
           "Analyst feed",
           "Yahoo Finance"
+        ]
+      },
+      {
+        "ticker": "SJT",
+        "name": "San Juan Basin Royalty Trust",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "energy",
+        "coverage_pct": 53.3,
+        "critical_coverage_pct": 46.2,
+        "missing_critical_count": 6,
+        "missing_critical_metrics": [
+          "free_cash_flow",
+          "operating_cash_flow",
+          "quick_ratio",
+          "trailing_pe",
+          "forward_pe",
+          "enterprise_to_ebitda"
+        ],
+        "recommended_retrieval_lane": "sec_edgar",
+        "score_reliability": "limited_evidence",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "SEC Form 4",
+          "Yahoo Finance",
+          "Yahoo Statements (targeted)"
         ]
       },
       {
@@ -1885,38 +1954,6 @@
         "sources": [
           "Analyst feed",
           "ESEF / filings.xbrl.org",
-          "Yahoo Finance"
-        ]
-      },
-      {
-        "ticker": "MIAC",
-        "name": "Meridian3 Industrials Acquisiti",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "general",
-        "coverage_pct": 36.7,
-        "critical_coverage_pct": 50.0,
-        "missing_critical_count": 8,
-        "missing_critical_metrics": [
-          "revenue_growth",
-          "earnings_growth",
-          "free_cash_flow",
-          "trailing_pe",
-          "forward_pe",
-          "price_to_book",
-          "enterprise_to_ebitda",
-          "roce_proxy"
-        ],
-        "recommended_retrieval_lane": "annual_statement_gap",
-        "score_reliability": "insufficient_data",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "SEC EDGAR",
-          "SEC Form 4",
           "Yahoo Finance"
         ]
       },
@@ -2255,6 +2292,32 @@
         ]
       },
       {
+        "ticker": "FSHRF",
+        "name": "FEISHANG ANTHRACITE RESOURCES L",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "energy",
+        "coverage_pct": 56.7,
+        "critical_coverage_pct": 53.8,
+        "missing_critical_count": 3,
+        "missing_critical_metrics": [
+          "trailing_pe",
+          "forward_pe",
+          "roce_proxy"
+        ],
+        "recommended_retrieval_lane": "sec_edgar",
+        "score_reliability": "limited_evidence",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "Yahoo Finance",
+          "Yahoo Statements (targeted)"
+        ]
+      },
+      {
         "ticker": "IVCTF",
         "name": "INVICTUS ENERGY LTD.",
         "region": "United States",
@@ -2577,7 +2640,7 @@
         "identity_state": "confirmed_equity",
         "identity_evidence": null,
         "score_model": "general",
-        "coverage_pct": 53.3,
+        "coverage_pct": 56.7,
         "critical_coverage_pct": 56.2,
         "missing_critical_count": 5,
         "missing_critical_metrics": [
@@ -2593,34 +2656,6 @@
         "sources": [
           "Analyst feed",
           "SEC EDGAR",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
-        "ticker": "VLTLF",
-        "name": "LibertyStream Infrastructure Pa",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "general",
-        "coverage_pct": 56.7,
-        "critical_coverage_pct": 56.2,
-        "missing_critical_count": 5,
-        "missing_critical_metrics": [
-          "revenue_growth",
-          "earnings_growth",
-          "debt_to_equity",
-          "trailing_pe",
-          "forward_pe"
-        ],
-        "recommended_retrieval_lane": "sec_edgar",
-        "score_reliability": "limited_evidence",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -2778,32 +2813,6 @@
         ],
         "recommended_retrieval_lane": "annual_statement_gap",
         "score_reliability": "robust",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "SEC EDGAR",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
-        "ticker": "YDES",
-        "name": "YD Bio Limited",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "biotech",
-        "coverage_pct": 56.7,
-        "critical_coverage_pct": 60.0,
-        "missing_critical_count": 2,
-        "missing_critical_metrics": [
-          "trailing_pe",
-          "forward_pe"
-        ],
-        "recommended_retrieval_lane": "annual_statement_gap",
-        "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
           "Analyst feed",
@@ -3339,32 +3348,6 @@
           "revenue_growth",
           "earnings_growth",
           "trailing_pe"
-        ],
-        "recommended_retrieval_lane": "sec_edgar",
-        "score_reliability": "robust",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
-        "ticker": "HYFT",
-        "name": "MindWalk Holdings Corp.",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "biotech",
-        "coverage_pct": 66.7,
-        "critical_coverage_pct": 60.0,
-        "missing_critical_count": 3,
-        "missing_critical_metrics": [
-          "earnings_growth",
-          "trailing_pe",
-          "forward_pe"
         ],
         "recommended_retrieval_lane": "sec_edgar",
         "score_reliability": "robust",
@@ -4175,8 +4158,8 @@
         ]
       },
       {
-        "ticker": "ENHA",
-        "name": "Enhanced Group Inc.",
+        "ticker": "VLTLF",
+        "name": "LibertyStream Infrastructure Pa",
         "region": "United States",
         "quote_type": "EQUITY",
         "reported_quote_type": "EQUITY",
@@ -4185,19 +4168,19 @@
         "score_model": "general",
         "coverage_pct": 56.7,
         "critical_coverage_pct": 62.5,
-        "missing_critical_count": 4,
+        "missing_critical_count": 5,
         "missing_critical_metrics": [
           "revenue_growth",
+          "earnings_growth",
           "debt_to_equity",
           "trailing_pe",
-          "roce_proxy"
+          "forward_pe"
         ],
-        "recommended_retrieval_lane": "annual_statement_gap",
+        "recommended_retrieval_lane": "sec_edgar",
         "score_reliability": "limited_evidence",
         "evidence_state": "observed",
         "sources": [
           "Analyst feed",
-          "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -4226,34 +4209,6 @@
         "evidence_state": "observed",
         "sources": [
           "Analyst feed",
-          "Yahoo Finance"
-        ]
-      },
-      {
-        "ticker": "XPL",
-        "name": "Solitario Resources Corp.",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "general",
-        "coverage_pct": 60.0,
-        "critical_coverage_pct": 62.5,
-        "missing_critical_count": 4,
-        "missing_critical_metrics": [
-          "revenue_growth",
-          "debt_to_equity",
-          "trailing_pe",
-          "price_to_book"
-        ],
-        "recommended_retrieval_lane": "annual_statement_gap",
-        "score_reliability": "limited_evidence",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "SEC EDGAR",
-          "SEC Form 4",
           "Yahoo Finance"
         ]
       },
@@ -4635,7 +4590,7 @@
       },
       {
         "ticker": "GF",
-        "name": "The New Germany Fund, Inc.",
+        "name": "New Germany Fund, Inc. (The)",
         "region": "United States",
         "quote_type": "EQUITY",
         "reported_quote_type": "EQUITY",
@@ -4775,7 +4730,7 @@
       },
       {
         "ticker": "GPACF",
-        "name": "Geopacific Resources Limited",
+        "name": "GEOPACIFIC RES LTD",
         "region": "United States",
         "quote_type": "EQUITY",
         "reported_quote_type": "EQUITY",
@@ -5340,33 +5295,6 @@
         ]
       },
       {
-        "ticker": "LEE",
-        "name": "Lee Enterprises, Incorporated",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "general",
-        "coverage_pct": 66.7,
-        "critical_coverage_pct": 68.8,
-        "missing_critical_count": 4,
-        "missing_critical_metrics": [
-          "roe",
-          "earnings_growth",
-          "trailing_pe",
-          "forward_pe"
-        ],
-        "recommended_retrieval_lane": "sec_edgar",
-        "score_reliability": "robust",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
         "ticker": "STI",
         "name": "Solidion Technology, Inc.",
         "region": "United States",
@@ -5448,34 +5376,6 @@
         ]
       },
       {
-        "ticker": "FLL",
-        "name": "Full House Resorts, Inc.",
-        "region": "United States",
-        "quote_type": "EQUITY",
-        "reported_quote_type": "EQUITY",
-        "identity_state": "confirmed_equity",
-        "identity_evidence": null,
-        "score_model": "general",
-        "coverage_pct": 70.0,
-        "critical_coverage_pct": 68.8,
-        "missing_critical_count": 4,
-        "missing_critical_metrics": [
-          "earnings_growth",
-          "debt_to_equity",
-          "trailing_pe",
-          "forward_pe"
-        ],
-        "recommended_retrieval_lane": "sec_edgar",
-        "score_reliability": "robust",
-        "evidence_state": "observed",
-        "sources": [
-          "Analyst feed",
-          "Official House/Senate disclosures / STOCK Act",
-          "SEC Form 4",
-          "Yahoo Finance"
-        ]
-      },
-      {
         "ticker": "ALTG",
         "name": "Alta Equipment Group Inc.",
         "region": "United States",
@@ -5498,6 +5398,33 @@
         "sources": [
           "Analyst feed",
           "SEC Capital Structure",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
+        "ticker": "FLL",
+        "name": "Full House Resorts, Inc.",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "general",
+        "coverage_pct": 73.3,
+        "critical_coverage_pct": 68.8,
+        "missing_critical_count": 3,
+        "missing_critical_metrics": [
+          "earnings_growth",
+          "debt_to_equity",
+          "trailing_pe"
+        ],
+        "recommended_retrieval_lane": "sec_edgar",
+        "score_reliability": "robust",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "Official House/Senate disclosures / STOCK Act",
           "SEC Form 4",
           "Yahoo Finance"
         ]
@@ -5686,6 +5613,33 @@
         ]
       },
       {
+        "ticker": "SAN.MC",
+        "name": "BANCO SANTANDER S.A.",
+        "region": "Spain",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "bank",
+        "coverage_pct": 60.0,
+        "critical_coverage_pct": 69.2,
+        "missing_critical_count": 4,
+        "missing_critical_metrics": [
+          "current_ratio",
+          "quick_ratio",
+          "enterprise_to_ebitda",
+          "roce_proxy"
+        ],
+        "recommended_retrieval_lane": "esef",
+        "score_reliability": "limited_evidence",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "Yahoo Finance",
+          "Yahoo Statements (targeted)"
+        ]
+      },
+      {
         "ticker": "PNBK",
         "name": "Patriot National Bancorp Inc.",
         "region": "United States",
@@ -5709,6 +5663,37 @@
         "evidence_state": "observed",
         "sources": [
           "Analyst feed",
+          "SEC EDGAR",
+          "SEC Form 4",
+          "Yahoo Finance",
+          "Yahoo Statements (targeted)"
+        ]
+      },
+      {
+        "ticker": "BCBP",
+        "name": "BCB Bancorp, Inc. (NJ)",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "bank",
+        "coverage_pct": 66.7,
+        "critical_coverage_pct": 69.2,
+        "missing_critical_count": 5,
+        "missing_critical_metrics": [
+          "current_ratio",
+          "quick_ratio",
+          "trailing_pe",
+          "enterprise_to_ebitda",
+          "roce_proxy"
+        ],
+        "recommended_retrieval_lane": "quarterly_ttm_gap",
+        "score_reliability": "robust",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "SEC Capital Structure",
           "SEC EDGAR",
           "SEC Form 4",
           "Yahoo Finance",
@@ -6297,6 +6282,33 @@
       {
         "ticker": "NGEN",
         "name": "NervGen Pharma Corp.",
+        "region": "United States",
+        "quote_type": "EQUITY",
+        "reported_quote_type": "EQUITY",
+        "identity_state": "confirmed_equity",
+        "identity_evidence": null,
+        "score_model": "biotech",
+        "coverage_pct": 63.3,
+        "critical_coverage_pct": 70.0,
+        "missing_critical_count": 3,
+        "missing_critical_metrics": [
+          "revenue_growth",
+          "debt_to_equity",
+          "trailing_pe"
+        ],
+        "recommended_retrieval_lane": "annual_statement_gap",
+        "score_reliability": "limited_evidence",
+        "evidence_state": "observed",
+        "sources": [
+          "Analyst feed",
+          "SEC EDGAR",
+          "SEC Form 4",
+          "Yahoo Finance"
+        ]
+      },
+      {
+        "ticker": "ONCY",
+        "name": "Oncolytics Biotech Inc.",
         "region": "United States",
         "quote_type": "EQUITY",
         "reported_quote_type": "EQUITY",
@@ -7551,7 +7563,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 11.9,
+      "score_raw": 11.8,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -7641,7 +7653,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 12.2,
+      "score_raw": 12.1,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -7682,7 +7694,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "quarterly_ttm_gap",
-      "score_raw": 16.5,
+      "score_raw": 16.4,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -7825,47 +7837,6 @@
       "opportunity_suppressed_reason": "Score Vestra suprimido por evidência insuficiente"
     },
     {
-      "ticker": "MIAC",
-      "name": "Meridian3 Industrials Acquisiti",
-      "region": "United States",
-      "quote_type": "EQUITY",
-      "reported_quote_type": "EQUITY",
-      "identity_state": "confirmed_equity",
-      "identity_evidence": null,
-      "score_model": "general",
-      "coverage_pct": 36.7,
-      "critical_coverage_pct": 50.0,
-      "missing_critical_metrics": [
-        "revenue_growth",
-        "earnings_growth",
-        "free_cash_flow",
-        "trailing_pe",
-        "forward_pe",
-        "price_to_book",
-        "enterprise_to_ebitda",
-        "roce_proxy"
-      ],
-      "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 31.3,
-      "score": null,
-      "score_reliability": "insufficient_data",
-      "sources": [
-        "Analyst feed",
-        "SEC EDGAR",
-        "SEC Form 4",
-        "Yahoo Finance"
-      ],
-      "gap_statement_enriched": false,
-      "gap_coverage_before": null,
-      "gap_coverage_after": null,
-      "quarterly_gap_enriched": false,
-      "quarterly_gap_coverage_before": null,
-      "quarterly_gap_coverage_after": null,
-      "opportunity_eligible": false,
-      "opportunity_score": null,
-      "opportunity_suppressed_reason": "Score Vestra suprimido por evidência insuficiente"
-    },
-    {
       "ticker": "RACC",
       "name": "Research Alliance Corporation I",
       "region": "United States",
@@ -7907,48 +7878,6 @@
       "opportunity_suppressed_reason": "Score Vestra suprimido por evidência insuficiente"
     },
     {
-      "ticker": "YARW",
-      "name": "Yarrow Bioscience, Inc.",
-      "region": "United States",
-      "quote_type": "EQUITY",
-      "reported_quote_type": "EQUITY",
-      "identity_state": "confirmed_equity",
-      "identity_evidence": null,
-      "score_model": "biotech",
-      "coverage_pct": 36.7,
-      "critical_coverage_pct": 30.0,
-      "missing_critical_metrics": [
-        "roe",
-        "roa",
-        "revenue_growth",
-        "earnings_growth",
-        "free_cash_flow",
-        "debt_to_equity",
-        "trailing_pe",
-        "price_to_book",
-        "enterprise_to_ebitda",
-        "roce_proxy"
-      ],
-      "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 41.4,
-      "score": null,
-      "score_reliability": "insufficient_data",
-      "sources": [
-        "Analyst feed",
-        "SEC Form 4",
-        "Yahoo Finance"
-      ],
-      "gap_statement_enriched": false,
-      "gap_coverage_before": null,
-      "gap_coverage_after": null,
-      "quarterly_gap_enriched": false,
-      "quarterly_gap_coverage_before": null,
-      "quarterly_gap_coverage_after": null,
-      "opportunity_eligible": false,
-      "opportunity_score": null,
-      "opportunity_suppressed_reason": "Score Vestra suprimido por evidência insuficiente"
-    },
-    {
       "ticker": "ALW.L",
       "name": "ALLIANCE WITAN PLC ORD 2.5P",
       "region": "United Kingdom",
@@ -7969,7 +7898,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "esef",
-      "score_raw": 47.7,
+      "score_raw": 54.6,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -7978,7 +7907,7 @@
         "Yahoo Statements (targeted)"
       ],
       "gap_statement_enriched": true,
-      "gap_coverage_before": 5.9,
+      "gap_coverage_before": 11.8,
       "gap_coverage_after": 58.8,
       "quarterly_gap_enriched": false,
       "quarterly_gap_coverage_before": null,
@@ -8090,7 +8019,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 37.8,
+      "score_raw": 37.9,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -8209,7 +8138,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 44.1,
+      "score_raw": 44.8,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -8289,7 +8218,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 28.7,
+      "score_raw": 28.6,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -8327,7 +8256,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "esef",
-      "score_raw": 77.0,
+      "score_raw": 77.1,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -8338,6 +8267,47 @@
       "gap_statement_enriched": true,
       "gap_coverage_before": 11.8,
       "gap_coverage_after": 58.8,
+      "quarterly_gap_enriched": false,
+      "quarterly_gap_coverage_before": null,
+      "quarterly_gap_coverage_after": null,
+      "opportunity_eligible": false,
+      "opportunity_score": null,
+      "opportunity_suppressed_reason": "Score Vestra suprimido por evidência insuficiente"
+    },
+    {
+      "ticker": "YARW",
+      "name": "Yarrow Bioscience, Inc.",
+      "region": "United States",
+      "quote_type": "EQUITY",
+      "reported_quote_type": "EQUITY",
+      "identity_state": "confirmed_equity",
+      "identity_evidence": null,
+      "score_model": "biotech",
+      "coverage_pct": 40.0,
+      "critical_coverage_pct": 30.0,
+      "missing_critical_metrics": [
+        "roe",
+        "roa",
+        "revenue_growth",
+        "earnings_growth",
+        "free_cash_flow",
+        "debt_to_equity",
+        "trailing_pe",
+        "enterprise_to_ebitda",
+        "roce_proxy"
+      ],
+      "recommended_retrieval_lane": "sec_edgar",
+      "score_raw": 41.6,
+      "score": null,
+      "score_reliability": "insufficient_data",
+      "sources": [
+        "Analyst feed",
+        "SEC Form 4",
+        "Yahoo Finance"
+      ],
+      "gap_statement_enriched": false,
+      "gap_coverage_before": null,
+      "gap_coverage_after": null,
       "quarterly_gap_enriched": false,
       "quarterly_gap_coverage_before": null,
       "quarterly_gap_coverage_after": null,
@@ -8365,7 +8335,7 @@
         "enterprise_to_ebitda"
       ],
       "recommended_retrieval_lane": "quarterly_ttm_gap",
-      "score_raw": 20.0,
+      "score_raw": 19.9,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -8447,7 +8417,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 48.9,
+      "score_raw": 48.8,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -8485,7 +8455,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 28.5,
+      "score_raw": 28.4,
       "score": null,
       "score_reliability": "insufficient_data",
       "sources": [
@@ -8692,6 +8662,42 @@
       "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
     },
     {
+      "ticker": "HLOGF",
+      "name": "HELIUM ONE GLOBAL LTD.",
+      "region": "United States",
+      "quote_type": "EQUITY",
+      "reported_quote_type": "EQUITY",
+      "identity_state": "confirmed_equity",
+      "identity_evidence": null,
+      "score_model": "energy",
+      "coverage_pct": 50.0,
+      "critical_coverage_pct": 38.5,
+      "missing_critical_metrics": [
+        "revenue_growth",
+        "earnings_growth",
+        "debt_to_equity",
+        "trailing_pe",
+        "forward_pe"
+      ],
+      "recommended_retrieval_lane": "sec_edgar",
+      "score_raw": 42.7,
+      "score": 42.7,
+      "score_reliability": "limited_evidence",
+      "sources": [
+        "Analyst feed",
+        "Yahoo Finance"
+      ],
+      "gap_statement_enriched": false,
+      "gap_coverage_before": null,
+      "gap_coverage_after": null,
+      "quarterly_gap_enriched": false,
+      "quarterly_gap_coverage_before": null,
+      "quarterly_gap_coverage_after": null,
+      "opportunity_eligible": false,
+      "opportunity_score": null,
+      "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
+    },
+    {
       "ticker": "KMGLF",
       "name": "ASIAMET RESOURCES LTD",
       "region": "United States",
@@ -8783,8 +8789,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 45.5,
-      "score": 45.5,
+      "score_raw": 45.4,
+      "score": 45.4,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -8965,8 +8971,8 @@
         "enterprise_to_ebitda"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 45.7,
-      "score": 45.7,
+      "score_raw": 45.6,
+      "score": 45.6,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9022,7 +9028,7 @@
     },
     {
       "ticker": "GF",
-      "name": "The New Germany Fund, Inc.",
+      "name": "New Germany Fund, Inc. (The)",
       "region": "United States",
       "quote_type": "EQUITY",
       "reported_quote_type": "EQUITY",
@@ -9039,8 +9045,8 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 44.8,
-      "score": 44.8,
+      "score_raw": 44.9,
+      "score": 44.9,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9061,7 +9067,7 @@
     },
     {
       "ticker": "GPACF",
-      "name": "Geopacific Resources Limited",
+      "name": "GEOPACIFIC RES LTD",
       "region": "United States",
       "quote_type": "EQUITY",
       "reported_quote_type": "EQUITY",
@@ -9147,49 +9153,11 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 19.0,
-      "score": 19.0,
+      "score_raw": 18.9,
+      "score": 18.9,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
-        "Yahoo Finance"
-      ],
-      "gap_statement_enriched": false,
-      "gap_coverage_before": null,
-      "gap_coverage_after": null,
-      "quarterly_gap_enriched": false,
-      "quarterly_gap_coverage_before": null,
-      "quarterly_gap_coverage_after": null,
-      "opportunity_eligible": false,
-      "opportunity_score": null,
-      "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
-    },
-    {
-      "ticker": "KBLB",
-      "name": "Kraig Biocraft Laboratories, In",
-      "region": "United States",
-      "quote_type": "EQUITY",
-      "reported_quote_type": "EQUITY",
-      "identity_state": "confirmed_equity",
-      "identity_evidence": null,
-      "score_model": "general",
-      "coverage_pct": 53.3,
-      "critical_coverage_pct": 56.2,
-      "missing_critical_metrics": [
-        "revenue_growth",
-        "debt_to_equity",
-        "trailing_pe",
-        "forward_pe",
-        "roce_proxy"
-      ],
-      "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 42.2,
-      "score": 42.2,
-      "score_reliability": "limited_evidence",
-      "sources": [
-        "Analyst feed",
-        "SEC EDGAR",
-        "SEC Form 4",
         "Yahoo Finance"
       ],
       "gap_statement_enriched": false,
@@ -9349,6 +9317,45 @@
       "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
     },
     {
+      "ticker": "SJT",
+      "name": "San Juan Basin Royalty Trust",
+      "region": "United States",
+      "quote_type": "EQUITY",
+      "reported_quote_type": "EQUITY",
+      "identity_state": "confirmed_equity",
+      "identity_evidence": null,
+      "score_model": "energy",
+      "coverage_pct": 53.3,
+      "critical_coverage_pct": 46.2,
+      "missing_critical_metrics": [
+        "free_cash_flow",
+        "operating_cash_flow",
+        "quick_ratio",
+        "trailing_pe",
+        "forward_pe",
+        "enterprise_to_ebitda"
+      ],
+      "recommended_retrieval_lane": "sec_edgar",
+      "score_raw": 34.2,
+      "score": 34.2,
+      "score_reliability": "limited_evidence",
+      "sources": [
+        "Analyst feed",
+        "SEC Form 4",
+        "Yahoo Finance",
+        "Yahoo Statements (targeted)"
+      ],
+      "gap_statement_enriched": true,
+      "gap_coverage_before": 52.9,
+      "gap_coverage_after": 64.7,
+      "quarterly_gap_enriched": false,
+      "quarterly_gap_coverage_before": null,
+      "quarterly_gap_coverage_after": null,
+      "opportunity_eligible": false,
+      "opportunity_score": null,
+      "opportunity_suppressed_reason": "Cobertura fundamental inferior a 55%"
+    },
+    {
       "ticker": "SMNLF",
       "name": "Strategic Minerals Plc",
       "region": "United States",
@@ -9436,8 +9443,8 @@
         "price_to_book"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 32.8,
-      "score": 32.8,
+      "score_raw": 32.5,
+      "score": 32.5,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9471,8 +9478,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 14.6,
-      "score": 14.6,
+      "score_raw": 15.2,
+      "score": 15.2,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9692,8 +9699,8 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 53.8,
-      "score": 53.8,
+      "score_raw": 53.9,
+      "score": 53.9,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9741,7 +9748,7 @@
       "quarterly_gap_coverage_before": null,
       "quarterly_gap_coverage_after": null,
       "opportunity_eligible": true,
-      "opportunity_score": 34.3,
+      "opportunity_score": 34.4,
       "opportunity_suppressed_reason": null
     },
     {
@@ -9763,8 +9770,8 @@
         "trailing_pe"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 44.3,
-      "score": 44.3,
+      "score_raw": 44.1,
+      "score": 44.1,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9779,7 +9786,7 @@
       "quarterly_gap_coverage_before": null,
       "quarterly_gap_coverage_after": null,
       "opportunity_eligible": true,
-      "opportunity_score": 33.5,
+      "opportunity_score": 33.4,
       "opportunity_suppressed_reason": null
     },
     {
@@ -9798,8 +9805,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 17.2,
-      "score": 17.2,
+      "score_raw": 17.0,
+      "score": 17.0,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -9814,45 +9821,8 @@
       "quarterly_gap_coverage_before": null,
       "quarterly_gap_coverage_after": null,
       "opportunity_eligible": true,
-      "opportunity_score": 18.8,
+      "opportunity_score": 18.7,
       "opportunity_suppressed_reason": null
-    },
-    {
-      "ticker": "ENHA",
-      "name": "Enhanced Group Inc.",
-      "region": "United States",
-      "quote_type": "EQUITY",
-      "reported_quote_type": "EQUITY",
-      "identity_state": "confirmed_equity",
-      "identity_evidence": null,
-      "score_model": "general",
-      "coverage_pct": 56.7,
-      "critical_coverage_pct": 62.5,
-      "missing_critical_metrics": [
-        "revenue_growth",
-        "debt_to_equity",
-        "trailing_pe",
-        "roce_proxy"
-      ],
-      "recommended_retrieval_lane": "annual_statement_gap",
-      "score_raw": 37.1,
-      "score": 37.1,
-      "score_reliability": "limited_evidence",
-      "sources": [
-        "Analyst feed",
-        "SEC EDGAR",
-        "SEC Form 4",
-        "Yahoo Finance"
-      ],
-      "gap_statement_enriched": false,
-      "gap_coverage_before": null,
-      "gap_coverage_after": null,
-      "quarterly_gap_enriched": false,
-      "quarterly_gap_coverage_before": null,
-      "quarterly_gap_coverage_after": null,
-      "opportunity_eligible": false,
-      "opportunity_score": null,
-      "opportunity_suppressed_reason": "Histórico de preço insuficiente para avaliar o momento"
     },
     {
       "ticker": "FJET",
@@ -9891,20 +9861,20 @@
       "opportunity_suppressed_reason": null
     },
     {
-      "ticker": "GLFGF",
-      "name": "GLOBAL FASHION GROUP SA",
+      "ticker": "FSHRF",
+      "name": "FEISHANG ANTHRACITE RESOURCES L",
       "region": "United States",
       "quote_type": "EQUITY",
       "reported_quote_type": "EQUITY",
       "identity_state": "confirmed_equity",
       "identity_evidence": null,
-      "score_model": "general",
+      "score_model": "energy",
       "coverage_pct": 56.7,
-      "critical_coverage_pct": 75.0,
+      "critical_coverage_pct": 53.8,
       "missing_critical_metrics": [
-        "earnings_growth",
         "trailing_pe",
-        "forward_pe"
+        "forward_pe",
+        "roce_proxy"
       ],
       "recommended_retrieval_lane": "sec_edgar",
       "score_raw": 45.0,
@@ -9912,11 +9882,12 @@
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
-        "Yahoo Finance"
+        "Yahoo Finance",
+        "Yahoo Statements (targeted)"
       ],
-      "gap_statement_enriched": false,
-      "gap_coverage_before": null,
-      "gap_coverage_after": null,
+      "gap_statement_enriched": true,
+      "gap_coverage_before": 64.7,
+      "gap_coverage_after": 82.4,
       "quarterly_gap_enriched": false,
       "quarterly_gap_coverage_before": null,
       "quarterly_gap_coverage_after": null,
@@ -10049,7 +10020,7 @@
         "roce_proxy"
       ],
       "recommended_retrieval_lane": "quarterly_ttm_gap",
-      "score_raw": 63.0,
+      "score_raw": 62.9,
       "score": 59.0,
       "score_reliability": "limited_evidence",
       "sources": [
@@ -10085,8 +10056,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 35.5,
-      "score": 35.5,
+      "score_raw": 35.8,
+      "score": 35.8,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -10135,6 +10106,44 @@
       "quarterly_gap_coverage_after": null,
       "opportunity_eligible": true,
       "opportunity_score": 31.4,
+      "opportunity_suppressed_reason": null
+    },
+    {
+      "ticker": "KBLB",
+      "name": "Kraig Biocraft Laboratories, In",
+      "region": "United States",
+      "quote_type": "EQUITY",
+      "reported_quote_type": "EQUITY",
+      "identity_state": "confirmed_equity",
+      "identity_evidence": null,
+      "score_model": "general",
+      "coverage_pct": 56.7,
+      "critical_coverage_pct": 56.2,
+      "missing_critical_metrics": [
+        "revenue_growth",
+        "debt_to_equity",
+        "trailing_pe",
+        "forward_pe",
+        "roce_proxy"
+      ],
+      "recommended_retrieval_lane": "annual_statement_gap",
+      "score_raw": 40.7,
+      "score": 40.7,
+      "score_reliability": "limited_evidence",
+      "sources": [
+        "Analyst feed",
+        "SEC EDGAR",
+        "SEC Form 4",
+        "Yahoo Finance"
+      ],
+      "gap_statement_enriched": false,
+      "gap_coverage_before": null,
+      "gap_coverage_after": null,
+      "quarterly_gap_enriched": false,
+      "quarterly_gap_coverage_before": null,
+      "quarterly_gap_coverage_after": null,
+      "opportunity_eligible": true,
+      "opportunity_score": 35.0,
       "opportunity_suppressed_reason": null
     },
     {
@@ -10265,8 +10274,8 @@
         "forward_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 38.5,
-      "score": 38.5,
+      "score_raw": 38.4,
+      "score": 38.4,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
@@ -10335,8 +10344,8 @@
         "trailing_pe"
       ],
       "recommended_retrieval_lane": "sec_edgar",
-      "score_raw": 40.1,
-      "score": 40.1,
+      "score_raw": 40.0,
+      "score": 40.0,
       "score_reliability": "limited_evidence",
       "sources": [
         "Analyst feed",
