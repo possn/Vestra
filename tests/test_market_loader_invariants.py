@@ -14,7 +14,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         index = read("index.html")
         self.assertLess(index.index('src="app-utils.js'), index.index('src="app.js'))
         self.assertLess(index.index('src="app.js'), index.index('src="market-runtime-loader.js'))
-        self.assertLess(index.index('src="market-runtime-loader.js'), index.index('src="market-data-loader.js'))
+        self.assertNotIn('src="market-data-loader.js', index)
         self.assertNotIn('src="politicians.js', index)
         self.assertNotIn('src="market.js', index)
         self.assertNotIn('src="market-hotfix.js', index)
@@ -22,8 +22,8 @@ class MarketLoaderInvariantTests(unittest.TestCase):
     def test_static_market_bundle_does_not_reload_base_utils(self):
         index = read("index.html")
         self.assertEqual(index.count('src="app-utils.js'), 1)
-        self.assertIn('market-data-loader.js?v=2.6', index)
         runtime_loader = read("market-runtime-loader.js")
+        self.assertIn('market-data-loader.js?v=2.6', runtime_loader)
         self.assertNotIn('src="portfolio-sheet-navigation.js', index)
         self.assertIn('portfolio-sheet-navigation.js?v=1.5', runtime_loader)
 

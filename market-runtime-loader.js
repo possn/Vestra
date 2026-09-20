@@ -1,4 +1,4 @@
-/* Vestra Market runtime loader v1.3 — defer market core + portfolio helpers until first use. */
+/* Vestra Market runtime loader v1.4 — defer market core + dossier data until first use. */
 (() => {
   'use strict';
 
@@ -72,8 +72,10 @@
 
     if (!portfolioHelpersPromise) {
       // Navigation must exist before portfolio rows can open dossiers. The
-      // classifier consumes the attributes installed by collapsibles.
+      // dossier wrapper must be armed before the core emits its ready event;
+      // the classifier consumes the attributes installed by collapsibles.
       portfolioHelpersPromise = loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.5')
+        .then(() => loadHelper('VestraMarketData', 'market-data-loader.js?v=2.6'))
         .then(() => loadHelper('VestraPortfolioCollapsibles', 'portfolio-collapsibles.js?v=1.2'))
         .then(() => loadHelper('VestraPortfolioCardClassifier', 'portfolio-card-classifier.js?v=1.2'))
         .catch(err => {
@@ -94,6 +96,7 @@
       window.VestraMarketSearchSuggestions &&
       window.VestraMarketRowUI &&
       window.VestraNavigation &&
+      window.VestraMarketData &&
       window.VestraPortfolioCollapsibles &&
       window.VestraPortfolioCardClassifier
     ) return Promise.resolve();
@@ -158,7 +161,7 @@
           return;
         }
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.3' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.4' } }));
         } catch (_) {}
         resolve(window.VestraMarket);
       };
@@ -222,6 +225,6 @@
     ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.3',
+    version: '1.4',
   });
 })();
