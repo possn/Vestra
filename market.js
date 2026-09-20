@@ -1495,9 +1495,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function openTool(tool){
     ensureLoaded().then(()=>{
       const sh=$m('marketSheet'), c=$m('marketSheetContent'); if(!sh||!c)return;
-      sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open'); sh.dataset.ticker='';
+      sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open'); sh.dataset.ticker='';
       sh.dataset.tool=tool||''; sh.dataset.returnView=tool==='portfolio'?'assets':'';
-      scrollDossierTop();
       if(tool==='portfolio'){
         const assets=portfolioAssets().slice().sort((a,b)=>portfolioValue(b)-portfolioValue(a));
         const eligible=assets.filter(researchEligibleAsset);
@@ -1540,6 +1539,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         c.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">NOTÍCIAS</div><h2>Notícias das tuas posições</h2><p>Abre uma posição para ver o feed específico.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-list">${picks.length?picks.map(s=>renderRow(s,'Abrir notícias e dossier')).join(''):'<div class="market-empty">Sem posições reconhecidas.</div>'}</div>`;
       }
       if(tool==='scanner') c.innerHTML=renderScanner('best_opportunities');
+      // Replace the previous tool first, then reset the actual scroll owner.
+      // WebKit can retain the old document anchor when scrollTop is reset before
+      // innerHTML, reopening a portfolio half-way down its content.
+      resetDossierViewport();
     });
   }
 

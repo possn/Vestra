@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.63 — defer Market dossier enhancements from startup. */
-const CACHE_NAME = "vestra-cache-v176";
+/* Vestra Service Worker v10.64 — portfolio sectors and iPhone sheet containment. */
+const CACHE_NAME = "vestra-cache-v177";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
@@ -21,7 +21,7 @@ const APP_SHELL = [
   "./portfolio-diagnostics.js", "./portfolio-diagnostics.css", "./portfolio-dossier-routing.js", "./politicians.js", "./politicians.css", "./market-global-search.css", "./market-stock-themes-tools.css", "./data/executives.json",
   "./manifest.webmanifest", "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",
   "./apple-touch-icon.png", "./apple-touch-icon-167.png", "./apple-touch-icon-152.png", "./apple-touch-icon-120.png",
-  "./favicon-32.png", "./favicon-16.png"
+  "./favicon-32.png", "./favicon-16.png", "./data/portfolio-sectors.json"
 ];
 
 const BOOTSTRAP_NETWORK_FIRST = new Set([

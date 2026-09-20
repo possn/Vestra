@@ -42,7 +42,7 @@ class DataPublishingContractTests(unittest.TestCase):
 
         # Core generated payloads are known tracked files and must be restored
         # before any diagnostics are staged.
-        core_checkout = "git checkout -- data/stocks.json data/stocks-index.json data/dossiers-manifest.json data/dossiers"
+        core_checkout = "git checkout -- data/stocks.json data/stocks-index.json data/portfolio-sectors.json data/dossiers-manifest.json data/dossiers"
         self.assertIn(core_checkout, blocked)
 
         # During the compact-payload rollout these two paths may be tracked on a
@@ -58,6 +58,7 @@ class DataPublishingContractTests(unittest.TestCase):
             "data/stocks-index.json",
             "data/stocks-startup.json",
             "data/stocks-scanner.json",
+            "data/portfolio-sectors.json",
             "data/dossiers-manifest.json",
             "data/dossiers",
         ):
@@ -71,7 +72,7 @@ class DataPublishingContractTests(unittest.TestCase):
 
         # Fail closed if any rejected payload remains modified/untracked. This
         # guard must run before the selective diagnostic staging/publish path.
-        dirty_guard = "git status --porcelain -- data/stocks.json data/stocks-index.json data/stocks-startup.json data/stocks-scanner.json data/dossiers-manifest.json data/dossiers"
+        dirty_guard = "git status --porcelain -- data/stocks.json data/stocks-index.json data/stocks-startup.json data/stocks-scanner.json data/portfolio-sectors.json data/dossiers-manifest.json data/dossiers"
         self.assertIn(dirty_guard, blocked)
         self.assertIn("refusing diagnostic publication", blocked)
         self.assertLess(blocked.index(dirty_guard), blocked.index(selective_stage))

@@ -64,6 +64,22 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertIsNone(shards.scanner_results({"ticker": "MSFT", "scanner_results": {}}))
         self.assertIsNone(shards.scanner_results({"ticker": "MSFT", "scanner_results": []}))
 
+    def test_portfolio_sector_payload_keeps_only_classification_identity(self):
+        row = shards.portfolio_sector_row({
+            "ticker": "NESN.SW",
+            "sector": "Consumer Defensive",
+            "industry": "Packaged Foods",
+            "quote_type": "EQUITY",
+            "score": 43,
+            "thesis_summary": "must stay out",
+        })
+        self.assertEqual(row, {
+            "sector": "Consumer Defensive",
+            "industry": "Packaged Foods",
+            "quote_type": "EQUITY",
+        })
+        self.assertIsNone(shards.portfolio_sector_row({"ticker": "UNKNOWN"}))
+
     def test_full_history_is_not_copied_but_compact_52_week_bounds_are_kept(self):
         row = shards.index_row({
             "ticker": "TEST",
