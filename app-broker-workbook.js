@@ -1,4 +1,4 @@
-/* Vestra broker workbook/file readers v1.2 — file IO, workbook structure + bank categorisation. */
+/* Vestra broker workbook/file readers v1.3 — file IO, workbook structure + bank categorisation. */
 (() => {
   'use strict';
 
@@ -165,13 +165,24 @@ function xtbExtractSheetMeta(ws, sheetName = "") {
     const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false });
     const nameMatch = String(sheetName || "").match(/(\d{2})(\d{2})(\d{4})/);
     if (nameMatch) meta.asOfDate = `${nameMatch[3]}-${nameMatch[2]}-${nameMatch[1]}`;
+    const dateFromCell = cell => {
+      const s = String(cell || "").trim();
+      const iso = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+      const dmy = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+      if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+      return "";
+    };
     if (!meta.asOfDate) {
-      for (let i = 0; i < Math.min(15, aoa.length); i++) {
-        const row = Array.isArray(aoa[i]) ? aoa[i] : [];
+      const scanned = aoa.slice(0, 15).map(row => Array.isArray(row) ? row : []);
+      // XTB includes both a historical "Date from" and the actual report cutoff.
+      // Prefer the explicit report/as-of or Date to control so an old start date
+      // never labels a current position snapshot.
+      const priority = scanned.filter(row => /data as of report generated|date to \(utc\)|data do relatorio|data ate/i.test(String(row[0] || "")));
+      for (const row of [...priority, ...scanned]) {
         for (const cell of row) {
-          const s = String(cell || "").trim();
-          const m = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-          if (m) { meta.asOfDate = `${m[3]}-${m[2]}-${m[1]}`; break; }
+          const parsed = dateFromCell(cell);
+          if (parsed) { meta.asOfDate = parsed; break; }
         }
         if (meta.asOfDate) break;
       }

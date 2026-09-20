@@ -1,4 +1,4 @@
-/* Vestra broker parsing core v1.2 — pure identity, format and key helpers. */
+/* Vestra broker parsing core v1.3 — pure identity, format and key helpers. */
 (() => {
   'use strict';
 
@@ -326,6 +326,8 @@ function normalizeBrokerAction(raw) {
   if (n.includes("stock split close")) return "SPLIT_CLOSE";
   if (n.includes("stock distribution") || n.includes("custom stock distribution")) return "STOCK_DISTRIBUTION";
   if (n.includes("spin off") || n.includes("spin_off")) return "STOCK_DISTRIBUTION"; // treat spin-off as stock event
+  if (n.includes("stock acquisition")) return "STOCK_DISTRIBUTION";
+  if (n.includes("result adjustment")) return "CASH_ADJUSTMENT";
   return "OTHER";
 }
 

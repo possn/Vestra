@@ -1,4 +1,4 @@
-/* Vestra broker parsers v1.1 — file/row transformation only. */
+/* Vestra broker parsers v1.2 — file/row transformation only. */
 (() => {
   'use strict';
 
@@ -188,17 +188,27 @@ function parseXTBPositionsRows(rows, meta) {
     const symbol   = String(r.symbol || r.simbolo || r.ticker || r.instrument || r.instrumento || r.instrument_position || "").trim();
     const vol      = parseNumberSmart(r.volume || r.qty || r.quantity);
     const openPx   = parseNumberSmart(r.open_price || r["open price"] || r.openprice || r.preco_de_abertura || r.preco_abertura || r.preco_entrada);
-    const mktPx    = parseNumberSmart(r.market_price || r["market price"] || r.marketprice || r["current price"] || r.preco_atual || r.preco_de_mercado);
+    const mktPx    = parseNumberSmart(r.market_price || r.marketprice || r.current_price || r.preco_atual || r.preco_de_mercado);
     const purchaseValue = parseNumberSmart(r.purchase_value || r["purchase value"] || r.valor_de_compra || r.valor_compra);
+    // Current XTB workbooks provide exact EUR Value and Net Profit per lot.
+    // Prefer these broker controls to approximate static FX conversion.
+    const reportedValueEUR = parseNumberSmart(r.value || r.market_value || r.valor || r.valor_mercado);
+    const reportedNetProfitEUR = parseNumberSmart(r.net_profit || r.profit || r.lucro_liquido || r.resultado_liquido);
 
     if (!symbol || !Number.isFinite(vol) || vol <= 0) continue;
     const nativeCcy = xtbSymbolCurrency(symbol);
     const fx = brokerApproxFxToEUR(nativeCcy);
     const usePrice = Number.isFinite(mktPx) && mktPx > 0 ? mktPx : (Number.isFinite(openPx) ? openPx : 0);
     const hasPV = Number.isFinite(purchaseValue) && purchaseValue > 0;
-    const lotCost = hasPV ? purchaseValue : vol * (Number.isFinite(openPx) && openPx > 0 ? openPx : usePrice) * fx;
+    const hasReportedValue = Number.isFinite(reportedValueEUR) && reportedValueEUR >= 0;
+    const hasReportedProfit = Number.isFinite(reportedNetProfitEUR);
+    const lotCost = hasPV ? purchaseValue
+      : hasReportedValue && hasReportedProfit ? Math.max(0, reportedValueEUR - reportedNetProfitEUR)
+      : vol * (Number.isFinite(openPx) && openPx > 0 ? openPx : usePrice) * fx;
     let lotMktVal;
-    if (hasPV && Number.isFinite(openPx) && openPx > 0 && Number.isFinite(usePrice) && usePrice > 0) {
+    if (hasReportedValue) {
+      lotMktVal = reportedValueEUR;
+    } else if (hasPV && Number.isFinite(openPx) && openPx > 0 && Number.isFinite(usePrice) && usePrice > 0) {
       lotMktVal = purchaseValue * (usePrice / openPx);
     } else {
       lotMktVal = vol * usePrice * fx;

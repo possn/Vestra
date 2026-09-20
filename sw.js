@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.71 — lazy application export runtime. */
-const CACHE_NAME = "vestra-cache-v184";
+/* Vestra Service Worker v10.72 — exact XTB snapshots and T212 adjustments. */
+const CACHE_NAME = "vestra-cache-v185";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

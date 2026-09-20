@@ -15,7 +15,7 @@ class RemainingQuoteIdentityTests(unittest.TestCase):
         self.assertIn('explicitIdentity && splitLike',a)
         self.assertIn('Cotação suspeita rejeitada',a)
     def test_fresh_bundle(self):
-        self.assertIn('app.js?v=20260920v4',read('index.html'))
+        self.assertIn('app.js?v=20260920v5',read('index.html'))
         sw=read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
         self.assertIn('staleWhileRevalidate',sw)

@@ -11,7 +11,7 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class LazyAppExportRuntimeTests(unittest.TestCase):
     def test_export_runtime_is_not_in_initial_html(self):
         self.assertNotIn('src="app-export-runtime.js', INDEX)
-        self.assertIn('app.js?v=20260920v4', INDEX)
+        self.assertIn('app.js?v=20260920v5', INDEX)
 
     def test_app_loads_exports_only_on_demand_with_retry(self):
         self.assertIn("function ensureAppExportRuntime()", APP)
