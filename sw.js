@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.76 — lazy XTB normalization runtime. */
-const CACHE_NAME = "vestra-cache-v189";
+/* Vestra Service Worker v10.77 — coherent youthful premium visual language. */
+const CACHE_NAME = "vestra-cache-v190";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
