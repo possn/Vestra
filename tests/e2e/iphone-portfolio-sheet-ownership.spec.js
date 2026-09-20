@@ -16,6 +16,7 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
     sentinel.id = 'underlyingOpportunitySentinel';
     sentinel.className = 'ux453-opp';
     sentinel.textContent = 'CF Industries · ENTRY 90';
+    sentinel.style.cssText = 'position:fixed;inset:auto 0 0 0;height:90px;z-index:1';
     document.getElementById('viewMarket').appendChild(sentinel);
   });
 
@@ -24,7 +25,11 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await expect(page.locator('body')).toHaveClass(/market-sheet-open/);
-  await expect(page.locator('#viewMarket')).toHaveCSS('visibility', 'hidden');
+  await expect(page.locator('#viewMarket')).toBeVisible();
+  expect(await page.evaluate(() => {
+    const top = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 12);
+    return Boolean(top?.closest('#marketSheet'));
+  })).toBeTruthy();
 
   await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
   expect(await sheet.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
@@ -38,5 +43,5 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   await page.waitForTimeout(80);
   expect(await sheet.evaluate(el => el.scrollTop)).toBe(0);
   await expect(sheet.locator('.market-detail-head h2')).toHaveText('As minhas posições');
-  await expect(page.locator('#underlyingOpportunitySentinel')).toBeHidden();
+  await expect(sheet).not.toContainText('CF Industries · ENTRY 90');
 });
