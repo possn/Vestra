@@ -8,7 +8,9 @@ def read(path): return (ROOT/path).read_text(encoding="utf-8")
 class PortfolioSheetNavigationTests(unittest.TestCase):
     def test_consolidated_navigation_is_the_only_active_sheet_nav(self):
         index=read("index.html")
-        self.assertIn('portfolio-sheet-navigation.js?v=1.5',index)
+        loader=read("market-runtime-loader.js")
+        self.assertNotIn('src="portfolio-sheet-navigation.js',index)
+        self.assertIn("loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.5')",loader)
         self.assertNotIn('portfolio-navigation-fix.js',index)
         self.assertNotIn('market-close-controller.js',index)
 

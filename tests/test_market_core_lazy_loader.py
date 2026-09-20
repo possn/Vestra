@@ -15,13 +15,15 @@ class LazyMarketCoreTests(unittest.TestCase):
 
     def test_market_core_is_not_in_initial_html(self):
         self.assertNotIn('src="market.js?v=20260831v2"', self.index)
-        self.assertIn('src="market-runtime-loader.js?v=1.2"', self.index)
-        self.assertIn('portfolio-sheet-navigation.js?v=1.5', self.index)
+        self.assertIn('src="market-runtime-loader.js?v=1.3"', self.index)
+        self.assertNotIn('src="portfolio-sheet-navigation.js', self.index)
+        self.assertIn('portfolio-sheet-navigation.js?v=1.5', self.loader)
         self.assertIn('market-data-loader.js?v=2.6', self.index)
 
     def test_loader_is_single_flight_bounded_and_does_not_fake_market_api(self):
         self.assertIn("if (!loadPromise)", self.loader)
         self.assertIn("function ensureHelpers()", self.loader)
+        self.assertIn("function ensurePortfolioHelpers()", self.loader)
         self.assertIn("function ensureEnhancements()", self.loader)
         self.assertIn("market-metric-cleanup.js?v=1.2", self.loader)
         self.assertIn("market-company-brief.js?v=2.1", self.loader)
@@ -41,6 +43,16 @@ class LazyMarketCoreTests(unittest.TestCase):
         self.assertIn('if (view === "market")', self.app)
         self.assertIn("window.VestraMarketLoader?.ensure?.({ loadData: true })", self.app)
         self.assertIn("api.ensureLoaded()", self.loader)
+
+    def test_portfolio_helpers_load_in_dependency_order_before_core(self):
+        navigation = self.loader.index("portfolio-sheet-navigation.js?v=1.5")
+        collapsibles = self.loader.index("portfolio-collapsibles.js?v=1.2", navigation)
+        classifier = self.loader.index("portfolio-card-classifier.js?v=1.2", collapsibles)
+        core = self.loader.index("script.src = 'market.js?v=20260920v1';", classifier)
+        self.assertLess(navigation, collapsibles)
+        self.assertLess(collapsibles, classifier)
+        self.assertLess(classifier, core)
+        self.assertIn("portfolioHelpersPromise = null;", self.loader)
 
     def test_portfolio_dossier_waits_for_lazy_core(self):
         self.assertIn("api=await window.VestraMarketLoader?.ensure?.()", self.navigation)

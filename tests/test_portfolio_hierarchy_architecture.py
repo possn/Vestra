@@ -12,8 +12,10 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
     def test_hotfix_uses_canonical_hierarchy_and_swap_lab(self):
         h=read('index.html')
         loader=read('market-static-universe.js')
+        runtime_loader=read('market-runtime-loader.js')
         self.assertNotIn('market-hotfix.js', h)
-        self.assertIn("portfolio-card-classifier.js?v=1.2", h)
+        self.assertIn("portfolio-card-classifier.js?v=1.2", runtime_loader)
+        self.assertNotIn('src="portfolio-card-classifier.js', h)
         for direct in (
             'src="vestra-portfolio-hierarchy.js',
             'src="vestra-swap-lab.js',
@@ -37,7 +39,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         for legacy in ('vestra-ux-v452.js','vestra-ux-v454.js','vestra-ux-v455.js','vestra-ux-v456.js','vestra-ux-v457.js','market-enhancements.js','vestra-portfolio-nav-fix-v464.js','vestra-portfolio-tabs-v479.js','vestra-portfolio-dossier-routing-v482.js'):
             self.assertNotIn(legacy, h)
             self.assertNotIn(legacy, loader)
-        self.assertLess(h.index('portfolio-collapsibles.js'), h.index('portfolio-card-classifier.js'))
+        self.assertLess(runtime_loader.index('portfolio-collapsibles.js'), runtime_loader.index('portfolio-card-classifier.js'))
         positions = [loader.index(module) for module in expected]
         self.assertEqual(positions, sorted(positions))
 
