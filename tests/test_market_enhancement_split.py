@@ -12,16 +12,15 @@ class MarketEnhancementSplitTests(unittest.TestCase):
     def test_hotfix_uses_canonical_modules_not_legacy_overlays(self):
         h = read('index.html')
         loader = read('market-static-universe.js')
+        runtime_loader = read('market-runtime-loader.js')
         self.assertNotIn('market-hotfix.js', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
-        for module in (
-            'market-company-brief.js?v=1.0',
-            'market-metric-cleanup.js?v=1.0',
-            'portfolio-collapsibles.js?v=1.2',
-            'portfolio-card-classifier.js?v=1.2',
-        ):
+        for module in ('portfolio-collapsibles.js?v=1.2', 'portfolio-card-classifier.js?v=1.2'):
             self.assertIn(module, h)
+        for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.1'):
+            self.assertIn(module, runtime_loader)
+            self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in (
             'portfolio-diagnostics.js?v=1.1',
             'vestra-ai-brief.js?v=1.2',

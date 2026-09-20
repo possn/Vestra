@@ -1,10 +1,11 @@
-/* Vestra Market runtime loader v1.1 — defer market core + pure helpers until first use. */
+/* Vestra Market runtime loader v1.2 — defer market core + enhancements until first use. */
 (() => {
   'use strict';
 
   const SRC = 'market.js?v=20260831v2';
   const TIMEOUT_MS = 12000;
   let helpersPromise = null;
+  let enhancementsPromise = null;
   let loadPromise = null;
 
   function loadHelper(globalName, src) {
@@ -89,6 +90,21 @@
     return helpersPromise;
   }
 
+  function ensureEnhancements() {
+    if (window.VestraMarketMetricCleanup && window.VestraMarketCompanyBrief) {
+      return Promise.resolve();
+    }
+    if (!enhancementsPromise) {
+      enhancementsPromise = loadHelper('VestraMarketMetricCleanup', 'market-metric-cleanup.js?v=1.2')
+        .then(() => loadHelper('VestraMarketCompanyBrief', 'market-company-brief.js?v=2.1'))
+        .catch(err => {
+          enhancementsPromise = null;
+          throw err;
+        });
+    }
+    return enhancementsPromise;
+  }
+
   function loadCore() {
     if (window.VestraMarket?.ensureLoaded) return Promise.resolve(window.VestraMarket);
     return new Promise((resolve, reject) => {
@@ -116,7 +132,7 @@
           return;
         }
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.1' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.2' } }));
         } catch (_) {}
         resolve(window.VestraMarket);
       };
@@ -148,13 +164,20 @@
   function ensure(options = {}) {
     const loadData = options?.loadData === true;
     if (window.VestraMarket?.ensureLoaded) {
+      // Enhancements improve an open dossier, but must never delay Market itself.
+      ensureEnhancements().catch(err => console.warn('Falha ao carregar enhancements de Mercado', err));
+      const ready = Promise.resolve(window.VestraMarket);
       return loadData
-        ? Promise.resolve(window.VestraMarket.ensureLoaded()).then(() => window.VestraMarket)
-        : Promise.resolve(window.VestraMarket);
+        ? ready.then(api => Promise.resolve(api.ensureLoaded()).then(() => api))
+        : ready;
     }
     if (!loadPromise) {
       loadPromise = ensureHelpers()
         .then(loadCore)
+        .then(api => {
+          ensureEnhancements().catch(err => console.warn('Falha ao carregar enhancements de Mercado', err));
+          return api;
+        })
         .catch(err => {
           loadPromise = null;
           throw err;
@@ -169,8 +192,9 @@
   window.VestraMarketLoader = Object.freeze({
     ensure,
     ensureHelpers,
+    ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.1',
+    version: '1.2',
   });
 })();
