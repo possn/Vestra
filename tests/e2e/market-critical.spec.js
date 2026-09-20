@@ -139,7 +139,8 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
 
   await isolateExternalSearch(page);
   await page.goto('/index.html');
-  await page.waitForFunction(() => typeof window.setView === 'function');
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarketLoader);
+  await page.evaluate(() => window.setView('market'));
   await page.waitForFunction(() => !!window.VestraLearnedUniverse && !!window.VestraGlobalMarketSearch);
 
   await page.route(/\/quote\?ticker=E2EVS(?:&|$)/, async route => {
@@ -179,8 +180,6 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
       body: JSON.stringify({ ok: true }),
     });
   });
-  await page.evaluate(() => window.setView('market'));
-
   const search = page.locator('#marketSearch');
   await expect(search).toBeVisible();
   await search.fill(ticker);
@@ -208,6 +207,8 @@ test('iPhone/WebKit: global ticker opens live and persists locally across reload
   expect(learnedBeforeReload.validation_count).toBeGreaterThanOrEqual(1);
 
   await page.reload();
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarketLoader);
+  await page.evaluate(() => window.setView('market'));
   await page.waitForFunction(() => !!window.VestraLearnedUniverse);
   const learnedAfterReload = await page.evaluate(async learnedTicker => {
     const rows = await window.VestraLearnedUniverse.list();

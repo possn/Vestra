@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.62 — lazy broker import loader joins the offline shell. */
-const CACHE_NAME = "vestra-cache-v175";
+/* Vestra Service Worker v10.63 — defer Market dossier enhancements from startup. */
+const CACHE_NAME = "vestra-cache-v176";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

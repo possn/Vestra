@@ -112,6 +112,8 @@ test('iPhone/WebKit: mismatched provider identity cannot contaminate or open the
   });
 
   await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function' && !!window.VestraMarketLoader);
+  await page.evaluate(() => window.setView('market'));
   await page.waitForFunction(() => Boolean(window.VestraGlobalMarketSearch && window.VestraLearnedUniverse));
 
   const opened = await page.evaluate(() => window.VestraGlobalMarketSearch.openRemoteTicker('SPIE'));
