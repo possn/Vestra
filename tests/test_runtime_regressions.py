@@ -17,6 +17,7 @@ class RuntimeRegressionTests(unittest.TestCase):
             "app-feedback.js",
             "app-storage.js",
             "app-asset-identity.js",
+            "app-chart-loader.js",
             "app-ui-core.js",
             "app-broker-normalization.js",
             "app-file-parsing.js",
@@ -52,7 +53,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         workflow = read(".github/workflows/architecture-invariants.yml")
         modules = [
             "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js",
-            "app-ui-core.js", "app-broker-normalization.js", "app-xtb-normalization.js",
+            "app-chart-loader.js", "app-ui-core.js", "app-broker-normalization.js", "app-xtb-normalization.js",
             "app-broker-identity-data.js", "app-file-parsing.js", "app-broker-parsing-core.js",
             "app-broker-import-loader.js", "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js",
             "app-quote-errors.js", "app-return-assumptions.js", "app-financial-engine.js",

@@ -16,18 +16,21 @@ class StartupScriptDeferTests(unittest.TestCase):
         self.assertIsNotNone(match, src_fragment)
         return (match.group("attrs") + " " + match.group("tail")).strip()
 
-    def test_chartjs_does_not_block_html_parser(self):
-        attrs = self.script_tag("chart.umd.min.js")
+    def test_chartjs_is_not_in_the_parser_ordered_bundle(self):
+        self.assertNotIn("chart.umd.min.js", self.index)
+        attrs = self.script_tag("app-chart-loader.js?v=1.0")
         self.assertRegex(attrs, r"\bdefer\b")
 
     def test_lazy_xlsx_loader_is_deferred_too(self):
         attrs = self.script_tag("app-xlsx-loader.js?v=1.0")
         self.assertRegex(attrs, r"\bdefer\b")
 
-    def test_chartjs_stays_before_app_runtime(self):
-        chart = self.index.index("chart.umd.min.js")
-        app = self.index.index("app.js?v=20260920v8")
-        self.assertLess(chart, app)
+    def test_chart_loader_stays_before_chart_consumers(self):
+        loader = self.index.index("app-chart-loader.js?v=1.0")
+        ui_core = self.index.index("app-ui-core.js?v=2.5")
+        app = self.index.index("app.js?v=20260920v9")
+        self.assertLess(loader, ui_core)
+        self.assertLess(ui_core, app)
         self.assertIn('defer="" fetchpriority="high"', self.index[self.index.index("<script", app - 80):app + 120])
 
 
