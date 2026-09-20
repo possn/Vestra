@@ -1,13 +1,13 @@
 {
-  "schema_version": 2,
-  "generated_at": "2026-09-17T12:38:10.401762+00:00",
+  "schema_version": 3,
+  "generated_at": "2026-09-20T09:12:50.809897+00:00",
   "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
   "horizons_days": [
     28,
     84,
     168
   ],
-  "snapshots_available": 4,
+  "snapshots_available": 5,
   "realised_outcomes": 0,
   "new_outcomes_this_run": 0,
   "horizons": {
@@ -17,6 +17,31 @@
       "top_quintile_mean_return_pct": null,
       "bottom_quintile_mean_return_pct": null,
       "top_minus_bottom_pct": null,
+      "peer_shadow_comparison": {
+        "eligible_n": 0,
+        "cohort_count": 0,
+        "production_same_subset": {
+          "n": 0,
+          "rank_information_coefficient": null,
+          "top_quintile_mean_return_pct": null,
+          "bottom_quintile_mean_return_pct": null,
+          "top_minus_bottom_pct": null
+        },
+        "peer_shadow": {
+          "n": 0,
+          "rank_information_coefficient": null,
+          "top_quintile_mean_return_pct": null,
+          "bottom_quintile_mean_return_pct": null,
+          "top_minus_bottom_pct": null
+        },
+        "median_production_cohort_rank_ic": null,
+        "median_peer_shadow_cohort_rank_ic": null,
+        "median_production_cohort_top_minus_bottom_pct": null,
+        "median_peer_shadow_cohort_top_minus_bottom_pct": null,
+        "positive_peer_shadow_ic_cohorts": 0,
+        "positive_peer_shadow_spread_cohorts": 0,
+        "cohorts": []
+      },
       "cohort_count": 0,
       "expected_matured_cohorts": 0,
       "cohort_capture_pct": null,
@@ -49,6 +74,31 @@
       "top_quintile_mean_return_pct": null,
       "bottom_quintile_mean_return_pct": null,
       "top_minus_bottom_pct": null,
+      "peer_shadow_comparison": {
+        "eligible_n": 0,
+        "cohort_count": 0,
+        "production_same_subset": {
+          "n": 0,
+          "rank_information_coefficient": null,
+          "top_quintile_mean_return_pct": null,
+          "bottom_quintile_mean_return_pct": null,
+          "top_minus_bottom_pct": null
+        },
+        "peer_shadow": {
+          "n": 0,
+          "rank_information_coefficient": null,
+          "top_quintile_mean_return_pct": null,
+          "bottom_quintile_mean_return_pct": null,
+          "top_minus_bottom_pct": null
+        },
+        "median_production_cohort_rank_ic": null,
+        "median_peer_shadow_cohort_rank_ic": null,
+        "median_production_cohort_top_minus_bottom_pct": null,
+        "median_peer_shadow_cohort_top_minus_bottom_pct": null,
+        "positive_peer_shadow_ic_cohorts": 0,
+        "positive_peer_shadow_spread_cohorts": 0,
+        "cohorts": []
+      },
       "cohort_count": 0,
       "expected_matured_cohorts": 0,
       "cohort_capture_pct": null,
@@ -81,6 +131,31 @@
       "top_quintile_mean_return_pct": null,
       "bottom_quintile_mean_return_pct": null,
       "top_minus_bottom_pct": null,
+      "peer_shadow_comparison": {
+        "eligible_n": 0,
+        "cohort_count": 0,
+        "production_same_subset": {
+          "n": 0,
+          "rank_information_coefficient": null,
+          "top_quintile_mean_return_pct": null,
+          "bottom_quintile_mean_return_pct": null,
+          "top_minus_bottom_pct": null
+        },
+        "peer_shadow": {
+          "n": 0,
+          "rank_information_coefficient": null,
+          "top_quintile_mean_return_pct": null,
+          "bottom_quintile_mean_return_pct": null,
+          "top_minus_bottom_pct": null
+        },
+        "median_production_cohort_rank_ic": null,
+        "median_peer_shadow_cohort_rank_ic": null,
+        "median_production_cohort_top_minus_bottom_pct": null,
+        "median_peer_shadow_cohort_top_minus_bottom_pct": null,
+        "positive_peer_shadow_ic_cohorts": 0,
+        "positive_peer_shadow_spread_cohorts": 0,
+        "cohorts": []
+      },
       "cohort_count": 0,
       "expected_matured_cohorts": 0,
       "cohort_capture_pct": null,
@@ -112,7 +187,8 @@
     "rank_ic": "Spearman correlation between the score known at cohort date and realised forward return.",
     "top_minus_bottom": "Mean return of the highest score quintile minus the lowest score quintile.",
     "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap.",
-    "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime."
+    "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
+    "peer_shadow": "Head-to-head specialist-model experiment. Production and peer-normalized candidate are compared on the exact same eligible rows; the candidate never changes the published score."
   },
   "decision_rule": "Do not optimize production weights from pooled n alone. Require multiple matured weekly cohorts, preferably at least 8 per horizon and evidence across at least two horizons, with stable positive median cohort rank IC and top-minus-bottom spread across score models/sectors."
 }
