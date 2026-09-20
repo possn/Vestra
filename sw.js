@@ -1,12 +1,12 @@
-/* Vestra Service Worker v10.70 — lazy bank transaction categorisation. */
-const CACHE_NAME = "vestra-cache-v183";
+/* Vestra Service Worker v10.71 — lazy application export runtime. */
+const CACHE_NAME = "vestra-cache-v184";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js", "./app-xlsx-loader.js",
   "./app-broker-normalization.js", "./app-xtb-normalization.js", "./app-broker-identity-data.js",
   "./app-broker-parsing-core.js", "./app-file-parsing.js", "./app-broker-import-loader.js", "./app-broker-workbook.js", "./app-broker-parsers.js",
-  "./app-market-client.js", "./app-quote-errors.js", "./app-return-assumptions.js", "./app-financial-engine.js", "./app-runtime-bridge.js",
+  "./app-market-client.js", "./app-quote-errors.js", "./app-return-assumptions.js", "./app-financial-engine.js", "./app-export-runtime.js", "./app-runtime-bridge.js",
   "./market.js", "./market-runtime-loader.js", "./market-live-overlay.js", "./market-congress-live.js", "./market-portfolio-context.js",
   "./market-watch-snapshots.js", "./market-static-universe.js", "./market-scanner-data.js",
   "./market-analysis-tools-runtime.js", "./market-analysis-tools-runtime.css", "./market-etf-intelligence.js", "./dashboard-weekly-events.js",
@@ -28,7 +28,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js", "app-ui-core.js", "app-xlsx-loader.js",
   "app-broker-normalization.js", "app-xtb-normalization.js", "app-broker-identity-data.js", "app-broker-parsing-core.js",
   "app-file-parsing.js", "app-broker-import-loader.js", "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js", "app-quote-errors.js",
-  "app-return-assumptions.js", "app-financial-engine.js", "app.js", "market-runtime-loader.js", "market-live-overlay.js",
+  "app-return-assumptions.js", "app-financial-engine.js", "app-export-runtime.js", "app.js", "market-runtime-loader.js", "market-live-overlay.js",
   "market-data-loader.js", "market-data-health.js", "market-portfolio-context.js", "market-static-universe.js",
   "market-scanner-data.js", "market-analysis-tools-runtime.js", "market-etf-intelligence.js", "dashboard-weekly-events.js",
   "dashboard-weekly-events-navigation.js", "dashboard-daily-news.js", "market-dossier-controls.js", "market-ui-polish.js", "market-opportunities.js",
