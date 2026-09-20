@@ -147,7 +147,7 @@ function response(status, label) {
   {
     const versionless = response(200, 'precache-style');
     const { context } = buildRuntime({ fetchError: new Error('offline'), versionlessCachedResponse: versionless });
-    const result = await context.staleWhileRevalidate({ url: '/styles.css?v=20260827v8' });
+    const result = await context.staleWhileRevalidate({ url: '/styles.css?v=20260920v1' });
     assert.strictEqual(result, versionless, 'stale-while-revalidate must reuse the unversioned precache for a versioned offline request');
   }
 

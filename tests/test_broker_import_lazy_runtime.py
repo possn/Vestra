@@ -47,7 +47,7 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertIn("fileToText(file)", bank)
 
     def test_app_rollout_is_versioned(self):
-        self.assertIn("app.js?v=20260919v3", INDEX)
+        self.assertIn("app.js?v=20260920v1", INDEX)
 
 
 if __name__ == "__main__":

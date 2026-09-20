@@ -737,6 +737,7 @@ function setView(view) {
   if (view === "assets" && prevView !== "assets") {
     itemsExpanded = false;
     window._pnlExpanded = false;
+    ensurePortfolioSectorMap();
   }
   _initViewCache();
   // Phase 1 (sync): switch visible section immediately — user sees tab change at once
@@ -1754,6 +1755,36 @@ function inferEtfSector(asset) {
   return "ETF diversificado";
 }
 
+let portfolioSectorMap = null;
+let portfolioSectorMapPromise = null;
+
+function portfolioSectorTickerCandidates(asset) {
+  return [...new Set([asset?.yahooTicker, asset?.ticker, asset?.symbol]
+    .map(value => String(value || "").trim().toUpperCase())
+    .filter(Boolean))];
+}
+
+function ensurePortfolioSectorMap() {
+  if (portfolioSectorMap) return Promise.resolve(portfolioSectorMap);
+  if (portfolioSectorMapPromise) return portfolioSectorMapPromise;
+  portfolioSectorMapPromise = fetch("data/portfolio-sectors.json", { cache: "no-store" })
+    .then(response => {
+      if (!response.ok) throw new Error("portfolio sector map " + response.status);
+      return response.json();
+    })
+    .then(payload => {
+      portfolioSectorMap = payload && typeof payload.tickers === "object" ? payload.tickers : {};
+      if (currentView === "assets" && !showingLiabs) renderPortfolioSectorBox();
+      return portfolioSectorMap;
+    })
+    .catch(error => {
+      console.warn("Mapa de sectores indisponível; a usar metadados locais", error);
+      portfolioSectorMapPromise = null;
+      return null;
+    });
+  return portfolioSectorMapPromise;
+}
+
 function portfolioEquitySector(asset) {
   const meta = asset?.meta || {};
   const direct = canonicalEquitySectorLabel(meta.sector);
@@ -1773,6 +1804,12 @@ function portfolioEquitySector(asset) {
     /\betf\b/i.test(String(asset?.class || ""));
   if (isEtf) return inferEtfSector(asset);
 
+  for (const ticker of portfolioSectorTickerCandidates(asset)) {
+    const mapped = portfolioSectorMap?.[ticker];
+    const mappedSector = canonicalEquitySectorLabel(mapped?.sector);
+    if (mappedSector) return mappedSector;
+  }
+
   try {
     const fallbackRaw = String(getTickerMeta(asset)?.sector || "").trim();
     const fallback = canonicalEquitySectorLabel(fallbackRaw);
@@ -1787,6 +1824,7 @@ function renderPortfolioSectorBox() {
   const card = document.getElementById("portfolioSectorCard");
   const root = document.getElementById("portfolioSectorSummary");
   if (!card || !root) return;
+  if (!portfolioSectorMap && !portfolioSectorMapPromise) ensurePortfolioSectorMap();
 
   if (showingLiabs) {
     card.hidden = true;
@@ -1817,14 +1855,22 @@ function renderPortfolioSectorBox() {
       sector, list, value,
       pctEquities: value / equityTotal * 100,
     };
-  }).sort((a,b) => b.value - a.value);
+  }).sort((a,b) => {
+    if (a.sector === "Sector por identificar") return 1;
+    if (b.sector === "Sector por identificar") return -1;
+    return b.value - a.value;
+  });
 
   const esc = escapeHtml;
+  const distribution = rows.map((row, idx) =>
+    '<span class="portfolio-sector-distribution__part" style="--sector-index:' + idx + ';width:' + row.pctEquities.toFixed(3) + '%" title="' + esc(row.sector) + ' · ' + row.pctEquities.toFixed(1) + '%"></span>'
+  ).join('');
   root.innerHTML = '<div class="portfolio-sector-overview">' +
+    '<div class="portfolio-sector-distribution" aria-label="Distribuição da carteira por sector">' + distribution + '</div>' +
     rows.map((row, idx) => {
       const concentration = row.pctEquities >= 30
         ? '<span class="portfolio-sector-risk">Concentração</span>' : '';
-      const assetsHtml = row.list.map(asset => {
+      const assetHtml = asset => {
         const value = parseNum(asset.value);
         const inSector = row.value > 0 ? value / row.value * 100 : 0;
         const inEquities = value / equityTotal * 100;
@@ -1842,14 +1888,18 @@ function renderPortfolioSectorBox() {
           '<span>' + inEquities.toFixed(1) + '% ações + ETFs · <em class="' + gainClass + '">' + gain + '</em></span></div>' +
           research +
           '</div>';
-      }).join('');
+      };
+      const visibleAssets = row.list.slice(0, 6).map(assetHtml).join('');
+      const remainingAssets = row.list.length > 6
+        ? '<details class="portfolio-sector-more"><summary>Ver mais ' + (row.list.length - 6) + ' posições</summary><div>' + row.list.slice(6).map(assetHtml).join('') + '</div></details>'
+        : '';
 
-      return '<details class="portfolio-sector-group" ' + (idx === 0 ? 'open' : '') + '>' +
+      return '<details class="portfolio-sector-group" ' + (idx === 0 && row.sector !== "Sector por identificar" ? 'open' : '') + '>' +
         '<summary><div class="portfolio-sector-title"><span class="portfolio-sector-dot" style="--sector-index:' + idx + '"></span>' +
         '<div><strong>' + esc(row.sector) + '</strong><small>' + row.list.length + (row.list.length === 1 ? ' posição' : ' posições') + '</small></div></div>' +
         '<div class="portfolio-sector-total"><strong>' + row.pctEquities.toFixed(1) + '%</strong><small>' + fmtEUR(row.value) + ' · ações + ETFs</small></div>' +
         concentration + '<span class="portfolio-sector-chevron">›</span></summary>' +
-        '<div class="portfolio-sector-assets">' + assetsHtml + '</div></details>';
+        '<div class="portfolio-sector-assets">' + visibleAssets + remainingAssets + '</div></details>';
     }).join('') +
     '</div>';
 
@@ -4313,6 +4363,8 @@ const TICKER_DB = {
   "4BRZ.DE": {s:"ETF",r:"Europa"},
   "AAKI.DE": {s:"Tecnologia",r:"Europa"},
   "AAPL": {s:"Tecnologia",r:"EUA"},
+  "GOOG": {s:"Comunicações",r:"EUA"},
+  "GOOGL": {s:"Comunicações",r:"EUA"},
   "ABEV": {s:"Consumo Básico",r:"Europa"},
   "ABR": {s:"Financeiros",r:"EUA"},
   "ABT": {s:"Saúde",r:"EUA"},
@@ -4490,7 +4542,8 @@ const TICKER_DB = {
   "NBIS": {s:"Tecnologia",r:"EUA"},
   "NEAR.CC": {s:"Cripto",r:"Cripto"},
   "NEE": {s:"Utilidades",r:"EUA"},
-  "NESN.CH": {s:"Saúde",r:"Europa"},
+  "NESN.CH": {s:"Consumo Básico",r:"Europa"},
+  "NESN.SW": {s:"Consumo Básico",r:"Europa"},
   "NET": {s:"Tecnologia",r:"EUA"},
   "NFE": {s:"Energia",r:"EUA"},
   "NFG": {s:"Energia",r:"EUA"},
@@ -4581,7 +4634,7 @@ const TICKER_DB = {
   "TGT": {s:"Consumo Básico",r:"EUA"},
   "TRAC.CC": {s:"Cripto",r:"Cripto"},
   "TROW": {s:"Financeiros",r:"EUA"},
-  "TSLA": {s:"Tecnologia",r:"EUA"},
+  "TSLA": {s:"Consumo Cíclico",r:"EUA"},
   "TSSI": {s:"Tecnologia",r:"EUA"},
   "TTE.FR": {s:"Energia",r:"Europa"},
   "UAVS": {s:"Tecnologia",r:"EUA"},
@@ -4630,10 +4683,11 @@ const TICKER_DB = {
 // Sector + region from static DB first, then from meta (⟳ Cotações), then from ticker suffix
 function getTickerMeta(asset) {
   const ticker = (asset.ticker || "").trim().toUpperCase();
+  const yahooTicker = (asset.yahooTicker || asset.symbol || "").trim().toUpperCase();
   const name = (asset.name || "").trim().toUpperCase();
-  const lookup = ticker || name;
+  const lookup = yahooTicker || ticker || name;
   // 1. Static DB (most comprehensive)
-  const db = TICKER_DB[lookup] || TICKER_DB[name] || TICKER_DB[ticker];
+  const db = TICKER_DB[lookup] || TICKER_DB[yahooTicker] || TICKER_DB[ticker] || TICKER_DB[name];
   if (db) return { sector: db.s, region: db.r };
 
   // 2. meta from ⟳ Cotações

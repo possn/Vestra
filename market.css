@@ -162,6 +162,11 @@ body.modal-open .topbar,
 body.modal-open .bottomnav{visibility:hidden!important;pointer-events:none!important}
 body.modal-open .main{pointer-events:none!important}
 body.modal-open .market-sheet{pointer-events:auto!important}
+/* The dossier is a sibling of the active view. Hide that view while the sheet
+   owns the viewport so an underlying opportunity row cannot bleed through at
+   the bottom during iOS overscroll or a short intermediate layout. */
+body.market-sheet-open .view:not([hidden]){visibility:hidden!important}
+body.market-sheet-open #marketSheet{visibility:visible!important}
 #marketSheetContent{padding-bottom:96px!important}
 .market-detail-head{
   position:sticky!important;

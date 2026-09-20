@@ -21,6 +21,7 @@ COLUMNAR_INDEX = os.path.join(ROOT, "data", "stocks-startup.json")
 SCANNER_INDEX = os.path.join(ROOT, "data", "stocks-scanner.json")
 SHARD_DIR = os.path.join(ROOT, "data", "dossiers")
 MANIFEST = os.path.join(ROOT, "data", "dossiers-manifest.json")
+PORTFOLIO_SECTORS = os.path.join(ROOT, "data", "portfolio-sectors.json")
 
 # Startup performance budgets. The browser now prefers COLUMNAR_INDEX and falls
 # back to INDEX/SRC only when the compact payload is unavailable or invalid.
@@ -207,6 +208,21 @@ def scanner_results(row: dict) -> dict | None:
     return value if isinstance(value, dict) and value else None
 
 
+def portfolio_sector_row(row: dict) -> dict | None:
+    """Return only the identity fields needed by the portfolio sector card."""
+    sector = str(row.get("sector") or "").strip()
+    if not sector:
+        return None
+    result = {"sector": sector}
+    industry = str(row.get("industry") or "").strip()
+    quote_type = str(row.get("quote_type") or "").strip()
+    if industry:
+        result["industry"] = industry
+    if quote_type:
+        result["quote_type"] = quote_type
+    return result
+
+
 def main() -> None:
     with open(SRC, "r", encoding="utf-8") as f:
         payload = json.load(f)
@@ -230,6 +246,7 @@ def main() -> None:
     shards: dict[str, dict[str, dict]] = defaultdict(dict)
     index_rows = []
     scanner_tickers = {}
+    portfolio_sectors = {}
     manifest = {}
     for ticker, row in rows:
         key = shard_for(ticker)
@@ -239,6 +256,9 @@ def main() -> None:
         results = scanner_results(row)
         if results:
             scanner_tickers[ticker] = results
+        sector_row = portfolio_sector_row(row)
+        if sector_row:
+            portfolio_sectors[ticker] = sector_row
 
     os.makedirs(SHARD_DIR, exist_ok=True)
     for name in os.listdir(SHARD_DIR):
@@ -271,6 +291,17 @@ def main() -> None:
             "generated_at": generated_at,
             "ticker_count": len(scanner_tickers),
             "tickers": scanner_tickers,
+        }, f, ensure_ascii=False, separators=(",", ":"))
+
+    # Small on-demand identity map for the Carteira sector view. Loading the
+    # full Market startup universe here would make a portfolio-only action pay
+    # the 2 MB Market bootstrap cost.
+    with open(PORTFOLIO_SECTORS, "w", encoding="utf-8") as f:
+        json.dump({
+            "schema_version": schema_version,
+            "generated_at": generated_at,
+            "ticker_count": len(portfolio_sectors),
+            "tickers": portfolio_sectors,
         }, f, ensure_ascii=False, separators=(",", ":"))
 
     shard_sizes = {}
