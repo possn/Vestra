@@ -7261,6 +7261,18 @@ function rebuildBrokerGeneratedData() {
       });
       continue;
     }
+    if (e.type === "CASH_ADJUSTMENT") {
+      const adjustment = parseNum(e.totalEUR);
+      if (adjustment !== 0) {
+        state.transactions.push({
+          id: uid(), date: e.date, type: adjustment >= 0 ? "in" : "out", category: "Ajuste corretora",
+          amount: Math.abs(adjustment), recurring: "none",
+          notes: `${e.notes || e.actionRaw || e.type} · ${e.broker || "Corretora"}${e.sourceName ? " · " + e.sourceName : ""}`,
+          generatedFromBroker: true, sourceHash: e.sourceHash, eventKey: e.key
+        });
+      }
+      continue;
+    }
     if (e.type === "DEPOSIT" || e.type === "WITHDRAWAL") {
       state.transactions.push({
         id: uid(), date: e.date, type: e.type === "DEPOSIT" ? "in" : "out", category: e.type === "DEPOSIT" ? "Transferência corretora" : "Levantamento corretora",
