@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.72 — exact XTB snapshots and T212 adjustments. */
-const CACHE_NAME = "vestra-cache-v185";
+/* Vestra Service Worker v10.73 — reliable portfolio sector classification. */
+const CACHE_NAME = "vestra-cache-v186";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
