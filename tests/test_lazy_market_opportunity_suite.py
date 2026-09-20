@@ -20,7 +20,7 @@ class LazyMarketOpportunitySuiteTests(unittest.TestCase):
         end = LOADER.index("\n  function ensureMarketCompanions()", start)
         block = LOADER[start:end]
         base = block.index("'market-opportunities.js?v=1.2'")
-        lenses = block.index("'market-opportunity-lenses.js?v=3.0'")
+        lenses = block.index("'market-opportunity-lenses.js?v=3.1'")
         self.assertLess(base, lenses)
         self.assertIn("if (!base) return null;", block)
         self.assertIn("opportunitySuitePromise", block)
