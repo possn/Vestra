@@ -826,7 +826,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
     document.documentElement.classList.add('modal-open');
     document.body.classList.add('modal-open');
-    document.body.classList.add('market-sheet-open');
     sh.hidden=false; sh.setAttribute('aria-hidden','false');
     resetDossierViewport();
     enrichTickerLive(s);
@@ -835,7 +834,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const sh=$m('marketSheet'); if(!sh)return;
     const returnView=txt(sh.dataset.returnView);
     sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.liveReady='0'; sh.dataset.tool=''; sh.dataset.returnView='';
-    document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open'); document.body.classList.remove('market-sheet-open');
+    document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     const panel=sheetPanel(); if(panel){panel.scrollTop=0;panel.scrollLeft=0;}
     if(returnView==='assets' && typeof setView==='function') setView('assets');
   }
@@ -1496,7 +1495,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function openTool(tool){
     ensureLoaded().then(()=>{
       const sh=$m('marketSheet'), c=$m('marketSheetContent'); if(!sh||!c)return;
-      sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open'); document.body.classList.add('market-sheet-open'); sh.dataset.ticker='';
+      sh.hidden=false; sh.setAttribute('aria-hidden','false'); document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open'); sh.dataset.ticker='';
       sh.dataset.tool=tool||''; sh.dataset.returnView=tool==='portfolio'?'assets':'';
       if(tool==='portfolio'){
         const assets=portfolioAssets().slice().sort((a,b)=>portfolioValue(b)-portfolioValue(a));

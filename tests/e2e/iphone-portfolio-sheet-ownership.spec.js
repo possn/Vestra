@@ -24,7 +24,6 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   await trigger.click();
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
-  await expect(page.locator('body')).toHaveClass(/market-sheet-open/);
   await expect(page.locator('#viewMarket')).toBeVisible();
   expect(await page.evaluate(() => {
     const top = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 12);
@@ -35,7 +34,6 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   expect(await sheet.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
   await sheet.locator('.market-close-persistent').click();
   await expect(sheet).toBeHidden();
-  await expect(page.locator('body')).not.toHaveClass(/market-sheet-open/);
 
   await page.evaluate(() => window.setView('market'));
   await page.locator('[data-market-tool="portfolio"]').first().click();
