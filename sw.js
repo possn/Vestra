@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.79 — Chart.js lazy runtime and safe analysis redraw. */
-const CACHE_NAME = "vestra-cache-v192";
+/* Vestra Service Worker v10.80 — lazy CDNs no longer connect during startup. */
+const CACHE_NAME = "vestra-cache-v193";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
