@@ -20,7 +20,6 @@ class RuntimeRegressionTests(unittest.TestCase):
             "app-ui-core.js",
             "app-broker-normalization.js",
             "app-xtb-normalization.js",
-            "app-broker-identity-data.js",
             "app-broker-parsing-core.js",
             "app-file-parsing.js",
             "app-broker-import-loader.js",
@@ -38,7 +37,9 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertEqual(positions, sorted(positions), "app module dependency order changed")
         self.assertNotIn("app-broker-workbook.js", html)
         self.assertNotIn("app-broker-parsers.js", html)
+        self.assertNotIn('src="app-broker-identity-data.js', html)
         loader = read("app-broker-import-loader.js")
+        self.assertIn("app-broker-identity-data.js?v=1.0", loader)
         self.assertIn("app-broker-workbook.js?v=1.0", loader)
         self.assertIn("app-broker-parsers.js?v=1.0", loader)
         self.assertLess(

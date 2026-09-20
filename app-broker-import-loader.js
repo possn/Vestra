@@ -1,8 +1,9 @@
-/* Vestra Broker Import runtime loader v1.0 — load workbook/parsers only on import. */
+/* Vestra Broker Import runtime loader v1.1 — load identity/workbook/parsers only when needed. */
 (() => {
   'use strict';
 
   const TIMEOUT_MS = 12000;
+  let identityDataPromise = null;
   let workbookPromise = null;
   let parsersPromise = null;
 
@@ -72,6 +73,17 @@
     return workbookPromise;
   }
 
+  function ensureIdentityData() {
+    if (window.VestraBrokerIdentityData) return Promise.resolve(window.VestraBrokerIdentityData);
+    if (!identityDataPromise) {
+      identityDataPromise = load('VestraBrokerIdentityData', 'app-broker-identity-data.js?v=1.0', 'identity-data').catch(err => {
+        identityDataPromise = null;
+        throw err;
+      });
+    }
+    return identityDataPromise;
+  }
+
   function ensureParsers() {
     if (window.VestraBrokerParsers) return Promise.resolve(window.VestraBrokerParsers);
     if (!parsersPromise) {
@@ -86,9 +98,10 @@
   }
 
   window.VestraBrokerImportLoader = Object.freeze({
+    ensureIdentityData,
     ensureWorkbook,
     ensureParsers,
     timeoutMs: TIMEOUT_MS,
-    version: '1.0',
+    version: '1.1',
   });
 })();
