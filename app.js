@@ -9829,6 +9829,16 @@ async function reportActiveSwVersion() {
    and writes it into CSS custom properties that .main's padding and
    .passivebar's position are built from — so they can never drift out of sync,
    regardless of device, font size, or future content changes to either bar. */
+let fixedBarSpacingInstalled = false;
+let fixedBarSyncFrame = null;
+
+function setFixedBarHeight(root, property, height) {
+  const value = `${Math.max(0, Math.ceil(Number(height) || 0))}px`;
+  if (root.getPropertyValue(property) === value) return false;
+  root.setProperty(property, value);
+  return true;
+}
+
 function syncFixedBarHeights() {
   const nav = document.querySelector(".bottomnav");
   const bar = document.getElementById("passivebar");
@@ -9842,10 +9852,10 @@ function syncFixedBarHeights() {
     const cs = window.getComputedStyle ? window.getComputedStyle(nav) : null;
     const navHidden = nav.style.display === "none" || (cs && (cs.display === "none" || cs.visibility === "hidden"));
     if (navHidden) {
-      root.setProperty("--bottomnav-h", "0px");
+      setFixedBarHeight(root, "--bottomnav-h", 0);
     } else {
       const h = nav.getBoundingClientRect().height;
-      if (h > 0) root.setProperty("--bottomnav-h", Math.ceil(h) + "px");
+      if (h > 0) setFixedBarHeight(root, "--bottomnav-h", h);
     }
   }
   // v64e: `offsetParent` is null for position:fixed elements in WebKit/Safari —
@@ -9860,27 +9870,41 @@ function syncFixedBarHeights() {
     const hidden = bar.style.display === "none" || (cs && (cs.display === "none" || cs.visibility === "hidden"));
     if (!hidden) {
       const h = bar.getBoundingClientRect().height;
-      if (h > 0) root.setProperty("--passivebar-h", Math.ceil(h) + "px");
+      if (h > 0) setFixedBarHeight(root, "--passivebar-h", h);
     } else {
-      root.setProperty("--passivebar-h", "0px");
+      setFixedBarHeight(root, "--passivebar-h", 0);
     }
   }
 }
 
+function scheduleFixedBarSync() {
+  if (fixedBarSyncFrame !== null) return fixedBarSyncFrame;
+  const run = () => {
+    fixedBarSyncFrame = null;
+    syncFixedBarHeights();
+  };
+  fixedBarSyncFrame = typeof requestAnimationFrame === "function"
+    ? requestAnimationFrame(run)
+    : setTimeout(run, 0);
+  return fixedBarSyncFrame;
+}
+
 function setupFixedBarSpacing() {
+  if (fixedBarSpacingInstalled) return false;
+  fixedBarSpacingInstalled = true;
   syncFixedBarHeights();
   // Re-measure após fontes/conteúdo assentarem, em resize (rotação, teclado),
   // e sempre que o conteúdo da passivebar mudar (ex: números passam a 2
   // linhas num ecrã estreito depois de um valor grande de carteira).
-  setTimeout(syncFixedBarHeights, 300);
-  setTimeout(syncFixedBarHeights, 1200); // v64q: 2ª rede de segurança — fontes/imagens que só assentam mais tarde
-  window.addEventListener("resize", () => { syncFixedBarHeights(); });
-  window.addEventListener("orientationchange", () => { setTimeout(syncFixedBarHeights, 200); });
+  setTimeout(scheduleFixedBarSync, 300);
+  setTimeout(scheduleFixedBarSync, 1200); // v64q: 2ª rede de segurança — fontes/imagens que só assentam mais tarde
+  window.addEventListener("resize", scheduleFixedBarSync, { passive: true });
+  window.addEventListener("orientationchange", () => { setTimeout(scheduleFixedBarSync, 200); }, { passive: true });
   // v64q: no Safari/iOS a barra de endereço esconde/mostra durante o scroll,
   // o que muda a altura visível e o safe-area-inset SEM disparar sempre o
   // evento "resize" normal — usar visualViewport, feito para isto, quando existe.
   if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", () => { syncFixedBarHeights(); });
+    window.visualViewport.addEventListener("resize", scheduleFixedBarSync, { passive: true });
   }
   // v64r: no lugar de espaçamento reservado, esconder a passivebar durante o
   // scroll activo (desliza para fora) e voltar a mostrá-la ao parar — elimina
@@ -9891,15 +9915,16 @@ function setupFixedBarSpacing() {
     clearTimeout(scrollTimer);
     scrollTimer = setTimeout(() => {
       document.body.classList.remove("is-scrolling");
-      syncFixedBarHeights();
+      scheduleFixedBarSync();
     }, 250);
   }, { passive: true });
   const bar = document.getElementById("passivebar");
   const nav = document.querySelector(".bottomnav");
   if ("ResizeObserver" in window) {
-    if (bar) { try { new ResizeObserver(() => syncFixedBarHeights()).observe(bar); } catch (_) {} }
-    if (nav) { try { new ResizeObserver(() => syncFixedBarHeights()).observe(nav); } catch (_) {} }
+    if (bar) { try { new ResizeObserver(scheduleFixedBarSync).observe(bar); } catch (_) {} }
+    if (nav) { try { new ResizeObserver(scheduleFixedBarSync).observe(nav); } catch (_) {} }
   }
+  return true;
 }
 
 function hardResetBrokerData() {
