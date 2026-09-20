@@ -1,9 +1,9 @@
-/* Vestra Service Worker v10.77 — coherent youthful premium visual language. */
-const CACHE_NAME = "vestra-cache-v190";
+/* Vestra Service Worker v10.79 — Chart.js lazy runtime and safe analysis redraw. */
+const CACHE_NAME = "vestra-cache-v192";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
-  "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-ui-core.js", "./app-xlsx-loader.js",
+  "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-chart-loader.js", "./app-ui-core.js", "./app-xlsx-loader.js",
   "./app-broker-normalization.js", "./app-xtb-normalization.js", "./app-broker-identity-data.js",
   "./app-broker-parsing-core.js", "./app-file-parsing.js", "./app-broker-import-loader.js", "./app-broker-workbook.js", "./app-broker-parsers.js",
   "./app-market-client.js", "./app-quote-errors.js", "./app-return-assumptions.js", "./app-financial-engine.js", "./app-export-runtime.js", "./app-runtime-bridge.js",
@@ -25,7 +25,7 @@ const APP_SHELL = [
 ];
 
 const BOOTSTRAP_NETWORK_FIRST = new Set([
-  "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js", "app-ui-core.js", "app-xlsx-loader.js",
+  "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js", "app-chart-loader.js", "app-ui-core.js", "app-xlsx-loader.js",
   "app-broker-normalization.js", "app-xtb-normalization.js", "app-broker-identity-data.js", "app-broker-parsing-core.js",
   "app-file-parsing.js", "app-broker-import-loader.js", "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js", "app-quote-errors.js",
   "app-return-assumptions.js", "app-financial-engine.js", "app-export-runtime.js", "app.js", "market-runtime-loader.js", "market-live-overlay.js",

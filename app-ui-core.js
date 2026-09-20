@@ -1,4 +1,4 @@
-/* Vestra UI core v2.3 — DOM, Chart infrastructure, safe update action and canonical launch lifecycle. */
+/* Vestra UI core v2.5 — DOM, lazy Chart infrastructure, safe update action and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -388,7 +388,12 @@ function buildNiceAxis(maxValue, targetSteps = 4) {
 
 function ensureChartCtx(id, fallbackHeight = 220) {
   if (typeof Chart === "undefined") {
-    renderChartUnavailable(id, "Biblioteca de gráficos não carregada");
+    renderChartUnavailable(id, "A preparar gráfico…");
+    if (window.__vestraAppHydrated === true && window.VestraChartLoader?.ensure) {
+      window.VestraChartLoader.ensure().catch(() => {
+        renderChartUnavailable(id, "Gráfico temporariamente indisponível");
+      });
+    }
     return null;
   }
   const canvas = prepareChartCanvas(document.getElementById(id), fallbackHeight);

@@ -66,6 +66,7 @@ jobs:
           node --check app-feedback.js
           node --check app-storage.js
           node --check app-asset-identity.js
+          node --check app-chart-loader.js
           node --check app-ui-core.js
           node --check app-broker-normalization.js
           node --check app-xtb-normalization.js
@@ -107,6 +108,7 @@ jobs:
           node --check tests/runtime_global_market_search_contract.js
           node --check tests/runtime_service_worker_contract.js
           node --check tests/runtime_app_update_manager_contract.js
+          node --check tests/runtime_chart_loader_contract.js
           node --check tests/runtime_broker_workbook_contract.js
           node --check tests/runtime_portfolio_sector_contract.js
           node --check tests/runtime_app_export_contract.js
@@ -170,6 +172,8 @@ jobs:
         run: node tests/runtime_service_worker_contract.js
       - name: Runtime · safe app update ownership
         run: node tests/runtime_app_update_manager_contract.js
+      - name: Runtime · lazy Chart.js loader
+        run: node tests/runtime_chart_loader_contract.js
       - name: Runtime · Worker AI brief
         run: node --experimental-default-type=module tests/runtime_worker_ai_brief_contract.mjs
       - name: Runtime · SEC ticker map resilience

@@ -18,12 +18,18 @@ try {
   }
 } catch (_) {}
 
-try {
-  if (typeof window !== "undefined" && window.Chart) {
+function configureChartRuntime() {
+  try {
+    if (typeof window === "undefined" || !window.Chart) return false;
+    Chart.defaults.animation = { duration: 0 };
+    Chart.defaults.font.family = "inherit";
     Chart.defaults.responsive = true;
     Chart.defaults.maintainAspectRatio = false;
-  }
-} catch (_) {}
+    return true;
+  } catch (_) { return false; }
+}
+
+configureChartRuntime();
 
 /* ─── UTILS — shared pure helpers live in app-utils.js ───────── */
 const {
@@ -756,6 +762,13 @@ function scheduleRenderView(view, opts = {}) {
   if (opts && opts.sync) run();
   else pendingViewRenderFrame = requestAnimationFrame(run);
 }
+
+window.addEventListener("vestra:charts-ready", () => {
+  if (!configureChartRuntime()) return;
+  markViewsDirty(RENDERABLE_VIEWS);
+  scheduleRenderView(currentView, { force: true });
+  try { window.VestraUiCore?.scheduleChartStabilization?.(document); } catch (_) {}
+});
 
 // v18: cache de elementos DOM para setView — evita querySelectorAll em cada navegação
 let _viewEls = null, _navEls = null, _sideNavEls = null;
@@ -5065,7 +5078,7 @@ function renderRankingsPanel() {
   var secYield = rankSection("Maior yield anual", yieldItems, getAssetPassiveRatePct, function(a,v){return v.toFixed(2)+"%/ano";}, function(){return "var(--green)";}, "🎯");
 
   // Totals
-  var totalInvested = gainers.reduce(function(s,a){return s+parseNum(a.costBasis);},0);
+  var totalInvested = validPerformance.reduce(function(s,a){return s+parseNum(a.costBasis);},0);
   var totalValue    = allAssets.reduce(function(s,a){return s+parseNum(a.value);},0);
   var totalGain     = totalValue - totalInvested;
   var totalGainPct  = totalInvested>0?totalGain/totalInvested*100:0;
@@ -12179,15 +12192,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (pruneGeneratedDividendSummaries()) changed = true;
     if (changed) await saveStateAsync();
   } catch (e) { console.error("Falha na reconciliação inicial dos dividendos/corretoras", e); }
-  // v18: Chart.js global defaults — animações reduzidas para performance
-  try {
-    if (typeof Chart !== "undefined") {
-      Chart.defaults.animation = { duration: 0 };
-      Chart.defaults.font.family = "inherit";
-      Chart.defaults.responsive = true;
-      Chart.defaults.maintainAspectRatio = false;
-    }
-  } catch (_) {}
+  configureChartRuntime();
   try { if (syncBrokerAssetDividendYieldsFromRecords()) await saveStateAsync(); } catch (e) { console.error("Falha ao sincronizar dividendos das posições", e); }
   try { ensureAllChartCanvasesReady(); } catch (e) { console.error("Falha ao preparar gráficos", e); }
   try { wire(); } catch (e) { console.error("Falha no binding dos botões", e); }

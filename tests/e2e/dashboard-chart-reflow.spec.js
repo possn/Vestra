@@ -1,11 +1,26 @@
 const { test, expect } = require('@playwright/test');
 
+test('iPhone/WebKit: portfolio hydration does not depend on the Chart.js CDN', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.route('**/chart.js@4.4.3/**', route => route.abort());
+
+  await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true);
+
+  expect(await page.evaluate(() => typeof window.Chart)).toBe('undefined');
+  await expect(page.locator('#viewDashboard')).toBeVisible();
+  expect(await page.locator('#viewDashboard .chartFallback').count()).toBeGreaterThan(0);
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
+
 test('iPhone/WebKit: dashboard charts fill their cards after render and viewport reflow', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraUiCore?.scheduleChartStabilization));
+  await page.evaluate(() => window.VestraChartLoader.ensure());
 
   await page.evaluate(() => {
     state.assets = [
