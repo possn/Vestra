@@ -15,7 +15,7 @@ class DividendProjectionEngineTests(unittest.TestCase):
   def test_bundle_versions(self):
     i=read("index.html"); sw=read("sw.js")
     self.assertIn("app-financial-engine.js?v=1.2",i)
-    self.assertIn("app.js?v=20260920v10",i)
+    self.assertIn("app.js?v=20260920v11",i)
     self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
     self.assertIn("staleWhileRevalidate",sw)
     self.assertIn('./market-live-overlay.js',sw)

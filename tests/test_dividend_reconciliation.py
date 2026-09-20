@@ -17,7 +17,7 @@ class DividendReconciliationTests(unittest.TestCase):
   def test_bundle(self):
     i=read('index.html'); sw=read('sw.js')
     self.assertIn('app-broker-normalization.js?v=1.1',i)
-    self.assertIn('app.js?v=20260920v10',i)
+    self.assertIn('app.js?v=20260920v11',i)
     self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
     self.assertIn('staleWhileRevalidate',sw)
     self.assertIn('./market-live-overlay.js',sw)
