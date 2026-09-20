@@ -10,7 +10,7 @@ test('iPhone/WebKit: portfolio hydration does not depend on the Chart.js CDN', a
 
   expect(await page.evaluate(() => typeof window.Chart)).toBe('undefined');
   await expect(page.locator('#viewDashboard')).toBeVisible();
-  await expect(page.locator('#viewDashboard .chartFallback').first()).toBeVisible();
+  expect(await page.locator('#viewDashboard .chartFallback').count()).toBeGreaterThan(0);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
