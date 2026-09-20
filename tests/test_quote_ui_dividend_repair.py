@@ -43,7 +43,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     self.assertIn('parseNum(d.amount) - tax',norm)
   def test_bundle_generation(self):
     i=read('index.html'); sw=read('sw.js')
-    self.assertIn('app-broker-parsing-core.js?v=1.1',i)
+    self.assertIn('app-broker-parsing-core.js?v=1.2',i)
     self.assertIn('app-asset-identity.js?v=20260829v2',i)
     self.assertIn('app.js?v=20260920v2',i)
     self.assertIn('const CACHE_NAME = "vestra-cache-',sw)

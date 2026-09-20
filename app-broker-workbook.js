@@ -1,10 +1,10 @@
-/* Vestra broker workbook/file readers v1.0 — file IO + workbook structure only. */
+/* Vestra broker workbook/file readers v1.1 — file IO + workbook structure only. */
 (() => {
   'use strict';
 
-  const { csvToObjects, normalizeRow } = window.VestraFileParsing || {};
+  const { csvToObjects, normKey, normalizeRow } = window.VestraFileParsing || {};
   const { detectBrokerRowsFormat } = window.VestraBrokerParsingCore || {};
-  if (![csvToObjects, normalizeRow, detectBrokerRowsFormat].every(fn => typeof fn === 'function')) {
+  if (![csvToObjects, normKey, normalizeRow, detectBrokerRowsFormat].every(fn => typeof fn === 'function')) {
     throw new Error('Broker workbook dependencies were not loaded before app-broker-workbook.js');
   }
 

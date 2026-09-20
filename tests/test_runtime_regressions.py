@@ -20,8 +20,8 @@ class RuntimeRegressionTests(unittest.TestCase):
             "app-ui-core.js",
             "app-broker-normalization.js",
             "app-xtb-normalization.js",
-            "app-broker-parsing-core.js",
             "app-file-parsing.js",
+            "app-broker-parsing-core.js",
             "app-broker-import-loader.js",
             "app-market-client.js",
             "app-quote-errors.js",
@@ -40,11 +40,11 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertNotIn('src="app-broker-identity-data.js', html)
         loader = read("app-broker-import-loader.js")
         self.assertIn("app-broker-identity-data.js?v=1.0", loader)
-        self.assertIn("app-broker-workbook.js?v=1.0", loader)
-        self.assertIn("app-broker-parsers.js?v=1.0", loader)
+        self.assertIn("app-broker-workbook.js?v=1.1", loader)
+        self.assertIn("app-broker-parsers.js?v=1.1", loader)
         self.assertLess(
-            loader.index("app-broker-workbook.js?v=1.0"),
-            loader.index("app-broker-parsers.js?v=1.0"),
+            loader.index("app-broker-workbook.js?v=1.1"),
+            loader.index("app-broker-parsers.js?v=1.1"),
         )
 
     def test_all_app_modules_are_syntax_checked_by_ci(self):
@@ -52,7 +52,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         modules = [
             "app-utils.js", "app-feedback.js", "app-storage.js", "app-asset-identity.js",
             "app-ui-core.js", "app-broker-normalization.js", "app-xtb-normalization.js",
-            "app-broker-identity-data.js", "app-broker-parsing-core.js", "app-file-parsing.js",
+            "app-broker-identity-data.js", "app-file-parsing.js", "app-broker-parsing-core.js",
             "app-broker-import-loader.js", "app-broker-workbook.js", "app-broker-parsers.js", "app-market-client.js",
             "app-quote-errors.js", "app-return-assumptions.js", "app-financial-engine.js",
             "app.js", "market.js", "market-data-loader.js", "market-data-health.js",

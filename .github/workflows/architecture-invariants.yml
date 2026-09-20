@@ -105,6 +105,7 @@ jobs:
           node --check tests/runtime_market_row_ui_contract.js
           node --check tests/runtime_service_worker_contract.js
           node --check tests/runtime_app_update_manager_contract.js
+          node --check tests/runtime_broker_workbook_contract.js
           node --check politicians.js
           node --check worker.js
           node --check worker-router.js
@@ -133,6 +134,8 @@ jobs:
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_market_live_overlay_does_not_rerender_open_dossier
       - name: Runtime · storage contract
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_storage_contract_is_stable
+      - name: Runtime · broker workbook headers
+        run: node tests/runtime_broker_workbook_contract.js
       - name: Runtime · learned universe central POST
         run: node tests/runtime_learned_universe_contract.js
       - name: Runtime · market data health semantics
