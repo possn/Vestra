@@ -21,6 +21,11 @@ class StartupScriptDeferTests(unittest.TestCase):
         attrs = self.script_tag("app-chart-loader.js?v=1.0")
         self.assertRegex(attrs, r"\bdefer\b")
 
+    def test_lazy_cdns_do_not_preconnect_during_startup(self):
+        self.assertNotIn('rel="preconnect"', self.index)
+        self.assertNotIn('rel="dns-prefetch"', self.index)
+        self.assertNotIn('href="https://cdn.jsdelivr.net"', self.index)
+
     def test_lazy_xlsx_loader_is_deferred_too(self):
         attrs = self.script_tag("app-xlsx-loader.js?v=1.0")
         self.assertRegex(attrs, r"\bdefer\b")
