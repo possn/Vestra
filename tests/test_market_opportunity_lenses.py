@@ -29,7 +29,10 @@ class MarketOpportunityLensesTests(unittest.TestCase):
         self.assertIn("document.addEventListener('change',deferNativeSectorCommit,true)", self.source)
         self.assertNotIn("window.VestraMarketOpportunities?.refresh?.(activeLens,selected)", self.source)
         self.assertNotIn("refreshAfterSectorSelection", self.source)
-        self.assertIn("version:'3.0'", self.source)
+        self.assertIn("version:'3.1'", self.source)
+        self.assertIn("const root=document.getElementById('marketPrimary');if(!root)return", self.source)
+        self.assertIn("observer.observe(root,{childList:true,subtree:true})", self.source)
+        self.assertNotIn("observe(document.body", self.source)
         self.assertIn('"./market-opportunity-lenses.css"', self.sw)
 
 

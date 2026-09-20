@@ -1,4 +1,4 @@
-/* Vestra Market Opportunity Lenses v3.0 — strategy controls over independent full-universe rankings. */
+/* Vestra Market Opportunity Lenses v3.1 — scoped strategy controls over full-universe rankings. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -109,10 +109,12 @@
     style();
     const canonical=window.VestraMarketOpportunities?.activeLens;if(LENSES.has(canonical))activeLens=canonical;
     refreshUi();
+    const root=document.getElementById('marketPrimary');if(!root)return;
     let pending=false;
-    new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;refreshUi();});}).observe(document.body,{childList:true,subtree:true});
+    const observer=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;refreshUi();});});
+    observer.observe(root,{childList:true,subtree:true});
     window.addEventListener('vestra:market-ready',refreshUi);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'3.0'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'3.1'});
 })();

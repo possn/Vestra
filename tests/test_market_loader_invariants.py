@@ -66,7 +66,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertNotIn('src="market-opportunity-lenses.js', index)
         self.assertIn("market-metals.js?v=1.0", universe)
         self.assertIn("market-opportunities.js?v=1.2", universe)
-        self.assertIn("market-opportunity-lenses.js?v=3.0", universe)
+        self.assertIn("market-opportunity-lenses.js?v=3.1", universe)
         self.assertIn("const etfReady = ensureMarketCompanions();", universe)
         self.assertIn("await etfReady;", universe)
         self.assertIn("market-static-universe.js?v=1.16", index)

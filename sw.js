@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.68 — lazy dossier data runtime. */
-const CACHE_NAME = "vestra-cache-v181";
+/* Vestra Service Worker v10.69 — scope opportunity observer to Market. */
+const CACHE_NAME = "vestra-cache-v182";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
