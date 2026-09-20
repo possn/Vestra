@@ -19,7 +19,6 @@ class RuntimeRegressionTests(unittest.TestCase):
             "app-asset-identity.js",
             "app-ui-core.js",
             "app-broker-normalization.js",
-            "app-xtb-normalization.js",
             "app-file-parsing.js",
             "app-broker-parsing-core.js",
             "app-broker-import-loader.js",
@@ -38,8 +37,10 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertNotIn("app-broker-workbook.js", html)
         self.assertNotIn("app-broker-parsers.js", html)
         self.assertNotIn('src="app-broker-identity-data.js', html)
+        self.assertNotIn('src="app-xtb-normalization.js', html)
         loader = read("app-broker-import-loader.js")
         self.assertIn("app-broker-identity-data.js?v=1.0", loader)
+        self.assertIn("app-xtb-normalization.js?v=1.0", loader)
         self.assertIn("app-broker-workbook.js?v=1.3", loader)
         self.assertIn("app-broker-parsers.js?v=1.2", loader)
         self.assertLess(

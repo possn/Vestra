@@ -45,7 +45,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     i=read('index.html'); sw=read('sw.js')
     self.assertIn('app-broker-parsing-core.js?v=1.3',i)
     self.assertIn('app-asset-identity.js?v=20260829v2',i)
-    self.assertIn('app.js?v=20260920v7',i)
+    self.assertIn('app.js?v=20260920v8',i)
     self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
     self.assertIn('staleWhileRevalidate',sw)
     self.assertIn('./market-live-overlay.js',sw)

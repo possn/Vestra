@@ -1,9 +1,10 @@
-/* Vestra Broker Import runtime loader v1.4 — load identity/workbook/parsers only when needed. */
+/* Vestra Broker Import runtime loader v1.5 — load broker-only helpers on demand. */
 (() => {
   'use strict';
 
   const TIMEOUT_MS = 12000;
   let identityDataPromise = null;
+  let xtbNormalizationPromise = null;
   let workbookPromise = null;
   let parsersPromise = null;
 
@@ -84,10 +85,21 @@
     return identityDataPromise;
   }
 
+  function ensureXtbNormalization() {
+    if (window.VestraXtbNormalization) return Promise.resolve(window.VestraXtbNormalization);
+    if (!xtbNormalizationPromise) {
+      xtbNormalizationPromise = load('VestraXtbNormalization', 'app-xtb-normalization.js?v=1.0', 'xtb-normalization').catch(err => {
+        xtbNormalizationPromise = null;
+        throw err;
+      });
+    }
+    return xtbNormalizationPromise;
+  }
+
   function ensureParsers() {
     if (window.VestraBrokerParsers) return Promise.resolve(window.VestraBrokerParsers);
     if (!parsersPromise) {
-      parsersPromise = ensureWorkbook()
+      parsersPromise = Promise.all([ensureWorkbook(), ensureXtbNormalization()])
         .then(() => load('VestraBrokerParsers', 'app-broker-parsers.js?v=1.2', 'parsers'))
         .catch(err => {
           parsersPromise = null;
@@ -99,9 +111,10 @@
 
   window.VestraBrokerImportLoader = Object.freeze({
     ensureIdentityData,
+    ensureXtbNormalization,
     ensureWorkbook,
     ensureParsers,
     timeoutMs: TIMEOUT_MS,
-    version: '1.4',
+    version: '1.5',
   });
 })();
