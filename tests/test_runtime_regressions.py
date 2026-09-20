@@ -40,10 +40,10 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertNotIn('src="app-broker-identity-data.js', html)
         loader = read("app-broker-import-loader.js")
         self.assertIn("app-broker-identity-data.js?v=1.0", loader)
-        self.assertIn("app-broker-workbook.js?v=1.1", loader)
+        self.assertIn("app-broker-workbook.js?v=1.2", loader)
         self.assertIn("app-broker-parsers.js?v=1.1", loader)
         self.assertLess(
-            loader.index("app-broker-workbook.js?v=1.1"),
+            loader.index("app-broker-workbook.js?v=1.2"),
             loader.index("app-broker-parsers.js?v=1.1"),
         )
 

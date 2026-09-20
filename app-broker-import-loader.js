@@ -1,4 +1,4 @@
-/* Vestra Broker Import runtime loader v1.2 — load identity/workbook/parsers only when needed. */
+/* Vestra Broker Import runtime loader v1.3 — load identity/workbook/parsers only when needed. */
 (() => {
   'use strict';
 
@@ -64,7 +64,7 @@
   function ensureWorkbook() {
     if (window.VestraBrokerWorkbook) return Promise.resolve(window.VestraBrokerWorkbook);
     if (!workbookPromise) {
-      workbookPromise = load('VestraBrokerWorkbook', 'app-broker-workbook.js?v=1.1', 'workbook')
+      workbookPromise = load('VestraBrokerWorkbook', 'app-broker-workbook.js?v=1.2', 'workbook')
         .catch(err => {
           workbookPromise = null;
           throw err;
@@ -102,6 +102,6 @@
     ensureWorkbook,
     ensureParsers,
     timeoutMs: TIMEOUT_MS,
-    version: '1.2',
+    version: '1.3',
   });
 })();

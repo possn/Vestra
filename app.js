@@ -8044,102 +8044,10 @@ function clearBrokerImports() {
    Detecta formato automaticamente pelo nome/tipo do ficheiro
 ─────────────────────────────────────────────────────────────── */
 
-/* ─── CATEGORIZAÇÃO AUTOMÁTICA ────────────────────────────────
-   Reconhece padrões comuns em descrições de extractos bancários PT
-─────────────────────────────────────────────────────────────── */
-function autoCategorise(desc, dir) {
-  const d = normStr(desc || "");
-
-  // Entradas específicas
-  if (dir === "in") {
-    if (/salario|vencimento|remuneracao|ordenado/.test(d)) return "Salário";
-    if (/subsidio|sub\. ?ferias|sub\. ?natal/.test(d)) return "Subsídio";
-    if (/renda|aluguer|arrendamento/.test(d)) return "Renda recebida";
-    if (/dividendo|dividend/.test(d)) return "Dividendos";
-    if (/reembolso|devolucao|devol\./.test(d)) return "Reembolso";
-    if (/transferencia de|trf\. de|trf\.imed\. de|recebido de/.test(d)) return "Transferência recebida";
-    if (/mb way/.test(d) && dir === "in") return "MB Way recebido";
-    if (/transferencia entre contas/.test(d)) return "Transferência entre contas";
-    if (/^poupan|pouoanca|poupanca noutra/.test(d)) return "Poupança própria";
-    if (/mesada pedro|mesada miudos/.test(d)) return "Mesada";
-    if (/constituicao de d\.p|constituicao de dp/.test(d)) return "Constituição DP";
-    if (/irs|at |autoridade tributaria/.test(d)) return "Reembolso IRS";
-    if (/seguranca social|seg\. social/.test(d)) return "Segurança Social";
-    if (/pensao|reforma/.test(d)) return "Pensão";
-  }
-
-  // Saídas — habitação
-  if (/hipoteca|credito habitacao|credito \/ habitacao|ch /.test(d)) return "Crédito habitação";
-  if (/condominio|cond\./.test(d)) return "Condomínio";
-  if (/renda|aluguer/.test(d) && dir === "out") return "Renda";
-  if (/agua|aguas de|aguas do/.test(d)) return "Água";
-  if (/luz|eletricidade|edp|ibelectra|e\.on/.test(d)) return "Electricidade";
-  if (/gas |galp|gas natural/.test(d)) return "Gás";
-  if (/internet|meo|nos |vodafone|nowo|altice/.test(d)) return "Telecomunicações";
-
-  // Saídas — seguros
-  if (/seguro de vida/.test(d)) return "Seguro de vida";
-  if (/seguro multi.riscos|seguro multiriscos/.test(d)) return "Seguro multirriscos";
-  if (/seguro |ageas|fidelidade|tranquilidade|zurich|allianz|chubb/.test(d)) return "Seguros";
-
-  // Saídas — transportes
-  if (/via verde|autoestrada/.test(d)) return "Via Verde";
-  if (/combustivel|galp|bp |repsol|shell/.test(d)) return "Combustível";
-  if (/comboio|cp |metro |autocarro|uber|bolt/.test(d)) return "Transportes";
-  if (/estacionamento|parque/.test(d)) return "Estacionamento";
-  if (/levantamento|atm|multibanco/.test(d)) return "Levantamento";
-
-  // Saídas — alimentação
-  if (/continente|pingo doce|lidl|aldi|minipreco|minipreço|mercadona|supermercado/.test(d)) return "Supermercado";
-  if (/restaurante|cafe |snack|pizza|mcdonalds|kfc|nandos|sushi/.test(d)) return "Restaurante";
-  if (/padaria|pastelaria|confeitaria/.test(d)) return "Padaria";
-
-  // Saídas — saúde
-  if (/farmacia|farmácia|medicina|clinica|hospital|dentista|consultorio/.test(d)) return "Saúde";
-  if (/ginasio|gym|fitness|coolgym|holmes|virgin/.test(d)) return "Ginásio";
-
-  // Saídas — finanças
-  if (/imposto|irs |iva |iuc |imt |at |fisco|tributaria/.test(d)) return "Impostos";
-  if (/comissao|comissão|manutencao conta/.test(d)) return "Comissões bancárias";
-  if (/deposito a prazo|constituicao de d\.p|dp |d\.p\./.test(d)) return "Constituição DP";
-  if (/ppr |plano poupanca|subscricao ppr/.test(d)) return "PPR";
-  if (/investimento|subscricao|fundo/.test(d)) return "Investimento";
-  // Transferências internas (poupança, entre contas próprias, mesadas)
-  if (/^poupan|pouoanca|poupanca noutra/.test(d)) return "Poupança própria";
-  if (/mesada pedro|mesada miudos/.test(d)) return "Mesada";
-  if (/transferencia entre contas/.test(d)) return "Transferência entre contas";
-  if (/cred\.|credito consumo|credito pessoal/.test(d)) return "Crédito pessoal";
-  if (/cartao|pagamento de conta cartao/.test(d)) return "Cartão de crédito";
-
-  // Saídas — educação
-  if (/escola|colegio|universidade|propina|aulas|explicador/.test(d)) return "Educação";
-
-  // Saídas — lazer
-  if (/netflix|spotify|amazon|apple\.com|google|disney|hbo/.test(d)) return "Subscrições";
-  if (/cinema|teatro|concerto|bilhete/.test(d)) return "Lazer";
-
-  // Transferências e MB Way genéricos
-  if (/mb way para|mb way emitida|trf\. mb way para/.test(d)) return "MB Way enviado";
-  if (/transferencia para|trf\. para|transferencia emitida|trf\. emitida/.test(d)) return "Transferência enviada";
-  if (/transferencia entre contas/.test(d)) return "Transferência entre contas";
-
-  // Serviços municipais
-  if (/servicos municip|camara|municipal|municipio/.test(d)) return "Serviços municipais";
-
-  // Transferências emitidas (Revolut, MB Way, TRF imediata)
-  if (/trf\.imed\. p\/|trf\.imed\.para|transferencia para revolut|para revolut/.test(d)) return "Transferência poupança";
-  if (/mb way/.test(d) && dir === "out") return "MB Way enviado";
-
-  // Quotas / associações
-  if (/quota mensal|quota|varzea de sintra|recreativa|associacao|sociedade recreativa/.test(d)) return "Quotas associações";
-
-  // Fallback
-  return dir === "in" ? "Outros recebimentos" : "Outras despesas";
-}
-
 async function importBankFile(file) {
   if (!file) throw new Error("Sem ficheiro.");
-  const { fileToText } = await ensureBrokerWorkbookRuntime();
+  const { fileToText, categoriseBankTransaction } = await ensureBrokerWorkbookRuntime();
+  if (typeof categoriseBankTransaction !== "function") throw new Error("Categorização bancária indisponível.");
   const name = file.name.toLowerCase();
   let text = "";
   let parsed = [];
@@ -8325,7 +8233,7 @@ async function importBankFile(file) {
     const tx = {
       id: uid(),
       type: dir,
-      category: autoCategorise(r.desc, dir),
+      category: categoriseBankTransaction(r.desc, dir),
       amount,
       date: normalizeDate(r.date) || r.date,
       recurring: "none",
