@@ -23,7 +23,9 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         index = read("index.html")
         self.assertEqual(index.count('src="app-utils.js'), 1)
         self.assertIn('market-data-loader.js?v=2.6', index)
-        self.assertIn('portfolio-sheet-navigation.js?v=1.5', index)
+        runtime_loader = read("market-runtime-loader.js")
+        self.assertNotIn('src="portfolio-sheet-navigation.js', index)
+        self.assertIn('portfolio-sheet-navigation.js?v=1.5', runtime_loader)
 
     def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
         market = read("market.js")

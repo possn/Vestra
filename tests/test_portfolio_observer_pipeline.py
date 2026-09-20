@@ -82,8 +82,11 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
 
     def test_static_bundle_keeps_canonical_order(self):
         index=read("index.html")
+        runtime_loader=read("market-runtime-loader.js")
         loader=read("market-static-universe.js")
-        self.assertLess(index.index("portfolio-collapsibles.js"), index.index("portfolio-card-classifier.js"))
+        self.assertNotIn('src="portfolio-collapsibles.js',index)
+        self.assertNotIn('src="portfolio-card-classifier.js',index)
+        self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-portfolio-focus.js?v=1.1",
             "vestra-swap-lab.js?v=1.1",

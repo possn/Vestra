@@ -1,9 +1,10 @@
-/* Vestra Market runtime loader v1.2 — defer market core + enhancements until first use. */
+/* Vestra Market runtime loader v1.3 — defer market core + portfolio helpers until first use. */
 (() => {
   'use strict';
 
   const SRC = 'market.js?v=20260920v1';
   const TIMEOUT_MS = 12000;
+  let portfolioHelpersPromise = null;
   let helpersPromise = null;
   let enhancementsPromise = null;
   let loadPromise = null;
@@ -62,6 +63,27 @@
     });
   }
 
+  function ensurePortfolioHelpers() {
+    if (
+      window.VestraNavigation &&
+      window.VestraPortfolioCollapsibles &&
+      window.VestraPortfolioCardClassifier
+    ) return Promise.resolve();
+
+    if (!portfolioHelpersPromise) {
+      // Navigation must exist before portfolio rows can open dossiers. The
+      // classifier consumes the attributes installed by collapsibles.
+      portfolioHelpersPromise = loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.5')
+        .then(() => loadHelper('VestraPortfolioCollapsibles', 'portfolio-collapsibles.js?v=1.2'))
+        .then(() => loadHelper('VestraPortfolioCardClassifier', 'portfolio-card-classifier.js?v=1.2'))
+        .catch(err => {
+          portfolioHelpersPromise = null;
+          throw err;
+        });
+    }
+    return portfolioHelpersPromise;
+  }
+
   function ensureHelpers() {
     if (
       window.VestraMarketLiveOverlay &&
@@ -70,7 +92,10 @@
       window.VestraMarketWatchSnapshots &&
       window.VestraMarketDossierSignals &&
       window.VestraMarketSearchSuggestions &&
-      window.VestraMarketRowUI
+      window.VestraMarketRowUI &&
+      window.VestraNavigation &&
+      window.VestraPortfolioCollapsibles &&
+      window.VestraPortfolioCardClassifier
     ) return Promise.resolve();
 
     if (!helpersPromise) {
@@ -82,6 +107,7 @@
         loadHelper('VestraMarketDossierSignals', 'market-dossier-signals.js?v=1.0'),
         loadHelper('VestraMarketSearchSuggestions', 'market-search-suggestions.js?v=1.2'),
         loadHelper('VestraMarketRowUI', 'market-row-ui.js?v=1.0'),
+        ensurePortfolioHelpers(),
       ]).catch(err => {
         helpersPromise = null;
         throw err;
@@ -132,7 +158,7 @@
           return;
         }
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.2' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.3' } }));
         } catch (_) {}
         resolve(window.VestraMarket);
       };
@@ -192,9 +218,10 @@
   window.VestraMarketLoader = Object.freeze({
     ensure,
     ensureHelpers,
+    ensurePortfolioHelpers,
     ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.2',
+    version: '1.3',
   });
 })();

@@ -17,7 +17,8 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
         for module in ('portfolio-collapsibles.js?v=1.2', 'portfolio-card-classifier.js?v=1.2'):
-            self.assertIn(module, h)
+            self.assertIn(module, runtime_loader)
+            self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.1'):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
