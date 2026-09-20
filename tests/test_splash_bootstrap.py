@@ -28,7 +28,7 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('beat any stale inline opacity/display writes', UI)
 
     def test_base_styles_own_single_entrance_animation(self):
-        self.assertIn('Vestra UI core v2.5', UI)
+        self.assertIn('Vestra UI core v2.6', UI)
         self.assertIn('animation:vestraMarkIn .72s', BASE)
         self.assertIn('animation:vestraCopyIn .55s .14s', BASE)
         self.assertIn('animation:vestraCopyIn .55s .22s', BASE)
@@ -40,13 +40,14 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('must not replace the\n   animation-name after parse', UI)
         self.assertIn('Do not swap animation names here', UI)
 
-    def test_release_keeps_single_fade_owner_and_existing_hold_contract(self):
-        self.assertIn('copyReadyMs = 2000', UI)
-        self.assertIn('minimumVisibleMs = 4000', UI)
-        self.assertIn('failsafeMs = 6200', UI)
-        self.assertIn('transition:opacity .68s cubic-bezier(.4,0,.2,1)!important', UI)
+    def test_release_keeps_single_fade_owner_and_short_hold_contract(self):
+        self.assertIn('copyReadyMs = 900', UI)
+        self.assertIn('minimumVisibleMs = 1500', UI)
+        self.assertIn('failsafeMs = 4000', UI)
+        self.assertIn('transition:opacity .52s cubic-bezier(.4,0,.2,1)!important', UI)
+        self.assertIn('never block an already-hydrated portfolio for several extra seconds', UI)
         self.assertIn("splash.classList.add('vestra-splash--leaving')", UI)
-        self.assertIn('}, 720);', UI)
+        self.assertIn('}, 560);', UI)
 
     def test_external_return_uses_hydration_shield_instead_of_exposing_empty_dashboard(self):
         self.assertIn("EXTERNAL_RETURN_KEY = 'vestra:external-return-v1'", UI)
