@@ -107,6 +107,7 @@ jobs:
           node --check tests/runtime_service_worker_contract.js
           node --check tests/runtime_app_update_manager_contract.js
           node --check tests/runtime_broker_workbook_contract.js
+          node --check tests/runtime_portfolio_sector_contract.js
           node --check tests/runtime_app_export_contract.js
           node --check politicians.js
           node --check worker.js
@@ -138,6 +139,8 @@ jobs:
         run: python -m unittest -v tests.test_runtime_regressions.RuntimeRegressionTests.test_storage_contract_is_stable
       - name: Runtime · broker workbook headers
         run: node tests/runtime_broker_workbook_contract.js
+      - name: Runtime · portfolio sector classification
+        run: node tests/runtime_portfolio_sector_contract.js
       - name: Runtime · lazy application exports
         run: node tests/runtime_app_export_contract.js
       - name: Runtime · learned universe central POST

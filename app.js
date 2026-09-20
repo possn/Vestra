@@ -1786,34 +1786,60 @@ function canonicalEquitySectorLabel(raw) {
   return aliases.get(key) || "";
 }
 
-function inferEtfSector(asset) {
+function inferPortfolioSectorTheme(asset) {
   const hay = [
     asset?.name, asset?.ticker, asset?.yahooTicker, asset?.symbol,
     asset?.meta?.industry, asset?.meta?.category, asset?.meta?.fundFamily
   ].filter(Boolean).join(" ").toLowerCase()
    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-  if (/semiconductor|technology|tecnolog|software|cyber|cloud|artificial intelligence|\bai\b/.test(hay)) return "Tecnologia";
+  if (/real estate|property|reit/.test(hay)) return "Imobiliário";
+  if (/physical (?:gold|silver|platinum|palladium)|\b(?:copper|aluminium|aluminum|nickel|lithium)\b|rare earth|strategic metals|metal miners?|gold producers?|mining/.test(hay)) return "Materiais";
   if (/healthcare|health care|biotech|pharma|medical/.test(hay)) return "Saúde";
   if (/financial|bank|insurance|fintech/.test(hay)) return "Financeiro / Bancos";
+  if (/semiconductor|technology|tecnolog|tech100|software|cyber|cloud|artificial intelligence|\bai\b|robotic|quantum comput/.test(hay)) return "Tecnologia";
   if (/consumer discretionary|retail|leisure|travel|automotive|autos?\b/.test(hay)) return "Consumo discricionário";
   if (/consumer staples|food|beverage|grocery|staples/.test(hay)) return "Consumo básico";
   if (/industrial|aerospace|defen[cs]e|infrastructure|robotics/.test(hay)) return "Industriais";
   if (/materials|material|mining|miners|metals|copper|lithium|rare earth/.test(hay)) return "Materiais";
   if (/communication|telecom|media/.test(hay)) return "Comunicação / Serviços";
-  if (/energy|oil|gas|uranium|nuclear|solar|clean energy/.test(hay)) return "Energia";
+  if (/natural gas|oil & gas|petroleum|uranium|nuclear|solar|clean energy|energy sector|energy trust/.test(hay)) return "Energia";
   if (/utilities|utility|water/.test(hay)) return "Utilities";
-  if (/real estate|property|reit/.test(hay)) return "Imobiliário";
+  return "";
+}
+
+function inferEtfSector(asset) {
+  const thematic = inferPortfolioSectorTheme(asset);
+  if (thematic) return thematic;
   return "ETF diversificado";
 }
 
 let portfolioSectorMap = null;
 let portfolioSectorMapPromise = null;
 
+const PORTFOLIO_SECTOR_TICKER_ALIASES = Object.freeze({
+  "NFC": ["NFC.DE", "NFLX"],
+  "UT8": ["UBER"],
+  "UT8.DE": ["UBER"],
+  "OMV": ["OMV.DE"],
+  "OMV.VI": ["OMV.DE"],
+});
+
+const PORTFOLIO_SECTOR_OVERRIDES = Object.freeze({
+  "NSIS-B.CO": "Materiais",
+  "NZYMB.DK": "Materiais",
+  "ADPT": "Saúde",
+  "AMBA": "Tecnologia",
+  "INMD": "Saúde",
+  "DXYZ": "Tecnologia",
+  "DN3": "Financeiro / Bancos",
+});
+
 function portfolioSectorTickerCandidates(asset) {
-  return [...new Set([asset?.yahooTicker, asset?.ticker, asset?.symbol]
+  const direct = [asset?.yahooTicker, asset?.ticker, asset?.symbol]
     .map(value => String(value || "").trim().toUpperCase())
-    .filter(Boolean))];
+    .filter(Boolean);
+  return [...new Set(direct.flatMap(ticker => [ticker, ...(PORTFOLIO_SECTOR_TICKER_ALIASES[ticker] || [])]))];
 }
 
 function ensurePortfolioSectorMap() {
@@ -1862,12 +1888,20 @@ function portfolioEquitySector(asset) {
     if (mappedSector) return mappedSector;
   }
 
+  for (const ticker of portfolioSectorTickerCandidates(asset)) {
+    const override = PORTFOLIO_SECTOR_OVERRIDES[ticker];
+    if (override) return override;
+  }
+
   try {
     const fallbackRaw = String(getTickerMeta(asset)?.sector || "").trim();
     const fallback = canonicalEquitySectorLabel(fallbackRaw);
     if (fallback) return fallback;
     if (fallbackRaw.toUpperCase() === "ETF") return inferEtfSector(asset);
   } catch (_) {}
+
+  const thematic = inferPortfolioSectorTheme(asset);
+  if (thematic) return thematic;
 
   return "Sector por identificar";
 }

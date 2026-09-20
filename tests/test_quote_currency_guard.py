@@ -18,7 +18,7 @@ class QuoteCurrencyGuardTests(unittest.TestCase):
 
     def test_fresh_bundle_is_published(self):
         index=read("index.html")
-        self.assertIn("app.js?v=20260920v5",index)
+        self.assertIn("app.js?v=20260920v6",index)
         sw=read("sw.js")
         self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
         self.assertIn("staleWhileRevalidate",sw)

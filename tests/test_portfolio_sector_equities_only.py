@@ -38,6 +38,15 @@ class PortfolioSectorEquityOnlyTests(unittest.TestCase):
         block = APP[start:end]
         self.assertLess(block.index("meta.sector"), block.index("getTickerMeta(asset)"))
 
+    def test_broker_aliases_and_high_confidence_themes_are_preserved(self):
+        self.assertIn('"NFC": ["NFC.DE", "NFLX"]', APP)
+        self.assertIn('"UT8": ["UBER"]', APP)
+        self.assertIn('"OMV.VI": ["OMV.DE"]', APP)
+        self.assertIn('"NSIS-B.CO": "Materiais"', APP)
+        self.assertIn('"ADPT": "Saúde"', APP)
+        self.assertIn('physical (?:gold|silver|platinum|palladium)', APP)
+        self.assertIn('const thematic = inferPortfolioSectorTheme(asset);', APP)
+
     def test_legacy_sector_chart_uses_same_equity_only_universe(self):
         start = APP.index("function renderPortfolioCharts()")
         end = APP.index("\nfunction ", start + 20)
@@ -47,7 +56,7 @@ class PortfolioSectorEquityOnlyTests(unittest.TestCase):
 
     def test_ui_copy_makes_scope_explicit_and_app_version_rolls_forward(self):
         self.assertIn("Só ações e ETFs · peso e valor por sector.", INDEX)
-        self.assertIn("app.js?v=20260920v5", INDEX)
+        self.assertIn("app.js?v=20260920v6", INDEX)
 
 
 if __name__ == "__main__":
