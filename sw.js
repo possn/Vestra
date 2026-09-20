@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.81 — coalesced fixed-bar layout measurements. */
-const CACHE_NAME = "vestra-cache-v194";
+/* Vestra Service Worker v10.82 — shorter hydrated-app launch hold. */
+const CACHE_NAME = "vestra-cache-v195";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

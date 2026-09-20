@@ -1,4 +1,4 @@
-/* Vestra UI core v2.5 — DOM, lazy Chart infrastructure, safe update action and canonical launch lifecycle. */
+/* Vestra UI core v2.6 — DOM, lazy Chart infrastructure, safe update action and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -213,7 +213,7 @@ function installPremiumSplashWatchdog() {
       }
       .vestra-splash.vestra-splash--premium.vestra-splash--leaving{
         display:flex!important;opacity:0!important;pointer-events:none!important;
-        transition:opacity .68s cubic-bezier(.4,0,.2,1)!important;
+        transition:opacity .52s cubic-bezier(.4,0,.2,1)!important;
       }
       .vestra-splash--premium .vestra-splash__mark{
         width:138px!important;height:138px!important;margin-bottom:0!important;
@@ -248,9 +248,11 @@ function installPremiumSplashWatchdog() {
   const startedAt = performance.now();
   // Entrance is already in flight from styles.css before this deferred module runs.
   // Do not swap animation names here; only settle copy, hold, then fade once.
-  const copyReadyMs = 2000;
-  const minimumVisibleMs = 4000;
-  const failsafeMs = 6200;
+  // The entrance animation settles in under 800 ms. Keep a short premium hold,
+  // but never block an already-hydrated portfolio for several extra seconds.
+  const copyReadyMs = 900;
+  const minimumVisibleMs = 1500;
+  const failsafeMs = 4000;
   let releasing = false;
   let releaseTimer = null;
 
@@ -283,7 +285,7 @@ function installPremiumSplashWatchdog() {
       splash.style.opacity = '0';
       splash.style.pointerEvents = 'none';
       splash.classList.remove('vestra-splash--premium', 'vestra-splash--copy-ready', 'vestra-splash--leaving');
-    }, 720);
+    }, 560);
   };
 
   window.addEventListener('vestra:app-ready', releaseSplash, { once: true });
