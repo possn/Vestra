@@ -197,6 +197,49 @@ async function ensureBrokerParsersRuntime() {
   return loader.ensureParsers();
 }
 
+/* ─── APPLICATION EXPORT RUNTIME — lazy, only on explicit export ─ */
+let appExportRuntimePromise = null;
+function ensureAppExportRuntime() {
+  if (window.VestraAppExports?.downloadText) return Promise.resolve(window.VestraAppExports);
+  if (appExportRuntimePromise) return appExportRuntimePromise;
+  appExportRuntimePromise = new Promise((resolve, reject) => {
+    const selector = 'script[data-vestra-app-exports]';
+    const existing = document.querySelector(selector);
+    const script = existing || document.createElement('script');
+    let settled = false;
+    let timeoutId = null;
+    const cleanup = () => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      script.removeEventListener('load', onLoad);
+      script.removeEventListener('error', onError);
+    };
+    const finish = error => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (error) {
+        if (script.isConnected && !window.VestraAppExports) script.remove();
+        appExportRuntimePromise = null;
+        reject(error);
+        return;
+      }
+      resolve(window.VestraAppExports);
+    };
+    const onLoad = () => finish(window.VestraAppExports?.downloadText ? null : new Error('Runtime de exportação sem API.'));
+    const onError = () => finish(new Error('Não foi possível carregar o runtime de exportação.'));
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+    timeoutId = setTimeout(() => finish(new Error('Tempo esgotado a carregar o runtime de exportação.')), 12000);
+    if (!existing) {
+      script.src = 'app-export-runtime.js?v=1.0';
+      script.async = true;
+      script.dataset.vestraAppExports = '1';
+      document.head.appendChild(script);
+    }
+  });
+  return appExportRuntimePromise;
+}
+
 /* ─── MARKET CLIENT — moved to app-market-client.js ───────── */
 const { fetchQuote, fetchFxRates, mapWithConcurrency, FX_FALLBACK_LOCAL } = window.VestraMarketClient || {};
 if (![fetchQuote, fetchFxRates, mapWithConcurrency].every(fn => typeof fn === 'function') || !FX_FALLBACK_LOCAL) {
@@ -9879,7 +9922,7 @@ function showAssetDiagnostic(prefill) {
   };
 }
 
-function exportJSON() {
+async function exportJSON() {
   // v63d: this silently did nothing before.
   // 1) state can contain Set/Map values (e.g. sourceNames) which JSON.stringify
   //    turns into {} — and any accidental cycle throws. There was no try/catch,
@@ -9887,38 +9930,9 @@ function exportJSON() {
   // 2) On iOS Safari a detached <a> does not reliably trigger a download; the
   //    element must be in the DOM before click().
   try {
-    const replacer = (key, value) => {
-      if (value instanceof Set) return Array.from(value);
-      if (value instanceof Map) return Array.from(value.entries());
-      if (typeof key === "string" && key.startsWith("_")) return undefined; // internal scratch fields
-      return value;
-    };
-    const seen = new WeakSet();
-    const safeReplacer = function (key, value) {
-      if (typeof key === "string" && key.charAt(0) === "_") return undefined; // internal scratch
-      const v = replacer(key, value);
-      if (v && typeof v === "object" && !Array.isArray(v)) {
-        if (seen.has(v)) return undefined; // drop cycles instead of throwing
-        seen.add(v);
-      }
-      return v;
-    };
-    const json = JSON.stringify(state, safeReplacer, 2);
-    if (!json) { toast("Falha ao gerar o backup."); return; }
-
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `PF_backup_${isoToday()}.json`;
-    a.style.display = "none";
-    document.body.appendChild(a);           // iOS Safari requires this
-    a.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-      if (a.parentNode) a.parentNode.removeChild(a);
-    }, 1500);
-    toast(`Backup exportado (${(json.length / 1024 / 1024).toFixed(1)} MB).`);
+    const runtime = await ensureAppExportRuntime();
+    const result = runtime.exportBackup(state, `PF_backup_${isoToday()}.json`);
+    toast(`Backup exportado (${(result.bytes / 1024 / 1024).toFixed(1)} MB).`);
     // v64s: guarda a data do último export para o lembrete de backup no Dashboard
     if (!state.settings) state.settings = {};
     state.settings.lastJsonExport = new Date().toISOString();
@@ -12182,17 +12196,7 @@ window.addEventListener("beforeunload", saveStateOnLifecycleExit);
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── EXPORT CSV / XLSX ────────────────────────────────────── */
-function downloadText(content, filename, mimeType) {
-  const BOM = mimeType.includes("csv") ? "\uFEFF" : "";
-  const blob = new Blob([BOM + content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.style.display = "none";
-  document.body.appendChild(a); a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-}
-
-function exportCashflowCSV() {
+async function exportCashflowCSV() {
   const gran = ($("cfGranularity") && $("cfGranularity").value) || "month";
   const y = ($("cfYear") && $("cfYear").value) || String(new Date().getFullYear());
   const m = $("cfMonth") ? String($("cfMonth").value).padStart(2,"0") : "01";
@@ -12201,53 +12205,56 @@ function exportCashflowCSV() {
   else if (gran === "year") txs = expandRecurring(getBalanceBaseTransactions()).filter(t => String(t.date||"").slice(0,4) === y);
   else { const key = `${y}-${m}`; txs = expandRecurring(getBalanceBaseTransactions()).filter(t => monthKeyFromDateISO(t.date) === key); }
   txs = txs.sort((a,b) => String(a.date).localeCompare(String(b.date)));
-  const header = ["Data","Tipo","Categoria","Valor (EUR)","Recorrente","Notas"];
-  const rows = txs.map(t => [t.date||"", t.type==="in"?"Entrada":"Saída", t.category||"", parseNum(t.amount).toFixed(2), t.recurring||"none", (t.notes||"").replace(/"/g,"'")]);
-  const csv = [header,...rows].map(r => r.map(c => `"${c}"`).join(";")).join("\n");
   const label = gran==="all" ? "completo" : gran==="year" ? y : `${y}_${m}`;
-  downloadText(csv, `balanco_${label}.csv`, "text/csv;charset=utf-8;");
-  toast("CSV exportado.");
+  try {
+    const runtime = await ensureAppExportRuntime();
+    runtime.exportCashflowCsv({ transactions: txs, label, parseNum });
+    toast("CSV exportado.");
+  } catch (err) {
+    console.error("Cashflow CSV export error:", err);
+    toast("Não foi possível exportar o CSV.");
+  }
 }
 
-function exportPortfolioCSV() {
-  const header = ["Tipo","Classe","Nome","Valor (EUR)","Tipo Yield","Yield Valor","Valorização Esperada %","Capitalização","Vencimento","Custo Aquis.","Notas"];
-  const rows = [
-    ...state.assets.map(a => ["Ativo", a.class||"", a.name||"", parseNum(a.value).toFixed(2), a.yieldType||"none", parseNum(a.yieldValue).toFixed(4), hasExplicitAppreciationPct(a) ? parseNum(a.appreciationPct).toFixed(4) : "", a.compoundFreq||"", a.maturityDate||"", parseNum(a.costBasis||0).toFixed(2), (a.notes||"").replace(/"/g,"'")]),
-    ...state.liabilities.map(l => ["Passivo", l.class||"", l.name||"", parseNum(l.value).toFixed(2), "","","","","","", (l.notes||"").replace(/"/g,"'")])
-  ];
-  const csv = [header,...rows].map(r => r.map(c => `"${c}"`).join(";")).join("\n");
-  downloadText(csv, `portfolio_${isoToday()}.csv`, "text/csv;charset=utf-8;");
-  toast("Portfólio CSV exportado.");
+async function exportPortfolioCSV() {
+  try {
+    const runtime = await ensureAppExportRuntime();
+    runtime.exportPortfolioCsv({
+      assets: state.assets, liabilities: state.liabilities, date: isoToday(), parseNum, hasExplicitAppreciationPct,
+    });
+    toast("Portfólio CSV exportado.");
+  } catch (err) {
+    console.error("Portfolio CSV export error:", err);
+    toast("Não foi possível exportar o portfólio CSV.");
+  }
 }
 
 async function exportPortfolioXLSX() {
   try {
-    if (!window.XLSX) {
-      const loader = window.VestraXlsxLoader;
-      if (!loader?.ensure) throw new Error("Carregador Excel não disponível.");
-      await loader.ensure();
-    }
+    const loader = window.VestraXlsxLoader;
+    if (!window.XLSX && !loader?.ensure) throw new Error("Carregador Excel não disponível.");
+    const [runtime, xlsx] = await Promise.all([
+      ensureAppExportRuntime(),
+      window.XLSX ? Promise.resolve(window.XLSX) : loader.ensure(),
+    ]);
+    const totals = calcTotals();
+    runtime.exportPortfolioXlsx({
+      XLSX: xlsx,
+      assets: state.assets,
+      liabilities: state.liabilities,
+      transactions: getBalanceBaseTransactions(),
+      totals,
+      passiveAnnual: getDisplayedPassiveAnnual(totals),
+      date: isoToday(),
+      parseNum,
+      hasExplicitAppreciationPct,
+      passiveFromItem,
+    });
+    toast("Excel exportado.");
   } catch (err) {
     console.error("XLSX load error:", err);
     toast("Não foi possível carregar o suporte Excel.");
-    return;
   }
-  const t = calcTotals();
-  const assetRows = state.assets.map(a => ({ Tipo:"Ativo", Classe:a.class||"", Nome:a.name||"", "Valor EUR":parseNum(a.value), "Tipo Yield":a.yieldType||"none", "Yield Valor":parseNum(a.yieldValue), "Valorização Esperada %": hasExplicitAppreciationPct(a) ? parseNum(a.appreciationPct) : "", "Capitalização":a.compoundFreq||"", Vencimento:a.maturityDate||"", "Custo Aquis.":parseNum(a.costBasis||0), "Rend. Anual EUR":passiveFromItem(a), Notas:a.notes||"" }));
-  const liabRows = state.liabilities.map(l => ({ Tipo:"Passivo", Classe:l.class||"", Nome:l.name||"", "Valor EUR":parseNum(l.value), "Tipo Yield":"","Yield Valor":"","Capitalização":"",Vencimento:"","Custo Aquis.":0,"Rend. Anual EUR":0, Notas:l.notes||"" }));
-  const txRows = getBalanceBaseTransactions().map(tx => ({ Data:tx.date||"", Tipo:tx.type==="in"?"Entrada":"Saída", Categoria:tx.category||"", "Valor EUR":parseNum(tx.amount), Recorrente:tx.recurring||"none", Notas:tx.notes||"" }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([...assetRows,...liabRows]), "Portfólio");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(txRows), "Movimentos");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
-    { Métrica:"Ativos Total", Valor:t.assetsTotal },
-    { Métrica:"Passivos Total", Valor:t.liabsTotal },
-    { Métrica:"Património Líquido", Valor:t.net },
-    { Métrica:"Rendimento Passivo Anual", Valor:getDisplayedPassiveAnnual(t) },
-    { Métrica:"Data Exportação", Valor:isoToday() }
-  ]), "Resumo");
-  XLSX.writeFile(wb, `patrimonio_${isoToday()}.xlsx`);
-  toast("Excel exportado.");
 }
 
 /* ─── AUTO-SNAPSHOT MENSAL ─────────────────────────────────── */
@@ -12833,16 +12840,19 @@ function renderFiscalPanel() {
     </div>`;
 }
 
-function exportFiscalCSV() {
+async function exportFiscalCSV() {
   const now = new Date();
   const year = now.getFullYear();
   const yearStart = `${year}-01-01`;
   const divs = (state.dividends || []).filter(d => d.date >= yearStart);
-  const header = ["Data","Activo","Dividendo Bruto (EUR)","Retenção (EUR)","Líquido (EUR)"];
-  const rows = divs.map(d => [d.date||"", d.assetName||"", getDividendGross(d).toFixed(2), parseNum(d.taxWithheld||0).toFixed(2), getDividendNet(d).toFixed(2)]);
-  const csv = [header,...rows].map(r => r.map(c=>`"${c}"`).join(";")).join("\n");
-  downloadText(csv, `fiscal_${year}.csv`, "text/csv;charset=utf-8;");
-  toast("Resumo fiscal exportado.");
+  try {
+    const runtime = await ensureAppExportRuntime();
+    runtime.exportFiscalCsv({ dividends: divs, year, parseNum, getDividendGross, getDividendNet });
+    toast("Resumo fiscal exportado.");
+  } catch (err) {
+    console.error("Fiscal CSV export error:", err);
+    toast("Não foi possível exportar o resumo fiscal.");
+  }
 }
 
 /* v15: FIRE custom params lidos directamente em renderFire via window._fireCustomR/Inf */
@@ -15304,7 +15314,7 @@ function renderReturnBreakdown() {
 }
 
 /* ─── ANOS ATÉ FIRE COM DCA ──────────────────────────────────── *//* ─── EXPORTAR RELATÓRIO ANUAL ───────────────────────────────── */
-function exportAnnualReport() {
+async function exportAnnualReport() {
   const t    = calcTotals();
   const py   = calcPortfolioYield();
   const twr  = calcTWR();
@@ -15312,67 +15322,22 @@ function exportAnnualReport() {
   const pnl  = calcEquityPortfolioPnL();
   const year = new Date().getFullYear();
 
-  const lines = [
-    `RELATÓRIO PATRIMONIAL ${year}`,
-    `Gerado em: ${new Date().toLocaleDateString("pt-PT")}`,
-    "",
-    "═══════════════════════════════════════",
-    "BALANÇO GLOBAL",
-    "═══════════════════════════════════════",
-    `Activos totais:       ${fmtEUR(t.assetsTotal)}`,
-    `Passivos totais:      ${fmtEUR(t.liabsTotal)}`,
-    `Património líquido:   ${fmtEUR(t.net)}`,
-    "",
-    "═══════════════════════════════════════",
-    "RENDIMENTO & RETORNO",
-    "═══════════════════════════════════════",
-    `Rendimento passivo anual: ${fmtEUR(getDisplayedPassiveAnnual(t))}`,
-    `Rendimento mensal:        ${fmtEUR(getDisplayedPassiveAnnual(t)/12)}`,
-    `Rendimento base projectado: ${fmtPct(py.weightedYield)}`,
-    `Retorno total:          ${fmtPct(py.totalReturnBlended)}`,
-    twr ? `TWR anualizado:           ${fmtPct(twr.annualised)} (${twr.years} anos)` : "",
-    "",
-    "═══════════════════════════════════════",
-    "PORTFÓLIO DE ACÇÕES/ETFs",
-    "═══════════════════════════════════════",
-    `Investido:    ${fmtEUR(pnl.totalCost)}`,
-    `Valor actual: ${fmtEUR(pnl.totalCurrent)}`,
-    `Ganho latente: ${pnl.totalGain>=0?"+":""}${fmtEUR(pnl.totalGain)} (${pnl.totalGain>=0?"+":""}${fmtPct(pnl.totalGainPct)})`,
-    `P&L realizado: ${pnl.totalRealized>=0?"+":""}${fmtEUR(pnl.totalRealized||0)}`,
-    `Dividendos recebidos: +${fmtEUR(pnl.totalDivAll||0)}`,
-    `Retorno total: ${pnl.grandTotalReturn>=0?"+":""}${fmtEUR(pnl.grandTotalReturn||0)} (${pnl.grandTotalReturn>=0?"+":""}${fmtPct(pnl.grandTotalReturnPct||0)})`,
-    "",
-    "POSIÇÕES (Nome | P&L latente | Realizado | Dividendos | Retorno total | Yield):",
-    ...pnl.positions.map(({asset,pos}) => {
-      const rz = pos.realizedPnL || 0;
-      const dv = pos.divAll || 0;
-      const yl = pos.trueYieldPct || 0;
-      return `  ${String(asset.name).padEnd(12)} ` +
-        `Latente: ${pos.gain>=0?"+":""}${fmtEUR(pos.gain)} (${fmtPct(pos.gainPct)})` +
-        (Math.abs(rz)>0 ? `  Realiz: ${rz>=0?"+":""}${fmtEUR(rz)}` : "") +
-        (dv>0 ? `  Div: +${fmtEUR(dv)}` + (yl>0 ? ` (${fmtPct(yl)}yield)` : "") : "") +
-        `  TOTAL: ${pos.totalReturn>=0?"+":""}${fmtEUR(pos.totalReturn)}`;
-    }),
-    "",
-    "═══════════════════════════════════════",
-    "ANÁLISE DE RISCO",
-    "═══════════════════════════════════════",
-    `Score diversificação: ${div.score}/100 (${div.label})`,
-    `Rácio dívida/activos: ${fmtPct(t.assetsTotal>0?t.liabsTotal/t.assetsTotal*100:0)}`,
-    "",
-    "DISTRIBUIÇÃO POR CLASSE:",
-    ...div.breakdown.map(b =>
-      `  ${String(b.cls).padEnd(20)} ${fmtPct(b.pct).padStart(7)} (${fmtEUR(b.val)})`
-    ),
-    "",
-    "═══════════════════════════════════════",
-    "AVISO LEGAL",
-    "═══════════════════════════════════════",
-    "Este relatório é meramente informativo.",
-    "Consulta sempre um TOC para matérias fiscais",
-    "e um consultor financeiro para decisões de investimento.",
-  ].filter(l => l !== null && l !== undefined);
-
-  downloadText(lines.join("\n"), `relatorio_patrimonial_${year}.txt`, "text/plain;charset=utf-8;");
-  toast("✅ Relatório exportado.");
+  try {
+    const runtime = await ensureAppExportRuntime();
+    runtime.exportAnnualReport({
+      totals: { ...t, displayedPassiveAnnual: getDisplayedPassiveAnnual(t) },
+      portfolioYield: py,
+      twr,
+      diversification: div,
+      pnl,
+      year,
+      generatedDate: new Date().toLocaleDateString("pt-PT"),
+      fmtEUR,
+      fmtPct,
+    });
+    toast("✅ Relatório exportado.");
+  } catch (err) {
+    console.error("Annual report export error:", err);
+    toast("Não foi possível exportar o relatório anual.");
+  }
 }
