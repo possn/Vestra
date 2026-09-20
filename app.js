@@ -6908,10 +6908,14 @@ async function ensureAndRepairBrokerIdentities({ persist = false } = {}) {
 ──────────────────────────────────────────────────────────────── */
 
 /* ─── XTB NORMALIZATION — moved to app-xtb-normalization.js ─── */
-const { parseXTBNormalizeAction, xtbTickerToYahoo, xtbSymbolCurrency } = window.VestraXtbNormalization || {};
-if (![parseXTBNormalizeAction, xtbTickerToYahoo, xtbSymbolCurrency].every(fn => typeof fn === "function")) {
-  throw new Error("VestraXtbNormalization não foi carregado antes de app.js");
+function xtbNormalizationMethod(name) {
+  const fn = window.VestraXtbNormalization?.[name];
+  if (typeof fn !== "function") throw new Error("Normalização XTB ainda não foi carregada.");
+  return fn;
 }
+const parseXTBNormalizeAction = (...args) => xtbNormalizationMethod("parseXTBNormalizeAction")(...args);
+const xtbTickerToYahoo = (...args) => xtbNormalizationMethod("xtbTickerToYahoo")(...args);
+const xtbSymbolCurrency = (...args) => xtbNormalizationMethod("xtbSymbolCurrency")(...args);
 
 /** XTB Trade History CSV (closed positions) */
 

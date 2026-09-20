@@ -12,12 +12,16 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertNotIn('src="app-broker-identity-data.js', INDEX)
         self.assertNotIn('src="app-broker-workbook.js', INDEX)
         self.assertNotIn('src="app-broker-parsers.js', INDEX)
-        self.assertIn('src="app-broker-import-loader.js?v=1.4"', INDEX)
+        self.assertNotIn('src="app-xtb-normalization.js', INDEX)
+        self.assertIn('src="app-broker-import-loader.js?v=1.5"', INDEX)
 
     def test_loader_preserves_dependency_order_and_retryability(self):
         self.assertIn("function ensureIdentityData()", LOADER)
         self.assertIn("function ensureWorkbook()", LOADER)
         self.assertIn("function ensureParsers()", LOADER)
+        self.assertIn("function ensureXtbNormalization()", LOADER)
+        self.assertIn("app-xtb-normalization.js?v=1.0", LOADER)
+        self.assertIn("Promise.all([ensureWorkbook(), ensureXtbNormalization()])", LOADER)
         self.assertIn("app-broker-workbook.js?v=1.3", LOADER)
         self.assertIn("app-broker-parsers.js?v=1.2", LOADER)
         self.assertIn("app-broker-identity-data.js?v=1.0", LOADER)
@@ -28,6 +32,7 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertIn("workbookPromise = null;", LOADER)
         self.assertIn("parsersPromise = null;", LOADER)
         self.assertIn("identityDataPromise = null;", LOADER)
+        self.assertIn("xtbNormalizationPromise = null;", LOADER)
         self.assertIn("const TIMEOUT_MS = 12000;", LOADER)
 
     def test_app_bootstrap_no_longer_requires_broker_parser_globals(self):
@@ -55,7 +60,7 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertNotIn("function autoCategorise", APP)
 
     def test_app_rollout_is_versioned(self):
-        self.assertIn("app.js?v=20260920v7", INDEX)
+        self.assertIn("app.js?v=20260920v8", INDEX)
 
     def test_identity_repairs_are_deferred_but_precede_quote_refresh(self):
         self.assertIn("await ensureAndRepairBrokerIdentities({ persist: true });", APP)
