@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.78 — Chart.js leaves the hydration-critical path. */
-const CACHE_NAME = "vestra-cache-v191";
+/* Vestra Service Worker v10.79 — Chart.js lazy runtime and safe analysis redraw. */
+const CACHE_NAME = "vestra-cache-v192";
 const NETWORK_TIMEOUT_MS = 5000;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",

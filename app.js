@@ -5078,7 +5078,7 @@ function renderRankingsPanel() {
   var secYield = rankSection("Maior yield anual", yieldItems, getAssetPassiveRatePct, function(a,v){return v.toFixed(2)+"%/ano";}, function(){return "var(--green)";}, "🎯");
 
   // Totals
-  var totalInvested = gainers.reduce(function(s,a){return s+parseNum(a.costBasis);},0);
+  var totalInvested = validPerformance.reduce(function(s,a){return s+parseNum(a.costBasis);},0);
   var totalValue    = allAssets.reduce(function(s,a){return s+parseNum(a.value);},0);
   var totalGain     = totalValue - totalInvested;
   var totalGainPct  = totalInvested>0?totalGain/totalInvested*100:0;

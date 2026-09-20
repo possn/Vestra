@@ -28,7 +28,7 @@ class StartupScriptDeferTests(unittest.TestCase):
     def test_chart_loader_stays_before_chart_consumers(self):
         loader = self.index.index("app-chart-loader.js?v=1.0")
         ui_core = self.index.index("app-ui-core.js?v=2.5")
-        app = self.index.index("app.js?v=20260920v9")
+        app = self.index.index("app.js?v=20260920v10")
         self.assertLess(loader, ui_core)
         self.assertLess(ui_core, app)
         self.assertIn('defer="" fetchpriority="high"', self.index[self.index.index("<script", app - 80):app + 120])

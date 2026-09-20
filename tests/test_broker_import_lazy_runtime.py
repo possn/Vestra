@@ -60,7 +60,7 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertNotIn("function autoCategorise", APP)
 
     def test_app_rollout_is_versioned(self):
-        self.assertIn("app.js?v=20260920v9", INDEX)
+        self.assertIn("app.js?v=20260920v10", INDEX)
 
     def test_identity_repairs_are_deferred_but_precede_quote_refresh(self):
         self.assertIn("await ensureAndRepairBrokerIdentities({ persist: true });", APP)
