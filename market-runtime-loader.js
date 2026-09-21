@@ -1,4 +1,4 @@
-/* Vestra Market runtime loader v1.4 — defer market core + dossier data until first use. */
+/* Vestra Market runtime loader v1.5 — replay early market mode intent after lazy core load. */
 (() => {
   'use strict';
 
@@ -8,6 +8,7 @@
   let helpersPromise = null;
   let enhancementsPromise = null;
   let loadPromise = null;
+  let pendingMode = '';
 
   function loadHelper(globalName, src) {
     if (window[globalName]) return Promise.resolve(window[globalName]);
@@ -144,6 +145,25 @@
     try { search.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
   }
 
+  function replayPendingMode() {
+    const mode = pendingMode;
+    pendingMode = '';
+    if (!mode) return;
+    const button = document.querySelector?.(`[data-market-mode="${mode}"]`);
+    if (!button) return;
+    try { button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); } catch (_) {
+      try { button.click(); } catch (_) {}
+    }
+  }
+
+  document.addEventListener?.('click', event => {
+    if (window.VestraMarket?.ensureLoaded) return;
+    const button = event.target?.closest?.('[data-market-mode]');
+    if (!button) return;
+    pendingMode = String(button.dataset.marketMode || '').trim();
+    if (pendingMode) ensure({ loadData: true }).catch(() => {});
+  }, true);
+
   function loadCore() {
     if (window.VestraMarket?.ensureLoaded) return Promise.resolve(window.VestraMarket);
     return new Promise((resolve, reject) => {
@@ -171,9 +191,10 @@
           return;
         }
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.4' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.5' } }));
         } catch (_) {}
         replayPendingSearch();
+        replayPendingMode();
         resolve(window.VestraMarket);
       };
       const onLoad = () => {
@@ -236,6 +257,6 @@
     ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.4',
+    version: '1.5',
   });
 })();
