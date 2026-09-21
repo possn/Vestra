@@ -11,7 +11,7 @@ class ServiceWorkerCacheGenerationTests(unittest.TestCase):
 
     def test_bounded_precache_install_uses_a_fresh_cache_generation(self):
         import re
-        self.assertRegex(self.source, r'const CACHE_NAME = "vestra-cache-v\\d+";')
+        self.assertRegex(self.source, r'const CACHE_NAME = "vestra-cache-v\d+";')
         self.assertIn('const cache = await caches.open(CACHE_NAME);', self.source)
         self.assertIn('"./data/portfolio-sectors.json"', self.source)
         self.assertIn('const PRECACHE_CONCURRENCY = 6;', self.source)
