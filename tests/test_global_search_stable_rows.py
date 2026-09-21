@@ -21,6 +21,10 @@ class GlobalSearchStableRowsTests(unittest.TestCase):
         block = self.source.split('function renderGlobalSuggestions(q, rows){', 1)[1].split('async function runSearch(q){', 1)[0]
         self.assertIn("for (const [ticker,row] of existing) if (!keep.has(ticker)) row.remove();", block)
 
+    def test_broker_alias_survives_when_same_ticker_becomes_local_during_search(self):
+        block = self.source.split('function renderGlobalSuggestions(q, rows){', 1)[1].split('async function runSearch(q){', 1)[0]
+        self.assertIn("r=>r._brokerAlias || !localExactPresent(r.ticker)", block)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
