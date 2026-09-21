@@ -8,6 +8,7 @@ MARKET = ROOT / "market.js"
 GLOBAL_CSS = ROOT / "market-global-search.css"
 BOOTSTRAP = ROOT / "market-company-brief.js"
 SW = ROOT / "sw.js"
+WORKER_ROUTER = ROOT / "worker-router.js"
 
 
 class GlobalMarketSearchTests(unittest.TestCase):
@@ -28,9 +29,20 @@ class GlobalMarketSearchTests(unittest.TestCase):
 
     def test_name_search_is_separate_from_daily_catalogue(self):
         text = GLOBAL.read_text(encoding="utf-8")
-        self.assertIn("/v1/finance/search", text)
+        self.assertIn("${base}/search?q=", text)
+        self.assertNotIn("query1.finance.yahoo.com/v1/finance/search", text)
         self.assertIn("PESQUISA GLOBAL · LIVE", text)
         self.assertNotIn("stocks-index.json", text)
+
+
+    def test_name_search_uses_worker_proxy_not_browser_yahoo(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        router = WORKER_ROUTER.read_text(encoding="utf-8")
+        self.assertIn("${base}/search?q=", text)
+        self.assertNotIn("query1.finance.yahoo.com/v1/finance/search", text)
+        self.assertIn("async function handleNameSearch(request)", router)
+        self.assertIn("https://query1.finance.yahoo.com/v1/finance/search", router)
+        self.assertIn("url.pathname === '/search'", router)
 
     def test_verified_broker_alias_keeps_hon_hai_searchable(self):
         text = GLOBAL.read_text(encoding="utf-8")
@@ -110,7 +122,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=3.0", text)
-        self.assertIn("market-global-search.js?v=2.0", text)
+        self.assertIn("market-global-search.js?v=2.1", text)
         self.assertIn("market-data-health.js?v=1.3", text)
 
     def test_presentation_has_static_css_owner_and_offline_reachability(self):
@@ -122,7 +134,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn('.vestra-global-search{', css)
         self.assertIn('.vestra-global-search__row{', css)
         self.assertIn('"./market-global-search.css"', sw)
-        self.assertIn("version:'2.0'", text)
+        self.assertIn("version:'2.1'", text)
 
 
 if __name__ == "__main__":

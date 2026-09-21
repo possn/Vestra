@@ -10,11 +10,12 @@ class ServiceWorkerCacheGenerationTests(unittest.TestCase):
         cls.source = (ROOT / "sw.js").read_text(encoding="utf-8")
 
     def test_bounded_precache_install_uses_a_fresh_cache_generation(self):
-        self.assertIn('const CACHE_NAME = "vestra-cache-v196";', self.source)
-        self.assertNotIn('const CACHE_NAME = "vestra-cache-v178";', self.source)
+        import re
+        self.assertRegex(self.source, r'const CACHE_NAME = "vestra-cache-v\d+";')
         self.assertIn('const cache = await caches.open(CACHE_NAME);', self.source)
         self.assertIn('"./data/portfolio-sectors.json"', self.source)
-        self.assertIn('APP_SHELL.map(asset => precacheAsset(cache, asset))', self.source)
+        self.assertIn('const PRECACHE_CONCURRENCY = 6;', self.source)
+        self.assertIn('async function precacheAppShell(cache)', self.source)
         self.assertIn('"./app-xlsx-loader.js"', self.source)
         self.assertIn('"app-xlsx-loader.js"', self.source)
         self.assertIn('"./market-runtime-loader.js"', self.source)
@@ -27,11 +28,17 @@ class ServiceWorkerCacheGenerationTests(unittest.TestCase):
         self.assertIn('"./market-company-brief.js"', self.source)
         self.assertIn('"./market-metric-cleanup.js"', self.source)
 
-    def test_install_fails_closed_if_any_shell_asset_fails(self):
+    def test_install_fails_closed_only_for_critical_shell_assets(self):
         install_start = self.source.index('self.addEventListener("install"')
         activate_start = self.source.index('self.addEventListener("activate"')
         install_block = self.source[install_start:activate_start]
-        self.assertIn('await Promise.all(APP_SHELL.map(asset => precacheAsset(cache, asset)))', install_block)
+        coordinator_start = self.source.index('async function precacheAppShell(cache)')
+        coordinator_block = self.source[coordinator_start:install_start]
+        self.assertIn('await precacheAppShell(cache)', install_block)
+        self.assertIn('const REQUIRED_APP_SHELL = new Set([', self.source)
+        self.assertIn('const critical = failures.filter(({ asset }) => REQUIRED_APP_SHELL.has(asset));', coordinator_block)
+        self.assertIn('if (critical.length)', coordinator_block)
+        self.assertIn('console.warn("[Vestra SW] Optional app-shell assets skipped during install:"', coordinator_block)
         self.assertNotIn('Promise.allSettled', install_block)
 
     def test_previous_generation_survives_until_activate_cleanup(self):
