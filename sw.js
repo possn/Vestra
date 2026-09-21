@@ -1,6 +1,7 @@
-/* Vestra Service Worker v10.83 — canonical stylesheet cleanup. */
-const CACHE_NAME = "vestra-cache-v196";
+/* Vestra Service Worker v10.84 — resilient bounded app-shell precache. */
+const CACHE_NAME = "vestra-cache-v197";
 const NETWORK_TIMEOUT_MS = 5000;
+const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [
   "./", "./index.html", "./styles.css", "./market.css", "./app.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-chart-loader.js", "./app-ui-core.js", "./app-xlsx-loader.js",
@@ -35,17 +36,54 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "market-opportunity-lenses.js", "mobile-ui-refresh.js", "vestra-ai-brief.js", "politicians.js"
 ]);
 
+const REQUIRED_APP_SHELL = new Set([
+  "./", "./index.html", "./styles.css", "./market.css", "./app.js",
+  "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js",
+  "./app-chart-loader.js", "./app-ui-core.js", "./app-market-client.js",
+  "./app-quote-errors.js", "./app-return-assumptions.js", "./app-financial-engine.js",
+  "./market-static-universe.js", "./market-runtime-loader.js", "./manifest.webmanifest"
+]);
+
 async function precacheAsset(cache, asset) {
   const fresh = await fetchWithTimeout(asset, { cache: "no-store" });
   if (!fresh || !fresh.ok) throw new Error(`Precache failed: ${asset}`);
   await cache.put(asset, fresh.clone());
 }
 
+async function precacheAppShell(cache) {
+  const queue = APP_SHELL.slice();
+  const failures = [];
+  const worker = async () => {
+    while (queue.length) {
+      const asset = queue.shift();
+      try {
+        await precacheAsset(cache, asset);
+      } catch (error) {
+        failures.push({ asset, error });
+      }
+    }
+  };
+  const workers = Array.from(
+    { length: Math.min(PRECACHE_CONCURRENCY, Math.max(1, APP_SHELL.length)) },
+    () => worker()
+  );
+  await Promise.all(workers);
+  const critical = failures.filter(({ asset }) => REQUIRED_APP_SHELL.has(asset));
+  if (critical.length) {
+    const names = critical.map(({ asset }) => asset).join(", ");
+    throw new Error(`Critical app-shell precache failed: ${names}`);
+  }
+  if (failures.length) {
+    console.warn("[Vestra SW] Optional app-shell assets skipped during install:", failures.map(({ asset }) => asset));
+  }
+  return { cached: APP_SHELL.length - failures.length, failed: failures.map(({ asset }) => asset) };
+}
+
 self.addEventListener("install", event => {
   self.skipWaiting();
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await Promise.all(APP_SHELL.map(asset => precacheAsset(cache, asset)));
+    await precacheAppShell(cache);
   })());
 });
 
