@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.5 — IndexedDB with durable rescue snapshots, mirrored fallback and read-failure write guard. */
+/* Vestra persistence layer v1.6 — authoritative empty-state acknowledgement + durable rescue snapshots. */
 (() => {
   'use strict';
 
@@ -8,6 +8,8 @@
   const DB_KEY = 'state';
   const DB_BACKUP_KEY = 'state_backup';
   const DB_RECOVERY_KEY = 'state_recovery';
+  const DB_EMPTY_AUTH_KEY = 'state_empty_authoritative';
+  const EMPTY_AUTH_STORAGE_KEY = STORAGE_KEY + '_EMPTY_AUTH';
   const IDB_OPEN_TIMEOUT_MS = 1500;
   const IDB_TRANSACTION_TIMEOUT_MS = 1500;
 
@@ -22,6 +24,16 @@
     const error = new Error(message);
     if (cause !== undefined) error.cause = cause;
     return error;
+  }
+
+  function validState(raw){
+    if (!raw || typeof raw !== 'string') return false;
+    try {
+      const p = JSON.parse(raw);
+      return !!p && typeof p === 'object' && !Array.isArray(p);
+    } catch (_) {
+      return false;
+    }
   }
 
   function stateRichness(raw){
@@ -201,13 +213,15 @@
     catch (error) { return { ok: false, value: null, error }; }
   }
 
-  function localStorageSetSafely(raw, existingValue = null){
+  function localStorageSetSafely(raw, existingValue = null, allowAuthoritativeEmpty = false){
     try {
       const rawScore = stateRichness(raw);
       const existingScore = stateRichness(existingValue);
-      // Never allow a zero/empty runtime state to erase a richer redundant copy.
-      if (rawScore <= 0 && existingScore > 0) return true;
+      // Never allow a suspicious empty runtime state to erase a richer redundant copy.
+      if (rawScore <= 0 && existingScore > 0 && !allowAuthoritativeEmpty) return true;
       localStorage.setItem(STORAGE_KEY, raw);
+      if (rawScore === 0 && allowAuthoritativeEmpty) localStorage.setItem(EMPTY_AUTH_STORAGE_KEY, raw);
+      else localStorage.removeItem(EMPTY_AUTH_STORAGE_KEY);
       return true;
     } catch (_) {
       return false;
@@ -218,6 +232,7 @@
     let primary = null;
     let backup = null;
     let recovery = null;
+    let emptyAuthority = null;
     let idbError = null;
 
     if (idbAvailable()) {
@@ -225,6 +240,7 @@
         primary = await idbGet(DB_KEY);
         try { backup = await idbGet(DB_BACKUP_KEY); } catch (_) {}
         try { recovery = await idbGet(DB_RECOVERY_KEY); } catch (_) {}
+        try { emptyAuthority = await idbGet(DB_EMPTY_AUTH_KEY); } catch (_) {}
       } catch (error) {
         idbError = error;
       }
@@ -232,12 +248,22 @@
 
     const fallback = localStorageGet();
     const localValue = fallback.ok ? fallback.value : null;
+    let localEmptyAuthority = null;
+    try { localEmptyAuthority = localStorage.getItem(EMPTY_AUTH_STORAGE_KEY); } catch (_) {}
     const primaryScore = stateRichness(primary);
     const backupScore = stateRichness(backup);
     const recoveryScore = stateRichness(recovery);
     const localScore = stateRichness(localValue);
 
-    // A valid non-empty primary is authoritative. If primary is absent/empty,
+    // A valid empty primary explicitly written after a trusted read is authoritative.
+    // Without that acknowledgement, an empty primary remains suspicious and recovery is allowed.
+    const authoritativeEmptyPrimary = primaryScore === 0 && validState(primary) && emptyAuthority === primary;
+    if (authoritativeEmptyPrimary) {
+      markStateReadTrusted('indexeddb-empty-authoritative');
+      return primary;
+    }
+
+    // A valid non-empty primary is authoritative. If primary is absent/suspiciously empty,
     // choose the richest preserved copy, including the non-degrading rescue snapshot.
     if (primaryScore <= 0) {
       const recovered = richestState([
@@ -264,6 +290,10 @@
       return backup;
     }
     if (localValue) {
+      if (localScore === 0 && validState(localValue) && localEmptyAuthority === localValue) {
+        markStateReadTrusted('localstorage-empty-authoritative');
+        return localValue;
+      }
       markStateReadTrusted('localstorage');
       return localValue;
     }
@@ -324,15 +354,22 @@
           try { await idbSet(DB_RECOVERY_KEY, rescue.value); } catch (_) {}
         }
 
+        const authoritativeEmpty = rawScore === 0 && validState(raw) && _stateReadAttempted && _stateReadTrusted;
         await idbSet(DB_KEY, raw);
-        // Maintain a second storage-engine copy, but never overwrite a rich copy
-        // with a suspicious empty state.
-        localStorageSetSafely(raw, localValue);
+        if (authoritativeEmpty) {
+          try { await idbSet(DB_EMPTY_AUTH_KEY, raw); } catch (_) {}
+        } else {
+          try { await idbDel(DB_EMPTY_AUTH_KEY); } catch (_) {}
+        }
+        // Maintain a second storage-engine copy. A trusted, intentional empty state
+        // is allowed to replace a richer mirror and carries the same acknowledgement.
+        localStorageSetSafely(raw, localValue, authoritativeEmpty);
         return true;
       } catch (_) {}
     }
 
-    return localStorageSetSafely(raw, localValue);
+    const authoritativeEmpty = rawScore === 0 && validState(raw) && _stateReadAttempted && _stateReadTrusted;
+    return localStorageSetSafely(raw, localValue, authoritativeEmpty);
   }
 
   async function storageGetBackup(){
@@ -350,16 +387,20 @@
       try { await idbDel(DB_KEY); } catch (_) {}
       try { await idbDel(DB_BACKUP_KEY); } catch (_) {}
       try { await idbDel(DB_RECOVERY_KEY); } catch (_) {}
+      try { await idbDel(DB_EMPTY_AUTH_KEY); } catch (_) {}
     }
-    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(EMPTY_AUTH_STORAGE_KEY);
+    } catch (_) {}
     markStateReadTrusted('cleared');
   }
 
   const api = Object.freeze({
-    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
-    idbAvailable, idbOpen, idbGet, idbSet, idbDel, stateRichness, richestState,
+    STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, DB_EMPTY_AUTH_KEY, EMPTY_AUTH_STORAGE_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
+    idbAvailable, idbOpen, idbGet, idbSet, idbDel, validState, stateRichness, richestState,
     requestPersistentStorage, storageGet, storageSet, storageGetBackup, storageGetRecovery, storageClear, persistenceStatus,
-    version: '1.5',
+    version: '1.6',
   });
 
   window.VestraStorage = api;
