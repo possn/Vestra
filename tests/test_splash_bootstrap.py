@@ -28,7 +28,7 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('beat any stale inline opacity/display writes', UI)
 
     def test_base_styles_own_single_entrance_animation(self):
-        self.assertIn('Vestra UI core v2.6', UI)
+        self.assertIn('Vestra UI core v2.7', UI)
         self.assertIn('animation:vestraMarkIn .72s', BASE)
         self.assertIn('animation:vestraCopyIn .55s .14s', BASE)
         self.assertIn('animation:vestraCopyIn .55s .22s', BASE)

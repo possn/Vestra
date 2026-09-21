@@ -1,4 +1,4 @@
-/* Vestra UI core v2.6 — DOM, lazy Chart infrastructure, safe update action and canonical launch lifecycle. */
+/* Vestra UI core v2.7 — DOM, lazy Chart infrastructure, safe update action and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -307,8 +307,9 @@ function resolveChartHeight(canvas, fallbackHeight = 220) {
 function prepareChartCanvas(canvas, fallbackHeight = 220) {
   if (!canvas || canvas._missing || typeof canvas.getContext !== "function") return null;
   const height = resolveChartHeight(canvas, fallbackHeight);
+  const appliedHeight = String(height);
   const wrap = canvas.closest ? canvas.closest(".chartWrap") : null;
-  if (wrap) {
+  if (wrap && wrap.dataset.chartHeightApplied !== appliedHeight) {
     wrap.style.position = "relative";
     wrap.style.width = "100%";
     wrap.style.minWidth = "0";
@@ -316,19 +317,33 @@ function prepareChartCanvas(canvas, fallbackHeight = 220) {
     wrap.style.height = `${height}px`;
     wrap.style.maxHeight = `${height}px`;
     wrap.style.overflow = "hidden";
-    wrap.dataset.chartHeightApplied = String(height);
+    wrap.dataset.chartHeightApplied = appliedHeight;
   }
-  canvas.style.setProperty("display", "block", "important");
-  canvas.style.setProperty("width", "100%", "important");
-  canvas.style.setProperty("min-width", "0", "important");
-  canvas.style.setProperty("height", `${height}px`, "important");
-  canvas.style.maxHeight = `${height}px`;
-  canvas.dataset.chartHeightApplied = String(height);
-  canvas.setAttribute("height", String(height));
+  if (canvas.dataset.chartHeightApplied !== appliedHeight) {
+    canvas.style.setProperty("display", "block", "important");
+    canvas.style.setProperty("width", "100%", "important");
+    canvas.style.setProperty("min-width", "0", "important");
+    canvas.style.setProperty("height", `${height}px`, "important");
+    canvas.style.maxHeight = `${height}px`;
+    canvas.dataset.chartHeightApplied = appliedHeight;
+    canvas.setAttribute("height", appliedHeight);
+  }
   return canvas;
 }
 
 let chartStabilizeToken = 0;
+let chartStabilizeFrameIds = [];
+let chartStabilizeTimerIds = [];
+
+function cancelChartStabilization() {
+  if (typeof cancelAnimationFrame === "function") {
+    chartStabilizeFrameIds.forEach(id => cancelAnimationFrame(id));
+  }
+  chartStabilizeFrameIds = [];
+  chartStabilizeTimerIds.forEach(id => clearTimeout(id));
+  chartStabilizeTimerIds = [];
+}
+
 function resizeVisibleCharts(root = document) {
   if (typeof Chart === "undefined") return 0;
   const scope = root && typeof root.querySelectorAll === "function" ? root : document;
@@ -349,18 +364,21 @@ function resizeVisibleCharts(root = document) {
 }
 
 function scheduleChartStabilization(root = document) {
+  cancelChartStabilization();
   const token = ++chartStabilizeToken;
   const run = () => {
     if (token !== chartStabilizeToken) return;
     try { resizeVisibleCharts(root); } catch (_) {}
   };
   if (typeof requestAnimationFrame === "function") {
-    requestAnimationFrame(() => requestAnimationFrame(run));
+    chartStabilizeFrameIds.push(requestAnimationFrame(() => {
+      chartStabilizeFrameIds.push(requestAnimationFrame(run));
+    }));
   } else {
-    setTimeout(run, 0);
+    chartStabilizeTimerIds.push(setTimeout(run, 0));
   }
-  setTimeout(run, 140);
-  setTimeout(run, 420);
+  chartStabilizeTimerIds.push(setTimeout(run, 140));
+  chartStabilizeTimerIds.push(setTimeout(run, 420));
   return token;
 }
 
