@@ -10096,7 +10096,7 @@ async function importJSON(file) {
 }
 
 let _resetPending = false;
-function resetAll() {
+async function resetAll() {
   const btn = document.getElementById("btnReset");
   if (!_resetPending) {
     _resetPending = true;
@@ -10108,11 +10108,19 @@ function resetAll() {
     return;
   }
   _resetPending = false;
-  void storageClear();
-  state = safeClone(DEFAULT_STATE);
-  saveState();
-  renderAll();
-  toast("Dados apagados.");
+  if (btn) btn.disabled = true;
+  try {
+    await storageClear();
+    state = safeClone(DEFAULT_STATE);
+    await saveStateAsync();
+    renderAll();
+    toast("Dados apagados.");
+  } catch (error) {
+    console.error("Falha no reset total", error);
+    toast("Não foi possível apagar todos os dados.", 4000);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 /* ─── SETTINGS ────────────────────────────────────────────── */
