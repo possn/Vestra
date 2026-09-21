@@ -23,14 +23,25 @@ module.exports = defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    serviceWorkers: 'allow'
+    serviceWorkers: 'block'
   },
   projects: [
     {
       name: 'webkit-iphone',
+      testIgnore: ['production-smoke.spec.js', 'pwa-lifecycle.spec.js'],
       use: {
         ...devices['iPhone 15'],
-        browserName: 'webkit'
+        browserName: 'webkit',
+        serviceWorkers: 'block'
+      }
+    },
+    {
+      name: 'webkit-iphone-pwa',
+      testMatch: 'pwa-lifecycle.spec.js',
+      use: {
+        ...devices['iPhone 15'],
+        browserName: 'webkit',
+        serviceWorkers: 'allow'
       }
     }
   ],
