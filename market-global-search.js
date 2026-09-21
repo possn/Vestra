@@ -1,4 +1,4 @@
-/* Vestra Global Market Search v2.0 — broker aliases + exact provider identity. */
+/* Vestra Global Market Search v2.1 — Worker-backed name search + exact provider identity. */
 (() => {
   'use strict';
 
