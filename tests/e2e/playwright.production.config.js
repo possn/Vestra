@@ -6,7 +6,7 @@ const productionURL = process.env.VESTRA_PRODUCTION_URL || 'https://possn.github
 
 module.exports = defineConfig({
   testDir: '.',
-  testMatch: 'production-smoke.spec.js',
+  testMatch: ['production-smoke.spec.js', 'pwa-lifecycle.spec.js'],
   outputDir: path.join(repoRoot, 'test-results-production'),
   timeout: 90_000,
   expect: { timeout: 15_000 },
@@ -20,14 +20,25 @@ module.exports = defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    serviceWorkers: 'allow'
+    serviceWorkers: 'block'
   },
   projects: [
     {
       name: 'webkit-iphone-production',
+      testMatch: 'production-smoke.spec.js',
       use: {
         ...devices['iPhone 15'],
-        browserName: 'webkit'
+        browserName: 'webkit',
+        serviceWorkers: 'block'
+      }
+    },
+    {
+      name: 'webkit-iphone-production-pwa',
+      testMatch: 'pwa-lifecycle.spec.js',
+      use: {
+        ...devices['iPhone 15'],
+        browserName: 'webkit',
+        serviceWorkers: 'allow'
       }
     }
   ]
