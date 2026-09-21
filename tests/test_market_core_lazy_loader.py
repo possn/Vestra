@@ -15,7 +15,7 @@ class LazyMarketCoreTests(unittest.TestCase):
 
     def test_market_core_is_not_in_initial_html(self):
         self.assertNotIn('src="market.js?v=20260831v2"', self.index)
-        self.assertIn('src="market-runtime-loader.js?v=1.4"', self.index)
+        self.assertIn('src="market-runtime-loader.js?v=1.5"', self.index)
         self.assertNotIn('src="portfolio-sheet-navigation.js', self.index)
         self.assertIn('portfolio-sheet-navigation.js?v=1.5', self.loader)
         self.assertNotIn('src="market-data-loader.js', self.index)
