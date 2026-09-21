@@ -106,6 +106,40 @@ function quoteHeaders(){
   };
 }
 
+async function handleNameSearch(request){
+  const url = new URL(request.url);
+  const origin = request.headers.get('Origin') || '';
+  const cors = learnedCors(origin);
+  const query = txt(url.searchParams.get('q'));
+  if (query.length < 2 || query.length > 80) return json({rows:[]},200,cors);
+  try {
+    const upstream = new URL('https://query1.finance.yahoo.com/v1/finance/search');
+    upstream.searchParams.set('q', query);
+    upstream.searchParams.set('quotesCount', '8');
+    upstream.searchParams.set('newsCount', '0');
+    upstream.searchParams.set('listsCount', '0');
+    const response = await fetchWithTimeout(upstream.toString(), {
+      headers: quoteHeaders(),
+    }, EXACT_FETCH_TIMEOUT_MS);
+    if (!response.ok) return json({rows:[]}, response.status, cors);
+    const payload = await response.json().catch(()=>({}));
+    const rows = (payload?.quotes || [])
+      .filter(row => ALLOWED_TYPES.has(txt(row?.quoteType).toUpperCase()))
+      .map(row => ({
+        ticker: txt(row?.symbol).toUpperCase(),
+        name: txt(row?.longname || row?.shortname || row?.symbol),
+        exchange: txt(row?.exchange || row?.exchDisp),
+        quote_type: txt(row?.quoteType).toUpperCase(),
+        currency: txt(row?.currency).toUpperCase(),
+      }))
+      .filter(row => validTicker(row.ticker))
+      .slice(0,8);
+    return json({rows},200,cors);
+  } catch (_) {
+    return json({rows:[]},200,cors);
+  }
+}
+
 function normalizedQuotePrice(price, currency){
   const value = Number(price);
   const rawCurrency = txt(currency);
@@ -369,6 +403,7 @@ export default {
   async fetch(request, env, ctx){
     const url = new URL(request.url);
     if (url.pathname === '/quotes' && request.method === 'GET') return handleExactBatchQuotes(request);
+    if (url.pathname === '/search' && request.method === 'GET') return handleNameSearch(request);
     if (url.pathname === '/learned-universe') return handleLearnedUniverse(request,env,ctx);
     if (url.pathname === '/ai-brief') return handleAiBrief(request,env,ctx);
     if (url.pathname === '/sec/companyfacts' || url.pathname === '/sec/submissions') return handleSecTransport(request,env,ctx);
