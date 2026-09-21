@@ -13,7 +13,7 @@ class StorageClearResilienceTests(unittest.TestCase):
             const fs = require('fs');
             const vm = require('vm');
             const source = fs.readFileSync({str(ROOT / 'app-storage.js')!r}, 'utf8');
-            let removed = null;
+            const removed = [];
             const context = {{
               window: {{}},
               navigator: {{}},
