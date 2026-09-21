@@ -18,7 +18,7 @@ class StorageClearResilienceTests(unittest.TestCase):
               window: {{}},
               navigator: {{}},
               localStorage: {{
-                removeItem(key) {{ removed = key; }}
+                removeItem(key) {{ removed.push(key); }}
               }},
               indexedDB: {{
                 open() {{ throw new Error('IndexedDB unavailable'); }}
@@ -31,8 +31,11 @@ class StorageClearResilienceTests(unittest.TestCase):
             vm.runInContext(source, context);
             (async () => {{
               await context.window.VestraStorage.storageClear();
-              if (removed !== 'PF_STATE_V6') {{
-                throw new Error(`localStorage fallback was not cleared: ${{removed}}`);
+              const required = ['PF_STATE_V6', 'PF_STATE_V6_EMPTY_AUTH'];
+              for (const key of required) {{
+                if (!removed.includes(key)) {{
+                  throw new Error(`localStorage key was not cleared: ${{key}}; removed=${{removed.join(',')}}`);
+                }}
               }}
             }})().catch((error) => {{
               console.error(error);
