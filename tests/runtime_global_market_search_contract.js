@@ -24,7 +24,7 @@ const context = vm.createContext({
 vm.runInContext(source, context, { filename: 'market-global-search.js' });
 const api = context.window.VestraGlobalMarketSearch;
 assert.ok(api, 'global market search API must be exported');
-assert.strictEqual(api.version, '2.0');
+assert.strictEqual(api.version, '2.1');
 
 for (const query of ['HHPD', 'HHPD.IL', 'Hon Hai', 'Foxconn']) {
   const rows = api.brokerAliasSearch(query);
