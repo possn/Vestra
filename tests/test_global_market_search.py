@@ -28,7 +28,8 @@ class GlobalMarketSearchTests(unittest.TestCase):
 
     def test_name_search_is_separate_from_daily_catalogue(self):
         text = GLOBAL.read_text(encoding="utf-8")
-        self.assertIn("/v1/finance/search", text)
+        self.assertIn("${base}/search?q=", text)
+        self.assertNotIn("query1.finance.yahoo.com/v1/finance/search", text)
         self.assertIn("PESQUISA GLOBAL · LIVE", text)
         self.assertNotIn("stocks-index.json", text)
 
