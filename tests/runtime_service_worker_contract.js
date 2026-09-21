@@ -13,14 +13,17 @@ assert(source.includes('cache.match(request, { ignoreSearch: true })'), 'version
 assert(source.includes('const NETWORK_TIMEOUT_MS = 5000;'), 'service-worker network waits must be bounded');
 assert(source.includes('async function fetchWithTimeout('), 'bounded fetch ownership must be centralized');
 assert(source.includes('async function precacheAsset('), 'install precache must use the bounded fetch path');
-assert(source.includes('APP_SHELL.map(asset => precacheAsset(cache, asset))'), 'every app-shell asset must use bounded precache');
+assert(source.includes('const PRECACHE_CONCURRENCY = 6;'), 'install precache concurrency must remain bounded');
+assert(source.includes('async function precacheAppShell('), 'app-shell install must have a resilient coordinator');
+assert(source.includes('REQUIRED_APP_SHELL.has(asset)'), 'install must distinguish critical from optional shell assets');
+assert(source.includes('await precacheAppShell(cache)'), 'install event must use the resilient app-shell coordinator');
 assert(!source.includes('cache.add(asset)'), 'install must not use unbounded cache.add fetches');
 assert(source.includes('controller.abort()'), 'timed-out fetches must abort when AbortController is available');
 for (const dependency of ['app-runtime-bridge.js', 'quote-canonical-repair.js', 'market-global-search.js', 'market-learned-universe.js']) {
   assert(source.includes(`"./${dependency}"`), `${dependency} must be precached because market-company-brief loads it dynamically`);
 }
 
-function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCachedResponse, hangFetch = false, immediateTimeout = false }) {
+function buildRuntime({ freshResponse, fetchError, fetchImpl, cachedResponse, versionlessCachedResponse, hangFetch = false, immediateTimeout = false }) {
   const puts = [];
   const matches = [];
   const listeners = {};
@@ -52,8 +55,9 @@ function buildRuntime({ freshResponse, fetchError, cachedResponse, versionlessCa
       keys: async () => [],
       delete: async () => true,
     },
-    fetch: async () => {
+    fetch: async request => {
       fetchCalls += 1;
+      if (fetchImpl) return fetchImpl(request);
       if (hangFetch) return await new Promise(() => {});
       if (fetchError) throw fetchError;
       return freshResponse;
@@ -94,6 +98,34 @@ function response(status, label) {
     await context.precacheAsset(cache, './app.js');
     assert.strictEqual(puts.length, 1, 'healthy precache response must be persisted');
     assert.strictEqual(puts[0].request, './app.js', 'precache must store the requested shell asset key');
+  }
+
+  {
+    const fresh = response(200, 'precache-fresh');
+    const { context, cache } = buildRuntime({
+      fetchImpl: async request => {
+        if (String(request) === './politicians.css') throw new Error('optional unavailable');
+        return fresh;
+      }
+    });
+    const result = await context.precacheAppShell(cache);
+    assert(result.failed.includes('./politicians.css'), 'optional precache failure must be reported');
+    assert(result.cached > 0, 'healthy shell assets must still be cached');
+  }
+
+  {
+    const fresh = response(200, 'precache-fresh');
+    const { context, cache } = buildRuntime({
+      fetchImpl: async request => {
+        if (String(request) === './app.js') throw new Error('critical unavailable');
+        return fresh;
+      }
+    });
+    await assert.rejects(
+      context.precacheAppShell(cache),
+      /Critical app-shell precache failed: .*\.\/app\.js/,
+      'critical bootstrap failure must still reject the install'
+    );
   }
 
   {
