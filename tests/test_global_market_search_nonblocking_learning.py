@@ -27,8 +27,8 @@ class GlobalMarketSearchNonblockingLearningTests(unittest.TestCase):
         )
 
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("version:'2.0'", GLOBAL)
-        self.assertIn("market-global-search.js?v=2.0", BOOT)
+        self.assertIn("version:'2.1'", GLOBAL)
+        self.assertIn("market-global-search.js?v=2.1", BOOT)
         self.assertIn("market-learned-universe.js?v=3.0", BOOT)
 
 
