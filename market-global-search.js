@@ -160,14 +160,39 @@
   function renderGlobalSuggestions(q, rows){
     const box = document.getElementById('marketSuggestions');
     if (!box) return;
-    box.querySelector('.vestra-global-search')?.remove();
     const filtered = rows.filter((r,i,a)=>a.findIndex(x=>x.ticker===r.ticker)===i).filter(r=>!localExactPresent(r.ticker)).slice(0,6);
-    if (!filtered.length) return;
+    let host = box.querySelector('.vestra-global-search');
+    if (!filtered.length) { host?.remove(); return; }
+
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'vestra-global-search';
+      host.innerHTML = '<div class="vestra-global-search__label"></div>';
+      box.appendChild(host);
+    }
+
+    const label = host.querySelector('.vestra-global-search__label');
     const hasLearned = filtered.some(r=>r._learned);
-    const host = document.createElement('div');
-    host.className = 'vestra-global-search';
-    host.innerHTML = `<div class="vestra-global-search__label">${hasLearned?'UNIVERSO APRENDIDO + LIVE':'PESQUISA GLOBAL · LIVE'}</div>${filtered.map(r=>`<button type="button" class="vestra-global-search__row" data-vestra-global-ticker="${esc(r.ticker)}"><span><strong>${esc(r.ticker)}</strong><small>${esc(r.name)}</small></span><em>${esc([r.exchange,r.currency,r._learned?'Guardada':''].filter(Boolean).join(' · '))}</em></button>`).join('')}`;
-    box.appendChild(host); box.hidden=false;
+    if (label) label.textContent = hasLearned ? 'UNIVERSO APRENDIDO + LIVE' : 'PESQUISA GLOBAL · LIVE';
+
+    const existing = new Map([...host.querySelectorAll('[data-vestra-global-ticker]')].map(el=>[txt(el.dataset.vestraGlobalTicker).toUpperCase(), el]));
+    const keep = new Set();
+    for (const r of filtered) {
+      const ticker = txt(r.ticker).toUpperCase();
+      let row = existing.get(ticker);
+      if (!row) {
+        row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'vestra-global-search__row';
+        row.dataset.vestraGlobalTicker = ticker;
+        host.appendChild(row);
+      }
+      const html = `<span><strong>${esc(r.ticker)}</strong><small>${esc(r.name)}</small></span><em>${esc([r.exchange,r.currency,r._learned?'Guardada':''].filter(Boolean).join(' · '))}</em>`;
+      if (row.innerHTML !== html) row.innerHTML = html;
+      keep.add(ticker);
+    }
+    for (const [ticker,row] of existing) if (!keep.has(ticker)) row.remove();
+    box.hidden=false;
   }
 
   async function runSearch(q){
