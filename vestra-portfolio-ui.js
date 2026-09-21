@@ -25,12 +25,14 @@
     return '';
   }
   function metrics(c){
+    const summary=c?.querySelector('.market-portfolio-summary');
     const dc=decisionCenter(c), dcTxt=t(dc?.textContent);
-    const positions=kpiByLabel(c,'Posições')||'';
-    const research=kpiByLabel(c,'Com research')||'';
-    const coverage=kpiByLabel(c,'Cobertura')||'';
-    const conviction=(dcTxt.match(/CONVICÇÃO\s*([0-9.,]+)/i)||[])[1]||'';
-    const risk=(dcTxt.match(/RISK BUDGET\s*([0-9.,]+)/i)||[])[1]||'';
+    const positions=t(summary?.dataset.vpuPositions)||kpiByLabel(c,'Posições')||'';
+    const research=t(summary?.dataset.vpuResearch)||kpiByLabel(c,'Com research')||'';
+    const coverageRaw=t(summary?.dataset.vpuCoverage);
+    const coverage=coverageRaw?coverageRaw+'%':kpiByLabel(c,'Cobertura')||'';
+    const conviction=t(dc?.dataset.vpuConviction)||(dcTxt.match(/CONVICÇÃO\s*([0-9.,]+)/i)||[])[1]||'';
+    const risk=t(dc?.dataset.vpuRisk)||(dcTxt.match(/RISK BUDGET\s*([0-9.,]+)/i)||[])[1]||'';
     return {
       positions,research,coverage,conviction,risk,
       reinforce:countRows(card('reinforce',c)), review:countRows(card('review',c)), swaps:countRows(card('swap',c)),
