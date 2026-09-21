@@ -160,7 +160,7 @@
   function renderGlobalSuggestions(q, rows){
     const box = document.getElementById('marketSuggestions');
     if (!box) return;
-    const filtered = rows.filter((r,i,a)=>a.findIndex(x=>x.ticker===r.ticker)===i).filter(r=>!localExactPresent(r.ticker)).slice(0,6);
+    const filtered = rows.filter((r,i,a)=>a.findIndex(x=>x.ticker===r.ticker)===i).filter(r=>r._brokerAlias || !localExactPresent(r.ticker)).slice(0,6);
     let host = box.querySelector('.vestra-global-search');
     if (!filtered.length) { host?.remove(); return; }
 
