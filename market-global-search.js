@@ -128,16 +128,18 @@
 
   async function yahooNameSearch(q){
     const text = txt(q); if (text.length < 2) return [];
+    const base = workerBase();
+    if (!base) return [];
     const key = `name:${text.toLowerCase()}`;
     if (cache.has(key)) return cache.get(key);
     try {
-      const u = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(text)}&quotesCount=8&newsCount=0&listsCount=0`;
+      const u = `${base}/search?q=${encodeURIComponent(text)}`;
       const r = await fetchRemoteWithDeadline(u, {cache:'no-store'}, SEARCH_FETCH_TIMEOUT_MS, 'Timeout na pesquisa global.');
       if (!r.ok) return [];
       const d = await r.json();
-      const rows = (d?.quotes||[]).filter(x=>['EQUITY','ETF','MUTUALFUND'].includes(txt(x.quoteType).toUpperCase())).map(x=>({
-        ticker:txt(x.symbol).toUpperCase(), name:txt(x.longname||x.shortname||x.symbol), exchange:txt(x.exchange||x.exchDisp), quote_type:txt(x.quoteType).toUpperCase(), currency:txt(x.currency)
-      })).filter(x=>x.ticker).slice(0,8);
+      const rows = (d?.rows||[]).map(x=>({
+        ticker:txt(x.ticker).toUpperCase(), name:txt(x.name||x.ticker), exchange:txt(x.exchange), quote_type:txt(x.quote_type).toUpperCase(), currency:txt(x.currency)
+      })).filter(x=>x.ticker && ['EQUITY','ETF','MUTUALFUND'].includes(x.quote_type)).slice(0,8);
       cache.set(key,rows); return rows;
     } catch (_) { return []; }
   }
@@ -291,5 +293,5 @@
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-vestra-global-ticker]');if(!b)return;e.preventDefault();openRemoteTicker(txt(b.dataset.vestraGlobalTicker).toUpperCase(),{sourceNode:b});});
   document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target?.id!=='marketSearch')return;const input=e.target;const raw=txt(input.value);const q=raw.toUpperCase();const aliasTicker=txt(brokerAliasSearch(raw)[0]?.ticker).toUpperCase();const target=aliasTicker||q;if(!validTickerQuery(target)||(!aliasTicker&&localExactPresent(q)))return;const enterRequest=++enterOpenSeq;setTimeout(async()=>{const rows=await validateExactTicker(target);if(enterRequest!==enterOpenSeq||txt(input.value).toUpperCase()!==q)return;if(rows[0])openRemoteTicker(rows[0].ticker,{sourceNode:input});},0);});
   style();
-  window.VestraGlobalMarketSearch=Object.freeze({version:'2.0',validateExactTicker,openRemoteTicker,runSearch,learnCentral,exactProviderIdentity,brokerAliasSearch});
+  window.VestraGlobalMarketSearch=Object.freeze({version:'2.1',validateExactTicker,openRemoteTicker,runSearch,learnCentral,exactProviderIdentity,brokerAliasSearch});
 })();
