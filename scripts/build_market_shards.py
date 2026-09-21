@@ -32,6 +32,10 @@ MAX_INDEX_BYTES = 7_250_000
 MAX_INDEX_RATIO = 0.15
 MAX_COLUMNAR_BYTES = 2_250_000
 MAX_COLUMNAR_INDEX_RATIO = 0.35
+# Regression floor for the field_rows_v1 columnar codec. Observed savings on the
+# current universe are ~0.70; 0.5 leaves headroom before the codec would need
+# revisiting (e.g. universe shrinks, or more per-row fields become dense).
+MIN_COLUMNAR_SAVING_RATIO = 0.5
 
 # Full dossier payloads used to be grouped only by the first ticker character.
 # A/C/M-class shards can reach several MB and JSON.parse then competes with the

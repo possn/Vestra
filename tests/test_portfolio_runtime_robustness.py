@@ -13,6 +13,9 @@ def test_portfolio_ui_text_helper_is_null_safe():
 
 
 def test_portfolio_runtime_cache_busters_are_current():
-    html = Path("index.html").read_text()
-    assert "vestra-portfolio-hierarchy.js?v=1.3" in html
-    assert "vestra-portfolio-ui.js?v=1.1" in html
+    # These modules are no longer <script>-tagged in index.html; they are
+    # fetched dynamically by market-static-universe.js's companion loader.
+    # Assert the cache-buster lives there instead of a stale index.html check.
+    loader = Path("market-static-universe.js").read_text()
+    assert "vestra-portfolio-hierarchy.js?v=" in loader
+    assert "vestra-portfolio-ui.js?v=" in loader

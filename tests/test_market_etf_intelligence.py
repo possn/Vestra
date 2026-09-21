@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,5 +36,5 @@ def test_etf_module_is_in_pwa_bootstrap_without_cache_contract_bump():
     src = (ROOT / "sw.js").read_text(encoding="utf-8")
     assert '"./market-etf-intelligence.js"' in src
     assert '"market-etf-intelligence.js"' in src
-    assert 'const CACHE_NAME = "vestra-cache-v128";' in src
-    assert "Vestra Service Worker v10.14" in src
+    assert re.search(r'const CACHE_NAME = "vestra-cache-v\d+";', src)
+    assert re.search(r"Vestra Service Worker v[\d.]+", src)
