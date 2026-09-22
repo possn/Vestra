@@ -1,4 +1,4 @@
-/* Vestra Metals v1.1 — Winston-inspired editorial commodities dashboard + transparent sentiment. */
+/* Vestra Metals v1.2 — Winston-inspired editorial commodities dashboard + transparent sentiment. */
 (() => {
   'use strict';
 
@@ -25,7 +25,7 @@
     const link=document.createElement('link');
     link.id='vestraMetalsStyles';
     link.rel='stylesheet';
-    link.href='market-metals.css?v=1.1';
+    link.href='market-metals.css?v=1.2';
     document.head.appendChild(link);
   }
   function injectModeButton(){
@@ -226,5 +226,5 @@
   });
   document.addEventListener('DOMContentLoaded',()=>{injectStyles();injectModeButton();});
   injectStyles(); injectModeButton();
-  window.VestraMetals=Object.freeze({version:'1.1',renderInto,metals:METALS});
+  window.VestraMetals=Object.freeze({version:'1.2',renderInto,metals:METALS});
 })();
