@@ -40,6 +40,9 @@ test('iPhone/WebKit: dashboard charts fill their cards after render and viewport
 
   await page.waitForTimeout(550);
 
+  await expect(page.locator('#dashboardDistributionCard')).toBeHidden();
+  await expect(page.locator('#trendChart')).toBeVisible();
+
   const initial = await page.locator('#viewDashboard .chartWrap canvas:visible').evaluateAll(canvases => canvases.map(canvas => {
     const wrap = canvas.closest('.chartWrap');
     return {
@@ -49,7 +52,7 @@ test('iPhone/WebKit: dashboard charts fill their cards after render and viewport
     };
   }));
 
-  expect(initial.length).toBeGreaterThanOrEqual(2);
+  expect(initial.length).toBeGreaterThanOrEqual(1);
   for (const item of initial) {
     expect(item.wrapWidth).toBeGreaterThan(250);
     expect(item.canvasWidth / item.wrapWidth).toBeGreaterThan(0.92);
@@ -72,7 +75,7 @@ test('iPhone/WebKit: dashboard charts fill their cards after render and viewport
     };
   }));
 
-  expect(after.length).toBeGreaterThanOrEqual(2);
+  expect(after.length).toBeGreaterThanOrEqual(1);
   for (const item of after) {
     expect(item.canvasWidth / item.wrapWidth).toBeGreaterThan(0.92);
     expect(item.bitmapWidth).toBeGreaterThan(250);
