@@ -83,15 +83,25 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         self.assertIn('quick.insertAdjacentElement(\'afterend\', card)', self.source)
         self.assertNotIn("fetch(", self.source)
 
+    def test_today_brief_reuses_rendered_market_event_and_news_signals(self):
+        self.assertIn("dashboardTodayBrief", self.source)
+        self.assertIn("renderTodayBrief", self.source)
+        self.assertIn("vestraMarketSentimentCard", self.source)
+        self.assertIn("dashboardWeeklyEventsCard", self.source)
+        self.assertIn("vestraDailyNewsCard", self.source)
+        self.assertIn("LEITURA DO DIA", self.source)
+        self.assertIn(".dashboard-today-brief", self.styles)
+        self.assertNotIn("fetch(", self.source)
+
     def test_cashflow_icon_forces_text_presentation(self):
         self.assertIn("#navCashflow .navico", self.source)
         self.assertIn("↕︎", self.source)
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
-        self.assertIn("dashboard-ui-refresh.js?v=1.5", self.loader)
+        self.assertIn("dashboard-ui-refresh.js?v=1.6", self.loader)
         self.assertIn("version: '1.17'", self.loader)
-        self.assertIn("version: '1.5'", self.source)
+        self.assertIn("version: '1.6'", self.source)
 
 
 if __name__ == "__main__":
