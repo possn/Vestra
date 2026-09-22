@@ -4,7 +4,11 @@
 .dashboard-editorial-heading p{margin:6px 0 0;max-width:640px;color:var(--muted,#64748b);font-size:11px;line-height:1.48}
 #dashboardTodayHeading{margin-top:26px}
 #dashboardPortfolioHeading{margin-top:28px}
-#dashboardTodayHeading + #vestraMarketSentimentCard{margin-top:0}
+#dashboardTodayHeading + #dashboardTodayBrief{margin-top:0}
+.dashboard-today-brief{margin:0 0 12px;padding:14px 15px;border:1px solid color-mix(in srgb,#b18a45 16%,var(--line));border-radius:18px;background:color-mix(in srgb,#f0eadf 34%,var(--card));box-shadow:0 3px 14px rgba(28,45,54,.03)}
+.dashboard-today-brief__head span{display:block;color:#9a773c;font-size:9px;font-weight:900;letter-spacing:.14em}.dashboard-today-brief__head strong{display:block;margin-top:4px;font-family:Georgia,"Times New Roman",serif;font-size:17px;line-height:1.15;color:var(--text)}
+.dashboard-today-brief__rows{display:grid;gap:8px;margin-top:11px}.dashboard-today-brief__row{display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent)}.dashboard-today-brief__label{font-size:8px;font-weight:900;letter-spacing:.11em;color:var(--muted);padding-top:2px}.dashboard-today-brief__body{min-width:0}.dashboard-today-brief__body strong{display:block;font-size:12px;line-height:1.35;color:var(--text);overflow-wrap:anywhere}.dashboard-today-brief__body small{display:block;margin-top:2px;font-size:9.5px;line-height:1.35;color:var(--muted)}
+#dashboardTodayBrief + #vestraMarketSentimentCard{margin-top:0}
 #dashboardPortfolioHeading + .kpi-quick{margin-top:0}
 .dashboard-pulse-card{overflow:hidden;background:color-mix(in srgb,#f0eadf 30%,var(--card));border-color:color-mix(in srgb,#b18a45 16%,var(--line))!important}
 .dashboard-pulse-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}
@@ -42,6 +46,9 @@
 .bottomnav .navbtn--active{background:rgba(23,123,120,.075);transform:translateY(-1px)}
 .bottomnav .navico{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI Symbol",sans-serif;font-weight:650}
 @media(max-width:560px){
+  .dashboard-today-brief{padding:13px}
+  .dashboard-today-brief__row{grid-template-columns:86px minmax(0,1fr);gap:8px}
+
   .dashboard-editorial-heading{margin:21px 1px 9px}
   .dashboard-editorial-heading h2{font-size:23px}
   .dashboard-editorial-heading p{font-size:10.5px}

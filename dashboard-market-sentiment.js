@@ -1,4 +1,4 @@
-/* Vestra Dashboard Market Sentiment v1.0 — transparent, price-derived market barometer. */
+/* Vestra Dashboard Market Sentiment v1.1 — transparent, price-derived market barometer. */
 (() => {
   'use strict';
 
@@ -180,8 +180,8 @@
   function mountPoint(){
     const dashboard=document.getElementById('viewDashboard');
     if(!dashboard) return null;
-    const hero=dashboard.querySelector('.card.hero');
-    return {dashboard,hero};
+    const anchor=document.getElementById('dashboardTodayBrief') || document.getElementById('dashboardTodayHeading') || dashboard.querySelector('.card.hero');
+    return {dashboard,anchor};
   }
 
   function cardMarkup(){
@@ -239,7 +239,7 @@
     if(!next) return false;
     const existing=document.getElementById(CARD_ID);
     if(existing) existing.replaceWith(next);
-    else if(mount.hero) mount.hero.insertAdjacentElement('afterend',next);
+    else if(mount.anchor) mount.anchor.insertAdjacentElement('afterend',next);
     else mount.dashboard.prepend(next);
     return true;
   }
@@ -327,7 +327,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.0',
+    version:'1.1',
     computeSnapshot,
     labelFor,
     load,

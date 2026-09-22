@@ -1,4 +1,4 @@
-/* Vestra Dashboard UI Refresh v1.5 — editorial home hierarchy + compact portfolio insights. */
+/* Vestra Dashboard UI Refresh v1.6 — editorial daily brief + portfolio context. */
 (() => {
   'use strict';
 
@@ -8,9 +8,12 @@
   const UPCOMING_TILE_ID = 'dashboardUpcomingDividendsTile';
   const TODAY_HEADING_ID = 'dashboardTodayHeading';
   const PORTFOLIO_HEADING_ID = 'dashboardPortfolioHeading';
+  const TODAY_BRIEF_ID = 'dashboardTodayBrief';
   let historyOpen = false;
   let historyObserver = null;
   let healthObserver = null;
+  let todayObserver = null;
+  let todayRenderQueued = false;
 
   const shared = window.VestraUtils;
   if (!shared || typeof shared.text !== 'function' || typeof shared.finiteOrNull !== 'function' ||
@@ -222,6 +225,83 @@
     if (quick && quick.previousElementSibling !== portfolio) quick.insertAdjacentElement('beforebegin', portfolio);
   }
 
+  function todaySignal(label, value, detail = '') {
+    const row = document.createElement('div');
+    row.className = 'dashboard-today-brief__row';
+    const kicker = document.createElement('span');
+    kicker.className = 'dashboard-today-brief__label';
+    kicker.textContent = label;
+    const body = document.createElement('div');
+    body.className = 'dashboard-today-brief__body';
+    const strong = document.createElement('strong');
+    strong.textContent = value;
+    body.appendChild(strong);
+    if (detail) {
+      const small = document.createElement('small');
+      small.textContent = detail;
+      body.appendChild(small);
+    }
+    row.append(kicker, body);
+    return row;
+  }
+
+  function renderTodayBrief() {
+    const dashboard = document.getElementById('viewDashboard');
+    const heading = document.getElementById(TODAY_HEADING_ID);
+    if (!dashboard || !heading) return false;
+
+    const sentiment = document.getElementById('vestraMarketSentimentCard');
+    const score = text(sentiment?.querySelector('.dms-score')?.textContent).replace(/\s+/g, '');
+    const sentimentLabel = text(sentiment?.querySelector('.dms-label')?.textContent);
+    const sentimentReason = text(sentiment?.querySelector('.dms-head p')?.textContent);
+
+    const event = document.querySelector('#dashboardWeeklyEventsCard .weekly-event');
+    const eventDay = text(event?.querySelector('.weekly-event__day')?.textContent);
+    const eventTitle = text(event?.querySelector('.weekly-event__ticker')?.textContent);
+    const eventType = text(event?.querySelector('.weekly-event__type')?.textContent);
+
+    const news = document.querySelector('#vestraDailyNewsCard .vestra-daily-news-item');
+    const newsTitle = text(news?.querySelector('strong')?.textContent);
+    const newsBadge = text(news?.querySelector('.vestra-daily-news-badge')?.textContent);
+
+    const signature = [score, sentimentLabel, sentimentReason, eventDay, eventTitle, eventType, newsTitle, newsBadge].join('|');
+    let brief = document.getElementById(TODAY_BRIEF_ID);
+    if (!brief) {
+      brief = document.createElement('section');
+      brief.id = TODAY_BRIEF_ID;
+      brief.className = 'dashboard-today-brief';
+    }
+    if (brief.dataset.signature !== signature) {
+      brief.replaceChildren();
+      const head = document.createElement('div');
+      head.className = 'dashboard-today-brief__head';
+      const copy = document.createElement('div');
+      copy.innerHTML = '<span>LEITURA DO DIA</span><strong>Três sinais para orientar a leitura</strong>';
+      head.appendChild(copy);
+      brief.appendChild(head);
+
+      const rows = document.createElement('div');
+      rows.className = 'dashboard-today-brief__rows';
+      if (score || sentimentLabel) rows.appendChild(todaySignal('MERCADO', [score, sentimentLabel].filter(Boolean).join(' · '), sentimentReason));
+      if (eventTitle) rows.appendChild(todaySignal('PRÓXIMO EVENTO', [eventDay, eventTitle].filter(Boolean).join(' · '), eventType));
+      if (newsTitle) rows.appendChild(todaySignal(newsBadge || 'NOTÍCIA', newsTitle));
+      if (!rows.childElementCount) rows.appendChild(todaySignal('A CARREGAR', 'A recolher os sinais do dia…', 'O resumo aparece assim que sentimento, eventos ou notícias estiverem disponíveis.'));
+      brief.appendChild(rows);
+      brief.dataset.signature = signature;
+    }
+    if (heading.nextElementSibling !== brief) heading.insertAdjacentElement('afterend', brief);
+    return true;
+  }
+
+  function queueTodayBrief() {
+    if (todayRenderQueued) return;
+    todayRenderQueued = true;
+    requestAnimationFrame(() => {
+      todayRenderQueued = false;
+      renderTodayBrief();
+    });
+  }
+
   function renderUpcomingDividendTile(now = new Date()) {
     const grid = document.querySelector('#viewDashboard .kpi-quick__grid');
     if (!grid) return;
@@ -307,6 +387,11 @@
       historyObserver = new MutationObserver(() => syncHistoryCompact());
       historyObserver.observe(table, { childList: true, subtree: true });
     }
+    const dashboard = document.getElementById('viewDashboard');
+    if (dashboard && !todayObserver) {
+      todayObserver = new MutationObserver(queueTodayBrief);
+      todayObserver.observe(dashboard, { childList: true, subtree: true, characterData: true });
+    }
     const alert = document.getElementById('negReturnAlert');
     if (alert && !healthObserver) {
       healthObserver = new MutationObserver(() => queueMicrotask(renderPortfolioHealth));
@@ -318,6 +403,7 @@
     ensureStyles();
     normalizeBottomNav();
     ensureEditorialHierarchy();
+    renderTodayBrief();
     renderPulse();
     renderUpcomingDividendTile();
     renderPortfolioHealth();
@@ -337,5 +423,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.5' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.6' });
 })();
