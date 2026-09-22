@@ -134,7 +134,8 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   const semiconductorTheme = thematic.locator('[data-dpc-theme="Semicondutores"]').first();
   await expect(semiconductorTheme).toBeVisible();
   await semiconductorTheme.click();
-  await expect(thematic.locator('.dpc-theme-detail')).toContainText('COMO SE FORMA');
+  await expect(thematic.locator('.dpc-theme-ranking')).toBeVisible();
+  await expect(thematic.locator('.dpc-theme-detail')).toContainText('O QUE ESTÁS A VER.');
   await expect(thematic.locator('.dpc-theme-detail')).toContainText('E2EDIV');
 
   await page.locator('#segLiabs').click();
