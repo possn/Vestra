@@ -48,12 +48,18 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
     window.VestraDashboardUiRefresh.refresh();
   });
 
+  const todayHeading = page.locator('#dashboardTodayHeading');
+  const portfolioHeading = page.locator('#dashboardPortfolioHeading');
+  await expect(todayHeading).toContainText('O que importa hoje');
+  await expect(portfolioHeading).toContainText('O património em contexto');
+
   const pulse = page.locator('#dashboardPortfolioPulseCard');
   await expect(pulse).toBeVisible({ timeout: 15_000 });
   await expect(pulse).toContainText('Pulso patrimonial');
   await expect(pulse).toContainText('7 dias');
   await expect(pulse).toContainText('30 dias');
   await expect(pulse).toContainText('Máximo 90d');
+  await expect(page.locator('#viewDashboard .kpi-quick + #dashboardPortfolioPulseCard')).toHaveCount(1);
 
   const upcoming = page.locator('#dashboardUpcomingDividendsTile');
   await expect(upcoming).toBeVisible();
@@ -87,7 +93,7 @@ test('iPhone/WebKit: Dashboard shows a clean empty upcoming state and integrates
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('/index.html');
-  await page.waitForFunction(() => window.VestraDashboardUiRefresh?.version === '1.4');
+  await page.waitForFunction(() => window.VestraDashboardUiRefresh?.version === '1.5');
 
   await page.evaluate(() => {
     state.assets = [{ id:'e2e-cash', name:'Cash', type:'cash', class:'Depósitos', value:1000, currency:'EUR' }];
