@@ -73,15 +73,25 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         self.assertIn("Abaixo da inflação", self.source)
         self.assertNotIn("⚠️", self.source)
 
+    def test_editorial_home_separates_today_from_portfolio_without_new_data_fetches(self):
+        self.assertIn("ensureEditorialHierarchy", self.source)
+        self.assertIn("O que importa hoje", self.source)
+        self.assertIn("O património em contexto", self.source)
+        self.assertIn("dashboardTodayHeading", self.source)
+        self.assertIn("dashboardPortfolioHeading", self.source)
+        self.assertIn(".dashboard-editorial-heading", self.styles)
+        self.assertIn('quick.insertAdjacentElement(\'afterend\', card)', self.source)
+        self.assertNotIn("fetch(", self.source)
+
     def test_cashflow_icon_forces_text_presentation(self):
         self.assertIn("#navCashflow .navico", self.source)
         self.assertIn("↕︎", self.source)
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
-        self.assertIn("dashboard-ui-refresh.js?v=1.4", self.loader)
+        self.assertIn("dashboard-ui-refresh.js?v=1.5", self.loader)
         self.assertIn("version: '1.17'", self.loader)
-        self.assertIn("version: '1.4'", self.source)
+        self.assertIn("version: '1.5'", self.source)
 
 
 if __name__ == "__main__":

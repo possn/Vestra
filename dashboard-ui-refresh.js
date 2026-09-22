@@ -1,4 +1,4 @@
-/* Vestra Dashboard UI Refresh v1.4 — compact history + portfolio pulse + passive-income insight + mobile polish. */
+/* Vestra Dashboard UI Refresh v1.5 — editorial home hierarchy + compact portfolio insights. */
 (() => {
   'use strict';
 
@@ -6,6 +6,8 @@
   const PULSE_ID = 'dashboardPortfolioPulseCard';
   const HISTORY_SUMMARY_ID = 'snapshotHistorySummary';
   const UPCOMING_TILE_ID = 'dashboardUpcomingDividendsTile';
+  const TODAY_HEADING_ID = 'dashboardTodayHeading';
+  const PORTFOLIO_HEADING_ID = 'dashboardPortfolioHeading';
   let historyOpen = false;
   let historyObserver = null;
   let healthObserver = null;
@@ -177,11 +179,47 @@
       </div>
       <div class="dashboard-pulse-sub">Último património registado: ${latest ? fmtMoney(latest._net) : '—'} · calculado a partir dos snapshots locais.</div>`;
 
-    const events = document.getElementById('dashboardWeeklyEventsCard');
+    const quick = dashboard.querySelector('.kpi-quick');
+    if (quick) quick.insertAdjacentElement('afterend', card);
+    else {
+      const hero = dashboard.querySelector('.card.hero');
+      if (hero) hero.insertAdjacentElement('afterend', card);
+      else dashboard.prepend(card);
+    }
+  }
+
+  function editorialHeading(id, kicker, title, copy) {
+    let node = document.getElementById(id);
+    if (!node) {
+      node = document.createElement('header');
+      node.id = id;
+      node.className = 'dashboard-editorial-heading';
+    }
+    node.innerHTML = `<span class="dashboard-editorial-heading__kicker">${kicker}</span><h2>${title}</h2><p>${copy}</p>`;
+    return node;
+  }
+
+  function ensureEditorialHierarchy() {
+    const dashboard = document.getElementById('viewDashboard');
+    if (!dashboard) return;
+
     const hero = dashboard.querySelector('.card.hero');
-    if (events) events.insertAdjacentElement('afterend', card);
-    else if (hero) hero.insertAdjacentElement('afterend', card);
-    else dashboard.prepend(card);
+    const today = editorialHeading(
+      TODAY_HEADING_ID,
+      'EM 30 SEGUNDOS',
+      'O que importa hoje',
+      'Sentimento do mercado, eventos e notícias com impacto potencial — primeiro o sinal, depois o detalhe.'
+    );
+    if (hero && hero.nextElementSibling !== today) hero.insertAdjacentElement('afterend', today);
+
+    const quick = dashboard.querySelector('.kpi-quick');
+    const portfolio = editorialHeading(
+      PORTFOLIO_HEADING_ID,
+      'A TUA CARTEIRA',
+      'O património em contexto',
+      'Rendimento, tendência e evolução apresentados como uma leitura única, sem repetir métricas.'
+    );
+    if (quick && quick.previousElementSibling !== portfolio) quick.insertAdjacentElement('beforebegin', portfolio);
   }
 
   function renderUpcomingDividendTile(now = new Date()) {
@@ -279,6 +317,7 @@
   function refresh() {
     ensureStyles();
     normalizeBottomNav();
+    ensureEditorialHierarchy();
     renderPulse();
     renderUpcomingDividendTile();
     renderPortfolioHealth();
@@ -298,5 +337,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, version: '1.4' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.5' });
 })();
