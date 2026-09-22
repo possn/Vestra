@@ -60,7 +60,9 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("S.themes=buildThemeExposure(assets,details", JS)
 
     def test_card_is_owned_by_portfolio_view_and_responsive(self):
-        self.assertIn("viewAssets", JS)\n        self.assertIn("portfolioGlance", JS)\n        self.assertNotIn("dashboardPortfolioPulseCard", JS)
+        self.assertIn("viewAssets", JS)
+        self.assertIn("portfolioGlance", JS)
+        self.assertNotIn("dashboardPortfolioPulseCard", JS)
         self.assertIn("dpc-mosaic", JS)
         self.assertIn("@media(max-width:560px)", CSS)
         self.assertIn("@media(max-width:360px)", CSS)
