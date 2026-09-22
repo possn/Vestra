@@ -22,7 +22,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("const hhi=weighted.reduce", JS)
         self.assertIn("1/hhi", JS)
         self.assertIn("Top 3", JS)
-        self.assertIn("ETFs contam como uma posição única", JS)
+        self.assertIn("ETFs contam como uma posição neste modo", JS)
 
     def test_etf_lookthrough_uses_only_observed_holdings_and_keeps_residual(self):
         self.assertIn("function buildLookthrough", JS)
@@ -30,7 +30,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("holdingPercent", JS)
         self.assertIn("etf-residual", JS)
         self.assertIn("não detalhado", JS)
-        self.assertIn("Sem dupla contagem", JS)
+        self.assertIn("sem dupla contagem", JS)
         self.assertIn("VestraMarketData?.hydrateTicker", JS)
         self.assertIn("function hydrationCandidates", JS)
         self.assertIn("slice(0,24)", JS)
@@ -69,7 +69,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("contributors:new Map()", JS)
         self.assertIn("dpc-theme-chip", JS)
         self.assertIn("COMO SE FORMA", JS)
-        self.assertIn("Percentagens sobre o património total", JS)
+        self.assertIn("Percentagens grandes = peso no património total", JS)
         self.assertIn("data-dpc-theme", JS)
         self.assertIn("data-dpc-theme-close", JS)
         self.assertIn(".dpc-theme-detail", CSS)
@@ -83,7 +83,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_theme_exposure_replaces_class_allocation_card(self):
         self.assertNotIn("function classAllocation", JS)
         self.assertNotIn("portfolioClassAllocationCard", JS)
-        self.assertIn("Onde está realmente exposto o teu património?", JS)
+        self.assertIn("Onde estão as tuas apostas de mercado?", JS)
         self.assertIn("dashboardDistributionCard", INDEX)
         self.assertIn('id="dashboardDistributionCard" hidden', INDEX)
         self.assertIn(".dpc-theme-bar", CSS)
