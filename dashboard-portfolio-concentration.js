@@ -1,8 +1,9 @@
-/* Vestra Portfolio Concentration v1.4 — portfolio-owned direct, ETF look-through + explainable thematic exposure. */
+/* Vestra Portfolio Concentration v1.5 — portfolio-owned concentration + class allocation. */
 (() => {
   'use strict';
 
   const CARD_ID='dashboardPortfolioConcentrationCard';
+  const CLASS_CARD_ID='portfolioClassAllocationCard';
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
   const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',loading:false,scheduled:false};
@@ -36,6 +37,37 @@
     const hhi=weighted.reduce((sum,row)=>sum+row.weight*row.weight,0);
     const effective=hhi>0?1/hhi:null;
     return {total,count:weighted.length,top1,top3,effective,rows:weighted};
+  }
+
+  function classAllocation(rows=directHoldings()){
+    const total=rows.reduce((sum,row)=>sum+row.value,0);
+    if(!(total>0)) return {total:0,rows:[]};
+    const buckets=new Map();
+    for(const row of rows){
+      const label=text(row?.asset?.class)||'Outros';
+      buckets.set(label,(buckets.get(label)||0)+row.value);
+    }
+    return {
+      total,
+      rows:[...buckets.entries()].map(([label,value])=>({label,value,weight:value/total})).sort((a,b)=>b.value-a.value),
+    };
+  }
+
+  function classAllocationMarkup(allocation){
+    if(!allocation.rows.length) return '';
+    const visible=allocation.rows.slice(0,6);
+    const rest=allocation.rows.slice(6).reduce((sum,row)=>sum+row.value,0);
+    if(rest>0) visible.push({label:'Outras',value:rest,weight:rest/allocation.total});
+    return `<section class="dpc-card dpc-class-card" id="${CLASS_CARD_ID}">
+      <div class="dpc-head"><div><span class="dpc-kicker">ALOCAÇÃO</span><h3>Como está distribuído o património?</h3><p>Distribuição por classe de ativo, sobre o valor atual registado.</p></div></div>
+      <div class="dpc-class-bar" aria-label="Distribuição por classe">${visible.map((row,index)=>`<span class="dpc-class-bar__segment dpc-segment--${(index%5)+1}" style="width:${Math.max(row.weight*100,2)}%" title="${esc(row.label)} · ${pct(row.weight)}"></span>`).join('')}</div>
+      <div class="dpc-class-list">${visible.map(row=>`<div><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></div>`).join('')}</div>
+    </section>`;
+  }
+
+  function portfolioShowsAssets(){
+    const assetsTab=document.getElementById('segAssets');
+    return !assetsTab || assetsTab.classList.contains('seg__btn--active');
   }
 
   function ratioToFraction(v){
@@ -233,7 +265,7 @@
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.4';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.5';
     document.head.appendChild(link);
   }
 
@@ -317,12 +349,27 @@
   function render(){
     ensureStyles();
     const target=mount(); if(!target) return false;
+    if(!portfolioShowsAssets()){
+      document.getElementById(CARD_ID)?.remove();
+      document.getElementById(CLASS_CARD_ID)?.remove();
+      return true;
+    }
+
     const shell=document.createElement('div'); shell.innerHTML=markup(concentrationSnapshot());
     const next=shell.firstElementChild; if(!next) return false;
     const existing=document.getElementById(CARD_ID);
     if(existing) existing.replaceWith(next);
     else if(target.anchor) target.anchor.insertAdjacentElement('afterend',next);
     else target.portfolio.appendChild(next);
+
+    const allocation=classAllocation();
+    const classShell=document.createElement('div'); classShell.innerHTML=classAllocationMarkup(allocation);
+    const classNext=classShell.firstElementChild;
+    const classExisting=document.getElementById(CLASS_CARD_ID);
+    if(classNext){
+      if(classExisting) classExisting.replaceWith(classNext);
+      else document.getElementById(CARD_ID)?.insertAdjacentElement('afterend',classNext);
+    }else classExisting?.remove();
     return true;
   }
 
@@ -402,13 +449,13 @@
         if(mode==='lookthrough'||mode==='themes') void hydrateLookthrough(false);
         return;
       }
-      if(event.target?.closest?.('[data-view="assets"]')) setTimeout(()=>{render();scheduleLookthrough();},60);
+      if(event.target?.closest?.('[data-view="assets"],#segAssets,#segLiabs')) setTimeout(()=>{render();scheduleLookthrough();},60);
     });
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'1.4',directHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'1.5',directHoldings,classAllocation,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
