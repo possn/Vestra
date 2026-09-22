@@ -61,6 +61,12 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(page.locator('#dashboardDistributionCard')).toBeHidden();
   await expect(page.locator('#viewDashboard .dashboard-shortcuts')).toHaveCount(0);
   await expect(page.locator('#btnDashQuickAdd')).toBeHidden();
+  const quickRecords = page.locator('#dashboardQuickRecordsCard');
+  await expect(quickRecords).toBeVisible();
+  await expect(quickRecords).toContainText('Registos rápidos');
+  await expect(quickRecords).not.toContainText('Cotações');
+  await expect(quickRecords).not.toContainText('Limpar histórico');
+  await expect(page.locator('#btnClearHistory')).toBeHidden();
 
   const pulse = page.locator('#dashboardPortfolioPulseCard');
   await expect(pulse).toBeVisible({ timeout: 15_000 });
