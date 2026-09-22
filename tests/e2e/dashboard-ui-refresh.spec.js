@@ -65,6 +65,13 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await themeMode.click();
   await expect(concentration).toContainText('Cobertura temática');
   await expect(concentration).toContainText('Não classificado');
+  const unclassifiedTheme = concentration.locator('[data-dpc-theme="Não classificado"]');
+  await expect(unclassifiedTheme).toBeVisible();
+  await unclassifiedTheme.click();
+  await expect(concentration.locator('.dpc-theme-detail')).toContainText('COMO SE FORMA');
+  await expect(concentration.locator('.dpc-theme-detail')).toContainText('E2EDIV');
+  await concentration.locator('[data-dpc-theme-close]').click();
+  await expect(concentration.locator('.dpc-theme-detail')).toHaveCount(0);
 
   const pulse = page.locator('#dashboardPortfolioPulseCard');
   await expect(pulse).toBeVisible({ timeout: 15_000 });

@@ -11,10 +11,10 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=1.2", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=1.3", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'1.2'", JS)
+        self.assertIn("version:'1.3'", JS)
 
     def test_concentration_is_direct_and_transparent(self):
         self.assertIn("function concentrationSnapshot", JS)
@@ -43,6 +43,21 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("cada exposição só entra num tema primário", JS)
         self.assertIn("data-dpc-mode=\"themes\"", JS)
         self.assertNotIn("themeWeights", JS)
+
+    def test_theme_evidence_keeps_contributor_provenance_and_drilldown(self):
+        self.assertIn("contributors:new Map()", JS)
+        self.assertIn("dpc-theme-chip", JS)
+        self.assertIn("COMO SE FORMA", JS)
+        self.assertIn("Contributos calculados sobre o património total", JS)
+        self.assertIn("data-dpc-theme", JS)
+        self.assertIn("data-dpc-theme-close", JS)
+        self.assertIn(".dpc-theme-detail", CSS)
+
+    def test_theme_hydration_has_single_assignment_and_fail_soft_theme_rebuild(self):
+        self.assertEqual(JS.count("S.details=details;"), 2)
+        self.assertEqual(JS.count("S.themes=buildThemeExposure(assets,details"), 2)
+        self.assertIn("}catch(_){", JS)
+        self.assertIn("S.themes=buildThemeExposure(assets,details", JS)
 
     def test_card_uses_portfolio_pulse_anchor_and_responsive_mosaic(self):
         self.assertIn("dashboardPortfolioPulseCard", JS)

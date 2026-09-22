@@ -1,11 +1,11 @@
-/* Vestra Dashboard Portfolio Concentration v1.2 — direct, ETF look-through + normalized thematic exposure. */
+/* Vestra Dashboard Portfolio Concentration v1.3 — direct, ETF look-through + explainable thematic exposure. */
 (() => {
   'use strict';
 
   const CARD_ID='dashboardPortfolioConcentrationCard';
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
-  const S={mode:'direct',lookthrough:null,themes:null,details:{},loading:false,scheduled:false};
+  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',loading:false,scheduled:false};
   const text=v=>String(v??'').trim();
   const esc=v=>text(v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
@@ -171,10 +171,14 @@
     const buckets=new Map();
     let classifiedValue=0;
 
-    const add=(theme,value)=>{
+    const add=(theme,value,contributor='')=>{
       if(!(value>0)) return;
       const label=theme||'Não classificado';
-      buckets.set(label,(buckets.get(label)||0)+value);
+      const bucket=buckets.get(label)||{value:0,contributors:new Map()};
+      bucket.value+=value;
+      const key=text(contributor)||'Exposição sem identificação';
+      bucket.contributors.set(key,(bucket.contributors.get(key)||0)+value);
+      buckets.set(label,bucket);
       if(theme) classifiedValue+=value;
     };
     const resolve=(ticker,fallback=null)=>detailsByTicker[ticker]||byTicker.get(ticker)||fallback||null;
@@ -184,7 +188,7 @@
       if(!(value>0)) return;
       const ticker=assetTicker(asset);
       if(!isFundAsset(asset)){
-        add(primaryTheme(resolve(ticker,asset)),value);
+        add(primaryTheme(resolve(ticker,asset)),value,ticker||text(asset?.name)||`Posição ${assetIndex+1}`);
         return;
       }
 
@@ -200,21 +204,26 @@
       }).filter(Boolean);
       const rawCoverage=parsed.reduce((sum,row)=>sum+row.fraction,0);
       const valid=parsed.length>0&&rawCoverage>0&&rawCoverage<=1.05;
-      if(!valid){ add(null,value); return; }
+      if(!valid){ add(null,value,ticker||text(asset?.name)||'ETF'); return; }
 
       const scale=rawCoverage>1?1/rawCoverage:1;
       let allocated=0;
       for(const holding of parsed){
         const contribution=value*holding.fraction*scale;
         allocated+=contribution;
-        add(holding.theme,contribution);
+        add(holding.theme,contribution,`${ticker||text(asset?.name)||'ETF'} → ${holding.label}`);
       }
       const residual=Math.max(0,value-allocated);
-      if(residual>.01) add(null,residual);
+      if(residual>.01) add(null,residual,`${ticker||text(asset?.name)||'ETF'} → restante`);
     });
 
-    const themeRows=[...buckets.entries()].map(([label,value])=>({label,value,weight:value/total,kind:label==='Não classificado'?'unclassified':'theme'}))
-      .sort((a,b)=>b.value-a.value);
+    const themeRows=[...buckets.entries()].map(([label,bucket])=>({
+      label,
+      value:bucket.value,
+      weight:bucket.value/total,
+      kind:label==='Não classificado'?'unclassified':'theme',
+      contributors:[...bucket.contributors.entries()].map(([name,value])=>({name,value,weight:value/total})).sort((a,b)=>b.value-a.value),
+    })).sort((a,b)=>b.value-a.value);
     return {total,coverage:classifiedValue/total,rows:themeRows,classifiedValue};
   }
 
@@ -224,7 +233,7 @@
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.2';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.3';
     document.head.appendChild(link);
   }
 
@@ -234,6 +243,15 @@
     const items=[...shown];
     if(rest>0) items.push({label:'Outras',weight:rest,kind:'other'});
     return items.map((row,index)=>`<div class="dpc-segment dpc-segment--${(index%5)+1}" style="flex:${Math.max(row.weight,.04)} 1 0" title="${esc(row.label)} · ${pct(row.weight)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></div>`).join('');
+  }
+
+  function themeEvidenceMarkup(themes){
+    if(!themes?.rows?.length) return '';
+    const visible=themes.rows.slice(0,6);
+    const buttons=visible.map(row=>`<button type="button" class="dpc-theme-chip${S.selectedTheme===row.label?' is-active':''}" data-dpc-theme="${esc(row.label)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></button>`).join('');
+    const selected=themes.rows.find(row=>row.label===S.selectedTheme)||null;
+    const detail=selected ? `<div class="dpc-theme-detail"><div class="dpc-theme-detail__head"><div><span>COMO SE FORMA</span><strong>${esc(selected.label)} · ${pct(selected.weight)}</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,5).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.value/themes.total)}</strong></div>`).join('')}</div><small>Contributos calculados sobre o património total. Só entram dados observados; o restante permanece “Não classificado”.</small></div>` : '';
+    return `<div class="dpc-theme-evidence"><div class="dpc-theme-evidence__label">TOCA NUM TEMA PARA VER O QUE O COMPÕE</div><div class="dpc-theme-chips">${buttons}</div>${detail}</div>`;
   }
 
   function metrics(snapshot){
@@ -283,6 +301,7 @@
       ${modeToggle(fundCount>0)}
       ${metrics(snapshot)}
       <div class="dpc-mosaic" aria-label="Peso das maiores exposições">${segmentMarkup(snapshot.rows)}</div>
+      ${usingThemes?themeEvidenceMarkup(S.themes):''}
       ${status}
       <div class="dpc-foot">${usingThemes ? 'Temas estreitos têm prioridade sobre sectores amplos e cada exposição só entra num tema primário. “Não classificado” preserva a parte sem evidência suficiente.' : usingLookthrough ? 'Sem dupla contagem: cada euro de ETF é repartido pelas holdings conhecidas e por um bloco residual explícito.' : `Cobertura direta: ${snapshot.count} posições · ETFs contam como uma posição única neste modo.`}</div>
     </section>`;
@@ -328,12 +347,12 @@
         settled.forEach((row,index)=>{if(row.status==='fulfilled'&&row.value)details[assetTicker(funds[index])]=row.value;});
       }
       S.details=details;
+      S.lookthrough=buildLookthrough(assets,details);
+      S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
+    }catch(_){
       S.details=details;
       S.lookthrough=buildLookthrough(assets,details);
       S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
-      S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
-    }catch(_){
-      S.lookthrough=buildLookthrough(assets,details);
     }finally{
       S.loading=false;render();
     }
@@ -352,17 +371,29 @@
 
   function boot(){
     render(); scheduleLookthrough();
-    window.addEventListener('vestra:app-ready',()=>{S.lookthrough=null;S.themes=null;S.details={};render();scheduleLookthrough();});
+    window.addEventListener('vestra:app-ready',()=>{S.lookthrough=null;S.themes=null;S.details={};S.selectedTheme='';render();scheduleLookthrough();});
     window.addEventListener('vestra:market-ready',()=>{render();scheduleLookthrough();});
     const net=document.getElementById('kpiNet');
     if(net&&typeof MutationObserver==='function'){
-      const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};render();scheduleLookthrough();});
+      const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};S.selectedTheme='';render();scheduleLookthrough();});
       observer.observe(net,{childList:true,subtree:true,characterData:true});
     }
     document.addEventListener('click',event=>{
+      const themeTarget=event.target?.closest?.('[data-dpc-theme]');
+      if(themeTarget){
+        S.selectedTheme=text(themeTarget.dataset.dpcTheme);
+        render();
+        return;
+      }
+      if(event.target?.closest?.('[data-dpc-theme-close]')){
+        S.selectedTheme='';
+        render();
+        return;
+      }
       const mode=event.target?.closest?.('[data-dpc-mode]')?.dataset?.dpcMode;
       if(mode==='direct'||mode==='lookthrough'||mode==='themes'){
         S.mode=mode;
+        if(mode!=='themes') S.selectedTheme='';
         if(mode==='themes'&&!S.themes){
           const assets=Array.isArray(getState()?.assets)?getState().assets:[];
           S.themes=buildThemeExposure(assets,S.details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
@@ -378,6 +409,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'1.2',directHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'1.3',directHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
