@@ -12,7 +12,7 @@ class StorageRecoverySnapshotTests(unittest.TestCase):
     def test_separate_recovery_snapshot_exists(self):
         self.assertIn("const DB_RECOVERY_KEY = 'state_recovery'", self.source)
         self.assertIn("async function storageGetRecovery()", self.source)
-        self.assertIn("version: '1.6'", self.source)
+        self.assertIn("version: '1.7'", self.source)
 
     def test_empty_primary_can_recover_from_durable_snapshot(self):
         get_block = self.source.split('async function storageGet(){', 1)[1].split('async function storageSet(raw){', 1)[0]
@@ -34,10 +34,9 @@ class StorageRecoverySnapshotTests(unittest.TestCase):
 
     def test_explicit_clear_removes_all_recovery_copies(self):
         clear_block = self.source.split('async function storageClear(){', 1)[1].split('const api = Object.freeze', 1)[0]
-        self.assertIn('await idbDel(DB_KEY)', clear_block)
-        self.assertIn('await idbDel(DB_BACKUP_KEY)', clear_block)
-        self.assertIn('await idbDel(DB_RECOVERY_KEY)', clear_block)
-        self.assertIn('await idbDel(DB_EMPTY_AUTH_KEY)', clear_block)
+        self.assertIn('[DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, DB_EMPTY_AUTH_KEY]', clear_block)
+        self.assertIn('deleted = await idbDel(key)', clear_block)
+        self.assertIn('if (!deleted) idbCleared = false;', clear_block)
         self.assertIn('localStorage.removeItem(STORAGE_KEY)', clear_block)
         self.assertIn('localStorage.removeItem(EMPTY_AUTH_STORAGE_KEY)', clear_block)
 

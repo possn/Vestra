@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.6 — authoritative empty-state acknowledgement + durable rescue snapshots. */
+/* Vestra persistence layer v1.7 — authoritative empty-state acknowledgement + durable rescue snapshots + verified clears. */
 (() => {
   'use strict';
 
@@ -255,12 +255,18 @@
     const recoveryScore = stateRichness(recovery);
     const localScore = stateRichness(localValue);
 
-    // A valid empty primary explicitly written after a trusted read is authoritative.
-    // Without that acknowledgement, an empty primary remains suspicious and recovery is allowed.
+    // A valid empty state explicitly written to either persistence engine is authoritative.
+    // Local storage must win here when IndexedDB was temporarily unavailable during an
+    // intentional reset; otherwise a stale IndexedDB primary could resurrect old data later.
     const authoritativeEmptyPrimary = primaryScore === 0 && validState(primary) && emptyAuthority === primary;
+    const authoritativeEmptyLocal = localScore === 0 && validState(localValue) && localEmptyAuthority === localValue;
     if (authoritativeEmptyPrimary) {
       markStateReadTrusted('indexeddb-empty-authoritative');
       return primary;
+    }
+    if (authoritativeEmptyLocal) {
+      markStateReadTrusted('localstorage-empty-authoritative');
+      return localValue;
     }
 
     // A valid non-empty primary is authoritative. If primary is absent/suspiciously empty,
@@ -290,10 +296,6 @@
       return backup;
     }
     if (localValue) {
-      if (localScore === 0 && validState(localValue) && localEmptyAuthority === localValue) {
-        markStateReadTrusted('localstorage-empty-authoritative');
-        return localValue;
-      }
       markStateReadTrusted('localstorage');
       return localValue;
     }
@@ -383,24 +385,39 @@
   }
 
   async function storageClear(){
+    let idbCleared = !idbAvailable();
     if (idbAvailable()) {
-      try { await idbDel(DB_KEY); } catch (_) {}
-      try { await idbDel(DB_BACKUP_KEY); } catch (_) {}
-      try { await idbDel(DB_RECOVERY_KEY); } catch (_) {}
-      try { await idbDel(DB_EMPTY_AUTH_KEY); } catch (_) {}
+      idbCleared = true;
+      for (const key of [DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, DB_EMPTY_AUTH_KEY]) {
+        let deleted = false;
+        try { deleted = await idbDel(key); } catch (_) {}
+        if (!deleted) idbCleared = false;
+      }
     }
+
+    let localCleared = true;
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(EMPTY_AUTH_STORAGE_KEY);
-    } catch (_) {}
-    markStateReadTrusted('cleared');
+    } catch (_) {
+      localCleared = false;
+    }
+
+    // Clearing either usable backend is enough to continue: the subsequent trusted
+    // empty write carries an authority marker, preventing a stale copy in the other
+    // backend from winning if that backend becomes available again later.
+    if (!idbCleared && !localCleared) {
+      throw idbFailure('Persistent state clear failed');
+    }
+    markStateReadTrusted(idbCleared ? 'cleared' : 'cleared-local-fallback');
+    return true;
   }
 
   const api = Object.freeze({
     STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, DB_EMPTY_AUTH_KEY, EMPTY_AUTH_STORAGE_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
     idbAvailable, idbOpen, idbGet, idbSet, idbDel, validState, stateRichness, richestState,
     requestPersistentStorage, storageGet, storageSet, storageGetBackup, storageGetRecovery, storageClear, persistenceStatus,
-    version: '1.6',
+    version: '1.7',
   });
 
   window.VestraStorage = api;

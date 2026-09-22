@@ -32,7 +32,8 @@ class StorageEmptyAuthorityTests(unittest.TestCase):
         set_block = self.source.split('async function storageSet(raw){', 1)[1].split('async function storageGetBackup(){', 1)[0]
         self.assertIn("await idbDel(DB_EMPTY_AUTH_KEY)", set_block)
         clear_block = self.source.split('async function storageClear(){', 1)[1].split('const api = Object.freeze', 1)[0]
-        self.assertIn("await idbDel(DB_EMPTY_AUTH_KEY)", clear_block)
+        self.assertIn("[DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, DB_EMPTY_AUTH_KEY]", clear_block)
+        self.assertIn("deleted = await idbDel(key)", clear_block)
         self.assertIn("localStorage.removeItem(EMPTY_AUTH_STORAGE_KEY)", clear_block)
 
 
