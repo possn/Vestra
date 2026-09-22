@@ -255,12 +255,18 @@
     const recoveryScore = stateRichness(recovery);
     const localScore = stateRichness(localValue);
 
-    // A valid empty primary explicitly written after a trusted read is authoritative.
-    // Without that acknowledgement, an empty primary remains suspicious and recovery is allowed.
+    // A valid empty state explicitly written to either persistence engine is authoritative.
+    // Local storage must win here when IndexedDB was temporarily unavailable during an
+    // intentional reset; otherwise a stale IndexedDB primary could resurrect old data later.
     const authoritativeEmptyPrimary = primaryScore === 0 && validState(primary) && emptyAuthority === primary;
+    const authoritativeEmptyLocal = localScore === 0 && validState(localValue) && localEmptyAuthority === localValue;
     if (authoritativeEmptyPrimary) {
       markStateReadTrusted('indexeddb-empty-authoritative');
       return primary;
+    }
+    if (authoritativeEmptyLocal) {
+      markStateReadTrusted('localstorage-empty-authoritative');
+      return localValue;
     }
 
     // A valid non-empty primary is authoritative. If primary is absent/suspiciously empty,
@@ -290,10 +296,6 @@
       return backup;
     }
     if (localValue) {
-      if (localScore === 0 && validState(localValue) && localEmptyAuthority === localValue) {
-        markStateReadTrusted('localstorage-empty-authoritative');
-        return localValue;
-      }
       markStateReadTrusted('localstorage');
       return localValue;
     }
@@ -383,8 +385,9 @@
   }
 
   async function storageClear(){
-    let idbCleared = true;
+    let idbCleared = !idbAvailable();
     if (idbAvailable()) {
+      idbCleared = true;
       for (const key of [DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, DB_EMPTY_AUTH_KEY]) {
         let deleted = false;
         try { deleted = await idbDel(key); } catch (_) {}
@@ -400,10 +403,13 @@
       localCleared = false;
     }
 
-    if (!idbCleared || !localCleared) {
+    // Clearing either usable backend is enough to continue: the subsequent trusted
+    // empty write carries an authority marker, preventing a stale copy in the other
+    // backend from winning if that backend becomes available again later.
+    if (!idbCleared && !localCleared) {
       throw idbFailure('Persistent state clear failed');
     }
-    markStateReadTrusted('cleared');
+    markStateReadTrusted(idbCleared ? 'cleared' : 'cleared-local-fallback');
     return true;
   }
 
