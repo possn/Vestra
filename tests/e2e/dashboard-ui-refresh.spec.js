@@ -27,6 +27,13 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
         currency: 'EUR',
         meta: { quoteType:'EQUITY', sector:'Technology', industry:'Semiconductors' },
         _yahooDiv: { payDate, rate: 2.4, currency: 'EUR' },
+      },{
+        id:'e2e-deposit',
+        name:'E2E Deposit',
+        type:'deposit',
+        class:'Depósitos',
+        value:1500000,
+        currency:'EUR',
       }];
       state.dividends = [{
         id: 'e2e-dividend-history',
@@ -115,10 +122,13 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(thematic).toContainText('Ativos de mercado');
   await expect(thematic).toContainText('Semicondutores');
   await expect(thematic).toContainText('100%');
+  await expect(thematic).toContainText('32,6%');
   await expect(concentration).toContainText('CONCENTRAÇÃO');
-  await expect(concentration).toContainText('Concentração das posições');
-  await expect(concentration).toContainText('As 3 maiores posições representam');
+  await expect(concentration).toContainText('Concentração dos ativos de mercado');
+  await expect(concentration).toContainText('As 3 maiores posições de mercado representam');
   await expect(concentration).toContainText('100%');
+  await expect(concentration).toContainText('32,6% do património total');
+  await expect(concentration).not.toContainText('E2E Deposit');
   await expect(concentration).toContainText('posições iguais');
   await expect(concentration.locator('[data-dpc-mode="themes"]')).toHaveCount(0);
   const semiconductorTheme = thematic.locator('[data-dpc-theme="Semicondutores"]').first();
