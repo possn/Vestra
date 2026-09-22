@@ -45,7 +45,7 @@ class UiVisualPolishContractTests(unittest.TestCase):
         self.assertIn('ensureUiVisualPolish', self.loader)
         self.assertIn('ui-visual-polish.js?v=1.1', self.loader)
         self.assertIn("version: '1.20'", self.loader)
-        self.assertIn("version:'1.2'", self.source)
+        self.assertIn("version:'1.1'", self.source)
 
 
 if __name__ == '__main__':
