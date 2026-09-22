@@ -11,10 +11,10 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=1.1", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=1.2", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'1.1'", JS)
+        self.assertIn("version:'1.2'", JS)
 
     def test_concentration_is_direct_and_transparent(self):
         self.assertIn("function concentrationSnapshot", JS)
@@ -33,6 +33,16 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("VestraMarketData?.hydrateTicker", JS)
         self.assertIn("requestIdleCallback", JS)
         self.assertNotIn("fund_theme", JS)
+
+    def test_theme_mode_is_primary_normalized_and_evidence_based(self):
+        self.assertIn("const THEME_RULES", JS)
+        self.assertIn("function primaryTheme", JS)
+        self.assertIn("function buildThemeExposure", JS)
+        self.assertIn("Não classificado", JS)
+        self.assertIn("classificação normalizada a 100%", JS)
+        self.assertIn("cada exposição só entra num tema primário", JS)
+        self.assertIn("data-dpc-mode=\"themes\"", JS)
+        self.assertNotIn("themeWeights", JS)
 
     def test_card_uses_portfolio_pulse_anchor_and_responsive_mosaic(self):
         self.assertIn("dashboardPortfolioPulseCard", JS)
