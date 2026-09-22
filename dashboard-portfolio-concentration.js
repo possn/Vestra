@@ -1,4 +1,4 @@
-/* Vestra Dashboard Portfolio Concentration v1.3 — direct, ETF look-through + explainable thematic exposure. */
+/* Vestra Portfolio Concentration v1.4 — portfolio-owned direct, ETF look-through + explainable thematic exposure. */
 (() => {
   'use strict';
 
@@ -233,7 +233,7 @@
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.3';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.4';
     document.head.appendChild(link);
   }
 
@@ -308,10 +308,10 @@
   }
 
   function mount(){
-    const dashboard=document.getElementById('viewDashboard');
-    if(!dashboard) return null;
-    const anchor=document.getElementById('dashboardPortfolioPulseCard')||dashboard.querySelector('.kpi-quick');
-    return {dashboard,anchor};
+    const portfolio=document.getElementById('viewAssets');
+    if(!portfolio) return null;
+    const anchor=document.getElementById('portfolioGlance')||document.getElementById('portfolioSectorCard');
+    return {portfolio,anchor};
   }
 
   function render(){
@@ -322,7 +322,7 @@
     const existing=document.getElementById(CARD_ID);
     if(existing) existing.replaceWith(next);
     else if(target.anchor) target.anchor.insertAdjacentElement('afterend',next);
-    else target.dashboard.appendChild(next);
+    else target.portfolio.appendChild(next);
     return true;
   }
 
@@ -402,13 +402,13 @@
         if(mode==='lookthrough'||mode==='themes') void hydrateLookthrough(false);
         return;
       }
-      if(event.target?.closest?.('[data-view="dashboard"]')) setTimeout(()=>{render();scheduleLookthrough();},60);
+      if(event.target?.closest?.('[data-view="assets"]')) setTimeout(()=>{render();scheduleLookthrough();},60);
     });
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'1.3',directHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'1.4',directHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
