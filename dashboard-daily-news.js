@@ -1,4 +1,4 @@
-/* Vestra Dashboard Daily News v1.5 — compact market + portfolio-aware daily briefing. */
+/* Vestra Dashboard Daily News v1.6 — compact market + portfolio-aware daily briefing. */
 (() => {
   'use strict';
 
@@ -123,7 +123,7 @@
   function dashboardMount() {
     const dashboard = document.getElementById('viewDashboard');
     if (!dashboard) return null;
-    return { parent: dashboard, before: dashboard.querySelector('.kpi-quick') };
+    return { parent: dashboard, before: document.getElementById('dashboardPortfolioHeading') || dashboard.querySelector('.kpi-quick') };
   }
 
   function render() {
@@ -246,6 +246,6 @@
 
   window.VestraDashboardDailyNews = Object.freeze({
     load, refresh: () => load(true), render, rankedItems, safeNewsUrl,
-    rememberNewsReturn, version: '1.5'
+    rememberNewsReturn, version: '1.6'
   });
 })();
