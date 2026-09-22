@@ -6,6 +6,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
 
   await page.goto('/index.html');
   await page.waitForFunction(() => Boolean(window.VestraDashboardUiRefresh));
+  await page.waitForFunction(() => Boolean(window.VestraDashboardPortfolioConcentration));
 
   await page.evaluate(() => {
     try {
@@ -46,12 +47,19 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
     } catch (_) {}
     document.getElementById('viewDashboard')?.classList.add('dash-secondary-open');
     window.VestraDashboardUiRefresh.refresh();
+    window.VestraDashboardPortfolioConcentration.render();
   });
 
   const todayHeading = page.locator('#dashboardTodayHeading');
   const portfolioHeading = page.locator('#dashboardPortfolioHeading');
   await expect(todayHeading).toContainText('O que importa hoje');
   await expect(portfolioHeading).toContainText('O património em contexto');
+
+  const concentration = page.locator('#dashboardPortfolioConcentrationCard');
+  await expect(concentration).toBeVisible();
+  await expect(concentration).toContainText('CONCENTRAÇÃO DIRETA');
+  await expect(concentration).toContainText('100%');
+  await expect(concentration).toContainText('1 / HHI');
 
   const pulse = page.locator('#dashboardPortfolioPulseCard');
   await expect(pulse).toBeVisible({ timeout: 15_000 });
