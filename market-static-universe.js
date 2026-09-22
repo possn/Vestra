@@ -111,7 +111,7 @@
   function ensureMarketUiPolish() { loadCompanion('VestraMarketUiPolish','script[data-vestra-market-ui-polish]','market-ui-polish.js?v=1.3&stockthemes=2','vestraMarketUiPolish'); }
   function ensureUiVisualPolish() { loadCompanion('VestraUiVisualPolish','script[data-vestra-ui-visual-polish]','ui-visual-polish.js?v=1.1','vestraUiVisualPolish'); }
   function ensurePoliticiansCompanion() { loadCompanion('VestraPoliticians','script[data-vestra-politicians]','politicians.js?v=2.1','vestraPoliticians'); }
-  function ensureMetalsCompanion() { loadCompanion('VestraMetals','script[data-vestra-market-metals]','market-metals.js?v=1.0','vestraMarketMetals'); }
+  function ensureMetalsCompanion() { loadCompanion('VestraMetals','script[data-vestra-market-metals]','market-metals.js?v=1.1','vestraMarketMetals'); }
 
   function loadOrderedCompanion(globalName, selector, src, datasetKey, attempt = 0) {
     if (typeof document === 'undefined') return Promise.resolve(window[globalName] || null);
