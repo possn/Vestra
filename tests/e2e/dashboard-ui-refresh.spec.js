@@ -59,6 +59,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(page.locator('#viewDashboard #dashboardPortfolioConcentrationCard')).toHaveCount(0);
   await expect(page.locator('#dashboardTopAssetsCard')).toBeHidden();
   await expect(page.locator('#dashboardDistributionCard')).toBeHidden();
+  await expect(page.locator('#dashboardDuplicateShortcuts')).toBeHidden();
 
   const pulse = page.locator('#dashboardPortfolioPulseCard');
   await expect(pulse).toBeVisible({ timeout: 15_000 });
