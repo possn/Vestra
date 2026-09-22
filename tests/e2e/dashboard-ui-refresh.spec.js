@@ -128,6 +128,15 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await page.locator('#segAssets').click();
   await expect(page.locator('#portfolioThemeExposureCard')).toBeVisible();
 
+  const sectorCard = page.locator('#portfolioSectorCard');
+  await expect(sectorCard).toContainText('Sectores tradicionais');
+  await expect(page.locator('#portfolioSectorBody')).toBeHidden();
+  const sectorToggle = page.locator('#btnPortfolioSectorToggle');
+  await expect(sectorToggle).toHaveText('Ver sectores');
+  await sectorToggle.click();
+  await expect(page.locator('#portfolioSectorBody')).toBeVisible();
+  await expect(sectorToggle).toHaveText('Ocultar sectores');
+
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
