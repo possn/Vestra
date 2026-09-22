@@ -19,7 +19,7 @@ class WinstonMetalsSentimentTests(unittest.TestCase):
         self.assertIn("Tendência curta", JS)
         self.assertIn("Momentum 1m", JS)
         self.assertIn("Momentum 3m", JS)
-        self.assertIn("position", "position")  # readability sentinel
+        self.assertIn("rangePos", JS)
         self.assertIn("Não é uma recomendação.", JS)
 
     def test_editorial_gauge_and_explainer_are_present(self):
