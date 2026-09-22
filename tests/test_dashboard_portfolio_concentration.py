@@ -11,10 +11,10 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=1.3", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=1.4", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'1.3'", JS)
+        self.assertIn("version:'1.4'", JS)
 
     def test_concentration_is_direct_and_transparent(self):
         self.assertIn("function concentrationSnapshot", JS)
@@ -59,8 +59,8 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("}catch(_){", JS)
         self.assertIn("S.themes=buildThemeExposure(assets,details", JS)
 
-    def test_card_uses_portfolio_pulse_anchor_and_responsive_mosaic(self):
-        self.assertIn("dashboardPortfolioPulseCard", JS)
+    def test_card_is_owned_by_portfolio_view_and_responsive(self):
+        self.assertIn("viewAssets", JS)\n        self.assertIn("portfolioGlance", JS)\n        self.assertNotIn("dashboardPortfolioPulseCard", JS)
         self.assertIn("dpc-mosaic", JS)
         self.assertIn("@media(max-width:560px)", CSS)
         self.assertIn("@media(max-width:360px)", CSS)
