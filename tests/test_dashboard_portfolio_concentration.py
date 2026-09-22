@@ -12,10 +12,10 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=1.8", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=1.9", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'1.8'", JS)
+        self.assertIn("version:'1.9'", JS)
 
     def test_concentration_is_market_sleeve_only_and_transparent(self):
         self.assertIn("function marketHoldings", JS)
@@ -76,12 +76,21 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
 
     def test_theme_evidence_keeps_contributor_provenance_and_drilldown(self):
         self.assertIn("contributors:new Map()", JS)
-        self.assertIn("dpc-theme-chip", JS)
-        self.assertIn("COMO SE FORMA", JS)
-        self.assertIn("Percentagens grandes = peso no património total", JS)
+        self.assertIn("dpc-theme-rank", JS)
+        self.assertIn("O QUE ESTÁS A VER.", JS)
         self.assertIn("data-dpc-theme", JS)
         self.assertIn("data-dpc-theme-close", JS)
         self.assertIn(".dpc-theme-detail", CSS)
+
+    def test_theme_ranking_removes_duplicate_chip_list_and_collapses_after_five(self):
+        self.assertIn("themesExpanded:false", JS)
+        self.assertIn("slice(0,S.themesExpanded?8:5)", JS)
+        self.assertIn("Ver todos os temas", JS)
+        self.assertIn("data-dpc-themes-toggle", JS)
+        self.assertIn("TEMAS PRINCIPAIS", JS)
+        self.assertIn(".dpc-theme-ranking", CSS)
+        self.assertNotIn("dpc-theme-chip", JS)
+        self.assertNotIn("VER O QUE COMPÕE CADA TEMA", JS)
 
     def test_theme_hydration_has_single_assignment_and_fail_soft_theme_rebuild(self):
         self.assertEqual(JS.count("S.details=details;"), 2)
