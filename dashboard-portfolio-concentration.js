@@ -6,6 +6,7 @@
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
   const text=v=>String(v??'').trim();
+  const esc=v=>text(v).replace(/[&<>\"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]));
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
 
   function getState(){try{return (typeof state!=='undefined'&&state)?state:null;}catch{return null;}}
@@ -84,6 +85,11 @@
     render();
     window.addEventListener('vestra:app-ready',render);
     window.addEventListener('vestra:market-ready',render);
+    const net=document.getElementById('kpiNet');
+    if(net&&typeof MutationObserver==='function'){
+      const observer=new MutationObserver(()=>render());
+      observer.observe(net,{childList:true,subtree:true,characterData:true});
+    }
     document.addEventListener('click',event=>{if(event.target?.closest?.('[data-view="dashboard"]'))setTimeout(render,60);});
   }
 
