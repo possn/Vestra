@@ -318,7 +318,7 @@
     const link = document.createElement('link');
     link.id = STYLE_ID;
     link.rel = 'stylesheet';
-    link.href = 'dashboard-weekly-events.css?v=1.0';
+    link.href = 'dashboard-weekly-events.css?v=1.1';
     document.head.appendChild(link);
   }
 
