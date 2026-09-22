@@ -142,7 +142,7 @@
   function themeEvidence(row){
     if(!row) return null;
     const sector=text(row?.sector);
-    const blob=[row?.ticker,row?.name,row?.sector,row?.industry,row?.category,row?.theme,row?.stock_theme,row?.style,row?.description,row?.long_business_summary,row?.business_summary].map(text).join(' ');
+    const blob=[row?.sector,row?.industry,row?.category,row?.theme,row?.stock_theme,row?.style,row?.description,row?.long_business_summary,row?.business_summary].map(text).join(' ');
     if(!sector&&!blob) return null;
     return {sector,text:blob};
   }
@@ -260,7 +260,7 @@
     const usingThemes=S.mode==='themes';
     const snapshot=usingThemes&&S.themes ? concentrationSnapshot(S.themes.rows) : usingLookthrough&&S.lookthrough ? S.lookthrough : direct;
     const description=usingThemes
-      ? 'Cada euro recebe um único tema primário com base em sector/indústria/descrição observados; o que não tem evidência suficiente fica explicitamente não classificado.'
+      ? 'Cada euro recebe um único tema primário com base em sector, indústria ou descrição observados — nunca apenas pelo nome/ticker; o que não tem evidência suficiente fica explicitamente não classificado.'
       : usingLookthrough
         ? 'Ações diretas e holdings conhecidas dos ETFs são agregadas pela identidade disponível. O restante de cada ETF fica explícito, sem o inventar.'
         : 'Peso das posições individuais. Usa Look-through ETF para revelar sobreposição quando existem holdings verificáveis.';
