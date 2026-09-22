@@ -6,15 +6,16 @@ JS = (ROOT / "dashboard-portfolio-concentration.js").read_text(encoding="utf-8")
 CSS = (ROOT / "dashboard-portfolio-concentration.css").read_text(encoding="utf-8")
 LOADER = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
 SW = (ROOT / "sw.js").read_text(encoding="utf-8")
+INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 
 
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=1.4", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=1.5", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'1.4'", JS)
+        self.assertIn("version:'1.5'", JS)
 
     def test_concentration_is_direct_and_transparent(self):
         self.assertIn("function concentrationSnapshot", JS)
@@ -58,6 +59,20 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertEqual(JS.count("S.themes=buildThemeExposure(assets,details"), 2)
         self.assertIn("}catch(_){", JS)
         self.assertIn("S.themes=buildThemeExposure(assets,details", JS)
+
+    def test_class_allocation_replaces_dashboard_distribution(self):
+        self.assertIn("function classAllocation", JS)
+        self.assertIn("portfolioClassAllocationCard", JS)
+        self.assertIn("Como está distribuído o património?", JS)
+        self.assertIn("dashboardDistributionCard", INDEX)
+        self.assertIn('id="dashboardDistributionCard" hidden', INDEX)
+        self.assertIn(".dpc-class-bar", CSS)
+
+    def test_assets_and_liabilities_do_not_share_analysis_cards(self):
+        self.assertIn("portfolioShowsAssets", JS)
+        self.assertIn("#segAssets,#segLiabs", JS)
+        self.assertIn("document.getElementById(CARD_ID)?.remove()", JS)
+        self.assertIn("document.getElementById(CLASS_CARD_ID)?.remove()", JS)
 
     def test_card_is_owned_by_portfolio_view_and_responsive(self):
         self.assertIn("viewAssets", JS)
