@@ -69,7 +69,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('market-ui-polish.js?v=1.3', self.loader)
         self.assertIn('ensureAnalysisToolsRuntime', self.loader)
         self.assertIn('market-analysis-tools-runtime.js?v=1.3', self.loader)
-        self.assertIn("version: '1.21'", self.loader)
+        self.assertIn("version: '1.22'", self.loader)
 
     def test_analysis_tools_have_searchable_compare_and_news_and_lazy_scanner(self):
         self.assertIn('marketCompareSearch', self.analysis_tools)
@@ -87,7 +87,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('overflow-y:auto', self.analysis_tools_css)
         self.assertIn('.market-tool-runtime__search', self.analysis_tools_css)
         self.assertIn('.market-tool-runtime__chips', self.analysis_tools_css)
-        self.assertIn("version:'1.3'", self.analysis_tools)
+        self.assertIn("version:'1.4'", self.analysis_tools)
 
 
 if __name__ == '__main__':
