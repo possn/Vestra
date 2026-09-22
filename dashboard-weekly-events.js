@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v2.2 — tappable earnings + macro catalysts with verified result details. */
+/* Vestra Dashboard Weekly Events v2.3 — tappable earnings + macro catalysts with verified result details. */
 (() => {
   'use strict';
 
-  const VERSION = '2.2';
+  const VERSION = '2.3';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -326,8 +326,8 @@
     let card = document.getElementById(CARD_ID);
     if (card) return card;
     card = document.createElement('div'); card.id = CARD_ID; card.className = 'card dash-secondary weekly-events-card';
-    const hero = dashboard.querySelector('.card.hero');
-    if (hero) hero.insertAdjacentElement('afterend', card); else dashboard.prepend(card);
+    const anchor = document.getElementById('vestraMarketSentimentCard') || document.getElementById('dashboardTodayBrief') || document.getElementById('dashboardTodayHeading') || dashboard.querySelector('.card.hero');
+    if (anchor) anchor.insertAdjacentElement('afterend', card); else dashboard.prepend(card);
     return card;
   }
 
