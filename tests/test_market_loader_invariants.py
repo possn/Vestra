@@ -61,6 +61,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertNotIn("ensureMarketUiPolish();", tail)
         self.assertNotIn("ensureMetalsCompanion();", tail)
         self.assertNotIn("ensureOpportunitySuite();", tail)
+        self.assertIn("ensureDashboardMarketSentiment();", tail)
         self.assertNotIn('src="market-metals.js', index)
         self.assertNotIn('src="market-opportunities.js', index)
         self.assertNotIn('src="market-opportunity-lenses.js', index)
@@ -69,7 +70,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("market-opportunity-lenses.js?v=3.1", universe)
         self.assertIn("const etfReady = ensureMarketCompanions();", universe)
         self.assertIn("await etfReady;", universe)
-        self.assertIn("market-static-universe.js?v=1.16", index)
+        self.assertIn("market-static-universe.js?v=1.17", index)
 
     def test_dossier_hydration_requires_exact_ticker_identity(self):
         loader = read("market-data-loader.js")
