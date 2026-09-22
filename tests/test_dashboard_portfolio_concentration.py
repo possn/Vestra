@@ -28,7 +28,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("function marketHoldings", JS)
         self.assertIn("filter(row=>isThemeEligibleAsset(row.asset))", JS)
         self.assertIn("Concentração dos ativos de mercado", JS)
-        self.assertIn("Depósitos, obrigações, PPR, imóveis e cripto", JS)
+        self.assertIn("Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto", JS)
         self.assertIn("dos ativos de mercado", JS)
 
     def test_concentration_is_direct_and_transparent(self):
@@ -36,7 +36,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("const hhi=weighted.reduce", JS)
         self.assertIn("1/hhi", JS)
         self.assertIn("Top 3", JS)
-        self.assertIn("As percentagens principais são relativas apenas à fatia de mercado", JS)
+        self.assertIn("A percentagem principal mede a concentração apenas na fatia de mercado", JS)
 
     def test_etf_lookthrough_uses_only_observed_holdings_and_keeps_residual(self):
         self.assertIn("function buildLookthrough", JS)
@@ -61,7 +61,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("holdingsRankMarkup", JS)
         self.assertIn(">Posições</button>", JS)
         self.assertIn(">Dentro dos ETFs</button>", JS)
-        self.assertIn("posições iguais · índice HHI", JS)
+        self.assertIn("posições iguais", JS)
         self.assertIn(".dpc-answer", CSS)
 
     def test_theme_exposure_is_primary_normalized_and_evidence_based(self):
@@ -75,7 +75,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("marketShare", JS)
         self.assertIn("marketWeight", JS)
         self.assertIn("Ativos de mercado", JS)
-        self.assertIn("Depósitos, obrigações, PPR, imóveis e cripto", JS)
+        self.assertIn("Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto", JS)
         self.assertIn("EXPOSIÇÃO TEMÁTICA", JS)
         self.assertIn("IA & Robótica", JS)
         self.assertIn("Semicondutores", JS)
