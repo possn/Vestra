@@ -111,7 +111,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(concentration).toBeVisible();
   await expect(thematic).toBeVisible();
   await expect(thematic).toContainText('EXPOSIÇÃO TEMÁTICA');
-  await expect(thematic).toContainText('Onde está realmente exposto o teu património?');
+  await expect(thematic).toContainText('Onde estão as tuas apostas de mercado?');
   await expect(thematic).toContainText('Ativos de mercado');
   await expect(thematic).toContainText('Semicondutores');
   await expect(thematic).toContainText('100%');
