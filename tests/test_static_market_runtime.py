@@ -82,7 +82,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertNotIn('./market-hotfix.js', sw)
         self.assertNotIn('./portfolio-navigation-fix.js', sw)
         self.assertNotIn('./market-close-controller.js', sw)
-        for name in ('./market.js','./market-runtime-loader.js','./market-live-overlay.js','./market-data-loader.js','./portfolio-sheet-navigation.js','./vestra-ai-brief.js','./portfolio-dossier-routing.js'):
+        for name in ('./market.js','./market-runtime-loader.js','./market-live-overlay.js','./market-data-loader.js','./portfolio-sheet-navigation.js','./vestra-ai-brief.js','./portfolio-dossier-routing.js','./dashboard-market-sentiment.js','./dashboard-market-sentiment.css'):
             self.assertIn(name, sw)
 
 if __name__ == '__main__':
