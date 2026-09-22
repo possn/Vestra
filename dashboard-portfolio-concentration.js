@@ -1,9 +1,9 @@
-/* Vestra Portfolio Concentration v1.5 — portfolio-owned concentration + class allocation. */
+/* Vestra Portfolio Concentration v1.6 — concentration + explainable thematic exposure. */
 (() => {
   'use strict';
 
   const CARD_ID='dashboardPortfolioConcentrationCard';
-  const CLASS_CARD_ID='portfolioClassAllocationCard';
+  const THEME_CARD_ID='portfolioThemeExposureCard';
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
   const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',loading:false,scheduled:false};
@@ -37,32 +37,6 @@
     const hhi=weighted.reduce((sum,row)=>sum+row.weight*row.weight,0);
     const effective=hhi>0?1/hhi:null;
     return {total,count:weighted.length,top1,top3,effective,rows:weighted};
-  }
-
-  function classAllocation(rows=directHoldings()){
-    const total=rows.reduce((sum,row)=>sum+row.value,0);
-    if(!(total>0)) return {total:0,rows:[]};
-    const buckets=new Map();
-    for(const row of rows){
-      const label=text(row?.asset?.class)||'Outros';
-      buckets.set(label,(buckets.get(label)||0)+row.value);
-    }
-    return {
-      total,
-      rows:[...buckets.entries()].map(([label,value])=>({label,value,weight:value/total})).sort((a,b)=>b.value-a.value),
-    };
-  }
-
-  function classAllocationMarkup(allocation){
-    if(!allocation.rows.length) return '';
-    const visible=allocation.rows.slice(0,6);
-    const rest=allocation.rows.slice(6).reduce((sum,row)=>sum+row.value,0);
-    if(rest>0) visible.push({label:'Outras',value:rest,weight:rest/allocation.total});
-    return `<section class="dpc-card dpc-class-card" id="${CLASS_CARD_ID}">
-      <div class="dpc-head"><div><span class="dpc-kicker">ALOCAÇÃO</span><h3>Como está distribuído o património?</h3><p>Distribuição por classe de ativo, sobre o valor atual registado.</p></div></div>
-      <div class="dpc-class-bar" aria-label="Distribuição por classe">${visible.map((row,index)=>`<span class="dpc-class-bar__segment dpc-segment--${(index%5)+1}" style="width:${Math.max(row.weight*100,2)}%" title="${esc(row.label)} · ${pct(row.weight)}"></span>`).join('')}</div>
-      <div class="dpc-class-list">${visible.map(row=>`<div><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></div>`).join('')}</div>
-    </section>`;
   }
 
   function portfolioShowsAssets(){
@@ -152,7 +126,8 @@
 
   const THEME_RULES=[
     ['Semicondutores', s => /semiconductor|chip|microprocessor|integrated circuit/i.test(s.text)],
-    ['IA & Robótica', s => /artificial intelligence|machine learning|robotics|robotic|automation/i.test(s.text)],
+    ['IA & Robótica', s => /artificial intelligence|machine learning|robotics|robotic|automation|generative ai|neural network/i.test(s.text)],
+    ['Cloud & Data Centers', s => /data center|datacenter|cloud computing|cloud infrastructure|hyperscale|hyperscaler/i.test(s.text)],
     ['Cibersegurança', s => /cybersecurity|cyber security|information security|network security/i.test(s.text)],
     ['Biotecnologia', s => /biotech|biotechnology|biopharma|biopharmaceutical/i.test(s.text)],
     ['Defesa & Aeroespacial', s => /aerospace|defen[cs]e|military/i.test(s.text)],
@@ -168,7 +143,7 @@
     ['Energia', s => s.sector==='Energy'],
     ['Consumo', s => /^Consumer /.test(s.sector)],
     ['Utilities', s => s.sector==='Utilities'],
-    ['Materiais', s => s.sector==='Basic Materials'],
+    ['Matérias-primas', s => s.sector==='Basic Materials'||/mining|metals?|commodit|copper|gold|silver|lithium|steel/i.test(s.text)],
   ];
 
   function themeEvidence(row){
@@ -265,7 +240,7 @@
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.5';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.6';
     document.head.appendChild(link);
   }
 
@@ -277,13 +252,43 @@
     return items.map((row,index)=>`<div class="dpc-segment dpc-segment--${(index%5)+1}" style="flex:${Math.max(row.weight,.04)} 1 0" title="${esc(row.label)} · ${pct(row.weight)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></div>`).join('');
   }
 
+  function themeRowsForDisplay(themes){
+    const rows=Array.isArray(themes?.rows)?themes.rows:[];
+    const classified=rows.filter(row=>row.kind==='theme');
+    const unknown=rows.find(row=>row.kind==='unclassified')||null;
+    const visible=classified.slice(0,8);
+    if(unknown?.weight>0.001) visible.push(unknown);
+    return {classified,unknown,visible};
+  }
+
   function themeEvidenceMarkup(themes){
     if(!themes?.rows?.length) return '';
-    const visible=themes.rows.slice(0,6);
+    const {visible}=themeRowsForDisplay(themes);
     const buttons=visible.map(row=>`<button type="button" class="dpc-theme-chip${S.selectedTheme===row.label?' is-active':''}" data-dpc-theme="${esc(row.label)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></button>`).join('');
     const selected=themes.rows.find(row=>row.label===S.selectedTheme)||null;
-    const detail=selected ? `<div class="dpc-theme-detail"><div class="dpc-theme-detail__head"><div><span>COMO SE FORMA</span><strong>${esc(selected.label)} · ${pct(selected.weight)}</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,5).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.value/themes.total)}</strong></div>`).join('')}</div><small>Contributos calculados sobre o património total. Só entram dados observados; o restante permanece “Não classificado”.</small></div>` : '';
+    const detail=selected ? `<div class="dpc-theme-detail"><div class="dpc-theme-detail__head"><div><span>COMO SE FORMA</span><strong>${esc(selected.label)} · ${pct(selected.weight)}</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,6).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.value/themes.total)}</strong></div>`).join('')}</div><small>Percentagens sobre o património total. Só entram exposições suportadas pelos dados disponíveis; o restante fica “Não classificado”.</small></div>` : '';
     return `<div class="dpc-theme-evidence"><div class="dpc-theme-evidence__label">TOCA NUM TEMA PARA VER O QUE O COMPÕE</div><div class="dpc-theme-chips">${buttons}</div>${detail}</div>`;
+  }
+
+  function themeExposureMarkup(themes){
+    if(!themes?.rows?.length) return '';
+    const {classified,unknown,visible}=themeRowsForDisplay(themes);
+    const largest=classified[0]||null;
+    const top3=classified.slice(0,3).reduce((sum,row)=>sum+row.weight,0);
+    const segments=visible.map((row,index)=>`<span class="dpc-theme-bar__segment dpc-segment--${(index%5)+1}" style="width:${Math.max(row.weight*100,2)}%" title="${esc(row.label)} · ${pct(row.weight)}"></span>`).join('');
+    const list=classified.slice(0,6).map(row=>`<button type="button" data-dpc-theme="${esc(row.label)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></button>`).join('');
+    return `<section class="dpc-card dpc-theme-card" id="${THEME_CARD_ID}">
+      <div class="dpc-head"><div><span class="dpc-kicker">EXPOSIÇÃO TEMÁTICA</span><h3>Onde está realmente exposto o teu património?</h3><p>IA, semicondutores, energia, matérias-primas e outros temas calculados sobre o património total. Cada euro entra num único tema primário para evitar dupla contagem.</p></div></div>
+      <div class="dpc-theme-stats">
+        <div><span>Maior tema</span><strong>${largest?esc(largest.label):'—'}</strong><small>${largest?pct(largest.weight):'Sem evidência suficiente'}</small></div>
+        <div><span>Top 3 temas</span><strong>${pct(top3)}</strong><small>do património total</small></div>
+        <div><span>Cobertura</span><strong>${pct(themes.coverage)}</strong><small>${unknown?.weight>0.001?`${pct(unknown.weight)} não classificado`:'classificado'}</small></div>
+      </div>
+      <div class="dpc-theme-bar" aria-label="Exposição temática do património">${segments}</div>
+      <div class="dpc-theme-list">${list||'<div class="dpc-empty">Ainda sem temas classificados.</div>'}</div>
+      ${themeEvidenceMarkup(themes)}
+      <div class="dpc-foot">Temas estreitos têm prioridade sobre sectores amplos. ETFs usam apenas holdings disponíveis; exposição não comprovada não é redistribuída.</div>
+    </section>`;
   }
 
   function metrics(snapshot){
@@ -295,47 +300,37 @@
   }
 
   function modeToggle(hasEtfs){
+    if(!hasEtfs) return '';
     return `<div class="dpc-mode" role="group" aria-label="Modo de concentração">
       <button type="button" data-dpc-mode="direct" class="${S.mode==='direct'?'is-active':''}">Direta</button>
-      ${hasEtfs?`<button type="button" data-dpc-mode="lookthrough" class="${S.mode==='lookthrough'?'is-active':''}">Look-through ETF</button>`:''}
-      <button type="button" data-dpc-mode="themes" class="${S.mode==='themes'?'is-active':''}">Temas</button>
+      <button type="button" data-dpc-mode="lookthrough" class="${S.mode==='lookthrough'?'is-active':''}">Look-through ETF</button>
     </div>`;
   }
 
   function markup(direct){
-    if(!direct.count) return `<section class="dpc-card" id="${CARD_ID}"><div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Quanto da carteira é realmente a mesma aposta?</h3></div></div><div class="dpc-empty">Adiciona posições à carteira para calcular a concentração.</div></section>`;
+    if(!direct.count) return `<section class="dpc-card" id="${CARD_ID}"><div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Quanto depende das maiores posições?</h3></div></div><div class="dpc-empty">Adiciona posições à carteira para calcular a concentração.</div></section>`;
 
     const fundCount=direct.rows.filter(row=>isFundAsset(row.asset)).length;
     const usingLookthrough=S.mode==='lookthrough'&&fundCount>0;
-    const usingThemes=S.mode==='themes';
-    const snapshot=usingThemes&&S.themes ? concentrationSnapshot(S.themes.rows) : usingLookthrough&&S.lookthrough ? S.lookthrough : direct;
-    const description=usingThemes
-      ? 'Cada euro recebe um único tema primário com base em sector, indústria ou descrição observados — nunca apenas pelo nome/ticker; o que não tem evidência suficiente fica explicitamente não classificado.'
-      : usingLookthrough
-        ? 'Ações diretas e holdings conhecidas dos ETFs são agregadas pela identidade disponível. O restante de cada ETF fica explícito, sem o inventar.'
-        : 'Peso das posições individuais. Usa Look-through ETF para revelar sobreposição quando existem holdings verificáveis.';
-    const status=usingThemes
+    const snapshot=usingLookthrough&&S.lookthrough ? S.lookthrough : direct;
+    const description=usingLookthrough
+      ? 'Ações diretas e holdings conhecidas dos ETFs são agregadas pela identidade disponível. O restante de cada ETF fica explícito, sem o inventar.'
+      : 'Mostra quanto da carteira depende de poucas posições. Ativa o look-through para revelar sobreposição entre ações diretas e ETFs.';
+    const status=usingLookthrough
       ? S.loading
-        ? '<div class="dpc-status">A validar exposição temática…</div>'
-        : S.themes
-          ? `<div class="dpc-status">Cobertura temática ${pct(S.themes.coverage)} · classificação normalizada a 100%, sem sobreposição entre temas.</div>`
-          : '<div class="dpc-status">Ainda sem evidência suficiente para a leitura temática.</div>'
-      : usingLookthrough
-        ? S.loading
-          ? '<div class="dpc-status">A carregar holdings dos ETFs…</div>'
-          : S.lookthrough
-            ? `<div class="dpc-status">Cobertura ETF ${pct(S.lookthrough.etfCoverage)} · exposição subjacente identificada ${pct(S.lookthrough.knownUnderlyingWeight)}</div>`
-            : '<div class="dpc-status">Ainda sem holdings suficientes para look-through.</div>'
-        : '';
+        ? '<div class="dpc-status">A carregar holdings dos ETFs…</div>'
+        : S.lookthrough
+          ? `<div class="dpc-status">Cobertura ETF ${pct(S.lookthrough.etfCoverage)} · exposição subjacente identificada ${pct(S.lookthrough.knownUnderlyingWeight)}</div>`
+          : '<div class="dpc-status">Ainda sem holdings suficientes para look-through.</div>'
+      : '';
 
     return `<section class="dpc-card" id="${CARD_ID}">
-      <div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Quanto da carteira é realmente a mesma aposta?</h3><p>${description}</p></div></div>
+      <div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Quanto depende das maiores posições?</h3><p>${description}</p></div></div>
       ${modeToggle(fundCount>0)}
       ${metrics(snapshot)}
       <div class="dpc-mosaic" aria-label="Peso das maiores exposições">${segmentMarkup(snapshot.rows)}</div>
-      ${usingThemes?themeEvidenceMarkup(S.themes):''}
       ${status}
-      <div class="dpc-foot">${usingThemes ? 'Temas estreitos têm prioridade sobre sectores amplos e cada exposição só entra num tema primário. “Não classificado” preserva a parte sem evidência suficiente.' : usingLookthrough ? 'Sem dupla contagem: cada euro de ETF é repartido pelas holdings conhecidas e por um bloco residual explícito.' : `Cobertura direta: ${snapshot.count} posições · ETFs contam como uma posição única neste modo.`}</div>
+      <div class="dpc-foot">${usingLookthrough ? 'Sem dupla contagem: cada euro de ETF é repartido pelas holdings conhecidas e por um bloco residual explícito.' : `Cobertura direta: ${snapshot.count} posições · ETFs contam como uma posição única neste modo.`}</div>
     </section>`;
   }
 
@@ -351,9 +346,12 @@
     const target=mount(); if(!target) return false;
     if(!portfolioShowsAssets()){
       document.getElementById(CARD_ID)?.remove();
-      document.getElementById(CLASS_CARD_ID)?.remove();
+      document.getElementById(THEME_CARD_ID)?.remove();
       return true;
     }
+
+    const assets=(Array.isArray(getState()?.assets)?getState().assets:[]).filter(asset=>assetValue(asset)>0);
+    S.themes=buildThemeExposure(assets,S.details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
 
     const shell=document.createElement('div'); shell.innerHTML=markup(concentrationSnapshot());
     const next=shell.firstElementChild; if(!next) return false;
@@ -362,14 +360,13 @@
     else if(target.anchor) target.anchor.insertAdjacentElement('afterend',next);
     else target.portfolio.appendChild(next);
 
-    const allocation=classAllocation();
-    const classShell=document.createElement('div'); classShell.innerHTML=classAllocationMarkup(allocation);
-    const classNext=classShell.firstElementChild;
-    const classExisting=document.getElementById(CLASS_CARD_ID);
-    if(classNext){
-      if(classExisting) classExisting.replaceWith(classNext);
-      else document.getElementById(CARD_ID)?.insertAdjacentElement('afterend',classNext);
-    }else classExisting?.remove();
+    const themeShell=document.createElement('div'); themeShell.innerHTML=themeExposureMarkup(S.themes);
+    const themeNext=themeShell.firstElementChild;
+    const themeExisting=document.getElementById(THEME_CARD_ID);
+    if(themeNext){
+      if(themeExisting) themeExisting.replaceWith(themeNext);
+      else document.getElementById(CARD_ID)?.insertAdjacentElement('afterend',themeNext);
+    }else themeExisting?.remove();
     return true;
   }
 
@@ -438,15 +435,11 @@
         return;
       }
       const mode=event.target?.closest?.('[data-dpc-mode]')?.dataset?.dpcMode;
-      if(mode==='direct'||mode==='lookthrough'||mode==='themes'){
+      if(mode==='direct'||mode==='lookthrough'){
         S.mode=mode;
-        if(mode!=='themes') S.selectedTheme='';
-        if(mode==='themes'&&!S.themes){
-          const assets=Array.isArray(getState()?.assets)?getState().assets:[];
-          S.themes=buildThemeExposure(assets,S.details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
-        }
+        S.selectedTheme='';
         render();
-        if(mode==='lookthrough'||mode==='themes') void hydrateLookthrough(false);
+        if(mode==='lookthrough') void hydrateLookthrough(false);
         return;
       }
       if(event.target?.closest?.('[data-view="assets"],#segAssets,#segLiabs')) setTimeout(()=>{render();scheduleLookthrough();},60);
@@ -456,6 +449,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'1.5',directHoldings,classAllocation,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'1.6',directHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
