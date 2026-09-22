@@ -383,24 +383,35 @@
   }
 
   async function storageClear(){
+    let idbCleared = true;
     if (idbAvailable()) {
-      try { await idbDel(DB_KEY); } catch (_) {}
-      try { await idbDel(DB_BACKUP_KEY); } catch (_) {}
-      try { await idbDel(DB_RECOVERY_KEY); } catch (_) {}
-      try { await idbDel(DB_EMPTY_AUTH_KEY); } catch (_) {}
+      for (const key of [DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, DB_EMPTY_AUTH_KEY]) {
+        let deleted = false;
+        try { deleted = await idbDel(key); } catch (_) {}
+        if (!deleted) idbCleared = false;
+      }
     }
+
+    let localCleared = true;
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(EMPTY_AUTH_STORAGE_KEY);
-    } catch (_) {}
+    } catch (_) {
+      localCleared = false;
+    }
+
+    if (!idbCleared || !localCleared) {
+      throw idbFailure('Persistent state clear failed');
+    }
     markStateReadTrusted('cleared');
+    return true;
   }
 
   const api = Object.freeze({
     STORAGE_KEY, DB_NAME, DB_STORE, DB_KEY, DB_BACKUP_KEY, DB_RECOVERY_KEY, DB_EMPTY_AUTH_KEY, EMPTY_AUTH_STORAGE_KEY, IDB_OPEN_TIMEOUT_MS, IDB_TRANSACTION_TIMEOUT_MS,
     idbAvailable, idbOpen, idbGet, idbSet, idbDel, validState, stateRichness, richestState,
     requestPersistentStorage, storageGet, storageSet, storageGetBackup, storageGetRecovery, storageClear, persistenceStatus,
-    version: '1.6',
+    version: '1.7',
   });
 
   window.VestraStorage = api;
