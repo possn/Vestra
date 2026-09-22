@@ -25,6 +25,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
         class: 'Ações',
         value: 725000,
         currency: 'EUR',
+        meta: { quoteType:'EQUITY', sector:'Technology', industry:'Semiconductors' },
         _yahooDiv: { payDate, rate: 2.4, currency: 'EUR' },
       }];
       state.dividends = [{
@@ -110,15 +111,19 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(concentration).toBeVisible();
   await expect(thematic).toBeVisible();
   await expect(thematic).toContainText('EXPOSIÇÃO TEMÁTICA');
-  await expect(thematic).toContainText('Onde está realmente exposto o teu património?');
-  await expect(thematic).toContainText('Cobertura');
+  await expect(thematic).toContainText('Onde estão as tuas apostas de mercado?');
+  await expect(thematic).toContainText('Ativos de mercado');
+  await expect(thematic).toContainText('Semicondutores');
+  await expect(thematic).toContainText('100%');
   await expect(concentration).toContainText('CONCENTRAÇÃO');
+  await expect(concentration).toContainText('Concentração das posições');
+  await expect(concentration).toContainText('As 3 maiores posições representam');
   await expect(concentration).toContainText('100%');
-  await expect(concentration).toContainText('1 / HHI');
+  await expect(concentration).toContainText('posições iguais');
   await expect(concentration.locator('[data-dpc-mode="themes"]')).toHaveCount(0);
-  const unclassifiedTheme = thematic.locator('[data-dpc-theme="Não classificado"]');
-  await expect(unclassifiedTheme).toBeVisible();
-  await unclassifiedTheme.click();
+  const semiconductorTheme = thematic.locator('[data-dpc-theme="Semicondutores"]').first();
+  await expect(semiconductorTheme).toBeVisible();
+  await semiconductorTheme.click();
   await expect(thematic.locator('.dpc-theme-detail')).toContainText('COMO SE FORMA');
   await expect(thematic.locator('.dpc-theme-detail')).toContainText('E2EDIV');
 

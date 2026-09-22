@@ -31,7 +31,7 @@ class MarketEtfIntelligenceLoaderRetryTests(unittest.TestCase):
         self.assertIn("const etfReady = ensureMarketCompanions();", SOURCE)
         self.assertIn("return ensureEtfIntelligence();", SOURCE)
         self.assertIn("await etfReady;", SOURCE)
-        self.assertIn("version: '1.24'", SOURCE)
+        self.assertIn("version: '1.25'", SOURCE)
 
 
 if __name__ == '__main__':
