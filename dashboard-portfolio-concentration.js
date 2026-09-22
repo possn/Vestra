@@ -1,11 +1,11 @@
-/* Vestra Dashboard Portfolio Concentration v1.1 — direct + evidence-based ETF look-through. */
+/* Vestra Dashboard Portfolio Concentration v1.2 — direct, ETF look-through + normalized thematic exposure. */
 (() => {
   'use strict';
 
   const CARD_ID='dashboardPortfolioConcentrationCard';
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
-  const S={mode:'direct',lookthrough:null,loading:false,scheduled:false};
+  const S={mode:'direct',lookthrough:null,themes:null,details:{},loading:false,scheduled:false};
   const text=v=>String(v??'').trim();
   const esc=v=>text(v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
@@ -118,13 +118,113 @@
     };
   }
 
+  const THEME_RULES=[
+    ['Semicondutores', s => /semiconductor|chip|microprocessor|integrated circuit/i.test(s.text)],
+    ['IA & Robótica', s => /artificial intelligence|machine learning|robotics|robotic|automation/i.test(s.text)],
+    ['Cibersegurança', s => /cybersecurity|cyber security|information security|network security/i.test(s.text)],
+    ['Biotecnologia', s => /biotech|biotechnology|biopharma|biopharmaceutical/i.test(s.text)],
+    ['Defesa & Aeroespacial', s => /aerospace|defen[cs]e|military/i.test(s.text)],
+    ['Energia limpa', s => /renewable|solar|wind energy|clean energy|hydrogen|fuel cell/i.test(s.text)],
+    ['Nuclear & Urânio', s => /nuclear|uranium/i.test(s.text)],
+    ['Água', s => /water|wastewater|desalination/i.test(s.text)],
+    ['Agricultura', s => /agricultur|farm|fertili[sz]er|crop|seed|grain/i.test(s.text)],
+    ['Imobiliário', s => s.sector==='Real Estate'||/reit|real estate/i.test(s.text)],
+    ['Tecnologia', s => s.sector==='Technology'],
+    ['Saúde', s => s.sector==='Healthcare'],
+    ['Financeiro', s => s.sector==='Financial Services'],
+    ['Indústria', s => s.sector==='Industrials'],
+    ['Energia', s => s.sector==='Energy'],
+    ['Consumo', s => /^Consumer /.test(s.sector)],
+    ['Utilities', s => s.sector==='Utilities'],
+    ['Materiais', s => s.sector==='Basic Materials'],
+  ];
+
+  function themeEvidence(row){
+    if(!row) return null;
+    const sector=text(row?.sector);
+    const blob=[row?.ticker,row?.name,row?.sector,row?.industry,row?.category,row?.theme,row?.stock_theme,row?.style,row?.description,row?.long_business_summary,row?.business_summary].map(text).join(' ');
+    if(!sector&&!blob) return null;
+    return {sector,text:blob};
+  }
+
+  function primaryTheme(row){
+    const evidence=themeEvidence(row);
+    if(!evidence) return null;
+    const found=THEME_RULES.find(([,match])=>match(evidence));
+    return found?.[0]||null;
+  }
+
+  function universeByTicker(stocks){
+    const map=new Map();
+    for(const row of Array.isArray(stocks)?stocks:[]){
+      const ticker=text(row?.ticker).toUpperCase();
+      if(ticker&&!map.has(ticker)) map.set(ticker,row);
+    }
+    return map;
+  }
+
+  function buildThemeExposure(assets,detailsByTicker={},stocks=[]){
+    const rows=Array.isArray(assets)?assets:[];
+    const total=rows.reduce((sum,asset)=>sum+(assetValue(asset)||0),0);
+    if(!(total>0)) return {total:0,coverage:null,rows:[],classifiedValue:0};
+    const byTicker=universeByTicker(stocks);
+    const buckets=new Map();
+    let classifiedValue=0;
+
+    const add=(theme,value)=>{
+      if(!(value>0)) return;
+      const label=theme||'Não classificado';
+      buckets.set(label,(buckets.get(label)||0)+value);
+      if(theme) classifiedValue+=value;
+    };
+    const resolve=(ticker,fallback=null)=>detailsByTicker[ticker]||byTicker.get(ticker)||fallback||null;
+
+    rows.forEach((asset,assetIndex)=>{
+      const value=assetValue(asset);
+      if(!(value>0)) return;
+      const ticker=assetTicker(asset);
+      if(!isFundAsset(asset)){
+        add(primaryTheme(resolve(ticker,asset)),value);
+        return;
+      }
+
+      const detail=detailsByTicker[ticker]||null;
+      const holdings=Array.isArray(detail?.top_holdings)?detail.top_holdings:[];
+      const parsed=holdings.map((holding,index)=>{
+        const fraction=holdingFraction(holding);
+        if(fraction==null||fraction<=0) return null;
+        const identity=holdingIdentity(holding,index);
+        const holdingTicker=text(holding?.symbol||holding?.ticker||holding?.holdingSymbol||holding?.holdingTicker).toUpperCase();
+        const evidence=resolve(holdingTicker,holding);
+        return {...identity,fraction,theme:primaryTheme(evidence)};
+      }).filter(Boolean);
+      const rawCoverage=parsed.reduce((sum,row)=>sum+row.fraction,0);
+      const valid=parsed.length>0&&rawCoverage>0&&rawCoverage<=1.05;
+      if(!valid){ add(null,value); return; }
+
+      const scale=rawCoverage>1?1/rawCoverage:1;
+      let allocated=0;
+      for(const holding of parsed){
+        const contribution=value*holding.fraction*scale;
+        allocated+=contribution;
+        add(holding.theme,contribution);
+      }
+      const residual=Math.max(0,value-allocated);
+      if(residual>.01) add(null,residual);
+    });
+
+    const themeRows=[...buckets.entries()].map(([label,value])=>({label,value,weight:value/total,kind:label==='Não classificado'?'unclassified':'theme'}))
+      .sort((a,b)=>b.value-a.value);
+    return {total,coverage:classifiedValue/total,rows:themeRows,classifiedValue};
+  }
+
   function pct(v){return v==null?'—':`${(v*100).toLocaleString('pt-PT',{maximumFractionDigits:1})}%`;}
   function effective(v){return v==null?'—':v.toLocaleString('pt-PT',{maximumFractionDigits:1});}
 
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.1';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.2';
     document.head.appendChild(link);
   }
 
@@ -145,10 +245,10 @@
   }
 
   function modeToggle(hasEtfs){
-    if(!hasEtfs) return '';
     return `<div class="dpc-mode" role="group" aria-label="Modo de concentração">
       <button type="button" data-dpc-mode="direct" class="${S.mode==='direct'?'is-active':''}">Direta</button>
-      <button type="button" data-dpc-mode="lookthrough" class="${S.mode==='lookthrough'?'is-active':''}">Look-through ETF</button>
+      ${hasEtfs?`<button type="button" data-dpc-mode="lookthrough" class="${S.mode==='lookthrough'?'is-active':''}">Look-through ETF</button>`:''}
+      <button type="button" data-dpc-mode="themes" class="${S.mode==='themes'?'is-active':''}">Temas</button>
     </div>`;
   }
 
@@ -157,17 +257,26 @@
 
     const fundCount=direct.rows.filter(row=>isFundAsset(row.asset)).length;
     const usingLookthrough=S.mode==='lookthrough'&&fundCount>0;
-    const snapshot=usingLookthrough&&S.lookthrough?S.lookthrough:direct;
-    const description=usingLookthrough
-      ? 'Ações diretas e holdings conhecidas dos ETFs são agregadas pela identidade disponível. O restante de cada ETF fica explícito, sem o inventar.'
-      : 'Peso das posições individuais. Usa Look-through ETF para revelar sobreposição quando existem holdings verificáveis.';
-    const status=usingLookthrough
+    const usingThemes=S.mode==='themes';
+    const snapshot=usingThemes&&S.themes ? concentrationSnapshot(S.themes.rows) : usingLookthrough&&S.lookthrough ? S.lookthrough : direct;
+    const description=usingThemes
+      ? 'Cada euro recebe um único tema primário com base em sector/indústria/descrição observados; o que não tem evidência suficiente fica explicitamente não classificado.'
+      : usingLookthrough
+        ? 'Ações diretas e holdings conhecidas dos ETFs são agregadas pela identidade disponível. O restante de cada ETF fica explícito, sem o inventar.'
+        : 'Peso das posições individuais. Usa Look-through ETF para revelar sobreposição quando existem holdings verificáveis.';
+    const status=usingThemes
       ? S.loading
-        ? '<div class="dpc-status">A carregar holdings dos ETFs…</div>'
-        : S.lookthrough
-          ? `<div class="dpc-status">Cobertura ETF ${pct(S.lookthrough.etfCoverage)} · exposição subjacente identificada ${pct(S.lookthrough.knownUnderlyingWeight)}</div>`
-          : '<div class="dpc-status">Ainda sem holdings suficientes para look-through.</div>'
-      : '';
+        ? '<div class="dpc-status">A validar exposição temática…</div>'
+        : S.themes
+          ? `<div class="dpc-status">Cobertura temática ${pct(S.themes.coverage)} · classificação normalizada a 100%, sem sobreposição entre temas.</div>`
+          : '<div class="dpc-status">Ainda sem evidência suficiente para a leitura temática.</div>'
+      : usingLookthrough
+        ? S.loading
+          ? '<div class="dpc-status">A carregar holdings dos ETFs…</div>'
+          : S.lookthrough
+            ? `<div class="dpc-status">Cobertura ETF ${pct(S.lookthrough.etfCoverage)} · exposição subjacente identificada ${pct(S.lookthrough.knownUnderlyingWeight)}</div>`
+            : '<div class="dpc-status">Ainda sem holdings suficientes para look-through.</div>'
+        : '';
 
     return `<section class="dpc-card" id="${CARD_ID}">
       <div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Quanto da carteira é realmente a mesma aposta?</h3><p>${description}</p></div></div>
@@ -175,7 +284,7 @@
       ${metrics(snapshot)}
       <div class="dpc-mosaic" aria-label="Peso das maiores exposições">${segmentMarkup(snapshot.rows)}</div>
       ${status}
-      <div class="dpc-foot">${usingLookthrough ? 'Sem dupla contagem: cada euro de ETF é repartido pelas holdings conhecidas e por um bloco residual explícito. Não há inferência temática nesta fase.' : `Cobertura direta: ${snapshot.count} posições · ETFs contam como uma posição única neste modo.`}</div>
+      <div class="dpc-foot">${usingThemes ? 'Temas estreitos têm prioridade sobre sectores amplos e cada exposição só entra num tema primário. “Não classificado” preserva a parte sem evidência suficiente.' : usingLookthrough ? 'Sem dupla contagem: cada euro de ETF é repartido pelas holdings conhecidas e por um bloco residual explícito.' : `Cobertura direta: ${snapshot.count} posições · ETFs contam como uma posição única neste modo.`}</div>
     </section>`;
   }
 
@@ -202,7 +311,12 @@
     if(S.loading) return S.lookthrough;
     const assets=(Array.isArray(getState()?.assets)?getState().assets:[]).filter(asset=>assetValue(asset)>0);
     const funds=assets.filter(isFundAsset).filter(asset=>assetTicker(asset));
-    if(!funds.length){S.lookthrough=null;render();return null;}
+    if(!funds.length){
+      S.lookthrough=null;
+      S.themes=buildThemeExposure(assets,{},window.VestraMarketStaticUniverse?.getStocks?.()||[]);
+      render();
+      return null;
+    }
     if(S.lookthrough&&!force){render();return S.lookthrough;}
     S.loading=true;render();
     const details={};
@@ -213,7 +327,11 @@
         const settled=await Promise.allSettled(funds.map(asset=>hydrate(assetTicker(asset))));
         settled.forEach((row,index)=>{if(row.status==='fulfilled'&&row.value)details[assetTicker(funds[index])]=row.value;});
       }
+      S.details=details;
+      S.details=details;
       S.lookthrough=buildLookthrough(assets,details);
+      S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
+      S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
     }catch(_){
       S.lookthrough=buildLookthrough(assets,details);
     }finally{
@@ -234,19 +352,23 @@
 
   function boot(){
     render(); scheduleLookthrough();
-    window.addEventListener('vestra:app-ready',()=>{S.lookthrough=null;render();scheduleLookthrough();});
+    window.addEventListener('vestra:app-ready',()=>{S.lookthrough=null;S.themes=null;S.details={};render();scheduleLookthrough();});
     window.addEventListener('vestra:market-ready',()=>{render();scheduleLookthrough();});
     const net=document.getElementById('kpiNet');
     if(net&&typeof MutationObserver==='function'){
-      const observer=new MutationObserver(()=>{S.lookthrough=null;render();scheduleLookthrough();});
+      const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};render();scheduleLookthrough();});
       observer.observe(net,{childList:true,subtree:true,characterData:true});
     }
     document.addEventListener('click',event=>{
       const mode=event.target?.closest?.('[data-dpc-mode]')?.dataset?.dpcMode;
-      if(mode==='direct'||mode==='lookthrough'){
+      if(mode==='direct'||mode==='lookthrough'||mode==='themes'){
         S.mode=mode;
+        if(mode==='themes'&&!S.themes){
+          const assets=Array.isArray(getState()?.assets)?getState().assets:[];
+          S.themes=buildThemeExposure(assets,S.details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
+        }
         render();
-        if(mode==='lookthrough') void hydrateLookthrough(false);
+        if(mode==='lookthrough'||mode==='themes') void hydrateLookthrough(false);
         return;
       }
       if(event.target?.closest?.('[data-view="dashboard"]')) setTimeout(()=>{render();scheduleLookthrough();},60);
@@ -256,6 +378,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'1.1',directHoldings,concentrationSnapshot,buildLookthrough,hydrateLookthrough,render
+    version:'1.2',directHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
