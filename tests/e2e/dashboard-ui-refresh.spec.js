@@ -139,9 +139,10 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(concentration).toContainText('100%');
   await expect(concentration).toContainText('26,6% do património total');
   await expect(concentration).not.toContainText('E2E Deposit');
-  await expect(concentration).not.toContainText('Certificados de aforro');
+  const holdingsRank = concentration.locator('.dpc-holdings-rank');
+  await expect(holdingsRank).not.toContainText('Certificados de aforro');
   await expect(concentration.locator('.dpc-concentration-hero')).toContainText('Top 3 posições');
-  await expect(concentration.locator('.dpc-holdings-rank')).toBeVisible();
+  await expect(holdingsRank).toBeVisible();
   await expect(concentration).toContainText('posições iguais');
   await expect(concentration.locator('[data-dpc-mode="themes"]')).toHaveCount(0);
   const semiconductorTheme = thematic.locator('[data-dpc-theme="Semicondutores"]').first();
