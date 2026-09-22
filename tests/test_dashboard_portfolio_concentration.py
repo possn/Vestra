@@ -52,7 +52,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("contributors:new Map()", JS)
         self.assertIn("dpc-theme-chip", JS)
         self.assertIn("COMO SE FORMA", JS)
-        self.assertIn("Contributos calculados sobre o património total", JS)
+        self.assertIn("Percentagens sobre o património total", JS)
         self.assertIn("data-dpc-theme", JS)
         self.assertIn("data-dpc-theme-close", JS)
         self.assertIn(".dpc-theme-detail", CSS)
