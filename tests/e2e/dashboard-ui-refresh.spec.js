@@ -57,7 +57,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
 
   const concentration = page.locator('#dashboardPortfolioConcentrationCard');
   await expect(concentration).toBeVisible();
-  await expect(concentration).toContainText('Concentração direta');
+  await expect(concentration).toContainText('CONCENTRAÇÃO DIRETA');
   await expect(concentration).toContainText('100%');
   await expect(concentration).toContainText('1 / HHI');
 
