@@ -9,8 +9,8 @@ LOADER = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
 
 class WinstonMetalsSentimentTests(unittest.TestCase):
     def test_metals_runtime_rolls_forward(self):
-        self.assertIn("Vestra Metals v1.1", JS)
-        self.assertIn("window.VestraMetals=Object.freeze({version:'1.1'", JS)
+        self.assertIn("Vestra Metals v1.2", JS)
+        self.assertIn("window.VestraMetals=Object.freeze({version:'1.2'", JS)
         self.assertIn("market-metals.js?v=1.1", LOADER)
         self.assertIn("market-metals.css?v=1.1", JS)
 
@@ -29,6 +29,9 @@ class WinstonMetalsSentimentTests(unittest.TestCase):
         self.assertIn("metal-sentiment-gauge", CSS)
         self.assertIn("metal-explainer", CSS)
         self.assertIn("font-family:Georgia", CSS)
+        self.assertNotIn("var(--ink)", CSS)
+        self.assertIn("overflow-wrap:anywhere", CSS)
+        self.assertIn("@media(max-width:360px)", CSS)
 
     def test_no_unavailable_positioning_is_claimed(self):
         self.assertIn("não inclui ainda COT", JS)
