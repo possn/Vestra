@@ -200,7 +200,7 @@
     const link = document.createElement('link');
     link.id = 'vestra-dashboard-daily-news-style';
     link.rel = 'stylesheet';
-    link.href = 'dashboard-daily-news.css?v=1.0';
+    link.href = 'dashboard-daily-news.css?v=1.1';
     document.head.appendChild(link);
   }
 
