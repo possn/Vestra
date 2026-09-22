@@ -44,7 +44,7 @@ class UiVisualPolishContractTests(unittest.TestCase):
     def test_loader_reaches_cache_busted_companion(self):
         self.assertIn('ensureUiVisualPolish', self.loader)
         self.assertIn('ui-visual-polish.js?v=1.1', self.loader)
-        self.assertIn("version: '1.18'", self.loader)
+        self.assertIn("version: '1.19'", self.loader)
         self.assertIn("version:'1.1'", self.source)
 
 
