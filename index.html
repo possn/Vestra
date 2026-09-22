@@ -238,11 +238,8 @@
 <span id="kpiPassiveMonthly" style="display:none"></span>
 <span id="kpiDivYTD" style="display:none"></span>
 <span id="kpiDivCount" style="display:none"></span>
-<div class="dashboard-shortcuts">
-<button onclick="setView('assets')"><span class="dashboard-shortcuts__icon">◫</span><span><b>Carteira</b><small>Ver posições</small></span></button>
-<button onclick="setView('market')"><span class="dashboard-shortcuts__icon">⌕</span><span><b>Mercado</b><small>Pesquisar oportunidades</small></span></button>
-<button id="btnDashQuickAdd"><span class="dashboard-shortcuts__icon">＋</span><span><b>Adicionar</b><small>Novo ativo</small></span></button>
-</div>
+<!-- Navegação duplicada removida do Home; mantém só o host do quick-add para compatibilidade JS. -->
+<button id="btnDashQuickAdd" type="button" hidden style="display:none!important" aria-hidden="true" tabindex="-1"></button>
 <div class="card dash-secondary">
 <div class="card__head"><div><div class="card__title">Ações e manutenção</div><div class="card__muted">Registos manuais e utilitários da carteira</div></div></div>
 <div class="row row--wrap" style="gap:8px">

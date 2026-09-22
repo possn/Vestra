@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.91 — resilient bounded app-shell precache. */
-const CACHE_NAME = "vestra-cache-v204";
+/* Vestra Service Worker v10.92 — resilient bounded app-shell precache. */
+const CACHE_NAME = "vestra-cache-v205";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [
