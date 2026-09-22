@@ -42,9 +42,17 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn("function portfolioTickers()", self.runtime)
         self.assertIn("function portfolioHits(item, held)", self.runtime)
         self.assertIn("120 + Math.min(30, hits.length * 10)", self.runtime)
-        self.assertIn("MAX_VISIBLE = 5", self.runtime)
+        self.assertIn("MAX_SELECTED = 5", self.runtime)
         self.assertIn("CARTEIRA", self.runtime)
         self.assertIn("MERCADO", self.runtime)
+
+    def test_news_is_progressively_disclosed_without_losing_ranked_items(self):
+        self.assertIn("COLLAPSED_VISIBLE = 3", self.runtime)
+        self.assertIn("MAX_SELECTED = 5", self.runtime)
+        self.assertIn("rows.slice(0, COLLAPSED_VISIBLE)", self.runtime)
+        self.assertIn("data-dashboard-news-toggle", self.runtime)
+        self.assertIn("Ver mais", self.runtime)
+        self.assertIn(".vestra-daily-news-more", self.css)
 
     def test_news_fetch_is_bounded_and_fail_soft(self):
         self.assertIn("const FETCH_TIMEOUT_MS = 5000", self.runtime)
@@ -53,12 +61,12 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn(".catch(() => null)", self.runtime)
 
     def test_companion_is_versioned_reachable_and_offline_capable(self):
-        self.assertIn("dashboard-daily-news.js?v=1.6", self.loader)
+        self.assertIn("dashboard-daily-news.js?v=1.7", self.loader)
         self.assertIn("ensureDashboardDailyNews()", self.loader)
         self.assertIn('"./dashboard-daily-news.js"', self.sw)
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
-        self.assertIn("dashboard-daily-news.css?v=1.0", self.runtime)
-        self.assertIn("version: '1.6'", self.runtime)
+        self.assertIn("dashboard-daily-news.css?v=1.1", self.runtime)
+        self.assertIn("version: '1.7'", self.runtime)
 
     def test_news_runtime_is_network_first_so_interaction_fixes_are_not_stale(self):
         network_first = self.sw.split('const BOOTSTRAP_NETWORK_FIRST = new Set([', 1)[1].split(']);', 1)[0]

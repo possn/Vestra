@@ -47,9 +47,15 @@ class DashboardWeeklyEventsFetchTimeoutTests(unittest.TestCase):
         self.assertNotIn(r"const match = /^[^:]+:(\\d{4}-\\d{2}-\\d{2}):/.exec(id);", self.runtime)
         self.assertIn("collectMacroEvents(snapshot, eventDay, 1)", self.runtime)
 
+    def test_weekly_card_uses_progressive_disclosure(self):
+        self.assertIn("const COLLAPSED_EVENTS = 4;", self.runtime)
+        self.assertIn("events.slice(0,COLLAPSED_EVENTS)", self.runtime)
+        self.assertIn("more.dataset.weeklyEventsToggle='1'", self.runtime)
+        self.assertIn("Ver semana completa", self.runtime)
+
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("const VERSION = '2.3';", self.runtime)
-        self.assertIn("dashboard-weekly-events.js?v=2.3", self.loader)
+        self.assertIn("const VERSION = '2.4';", self.runtime)
+        self.assertIn("dashboard-weekly-events.js?v=2.4", self.loader)
 
 
 if __name__ == "__main__":

@@ -1,15 +1,15 @@
-.vestra-daily-news-card{display:block!important;margin:18px 0;padding:18px;border:1px solid var(--border,rgba(31,54,63,.14));border-radius:22px;background:var(--card,#fff);box-shadow:0 10px 30px rgba(20,45,55,.06)}
-.vestra-daily-news-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
-.vestra-daily-news-head h3{margin:2px 0 4px;font-size:20px;line-height:1.2;color:var(--text,#173642)}
-.vestra-daily-news-head p{margin:0;color:var(--muted,#6d7f86);font-size:13px;line-height:1.4}
-.vestra-daily-news-head>small{white-space:nowrap;color:var(--muted,#6d7f86);font-size:11px;font-weight:700}
-.vestra-daily-news-kicker{display:block;color:var(--accent,#0d9f96);font-size:10px;font-weight:800;letter-spacing:.14em}
-.vestra-daily-news-list{display:grid;gap:2px}
-.vestra-daily-news-item{display:grid;grid-template-columns:auto 1fr;column-gap:10px;row-gap:3px;padding:12px 4px;border-top:1px solid var(--border,rgba(31,54,63,.10));color:inherit;text-decoration:none;min-width:0}
-.vestra-daily-news-item:first-child{border-top:0;padding-top:5px}
-.vestra-daily-news-item strong{grid-column:2;min-width:0;color:var(--text,#173642);font-size:14px;line-height:1.35;font-weight:760}
-.vestra-daily-news-item small{grid-column:2;color:var(--muted,#6d7f86);font-size:11px;line-height:1.3}
-.vestra-daily-news-badge{grid-column:1;grid-row:1 / span 2;align-self:start;margin-top:2px;padding:4px 7px;border-radius:999px;background:rgba(31,54,63,.07);color:var(--muted,#5b7079);font-size:9px;font-weight:800;letter-spacing:.05em;white-space:nowrap}
-.vestra-daily-news-badge.is-portfolio{background:rgba(13,159,150,.12);color:var(--accent,#087f79)}
-.vestra-daily-news-empty{padding:14px 4px;color:var(--muted,#6d7f86);font-size:13px}
-@media(max-width:600px){.vestra-daily-news-card{margin:14px 0;padding:16px;border-radius:20px}.vestra-daily-news-head{gap:10px}.vestra-daily-news-head h3{font-size:19px}.vestra-daily-news-head p{font-size:12px}.vestra-daily-news-item{grid-template-columns:1fr;padding:12px 2px}.vestra-daily-news-badge{grid-column:1;grid-row:auto;justify-self:start;margin:0 0 2px}.vestra-daily-news-item strong,.vestra-daily-news-item small{grid-column:1}.vestra-daily-news-item strong{font-size:13.5px}}
+.vestra-daily-news-card{display:block!important;margin:10px 0 16px;padding:14px 15px;border:1px solid color-mix(in srgb,#b18a45 13%,var(--line));border-radius:18px;background:color-mix(in srgb,#f0eadf 20%,var(--card));box-shadow:0 3px 14px rgba(20,45,55,.035)}
+.vestra-daily-news-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:7px}
+.vestra-daily-news-head h3{margin:2px 0 0;font-family:Georgia,"Times New Roman",serif;font-size:17px;line-height:1.15;color:var(--text,#173642)}
+.vestra-daily-news-head>small{white-space:nowrap;color:var(--muted,#6d7f86);font-size:9px;font-weight:700;padding-top:2px}
+.vestra-daily-news-kicker{display:block;color:#9a773c;font-size:9px;font-weight:900;letter-spacing:.14em}
+.vestra-daily-news-list{display:grid}
+.vestra-daily-news-item{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:2px;padding:9px 1px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);color:inherit;text-decoration:none;min-width:0}
+.vestra-daily-news-item:first-child{border-top:0;padding-top:4px}
+.vestra-daily-news-item strong{grid-column:2;min-width:0;color:var(--text,#173642);font-size:12px;line-height:1.3;font-weight:780;overflow-wrap:anywhere}
+.vestra-daily-news-item small{grid-column:2;color:var(--muted,#6d7f86);font-size:9.5px;line-height:1.25}
+.vestra-daily-news-badge{grid-column:1;grid-row:1 / span 2;align-self:start;margin-top:1px;padding:3px 6px;border-radius:999px;background:rgba(31,54,63,.07);color:var(--muted,#5b7079);font-size:8px;font-weight:850;letter-spacing:.04em;white-space:nowrap}
+.vestra-daily-news-badge.is-portfolio{background:rgba(13,159,150,.11);color:var(--accent,#087f79)}
+.vestra-daily-news-more{display:block;margin:5px 0 0 auto;appearance:none;border:0;background:transparent;color:var(--text2,#334f5b);font-size:9.5px;font-weight:850;padding:5px 1px;cursor:pointer}
+.vestra-daily-news-empty{padding:10px 1px;color:var(--muted,#6d7f86);font-size:11px}
+@media(max-width:600px){.vestra-daily-news-card{margin:9px 0 14px;padding:13px;border-radius:17px}.vestra-daily-news-item{grid-template-columns:1fr;padding:8px 0}.vestra-daily-news-badge{grid-column:1;grid-row:auto;justify-self:start;margin:0 0 1px}.vestra-daily-news-item strong,.vestra-daily-news-item small{grid-column:1}.vestra-daily-news-item strong{font-size:11.5px}}
