@@ -12,10 +12,10 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=1.5", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=1.6", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'1.5'", JS)
+        self.assertIn("version:'1.6'", JS)
 
     def test_concentration_is_direct_and_transparent(self):
         self.assertIn("function concentrationSnapshot", JS)
@@ -35,14 +35,17 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("requestIdleCallback", JS)
         self.assertNotIn("fund_theme", JS)
 
-    def test_theme_mode_is_primary_normalized_and_evidence_based(self):
+    def test_theme_exposure_is_primary_normalized_and_evidence_based(self):
         self.assertIn("const THEME_RULES", JS)
         self.assertIn("function primaryTheme", JS)
         self.assertIn("function buildThemeExposure", JS)
         self.assertIn("Não classificado", JS)
-        self.assertIn("classificação normalizada a 100%", JS)
-        self.assertIn("cada exposição só entra num tema primário", JS)
-        self.assertIn("data-dpc-mode=\"themes\"", JS)
+        self.assertIn("portfolioThemeExposureCard", JS)
+        self.assertIn("EXPOSIÇÃO TEMÁTICA", JS)
+        self.assertIn("IA & Robótica", JS)
+        self.assertIn("Semicondutores", JS)
+        self.assertIn("Matérias-primas", JS)
+        self.assertNotIn('data-dpc-mode="themes"', JS)
         self.assertNotIn("themeWeights", JS)
 
     def test_theme_evidence_keeps_contributor_provenance_and_drilldown(self):
@@ -60,19 +63,20 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("}catch(_){", JS)
         self.assertIn("S.themes=buildThemeExposure(assets,details", JS)
 
-    def test_class_allocation_replaces_dashboard_distribution(self):
-        self.assertIn("function classAllocation", JS)
-        self.assertIn("portfolioClassAllocationCard", JS)
-        self.assertIn("Como está distribuído o património?", JS)
+    def test_theme_exposure_replaces_class_allocation_card(self):
+        self.assertNotIn("function classAllocation", JS)
+        self.assertNotIn("portfolioClassAllocationCard", JS)
+        self.assertIn("Onde está realmente exposto o teu património?", JS)
         self.assertIn("dashboardDistributionCard", INDEX)
         self.assertIn('id="dashboardDistributionCard" hidden', INDEX)
-        self.assertIn(".dpc-class-bar", CSS)
+        self.assertIn(".dpc-theme-bar", CSS)
+        self.assertIn(".dpc-theme-stats", CSS)
 
     def test_assets_and_liabilities_do_not_share_analysis_cards(self):
         self.assertIn("portfolioShowsAssets", JS)
         self.assertIn("#segAssets,#segLiabs", JS)
         self.assertIn("document.getElementById(CARD_ID)?.remove()", JS)
-        self.assertIn("document.getElementById(CLASS_CARD_ID)?.remove()", JS)
+        self.assertIn("document.getElementById(THEME_CARD_ID)?.remove()", JS)
 
     def test_card_is_owned_by_portfolio_view_and_responsive(self):
         self.assertIn("viewAssets", JS)
