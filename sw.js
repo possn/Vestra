@@ -1,5 +1,5 @@
-/* Vestra Service Worker v10.84 — resilient bounded app-shell precache. */
-const CACHE_NAME = "vestra-cache-v197";
+/* Vestra Service Worker v10.85 — resilient bounded app-shell precache. */
+const CACHE_NAME = "vestra-cache-v198";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [
@@ -11,7 +11,7 @@ const APP_SHELL = [
   "./market.js", "./market-runtime-loader.js", "./market-live-overlay.js", "./market-congress-live.js", "./market-portfolio-context.js",
   "./market-watch-snapshots.js", "./market-static-universe.js", "./market-scanner-data.js",
   "./market-analysis-tools-runtime.js", "./market-analysis-tools-runtime.css", "./market-etf-intelligence.js", "./dashboard-weekly-events.js",
-  "./dashboard-weekly-events-navigation.js", "./dashboard-ui-refresh.js", "./dashboard-daily-news.js", "./dashboard-daily-news.css", "./ui-visual-polish.js", "./market-dossier-signals.js", "./market-search-suggestions.js",
+  "./dashboard-weekly-events-navigation.js", "./dashboard-ui-refresh.js", "./dashboard-daily-news.js", "./dashboard-daily-news.css", "./dashboard-market-sentiment.js", "./dashboard-market-sentiment.css", "./ui-visual-polish.js", "./market-dossier-signals.js", "./market-search-suggestions.js",
   "./market-row-ui.js", "./market-data-loader.js", "./market-data-health.js", "./market-data-health.css", "./market-company-brief.js", "./market-company-brief.css",
   "./market-metric-cleanup.js", "./market-dossier-controls.js", "./market-dossier-controls.css", "./market-ui-polish.js", "./market-stock-themes-tools.js", "./portfolio-collapsibles.js", "./portfolio-collapsibles.css",
   "./portfolio-sheet-navigation.js", "./portfolio-sheet-navigation.css", "./portfolio-card-classifier.js", "./portfolio-card-classifier.css", "./market-opportunities.js", "./market-opportunities.css",
@@ -32,7 +32,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "app-return-assumptions.js", "app-financial-engine.js", "app-export-runtime.js", "app.js", "market-runtime-loader.js", "market-live-overlay.js",
   "market-data-loader.js", "market-data-health.js", "market-portfolio-context.js", "market-static-universe.js",
   "market-scanner-data.js", "market-analysis-tools-runtime.js", "market-etf-intelligence.js", "dashboard-weekly-events.js",
-  "dashboard-weekly-events-navigation.js", "dashboard-daily-news.js", "market-dossier-controls.js", "market-ui-polish.js", "market-opportunities.js",
+  "dashboard-weekly-events-navigation.js", "dashboard-daily-news.js", "dashboard-market-sentiment.js", "market-dossier-controls.js", "market-ui-polish.js", "market-opportunities.js",
   "market-opportunity-lenses.js", "mobile-ui-refresh.js", "vestra-ai-brief.js", "politicians.js"
 ]);
 
