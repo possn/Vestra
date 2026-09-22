@@ -55,7 +55,7 @@ class PortfolioSectorEquityOnlyTests(unittest.TestCase):
         self.assertIn("portfolioEquitySector(a)", block)
 
     def test_ui_copy_makes_scope_explicit_and_app_version_rolls_forward(self):
-        self.assertIn("Só ações e ETFs · peso e valor por sector.", INDEX)
+        self.assertIn("Classificação sectorial de ações e ETFs · complemento à exposição temática.", INDEX)
         self.assertIn("app.js?v=20260921v12", INDEX)
 
 
