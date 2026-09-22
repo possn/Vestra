@@ -1,4 +1,4 @@
-/* Vestra Dashboard Market Sentiment v1.1 — transparent, price-derived market barometer. */
+/* Vestra Dashboard Market Sentiment v1.2 — compact transparent market barometer. */
 (() => {
   'use strict';
 
@@ -18,7 +18,7 @@
   ];
   const VIX_TICKER='^VIX';
 
-  const S={loading:false,data:null,error:'',scheduled:false};
+  const S={loading:false,data:null,error:'',scheduled:false,expanded:false};
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
   const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,7 +33,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=1.0';
+    link.href='dashboard-market-sentiment.css?v=1.1';
     document.head.appendChild(link);
   }
 
@@ -217,14 +217,19 @@
         </div>
         ${gauge(current.score,tone)}
       </div>
-      <div class="dms-components">
-        <div><span>Tendência</span><strong>${metric(current.trend)}</strong></div>
-        <div><span>Momentum</span><strong>${metric(current.momentum)}</strong></div>
-        <div><span>Participação proxy</span><strong>${metric(current.participation)}</strong></div>
-        <div><span>Volatilidade</span><strong>${metric(current.vol?.score)}</strong></div>
+      <button class="dms-detail-toggle" type="button" data-dms-detail-toggle aria-expanded="${S.expanded?'true':'false'}">
+        ${S.expanded?'Ocultar detalhe':'Ver como é calculado'} <span aria-hidden="true">${S.expanded?'−':'+'}</span>
+      </button>
+      <div class="dms-detail"${S.expanded?'':' hidden'}>
+        <div class="dms-components">
+          <div><span>Tendência</span><strong>${metric(current.trend)}</strong></div>
+          <div><span>Momentum</span><strong>${metric(current.momentum)}</strong></div>
+          <div><span>Participação proxy</span><strong>${metric(current.participation)}</strong></div>
+          <div><span>Volatilidade</span><strong>${metric(current.vol?.score)}</strong></div>
+        </div>
+        <div class="dms-context">${vix!=null?`VIX ${vix.toFixed(1)} · `:''}universo: ACWI, S&P 500, Nasdaq 100, small caps, desenvolvidos ex-EUA e emergentes.</div>
+        <aside class="dms-explainer"><strong>O QUE ESTÁS A VER.</strong><p>Score 0–100 calculado com dados de preço: 35% tendência vs médias 50/200, 30% momentum 1/3 meses, 20% participação proxy destes seis mercados acima das médias e 15% VIX. Não usa breadth real, put/call, credit spreads ou COT enquanto essas fontes não estiverem ligadas de forma robusta.</p></aside>
       </div>
-      <div class="dms-context">${vix!=null?`VIX ${vix.toFixed(1)} · `:''}universo: ACWI, S&P 500, Nasdaq 100, small caps, desenvolvidos ex-EUA e emergentes.</div>
-      <aside class="dms-explainer"><strong>O QUE ESTÁS A VER.</strong><p>Score 0–100 calculado com dados de preço: 35% tendência vs médias 50/200, 30% momentum 1/3 meses, 20% participação proxy destes seis mercados acima das médias e 15% VIX. Não usa breadth real, put/call, credit spreads ou COT enquanto essas fontes não estiverem ligadas de forma robusta.</p></aside>
     </section>`;
   }
 
@@ -318,6 +323,7 @@
     scheduleLoad();
     window.addEventListener('vestra:app-ready',()=>{render();scheduleLoad();});
     document.addEventListener('click',event=>{
+      if(event.target?.closest?.('[data-dms-detail-toggle]')){S.expanded=!S.expanded;render();return;}
       if(event.target?.closest?.('[data-dms-refresh]')){load(true);return;}
       if(event.target?.closest?.('[data-view="dashboard"]')) setTimeout(()=>{render();scheduleLoad();},60);
     });
@@ -327,7 +333,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.1',
+    version:'1.2',
     computeSnapshot,
     labelFor,
     load,

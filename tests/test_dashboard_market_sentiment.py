@@ -11,7 +11,7 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardMarketSentimentTests(unittest.TestCase):
     def test_runtime_is_reachable_without_blocking_market_load(self):
         self.assertIn("ensureDashboardMarketSentiment", LOADER)
-        self.assertIn("dashboard-market-sentiment.js?v=1.1", LOADER)
+        self.assertIn("dashboard-market-sentiment.js?v=1.2", LOADER)
         tail = LOADER[LOADER.index("// Dashboard/mobile companions remain eager"):]
         self.assertIn("ensureDashboardMarketSentiment();", tail)
         self.assertIn("requestIdleCallback", JS)
@@ -36,6 +36,14 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn("font-family:Georgia", CSS)
         self.assertIn("@media(max-width:560px)", CSS)
         self.assertIn("@media(max-width:360px)", CSS)
+
+    def test_methodology_is_progressively_disclosed(self):
+        self.assertIn("expanded:false", JS)
+        self.assertIn("data-dms-detail-toggle", JS)
+        self.assertIn("Ver como é calculado", JS)
+        self.assertIn("dms-detail", JS)
+        self.assertIn(".dms-detail[hidden]", CSS)
+        self.assertIn("version:'1.2'", JS)
 
     def test_service_worker_tracks_companion(self):
         self.assertIn("./dashboard-market-sentiment.js", SW)
