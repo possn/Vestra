@@ -58,6 +58,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   // Portfolio analysis no longer competes with the Home summary.
   await expect(page.locator('#viewDashboard #dashboardPortfolioConcentrationCard')).toHaveCount(0);
   await expect(page.locator('#dashboardTopAssetsCard')).toBeHidden();
+  await expect(page.locator('#dashboardDistributionCard')).toBeHidden();
 
   const pulse = page.locator('#dashboardPortfolioPulseCard');
   await expect(pulse).toBeVisible({ timeout: 15_000 });
@@ -97,7 +98,12 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await page.locator('#navAssets').click();
   await expect(page.locator('#viewAssets')).toBeVisible();
   const concentration = page.locator('#viewAssets #dashboardPortfolioConcentrationCard');
+  const allocation = page.locator('#viewAssets #portfolioClassAllocationCard');
   await expect(concentration).toBeVisible();
+  await expect(allocation).toBeVisible();
+  await expect(allocation).toContainText('Como está distribuído o património?');
+  await expect(allocation).toContainText('Ações');
+  await expect(allocation).toContainText('100%');
   await expect(concentration).toContainText('CONCENTRAÇÃO');
   await expect(concentration).toContainText('100%');
   await expect(concentration).toContainText('1 / HHI');
@@ -109,6 +115,12 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await unclassifiedTheme.click();
   await expect(concentration.locator('.dpc-theme-detail')).toContainText('COMO SE FORMA');
   await expect(concentration.locator('.dpc-theme-detail')).toContainText('E2EDIV');
+
+  await page.locator('#segLiabs').click();
+  await expect(page.locator('#dashboardPortfolioConcentrationCard')).toHaveCount(0);
+  await expect(page.locator('#portfolioClassAllocationCard')).toHaveCount(0);
+  await page.locator('#segAssets').click();
+  await expect(page.locator('#portfolioClassAllocationCard')).toBeVisible();
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
