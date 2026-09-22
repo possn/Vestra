@@ -57,7 +57,7 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         self.assertIn('ensureMobileUiRefresh', self.loader)
         self.assertIn('mobile-ui-refresh.js?v=1.4', self.loader)
         self.assertIn("version: '1.23'", self.loader)
-        self.assertIn("version:'1.5'", self.source)
+        self.assertIn("version:'1.4'", self.source)
 
 
 if __name__ == '__main__':
