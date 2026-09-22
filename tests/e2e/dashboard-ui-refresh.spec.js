@@ -60,6 +60,11 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(concentration).toContainText('CONCENTRAÇÃO');
   await expect(concentration).toContainText('100%');
   await expect(concentration).toContainText('1 / HHI');
+  const themeMode = concentration.locator('[data-dpc-mode="themes"]');
+  await expect(themeMode).toBeVisible();
+  await themeMode.click();
+  await expect(concentration).toContainText('Cobertura temática');
+  await expect(concentration).toContainText('Não classificado');
 
   const pulse = page.locator('#dashboardPortfolioPulseCard');
   await expect(pulse).toBeVisible({ timeout: 15_000 });
