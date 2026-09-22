@@ -500,7 +500,7 @@
       S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
     }catch(_){
       S.details=details;
-      S.lookthrough=funds.length?buildLookthrough(assets,details):null;
+      S.lookthrough=funds.length?buildLookthrough(marketAssets,details):null;
       S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
     }finally{
       S.loading=false;render();
