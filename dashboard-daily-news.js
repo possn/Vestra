@@ -1,13 +1,15 @@
-/* Vestra Dashboard Daily News v1.6 — compact market + portfolio-aware daily briefing. */
+/* Vestra Dashboard Daily News v1.7 — editorial compact market + portfolio-aware daily briefing. */
 (() => {
   'use strict';
 
   const FETCH_TIMEOUT_MS = 5000;
-  const MAX_VISIBLE = 5;
+  const MAX_SELECTED = 5;
+  const COLLAPSED_VISIBLE = 3;
   let payload = null;
   let loadPromise = null;
   let renderQueued = false;
   let renderedMarkup = '';
+  let expanded = false;
 
   const text = value => String(value ?? '').trim();
   const esc = value => text(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -88,7 +90,7 @@
       }
       selected.push(candidate);
       if (source) seenSources.set(source, sourceCount + 1);
-      if (selected.length >= MAX_VISIBLE) break;
+      if (selected.length >= MAX_SELECTED) break;
     }
     return selected;
   }
@@ -108,7 +110,8 @@
     const rows = rankedItems();
     const generated = payload?.generated_at ? Date.parse(payload.generated_at) : 0;
     const freshness = Number.isFinite(generated) && generated > 0 ? new Date(generated).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' }) : '';
-    const body = rows.length ? rows.map(({ item, hits }) => {
+    const visible = expanded ? rows : rows.slice(0, COLLAPSED_VISIBLE);
+    const body = visible.length ? visible.map(({ item, hits }) => {
       const badge = hits.length ? `CARTEIRA · ${esc(hits.slice(0, 2).map(x => text(x).split('.')[0]).join(', '))}` : 'MERCADO';
       const meta = [text(item?.source), timeLabel(item)].filter(Boolean).join(' · ');
       const content = `<span class="vestra-daily-news-badge${hits.length ? ' is-portfolio' : ''}">${badge}</span><strong>${esc(item?.title)}</strong><small>${esc(meta)}</small>`;
@@ -117,7 +120,10 @@
         ? `<a class="vestra-daily-news-item" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${content}</a>`
         : `<div class="vestra-daily-news-item is-disabled">${content}</div>`;
     }).join('') : '<div class="vestra-daily-news-empty">Sem notícias relevantes atualizadas neste momento.</div>';
-    return `<section class="vestra-daily-news-card" id="vestraDailyNewsCard"><div class="vestra-daily-news-head"><div><span class="vestra-daily-news-kicker">HOJE</span><h3>Notícias do dia</h3><p>O que pode mexer com os mercados e com a tua carteira.</p></div>${freshness ? `<small>Dados ${esc(freshness)}</small>` : ''}</div><div class="vestra-daily-news-list">${body}</div></section>`;
+    const more = rows.length > COLLAPSED_VISIBLE
+      ? `<button class="vestra-daily-news-more" type="button" data-dashboard-news-toggle aria-expanded="${expanded ? 'true' : 'false'}">${expanded ? 'Mostrar menos' : `Ver mais ${rows.length - COLLAPSED_VISIBLE}`}</button>`
+      : '';
+    return `<section class="vestra-daily-news-card" id="vestraDailyNewsCard"><div class="vestra-daily-news-head"><div><span class="vestra-daily-news-kicker">HOJE</span><h3>Notícias do dia</h3></div>${freshness ? `<small>Dados ${esc(freshness)}</small>` : ''}</div><div class="vestra-daily-news-list">${body}</div>${more}</section>`;
   }
 
   function dashboardMount() {
@@ -209,6 +215,13 @@
     let resumeRefreshPending = false;
 
     document.addEventListener('click', event => {
+      const toggle = event.target.closest?.('[data-dashboard-news-toggle]');
+      if (toggle) {
+        expanded = !expanded;
+        renderedMarkup = '';
+        queueRender();
+        return;
+      }
       const newsLink = event.target.closest?.('a.vestra-daily-news-item[href]');
       if (newsLink && safeNewsUrl(newsLink.getAttribute('href'))) {
         rememberNewsReturn();
@@ -246,6 +259,6 @@
 
   window.VestraDashboardDailyNews = Object.freeze({
     load, refresh: () => load(true), render, rankedItems, safeNewsUrl,
-    rememberNewsReturn, version: '1.6'
+    rememberNewsReturn, version: '1.7'
   });
 })();
