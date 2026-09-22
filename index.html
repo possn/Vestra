@@ -394,10 +394,15 @@
 </div>
 <div class="card portfolio-sector-card" id="portfolioSectorCard">
 <div class="card__head portfolio-sector-head">
-<div><div class="card__title">Sectores da carteira</div><div class="card__muted">Só ações e ETFs · peso e valor por sector.</div></div>
+<div><div class="card__title">Sectores tradicionais</div><div class="card__muted">Classificação sectorial de ações e ETFs · complemento à exposição temática.</div></div>
+<div class="row row--wrap" style="gap:6px;justify-content:flex-end">
+<button class="btn btn--ghost btn--sm" id="btnPortfolioSectorToggle" type="button" aria-expanded="false" onclick="const body=document.getElementById('portfolioSectorBody');const open=body?.hidden;if(body){body.hidden=!open;this.textContent=open?'Ocultar sectores':'Ver sectores';this.setAttribute('aria-expanded',String(open));}">Ver sectores</button>
 <button class="btn btn--ghost btn--sm" id="btnPortfolioSectorAnalysis" type="button">Análise completa</button>
 </div>
+</div>
+<div id="portfolioSectorBody" hidden>
 <div id="portfolioSectorSummary"></div>
+</div>
 </div>
 <div class="card portfolio-list-card">
 <div class="card__head portfolio-list-head">
