@@ -29,7 +29,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("const hhi=weighted.reduce", JS)
         self.assertIn("1/hhi", JS)
         self.assertIn("Top 3", JS)
-        self.assertIn("ETFs contam como uma posição neste modo", JS)
+        self.assertIn("As percentagens principais são relativas apenas à fatia de mercado", JS)
 
     def test_etf_lookthrough_uses_only_observed_holdings_and_keeps_residual(self):
         self.assertIn("function buildLookthrough", JS)
@@ -43,11 +43,13 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("slice(0,24)", JS)
         self.assertIn("i+=6", JS)
         self.assertIn("requestIdleCallback", JS)
+        self.assertEqual(JS.count("buildLookthrough(marketAssets,details)"), 2)
+        self.assertNotIn("buildLookthrough(assets,details)", JS)
         self.assertNotIn("fund_theme", JS)
 
     def test_concentration_copy_is_plain_language_and_modes_are_clear(self):
-        self.assertIn("Concentração das posições", JS)
-        self.assertIn("As 3 maiores posições representam", JS)
+        self.assertIn("Concentração dos ativos de mercado", JS)
+        self.assertIn("As 3 maiores posições de mercado representam", JS)
         self.assertIn(">Posições</button>", JS)
         self.assertIn(">Dentro dos ETFs</button>", JS)
         self.assertIn("posições iguais · índice HHI", JS)
