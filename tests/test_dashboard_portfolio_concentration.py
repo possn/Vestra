@@ -12,10 +12,17 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=1.7", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=1.8", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'1.7'", JS)
+        self.assertIn("version:'1.8'", JS)
+
+    def test_concentration_is_market_sleeve_only_and_transparent(self):
+        self.assertIn("function marketHoldings", JS)
+        self.assertIn("filter(row=>isThemeEligibleAsset(row.asset))", JS)
+        self.assertIn("Concentração dos ativos de mercado", JS)
+        self.assertIn("Depósitos, obrigações, PPR, imóveis e cripto", JS)
+        self.assertIn("dos ativos de mercado", JS)
 
     def test_concentration_is_direct_and_transparent(self):
         self.assertIn("function concentrationSnapshot", JS)
