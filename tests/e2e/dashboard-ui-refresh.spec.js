@@ -55,23 +55,9 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(todayHeading).toContainText('O que importa hoje');
   await expect(portfolioHeading).toContainText('O património em contexto');
 
-  const concentration = page.locator('#dashboardPortfolioConcentrationCard');
-  await expect(concentration).toBeVisible();
-  await expect(concentration).toContainText('CONCENTRAÇÃO');
-  await expect(concentration).toContainText('100%');
-  await expect(concentration).toContainText('1 / HHI');
-  const themeMode = concentration.locator('[data-dpc-mode="themes"]');
-  await expect(themeMode).toBeVisible();
-  await themeMode.click();
-  await expect(concentration).toContainText('Cobertura temática');
-  await expect(concentration).toContainText('Não classificado');
-  const unclassifiedTheme = concentration.locator('[data-dpc-theme="Não classificado"]');
-  await expect(unclassifiedTheme).toBeVisible();
-  await unclassifiedTheme.click();
-  await expect(concentration.locator('.dpc-theme-detail')).toContainText('COMO SE FORMA');
-  await expect(concentration.locator('.dpc-theme-detail')).toContainText('E2EDIV');
-  await concentration.locator('[data-dpc-theme-close]').click();
-  await expect(concentration.locator('.dpc-theme-detail')).toHaveCount(0);
+  // Portfolio analysis no longer competes with the Home summary.
+  await expect(page.locator('#viewDashboard #dashboardPortfolioConcentrationCard')).toHaveCount(0);
+  await expect(page.locator('#dashboardTopAssetsCard')).toBeHidden();
 
   const pulse = page.locator('#dashboardPortfolioPulseCard');
   await expect(pulse).toBeVisible({ timeout: 15_000 });
@@ -106,6 +92,24 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(summary.locator('button')).toContainText('Ver histórico');
 
   await expect(page.locator('#navCashflow .navico')).toHaveText('↕︎');
+
+  // Concentration belongs to Carteira, where the full positions list already lives.
+  await page.locator('#navAssets').click();
+  await expect(page.locator('#viewAssets')).toBeVisible();
+  const concentration = page.locator('#viewAssets #dashboardPortfolioConcentrationCard');
+  await expect(concentration).toBeVisible();
+  await expect(concentration).toContainText('CONCENTRAÇÃO');
+  await expect(concentration).toContainText('100%');
+  await expect(concentration).toContainText('1 / HHI');
+  const themeMode = concentration.locator('[data-dpc-mode="themes"]');
+  await themeMode.click();
+  await expect(concentration).toContainText('Cobertura temática');
+  const unclassifiedTheme = concentration.locator('[data-dpc-theme="Não classificado"]');
+  await expect(unclassifiedTheme).toBeVisible();
+  await unclassifiedTheme.click();
+  await expect(concentration.locator('.dpc-theme-detail')).toContainText('COMO SE FORMA');
+  await expect(concentration.locator('.dpc-theme-detail')).toContainText('E2EDIV');
+
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
