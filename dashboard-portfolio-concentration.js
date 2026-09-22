@@ -1,4 +1,4 @@
-/* Vestra Portfolio Concentration v1.7 — clearer concentration + broader thematic evidence. */
+/* Vestra Portfolio Concentration v1.8 — market-sleeve concentration + thematic exposure. */
 (() => {
   'use strict';
 
@@ -26,6 +26,14 @@
       const label=text(asset?.ticker||asset?.symbol||asset?.name)||`Posição ${index+1}`;
       return {asset,label,value};
     }).filter(x=>x.value!=null&&x.value>0).sort((a,b)=>b.value-a.value);
+  }
+
+  function marketHoldings(){
+    return directHoldings().filter(row=>isThemeEligibleAsset(row.asset));
+  }
+
+  function totalPortfolioValue(){
+    return directHoldings().reduce((sum,row)=>sum+row.value,0);
   }
 
   function concentrationSnapshot(rows=directHoldings()){
@@ -306,7 +314,7 @@
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.7';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.8';
     document.head.appendChild(link);
   }
 
@@ -379,35 +387,39 @@
   }
 
   function markup(direct){
-    if(!direct.count) return `<section class="dpc-card" id="${CARD_ID}"><div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Concentração das posições</h3></div></div><div class="dpc-empty">Adiciona posições à carteira para calcular a concentração.</div></section>`;
+    if(!direct.count) return `<section class="dpc-card" id="${CARD_ID}"><div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Concentração dos ativos de mercado</h3></div></div><div class="dpc-empty">Ainda não existem ações, ETFs ou fundos com ticker suficientes para calcular a concentração de mercado.</div></section>`;
 
     const fundCount=direct.rows.filter(row=>isFundAsset(row.asset)).length;
     const usingLookthrough=S.mode==='lookthrough'&&fundCount>0;
     const snapshot=usingLookthrough&&S.lookthrough ? S.lookthrough : direct;
+    const portfolioTotal=totalPortfolioValue();
+    const marketShare=portfolioTotal>0?direct.total/portfolioTotal:null;
+    const top3Wealth=snapshot.top3!=null&&marketShare!=null?snapshot.top3*marketShare:null;
     const top3Text=pct(snapshot.top3);
+    const wealthText=top3Wealth==null?'':` (${pct(top3Wealth)} do património total)`;
     const answer=usingLookthrough
-      ? `Depois de abrir os ETFs, as 3 maiores exposições representam <b>${top3Text}</b> do património.`
-      : `As 3 maiores posições representam <b>${top3Text}</b> do património.`;
+      ? `Depois de abrir os ETFs, as 3 maiores exposições representam <b>${top3Text}</b> dos ativos de mercado${wealthText}.`
+      : `As 3 maiores posições de mercado representam <b>${top3Text}</b> dos ativos de mercado${wealthText}.`;
     const description=usingLookthrough
       ? 'Vê as empresas que estão por baixo dos ETFs e soma exposições repetidas sem dupla contagem.'
-      : 'Mede concentração por posição. Este modo não assume que duas posições diferentes são a mesma aposta.';
+      : 'Analisa apenas ações, ETFs e fundos com ticker. Depósitos, obrigações, PPR, imóveis e cripto ficam fora desta leitura de concentração de mercado.';
 
     const status=usingLookthrough
       ? S.loading
         ? '<div class="dpc-status">A abrir as holdings dos ETFs…</div>'
         : S.lookthrough
-          ? `<div class="dpc-status">Holdings disponíveis em ${pct(S.lookthrough.etfCoverage)} dos ETFs · ${pct(S.lookthrough.knownUnderlyingWeight)} do património identificado por baixo dos ETFs.</div>`
+          ? `<div class="dpc-status">Holdings disponíveis em ${pct(S.lookthrough.etfCoverage)} dos ETFs · ${pct(S.lookthrough.knownUnderlyingWeight)} da fatia de mercado identificado por baixo dos ETFs.</div>`
           : '<div class="dpc-status">Ainda sem holdings suficientes para abrir os ETFs.</div>'
-      : '';
+      : `<div class="dpc-status">Ativos de mercado = ${pct(marketShare)} do património total · ${snapshot.count} posições analisadas.</div>`;
 
     return `<section class="dpc-card" id="${CARD_ID}">
-      <div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Concentração das posições</h3><p>${description}</p></div></div>
+      <div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Concentração dos ativos de mercado</h3><p>${description}</p></div></div>
       <div class="dpc-answer">${answer}</div>
       ${modeToggle(fundCount>0)}
       ${metrics(snapshot,usingLookthrough)}
-      <div class="dpc-mosaic" aria-label="Peso das maiores posições">${segmentMarkup(snapshot.rows)}</div>
+      <div class="dpc-mosaic" aria-label="Peso das maiores posições de mercado">${segmentMarkup(snapshot.rows)}</div>
       ${status}
-      <div class="dpc-foot">${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito.' : `${snapshot.count} posições com valor · ETFs contam como uma posição neste modo.`}</div>
+      <div class="dpc-foot">${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito.' : 'As percentagens principais são relativas apenas à fatia de mercado; a conclusão mostra também o equivalente sobre o património total.'}</div>
     </section>`;
   }
 
@@ -430,7 +442,7 @@
     const assets=(Array.isArray(getState()?.assets)?getState().assets:[]).filter(asset=>assetValue(asset)>0);
     S.themes=buildThemeExposure(assets,S.details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
 
-    const shell=document.createElement('div'); shell.innerHTML=markup(concentrationSnapshot());
+    const shell=document.createElement('div'); shell.innerHTML=markup(concentrationSnapshot(marketHoldings()));
     const next=shell.firstElementChild; if(!next) return false;
     const existing=document.getElementById(CARD_ID);
     if(existing) existing.replaceWith(next);
@@ -462,9 +474,10 @@
     if(S.loading) return S.lookthrough;
     const assets=(Array.isArray(getState()?.assets)?getState().assets:[]).filter(asset=>assetValue(asset)>0);
     const candidates=hydrationCandidates(assets);
-    const funds=assets.filter(isFundAsset).filter(asset=>assetTicker(asset));
+    const marketAssets=assets.filter(isThemeEligibleAsset);
+    const funds=marketAssets.filter(isFundAsset).filter(asset=>assetTicker(asset));
     if(!candidates.length){
-      S.lookthrough=funds.length?buildLookthrough(assets,{}):null;
+      S.lookthrough=funds.length?buildLookthrough(marketAssets,{}):null;
       S.themes=buildThemeExposure(assets,{},window.VestraMarketStaticUniverse?.getStocks?.()||[]);
       render();
       return S.lookthrough;
@@ -483,7 +496,7 @@
         }
       }
       S.details=details;
-      S.lookthrough=funds.length?buildLookthrough(assets,details):null;
+      S.lookthrough=funds.length?buildLookthrough(marketAssets,details):null;
       S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
     }catch(_){
       S.details=details;
@@ -541,6 +554,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'1.7',directHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'1.8',directHoldings,marketHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
