@@ -316,7 +316,7 @@ async function loadStateAsync() {
 }
 
 function saveState() { invalidateRenderCache(); return storageSet(JSON.stringify(state)); }
-async function saveStateAsync() { invalidateRenderCache(); await storageSet(JSON.stringify(state)); }
+async function saveStateAsync() { invalidateRenderCache(); const ok = await storageSet(JSON.stringify(state)); if (!ok) throw new Error('Falha ao guardar o estado local.'); return true; }
 
 /* ─── TOTALS ──────────────────────────────────────────────── */
 function getLegacyPassiveMeta(it) {
