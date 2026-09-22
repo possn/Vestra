@@ -1,4 +1,4 @@
-/* Vestra persistence layer v1.6 — authoritative empty-state acknowledgement + durable rescue snapshots. */
+/* Vestra persistence layer v1.7 — authoritative empty-state acknowledgement + durable rescue snapshots + verified clears. */
 (() => {
   'use strict';
 
