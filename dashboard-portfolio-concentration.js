@@ -1,4 +1,4 @@
-/* Vestra Portfolio Concentration v1.8 — market-sleeve concentration + thematic exposure. */
+/* Vestra Portfolio Concentration v1.9 — market concentration + editorial thematic ranking. */
 (() => {
   'use strict';
 
@@ -6,7 +6,7 @@
   const THEME_CARD_ID='portfolioThemeExposureCard';
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
-  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',loading:false,scheduled:false};
+  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',themesExpanded:false,loading:false,scheduled:false};
   const text=v=>String(v??'').trim();
   const esc=v=>text(v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
@@ -314,7 +314,7 @@
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.8';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.9';
     document.head.appendChild(link);
   }
 
@@ -330,43 +330,50 @@
     const rows=Array.isArray(themes?.rows)?themes.rows:[];
     const classified=rows.filter(row=>row.kind==='theme');
     const unknown=rows.find(row=>row.kind==='unclassified')||null;
-    const visible=classified.slice(0,8);
-    if(unknown?.marketWeight>0.001) visible.push(unknown);
+    const visible=classified.slice(0,S.themesExpanded?8:5);
     return {classified,unknown,visible};
   }
 
-  function themeEvidenceMarkup(themes){
-    if(!themes?.rows?.length) return '';
-    const {visible}=themeRowsForDisplay(themes);
-    const buttons=visible.map(row=>`<button type="button" class="dpc-theme-chip${S.selectedTheme===row.label?' is-active':''}" data-dpc-theme="${esc(row.label)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></button>`).join('');
+  function themeDetailMarkup(themes){
     const selected=themes.rows.find(row=>row.label===S.selectedTheme)||null;
-    const detail=selected ? `<div class="dpc-theme-detail"><div class="dpc-theme-detail__head"><div><span>COMO SE FORMA</span><strong>${esc(selected.label)} · ${pct(selected.weight)} do património</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,6).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.weight)}</strong></div>`).join('')}</div><small>${pct(selected.marketWeight)} da fatia de mercado. Inclui posições diretas e holdings de ETFs quando existem dados verificáveis.</small></div>` : '';
-    return `<div class="dpc-theme-evidence"><div class="dpc-theme-evidence__label">VER O QUE COMPÕE CADA TEMA</div><div class="dpc-theme-chips">${buttons}</div>${detail}</div>`;
+    if(!selected) return '';
+    return `<div class="dpc-theme-detail"><div class="dpc-theme-detail__head"><div><span>O QUE ESTÁS A VER.</span><strong>${esc(selected.label)} · ${pct(selected.weight)} do património</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,6).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.weight)}</strong></div>`).join('')}</div><small>${pct(selected.marketWeight)} da fatia de mercado. Inclui posições diretas e holdings de ETFs quando existem dados verificáveis.</small></div>`;
+  }
+
+  function themeRankMarkup(themes){
+    const {classified,visible}=themeRowsForDisplay(themes);
+    if(!visible.length) return '<div class="dpc-empty">Ainda sem temas classificados.</div>';
+    const max=Math.max(...visible.map(row=>row.marketWeight||0),.001);
+    const rows=visible.map((row,index)=>`<button type="button" class="dpc-theme-rank${S.selectedTheme===row.label?' is-active':''}" data-dpc-theme="${esc(row.label)}">
+      <span class="dpc-theme-rank__order">${index+1}</span>
+      <span class="dpc-theme-rank__body"><span class="dpc-theme-rank__name">${esc(row.label)}</span><span class="dpc-theme-rank__bar"><i style="width:${Math.max(3,(row.marketWeight/max)*100)}%"></i></span><small>${pct(row.marketWeight)} dos ativos de mercado</small></span>
+      <strong>${pct(row.weight)}</strong>
+    </button>`).join('');
+    const toggle=classified.length>5?`<button type="button" class="dpc-theme-more" data-dpc-themes-toggle aria-expanded="${S.themesExpanded?'true':'false'}">${S.themesExpanded?'Mostrar menos':`Ver todos os temas (${classified.length})`}</button>`:'';
+    return `<div class="dpc-theme-ranking">${rows}</div>${toggle}`;
   }
 
   function themeExposureMarkup(themes){
     if(!(themes?.marketTotal>0)) return '';
-    const {classified,unknown,visible}=themeRowsForDisplay(themes);
+    const {classified,unknown}=themeRowsForDisplay(themes);
     const largest=classified[0]||null;
-    const segments=visible.map((row,index)=>`<span class="dpc-theme-bar__segment dpc-segment--${(index%5)+1}" style="width:${Math.max(row.marketWeight*100,2)}%" title="${esc(row.label)} · ${pct(row.weight)} do património"></span>`).join('');
-    const list=classified.slice(0,8).map(row=>`<button type="button" data-dpc-theme="${esc(row.label)}"><span>${esc(row.label)}<small>${pct(row.marketWeight)} dos ativos de mercado</small></span><strong>${pct(row.weight)}</strong></button>`).join('');
     const unknownMarket=unknown?.marketWeight||0;
+    const top3=classified.slice(0,3).reduce((sum,row)=>sum+(row.marketWeight||0),0);
     const answer=largest
-      ? `A maior exposição temática identificada é <b>${esc(largest.label)}</b>: ${pct(largest.weight)} do património total.`
+      ? `A maior aposta temática é <b>${esc(largest.label)}</b>. Os 3 principais temas concentram <b>${pct(top3)}</b> dos ativos de mercado.`
       : 'Ainda não há evidência suficiente para identificar temas nesta fatia da carteira.';
     return `<section class="dpc-card dpc-theme-card" id="${THEME_CARD_ID}">
-      <div class="dpc-head"><div><span class="dpc-kicker">EXPOSIÇÃO TEMÁTICA</span><h3>Onde estão as tuas apostas de mercado?</h3><p>Analisa apenas ações, ETFs e fundos com ticker. Depósitos, obrigações, PPR, imóveis e cripto não baixam artificialmente a cobertura temática.</p></div></div>
+      <div class="dpc-head"><div><span class="dpc-kicker">EXPOSIÇÃO TEMÁTICA</span><h3>Onde estão as tuas apostas de mercado?</h3><p>Ranking das exposições em ações, ETFs e fundos. Cada euro entra num único tema principal para evitar dupla contagem.</p></div></div>
       <div class="dpc-answer dpc-answer--theme">${answer}</div>
       <div class="dpc-theme-stats">
         <div><span>Ativos de mercado</span><strong>${pct(themes.marketShare)}</strong><small>do património total</small></div>
-        <div><span>Maior tema</span><strong>${largest?esc(largest.label):'—'}</strong><small>${largest?pct(largest.weight)+' do património':'sem evidência'}</small></div>
-        <div><span>Cobertura temática</span><strong>${pct(themes.coverage)}</strong><small>${unknownMarket>0.001?`${pct(unknownMarket)} da fatia de mercado por classificar`:'fatia de mercado classificada'}</small></div>
+        <div><span>Top 3 temas</span><strong>${pct(top3)}</strong><small>dos ativos de mercado</small></div>
+        <div><span>Cobertura</span><strong>${pct(themes.coverage)}</strong><small>${unknownMarket>0.001?`${pct(unknownMarket)} por classificar`:'fatia classificada'}</small></div>
       </div>
-      <div class="dpc-theme-bar-label"><span>Composição dos ativos de mercado</span><small>100% = ações + ETFs + fundos analisáveis</small></div>
-      <div class="dpc-theme-bar" aria-label="Composição temática dos ativos de mercado">${segments}</div>
-      <div class="dpc-theme-list">${list||'<div class="dpc-empty">Ainda sem temas classificados.</div>'}</div>
-      ${themeEvidenceMarkup(themes)}
-      <div class="dpc-foot">Percentagens grandes = peso no património total. O detalhe mostra também o peso dentro da fatia de mercado. Temas estreitos têm prioridade sobre sectores amplos e não há dupla contagem.</div>
+      <div class="dpc-theme-ranking-head"><span>TEMAS PRINCIPAIS</span><small>% grande = património total</small></div>
+      ${themeRankMarkup(themes)}
+      ${themeDetailMarkup(themes)}
+      <div class="dpc-foot">O ranking usa a fatia de mercado como contexto, mas a percentagem grande mostra sempre o peso no património total. Temas estreitos têm prioridade sobre sectores amplos.</div>
     </section>`;
   }
 
@@ -539,6 +546,11 @@
         render();
         return;
       }
+      if(event.target?.closest?.('[data-dpc-themes-toggle]')){
+        S.themesExpanded=!S.themesExpanded;
+        render();
+        return;
+      }
       const mode=event.target?.closest?.('[data-dpc-mode]')?.dataset?.dpcMode;
       if(mode==='direct'||mode==='lookthrough'){
         S.mode=mode;
@@ -554,6 +566,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'1.8',directHoldings,marketHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'1.9',directHoldings,marketHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
