@@ -105,7 +105,7 @@
   function ensureAnalysisToolsRuntime() { loadCompanion('VestraMarketAnalysisToolsRuntime','script[data-vestra-analysis-tools-runtime]','market-analysis-tools-runtime.js?v=1.3','vestraAnalysisToolsRuntime'); }
   function ensureWeeklyEventsCompanion() { loadCompanion('VestraWeeklyEvents','script[data-vestra-weekly-events]','dashboard-weekly-events.js?v=2.2','vestraWeeklyEvents'); }
   function ensureWeeklyEventsNavigation() { loadCompanion('VestraWeeklyEventsNavigation','script[data-vestra-weekly-events-navigation]','dashboard-weekly-events-navigation.js?v=1.1','vestraWeeklyEventsNavigation'); }
-  function ensureDashboardUiRefresh() { loadCompanion('VestraDashboardUiRefresh','script[data-vestra-dashboard-ui-refresh]','dashboard-ui-refresh.js?v=1.4','vestraDashboardUiRefresh'); }
+  function ensureDashboardUiRefresh() { loadCompanion('VestraDashboardUiRefresh','script[data-vestra-dashboard-ui-refresh]','dashboard-ui-refresh.js?v=1.5','vestraDashboardUiRefresh'); }
   function ensureDashboardDailyNews() { loadCompanion('VestraDashboardDailyNews','script[data-vestra-dashboard-daily-news]','dashboard-daily-news.js?v=1.5','vestraDashboardDailyNews'); }
   function ensureDashboardMarketSentiment() { loadCompanion('VestraDashboardMarketSentiment','script[data-vestra-dashboard-market-sentiment]','dashboard-market-sentiment.js?v=1.0','vestraDashboardMarketSentiment'); }
   function ensureMobileUiRefresh() { loadCompanion('VestraMobileUiRefresh','script[data-vestra-mobile-ui-refresh]','mobile-ui-refresh.js?v=1.4','vestraMobileUiRefresh'); }
