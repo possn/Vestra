@@ -323,7 +323,7 @@
     const classified=rows.filter(row=>row.kind==='theme');
     const unknown=rows.find(row=>row.kind==='unclassified')||null;
     const visible=classified.slice(0,8);
-    if(unknown?.weight>0.001) visible.push(unknown);
+    if(unknown?.marketWeight>0.001) visible.push(unknown);
     return {classified,unknown,visible};
   }
 
@@ -332,28 +332,33 @@
     const {visible}=themeRowsForDisplay(themes);
     const buttons=visible.map(row=>`<button type="button" class="dpc-theme-chip${S.selectedTheme===row.label?' is-active':''}" data-dpc-theme="${esc(row.label)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></button>`).join('');
     const selected=themes.rows.find(row=>row.label===S.selectedTheme)||null;
-    const detail=selected ? `<div class="dpc-theme-detail"><div class="dpc-theme-detail__head"><div><span>COMO SE FORMA</span><strong>${esc(selected.label)} · ${pct(selected.weight)}</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,6).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.value/themes.total)}</strong></div>`).join('')}</div><small>Percentagens sobre o património total. Só entram exposições suportadas pelos dados disponíveis; o restante fica “Não classificado”.</small></div>` : '';
-    return `<div class="dpc-theme-evidence"><div class="dpc-theme-evidence__label">TOCA NUM TEMA PARA VER O QUE O COMPÕE</div><div class="dpc-theme-chips">${buttons}</div>${detail}</div>`;
+    const detail=selected ? `<div class="dpc-theme-detail"><div class="dpc-theme-detail__head"><div><span>COMO SE FORMA</span><strong>${esc(selected.label)} · ${pct(selected.weight)} do património</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,6).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.weight)}</strong></div>`).join('')}</div><small>${pct(selected.marketWeight)} da fatia de mercado. Inclui posições diretas e holdings de ETFs quando existem dados verificáveis.</small></div>` : '';
+    return `<div class="dpc-theme-evidence"><div class="dpc-theme-evidence__label">VER O QUE COMPÕE CADA TEMA</div><div class="dpc-theme-chips">${buttons}</div>${detail}</div>`;
   }
 
   function themeExposureMarkup(themes){
-    if(!themes?.rows?.length) return '';
+    if(!(themes?.marketTotal>0)) return '';
     const {classified,unknown,visible}=themeRowsForDisplay(themes);
     const largest=classified[0]||null;
-    const top3=classified.slice(0,3).reduce((sum,row)=>sum+row.weight,0);
-    const segments=visible.map((row,index)=>`<span class="dpc-theme-bar__segment dpc-segment--${(index%5)+1}" style="width:${Math.max(row.weight*100,2)}%" title="${esc(row.label)} · ${pct(row.weight)}"></span>`).join('');
-    const list=classified.slice(0,6).map(row=>`<button type="button" data-dpc-theme="${esc(row.label)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></button>`).join('');
+    const segments=visible.map((row,index)=>`<span class="dpc-theme-bar__segment dpc-segment--${(index%5)+1}" style="width:${Math.max(row.marketWeight*100,2)}%" title="${esc(row.label)} · ${pct(row.weight)} do património"></span>`).join('');
+    const list=classified.slice(0,8).map(row=>`<button type="button" data-dpc-theme="${esc(row.label)}"><span>${esc(row.label)}<small>${pct(row.marketWeight)} dos ativos de mercado</small></span><strong>${pct(row.weight)}</strong></button>`).join('');
+    const unknownMarket=unknown?.marketWeight||0;
+    const answer=largest
+      ? `A maior exposição temática identificada é <b>${esc(largest.label)}</b>: ${pct(largest.weight)} do património total.`
+      : 'Ainda não há evidência suficiente para identificar temas nesta fatia da carteira.';
     return `<section class="dpc-card dpc-theme-card" id="${THEME_CARD_ID}">
-      <div class="dpc-head"><div><span class="dpc-kicker">EXPOSIÇÃO TEMÁTICA</span><h3>Onde está realmente exposto o teu património?</h3><p>IA, semicondutores, energia, matérias-primas e outros temas calculados sobre o património total. Cada euro entra num único tema primário para evitar dupla contagem.</p></div></div>
+      <div class="dpc-head"><div><span class="dpc-kicker">EXPOSIÇÃO TEMÁTICA</span><h3>Onde estão as tuas apostas de mercado?</h3><p>Analisa apenas ações, ETFs e fundos com ticker. Depósitos, obrigações, PPR, imóveis e cripto não baixam artificialmente a cobertura temática.</p></div></div>
+      <div class="dpc-answer dpc-answer--theme">${answer}</div>
       <div class="dpc-theme-stats">
-        <div><span>Maior tema</span><strong>${largest?esc(largest.label):'—'}</strong><small>${largest?pct(largest.weight):'Sem evidência suficiente'}</small></div>
-        <div><span>Top 3 temas</span><strong>${pct(top3)}</strong><small>do património total</small></div>
-        <div><span>Cobertura</span><strong>${pct(themes.coverage)}</strong><small>${unknown?.weight>0.001?`${pct(unknown.weight)} não classificado`:'classificado'}</small></div>
+        <div><span>Ativos de mercado</span><strong>${pct(themes.marketShare)}</strong><small>do património total</small></div>
+        <div><span>Maior tema</span><strong>${largest?esc(largest.label):'—'}</strong><small>${largest?pct(largest.weight)+' do património':'sem evidência'}</small></div>
+        <div><span>Cobertura temática</span><strong>${pct(themes.coverage)}</strong><small>${unknownMarket>0.001?`${pct(unknownMarket)} da fatia de mercado por classificar`:'fatia de mercado classificada'}</small></div>
       </div>
-      <div class="dpc-theme-bar" aria-label="Exposição temática do património">${segments}</div>
+      <div class="dpc-theme-bar-label"><span>Composição dos ativos de mercado</span><small>100% = ações + ETFs + fundos analisáveis</small></div>
+      <div class="dpc-theme-bar" aria-label="Composição temática dos ativos de mercado">${segments}</div>
       <div class="dpc-theme-list">${list||'<div class="dpc-empty">Ainda sem temas classificados.</div>'}</div>
       ${themeEvidenceMarkup(themes)}
-      <div class="dpc-foot">Temas estreitos têm prioridade sobre sectores amplos. ETFs usam apenas holdings disponíveis; exposição não comprovada não é redistribuída.</div>
+      <div class="dpc-foot">Percentagens grandes = peso no património total. O detalhe mostra também o peso dentro da fatia de mercado. Temas estreitos têm prioridade sobre sectores amplos e não há dupla contagem.</div>
     </section>`;
   }
 
@@ -442,32 +447,47 @@
     return true;
   }
 
+  function hydrationCandidates(assets){
+    const funds=assets.filter(asset=>isFundAsset(asset)&&assetTicker(asset)).sort((a,b)=>assetValue(b)-assetValue(a)).slice(0,18);
+    const direct=assets.filter(asset=>!isFundAsset(asset)&&isThemeEligibleAsset(asset)&&assetTicker(asset)).sort((a,b)=>assetValue(b)-assetValue(a)).slice(0,24);
+    const seen=new Set();
+    return [...funds,...direct].filter(asset=>{
+      const ticker=assetTicker(asset);
+      if(!ticker||seen.has(ticker)) return false;
+      seen.add(ticker); return true;
+    }).slice(0,36);
+  }
+
   async function hydrateLookthrough(force=false){
     if(S.loading) return S.lookthrough;
     const assets=(Array.isArray(getState()?.assets)?getState().assets:[]).filter(asset=>assetValue(asset)>0);
+    const candidates=hydrationCandidates(assets);
     const funds=assets.filter(isFundAsset).filter(asset=>assetTicker(asset));
-    if(!funds.length){
-      S.lookthrough=null;
+    if(!candidates.length){
+      S.lookthrough=funds.length?buildLookthrough(assets,{}):null;
       S.themes=buildThemeExposure(assets,{},window.VestraMarketStaticUniverse?.getStocks?.()||[]);
       render();
-      return null;
+      return S.lookthrough;
     }
-    if(S.lookthrough&&!force){render();return S.lookthrough;}
+    if(Object.keys(S.details).length&&!force){render();return S.lookthrough;}
     S.loading=true;render();
-    const details={};
+    const details={...S.details};
     try{
       await window.VestraMarketLoader?.ensureHelpers?.();
       const hydrate=window.VestraMarketData?.hydrateTicker;
       if(typeof hydrate==='function'){
-        const settled=await Promise.allSettled(funds.map(asset=>hydrate(assetTicker(asset))));
-        settled.forEach((row,index)=>{if(row.status==='fulfilled'&&row.value)details[assetTicker(funds[index])]=row.value;});
+        for(let i=0;i<candidates.length;i+=6){
+          const batch=candidates.slice(i,i+6);
+          const settled=await Promise.allSettled(batch.map(asset=>hydrate(assetTicker(asset))));
+          settled.forEach((row,index)=>{if(row.status==='fulfilled'&&row.value)details[assetTicker(batch[index])]=row.value;});
+        }
       }
       S.details=details;
-      S.lookthrough=buildLookthrough(assets,details);
+      S.lookthrough=funds.length?buildLookthrough(assets,details):null;
       S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
     }catch(_){
       S.details=details;
-      S.lookthrough=buildLookthrough(assets,details);
+      S.lookthrough=funds.length?buildLookthrough(assets,details):null;
       S.themes=buildThemeExposure(assets,details,window.VestraMarketStaticUniverse?.getStocks?.()||[]);
     }finally{
       S.loading=false;render();
@@ -478,7 +498,7 @@
   function scheduleLookthrough(){
     if(S.scheduled) return;
     const assets=Array.isArray(getState()?.assets)?getState().assets:[];
-    if(!assets.some(isFundAsset)) return;
+    if(!assets.some(asset=>isThemeEligibleAsset(asset)&&assetTicker(asset))) return;
     S.scheduled=true;
     const run=()=>{S.scheduled=false;void hydrateLookthrough(false);};
     if(typeof requestIdleCallback==='function') requestIdleCallback(run,{timeout:2200});
