@@ -8,7 +8,7 @@ vm.createContext(context);
 vm.runInContext(source, context);
 
 const api = context.window.VestraMarketStaticUniverse;
-assert(api && api.version === '1.22');
+assert(api && api.version === '1.23');
 assert.strictEqual(api.dataFetchTimeoutMs, 8000);
 assert.strictEqual(api.etfIntelligenceLoadTimeoutMs, 8000);
 assert.strictEqual(api.companionLoadTimeoutMs, 8000);
@@ -39,7 +39,7 @@ assert(source.includes('dashboard-weekly-events-navigation.js?v=1.1'), 'weekly h
 assert(source.includes('dashboard-ui-refresh.js?v=1.6'));
 assert(source.includes('dashboard-daily-news.js?v=1.7'), 'daily dashboard news must be a reachable runtime companion');
 assert(source.includes('dashboard-market-sentiment.js?v=1.2'), 'market sentiment must be a reachable dashboard companion');
-assert(source.includes('dashboard-portfolio-concentration.js?v=1.4'), 'portfolio concentration must be a reachable dashboard companion');
+assert(source.includes('dashboard-portfolio-concentration.js?v=1.5'), 'portfolio concentration must be a reachable dashboard companion');
 assert(source.includes('mobile-ui-refresh.js?v=1.4'));
 assert(source.includes('market-ui-polish.js?v=1.3'));
 assert(source.includes('ui-visual-polish.js?v=1.1'));
