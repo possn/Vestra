@@ -11,8 +11,8 @@ class WinstonMetalsSentimentTests(unittest.TestCase):
     def test_metals_runtime_rolls_forward(self):
         self.assertIn("Vestra Metals v1.2", JS)
         self.assertIn("window.VestraMetals=Object.freeze({version:'1.2'", JS)
-        self.assertIn("market-metals.js?v=1.1", LOADER)
-        self.assertIn("market-metals.css?v=1.1", JS)
+        self.assertIn("market-metals.js?v=1.2", LOADER)
+        self.assertIn("market-metals.css?v=1.2", JS)
 
     def test_sentiment_is_transparent_and_price_derived(self):
         self.assertIn("function sentimentFor(detail,quote)", JS)
