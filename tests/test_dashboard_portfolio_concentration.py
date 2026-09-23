@@ -12,10 +12,10 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=2.4", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=2.5", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'2.4'", JS)
+        self.assertIn("version:'2.5'", JS)
 
     def test_explicit_non_market_classes_override_stale_quote_metadata(self):
         self.assertIn("function isExplicitNonMarketAsset", JS)
@@ -111,6 +111,11 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
 
     def test_theme_evidence_keeps_contributor_provenance_and_drilldown(self):
         self.assertIn("contributors:new Map()", JS)
+        self.assertIn("dpc-theme-rank-group", JS)
+        self.assertIn("active?themeDetailMarkup(row):''", JS)
+        self.assertIn('aria-expanded="${active?\'true\':\'false\'}"', JS)
+        self.assertNotIn("${themeDetailMarkup(themes)}", JS)
+        self.assertIn(".dpc-theme-detail--inline", CSS)
         self.assertIn("dpc-theme-rank", JS)
         self.assertIn("O QUE ESTÁS A VER.", JS)
         self.assertIn("data-dpc-theme", JS)
