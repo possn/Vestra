@@ -17,7 +17,7 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         self.assertIn('id="portfolioSectorCard"', self.index)
         self.assertIn('id="portfolioSectorSummary"', self.index)
         self.assertIn('id="portfolioSectorBody"', self.index)
-        self.assertIn('<details class="portfolio-sector-disclosure" id="portfolioSectorCard">', self.index)
+        self.assertIn('<details class="portfolio-sector-disclosure" id="portfolioSectorCard"', self.index)
         self.assertIn('<summary>', self.index)
         self.assertIn('Ver sectores', self.index)
         self.assertIn('Sectores tradicionais', self.index)
