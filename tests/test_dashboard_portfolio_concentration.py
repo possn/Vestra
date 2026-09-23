@@ -12,10 +12,10 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=2.3", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=2.4", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'2.3'", JS)
+        self.assertIn("version:'2.4'", JS)
 
     def test_explicit_non_market_classes_override_stale_quote_metadata(self):
         self.assertIn("function isExplicitNonMarketAsset", JS)
@@ -118,9 +118,11 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn(".dpc-theme-detail", CSS)
 
     def test_theme_ranking_removes_duplicate_chip_list_and_collapses_after_five(self):
-        self.assertIn("themesExpanded:false", JS)
-        self.assertIn("slice(0,S.themesExpanded?8:5)", JS)
+        self.assertIn("themeView:'top3'", JS)
+        self.assertIn("S.themeView==='all'?classified.length:S.themeView==='top5'?5:3", JS)
+        self.assertIn("Ver top 5", JS)
         self.assertIn("Ver todos os temas", JS)
+        self.assertIn("Mostrar top 3", JS)
         self.assertIn("data-dpc-themes-toggle", JS)
         self.assertIn("TEMAS PRINCIPAIS", JS)
         self.assertIn(".dpc-theme-ranking", CSS)
