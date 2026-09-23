@@ -1,4 +1,4 @@
-/* Vestra Portfolio Concentration v2.2 — compact ranked concentration + editorial exposure. */
+/* Vestra Portfolio Concentration v2.3 — compact ranked concentration + editorial exposure. */
 (() => {
   'use strict';
 
@@ -6,7 +6,7 @@
   const THEME_CARD_ID='portfolioThemeExposureCard';
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
-  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',themesExpanded:false,holdingsExpanded:false,loading:false,scheduled:false};
+  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',themesExpanded:false,holdingsExpanded:false,concentrationMethodOpen:false,themeMethodOpen:false,loading:false,scheduled:false};
   const text=v=>String(v??'').trim();
   const esc=v=>text(v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
@@ -398,7 +398,7 @@
       <div class="dpc-theme-ranking-head"><span>TEMAS PRINCIPAIS</span><small>% grande = património total</small></div>
       ${themeRankMarkup(themes)}
       ${themeDetailMarkup(themes)}
-      <details class="dpc-method"><summary>Como calculamos</summary><p>O ranking usa a fatia de mercado como contexto, mas a percentagem grande mostra sempre o peso no património total. Cada euro entra num único tema principal; temas estreitos têm prioridade sobre sectores amplos e exposição sem evidência fica por classificar.</p></details>
+      <details class="dpc-method" data-dpc-method="theme"${S.themeMethodOpen?' open':''}><summary>Como calculamos</summary><p>O ranking usa a fatia de mercado como contexto, mas a percentagem grande mostra sempre o peso no património total. Cada euro entra num único tema principal; temas estreitos têm prioridade sobre sectores amplos e exposição sem evidência fica por classificar.</p></details>
     </section>`;
   }
 
@@ -447,7 +447,7 @@
       ${holdingsRankMarkup(snapshot.rows)}
       ${metrics(snapshot,usingLookthrough)}
       ${status}
-      <details class="dpc-method"><summary>Como calculamos</summary><p>${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito. A exposição só é agregada quando existem holdings observadas, sem dupla contagem.' : 'A percentagem principal mede apenas ações, ETFs e fundos de mercado. Certificados de Aforro, depósitos, obrigações, PPR, imóveis e cripto ficam de fora; o equivalente sobre o património total aparece no destaque principal.'}</p></details>
+      <details class="dpc-method" data-dpc-method="concentration"${S.concentrationMethodOpen?' open':''}><summary>Como calculamos</summary><p>${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito. A exposição só é agregada quando existem holdings observadas, sem dupla contagem.' : 'A percentagem principal mede apenas ações, ETFs e fundos de mercado. Certificados de Aforro, depósitos, obrigações, PPR, imóveis e cripto ficam de fora; o equivalente sobre o património total aparece no destaque principal.'}</p></details>
     </section>`;
   }
 
@@ -552,10 +552,25 @@
     window.addEventListener('vestra:market-ready',()=>{render();scheduleLookthrough();});
     const net=document.getElementById('kpiNet');
     if(net&&typeof MutationObserver==='function'){
-      const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};S.selectedTheme='';render();scheduleLookthrough();});
+      const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};render();scheduleLookthrough();});
       observer.observe(net,{childList:true,subtree:true,characterData:true});
     }
+    document.addEventListener('toggle',event=>{
+      const details=event.target?.closest?.('.dpc-method[data-dpc-method]');
+      if(!details) return;
+      const key=details.dataset.dpcMethod;
+      if(key==='concentration') S.concentrationMethodOpen=!!details.open;
+      if(key==='theme') S.themeMethodOpen=!!details.open;
+    },true);
     document.addEventListener('click',event=>{
+      const methodSummary=event.target?.closest?.('.dpc-method > summary');
+      if(methodSummary){
+        const details=methodSummary.parentElement;
+        const key=details?.dataset?.dpcMethod;
+        const nextOpen=!details?.open;
+        if(key==='concentration') S.concentrationMethodOpen=nextOpen;
+        if(key==='theme') S.themeMethodOpen=nextOpen;
+      }
       const themeTarget=event.target?.closest?.('[data-dpc-theme]');
       if(themeTarget){
         S.selectedTheme=text(themeTarget.dataset.dpcTheme);
@@ -592,6 +607,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'2.2',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'2.3',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
