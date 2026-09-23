@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPAIR = ROOT / "quote-canonical-repair.js"
 BOOTSTRAP = ROOT / "market-company-brief.js"
 IDENTITY = ROOT / "app-asset-identity.js"
+INDEX = ROOT / "index.html"
 
 
 class CanonicalQuoteRecoveryTests(unittest.TestCase):
@@ -148,6 +149,30 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             if (other.ok) process.exit(14);
         """)
         subprocess.run(["node", "-e", script], check=True, cwd=ROOT)
+
+    def test_quote_repair_is_available_before_any_manual_refresh(self):
+        html = INDEX.read_text(encoding="utf-8")
+        app_pos = html.index('app.js?v=20260921v12')
+        guard_pos = html.index('quote-canonical-repair.js?v=2.4')
+        market_pos = html.index('market-static-universe.js?v=1.30')
+        self.assertLess(app_pos, guard_pos)
+        self.assertLess(guard_pos, market_pos)
+
+    def test_current_failed_identity_set_is_canonical(self):
+        text = IDENTITY.read_text(encoding="utf-8")
+        expected = [
+            '"AU0000185993":"IREN"',
+            '"CH0334081137":"CRSP"',
+            '"GB0007188757":"RIO.L"',
+            '"GB00BL6K5J42":"EDV.TO"',
+            '"GB00BVZK7T90":"UNA.AS"',
+            '"IE00BLCHJ534":"PAVE.L"',
+            '"US64110L1061":"NFC.DE"',
+            '"FR0014019Y19":"ALCPB.PA"',
+            '"MATIC":"POL28321-USD"',
+        ]
+        for mapping in expected:
+            self.assertIn(mapping, text)
 
     def test_bootstrap_loads_identity_guard_without_parallel_quote_fast_lane(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
