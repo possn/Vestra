@@ -1,4 +1,4 @@
-/* Vestra Portfolio Concentration v2.3 — compact ranked concentration + editorial exposure. */
+/* Vestra Portfolio Concentration v2.4 — compact ranked concentration + editorial exposure. */
 (() => {
   'use strict';
 
@@ -6,7 +6,7 @@
   const THEME_CARD_ID='portfolioThemeExposureCard';
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
-  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',themesExpanded:false,holdingsExpanded:false,concentrationMethodOpen:false,themeMethodOpen:false,loading:false,scheduled:false};
+  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',themeView:'top3',holdingsExpanded:false,concentrationMethodOpen:false,themeMethodOpen:false,loading:false,scheduled:false};
   const text=v=>String(v??'').trim();
   const esc=v=>text(v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
@@ -355,7 +355,8 @@
     const rows=Array.isArray(themes?.rows)?themes.rows:[];
     const classified=rows.filter(row=>row.kind==='theme');
     const unknown=rows.find(row=>row.kind==='unclassified')||null;
-    const visible=classified.slice(0,S.themesExpanded?8:5);
+    const limit=S.themeView==='all'?classified.length:S.themeView==='top5'?5:3;
+    const visible=classified.slice(0,limit);
     return {classified,unknown,visible};
   }
 
@@ -374,7 +375,15 @@
       <span class="dpc-theme-rank__body"><span class="dpc-theme-rank__name">${esc(row.label)}</span><span class="dpc-theme-rank__bar"><i style="width:${Math.max(3,(row.marketWeight/max)*100)}%"></i></span><small>${pct(row.marketWeight)} dos ativos de mercado</small></span>
       <strong>${pct(row.weight)}</strong>
     </button>`).join('');
-    const toggle=classified.length>5?`<button type="button" class="dpc-theme-more" data-dpc-themes-toggle aria-expanded="${S.themesExpanded?'true':'false'}">${S.themesExpanded?'Mostrar menos':`Ver todos os temas (${classified.length})`}</button>`:'';
+    let toggle='';
+    if(classified.length>3){
+      const label=S.themeView==='top3'
+        ? 'Ver top 5'
+        : S.themeView==='top5'&&classified.length>5
+          ? `Ver todos os temas (${classified.length})`
+          : 'Mostrar top 3';
+      toggle=`<button type="button" class="dpc-theme-more" data-dpc-themes-toggle aria-expanded="${S.themeView==='all'?'true':'false'}">${label}</button>`;
+    }
     return `<div class="dpc-theme-ranking">${rows}</div>${toggle}`;
   }
 
@@ -583,7 +592,10 @@
         return;
       }
       if(event.target?.closest?.('[data-dpc-themes-toggle]')){
-        S.themesExpanded=!S.themesExpanded;
+        const count=Array.isArray(S.themes?.rows)?S.themes.rows.filter(row=>row.kind==='theme').length:0;
+        if(S.themeView==='top3') S.themeView='top5';
+        else if(S.themeView==='top5'&&count>5) S.themeView='all';
+        else S.themeView='top3';
         render();
         return;
       }
@@ -607,6 +619,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'2.3',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'2.4',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
