@@ -800,7 +800,7 @@ function setView(view) {
   requestAnimationFrame(() => { try { syncFixedBarHeights(); } catch (_) {} });
   if (view === "dashboard" && prevView !== "dashboard") summaryExpanded = false;
   if (view === "assets" && prevView !== "assets") {
-    itemsExpanded = false;
+    itemsView = 'top5';
     window._pnlExpanded = false;
     ensurePortfolioSectorMap();
   }
@@ -1727,7 +1727,15 @@ function rebuildClassFilter() {
   sel.value = current;
 }
 
-let itemsExpanded = false;
+let itemsView = 'top5';
+
+function cycleItemsView() {
+  const src = showingLiabs ? (state.liabilities || []) : (state.assets || []);
+  if (itemsView === 'top5') itemsView = src.length > 20 ? 'top20' : 'all';
+  else if (itemsView === 'top20') itemsView = 'all';
+  else itemsView = 'top5';
+  renderItems();
+}
 
 function renderPortfolioGlance() {
   const src = showingLiabs ? (state.liabilities || []) : (state.assets || []);
@@ -2116,9 +2124,9 @@ function renderItems() {
     return;
   }
 
-  // Mostrar 10 por defeito, excepto se está a pesquisar
-  const LIMIT = 10;
-  const shown = (itemsExpanded || isSearching) ? src : src.slice(0, LIMIT);
+  // Leitura progressiva: Top 5 → Top 20 → todas. Pesquisa/filtros mostram todos os resultados.
+  const itemLimit = itemsView === 'all' ? src.length : itemsView === 'top20' ? 20 : 5;
+  const shown = isSearching ? src : src.slice(0, itemLimit);
 
   for (const it of shown) {
     const row = document.createElement("div");
@@ -2151,14 +2159,14 @@ function renderItems() {
     list.appendChild(row);
   }
 
-  // Botão Ver todos / Ver menos
+  // Progressão Top 5 → Top 20 → todas → Top 5.
   const tog = document.getElementById("btnItemsToggle");
   if (tog) {
-    if (src.length > LIMIT && !isSearching) {
+    if (src.length > 5 && !isSearching) {
       tog.style.display = "";
-      tog.textContent = itemsExpanded
-        ? "▲ Ver menos"
-        : `▼ Ver mais (${src.length})`;
+      if (itemsView === 'top5') tog.textContent = src.length > 20 ? 'Ver top 20' : `Ver todas (${src.length})`;
+      else if (itemsView === 'top20' && src.length > 20) tog.textContent = `Ver todas (${src.length})`;
+      else tog.textContent = 'Mostrar top 5';
     } else {
       tog.style.display = "none";
     }
