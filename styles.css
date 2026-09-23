@@ -551,7 +551,8 @@ body.is-scrolling .passivebar { transform: translateX(-50%) translateY(140%); op
 @media (min-width: 900px) {
   :root {
     --desktop-sidebar-w: 260px;
-    --desktop-content-max: 680px;
+    --desktop-content-max: 1440px;
+    --desktop-passive-max: 760px;
     --desktop-gutter: 24px;
   }
   .sidebar-toggle,
@@ -589,7 +590,7 @@ body.is-scrolling .passivebar { transform: translateX(-50%) translateY(140%); op
   }
   .passivebar {
     width: min(
-      var(--desktop-content-max),
+      var(--desktop-passive-max),
       calc(100vw - var(--desktop-sidebar-w) - (2 * var(--desktop-gutter)))
     );
     left: calc(

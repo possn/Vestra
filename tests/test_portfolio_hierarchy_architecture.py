@@ -28,7 +28,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         expected = (
             "vestra-portfolio-focus.js?v=1.1",
             "vestra-swap-lab.js?v=1.1",
-            "vestra-portfolio-ui.js?v=1.2",
+            "vestra-portfolio-ui.js?v=1.3",
             "portfolio-diagnostics.js?v=1.1",
             "portfolio-dossier-routing.js?v=1.4",
             "vestra-portfolio-hierarchy.js?v=1.6",

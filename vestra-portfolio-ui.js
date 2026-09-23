@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v1.2 — canonical portfolio landing + analysis tabs. */
+/* Vestra Portfolio UI v1.3 — canonical portfolio landing + clearer analysis flow. */
 (() => {
   'use strict';
 
@@ -91,18 +91,23 @@
     const introTitle=tabs.querySelector('.vpu-tab-intro strong'),introSub=tabs.querySelector('.vpu-tab-intro span');
     if(introTitle&&introTitle.textContent!==meta.title)introTitle.textContent=meta.title;
     if(introSub&&introSub.textContent!==meta.sub)introSub.textContent=meta.sub;
-    c.querySelectorAll('.market-detail-card[data-collapsible="1"],[data-ux-kind]').forEach(el=>{const g=classify(el);if(!g)return;el.classList.toggle('vpu-hidden',!expanded||g!==active);});
+    c.querySelectorAll('.market-detail-card[data-collapsible="1"],[data-ux-kind]').forEach(el=>{const g=classify(el);if(!g)return;el.classList.add('vpu-section-card');el.dataset.vpuGroup=g;el.classList.toggle('vpu-hidden',!expanded||g!==active);});
     const btn=reveal.querySelector('[data-vpu-toggle]'),label=expanded?'Fechar navegação':'Explorar'; if(btn&&btn.textContent!==label)btn.textContent=label;
   }
+  function openFirstActive(c){
+    const first=[...c.querySelectorAll('.vpu-section-card')].find(el=>el.dataset.vpuGroup===active&&!el.classList.contains('vpu-hidden'));
+    if(first?.classList.contains('is-collapsed')) first.querySelector(':scope > [data-collapse-toggle],:scope > .market-collapse-toggle')?.click();
+    return first||null;
+  }
   function jump(kind){ const c=root(), target=card(kind,c); if(!target)return; c.dataset.vpuExpanded='1'; active=classify(target)||active; try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{} apply(); if(target.classList.contains('is-collapsed'))target.querySelector('[data-collapse-toggle],.market-collapse-toggle')?.click(); setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30); }
-  function style(){ if(document.getElementById('vestra-portfolio-ui-style'))return; const link=document.createElement('link'); link.id='vestra-portfolio-ui-style'; link.rel='stylesheet'; link.href='vestra-portfolio-ui.css?v=1.0'; document.head.appendChild(link); }
+  function style(){ if(document.getElementById('vestra-portfolio-ui-style'))return; const link=document.createElement('link'); link.id='vestra-portfolio-ui-style'; link.rel='stylesheet'; link.href='vestra-portfolio-ui.css?v=1.1'; document.head.appendChild(link); }
   document.addEventListener('click',e=>{
     const d=e.target.closest?.('[data-vpu-detail]'); if(d){const c=root(),dc=decisionCenter(c);if(dc){dc.hidden=!dc.hidden;d.textContent=dc.hidden?'Ver diagnóstico':'Ocultar diagnóstico';if(!dc.hidden)setTimeout(()=>dc.scrollIntoView({behavior:'smooth',block:'start'}),20);}return;}
     const j=e.target.closest?.('[data-vpu-jump]'); if(j){e.preventDefault();jump(j.dataset.vpuJump);return;}
-    const q=e.target.closest?.('[data-vpu-toggle]'); if(q){const c=root();if(!c)return;c.dataset.vpuExpanded=c.dataset.vpuExpanded==='1'?'0':'1';apply();return;}
-    const tab=e.target.closest?.('[data-vpu-tab]'); if(tab){active=tab.dataset.vpuTab||'decide';try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{}apply();return;}
+    const q=e.target.closest?.('[data-vpu-toggle]'); if(q){const c=root();if(!c)return;const opening=c.dataset.vpuExpanded!=='1';c.dataset.vpuExpanded=opening?'1':'0';apply();if(opening){const first=openFirstActive(c);setTimeout(()=>c.querySelector('.vpu-tabs-shell')?.scrollIntoView({behavior:'smooth',block:'start'}),20);if(first)setTimeout(()=>first.scrollIntoView({behavior:'smooth',block:'nearest'}),80);}return;}
+    const tab=e.target.closest?.('[data-vpu-tab]'); if(tab){active=tab.dataset.vpuTab||'decide';try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{}apply();const c=root();if(c){const first=openFirstActive(c);if(first)setTimeout(()=>first.scrollIntoView({behavior:'smooth',block:'nearest'}),40);}return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{} apply();}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.2'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.3'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
