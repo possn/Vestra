@@ -1,4 +1,4 @@
-/* Vestra Portfolio Concentration v2.4 — compact ranked concentration + editorial exposure. */
+/* Vestra Portfolio Concentration v2.5 — compact ranked concentration + editorial exposure. */
 (() => {
   'use strict';
 
@@ -360,21 +360,26 @@
     return {classified,unknown,visible};
   }
 
-  function themeDetailMarkup(themes){
-    const selected=themes.rows.find(row=>row.label===S.selectedTheme)||null;
+  function themeDetailMarkup(selected){
     if(!selected) return '';
-    return `<div class="dpc-theme-detail"><div class="dpc-theme-detail__head"><div><span>O QUE ESTÁS A VER.</span><strong>${esc(selected.label)} · ${pct(selected.weight)} do património</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,6).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.weight)}</strong></div>`).join('')}</div><small>${pct(selected.marketWeight)} da fatia de mercado. Inclui posições diretas e holdings de ETFs quando existem dados verificáveis.</small></div>`;
+    return `<div class="dpc-theme-detail dpc-theme-detail--inline"><div class="dpc-theme-detail__head"><div><span>O QUE ESTÁS A VER.</span><strong>${esc(selected.label)} · ${pct(selected.weight)} do património</strong></div><button type="button" data-dpc-theme-close aria-label="Fechar detalhe">×</button></div><div class="dpc-theme-detail__rows">${selected.contributors.slice(0,6).map(item=>`<div><span>${esc(item.name)}</span><strong>${pct(item.weight)}</strong></div>`).join('')}</div><small>${pct(selected.marketWeight)} da fatia de mercado. Inclui posições diretas e holdings de ETFs quando existem dados verificáveis.</small></div>`;
   }
 
   function themeRankMarkup(themes){
     const {classified,visible}=themeRowsForDisplay(themes);
     if(!visible.length) return '<div class="dpc-empty">Ainda sem temas classificados.</div>';
     const max=Math.max(...visible.map(row=>row.marketWeight||0),.001);
-    const rows=visible.map((row,index)=>`<button type="button" class="dpc-theme-rank${S.selectedTheme===row.label?' is-active':''}" data-dpc-theme="${esc(row.label)}">
-      <span class="dpc-theme-rank__order">${index+1}</span>
-      <span class="dpc-theme-rank__body"><span class="dpc-theme-rank__name">${esc(row.label)}</span><span class="dpc-theme-rank__bar"><i style="width:${Math.max(3,(row.marketWeight/max)*100)}%"></i></span><small>${pct(row.marketWeight)} dos ativos de mercado</small></span>
-      <strong>${pct(row.weight)}</strong>
-    </button>`).join('');
+    const rows=visible.map((row,index)=>{
+      const active=S.selectedTheme===row.label;
+      return `<div class="dpc-theme-rank-group${active?' is-active':''}">
+        <button type="button" class="dpc-theme-rank${active?' is-active':''}" data-dpc-theme="${esc(row.label)}" aria-expanded="${active?'true':'false'}">
+          <span class="dpc-theme-rank__order">${index+1}</span>
+          <span class="dpc-theme-rank__body"><span class="dpc-theme-rank__name">${esc(row.label)}</span><span class="dpc-theme-rank__bar"><i style="width:${Math.max(3,(row.marketWeight/max)*100)}%"></i></span><small>${pct(row.marketWeight)} dos ativos de mercado</small></span>
+          <strong>${pct(row.weight)}</strong>
+        </button>
+        ${active?themeDetailMarkup(row):''}
+      </div>`;
+    }).join('');
     let toggle='';
     if(classified.length>3){
       const label=S.themeView==='top3'
@@ -406,7 +411,6 @@
       </div>
       <div class="dpc-theme-ranking-head"><span>TEMAS PRINCIPAIS</span><small>% grande = património total</small></div>
       ${themeRankMarkup(themes)}
-      ${themeDetailMarkup(themes)}
       <details class="dpc-method" data-dpc-method="theme"${S.themeMethodOpen?' open':''}><summary>Como calculamos</summary><p>O ranking usa a fatia de mercado como contexto, mas a percentagem grande mostra sempre o peso no património total. Cada euro entra num único tema principal; temas estreitos têm prioridade sobre sectores amplos e exposição sem evidência fica por classificar.</p></details>
     </section>`;
   }
@@ -619,6 +623,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'2.4',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'2.5',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
