@@ -26,10 +26,10 @@ class GlobalVisualLanguageTests(unittest.TestCase):
 
     def test_portfolio_keeps_positions_before_secondary_sector_detail(self):
         positions = INDEX.index('class="card portfolio-list-card"')
-        sectors = INDEX.index('id="portfolioSectorCard"')
         tools = INDEX.index('id="portfolioToolsStrip"')
-        self.assertLess(positions, sectors)
-        self.assertLess(sectors, tools)
+        sectors = INDEX.index('id="portfolioSectorCard"', tools)
+        self.assertLess(positions, tools)
+        self.assertLess(tools, sectors)
 
     def test_visual_layer_does_not_change_fixed_navigation_or_sheets(self):
         start = STYLES.index("VESTRA v3.5")
