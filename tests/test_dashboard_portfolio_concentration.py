@@ -82,7 +82,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("marketShare", JS)
         self.assertIn("marketWeight", JS)
         self.assertIn("Ativos de mercado", JS)
-        self.assertIn("Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto", JS)
+        self.assertIn("isExplicitNonMarketAsset", JS)
         self.assertIn("EXPOSIÇÃO TEMÁTICA", JS)
         self.assertIn("IA & Robótica", JS)
         self.assertIn("Semicondutores", JS)
