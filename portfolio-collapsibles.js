@@ -1,4 +1,5 @@
 /* Vestra Portfolio Collapsibles v1.2 — canonical portfolio section collapsing. */
+// Static Carteira secondary tools (including equity performance) are owned by index.html, not this market-sheet runtime.
 (() => {
 'use strict';
 const COLLAPSE_KEY='vestra-market-collapse-v1';
