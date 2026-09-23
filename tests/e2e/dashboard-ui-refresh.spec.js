@@ -198,7 +198,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(sectorCard).toContainText('Sectores tradicionais');
   await expect(page.locator('#portfolioSectorBody')).toBeHidden();
   await expect(sectorCard).not.toHaveAttribute('open', '');
-  await sectorCard.locator('summary').click();
+  await sectorCard.locator(':scope > summary').click();
   await expect(page.locator('#portfolioSectorBody')).toBeVisible();
   await expect(sectorCard).toHaveAttribute('open', '');
 
