@@ -21,7 +21,8 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         self.assertIn('<summary>', self.index)
         self.assertIn('Ver sectores', self.index)
         self.assertIn('Sectores tradicionais', self.index)
-        self.assertIn('Classificação sectorial de ações e ETFs · complemento à exposição temática.', self.index)
+        self.assertIn('.portfolio-sector-disclosure', self.styles)
+        self.assertIn('Complemento à exposição temática', self.index)
 
     def test_sector_box_is_rendered_with_portfolio_items(self):
         self.assertIn("function renderPortfolioSectorBox()", self.app)
