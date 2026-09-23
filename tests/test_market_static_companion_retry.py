@@ -33,7 +33,7 @@ class MarketStaticCompanionRetryTests(unittest.TestCase):
         self.assertIn("if (window[globalName] || document.querySelector(selector)) return;", SOURCE)
 
     def test_runtime_version_is_current(self):
-        self.assertIn("version: '1.29'", SOURCE)
+        self.assertIn("version: '1.30'", SOURCE)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-/* Vestra Portfolio Concentration v2.1 — compact editorial exposure cards with transparent methodology. */
+/* Vestra Portfolio Concentration v2.2 — compact ranked concentration + editorial exposure. */
 (() => {
   'use strict';
 
@@ -6,7 +6,7 @@
   const THEME_CARD_ID='portfolioThemeExposureCard';
   const STYLE_ID='dashboardPortfolioConcentrationStyle';
   const MAX_SEGMENTS=6;
-  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',themesExpanded:false,loading:false,scheduled:false};
+  const S={mode:'direct',lookthrough:null,themes:null,details:{},selectedTheme:'',themesExpanded:false,holdingsExpanded:false,loading:false,scheduled:false};
   const text=v=>String(v??'').trim();
   const esc=v=>text(v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
@@ -333,19 +333,22 @@
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=2.0';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=2.1';
     document.head.appendChild(link);
   }
 
   function holdingsRankMarkup(rows){
-    const visible=rows.slice(0,5);
+    const ranked=Array.isArray(rows)?rows:[];
+    const visible=ranked.slice(0,S.holdingsExpanded?5:3);
     if(!visible.length) return '';
     const max=Math.max(...visible.map(row=>row.weight||0),.001);
-    return `<div class="dpc-holdings-rank">${visible.map((row,index)=>`<div class="dpc-holding-row">
+    const list=`<div class="dpc-holdings-rank">${visible.map((row,index)=>`<div class="dpc-holding-row">
       <span class="dpc-holding-row__order">${index+1}</span>
       <span class="dpc-holding-row__body"><strong>${esc(row.label)}</strong><span><i style="width:${Math.max(4,(row.weight/max)*100)}%"></i></span></span>
       <b>${pct(row.weight)}</b>
     </div>`).join('')}</div>`;
+    const toggle=ranked.length>3?`<button type="button" class="dpc-holdings-more" data-dpc-holdings-toggle aria-expanded="${S.holdingsExpanded?'true':'false'}">${S.holdingsExpanded?'Mostrar top 3':'Ver top 5'}</button>`:'';
+    return list+toggle;
   }
 
   function themeRowsForDisplay(themes){
@@ -569,6 +572,11 @@
         render();
         return;
       }
+      if(event.target?.closest?.('[data-dpc-holdings-toggle]')){
+        S.holdingsExpanded=!S.holdingsExpanded;
+        render();
+        return;
+      }
       const mode=event.target?.closest?.('[data-dpc-mode]')?.dataset?.dpcMode;
       if(mode==='direct'||mode==='lookthrough'){
         S.mode=mode;
@@ -584,6 +592,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'2.1',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'2.2',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
