@@ -387,11 +387,6 @@
 </div>
 </div>
 
-<div class="portfolio-actions">
-<button onclick="setView('market')"><span>⌕</span><b>Pesquisar mercado</b></button>
-<button onclick="setView('dividends')"><span>↙</span><b>Dividendos</b></button>
-<button onclick="setView('analysis')"><span>⌁</span><b>Análise</b></button>
-</div>
 <div class="card portfolio-sector-card" id="portfolioSectorCard">
 <div class="card__head portfolio-sector-head">
 <div><div class="card__title">Sectores tradicionais</div><div class="card__muted">Classificação sectorial de ações e ETFs · complemento à exposição temática.</div></div>
@@ -438,6 +433,11 @@
 <div style="text-align:center;margin-top:10px">
 <button class="btn btn--ghost btn--sm" id="btnItemsToggle" onclick="itemsExpanded=!itemsExpanded;renderItems()" style="display:none">Ver todos</button>
 </div>
+</div>
+<div class="portfolio-tools-strip" id="portfolioToolsStrip" aria-label="Ferramentas da carteira">
+<span>FERRAMENTAS</span>
+<button type="button" onclick="setView('dividends')">↙ Dividendos</button>
+<button type="button" onclick="setView('analysis')">⌁ Análise</button>
 </div>
 <details class="portfolio-more">
 <summary>Desempenho das ações e ETFs <span>›</span></summary>
