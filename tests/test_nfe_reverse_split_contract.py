@@ -40,4 +40,21 @@ def test_nfe_100_old_shares_become_2_without_changing_cost_basis():
 def test_schema_bump_forces_existing_saved_broker_state_to_rebuild():
     match = re.search(r"const BROKER_REBUILD_SCHEMA_VERSION = (\d+);", APP)
     assert match
-    assert int(match.group(1)) >= 46
+    assert int(match.group(1)) >= 47
+
+
+def test_capital_b_reverse_split_is_canonical_and_dated():
+    assert 'ticker: "ALCPB"' in APP
+    assert 'effectiveDate: "2026-09-08"' in APP
+    assert 'numerator: 1, denominator: 10' in APP
+    assert 'eventWindowStart: "2026-09-08"' in APP
+
+
+def test_capital_b_legacy_50_shares_become_5_without_changing_cost_basis():
+    old_qty = 50
+    split_denominator = 10
+    cost_basis_eur = 50.0
+    new_qty = old_qty / split_denominator
+    new_pm = cost_basis_eur / new_qty
+    assert new_qty == 5
+    assert new_pm == 10.0

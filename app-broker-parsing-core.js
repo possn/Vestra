@@ -54,7 +54,9 @@ const KNOWN_BROKER_YAHOO_OVERRIDES = {
   "|RIO1": "RIO.L",
   "|UNA": "UNA.AS",
   "|ENL": "ENEL.MI",
-  "|XVALO": "XVALO.MC"
+  "|XVALO": "XVALO.MC",
+  "|UT8": "UBER",
+  "|HHPD": "HNHPF"
 };
 
 function getKnownBrokerYahooOverride({ isin = "", ticker = "", name = "", currency = "", priceCurrency = "" } = {}) {
@@ -84,6 +86,8 @@ function getKnownBrokerYahooOverride({ isin = "", ticker = "", name = "", curren
   if ((t === "IREN" || n === "IREN") && i === "AU0000185993") return "IREN";
   if ((t === "ENL" || /\bENEL\b/.test(n)) && i === "IT0003128367") return "ENEL.MI";
   if ((t === "HTOO" || /\bFUSION FUEL GREEN\b/.test(n)) && i === "IE00045C7B38") return "HTOO";
+  if (t === "UT8" || /\bUBER TECHNOLOGIES\b/.test(n)) return "UBER";
+  if (t === "HHPD" || /\bHON HAI PRECISION INDUSTRY\b/.test(n)) return "HNHPF";
   if (t === "MPW.US" || t === "MPW" || /\bMEDICAL PROPERTIES TRUST\b/.test(n)) return "MPT";
   return "";
 }

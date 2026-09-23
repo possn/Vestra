@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPAIR = ROOT / "quote-canonical-repair.js"
 BOOTSTRAP = ROOT / "market-company-brief.js"
 IDENTITY = ROOT / "app-asset-identity.js"
+INDEX = ROOT / "index.html"
 
 
 class CanonicalQuoteRecoveryTests(unittest.TestCase):
@@ -28,8 +29,13 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             "GB0007188757: 'RIO.L'",
             "CH0334081137: 'CRSP'",
             "US64110L1061: 'NFC.DE'",
+            "FR0011053636: 'ALCPB.PA'",
+            "FR0014019Y19: 'ALCPB.PA'",
             "DE0006047004: 'HEI.DE'",
             "RIO1: 'RIO.L'",
+            "UT8: 'UBER'",
+            "HHPD: 'HNHPF'",
+            "NFC: 'NFC.DE'",
             "'HEI.DE': 'HEI.DE'",
         ]
         for mapping in expected:
@@ -100,6 +106,13 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             );
             if (!iren.ok || !iren.canonicalRecovery) process.exit(23);
 
+            const capitalB = window.quoteSanityCheck(
+              {{isin:'FR0011053636', ticker:'ALCPB', yahooTicker:'ALCPB.PA'}},
+              {{ticker:'ALCPB.PA', currency:'EUR', price:5.1}},
+              5.1, 'ALCPB.PA', 'ALCPB.PA'
+            );
+            if (!capitalB.ok || !capitalB.canonicalRecovery) process.exit(28);
+
             const heiWithIsin = window.quoteSanityCheck(
               {{isin:'DE0006047004', ticker:'HEI.DE', yahooTicker:'HEI.DE', currency:'USD'}},
               {{ticker:'HEI.DE', currency:'EUR', price:163.15}},
@@ -137,10 +150,34 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
         """)
         subprocess.run(["node", "-e", script], check=True, cwd=ROOT)
 
+    def test_quote_repair_is_available_before_any_manual_refresh(self):
+        html = INDEX.read_text(encoding="utf-8")
+        app_pos = html.index('app.js?v=20260921v12')
+        guard_pos = html.index('quote-canonical-repair.js?v=2.4')
+        market_pos = html.index('market-static-universe.js?v=1.30')
+        self.assertLess(app_pos, guard_pos)
+        self.assertLess(guard_pos, market_pos)
+
+    def test_current_failed_identity_set_is_canonical(self):
+        text = IDENTITY.read_text(encoding="utf-8")
+        expected = [
+            '"AU0000185993":"IREN"',
+            '"CH0334081137":"CRSP"',
+            '"GB0007188757":"RIO.L"',
+            '"GB00BL6K5J42":"EDV.TO"',
+            '"GB00BVZK7T90":"UNA.AS"',
+            '"IE00BLCHJ534":"PAVE.L"',
+            '"US64110L1061":"NFC.DE"',
+            '"FR0014019Y19":"ALCPB.PA"',
+            '"MATIC":"POL28321-USD"',
+        ]
+        for mapping in expected:
+            self.assertIn(mapping, text)
+
     def test_bootstrap_loads_identity_guard_without_parallel_quote_fast_lane(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("loadCanonicalQuoteRepair();", text)
-        self.assertIn("quote-canonical-repair.js?v=2.3", text)
+        self.assertIn("quote-canonical-repair.js?v=2.4", text)
         self.assertIn("window.VestraAssetIdentityGuard", text)
         self.assertNotIn("loadQuoteRefreshPerformance", text)
         self.assertNotIn("quote-refresh-performance.js", text)

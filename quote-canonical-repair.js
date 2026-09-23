@@ -1,4 +1,4 @@
-/* Vestra Asset Identity Guard v2.3 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
+/* Vestra Asset Identity Guard v2.4 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
 (() => {
   'use strict';
 
@@ -10,11 +10,16 @@
     GB0007188757: 'RIO.L',
     CH0334081137: 'CRSP',
     US64110L1061: 'NFC.DE',
+    FR0011053636: 'ALCPB.PA',
+    FR0014019Y19: 'ALCPB.PA',
     DE0006047004: 'HEI.DE',
   });
 
   const BROKER_ALIAS_REPAIRS = Object.freeze({
     RIO1: 'RIO.L',
+    UT8: 'UBER',
+    HHPD: 'HNHPF',
+    NFC: 'NFC.DE',
     'HEI.DE': 'HEI.DE',
   });
 
@@ -22,11 +27,16 @@
     DE000SHL1006: Object.freeze({ ticker: 'SHL.DE', currency: 'EUR', minPrice: 5, maxPrice: 200 }),
     US12468P1049: Object.freeze({ ticker: 'AI', currency: 'USD', minPrice: 1, maxPrice: 100 }),
     AU0000185993: Object.freeze({ ticker: 'IREN', currency: 'USD', minPrice: 5, maxPrice: 150 }),
+    FR0011053636: Object.freeze({ ticker: 'ALCPB.PA', currency: 'EUR', minPrice: 0.2, maxPrice: 20 }),
+    FR0014019Y19: Object.freeze({ ticker: 'ALCPB.PA', currency: 'EUR', minPrice: 0.2, maxPrice: 20 }),
     DE0006047004: Object.freeze({ ticker: 'HEI.DE', currency: 'EUR', minPrice: 50, maxPrice: 400 }),
   });
 
   const BROKER_ALIAS_RECOVERY_RULES = Object.freeze({
     RIO1: Object.freeze({ ticker: 'RIO.L', currency: 'GBP', minPrice: 10, maxPrice: 150 }),
+    UT8: Object.freeze({ ticker: 'UBER', currency: 'USD', minPrice: 10, maxPrice: 300 }),
+    HHPD: Object.freeze({ ticker: 'HNHPF', currency: 'USD', minPrice: 1, maxPrice: 100 }),
+    NFC: Object.freeze({ ticker: 'NFC.DE', currency: 'EUR', minPrice: 5, maxPrice: 300 }),
     'HEI.DE': Object.freeze({ ticker: 'HEI.DE', currency: 'EUR', minPrice: 50, maxPrice: 400 }),
   });
 
@@ -189,7 +199,7 @@
   if (!install()) document.addEventListener('DOMContentLoaded', install, { once: true });
 
   const api = Object.freeze({
-    version: '2.3',
+    version: '2.4',
     identityMapRepairs: IDENTITY_MAP_REPAIRS,
     brokerAliasRepairs: BROKER_ALIAS_REPAIRS,
     specialRules: SPECIAL_RECOVERY_RULES,
