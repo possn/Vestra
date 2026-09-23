@@ -1566,7 +1566,7 @@ function renderSummary() {
   if (toggleBtn) {
     toggleBtn.style.display = items.length > 10 ? "inline-flex" : "none";
     toggleBtn.textContent = summaryExpanded
-      ? "▲ Ver menos"
+      ? "Mostrar menos"
       : `▼ Ver mais (${items.length - 10} de ${items.length} ativos)`;
   }
   // Update subtitle with total count
@@ -2116,8 +2116,8 @@ function renderItems() {
     return;
   }
 
-  // Mostrar 10 por defeito, excepto se está a pesquisar
-  const LIMIT = 10;
+  // Mostrar 5 posições principais por defeito, excepto se está a pesquisar
+  const LIMIT = 5;
   const shown = (itemsExpanded || isSearching) ? src : src.slice(0, LIMIT);
 
   for (const it of shown) {
@@ -2158,7 +2158,7 @@ function renderItems() {
       tog.style.display = "";
       tog.textContent = itemsExpanded
         ? "▲ Ver menos"
-        : `▼ Ver mais (${src.length})`;
+        : `Ver todas (${src.length})`;
     } else {
       tog.style.display = "none";
     }
