@@ -434,7 +434,7 @@ function migrateDividendRecords() {
   return changed;
 }
 
-const BROKER_REBUILD_SCHEMA_VERSION = 46; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
+const BROKER_REBUILD_SCHEMA_VERSION = 47; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
 
 function getReturnSettings() {
   return normalizeReturnSettings((state && state.settings && state.settings.returnDefaults) || {}, parseNum);
@@ -6946,7 +6946,12 @@ const CANONICAL_BROKER_SPLITS = Object.freeze([
   // New Fortress Energy: 1-for-50 reverse split. Trading resumed split-adjusted
   // on 2026-09-14. Historical broker ledgers imported before the corporate
   // action still contain pre-split quantities, while live quotes are post-split.
-  { ticker: "NFE", effectiveDate: "2026-09-14", eventWindowStart: "2026-09-11", eventWindowEnd: "2026-09-14", numerator: 1, denominator: 50 }
+  { ticker: "NFE", effectiveDate: "2026-09-14", eventWindowStart: "2026-09-11", eventWindowEnd: "2026-09-14", numerator: 1, denominator: 50 },
+  // Capital B: 10 old shares became 1 new share on 2026-09-08. Trading 212's
+  // imported ledger can contain only the pre-split 2025 buys, so synthesize the
+  // corporate action when no explicit split event exists. This keeps quantity
+  // and post-split ALCPB.PA quotes on the same basis.
+  { ticker: "ALCPB", effectiveDate: "2026-09-08", eventWindowStart: "2026-09-08", eventWindowEnd: "2026-09-10", numerator: 1, denominator: 10 }
 ]);
 
 function canonicalBrokerSplitMatches(record, action) {
