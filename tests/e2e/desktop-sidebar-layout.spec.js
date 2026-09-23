@@ -4,7 +4,7 @@ const { test, expect } = require('@playwright/test');
 // controlled shell cache. Service-worker cache behaviour has its own contracts.
 test.use({ serviceWorkers: 'block' });
 
-test('desktop: fixed sidebar reserves its own column without covering app content', async ({ page }) => {
+test('desktop: sidebar can release the full canvas without covering app content', async ({ page }) => {
   await page.setViewportSize({ width: 920, height: 820 });
   await page.goto('/index.html');
   await page.waitForFunction(() => window.__vestraAppHydrated === true);
@@ -17,7 +17,8 @@ test('desktop: fixed sidebar reserves its own column without covering app conten
   await expect(sidebar).toBeVisible();
   await expect(main).toBeVisible();
   await expect(topbar).toBeVisible();
-  await expect(sidebarClose).toBeHidden();
+  await expect(sidebarClose).toBeVisible();
+  await expect(page.locator('#btnSidebarToggle')).toBeVisible();
 
   const [sidebarBox, mainBox, topbarBox] = await Promise.all([
     sidebar.boundingBox(),
@@ -75,4 +76,21 @@ test('desktop: fixed sidebar reserves its own column without covering app conten
   expect(modalBox.x + modalBox.width).toBeLessThanOrEqual(920);
   expect(toastBox.x).toBeGreaterThanOrEqual(sidebarRight);
   expect(toastBox.x + toastBox.width).toBeLessThanOrEqual(920);
+
+  // Desktop navigation is optional: collapse it and the app must reclaim the canvas.
+  await sidebarClose.click();
+  await expect(page.locator('body')).toHaveClass(/desktop-sidebar-collapsed/);
+  await expect(page.locator('#btnSidebarToggle')).toHaveAttribute('aria-expanded', 'false');
+  const collapsedMain = await main.boundingBox();
+  const collapsedSidebar = await sidebar.boundingBox();
+  expect(collapsedMain.x).toBeLessThan(40);
+  expect(collapsedMain.width).toBeGreaterThan(mainBox.width + 200);
+  expect(collapsedSidebar.x + collapsedSidebar.width).toBeLessThanOrEqual(1);
+
+  // The topbar toggle restores navigation and its preference.
+  await page.locator('#btnSidebarToggle').click();
+  await expect(page.locator('body')).not.toHaveClass(/desktop-sidebar-collapsed/);
+  await expect(page.locator('#btnSidebarToggle')).toHaveAttribute('aria-expanded', 'true');
+  const restoredMain = await main.boundingBox();
+  expect(restoredMain.x).toBeGreaterThanOrEqual(sidebarRight + 20);
 });
