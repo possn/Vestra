@@ -23,6 +23,8 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         self.assertIn('Sectores tradicionais', self.index)
         self.assertIn('.portfolio-sector-disclosure', self.styles)
         self.assertIn('Complemento à exposição temática', self.index)
+        self.assertIn('.portfolio-tools__body > button', self.styles)
+        self.assertNotIn('.portfolio-tools__body button', self.styles)
         tools_start = self.index.index('<details class="portfolio-tools" id="portfolioToolsStrip">')
         tools_end = self.index.index('</details>\n</section>', tools_start)
         sector_pos = self.index.index('<details class="portfolio-sector-disclosure" id="portfolioSectorCard"', tools_start)
