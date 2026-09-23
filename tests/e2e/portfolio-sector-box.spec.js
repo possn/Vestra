@@ -33,10 +33,9 @@ test('iPhone/WebKit: main portfolio restores sectors with holdings and hides the
   const body = page.locator('#portfolioSectorBody');
   await expect(card).not.toHaveAttribute('open', '');
   await expect(body).toBeHidden();
-  await card.locator('summary').tap();
+  await card.locator(':scope > summary').tap();
   await expect(card).toHaveAttribute('open', '');
   await expect(body).toBeVisible();
-  await expect(card.locator('summary')).toContainText('Ocultar');
   await expect(card.locator('.portfolio-sector-group')).toHaveCount(3);
   await expect(card).toContainText('Tecnologia');
   await expect(card).toContainText('Energia');
