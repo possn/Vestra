@@ -14,7 +14,7 @@
 <link href="apple-touch-icon-120.png" rel="apple-touch-icon" sizes="120x120"/>
 <link href="apple-touch-icon-152.png" rel="apple-touch-icon" sizes="152x152"/>
 <link href="apple-touch-icon-167.png" rel="apple-touch-icon" sizes="167x167"/>
-<link href="styles.css?v=20260920v4" rel="stylesheet"/>
+<link href="styles.css?v=20260923v1" rel="stylesheet"/>
 <link href="portfolio-glance-polish.css?v=1.0" rel="stylesheet"/>
 <link href="market.css?v=20260920v2" rel="stylesheet"/>
 <script>
@@ -434,11 +434,16 @@
 <button class="btn btn--ghost btn--sm" id="btnItemsToggle" onclick="itemsExpanded=!itemsExpanded;renderItems()" style="display:none">Ver todos</button>
 </div>
 </div>
-<div class="portfolio-tools-strip" id="portfolioToolsStrip" aria-label="Ferramentas da carteira">
-<span>FERRAMENTAS</span>
-<button type="button" onclick="setView('dividends')">↙ Dividendos</button>
-<button type="button" onclick="setView('analysis')">⌁ Análise</button>
+<details class="portfolio-tools" id="portfolioToolsStrip">
+<summary>
+<div><small>Ferramentas</small><strong>Explorar a carteira</strong></div>
+<span aria-hidden="true">›</span>
+</summary>
+<div class="portfolio-tools__body">
+<button type="button" onclick="setView('dividends')"><span aria-hidden="true">↙</span><div><strong>Dividendos</strong><small>Histórico, calendário e rendimento</small></div><span aria-hidden="true">›</span></button>
+<button type="button" onclick="setView('analysis')"><span aria-hidden="true">⌁</span><div><strong>Análise</strong><small>Risco, fiscalidade e detalhe</small></div><span aria-hidden="true">›</span></button>
 </div>
+</details>
 <details class="portfolio-more">
 <summary>Desempenho das ações e ETFs <span>›</span></summary>
 <div class="portfolio-more__body">
