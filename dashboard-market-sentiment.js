@@ -1,4 +1,4 @@
-/* Vestra Dashboard Market Sentiment v1.2 — compact transparent market barometer. */
+/* Vestra Dashboard Market Sentiment v1.4 — compact transparent market barometer. */
 (() => {
   'use strict';
 
@@ -18,7 +18,7 @@
   ];
   const VIX_TICKER='^VIX';
 
-  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaii:null};
+  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null};
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
   const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,7 +33,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=1.2';
+    link.href='dashboard-market-sentiment.css?v=1.3';
     document.head.appendChild(link);
   }
 
@@ -167,6 +167,30 @@
     return n==null?'—':`${n>0?'+':''}${n.toFixed(1)} pp`;
   }
 
+  function aaiiTrendChart(weeks){
+    const ordered=weeks.slice().reverse();
+    const width=440,height=176,left=30,right=12,top=16,bottom=30;
+    const plotW=width-left-right,plotH=height-top-bottom;
+    const x=index=>left+(ordered.length<=1?plotW/2:index*(plotW/(ordered.length-1)));
+    const y=value=>top+(100-clamp(num(value)??0,0,100))/100*plotH;
+    const points=key=>ordered.map((week,index)=>`${x(index).toFixed(1)},${y(week[key]).toFixed(1)}`).join(' ');
+    const dots=(key,klass)=>ordered.map((week,index)=>`<circle class="${klass}" cx="${x(index).toFixed(1)}" cy="${y(week[key]).toFixed(1)}" r="3.2"><title>${esc(aaiiDate(week.date))}: ${aaiiPct(week[key])}</title></circle>`).join('');
+    const labels=ordered.map((week,index)=>`<text x="${x(index).toFixed(1)}" y="${height-7}" text-anchor="middle">${esc(aaiiDate(week.date))}</text>`).join('');
+    const grid=[25,50,75].map(value=>`<g class="dms-aaii-chart-grid"><line x1="${left}" y1="${y(value).toFixed(1)}" x2="${width-right}" y2="${y(value).toFixed(1)}"/><text x="${left-7}" y="${(y(value)+3).toFixed(1)}" text-anchor="end">${value}</text></g>`).join('');
+    return `<div class="dms-aaii-chart-wrap">
+      <div class="dms-aaii-chart-title"><span>Evolução semanal</span><small>percentagem de respostas</small></div>
+      <svg class="dms-aaii-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução AAII bullish, neutral e bearish nas últimas cinco semanas">
+        ${grid}
+        <polyline class="dms-aaii-line is-bull" points="${points('bullish')}"/>
+        <polyline class="dms-aaii-line is-neutral" points="${points('neutral')}"/>
+        <polyline class="dms-aaii-line is-bear" points="${points('bearish')}"/>
+        ${dots('bullish','dms-aaii-dot is-bull')}${dots('neutral','dms-aaii-dot is-neutral')}${dots('bearish','dms-aaii-dot is-bear')}
+        <g class="dms-aaii-chart-labels">${labels}</g>
+      </svg>
+      <div class="dms-aaii-chart-key"><span class="is-bull">● Bullish</span><span class="is-neutral">● Neutral</span><span class="is-bear">● Bearish</span></div>
+    </div>`;
+  }
+
   function aaiiMarkup(){
     const weeks=Array.isArray(S.aaii?.weeks)?S.aaii.weeks.slice(0,5):[];
     if(!weeks.length) return '';
@@ -202,8 +226,8 @@
         <span>▼ Bearish <b>${aaiiPct(latest.bearish)}</b></span>
       </div>
       <div class="dms-aaii-note">Semana de ${esc(aaiiDate(latest.date))}${delta==null?'':` · spread ${aaiiSpreadText(delta)} vs. semana anterior`}</div>
-      <details class="dms-aaii-history">
-        <summary>Ver últimas 5 semanas <span>›</span></summary>
+      <details class="dms-aaii-history"${S.aaiiExpanded?' open':''}>
+        <summary>Ver evolução das últimas 5 semanas <span>›</span></summary>\n        ${aaiiTrendChart(weeks)}
         <div class="dms-aaii-grid-head"><span>Semana</span><span>Bull</span><span>Neutral</span><span>Bear</span><span>Spread</span></div>
         <div class="dms-aaii-rows">${rows}</div>
       </details>
@@ -404,6 +428,10 @@
     scheduleLoad();
     loadAaii();
     window.addEventListener('vestra:app-ready',()=>{render();scheduleLoad();});
+    document.addEventListener('toggle',event=>{
+      const details=event.target?.closest?.('.dms-aaii-history');
+      if(details) S.aaiiExpanded=!!details.open;
+    },true);
     document.addEventListener('click',event=>{
       if(event.target?.closest?.('[data-dms-detail-toggle]')){S.expanded=!S.expanded;render();return;}
       if(event.target?.closest?.('[data-dms-refresh]')){load(true);return;}
@@ -415,7 +443,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.3',
+    version:'1.4',
     computeSnapshot,
     labelFor,
     load,
