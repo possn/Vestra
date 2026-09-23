@@ -14,6 +14,7 @@ ACTIVE_WORKFLOWS = {
     'sec-connectivity-probe.yml',
     'sec-fund-identity.yml',
     'sec-runtime-regression.yml',
+    'update-aaii-sentiment.yml',
     'update-executives.yml',
     'update-dashboard-feeds.yml',
     'update-macro-events.yml',
