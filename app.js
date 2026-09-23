@@ -800,7 +800,7 @@ function setView(view) {
   requestAnimationFrame(() => { try { syncFixedBarHeights(); } catch (_) {} });
   if (view === "dashboard" && prevView !== "dashboard") summaryExpanded = false;
   if (view === "assets" && prevView !== "assets") {
-    itemsExpanded = false;
+    itemsVisibleLimit = PORTFOLIO_ITEMS_INITIAL;
     window._pnlExpanded = false;
     ensurePortfolioSectorMap();
   }
@@ -1713,6 +1713,7 @@ function setModeLiabs(on) {
   const heroSub = document.getElementById("portfolioHeroSub");
   if (heroTitle) heroTitle.textContent = showingLiabs ? "Passivos" : "Carteira";
   if (heroSub) heroSub.textContent = showingLiabs ? "Responsabilidades financeiras num só lugar." : "As tuas posições, sem ruído.";
+  itemsVisibleLimit = PORTFOLIO_ITEMS_INITIAL;
   rebuildClassFilter();
   renderItems();
 }
@@ -1727,7 +1728,9 @@ function rebuildClassFilter() {
   sel.value = current;
 }
 
-let itemsExpanded = false;
+const PORTFOLIO_ITEMS_INITIAL = 10;
+const PORTFOLIO_ITEMS_PAGE = 25;
+let itemsVisibleLimit = PORTFOLIO_ITEMS_INITIAL;
 
 function renderPortfolioGlance() {
   const src = showingLiabs ? (state.liabilities || []) : (state.assets || []);
@@ -2116,9 +2119,9 @@ function renderItems() {
     return;
   }
 
-  // Mostrar 10 por defeito, excepto se está a pesquisar
-  const LIMIT = 10;
-  const shown = (itemsExpanded || isSearching) ? src : src.slice(0, LIMIT);
+  // Mantém a lista leve no iPhone: 10 inicialmente e mais 25 por pedido.
+  // Pesquisa/filtros continuam a mostrar todos os resultados relevantes.
+  const shown = isSearching ? src : src.slice(0, Math.min(itemsVisibleLimit, src.length));
 
   for (const it of shown) {
     const row = document.createElement("div");
@@ -2151,18 +2154,28 @@ function renderItems() {
     list.appendChild(row);
   }
 
-  // Botão Ver todos / Ver menos
+  // Carregamento progressivo evita montar centenas de rows de uma vez.
   const tog = document.getElementById("btnItemsToggle");
   if (tog) {
-    if (src.length > LIMIT && !isSearching) {
+    if (src.length > PORTFOLIO_ITEMS_INITIAL && !isSearching) {
       tog.style.display = "";
-      tog.textContent = itemsExpanded
-        ? "▲ Ver menos"
-        : `▼ Ver mais (${src.length})`;
+      if (itemsVisibleLimit < src.length) {
+        const next = Math.min(PORTFOLIO_ITEMS_PAGE, src.length - itemsVisibleLimit);
+        tog.textContent = `Ver mais ${next} · ${Math.min(itemsVisibleLimit, src.length)}/${src.length}`;
+      } else {
+        tog.textContent = "Mostrar top 10";
+      }
     } else {
       tog.style.display = "none";
     }
   }
+}
+
+function togglePortfolioItems() {
+  const src = showingLiabs ? (state.liabilities || []) : (state.assets || []);
+  if (itemsVisibleLimit >= src.length) itemsVisibleLimit = PORTFOLIO_ITEMS_INITIAL;
+  else itemsVisibleLimit = Math.min(src.length, itemsVisibleLimit + PORTFOLIO_ITEMS_PAGE);
+  renderItems();
 }
 
 function yieldBadge(it) {
