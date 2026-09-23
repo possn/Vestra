@@ -12,10 +12,10 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=2.2", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=2.3", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'2.2'", JS)
+        self.assertIn("version:'2.3'", JS)
 
     def test_explicit_non_market_classes_override_stale_quote_metadata(self):
         self.assertIn("function isExplicitNonMarketAsset", JS)
@@ -57,6 +57,13 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_methodology_is_progressively_disclosed(self):
         self.assertIn("dpc-method", JS)
         self.assertIn("Como calculamos", JS)
+        self.assertIn("concentrationMethodOpen:false", JS)
+        self.assertIn("themeMethodOpen:false", JS)
+        self.assertIn('data-dpc-method="concentration"', JS)
+        self.assertIn('data-dpc-method="theme"', JS)
+        self.assertIn("addEventListener('toggle'", JS)
+        self.assertIn("S.concentrationMethodOpen=!!details.open", JS)
+        self.assertIn("S.themeMethodOpen=!!details.open", JS)
         self.assertIn(".dpc-method", CSS)
         self.assertIn("Mede apenas a fatia de mercado da carteira.", JS)
         self.assertIn("Ranking das exposições que realmente movem a carteira.", JS)
@@ -97,6 +104,10 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("Matérias-primas", JS)
         self.assertNotIn('data-dpc-mode="themes"', JS)
         self.assertNotIn("themeWeights", JS)
+
+    def test_selected_theme_survives_live_value_rerenders(self):
+        self.assertIn("const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};render();scheduleLookthrough();});", JS)
+        self.assertNotIn("const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};S.selectedTheme='';render();scheduleLookthrough();});", JS)
 
     def test_theme_evidence_keeps_contributor_provenance_and_drilldown(self):
         self.assertIn("contributors:new Map()", JS)
