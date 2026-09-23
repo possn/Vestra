@@ -77,6 +77,13 @@ test('desktop: sidebar can release the full canvas without covering app content'
   expect(toastBox.x).toBeGreaterThanOrEqual(sidebarRight);
   expect(toastBox.x + toastBox.width).toBeLessThanOrEqual(920);
 
+  // Geometry probes above deliberately opened a modal; close transient surfaces
+  // before exercising real topbar/sidebar pointer interactions.
+  await page.evaluate(() => {
+    document.getElementById('modalItem')?.setAttribute('aria-hidden', 'true');
+    document.getElementById('toastEl')?.classList.remove('toast--show');
+  });
+
   // Desktop navigation is optional: collapse it and the app must reclaim the canvas.
   await sidebarClose.click();
   await expect(page.locator('body')).toHaveClass(/desktop-sidebar-collapsed/);
