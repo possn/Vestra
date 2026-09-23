@@ -12,6 +12,7 @@ class VestraPortfolioUiStyleTests(unittest.TestCase):
     def test_portfolio_ui_keeps_dynamic_kpi_widths_and_moves_static_styles_to_css(self):
         js = read('vestra-portfolio-ui.js')
         css = read('vestra-portfolio-ui.css')
+        app_css = read('styles.css')
         self.assertIn("vestra-portfolio-ui.css?v=1.1", js)
         self.assertIn("link.rel='stylesheet'", js)
         self.assertNotIn("document.createElement('style')", js)
@@ -29,7 +30,6 @@ class VestraPortfolioUiStyleTests(unittest.TestCase):
         self.assertIn('body.desktop-sidebar-collapsed { --desktop-sidebar-space: 0px; }', app_css)
         self.assertIn('.vpu-section-card.is-collapsed', css)
         self.assertIn('function openFirstActive(', js)
-        app_css = read('styles.css')
         self.assertIn('--desktop-content-max: 1440px', app_css)
         self.assertIn('--desktop-passive-max: 760px', app_css)
         self.assertNotIn('--desktop-content-max: 680px', app_css)
