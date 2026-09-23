@@ -1,4 +1,4 @@
-/* Vestra Dashboard Market Sentiment v1.4 — compact transparent market barometer. */
+/* Vestra Dashboard Market Sentiment v1.5 — compact transparent market barometer. */
 (() => {
   'use strict';
 
@@ -33,7 +33,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=1.3';
+    link.href='dashboard-market-sentiment.css?v=1.4';
     document.head.appendChild(link);
   }
 
@@ -167,28 +167,25 @@
     return n==null?'—':`${n>0?'+':''}${n.toFixed(1)} pp`;
   }
 
-  function aaiiTrendChart(weeks){
-    const ordered=weeks.slice().reverse();
-    const width=440,height=176,left=30,right=12,top=16,bottom=30;
-    const plotW=width-left-right,plotH=height-top-bottom;
-    const x=index=>left+(ordered.length<=1?plotW/2:index*(plotW/(ordered.length-1)));
-    const y=value=>top+(100-clamp(num(value)??0,0,100))/100*plotH;
-    const points=key=>ordered.map((week,index)=>`${x(index).toFixed(1)},${y(week[key]).toFixed(1)}`).join(' ');
-    const dots=(key,klass)=>ordered.map((week,index)=>`<circle class="${klass}" cx="${x(index).toFixed(1)}" cy="${y(week[key]).toFixed(1)}" r="3.2"><title>${esc(aaiiDate(week.date))}: ${aaiiPct(week[key])}</title></circle>`).join('');
-    const labels=ordered.map((week,index)=>`<text x="${x(index).toFixed(1)}" y="${height-7}" text-anchor="middle">${esc(aaiiDate(week.date))}</text>`).join('');
-    const grid=[25,50,75].map(value=>`<g class="dms-aaii-chart-grid"><line x1="${left}" y1="${y(value).toFixed(1)}" x2="${width-right}" y2="${y(value).toFixed(1)}"/><text x="${left-7}" y="${(y(value)+3).toFixed(1)}" text-anchor="end">${value}</text></g>`).join('');
-    return `<div class="dms-aaii-chart-wrap">
-      <div class="dms-aaii-chart-title"><span>Evolução semanal</span><small>percentagem de respostas</small></div>
-      <svg class="dms-aaii-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução AAII bullish, neutral e bearish nas últimas cinco semanas">
-        ${grid}
-        <polyline class="dms-aaii-line is-bull" points="${points('bullish')}"/>
-        <polyline class="dms-aaii-line is-neutral" points="${points('neutral')}"/>
-        <polyline class="dms-aaii-line is-bear" points="${points('bearish')}"/>
-        ${dots('bullish','dms-aaii-dot is-bull')}${dots('neutral','dms-aaii-dot is-neutral')}${dots('bearish','dms-aaii-dot is-bear')}
-        <g class="dms-aaii-chart-labels">${labels}</g>
-      </svg>
-      <div class="dms-aaii-chart-key"><span class="is-bull">● Bullish</span><span class="is-neutral">● Neutral</span><span class="is-bear">● Bearish</span></div>
-    </div>`;
+  function aaiiWeekCard(week){
+    const spread=aaiiSpread(week);
+    const tone=spread==null?'neutral':spread>8?'bull':spread<-8?'bear':'neutral';
+    return `<article class="dms-aaii-weekcard">
+      <div class="dms-aaii-weekcard__head">
+        <strong>Semana de ${esc(aaiiDate(week.date))}</strong>
+        <div class="dms-aaii-weekcard__spread"><small>Bull–Bear</small><b class="is-${tone}">${aaiiSpreadText(spread)}</b></div>
+      </div>
+      <div class="dms-aaii-mix" aria-label="Bullish ${aaiiPct(week.bullish)}, neutral ${aaiiPct(week.neutral)}, bearish ${aaiiPct(week.bearish)}">
+        <i class="is-bull" style="width:${num(week.bullish)??0}%"></i>
+        <i class="is-neutral" style="width:${num(week.neutral)??0}%"></i>
+        <i class="is-bear" style="width:${num(week.bearish)??0}%"></i>
+      </div>
+      <div class="dms-aaii-legend">
+        <span>▲ Bullish <b>${aaiiPct(week.bullish)}</b></span>
+        <span>● Neutral <b>${aaiiPct(week.neutral)}</b></span>
+        <span>▼ Bearish <b>${aaiiPct(week.bearish)}</b></span>
+      </div>
+    </article>`;
   }
 
   function aaiiMarkup(){
@@ -199,17 +196,7 @@
     const prior=weeks[1]?aaiiSpread(weeks[1]):null;
     const delta=spread!=null&&prior!=null?spread-prior:null;
     const dominant=num(latest?.bearish)>num(latest?.bullish)?'Predomina cautela':num(latest?.bullish)>num(latest?.bearish)?'Predomina optimismo':'Sentimento equilibrado';
-    const rows=weeks.map((week,index)=>{
-      const s=aaiiSpread(week);
-      const tone=s==null?'neutral':s>8?'bull':s<-8?'bear':'neutral';
-      return `<div class="dms-aaii-row${index===0?' is-latest':''}">
-        <span>${esc(aaiiDate(week.date))}</span>
-        <span class="is-bull">▲ ${aaiiPct(week.bullish)}</span>
-        <span>● ${aaiiPct(week.neutral)}</span>
-        <span class="is-bear">▼ ${aaiiPct(week.bearish)}</span>
-        <strong class="is-${tone}">${aaiiSpreadText(s)}</strong>
-      </div>`;
-    }).join('');
+    const previousWeeks=weeks.slice(1).map(aaiiWeekCard).join('');
     return `<section class="dms-aaii" aria-label="AAII Investor Sentiment Survey">
       <div class="dms-aaii-head">
         <div><span>AAII · RETAIL SENTIMENT</span><strong>${dominant}</strong></div>
@@ -227,9 +214,8 @@
       </div>
       <div class="dms-aaii-note">Semana de ${esc(aaiiDate(latest.date))}${delta==null?'':` · spread ${aaiiSpreadText(delta)} vs. semana anterior`}</div>
       <details class="dms-aaii-history"${S.aaiiExpanded?' open':''}>
-        <summary>Ver evolução das últimas 5 semanas <span>›</span></summary>\n        ${aaiiTrendChart(weeks)}
-        <div class="dms-aaii-grid-head"><span>Semana</span><span>Bull</span><span>Neutral</span><span>Bear</span><span>Spread</span></div>
-        <div class="dms-aaii-rows">${rows}</div>
+        <summary>Ver semanas anteriores <span>›</span></summary>
+        <div class="dms-aaii-history__weeks">${previousWeeks}</div>
       </details>
     </section>`;
   }
@@ -443,7 +429,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.4',
+    version:'1.5',
     computeSnapshot,
     labelFor,
     load,
