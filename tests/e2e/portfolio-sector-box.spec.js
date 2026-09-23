@@ -27,6 +27,12 @@ test('iPhone/WebKit: main portfolio restores sectors with holdings and hides the
   await page.waitForFunction(() => window.__vestraAppHydrated === true);
   await page.evaluate(() => setView('assets'));
 
+  const tools = page.locator('#portfolioToolsStrip');
+  await expect(tools).toBeVisible();
+  await expect(tools).not.toHaveAttribute('open', '');
+  await tools.locator(':scope > summary').tap();
+  await expect(tools).toHaveAttribute('open', '');
+
   const card = page.locator('#portfolioSectorCard');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Sectores tradicionais');
