@@ -28,8 +28,13 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             "GB0007188757: 'RIO.L'",
             "CH0334081137: 'CRSP'",
             "US64110L1061: 'NFC.DE'",
+            "FR0011053636: 'ALCPB.PA'",
+            "FR0014019Y19: 'ALCPB.PA'",
             "DE0006047004: 'HEI.DE'",
             "RIO1: 'RIO.L'",
+            "UT8: 'UBER'",
+            "HHPD: 'HNHPF'",
+            "NFC: 'NFC.DE'",
             "'HEI.DE': 'HEI.DE'",
         ]
         for mapping in expected:
@@ -100,6 +105,13 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             );
             if (!iren.ok || !iren.canonicalRecovery) process.exit(23);
 
+            const capitalB = window.quoteSanityCheck(
+              {{isin:'FR0011053636', ticker:'ALCPB', yahooTicker:'ALCPB.PA'}},
+              {{ticker:'ALCPB.PA', currency:'EUR', price:5.1}},
+              5.1, 'ALCPB.PA', 'ALCPB.PA'
+            );
+            if (!capitalB.ok || !capitalB.canonicalRecovery) process.exit(28);
+
             const heiWithIsin = window.quoteSanityCheck(
               {{isin:'DE0006047004', ticker:'HEI.DE', yahooTicker:'HEI.DE', currency:'USD'}},
               {{ticker:'HEI.DE', currency:'EUR', price:163.15}},
@@ -140,7 +152,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
     def test_bootstrap_loads_identity_guard_without_parallel_quote_fast_lane(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("loadCanonicalQuoteRepair();", text)
-        self.assertIn("quote-canonical-repair.js?v=2.3", text)
+        self.assertIn("quote-canonical-repair.js?v=2.4", text)
         self.assertIn("window.VestraAssetIdentityGuard", text)
         self.assertNotIn("loadQuoteRefreshPerformance", text)
         self.assertNotIn("quote-refresh-performance.js", text)
