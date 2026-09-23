@@ -44,7 +44,7 @@ function loadScript(id,src,ready,onload,attempt=0){
   if(!existing){s.id=id;s.src=src;s.defer=true;document.head.appendChild(s)}
 }
 function loadResearchDiagnostics(){loadScript('vestra-model-validation-script','market-model-validation.js?v=1.0',()=>window.VestraModelValidation)}
-function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.3',()=>window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
+function loadCanonicalQuoteRepair(){loadScript('vestra-canonical-quote-repair-script','quote-canonical-repair.js?v=2.4',()=>window.VestraAssetIdentityGuard||window.VestraCanonicalQuoteRepair)}
 function loadDossierControls(){loadScript('vestra-market-dossier-controls-script','market-dossier-controls.js?v=1.8',()=>window.VestraMarketDossierControls,()=>window.VestraMarketDossierControls?.normalizeButtons?.())}
 function loadGlobalMarketSearch(){loadScript('vestra-global-market-search-script','market-global-search.js?v=2.1',()=>window.VestraGlobalMarketSearch)}
 function loadLearnedUniverse(){loadScript('vestra-learned-universe-script','market-learned-universe.js?v=3.0',()=>window.VestraLearnedUniverse,loadGlobalMarketSearch)}
