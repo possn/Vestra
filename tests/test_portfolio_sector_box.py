@@ -17,12 +17,17 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         self.assertIn('id="portfolioSectorCard"', self.index)
         self.assertIn('id="portfolioSectorSummary"', self.index)
         self.assertIn('id="portfolioSectorBody"', self.index)
-        self.assertIn('<details class="portfolio-sector-disclosure" id="portfolioSectorCard">', self.index)
+        self.assertIn('<details class="portfolio-sector-disclosure" id="portfolioSectorCard"', self.index)
         self.assertIn('<summary>', self.index)
         self.assertIn('Ver sectores', self.index)
         self.assertIn('Sectores tradicionais', self.index)
         self.assertIn('.portfolio-sector-disclosure', self.styles)
         self.assertIn('Complemento à exposição temática', self.index)
+        tools_start = self.index.index('<details class="portfolio-tools" id="portfolioToolsStrip">')
+        tools_end = self.index.index('</details>\n</section>', tools_start)
+        sector_pos = self.index.index('<details class="portfolio-sector-disclosure" id="portfolioSectorCard"', tools_start)
+        self.assertLess(tools_start, sector_pos)
+        self.assertLess(sector_pos, tools_end)
 
     def test_sector_box_is_rendered_with_portfolio_items(self):
         self.assertIn("function renderPortfolioSectorBox()", self.app)

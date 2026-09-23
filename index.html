@@ -424,7 +424,15 @@
 <button class="btn btn--ghost btn--sm" id="btnItemsToggle" onclick="cycleItemsView()" style="display:none">Ver todos</button>
 </div>
 </div>
-<details class="portfolio-sector-disclosure" id="portfolioSectorCard">
+<details class="portfolio-tools" id="portfolioToolsStrip">
+<summary>
+<div><small>Ferramentas</small><strong>Explorar a carteira</strong></div>
+<span aria-hidden="true">›</span>
+</summary>
+<div class="portfolio-tools__body">
+<button type="button" onclick="setView('dividends')"><span aria-hidden="true">↙</span><div><strong>Dividendos</strong><small>Histórico, calendário e rendimento</small></div><span aria-hidden="true">›</span></button>
+<button type="button" onclick="setView('analysis')"><span aria-hidden="true">⌁</span><div><strong>Análise</strong><small>Risco, fiscalidade e detalhe</small></div><span aria-hidden="true">›</span></button>
+<details class="portfolio-sector-disclosure" id="portfolioSectorCard" style="grid-column:1/-1;margin:0">
 <summary>
 <div><span>Sectores tradicionais</span><small>Complemento à exposição temática</small></div>
 <strong>Ver sectores</strong>
@@ -436,14 +444,6 @@
 <div id="portfolioSectorSummary"></div>
 </div>
 </details>
-<details class="portfolio-tools" id="portfolioToolsStrip">
-<summary>
-<div><small>Ferramentas</small><strong>Explorar a carteira</strong></div>
-<span aria-hidden="true">›</span>
-</summary>
-<div class="portfolio-tools__body">
-<button type="button" onclick="setView('dividends')"><span aria-hidden="true">↙</span><div><strong>Dividendos</strong><small>Histórico, calendário e rendimento</small></div><span aria-hidden="true">›</span></button>
-<button type="button" onclick="setView('analysis')"><span aria-hidden="true">⌁</span><div><strong>Análise</strong><small>Risco, fiscalidade e detalhe</small></div><span aria-hidden="true">›</span></button>
 <details class="portfolio-more" style="grid-column:1/-1;margin-top:0">
 <summary><span>Desempenho das ações e ETFs</span><span>›</span></summary>
 <div class="portfolio-more__body">
