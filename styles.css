@@ -1887,3 +1887,7 @@ body{
   .view .card__head .card__title::before{width:6px;height:6px;flex-basis:6px;box-shadow:0 0 0 3px rgba(var(--view-accent-rgb),.09)}
 }
 @media(prefers-reduced-motion:reduce){.view-intro__mark{transform:none}}
+
+/* Portfolio: utility navigation belongs after the positions, not inside the analysis flow. */
+.portfolio-tools-strip{display:flex;align-items:center;gap:7px;margin:10px 0 0;padding:3px 1px;overflow-x:auto;scrollbar-width:none}.portfolio-tools-strip::-webkit-scrollbar{display:none}.portfolio-tools-strip>span{flex:0 0 auto;margin-right:2px;color:var(--muted);font-size:7.5px;font-weight:900;letter-spacing:.11em}.portfolio-tools-strip button{appearance:none;flex:0 0 auto;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--card2) 78%,transparent);color:var(--text2);padding:7px 10px;font:inherit;font-size:8.5px;font-weight:850;cursor:pointer}
+@media(max-width:560px){.portfolio-tools-strip{margin-top:8px}.portfolio-tools-strip button{padding:7px 9px}}
