@@ -56,7 +56,7 @@ class PortfolioSectorEquityOnlyTests(unittest.TestCase):
 
     def test_ui_copy_makes_scope_explicit_and_app_version_rolls_forward(self):
         self.assertIn("Complemento à exposição temática", INDEX)
-        self.assertIn("app.js?v=20260921v12", INDEX)
+        self.assertIn("app.js?v=20260923v13", INDEX)
 
 
 if __name__ == "__main__":
