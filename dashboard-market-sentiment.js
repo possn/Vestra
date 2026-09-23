@@ -18,7 +18,7 @@
   ];
   const VIX_TICKER='^VIX';
 
-  const S={loading:false,data:null,error:'',scheduled:false,expanded:false};
+  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaii:null};
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
   const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,7 +33,7 @@
     const link=document.createElement('link');
     link.id=STYLE_ID;
     link.rel='stylesheet';
-    link.href='dashboard-market-sentiment.css?v=1.1';
+    link.href='dashboard-market-sentiment.css?v=1.2';
     document.head.appendChild(link);
   }
 
@@ -146,6 +146,83 @@
     return `${label} ${d>0?'+':''}${d} pts`;
   }
 
+  function aaiiPct(value){
+    const n=num(value);
+    return n==null?'—':`${n.toFixed(1)}%`;
+  }
+
+  function aaiiDate(iso){
+    try{
+      return new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short'}).format(new Date(`${iso}T12:00:00Z`));
+    }catch{return String(iso||'—');}
+  }
+
+  function aaiiSpread(row){
+    const bull=num(row?.bullish),bear=num(row?.bearish);
+    return bull==null||bear==null?null:bull-bear;
+  }
+
+  function aaiiSpreadText(value){
+    const n=num(value);
+    return n==null?'—':`${n>0?'+':''}${n.toFixed(1)} pp`;
+  }
+
+  function aaiiMarkup(){
+    const weeks=Array.isArray(S.aaii?.weeks)?S.aaii.weeks.slice(0,5):[];
+    if(!weeks.length) return '';
+    const latest=weeks[0];
+    const spread=aaiiSpread(latest);
+    const prior=weeks[1]?aaiiSpread(weeks[1]):null;
+    const delta=spread!=null&&prior!=null?spread-prior:null;
+    const dominant=num(latest?.bearish)>num(latest?.bullish)?'Predomina cautela':num(latest?.bullish)>num(latest?.bearish)?'Predomina optimismo':'Sentimento equilibrado';
+    const rows=weeks.map((week,index)=>{
+      const s=aaiiSpread(week);
+      const tone=s==null?'neutral':s>8?'bull':s<-8?'bear':'neutral';
+      return `<div class="dms-aaii-row${index===0?' is-latest':''}">
+        <span>${esc(aaiiDate(week.date))}</span>
+        <span class="is-bull">▲ ${aaiiPct(week.bullish)}</span>
+        <span>● ${aaiiPct(week.neutral)}</span>
+        <span class="is-bear">▼ ${aaiiPct(week.bearish)}</span>
+        <strong class="is-${tone}">${aaiiSpreadText(s)}</strong>
+      </div>`;
+    }).join('');
+    return `<section class="dms-aaii" aria-label="AAII Investor Sentiment Survey">
+      <div class="dms-aaii-head">
+        <div><span>AAII · RETAIL SENTIMENT</span><strong>${dominant}</strong></div>
+        <div class="dms-aaii-spread"><small>Bull–Bear</small><b>${aaiiSpreadText(spread)}</b></div>
+      </div>
+      <div class="dms-aaii-mix" aria-label="Bullish ${aaiiPct(latest.bullish)}, neutral ${aaiiPct(latest.neutral)}, bearish ${aaiiPct(latest.bearish)}">
+        <i class="is-bull" style="width:${num(latest.bullish)??0}%"></i>
+        <i class="is-neutral" style="width:${num(latest.neutral)??0}%"></i>
+        <i class="is-bear" style="width:${num(latest.bearish)??0}%"></i>
+      </div>
+      <div class="dms-aaii-legend">
+        <span>▲ Bullish <b>${aaiiPct(latest.bullish)}</b></span>
+        <span>● Neutral <b>${aaiiPct(latest.neutral)}</b></span>
+        <span>▼ Bearish <b>${aaiiPct(latest.bearish)}</b></span>
+      </div>
+      <div class="dms-aaii-note">Semana de ${esc(aaiiDate(latest.date))}${delta==null?'':` · spread ${aaiiSpreadText(delta)} vs. semana anterior`}</div>
+      <details class="dms-aaii-history">
+        <summary>Ver últimas 5 semanas <span>›</span></summary>
+        <div class="dms-aaii-grid-head"><span>Semana</span><span>Bull</span><span>Neutral</span><span>Bear</span><span>Spread</span></div>
+        <div class="dms-aaii-rows">${rows}</div>
+      </details>
+    </section>`;
+  }
+
+  async function loadAaii(){
+    try{
+      const response=await fetch('data/aaii-sentiment.json',{cache:'no-store'});
+      if(!response.ok) throw new Error(`AAII ${response.status}`);
+      const payload=await response.json();
+      if(!Array.isArray(payload?.weeks)||!payload.weeks.length) throw new Error('AAII payload vazio');
+      S.aaii=payload;
+      render();
+    }catch(error){
+      console.warn('[Vestra] AAII sentiment unavailable',error);
+    }
+  }
+
   function reason(snapshot){
     const drivers=(snapshot?.parts||[]).map(([name,value])=>({name,value})).filter(x=>x.value!=null).sort((a,b)=>b.value-a.value);
     if(!drivers.length) return 'Ainda não há componentes suficientes para explicar a leitura.';
@@ -189,16 +266,19 @@
     if(!base) return `<section class="dms-card" id="${CARD_ID}">
       <div class="dms-head"><div><span class="dms-kicker">MARKET SENTIMENT</span><h2>Como está o mercado?</h2><p>O barómetro precisa do Worker Vestra para ler preços e histórico.</p></div></div>
       <div class="dms-empty">Configura o Worker em Mais → Preferências.</div>
+      ${aaiiMarkup()}
     </section>`;
 
     if(S.loading&&!S.data) return `<section class="dms-card" id="${CARD_ID}">
       <div class="dms-head"><div><span class="dms-kicker">MARKET SENTIMENT</span><h2>Como está o mercado?</h2><p>A combinar tendência, momentum, participação proxy e volatilidade.</p></div></div>
       <div class="dms-loading"><span></span>A calcular leitura…</div>
+      ${aaiiMarkup()}
     </section>`;
 
     if(!S.data) return `<section class="dms-card" id="${CARD_ID}">
       <div class="dms-head"><div><span class="dms-kicker">MARKET SENTIMENT</span><h2>Como está o mercado?</h2><p>Leitura indisponível neste momento.</p></div><button class="dms-refresh" type="button" data-dms-refresh>↻</button></div>
       <div class="dms-empty">${esc(S.error||'Ainda não existem dados suficientes para calcular o score.')}</div>
+      ${aaiiMarkup()}
     </section>`;
 
     const current=S.data.current;
@@ -217,6 +297,7 @@
         </div>
         ${gauge(current.score,tone)}
       </div>
+      ${aaiiMarkup()}
       <button class="dms-detail-toggle" type="button" data-dms-detail-toggle aria-expanded="${S.expanded?'true':'false'}">
         ${S.expanded?'Ocultar detalhe':'Ver como é calculado'} <span aria-hidden="true">${S.expanded?'−':'+'}</span>
       </button>
@@ -321,6 +402,7 @@
     S.data=cacheGet();
     render();
     scheduleLoad();
+    loadAaii();
     window.addEventListener('vestra:app-ready',()=>{render();scheduleLoad();});
     document.addEventListener('click',event=>{
       if(event.target?.closest?.('[data-dms-detail-toggle]')){S.expanded=!S.expanded;render();return;}
@@ -333,7 +415,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.2',
+    version:'1.3',
     computeSnapshot,
     labelFor,
     load,

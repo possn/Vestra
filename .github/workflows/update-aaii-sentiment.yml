@@ -1,0 +1,60 @@
+name: Update AAII sentiment
+
+on:
+  schedule:
+    - cron: "15 15 * * 4"
+    - cron: "15 15 * * 5"
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'scripts/refresh_aaii_sentiment.py'
+      - '.github/workflows/update-aaii-sentiment.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-aaii-sentiment
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+      - name: Refresh AAII sentiment
+        run: python scripts/refresh_aaii_sentiment.py
+      - name: Validate payload
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('data/aaii-sentiment.json').read_text())
+          weeks=p.get('weeks') or []
+          assert len(weeks) == 5
+          assert p.get('latest_published') == weeks[0].get('date')
+          assert weeks == sorted(weeks, key=lambda x: x['date'], reverse=True)
+          for row in weeks:
+              total=sum(float(row[k]) for k in ('bullish','neutral','bearish'))
+              assert 99.0 <= total <= 101.0, (row, total)
+          print('AAII payload valid:', weeks[0]['date'])
+          PY
+      - name: Publish AAII snapshot
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/aaii-sentiment.json
+          if git diff --cached --quiet; then
+            echo "AAII sentiment unchanged."
+          else
+            git commit -m "Actualização AAII sentiment ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            PUBLISH_SUPERSEDE_COMMIT_PREFIX="Actualização AAII sentiment (" \
+              bash scripts/publish_with_retry.sh origin main
+          fi
