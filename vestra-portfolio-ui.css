@@ -51,11 +51,11 @@
 @media(min-width:900px){
   #marketSheet[data-tool="portfolio"]{
     box-sizing:border-box;
-    padding:24px 24px 24px var(--desktop-sidebar-w,260px);
+    padding:24px 24px 24px var(--desktop-sidebar-space,var(--desktop-sidebar-w,260px));
     align-items:center;
   }
   #marketSheet[data-tool="portfolio"] .market-sheet__panel{
-    width:min(1280px,calc(100vw - var(--desktop-sidebar-w,260px) - 48px));
+    width:min(1280px,calc(100vw - var(--desktop-sidebar-space,var(--desktop-sidebar-w,260px)) - 48px));
     max-height:calc(100vh - 48px);
     border-radius:28px;
     padding:18px 18px 26px;
