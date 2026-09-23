@@ -16,11 +16,13 @@ class PortfolioSectorBoxTests(unittest.TestCase):
     def test_main_portfolio_contains_sector_holdings_box(self):
         self.assertIn('id="portfolioSectorCard"', self.index)
         self.assertIn('id="portfolioSectorSummary"', self.index)
-        self.assertIn('id="portfolioSectorBody" hidden', self.index)
-        self.assertIn('id="btnPortfolioSectorToggle"', self.index)
+        self.assertIn('id="portfolioSectorBody"', self.index)
+        self.assertIn('<details class="portfolio-sector-disclosure" id="portfolioSectorCard">', self.index)
+        self.assertIn('<summary>', self.index)
         self.assertIn('Ver sectores', self.index)
         self.assertIn('Sectores tradicionais', self.index)
-        self.assertIn('Classificação sectorial de ações e ETFs · complemento à exposição temática.', self.index)
+        self.assertIn('.portfolio-sector-disclosure', self.styles)
+        self.assertIn('Complemento à exposição temática', self.index)
 
     def test_sector_box_is_rendered_with_portfolio_items(self):
         self.assertIn("function renderPortfolioSectorBox()", self.app)
