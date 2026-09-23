@@ -16,8 +16,11 @@ class MobileUiOwnershipTests(unittest.TestCase):
         for marker in (
             "function openSidebar()",
             "function closeSidebar()",
+            "function toggleSidebar()",
             "function wireSidebar()",
-            'toggle.addEventListener("click", openSidebar)',
+            'toggle.addEventListener("click", toggleSidebar)',
+            'if (!desktopSidebarMode()) closeSidebar()',
+            'const DESKTOP_SIDEBAR_KEY = "vestra.desktopSidebarCollapsed.v1"',
             'backdrop.addEventListener("click", closeSidebar)',
         ):
             self.assertIn(marker, app, marker)
