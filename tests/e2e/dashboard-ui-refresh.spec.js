@@ -162,6 +162,22 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(themeMethod).toHaveAttribute('open', '');
   await expect(themeMethod).toContainText('um único tema principal');
 
+  await page.evaluate(() => {
+    state.assets.push(
+      {id:'e2e-market-2',name:'E2E Market 2',ticker:'E2E2',type:'stock',class:'Ações',value:12000,meta:{quoteType:'EQUITY',sector:'Technology'}},
+      {id:'e2e-market-3',name:'E2E Market 3',ticker:'E2E3',type:'stock',class:'Ações',value:11000,meta:{quoteType:'EQUITY',sector:'Technology'}},
+      {id:'e2e-market-4',name:'E2E Market 4',ticker:'E2E4',type:'stock',class:'Ações',value:10000,meta:{quoteType:'EQUITY',sector:'Technology'}},
+      {id:'e2e-market-5',name:'E2E Market 5',ticker:'E2E5',type:'stock',class:'Ações',value:9000,meta:{quoteType:'EQUITY',sector:'Technology'}}
+    );
+    window.VestraDashboardPortfolioConcentration.render();
+  });
+  const holdingsToggle = concentration.locator('[data-dpc-holdings-toggle]');
+  await expect(holdingsToggle).toHaveText('Ver top 5');
+  await expect(concentration.locator('.dpc-holding-row')).toHaveCount(3);
+  await holdingsToggle.click();
+  await expect(concentration.locator('.dpc-holding-row')).toHaveCount(5);
+  await expect(concentration.locator('[data-dpc-holdings-toggle]')).toHaveText('Mostrar top 3');
+
   await page.locator('#segLiabs').click();
   await expect(page.locator('#dashboardPortfolioConcentrationCard')).toHaveCount(0);
   await expect(page.locator('#portfolioThemeExposureCard')).toHaveCount(0);
