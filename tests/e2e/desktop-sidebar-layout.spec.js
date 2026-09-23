@@ -81,16 +81,17 @@ test('desktop: sidebar can release the full canvas without covering app content'
   await sidebarClose.click();
   await expect(page.locator('body')).toHaveClass(/desktop-sidebar-collapsed/);
   await expect(page.locator('#btnSidebarToggle')).toHaveAttribute('aria-expanded', 'false');
+  await expect.poll(async () => (await main.boundingBox())?.x ?? 999).toBeLessThan(40);
+  await expect.poll(async () => {
+    const box = await sidebar.boundingBox();
+    return box ? box.x + box.width : 999;
+  }).toBeLessThanOrEqual(1);
   const collapsedMain = await main.boundingBox();
-  const collapsedSidebar = await sidebar.boundingBox();
-  expect(collapsedMain.x).toBeLessThan(40);
   expect(collapsedMain.width).toBeGreaterThan(mainBox.width + 200);
-  expect(collapsedSidebar.x + collapsedSidebar.width).toBeLessThanOrEqual(1);
 
   // The topbar toggle restores navigation and its preference.
   await page.locator('#btnSidebarToggle').click();
   await expect(page.locator('body')).not.toHaveClass(/desktop-sidebar-collapsed/);
   await expect(page.locator('#btnSidebarToggle')).toHaveAttribute('aria-expanded', 'true');
-  const restoredMain = await main.boundingBox();
-  expect(restoredMain.x).toBeGreaterThanOrEqual(sidebarRight + 20);
+  await expect.poll(async () => (await main.boundingBox())?.x ?? 0).toBeGreaterThanOrEqual(sidebarRight + 20);
 });
