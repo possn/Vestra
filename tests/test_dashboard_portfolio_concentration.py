@@ -12,10 +12,10 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=2.1", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=2.2", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'2.1'", JS)
+        self.assertIn("version:'2.2'", JS)
 
     def test_explicit_non_market_classes_override_stale_quote_metadata(self):
         self.assertIn("function isExplicitNonMarketAsset", JS)
@@ -60,6 +60,14 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn(".dpc-method", CSS)
         self.assertIn("Mede apenas a fatia de mercado da carteira.", JS)
         self.assertIn("Ranking das exposições que realmente movem a carteira.", JS)
+
+    def test_concentration_rank_collapses_after_top_three(self):
+        self.assertIn("holdingsExpanded:false", JS)
+        self.assertIn("slice(0,S.holdingsExpanded?5:3)", JS)
+        self.assertIn("Ver top 5", JS)
+        self.assertIn("Mostrar top 3", JS)
+        self.assertIn("data-dpc-holdings-toggle", JS)
+        self.assertIn(".dpc-holdings-more", CSS)
 
     def test_concentration_copy_is_plain_language_and_modes_are_clear(self):
         self.assertIn("Concentração dos ativos de mercado", JS)
