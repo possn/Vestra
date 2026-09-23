@@ -444,7 +444,7 @@
       ${holdingsRankMarkup(snapshot.rows)}
       ${metrics(snapshot,usingLookthrough)}
       ${status}
-      <details class="dpc-method"><summary>Como calculamos</summary><p>${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito. A exposição só é agregada quando existem holdings observadas.' : 'A percentagem principal mede apenas ações, ETFs e fundos de mercado. Certificados de Aforro, depósitos, obrigações, PPR, imóveis e cripto ficam de fora; o equivalente sobre o património total aparece no destaque principal.'}</p></details>
+      <details class="dpc-method"><summary>Como calculamos</summary><p>${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito. A exposição só é agregada quando existem holdings observadas, sem dupla contagem.' : 'A percentagem principal mede apenas ações, ETFs e fundos de mercado. Certificados de Aforro, depósitos, obrigações, PPR, imóveis e cripto ficam de fora; o equivalente sobre o património total aparece no destaque principal.'}</p></details>
     </section>`;
   }
 
