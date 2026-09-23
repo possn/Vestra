@@ -144,6 +144,11 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(concentration.locator('.dpc-concentration-hero')).toContainText('Top 3 posições');
   await expect(holdingsRank).toBeVisible();
   await expect(concentration).toContainText('posições iguais');
+  const concentrationMethod = concentration.locator('.dpc-method');
+  await expect(concentrationMethod).not.toHaveAttribute('open', '');
+  await concentrationMethod.locator('summary').click();
+  await expect(concentrationMethod).toHaveAttribute('open', '');
+  await expect(concentrationMethod).toContainText('Certificados de Aforro');
   await expect(concentration.locator('[data-dpc-mode="themes"]')).toHaveCount(0);
   const semiconductorTheme = thematic.locator('[data-dpc-theme="Semicondutores"]').first();
   await expect(semiconductorTheme).toBeVisible();
@@ -151,6 +156,11 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(thematic.locator('.dpc-theme-ranking')).toBeVisible();
   await expect(thematic.locator('.dpc-theme-detail')).toContainText('O QUE ESTÁS A VER.');
   await expect(thematic.locator('.dpc-theme-detail')).toContainText('E2EDIV');
+  const themeMethod = thematic.locator('.dpc-method');
+  await expect(themeMethod).not.toHaveAttribute('open', '');
+  await themeMethod.locator('summary').click();
+  await expect(themeMethod).toHaveAttribute('open', '');
+  await expect(themeMethod).toContainText('um único tema principal');
 
   await page.locator('#segLiabs').click();
   await expect(page.locator('#dashboardPortfolioConcentrationCard')).toHaveCount(0);

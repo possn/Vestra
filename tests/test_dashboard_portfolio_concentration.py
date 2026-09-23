@@ -12,10 +12,10 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=2.0", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=2.1", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'2.0'", JS)
+        self.assertIn("version:'2.1'", JS)
 
     def test_explicit_non_market_classes_override_stale_quote_metadata(self):
         self.assertIn("function isExplicitNonMarketAsset", JS)
@@ -28,7 +28,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("function marketHoldings", JS)
         self.assertIn("filter(row=>isThemeEligibleAsset(row.asset))", JS)
         self.assertIn("Concentração dos ativos de mercado", JS)
-        self.assertIn("Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto", JS)
+        self.assertIn("Certificados de Aforro, depósitos, obrigações, PPR, imóveis e cripto", JS)
         self.assertIn("dos ativos de mercado", JS)
 
     def test_concentration_is_direct_and_transparent(self):
@@ -36,7 +36,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("const hhi=weighted.reduce", JS)
         self.assertIn("1/hhi", JS)
         self.assertIn("Top 3", JS)
-        self.assertIn("A percentagem principal mede a concentração apenas na fatia de mercado", JS)
+        self.assertIn("A percentagem principal mede apenas ações, ETFs e fundos de mercado", JS)
 
     def test_etf_lookthrough_uses_only_observed_holdings_and_keeps_residual(self):
         self.assertIn("function buildLookthrough", JS)
@@ -53,6 +53,13 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertEqual(JS.count("buildLookthrough(marketAssets,details)"), 2)
         self.assertNotIn("buildLookthrough(assets,details)", JS)
         self.assertNotIn("fund_theme", JS)
+
+    def test_methodology_is_progressively_disclosed(self):
+        self.assertIn("dpc-method", JS)
+        self.assertIn("Como calculamos", JS)
+        self.assertIn(".dpc-method", CSS)
+        self.assertIn("Mede apenas a fatia de mercado da carteira.", JS)
+        self.assertIn("Ranking das exposições que realmente movem a carteira.", JS)
 
     def test_concentration_copy_is_plain_language_and_modes_are_clear(self):
         self.assertIn("Concentração dos ativos de mercado", JS)
@@ -75,7 +82,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("marketShare", JS)
         self.assertIn("marketWeight", JS)
         self.assertIn("Ativos de mercado", JS)
-        self.assertIn("Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto", JS)
+        self.assertIn("isExplicitNonMarketAsset", JS)
         self.assertIn("EXPOSIÇÃO TEMÁTICA", JS)
         self.assertIn("IA & Robótica", JS)
         self.assertIn("Semicondutores", JS)

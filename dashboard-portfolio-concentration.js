@@ -1,4 +1,4 @@
-/* Vestra Portfolio Concentration v2.0 — explicit market eligibility + simplified concentration card. */
+/* Vestra Portfolio Concentration v2.1 — compact editorial exposure cards with transparent methodology. */
 (() => {
   'use strict';
 
@@ -333,7 +333,7 @@
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
     const link=document.createElement('link');
-    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=1.9';
+    link.id=STYLE_ID; link.rel='stylesheet'; link.href='dashboard-portfolio-concentration.css?v=2.0';
     document.head.appendChild(link);
   }
 
@@ -385,7 +385,7 @@
       ? `A maior aposta temática é <b>${esc(largest.label)}</b>. Os 3 principais temas concentram <b>${pct(top3)}</b> dos ativos de mercado.`
       : 'Ainda não há evidência suficiente para identificar temas nesta fatia da carteira.';
     return `<section class="dpc-card dpc-theme-card" id="${THEME_CARD_ID}">
-      <div class="dpc-head"><div><span class="dpc-kicker">EXPOSIÇÃO TEMÁTICA</span><h3>Onde estão as tuas apostas de mercado?</h3><p>Ranking das exposições em ações, ETFs e fundos. Cada euro entra num único tema principal para evitar dupla contagem.</p></div></div>
+      <div class="dpc-head"><div><span class="dpc-kicker">EXPOSIÇÃO TEMÁTICA</span><h3>Onde estão as tuas apostas de mercado?</h3><p>Ranking das exposições que realmente movem a carteira.</p></div></div>
       <div class="dpc-answer dpc-answer--theme">${answer}</div>
       <div class="dpc-theme-stats">
         <div><span>Ativos de mercado</span><strong>${pct(themes.marketShare)}</strong><small>do património total</small></div>
@@ -395,7 +395,7 @@
       <div class="dpc-theme-ranking-head"><span>TEMAS PRINCIPAIS</span><small>% grande = património total</small></div>
       ${themeRankMarkup(themes)}
       ${themeDetailMarkup(themes)}
-      <div class="dpc-foot">O ranking usa a fatia de mercado como contexto, mas a percentagem grande mostra sempre o peso no património total. Temas estreitos têm prioridade sobre sectores amplos.</div>
+      <details class="dpc-method"><summary>Como calculamos</summary><p>O ranking usa a fatia de mercado como contexto, mas a percentagem grande mostra sempre o peso no património total. Cada euro entra num único tema principal; temas estreitos têm prioridade sobre sectores amplos e exposição sem evidência fica por classificar.</p></details>
     </section>`;
   }
 
@@ -426,8 +426,8 @@
     const headline=usingLookthrough?'Top 3 exposições':'Top 3 posições';
     const answer=`<div class="dpc-concentration-hero"><span>${headline}</span><strong>${pct(snapshot.top3)}</strong><small>dos ativos de mercado · ${pct(top3Wealth)} do património total</small></div>`;
     const description=usingLookthrough
-      ? 'Abre os ETFs e agrega exposições repetidas sem dupla contagem.'
-      : 'Só ações, ETFs e fundos de mercado. Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto ficam de fora.';
+      ? 'Abre os ETFs e soma exposições repetidas.'
+      : 'Mede apenas a fatia de mercado da carteira.';
 
     const status=usingLookthrough
       ? S.loading
@@ -444,7 +444,7 @@
       ${holdingsRankMarkup(snapshot.rows)}
       ${metrics(snapshot,usingLookthrough)}
       ${status}
-      <div class="dpc-foot">${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito.' : 'A percentagem principal mede a concentração apenas na fatia de mercado; o equivalente sobre o património total aparece logo abaixo.'}</div>
+      <details class="dpc-method"><summary>Como calculamos</summary><p>${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito. A exposição só é agregada quando existem holdings observadas, sem dupla contagem.' : 'A percentagem principal mede apenas ações, ETFs e fundos de mercado. Certificados de Aforro, depósitos, obrigações, PPR, imóveis e cripto ficam de fora; o equivalente sobre o património total aparece no destaque principal.'}</p></details>
     </section>`;
   }
 
@@ -584,6 +584,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'2.0',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'2.1',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
