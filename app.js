@@ -1707,8 +1707,8 @@ function setModeLiabs(on) {
   showingLiabs = !!on;
   $("segLiabs").classList.toggle("seg__btn--active", showingLiabs);
   $("segAssets").classList.toggle("seg__btn--active", !showingLiabs);
-  $("itemsTitle").textContent = showingLiabs ? "Passivos" : "Posições";
-  $("itemsSub").textContent = showingLiabs ? "Créditos e outras responsabilidades." : "Ordenadas por valor.";
+  $("itemsTitle").textContent = showingLiabs ? "Passivos" : "Posições principais";
+  $("itemsSub").textContent = showingLiabs ? "Créditos e outras responsabilidades." : "Top 5 por valor · pesquisa e filtros para ver o resto.";
   const heroTitle = document.getElementById("portfolioHeroTitle");
   const heroSub = document.getElementById("portfolioHeroSub");
   if (heroTitle) heroTitle.textContent = showingLiabs ? "Passivos" : "Carteira";
@@ -2157,7 +2157,7 @@ function renderItems() {
     if (src.length > LIMIT && !isSearching) {
       tog.style.display = "";
       tog.textContent = itemsExpanded
-        ? "▲ Ver menos"
+        ? "Mostrar menos"
         : `Ver todas (${src.length})`;
     } else {
       tog.style.display = "none";
