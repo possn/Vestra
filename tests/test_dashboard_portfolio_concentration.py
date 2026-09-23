@@ -12,16 +12,23 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=1.9", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=2.0", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'1.9'", JS)
+        self.assertIn("version:'2.0'", JS)
+
+    def test_explicit_non_market_classes_override_stale_quote_metadata(self):
+        self.assertIn("function isExplicitNonMarketAsset", JS)
+        self.assertIn("certificado", JS)
+        self.assertIn("aforro", JS)
+        self.assertIn("obrigac", JS)
+        self.assertIn("if(!(assetValue(asset)>0)||isExplicitNonMarketAsset(asset)) return false;", JS)
 
     def test_concentration_is_market_sleeve_only_and_transparent(self):
         self.assertIn("function marketHoldings", JS)
         self.assertIn("filter(row=>isThemeEligibleAsset(row.asset))", JS)
         self.assertIn("Concentração dos ativos de mercado", JS)
-        self.assertIn("Depósitos, obrigações, PPR, imóveis e cripto", JS)
+        self.assertIn("Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto", JS)
         self.assertIn("dos ativos de mercado", JS)
 
     def test_concentration_is_direct_and_transparent(self):
@@ -29,7 +36,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("const hhi=weighted.reduce", JS)
         self.assertIn("1/hhi", JS)
         self.assertIn("Top 3", JS)
-        self.assertIn("As percentagens principais são relativas apenas à fatia de mercado", JS)
+        self.assertIn("A percentagem principal mede a concentração apenas na fatia de mercado", JS)
 
     def test_etf_lookthrough_uses_only_observed_holdings_and_keeps_residual(self):
         self.assertIn("function buildLookthrough", JS)
@@ -49,10 +56,12 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
 
     def test_concentration_copy_is_plain_language_and_modes_are_clear(self):
         self.assertIn("Concentração dos ativos de mercado", JS)
-        self.assertIn("As 3 maiores posições de mercado representam", JS)
+        self.assertIn("Top 3 posições", JS)
+        self.assertIn("dpc-concentration-hero", JS)
+        self.assertIn("holdingsRankMarkup", JS)
         self.assertIn(">Posições</button>", JS)
         self.assertIn(">Dentro dos ETFs</button>", JS)
-        self.assertIn("posições iguais · índice HHI", JS)
+        self.assertIn("posições iguais", JS)
         self.assertIn(".dpc-answer", CSS)
 
     def test_theme_exposure_is_primary_normalized_and_evidence_based(self):
@@ -66,7 +75,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("marketShare", JS)
         self.assertIn("marketWeight", JS)
         self.assertIn("Ativos de mercado", JS)
-        self.assertIn("Depósitos, obrigações, PPR, imóveis e cripto", JS)
+        self.assertIn("Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto", JS)
         self.assertIn("EXPOSIÇÃO TEMÁTICA", JS)
         self.assertIn("IA & Robótica", JS)
         self.assertIn("Semicondutores", JS)
@@ -117,7 +126,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertIn("viewAssets", JS)
         self.assertIn("portfolioGlance", JS)
         self.assertNotIn("dashboardPortfolioPulseCard", JS)
-        self.assertIn("dpc-mosaic", JS)
+        self.assertIn("dpc-holdings-rank", JS)
         self.assertIn("@media(max-width:560px)", CSS)
         self.assertIn("@media(max-width:360px)", CSS)
 

@@ -1,4 +1,4 @@
-/* Vestra Portfolio Concentration v1.9 — market concentration + editorial thematic ranking. */
+/* Vestra Portfolio Concentration v2.0 — explicit market eligibility + simplified concentration card. */
 (() => {
   'use strict';
 
@@ -183,16 +183,35 @@
     return map;
   }
 
+  function normalizedAssetText(value){
+    return text(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+
+  function isExplicitNonMarketAsset(asset){
+    const cls=normalizedAssetText(asset?.class);
+    const type=normalizedAssetText(asset?.type);
+    const name=normalizedAssetText(asset?.name);
+    const quoteType=text(asset?.meta?.quoteType||asset?.meta?.quote_type).toUpperCase();
+
+    // Explicit portfolio classes win over stale quote metadata. A traded bond ETF
+    // normally carries class ETF/Ações+ETFs and is therefore not caught here.
+    if(/deposit|deposito|cash|conta|certificado|aforro|obrigac|bond|ppr|imovel|imobili|crypto|cripto/.test(cls)) return true;
+    if(/deposit|deposito|cash|certificado de aforro|certificados de aforro|ppr/.test(type)) return true;
+    if(/certificado[s]? de aforro|conta a prazo|deposito/.test(name)) return true;
+    if(quoteType==='CRYPTOCURRENCY') return true;
+    return false;
+  }
+
   function isThemeEligibleAsset(asset){
-    if(!(assetValue(asset)>0)) return false;
+    if(!(assetValue(asset)>0)||isExplicitNonMarketAsset(asset)) return false;
     if(typeof window.isPortfolioEquityAsset==='function'){
       try{ if(window.isPortfolioEquityAsset(asset)) return true; }catch(_){}
     }
     const quoteType=text(asset?.meta?.quoteType||asset?.meta?.quote_type).toUpperCase();
-    if(quoteType==='EQUITY'||quoteType==='ETF') return true;
-    const cls=text(asset?.class).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    if(/acao|acoes|etf/.test(cls)) return true;
-    return isFundAsset(asset)&&Boolean(assetTicker(asset));
+    if(quoteType==='EQUITY'||quoteType==='ETF'||quoteType==='MUTUALFUND'||quoteType==='FUND') return true;
+    const cls=normalizedAssetText(asset?.class);
+    if(/acao|acoes|etf|fundo|fund/.test(cls)) return Boolean(assetTicker(asset));
+    return false;
   }
 
   function assetThemeEvidence(asset,ticker,detailsByTicker,byTicker){
@@ -318,12 +337,15 @@
     document.head.appendChild(link);
   }
 
-  function segmentMarkup(rows){
-    const shown=rows.slice(0,MAX_SEGMENTS);
-    const rest=rows.slice(MAX_SEGMENTS).reduce((sum,row)=>sum+row.weight,0);
-    const items=[...shown];
-    if(rest>0) items.push({label:'Outras',weight:rest,kind:'other'});
-    return items.map((row,index)=>`<div class="dpc-segment dpc-segment--${(index%5)+1}" style="flex:${Math.max(row.weight,.04)} 1 0" title="${esc(row.label)} · ${pct(row.weight)}"><span>${esc(row.label)}</span><strong>${pct(row.weight)}</strong></div>`).join('');
+  function holdingsRankMarkup(rows){
+    const visible=rows.slice(0,5);
+    if(!visible.length) return '';
+    const max=Math.max(...visible.map(row=>row.weight||0),.001);
+    return `<div class="dpc-holdings-rank">${visible.map((row,index)=>`<div class="dpc-holding-row">
+      <span class="dpc-holding-row__order">${index+1}</span>
+      <span class="dpc-holding-row__body"><strong>${esc(row.label)}</strong><span><i style="width:${Math.max(4,(row.weight/max)*100)}%"></i></span></span>
+      <b>${pct(row.weight)}</b>
+    </div>`).join('')}</div>`;
   }
 
   function themeRowsForDisplay(themes){
@@ -378,10 +400,9 @@
   }
 
   function metrics(snapshot,usingLookthrough=false){
-    return `<div class="dpc-metrics">
+    return `<div class="dpc-metrics dpc-metrics--secondary">
       <div><span>${usingLookthrough?'Maior exposição':'Maior posição'}</span><strong>${pct(snapshot.top1)}</strong></div>
-      <div><span>${usingLookthrough?'Top 3 exposições':'Top 3 posições'}</span><strong>${pct(snapshot.top3)}</strong></div>
-      <div><span>Equivalente a</span><strong>${effective(snapshot.effective)}</strong><small>posições iguais · índice HHI</small></div>
+      <div><span>Equivalente a</span><strong>${effective(snapshot.effective)}</strong><small>posições iguais</small></div>
     </div>`;
   }
 
@@ -394,7 +415,7 @@
   }
 
   function markup(direct){
-    if(!direct.count) return `<section class="dpc-card" id="${CARD_ID}"><div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Concentração dos ativos de mercado</h3></div></div><div class="dpc-empty">Ainda não existem ações, ETFs ou fundos com ticker suficientes para calcular a concentração de mercado.</div></section>`;
+    if(!direct.count) return `<section class="dpc-card" id="${CARD_ID}"><div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Concentração dos ativos de mercado</h3></div></div><div class="dpc-empty">Ainda não existem ações, ETFs ou fundos de mercado suficientes para calcular a concentração.</div></section>`;
 
     const fundCount=direct.rows.filter(row=>isFundAsset(row.asset)).length;
     const usingLookthrough=S.mode==='lookthrough'&&fundCount>0;
@@ -402,31 +423,28 @@
     const portfolioTotal=totalPortfolioValue();
     const marketShare=portfolioTotal>0?direct.total/portfolioTotal:null;
     const top3Wealth=snapshot.top3!=null&&marketShare!=null?snapshot.top3*marketShare:null;
-    const top3Text=pct(snapshot.top3);
-    const wealthText=top3Wealth==null?'':` (${pct(top3Wealth)} do património total)`;
-    const answer=usingLookthrough
-      ? `Depois de abrir os ETFs, as 3 maiores exposições representam <b>${top3Text}</b> dos ativos de mercado${wealthText}.`
-      : `As 3 maiores posições de mercado representam <b>${top3Text}</b> dos ativos de mercado${wealthText}.`;
+    const headline=usingLookthrough?'Top 3 exposições':'Top 3 posições';
+    const answer=`<div class="dpc-concentration-hero"><span>${headline}</span><strong>${pct(snapshot.top3)}</strong><small>dos ativos de mercado · ${pct(top3Wealth)} do património total</small></div>`;
     const description=usingLookthrough
-      ? 'Vê as empresas que estão por baixo dos ETFs e soma exposições repetidas sem dupla contagem.'
-      : 'Analisa apenas ações, ETFs e fundos com ticker. Depósitos, obrigações, PPR, imóveis e cripto ficam fora desta leitura de concentração de mercado.';
+      ? 'Abre os ETFs e agrega exposições repetidas sem dupla contagem.'
+      : 'Só ações, ETFs e fundos de mercado. Certificados de aforro, depósitos, obrigações, PPR, imóveis e cripto ficam de fora.';
 
     const status=usingLookthrough
       ? S.loading
         ? '<div class="dpc-status">A abrir as holdings dos ETFs…</div>'
         : S.lookthrough
-          ? `<div class="dpc-status">Holdings disponíveis em ${pct(S.lookthrough.etfCoverage)} dos ETFs · ${pct(S.lookthrough.knownUnderlyingWeight)} da fatia de mercado identificado por baixo dos ETFs.</div>`
+          ? `<div class="dpc-status">Holdings disponíveis em ${pct(S.lookthrough.etfCoverage)} dos ETFs · ${pct(S.lookthrough.knownUnderlyingWeight)} da fatia de mercado identificado.</div>`
           : '<div class="dpc-status">Ainda sem holdings suficientes para abrir os ETFs.</div>'
       : `<div class="dpc-status">Ativos de mercado = ${pct(marketShare)} do património total · ${snapshot.count} posições analisadas.</div>`;
 
     return `<section class="dpc-card" id="${CARD_ID}">
       <div class="dpc-head"><div><span class="dpc-kicker">CONCENTRAÇÃO</span><h3>Concentração dos ativos de mercado</h3><p>${description}</p></div></div>
-      <div class="dpc-answer">${answer}</div>
+      ${answer}
       ${modeToggle(fundCount>0)}
+      ${holdingsRankMarkup(snapshot.rows)}
       ${metrics(snapshot,usingLookthrough)}
-      <div class="dpc-mosaic" aria-label="Peso das maiores posições de mercado">${segmentMarkup(snapshot.rows)}</div>
       ${status}
-      <div class="dpc-foot">${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito.' : 'As percentagens principais são relativas apenas à fatia de mercado; a conclusão mostra também o equivalente sobre o património total.'}</div>
+      <div class="dpc-foot">${usingLookthrough ? 'Dentro dos ETFs, cada euro é repartido pelas holdings conhecidas e por um residual explícito.' : 'A percentagem principal mede a concentração apenas na fatia de mercado; o equivalente sobre o património total aparece logo abaixo.'}</div>
     </section>`;
   }
 
@@ -566,6 +584,6 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'1.9',directHoldings,marketHoldings,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'2.0',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();
