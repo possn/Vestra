@@ -11,7 +11,7 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardMarketSentimentTests(unittest.TestCase):
     def test_runtime_is_reachable_without_blocking_market_load(self):
         self.assertIn("ensureDashboardMarketSentiment", LOADER)
-        self.assertIn("dashboard-market-sentiment.js?v=1.3", LOADER)
+        self.assertIn("dashboard-market-sentiment.js?v=1.4", LOADER)
         tail = LOADER[LOADER.index("// Dashboard/mobile companions remain eager"):]
         self.assertIn("ensureDashboardMarketSentiment();", tail)
         self.assertIn("requestIdleCallback", JS)
@@ -43,15 +43,20 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn("Ver como é calculado", JS)
         self.assertIn("dms-detail", JS)
         self.assertIn(".dms-detail[hidden]", CSS)
-        self.assertIn("version:'1.3'", JS)
+        self.assertIn("version:'1.4'", JS)
 
     def test_aaii_retail_sentiment_is_integrated_without_a_second_dashboard_card(self):
         data = (ROOT / "data" / "aaii-sentiment.json").read_text(encoding="utf-8")
         workflow = (ROOT / ".github" / "workflows" / "update-aaii-sentiment.yml").read_text(encoding="utf-8")
         refresh = (ROOT / "scripts" / "refresh_aaii_sentiment.py").read_text(encoding="utf-8")
         self.assertIn("AAII · RETAIL SENTIMENT", JS)
-        self.assertIn("Ver últimas 5 semanas", JS)
+        self.assertIn("Ver evolução das últimas 5 semanas", JS)
         self.assertIn("data/aaii-sentiment.json", JS)
+        self.assertIn("function aaiiTrendChart", JS)
+        self.assertIn("dms-aaii-chart", JS)
+        self.assertIn("aaiiExpanded:false", JS)
+        self.assertIn("addEventListener(\'toggle\'", JS)
+        self.assertIn(".dms-aaii-chart", CSS)
         self.assertIn('"weeks"', data)
         self.assertIn('"latest_published"', data)
         self.assertIn("sent_results", refresh)
