@@ -1891,3 +1891,16 @@ body{
 /* Portfolio: utility navigation belongs after the positions, not inside the analysis flow. */
 .portfolio-tools-strip{display:flex;align-items:center;gap:7px;margin:10px 0 0;padding:3px 1px;overflow-x:auto;scrollbar-width:none}.portfolio-tools-strip::-webkit-scrollbar{display:none}.portfolio-tools-strip>span{flex:0 0 auto;margin-right:2px;color:var(--muted);font-size:7.5px;font-weight:900;letter-spacing:.11em}.portfolio-tools-strip button{appearance:none;flex:0 0 auto;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--card2) 78%,transparent);color:var(--text2);padding:7px 10px;font:inherit;font-size:8.5px;font-weight:850;cursor:pointer}
 @media(max-width:560px){.portfolio-tools-strip{margin-top:8px}.portfolio-tools-strip button{padding:7px 9px}}
+
+.portfolio-sector-disclosure{margin:10px 0 12px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--card) 92%,transparent);overflow:hidden}
+.portfolio-sector-disclosure>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;cursor:pointer}
+.portfolio-sector-disclosure>summary::-webkit-details-marker{display:none}
+.portfolio-sector-disclosure>summary>div{min-width:0}
+.portfolio-sector-disclosure>summary span{display:block;color:var(--text);font-size:11px;font-weight:850}
+.portfolio-sector-disclosure>summary small{display:block;margin-top:2px;color:var(--muted);font-size:8.5px}
+.portfolio-sector-disclosure>summary>strong{flex:0 0 auto;color:#9a773c;font-size:8.5px;font-weight:900}
+.portfolio-sector-disclosure[open]>summary>strong{font-size:0}
+.portfolio-sector-disclosure[open]>summary>strong::after{content:'Ocultar';font-size:8.5px}
+.portfolio-sector-disclosure__body{border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);padding:10px 12px 12px}
+.portfolio-sector-disclosure__actions{display:flex;justify-content:flex-end;margin-bottom:8px}
+@media(max-width:560px){.portfolio-sector-disclosure>summary{padding:11px 12px}.portfolio-sector-disclosure__body{padding:9px 10px 11px}}
