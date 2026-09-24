@@ -51,7 +51,7 @@ assert(source.includes('vestra-swap-lab.js?v=1.2'));
 assert(source.includes('vestra-portfolio-ui.js?v=1.7'));
 assert(source.includes('portfolio-diagnostics.js?v=1.2'));
 assert(source.includes('portfolio-dossier-routing.js?v=1.5'));
-assert(source.includes('vestra-portfolio-hierarchy.js?v=2.0'));
+assert(source.includes('vestra-portfolio-hierarchy.js?v=2.1'));
 assert(source.includes('vestra-ai-brief.js?v=1.2'));
 assert(!source.includes('VestraPortfolioFocus'));
 assert(!source.includes('vestra-portfolio-focus.js'));
