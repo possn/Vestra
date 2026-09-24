@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v1.6 — canonical portfolio landing without retired legacy surface bridges. */
+/* Vestra Portfolio UI v1.7 — canonical portfolio landing without retired legacy surface bridges. */
 (() => {
   'use strict';
 
@@ -115,7 +115,7 @@
     const tab=e.target.closest?.('[data-vpu-tab]'); if(tab){active=tab.dataset.vpuTab||'decide';try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{}apply();const c=root();if(c){const first=openFirstActive(c);if(first)setTimeout(()=>first.scrollIntoView({behavior:'smooth',block:'nearest'}),40);}return;}
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;if(target.classList.contains('is-collapsed'))target.querySelector('[data-collapse-toggle],.market-collapse-toggle')?.click();setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
-  function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{} apply();}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.6'});
+  function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.7'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
