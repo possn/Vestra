@@ -191,7 +191,7 @@
       .then(api => api && loadOrderedCompanion('VestraPortfolioUI','script[data-vestra-portfolio-ui]','vestra-portfolio-ui.js?v=1.6','vestraPortfolioUi'))
       .then(api => api && loadOrderedCompanion('VestraPortfolioDiagnostics','script[data-vestra-portfolio-diagnostics]','portfolio-diagnostics.js?v=1.1','vestraPortfolioDiagnostics'))
       .then(api => api && loadOrderedCompanion('VestraPortfolioDossierRouting','script[data-vestra-portfolio-dossier-routing]','portfolio-dossier-routing.js?v=1.4','vestraPortfolioDossierRouting'))
-      .then(api => api && loadOrderedCompanion('VestraPortfolioHierarchy','script[data-vestra-portfolio-hierarchy]','vestra-portfolio-hierarchy.js?v=1.8','vestraPortfolioHierarchy'))
+      .then(api => api && loadOrderedCompanion('VestraPortfolioHierarchy','script[data-vestra-portfolio-hierarchy]','vestra-portfolio-hierarchy.js?v=1.9','vestraPortfolioHierarchy'))
       .then(api => api && loadOrderedCompanion('VestraAiBrief','script[data-vestra-ai-brief]','vestra-ai-brief.js?v=1.2','vestraAiBrief'))
       .finally(() => { portfolioSheetSuitePromise = null; });
     return portfolioSheetSuitePromise;

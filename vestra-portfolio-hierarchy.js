@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.8 — canonical card ordering with consolidated decorators. */
+/* Vestra Portfolio Hierarchy v1.9 — canonical card ordering with single-pass observed refreshes. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -131,9 +131,21 @@
   function start(){
     style();apply();
     const sh=document.getElementById('marketSheet');if(!sh)return;
+    const observerOptions={childList:true,subtree:true};
     let pending=false;
-    const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;apply();});});
-    mo.observe(sh,{childList:true,subtree:true});
+    const mo=new MutationObserver(()=>{
+      if(pending)return;
+      pending=true;
+      requestAnimationFrame(()=>{
+        pending=false;
+        mo.disconnect();
+        try{apply();}finally{
+          mo.takeRecords();
+          mo.observe(sh,observerOptions);
+        }
+      });
+    });
+    mo.observe(sh,observerOptions);
   }
   document.addEventListener('click',e=>{
     const open=e.target.closest?.('[data-ux454-open-swap]');
@@ -142,5 +154,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.8'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.9'});
 })();
