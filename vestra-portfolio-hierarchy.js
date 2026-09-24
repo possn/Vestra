@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.6 — canonical final hierarchy from UX 4.54/4.55/4.57. */
+/* Vestra Portfolio Hierarchy v1.7 — canonical card ordering without hidden legacy labels. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -19,26 +19,8 @@
     return (!sh||sh.hidden||t(sh.dataset.tool)!=='portfolio'||!c)?null:c;
   }
   function card(kind,c){return c.querySelector(`[data-ux-kind="${kind}"]`);}
-  function makeLabel(g){
-    const d=document.createElement('div');d.className='ux455-group-label';d.dataset.ux455Group=g.id;
-    d.innerHTML=`<span>${g.title}</span><small>${g.sub}</small>`;return d;
-  }
-
   function decorateBase(c){
     c.classList.add('ux454-portfolio');
-    const toolbar=c.querySelector('.market-collapse-toolbar');
-    const focus=c.querySelector('.ux453-focusbar');
-    const shortcuts=c.querySelector('.ux-portfolio-shortcuts');
-    if(toolbar)toolbar.classList.add('ux454-toolbar');
-    if(focus)focus.classList.add('ux454-focus');
-    if(shortcuts)shortcuts.classList.add('ux454-shortcuts');
-
-    if(toolbar&&!c.querySelector('.ux454-nav-title')){
-      const title=document.createElement('div');title.className='ux454-nav-title';
-      title.innerHTML='<div><small>PORTFOLIO INTELLIGENCE</small><strong>Navegação rápida</strong></div><span>Escolhe o que queres analisar</span>';
-      toolbar.insertAdjacentElement('beforebegin',title);
-    }
-
     c.querySelectorAll('[data-ux-kind]').forEach(x=>{
       const kind=x.dataset.uxKind;
       if(!kind||x.querySelector(':scope > .ux454-purpose'))return;
@@ -57,23 +39,23 @@
     }
   }
 
-  function hierarchyIsCurrent(c){
-    const labels=[...c.querySelectorAll(':scope > .ux455-group-label')];
-    if(labels.length!==ORDER.length)return false;
-    return ORDER.every((g,i)=>t(labels[i]?.dataset.ux455Group)===g.id);
+  function orderedCards(c){
+    const rows=[];
+    ORDER.forEach(g=>g.kinds.map(k=>card(k,c)).filter(Boolean).forEach(x=>{x.dataset.ux455Group=g.id;rows.push(x);}));
+    return rows;
+  }
+  function hierarchyIsCurrent(anchor,cards){
+    let cursor=anchor;
+    return cards.every(x=>{const ok=cursor.nextElementSibling===x;cursor=x;return ok;});
   }
   function repairHierarchy(c){
-    const anchor=c.querySelector('.market-decision-center')||c.querySelector('.ux-portfolio-shortcuts')||c.querySelector('.ux453-focusbar')||c.querySelector('.market-collapse-toolbar');
+    const anchor=c.querySelector('.market-decision-center');
     if(!anchor)return;
-    if(hierarchyIsCurrent(c))return;
-    c.querySelectorAll('.ux454-group-label,.ux455-group-label').forEach(x=>x.remove());
+    c.querySelectorAll(':scope > .ux454-group-label,:scope > .ux455-group-label,:scope > .ux454-nav-title').forEach(x=>x.remove());
+    const cards=orderedCards(c);
+    if(!cards.length||hierarchyIsCurrent(anchor,cards))return;
     let cursor=anchor;
-    ORDER.forEach(g=>{
-      const cards=g.kinds.map(k=>card(k,c)).filter(Boolean);
-      if(!cards.length)return;
-      const label=makeLabel(g);cursor.insertAdjacentElement('afterend',label);cursor=label;
-      cards.forEach(x=>{cursor.insertAdjacentElement('afterend',x);cursor=x;x.dataset.ux455Group=g.id;});
-    });
+    cards.forEach(x=>{cursor.insertAdjacentElement('afterend',x);cursor=x;});
   }
 
   function fixHeaderCollisions(c){
@@ -121,15 +103,6 @@
     note.innerHTML='<b>Exposure Map</b><span>Prioriza duplicações que aumentem concentração real; pequenas sobreposições podem ser intencionais.</span>';
     const head=overlap.querySelector('.ux454-overlap-head');head?head.insertAdjacentElement('afterend',note):overlap.prepend(note);
   }
-  function dedupeSurfaces(c){
-    c.querySelectorAll('.ux454-group-label').forEach(x=>x.remove());
-    const seen=new Set();
-    c.querySelectorAll('.ux455-group-label').forEach(x=>{const key=t(x.dataset.ux455Group)||t(x.textContent).toLowerCase();if(seen.has(key))x.remove();else seen.add(key);});
-    for(const sel of ['.ux454-nav-title','.market-collapse-toolbar','.ux453-focusbar','.ux-portfolio-shortcuts']){
-      [...c.querySelectorAll(sel)].slice(1).forEach(x=>x.remove());
-    }
-  }
-
   function openScenario(){
     const c=root();if(!c)return;const scenario=card('scenario',c);if(!scenario)return;
     if(scenario.classList.contains('is-collapsed'))scenario.querySelector('[data-collapse-toggle]')?.click();
@@ -141,7 +114,7 @@
     const link=document.createElement('link');
     link.id='vestra-portfolio-hierarchy-style';
     link.rel='stylesheet';
-    link.href='vestra-portfolio-hierarchy.css?v=1.0';
+    link.href='vestra-portfolio-hierarchy.css?v=1.1';
     document.head.appendChild(link);
   }
 
@@ -150,7 +123,7 @@
     window.VestraPortfolioCardClassifier?.refresh?.();
     window.VestraPortfolioFocus?.refresh?.();
     const c=root();if(!c)return;
-    decorateBase(c);repairHierarchy(c);fixHeaderCollisions(c);swapLab(c);overlapCard(c);dedupeSurfaces(c);
+    decorateBase(c);repairHierarchy(c);fixHeaderCollisions(c);swapLab(c);overlapCard(c);
     window.VestraSwapLab?.refresh?.();
     window.VestraPortfolioUI?.refresh?.();
     window.VestraPortfolioDiagnostics?.refresh?.();
@@ -170,5 +143,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.6'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.7'});
 })();

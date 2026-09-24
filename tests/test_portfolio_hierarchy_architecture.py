@@ -31,7 +31,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             "vestra-portfolio-ui.js?v=1.5",
             "portfolio-diagnostics.js?v=1.1",
             "portfolio-dossier-routing.js?v=1.4",
-            "vestra-portfolio-hierarchy.js?v=1.6",
+            "vestra-portfolio-hierarchy.js?v=1.7",
             "vestra-ai-brief.js?v=1.2",
         )
         for module in expected:
@@ -53,6 +53,11 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         ):
             self.assertIn(token, s)
         self.assertEqual(s.count('new MutationObserver'), 1)
+        self.assertIn("const anchor=c.querySelector('.market-decision-center')", s)
+        self.assertIn('function orderedCards(c)', s)
+        self.assertNotIn('function makeLabel', s)
+        self.assertNotIn("createElement('div');d.className='ux455-group-label'", s)
+        self.assertIn("version:'1.7'", s)
 
     def test_swap_lab_preserves_v456_contract_under_hierarchy_observer(self):
         s=read('vestra-swap-lab.js')
