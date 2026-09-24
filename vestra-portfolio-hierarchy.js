@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.7 — canonical card ordering without hidden legacy labels. */
+/* Vestra Portfolio Hierarchy v1.8 — canonical card ordering with consolidated decorators. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -121,7 +121,6 @@
   function apply(){
     window.VestraPortfolioCollapsibles?.refresh?.();
     window.VestraPortfolioCardClassifier?.refresh?.();
-    window.VestraPortfolioFocus?.refresh?.();
     const c=root();if(!c)return;
     decorateBase(c);repairHierarchy(c);fixHeaderCollisions(c);swapLab(c);overlapCard(c);
     window.VestraSwapLab?.refresh?.();
@@ -143,5 +142,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.7'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.8'});
 })();

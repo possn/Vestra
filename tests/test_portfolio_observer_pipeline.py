@@ -10,7 +10,6 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         modules = {
             "collapsibles": read("portfolio-collapsibles.js"),
             "classifier": read("portfolio-card-classifier.js"),
-            "focus": read("vestra-portfolio-focus.js"),
             "swap": read("vestra-swap-lab.js"),
             "portfolio_ui": read("vestra-portfolio-ui.js"),
             "diagnostics": read("portfolio-diagnostics.js"),
@@ -28,32 +27,28 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         hierarchy=read("vestra-portfolio-hierarchy.js")
         collapsibles=hierarchy.index("VestraPortfolioCollapsibles?.refresh")
         classifier=hierarchy.index("VestraPortfolioCardClassifier?.refresh")
-        focus=hierarchy.index("VestraPortfolioFocus?.refresh")
         root=hierarchy.index("const c=root()",collapsibles)
         swap=hierarchy.index("VestraSwapLab?.refresh",root)
         ui=hierarchy.index("VestraPortfolioUI?.refresh",swap)
         diagnostics=hierarchy.index("VestraPortfolioDiagnostics?.refresh",ui)
         routing=hierarchy.index("VestraPortfolioDossierRouting?.decorate",diagnostics)
         self.assertLess(collapsibles,classifier)
-        self.assertLess(classifier,focus)
-        self.assertLess(focus,root)
+        self.assertLess(classifier,root)
+        self.assertNotIn("VestraPortfolioFocus",hierarchy)
         self.assertLess(root,swap)
         self.assertLess(swap,ui)
         self.assertLess(ui,diagnostics)
         self.assertLess(diagnostics,routing)
 
     def test_decorators_keep_explicit_refresh_contracts(self):
-        focus=read("vestra-portfolio-focus.js")
         swap=read("vestra-swap-lab.js")
         ui=read("vestra-portfolio-ui.js")
         diagnostics=read("portfolio-diagnostics.js")
         routing=read("portfolio-dossier-routing.js")
-        self.assertIn("refresh:portfolioFocus",focus)
         self.assertIn("refresh:apply",swap)
         self.assertIn("window.VestraPortfolioUI=Object.freeze({refresh:apply",ui)
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
-        self.assertIn("version:'1.2'",focus)
         self.assertIn("version:'1.1'",swap)
         self.assertIn("version:'1.6'",ui)
         self.assertIn("version:'1.1'",diagnostics)
@@ -76,19 +71,17 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("data-ux-jump",classifier)
         self.assertNotIn("jumpPortfolio",classifier)
         self.assertNotIn("ux-portfolio-shortcuts",css)
-        self.assertIn("version:'1.3'",classifier)
+        self.assertIn("version:'1.4'",classifier)
 
-    def test_legacy_focus_runtime_is_badges_only(self):
-        focus=read("vestra-portfolio-focus.js")
-        css=read("vestra-portfolio-focus.css")
-        self.assertNotIn("FOCUS_KEY",focus)
-        self.assertNotIn("localStorage",focus)
-        self.assertNotIn("data-ux-focus",focus)
-        self.assertNotIn("ux453-focusbar",focus)
-        self.assertNotIn("data-ux-focus",css)
-        self.assertNotIn("ux453-focusbar",css)
-        for token in ("ux453-badge is-purple","ux453-badge is-amber","ux453-badge is-green"):
-            self.assertIn(token,focus)
+    def test_classifier_owns_portfolio_badges(self):
+        classifier=read("portfolio-card-classifier.js")
+        css=read("portfolio-card-classifier.css")
+        for token in ("TROCAS INTELIGENTES","DUPLICAÇÃO DE EXPOSIÇÃO","CAPITAL NOVO"):
+            self.assertIn(token,classifier)
+        for token in (".ux-card-badge.is-purple",".ux-card-badge.is-amber",".ux-card-badge.is-green"):
+            self.assertIn(token,css)
+        self.assertNotIn("ux453-badge",classifier)
+        self.assertNotIn("ux453-badge",css)
 
     def test_childlist_writers_are_idempotent(self):
         hierarchy=read("vestra-portfolio-hierarchy.js")
@@ -119,18 +112,16 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn('src="portfolio-card-classifier.js',index)
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
-            "vestra-portfolio-focus.js?v=1.2",
             "vestra-swap-lab.js?v=1.1",
             "vestra-portfolio-ui.js?v=1.6",
             "portfolio-diagnostics.js?v=1.1",
             "portfolio-dossier-routing.js?v=1.4",
-            "vestra-portfolio-hierarchy.js?v=1.7",
+            "vestra-portfolio-hierarchy.js?v=1.8",
             "vestra-ai-brief.js?v=1.2",
         ]
         positions=[loader.index(x) for x in lazy_order]
         self.assertEqual(positions,sorted(positions))
         for name in (
-            'src="vestra-portfolio-focus.js',
             'src="vestra-swap-lab.js',
             'src="vestra-portfolio-ui.js',
             'src="portfolio-diagnostics.js',
@@ -142,7 +133,10 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         sw=read("sw.js")
         self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
         self.assertIn("staleWhileRevalidate",sw)
-        for name in ("./vestra-portfolio-focus.js","./vestra-portfolio-hierarchy.js","./vestra-swap-lab.js","./vestra-portfolio-ui.js","./portfolio-diagnostics.js","./portfolio-dossier-routing.js"):
+        for name in ("./vestra-portfolio-hierarchy.js","./vestra-swap-lab.js","./vestra-portfolio-ui.js","./portfolio-diagnostics.js","./portfolio-dossier-routing.js"):
             self.assertIn(name,sw)
+        self.assertNotIn("./vestra-portfolio-focus.js",sw)
+        self.assertNotIn("./vestra-portfolio-focus.css",sw)
+        self.assertNotIn("vestra-portfolio-focus.js",loader)
 
 if __name__=='__main__': unittest.main(verbosity=2)

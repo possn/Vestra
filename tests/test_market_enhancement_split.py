@@ -16,7 +16,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('market-hotfix.js', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
-        for module in ('portfolio-collapsibles.js?v=1.3', 'portfolio-card-classifier.js?v=1.3'):
+        for module in ('portfolio-collapsibles.js?v=1.3', 'portfolio-card-classifier.js?v=1.4'):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.1'):
@@ -81,14 +81,18 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('jumpPortfolio', s)
         self.assertIn('Trocas inteligentes · compara alternativas sem assumir que vender é obrigatório.', s)
         self.assertIn('Sobreposição · mostra onde várias posições estão a comprar a mesma exposição.', s)
-        self.assertIn("portfolio-card-classifier.css?v=1.0", s)
+        self.assertIn("portfolio-card-classifier.css?v=1.1", s)
         self.assertIn("link.rel='stylesheet'", s)
         self.assertNotIn("document.createElement('style')", s)
         self.assertNotIn('s.textContent=', s)
         self.assertNotIn('.ux-portfolio-shortcuts{', css)
         self.assertIn('[data-ux-tone="violet"].is-collapsed', css)
+        for token in ('TROCAS INTELIGENTES','DUPLICAÇÃO DE EXPOSIÇÃO','CAPITAL NOVO'):
+            self.assertIn(token, s)
+        for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
+            self.assertIn(token, css)
         self.assertIn('window.VestraPortfolioCardClassifier', s)
-        self.assertIn("version:'1.3'", s)
+        self.assertIn("version:'1.4'", s)
 
     def test_portfolio_dossier_routing_delegates_navigation_exclusively(self):
         s = read('portfolio-dossier-routing.js')
@@ -131,6 +135,8 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn('staleWhileRevalidate', sw)
         for module in ('./market-live-overlay.js', './market-company-brief.js', './market-metric-cleanup.js', './market-dossier-controls.css', './portfolio-collapsibles.js', './portfolio-collapsibles.css', './portfolio-sheet-navigation.css', './portfolio-card-classifier.js', './portfolio-card-classifier.css', './portfolio-diagnostics.js', './vestra-ai-brief.js', './portfolio-dossier-routing.js', './market-opportunity-lenses.js', './mobile-ui-refresh.js'):
             self.assertIn(module, sw)
+        self.assertNotIn('./vestra-portfolio-focus.js', sw)
+        self.assertNotIn('./vestra-portfolio-focus.css', sw)
 
 
 if __name__ == '__main__':

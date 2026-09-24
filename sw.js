@@ -17,7 +17,7 @@ const APP_SHELL = [
   "./portfolio-sheet-navigation.js", "./portfolio-sheet-navigation.css", "./portfolio-card-classifier.js", "./portfolio-card-classifier.css", "./market-opportunities.js", "./market-opportunities.css",
   "./market-metals.js", "./market-metals.css", "./market-model-validation.js", "./market-model-validation.css",
   "./quote-canonical-repair.js", "./market-global-search.js", "./market-learned-universe.js",
-  "./vestra-portfolio-focus.js", "./vestra-portfolio-focus.css", "./vestra-portfolio-hierarchy.js", "./vestra-portfolio-hierarchy.css", "./vestra-swap-lab.js", "./vestra-swap-lab.css",
+  "./vestra-portfolio-hierarchy.js", "./vestra-portfolio-hierarchy.css", "./vestra-swap-lab.js", "./vestra-swap-lab.css",
   "./market-opportunity-lenses.js", "./market-opportunity-lenses.css", "./mobile-ui-refresh.js", "./vestra-ai-brief.js", "./vestra-ai-brief.css", "./vestra-portfolio-ui.js", "./vestra-portfolio-ui.css",
   "./portfolio-diagnostics.js", "./portfolio-diagnostics.css", "./portfolio-dossier-routing.js", "./politicians.js", "./politicians.css", "./market-global-search.css", "./market-stock-themes-tools.css", "./data/executives.json",
   "./manifest.webmanifest", "./icon192.png", "./icon512.png", "./icon192-maskable.png", "./icon512-maskable.png",

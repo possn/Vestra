@@ -29,7 +29,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'market-company-brief.js?v=2.1',
             'portfolio-sheet-navigation.js?v=1.5',
             'portfolio-collapsibles.js?v=1.3',
-            'portfolio-card-classifier.js?v=1.3',
+            'portfolio-card-classifier.js?v=1.4',
             'market-data-loader.js?v=2.6',
         ):
             self.assertIn(lazy, loader)
@@ -42,12 +42,11 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertIn("market-opportunities.js?v=1.2", universe)
         self.assertIn("market-opportunity-lenses.js?v=3.1", universe)
         for module in (
-            "vestra-portfolio-focus.js?v=1.2",
             "vestra-swap-lab.js?v=1.1",
             "vestra-portfolio-ui.js?v=1.6",
             "portfolio-diagnostics.js?v=1.1",
             "portfolio-dossier-routing.js?v=1.4",
-            "vestra-portfolio-hierarchy.js?v=1.7",
+            "vestra-portfolio-hierarchy.js?v=1.8",
             "vestra-ai-brief.js?v=1.2",
         ):
             self.assertIn(module, universe)
@@ -55,7 +54,6 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'src="market-metals.js',
             'src="market-opportunities.js',
             'src="market-opportunity-lenses.js',
-            'src="vestra-portfolio-focus.js',
             'src="vestra-swap-lab.js',
             'src="vestra-portfolio-ui.js',
             'src="portfolio-diagnostics.js',
@@ -66,6 +64,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             self.assertNotIn(direct, index)
         self.assertNotIn('portfolio-navigation-fix.js', index)
         self.assertNotIn('market-close-controller.js', index)
+        self.assertNotIn('vestra-portfolio-focus.js', universe)
 
     def test_every_static_market_script_is_deferred(self):
         index = read("index.html")
@@ -84,6 +83,8 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertNotIn('./market-close-controller.js', sw)
         for name in ('./market.js','./market-runtime-loader.js','./market-live-overlay.js','./market-data-loader.js','./portfolio-sheet-navigation.js','./vestra-ai-brief.js','./portfolio-dossier-routing.js','./dashboard-market-sentiment.js','./dashboard-market-sentiment.css'):
             self.assertIn(name, sw)
+        self.assertNotIn('./vestra-portfolio-focus.js', sw)
+        self.assertNotIn('./vestra-portfolio-focus.css', sw)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

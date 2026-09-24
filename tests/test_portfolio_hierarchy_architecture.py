@@ -14,7 +14,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         loader=read('market-static-universe.js')
         runtime_loader=read('market-runtime-loader.js')
         self.assertNotIn('market-hotfix.js', h)
-        self.assertIn("portfolio-card-classifier.js?v=1.3", runtime_loader)
+        self.assertIn("portfolio-card-classifier.js?v=1.4", runtime_loader)
         self.assertNotIn('src="portfolio-card-classifier.js', h)
         for direct in (
             'src="vestra-portfolio-hierarchy.js',
@@ -26,12 +26,11 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         ):
             self.assertNotIn(direct, h)
         expected = (
-            "vestra-portfolio-focus.js?v=1.2",
             "vestra-swap-lab.js?v=1.1",
             "vestra-portfolio-ui.js?v=1.6",
             "portfolio-diagnostics.js?v=1.1",
             "portfolio-dossier-routing.js?v=1.4",
-            "vestra-portfolio-hierarchy.js?v=1.7",
+            "vestra-portfolio-hierarchy.js?v=1.8",
             "vestra-ai-brief.js?v=1.2",
         )
         for module in expected:
@@ -57,7 +56,8 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertIn('function orderedCards(c)', s)
         self.assertNotIn('function makeLabel', s)
         self.assertNotIn("createElement('div');d.className='ux455-group-label'", s)
-        self.assertIn("version:'1.7'", s)
+        self.assertIn("version:'1.8'", s)
+        self.assertNotIn('VestraPortfolioFocus', s)
 
     def test_swap_lab_preserves_v456_contract_under_hierarchy_observer(self):
         s=read('vestra-swap-lab.js')
@@ -78,6 +78,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
 
     def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
+        loader=read('market-static-universe.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
         self.assertIn('staleWhileRevalidate', sw)
         self.assertIn('./market-live-overlay.js', sw)
@@ -90,6 +91,9 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertIn('./portfolio-dossier-routing.js', sw)
         self.assertIn('./market-opportunity-lenses.js', sw)
         self.assertIn('./mobile-ui-refresh.js', sw)
+        self.assertNotIn('./vestra-portfolio-focus.js', sw)
+        self.assertNotIn('./vestra-portfolio-focus.css', sw)
+        self.assertNotIn('vestra-portfolio-focus.js', loader)
 
 
 if __name__ == '__main__':
