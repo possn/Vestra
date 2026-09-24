@@ -56,19 +56,21 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn("v.textContent='—'", s)
         self.assertIn('window.VestraMarketMetricCleanup', s)
 
-    def test_collapsibles_preserve_storage_controls_and_static_styles(self):
+    def test_collapsibles_preserve_per_section_state_without_hidden_global_toolbar(self):
         s = read('portfolio-collapsibles.js')
         css = read('portfolio-collapsibles.css')
         self.assertIn("const COLLAPSE_KEY='vestra-market-collapse-v1'", s)
-        for token in ('data-collapse-toggle', 'data-collapse-all', 'Abrir tudo', 'Fechar tudo', 'market-collapse-toolbar'):
-            self.assertIn(token, s)
+        self.assertIn('data-collapse-toggle', s)
+        for token in ('data-collapse-all', 'Abrir tudo', 'Fechar tudo', 'market-collapse-toolbar'):
+            self.assertNotIn(token, s)
         self.assertIn("portfolio-collapsibles.css?v=1.0", s)
         self.assertIn("link.rel='stylesheet'", s)
         self.assertNotIn("document.createElement('style')", s)
         self.assertNotIn('s.textContent=', s)
         self.assertIn('.market-collapse-toggle{', css)
-        self.assertIn('.market-collapse-toolbar{', css)
+        self.assertNotIn('.market-collapse-toolbar{', css)
         self.assertIn('window.VestraPortfolioCollapsibles', s)
+        self.assertIn("version:'1.3'", s)
 
     def test_classifier_preserves_all_portfolio_kinds_hints_and_static_styles_without_hidden_shortcuts(self):
         s = read('portfolio-card-classifier.js')
