@@ -77,6 +77,17 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         ):
             self.assertIn(token,hierarchy)
 
+    def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
+        collapsibles=read("portfolio-collapsibles.js")
+        classifier=read("portfolio-card-classifier.js")
+        hierarchy=read("vestra-portfolio-hierarchy.js")
+        self.assertIn("function start(){style()}",collapsibles)
+        self.assertIn("function start(){style();}",classifier)
+        self.assertNotIn("function start(){style();install()}",collapsibles)
+        self.assertNotIn("function start(){style();classify();}",classifier)
+        self.assertIn("VestraPortfolioCollapsibles?.refresh?.()",hierarchy)
+        self.assertIn("VestraPortfolioCardClassifier?.refresh?.()",hierarchy)
+
     def test_collapsibles_do_not_build_hidden_global_toolbar(self):
         collapsibles=read("portfolio-collapsibles.js")
         css=read("portfolio-collapsibles.css")
