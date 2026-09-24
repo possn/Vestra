@@ -53,10 +53,29 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioUI=Object.freeze({refresh:apply",ui)
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
-        self.assertIn("version:'1.1'",swap)
-        self.assertIn("version:'1.6'",ui)
-        self.assertIn("version:'1.1'",diagnostics)
-        self.assertIn("const VERSION='1.4'",routing)
+        self.assertIn("version:'1.2'",swap)
+        self.assertIn("version:'1.7'",ui)
+        self.assertIn("version:'1.2'",diagnostics)
+        self.assertIn("const VERSION='1.5'",routing)
+
+    def test_companions_defer_initial_refresh_to_hierarchy_bootstrap(self):
+        swap=read("vestra-swap-lab.js")
+        ui=read("vestra-portfolio-ui.js")
+        diagnostics=read("portfolio-diagnostics.js")
+        routing=read("portfolio-dossier-routing.js")
+        self.assertIn("function start(){addStyle();}",swap)
+        self.assertIn("function start(){style();try{",ui)
+        self.assertNotIn("catch{} apply();}",ui)
+        self.assertIn("function start(){style();}",diagnostics)
+        self.assertIn("function start(){}",routing)
+        hierarchy=read("vestra-portfolio-hierarchy.js")
+        for token in (
+            "VestraSwapLab?.refresh?.()",
+            "VestraPortfolioUI?.refresh?.()",
+            "VestraPortfolioDiagnostics?.refresh?.()",
+            "VestraPortfolioDossierRouting?.decorate?.()",
+        ):
+            self.assertIn(token,hierarchy)
 
     def test_collapsibles_do_not_build_hidden_global_toolbar(self):
         collapsibles=read("portfolio-collapsibles.js")
@@ -116,11 +135,11 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn('src="portfolio-card-classifier.js',index)
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
-            "vestra-swap-lab.js?v=1.1",
-            "vestra-portfolio-ui.js?v=1.6",
-            "portfolio-diagnostics.js?v=1.1",
-            "portfolio-dossier-routing.js?v=1.4",
-            "vestra-portfolio-hierarchy.js?v=1.9",
+            "vestra-swap-lab.js?v=1.2",
+            "vestra-portfolio-ui.js?v=1.7",
+            "portfolio-diagnostics.js?v=1.2",
+            "portfolio-dossier-routing.js?v=1.5",
+            "vestra-portfolio-hierarchy.js?v=2.0",
             "vestra-ai-brief.js?v=1.2",
         ]
         positions=[loader.index(x) for x in lazy_order]

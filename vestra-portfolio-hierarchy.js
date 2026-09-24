@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v1.9 — canonical card ordering with single-pass observed refreshes. */
+/* Vestra Portfolio Hierarchy v2.0 — canonical card ordering with single-pass observed refreshes. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -154,5 +154,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'1.9'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.0'});
 })();

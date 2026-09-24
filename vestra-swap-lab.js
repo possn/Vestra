@@ -1,4 +1,4 @@
-/* Vestra Swap Lab v1.1 — canonical portfolio swap comparator. */
+/* Vestra Swap Lab v1.2 — canonical portfolio swap comparator. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -117,7 +117,7 @@
     const impact=e.target.closest?.('[data-ux456-impact]');
     if(impact){e.preventDefault();e.stopPropagation();const root=document.getElementById('marketSheetContent');const scenario=root?.querySelector('[data-ux-kind="scenario"]');if(scenario?.classList.contains('is-collapsed'))scenario.querySelector('[data-collapse-toggle]')?.click();setTimeout(()=>scenario?.scrollIntoView({behavior:'smooth',block:'start'}),30);}
   });
-  function start(){addStyle();apply();}
+  function start(){addStyle();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraSwapLab=Object.freeze({stock,priceStats,timing,verdict,refresh:apply,version:'1.1'});
+  window.VestraSwapLab=Object.freeze({stock,priceStats,timing,verdict,refresh:apply,version:'1.2'});
 })();

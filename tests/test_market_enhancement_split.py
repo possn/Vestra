@@ -23,9 +23,9 @@ class MarketEnhancementSplitTests(unittest.TestCase):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in (
-            'portfolio-diagnostics.js?v=1.1',
+            'portfolio-diagnostics.js?v=1.2',
             'vestra-ai-brief.js?v=1.2',
-            'portfolio-dossier-routing.js?v=1.4',
+            'portfolio-dossier-routing.js?v=1.5',
         ):
             self.assertIn(module, loader)
         for direct in (

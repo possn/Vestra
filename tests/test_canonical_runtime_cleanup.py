@@ -22,13 +22,13 @@ class CanonicalRuntimeCleanupTests(unittest.TestCase):
         self.assertNotIn('src="vestra-ai-brief.js', h)
         self.assertNotIn('src="portfolio-dossier-routing.js', h)
         self.assertIn("vestra-ai-brief.js?v=1.2", loader)
-        self.assertIn("portfolio-dossier-routing.js?v=1.4", loader)
+        self.assertIn("portfolio-dossier-routing.js?v=1.5", loader)
         self.assertLess(
-            loader.index("portfolio-dossier-routing.js?v=1.4"),
-            loader.index("vestra-portfolio-hierarchy.js?v=1.9"),
+            loader.index("portfolio-dossier-routing.js?v=1.5"),
+            loader.index("vestra-portfolio-hierarchy.js?v=2.0"),
         )
         self.assertLess(
-            loader.index("vestra-portfolio-hierarchy.js?v=1.9"),
+            loader.index("vestra-portfolio-hierarchy.js?v=2.0"),
             loader.index("vestra-ai-brief.js?v=1.2"),
         )
         for legacy in LEGACY_RUNTIME_FILES:
