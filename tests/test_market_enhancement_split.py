@@ -70,7 +70,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn('.market-collapse-toggle{', css)
         self.assertNotIn('.market-collapse-toolbar{', css)
         self.assertIn('window.VestraPortfolioCollapsibles', s)
-        self.assertIn("version:'1.4'", s)
+        self.assertIn("version:'1.3'", s)
 
     def test_classifier_preserves_all_portfolio_kinds_hints_and_static_styles_without_hidden_shortcuts(self):
         s = read('portfolio-card-classifier.js')
@@ -92,7 +92,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
             self.assertIn(token, css)
         self.assertIn('window.VestraPortfolioCardClassifier', s)
-        self.assertIn("version:'1.3'", s)
+        self.assertIn("version:'1.4'", s)
 
     def test_portfolio_dossier_routing_delegates_navigation_exclusively(self):
         s = read('portfolio-dossier-routing.js')
