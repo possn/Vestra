@@ -59,6 +59,16 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("version:'1.1'",diagnostics)
         self.assertIn("const VERSION='1.4'",routing)
 
+    def test_collapsibles_do_not_build_hidden_global_toolbar(self):
+        collapsibles=read("portfolio-collapsibles.js")
+        css=read("portfolio-collapsibles.css")
+        hierarchy=read("vestra-portfolio-hierarchy.js")
+        self.assertNotIn("data-collapse-all",collapsibles)
+        self.assertNotIn("market-collapse-toolbar",collapsibles)
+        self.assertNotIn(".market-collapse-toolbar{",css)
+        self.assertIn("c.querySelector('.market-decision-center')",hierarchy)
+        self.assertIn("version:'1.3'",collapsibles)
+
     def test_classifier_does_not_build_hidden_legacy_shortcuts(self):
         classifier=read("portfolio-card-classifier.js")
         css=read("portfolio-card-classifier.css")
