@@ -63,7 +63,7 @@
     return ORDER.every((g,i)=>t(labels[i]?.dataset.ux455Group)===g.id);
   }
   function repairHierarchy(c){
-    const anchor=c.querySelector('.ux-portfolio-shortcuts')||c.querySelector('.ux453-focusbar')||c.querySelector('.market-collapse-toolbar');
+    const anchor=c.querySelector('.market-decision-center')||c.querySelector('.ux-portfolio-shortcuts')||c.querySelector('.ux453-focusbar')||c.querySelector('.market-collapse-toolbar');
     if(!anchor)return;
     if(hierarchyIsCurrent(c))return;
     c.querySelectorAll('.ux454-group-label,.ux455-group-label').forEach(x=>x.remove());
