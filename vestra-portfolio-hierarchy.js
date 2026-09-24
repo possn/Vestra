@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v2.0 — canonical card ordering with single-pass observed refreshes. */
+/* Vestra Portfolio Hierarchy v2.1 — canonical card ordering with filtered single-pass observed refreshes. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -128,13 +128,23 @@
     window.VestraPortfolioDiagnostics?.refresh?.();
     window.VestraPortfolioDossierRouting?.decorate?.();
   }
+  function relevantMutation(m){
+    if(m.type!=='childList')return false;
+    const nodes=[...m.addedNodes,...m.removedNodes];
+    return nodes.some(node=>{
+      if(node.nodeType!==1)return false;
+      const el=node;
+      if(el.matches?.('.market-detail-card,.market-row,.market-action-row,.market-fresh-row,.market-rebalance-row,.market-research-queue-main,[data-ux-kind]'))return true;
+      return !!el.querySelector?.('.market-detail-card,.market-row,.market-action-row,.market-fresh-row,.market-rebalance-row,.market-research-queue-main,[data-ux-kind]');
+    });
+  }
   function start(){
     style();apply();
     const sh=document.getElementById('marketSheet');if(!sh)return;
     const observerOptions={childList:true,subtree:true};
     let pending=false;
-    const mo=new MutationObserver(()=>{
-      if(pending)return;
+    const mo=new MutationObserver(mutations=>{
+      if(pending||!mutations.some(relevantMutation))return;
       pending=true;
       requestAnimationFrame(()=>{
         pending=false;
@@ -154,5 +164,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.0'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.1'});
 })();
