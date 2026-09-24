@@ -30,7 +30,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             "vestra-portfolio-ui.js?v=1.7",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
-            "vestra-portfolio-hierarchy.js?v=2.0",
+            "vestra-portfolio-hierarchy.js?v=2.1",
             "vestra-ai-brief.js?v=1.2",
         )
         for module in expected:
@@ -56,7 +56,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertIn('function orderedCards(c)', s)
         self.assertNotIn('function makeLabel', s)
         self.assertNotIn("createElement('div');d.className='ux455-group-label'", s)
-        self.assertIn("version:'2.0'", s)
+        self.assertIn("version:'2.1'", s)
         self.assertNotIn('VestraPortfolioFocus', s)
 
     def test_swap_lab_preserves_v456_contract_under_hierarchy_observer(self):
