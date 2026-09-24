@@ -133,7 +133,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("if(button.textContent!=='Ver comparação')",hierarchy)
         self.assertIn("hero.dataset.signature",ui)
         self.assertIn("setText(introTitle,meta.title)",ui)
-        self.assertIn("btn.textContent!==label",ui)
+        self.assertIn("setText(btn,label)",ui)
         self.assertIn("host.dataset.signature",diagnostics)
         self.assertIn("function setText(el,value)",diagnostics)
 
