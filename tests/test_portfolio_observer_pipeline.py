@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'1.7'",ui)
+        self.assertIn("version:'1.8'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -76,6 +76,14 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
             "VestraPortfolioDossierRouting?.decorate?.()",
         ):
             self.assertIn(token,hierarchy)
+
+    def test_portfolio_ui_label_updates_do_not_retrigger_childlist_observer(self):
+        ui=read("vestra-portfolio-ui.js")
+        self.assertIn("const setText=",ui)
+        self.assertIn("el.firstChild.data=next",ui)
+        self.assertIn("setText(introTitle,meta.title)",ui)
+        self.assertIn("setText(introSub,meta.sub)",ui)
+        self.assertIn("setText(btn,label)",ui)
 
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
@@ -124,8 +132,8 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("panel.dataset.signature",hierarchy)
         self.assertIn("if(button.textContent!=='Ver comparação')",hierarchy)
         self.assertIn("hero.dataset.signature",ui)
-        self.assertIn("introTitle.textContent!==meta.title",ui)
-        self.assertIn("btn.textContent!==label",ui)
+        self.assertIn("setText(introTitle,meta.title)",ui)
+        self.assertIn("setText(btn,label)",ui)
         self.assertIn("host.dataset.signature",diagnostics)
         self.assertIn("function setText(el,value)",diagnostics)
 
@@ -147,7 +155,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=1.7",
+            "vestra-portfolio-ui.js?v=1.8",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.0",
