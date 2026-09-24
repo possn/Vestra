@@ -64,7 +64,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         diagnostics=read("portfolio-diagnostics.js")
         routing=read("portfolio-dossier-routing.js")
         self.assertIn("function start(){addStyle();}",swap)
-        self.assertNotIn("catch{} apply();}",ui)
+        self.assertIn("function start(){style();try{",ui)\n        self.assertNotIn("catch{} apply();}",ui)
         self.assertIn("function start(){style();}",diagnostics)
         self.assertIn("function start(){}",routing)
         hierarchy=read("vestra-portfolio-hierarchy.js")
