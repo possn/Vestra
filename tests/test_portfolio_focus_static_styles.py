@@ -9,22 +9,28 @@ def read(path: str) -> str:
 
 
 class PortfolioFocusStaticStyleTests(unittest.TestCase):
-    def test_focus_preserves_state_controls_and_uses_static_stylesheet(self):
+    def test_focus_keeps_badges_without_legacy_visibility_controls(self):
         js = read('vestra-portfolio-focus.js')
         css = read('vestra-portfolio-focus.css')
         sw = read('sw.js')
 
-        self.assertIn("const FOCUS_KEY='vestra-portfolio-focus-v1'", js)
-        self.assertIn('data-ux-focus="focus"', js)
-        self.assertIn('data-ux-focus="all"', js)
-        self.assertIn('vestra-portfolio-focus.css?v=1.0', js)
+        self.assertNotIn("FOCUS_KEY", js)
+        self.assertNotIn('data-ux-focus="focus"', js)
+        self.assertNotIn('data-ux-focus="all"', js)
+        self.assertIn("c.dataset.uxFocus='all'", js)
+        self.assertIn("c.querySelector('.ux453-focusbar')?.remove()", js)
+        self.assertIn('vestra-portfolio-focus.css?v=1.1', js)
         self.assertIn("link.rel='stylesheet'", js)
         self.assertNotIn("document.createElement('style')", js)
         self.assertNotIn('s.textContent=', js)
-        self.assertIn('#marketSheetContent[data-ux-focus="focus"]', css)
+        self.assertNotIn('#marketSheetContent[data-ux-focus="focus"]', css)
+        self.assertNotIn('.ux453-focusbar', css)
         self.assertIn('.ux453-badge.is-purple', css)
+        self.assertIn('.ux453-badge.is-amber', css)
+        self.assertIn('.ux453-badge.is-green', css)
         self.assertIn('./vestra-portfolio-focus.css', sw)
         self.assertIn('window.VestraPortfolioFocus', js)
+        self.assertIn("version:'1.2'", js)
 
 
 if __name__ == '__main__':
