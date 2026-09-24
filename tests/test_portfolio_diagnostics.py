@@ -39,7 +39,7 @@ class PortfolioDiagnosticsTests(unittest.TestCase):
         self.assertNotIn('src="vestra-portfolio-ui.js', h)
         self.assertNotIn('src="portfolio-diagnostics.js', h)
         self.assertLess(
-            loader.index('vestra-portfolio-ui.js?v=1.7'),
+            loader.index('vestra-portfolio-ui.js?v=1.8'),
             loader.index('portfolio-diagnostics.js?v=1.2'),
         )
         self.assertIn('./portfolio-diagnostics.js', sw)

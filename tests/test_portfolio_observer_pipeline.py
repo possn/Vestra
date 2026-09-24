@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'1.7'",ui)
+        self.assertIn("version:'1.8'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -84,6 +84,12 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
             "VestraPortfolioDossierRouting?.decorate?.()",
         ):
             self.assertIn(token,hierarchy)
+
+    def test_diagnosis_toggle_has_single_owner(self):
+        ui=read("vestra-portfolio-ui.js")
+        diagnostics=read("portfolio-diagnostics.js")
+        self.assertNotIn("const d=e.target.closest?.('[data-vpu-detail]')",ui)
+        self.assertIn("const btn=e.target.closest?.('[data-vpu-detail]')",diagnostics)
 
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
@@ -155,7 +161,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=1.7",
+            "vestra-portfolio-ui.js?v=1.8",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",
