@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v1.5 — canonical portfolio landing + unified visibility ownership. */
+/* Vestra Portfolio UI v1.6 — canonical portfolio landing without retired legacy surface bridges. */
 (() => {
   'use strict';
 
@@ -55,7 +55,7 @@
   }
   function ensureHero(c){
     let hero=c.querySelector('.vpu-overview'), created=false; const m=metrics(c), st=status(m);
-    if(!hero){ hero=document.createElement('section'); hero.className='vpu-overview'; created=true; const dc=decisionCenter(c); const anchor=dc||c.querySelector('.ux454-nav-title,.market-collapse-toolbar'); if(anchor)anchor.insertAdjacentElement('beforebegin',hero); else c.prepend(hero); }
+    if(!hero){ hero=document.createElement('section'); hero.className='vpu-overview'; created=true; const dc=decisionCenter(c); if(dc)dc.insertAdjacentElement('beforebegin',hero); else c.prepend(hero); }
     const cov=num(m.coverage), covText=m.coverage||'—';
     const signature=JSON.stringify([m.positions,m.research,m.coverage,m.conviction,m.risk,m.reinforce,m.review,m.swaps,st.title,st.tone,st.sub]);
     if(hero.dataset.signature!==signature){
@@ -82,12 +82,7 @@
   }
   function apply(){
     const c=root(); if(!c)return; c.classList.add('vpu-portfolio');
-    // The canonical VPU now owns section visibility. The legacy Focus module
-    // remains loaded for compatibility/badges, but must not keep cards hidden
-    // behind an invisible Essencial/Tudo control.
-    c.dataset.uxFocus='all';
     const hero=ensureHero(c), reveal=ensureExplore(c,hero), tabs=ensureTabs(c,reveal);
-    c.querySelectorAll('.ux455-group-label,.ux454-group-label,.ux454-nav-title,.market-collapse-toolbar,.ux-portfolio-shortcuts,.ux453-focusbar,.ux460-overview,.ux461-reveal,.v479-portfolio-tabs').forEach(x=>{if(!x.closest('.vpu-overview,.vpu-reveal,.vpu-tabs-shell'))x.style.display='none';});
     const expanded=c.dataset.vpuExpanded==='1';
     tabs.hidden=!expanded;
     const meta=GROUPS[active]||GROUPS.decide;
@@ -121,6 +116,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;if(target.classList.contains('is-collapsed'))target.querySelector('[data-collapse-toggle],.market-collapse-toggle')?.click();setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{} apply();}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.5'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.6'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
