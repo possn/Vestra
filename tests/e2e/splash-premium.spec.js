@@ -9,6 +9,7 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
   // causing WebKit/iOS to start a second visual entrance.
   await page.addInitScript(() => {
     window.__vestraSplashTimeline = { copyReadyAt: null, leavingAt: null, animationStarts: [] };
+    window.__vestraSplashInitialCss = null;
     document.addEventListener('animationstart', event => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -18,6 +19,27 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
         at: performance.now(),
         className: target.className || '',
       });
+      if (event.animationName === 'vestraMarkIn' && !window.__vestraSplashInitialCss) {
+        const splash = document.querySelector('#appLoadingOverlay');
+        const mark = document.querySelector('.vestra-splash__mark');
+        const brand = document.querySelector('.vestra-splash__brand');
+        const tagline = document.querySelector('.vestra-splash__tagline');
+        const splashStyle = getComputedStyle(splash);
+        const markStyle = getComputedStyle(mark);
+        const brandStyle = getComputedStyle(brand);
+        const taglineStyle = getComputedStyle(tagline);
+        window.__vestraSplashInitialCss = {
+          backgroundColor: splashStyle.backgroundColor,
+          markAnimation: markStyle.animationName,
+          markDuration: parseFloat(markStyle.animationDuration) * 1000,
+          brandAnimation: brandStyle.animationName,
+          brandDelay: parseFloat(brandStyle.animationDelay) * 1000,
+          brandDuration: parseFloat(brandStyle.animationDuration) * 1000,
+          taglineAnimation: taglineStyle.animationName,
+          taglineDelay: parseFloat(taglineStyle.animationDelay) * 1000,
+          taglineDuration: parseFloat(taglineStyle.animationDuration) * 1000,
+        };
+      }
     }, true);
     document.addEventListener('DOMContentLoaded', () => {
       const splash = document.getElementById('appLoadingOverlay');
@@ -46,23 +68,11 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
   await expect(brand).toHaveText('Vestra');
   await expect(tagline).toHaveText('Finance, made simple.');
 
-  const css = await page.evaluate(() => {
-    const splashStyle = getComputedStyle(document.querySelector('#appLoadingOverlay'));
-    const markStyle = getComputedStyle(document.querySelector('.vestra-splash__mark'));
-    const brandStyle = getComputedStyle(document.querySelector('.vestra-splash__brand'));
-    const taglineStyle = getComputedStyle(document.querySelector('.vestra-splash__tagline'));
-    return {
-      backgroundColor: splashStyle.backgroundColor,
-      markAnimation: markStyle.animationName,
-      markDuration: parseFloat(markStyle.animationDuration) * 1000,
-      brandAnimation: brandStyle.animationName,
-      brandDelay: parseFloat(brandStyle.animationDelay) * 1000,
-      brandDuration: parseFloat(brandStyle.animationDuration) * 1000,
-      taglineAnimation: taglineStyle.animationName,
-      taglineDelay: parseFloat(taglineStyle.animationDelay) * 1000,
-      taglineDuration: parseFloat(taglineStyle.animationDuration) * 1000,
-    };
-  });
+  await expect.poll(
+    () => page.evaluate(() => window.__vestraSplashInitialCss),
+    { timeout: 2_000 }
+  ).not.toBeNull();
+  const css = await page.evaluate(() => window.__vestraSplashInitialCss);
 
   expect(css.backgroundColor).toBe('rgb(238, 240, 236)');
   expect(css.markAnimation).toContain('vestraMarkIn');
