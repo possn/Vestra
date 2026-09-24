@@ -1,4 +1,4 @@
-/* Vestra Portfolio Collapsibles v1.3 — canonical per-section collapsing without legacy global toolbar. */
+/* Vestra Portfolio Collapsibles v1.4 — canonical per-section collapsing without legacy global toolbar. */
 // Static Carteira secondary tools (including equity performance) are owned by index.html, not this market-sheet runtime.
 (() => {
 'use strict';
@@ -11,7 +11,7 @@ function setCollapsed(card,x){card.classList.toggle('is-collapsed',x);const b=ca
 function install(){const sh=document.getElementById('marketSheet'),c=document.getElementById('marketSheetContent');if(!sh||sh.hidden||t(sh.dataset.tool)!=='portfolio'||!c)return;const st=collapseState(),cards=[...c.querySelectorAll('.market-detail-card')];cards.forEach((card,i)=>{if(card.classList.contains('market-decision-center')||card.dataset.collapsible==='1')return;card.dataset.collapsible='1';const k=keyFor(card,i);card.dataset.collapseKey=k;const b=document.createElement('button');b.type='button';b.className='market-collapse-toggle';b.dataset.collapseToggle=k;card.appendChild(b);const def=card.classList.contains('market-research-queue')||i>1;setCollapsed(card,st[k]===undefined?def:!!st[k])})}
 function style(){if(document.getElementById('vestra-portfolio-collapsibles-style'))return;const link=document.createElement('link');link.id='vestra-portfolio-collapsibles-style';link.rel='stylesheet';link.href='portfolio-collapsibles.css?v=1.0';document.head.appendChild(link)}
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-collapse-toggle]');if(!b)return;e.preventDefault();e.stopPropagation();const card=b.closest('.market-detail-card');const x=!card.classList.contains('is-collapsed');setCollapsed(card,x);const st=collapseState();st[card.dataset.collapseKey]=x;saveState(st)});
-function start(){style();install()}
+function start(){style()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-window.VestraPortfolioCollapsibles=Object.freeze({refresh:install,version:'1.3'});
+window.VestraPortfolioCollapsibles=Object.freeze({refresh:install,version:'1.4'});
 })();
