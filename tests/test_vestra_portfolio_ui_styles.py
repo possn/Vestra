@@ -34,6 +34,7 @@ class VestraPortfolioUiStyleTests(unittest.TestCase):
         self.assertIn('data-vpu-guide="scenario"', js)
         self.assertIn('data-vpu-guide="rebalance"', js)
         self.assertIn('function optimizeTarget(', js)
+        self.assertIn("c.dataset.uxFocus='all'", js)
         self.assertIn('.vpu-optimize-guide{', css)
         self.assertIn('--desktop-content-max: 1440px', app_css)
         self.assertIn('--desktop-passive-max: 760px', app_css)
