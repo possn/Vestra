@@ -58,6 +58,14 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
+    def test_observer_ignores_presentation_only_mutations(self):
+        hierarchy=read("vestra-portfolio-hierarchy.js")
+        self.assertIn("function relevantMutation(m)",hierarchy)
+        self.assertIn("mutations.some(relevantMutation)",hierarchy)
+        self.assertIn("presentationOnly=node=>",hierarchy)
+        self.assertIn(".vpu-overview,.vpu-reveal,.vpu-tabs-shell,.ux456-swaplab",hierarchy)
+        self.assertIn("return !nodes.every(presentationOnly)",hierarchy)
+
     def test_companions_defer_initial_refresh_to_hierarchy_bootstrap(self):
         swap=read("vestra-swap-lab.js")
         ui=read("vestra-portfolio-ui.js")
@@ -150,7 +158,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
             "vestra-portfolio-ui.js?v=1.7",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
-            "vestra-portfolio-hierarchy.js?v=2.0",
+            "vestra-portfolio-hierarchy.js?v=2.1",
             "vestra-ai-brief.js?v=1.2",
         ]
         positions=[loader.index(x) for x in lazy_order]
