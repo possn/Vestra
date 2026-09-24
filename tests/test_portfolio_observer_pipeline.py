@@ -62,7 +62,9 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         hierarchy=read("vestra-portfolio-hierarchy.js")
         self.assertIn("function relevantMutation(m)",hierarchy)
         self.assertIn("mutations.some(relevantMutation)",hierarchy)
-        self.assertIn(".market-detail-card,.market-row,.market-action-row,.market-fresh-row,.market-rebalance-row,.market-research-queue-main,[data-ux-kind]",hierarchy)
+        self.assertIn("presentationOnly=node=>",hierarchy)
+        self.assertIn(".vpu-overview,.vpu-reveal,.vpu-tabs-shell,.ux456-swaplab",hierarchy)
+        self.assertIn("return !nodes.every(presentationOnly)",hierarchy)
 
     def test_companions_defer_initial_refresh_to_hierarchy_bootstrap(self):
         swap=read("vestra-swap-lab.js")
