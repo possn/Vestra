@@ -18,7 +18,7 @@ class VestraPortfolioUiStyleTests(unittest.TestCase):
         self.assertNotIn("document.createElement('style')", js)
         self.assertNotIn('s.textContent=', js)
         self.assertIn('style="width:${x}%"', js)
-        self.assertIn('x.style.display=', js)
+        self.assertNotIn('x.style.display=', js)
         for token in ('const GROUPS =', 'function ensureHero(', 'data-vpu-tab', 'data-vpu-jump', 'vestra.portfolio.analysisTab'):
             self.assertIn(token, js)
         self.assertIn('.vpu-overview{', css)
@@ -34,7 +34,9 @@ class VestraPortfolioUiStyleTests(unittest.TestCase):
         self.assertIn('data-vpu-guide="scenario"', js)
         self.assertIn('data-vpu-guide="rebalance"', js)
         self.assertIn('function optimizeTarget(', js)
-        self.assertIn("c.dataset.uxFocus='all'", js)
+        self.assertNotIn('uxFocus', js)
+        for retired in ('ux455-group-label','ux454-group-label','ux454-nav-title','market-collapse-toolbar','ux-portfolio-shortcuts','ux453-focusbar','ux460-overview','ux461-reveal','v479-portfolio-tabs'):
+            self.assertNotIn(retired, js)
         self.assertIn('.vpu-optimize-guide{', css)
         self.assertIn('--desktop-content-max: 1440px', app_css)
         self.assertIn('--desktop-passive-max: 760px', app_css)
