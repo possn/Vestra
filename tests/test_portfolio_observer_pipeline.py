@@ -20,7 +20,11 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         hierarchy=read("vestra-portfolio-hierarchy.js")
         self.assertEqual(hierarchy.count("new MutationObserver"),1)
         self.assertIn("const sh=document.getElementById('marketSheet');if(!sh)return",hierarchy)
-        self.assertIn("mo.observe(sh,{childList:true,subtree:true})",hierarchy)
+        self.assertIn("const observerOptions={childList:true,subtree:true}",hierarchy)
+        self.assertIn("mo.disconnect()",hierarchy)
+        self.assertIn("mo.takeRecords()",hierarchy)
+        self.assertIn("mo.observe(sh,observerOptions)",hierarchy)
+        self.assertIn("try{apply();}finally{",hierarchy)
         self.assertNotIn("mo.observe(document.body",hierarchy)
 
     def test_hierarchy_refreshes_decorators_in_pipeline_order(self):
@@ -116,7 +120,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
             "vestra-portfolio-ui.js?v=1.6",
             "portfolio-diagnostics.js?v=1.1",
             "portfolio-dossier-routing.js?v=1.4",
-            "vestra-portfolio-hierarchy.js?v=1.8",
+            "vestra-portfolio-hierarchy.js?v=1.9",
             "vestra-ai-brief.js?v=1.2",
         ]
         positions=[loader.index(x) for x in lazy_order]
