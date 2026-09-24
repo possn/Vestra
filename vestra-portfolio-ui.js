@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v1.7 — canonical portfolio landing without retired legacy surface bridges. */
+/* Vestra Portfolio UI v1.8 — canonical portfolio landing without retired legacy surface bridges. */
 (() => {
   'use strict';
 
@@ -109,13 +109,12 @@
   function jump(kind){ const c=root(), target=card(kind,c); if(!target)return; c.dataset.vpuExpanded='1'; active=classify(target)||active; try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{} apply(); if(target.classList.contains('is-collapsed'))target.querySelector('[data-collapse-toggle],.market-collapse-toggle')?.click(); setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30); }
   function style(){ if(document.getElementById('vestra-portfolio-ui-style'))return; const link=document.createElement('link'); link.id='vestra-portfolio-ui-style'; link.rel='stylesheet'; link.href='vestra-portfolio-ui.css?v=1.2'; document.head.appendChild(link); }
   document.addEventListener('click',e=>{
-    const d=e.target.closest?.('[data-vpu-detail]'); if(d){const c=root(),dc=decisionCenter(c);if(dc){dc.hidden=!dc.hidden;d.textContent=dc.hidden?'Ver diagnóstico':'Ocultar diagnóstico';if(!dc.hidden)setTimeout(()=>dc.scrollIntoView({behavior:'smooth',block:'start'}),20);}return;}
     const j=e.target.closest?.('[data-vpu-jump]'); if(j){e.preventDefault();jump(j.dataset.vpuJump);return;}
     const q=e.target.closest?.('[data-vpu-toggle]'); if(q){const c=root();if(!c)return;const opening=c.dataset.vpuExpanded!=='1';c.dataset.vpuExpanded=opening?'1':'0';apply();if(opening){const first=openFirstActive(c);setTimeout(()=>c.querySelector('.vpu-tabs-shell')?.scrollIntoView({behavior:'smooth',block:'start'}),20);if(first)setTimeout(()=>first.scrollIntoView({behavior:'smooth',block:'nearest'}),80);}return;}
     const tab=e.target.closest?.('[data-vpu-tab]'); if(tab){active=tab.dataset.vpuTab||'decide';try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{}apply();const c=root();if(c){const first=openFirstActive(c);if(first)setTimeout(()=>first.scrollIntoView({behavior:'smooth',block:'nearest'}),40);}return;}
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;if(target.classList.contains('is-collapsed'))target.querySelector('[data-collapse-toggle],.market-collapse-toggle')?.click();setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.7'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'1.8'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
