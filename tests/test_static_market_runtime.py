@@ -46,7 +46,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             "vestra-portfolio-ui.js?v=1.7",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
-            "vestra-portfolio-hierarchy.js?v=2.0",
+            "vestra-portfolio-hierarchy.js?v=2.1",
             "vestra-ai-brief.js?v=1.2",
         ):
             self.assertIn(module, universe)
