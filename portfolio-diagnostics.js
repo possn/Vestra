@@ -1,4 +1,4 @@
-/* Vestra Portfolio Diagnostics v1.1 — diagnosis state, coverage semantics and measurable overlap. */
+/* Vestra Portfolio Diagnostics v1.2 — diagnosis state, coverage semantics and measurable overlap. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -96,7 +96,7 @@
   function style(){if(document.getElementById('vestra-portfolio-diagnostics-style'))return;const link=document.createElement('link');link.id='vestra-portfolio-diagnostics-style';link.rel='stylesheet';link.href='portfolio-diagnostics.css?v=1.0';document.head.appendChild(link);}
   function apply(){const c=root();if(!c)return;syncCoverage(c);syncDiagnosis(c);syncOverlap(c);}
   document.addEventListener('click',e=>{const btn=e.target.closest?.('[data-vpu-detail]');if(!btn)return;const c=root();if(!c)return;const dc=decisionCenter(c);if(!dc)return;const open=!dc.hidden;c.dataset.vpdDiagnosis=open?'1':'0';requestAnimationFrame(()=>{syncDiagnosis(c);if(open)dc.scrollIntoView?.({behavior:'smooth',block:'start'});});},true);
-  function start(){style();apply();}
-  window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply,overlapModel,version:'1.1'});
+  function start(){style();}
+  window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply,overlapModel,version:'1.2'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
