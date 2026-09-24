@@ -16,7 +16,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('market-hotfix.js', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
-        for module in ('portfolio-collapsibles.js?v=1.2', 'portfolio-card-classifier.js?v=1.2'):
+        for module in ('portfolio-collapsibles.js?v=1.2', 'portfolio-card-classifier.js?v=1.3'):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.1'):
@@ -70,22 +70,23 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn('.market-collapse-toolbar{', css)
         self.assertIn('window.VestraPortfolioCollapsibles', s)
 
-    def test_classifier_preserves_all_portfolio_kinds_shortcuts_hints_and_static_styles(self):
+    def test_classifier_preserves_all_portfolio_kinds_hints_and_static_styles_without_hidden_shortcuts(self):
         s = read('portfolio-card-classifier.js')
         css = read('portfolio-card-classifier.css')
         for kind in ('research','priority','map','reinforce','review','overlap','swap','scenario','target','history','risk','stress'):
             self.assertIn(f"kind:'{kind}'", s)
-        for token in ('data-ux-jump="priority"','data-ux-jump="swap"','data-ux-jump="overlap"','data-ux-jump="risk"'):
-            self.assertIn(token, s)
+        self.assertNotIn('data-ux-jump', s)
+        self.assertNotIn('jumpPortfolio', s)
         self.assertIn('Trocas inteligentes · compara alternativas sem assumir que vender é obrigatório.', s)
         self.assertIn('Sobreposição · mostra onde várias posições estão a comprar a mesma exposição.', s)
         self.assertIn("portfolio-card-classifier.css?v=1.0", s)
         self.assertIn("link.rel='stylesheet'", s)
         self.assertNotIn("document.createElement('style')", s)
         self.assertNotIn('s.textContent=', s)
-        self.assertIn('.ux-portfolio-shortcuts{', css)
+        self.assertNotIn('.ux-portfolio-shortcuts{', css)
         self.assertIn('[data-ux-tone="violet"].is-collapsed', css)
         self.assertIn('window.VestraPortfolioCardClassifier', s)
+        self.assertIn("version:'1.3'", s)
 
     def test_portfolio_dossier_routing_delegates_navigation_exclusively(self):
         s = read('portfolio-dossier-routing.js')
