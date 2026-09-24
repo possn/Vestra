@@ -91,6 +91,13 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("const d=e.target.closest?.('[data-vpu-detail]')",ui)
         self.assertIn("const btn=e.target.closest?.('[data-vpu-detail]')",diagnostics)
 
+    def test_exploration_keeps_one_decision_card_open(self):
+        ui = (ROOT / "vestra-portfolio-ui.js").read_text(encoding="utf-8")
+        self.assertIn("function focusCard(c,target)", ui)
+        self.assertIn("openFirstActive(c)", ui)
+        self.assertIn("focusCard(c,target)", ui)
+        self.assertIn("el.classList.contains('vpu-hidden')||el===target", ui)
+
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
         classifier=read("portfolio-card-classifier.js")
