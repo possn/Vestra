@@ -10244,12 +10244,37 @@ function setSettingsPane(which) {
 }
 
 /* ─── WIRING ──────────────────────────────────────────────── */
-// v64f: sidebar off-canvas (telemóvel) / fixa (ecrãs largos, ≥900px)
+// Sidebar: off-canvas on mobile, collapsible workspace navigation on desktop.
+const DESKTOP_SIDEBAR_KEY = "vestra.desktopSidebarCollapsed.v1";
+function desktopSidebarMode() {
+  return !!(window.matchMedia && window.matchMedia("(min-width: 900px)").matches);
+}
+function persistDesktopSidebar(collapsed) {
+  try { localStorage.setItem(DESKTOP_SIDEBAR_KEY, collapsed ? "1" : "0"); } catch (_) {}
+}
+function applyDesktopSidebarPreference() {
+  const btn = document.getElementById("btnSidebarToggle");
+  if (!desktopSidebarMode()) {
+    document.body.classList.remove("desktop-sidebar-collapsed");
+    return;
+  }
+  let collapsed = false;
+  try { collapsed = localStorage.getItem(DESKTOP_SIDEBAR_KEY) === "1"; } catch (_) {}
+  document.body.classList.toggle("desktop-sidebar-collapsed", collapsed);
+  if (btn) btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+}
 function openSidebar() {
   const sb = document.getElementById("sidebar");
   const bg = document.getElementById("sidebarBackdrop");
   const btn = document.getElementById("btnSidebarToggle");
   if (!sb) return;
+  if (desktopSidebarMode()) {
+    document.body.classList.remove("desktop-sidebar-collapsed");
+    persistDesktopSidebar(false);
+    if (bg) bg.hidden = true;
+    if (btn) btn.setAttribute("aria-expanded", "true");
+    return;
+  }
   sb.classList.add("sidebar--open");
   if (bg) bg.hidden = false;
   if (btn) btn.setAttribute("aria-expanded", "true");
@@ -10259,21 +10284,37 @@ function closeSidebar() {
   const sb = document.getElementById("sidebar");
   const bg = document.getElementById("sidebarBackdrop");
   const btn = document.getElementById("btnSidebarToggle");
+  if (desktopSidebarMode()) {
+    document.body.classList.add("desktop-sidebar-collapsed");
+    persistDesktopSidebar(true);
+    if (bg) bg.hidden = true;
+    if (btn) btn.setAttribute("aria-expanded", "false");
+    return;
+  }
   if (sb) sb.classList.remove("sidebar--open");
   if (bg) bg.hidden = true;
   if (btn) btn.setAttribute("aria-expanded", "false");
   document.body.classList.remove("sidebar-open");
 }
+function toggleSidebar() {
+  if (desktopSidebarMode()) {
+    document.body.classList.contains("desktop-sidebar-collapsed") ? openSidebar() : closeSidebar();
+    return;
+  }
+  openSidebar();
+}
 function wireSidebar() {
   const toggle = document.getElementById("btnSidebarToggle");
   const close = document.getElementById("btnSidebarClose");
   const backdrop = document.getElementById("sidebarBackdrop");
-  if (toggle) toggle.addEventListener("click", openSidebar);
+  if (toggle) toggle.addEventListener("click", toggleSidebar);
   if (close) close.addEventListener("click", closeSidebar);
   if (backdrop) backdrop.addEventListener("click", closeSidebar);
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeSidebar(); });
+  window.addEventListener("resize", applyDesktopSidebarPreference, { passive: true });
+  applyDesktopSidebarPreference();
   document.querySelectorAll(".sidenavbtn[data-view]").forEach(b => {
-    b.addEventListener("click", () => { setView(b.dataset.view); closeSidebar(); });
+    b.addEventListener("click", () => { setView(b.dataset.view); if (!desktopSidebarMode()) closeSidebar(); });
   });
   // v64s: acções rápidas — a sidebar deixou de ser só um duplicado do rodapé
   // agora que o rodapé voltou (v64p); estas duas não têm atalho de um toque

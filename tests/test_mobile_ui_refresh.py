@@ -30,8 +30,10 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         for marker in (
             'function openSidebar()',
             'function closeSidebar()',
+            'function toggleSidebar()',
             'function wireSidebar()',
-            'toggle.addEventListener("click", openSidebar)',
+            'toggle.addEventListener("click", toggleSidebar)',
+            'if (!desktopSidebarMode()) closeSidebar()',
             'backdrop.addEventListener("click", closeSidebar)',
         ):
             self.assertIn(marker, self.app)
