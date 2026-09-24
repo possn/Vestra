@@ -59,6 +59,18 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("version:'1.1'",diagnostics)
         self.assertIn("const VERSION='1.4'",routing)
 
+    def test_legacy_focus_runtime_is_badges_only(self):
+        focus=read("vestra-portfolio-focus.js")
+        css=read("vestra-portfolio-focus.css")
+        self.assertNotIn("FOCUS_KEY",focus)
+        self.assertNotIn("localStorage",focus)
+        self.assertNotIn("data-ux-focus",focus)
+        self.assertNotIn("ux453-focusbar",focus)
+        self.assertNotIn("data-ux-focus",css)
+        self.assertNotIn("ux453-focusbar",css)
+        for token in ("ux453-badge is-purple","ux453-badge is-amber","ux453-badge is-green"):
+            self.assertIn(token,focus)
+
     def test_childlist_writers_are_idempotent(self):
         hierarchy=read("vestra-portfolio-hierarchy.js")
         ui=read("vestra-portfolio-ui.js")
