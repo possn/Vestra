@@ -85,7 +85,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("market-collapse-toolbar",collapsibles)
         self.assertNotIn(".market-collapse-toolbar{",css)
         self.assertIn("c.querySelector('.market-decision-center')",hierarchy)
-        self.assertIn("version:'1.3'",collapsibles)
+        self.assertIn("version:'1.4'",collapsibles)
 
     def test_classifier_does_not_build_hidden_legacy_shortcuts(self):
         classifier=read("portfolio-card-classifier.js")
@@ -94,7 +94,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("data-ux-jump",classifier)
         self.assertNotIn("jumpPortfolio",classifier)
         self.assertNotIn("ux-portfolio-shortcuts",css)
-        self.assertIn("version:'1.4'",classifier)
+        self.assertIn("version:'1.5'",classifier)
 
     def test_classifier_owns_portfolio_badges(self):
         classifier=read("portfolio-card-classifier.js")
