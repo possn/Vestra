@@ -187,7 +187,7 @@
       return Promise.resolve(window.VestraPortfolioHierarchy);
     }
     if (portfolioSheetSuitePromise) return portfolioSheetSuitePromise;
-    portfolioSheetSuitePromise = loadOrderedCompanion('VestraPortfolioFocus','script[data-vestra-portfolio-focus]','vestra-portfolio-focus.js?v=1.1','vestraPortfolioFocus')
+    portfolioSheetSuitePromise = loadOrderedCompanion('VestraPortfolioFocus','script[data-vestra-portfolio-focus]','vestra-portfolio-focus.js?v=1.2','vestraPortfolioFocus')
       .then(api => api && loadOrderedCompanion('VestraSwapLab','script[data-vestra-swap-lab]','vestra-swap-lab.js?v=1.1','vestraSwapLab'))
       .then(api => api && loadOrderedCompanion('VestraPortfolioUI','script[data-vestra-portfolio-ui]','vestra-portfolio-ui.js?v=1.5','vestraPortfolioUi'))
       .then(api => api && loadOrderedCompanion('VestraPortfolioDiagnostics','script[data-vestra-portfolio-diagnostics]','portfolio-diagnostics.js?v=1.1','vestraPortfolioDiagnostics'))

@@ -18,7 +18,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("market-opportunity-lenses.js?v=3.1", loader)
         self.assertLess(loader.index("market-opportunities.js?v=1.2"), loader.index("market-opportunity-lenses.js?v=3.1"))
         self.assertNotIn('src="vestra-portfolio-focus.js', hotfix)
-        self.assertIn("vestra-portfolio-focus.js?v=1.1", loader)
+        self.assertIn("vestra-portfolio-focus.js?v=1.2", loader)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
         self.assertNotIn("vestra-ux-v453.js", hotfix)
         self.assertNotIn("vestra-ux-v454.js", hotfix)
@@ -105,12 +105,16 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         for selector in ('.ux453-opp{', '.ux454-opportunity-guide{', '.ux454-podium-1{', '.ux454-rank{'):
             self.assertIn(selector, css)
 
-    def test_portfolio_focus_keeps_existing_state_key_and_css_contract(self):
+    def test_portfolio_focus_is_badges_only_compatibility(self):
         source = read('vestra-portfolio-focus.js')
-        self.assertIn("vestra-portfolio-focus-v1", source)
-        self.assertIn(".ux453-focusbar", source)
+        css = read('vestra-portfolio-focus.css')
         self.assertIn(".ux453-badge", source)
-        self.assertIn("data-ux-focus", source)
+        self.assertNotIn("vestra-portfolio-focus-v1", source)
+        self.assertNotIn("ux453-focusbar", source)
+        self.assertNotIn("data-ux-focus", source)
+        self.assertNotIn("localStorage", source)
+        self.assertNotIn("ux453-focusbar", css)
+        self.assertNotIn("data-ux-focus", css)
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
