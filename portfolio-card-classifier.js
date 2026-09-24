@@ -1,4 +1,4 @@
-/* Vestra Portfolio Card Classifier v1.3 — canonical card identity, tones and hints. */
+/* Vestra Portfolio Card Classifier v1.4 — canonical card identity, tones, badges and hints. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -16,6 +16,11 @@
     {q:'Diversificação da carteira',kind:'risk',icon:'◇',tone:'coral'},
     {q:'Como reage a carteira?',kind:'stress',icon:'≈',tone:'amber'}
   ];
+  const BADGES={
+    swap:{cls:'is-purple',text:'⇄ TROCAS INTELIGENTES'},
+    overlap:{cls:'is-amber',text:'◉ DUPLICAÇÃO DE EXPOSIÇÃO'},
+    reinforce:{cls:'is-green',text:'↗ CAPITAL NOVO'}
+  };
   function cardTitle(card){return t(card.querySelector('.market-perspective-head h4')?.textContent||card.querySelector(':scope > h4')?.textContent||card.querySelector('h4')?.textContent);}
   function classify(){
     const sh=document.getElementById('marketSheet'),c=document.getElementById('marketSheetContent');
@@ -26,6 +31,10 @@
       card.dataset.uxKind=cfg.kind;card.dataset.uxTone=cfg.tone;
       let icon=card.querySelector(':scope > .ux-card-icon');
       if(!icon){icon=document.createElement('span');icon.className='ux-card-icon';icon.textContent=cfg.icon;card.appendChild(icon);}
+      const badgeCfg=BADGES[cfg.kind];
+      if(badgeCfg&&!card.querySelector(':scope > .ux-card-badge')){
+        const badge=document.createElement('span');badge.className=`ux-card-badge ${badgeCfg.cls}`;badge.textContent=badgeCfg.text;card.insertAdjacentElement('afterbegin',badge);
+      }
     });
     const swap=c.querySelector('[data-ux-kind="swap"]'); if(swap&&!swap.querySelector('.ux-section-hint')){
       const hint=document.createElement('div');hint.className='ux-section-hint';hint.textContent='Trocas inteligentes · compara alternativas sem assumir que vender é obrigatório.';swap.appendChild(hint);
@@ -39,10 +48,10 @@
     const link=document.createElement('link');
     link.id='vestra-portfolio-card-classifier-style';
     link.rel='stylesheet';
-    link.href='portfolio-card-classifier.css?v=1.0';
+    link.href='portfolio-card-classifier.css?v=1.1';
     document.head.appendChild(link);
   }
   function start(){style();classify();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.3'});
+  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.4'});
 })();
