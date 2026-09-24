@@ -14,7 +14,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         loader=read('market-static-universe.js')
         runtime_loader=read('market-runtime-loader.js')
         self.assertNotIn('market-hotfix.js', h)
-        self.assertIn("portfolio-card-classifier.js?v=1.2", runtime_loader)
+        self.assertIn("portfolio-card-classifier.js?v=1.3", runtime_loader)
         self.assertNotIn('src="portfolio-card-classifier.js', h)
         for direct in (
             'src="vestra-portfolio-hierarchy.js',
