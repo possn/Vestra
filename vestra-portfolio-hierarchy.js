@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v2.1 — canonical card ordering with filtered single-pass observed refreshes. */
+/* Vestra Portfolio Hierarchy v2.1 — canonical card ordering with presentation-filtered single-pass observed refreshes. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -131,12 +131,14 @@
   function relevantMutation(m){
     if(m.type!=='childList')return false;
     const nodes=[...m.addedNodes,...m.removedNodes];
-    return nodes.some(node=>{
-      if(node.nodeType!==1)return false;
+    if(!nodes.length)return false;
+    const presentationOnly=node=>{
+      if(node.nodeType===3)return !t(node.textContent);
+      if(node.nodeType!==1)return true;
       const el=node;
-      if(el.matches?.('.market-detail-card,.market-row,.market-action-row,.market-fresh-row,.market-rebalance-row,.market-research-queue-main,[data-ux-kind]'))return true;
-      return !!el.querySelector?.('.market-detail-card,.market-row,.market-action-row,.market-fresh-row,.market-rebalance-row,.market-research-queue-main,[data-ux-kind]');
-    });
+      return !!el.matches?.('.ux454-purpose,.ux454-swap-head,.ux455-swap-summary,.ux455-swap-tag,.ux455-overlap-note,.ux-card-icon,.ux-card-badge,.ux-section-hint,.vpu-overview,.vpu-reveal,.vpu-tabs-shell,.ux456-swaplab');
+    };
+    return !nodes.every(presentationOnly);
   }
   function start(){
     style();apply();
