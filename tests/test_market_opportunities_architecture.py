@@ -112,7 +112,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
             self.assertIn(token, source)
         for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
             self.assertIn(token, css)
-        self.assertIn("version:'1.4'", source)
+        self.assertIn("version:'1.5'", source)
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
