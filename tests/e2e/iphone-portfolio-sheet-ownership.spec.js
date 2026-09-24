@@ -23,6 +23,7 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   const trigger = page.locator('[data-market-tool="portfolio"]').first();
   await trigger.click();
   const sheet = page.locator('#marketSheet');
+  const panel = sheet.locator('.market-sheet__panel');
   await expect(sheet).toBeVisible();
   await expect(page.locator('#viewMarket')).toBeVisible();
   expect(await page.evaluate(() => {
@@ -31,11 +32,11 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   })).toBeTruthy();
 
   await expect.poll(
-    () => sheet.evaluate(el => el.scrollHeight - el.clientHeight),
+    () => panel.evaluate(el => el.scrollHeight - el.clientHeight),
     { timeout: 15_000 }
   ).toBeGreaterThan(0);
-  await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
-  await expect.poll(() => sheet.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+  await panel.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await expect.poll(() => panel.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
   await sheet.locator('.market-close-persistent').click();
   await expect(sheet).toBeHidden();
 
@@ -43,7 +44,7 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   await page.locator('[data-market-tool="portfolio"]').first().click();
   await expect(sheet).toBeVisible();
   await page.waitForTimeout(80);
-  expect(await sheet.evaluate(el => el.scrollTop)).toBe(0);
+  expect(await panel.evaluate(el => el.scrollTop)).toBe(0);
   await expect(sheet.locator('.market-detail-head h2')).toHaveText('As minhas posições');
   await expect(sheet).not.toContainText('CF Industries · ENTRY 90');
 });
