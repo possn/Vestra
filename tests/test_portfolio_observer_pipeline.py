@@ -77,6 +77,14 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         ):
             self.assertIn(token,hierarchy)
 
+    def test_portfolio_ui_label_updates_do_not_retrigger_childlist_observer(self):
+        ui=read("vestra-portfolio-ui.js")
+        self.assertIn("const setText=",ui)
+        self.assertIn("el.firstChild.data=next",ui)
+        self.assertIn("setText(introTitle,meta.title)",ui)
+        self.assertIn("setText(introSub,meta.sub)",ui)
+        self.assertIn("setText(btn,label)",ui)
+
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
         classifier=read("portfolio-card-classifier.js")
