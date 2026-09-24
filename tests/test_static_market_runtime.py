@@ -1,3 +1,4 @@
+# CI touch: desktop canvas CSS audit is validated by runtime, architecture, and browser gates.
 from pathlib import Path
 import unittest
 
