@@ -101,3 +101,13 @@
   border-color:color-mix(in srgb,var(--accent,#168e89) 20%,var(--line));
   box-shadow:0 8px 24px rgba(18,52,58,.045);
 }
+
+.vpu-optimize-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.vpu-optimize-guide[hidden]{display:none!important}
+.vpu-optimize-guide button{display:flex;align-items:center;gap:9px;min-height:58px;border:1px solid var(--line);border-radius:14px;background:var(--soft);color:var(--text);padding:9px 10px;text-align:left}
+.vpu-optimize-guide button:hover{border-color:color-mix(in srgb,var(--accent,#168e89) 34%,var(--line));background:color-mix(in srgb,var(--accent,#168e89) 6%,var(--soft))}
+.vpu-optimize-guide small{display:grid;place-items:center;flex:0 0 24px;height:24px;border-radius:999px;background:var(--accent,#168e89);color:#fff;font-size:10px;font-weight:900}
+.vpu-optimize-guide span{display:grid;gap:2px;min-width:0}
+.vpu-optimize-guide b{font-size:11px;line-height:1.15}
+.vpu-optimize-guide em{font-style:normal;font-size:9px;line-height:1.2;color:var(--text2)}
+@media(max-width:620px){.vpu-optimize-guide{grid-template-columns:1fr}.vpu-optimize-guide button{min-height:52px}}
