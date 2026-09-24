@@ -77,6 +77,17 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         ):
             self.assertIn(token,hierarchy)
 
+    def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
+        collapsibles=read("portfolio-collapsibles.js")
+        classifier=read("portfolio-card-classifier.js")
+        hierarchy=read("vestra-portfolio-hierarchy.js")
+        self.assertIn("function start(){style()}",collapsibles)
+        self.assertIn("function start(){style();}",classifier)
+        self.assertNotIn("function start(){style();install()}",collapsibles)
+        self.assertNotIn("function start(){style();classify();}",classifier)
+        self.assertIn("VestraPortfolioCollapsibles?.refresh?.()",hierarchy)
+        self.assertIn("VestraPortfolioCardClassifier?.refresh?.()",hierarchy)
+
     def test_collapsibles_do_not_build_hidden_global_toolbar(self):
         collapsibles=read("portfolio-collapsibles.js")
         css=read("portfolio-collapsibles.css")
@@ -85,7 +96,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("market-collapse-toolbar",collapsibles)
         self.assertNotIn(".market-collapse-toolbar{",css)
         self.assertIn("c.querySelector('.market-decision-center')",hierarchy)
-        self.assertIn("version:'1.3'",collapsibles)
+        self.assertIn("version:'1.4'",collapsibles)
 
     def test_classifier_does_not_build_hidden_legacy_shortcuts(self):
         classifier=read("portfolio-card-classifier.js")
@@ -94,7 +105,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("data-ux-jump",classifier)
         self.assertNotIn("jumpPortfolio",classifier)
         self.assertNotIn("ux-portfolio-shortcuts",css)
-        self.assertIn("version:'1.4'",classifier)
+        self.assertIn("version:'1.5'",classifier)
 
     def test_classifier_owns_portfolio_badges(self):
         classifier=read("portfolio-card-classifier.js")

@@ -1,4 +1,4 @@
-/* Vestra Portfolio Card Classifier v1.4 — canonical card identity, tones, badges and hints. */
+/* Vestra Portfolio Card Classifier v1.5 — canonical card identity, tones, badges and hints. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -51,7 +51,7 @@
     link.href='portfolio-card-classifier.css?v=1.1';
     document.head.appendChild(link);
   }
-  function start(){style();classify();}
+  function start(){style();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.4'});
+  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.5'});
 })();
