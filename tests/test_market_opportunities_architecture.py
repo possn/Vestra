@@ -18,7 +18,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("market-opportunity-lenses.js?v=3.1", loader)
         self.assertLess(loader.index("market-opportunities.js?v=1.2"), loader.index("market-opportunity-lenses.js?v=3.1"))
         self.assertNotIn('src="vestra-portfolio-focus.js', hotfix)
-        self.assertIn("vestra-portfolio-focus.js?v=1.2", loader)
+        self.assertNotIn("vestra-portfolio-focus.js", loader)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
         self.assertNotIn("vestra-ux-v453.js", hotfix)
         self.assertNotIn("vestra-ux-v454.js", hotfix)
@@ -105,27 +105,27 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         for selector in ('.ux453-opp{', '.ux454-opportunity-guide{', '.ux454-podium-1{', '.ux454-rank{'):
             self.assertIn(selector, css)
 
-    def test_portfolio_focus_is_badges_only_compatibility(self):
-        source = read('vestra-portfolio-focus.js')
-        css = read('vestra-portfolio-focus.css')
-        self.assertIn(".ux453-badge", source)
-        self.assertNotIn("vestra-portfolio-focus-v1", source)
-        self.assertNotIn("ux453-focusbar", source)
-        self.assertNotIn("data-ux-focus", source)
-        self.assertNotIn("localStorage", source)
-        self.assertNotIn("ux453-focusbar", css)
-        self.assertNotIn("data-ux-focus", css)
+    def test_portfolio_badges_are_consolidated_into_classifier(self):
+        source = read('portfolio-card-classifier.js')
+        css = read('portfolio-card-classifier.css')
+        for token in ('TROCAS INTELIGENTES','DUPLICAÇÃO DE EXPOSIÇÃO','CAPITAL NOVO'):
+            self.assertIn(token, source)
+        for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
+            self.assertIn(token, css)
+        self.assertIn("version:'1.4'", source)
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
         self.assertIn('staleWhileRevalidate', sw)
         for module in (
-            './market-live-overlay.js','./market-opportunities.js','./market-opportunities.css','./vestra-portfolio-focus.js','./vestra-portfolio-hierarchy.js','./vestra-swap-lab.js',
+            './market-live-overlay.js','./market-opportunities.js','./market-opportunities.css','./vestra-portfolio-hierarchy.js','./vestra-swap-lab.js',
             './market-company-brief.js','./market-metric-cleanup.js','./portfolio-collapsibles.js','./portfolio-card-classifier.js','./portfolio-diagnostics.js',
             './vestra-ai-brief.js','./portfolio-dossier-routing.js','./market-opportunity-lenses.js','./mobile-ui-refresh.js',
         ):
             self.assertIn(module, sw)
+        self.assertNotIn('./vestra-portfolio-focus.js', sw)
+        self.assertNotIn('./vestra-portfolio-focus.css', sw)
 
 
 if __name__ == '__main__':
