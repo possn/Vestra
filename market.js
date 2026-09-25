@@ -1007,6 +1007,49 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const regAfter=regNow+delta-(srcReg===reg?delta:0); if(regAfter>maxRegion) penalty+=(regAfter-maxRegion)*.45;
     return penalty;
   }
+  function portfolioMoveEvidence(stock){
+    const conf=n(stock?.confidence_score), valuation=txt(stock?.valuation_signal), estimates=txt(stock?.estimate_signal), thesis=txt(stock?.thesis_direction), gate=txt(stock?.risk_gate);
+    const strict=conf!=null&&conf>=60&&valuation!=='overvalued'&&estimates!=='deteriorating'&&thesis!=='down'&&!['watch','high','severe'].includes(gate);
+    const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
+    const warnings=[]; let penalty=0;
+    if(conf==null){penalty+=7;warnings.push('confiança sem score');}
+    else if(conf<60){penalty+=(60-conf)*.35+3;warnings.push(`confiança ${Math.round(conf)}`);}
+    if(valuation==='overvalued'){penalty+=9;warnings.push('valuation exigente');}
+    else if(valuation==='uncertain'){penalty+=3;warnings.push('valuation incerto');}
+    if(estimates==='deteriorating'){penalty+=8;warnings.push('expectativas a piorar');}
+    if(thesis==='down'){penalty+=7;warnings.push('tese a deteriorar');}
+    if(gate==='watch'){penalty+=6;warnings.push('Risk Gate watch');}
+    const tier=strict?'preferred':acceptable?'acceptable':'research';
+    if(tier==='research') penalty+=12;
+    return {conf,valuation,estimates,thesis,gate,strict,acceptable,tier,penalty,warnings};
+  }
+  function evaluatePortfolioMove({mode='replace',sourceStock=null,destination,rows=[],amount=0,totalAfter=1,sourceConv=null,destinationConv=null,positionPct=0,sectorPct=0,indirect=0,sourceIndirect=0}={}){
+    const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
+    const evidence=portfolioMoveEvidence(destination);
+    const riskPenalty=riskBudgetPenalty(destination,rows,amount,totalAfter,sourceStock);
+    const overlapDelta=indirect-sourceIndirect;
+    const convictionGain=sourceConv!=null&&destinationConv!=null?destinationConv-sourceConv:null;
+    const convDelta=convictionGain==null?null:convictionGain*(amount/(totalAfter||1));
+    const sourceAutomatable=!sourceStock||(!isFund(sourceStock)&&n(sourceStock.score)!=null&&n(sourceStock.confidence_score)!=null);
+    let autoEligible=false;
+    if(mode==='fresh'){
+      autoEligible=evidence.strict&&riskPenalty<5&&(targets.overlap!=='reduce'||indirect<2)&&positionPct<=maxPos&&sectorPct<=maxSector;
+    }else if(mode==='scenario'){
+      autoEligible=evidence.strict&&convDelta>0&&overlapDelta<2&&riskPenalty<5;
+    }else{
+      autoEligible=sourceAutomatable&&evidence.strict&&convictionGain>=2&&convDelta>0&&overlapDelta<2&&positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5;
+    }
+    const warnings=[...evidence.warnings];
+    if(sourceStock&&!sourceAutomatable) warnings.push('origem apenas para análise manual');
+    if(mode!=='fresh'&&convictionGain!=null&&convictionGain<2) warnings.push('melhoria de convicção insuficiente');
+    if(mode!=='fresh'&&overlapDelta>=2) warnings.push('aumenta overlap');
+    if(mode==='fresh'&&targets.overlap==='reduce'&&indirect>=2) warnings.push('overlap elevado');
+    if(riskPenalty>=5) warnings.push('pressiona orçamento de risco');
+    if(positionPct>(mode==='replace'?maxPos+1:maxPos)) warnings.push('excede objetivo por posição');
+    if(sectorPct>(mode==='replace'?maxSector+1:maxSector)) warnings.push('excede objetivo setorial');
+    return {targets,maxPos,maxSector,evidence,riskPenalty,overlapDelta,convictionGain,convDelta,sourceAutomatable,autoEligible,warnings};
+  }
+
   function renderRiskBudget(rows){
     const profile=portfolioRiskProfile(rows), t=loadPortfolioTargets();
     const maxFactor=n(t.maxFactor)||45, maxCurrency=n(t.maxCurrency)||70, maxRegion=n(t.maxRegion)||70;
