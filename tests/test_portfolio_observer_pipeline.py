@@ -98,6 +98,15 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("focusCard(c,target)", ui)
         self.assertIn("el.classList.contains('vpu-hidden')||el===target", ui)
 
+    def test_optimize_is_a_connected_three_step_journey(self):
+        ui = (ROOT / "vestra-portfolio-ui.js").read_text(encoding="utf-8")
+        css = (ROOT / "vestra-portfolio-ui.css").read_text(encoding="utf-8")
+        self.assertIn("function syncOptimizeGuide(c,target=null)", ui)
+        self.assertIn("aria-current", ui)
+        self.assertIn("vpu-step-state", ui)
+        self.assertIn("button.is-current", css)
+        self.assertIn("button:not(:last-child)::after", css)
+
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
         classifier=read("portfolio-card-classifier.js")
