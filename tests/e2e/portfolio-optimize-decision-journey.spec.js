@@ -34,9 +34,11 @@ test('iPhone/WebKit: Portfolio Optimize follows one canonical decision journey',
       ['scenario', 'Se substituíres pelo mesmo valor'],
       ['swap', 'Alternativas no mesmo setor'],
     ];
-    content.innerHTML = cards.map(([kind, title]) =>
-      `<div class="market-detail-card" data-ux-kind="${kind}"><h4>${title}</h4><p>Fixture ${kind}</p></div>`
-    ).join('') + '<section class="market-portfolio-section" id="e2eBaseHoldings"><h3>Ações, ETFs e fundos</h3></section>';
+    content.innerHTML = '<div class="market-decision-center"><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora</h4></div>' +
+      cards.map(([kind, title]) =>
+        `<div class="market-detail-card" data-ux-kind="${kind}"><h4>${title}</h4><p>Fixture ${kind}</p></div>`
+      ).join('') +
+      '<section class="market-portfolio-section" id="e2eBaseHoldings"><h3>Ações, ETFs e fundos</h3></section>';
     window.VestraPortfolioHierarchy.refresh();
   });
 
