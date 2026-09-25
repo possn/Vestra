@@ -9,7 +9,7 @@
   };
   const t=v=>String(v??'').trim();
   const num=v=>{const m=t(v).replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null;};
-  let active='decide';
+  let active='decide', focusing=false;
 
   function root(){
     const sh=document.getElementById('marketSheet'), c=document.getElementById('marketSheetContent');
@@ -117,12 +117,15 @@
   }
   function focusCard(c,target){
     if(!target)return null;
-    c.querySelectorAll('.vpu-section-card').forEach(el=>{
-      if(el.classList.contains('vpu-hidden')||el===target)return;
-      if(!el.classList.contains('is-collapsed'))el.querySelector(':scope > [data-collapse-toggle],:scope > .market-collapse-toggle')?.click();
-    });
-    if(target.classList.contains('is-collapsed'))target.querySelector(':scope > [data-collapse-toggle],:scope > .market-collapse-toggle')?.click();
-    return target;
+    focusing=true;
+    try{
+      c.querySelectorAll('.vpu-section-card').forEach(el=>{
+        if(el.classList.contains('vpu-hidden')||el===target)return;
+        if(!el.classList.contains('is-collapsed'))el.querySelector(':scope > [data-collapse-toggle],:scope > .market-collapse-toggle')?.click();
+      });
+      if(target.classList.contains('is-collapsed'))target.querySelector(':scope > [data-collapse-toggle],:scope > .market-collapse-toggle')?.click();
+      return target;
+    }finally{focusing=false;}
   }
   function collapseActive(c){
     c.querySelectorAll('.vpu-section-card').forEach(el=>{
@@ -153,7 +156,7 @@
   function style(){ if(document.getElementById('vestra-portfolio-ui-style'))return; const link=document.createElement('link'); link.id='vestra-portfolio-ui-style'; link.rel='stylesheet'; link.href='vestra-portfolio-ui.css?v=1.3'; document.head.appendChild(link); }
   document.addEventListener('click',e=>{
     const toggle=e.target.closest?.('[data-collapse-toggle]');
-    if(toggle){
+    if(toggle&&!focusing){
       const target=toggle.closest?.('.vpu-section-card');
       if(target?.classList.contains('is-collapsed')&&!target.classList.contains('vpu-hidden')){
         const c=root();if(!c)return;
