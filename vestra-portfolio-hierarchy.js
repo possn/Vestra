@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v2.1 — canonical card ordering with presentation-filtered single-pass observed refreshes. */
+/* Vestra Portfolio Hierarchy v2.2 — Optimize order follows compare → simulate → redistribute before support analysis. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -6,12 +6,12 @@
 
   const ORDER=[
     {id:'decide',title:'Decidir agora',sub:'As ações que podem exigir atenção.',kinds:['research','priority','reinforce','review']},
-    {id:'optimize',title:'Otimizar a carteira',sub:'Trocas, overlap e eficiência da alocação.',kinds:['swap','scenario','overlap','map']},
+    {id:'optimize',title:'Otimizar a carteira',sub:'Trocas, overlap e eficiência da alocação.',kinds:['swap','scenario','rebalance','overlap','map','plan']},
     {id:'monitor',title:'Monitorizar',sub:'Saúde, objetivos e resistência da carteira.',kinds:['target','history','risk','stress']}
   ];
   const PURPOSES={
     research:'Pendências de research',priority:'O que merece atenção',map:'Como está distribuída',reinforce:'Onde colocar capital novo',review:'O que reavaliar',
-    overlap:'Exposição duplicada',swap:'Melhores substitutos',scenario:'Simular antes de trocar',target:'Fit com os teus objetivos',history:'Evolução da qualidade',risk:'Concentração e diversificação',stress:'Comportamento em quedas'
+    overlap:'Exposição duplicada',swap:'Melhores substitutos',scenario:'Simular antes de trocar',rebalance:'Redistribuir capital',plan:'Plano multi-movimento',target:'Fit com os teus objetivos',history:'Evolução da qualidade',risk:'Concentração e diversificação',stress:'Comportamento em quedas'
   };
 
   function root(){
@@ -166,5 +166,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.1'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.2'});
 })();
