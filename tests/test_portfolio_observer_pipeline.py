@@ -118,6 +118,12 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn(".vpu-tab-count", css)
         self.assertIn(".vpu-card-cue", css)
 
+    def test_exploration_avoids_repeated_header_copy(self):
+        ui = (ROOT / "vestra-portfolio-ui.js").read_text(encoding="utf-8")
+        self.assertIn("<strong>Escolhe o foco</strong>", ui)
+        self.assertEqual(ui.count("<small>EXPLORAR A CARTEIRA</small>"), 1)
+        self.assertIn("active==='optimize'?'Segue os três passos abaixo.':''", ui)
+
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
         classifier=read("portfolio-card-classifier.js")
