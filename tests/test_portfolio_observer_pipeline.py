@@ -124,6 +124,14 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertEqual(ui.count("<small>EXPLORAR A CARTEIRA</small>"), 1)
         self.assertIn("active==='optimize'?'Segue os três passos abaixo.':''", ui)
 
+    def test_exploration_is_scan_first_until_explicit_card_intent(self):
+        ui = (ROOT / "vestra-portfolio-ui.js").read_text(encoding="utf-8")
+        self.assertIn("function collapseActive(c)", ui)
+        self.assertNotIn("function openFirstActive(c)", ui)
+        self.assertIn("if(opening){collapseActive(c);", ui)
+        self.assertIn("apply();const c=root();if(c){collapseActive(c);", ui)
+        self.assertIn("focusCard(c,target)", ui)
+
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
         classifier=read("portfolio-card-classifier.js")
