@@ -29,7 +29,7 @@ class VestraPortfolioUiStyleTests(unittest.TestCase):
         self.assertIn('--desktop-sidebar-space: var(--desktop-sidebar-w)', app_css)
         self.assertIn('body.desktop-sidebar-collapsed { --desktop-sidebar-space: 0px; }', app_css)
         self.assertIn('.vpu-section-card.is-collapsed', css)
-        self.assertIn('function openFirstActive(', js)
+        self.assertIn('function collapseActive(', js)
         self.assertIn('data-vpu-guide="swap"', js)
         self.assertIn('data-vpu-guide="scenario"', js)
         self.assertIn('data-vpu-guide="rebalance"', js)
