@@ -15,7 +15,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("industryBonus", s)
         self.assertIn("conf==null||conf<60", s)
         self.assertIn("x.indirect<=currentIndirect+1.5", s)
-        self.assertIn("convDelta*1.35+scoreDelta*.25+valuationBonus-overlapPenalty", s)
+        self.assertIn("convDelta*1.35+scoreDelta*.25+valuationBonus+industryBonus-overlapPenalty", s)
         self.assertIn("Convicção +${a.convDelta.toFixed(0)}", s)
 
     def test_rebalancer_marks_only_robust_positive_improvements_auto_eligible(self):
