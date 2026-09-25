@@ -16,7 +16,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('market-hotfix.js', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
-        for module in ('portfolio-collapsibles.js?v=1.4', 'portfolio-card-classifier.js?v=1.5'):
+        for module in ('portfolio-collapsibles.js?v=1.5', 'portfolio-card-classifier.js?v=1.5'):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.1'):
@@ -63,7 +63,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn('data-collapse-toggle', s)
         for token in ('data-collapse-all', 'Abrir tudo', 'Fechar tudo', 'market-collapse-toolbar'):
             self.assertNotIn(token, s)
-        self.assertIn("portfolio-collapsibles.css?v=1.0", s)
+        self.assertIn("portfolio-collapsibles.css?v=1.1", s)
         self.assertIn("link.rel='stylesheet'", s)
         self.assertNotIn("document.createElement('style')", s)
         self.assertNotIn('s.textContent=', s)
