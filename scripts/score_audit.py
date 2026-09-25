@@ -361,7 +361,7 @@ def main():
         flags.append({"type": "sector_concentration", "severity": "review", "sectors": [x["sector"] for x in skewed]})
 
     out = {
-        "schema_version": 3,
+        "schema_version": 4,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "rows_analysed": len(rows),
         "methodology": {
@@ -377,7 +377,7 @@ def main():
         "model_audits": model_results,
         "sector_top_decile_bias": sector_bias,
         "flags": flags,
-        "known_methodological_issue_to_test": "Several specialist packs still inherit globally-ranked base components such as growth, stability or interest coverage before model-specific weighting. Do not change this until prospective validation can compare global vs peer-normalized variants out of sample.",
+        "known_methodological_issue_to_test": "Several specialist packs still inherit globally-ranked base components such as growth, stability or interest coverage before model-specific weighting. Missing dimensions are also renormalized over the surviving weight pack. Both effects are diagnostic-only until prospective validation can compare alternatives out of sample.",
         "next_step": "Combine cross-sectional stability with prospective 4/12/24-week rank IC and top-minus-bottom return spreads before changing production weights or normalization universes.",
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
