@@ -1034,6 +1034,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     let autoEligible=false;
     if(mode==='fresh'){
       autoEligible=evidence.strict&&riskPenalty<5&&(targets.overlap!=='reduce'||indirect<2)&&positionPct<=maxPos&&sectorPct<=maxSector;
+    }else if(mode==='alternative'){
+      autoEligible=sourceAutomatable&&evidence.strict&&convictionGain>=5&&convDelta>0&&overlapDelta<1.5&&riskPenalty<5;
     }else if(mode==='scenario'){
       autoEligible=evidence.strict&&convDelta>0&&overlapDelta<2&&riskPenalty<5;
     }else{
@@ -1042,7 +1044,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const warnings=[...evidence.warnings];
     if(sourceStock&&!sourceAutomatable) warnings.push('origem apenas para análise manual');
     if(mode!=='fresh'&&convictionGain!=null&&convictionGain<2) warnings.push('melhoria de convicção insuficiente');
-    if(mode!=='fresh'&&overlapDelta>=2) warnings.push('aumenta overlap');
+    if(mode==='alternative'&&overlapDelta>=1.5) warnings.push('aumenta overlap');
+    else if(mode!=='fresh'&&overlapDelta>=2) warnings.push('aumenta overlap');
     if(mode==='fresh'&&targets.overlap==='reduce'&&indirect>=2) warnings.push('overlap elevado');
     if(riskPenalty>=5) warnings.push('pressiona orçamento de risco');
     if(positionPct>(mode==='replace'?maxPos+1:maxPos)) warnings.push('excede objetivo por posição');
@@ -1247,26 +1250,23 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const weak=ranked.slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,7);
     const alternatives=[];
     for(const r of weak){
-      const curScore=n(r.stock.score), curConv=r.conviction; if(isFund(r.stock)||!txt(r.stock.sector)||curScore==null||curConv==null) continue;
-      const currentIndirect=r.portfolioFit?.indirectPct||0;
-      const candidates=M.stocks.filter(x=>{
-        if(isFund(x)||heldTickers.has(txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,''))||txt(x.sector)!==txt(r.stock.sector)) return false;
-        const score=n(x.score), conv=portfolioConviction(x), conf=n(x.confidence_score);
-        if(score==null||conv==null||conf==null||conf<60) return false;
-        if(['watch','high','severe'].includes(txt(x.risk_gate))||txt(x.valuation_signal)==='overvalued'||txt(x.estimate_signal)==='deteriorating'||txt(x.thesis_direction)==='down') return false;
-        return conv>=curConv+5 && score>=curScore+3;
-      });
+      const curScore=n(r.stock.score), curConv=r.conviction; if(isFund(r.stock)||!txt(r.stock.sector)||curScore==null||curConv==null||r.value<=0) continue;
+      const currentIndirect=r.portfolioFit?.indirectPct||0, sourceSectorPct=(sectorRows.find(x=>x.sector===txt(r.stock.sector))?.pct)||0;
+      const candidates=M.stocks.filter(x=>!isFund(x)&&!heldTickers.has(txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,''))&&txt(x.sector)===txt(r.stock.sector)&&n(x.score)!=null);
       const cand=candidates.map(x=>{
-        const indirect=indirectExposurePct(x,etfsForFit), conv=portfolioConviction(x), scoreDelta=n(x.score)-curScore, convDelta=conv-curConv;
-        const overlapPenalty=Math.max(0,indirect-currentIndirect)*4;
-        const valuationBonus=txt(x.valuation_signal)==='undervalued'?3:txt(x.valuation_signal)==='fair'?1:0;
+        const indirect=indirectExposurePct(x,etfsForFit), conv=portfolioConviction(x); if(conv==null) return null;
+        const scoreDelta=n(x.score)-curScore;
+        const decision=evaluatePortfolioMove({mode:'alternative',sourceStock:r.stock,destination:x,rows:ranked,amount:r.value,totalAfter:analysed,sourceConv:curConv,destinationConv:conv,positionPct:r.value/analysed*100,sectorPct:sourceSectorPct,indirect,sourceIndirect:currentIndirect});
+        if(!decision.autoEligible||scoreDelta<3) return null;
+        const overlapPenalty=Math.max(0,decision.overlapDelta)*4;
+        const valuationBonus=decision.evidence.valuation==='undervalued'?3:decision.evidence.valuation==='fair'?1:0;
         const industryBonus=txt(x.industry)&&txt(x.industry)===txt(r.stock.industry)?3:0;
-        const rank=convDelta*1.35+scoreDelta*.25+valuationBonus+industryBonus-overlapPenalty;
-        return {stock:x,indirect,conv,scoreDelta,convDelta,rank};
-      }).filter(x=>x.indirect<=currentIndirect+1.5).sort((a,b)=>b.rank-a.rank)[0];
+        const rank=decision.convictionGain*1.35+scoreDelta*.25+valuationBonus+industryBonus-overlapPenalty;
+        return {stock:x,indirect,conv,scoreDelta,convDelta:decision.convictionGain,rank,decision};
+      }).filter(Boolean).sort((a,b)=>b.rank-a.rank)[0];
       if(cand){
         const fit=cand.indirect+1<currentIndirect?'better':cand.indirect>currentIndirect+1?'worse':'neutral';
-        alternatives.push({from:r.stock,to:cand.stock,delta:cand.scoreDelta,convDelta:cand.convDelta,portfolioFit:fit,currentIndirect,candidateIndirect:cand.indirect});
+        alternatives.push({from:r.stock,to:cand.stock,delta:cand.scoreDelta,convDelta:cand.convDelta,portfolioFit:fit,currentIndirect,candidateIndirect:cand.indirect,decision:cand.decision});
       }
       if(alternatives.length>=3) break;
     }
@@ -1358,7 +1358,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       <div class="market-detail-card"><h4>Candidatos a reforço</h4>${compactRows(reinforce,r=>`Convicção ${Math.round(r.conviction)}/100 · ${txt(r.stock.valuation_signal)||'valuation sem sinal'}`)}</div>
       <div class="market-detail-card"><h4>Posições a rever</h4>${compactRows(review,r=>`Convicção ${r.conviction==null?'—':Math.round(r.conviction)}/100 · ${txt(r.stock.risk_gate)||'clear'} · ${txt(r.stock.estimate_signal)||'expectativas —'}`)}</div>
       <div class="market-detail-card"><h4>Concentração e overlap</h4>${concHtml}</div>
-      <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida do mesmo setor com convicção ≥5 pontos superior, Score ≥3 pontos superior, confiança ≥60 e sem agravamento material de overlap.</p>${altHtml}</div>
+      <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida do mesmo setor com convicção ≥5 pontos superior, Score ≥3 pontos superior e passa a avaliação canónica de evidência, Risk Budget e overlap.</p>${altHtml}</div>
       ${scenarioHtml}
       ${targetFitHtml}
       ${healthTimelineHtml}
