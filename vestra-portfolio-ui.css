@@ -279,3 +279,30 @@
   }
   .vpu-portfolio .vpu-section-card.vpu-support-start{margin-top:38px!important}
 }
+
+
+/* v2.0 — exploration focus mode: analysis first, base holdings on explicit exit. */
+.vpu-portfolio[data-vpu-expanded="1"] > .market-portfolio-section,
+.vpu-portfolio[data-vpu-expanded="1"] > details.market-detail-disclosure{display:none!important}
+.vpu-exit{margin:14px 0 4px}
+.vpu-exit[hidden]{display:none!important}
+.vpu-exit>button{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px;
+  border:1px solid color-mix(in srgb,var(--accent,#168e89) 22%,var(--line));
+  border-radius:18px;
+  background:color-mix(in srgb,var(--accent,#168e89) 5%,var(--card));
+  color:var(--text);
+  text-align:left;
+}
+.vpu-exit span{font-size:9px;color:var(--text2)}
+.vpu-exit strong{font-size:11px;color:var(--accent,#168e89)}
+@media(max-width:620px){
+  .vpu-exit>button{padding:13px 14px}
+  .vpu-exit span{font-size:8.5px}
+  .vpu-exit strong{font-size:10px}
+}
