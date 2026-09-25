@@ -27,7 +27,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             self.assertNotIn(direct, h)
         expected = (
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.3",
+            "vestra-portfolio-ui.js?v=2.4",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",
@@ -75,6 +75,16 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         hierarchy=read('vestra-portfolio-hierarchy.js')
         self.assertEqual(hierarchy.count('new MutationObserver'), 1)
         self.assertIn('VestraSwapLab?.refresh?.()', hierarchy)
+
+    def test_portfolio_ui_has_calm_empty_states(self):
+        s=read('vestra-portfolio-ui.js')
+        css=read('vestra-portfolio-ui.css')
+        self.assertIn('function ensureEmptyState', s)
+        self.assertIn('Sem prioridades urgentes', s)
+        self.assertIn('Sem alertas para destacar', s)
+        self.assertIn('Sem otimizações pendentes', s)
+        self.assertIn("version:'2.4'", s)
+        self.assertIn('.vpu-empty[hidden]', css)
 
     def test_service_worker_caches_hierarchy_and_swap_lab(self):
         sw=read('sw.js')
