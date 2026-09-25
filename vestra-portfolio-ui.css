@@ -237,3 +237,45 @@
   .vpu-portfolio .vpu-section-card.is-collapsed>h4{padding-right:132px!important;font-size:11px}
   .vpu-portfolio .vpu-section-card.is-collapsed>.vpu-card-cue{right:43px;max-width:84px;font-size:7.5px}
 }
+
+
+/* v1.9 — Optimize scan follows the three-step journey before support analysis. */
+.vpu-portfolio .vpu-section-card.is-collapsed .market-data-age{display:none!important}
+.vpu-portfolio .vpu-section-card[data-vpu-scan-title].is-collapsed::after{
+  content:attr(data-vpu-scan-title);
+  position:absolute;
+  left:52px;
+  top:50%;
+  transform:translateY(-50%);
+  max-width:calc(100% - 220px);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text);
+  font-size:12px;
+  line-height:1.2;
+  font-weight:850;
+  pointer-events:none;
+}
+.vpu-portfolio .vpu-section-card[data-vpu-scan-title].is-collapsed>h4{visibility:hidden}
+.vpu-portfolio .vpu-section-card.vpu-support-start{margin-top:42px!important}
+.vpu-portfolio .vpu-section-card.vpu-support-start::before{
+  content:'ANÁLISES DE APOIO';
+  position:absolute;
+  left:2px;
+  top:-28px;
+  color:var(--text2);
+  font-size:8px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.13em;
+  pointer-events:none;
+}
+@media(max-width:620px){
+  .vpu-portfolio .vpu-section-card[data-vpu-scan-title].is-collapsed::after{
+    left:52px;
+    max-width:calc(100% - 190px);
+    font-size:11px;
+  }
+  .vpu-portfolio .vpu-section-card.vpu-support-start{margin-top:38px!important}
+}

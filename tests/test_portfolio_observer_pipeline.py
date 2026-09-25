@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'2.9'",ui)
+        self.assertIn("version:'3.0'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -178,7 +178,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("data-ux-jump",classifier)
         self.assertNotIn("jumpPortfolio",classifier)
         self.assertNotIn("ux-portfolio-shortcuts",css)
-        self.assertIn("version:'1.5'",classifier)
+        self.assertIn("version:'1.6'",classifier)
 
     def test_classifier_owns_portfolio_badges(self):
         classifier=read("portfolio-card-classifier.js")
@@ -220,10 +220,10 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.9",
+            "vestra-portfolio-ui.js?v=3.0",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
-            "vestra-portfolio-hierarchy.js?v=2.1",
+            "vestra-portfolio-hierarchy.js?v=2.2",
             "vestra-ai-brief.js?v=1.2",
         ]
         positions=[loader.index(x) for x in lazy_order]

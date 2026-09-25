@@ -30,7 +30,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'market-company-brief.js?v=2.1',
             'portfolio-sheet-navigation.js?v=1.5',
             'portfolio-collapsibles.js?v=1.7',
-            'portfolio-card-classifier.js?v=1.5',
+            'portfolio-card-classifier.js?v=1.6',
             'market-data-loader.js?v=2.6',
         ):
             self.assertIn(lazy, loader)
@@ -44,10 +44,10 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertIn("market-opportunity-lenses.js?v=3.1", universe)
         for module in (
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.9",
+            "vestra-portfolio-ui.js?v=3.0",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
-            "vestra-portfolio-hierarchy.js?v=2.1",
+            "vestra-portfolio-hierarchy.js?v=2.2",
             "vestra-ai-brief.js?v=1.2",
         ):
             self.assertIn(module, universe)

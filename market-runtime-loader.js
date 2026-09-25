@@ -76,7 +76,7 @@
       // classifier consumes the attributes installed by collapsibles.
       portfolioHelpersPromise = loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.5')
         .then(() => loadHelper('VestraPortfolioCollapsibles', 'portfolio-collapsibles.js?v=1.7'))
-        .then(() => loadHelper('VestraPortfolioCardClassifier', 'portfolio-card-classifier.js?v=1.5'))
+        .then(() => loadHelper('VestraPortfolioCardClassifier', 'portfolio-card-classifier.js?v=1.6'))
         .catch(err => {
           portfolioHelpersPromise = null;
           throw err;
