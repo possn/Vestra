@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'2.7'",ui)
+        self.assertIn("version:'2.8'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -96,6 +96,9 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("function focusCard(c,target)", ui)
         self.assertIn("function collapseActive(c)", ui)
         self.assertIn("focusCard(c,target)", ui)
+        self.assertIn("const direct=e.target.closest?.('.vpu-section-card.is-collapsed')", ui)
+        self.assertIn("focusCard(c,direct)", ui)
+        self.assertNotIn(".market-detail-card[data-collapsible=\"1\"].is-collapsed", collapsibles)
         self.assertIn("el.classList.contains('vpu-hidden')||el===target", ui)
 
     def test_optimize_is_a_connected_three_step_journey(self):
@@ -154,7 +157,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("market-collapse-toolbar",collapsibles)
         self.assertNotIn(".market-collapse-toolbar{",css)
         self.assertIn("c.querySelector('.market-decision-center')",hierarchy)
-        self.assertIn("version:'1.6'",collapsibles)
+        self.assertIn("version:'1.7'",collapsibles)
         self.assertIn("function toggleCard(card)",collapsibles)
         self.assertIn("aria-expanded",collapsibles)
         self.assertIn("aria-label",collapsibles)
@@ -211,7 +214,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.7",
+            "vestra-portfolio-ui.js?v=2.8",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",
