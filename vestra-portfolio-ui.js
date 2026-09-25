@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v2.3 — scannable priority and monitoring workspaces with focused navigation. */
+/* Vestra Portfolio UI v2.4 — compact exploration hierarchy with less repeated chrome. */
 (() => {
   'use strict';
 
@@ -78,7 +78,7 @@
     let reveal=c.querySelector('.vpu-reveal'); if(!reveal){ reveal=document.createElement('div'); reveal.className='vpu-reveal'; reveal.innerHTML='<div><small>EXPLORAR A CARTEIRA</small><strong>Transforma a carteira em decisões</strong><span>Começa pelo que exige atenção, acompanha a saúde ou testa uma melhoria.</span></div><button type="button" data-vpu-toggle>Começar</button>'; hero.insertAdjacentElement('afterend',reveal); } return reveal;
   }
   function ensureTabs(c,reveal){
-    let shell=c.querySelector('.vpu-tabs-shell'); if(!shell){ shell=document.createElement('section'); shell.className='vpu-tabs-shell'; shell.innerHTML=`<div class="vpu-tabs-head"><div><small>EXPLORAR A CARTEIRA</small><strong>O que queres perceber?</strong></div><button type="button" data-vpu-toggle aria-label="Fechar análise">×</button></div><div class="vpu-tabs" role="tablist" aria-label="Análise da carteira">${Object.entries(GROUPS).map(([id,g])=>`<button type="button" role="tab" data-vpu-tab="${id}"><strong>${g.label}</strong><span>${g.sub}</span></button>`).join('')}</div><div class="vpu-tab-intro"><strong></strong><span></span></div><div class="vpu-optimize-guide" hidden><button type="button" data-vpu-guide="swap"><small>1</small><span><b>Encontrar alternativa</b><em>Comparar opções melhores</em></span><i class="vpu-step-state">Comparar</i></button><button type="button" data-vpu-guide="scenario"><small>2</small><span><b>Simular impacto</b><em>Ver antes de trocar</em></span><i class="vpu-step-state">Simular</i></button><button type="button" data-vpu-guide="rebalance"><small>3</small><span><b>Redistribuir capital</b><em>Escolher onde melhora mais</em></span><i class="vpu-step-state">Decidir</i></button></div>`; reveal.insertAdjacentElement('afterend',shell); } return shell;
+    let shell=c.querySelector('.vpu-tabs-shell'); if(!shell){ shell=document.createElement('section'); shell.className='vpu-tabs-shell'; shell.innerHTML=`<div class="vpu-tabs-head"><div><strong>Escolhe o foco</strong></div><button type="button" data-vpu-toggle aria-label="Fechar análise">×</button></div><div class="vpu-tabs" role="tablist" aria-label="Análise da carteira">${Object.entries(GROUPS).map(([id,g])=>`<button type="button" role="tab" data-vpu-tab="${id}"><strong>${g.label}</strong><span>${g.sub}</span></button>`).join('')}</div><div class="vpu-tab-intro"><strong></strong><span></span></div><div class="vpu-optimize-guide" hidden><button type="button" data-vpu-guide="swap"><small>1</small><span><b>Encontrar alternativa</b><em>Comparar opções melhores</em></span><i class="vpu-step-state">Comparar</i></button><button type="button" data-vpu-guide="scenario"><small>2</small><span><b>Simular impacto</b><em>Ver antes de trocar</em></span><i class="vpu-step-state">Simular</i></button><button type="button" data-vpu-guide="rebalance"><small>3</small><span><b>Redistribuir capital</b><em>Escolher onde melhora mais</em></span><i class="vpu-step-state">Decidir</i></button></div>`; reveal.insertAdjacentElement('afterend',shell); } return shell;
   }
   function cardCount(el){return countRows(el)||null;}
   function syncGroupScan(c,tabs){
@@ -110,7 +110,7 @@
     tabs.querySelectorAll('[data-vpu-tab]').forEach(b=>{const on=b.dataset.vpuTab===active;b.classList.toggle('is-active',on);b.setAttribute('aria-selected',on?'true':'false');});
     const introTitle=tabs.querySelector('.vpu-tab-intro strong'),introSub=tabs.querySelector('.vpu-tab-intro span');
     if(introTitle&&introTitle.textContent!==meta.title)introTitle.textContent=meta.title;
-    if(introSub&&introSub.textContent!==meta.sub)introSub.textContent=meta.sub;
+    if(introSub){const compact=active==='optimize'?'Segue os três passos abaixo.':'';if(introSub.textContent!==compact)introSub.textContent=compact;}
     const guide=tabs.querySelector('.vpu-optimize-guide'); if(guide)guide.hidden=!expanded||active!=='optimize';
     c.querySelectorAll('.market-detail-card[data-collapsible="1"],[data-ux-kind]').forEach(el=>{const g=classify(el);if(!g)return;el.classList.add('vpu-section-card');el.dataset.vpuGroup=g;el.classList.toggle('vpu-hidden',!expanded||g!==active);});
     syncGroupScan(c,tabs);
@@ -156,6 +156,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'2.3'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'2.4'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();

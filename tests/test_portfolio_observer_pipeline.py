@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'2.3'",ui)
+        self.assertIn("version:'2.4'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -117,6 +117,12 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("Stress test", ui)
         self.assertIn(".vpu-tab-count", css)
         self.assertIn(".vpu-card-cue", css)
+
+    def test_exploration_avoids_repeated_header_copy(self):
+        ui = (ROOT / "vestra-portfolio-ui.js").read_text(encoding="utf-8")
+        self.assertIn("<strong>Escolhe o foco</strong>", ui)
+        self.assertEqual(ui.count("<small>EXPLORAR A CARTEIRA</small>"), 1)
+        self.assertIn("active==='optimize'?'Segue os três passos abaixo.':''", ui)
 
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
@@ -188,7 +194,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.3",
+            "vestra-portfolio-ui.js?v=2.4",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",
