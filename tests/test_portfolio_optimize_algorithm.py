@@ -10,6 +10,9 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
     def test_same_sector_alternatives_are_conviction_first(self):
         s = read("market.js")
         self.assertIn("conv>=curConv+5 && score>=curScore+3", s)
+        self.assertIn("if(isFund(r.stock)||!txt(r.stock.sector)", s)
+        self.assertIn("[\'watch\',\'high\',\'severe\'].includes(txt(x.risk_gate))", s)
+        self.assertIn("industryBonus", s)
         self.assertIn("conf==null||conf<60", s)
         self.assertIn("x.indirect<=currentIndirect+1.5", s)
         self.assertIn("convDelta*1.35+scoreDelta*.25+valuationBonus-overlapPenalty", s)
@@ -22,6 +25,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("Number(b.autoEligible)-Number(a.autoEligible)", s)
         self.assertIn("melhoria de convicção insuficiente", s)
         self.assertIn("aumenta overlap", s)
+        self.assertIn("origem apenas para análise manual", s)
+        self.assertIn("txt(stock.risk_gate)!==\'watch\'", s)
 
     def test_multi_move_plan_never_falls_back_to_worsening_candidate(self):
         s = read("market.js")
@@ -29,6 +34,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertNotIn("|| sim.results.find(r=>!usedDest.has", s)
         self.assertIn("const usedDest=new Set(), sectorAdds=new Map()", s)
         self.assertIn("const sourcePressure=r=>", s)
+        self.assertIn("const planSources=rows.filter(r=>!isFund(r.stock)", s)
         self.assertIn("positionPct-maxPosition", s)
         self.assertIn("sectorPct-maxSector", s)
         self.assertIn("Plano indicativo e conservador", s)
