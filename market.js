@@ -1043,7 +1043,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
     const warnings=[...evidence.warnings];
     if(sourceStock&&!sourceAutomatable) warnings.push('origem apenas para análise manual');
-    if(mode!=='fresh'&&convictionGain!=null&&convictionGain<2) warnings.push('melhoria de convicção insuficiente');
+    if(mode==='alternative'&&convictionGain!=null&&convictionGain<5) warnings.push('melhoria de convicção insuficiente');
+    else if(mode!=='fresh'&&convictionGain!=null&&convictionGain<2) warnings.push('melhoria de convicção insuficiente');
     if(mode==='alternative'&&overlapDelta>=1.5) warnings.push('aumenta overlap');
     else if(mode!=='fresh'&&overlapDelta>=2) warnings.push('aumenta overlap');
     if(mode==='fresh'&&targets.overlap==='reduce'&&indirect>=2) warnings.push('overlap elevado');
