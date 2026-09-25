@@ -92,7 +92,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
             self.assertIn(token, css)
         self.assertIn('window.VestraPortfolioCardClassifier', s)
-        self.assertIn("version:'1.6'", s)
+        self.assertIn("version:'1.5'", s)
 
     def test_portfolio_dossier_routing_delegates_navigation_exclusively(self):
         s = read('portfolio-dossier-routing.js')
