@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -35,6 +37,111 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
     def test_raw_score_prefers_pre_confidence_score(self):
         self.assertEqual(mod.raw_score({"score_raw": 71, "score": 59}), 71)
         self.assertEqual(mod.raw_score({"score": 59}), 59)
+
+    def test_all_weight_packs_sum_to_one(self):
+        for model, weights in mod.MODEL_WEIGHTS.items():
+            self.assertAlmostEqual(sum(weights.values()), 1.0, places=9, msg=model)
+
+    def test_effective_weight_profile_quantifies_missing_dimension_renormalization(self):
+        weights = mod.MODEL_WEIGHTS["general"]
+        dims = {name: 50.0 for name in weights}
+        full = mod.effective_weight_profile(dims, weights)
+        self.assertAlmostEqual(full["missing_weight_pct"], 0.0, places=6)
+        self.assertAlmostEqual(full["renormalization_factor"], 1.0, places=6)
+
+        sparse = dict(dims)
+        sparse["Quality"] = None
+        sparse["Growth"] = None
+        profile = mod.effective_weight_profile(sparse, weights)
+        self.assertAlmostEqual(profile["missing_weight_pct"], 33.0, places=6)
+        self.assertGreater(profile["renormalization_factor"], 1.4)
+        self.assertIsNotNone(profile["dominant_dimension"])
+
+    def test_model_audit_reports_material_missing_weight(self):
+        rows = [general_row(i) for i in range(10)]
+        for row in rows:
+            row["score_dimensions"]["Quality"] = None
+            row["score_dimensions"]["Growth"] = None
+        result = mod.model_audit("general", rows)
+        renorm = result["missing_weight_renormalization"]
+        self.assertEqual(renorm["rows_missing_at_least_20pct_weight"], 10)
+        self.assertEqual(renorm["rows_missing_at_least_35pct_weight"], 0)
+        self.assertAlmostEqual(result["weight_pack_sum"], 1.0, places=9)
+
+    def test_model_audit_exposes_missing_weight_contract(self):
+        rows = [general_row(i) for i in range(10)]
+        result = mod.model_audit("general", rows)
+        self.assertEqual(result["weight_pack_sum"], 1.0)
+        renorm = result["missing_weight_renormalization"]
+        self.assertEqual(
+            set(renorm),
+            {
+                "mean_missing_weight_pct",
+                "max_missing_weight_pct",
+                "rows_missing_at_least_20pct_weight",
+                "rows_missing_at_least_35pct_weight",
+                "mean_renormalization_factor",
+                "max_renormalization_factor",
+                "mean_max_effective_dimension_share_pct",
+                "max_effective_dimension_share_pct",
+                "dominant_dimension_counts",
+            },
+        )
+
+    def test_main_is_read_only_for_input_snapshot(self):
+        rows = [general_row(i) for i in range(10)]
+        payload = {"stocks": rows}
+        original_stocks, original_out = mod.STOCKS, mod.OUT
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            stocks = tmp / "stocks.json"
+            out = tmp / "score_audit.json"
+            stocks.write_text(json.dumps(payload), encoding="utf-8")
+            before = stocks.read_bytes()
+            try:
+                mod.STOCKS = stocks
+                mod.OUT = out
+                mod.main()
+            finally:
+                mod.STOCKS = original_stocks
+                mod.OUT = original_out
+            self.assertEqual(stocks.read_bytes(), before)
+            report = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(report["methodology"]["purpose"], "diagnostic only; production score/weights are unchanged")
+            self.assertIn("missing_weight_renormalization", report["methodology"])
+            self.assertIn("model_audits", report)
+            self.assertIn("flags", report)
+
+    def test_real_snapshot_audit_smoke_and_emit_compact_summary(self):
+        original_out = mod.OUT
+        with tempfile.TemporaryDirectory() as tmp:
+            try:
+                mod.OUT = Path(tmp) / "score_audit.json"
+                mod.main()
+                report = json.loads(mod.OUT.read_text(encoding="utf-8"))
+            finally:
+                mod.OUT = original_out
+        summary = {
+            "rows_analysed": report["rows_analysed"],
+            "models": [
+                {
+                    "score_model": x["score_model"],
+                    "n": x["n"],
+                    "raw_vs_reconstructed_rank_spearman": x.get("raw_vs_reconstructed_rank_spearman"),
+                    "published_vs_raw_rank_spearman": x.get("published_vs_raw_rank_spearman"),
+                    "redundant_pair_count": x.get("redundant_pair_count"),
+                    "material_sensitivity_count": x.get("material_sensitivity_count"),
+                    "missing_weight_renormalization": x.get("missing_weight_renormalization"),
+                    "dimension_coverage": x.get("dimension_coverage"),
+                }
+                for x in report["model_audits"]
+            ],
+            "sector_top_decile_bias": report["sector_top_decile_bias"],
+            "flags": report["flags"],
+        }
+        print("SCORE_AUDIT_SUMMARY=" + json.dumps(summary, sort_keys=True))
+        self.assertGreater(report["rows_analysed"], 0)
+        self.assertTrue(report["model_audits"])
 
     def test_model_audit_does_not_call_confidence_moderation_reconstruction_error(self):
         rows = [
