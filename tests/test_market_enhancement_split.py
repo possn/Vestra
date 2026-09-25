@@ -70,7 +70,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn('.market-collapse-toggle{', css)
         self.assertNotIn('.market-collapse-toolbar{', css)
         self.assertIn('window.VestraPortfolioCollapsibles', s)
-        self.assertIn("version:'1.4'", s)
+        self.assertIn("version:'1.5'", s)
 
     def test_classifier_preserves_all_portfolio_kinds_hints_and_static_styles_without_hidden_shortcuts(self):
         s = read('portfolio-card-classifier.js')
