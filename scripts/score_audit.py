@@ -275,6 +275,14 @@ def model_audit(model, rows):
         "raw_vs_reconstructed_rank_spearman": round(raw_vs_reconstructed, 4) if raw_vs_reconstructed is not None else None,
         "published_vs_raw_rank_spearman": round(published_vs_raw, 4) if published_vs_raw is not None else None,
         "dimension_coverage": dimension_coverage,
+        "structurally_unavailable_dimensions": [
+            {
+                "dimension": dimension,
+                "nominal_weight_pct": round(weights[dimension] * 100.0, 2),
+            }
+            for dimension, stats in dimension_coverage.items()
+            if stats["present"] == 0
+        ],
         "effective_dimension_count_distribution": dict(sorted(effective.items())),
         "weight_pack_sum": round(sum(weights.values()), 6),
         "missing_weight_renormalization": {
@@ -336,6 +344,14 @@ def main():
             flags.append({"type": "dimension_redundancy", "score_model": model["score_model"], "severity": "review", "count": model["redundant_pair_count"]})
         if model.get("material_sensitivity_count", 0):
             flags.append({"type": "weight_sensitivity", "score_model": model["score_model"], "severity": "review", "count": model["material_sensitivity_count"]})
+        structural = model.get("structurally_unavailable_dimensions") or []
+        if structural:
+            flags.append({
+                "type": "structurally_unavailable_dimensions",
+                "score_model": model["score_model"],
+                "severity": "investigate",
+                "dimensions": structural,
+            })
         renorm = model.get("missing_weight_renormalization") or {}
         if renorm.get("rows_missing_at_least_35pct_weight", 0):
             flags.append({
@@ -371,6 +387,7 @@ def main():
             "redundancy_threshold": "absolute Spearman >= 0.75",
             "material_sensitivity": "rank Spearman < 0.95 or top-decile Jaccard < 0.75",
             "missing_weight_renormalization": "measure nominal weight absent per row and the largest effective dimension share after production-style renormalization",
+            "structural_unavailability": "flag dimensions with positive nominal weight but zero observed coverage across the entire score model; do not silently treat them as ordinary row-level missingness",
             "sector_bias_note": "descriptive concentration only; not causal evidence",
             "reconstruction_parity": "reconstruct score_dimensions, apply structural score_cap, compare with score_raw; public score moderation by evidence confidence is reported separately",
         },
