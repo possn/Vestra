@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v2.6 — denser scan hierarchy for portfolio exploration. */
+/* Vestra Portfolio UI v2.7 — navigation counts reflect analyses, not inferred actionable items. */
 (() => {
   'use strict';
 
@@ -85,11 +85,10 @@
     const meta=GROUPS[active]||GROUPS.decide;
     tabs.querySelectorAll('[data-vpu-tab]').forEach(b=>{
       const group=b.dataset.vpuTab, cards=[...c.querySelectorAll('.vpu-section-card')].filter(el=>el.dataset.vpuGroup===group);
-      const actionable=cards.reduce((sum,el)=>sum+(cardCount(el)||0),0);
       let badge=b.querySelector('.vpu-tab-count');
       if(!badge){badge=document.createElement('i');badge.className='vpu-tab-count';b.appendChild(badge);}
-      badge.textContent=actionable?String(actionable):String(cards.length);
-      badge.title=actionable?`${actionable} itens nesta área`:`${cards.length} análises nesta área`;
+      badge.textContent=String(cards.length);
+      badge.title=`${cards.length} análises nesta área`;
     });
     c.querySelectorAll('.vpu-section-card').forEach(el=>{
       let cue=el.querySelector(':scope > .vpu-card-cue');
@@ -159,6 +158,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'2.6'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'2.7'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
