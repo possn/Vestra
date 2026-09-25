@@ -115,7 +115,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertNotIn('src="market-live-overlay.js', html)
         loader = read("market-runtime-loader.js")
         self.assertIn("loadHelper('VestraMarketLiveOverlay', 'market-live-overlay.js?v=1.2')", loader)
-        self.assertLess(loader.index("market-live-overlay.js?v=1.2"), loader.index("script.src = 'market.js?v=20260925opt5';"))
+        self.assertLess(loader.index("market-live-overlay.js?v=1.2"), loader.index("script.src = 'market.js?v=20260925opt6';"))
         self.assertIn('"./market-live-overlay.js"', sw)
 
     def test_lifecycle_persistence_is_blocked_until_hydration(self):
