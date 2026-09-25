@@ -1472,62 +1472,71 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const held=new Map(rows.map(r=>[txt(r.stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,''),r]));
     const etfs=rows.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
-    const universe=M.stocks.filter(x=>!isFund(x)&&n(x.score)!=null&&!['high','severe'].includes(txt(x.risk_gate)));
+    const universe=M.stocks.filter(x=>!isFund(x)&&n(x.score)!=null&&!['watch','high','severe'].includes(txt(x.risk_gate)));
     const candidates=universe.map(stock=>{
       const conv=portfolioConviction(stock); if(conv==null) return null;
       const base=txt(stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,''); const existing=held.get(base); const existingValue=existing?.value||0;
       const sector=txt(stock.sector)||'Sem setor', sectorValue=sectors.get(sector)||0, indirect=isFund(stock)?0:indirectExposurePct(stock,etfs);
       const strictPosCapacity=Math.max(0,afterTotal*maxPos/100-existingValue), strictSectorCapacity=Math.max(0,afterTotal*maxSector/100-sectorValue);
-      const softPosCapacity=Math.max(0,afterTotal*(maxPos+3)/100-existingValue), softSectorCapacity=Math.max(0,afterTotal*(maxSector+5)/100-sectorValue);
-      let capacity=Math.min(strictPosCapacity,strictSectorCapacity,fresh), budgetMode='within targets';
-      if(capacity<50){ capacity=Math.min(softPosCapacity,softSectorCapacity,fresh); budgetMode='soft budget'; }
-      if(capacity<50) return null;
-      const conf=n(stock.confidence_score), valuation=txt(stock.valuation_signal), estimates=txt(stock.estimate_signal);
-      const strict=conf!=null&&conf>=60&&valuation!=='overvalued'&&estimates!=='deteriorating'&&budgetMode==='within targets';
-      const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating');
+      const capacity=Math.min(strictPosCapacity,strictSectorCapacity,fresh); if(capacity<50) return null;
+      const conf=n(stock.confidence_score), valuation=txt(stock.valuation_signal), estimates=txt(stock.estimate_signal), thesis=txt(stock.thesis_direction), gate=txt(stock.risk_gate);
+      const strict=conf!=null&&conf>=60&&valuation!=='overvalued'&&estimates!=='deteriorating'&&thesis!=='down'&&gate!=='watch';
+      const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down';
       const tier=strict?'preferred':acceptable?'acceptable':'research';
       const warnings=[]; let score=conv+portfolioTiltBonus(stock,targets.tilt);
       if(conf==null){ score-=7; warnings.push('confiança sem score'); } else if(conf<60){ score-=(60-conf)*.35+3; warnings.push(`confiança ${Math.round(conf)}`); }
       if(valuation==='overvalued'){ score-=9; warnings.push('valuation exigente'); }
       if(estimates==='deteriorating'){ score-=8; warnings.push('expectativas a piorar'); }
-      if(budgetMode==='soft budget'){ score-=6; warnings.push('excede objetivo ligeiramente'); }
+      if(thesis==='down'){ score-=8; warnings.push('tese a deteriorar'); }
+      if(gate==='watch'){ score-=6; warnings.push('Risk Gate watch'); }
       if(tier==='research') score-=12;
       if(valuation==='undervalued') score+=4; else if(valuation==='fair') score+=1;
       const sectorNow=sectorValue/analysed*100; if(sectorNow<maxSector*.55) score+=3; else if(sectorNow>maxSector*.85) score-=3;
       if(existing&&existingValue/analysed*100<maxPos*.65) score+=2;
       if(targets.overlap==='reduce'&&indirect>1.5) score-=(indirect-1.5)*2.5;
-      score-=riskBudgetPenalty(stock,rows,Math.min(capacity,fresh),afterTotal);
-      return {stock,conv,score,capacity,existingValue,sector,sectorValue,indirect,tier,warnings,budgetMode};
-    }).filter(Boolean).sort((a,b)=>{ const rank={preferred:0,acceptable:1,research:2}; return (rank[a.tier]-rank[b.tier])||b.score-a.score; });
-    const allocations=[], used=new Set(); let remaining=fresh; const shares=[.5,.3,.2];
+      const riskPenalty=riskBudgetPenalty(stock,rows,Math.min(capacity,fresh),afterTotal); score-=riskPenalty;
+      const autoEligible=strict&&riskPenalty<5&&(!targets.overlap||targets.overlap!=='reduce'||indirect<2);
+      if(!autoEligible&&riskPenalty>=5) warnings.push('pressiona orçamento de risco');
+      if(!autoEligible&&targets.overlap==='reduce'&&indirect>=2) warnings.push('overlap elevado');
+      return {stock,conv,score,capacity,existingValue,sector,sectorValue,indirect,tier,warnings,autoEligible};
+    }).filter(Boolean).sort((a,b)=>{ const rank={preferred:0,acceptable:1,research:2}; return Number(b.autoEligible)-Number(a.autoEligible)||(rank[a.tier]-rank[b.tier])||b.score-a.score; });
+    const allocations=[], used=new Set(), sectorAdds=new Map(); let remaining=fresh; const shares=[.5,.3,.2];
     for(let i=0;i<shares.length&&remaining>=50;i++){
-      const cand=candidates.find(c=>!used.has(txt(c.stock.ticker).toUpperCase())&&c.capacity>=50); if(!cand) break;
+      const cand=candidates.find(c=>{
+        if(!c.autoEligible||used.has(txt(c.stock.ticker).toUpperCase())||c.capacity<50) return false;
+        const sectorRoom=Math.max(0,afterTotal*maxSector/100-c.sectorValue-(sectorAdds.get(c.sector)||0));
+        return Math.min(c.capacity,sectorRoom)>=50;
+      }); if(!cand) break;
       let desired=i===shares.length-1?remaining:Math.max(50,Math.round((fresh*shares[i])/50)*50);
-      let alloc=Math.min(remaining,cand.capacity,desired); alloc=Math.floor(alloc/50)*50; if(alloc<50){used.add(txt(cand.stock.ticker).toUpperCase()); i--; continue;}
-      used.add(txt(cand.stock.ticker).toUpperCase()); remaining-=alloc;
-      const positionPct=(cand.existingValue+alloc)/afterTotal*100, sectorPct=(cand.sectorValue+alloc)/afterTotal*100;
+      const sectorRoom=Math.max(0,afterTotal*maxSector/100-cand.sectorValue-(sectorAdds.get(cand.sector)||0));
+      let alloc=Math.min(remaining,cand.capacity,sectorRoom,desired); alloc=Math.floor(alloc/50)*50; if(alloc<50){used.add(txt(cand.stock.ticker).toUpperCase()); i--; continue;}
+      used.add(txt(cand.stock.ticker).toUpperCase()); sectorAdds.set(cand.sector,(sectorAdds.get(cand.sector)||0)+alloc); remaining-=alloc;
+      const positionPct=(cand.existingValue+alloc)/afterTotal*100, sectorPct=(cand.sectorValue+(sectorAdds.get(cand.sector)||0))/afterTotal*100;
       allocations.push({...cand,amount:alloc,positionPct,sectorPct});
     }
     if(remaining>=50){
       for(const cand of candidates){
-        if(remaining<50) break; if(used.has(txt(cand.stock.ticker).toUpperCase())) continue;
-        let alloc=Math.min(remaining,cand.capacity); alloc=Math.floor(alloc/50)*50; if(alloc<50) continue;
-        used.add(txt(cand.stock.ticker).toUpperCase()); remaining-=alloc;
-        allocations.push({...cand,amount:alloc,positionPct:(cand.existingValue+alloc)/afterTotal*100,sectorPct:(cand.sectorValue+alloc)/afterTotal*100});
+        if(remaining<50) break; if(!cand.autoEligible||used.has(txt(cand.stock.ticker).toUpperCase())) continue;
+        const sectorRoom=Math.max(0,afterTotal*maxSector/100-cand.sectorValue-(sectorAdds.get(cand.sector)||0));
+        let alloc=Math.min(remaining,cand.capacity,sectorRoom); alloc=Math.floor(alloc/50)*50; if(alloc<50) continue;
+        used.add(txt(cand.stock.ticker).toUpperCase()); sectorAdds.set(cand.sector,(sectorAdds.get(cand.sector)||0)+alloc); remaining-=alloc;
+        allocations.push({...cand,amount:alloc,positionPct:(cand.existingValue+alloc)/afterTotal*100,sectorPct:(cand.sectorValue+(sectorAdds.get(cand.sector)||0))/afterTotal*100});
         if(allocations.length>=5) break;
       }
     }
     const currentConvRows=rows.map(r=>({...r,conv:portfolioConviction(r.stock)})).filter(r=>r.conv!=null&&r.value>0), convBase=currentConvRows.reduce((a,r)=>a+r.value,0)||1;
     const currentConv=currentConvRows.reduce((a,r)=>a+r.value*r.conv,0)/convBase;
     const added=allocations.reduce((a,x)=>a+x.amount,0), afterConv=(currentConv*convBase+allocations.reduce((a,x)=>a+x.amount*x.conv,0))/(convBase+added||1);
-    return {fresh,allocated:added,remaining:fresh-added,currentConv,afterConv,allocations,targets};
+    return {fresh,allocated:added,remaining:fresh-added,currentConv,afterConv,allocations,manual:candidates.filter(x=>!x.autoEligible).slice(0,3),targets};
   }
 
   function renderFreshCapitalPlan(plan){
     if(plan?.error) return `<p class="market-case-note">${esc(plan.error)}</p>`;
-    if(!plan?.allocations?.length) return '<p class="market-case-note">Não encontrei candidatos mesmo após relaxar os filtros. Revê os objetivos ou a cobertura do universo.</p>';
-    const tierLabel=x=>x.tier==='preferred'?'Preferido':x.tier==='acceptable'?'Aceitável':'Research';
-    return `<div class="market-fresh-summary"><strong>${euro(plan.allocated)} distribuídos</strong><span>Convicção ponderada ${plan.currentConv.toFixed(1)} → ${plan.afterConv.toFixed(1)}${plan.remaining>=50?` · ${euro(plan.remaining)} ficam por alocar`:''}</span></div><div class="market-fresh-list">${plan.allocations.map((x,i)=>`<button type="button" class="market-fresh-row" data-market-ticker="${esc(x.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(x.stock.ticker)} · ${euro(x.amount)}</strong><small>${tierLabel(x)} · ${x.existingValue>0?'reforço existente':'nova posição'} · conv. ${Math.round(x.conv)} · ${esc(x.sector)}</small><small>Peso ${x.positionPct.toFixed(1)}% · setor ${x.sectorPct.toFixed(1)}% · fit ${x.score.toFixed(0)}${x.warnings?.length?' · ⚠ '+esc(x.warnings.slice(0,2).join(' · ')):''}</small></span></button>`).join('')}</div><p class="market-case-note">Preferido = cumpre filtros ideais; Aceitável/Research aparecem com alertas em vez de serem escondidos. Risk Gate high/severe continua excluído.</p>`;
+    if(!plan?.allocations?.length){
+      const manual=plan?.manual?.length?`<div class="market-fresh-list">${plan.manual.map(x=>`<button type="button" class="market-fresh-row" data-market-ticker="${esc(x.stock.ticker)}"><span><strong>${esc(x.stock.ticker)}</strong><small>Comparação manual · conv. ${Math.round(x.conv)} · ${esc(x.sector)}</small><small>${x.warnings?.length?'⚠ '+esc(x.warnings.slice(0,2).join(' · ')):'Não cumpre os filtros automáticos.'}</small></span></button>`).join('')}</div>`:''; 
+      return `<p class="market-case-note">Não encontrei destinos robustos para distribuição automática dentro dos targets atuais. O capital fica por alocar.</p>${manual}`;
+    }
+    return `<div class="market-fresh-summary"><strong>${euro(plan.allocated)} distribuídos</strong><span>Convicção ponderada ${plan.currentConv.toFixed(1)} → ${plan.afterConv.toFixed(1)}${plan.remaining>=50?` · ${euro(plan.remaining)} ficam por alocar`:''}</span></div><div class="market-fresh-list">${plan.allocations.map((x,i)=>`<button type="button" class="market-fresh-row" data-market-ticker="${esc(x.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(x.stock.ticker)} · ${euro(x.amount)}</strong><small>Elegível p/ capital novo · ${x.existingValue>0?'reforço existente':'nova posição'} · conv. ${Math.round(x.conv)} · ${esc(x.sector)}</small><small>Peso ${x.positionPct.toFixed(1)}% · setor ${x.sectorPct.toFixed(1)}% · fit ${x.score.toFixed(0)}${x.warnings?.length?' · ⚠ '+esc(x.warnings.slice(0,2).join(' · ')):''}</small></span></button>`).join('')}</div><p class="market-case-note">A distribuição automática usa apenas candidatos com evidência forte, dentro dos targets e sem pressão material de risco/overlap. O montante que não cumprir estes critérios fica por alocar.</p>`;
   }
 
   function openTool(tool){
