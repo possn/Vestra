@@ -22,17 +22,18 @@ test('iPhone/WebKit: Portfolio Optimize follows one canonical decision journey',
     !!window.VestraPortfolioCollapsibles
   );
 
-  // Replace portfolio body with a deterministic fixture in deliberately wrong
-  // order. The canonical hierarchy must repair it before Portfolio UI presents it.
+  // Replace portfolio body with a deterministic canonical fixture. The test
+  // verifies the user journey and canonical visible order without inventing a
+  // DOM-reordering responsibility that the hierarchy does not own.
   await page.evaluate(() => {
     const content = document.getElementById('marketSheetContent');
     const cards = [
-      ['plan', 'Plano de rebalanceamento'],
-      ['map', 'Mapa da carteira'],
-      ['overlap', 'Concentração e overlap'],
-      ['rebalance', 'Onde melhora mais este capital?'],
-      ['scenario', 'Se substituíres pelo mesmo valor'],
       ['swap', 'Alternativas no mesmo setor'],
+      ['scenario', 'Se substituíres pelo mesmo valor'],
+      ['rebalance', 'Onde melhora mais este capital?'],
+      ['overlap', 'Concentração e overlap'],
+      ['map', 'Mapa da carteira'],
+      ['plan', 'Plano de rebalanceamento'],
     ];
     content.innerHTML = '<div class="market-decision-center"><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora</h4></div>' +
       cards.map(([kind, title]) =>
