@@ -1,8 +1,8 @@
-/* Vestra Market runtime loader v1.6 — replay early market mode intent after lazy core load. */
+/* Vestra Market runtime loader v1.7 — replay early market mode intent after lazy core load. */
 (() => {
   'use strict';
 
-  const SRC = 'market.js?v=20260925opt2';
+  const SRC = 'market.js?v=20260925opt3';
   const TIMEOUT_MS = 12000;
   let portfolioHelpersPromise = null;
   let helpersPromise = null;
@@ -191,7 +191,7 @@
           return;
         }
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.6' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.7' } }));
         } catch (_) {}
         replayPendingSearch();
         replayPendingMode();
@@ -214,7 +214,7 @@
       );
 
       if (!existing) {
-        script.src = 'market.js?v=20260925opt2';
+        script.src = 'market.js?v=20260925opt3';
         script.async = true;
         script.dataset.vestraMarketCore = '1';
         document.head.appendChild(script);
@@ -257,6 +257,6 @@
     ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.6',
+    version: '1.7',
   });
 })();
