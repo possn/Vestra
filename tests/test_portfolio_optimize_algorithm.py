@@ -28,6 +28,16 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("origem apenas para análise manual", s)
         self.assertIn("txt(stock.risk_gate)!==\'watch\'", s)
 
+    def test_same_value_scenario_uses_risk_and_evidence_consistently(self):
+        s = read("market.js")
+        self.assertIn("const riskPenalty=riskBudgetPenalty(a.to,ranked,fromRow.value,analysed,a.from)", s)
+        self.assertIn("const strongEvidence=n(a.to.confidence_score)>=60", s)
+        self.assertIn("const autoEligible=strongEvidence&&convDelta>0&&overlapDelta<2&&riskPenalty<5", s)
+        self.assertIn("if(autoEligible&&(convDelta>=.5||overlapDelta<=-1)) impact='Melhora'", s)
+        self.assertIn("if(convDelta<=0||overlapDelta>=2||riskPenalty>=5||!strongEvidence) impact='Piora'", s)
+        self.assertIn("pressiona orçamento de risco", s)
+        self.assertIn("cruza convicção, overlap e orçamento de risco", s)
+
     def test_fresh_capital_allocates_only_strict_candidates_with_cumulative_sector_budget(self):
         s = read("market.js")
         self.assertIn("!['watch','high','severe'].includes(txt(x.risk_gate))", s)
