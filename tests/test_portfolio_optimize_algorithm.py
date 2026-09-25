@@ -20,7 +20,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
 
     def test_rebalancer_marks_only_robust_positive_improvements_auto_eligible(self):
         s = read("market.js")
-        self.assertIn("const autoEligible=tier!=='research'&&convictionGain>=2&&convDelta>0&&overlapDelta<2", s)
+        self.assertIn("const autoEligible=srcAutomatable&&strict&&convictionGain>=2&&convDelta>0&&overlapDelta<2", s)
         self.assertIn("positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5", s)
         self.assertIn("Number(b.autoEligible)-Number(a.autoEligible)", s)
         self.assertIn("melhoria de convicção insuficiente", s)
