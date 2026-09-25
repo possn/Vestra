@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v2.8 — direct card intent preserves one-decision focus. */
+/* Vestra Portfolio UI v2.9 — every card-open path preserves one-decision focus. */
 (() => {
   'use strict';
 
@@ -152,6 +152,17 @@
   function jump(kind){ const c=root(), target=card(kind,c); if(!target)return; c.dataset.vpuExpanded='1'; active=classify(target)||active; try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{} apply(); focusCard(c,target); setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30); }
   function style(){ if(document.getElementById('vestra-portfolio-ui-style'))return; const link=document.createElement('link'); link.id='vestra-portfolio-ui-style'; link.rel='stylesheet'; link.href='vestra-portfolio-ui.css?v=1.3'; document.head.appendChild(link); }
   document.addEventListener('click',e=>{
+    const toggle=e.target.closest?.('[data-collapse-toggle]');
+    if(toggle){
+      const target=toggle.closest?.('.vpu-section-card');
+      if(target?.classList.contains('is-collapsed')&&!target.classList.contains('vpu-hidden')){
+        const c=root();if(!c)return;
+        e.preventDefault();e.stopPropagation();focusCard(c,target);
+        if(active==='optimize')syncOptimizeGuide(c,target);
+        setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'nearest'}),20);
+        return;
+      }
+    }
     const direct=e.target.closest?.('.vpu-section-card.is-collapsed');
     if(direct&&!e.target.closest?.('a,button,input,select,textarea,[role="button"]')){
       const c=root();if(!c||direct.classList.contains('vpu-hidden'))return;
@@ -166,6 +177,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'2.8'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'2.9'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
