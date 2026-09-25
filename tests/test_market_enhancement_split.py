@@ -16,7 +16,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('market-hotfix.js', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
-        for module in ('portfolio-collapsibles.js?v=1.5', 'portfolio-card-classifier.js?v=1.5'):
+        for module in ('portfolio-collapsibles.js?v=1.6', 'portfolio-card-classifier.js?v=1.5'):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.1'):
@@ -63,14 +63,14 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertIn('data-collapse-toggle', s)
         for token in ('data-collapse-all', 'Abrir tudo', 'Fechar tudo', 'market-collapse-toolbar'):
             self.assertNotIn(token, s)
-        self.assertIn("portfolio-collapsibles.css?v=1.1", s)
+        self.assertIn("portfolio-collapsibles.css?v=1.2", s)
         self.assertIn("link.rel='stylesheet'", s)
         self.assertNotIn("document.createElement('style')", s)
         self.assertNotIn('s.textContent=', s)
         self.assertIn('.market-collapse-toggle{', css)
         self.assertNotIn('.market-collapse-toolbar{', css)
         self.assertIn('window.VestraPortfolioCollapsibles', s)
-        self.assertIn("version:'1.5'", s)
+        self.assertIn("version:'1.6'", s)
 
     def test_classifier_preserves_all_portfolio_kinds_hints_and_static_styles_without_hidden_shortcuts(self):
         s = read('portfolio-card-classifier.js')
@@ -92,7 +92,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
             self.assertIn(token, css)
         self.assertIn('window.VestraPortfolioCardClassifier', s)
-        self.assertIn("version:'1.5'", s)
+        self.assertIn("version:'1.6'", s)
 
     def test_portfolio_dossier_routing_delegates_navigation_exclusively(self):
         s = read('portfolio-dossier-routing.js')
