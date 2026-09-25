@@ -35,7 +35,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         ):
             self.assertIn(lazy, loader)
             self.assertNotIn(f'src="{lazy.split("?")[0]}', index)
-        self.assertIn("script.src = 'market.js?v=20260925opt6';", loader)
+        self.assertIn("script.src = 'market.js?v=20260925opt7';", loader)
         universe = read("market-static-universe.js")
         self.assertIn("politicians.js?v=2.1", universe)
         self.assertNotIn('src="politicians.js', index)
