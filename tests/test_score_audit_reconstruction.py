@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -65,6 +67,50 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
         self.assertEqual(renorm["rows_missing_at_least_20pct_weight"], 10)
         self.assertEqual(renorm["rows_missing_at_least_35pct_weight"], 0)
         self.assertAlmostEqual(result["weight_pack_sum"], 1.0, places=9)
+
+    def test_model_audit_exposes_missing_weight_contract(self):
+        rows = [general_row(i) for i in range(10)]
+        result = mod.model_audit("general", rows)
+        self.assertEqual(result["weight_pack_sum"], 1.0)
+        renorm = result["missing_weight_renormalization"]
+        self.assertEqual(
+            set(renorm),
+            {
+                "mean_missing_weight_pct",
+                "max_missing_weight_pct",
+                "rows_missing_at_least_20pct_weight",
+                "rows_missing_at_least_35pct_weight",
+                "mean_renormalization_factor",
+                "max_renormalization_factor",
+                "mean_max_effective_dimension_share_pct",
+                "max_effective_dimension_share_pct",
+                "dominant_dimension_counts",
+            },
+        )
+
+    def test_main_is_read_only_for_input_snapshot(self):
+        rows = [general_row(i) for i in range(10)]
+        payload = {"stocks": rows}
+        original_stocks, original_out = mod.STOCKS, mod.OUT
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            stocks = tmp / "stocks.json"
+            out = tmp / "score_audit.json"
+            stocks.write_text(json.dumps(payload), encoding="utf-8")
+            before = stocks.read_bytes()
+            try:
+                mod.STOCKS = stocks
+                mod.OUT = out
+                mod.main()
+            finally:
+                mod.STOCKS = original_stocks
+                mod.OUT = original_out
+            self.assertEqual(stocks.read_bytes(), before)
+            report = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(report["methodology"]["purpose"], "diagnostic only; production score/weights are unchanged")
+            self.assertIn("missing_weight_renormalization", report["methodology"])
+            self.assertIn("model_audits", report)
+            self.assertIn("flags", report)
 
     def test_model_audit_does_not_call_confidence_moderation_reconstruction_error(self):
         rows = [
