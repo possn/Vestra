@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "generated_at": "2026-09-23T12:32:48.371324+00:00",
+  "generated_at": "2026-09-25T12:48:04.216766+00:00",
   "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
   "horizons_days": [
     28,
@@ -8,15 +8,15 @@
     168
   ],
   "snapshots_available": 5,
-  "realised_outcomes": 0,
-  "new_outcomes_this_run": 0,
+  "realised_outcomes": 1475,
+  "new_outcomes_this_run": 1475,
   "horizons": {
     "28": {
-      "n": 0,
-      "rank_information_coefficient": null,
-      "top_quintile_mean_return_pct": null,
-      "bottom_quintile_mean_return_pct": null,
-      "top_minus_bottom_pct": null,
+      "n": 1475,
+      "rank_information_coefficient": 0.0879,
+      "top_quintile_mean_return_pct": -3.65,
+      "bottom_quintile_mean_return_pct": 24.81,
+      "top_minus_bottom_pct": -28.46,
       "peer_shadow_comparison": {
         "eligible_n": 0,
         "cohort_count": 0,
@@ -42,31 +42,175 @@
         "positive_peer_shadow_spread_cohorts": 0,
         "cohorts": []
       },
-      "cohort_count": 0,
-      "expected_matured_cohorts": 0,
-      "cohort_capture_pct": null,
-      "median_cohort_rank_ic": null,
-      "positive_ic_cohorts": 0,
-      "median_cohort_top_minus_bottom_pct": null,
+      "cohort_count": 1,
+      "expected_matured_cohorts": 1,
+      "cohort_capture_pct": 100.0,
+      "median_cohort_rank_ic": 0.0879,
+      "positive_ic_cohorts": 1,
+      "median_cohort_top_minus_bottom_pct": -28.46,
       "positive_spread_cohorts": 0,
       "factor_rank_information_coefficient": {
-        "score": null,
-        "quality_pct": null,
-        "growth_pct": null,
-        "balance_pct": null,
-        "cashflow_pct": null,
-        "value_pct": null,
-        "execution_pct": null,
-        "earnings_quality_pct": null,
-        "capital_allocation_pct": null,
-        "stability_pct": null
+        "score": 0.0879,
+        "quality_pct": 0.0042,
+        "growth_pct": 0.1113,
+        "balance_pct": 0.0259,
+        "cashflow_pct": -0.0024,
+        "value_pct": -0.0132,
+        "execution_pct": -0.0192,
+        "earnings_quality_pct": 0.0521,
+        "capital_allocation_pct": -0.0377,
+        "stability_pct": 0.0276
       },
-      "by_score_model": {},
-      "by_sector": {},
-      "cohorts": [],
+      "by_score_model": {
+        "bank": {
+          "n": 80,
+          "rank_information_coefficient": -0.2601,
+          "top_quintile_mean_return_pct": -6.93,
+          "bottom_quintile_mean_return_pct": 0.13,
+          "top_minus_bottom_pct": -7.06
+        },
+        "biotech": {
+          "n": 130,
+          "rank_information_coefficient": 0.1738,
+          "top_quintile_mean_return_pct": -3.62,
+          "bottom_quintile_mean_return_pct": 230.24,
+          "top_minus_bottom_pct": -233.86
+        },
+        "energy": {
+          "n": 81,
+          "rank_information_coefficient": 0.5804,
+          "top_quintile_mean_return_pct": 3.21,
+          "bottom_quintile_mean_return_pct": 113.82,
+          "top_minus_bottom_pct": -110.61
+        },
+        "general": {
+          "n": 814,
+          "rank_information_coefficient": 0.0169,
+          "top_quintile_mean_return_pct": -5.88,
+          "bottom_quintile_mean_return_pct": -6.46,
+          "top_minus_bottom_pct": 0.59
+        },
+        "growth_tech": {
+          "n": 188,
+          "rank_information_coefficient": -0.0543,
+          "top_quintile_mean_return_pct": 0.23,
+          "bottom_quintile_mean_return_pct": 26.37,
+          "top_minus_bottom_pct": -26.15
+        },
+        "insurance": {
+          "n": 49,
+          "rank_information_coefficient": -0.0135,
+          "top_quintile_mean_return_pct": -4.66,
+          "bottom_quintile_mean_return_pct": -4.33,
+          "top_minus_bottom_pct": -0.33
+        },
+        "reit": {
+          "n": 66,
+          "rank_information_coefficient": 0.0007,
+          "top_quintile_mean_return_pct": -8.42,
+          "bottom_quintile_mean_return_pct": -9.05,
+          "top_minus_bottom_pct": 0.63
+        },
+        "utility": {
+          "n": 67,
+          "rank_information_coefficient": 0.363,
+          "top_quintile_mean_return_pct": -4.82,
+          "bottom_quintile_mean_return_pct": -9.6,
+          "top_minus_bottom_pct": 4.78
+        }
+      },
+      "by_sector": {
+        "Basic Materials": {
+          "n": 111,
+          "rank_information_coefficient": -0.0867,
+          "top_quintile_mean_return_pct": -8.34,
+          "bottom_quintile_mean_return_pct": -3.65,
+          "top_minus_bottom_pct": -4.69
+        },
+        "Communication Services": {
+          "n": 61,
+          "rank_information_coefficient": -0.0713,
+          "top_quintile_mean_return_pct": -4.11,
+          "bottom_quintile_mean_return_pct": -0.23,
+          "top_minus_bottom_pct": -3.88
+        },
+        "Consumer Cyclical": {
+          "n": 137,
+          "rank_information_coefficient": 0.0686,
+          "top_quintile_mean_return_pct": -4.81,
+          "bottom_quintile_mean_return_pct": -6.96,
+          "top_minus_bottom_pct": 2.15
+        },
+        "Consumer Defensive": {
+          "n": 76,
+          "rank_information_coefficient": 0.2073,
+          "top_quintile_mean_return_pct": -4.44,
+          "bottom_quintile_mean_return_pct": -9.99,
+          "top_minus_bottom_pct": 5.55
+        },
+        "Energy": {
+          "n": 81,
+          "rank_information_coefficient": 0.5804,
+          "top_quintile_mean_return_pct": 3.21,
+          "bottom_quintile_mean_return_pct": 113.82,
+          "top_minus_bottom_pct": -110.61
+        },
+        "Financial Services": {
+          "n": 213,
+          "rank_information_coefficient": -0.2064,
+          "top_quintile_mean_return_pct": -7.12,
+          "bottom_quintile_mean_return_pct": 0.62,
+          "top_minus_bottom_pct": -7.74
+        },
+        "Healthcare": {
+          "n": 223,
+          "rank_information_coefficient": 0.1707,
+          "top_quintile_mean_return_pct": -3.97,
+          "bottom_quintile_mean_return_pct": 131.43,
+          "top_minus_bottom_pct": -135.4
+        },
+        "Industrials": {
+          "n": 203,
+          "rank_information_coefficient": 0.0479,
+          "top_quintile_mean_return_pct": -6.78,
+          "bottom_quintile_mean_return_pct": -10.97,
+          "top_minus_bottom_pct": 4.19
+        },
+        "Real Estate": {
+          "n": 66,
+          "rank_information_coefficient": 0.0007,
+          "top_quintile_mean_return_pct": -8.42,
+          "bottom_quintile_mean_return_pct": -9.05,
+          "top_minus_bottom_pct": 0.63
+        },
+        "Technology": {
+          "n": 237,
+          "rank_information_coefficient": -0.0204,
+          "top_quintile_mean_return_pct": -0.32,
+          "bottom_quintile_mean_return_pct": 19.73,
+          "top_minus_bottom_pct": -20.05
+        },
+        "Utilities": {
+          "n": 67,
+          "rank_information_coefficient": 0.363,
+          "top_quintile_mean_return_pct": -4.82,
+          "bottom_quintile_mean_return_pct": -9.6,
+          "top_minus_bottom_pct": 4.78
+        }
+      },
+      "cohorts": [
+        {
+          "cohort_date": "2026-08-27",
+          "n": 1475,
+          "rank_information_coefficient": 0.0879,
+          "top_quintile_mean_return_pct": -3.65,
+          "bottom_quintile_mean_return_pct": 24.81,
+          "top_minus_bottom_pct": -28.46
+        }
+      ],
       "status": "collecting_evidence",
       "first_possible_maturity_date": "2026-09-24",
-      "next_pending_maturity_date": "2026-09-24"
+      "next_pending_maturity_date": "2026-10-01"
     },
     "84": {
       "n": 0,
