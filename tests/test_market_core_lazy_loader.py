@@ -15,7 +15,7 @@ class LazyMarketCoreTests(unittest.TestCase):
 
     def test_market_core_is_not_in_initial_html(self):
         self.assertNotIn('src="market.js?v=20260831v2"', self.index)
-        self.assertIn('src="market-runtime-loader.js?v=1.7"', self.index)
+        self.assertIn('src="market-runtime-loader.js?v=1.8"', self.index)
         self.assertNotIn('src="portfolio-sheet-navigation.js', self.index)
         self.assertIn('portfolio-sheet-navigation.js?v=1.5', self.loader)
         self.assertNotIn('src="market-data-loader.js', self.index)
@@ -50,7 +50,7 @@ class LazyMarketCoreTests(unittest.TestCase):
         dossier_data = self.loader.index("market-data-loader.js?v=2.6", navigation)
         collapsibles = self.loader.index("portfolio-collapsibles.js?v=1.7", navigation)
         classifier = self.loader.index("portfolio-card-classifier.js?v=1.6", collapsibles)
-        core = self.loader.index("script.src = 'market.js?v=20260925opt3';", classifier)
+        core = self.loader.index("script.src = 'market.js?v=20260925opt4';", classifier)
         self.assertLess(navigation, collapsibles)
         self.assertLess(collapsibles, classifier)
         self.assertLess(dossier_data, core)
