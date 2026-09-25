@@ -7,9 +7,24 @@ const source = fs.readFileSync('market.js', 'utf8');
 function extractFunction(name) {
   const start = source.indexOf(`function ${name}(`);
   assert(start >= 0, `${name} must exist in market.js`);
-  let brace = source.indexOf('{', start);
+  const paramsStart = source.indexOf('(', start);
+  let parens = 0, quote = null, escape = false, paramsEnd = -1;
+  for (let i = paramsStart; i < source.length; i++) {
+    const ch = source[i];
+    if (quote) {
+      if (escape) { escape = false; continue; }
+      if (ch === '\\') { escape = true; continue; }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') { quote = ch; continue; }
+    if (ch === '(') parens++;
+    else if (ch === ')' && --parens === 0) { paramsEnd = i; break; }
+  }
+  assert(paramsEnd >= 0, `${name} parameters must close`);
+  const brace = source.indexOf('{', paramsEnd);
   assert(brace >= 0, `${name} must have a body`);
-  let depth = 0, quote = null, escape = false;
+  let depth = 0; quote = null; escape = false;
   for (let i = brace; i < source.length; i++) {
     const ch = source[i];
     if (quote) {
