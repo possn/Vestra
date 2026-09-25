@@ -94,7 +94,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
     def test_exploration_keeps_one_decision_card_open(self):
         ui = (ROOT / "vestra-portfolio-ui.js").read_text(encoding="utf-8")
         self.assertIn("function focusCard(c,target)", ui)
-        self.assertIn("openFirstActive(c)", ui)
+        self.assertIn("function collapseActive(c)", ui)
         self.assertIn("focusCard(c,target)", ui)
         self.assertIn("el.classList.contains('vpu-hidden')||el===target", ui)
 
