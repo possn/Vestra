@@ -105,6 +105,7 @@ jobs:
           node --check tests/runtime_market_dossier_signals_contract.js
           node --check tests/runtime_market_search_suggestions_contract.js
           node --check tests/runtime_market_row_ui_contract.js
+          node --check tests/runtime_portfolio_decision_engine_contract.js
           node --check tests/runtime_global_market_search_contract.js
           node --check tests/runtime_service_worker_contract.js
           node --check tests/runtime_app_update_manager_contract.js
@@ -166,6 +167,8 @@ jobs:
         run: node tests/runtime_market_search_suggestions_contract.js
       - name: Runtime · market row ui
         run: node tests/runtime_market_row_ui_contract.js
+      - name: Runtime · Portfolio decision engine fixtures
+        run: node tests/runtime_portfolio_decision_engine_contract.js
       - name: Runtime · global market search aliases
         run: node tests/runtime_global_market_search_contract.js
       - name: Runtime · service worker network fallback
