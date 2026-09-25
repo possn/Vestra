@@ -151,7 +151,9 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("market-collapse-toolbar",collapsibles)
         self.assertNotIn(".market-collapse-toolbar{",css)
         self.assertIn("c.querySelector('.market-decision-center')",hierarchy)
-        self.assertIn("version:'1.4'",collapsibles)
+        self.assertIn("version:'1.5'",collapsibles)
+        self.assertIn(":not(.vpu-card-cue)",css)
+        self.assertIn("portfolio-collapsibles.css?v=1.1",collapsibles)
 
     def test_classifier_does_not_build_hidden_legacy_shortcuts(self):
         classifier=read("portfolio-card-classifier.js")
