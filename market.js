@@ -1506,25 +1506,15 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const sector=txt(stock.sector)||'Sem setor', sectorValue=sectors.get(sector)||0, indirect=isFund(stock)?0:indirectExposurePct(stock,etfs);
       const strictPosCapacity=Math.max(0,afterTotal*maxPos/100-existingValue), strictSectorCapacity=Math.max(0,afterTotal*maxSector/100-sectorValue);
       const capacity=Math.min(strictPosCapacity,strictSectorCapacity,fresh); if(capacity<50) return null;
-      const conf=n(stock.confidence_score), valuation=txt(stock.valuation_signal), estimates=txt(stock.estimate_signal), thesis=txt(stock.thesis_direction), gate=txt(stock.risk_gate);
-      const strict=conf!=null&&conf>=60&&valuation!=='overvalued'&&estimates!=='deteriorating'&&thesis!=='down'&&gate!=='watch';
-      const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down';
-      const tier=strict?'preferred':acceptable?'acceptable':'research';
-      const warnings=[]; let score=conv+portfolioTiltBonus(stock,targets.tilt);
-      if(conf==null){ score-=7; warnings.push('confiança sem score'); } else if(conf<60){ score-=(60-conf)*.35+3; warnings.push(`confiança ${Math.round(conf)}`); }
-      if(valuation==='overvalued'){ score-=9; warnings.push('valuation exigente'); }
-      if(estimates==='deteriorating'){ score-=8; warnings.push('expectativas a piorar'); }
-      if(thesis==='down'){ score-=8; warnings.push('tese a deteriorar'); }
-      if(gate==='watch'){ score-=6; warnings.push('Risk Gate watch'); }
-      if(tier==='research') score-=12;
+      const positionPct=(existingValue+Math.min(capacity,fresh))/afterTotal*100, sectorPct=(sectorValue+Math.min(capacity,fresh))/afterTotal*100;
+      const decision=evaluatePortfolioMove({mode:'fresh',destination:stock,rows,amount:Math.min(capacity,fresh),totalAfter:afterTotal,destinationConv:conv,positionPct,sectorPct,indirect});
+      const {riskPenalty,autoEligible,warnings}=decision;
+      const {valuation,tier}=decision.evidence;
+      let score=conv+portfolioTiltBonus(stock,targets.tilt)-decision.evidence.penalty-riskPenalty;
       if(valuation==='undervalued') score+=4; else if(valuation==='fair') score+=1;
       const sectorNow=sectorValue/analysed*100; if(sectorNow<maxSector*.55) score+=3; else if(sectorNow>maxSector*.85) score-=3;
       if(existing&&existingValue/analysed*100<maxPos*.65) score+=2;
       if(targets.overlap==='reduce'&&indirect>1.5) score-=(indirect-1.5)*2.5;
-      const riskPenalty=riskBudgetPenalty(stock,rows,Math.min(capacity,fresh),afterTotal); score-=riskPenalty;
-      const autoEligible=strict&&riskPenalty<5&&(!targets.overlap||targets.overlap!=='reduce'||indirect<2);
-      if(!autoEligible&&riskPenalty>=5) warnings.push('pressiona orçamento de risco');
-      if(!autoEligible&&targets.overlap==='reduce'&&indirect>=2) warnings.push('overlap elevado');
       return {stock,conv,score,capacity,existingValue,sector,sectorValue,indirect,tier,warnings,autoEligible};
     }).filter(Boolean).sort((a,b)=>{ const rank={preferred:0,acceptable:1,research:2}; return Number(b.autoEligible)-Number(a.autoEligible)||(rank[a.tier]-rank[b.tier])||b.score-a.score; });
     const allocations=[], used=new Set(), sectorAdds=new Map(); let remaining=fresh; const shares=[.5,.3,.2];
