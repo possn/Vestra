@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'3.0'",ui)
+        self.assertIn("version:'3.1'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -63,7 +63,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("function relevantMutation(m)",hierarchy)
         self.assertIn("mutations.some(relevantMutation)",hierarchy)
         self.assertIn("presentationOnly=node=>",hierarchy)
-        self.assertIn(".vpu-overview,.vpu-reveal,.vpu-tabs-shell,.ux456-swaplab",hierarchy)
+        self.assertIn(".vpu-overview,.vpu-reveal,.vpu-tabs-shell,.vpu-exit,.ux456-swaplab",hierarchy)
         self.assertIn("return !nodes.every(presentationOnly)",hierarchy)
 
     def test_companions_defer_initial_refresh_to_hierarchy_bootstrap(self):
@@ -97,6 +97,8 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("function focusCard(c,target)", ui)
         self.assertIn("function collapseActive(c)", ui)
         self.assertIn("focusCard(c,target)", ui)
+        self.assertIn("data-vpu-exit", ui)
+        self.assertIn("c.dataset.vpuExpanded=\'0\'", ui)
         self.assertIn("const direct=e.target.closest?.('.vpu-section-card.is-collapsed')", ui)
         self.assertIn("focusCard(c,direct)", ui)
         self.assertIn("const toggle=e.target.closest?.(\'[data-collapse-toggle]\')", ui)
@@ -220,10 +222,10 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=3.0",
+            "vestra-portfolio-ui.js?v=3.1",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
-            "vestra-portfolio-hierarchy.js?v=2.2",
+            "vestra-portfolio-hierarchy.js?v=2.3",
             "vestra-ai-brief.js?v=1.2",
         ]
         positions=[loader.index(x) for x in lazy_order]
