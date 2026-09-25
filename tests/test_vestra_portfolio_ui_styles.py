@@ -13,7 +13,7 @@ class VestraPortfolioUiStyleTests(unittest.TestCase):
         js = read('vestra-portfolio-ui.js')
         css = read('vestra-portfolio-ui.css')
         app_css = read('styles.css')
-        self.assertIn("vestra-portfolio-ui.css?v=1.2", js)
+        self.assertIn("vestra-portfolio-ui.css?v=1.3", js)
         self.assertIn("link.rel='stylesheet'", js)
         self.assertNotIn("document.createElement('style')", js)
         self.assertNotIn('s.textContent=', js)

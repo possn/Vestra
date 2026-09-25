@@ -170,3 +170,8 @@
 .vpu-section-card:not(.is-collapsed)>.vpu-card-cue{opacity:.45}
 @media(min-width:900px){.vpu-tab-intro[data-vpu-mode="decide"]~.vpu-section-card.is-collapsed,.vpu-tab-intro[data-vpu-mode="monitor"]~.vpu-section-card.is-collapsed{min-height:58px!important}}
 @media(max-width:620px){.vpu-tab-count{top:6px;right:6px;min-width:18px;height:18px}.vpu-card-cue{right:43px;top:15px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+
+
+/* v1.7 — calm empty states for exploration paths. */
+.vpu-empty{margin:10px 4px 2px;padding:14px 15px;border:1px dashed color-mix(in srgb,var(--accent,#168e89) 24%,var(--line));border-radius:15px;background:color-mix(in srgb,var(--accent,#168e89) 4%,var(--card));display:grid;gap:3px}
+.vpu-empty[hidden]{display:none!important}.vpu-empty strong{font-size:11px}.vpu-empty span{font-size:9px;line-height:1.4;color:var(--text2)}
