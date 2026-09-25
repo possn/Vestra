@@ -29,7 +29,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'market-metric-cleanup.js?v=1.2',
             'market-company-brief.js?v=2.1',
             'portfolio-sheet-navigation.js?v=1.5',
-            'portfolio-collapsibles.js?v=1.6',
+            'portfolio-collapsibles.js?v=1.7',
             'portfolio-card-classifier.js?v=1.5',
             'market-data-loader.js?v=2.6',
         ):
@@ -44,7 +44,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertIn("market-opportunity-lenses.js?v=3.1", universe)
         for module in (
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.7",
+            "vestra-portfolio-ui.js?v=2.8",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",
