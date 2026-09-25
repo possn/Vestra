@@ -7,15 +7,14 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
-    def test_same_sector_alternatives_are_conviction_first(self):
+    def test_same_sector_alternatives_use_canonical_move_evaluation(self):
         s = read("market.js")
-        self.assertIn("conv>=curConv+5 && score>=curScore+3", s)
-        self.assertIn("if(isFund(r.stock)||!txt(r.stock.sector)", s)
-        self.assertIn("[\'watch\',\'high\',\'severe\'].includes(txt(x.risk_gate))", s)
+        self.assertIn("mode==='alternative'", s)
+        self.assertIn("convictionGain>=5&&convDelta>0&&overlapDelta<1.5&&riskPenalty<5", s)
+        self.assertIn("const decision=evaluatePortfolioMove({mode:'alternative'", s)
+        self.assertIn("if(!decision.autoEligible||scoreDelta<3) return null", s)
         self.assertIn("industryBonus", s)
-        self.assertIn("conf==null||conf<60", s)
-        self.assertIn("x.indirect<=currentIndirect+1.5", s)
-        self.assertIn("convDelta*1.35+scoreDelta*.25+valuationBonus+industryBonus-overlapPenalty", s)
+        self.assertIn("decision.convictionGain*1.35+scoreDelta*.25", s)
         self.assertIn("Convicção +${a.convDelta.toFixed(0)}", s)
 
     def test_canonical_move_evaluator_owns_shared_eligibility(self):
@@ -29,7 +28,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("melhoria de convicção insuficiente", s)
         self.assertIn("aumenta overlap", s)
         self.assertIn("origem apenas para análise manual", s)
-        self.assertGreaterEqual(s.count("evaluatePortfolioMove({"), 4)
+        self.assertGreaterEqual(s.count("evaluatePortfolioMove({"), 5)
 
     def test_rebalancer_consumes_canonical_move_evaluator(self):
         s = read("market.js")
