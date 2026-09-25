@@ -170,3 +170,7 @@
 .vpu-section-card:not(.is-collapsed)>.vpu-card-cue{opacity:.45}
 @media(min-width:900px){.vpu-tab-intro[data-vpu-mode="decide"]~.vpu-section-card.is-collapsed,.vpu-tab-intro[data-vpu-mode="monitor"]~.vpu-section-card.is-collapsed{min-height:58px!important}}
 @media(max-width:620px){.vpu-tab-count{top:6px;right:6px;min-width:18px;height:18px}.vpu-card-cue{right:43px;top:15px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+
+/* v1.7 — compact exploration hierarchy: remove repeated explanatory chrome. */
+.vpu-tabs-head{padding-bottom:8px}.vpu-tabs-head strong{font-size:14px}.vpu-tab-intro{padding:10px 6px 5px}.vpu-tab-intro span:empty{display:none}.vpu-tab-intro span:empty+.vpu-optimize-guide{margin-top:0}
+@media(min-width:900px){.vpu-tabs-shell{padding-top:13px}.vpu-tab-intro{padding-top:11px}}
