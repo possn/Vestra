@@ -112,6 +112,37 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
             self.assertIn("model_audits", report)
             self.assertIn("flags", report)
 
+    def test_real_snapshot_audit_smoke_and_emit_compact_summary(self):
+        original_out = mod.OUT
+        with tempfile.TemporaryDirectory() as tmp:
+            try:
+                mod.OUT = Path(tmp) / "score_audit.json"
+                mod.main()
+                report = json.loads(mod.OUT.read_text(encoding="utf-8"))
+            finally:
+                mod.OUT = original_out
+        summary = {
+            "rows_analysed": report["rows_analysed"],
+            "models": [
+                {
+                    "score_model": x["score_model"],
+                    "n": x["n"],
+                    "raw_vs_reconstructed_rank_spearman": x.get("raw_vs_reconstructed_rank_spearman"),
+                    "published_vs_raw_rank_spearman": x.get("published_vs_raw_rank_spearman"),
+                    "redundant_pair_count": x.get("redundant_pair_count"),
+                    "material_sensitivity_count": x.get("material_sensitivity_count"),
+                    "missing_weight_renormalization": x.get("missing_weight_renormalization"),
+                    "dimension_coverage": x.get("dimension_coverage"),
+                }
+                for x in report["model_audits"]
+            ],
+            "sector_top_decile_bias": report["sector_top_decile_bias"],
+            "flags": report["flags"],
+        }
+        print("SCORE_AUDIT_SUMMARY=" + json.dumps(summary, sort_keys=True))
+        self.assertGreater(report["rows_analysed"], 0)
+        self.assertTrue(report["model_audits"])
+
     def test_model_audit_does_not_call_confidence_moderation_reconstruction_error(self):
         rows = [
             general_row(0),
