@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'2.2'",ui)
+        self.assertIn("version:'2.3'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -106,6 +106,17 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("vpu-step-state", ui)
         self.assertIn("button.is-current", css)
         self.assertIn("button:not(:last-child)::after", css)
+
+    def test_priority_and_monitor_paths_expose_scan_cues(self):
+        ui = (ROOT / "vestra-portfolio-ui.js").read_text(encoding="utf-8")
+        css = (ROOT / "vestra-portfolio-ui.css").read_text(encoding="utf-8")
+        self.assertIn("function syncGroupScan(c,tabs)", ui)
+        self.assertIn("vpu-tab-count", ui)
+        self.assertIn("vpu-card-cue", ui)
+        self.assertIn("Research pendente", ui)
+        self.assertIn("Stress test", ui)
+        self.assertIn(".vpu-tab-count", css)
+        self.assertIn(".vpu-card-cue", css)
 
     def test_foundation_helpers_defer_dom_work_to_hierarchy_bootstrap(self):
         collapsibles=read("portfolio-collapsibles.js")
@@ -177,7 +188,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.2",
+            "vestra-portfolio-ui.js?v=2.3",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",

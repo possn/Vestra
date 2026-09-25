@@ -162,3 +162,11 @@
 .vpu-step-state{margin-left:auto;padding:4px 7px;border-radius:999px;background:var(--card);color:var(--text2);font-size:8px;font-style:normal;font-weight:850;white-space:nowrap}
 .vpu-optimize-guide button.is-current .vpu-step-state{background:var(--accent,#168e89);color:#fff}
 @media(max-width:620px){.vpu-optimize-guide button:not(:last-child)::after{content:'↓';right:50%;top:auto;bottom:-13px;transform:translate(50%,50%)}.vpu-step-state{font-size:7.5px}}
+
+/* v1.6 — scannable Prioridades / Monitorizar paths. */
+.vpu-tab-count{position:absolute;top:9px;right:10px;min-width:20px;height:20px;padding:0 6px;display:grid;place-items:center;border-radius:999px;background:var(--soft);color:var(--text2);font-size:8px;font-style:normal;font-weight:900}
+.vpu-tabs button.is-active .vpu-tab-count{background:rgba(255,255,255,.18);color:#fff}
+.vpu-card-cue{position:absolute;right:48px;top:14px;padding:4px 8px;border-radius:999px;background:var(--soft);color:var(--text2);font-size:8px;font-weight:850;line-height:1;pointer-events:none}
+.vpu-section-card:not(.is-collapsed)>.vpu-card-cue{opacity:.45}
+@media(min-width:900px){.vpu-tab-intro[data-vpu-mode="decide"]~.vpu-section-card.is-collapsed,.vpu-tab-intro[data-vpu-mode="monitor"]~.vpu-section-card.is-collapsed{min-height:58px!important}}
+@media(max-width:620px){.vpu-tab-count{top:6px;right:6px;min-width:18px;height:18px}.vpu-card-cue{right:43px;top:15px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}

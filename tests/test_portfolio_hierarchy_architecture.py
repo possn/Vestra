@@ -27,7 +27,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             self.assertNotIn(direct, h)
         expected = (
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.2",
+            "vestra-portfolio-ui.js?v=2.3",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",
