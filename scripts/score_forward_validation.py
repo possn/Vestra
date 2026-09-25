@@ -192,34 +192,69 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
     return added
 
 
-def mean(values):
+def finite_values(values):
     vals = [num(v) for v in values]
-    vals = [v for v in vals if v is not None]
+    return [v for v in vals if v is not None]
+
+
+def mean(values):
+    vals = finite_values(values)
     return sum(vals) / len(vals) if vals else None
+
+
+def median(values):
+    vals = finite_values(values)
+    return statistics.median(vals) if vals else None
+
+
+def winsorized_mean(values, tail_fraction=0.05):
+    """Mean after symmetric tail clipping; diagnostic only, never mutates outcomes."""
+    vals = sorted(finite_values(values))
+    if not vals:
+        return None
+    if len(vals) < 20 or tail_fraction <= 0:
+        return sum(vals) / len(vals)
+    k = min(int(len(vals) * tail_fraction), (len(vals) - 1) // 2)
+    if k <= 0:
+        return sum(vals) / len(vals)
+    low, high = vals[k], vals[-k - 1]
+    clipped = [min(high, max(low, value)) for value in vals]
+    return sum(clipped) / len(clipped)
 
 
 def quintile_metrics(vals, score_field="score"):
     ordered = sorted(vals, key=lambda x: num(x.get(score_field)) if num(x.get(score_field)) is not None else -1e9, reverse=True)
     if not ordered:
-        return None, None, None
+        return {}
     q = max(1, len(ordered) // 5)
-    top = ordered[:q]
-    bottom = ordered[-q:]
-    top_mean = mean([x.get("return_pct") for x in top])
-    bottom_mean = mean([x.get("return_pct") for x in bottom])
-    spread = top_mean - bottom_mean if top_mean is not None and bottom_mean is not None else None
-    return top_mean, bottom_mean, spread
+    top = [x.get("return_pct") for x in ordered[:q]]
+    bottom = [x.get("return_pct") for x in ordered[-q:]]
+    top_mean, bottom_mean = mean(top), mean(bottom)
+    top_median, bottom_median = median(top), median(bottom)
+    top_winsor, bottom_winsor = winsorized_mean(top), winsorized_mean(bottom)
+    return {
+        "top_quintile_mean_return_pct": top_mean,
+        "bottom_quintile_mean_return_pct": bottom_mean,
+        "top_minus_bottom_pct": top_mean - bottom_mean if top_mean is not None and bottom_mean is not None else None,
+        "top_quintile_median_return_pct": top_median,
+        "bottom_quintile_median_return_pct": bottom_median,
+        "median_top_minus_bottom_pct": top_median - bottom_median if top_median is not None and bottom_median is not None else None,
+        "top_quintile_winsorized_mean_return_pct": top_winsor,
+        "bottom_quintile_winsorized_mean_return_pct": bottom_winsor,
+        "winsorized_top_minus_bottom_pct": top_winsor - bottom_winsor if top_winsor is not None and bottom_winsor is not None else None,
+    }
 
 
 def metric_pack(vals, score_field="score"):
     ic = spearman([(x.get(score_field), x.get("return_pct")) for x in vals])
-    top_mean, bottom_mean, spread = quintile_metrics(vals, score_field)
+    quintiles = quintile_metrics(vals, score_field)
     return {
         "n": len(vals),
         "rank_information_coefficient": round(ic, 4) if ic is not None else None,
-        "top_quintile_mean_return_pct": round(top_mean, 2) if top_mean is not None else None,
-        "bottom_quintile_mean_return_pct": round(bottom_mean, 2) if bottom_mean is not None else None,
-        "top_minus_bottom_pct": round(spread, 2) if spread is not None else None,
+        **{
+            key: round(value, 2) if value is not None else None
+            for key, value in quintiles.items()
+        },
     }
 
 
@@ -452,7 +487,8 @@ def main():
         "horizons": report_horizons,
         "interpretation": {
             "rank_ic": "Spearman correlation between the score known at cohort date and realised forward return.",
-            "top_minus_bottom": "Mean return of the highest score quintile minus the lowest score quintile.",
+            "top_minus_bottom": "Raw mean return spread between highest and lowest score quintiles; retain it for transparency but inspect robust companions when tails are extreme.",
+            "robust_quintile_spreads": "Median and 5% winsorized-mean top-minus-bottom spreads are reported alongside the raw mean. They are diagnostics, not replacements chosen after seeing outcomes.",
             "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap.",
             "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
             "peer_shadow": "Head-to-head specialist-model experiment. Production and peer-normalized candidate are compared on the exact same eligible rows; the candidate never changes the published score.",
