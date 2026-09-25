@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'2.8'",ui)
+        self.assertIn("version:'2.9'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -99,6 +99,8 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("focusCard(c,target)", ui)
         self.assertIn("const direct=e.target.closest?.('.vpu-section-card.is-collapsed')", ui)
         self.assertIn("focusCard(c,direct)", ui)
+        self.assertIn("const toggle=e.target.closest?.(\'[data-collapse-toggle]\')", ui)
+        self.assertIn("focusCard(c,target)", ui)
         self.assertNotIn(".market-detail-card[data-collapsible=\"1\"].is-collapsed", collapsibles)
         self.assertIn("el.classList.contains('vpu-hidden')||el===target", ui)
 
@@ -215,7 +217,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.8",
+            "vestra-portfolio-ui.js?v=2.9",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",
