@@ -1201,17 +1201,29 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const etfsForFit=ranked.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
     for(const r of ranked) r.portfolioFit=portfolioFit(r,sectorRows,analysed,etfsForFit);
 
-    const weak=ranked.slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,5);
+    const weak=ranked.slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,7);
     const alternatives=[];
     for(const r of weak){
-      const curScore=n(r.stock.score); if(!txt(r.stock.sector)||curScore==null) continue;
-      const candidates=M.stocks.filter(x=>!isFund(x)&&!heldTickers.has(txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,''))&&txt(x.sector)===txt(r.stock.sector)&&n(x.score)!=null&&n(x.score)>=curScore+8&&n(x.confidence_score)>=60&&!['high','severe'].includes(txt(x.risk_gate))&&txt(x.valuation_signal)!=='overvalued'&&txt(x.estimate_signal)!=='deteriorating');
+      const curScore=n(r.stock.score), curConv=r.conviction; if(isFund(r.stock)||!txt(r.stock.sector)||curScore==null||curConv==null) continue;
       const currentIndirect=r.portfolioFit?.indirectPct||0;
-      const cand=candidates.map(x=>({stock:x,indirect:indirectExposurePct(x,etfsForFit)}))
-        .sort((a,b)=>((portfolioConviction(b.stock)||0)-b.indirect*4)-((portfolioConviction(a.stock)||0)-a.indirect*4))[0];
+      const candidates=M.stocks.filter(x=>{
+        if(isFund(x)||heldTickers.has(txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,''))||txt(x.sector)!==txt(r.stock.sector)) return false;
+        const score=n(x.score), conv=portfolioConviction(x), conf=n(x.confidence_score);
+        if(score==null||conv==null||conf==null||conf<60) return false;
+        if(['watch','high','severe'].includes(txt(x.risk_gate))||txt(x.valuation_signal)==='overvalued'||txt(x.estimate_signal)==='deteriorating'||txt(x.thesis_direction)==='down') return false;
+        return conv>=curConv+5 && score>=curScore+3;
+      });
+      const cand=candidates.map(x=>{
+        const indirect=indirectExposurePct(x,etfsForFit), conv=portfolioConviction(x), scoreDelta=n(x.score)-curScore, convDelta=conv-curConv;
+        const overlapPenalty=Math.max(0,indirect-currentIndirect)*4;
+        const valuationBonus=txt(x.valuation_signal)==='undervalued'?3:txt(x.valuation_signal)==='fair'?1:0;
+        const industryBonus=txt(x.industry)&&txt(x.industry)===txt(r.stock.industry)?3:0;
+        const rank=convDelta*1.35+scoreDelta*.25+valuationBonus+industryBonus-overlapPenalty;
+        return {stock:x,indirect,conv,scoreDelta,convDelta,rank};
+      }).filter(x=>x.indirect<=currentIndirect+1.5).sort((a,b)=>b.rank-a.rank)[0];
       if(cand){
-        const fit=cand.indirect+1<currentIndirect?'better':cand.indirect>currentIndirect+2?'worse':'neutral';
-        alternatives.push({from:r.stock,to:cand.stock,delta:n(cand.stock.score)-curScore,portfolioFit:fit,currentIndirect,candidateIndirect:cand.indirect});
+        const fit=cand.indirect+1<currentIndirect?'better':cand.indirect>currentIndirect+1?'worse':'neutral';
+        alternatives.push({from:r.stock,to:cand.stock,delta:cand.scoreDelta,convDelta:cand.convDelta,portfolioFit:fit,currentIndirect,candidateIndirect:cand.indirect});
       }
       if(alternatives.length>=3) break;
     }
@@ -1243,7 +1255,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     concentration.push(...overlaps.slice(0,3));
 
     const compactRows=(arr,metaFn)=>arr.length?`<div class="market-list">${arr.map(r=>renderRow(r.stock,metaFn(r))).join('')}</div>`:'<p class="market-case-note">Nenhuma posição cumpre este filtro com os dados atuais.</p>';
-    const altHtml=alternatives.length?`<div class="market-list">${alternatives.map(a=>renderRow(a.to,`Alternativa a ${a.from.ticker} · Score +${a.delta.toFixed(0)} · ${a.portfolioFit==='better'?'reduz overlap':a.portfolioFit==='worse'?'aumenta overlap':'impacto neutro'}`)).join('')}</div>`:'<p class="market-case-note">Sem alternativa claramente superior identificada no mesmo setor.</p>';
+    const altHtml=alternatives.length?`<div class="market-list">${alternatives.map(a=>renderRow(a.to,`Alternativa a ${a.from.ticker} · Convicção +${a.convDelta.toFixed(0)} · Score +${a.delta.toFixed(0)} · ${a.portfolioFit==='better'?'reduz overlap':a.portfolioFit==='worse'?'aumenta overlap':'impacto neutro'}`)).join('')}</div>`:'<p class="market-case-note">Sem alternativa claramente superior identificada no mesmo setor.</p>';
     const concHtml=concentration.length?`<ul class="market-case-list">${[...new Set(concentration)].slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="market-case-note">Sem concentração material detetada com os dados disponíveis.</p>';
 
     const convRows=ranked.filter(r=>r.conviction!=null&&r.value>0);
@@ -1301,7 +1313,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       <div class="market-detail-card"><h4>Candidatos a reforço</h4>${compactRows(reinforce,r=>`Convicção ${Math.round(r.conviction)}/100 · ${txt(r.stock.valuation_signal)||'valuation sem sinal'}`)}</div>
       <div class="market-detail-card"><h4>Posições a rever</h4>${compactRows(review,r=>`Convicção ${r.conviction==null?'—':Math.round(r.conviction)}/100 · ${txt(r.stock.risk_gate)||'clear'} · ${txt(r.stock.estimate_signal)||'expectativas —'}`)}</div>
       <div class="market-detail-card"><h4>Concentração e overlap</h4>${concHtml}</div>
-      <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida com score pelo menos 8 pontos superior, confiança ≥60 e sem Risk Gate alto/severo.</p>${altHtml}</div>
+      <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida do mesmo setor com convicção ≥5 pontos superior, Score ≥3 pontos superior, confiança ≥60 e sem agravamento material de overlap.</p>${altHtml}</div>
       ${scenarioHtml}
       ${targetFitHtml}
       ${healthTimelineHtml}
@@ -1324,17 +1336,34 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const key=txt(stock.ticker).toUpperCase(); const prev=rowMap.get(key)||{stock,value:0}; prev.value+=portfolioValue(a); rowMap.set(key,prev);
     }
     const rows=[...rowMap.values()].map(r=>({...r,conviction:portfolioConviction(r.stock)})).filter(r=>r.conviction!=null&&r.value>0);
-    const sources=rows.filter(r=>['high','severe'].includes(txt(r.stock.risk_gate))||txt(r.stock.thesis_direction)==='down'||txt(r.stock.estimate_signal)==='deteriorating'||r.conviction<55).sort((a,b)=>a.conviction-b.conviction||b.value-a.value);
-    const fallback=rows.slice().sort((a,b)=>a.conviction-b.conviction||b.value-a.value);
-    const queue=(sources.length?sources:fallback).slice(0,5);
-    const usedDest=new Set(), moves=[]; let totalConvDelta=0, totalOverlapDelta=0, totalMoved=0;
+    const totalValue=rows.reduce((a,r)=>a+r.value,0)||1, targets=loadPortfolioTargets();
+    const maxPosition=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
+    const sectors=new Map(); for(const r of rows){const k=txt(r.stock.sector)||'Sem setor';sectors.set(k,(sectors.get(k)||0)+r.value);}
+    const sourcePressure=r=>{
+      const gate=txt(r.stock.risk_gate), positionPct=r.value/totalValue*100, sectorPct=(sectors.get(txt(r.stock.sector)||'Sem setor')||0)/totalValue*100;
+      let p=Math.max(0,55-r.conviction)*.55+Math.max(0,positionPct-maxPosition)*1.5+Math.max(0,sectorPct-maxSector)*.6;
+      if(gate==='severe')p+=24;else if(gate==='high')p+=16;
+      if(txt(r.stock.thesis_direction)==='down')p+=9;
+      if(txt(r.stock.estimate_signal)==='deteriorating')p+=9;
+      return p;
+    };
+    const planSources=rows.filter(r=>!isFund(r.stock)&&n(r.stock.score)!=null&&n(r.stock.confidence_score)!=null);
+    const sources=planSources.map(r=>({...r,sourcePressure:sourcePressure(r)})).filter(r=>r.sourcePressure>0).sort((a,b)=>b.sourcePressure-a.sourcePressure||a.conviction-b.conviction||b.value-a.value);
+    const fallback=planSources.slice().sort((a,b)=>a.conviction-b.conviction||b.value-a.value);
+    const queue=(sources.length?sources:fallback).slice(0,6);
+    const usedDest=new Set(), sectorAdds=new Map(), moves=[]; let totalConvDelta=0, totalOverlapDelta=0, totalMoved=0;
     for(const src of queue){
       if(moves.length>=3) break;
       const amount=Math.max(100,Math.min(1000,Math.round((src.value*.25)/50)*50||100));
       const sim=rebalanceSimulation(src.stock.ticker,amount); if(sim.error||!sim.results?.length) continue;
-      const dest=sim.results.find(r=>!usedDest.has(txt(r.stock.ticker).toUpperCase())&&r.convDelta>0&&r.overlapDelta<3) || sim.results.find(r=>!usedDest.has(txt(r.stock.ticker).toUpperCase()));
+      const dest=sim.results.find(r=>{
+        const key=txt(r.stock.ticker).toUpperCase(), sector=txt(r.stock.sector)||'Sem setor';
+        const cumulativeSectorPct=r.sectorPct+((sectorAdds.get(sector)||0)/totalValue*100);
+        return !usedDest.has(key)&&r.autoEligible&&cumulativeSectorPct<=maxSector+1;
+      });
       if(!dest) continue;
-      usedDest.add(txt(dest.stock.ticker).toUpperCase());
+      const destKey=txt(dest.stock.ticker).toUpperCase(), destSector=txt(dest.stock.sector)||'Sem setor';
+      usedDest.add(destKey); sectorAdds.set(destSector,(sectorAdds.get(destSector)||0)+sim.amount);
       totalConvDelta+=dest.convDelta; totalOverlapDelta+=dest.overlapDelta; totalMoved+=sim.amount;
       moves.push({from:sim.source,to:dest.stock,amount:sim.amount,convDelta:dest.convDelta,overlapDelta:dest.overlapDelta,fitScore:dest.fitScore});
     }
@@ -1344,7 +1373,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function renderMultiMovePlan(plan){
     if(!plan?.moves?.length) return '<p class="market-case-note">Não encontrei um plano automático robusto. Experimenta o Rebalancer manual: a Vestra agora mostra candidatos aceitáveis com alertas em vez de esconder tudo.</p>';
     const impact=plan.totalConvDelta>0&&plan.totalOverlapDelta<=1?'Melhora':plan.totalConvDelta<0||plan.totalOverlapDelta>=4?'Piora':'Neutro';
-    return `<div class="market-plan-summary"><strong>${impact}</strong><span>${euro(plan.totalMoved)} realocados · Δ convicção ${plan.totalConvDelta>=0?'+':''}${plan.totalConvDelta.toFixed(2)} · Δ overlap ${plan.totalOverlapDelta>=0?'+':''}${plan.totalOverlapDelta.toFixed(1)} pp</span></div><div class="market-plan-list">${plan.moves.map((m,i)=>`<div class="market-plan-row"><span class="market-rebalance-rank">${i+1}</span><div><strong>${esc(m.from.ticker)} → ${esc(m.to.ticker)} · ${euro(m.amount)}</strong><small>Δ convicção ${m.convDelta>=0?'+':''}${m.convDelta.toFixed(2)} · overlap ${m.overlapDelta>=0?'+':''}${m.overlapDelta.toFixed(1)} pp · fit ${m.fitScore.toFixed(0)}</small></div></div>`).join('')}</div><p class="market-case-note">Plano indicativo: não considera impostos, spreads, comissões, liquidez nem preferências pessoais.</p>`;
+    return `<div class="market-plan-summary"><strong>${impact}</strong><span>${euro(plan.totalMoved)} realocados · Δ convicção ${plan.totalConvDelta>=0?'+':''}${plan.totalConvDelta.toFixed(2)} · Δ overlap ${plan.totalOverlapDelta>=0?'+':''}${plan.totalOverlapDelta.toFixed(1)} pp</span></div><div class="market-plan-list">${plan.moves.map((m,i)=>`<div class="market-plan-row"><span class="market-rebalance-rank">${i+1}</span><div><strong>${esc(m.from.ticker)} → ${esc(m.to.ticker)} · ${euro(m.amount)}</strong><small>Δ convicção ${m.convDelta>=0?'+':''}${m.convDelta.toFixed(2)} · overlap ${m.overlapDelta>=0?'+':''}${m.overlapDelta.toFixed(1)} pp · fit ${m.fitScore.toFixed(0)}</small></div></div>`).join('')}</div><p class="market-case-note">Plano indicativo e conservador: só inclui movimentos com melhoria líquida positiva e sem agravamento material dos limites. Não considera impostos, spreads, comissões, liquidez nem preferências pessoais.</p>`;
   }
 
   function rebalanceSimulation(sourceTicker, amount){
@@ -1364,6 +1393,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const src=rows.find(r=>txt(r.stock.ticker).toUpperCase()===source); if(!src) return {error:'Posição de origem não encontrada.'};
     const move=Math.max(0,Math.min(n(amount)||0,src.value)); if(move<=0) return {error:'Indica um montante válido.'};
     const srcConv=portfolioConviction(src.stock); if(srcConv==null) return {error:'A posição de origem não tem convicção calculável.'};
+    const srcAutomatable=!isFund(src.stock)&&n(src.stock.score)!=null&&n(src.stock.confidence_score)!=null;
     const sectors=new Map(); for(const r of rows){ const k=txt(r.stock.sector)||'Sem setor'; sectors.set(k,(sectors.get(k)||0)+r.value); }
     const etfs=rows.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
     const held=new Map(rows.map(r=>[txt(r.stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,''),r]));
@@ -1396,7 +1426,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const tiltBonus=portfolioTiltBonus(stock,targets.tilt);
       const riskPenalty=riskBudgetPenalty(stock,rows,move,analysed,src.stock);
       const conf=n(stock.confidence_score), valuation=txt(stock.valuation_signal), estimates=txt(stock.estimate_signal);
-      const strict=conf!=null&&conf>=60&&valuation!=='overvalued'&&estimates!=='deteriorating';
+      const strict=conf!=null&&conf>=60&&valuation!=='overvalued'&&estimates!=='deteriorating'&&txt(stock.thesis_direction)!=='down'&&txt(stock.risk_gate)!=='watch';
       const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating');
       let evidencePenalty=0; const warnings=[];
       if(conf==null){ evidencePenalty+=7; warnings.push('confiança sem score'); }
@@ -1404,11 +1434,19 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       if(valuation==='overvalued'){ evidencePenalty+=9; warnings.push('valuation exigente'); }
       else if(valuation==='uncertain'){ evidencePenalty+=3; warnings.push('valuation incerto'); }
       if(estimates==='deteriorating'){ evidencePenalty+=8; warnings.push('expectativas a piorar'); }
+      if(txt(stock.thesis_direction)==='down'){ evidencePenalty+=7; warnings.push('tese a deteriorar'); }
+      if(txt(stock.risk_gate)==='watch'){ evidencePenalty+=6; warnings.push('Risk Gate watch'); }
       const tier=strict?'preferred':acceptable?'acceptable':'research';
       if(tier==='research') evidencePenalty+=12;
-      const fitScore=conv-penalty-riskPenalty+diversityBonus+valuationBonus+tiltBonus-evidencePenalty;
-      return {stock,conv,convDelta,fitScore,positionPct,sectorPct,indirect,overlapDelta:indirect-srcIndirect,existing:!!existing,targets,tier,warnings};
-    }).filter(Boolean).sort((a,b)=>{ const rank={preferred:0,acceptable:1,research:2}; return (rank[a.tier]-rank[b.tier])||b.fitScore-a.fitScore; }).slice(0,5);
+      const overlapDelta=indirect-srcIndirect;
+      const convictionGain=conv-srcConv;
+      const fitScore=Math.max(0,Math.min(100,50+convictionGain*1.15-penalty-riskPenalty+diversityBonus+valuationBonus+tiltBonus-evidencePenalty));
+      const autoEligible=srcAutomatable&&strict&&convictionGain>=2&&convDelta>0&&overlapDelta<2&&positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5;
+      if(!srcAutomatable) warnings.push('origem apenas para análise manual');
+      if(!autoEligible&&convictionGain<2) warnings.push('melhoria de convicção insuficiente');
+      if(!autoEligible&&overlapDelta>=2) warnings.push('aumenta overlap');
+      return {stock,conv,convictionGain,convDelta,fitScore,positionPct,sectorPct,indirect,overlapDelta,existing:!!existing,targets,tier,warnings,autoEligible};
+    }).filter(Boolean).sort((a,b)=>{ const rank={preferred:0,acceptable:1,research:2}; return Number(b.autoEligible)-Number(a.autoEligible)||(rank[a.tier]-rank[b.tier])||b.fitScore-a.fitScore; }).slice(0,5);
     return {source:src.stock,amount:move,sourceConv:srcConv,results:ranked};
   }
 
@@ -1416,8 +1454,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(sim?.error) return `<p class="market-case-note">${esc(sim.error)}</p>`;
     if(!sim?.results?.length) return '<p class="market-case-note">Sem candidatos sequer para research. Revê o universo de dados ou os Portfolio Targets.</p>';
     const t=loadPortfolioTargets();
-    const tierLabel=r=>r.tier==='preferred'?'Preferido':r.tier==='acceptable'?'Aceitável':'Research';
-    return `<div class="market-target-summary">Limites: posição ${t.maxPosition}% · setor ${t.maxSector}% · ${t.overlap==='reduce'?'reduzir overlap':'overlap neutro'} · ${esc(t.tilt)}</div><div class="market-rebalance-list">${sim.results.map((r,i)=>`<button type="button" class="market-rebalance-row" data-market-ticker="${esc(r.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(r.stock.ticker)} · ${esc(r.stock.name||'')}</strong><small>${tierLabel(r)} · ${r.existing?'já em carteira':'nova posição'} · conv. ${Math.round(r.conv)} · peso após ${r.positionPct.toFixed(1)}% · setor ${r.sectorPct.toFixed(0)}%</small><small>Δ convicção ${r.convDelta>=0?'+':''}${r.convDelta.toFixed(2)} · overlap ${r.overlapDelta>=0?'+':''}${r.overlapDelta.toFixed(1)} pp${r.warnings?.length?' · ⚠ '+esc(r.warnings.slice(0,2).join(' · ')):''}</small></span><em>${r.fitScore.toFixed(0)}</em></button>`).join('')}</div>`;
+    const tierLabel=r=>r.autoEligible?'Elegível p/ plano':r.tier==='preferred'?'Preferido · manual':r.tier==='acceptable'?'Aceitável · manual':'Research';
+    return `<div class="market-target-summary">Limites: posição ${t.maxPosition}% · setor ${t.maxSector}% · ${t.overlap==='reduce'?'reduzir overlap':'overlap neutro'} · ${esc(t.tilt)}</div><div class="market-rebalance-list">${sim.results.map((r,i)=>`<button type="button" class="market-rebalance-row" data-market-ticker="${esc(r.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(r.stock.ticker)} · ${esc(r.stock.name||'')}</strong><small>${tierLabel(r)} · ${r.existing?'já em carteira':'nova posição'} · conv. ${Math.round(r.conv)} · ganho ${r.convictionGain>=0?'+':''}${r.convictionGain.toFixed(1)} · peso após ${r.positionPct.toFixed(1)}% · setor ${r.sectorPct.toFixed(0)}%</small><small>Δ carteira ${r.convDelta>=0?'+':''}${r.convDelta.toFixed(2)} · overlap ${r.overlapDelta>=0?'+':''}${r.overlapDelta.toFixed(1)} pp${r.warnings?.length?' · ⚠ '+esc(r.warnings.slice(0,2).join(' · ')):''}</small></span><em>${r.fitScore.toFixed(0)}</em></button>`).join('')}</div><p class="market-case-note">“Elegível p/ plano” exige melhoria relativa de convicção, Δ positivo na carteira e ausência de agravamento material de targets/overlap. Os restantes ficam visíveis apenas para comparação manual.</p>`;
   }
 
   function freshCapitalPlan(amount){
