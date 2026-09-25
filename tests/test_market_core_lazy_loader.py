@@ -48,7 +48,7 @@ class LazyMarketCoreTests(unittest.TestCase):
     def test_portfolio_helpers_load_in_dependency_order_before_core(self):
         navigation = self.loader.index("portfolio-sheet-navigation.js?v=1.5")
         dossier_data = self.loader.index("market-data-loader.js?v=2.6", navigation)
-        collapsibles = self.loader.index("portfolio-collapsibles.js?v=1.5", navigation)
+        collapsibles = self.loader.index("portfolio-collapsibles.js?v=1.6", navigation)
         classifier = self.loader.index("portfolio-card-classifier.js?v=1.5", collapsibles)
         core = self.loader.index("script.src = 'market.js?v=20260920v1';", classifier)
         self.assertLess(navigation, collapsibles)
