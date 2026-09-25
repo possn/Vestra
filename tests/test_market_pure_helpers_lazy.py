@@ -24,7 +24,7 @@ class LazyMarketPureHelpersTests(unittest.TestCase):
             self.assertNotIn(f'src="{path}', INDEX)
 
     def test_helpers_are_loaded_before_market_core(self):
-        core = LOADER.index("script.src = 'market.js?v=20260925opt4';")
+        core = LOADER.index("script.src = 'market.js?v=20260925opt5';")
         for global_name, src in HELPERS:
             token = f"loadHelper('{global_name}', '{src}')"
             self.assertIn(token, LOADER)
@@ -44,8 +44,8 @@ class LazyMarketPureHelpersTests(unittest.TestCase):
             self.assertIn(f'"./{path}"', SW)
 
     def test_loader_rollout_is_versioned(self):
-        self.assertIn('market-runtime-loader.js?v=1.8', INDEX)
-        self.assertIn("version: '1.8'", LOADER)
+        self.assertIn('market-runtime-loader.js?v=1.9', INDEX)
+        self.assertIn("version: '1.9'", LOADER)
 
 
 if __name__ == "__main__":
