@@ -7,8 +7,9 @@ const source = fs.readFileSync('market.js', 'utf8');
 function extractFunction(name){
   const start = source.indexOf(`function ${name}(`);
   assert(start >= 0, `${name} must exist in market.js`);
-  const open = source.indexOf('{', start);
-  assert(open >= 0, `${name} opening brace missing`);
+  const signatureEnd = source.indexOf('){', start);
+  assert(signatureEnd >= 0, `${name} signature end missing`);
+  const open = signatureEnd + 1;
   let depth = 0;
   for(let i=open;i<source.length;i++){
     if(source[i]==='{') depth++;
