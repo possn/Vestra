@@ -28,6 +28,17 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("origem apenas para análise manual", s)
         self.assertIn("txt(stock.risk_gate)!==\'watch\'", s)
 
+    def test_fresh_capital_allocates_only_strict_candidates_with_cumulative_sector_budget(self):
+        s = read("market.js")
+        self.assertIn("!['watch','high','severe'].includes(txt(x.risk_gate))", s)
+        self.assertIn("const autoEligible=strict&&riskPenalty<5", s)
+        self.assertIn("if(!c.autoEligible||used.has", s)
+        self.assertIn("const allocations=[], used=new Set(), sectorAdds=new Map()", s)
+        self.assertIn("afterTotal*maxSector/100-c.sectorValue-(sectorAdds.get(c.sector)||0)", s)
+        self.assertIn("manual:candidates.filter(x=>!x.autoEligible).slice(0,3)", s)
+        self.assertIn("O capital fica por alocar.", s)
+        self.assertNotIn("budgetMode='soft budget'", s)
+
     def test_multi_move_plan_never_falls_back_to_worsening_candidate(self):
         s = read("market.js")
         self.assertIn("return !usedDest.has(key)&&r.autoEligible&&cumulativeSectorPct<=maxSector+1", s)
