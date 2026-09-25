@@ -1,4 +1,4 @@
-/* Vestra Market runtime loader v1.5 — replay early market mode intent after lazy core load. */
+/* Vestra Market runtime loader v1.6 — replay early market mode intent after lazy core load. */
 (() => {
   'use strict';
 
@@ -191,7 +191,7 @@
           return;
         }
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.5' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '1.6' } }));
         } catch (_) {}
         replayPendingSearch();
         replayPendingMode();
@@ -257,6 +257,6 @@
     ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.5',
+    version: '1.6',
   });
 })();
