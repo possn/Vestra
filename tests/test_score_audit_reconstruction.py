@@ -36,6 +36,36 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
         self.assertEqual(mod.raw_score({"score_raw": 71, "score": 59}), 71)
         self.assertEqual(mod.raw_score({"score": 59}), 59)
 
+    def test_all_weight_packs_sum_to_one(self):
+        for model, weights in mod.MODEL_WEIGHTS.items():
+            self.assertAlmostEqual(sum(weights.values()), 1.0, places=9, msg=model)
+
+    def test_effective_weight_profile_quantifies_missing_dimension_renormalization(self):
+        weights = mod.MODEL_WEIGHTS["general"]
+        dims = {name: 50.0 for name in weights}
+        full = mod.effective_weight_profile(dims, weights)
+        self.assertAlmostEqual(full["missing_weight_pct"], 0.0, places=6)
+        self.assertAlmostEqual(full["renormalization_factor"], 1.0, places=6)
+
+        sparse = dict(dims)
+        sparse["Quality"] = None
+        sparse["Growth"] = None
+        profile = mod.effective_weight_profile(sparse, weights)
+        self.assertAlmostEqual(profile["missing_weight_pct"], 33.0, places=6)
+        self.assertGreater(profile["renormalization_factor"], 1.4)
+        self.assertIsNotNone(profile["dominant_dimension"])
+
+    def test_model_audit_reports_material_missing_weight(self):
+        rows = [general_row(i) for i in range(10)]
+        for row in rows:
+            row["score_dimensions"]["Quality"] = None
+            row["score_dimensions"]["Growth"] = None
+        result = mod.model_audit("general", rows)
+        renorm = result["missing_weight_renormalization"]
+        self.assertEqual(renorm["rows_missing_at_least_20pct_weight"], 10)
+        self.assertEqual(renorm["rows_missing_at_least_35pct_weight"], 0)
+        self.assertAlmostEqual(result["weight_pack_sum"], 1.0, places=9)
+
     def test_model_audit_does_not_call_confidence_moderation_reconstruction_error(self):
         rows = [
             general_row(0),
