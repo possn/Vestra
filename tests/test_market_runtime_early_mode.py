@@ -22,8 +22,8 @@ class MarketRuntimeEarlyModeTests(unittest.TestCase):
         self.assertIn("button.dispatchEvent(new MouseEvent('click'", self.loader)
 
     def test_bootstrap_uses_current_runtime_loader_version(self):
-        self.assertIn('market-runtime-loader.js?v=1.8', self.index)
-        self.assertIn("version: '1.8'", self.loader)
+        self.assertIn('market-runtime-loader.js?v=1.9', self.index)
+        self.assertIn("version: '1.9'", self.loader)
 
 
 if __name__ == '__main__':
