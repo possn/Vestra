@@ -1335,11 +1335,21 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const key=txt(stock.ticker).toUpperCase(); const prev=rowMap.get(key)||{stock,value:0}; prev.value+=portfolioValue(a); rowMap.set(key,prev);
     }
     const rows=[...rowMap.values()].map(r=>({...r,conviction:portfolioConviction(r.stock)})).filter(r=>r.conviction!=null&&r.value>0);
-    const sources=rows.filter(r=>['high','severe'].includes(txt(r.stock.risk_gate))||txt(r.stock.thesis_direction)==='down'||txt(r.stock.estimate_signal)==='deteriorating'||r.conviction<55).sort((a,b)=>a.conviction-b.conviction||b.value-a.value);
+    const totalValue=rows.reduce((a,r)=>a+r.value,0)||1, targets=loadPortfolioTargets();
+    const maxPosition=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
+    const sectors=new Map(); for(const r of rows){const k=txt(r.stock.sector)||'Sem setor';sectors.set(k,(sectors.get(k)||0)+r.value);}
+    const sourcePressure=r=>{
+      const gate=txt(r.stock.risk_gate), positionPct=r.value/totalValue*100, sectorPct=(sectors.get(txt(r.stock.sector)||'Sem setor')||0)/totalValue*100;
+      let p=Math.max(0,55-r.conviction)*.55+Math.max(0,positionPct-maxPosition)*1.5+Math.max(0,sectorPct-maxSector)*.6;
+      if(gate==='severe')p+=24;else if(gate==='high')p+=16;
+      if(txt(r.stock.thesis_direction)==='down')p+=9;
+      if(txt(r.stock.estimate_signal)==='deteriorating')p+=9;
+      return p;
+    };
+    const sources=rows.map(r=>({...r,sourcePressure:sourcePressure(r)})).filter(r=>r.sourcePressure>0).sort((a,b)=>b.sourcePressure-a.sourcePressure||a.conviction-b.conviction||b.value-a.value);
     const fallback=rows.slice().sort((a,b)=>a.conviction-b.conviction||b.value-a.value);
-    const queue=(sources.length?sources:fallback).slice(0,5);
+    const queue=(sources.length?sources:fallback).slice(0,6);
     const usedDest=new Set(), sectorAdds=new Map(), moves=[]; let totalConvDelta=0, totalOverlapDelta=0, totalMoved=0;
-    const totalValue=rows.reduce((a,r)=>a+r.value,0)||1, targets=loadPortfolioTargets(), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
     for(const src of queue){
       if(moves.length>=3) break;
       const amount=Math.max(100,Math.min(1000,Math.round((src.value*.25)/50)*50||100));
