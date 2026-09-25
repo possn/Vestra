@@ -111,6 +111,7 @@ jobs:
           node --check tests/runtime_chart_loader_contract.js
           node --check tests/runtime_broker_workbook_contract.js
           node --check tests/runtime_portfolio_sector_contract.js
+          node --check tests/runtime_portfolio_decision_engine_contract.js
           node --check tests/runtime_app_export_contract.js
           node --check politicians.js
           node --check worker.js
@@ -144,6 +145,8 @@ jobs:
         run: node tests/runtime_broker_workbook_contract.js
       - name: Runtime · portfolio sector classification
         run: node tests/runtime_portfolio_sector_contract.js
+      - name: Runtime · Portfolio decision engine
+        run: node tests/runtime_portfolio_decision_engine_contract.js
       - name: Runtime · lazy application exports
         run: node tests/runtime_app_export_contract.js
       - name: Runtime · learned universe central POST
