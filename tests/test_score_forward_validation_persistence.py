@@ -84,6 +84,34 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertGreater(summary["median_cohort_rank_ic"], 0)
         self.assertGreater(summary["median_cohort_top_minus_bottom_pct"], 0)
 
+    def test_robust_quintile_spreads_expose_outlier_distortion(self):
+        rows = []
+        for i in range(100):
+            score = 100 - i
+            realised = 5.0 if i < 20 else (1.0 if i >= 80 else 2.0)
+            rows.append({
+                "cohort_date": "2026-08-02",
+                "ticker": f"T{i}",
+                "score": score,
+                "return_pct": realised,
+                "score_model": "general",
+                "sector": "Technology",
+            })
+        # One extreme top-quintile winner should move the raw mean materially,
+        # while median and winsorized diagnostics remain representative.
+        rows[0]["return_pct"] = 1000.0
+        pack = MOD.metric_pack(rows)
+        self.assertGreater(pack["top_minus_bottom_pct"], 40)
+        self.assertEqual(pack["median_top_minus_bottom_pct"], 4.0)
+        self.assertEqual(pack["winsorized_top_minus_bottom_pct"], 4.0)
+
+    def test_winsorized_mean_does_not_mutate_observations(self):
+        values = [1000.0] + [5.0] * 19
+        before = list(values)
+        result = MOD.winsorized_mean(values)
+        self.assertEqual(values, before)
+        self.assertEqual(result, 5.0)
+
     def test_maturity_dates_expose_first_and_next_checkpoint(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{"date": "2026-08-27", "observations": {}}, {"date": "2026-09-03", "observations": {}}]

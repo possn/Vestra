@@ -143,6 +143,16 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
         self.assertGreater(report["rows_analysed"], 0)
         self.assertTrue(report["model_audits"])
 
+    def test_model_audit_flags_zero_coverage_weighted_dimension_as_structural(self):
+        rows = [general_row(i) for i in range(10)]
+        for row in rows:
+            row["score_dimensions"]["Growth"] = None
+        result = mod.model_audit("general", rows)
+        self.assertIn(
+            {"dimension": "Growth", "nominal_weight_pct": 15.0},
+            result["structurally_unavailable_dimensions"],
+        )
+
     def test_model_audit_does_not_call_confidence_moderation_reconstruction_error(self):
         rows = [
             general_row(0),
