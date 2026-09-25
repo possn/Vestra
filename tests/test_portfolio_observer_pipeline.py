@@ -54,7 +54,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
         self.assertIn("version:'1.2'",swap)
-        self.assertIn("version:'2.6'",ui)
+        self.assertIn("version:'2.7'",ui)
         self.assertIn("version:'1.2'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
 
@@ -113,6 +113,9 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("function syncGroupScan(c,tabs)", ui)
         self.assertIn("vpu-tab-count", ui)
         self.assertIn("vpu-card-cue", ui)
+        self.assertIn("badge.textContent=String(cards.length)", ui)
+        self.assertIn("`${cards.length} análises nesta área`", ui)
+        self.assertNotIn("const actionable=cards.reduce", ui)
         self.assertIn("Research pendente", ui)
         self.assertIn("Stress test", ui)
         self.assertIn(".vpu-tab-count", css)
@@ -208,7 +211,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
         lazy_order=[
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=2.6",
+            "vestra-portfolio-ui.js?v=2.7",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
             "vestra-portfolio-hierarchy.js?v=2.1",
