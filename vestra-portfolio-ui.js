@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v2.2 — guided optimization journey with focused decision navigation. */
+/* Vestra Portfolio UI v2.3 — scannable priority and monitoring workspaces with focused navigation. */
 (() => {
   'use strict';
 
@@ -80,6 +80,27 @@
   function ensureTabs(c,reveal){
     let shell=c.querySelector('.vpu-tabs-shell'); if(!shell){ shell=document.createElement('section'); shell.className='vpu-tabs-shell'; shell.innerHTML=`<div class="vpu-tabs-head"><div><small>EXPLORAR A CARTEIRA</small><strong>O que queres perceber?</strong></div><button type="button" data-vpu-toggle aria-label="Fechar análise">×</button></div><div class="vpu-tabs" role="tablist" aria-label="Análise da carteira">${Object.entries(GROUPS).map(([id,g])=>`<button type="button" role="tab" data-vpu-tab="${id}"><strong>${g.label}</strong><span>${g.sub}</span></button>`).join('')}</div><div class="vpu-tab-intro"><strong></strong><span></span></div><div class="vpu-optimize-guide" hidden><button type="button" data-vpu-guide="swap"><small>1</small><span><b>Encontrar alternativa</b><em>Comparar opções melhores</em></span><i class="vpu-step-state">Comparar</i></button><button type="button" data-vpu-guide="scenario"><small>2</small><span><b>Simular impacto</b><em>Ver antes de trocar</em></span><i class="vpu-step-state">Simular</i></button><button type="button" data-vpu-guide="rebalance"><small>3</small><span><b>Redistribuir capital</b><em>Escolher onde melhora mais</em></span><i class="vpu-step-state">Decidir</i></button></div>`; reveal.insertAdjacentElement('afterend',shell); } return shell;
   }
+  function cardCount(el){return countRows(el)||null;}
+  function syncGroupScan(c,tabs){
+    const meta=GROUPS[active]||GROUPS.decide;
+    tabs.querySelectorAll('[data-vpu-tab]').forEach(b=>{
+      const group=b.dataset.vpuTab, cards=[...c.querySelectorAll('.vpu-section-card')].filter(el=>el.dataset.vpuGroup===group);
+      const actionable=cards.reduce((sum,el)=>sum+(cardCount(el)||0),0);
+      let badge=b.querySelector('.vpu-tab-count');
+      if(!badge){badge=document.createElement('i');badge.className='vpu-tab-count';b.appendChild(badge);}
+      badge.textContent=actionable?String(actionable):String(cards.length);
+      badge.title=actionable?`${actionable} itens nesta área`:`${cards.length} análises nesta área`;
+    });
+    c.querySelectorAll('.vpu-section-card').forEach(el=>{
+      let cue=el.querySelector(':scope > .vpu-card-cue');
+      const rows=cardCount(el),kind=t(el.dataset.uxKind);
+      const labels={research:'Research pendente',priority:'Prioridade',reinforce:'Possível reforço',review:'Rever',target:'Objetivos',history:'Evolução',risk:'Risco',stress:'Stress test'};
+      if(!labels[kind]){cue?.remove();return;}
+      if(!cue){cue=document.createElement('span');cue.className='vpu-card-cue';el.appendChild(cue);}
+      cue.textContent=rows?`${labels[kind]} · ${rows}`:labels[kind];
+    });
+    const intro=tabs.querySelector('.vpu-tab-intro');if(intro)intro.dataset.vpuMode=active;
+  }
   function apply(){
     const c=root(); if(!c)return; c.classList.add('vpu-portfolio');
     const hero=ensureHero(c), reveal=ensureExplore(c,hero), tabs=ensureTabs(c,reveal);
@@ -92,6 +113,7 @@
     if(introSub&&introSub.textContent!==meta.sub)introSub.textContent=meta.sub;
     const guide=tabs.querySelector('.vpu-optimize-guide'); if(guide)guide.hidden=!expanded||active!=='optimize';
     c.querySelectorAll('.market-detail-card[data-collapsible="1"],[data-ux-kind]').forEach(el=>{const g=classify(el);if(!g)return;el.classList.add('vpu-section-card');el.dataset.vpuGroup=g;el.classList.toggle('vpu-hidden',!expanded||g!==active);});
+    syncGroupScan(c,tabs);
     const btn=reveal.querySelector('[data-vpu-toggle]'),label=expanded?'Fechar':'Começar'; if(btn&&btn.textContent!==label)btn.textContent=label;
   }
   function focusCard(c,target){
@@ -134,6 +156,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'2.2'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'2.3'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
