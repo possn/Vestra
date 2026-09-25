@@ -152,6 +152,8 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn(".market-collapse-toolbar{",css)
         self.assertIn("c.querySelector('.market-decision-center')",hierarchy)
         self.assertIn("version:'1.5'",collapsibles)
+        self.assertIn(":not(.vpu-card-cue)",css)
+        self.assertIn("portfolio-collapsibles.css?v=1.1",collapsibles)
 
     def test_classifier_does_not_build_hidden_legacy_shortcuts(self):
         classifier=read("portfolio-card-classifier.js")
@@ -197,8 +199,6 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         index=read("index.html")
         runtime_loader=read("market-runtime-loader.js")
         loader=read("market-static-universe.js")
-        self.assertIn(":not(.vpu-card-cue)", css)
-        self.assertIn("portfolio-collapsibles.css?v=1.1", collapsibles)
         self.assertNotIn('src="portfolio-collapsibles.js',index)
         self.assertNotIn('src="portfolio-card-classifier.js',index)
         self.assertLess(runtime_loader.index("portfolio-collapsibles.js"), runtime_loader.index("portfolio-card-classifier.js"))
