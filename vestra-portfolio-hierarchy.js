@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v2.2 — Optimize order follows compare → simulate → redistribute before support analysis. */
+/* Vestra Portfolio Hierarchy v2.3 — focus-mode exit is presentation-only within the canonical pipeline. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -136,7 +136,7 @@
       if(node.nodeType===3)return !t(node.textContent);
       if(node.nodeType!==1)return true;
       const el=node;
-      return !!el.matches?.('.ux454-purpose,.ux454-swap-head,.ux455-swap-summary,.ux455-swap-tag,.ux455-overlap-note,.ux-card-icon,.ux-card-badge,.ux-section-hint,.vpu-overview,.vpu-reveal,.vpu-tabs-shell,.ux456-swaplab');
+      return !!el.matches?.('.ux454-purpose,.ux454-swap-head,.ux455-swap-summary,.ux455-swap-tag,.ux455-overlap-note,.ux-card-icon,.ux-card-badge,.ux-section-hint,.vpu-overview,.vpu-reveal,.vpu-tabs-shell,.vpu-exit,.ux456-swaplab');
     };
     return !nodes.every(presentationOnly);
   }
@@ -166,5 +166,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.2'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.3'});
 })();
