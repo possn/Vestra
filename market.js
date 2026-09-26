@@ -1068,7 +1068,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const overlap=fundHoldingsOverlapPct(source,candidate);
     const sameCategory=txt(source?.fund_category||source?.category).toLowerCase()&&txt(source?.fund_category||source?.category).toLowerCase()===txt(candidate?.fund_category||candidate?.category).toLowerCase();
     const specific=common.some(x=>!['world','europe','emerging','dividend','bonds'].includes(x));
-    const match=overlap==null?sameCategory||specific:overlap>=30||sameCategory;
+    const match=overlap==null?sameCategory||specific:overlap>=30||(sameCategory&&specific);
     return {match,common,overlap};
   }
   function findEtfOptimizeAlternatives(ranked,heldTickers){
@@ -1082,7 +1082,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const sourceDup=fundPortfolioDuplicationPct(source,heldEtfs,txt(source.ticker));
       const sourceDiv=n(source?.etf_score_dimensions?.diversification);
       const candidates=universe.map(candidate=>{
-        const key=txt(candidate?.ticker).toUpperCase().replace(/.[A-Z]+$/,'');
+        const key=txt(candidate?.ticker).toUpperCase().replace(/\.[A-Z]+$/,'');
         if(!key||heldTickers.has(key))return null;
         const exposure=sameFundExposure(source,candidate);
         if(!exposure.match)return null;
