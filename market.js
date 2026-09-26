@@ -1840,15 +1840,16 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const capacity=Math.min(strictPosCapacity,strictSectorCapacity,fresh); if(capacity<50) return null;
       const positionPct=(existingValue+Math.min(capacity,fresh))/afterTotal*100, sectorPct=(sectorValue+Math.min(capacity,fresh))/afterTotal*100;
       const decision=evaluatePortfolioMove({mode:'fresh',destination:stock,rows,amount:Math.min(capacity,fresh),totalAfter:afterTotal,destinationConv:conv,positionPct,sectorPct,indirect});
-      const {riskPenalty,autoEligible,warnings}=decision;
-      const {valuation,tier}=decision.evidence;
+      const {riskPenalty,warnings}=decision;
+      const {valuation,tier,strict}=decision.evidence;
+      const baseEligible=strict&&(targets.overlap!=='reduce'||indirect<2);
       let score=conv+portfolioTiltBonus(stock,targets.tilt)-decision.evidence.penalty-riskPenalty;
       if(valuation==='undervalued') score+=4; else if(valuation==='fair') score+=1;
       const sectorNow=sectorValue/analysed*100; if(sectorNow<maxSector*.55) score+=3; else if(sectorNow>maxSector*.85) score-=3;
       if(existing&&existingValue/analysed*100<maxPos*.65) score+=2;
       if(targets.overlap==='reduce'&&indirect>1.5) score-=(indirect-1.5)*2.5;
-      return {stock,conv,score,capacity,existingValue,sector,sectorValue,indirect,tier,warnings,autoEligible};
-    }).filter(Boolean).sort((a,b)=>{ const rank={preferred:0,acceptable:1,research:2}; return Number(b.autoEligible)-Number(a.autoEligible)||(rank[a.tier]-rank[b.tier])||b.score-a.score; });
+      return {stock,conv,score,capacity,existingValue,sector,sectorValue,indirect,tier,warnings,baseEligible};
+    }).filter(Boolean).sort((a,b)=>{ const rank={preferred:0,acceptable:1,research:2}; return Number(b.baseEligible)-Number(a.baseEligible)||(rank[a.tier]-rank[b.tier])||b.score-a.score; });
     const baselineRisk=portfolioRiskProfile(rows,afterTotal);
     const riskPct=(group,name)=>baselineRisk[group].find(x=>x.name===name)?.pct||0;
     const riskAdds={factors:new Map(),currencies:new Map(),regions:new Map()};
@@ -1870,7 +1871,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       addRisk('regions',stockRegion(stock),delta);
     };
     const allocationsByTicker=new Map(), sectorAdds=new Map(); let remaining=fresh;
-    const eligible=candidates.filter(c=>c.autoEligible).slice(0,5);
+    const eligible=candidates.filter(c=>c.baseEligible).slice(0,5);
     let progressed=true;
     while(remaining>=50&&progressed){
       progressed=false;
@@ -1895,7 +1896,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const currentConvRows=rows.map(r=>({...r,conv:portfolioConviction(r.stock)})).filter(r=>r.conv!=null&&r.value>0), convBase=currentConvRows.reduce((a,r)=>a+r.value,0)||1;
     const currentConv=currentConvRows.reduce((a,r)=>a+r.value*r.conv,0)/convBase;
     const added=allocations.reduce((a,x)=>a+x.amount,0), afterConv=(currentConv*convBase+allocations.reduce((a,x)=>a+x.amount*x.conv,0))/(convBase+added||1);
-    return {fresh,allocated:added,remaining:fresh-added,currentConv,afterConv,allocations,manual:candidates.filter(x=>!x.autoEligible).slice(0,3),targets};
+    return {fresh,allocated:added,remaining:fresh-added,currentConv,afterConv,allocations,manual:candidates.filter(x=>!x.baseEligible).slice(0,3),targets};
   }
 
   function renderFreshCapitalPlan(plan){
