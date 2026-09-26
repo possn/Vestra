@@ -275,6 +275,12 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('"fund_flow_1w_pct"', shards)
         self.assertIn('.market-rotation-name em{', css)
 
+    def test_market_rebuild_marker_is_wired_to_canonical_pipeline(self):
+        workflow = read('.github/workflows/update-market-data.yml')
+        self.assertIn("'.github/triggers/market-data-rebuild.txt'", workflow)
+        self.assertIn('python build_market_shards.py', workflow)
+        self.assertIn('git add data/', workflow)
+
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
