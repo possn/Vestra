@@ -297,6 +297,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('python build_market_shards.py', workflow)
         self.assertIn('git add data/', workflow)
 
+    def test_shared_worker_survives_hydration_and_blank_settings(self):
+        app = read('app.js')
+        html = read('index.html')
+        self.assertIn('workerUrl: String((p.settings && p.settings.workerUrl) || DEFAULT_WORKER_URL).trim() || DEFAULT_WORKER_URL', app)
+        self.assertIn('workerInput.value = (state.settings && state.settings.workerUrl) || DEFAULT_WORKER_URL', app)
+        self.assertIn('state.settings.workerUrl = val || DEFAULT_WORKER_URL', app)
+        self.assertIn('Worker global restaurado', app)
+        self.assertIn('app.js?v=20260926v13', html)
+
     def test_shared_worker_default_and_rotation_contrast_are_explicit(self):
         app = read('app.js')
         market = read('market.js')
