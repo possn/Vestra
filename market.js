@@ -1636,8 +1636,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
 
     const concentration=[];
-    if(topPosPct>=15) concentration.push(`${topPosition.stock.ticker} representa ~${topPosPct.toFixed(0)}% da parte analisável`);
-    if(sectorRows[0]?.pct>=30) concentration.push(`${sectorRows[0].sector} concentra ~${sectorRows[0].pct.toFixed(0)}% da parte analisável`);
+    const concentrationMaxPos=Math.max(3,Math.min(30,n(portfolioTargets.maxPosition)||10));
+    const concentrationMaxSector=Math.max(10,Math.min(60,n(portfolioTargets.maxSector)||25));
+    if(topPosition&&topPosPct>concentrationMaxPos) concentration.push(`${topPosition.stock.ticker} representa ~${topPosPct.toFixed(0)}% · objetivo ${concentrationMaxPos}%`);
+    if(sectorRows[0]?.pct>concentrationMaxSector) concentration.push(`${sectorRows[0].sector} concentra ~${sectorRows[0].pct.toFixed(0)}% · objetivo ${concentrationMaxSector}%`);
     concentration.push(...overlaps.slice(0,3));
 
     const compactRows=(arr,metaFn)=>arr.length?`<div class="market-list">${arr.map(r=>renderRow(r.stock,metaFn(r))).join('')}</div>`:'<p class="market-case-note">Nenhuma posição cumpre este filtro com os dados atuais.</p>';
