@@ -43,7 +43,7 @@
       const ticker=text(s?.ticker);
       const held=inPortfolio(ticker), watched=isWatched(ticker);
       const shownScore=displayScore ?? (fund ? s?.etf_score : s?.score);
-      const scoreLabel=fund ? 'ETF Score' : 'Score';
+      const scoreLabel=fund ? 'ETF Score' : 'Score Vestra';
       return `<div class="market-row" data-market-ticker="${escapeHtml(ticker)}">
       <div><div class="market-row__title"><span class="market-row__ticker">${escapeHtml(ticker)}</span>${held?'<span class="market-held-badge">Carteira</span>':''}<span class="market-row__name">${escapeHtml(s?.name||'')}</span></div><div class="market-row__meta">${escapeHtml(sub)}</div>${(held||watched)?changeBadge(s):''}</div>
       <div class="market-row__end"><button class="market-watch ${watched?'is-active':''}" data-market-watch="${escapeHtml(ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}" title="${watched?'A acompanhar':'Acompanhar'}">${watched?'★':'☆'}</button><div class="market-score ${scoreClass(shownScore)}" title="${escapeHtml(scoreLabel)}">${number(shownScore)==null?'—':Math.round(number(shownScore))}</div></div>
