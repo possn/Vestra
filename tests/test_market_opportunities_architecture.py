@@ -129,7 +129,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_general_discovery_shortlist_has_diversification_guardrails(self):
         source = read('market-opportunities.js')
         self.assertIn('function diversify(rows,limit,{sectorCap=3,industryCap=2}={})', source)
-        self.assertIn('return diversify(selected,limit)', source)
+        self.assertIn('return diversify(pool,limit)', source)
         self.assertNotIn('for(const candidate of deferred)', source)
         self.assertIn('never refill with names that were', source)
         self.assertIn('diversify,rankLens', source)
