@@ -1703,19 +1703,49 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const sources=planSources.map(r=>({...r,sourcePressure:sourcePressure(r)})).filter(r=>r.sourcePressure>0).sort((a,b)=>b.sourcePressure-a.sourcePressure||a.conviction-b.conviction||b.value-a.value);
     const fallback=planSources.slice().sort((a,b)=>a.conviction-b.conviction||b.value-a.value);
     const queue=(sources.length?sources:fallback).slice(0,6);
-    const usedDest=new Set(), sectorAdds=new Map(), moves=[]; let totalConvDelta=0, totalOverlapDelta=0, totalMoved=0;
+    const baselineRisk=portfolioRiskProfile(rows,totalValue);
+    const riskPct=(group,name)=>baselineRisk[group].find(x=>x.name===name)?.pct||0;
+    const riskDelta={factors:new Map(),currencies:new Map(),regions:new Map()};
+    const addRiskDelta=(group,name,delta)=>riskDelta[group].set(name,(riskDelta[group].get(name)||0)+delta);
+    const riskMoveSafe=(sourceStock,destination,amount)=>{
+      const delta=amount/totalValue*100, checks=[];
+      const srcFactors=new Set(stockRiskTags(sourceStock)), dstFactors=new Set(stockRiskTags(destination));
+      for(const name of new Set([...srcFactors,...dstFactors])) checks.push(['factors',name,(dstFactors.has(name)?delta:0)-(srcFactors.has(name)?delta:0),n(targets.maxFactor)||45]);
+      const srcCur=stockCurrency(sourceStock), dstCur=stockCurrency(destination);
+      for(const name of new Set([srcCur,dstCur])) checks.push(['currencies',name,(dstCur===name?delta:0)-(srcCur===name?delta:0),n(targets.maxCurrency)||70]);
+      const srcReg=stockRegion(sourceStock), dstReg=stockRegion(destination);
+      for(const name of new Set([srcReg,dstReg])) checks.push(['regions',name,(dstReg===name?delta:0)-(srcReg===name?delta:0),n(targets.maxRegion)||70]);
+      return checks.every(([group,name,moveDelta,limit])=>{
+        const current=riskPct(group,name)+(riskDelta[group].get(name)||0), next=current+moveDelta;
+        return current>limit ? next<=current+.01 : next<=limit+.01;
+      });
+    };
+    const applyRiskMove=(sourceStock,destination,amount)=>{
+      const delta=amount/totalValue*100, srcFactors=new Set(stockRiskTags(sourceStock)), dstFactors=new Set(stockRiskTags(destination));
+      for(const name of new Set([...srcFactors,...dstFactors])) addRiskDelta('factors',name,(dstFactors.has(name)?delta:0)-(srcFactors.has(name)?delta:0));
+      const srcCur=stockCurrency(sourceStock), dstCur=stockCurrency(destination);
+      for(const name of new Set([srcCur,dstCur])) addRiskDelta('currencies',name,(dstCur===name?delta:0)-(srcCur===name?delta:0));
+      const srcReg=stockRegion(sourceStock), dstReg=stockRegion(destination);
+      for(const name of new Set([srcReg,dstReg])) addRiskDelta('regions',name,(dstReg===name?delta:0)-(srcReg===name?delta:0));
+    };
+    const usedDest=new Set(), sectorDeltas=new Map(), moves=[]; let totalConvDelta=0, totalOverlapDelta=0, totalMoved=0;
     for(const src of queue){
       if(moves.length>=3) break;
       const amount=Math.max(100,Math.min(1000,Math.round((src.value*.25)/50)*50||100));
       const sim=rebalanceSimulation(src.stock.ticker,amount); if(sim.error||!sim.results?.length) continue;
       const dest=sim.results.find(r=>{
         const key=txt(r.stock.ticker).toUpperCase(), sector=txt(r.stock.sector)||'Sem setor';
-        const cumulativeSectorPct=r.sectorPct+((sectorAdds.get(sector)||0)/totalValue*100);
-        return !usedDest.has(key)&&r.autoEligible&&cumulativeSectorPct<=maxSector+1;
+        const cumulativeSectorPct=r.sectorPct+((sectorDeltas.get(sector)||0)/totalValue*100);
+        const projectedOverlap=totalOverlapDelta+r.overlapDelta;
+        const overlapSafe=targets.overlap==='reduce'?projectedOverlap<=0:projectedOverlap<2;
+        return !usedDest.has(key)&&r.autoEligible&&cumulativeSectorPct<=maxSector+1&&overlapSafe&&riskMoveSafe(sim.source,r.stock,sim.amount);
       });
       if(!dest) continue;
-      const destKey=txt(dest.stock.ticker).toUpperCase(), destSector=txt(dest.stock.sector)||'Sem setor';
-      usedDest.add(destKey); sectorAdds.set(destSector,(sectorAdds.get(destSector)||0)+sim.amount);
+      const destKey=txt(dest.stock.ticker).toUpperCase(), destSector=txt(dest.stock.sector)||'Sem setor', srcSector=txt(sim.source.sector)||'Sem setor';
+      usedDest.add(destKey);
+      sectorDeltas.set(srcSector,(sectorDeltas.get(srcSector)||0)-sim.amount);
+      sectorDeltas.set(destSector,(sectorDeltas.get(destSector)||0)+sim.amount);
+      applyRiskMove(sim.source,dest.stock,sim.amount);
       totalConvDelta+=dest.convDelta; totalOverlapDelta+=dest.overlapDelta; totalMoved+=sim.amount;
       moves.push({from:sim.source,to:dest.stock,amount:sim.amount,convDelta:dest.convDelta,overlapDelta:dest.overlapDelta,fitScore:dest.fitScore});
     }
