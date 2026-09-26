@@ -55,8 +55,13 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("convictionGain>=5&&convDelta>0&&overlapDelta<1.5&&riskPenalty<5", s)
         self.assertIn("const decision=evaluatePortfolioMove({mode:'alternative'", s)
         self.assertIn("if(!decision.autoEligible||scoreDelta<3) return null", s)
-        self.assertIn("industryBonus", s)
-        self.assertIn("decision.convictionGain*1.35+scoreDelta*.25", s)
+        self.assertIn("const sameIndustry=!!txt(x.industry)&&txt(x.industry)===txt(r.stock.industry)", s)
+        self.assertIn("||a.decision.overlapDelta-b.decision.overlapDelta", s)
+        self.assertIn("||b.scoreDelta-a.scoreDelta", s)
+        self.assertIn("||Number(b.sameIndustry)-Number(a.sameIndustry)", s)
+        self.assertIn("||b.valuationRank-a.valuationRank", s)
+        self.assertNotIn("decision.convictionGain*1.35+scoreDelta*.25", s)
+        self.assertNotIn("const rank=decision.convictionGain", s)
         self.assertIn("Convicção +${a.convDelta.toFixed(0)}", s)
 
     def test_canonical_move_evaluator_owns_shared_eligibility(self):
