@@ -1492,9 +1492,30 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<div class="market-research-checkpoint" data-checkpoint-ticker="${esc(ticker)}"><select data-checkpoint-select><option value="" ${!cp?'selected':''}>Checkpoint…</option><option value="maintain" ${cp==='maintain'?'selected':''}>Mantém</option><option value="deteriorated" ${cp==='deteriorated'?'selected':''}>Deteriorou</option><option value="wait_earnings" ${cp==='wait_earnings'?'selected':''}>Aguardar earnings</option><option value="improving" ${cp==='improving'?'selected':''}>A melhorar</option><option value="exit_review" ${cp==='exit_review'?'selected':''}>Rever saída</option></select><input type="text" maxlength="500" data-checkpoint-note placeholder="Nota curta de research" value="${esc(state?.note||'')}"><button type="button" data-checkpoint-save>Guardar</button></div>`;
   }
 
+  function portfolioReviewSignals(r){
+    const gate=txt(r?.stock?.risk_gate);
+    return {
+      replace:r?.action?.key==='replace',
+      gateRank:gate==='severe'?3:gate==='high'?2:gate==='watch'?1:0,
+      thesisDown:txt(r?.stock?.thesis_direction)==='down',
+      estimatesDown:txt(r?.stock?.estimate_signal)==='deteriorating',
+      conviction:r?.conviction??999,
+      value:n(r?.value)||0,
+    };
+  }
+  function comparePortfolioReview(a,b){
+    const x=portfolioReviewSignals(a), y=portfolioReviewSignals(b);
+    return Number(y.replace)-Number(x.replace)
+      ||y.gateRank-x.gateRank
+      ||Number(y.thesisDown)-Number(x.thesisDown)
+      ||Number(y.estimatesDown)-Number(x.estimatesDown)
+      ||x.conviction-y.conviction
+      ||y.value-x.value;
+  }
+
   function renderResearchQueue(review){
     const rank={new:0,in_review:1,snoozed:2,reviewed:3};
-    const items=review.map(r=>({r,state:researchQueueState(r.stock.ticker)})).sort((a,b)=>(rank[a.state.status]??9)-(rank[b.state.status]??9)||(a.r.conviction??999)-(b.r.conviction??999));
+    const items=review.map(r=>({r,state:researchQueueState(r.stock.ticker)})).sort((a,b)=>(rank[a.state.status]??9)-(rank[b.state.status]??9)||comparePortfolioReview(a.r,b.r));
     const counts=items.reduce((a,x)=>{a[x.state.status]=(a[x.state.status]||0)+1;return a;},{});
     const visible=items.filter(x=>x.state.status!=='reviewed'&&x.state.status!=='snoozed').slice(0,12);
     const label={new:'Novo',in_review:'Em revisão',reviewed:'Revisto',snoozed:'Adiado'};
@@ -1517,20 +1538,20 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const topSector=[...sectors.entries()].map(([name,value])=>({name,pct:value/analysed*100})).sort((a,b)=>b.pct-a.pct)[0];
     const topPosition=ranked.slice().sort((a,b)=>b.value-a.value)[0];
     const topPositionPct=topPosition?topPosition.value/analysed*100:0;
-    const review=ranked.filter(r=>['review','replace'].includes(r.action?.key)).sort((a,b)=>(a.conviction??999)-(b.conviction??999));
+    const review=ranked.filter(r=>['review','replace'].includes(r.action?.key)).sort(comparePortfolioReview);
     const reinforce=ranked.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction);
     const structuralAlert=topPositionPct>targets.maxPosition||(topSector?.pct||0)>targets.maxSector||riskBudget.fit<65||(worst?.resilience||100)<70;
     const decisionState=review.length?'Rever':structuralAlert?'Atenção':'Estável';
     const tone=review.length?'is-risk':structuralAlert?'is-warn':'is-positive';
     const materialEtfOptimize=(etfOptimizeRows||[]).find(x=>x.improvements>=2||x.scoreDelta>=5||(x.terSaving!=null&&x.terSaving>=.10)||(x.dupDelta!=null&&x.dupDelta<=-10))||null;
     const priorities=[];
-    if(review[0]) priorities.push({label:`Rever ${review[0].stock.ticker}: ${review[0].conviction==null?'convicção insuficiente':`convicção ${Math.round(review[0].conviction)}/100`}`,kind:'ticker',value:review[0].stock.ticker});
+    if(review[0]) priorities.push({label:`${review[0].action?.key==='replace'?'Substituir':'Rever'} ${review[0].stock.ticker}: ${review[0].conviction==null?'convicção insuficiente':`convicção ${Math.round(review[0].conviction)}/100`}`,kind:'ticker',value:review[0].stock.ticker});
     if(topPositionPct>targets.maxPosition&&topPosition) priorities.push({label:`${topPosition.stock.ticker} está acima do objetivo por posição (${topPositionPct.toFixed(1)}%)`,kind:'ticker',value:topPosition.stock.ticker});
     if(topSector&&topSector.pct>targets.maxSector) priorities.push({label:`${topSector.name} está acima do objetivo setorial (${topSector.pct.toFixed(1)}%)`,kind:'targets',value:'targets'});
     if(worst&&worst.resilience<70) priorities.push({label:`Stress mais exigente: ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label} · resiliência ${worst.resilience}/100`,kind:'stress',value:worst.key});
     if(materialEtfOptimize) priorities.push({label:`Comparar ${materialEtfOptimize.source.ticker} → ${materialEtfOptimize.candidate.ticker}: ETF Optimize encontrou ${materialEtfOptimize.improvements} melhoria${materialEtfOptimize.improvements===1?'':'s'} material${materialEtfOptimize.improvements===1?'':'is'}`,kind:'etfoptimize',value:materialEtfOptimize.source.ticker});
     if(!priorities.length&&reinforce[0]) priorities.push({label:`Carteira sem alerta dominante; ${reinforce[0].stock.ticker} é o reforço com maior convicção atual`,kind:'ticker',value:reinforce[0].stock.ticker});
-    const next=review[0]?{label:`Abrir ${review[0].stock.ticker} e rever a tese`,kind:'ticker',value:review[0].stock.ticker}
+    const next=review[0]?{label:review[0].action?.key==='replace'?`Abrir ${review[0].stock.ticker} e avaliar substituição`:`Abrir ${review[0].stock.ticker} e rever a tese`,kind:'ticker',value:review[0].stock.ticker}
       :topPositionPct>targets.maxPosition?{label:'Usar o Rebalancer para reduzir concentração por posição',kind:'rebalancer',value:'rebalancer'}
       :topSector&&topSector.pct>targets.maxSector?{label:`Rever concentração no setor ${topSector.name}`,kind:'targets',value:'targets'}
       :riskBudget.fit<65?{label:'Rever o Risk Budget antes de reforçar posições',kind:'riskbudget',value:'riskbudget'}
@@ -1596,7 +1617,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const actionCounts=actionRows.reduce((acc,r)=>{acc[r.action.key]=(acc[r.action.key]||0)+1;return acc;},{});
 
     const reinforce=actionRows.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction).slice(0,3);
-    const review=actionRows.filter(r=>['review','replace'].includes(r.action?.key)).sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,3);
+    const review=actionRows.filter(r=>['review','replace'].includes(r.action?.key)).sort(comparePortfolioReview).slice(0,3);
 
     const overlaps=[];
     const etfs=etfsForFit;
