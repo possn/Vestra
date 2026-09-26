@@ -88,6 +88,10 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("ETF indireto ${(n(fit.indirectPct)||0).toFixed(1)}%", market)
         self.assertIn("fit.fit==='concentrated'?'Concentrado':fit.fit==='watch'?'Atenção':'Equilibrado'", market)
         self.assertNotIn('portfolioFitScore', market)
+        action_block = market.split('function portfolioAction(stock, alternativesByTicker, context)', 1)[1].split('const PORTFOLIO_TARGETS_KEY', 1)[0]
+        self.assertIn("ctx.fit==='concentrated'||ctx.fit==='watch'", action_block)
+        self.assertIn("key:'hold',label:'Manter'", action_block)
+        self.assertIn("key:'reinforce',label:'Reforçar'", action_block)
 
 
     def test_opportunities_reuse_canonical_market_universe_without_refetch(self):
