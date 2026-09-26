@@ -287,7 +287,6 @@ def assess(row: dict) -> dict:
 
     components = {
         "vestra_score": score,
-        "confidence": conf,
         "moat": moat,
         "capital_allocation": cap,
         "qarp": qarp,
@@ -309,12 +308,15 @@ def assess(row: dict) -> dict:
     if len(structural_observed) < 2:
         return _insufficient("Faltam sinais estruturais suficientes", components, gates, timing)
 
-    # Structural quality remains the foundation, but timing now has enough weight
-    # to distinguish "great company" from "good opportunity now".
+    # Discovery Score answers "worth investigating now?". Confidence is an
+    # evidence gate/cap, not an alpha signal: once minimum evidence is present,
+    # a higher confidence value must not mechanically promote an otherwise
+    # identical candidate. Risk Gate is likewise applied below as a constraint.
+    # Portfolio fit is intentionally absent from this cross-sectional ranking.
     raw = _weighted([
-        (score, .19), (conf, .09), (moat, .11), (cap, .08), (qarp, .14),
-        (trap_inverse, .10), (sector, .05), (low52, .05), (recovery, .07),
-        (valuation, .02), (timing_score, .20),
+        (score, .21), (moat, .12), (cap, .09), (qarp, .15),
+        (trap_inverse, .11), (sector, .06), (low52, .05), (recovery, .08),
+        (valuation, .02), (timing_score, .21),
     ])
 
     gate = str(row.get("risk_gate") or "clear").lower()
