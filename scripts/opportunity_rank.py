@@ -328,12 +328,27 @@ def assess(row: dict) -> dict:
     # a higher confidence value must not mechanically promote an otherwise
     # identical candidate. Risk Gate is likewise applied below as a constraint.
     # Portfolio fit is intentionally absent from this cross-sectional ranking.
-    ranking_parts = [
-        (score, .21), (moat, .12), (cap, .09), (qarp, .15),
-        (trap_inverse, .11), (sector, .06), (low52, .05), (recovery, .08),
-        (valuation, .02), (timing_score, .21),
+    # Compose correlated proxies inside economic sleeves before combining them.
+    # This prevents one thesis from receiving several independent votes merely
+    # because the same underlying fundamentals appear in multiple derived scores.
+    strength, strength_coverage = _fixed_weighted([
+        (score, .44), (moat, .24), (cap, .18), (sector, .14),
+    ])
+    asymmetry, asymmetry_coverage = _fixed_weighted([
+        (qarp, .54), (trap_inverse, .38), (valuation, .08),
+    ])
+    inflection, inflection_coverage = _fixed_weighted([
+        (timing_score, .62), (recovery, .24), (low52, .14),
+    ])
+    sleeve_parts = [
+        (strength, .36), (asymmetry, .28), (inflection, .36),
     ]
-    raw, ranking_weight_coverage = _fixed_weighted(ranking_parts)
+    raw, _ = _fixed_weighted(sleeve_parts)
+    ranking_weight_coverage = (
+        strength_coverage * .36
+        + asymmetry_coverage * .28
+        + inflection_coverage * .36
+    )
 
     gate = str(row.get("risk_gate") or "clear").lower()
     reasons = list(timing.get("reasons") or [])
@@ -439,6 +454,16 @@ def assess(row: dict) -> dict:
         "opportunity_signal_count": len(observed),
         "opportunity_structural_signal_count": len(structural_observed),
         "opportunity_ranking_weight_coverage_pct": round(ranking_weight_coverage * 100.0, 1),
+        "opportunity_sleeves": {
+            "strength": round(_clip(strength), 1) if strength is not None else None,
+            "asymmetry": round(_clip(asymmetry), 1) if asymmetry is not None else None,
+            "inflection": round(_clip(inflection), 1) if inflection is not None else None,
+        },
+        "opportunity_sleeve_coverage_pct": {
+            "strength": round(strength_coverage * 100.0, 1),
+            "asymmetry": round(asymmetry_coverage * 100.0, 1),
+            "inflection": round(inflection_coverage * 100.0, 1),
+        },
         "opportunity_gates": gates,
         "opportunity_caps": caps,
         "opportunity_timing_score": timing_score,
