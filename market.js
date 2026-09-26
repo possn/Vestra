@@ -292,25 +292,18 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function renderRotationRow(r, rank){
     return `<div class="market-rotation-row is-${r.tone}"><div class="market-rotation-rank">${rank}</div><div class="market-rotation-name"><strong>${esc(r.label)}</strong><small>${esc(r.signal)} · ${r.count} ações</small><em>${esc(rotationEtfText(r))}</em></div><div class="market-rotation-bar"><i style="width:${Math.max(4,Math.min(100,r.breadth))}%"></i><small>breadth ${r.breadth.toFixed(0)}%</small></div><div class="market-rotation-metrics"><strong>${r.med5>=0?'+':''}${r.med5.toFixed(1)}%</strong><small>5d mediano${r.med20!=null?` · 20d ${r.med20>=0?'+':''}${r.med20.toFixed(1)}%`:''}</small></div></div>`;
   }
-  function renderRotationGroup(title, subtitle, rows, tone){
-    if(!rows.length) return `<div class="market-rotation-group market-rotation-group--empty market-rotation-group--${tone}"><div class="market-rotation-group__head market-rotation-group__head--compact"><strong>${esc(title)}</strong><small>Sem sinal confirmado esta semana</small></div></div>`;
+  function renderRotationGroup(title, subtitle, rows, tone, emptyText){
+    if(!rows.length) return `<div class="market-rotation-group market-rotation-group--empty market-rotation-group--${tone}"><div class="market-rotation-group__head market-rotation-group__head--compact"><strong>${esc(title)}</strong><small>${esc(emptyText)}</small></div></div>`;
     return `<div class="market-rotation-group market-rotation-group--${tone}"><div class="market-rotation-group__head"><strong>${esc(title)}</strong><small>${esc(subtitle)}</small></div><div class="market-rotation-grid">${rows.map((r,i)=>renderRotationRow(r,i+1)).join('')}</div></div>`;
   }
   function renderWeeklyRotation(){
     const rows=weeklyRotationThemeRows(), coverage=weeklyRotationCoverage();
-    if(!rows.length) return `<div class="market-rotation market-rotation--waiting" aria-live="polite"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-rotation-status">A preparar</span></div><div class="market-rotation-wait"><strong class="market-rotation-wait-title">A primeira leitura semanal ainda está a ser calculada.</strong><span class="market-rotation-wait-copy">A tabela aparece automaticamente aqui quando houver 5 dias de dados suficientes. Não tens de abrir este card.</span></div></div>`;
-    const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50).slice(0,4);
-    const outflows=rows.filter(r=>r.med5<0 && r.breadth<=50).sort((a,b)=>a.rank-b.rank).slice(0,4);
-    const neutral=rows.filter(r=>!inflows.includes(r)&&!outflows.includes(r)).slice(0,3);
+    if(!rows.length) return `<div class="market-rotation market-rotation--waiting" aria-live="polite"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-rotation-status">A preparar</span></div><div class="market-rotation-wait"><span class="market-rotation-wait-copy">A formar a primeira leitura semanal.</span></div></div>`;
+    const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50).slice(0,3);
+    const outflows=rows.filter(r=>r.med5<0 && r.breadth<=50).sort((a,b)=>a.rank-b.rank).slice(0,3);
     const pending=coverage.pending.map(x=>x.label).slice(0,4);
-    const breadthPositive=rows.filter(r=>r.med5>0).length;
-    const marketState=inflows.length
-      ? `${inflows.length} tema${inflows.length===1?'':'s'} com entrada semanal`
-      : breadthPositive
-        ? 'Há força positiva, mas ainda sem breadth suficiente para confirmar entrada'
-        : 'Nenhum tema com entrada semanal confirmada';
-    const pendingText=pending.length?`Ainda a formar série: ${esc(pending.join(', '))}${coverage.pending.length>pending.length?` +${coverage.pending.length-pending.length}`:''}. Um tema só entra no ranking com ≥4 ações com retorno semanal.`:'Todos os temas com cobertura suficiente já entram na leitura.';
-    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PRICE + BREADTH PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div><div class="market-rotation-summary">${esc(marketState)}</div>${renderRotationGroup('A receber capital','Temas com retorno 5d positivo e breadth ≥50%',inflows,'in')}${renderRotationGroup('A perder capital','Temas com retorno 5d negativo e breadth ≤50%',outflows,'out')}${neutral.length?`<details class="market-rotation-neutral"><summary>Rotação mista / sem confirmação (${neutral.length})</summary><div class="market-rotation-grid">${neutral.map((r,i)=>renderRotationRow(r,i+1)).join('')}</div></details>`:''}<details class="market-rotation-method"><summary>Como é calculado · cobertura ${coverage.ready}/${coverage.total}</summary><div class="market-rotation-method__body"><p>${pendingText}</p><p>O ranking continua baseado em preço + breadth. 20d e ETF flow servem apenas como confirmação; ETF flow é estimado pela variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos.</p></div></details></div>`;
+    const pendingText=pending.length?`Ainda a formar série: ${esc(pending.join(', '))}${coverage.pending.length>pending.length?` +${coverage.pending.length-pending.length}`:''}. Um tema só entra na leitura com ≥4 ações com retorno semanal.`:'Todos os temas têm cobertura semanal suficiente.';
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas</span></div>${renderRotationGroup('Entradas','Retorno 5d positivo · breadth ≥50%',inflows,'in','Sem entradas confirmadas esta semana')}${renderRotationGroup('Saídas','Retorno 5d negativo · breadth ≤50%',outflows,'out','Sem saídas confirmadas esta semana')}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>Ranking: retorno mediano 5d + breadth, com confirmação 20d.</p><p>ETF flows são apenas confirmação e resultam da variação de AUM ajustada ao retorno do ETF; não são fluxos monetários observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
   }
 
   function renderDiscover(){
