@@ -28,6 +28,14 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
             50.0,
             'general shortlist must not be dominated by the recovery lens',
         )
+        diag = report['general_shortlist_diagnostics']
+        self.assertLessEqual(diag['max_sector_share_pct'], 25.0)
+        self.assertLessEqual(diag['max_industry_share_pct'], 16.7)
+        self.assertGreaterEqual(diag['distinct_sectors'], 4)
+        self.assertGreaterEqual(diag['distinct_industries'], 6)
+        self.assertGreaterEqual(diag['distinct_dominant_sleeves'], 2)
+        represented = sum(1 for count in diag['archetype_counts'].values() if count > 0)
+        self.assertGreaterEqual(represented, 3)
         print('OPPORTUNITY_OVERLAP_AUDIT=' + json.dumps(report, sort_keys=True))
 
 
