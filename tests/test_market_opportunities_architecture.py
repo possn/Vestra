@@ -45,7 +45,9 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_opportunity_ui_does_not_alias_vestra_score_as_quality(self):
         source = read('market-opportunities.js')
         self.assertIn('Score Vestra ${Math.round(n(s?.score)||0)}', source)
-        self.assertIn('prioridade para investigar agora; não mede adequação à tua carteira', source)
+        self.assertIn('prioridade para investigar agora', source)
+        self.assertIn('≠ PORTFOLIO FIT', source)
+        self.assertIn('adequação à tua carteira só é avaliada na Carteira / Optimizar', source)
         self.assertNotIn('<span>Qualidade ${Math.round(n(s?.score)||0)}</span>', source)
 
     def test_discovery_score_is_distinct_from_confidence_and_portfolio_fit(self):
@@ -67,6 +69,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn('portfolio_fit', sleeve_block)
         self.assertIn('<small>DISCOVERY</small>', source)
         self.assertNotIn('<small>ENTRY</small>', source)
+
+    def test_portfolio_fit_is_labeled_only_in_portfolio_context(self):
+        source = read('market-opportunities.js')
+        market = read('market.js')
+        discovery_block = source.split('function discoveryScore(s)', 1)[1].split('function eligible', 1)[0]
+        self.assertNotIn('portfolioFit', discovery_block)
+        self.assertIn('<small>PORTFOLIO FIT</small><h4>Aderência desta carteira aos objetivos</h4>', market)
+        self.assertIn('function portfolioFit(', market)
+
 
     def test_opportunities_reuse_canonical_market_universe_without_refetch(self):
         source = read('market-opportunities.js')
