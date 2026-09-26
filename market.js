@@ -1353,8 +1353,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const topSector=[...sectors.entries()].map(([name,value])=>({name,pct:value/analysed*100})).sort((a,b)=>b.pct-a.pct)[0];
     const topPosition=ranked.slice().sort((a,b)=>b.value-a.value)[0];
     const topPositionPct=topPosition?topPosition.value/analysed*100:0;
-    const review=ranked.filter(r=>['high','severe'].includes(txt(r.stock.risk_gate))||txt(r.stock.thesis_direction)==='down'||txt(r.stock.estimate_signal)==='deteriorating'||(r.conviction!=null&&r.conviction<50)).sort((a,b)=>(a.conviction??999)-(b.conviction??999));
-    const reinforce=ranked.filter(r=>r.conviction!=null&&r.conviction>=70&&n(r.stock.confidence_score)>=60&&!['high','severe'].includes(txt(r.stock.risk_gate))&&!['overvalued','uncertain'].includes(txt(r.stock.valuation_signal))&&txt(r.stock.estimate_signal)!=='deteriorating').sort((a,b)=>b.conviction-a.conviction);
+    const review=ranked.filter(r=>['review','replace'].includes(r.action?.key)).sort((a,b)=>(a.conviction??999)-(b.conviction??999));
+    const reinforce=ranked.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction);
     let health=100; health-=Math.max(0,topPositionPct-targets.maxPosition)*1.4; health-=Math.max(0,(topSector?.pct||0)-targets.maxSector)*1.1; health-=review.length*2.2; health-=(100-riskBudget.fit)*.25; health-=(100-(worst?.resilience||100))*.20; health=Math.max(0,Math.min(100,Math.round(health)));
     const tone=health>=80?'is-positive':health>=60?'is-warn':'is-risk';
     const priorities=[];
@@ -1379,11 +1379,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const sectorRows=[...sectors.entries()].map(([sector,value])=>({sector,value,pct:value/analysed*100})).sort((a,b)=>b.value-a.value);
     const topPosition=ranked.slice().sort((a,b)=>b.value-a.value)[0];
     const topPosPct=topPosition?topPosition.value/analysed*100:0;
-
-    const reinforce=ranked.filter(r=>r.conviction!=null&&r.conviction>=70&&n(r.stock.confidence_score)>=60&&!['high','severe'].includes(txt(r.stock.risk_gate))&&!['overvalued','uncertain'].includes(txt(r.stock.valuation_signal))&&txt(r.stock.estimate_signal)!=='deteriorating')
-      .sort((a,b)=>b.conviction-a.conviction).slice(0,3);
-    const review=ranked.filter(r=>['high','severe'].includes(txt(r.stock.risk_gate))||txt(r.stock.thesis_direction)==='down'||txt(r.stock.estimate_signal)==='deteriorating'||(r.conviction!=null&&r.conviction<50))
-      .sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,3);
 
     const etfsForFit=ranked.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
     for(const r of ranked) r.portfolioFit=portfolioFit(r,sectorRows,analysed,etfsForFit);
@@ -1416,6 +1411,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const actionOrder={replace:0,review:1,reinforce:2,hold:3};
     actionRows.sort((a,b)=>(actionOrder[a.action.key]??9)-(actionOrder[b.action.key]??9)||(b.value-a.value));
     const actionCounts=actionRows.reduce((acc,r)=>{acc[r.action.key]=(acc[r.action.key]||0)+1;return acc;},{});
+
+    const reinforce=actionRows.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction).slice(0,3);
+    const review=actionRows.filter(r=>['review','replace'].includes(r.action?.key)).sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,3);
 
     const overlaps=[];
     const etfs=etfsForFit;
@@ -1494,7 +1492,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const overlapCount=ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length;
     const actionMapHtml=`<div class="market-detail-card market-action-map"><div class="market-perspective-head"><div><small>ACTION MAP · PORTFOLIO FIT</small><h4>Mapa da carteira</h4></div><span class="market-data-age">${actionRows.length} posições</span></div><div class="market-action-context"><span>${concentratedCount} concentração</span><span>${overlapCount} overlap indireto</span><span>${sectorRows[0]?`${esc(sectorRows[0].sector)} ${sectorRows[0].pct.toFixed(0)}%`:'setor —'}</span></div><div class="market-action-summary"><button type="button" class="is-positive" data-action-filter="reinforce">Reforçar ${actionCounts.reinforce||0}</button><button type="button" data-action-filter="hold">Manter ${actionCounts.hold||0}</button><button type="button" class="is-warn" data-action-filter="review">Rever ${actionCounts.review||0}</button><button type="button" class="is-risk" data-action-filter="replace">Substituir ${actionCounts.replace||0}</button></div><div class="market-action-filter-status" data-action-filter-status>Mostrar todas as posições</div><div class="market-action-list">${actionRows.slice(0,12).map(r=>`<button type="button" class="market-action-row" data-action-key="${esc(r.action.key)}" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)} · ${esc(portfolioFitSummary(r.portfolioFit))}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div>${actionRows.length>12?`<details class="market-detail-disclosure"><summary>Ver mais ${actionRows.length-12} posições</summary><div class="market-action-list">${actionRows.slice(12).map(r=>`<button type="button" class="market-action-row" data-action-key="${esc(r.action.key)}" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.action.reason)} · ${esc(portfolioFitSummary(r.portfolioFit))}</small></span><em class="market-action-badge market-action-badge--${r.action.tone}">${esc(r.action.label)}</em></button>`).join('')}</div></details>`:''}<p class="market-case-note">Classificação de research baseada em dados atuais; não é uma ordem automática de compra ou venda.</p></div>`;
 
-    return `${renderPortfolioDecisionCenter(rows,total)}
+    return `${renderPortfolioDecisionCenter(actionRows,total)}
       <div class="market-detail-card"><div class="market-perspective-head"><div><small>PORTFOLIO INTELLIGENCE</small><h4>Prioridades da carteira</h4></div><span class="market-data-age">${Math.round(analysed/(total||analysed)*100)}% coberto</span></div><p>Convicção sintetiza Score Vestra, valuation, expectativas e direção da tese. Confiança mede separadamente a qualidade da evidência; Risk Gate é um travão independente. É uma priorização de research — não uma ordem de compra ou venda.</p></div>
       ${actionMapHtml}
       <div class="market-detail-card"><h4>Candidatos a reforço</h4>${compactRows(reinforce,r=>`Convicção ${Math.round(r.conviction)}/100 · ${txt(r.stock.valuation_signal)||'valuation sem sinal'}`)}</div>
