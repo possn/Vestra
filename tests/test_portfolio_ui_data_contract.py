@@ -23,9 +23,10 @@ class PortfolioUiDataContractTests(unittest.TestCase):
             'data-vpu-conviction="${conviction.toFixed(1)}"',
             'data-vpu-risk="${riskBudget.fit}"',
             'data-vpu-review="${review.length}"',
-            'data-vpu-health="${health}"',
+            'data-vpu-state="${esc(decisionState)}"',
         ):
             self.assertIn(token.replace('\\',''), self.market)
+        self.assertNotIn('data-vpu-health=', self.market)
 
     def test_portfolio_ui_prefers_structured_metrics_before_text_fallbacks(self):
         block = self.ui.split('function metrics(c){', 1)[1].split('function status(m){', 1)[0]
