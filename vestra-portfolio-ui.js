@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v3.1 — exploration focus mode separates analysis from base holdings. */
+/* Vestra Portfolio UI v3.2 — exploration focus mode separates analysis from base holdings. */
 (() => {
   'use strict';
 
@@ -32,7 +32,7 @@
     const coverageRaw=t(summary?.dataset.vpuCoverage);
     const coverage=coverageRaw?coverageRaw+'%':kpiByLabel(c,'Cobertura')||'';
     const conviction=t(dc?.dataset.vpuConviction)||(dcTxt.match(/CONVICÇÃO\s*([0-9.,]+)/i)||[])[1]||'';
-    const risk=t(dc?.dataset.vpuRisk)||(dcTxt.match(/RISK BUDGET\s*([0-9.,]+)/i)||[])[1]||'';
+    const risk=t(dc?.dataset.vpuRisk)||(dcTxt.match(/RISK (?:FIT|BUDGET)\s*([0-9.,]+)/i)||[])[1]||'';
     return {
       positions,research,coverage,conviction,risk,
       reinforce:countRows(card('reinforce',c)), review:countRows(card('review',c)), swaps:countRows(card('swap',c)),
@@ -195,6 +195,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.1'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.2'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
