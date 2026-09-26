@@ -130,6 +130,8 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         source = read('market-opportunities.js')
         self.assertIn('function diversify(rows,limit,{sectorCap=3,industryCap=2}={})', source)
         self.assertIn('return diversify(selected,limit)', source)
+        self.assertNotIn('for(const candidate of deferred)', source)
+        self.assertIn('never refill with names that were', source)
         self.assertIn('diversify,rankLens', source)
         # Strategy-specific lenses remain pure rankings; only the general shortlist
         # applies presentation-level diversification.
