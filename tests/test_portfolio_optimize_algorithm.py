@@ -79,6 +79,33 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("O capital fica por alocar.", s)
         self.assertNotIn("budgetMode='soft budget'", s)
 
+    def test_etf_optimize_compares_like_for_like_without_new_super_score(self):
+        s = read("market.js")
+        self.assertIn("function sameFundExposure(source,candidate)", s)
+        self.assertIn("function fundHoldingsOverlapPct(a,b)", s)
+        self.assertIn("function findEtfOptimizeAlternatives(ranked,heldTickers)", s)
+        self.assertIn("function renderEtfOptimizeCard(rows)", s)
+        self.assertIn("overlap>=30||sameCategory", s)
+        self.assertIn("scoreDelta>=3", s)
+        self.assertIn("terSaving!=null&&terSaving>=0.05", s)
+        self.assertIn("dupDelta!=null&&dupDelta<=-5", s)
+        self.assertIn("if(scoreDelta<-2)return null", s)
+        self.assertIn("if(terSaving!=null&&terSaving<-0.03)return null", s)
+        self.assertIn("if(dupDelta!=null&&dupDelta>10)return null", s)
+        self.assertIn("ETF OPTIMIZE · MESMA EXPOSIÇÃO", s)
+        self.assertIn("não uma recomendação automática de troca", s)
+        self.assertIn("Não altera Vestra Score, Discovery Score nem Portfolio Action", s)
+        self.assertNotIn("etfOptimizeScore", s)
+
+    def test_etf_optimize_is_separate_from_equity_portfolio_action(self):
+        s = read("market.js")
+        action = s.split("function portfolioAction(", 1)[1].split("\n  const PORTFOLIO_TARGETS_KEY", 1)[0]
+        self.assertNotIn("etf_score", action)
+        self.assertNotIn("findEtfOptimizeAlternatives", action)
+        intelligence = s.split("function portfolioIntelligence(rows,total)", 1)[1].split("function buildMultiMovePlan", 1)[0]
+        self.assertIn("const etfOptimizeRows=findEtfOptimizeAlternatives(ranked,heldTickers)", intelligence)
+        self.assertIn("${etfOptimizeHtml}", intelligence)
+
     def test_multi_move_plan_never_falls_back_to_worsening_candidate(self):
         s = read("market.js")
         self.assertIn("return !usedDest.has(key)&&r.autoEligible&&cumulativeSectorPct<=maxSector+1", s)
