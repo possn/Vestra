@@ -56,7 +56,7 @@
   function verdict(a,b){
     let wins=0,losses=0,reasons=[];
     const cmp=(label,av,bv,higher=true,threshold=0)=>{if(av==null||bv==null)return;const d=higher?bv-av:av-bv;if(d>threshold){wins++;reasons.push(`${label} melhora`);}else if(d<-threshold)losses++;};
-    cmp('qualidade',n(a?.score),n(b?.score),true,3);
+    cmp('Score Vestra',n(a?.score),n(b?.score),true,3);
     cmp('timing',timing(a),timing(b),true,5);
     cmp('confiança',n(a?.confidence_score),n(b?.confidence_score),true,5);
     cmp('ROE',n(a?.roe),n(b?.roe),true,0.02);
@@ -75,7 +75,7 @@
       <div class="ux456-metrics">
         ${metric('Score Vestra',a.score,b.score)}
         ${metric('Timing',timing(a),timing(b))}
-        ${metric('Confiança',a.confidence_score,b.confidence_score)}
+        ${metric('Confiança da evidência',a.confidence_score,b.confidence_score)}
         ${metric('ROE',a.roe,b.roe,pct,true)}
         ${metric('FCF yield',a.free_cash_flow_yield_pct,b.free_cash_flow_yield_pct,pct,true)}
         ${metric('Forward P/E',a.forward_pe,b.forward_pe,multiple,false)}

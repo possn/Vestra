@@ -41,6 +41,12 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
         self.assertIn('score_cap', self.market)
         self.assertIn('Risk Gate', self.market)
 
+    def test_decision_signal_labels_stay_semantically_separate(self):
+        self.assertIn('Convicção sintetiza Score Vestra, valuation, expectativas e direção da tese.', self.market)
+        self.assertIn('Confiança mede separadamente a qualidade da evidência', self.market)
+        self.assertIn('Risk Gate é um travão independente', self.market)
+        self.assertNotIn('Convicção combina Score Vestra, confiança, valuation, expectativas e Risk Gate.', self.market)
+
     def test_specialist_model_weights_are_visible(self):
         for token in ('growth_tech', 'bank', 'reit', 'insurance', 'utility', 'energy', 'biotech'):
             self.assertIn(token, self.market)

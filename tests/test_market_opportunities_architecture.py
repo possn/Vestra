@@ -42,6 +42,12 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         ):
             self.assertIn(token, source)
 
+    def test_opportunity_ui_does_not_alias_vestra_score_as_quality(self):
+        source = read('market-opportunities.js')
+        self.assertIn('Score Vestra ${Math.round(n(s?.score)||0)}', source)
+        self.assertIn('ranking de descoberta: Score Vestra + timing + sinais', source)
+        self.assertNotIn('<span>Qualidade ${Math.round(n(s?.score)||0)}</span>', source)
+
     def test_opportunities_reuse_canonical_market_universe_without_refetch(self):
         source = read('market-opportunities.js')
         universe = read('market-static-universe.js')

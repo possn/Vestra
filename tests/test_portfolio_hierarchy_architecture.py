@@ -63,7 +63,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
     def test_swap_lab_preserves_v456_contract_under_hierarchy_observer(self):
         s=read('vestra-swap-lab.js')
         for token in (
-            "cmp('qualidade',n(a?.score),n(b?.score),true,3)",
+            "cmp('Score Vestra',n(a?.score),n(b?.score),true,3)",
             "cmp('timing',timing(a),timing(b),true,5)",
             "cmp('confiança',n(a?.confidence_score),n(b?.confidence_score),true,5)",
             "cmp('ROE',n(a?.roe),n(b?.roe),true,0.02)",

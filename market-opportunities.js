@@ -177,13 +177,13 @@
   function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
   function reason(s){const p=stats(s),b=[];if(t(s?.estimate_signal)==='improving')b.push('estimativas ↑');if(['confirmed','recovering'].includes(t(s?.recovery_status)))b.push('recuperação confirmada');if(p.accel!=null&&p.accel>2)b.push('aceleração recente');if(p.room!=null&&p.room>=5&&p.room<=30)b.push(`${p.room.toFixed(0)}% abaixo do máximo`);const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);if(fv!=null&&fv>8)b.push(`upside +${fv.toFixed(0)}%`);else if(pt!=null&&pt>10)b.push(`target +${pt.toFixed(0)}%`);return b.slice(0,3).join(' · ')||'qualidade e timing alinhados';}
   function lensReason(s,lens){
-    if(lens==='low52'){const x=low52Above(s);return x!=null?`${x.toFixed(1)}% acima do mínimo 52s · qualidade ${Math.round(n(s?.score)||0)} · timing ${Math.round(timing(s))}`:reason(s);}
+    if(lens==='low52'){const x=low52Above(s);return x!=null?`${x.toFixed(1)}% acima do mínimo 52s · Score Vestra ${Math.round(n(s?.score)||0)} · timing ${Math.round(timing(s))}`:reason(s);}
     if(lens==='emerging')return ['setup inicial',t(s?.estimate_signal)==='improving'?'estimativas ↑':'',stats(s).accel>0?'aceleração positiva':''].filter(Boolean).join(' · ');
     if(lens==='recovery')return ['recuperação',t(s?.recovery_status)||'',confirmed(s)>=2?`${confirmed(s)} confirmações`:''].filter(Boolean).join(' · ');
     if(lens==='value'){const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);return ['value + timing',fv!=null?`fair value +${fv.toFixed(0)}%`:pt!=null?`target +${pt.toFixed(0)}%`:'',`timing ${Math.round(timing(s))}`].filter(Boolean).join(' · ');}
     return reason(s);
   }
-  function row(s,lens){const p=stats(s),sc=lensScore(s,lens),tm=timing(s);return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-pills"><span>Qualidade ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}${p.accel!=null?`<span>Acel. ${p.accel>=0?'+':''}${p.accel.toFixed(1)}</span>`:''}</div></div><div class="ux453-entry"><small>ENTRY</small><strong>${Math.round(sc)}</strong><em>${confirmed(s)} sinais</em></div></div>`;}
+  function row(s,lens){const p=stats(s),sc=lensScore(s,lens),tm=timing(s);return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-pills"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}${p.accel!=null?`<span>Acel. ${p.accel>=0?'+':''}${p.accel.toFixed(1)}</span>`:''}</div></div><div class="ux453-entry"><small>ENTRY</small><strong>${Math.round(sc)}</strong><em>${confirmed(s)} sinais</em></div></div>`;}
 
   function decorate(section){
     const list=section?.querySelector('.market-list');if(!list)return;
@@ -198,7 +198,7 @@
     });
     if(!section.querySelector('.ux454-opportunity-guide')){
       const g=document.createElement('div');g.className='ux454-opportunity-guide';
-      g.innerHTML='<span><b>ENTRY</b> combinação de qualidade + timing</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
+      g.innerHTML='<span><b>ENTRY</b> ranking de descoberta: Score Vestra + timing + sinais</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
       section.querySelector('.market-section__head')?.insertAdjacentElement('afterend',g);
     }
   }
