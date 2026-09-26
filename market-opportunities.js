@@ -206,8 +206,16 @@
       }
     }
 
-    selected.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
-    return diversify(selected,limit);
+    // Diversify over a deeper canonical pool, not only the first twelve
+    // archetype picks. This preserves hard concentration caps without shrinking
+    // the useful shortlist when equally eligible names exist further down.
+    const pool=[],poolSeen=new Set();
+    const addPool=candidate=>{const key=t(candidate?.ticker).toUpperCase();if(key&&!poolSeen.has(key)){pool.push(candidate);poolSeen.add(key);}};
+    selected.forEach(addPool);
+    general.forEach(addPool);
+    for(const bucket of buckets)bucket.rows.forEach(addPool);
+    pool.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
+    return diversify(pool,limit);
   }
   function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
   function sleeveLabel(key){return key==='strength'?'Força':key==='asymmetry'?'Assimetria':key==='inflection'?'Inflection':'';}
