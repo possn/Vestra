@@ -112,6 +112,15 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("||b.valuationRank-a.valuationRank", block)
         self.assertIn("||b.tiltBonus-a.tiltBonus", block)
 
+    def test_concentration_card_uses_saved_portfolio_targets(self):
+        s = read("market.js")
+        self.assertIn("const concentrationMaxPos=Math.max(3,Math.min(30,n(portfolioTargets.maxPosition)||10))", s)
+        self.assertIn("const concentrationMaxSector=Math.max(10,Math.min(60,n(portfolioTargets.maxSector)||25))", s)
+        self.assertIn("if(topPosition&&topPosPct>concentrationMaxPos)", s)
+        self.assertIn("if(sectorRows[0]?.pct>concentrationMaxSector)", s)
+        self.assertNotIn("if(topPosPct>=15) concentration.push", s)
+        self.assertNotIn("if(sectorRows[0]?.pct>=30) concentration.push", s)
+
     def test_action_map_respects_risk_gate_and_saved_portfolio_targets(self):
         s = read("market.js")
         self.assertIn("function portfolioFit(r, sectorRows, analysed, etfs, targets=loadPortfolioTargets())", s)
