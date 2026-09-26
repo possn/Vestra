@@ -95,27 +95,36 @@
     }
     return false;
   }
-  function lensScore(s,lens){
-    const base=n(s?.score)||0,tm=timing(s),conf=n(s?.confidence_score)||0,p=stats(s);
-    if(lens==='all')return discoveryScore(s)||0;
-    if(lens==='low52'){
-      const above=Math.max(0,low52Above(s)??5),proximity=clamp(100-above*20);
-      return clamp(base*.38+tm*.22+proximity*.30+conf*.10);
-    }
-    if(lens==='emerging'){
-      const accel=p.accel==null?50:clamp(50+p.accel*7);
-      return clamp(tm*.38+base*.27+accel*.20+conf*.15);
-    }
-    if(lens==='recovery'){
-      const rec=n(s?.recovery_score)??(confirmed(s)*18);
-      return clamp(base*.28+tm*.27+clamp(rec)*.27+clamp(confirmed(s)*20)*.18);
-    }
+  function sleeveScores(s){
+    const published=s?.opportunity_sleeves;
+    if(published&&typeof published==='object')return {
+      strength:n(published.strength),asymmetry:n(published.asymmetry),inflection:n(published.inflection)
+    };
+    return {strength:n(s?.score),asymmetry:n(s?.qarp_score)??n(s?.valuation_score),inflection:timing(s)};
+  }
+  function dominantSleeve(s){
+    const sleeves=sleeveScores(s),entries=Object.entries(sleeves).filter(([,v])=>v!=null);
+    if(!entries.length)return null;
+    return entries.sort((a,b)=>b[1]-a[1])[0][0];
+  }
+  function lensTilt(s,lens){
+    const p=stats(s);
+    if(lens==='all')return 0;
+    if(lens==='low52'){const above=Math.max(0,low52Above(s)??5);return clamp(100-above*20)-50;}
+    if(lens==='emerging')return p.accel==null?0:Math.max(-50,Math.min(50,p.accel*7));
+    if(lens==='recovery')return (n(s?.recovery_score)??clamp(confirmed(s)*20))-50;
     if(lens==='value'){
       const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct),up=Math.max(fv??-100,pt??-100);
-      const upside=clamp(50+Math.max(-40,Math.min(50,up))*1.15);
-      return clamp(base*.30+tm*.25+upside*.30+conf*.15);
+      return clamp(50+Math.max(-40,Math.min(50,up))*1.15)-50;
     }
-    return discoveryScore(s)||0;
+    return 0;
+  }
+  function lensScore(s,lens){
+    const discovery=discoveryScore(s)||0;
+    if(lens==='all')return discovery;
+    // Strategy lenses reorder the canonical Discovery shortlist; they are not
+    // independent alpha engines. Confidence remains a gate/cap upstream.
+    return clamp(discovery*.82+(50+lensTilt(s,lens))*.18);
   }
   function rankedCandidates(universe,lens,sector='all'){
     let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
@@ -191,7 +200,24 @@
     return diversify(selected,limit);
   }
   function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
-  function reason(s){const p=stats(s),b=[];if(t(s?.estimate_signal)==='improving')b.push('estimativas ↑');if(['confirmed','recovering'].includes(t(s?.recovery_status)))b.push('recuperação confirmada');if(p.accel!=null&&p.accel>2)b.push('aceleração recente');if(p.room!=null&&p.room>=5&&p.room<=30)b.push(`${p.room.toFixed(0)}% abaixo do máximo`);const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);if(fv!=null&&fv>8)b.push(`upside +${fv.toFixed(0)}%`);else if(pt!=null&&pt>10)b.push(`target +${pt.toFixed(0)}%`);return b.slice(0,3).join(' · ')||'qualidade e timing alinhados';}
+  function sleeveLabel(key){return key==='strength'?'Força':key==='asymmetry'?'Assimetria':key==='inflection'?'Inflection':'';}
+  function opportunityType(s){
+    const sleeves=sleeveScores(s),strength=sleeves.strength,inflection=sleeves.inflection;
+    if(strength!=null&&strength>=72&&inflection!=null&&inflection<58)return 'boa empresa; timing ainda incompleto';
+    if(inflection!=null&&inflection>=70&&strength!=null&&strength<62)return 'setup forte; qualidade estrutural a confirmar';
+    if(strength!=null&&strength>=68&&inflection!=null&&inflection>=65)return 'qualidade + oportunidade agora';
+    return 'oportunidade para investigar';
+  }
+  function reason(s){
+    const p=stats(s),b=[],dom=dominantSleeve(s),sl=sleeveScores(s);
+    if(dom&&sl[dom]!=null)b.push(`${sleeveLabel(dom)} lidera ${Math.round(sl[dom])}`);
+    if(t(s?.estimate_signal)==='improving')b.push('estimativas ↑');
+    if(['confirmed','recovering'].includes(t(s?.recovery_status)))b.push('recuperação confirmada');
+    if(p.accel!=null&&p.accel>2)b.push('aceleração recente');
+    const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);
+    if(fv!=null&&fv>8)b.push(`upside +${fv.toFixed(0)}%`);else if(pt!=null&&pt>10)b.push(`target +${pt.toFixed(0)}%`);
+    return b.slice(0,3).join(' · ')||'Discovery equilibrado';
+  }
   function lensReason(s,lens){
     if(lens==='low52'){const x=low52Above(s);return x!=null?`${x.toFixed(1)}% acima do mínimo 52s · Score Vestra ${Math.round(n(s?.score)||0)} · timing ${Math.round(timing(s))}`:reason(s);}
     if(lens==='emerging')return ['setup inicial',t(s?.estimate_signal)==='improving'?'estimativas ↑':'',stats(s).accel>0?'aceleração positiva':''].filter(Boolean).join(' · ');
@@ -199,7 +225,12 @@
     if(lens==='value'){const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);return ['value + timing',fv!=null?`fair value +${fv.toFixed(0)}%`:pt!=null?`target +${pt.toFixed(0)}%`:'',`timing ${Math.round(timing(s))}`].filter(Boolean).join(' · ');}
     return reason(s);
   }
-  function row(s,lens){const p=stats(s),sc=lensScore(s,lens),tm=timing(s);return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-pills"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}${p.accel!=null?`<span>Acel. ${p.accel>=0?'+':''}${p.accel.toFixed(1)}</span>`:''}</div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${Math.round(sc)}</strong><em>${confirmed(s)} sinais</em></div></div>`;}
+  function row(s,lens){
+    const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),dom=dominantSleeve(s);
+    const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
+      .filter(([,v])=>v!=null).map(([label,v,key])=>`<span class="${key===dom?'is-driver':''}">${label} ${Math.round(v)}</span>`).join('');
+    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${Math.round(sc)}</strong><em>${confirmed(s)} sinais</em></div></div>`;
+  }
 
   function decorate(section){
     const list=section?.querySelector('.market-list');if(!list)return;
@@ -256,5 +287,5 @@
   function start(){style();opportunities();const root=document.getElementById('marketPrimary');if(!root)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(root,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.3'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.4'});
 })();
