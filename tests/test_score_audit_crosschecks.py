@@ -107,8 +107,8 @@ class ScoreAuditCrosscheckTests(unittest.TestCase):
                     "status": data["status"],
                     "rank_information_coefficient": data["rank_information_coefficient"],
                     "median_cohort_rank_ic": data["median_cohort_rank_ic"],
-                    "top_minus_bottom_pct": data["top_minus_bottom_pct"],
-                    "median_cohort_top_minus_bottom_pct": data["median_cohort_top_minus_bottom_pct"],
+                    "top_minus_bottom_pct": data.get("top_minus_bottom_pct"),
+                    "median_cohort_top_minus_bottom_pct": data.get("median_cohort_top_minus_bottom_pct"),
                     "peer_shadow_eligible_n": data["peer_shadow_comparison"]["eligible_n"],
                 }
                 for horizon, data in report["horizons"].items()
