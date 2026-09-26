@@ -84,8 +84,11 @@ if (![requestPersistentStorage, storageGet, storageSet, storageClear].every(fn =
 }
 
 /* ─── STATE ───────────────────────────────────────────────── */
+const DEFAULT_WORKER_URL = "https://delicate-bar-cc80.pedrossnunes.workers.dev";
+window.VestraRuntimeConfig = Object.freeze({ workerUrl: DEFAULT_WORKER_URL });
+
 const DEFAULT_STATE = {
-  settings: { currency: "EUR", goalMonthly: 0, targetAllocation: null, autoRefreshQuotes: true },
+  settings: { currency: "EUR", goalMonthly: 0, targetAllocation: null, autoRefreshQuotes: true, workerUrl: DEFAULT_WORKER_URL },
   assets: [],
   liabilities: [],
   transactions: [],
@@ -2302,7 +2305,7 @@ function wireMarketLookup() {
     const qty = parseNum(($("mQty") || {}).value);
     const status = document.getElementById("mLookupStatus");
     if (!tk) { if (status) { status.style.display=""; status.textContent="Introduz o ticker primeiro."; } return; }
-    const workerUrl = (state.settings && state.settings.workerUrl) || "";
+    const workerUrl = (state.settings && state.settings.workerUrl) || DEFAULT_WORKER_URL;
     if (!workerUrl) {
       if (status) { status.style.display=""; status.textContent="⚠️ Worker URL não configurado. Clica em ⟳ Cotações para configurar."; }
       return;
@@ -10088,7 +10091,7 @@ async function importJSON(file) {
   const text = await file.text();
   const p = JSON.parse(text);
   state = {
-    settings: { currency: "EUR", goalMonthly: 0, returnDefaults: safeClone(DEFAULT_RETURN_SETTINGS), ...(p.settings || {}) },
+    settings: { currency: "EUR", goalMonthly: 0, returnDefaults: safeClone(DEFAULT_RETURN_SETTINGS), workerUrl: DEFAULT_WORKER_URL, ...(p.settings || {}), workerUrl: ((p.settings && p.settings.workerUrl) || DEFAULT_WORKER_URL) },
     assets: Array.isArray(p.assets) ? p.assets : [],
     liabilities: Array.isArray(p.liabilities) ? p.liabilities : [],
     transactions: Array.isArray(p.transactions) ? p.transactions : [],
@@ -11136,7 +11139,7 @@ async function refreshLiveQuotesCore(options = {}) {
   const manual = options && options.manual === true;
   const silent = !manual;
   const btn = $("btnRefreshQuotes");
-  const workerUrl = (state.settings && state.settings.workerUrl) || "";
+  const workerUrl = (state.settings && state.settings.workerUrl) || DEFAULT_WORKER_URL;
 
   if (!workerUrl) {
     // Sem Worker configurado — mostrar modal de configuração
@@ -12130,7 +12133,7 @@ function renderQuoteSyncStatus() {
   const status = document.getElementById("quoteSyncStatus");
   const meta = document.getElementById("quoteSyncMeta");
   if (!card || !status || !meta) return;
-  const workerUrl = (state.settings && state.settings.workerUrl) || "";
+  const workerUrl = (state.settings && state.settings.workerUrl) || DEFAULT_WORKER_URL;
   const lastTs = (state.settings && state.settings.lastQuoteRefreshTs) || 0;
   const report = (state.settings && state.settings.lastQuoteRefresh) || null;
   const auto = !(state.settings && state.settings.autoRefreshQuotes === false);
@@ -12206,7 +12209,7 @@ function scheduleWhenIdle(task, { timeoutMs = 1200, fallbackDelayMs = 450 } = {}
 
 function autoRefreshQuotesIfStale() {
   if (state.settings && state.settings.autoRefreshQuotes === false) return;
-  const workerUrl = (state.settings && state.settings.workerUrl) || "";
+  const workerUrl = (state.settings && state.settings.workerUrl) || DEFAULT_WORKER_URL;
   if (!workerUrl) return; // Worker não configurado — não fazer nada
 
   const candidates = (state.assets || []).filter(assetLooksQuoteEligible);
