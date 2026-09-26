@@ -1703,18 +1703,28 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const totalValue=rows.reduce((a,r)=>a+r.value,0)||1, targets=loadPortfolioTargets();
     const maxPosition=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
     const sectors=new Map(); for(const r of rows){const k=txt(r.stock.sector)||'Sem setor';sectors.set(k,(sectors.get(k)||0)+r.value);}
-    const sourcePressure=r=>{
+    const sourceSignals=r=>{
       const gate=txt(r.stock.risk_gate), positionPct=r.value/totalValue*100, sectorPct=(sectors.get(txt(r.stock.sector)||'Sem setor')||0)/totalValue*100;
-      let p=Math.max(0,55-r.conviction)*.55+Math.max(0,positionPct-maxPosition)*1.5+Math.max(0,sectorPct-maxSector)*.6;
-      if(gate==='severe')p+=24;else if(gate==='high')p+=16;
-      if(txt(r.stock.thesis_direction)==='down')p+=9;
-      if(txt(r.stock.estimate_signal)==='deteriorating')p+=9;
-      return p;
+      const gateRank=gate==='severe'?3:gate==='high'?2:gate==='watch'?1:0;
+      const thesisDown=txt(r.stock.thesis_direction)==='down';
+      const estimatesDown=txt(r.stock.estimate_signal)==='deteriorating';
+      const positionExcess=Math.max(0,positionPct-maxPosition);
+      const sectorExcess=Math.max(0,sectorPct-maxSector);
+      const lowConviction=r.conviction<55;
+      const pressured=gateRank>0||thesisDown||estimatesDown||positionExcess>0||sectorExcess>0||lowConviction;
+      return {gateRank,thesisDown,estimatesDown,positionExcess,sectorExcess,lowConviction,pressured};
     };
     const planSources=rows.filter(r=>!isFund(r.stock)&&n(r.stock.score)!=null&&n(r.stock.confidence_score)!=null);
-    const sources=planSources.map(r=>({...r,sourcePressure:sourcePressure(r)})).filter(r=>r.sourcePressure>0).sort((a,b)=>b.sourcePressure-a.sourcePressure||a.conviction-b.conviction||b.value-a.value);
-    const fallback=planSources.slice().sort((a,b)=>a.conviction-b.conviction||b.value-a.value);
-    const queue=(sources.length?sources:fallback).slice(0,6);
+    const sources=planSources.map(r=>({...r,sourceSignals:sourceSignals(r)})).filter(r=>r.sourceSignals.pressured).sort((a,b)=>
+      b.sourceSignals.gateRank-a.sourceSignals.gateRank
+      ||Number(b.sourceSignals.thesisDown)-Number(a.sourceSignals.thesisDown)
+      ||Number(b.sourceSignals.estimatesDown)-Number(a.sourceSignals.estimatesDown)
+      ||b.sourceSignals.positionExcess-a.sourceSignals.positionExcess
+      ||b.sourceSignals.sectorExcess-a.sourceSignals.sectorExcess
+      ||a.conviction-b.conviction
+      ||b.value-a.value
+    );
+    const queue=sources.slice(0,6);
     const baselineRisk=portfolioRiskProfile(rows,totalValue);
     const riskPct=(group,name)=>baselineRisk[group].find(x=>x.name===name)?.pct||0;
     const riskDelta={factors:new Map(),currencies:new Map(),regions:new Map()};
