@@ -289,7 +289,7 @@
     });
     if(!section.querySelector('.ux454-opportunity-guide')){
       const g=document.createElement('div');g.className='ux454-opportunity-guide';
-      g.innerHTML='<span><b>DISCOVERY</b> prioridade para investigar agora; não mede adequação à tua carteira</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
+      g.innerHTML='<span><b>DISCOVERY</b> prioridade para investigar agora</span><span><b>≠ PORTFOLIO FIT</b> adequação à tua carteira só é avaliada na Carteira / Optimizar</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
       section.querySelector('.market-section__head')?.insertAdjacentElement('afterend',g);
     }
   }
@@ -331,5 +331,5 @@
   function start(){style();opportunities();const root=document.getElementById('marketPrimary');if(!root)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(root,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.7'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.8'});
 })();
