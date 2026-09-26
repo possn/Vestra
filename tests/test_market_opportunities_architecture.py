@@ -106,6 +106,26 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn("function lensMatch(row, lens)", lenses)
         self.assertNotIn("querySelectorAll('.market-list .market-row')", lenses)
 
+    def test_strategy_lenses_are_tilts_not_second_alpha_engines(self):
+        source = read('market-opportunities.js')
+        block = source.split('function lensScore(s,lens){', 1)[1].split('function rankedCandidates', 1)[0]
+        self.assertIn('const discovery=discoveryScore(s)||0', block)
+        self.assertIn('discovery*.82', block)
+        self.assertIn('lensTilt(s,lens)', block)
+        self.assertNotIn('confidence_score', block)
+        self.assertNotIn('conf*.', block)
+
+    def test_opportunity_rows_explain_driver_and_company_vs_setup(self):
+        source = read('market-opportunities.js')
+        css = read('market-opportunities.css')
+        for token in ('function sleeveScores(s)', 'function dominantSleeve(s)', 'function opportunityType(s)', 'Força', 'Assimetria', 'Inflection'):
+            self.assertIn(token, source)
+        self.assertIn('boa empresa; timing ainda incompleto', source)
+        self.assertIn('setup forte; qualidade estrutural a confirmar', source)
+        self.assertIn('qualidade + oportunidade agora', source)
+        self.assertIn('is-driver', source)
+        self.assertIn('.ux453-sleeves span.is-driver', css)
+
     def test_general_discovery_shortlist_has_diversification_guardrails(self):
         source = read('market-opportunities.js')
         self.assertIn('function diversify(rows,limit,{sectorCap=3,industryCap=2}={})', source)
