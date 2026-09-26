@@ -236,7 +236,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
             self.assertIn(token, source)
         for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
             self.assertIn(token, css)
-        self.assertIn("version:'1.6'", source)
+        self.assertIn("version:'1.7'", source)
 
     def test_weekly_rotation_is_an_explainable_proxy_not_literal_fund_flow(self):
         market = read('market.js')
