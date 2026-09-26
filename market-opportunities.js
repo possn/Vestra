@@ -54,8 +54,10 @@
     if(['insufficient','suppressed'].includes(rel)||['high','severe'].includes(risk)||t(s?.zombie).toLowerCase()==='yes'||overextended(s))return false;
     return timing(s)>=48 && confirmed(s)>=2;
   }
-  function score(s){
-    const vals=[[n(s?.score),.23],[timing(s),.27],[n(s?.recovery_score),.10],[n(s?.qarp_score),.10],[n(s?.moat_score),.07],[n(s?.capital_allocation_intelligence_score),.05],[n(s?.confidence_score),.06],[n(s?.value_pct),.06],[n(s?.growth_pct),.03],[n(s?.sector_native_score),.03]].filter(([v])=>v!=null);
+  function discoveryScore(s){
+    const published=n(s?.opportunity_score);
+    if(published!=null)return clamp(published);
+    const vals=[[n(s?.score),.25],[timing(s),.29],[n(s?.recovery_score),.10],[n(s?.qarp_score),.11],[n(s?.moat_score),.08],[n(s?.capital_allocation_intelligence_score),.06],[n(s?.value_pct),.06],[n(s?.growth_pct),.02],[n(s?.sector_native_score),.03]].filter(([v])=>v!=null);
     if(!vals.length)return null;let x=vals.reduce((a,[v,w])=>a+clamp(v)*w,0)/vals.reduce((a,[,w])=>a+w,0);
     const p=stats(s),fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);
     if(fv!=null)x+=Math.max(-7,Math.min(8,fv/4.5));else if(pt!=null)x+=Math.max(-5,Math.min(6,pt/7));
@@ -95,7 +97,7 @@
   }
   function lensScore(s,lens){
     const base=n(s?.score)||0,tm=timing(s),conf=n(s?.confidence_score)||0,p=stats(s);
-    if(lens==='all')return score(s)||0;
+    if(lens==='all')return discoveryScore(s)||0;
     if(lens==='low52'){
       const above=Math.max(0,low52Above(s)??5),proximity=clamp(100-above*20);
       return clamp(base*.38+tm*.22+proximity*.30+conf*.10);
@@ -113,12 +115,12 @@
       const upside=clamp(50+Math.max(-40,Math.min(50,up))*1.15);
       return clamp(base*.30+tm*.25+upside*.30+conf*.15);
     }
-    return score(s)||0;
+    return discoveryScore(s)||0;
   }
   function rankedCandidates(universe,lens,sector='all'){
     let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
     if(sector!=='all')ranked=ranked.filter(s=>t(s?.sector)===sector);
-    ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)||(score(b)||0)-(score(a)||0));
+    ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)||(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return ranked;
   }
   function rankLens(universe,lens,{limit=12,sector='all'}={}){
@@ -162,7 +164,7 @@
       const fallback=[];
       for(const bucket of buckets)fallback.push(...bucket.rows);
       fallback.push(...general);
-      fallback.sort((a,b)=>(score(b)||0)-(score(a)||0));
+      fallback.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
       for(const candidate of fallback){
         if(selected.length>=limit)break;
         const key=t(candidate?.ticker).toUpperCase();
@@ -171,7 +173,7 @@
       }
     }
 
-    selected.sort((a,b)=>(score(b)||0)-(score(a)||0));
+    selected.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return selected.slice(0,limit);
   }
   function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
@@ -183,7 +185,7 @@
     if(lens==='value'){const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);return ['value + timing',fv!=null?`fair value +${fv.toFixed(0)}%`:pt!=null?`target +${pt.toFixed(0)}%`:'',`timing ${Math.round(timing(s))}`].filter(Boolean).join(' · ');}
     return reason(s);
   }
-  function row(s,lens){const p=stats(s),sc=lensScore(s,lens),tm=timing(s);return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-pills"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}${p.accel!=null?`<span>Acel. ${p.accel>=0?'+':''}${p.accel.toFixed(1)}</span>`:''}</div></div><div class="ux453-entry"><small>ENTRY</small><strong>${Math.round(sc)}</strong><em>${confirmed(s)} sinais</em></div></div>`;}
+  function row(s,lens){const p=stats(s),sc=lensScore(s,lens),tm=timing(s);return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-pills"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}${p.accel!=null?`<span>Acel. ${p.accel>=0?'+':''}${p.accel.toFixed(1)}</span>`:''}</div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${Math.round(sc)}</strong><em>${confirmed(s)} sinais</em></div></div>`;}
 
   function decorate(section){
     const list=section?.querySelector('.market-list');if(!list)return;
@@ -198,7 +200,7 @@
     });
     if(!section.querySelector('.ux454-opportunity-guide')){
       const g=document.createElement('div');g.className='ux454-opportunity-guide';
-      g.innerHTML='<span><b>ENTRY</b> ranking de descoberta: Score Vestra + timing + sinais</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
+      g.innerHTML='<span><b>DISCOVERY</b> prioridade para investigar agora; não mede adequação à tua carteira</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
       section.querySelector('.market-section__head')?.insertAdjacentElement('afterend',g);
     }
   }
@@ -240,5 +242,5 @@
   function start(){style();opportunities();const root=document.getElementById('marketPrimary');if(!root)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(root,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,score,low52Above,lensEligible,lensScore,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.2'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.3'});
 })();
