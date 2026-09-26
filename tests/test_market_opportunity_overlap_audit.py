@@ -41,6 +41,13 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
             self.assertLessEqual(summary['max'], 100)
         represented = sum(1 for count in diag['archetype_counts'].values() if count > 0)
         self.assertGreaterEqual(represented, 3)
+        novelty = report['discovery_novelty_vs_score']
+        self.assertEqual(len(novelty['top_score_ranked']), 12)
+        self.assertGreaterEqual(novelty['discovery_novel_count'], 1)
+        self.assertEqual(
+            novelty['discovery_novel_count'] + novelty['discovery_in_top_score_decile_count'],
+            12,
+        )
         print('OPPORTUNITY_OVERLAP_AUDIT=' + json.dumps(report, sort_keys=True))
 
 
