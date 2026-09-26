@@ -256,6 +256,17 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn('weeklyFundFlowScore', market)
 
 
+    def test_weekly_rotation_waiting_state_is_readable_and_not_fake_interactive(self):
+        market = read('market.js')
+        css = read('market.css')
+        self.assertIn('market-rotation--waiting', market)
+        self.assertIn('market-rotation-status', market)
+        self.assertIn('A primeira leitura semanal ainda está a ser calculada.', market)
+        self.assertIn('Não tens de abrir este card.', market)
+        self.assertIn('.market-rotation--waiting{background:var(--card2);color:var(--text)', css)
+        self.assertIn('.market-rotation-wait span{', css)
+        self.assertNotIn('data-rotation-toggle', market)
+
     def test_weekly_rotation_etf_flow_is_confirmation_not_ranking_alpha(self):
         market = read('market.js')
         shards = read('scripts/build_market_shards.py')
