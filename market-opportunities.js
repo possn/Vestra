@@ -133,17 +133,27 @@
     return ranked;
   }
   function diversify(rows,limit,{sectorCap=3,industryCap=2}={}){
-    const source=Array.isArray(rows)?rows:[],selected=[],deferred=[];
+    const source=Array.isArray(rows)?rows:[],selected=[];
     const sectors=new Map(),industries=new Map();
     const key=v=>t(v)||'Unknown';
-    for(const candidate of source){
+    const canAdd=candidate=>{
       const sector=key(candidate?.sector),industry=key(candidate?.industry);
-      const sectorN=sectors.get(sector)||0,industryN=industries.get(industry)||0;
-      if(sectorN>=sectorCap||industryN>=industryCap){deferred.push(candidate);continue;}
-      selected.push(candidate);sectors.set(sector,sectorN+1);industries.set(industry,industryN+1);
-      if(selected.length>=limit)return selected;
+      return (sectors.get(sector)||0)<sectorCap&&(industries.get(industry)||0)<industryCap;
+    };
+    const add=candidate=>{
+      const sector=key(candidate?.sector),industry=key(candidate?.industry);
+      selected.push(candidate);
+      sectors.set(sector,(sectors.get(sector)||0)+1);
+      industries.set(industry,(industries.get(industry)||0)+1);
+    };
+    for(const candidate of source){
+      if(!canAdd(candidate))continue;
+      add(candidate);
+      if(selected.length>=limit)break;
     }
-    for(const candidate of deferred){if(selected.length>=limit)break;selected.push(candidate);}
+    // Caps are guardrails, not preferences: never refill with names that were
+    // rejected for concentration. A shorter shortlist is more informative than
+    // twelve near-duplicates.
     return selected;
   }
   function rankLens(universe,lens,{limit=12,sector='all'}={}){
