@@ -298,6 +298,66 @@ def validation_status(cohort_count):
     return "multiple_cohorts_available"
 
 
+def score_v2_readiness(horizons):
+    """Conservative gate for considering a production score experiment.
+
+    This is intentionally stricter than validation_status(): having several
+    observations is not evidence that a replacement is better. A v2 candidate
+    should not reach production discussion until two horizons each have at
+    least eight matured cohorts, adequate cohort capture, positive robust
+    production diagnostics, and a prospective shadow candidate that improves
+    rank IC on the same rows without worsening robust quintile separation.
+    """
+    qualified = []
+    blockers = []
+    for horizon in HORIZONS:
+        pack = horizons.get(str(horizon)) or {}
+        cohorts = int(pack.get("cohort_count") or 0)
+        capture = num(pack.get("cohort_capture_pct"))
+        prod_ic = num(pack.get("median_cohort_rank_ic"))
+        prod_spread = num(pack.get("median_cohort_top_minus_bottom_pct"))
+        peer = pack.get("peer_shadow_comparison") or {}
+        peer_cohorts = int(peer.get("cohort_count") or 0)
+        prod_peer_ic = num(peer.get("median_production_cohort_rank_ic"))
+        cand_ic = num(peer.get("median_peer_shadow_cohort_rank_ic"))
+        prod_peer_spread = num(peer.get("median_production_cohort_top_minus_bottom_pct"))
+        cand_spread = num(peer.get("median_peer_shadow_cohort_top_minus_bottom_pct"))
+
+        reasons = []
+        if cohorts < 8:
+            reasons.append("fewer_than_8_matured_cohorts")
+        if capture is None or capture < 80:
+            reasons.append("cohort_capture_below_80pct")
+        if prod_ic is None or prod_ic <= 0:
+            reasons.append("production_median_rank_ic_not_positive")
+        if prod_spread is None or prod_spread <= 0:
+            reasons.append("production_median_spread_not_positive")
+        if peer_cohorts < 8:
+            reasons.append("shadow_has_fewer_than_8_cohorts")
+        if prod_peer_ic is None or cand_ic is None or cand_ic <= prod_peer_ic:
+            reasons.append("shadow_rank_ic_not_better")
+        if prod_peer_spread is None or cand_spread is None or cand_spread < prod_peer_spread:
+            reasons.append("shadow_spread_worse_or_unavailable")
+
+        if reasons:
+            blockers.append({"horizon_days": horizon, "reasons": reasons})
+        else:
+            qualified.append(horizon)
+
+    ready = len(qualified) >= 2
+    return {
+        "status": "candidate_review_allowed" if ready else "production_change_deferred",
+        "production_weights_frozen": not ready,
+        "qualified_horizons": qualified,
+        "required_qualified_horizons": 2,
+        "blockers": blockers,
+        "rule": (
+            "A Score v2 candidate may enter production review only after at least two horizons "
+            "independently satisfy the prospective evidence gate. Passing permits review, not deployment."
+        ),
+    }
+
+
 def peer_shadow_comparison(vals):
     peer_vals = [x for x in vals if num(x.get("peer_shadow_score")) is not None]
     production = metric_pack(peer_vals, "score")
@@ -485,6 +545,7 @@ def main():
         "realised_outcomes": len(outcomes),
         "new_outcomes_this_run": added,
         "horizons": report_horizons,
+        "score_v2_readiness": score_v2_readiness(report_horizons),
         "interpretation": {
             "rank_ic": "Spearman correlation between the score known at cohort date and realised forward return.",
             "top_minus_bottom": "Raw mean return spread between highest and lowest score quintiles; retain it for transparency but inspect robust companions when tails are extreme.",
