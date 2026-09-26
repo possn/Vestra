@@ -34,13 +34,20 @@ test('iPhone/WebKit: Portfolio Optimize follows one canonical decision journey',
       ['scenario', 'Se substituíres pelo mesmo valor'],
       ['swap', 'Alternativas no mesmo setor'],
     ];
-    content.innerHTML = '<div class="market-decision-center"><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora</h4></div>' +
+    content.innerHTML = '<div class="market-decision-center" data-vpu-conviction="72" data-vpu-risk="90" data-vpu-review="0" data-vpu-state="Estável"><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora</h4><span>Estável</span></div>' +
       cards.map(([kind, title]) =>
         `<div class="market-detail-card" data-ux-kind="${kind}"><h4>${title}</h4><p>Fixture ${kind}</p></div>`
       ).join('') +
       '<section class="market-portfolio-section" id="e2eBaseHoldings"><h3>Ações, ETFs e fundos</h3></section>';
     window.VestraPortfolioHierarchy.refresh();
   });
+
+  const overview = sheet.locator('.vpu-overview');
+  await expect(overview).toBeVisible();
+  await expect(overview).toContainText('Risk Fit');
+  await expect(overview).toContainText('Risk Fit sólido');
+  await expect(overview).toContainText('maior é melhor');
+  await expect(overview).not.toContainText('risco elevado');
 
   const explore = sheet.locator('[data-vpu-toggle]').first();
   await expect(explore).toBeVisible();

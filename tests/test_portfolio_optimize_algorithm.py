@@ -29,6 +29,26 @@ class PortfolioSignalSeparationTests(unittest.TestCase):
 
 
 class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
+    def test_decision_center_prioritizes_signals_without_composite_health_score(self):
+        s = read("market.js")
+        block = s.split("function renderPortfolioDecisionCenter(", 1)[1].split("\n  function portfolioIntelligence(", 1)[0]
+        self.assertIn("const structuralAlert=", block)
+        self.assertIn("const decisionState=", block)
+        self.assertIn("data-vpu-state=", block)
+        self.assertIn("<small>Risk Fit</small>", block)
+        self.assertNotIn("let health=100", block)
+        self.assertNotIn("data-vpu-health=", block)
+        self.assertNotIn("${health}/100", block)
+
+    def test_portfolio_ui_treats_risk_fit_as_higher_is_better(self):
+        s = read("vestra-portfolio-ui.js")
+        self.assertIn("riskFit<65", s)
+        self.assertIn("riskFit<85", s)
+        self.assertIn("Risk Fit sólido", s)
+        self.assertIn("healthBar('Risk Fit',m.risk)", s)
+        self.assertNotIn("healthBar('Risco',m.risk,true)", s)
+        self.assertIn("maior é melhor", s)
+
     def test_same_sector_alternatives_use_canonical_move_evaluation(self):
         s = read("market.js")
         self.assertIn("mode==='alternative'", s)
