@@ -504,3 +504,17 @@ html.modal-open,body.modal-open{
 .market-etf-theme:active{transform:scale(.985)}
 .market-etf-change-theme{flex:0 0 auto;border:1px solid var(--line);background:var(--card2);color:var(--text2);border-radius:999px;padding:7px 10px;font:inherit;font-size:10px;font-weight:800;cursor:pointer}
 @media(min-width:640px){.market-etf-theme-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+
+/* v6.5 — Weekly market rotation proxy */
+.market-rotation{margin:12px 0 14px;padding:14px;border:1px solid var(--line2);border-radius:18px;background:linear-gradient(180deg,rgba(32,129,126,.055),rgba(255,255,255,.02))}
+.market-rotation-intro{margin:6px 0 10px;color:var(--muted);font-size:11px;line-height:1.45}
+.market-rotation-grid{display:grid;gap:7px}
+.market-rotation-row{display:grid;grid-template-columns:26px minmax(125px,1.15fr) minmax(120px,1fr) minmax(120px,.9fr);align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line2);border-radius:14px;background:var(--item-bg)}
+.market-rotation-rank{font-size:11px;font-weight:900;color:var(--muted)}
+.market-rotation-name{min-width:0}.market-rotation-name strong,.market-rotation-name small{display:block}.market-rotation-name strong{font-size:12px}.market-rotation-name small{margin-top:2px;font-size:9px;color:var(--muted)}
+.market-rotation-bar{position:relative;height:28px;padding-top:2px}.market-rotation-bar:before{content:"";position:absolute;left:0;right:0;top:5px;height:6px;border-radius:99px;background:rgba(127,127,127,.13)}.market-rotation-bar i{position:absolute;left:0;top:5px;height:6px;border-radius:99px;background:currentColor;opacity:.68}.market-rotation-bar small{display:block;margin-top:14px;font-size:9px;color:var(--muted)}
+.market-rotation-metrics{text-align:right}.market-rotation-metrics strong,.market-rotation-metrics small{display:block}.market-rotation-metrics strong{font-size:14px}.market-rotation-metrics small{margin-top:2px;font-size:9px;color:var(--muted)}
+.market-rotation-row.is-positive{color:#34764a}.market-rotation-row.is-warn{color:#8a6b2f}.market-rotation-row.is-risk{color:#9b4b44}.market-rotation-row.is-neutral{color:var(--text)}
+.market-rotation--waiting{background:var(--item-bg)}
+@media(max-width:680px){.market-rotation-row{grid-template-columns:24px 1fr auto}.market-rotation-bar{grid-column:2/-1}.market-rotation-metrics{grid-column:3;grid-row:1;text-align:right}}
