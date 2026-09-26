@@ -1,4 +1,4 @@
-/* Vestra Portfolio UI v3.1 — exploration focus mode separates analysis from base holdings. */
+/* Vestra Portfolio UI v3.2 — exploration focus mode separates analysis from base holdings. */
 (() => {
   'use strict';
 
@@ -32,7 +32,7 @@
     const coverageRaw=t(summary?.dataset.vpuCoverage);
     const coverage=coverageRaw?coverageRaw+'%':kpiByLabel(c,'Cobertura')||'';
     const conviction=t(dc?.dataset.vpuConviction)||(dcTxt.match(/CONVICÇÃO\s*([0-9.,]+)/i)||[])[1]||'';
-    const risk=t(dc?.dataset.vpuRisk)||(dcTxt.match(/RISK BUDGET\s*([0-9.,]+)/i)||[])[1]||'';
+    const risk=t(dc?.dataset.vpuRisk)||(dcTxt.match(/RISK (?:FIT|BUDGET)\s*([0-9.,]+)/i)||[])[1]||'';
     return {
       positions,research,coverage,conviction,risk,
       reinforce:countRows(card('reinforce',c)), review:countRows(card('review',c)), swaps:countRows(card('swap',c)),
@@ -40,12 +40,12 @@
     };
   }
   function status(m){
-    const conv=num(m.conviction), risk=num(m.risk), cov=num(m.coverage), review=num(m.review);
+    const conv=num(m.conviction), riskFit=num(m.risk), cov=num(m.coverage), review=num(m.review);
     let title='Carteira equilibrada, com pontos a acompanhar', tone='neutral'; const bits=[];
     if(conv!=null) bits.push(conv>=70?'convicção forte':conv<45?'convicção frágil':'convicção moderada');
-    if(risk!=null){ if(risk>=70){bits.push('risco elevado');tone='warn';title='Boa base, mas o risco merece atenção';} else if(risk>=55){bits.push('concentração a vigiar');tone='warn';} else bits.push('risco controlado'); }
+    if(riskFit!=null){ if(riskFit<65){bits.push('Risk Fit baixo');tone='warn';title='A diversificação merece atenção';} else if(riskFit<85){bits.push('Risk Fit intermédio');tone='warn';} else bits.push('Risk Fit sólido'); }
     if(cov!=null&&cov<35) bits.push('research ainda incompleto');
-    if(review>0) bits.push(`${review} itens para rever`);
+    if(review>0){bits.push(`${review} itens para rever`);tone='warn';}
     return {title,tone,sub:bits.slice(0,3).join(' · ')||'Visão consolidada da carteira.'};
   }
   function tone(v,reverse=false){ const x=num(v); if(x==null)return'neutral'; if(reverse)return x>=75?'bad':x>=55?'warn':'good'; return x>=70?'good':x>=50?'warn':'bad'; }
@@ -60,7 +60,7 @@
     const signature=JSON.stringify([m.positions,m.research,m.coverage,m.conviction,m.risk,m.reinforce,m.review,m.swaps,st.title,st.tone,st.sub]);
     if(hero.dataset.signature!==signature){
       hero.dataset.signature=signature;
-      hero.innerHTML=`<div class="vpu-kicker">VISÃO GLOBAL DA CARTEIRA</div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail>Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>total</span></div><div><small>Com research</small><strong>${m.research||'—'}</strong><span>analisáveis</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>research</span></div><div><small>Convicção</small><strong>${m.conviction||'—'}</strong><span>/100</span></div><div><small>Risco</small><strong>${m.risk||'—'}</strong><span>/100</span></div><div><small>Rever</small><strong>${m.review||0}</strong><span>posições</span></div></div><div class="vpu-actions"><button data-vpu-jump="reinforce">↗ Reforçar <b>${m.reinforce||0}</b></button><button data-vpu-jump="review">! Rever <b>${m.review||0}</b></button><button data-vpu-jump="swap">⇄ Trocas <b>${m.swaps||0}</b></button><button data-vpu-jump="risk">◇ Risco <b>${m.risk||'—'}</b></button></div><div class="vpu-snapshot"><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Leitura em 5 segundos</strong></div><span>${m.positions||'—'} posições · ${m.research||'—'} com research</span></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risco',m.risk,true)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></div>`;
+      hero.innerHTML=`<div class="vpu-kicker">VISÃO GLOBAL DA CARTEIRA</div><div class="vpu-status is-${st.tone}"><div><strong>${st.title}</strong><span>${st.sub}</span></div><button type="button" data-vpu-detail>Ver diagnóstico</button></div><div class="vpu-grid"><div><small>Posições</small><strong>${m.positions||'—'}</strong><span>total</span></div><div><small>Com research</small><strong>${m.research||'—'}</strong><span>analisáveis</span></div><div><small>Cobertura</small><strong>${m.coverage||'—'}</strong><span>research</span></div><div><small>Convicção</small><strong>${m.conviction||'—'}</strong><span>/100</span></div><div><small>Risk Fit</small><strong>${m.risk||'—'}</strong><span>/100 · maior é melhor</span></div><div><small>Rever</small><strong>${m.review||0}</strong><span>posições</span></div></div><div class="vpu-actions"><button data-vpu-jump="reinforce">↗ Reforçar <b>${m.reinforce||0}</b></button><button data-vpu-jump="review">! Rever <b>${m.review||0}</b></button><button data-vpu-jump="swap">⇄ Trocas <b>${m.swaps||0}</b></button><button data-vpu-jump="risk">◇ Risk Fit <b>${m.risk||'—'}</b></button></div><div class="vpu-snapshot"><div class="vpu-snapshot-head"><div><small>SAÚDE DA CARTEIRA</small><strong>Leitura em 5 segundos</strong></div><span>${m.positions||'—'} posições · ${m.research||'—'} com research</span></div><div class="vpu-health">${healthBar('Convicção',m.conviction)}${healthBar('Risk Fit',m.risk)}<div class="vpu-health-row"><div><span>Cobertura</span><b>${covText}</b></div><div class="vpu-track"><i class="is-${cov!=null&&cov>=70?'good':cov!=null&&cov>=40?'warn':'bad'}" style="width:${Math.max(0,Math.min(100,cov??0))}%"></i></div></div></div></div>`;
     }
     if(created){const dc=decisionCenter(c); if(dc)dc.hidden=true;}
     return hero;
@@ -195,6 +195,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.1'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.2'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
