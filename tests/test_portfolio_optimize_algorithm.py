@@ -125,6 +125,21 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertNotIn("if(positionPct>=15||sectorPct>=35||indirectPct>=4) fit='concentrated'", s)
         self.assertNotIn("else if(positionPct>=10||sectorPct>=28||indirectPct>=2) fit='watch'", s)
 
+    def test_review_priority_is_explicit_and_shared_across_decision_surfaces(self):
+        s = read("market.js")
+        self.assertIn("function portfolioReviewSignals(r)", s)
+        self.assertIn("function comparePortfolioReview(a,b)", s)
+        self.assertIn("replace:r?.action?.key==='replace'", s)
+        self.assertIn("gateRank:gate==='severe'?3:gate==='high'?2:gate==='watch'?1:0", s)
+        self.assertIn("||Number(y.thesisDown)-Number(x.thesisDown)", s)
+        self.assertIn("||Number(y.estimatesDown)-Number(x.estimatesDown)", s)
+        self.assertIn("||x.conviction-y.conviction", s)
+        self.assertIn(".sort(comparePortfolioReview)", s)
+        self.assertIn("||comparePortfolioReview(a.r,b.r)", s)
+        self.assertIn("review[0].action?.key==='replace'?'Substituir':'Rever'", s)
+        self.assertIn("e avaliar substituição", s)
+        self.assertNotIn(".sort((a,b)=>(a.conviction??999)-(b.conviction??999))", s)
+
     def test_same_value_scenario_uses_canonical_move_evaluator(self):
         s = read("market.js")
         self.assertIn("const decision=evaluatePortfolioMove({mode:'scenario'", s)
