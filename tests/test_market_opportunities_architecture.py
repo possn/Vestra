@@ -102,6 +102,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn("function lensMatch(row, lens)", lenses)
         self.assertNotIn("querySelectorAll('.market-list .market-row')", lenses)
 
+    def test_general_discovery_shortlist_has_diversification_guardrails(self):
+        source = read('market-opportunities.js')
+        self.assertIn('function diversify(rows,limit,{sectorCap=3,industryCap=2}={})', source)
+        self.assertIn('return diversify(selected,limit)', source)
+        self.assertIn('diversify,rankLens', source)
+        # Strategy-specific lenses remain pure rankings; only the general shortlist
+        # applies presentation-level diversification.
+        self.assertIn("if(lens!=='all')return rankedCandidates(universe,lens,sector).slice(0,limit)", source)
+
     def test_empty_lens_clears_previous_rows_instead_of_leaving_stale_candidates(self):
         source = read('market-opportunities.js')
         self.assertNotIn("if(!rows.length)return", source)
