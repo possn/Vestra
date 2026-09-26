@@ -994,21 +994,25 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return exposure;
   }
 
-  function portfolioFit(r, sectorRows, analysed, etfs){
+  function portfolioFit(r, sectorRows, analysed, etfs, targets=loadPortfolioTargets()){
     const positionPct=analysed>0?r.value/analysed*100:0;
     const sector=txt(r.stock?.sector)||'Sem setor';
     const sectorPct=sectorRows.find(x=>x.sector===sector)?.pct||0;
     const indirectPct=isFund(r.stock)?0:indirectExposurePct(r.stock,etfs);
+    const maxPos=Math.max(3,Math.min(30,n(targets?.maxPosition)||10));
+    const maxSector=Math.max(10,Math.min(60,n(targets?.maxSector)||25));
+    const posSevere=maxPos*1.5, sectorSevere=maxSector*1.4;
+    const overlapWatch=targets?.overlap==='reduce'?2:Infinity, overlapSevere=targets?.overlap==='reduce'?4:Infinity;
     const flags=[];
-    if(positionPct>=15) flags.push(`posição ${positionPct.toFixed(0)}%`);
-    else if(positionPct>=10) flags.push(`posição já relevante ${positionPct.toFixed(0)}%`);
-    if(sectorPct>=35) flags.push(`setor concentrado ${sectorPct.toFixed(0)}%`);
-    else if(sectorPct>=28) flags.push(`setor já elevado ${sectorPct.toFixed(0)}%`);
-    if(indirectPct>=2) flags.push(`+${indirectPct.toFixed(1)}% indireto via ETFs`);
+    if(positionPct>=posSevere) flags.push(`posição ${positionPct.toFixed(0)}% > objetivo ${maxPos}%`);
+    else if(positionPct>=maxPos) flags.push(`posição acima do objetivo ${positionPct.toFixed(0)}% > ${maxPos}%`);
+    if(sectorPct>=sectorSevere) flags.push(`setor concentrado ${sectorPct.toFixed(0)}% > objetivo ${maxSector}%`);
+    else if(sectorPct>=maxSector) flags.push(`setor acima do objetivo ${sectorPct.toFixed(0)}% > ${maxSector}%`);
+    if(indirectPct>=overlapWatch) flags.push(`+${indirectPct.toFixed(1)}% indireto via ETFs`);
     let fit='balanced';
-    if(positionPct>=15||sectorPct>=35||indirectPct>=4) fit='concentrated';
-    else if(positionPct>=10||sectorPct>=28||indirectPct>=2) fit='watch';
-    return {positionPct,sectorPct,indirectPct,fit,flags};
+    if(positionPct>=posSevere||sectorPct>=sectorSevere||indirectPct>=overlapSevere) fit='concentrated';
+    else if(positionPct>=maxPos||sectorPct>=maxSector||indirectPct>=overlapWatch) fit='watch';
+    return {positionPct,sectorPct,indirectPct,fit,flags,maxPos,maxSector};
   }
   function portfolioFitSummary(ctx){
     const fit=ctx||{};
@@ -1145,12 +1149,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(ctx.indirectPct>=2) reasons.push(`overlap indireto ${ctx.indirectPct.toFixed(1)}%`);
     if(ctx.positionPct>=10) reasons.push(`peso ${ctx.positionPct.toFixed(0)}%`);
     if(ctx.sectorPct>=28) reasons.push(`setor ${ctx.sectorPct.toFixed(0)}%`);
-    if(alt && alt.portfolioFit!=='worse' && (gate==='high'||gate==='severe'||(conviction!=null&&conviction<50))) {
+    const structuralDeterioration=gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50);
+    if(alt && alt.portfolioFit!=='worse' && structuralDeterioration) {
       const fitNote=alt.portfolioFit==='better'?' · melhora diversificação':'';
       return {key:'replace',label:'Substituir',tone:'risk',reason:`${reasons[0]||'convicção fraca'} · alternativa ${alt.to.ticker} superior${fitNote}`};
     }
-    if(gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50)) return {key:'review',label:'Rever',tone:'risk',reason:reasons.slice(0,2).join(' · ')||'convicção baixa'};
-    if(conviction!=null&&conviction>=70&&conf!=null&&conf>=60&&!['overvalued','uncertain'].includes(valuation)) {
+    if(structuralDeterioration||gate==='watch') return {key:'review',label:'Rever',tone:structuralDeterioration?'risk':'warn',reason:reasons.slice(0,2).join(' · ')||(gate==='watch'?'Risk Gate watch':'convicção baixa')};
+    if(conviction!=null&&conviction>=70&&conf!=null&&conf>=60&&gate!=='watch'&&!['overvalued','uncertain'].includes(valuation)) {
       if(ctx.fit==='concentrated'||ctx.fit==='watch') return {key:'hold',label:'Manter',tone:'neutral',reason:`boa tese · não reforçar por ${ctx.flags?.[0]||(ctx.fit==='watch'?'Portfolio Fit em atenção':'concentração')}`};
       return {key:'reinforce',label:'Reforçar',tone:'positive',reason:reasons.slice(0,2).join(' · ')||'convicção elevada'};
     }
@@ -1543,7 +1548,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const topPosPct=topPosition?topPosition.value/analysed*100:0;
 
     const etfsForFit=ranked.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
-    for(const r of ranked) r.portfolioFit=portfolioFit(r,sectorRows,analysed,etfsForFit);
+    const portfolioTargets=loadPortfolioTargets();
+    for(const r of ranked) r.portfolioFit=portfolioFit(r,sectorRows,analysed,etfsForFit,portfolioTargets);
 
     const etfOptimizeRows=findEtfOptimizeAlternatives(ranked,heldTickers);
     const etfOptimizeHtml=renderEtfOptimizeCard(etfOptimizeRows);
