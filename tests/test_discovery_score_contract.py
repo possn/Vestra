@@ -42,6 +42,25 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertTrue(high["opportunity_eligible"])
         self.assertEqual(low["opportunity_score_raw"], high["opportunity_score_raw"])
 
+    def test_missing_optional_signal_does_not_renormalise_remaining_winners(self):
+        complete = MOD.assess(row())
+        sparse_row = row()
+        sparse_row["moat_score"] = None
+        sparse = MOD.assess(sparse_row)
+        self.assertTrue(sparse["opportunity_eligible"])
+        self.assertLess(sparse["opportunity_ranking_weight_coverage_pct"], complete["opportunity_ranking_weight_coverage_pct"])
+        self.assertLess(sparse["opportunity_score_raw"], complete["opportunity_score_raw"])
+
+    def test_sparse_discovery_evidence_is_explicitly_capped(self):
+        sparse_row = row()
+        for key in ("moat_score", "capital_allocation_intelligence_score", "low52_opportunity_score", "valuation_score"):
+            sparse_row[key] = None
+        sparse = MOD.assess(sparse_row)
+        self.assertTrue(sparse["opportunity_eligible"])
+        self.assertLess(sparse["opportunity_ranking_weight_coverage_pct"], 75)
+        self.assertLessEqual(sparse["opportunity_score"], 64)
+        self.assertTrue(any("Discovery" in cap["reason"] for cap in sparse["opportunity_caps"]))
+
     def test_confidence_still_gates_insufficient_evidence(self):
         out = MOD.assess(row(confidence=49))
         self.assertFalse(out["opportunity_eligible"])
