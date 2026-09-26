@@ -123,6 +123,20 @@
     ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)||(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return ranked;
   }
+  function diversify(rows,limit,{sectorCap=3,industryCap=2}={}){
+    const source=Array.isArray(rows)?rows:[],selected=[],deferred=[];
+    const sectors=new Map(),industries=new Map();
+    const key=v=>t(v)||'Unknown';
+    for(const candidate of source){
+      const sector=key(candidate?.sector),industry=key(candidate?.industry);
+      const sectorN=sectors.get(sector)||0,industryN=industries.get(industry)||0;
+      if(sectorN>=sectorCap||industryN>=industryCap){deferred.push(candidate);continue;}
+      selected.push(candidate);sectors.set(sector,sectorN+1);industries.set(industry,industryN+1);
+      if(selected.length>=limit)return selected;
+    }
+    for(const candidate of deferred){if(selected.length>=limit)break;selected.push(candidate);}
+    return selected;
+  }
   function rankLens(universe,lens,{limit=12,sector='all'}={}){
     if(lens!=='all')return rankedCandidates(universe,lens,sector).slice(0,limit);
 
@@ -174,7 +188,7 @@
     }
 
     selected.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
-    return selected.slice(0,limit);
+    return diversify(selected,limit);
   }
   function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
   function reason(s){const p=stats(s),b=[];if(t(s?.estimate_signal)==='improving')b.push('estimativas ↑');if(['confirmed','recovering'].includes(t(s?.recovery_status)))b.push('recuperação confirmada');if(p.accel!=null&&p.accel>2)b.push('aceleração recente');if(p.room!=null&&p.room>=5&&p.room<=30)b.push(`${p.room.toFixed(0)}% abaixo do máximo`);const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);if(fv!=null&&fv>8)b.push(`upside +${fv.toFixed(0)}%`);else if(pt!=null&&pt>10)b.push(`target +${pt.toFixed(0)}%`);return b.slice(0,3).join(' · ')||'qualidade e timing alinhados';}
@@ -242,5 +256,5 @@
   function start(){style();opportunities();const root=document.getElementById('marketPrimary');if(!root)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(root,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.3'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.3'});
 })();
