@@ -280,11 +280,26 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
     return rows.sort((a,b)=>b.rank-a.rank);
   }
+  function renderRotationRow(r, rank){
+    return `<div class="market-rotation-row is-${r.tone}"><div class="market-rotation-rank">${rank}</div><div class="market-rotation-name"><strong>${esc(r.label)}</strong><small>${esc(r.signal)} · ${r.count} ações</small><em>${esc(rotationEtfText(r))}</em></div><div class="market-rotation-bar"><i style="width:${Math.max(4,Math.min(100,r.breadth))}%"></i><small>breadth ${r.breadth.toFixed(0)}%</small></div><div class="market-rotation-metrics"><strong>${r.med5>=0?'+':''}${r.med5.toFixed(1)}%</strong><small>5d mediano${r.med20!=null?` · 20d ${r.med20>=0?'+':''}${r.med20.toFixed(1)}%`:''}</small></div></div>`;
+  }
+  function renderRotationGroup(title, subtitle, rows, tone){
+    if(!rows.length) return `<div class="market-rotation-group market-rotation-group--empty"><div class="market-rotation-group__head"><strong>${esc(title)}</strong><small>${esc(subtitle)}</small></div><div class="market-rotation-empty">Sem temas com sinal positivo suficientemente disseminado nesta semana.</div></div>`;
+    return `<div class="market-rotation-group market-rotation-group--${tone}"><div class="market-rotation-group__head"><strong>${esc(title)}</strong><small>${esc(subtitle)}</small></div><div class="market-rotation-grid">${rows.map((r,i)=>renderRotationRow(r,i+1)).join('')}</div></div>`;
+  }
   function renderWeeklyRotation(){
     const rows=weeklyRotationThemeRows();
     if(!rows.length) return `<div class="market-rotation market-rotation--waiting" aria-live="polite"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-rotation-status">A preparar</span></div><div class="market-rotation-wait"><strong class="market-rotation-wait-title">A primeira leitura semanal ainda está a ser calculada.</strong><span class="market-rotation-wait-copy">A tabela aparece automaticamente aqui quando houver 5 dias de dados suficientes. Não tens de abrir este card.</span></div></div>`;
-    const leaders=rows.slice(0,8);
-    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PRICE + BREADTH PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">5 dias</span></div><p class="market-rotation-intro">Deteta rotação semanal por retorno mediano e breadth dentro de cada tema; 20d serve apenas de confirmação. Não representa subscrições/resgates de fundos.</p><div class="market-rotation-grid">${leaders.map((r,i)=>`<div class="market-rotation-row is-${r.tone}"><div class="market-rotation-rank">${i+1}</div><div class="market-rotation-name"><strong>${esc(r.label)}</strong><small>${esc(r.signal)} · ${r.count} ações</small><em>${esc(rotationEtfText(r))}</em></div><div class="market-rotation-bar"><i style="width:${Math.max(4,Math.min(100,r.breadth))}%"></i><small>breadth ${r.breadth.toFixed(0)}%</small></div><div class="market-rotation-metrics"><strong>${r.med5>=0?'+':''}${r.med5.toFixed(1)}%</strong><small>5d mediano${r.med20!=null?` · 20d ${r.med20>=0?'+':''}${r.med20.toFixed(1)}%`:''}</small></div></div>`).join('')}</div><p class="market-case-note">O ranking continua baseado em preço + breadth. ETF flow é apenas confirmação: estima criações/resgates pela variação de AUM ajustada ao retorno do ETF e só aparece após uma janela observável de 5–14 dias.</p></div>`;
+    const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50).slice(0,4);
+    const outflows=rows.filter(r=>r.med5<0 && r.breadth<=50).sort((a,b)=>a.rank-b.rank).slice(0,4);
+    const neutral=rows.filter(r=>!inflows.includes(r)&&!outflows.includes(r)).slice(0,3);
+    const breadthPositive=rows.filter(r=>r.med5>0).length;
+    const marketState=inflows.length
+      ? `${inflows.length} tema${inflows.length===1?'':'s'} com entrada semanal`
+      : breadthPositive
+        ? 'Há força positiva, mas ainda sem breadth suficiente para confirmar entrada'
+        : 'Nenhum tema com entrada semanal confirmada';
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PRICE + BREADTH PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">5 dias</span></div><p class="market-rotation-intro">A leitura separa explicitamente <b>entradas</b> de <b>saídas</b>. O sinal combina retorno mediano 5d e breadth; 20d e ETF flow servem como confirmação.</p><div class="market-rotation-summary">${esc(marketState)}</div>${renderRotationGroup('A receber capital','Temas com retorno 5d positivo e breadth ≥50%',inflows,'in')}${renderRotationGroup('A perder capital','Temas com retorno 5d negativo e breadth ≤50%',outflows,'out')}${neutral.length?`<details class="market-rotation-neutral"><summary>Rotação mista / sem confirmação (${neutral.length})</summary><div class="market-rotation-grid">${neutral.map((r,i)=>renderRotationRow(r,i+1)).join('')}</div></details>`:''}<p class="market-case-note market-rotation-note">O ranking continua baseado em preço + breadth. ETF flow é confirmação, não o motor do ranking: estima criações/resgates pela variação de AUM ajustada ao retorno do ETF e só aparece após uma janela observável de 5–14 dias.</p></div>`;
   }
 
   function renderDiscover(){
