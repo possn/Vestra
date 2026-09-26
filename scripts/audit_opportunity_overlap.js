@@ -53,6 +53,18 @@ function shortlistDiagnostics(rows) {
     acc[driver] = (acc[driver] || 0) + 1;
     return acc;
   }, {});
+  const sleeveValues = rows.map(stock => api.sleeveScores?.(stock) || {});
+  const sleeveSummary = Object.fromEntries(['strength', 'asymmetry', 'inflection'].map(key => {
+    const values = sleeveValues.map(x => Number(x[key])).filter(Number.isFinite).sort((a, b) => a - b);
+    const mean = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    const median = values.length ? (values.length % 2 ? values[(values.length - 1) / 2] : (values[values.length / 2 - 1] + values[values.length / 2]) / 2) : null;
+    return [key, {
+      mean: mean == null ? null : Number(mean.toFixed(1)),
+      median: median == null ? null : Number(median.toFixed(1)),
+      min: values.length ? Number(values[0].toFixed(1)) : null,
+      max: values.length ? Number(values[values.length - 1].toFixed(1)) : null,
+    }];
+  }));
   const archetypes = Object.fromEntries(
     ['low52', 'emerging', 'recovery', 'value'].map(lens => [
       lens, rows.filter(stock => api.lensEligible(stock, lens)).length,
@@ -62,6 +74,7 @@ function shortlistDiagnostics(rows) {
     sector_counts: sectors,
     industry_counts: industries,
     dominant_sleeve_counts: drivers,
+    sleeve_score_summary: sleeveSummary,
     archetype_counts: archetypes,
     max_sector_share_pct: maxShare(sectors),
     max_industry_share_pct: maxShare(industries),
