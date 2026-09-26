@@ -125,6 +125,11 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('qualidade + oportunidade agora', source)
         self.assertIn('is-driver', source)
         self.assertIn('.ux453-sleeves span.is-driver', css)
+        self.assertIn('function sleeveCoverage(s)', source)
+        self.assertIn('function credibleDominantSleeve(s)', source)
+        self.assertIn("cov==null||cov>=70?dom:null", source)
+        self.assertIn('evidência limitada', source)
+        self.assertIn('dom=credibleDominantSleeve(s)', source)
 
     def test_general_discovery_shortlist_has_diversification_guardrails(self):
         source = read('market-opportunities.js')
