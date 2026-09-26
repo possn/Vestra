@@ -196,6 +196,60 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function renderRow(s, meta='', displayScore=null){ return marketRowUI?.renderRow(s,meta,displayScore) || ''; }
 
+  const WEEKLY_ROTATION_THEMES=[
+    ['Semicondutores',/semiconductor|semiconductors|chip|foundry|wafer|integrated circuit/i],
+    ['Biotecnologia',/biotech|biotechnology|genomic|genomics|gene therap|life sciences/i],
+    ['Minerais & metais',/metal|mining|miner|copper|lithium|uranium|gold|silver|steel|aluminum|aluminium|rare earth/i],
+    ['Agricultura',/agricultur|agribusiness|farm|crop|seed|fertili[sz]er|grain|potash/i],
+    ['Energia',/energy|oil|gas|petroleum|exploration|drilling|refin/i],
+    ['Defesa & aeroespacial',/defen[cs]e|aerospace|military|weapon|missile/i],
+    ['IA & software',/artificial intelligence|machine learning|software|cloud|saas|cyber|data infrastructure/i],
+    ['Bancos',/bank|banks|banking|financial services/i],
+    ['Imobiliário',/real estate|reit|property/i],
+    ['Consumo discricionário',/consumer cyclical|consumer discretionary|auto manufacturer|travel|leisure|retail/i],
+  ];
+  function weeklyRotationReturn(stock){
+    const published=n(stock?.opportunity_return_5d_pct);
+    if(published!=null) return published;
+    const hist=Array.isArray(stock?.price_history_1y)?stock.price_history_1y:[];
+    const closes=hist.map(x=>n(x?.close)).filter(x=>x!=null&&x>0);
+    return closes.length>5?(closes[closes.length-1]/closes[closes.length-6]-1)*100:null;
+  }
+  function rotationMedian(values){
+    const xs=values.filter(v=>Number.isFinite(v)).sort((a,b)=>a-b);
+    if(!xs.length) return null;
+    const m=Math.floor(xs.length/2);
+    return xs.length%2?xs[m]:(xs[m-1]+xs[m])/2;
+  }
+  function weeklyRotationThemeRows(){
+    const stocks=M.stocks.filter(s=>!isFund(s)&&txt(s.zombie)!=='yes');
+    const rows=[];
+    for(const [label,re] of WEEKLY_ROTATION_THEMES){
+      const members=stocks.filter(s=>re.test(`${txt(s.sector)} ${txt(s.industry)} ${txt(s.name)}`));
+      const weekly=members.map(s=>({stock:s,r5:weeklyRotationReturn(s),r20:n(s.opportunity_return_20d_pct)})).filter(x=>x.r5!=null);
+      if(weekly.length<4) continue;
+      const med5=rotationMedian(weekly.map(x=>x.r5));
+      const breadth=weekly.filter(x=>x.r5>0).length/weekly.length*100;
+      const med20=rotationMedian(weekly.map(x=>x.r20).filter(x=>x!=null));
+      const rank=(med5||0)*1.4+(breadth-50)*.08+(med20||0)*.25;
+      let signal='Rotação mista',tone='neutral';
+      if(med5>=2&&breadth>=60){signal='Entrada forte',tone='positive';}
+      else if(med5>=.5&&breadth>=55){signal='A receber capital',tone='positive';}
+      else if(med5<=-2&&breadth<=40){signal='Saída forte',tone='risk';}
+      else if(med5<=-.5&&breadth<=45){signal='A perder capital',tone='risk';}
+      else if(med5>0){signal='A melhorar',tone='warn';}
+      else if(med5<0){signal='A enfraquecer',tone='warn';}
+      rows.push({label,count:weekly.length,med5,breadth,med20,rank,signal,tone});
+    }
+    return rows.sort((a,b)=>b.rank-a.rank);
+  }
+  function renderWeeklyRotation(){
+    const rows=weeklyRotationThemeRows();
+    if(!rows.length) return `<div class="market-rotation market-rotation--waiting"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">5 dias</span></div><p class="market-case-note">A série semanal entra no próximo refresh do universo. A Vestra não substitui dados ausentes por uma falsa leitura de fluxos.</p></div>`;
+    const leaders=rows.slice(0,8);
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PRICE + BREADTH PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">5 dias</span></div><p class="market-rotation-intro">Deteta rotação semanal por retorno mediano e breadth dentro de cada tema; 20d serve apenas de confirmação. Não representa subscrições/resgates de fundos.</p><div class="market-rotation-grid">${leaders.map((r,i)=>`<div class="market-rotation-row is-${r.tone}"><div class="market-rotation-rank">${i+1}</div><div class="market-rotation-name"><strong>${esc(r.label)}</strong><small>${esc(r.signal)} · ${r.count} ações</small></div><div class="market-rotation-bar"><i style="width:${Math.max(4,Math.min(100,r.breadth))}%"></i><small>breadth ${r.breadth.toFixed(0)}%</small></div><div class="market-rotation-metrics"><strong>${r.med5>=0?'+':''}${r.med5.toFixed(1)}%</strong><small>5d mediano${r.med20!=null?` · 20d ${r.med20>=0?'+':''}${r.med20.toFixed(1)}%`:''}</small></div></div>`).join('')}</div><p class="market-case-note">“Entrada” significa força relativa disseminada no preço, não fluxo monetário observado. Para fluxo real, a próxima camada deve usar variação de AUM/flows de ETFs temáticos.</p></div>`;
+  }
+
   function renderDiscover(){
     const sectors = [...new Set(M.stocks.filter(s=>!isFund(s)&&s.sector).map(s=>s.sector))].sort();
     const preferred = ['Technology','Financial Services','Healthcare','Industrials','Consumer Cyclical','Basic Materials'];
@@ -217,6 +271,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
     rows=rows.slice(0,20);
     return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Oportunidades emergentes · empresas robustas com momentum a começar, sem preço excessivamente esticado'}</p></div><span class="market-data-age">${ageText()}</span></div>
+      ${!qs&&M.sector==='all'?renderWeeklyRotation():''}
       <div class="market-sector-grid" role="group" aria-label="Setores">
         <button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>
         ${visibleSectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}" title="${esc(x)}">${esc(x)}</button>`).join('')}

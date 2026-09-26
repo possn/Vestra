@@ -80,7 +80,7 @@ INDEX_KEYS = {
     "opportunity_score", "opportunity_score_raw", "opportunity_label",
     "opportunity_eligible", "opportunity_signal_count", "opportunity_structural_signal_count",
     "opportunity_timing_score", "opportunity_timing_label", "opportunity_overextended",
-    "opportunity_return_20d_pct", "opportunity_return_60d_pct",
+    "opportunity_return_5d_pct", "opportunity_return_20d_pct", "opportunity_return_60d_pct",
     "opportunity_drawdown_from_high_pct",
     # low-52 / recovery / sector-relative summaries
     "low52_status", "low52_label", "low52_score", "low52_resilience_score",
