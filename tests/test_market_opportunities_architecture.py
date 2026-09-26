@@ -79,6 +79,17 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('function portfolioFit(', market)
 
 
+    def test_portfolio_fit_per_asset_is_explainable_not_a_super_score(self):
+        market = read('market.js')
+        self.assertIn('function portfolioFitSummary(ctx)', market)
+        self.assertIn("Portfolio Fit: ${label}", market)
+        self.assertIn("posição ${(n(fit.positionPct)||0).toFixed(1)}%", market)
+        self.assertIn("setor ${(n(fit.sectorPct)||0).toFixed(1)}%", market)
+        self.assertIn("ETF indireto ${(n(fit.indirectPct)||0).toFixed(1)}%", market)
+        self.assertIn("fit.fit==='concentrated'?'Concentrado':fit.fit==='watch'?'Atenção':'Equilibrado'", market)
+        self.assertNotIn('portfolioFitScore', market)
+
+
     def test_opportunities_reuse_canonical_market_universe_without_refetch(self):
         source = read('market-opportunities.js')
         universe = read('market-static-universe.js')
