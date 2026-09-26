@@ -75,9 +75,10 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
     def test_rebalancer_consumes_canonical_move_evaluator(self):
         s = read("market.js")
         self.assertIn("const decision=evaluatePortfolioMove({mode:'replace'", s)
-        self.assertIn("decision.evidence.penalty", s)
+        self.assertIn("riskPenalty,diversifies,valuationRank,tiltBonus", s)
         self.assertIn("tier:decision.evidence.tier", s)
         self.assertIn("Number(b.autoEligible)-Number(a.autoEligible)", s)
+        self.assertNotIn("decision.evidence.penalty", s.split("function rebalanceSimulation", 1)[1].split("\n  function renderRebalanceResults", 1)[0])
 
     def test_portfolio_candidate_ordering_has_no_composite_fit_score(self):
         s = read("market.js")
@@ -114,8 +115,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         s = read("market.js")
         self.assertIn("!['watch','high','severe'].includes(txt(x.risk_gate))", s)
         self.assertIn("const decision=evaluatePortfolioMove({mode:'fresh'", s)
-        self.assertIn("const {riskPenalty,warnings}=decision", s)
-        self.assertIn("const {valuation,tier,strict}=decision.evidence", s)
+        self.assertIn("const {tier,strict}=decision.evidence", s)
+        self.assertIn("const warnings=[...decision.evidence.warnings]", s)
         self.assertNotIn("if(!c.autoEligible||used.has", s)
         self.assertIn("const baselineRisk=portfolioRiskProfile(rows,afterTotal)", s)
         self.assertIn("const riskAddSafe=(stock,amount)=>", s)
