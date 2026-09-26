@@ -292,6 +292,19 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('python build_market_shards.py', workflow)
         self.assertIn('git add data/', workflow)
 
+    def test_shared_worker_default_and_rotation_contrast_are_explicit(self):
+        app = read('app.js')
+        market = read('market.js')
+        css = read('market.css')
+        self.assertIn('const DEFAULT_WORKER_URL = "https://delicate-bar-cc80.pedrossnunes.workers.dev"', app)
+        self.assertIn('window.VestraRuntimeConfig = Object.freeze({ workerUrl: DEFAULT_WORKER_URL })', app)
+        self.assertIn('workerUrl: DEFAULT_WORKER_URL', app)
+        self.assertIn('window.VestraRuntimeConfig?.workerUrl', market)
+        self.assertIn('market-rotation-wait-title', market)
+        self.assertIn('market-rotation-wait-copy', market)
+        self.assertIn('.market-rotation-wait-title{color:#18324a!important}', css)
+        self.assertIn('.market-rotation-wait-copy{color:#4f6472!important;opacity:1!important}', css)
+
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)

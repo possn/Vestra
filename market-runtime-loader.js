@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const SRC = 'market.js?v=20260925opt7';
+  const SRC = 'market.js?v=20260926rotation2';
   const TIMEOUT_MS = 12000;
   let portfolioHelpersPromise = null;
   let helpersPromise = null;
@@ -214,7 +214,7 @@
       );
 
       if (!existing) {
-        script.src = 'market.js?v=20260925opt7';
+        script.src = 'market.js?v=20260926rotation2';
         script.async = true;
         script.dataset.vestraMarketCore = '1';
         document.head.appendChild(script);
