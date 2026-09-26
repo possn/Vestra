@@ -94,6 +94,25 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("key:'reinforce',label:'Reforçar'", action_block)
 
 
+    def test_inflation_shield_is_an_explainable_portfolio_regime_lens(self):
+        market = read('market.js')
+        css = read('market.css')
+        self.assertIn('function inflationShieldProfile(stock)', market)
+        self.assertIn('function renderInflationShield(rows)', market)
+        self.assertIn('INFLATION SHIELD · REGIME LENS', market)
+        self.assertIn('Não altera Vestra Score, Discovery nem Portfolio Fit', market)
+        self.assertIn('Proxy, não backtest', market)
+        self.assertIn("bucket:'benefit'", market)
+        self.assertIn("bucket:'resilient'", market)
+        self.assertIn("'vulnerable'", market)
+        self.assertNotIn('inflationShieldScore', market)
+        discovery = read('market-opportunities.js')
+        self.assertNotIn('inflationShield', discovery)
+        self.assertIn('.market-inflation-zones{', css)
+        self.assertIn('.market-inflation-bar__benefit', css)
+        self.assertIn('@media(max-width:620px)', css)
+
+
     def test_opportunities_reuse_canonical_market_universe_without_refetch(self):
         source = read('market-opportunities.js')
         universe = read('market-static-universe.js')

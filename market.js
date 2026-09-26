@@ -1136,6 +1136,83 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<div class="market-detail-card market-stress-test"><div class="market-perspective-head"><div><small>PORTFOLIO STRESS TEST · PROXY</small><h4>Como reage a carteira?</h4></div><span class="market-data-age">cenários</span></div><div class="market-stress-tabs">${Object.entries(PORTFOLIO_STRESS_SCENARIOS).map(([k,v],i)=>`<button type="button" data-stress-scenario="${k}" class="${i===0?'is-active':''}">${esc(v.label)}</button>`).join('')}</div>${Object.keys(PORTFOLIO_STRESS_SCENARIOS).map(k=>renderStressScenario(rows,k)).join('')}</div>`;
   }
 
+  const INFLATION_BUCKETS={
+    benefit:{label:'Beneficia',tone:'benefit'},
+    resilient:{label:'Resiliente',tone:'resilient'},
+    neutral:{label:'Neutro',tone:'neutral'},
+    vulnerable:{label:'Vulnerável',tone:'vulnerable'},
+  };
+  function averageKnown(values){
+    const xs=values.map(n).filter(v=>v!=null);
+    return xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:null;
+  }
+  function inflationFundProfile(stock){
+    const hay=`${txt(stock?.name)} ${txt(stock?.fund_theme)} ${txt(stock?.fund_style)} ${txt(stock?.sector)} ${txt(stock?.industry)}`.toLowerCase();
+    if(/gold|silver|precious metal|commodity|commodities|oil|gas|energy|uranium|copper|mining|materials|agricultur/.test(hay)) return {bucket:'benefit',drivers:['exposição temática a ativos reais'],evidence:1};
+    if(/consumer staples|consumer defensive|healthcare|infrastructure/.test(hay)) return {bucket:'resilient',drivers:['exposição temática defensiva'],evidence:1};
+    if(/real estate|reit|long duration|technology|growth/.test(hay)) return {bucket:'vulnerable',drivers:['tema sensível a taxas/discount rate'],evidence:1};
+    return null;
+  }
+  function inflationShieldProfile(stock){
+    if(isFund(stock)) return inflationFundProfile(stock);
+    const sec=txt(stock?.sector).toLowerCase(), ind=txt(stock?.industry).toLowerCase();
+    if(!sec&&!ind) return null;
+    let structural=0, sectorDriver='setor sem viés forte';
+    if(/energy/.test(sec)){structural=2.2;sectorDriver='energia tende a captar inflação de commodities';}
+    else if(/basic materials|materials/.test(sec)){structural=1.8;sectorDriver='materiais têm ligação direta a preços de inputs';}
+    else if(/consumer defensive/.test(sec)){structural=1.15;sectorDriver='procura defensiva em bens essenciais';}
+    else if(/healthcare/.test(sec)){structural=.75;sectorDriver='procura relativamente defensiva';}
+    else if(/industrials/.test(sec)){structural=.45;sectorDriver='exposição cíclica com algum pricing power';}
+    else if(/utilities/.test(sec)){structural=.35;sectorDriver='receitas defensivas, mas sensibilidade a taxas';}
+    else if(/financial/.test(sec)){structural=.25;sectorDriver='impacto misto entre inflação e taxas';}
+    else if(/real estate/.test(sec)){structural=-.45;sectorDriver='rendas podem reajustar, mas duration e financiamento pesam';}
+    else if(/technology/.test(sec)){structural=-.65;sectorDriver='duration longa pode sofrer com taxas reais altas';}
+    else if(/communication/.test(sec)){structural=-.55;sectorDriver='duration e custos podem pressionar múltiplos';}
+    else if(/consumer cyclical/.test(sec)){structural=-1.05;sectorDriver='procura discricionária e margens mais expostas';}
+
+    const pricing=averageKnown([stock?.moat_score,stock?.profitability_pct,stock?.stability_pct]);
+    const balance=averageKnown([stock?.balance_pct,stock?.leverage_pct,stock?.cashflow_pct]);
+    const drivers=[sectorDriver];
+    let adjustment=0, evidence=1;
+    if(pricing!=null){
+      evidence++;
+      if(pricing>=70){adjustment+=.95;drivers.push('pricing power/margens proxy fortes');}
+      else if(pricing>=55){adjustment+=.35;drivers.push('pricing power/margens proxy razoáveis');}
+      else if(pricing<40){adjustment-=.6;drivers.push('margens/estabilidade mais frágeis');}
+    }
+    if(balance!=null){
+      evidence++;
+      if(balance>=65){adjustment+=.7;drivers.push('balanço e cash flow resilientes');}
+      else if(balance<40){adjustment-=.75;drivers.push('balanço/cash flow mais vulneráveis');}
+    }
+    if(stockRiskTags(stock).includes('Sensível a taxas')){adjustment-=.8;drivers.push('sensível a taxas');}
+    const composite=structural+adjustment;
+    const bucket=composite>=2.5?'benefit':composite>=.75?'resilient':composite>-.75?'neutral':'vulnerable';
+    return {bucket,drivers,evidence,structural,composite};
+  }
+  function renderInflationShield(rows){
+    const total=rows.reduce((a,r)=>a+(n(r.value)||0),0)||1;
+    const classified=rows.map(r=>({...r,inflation:inflationShieldProfile(r.stock)})).filter(r=>r.inflation&&r.value>0);
+    const covered=classified.reduce((a,r)=>a+r.value,0), coverage=covered/total*100;
+    const groups={benefit:[],resilient:[],neutral:[],vulnerable:[]};
+    classified.forEach(r=>groups[r.inflation.bucket].push(r));
+    const weight=k=>groups[k].reduce((a,r)=>a+r.value,0)/(covered||1)*100;
+    Object.values(groups).forEach(xs=>xs.sort((a,b)=>b.value-a.value));
+    const protective=weight('benefit')+weight('resilient'), vulnerable=weight('vulnerable');
+    const status=vulnerable>=25?'Pressão elevada':protective>=65?'Proteção relevante':protective>=45?'Proteção mista':'Proteção limitada';
+    const statusTone=vulnerable>=25?'is-risk':protective>=65?'is-positive':'is-warn';
+    const zones=Object.keys(INFLATION_BUCKETS).map(k=>{
+      const meta=INFLATION_BUCKETS[k], pct=weight(k), names=groups[k].slice(0,4).map(r=>esc(r.stock.ticker)).join(' · ');
+      return `<div class="market-inflation-zone market-inflation-zone--${meta.tone}"><span>${esc(meta.label)}</span><strong>${pct.toFixed(0)}%</strong><small>${names||'—'}</small></div>`;
+    }).join('');
+    const bar=Object.keys(INFLATION_BUCKETS).map(k=>`<i class="market-inflation-bar__${INFLATION_BUCKETS[k].tone}" style="width:${Math.max(0,weight(k)).toFixed(2)}%" title="${esc(INFLATION_BUCKETS[k].label)} ${weight(k).toFixed(1)}%"></i>`).join('');
+    const list=classified.slice().sort((a,b)=>b.value-a.value).slice(0,10).map(r=>{
+      const meta=INFLATION_BUCKETS[r.inflation.bucket], portfolioWeight=r.value/total*100;
+      return `<button type="button" class="market-inflation-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.inflation.drivers.slice(0,2).join(' · '))}</small></span><em class="market-inflation-badge market-inflation-badge--${meta.tone}">${esc(meta.label)}</em><b>${portfolioWeight.toFixed(1)}%</b></button>`;
+    }).join('');
+    return `<div class="market-detail-card market-inflation-shield"><div class="market-perspective-head"><div><small>INFLATION SHIELD · REGIME LENS</small><h4>Como reage a carteira à inflação?</h4></div><span class="market-inflation-status ${statusTone}">${esc(status)}</span></div><p class="market-case-note">Lente fundamental explicável para um regime de inflação persistente com taxas restritivas. Não altera Vestra Score, Discovery nem Portfolio Fit.</p><div class="market-inflation-coverage"><span>Cobertura ${coverage.toFixed(0)}%</span><small>distribuição da exposição classificada</small></div><div class="market-inflation-bar" aria-label="Distribuição Inflation Shield">${bar}</div><div class="market-inflation-zones">${zones}</div><div class="market-inflation-list">${list||'<p class="market-case-note">Sem posições classificáveis com os dados atuais.</p>'}</div><p class="market-case-note">Proxy, não backtest: usa setor, moat/profitabilidade/estabilidade, balanço/leverage/cash flow e sensibilidade a taxas. ETFs só são classificados quando o tema é explícito. Não infere correlação histórica com CPI quando essa série não existe.</p></div>`;
+  }
+
   const PORTFOLIO_HEALTH_KEY='vestra_portfolio_health_v1';
   function portfolioHealthDay(d=new Date()){
     const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
@@ -1351,6 +1428,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const riskBudget=renderRiskBudget(ranked);
     const riskBudgetHtml=riskBudget.html;
     const stressTestHtml=renderPortfolioStressTest(ranked);
+    const inflationShieldHtml=renderInflationShield(ranked);
     const healthSnapshot={targetFit,conviction:portfolioConvictionNow,topPosition:topPosPct,topSector:sectorRows[0]?.pct||0,overlapCount:ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length,riskPositions:(actionCounts.review||0)+(actionCounts.replace||0),riskFit:riskBudget.fit};
     const healthHistory=savePortfolioHealthSnapshot(healthSnapshot);
     const healthTimelineHtml=renderPortfolioHealthTimeline(healthHistory);
@@ -1373,6 +1451,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       ${healthTimelineHtml}
       ${riskBudgetHtml}
       ${stressTestHtml}
+      ${inflationShieldHtml}
       ${targetHtml}
       ${freshCapitalHtml}
       ${rebalancerHtml}
