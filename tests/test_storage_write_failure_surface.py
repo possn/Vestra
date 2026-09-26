@@ -21,7 +21,7 @@ class StorageWriteFailureSurfaceTests(unittest.TestCase):
         self.assertIn('toast("Não foi possível apagar todos os dados.", 4000);', block)
 
     def test_app_bootstrap_cache_version_bumped_for_persistence_fix(self):
-        self.assertIn('app.js?v=20260921v12', self.index)
+        self.assertIn('app.js?v=20260926v13', self.index)
 
 
 if __name__ == '__main__':
