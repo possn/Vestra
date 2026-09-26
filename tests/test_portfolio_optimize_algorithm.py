@@ -79,6 +79,29 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("tier:decision.evidence.tier", s)
         self.assertIn("Number(b.autoEligible)-Number(a.autoEligible)", s)
 
+    def test_portfolio_candidate_ordering_has_no_composite_fit_score(self):
+        s = read("market.js")
+        self.assertNotIn("const fitScore=Math.max", s)
+        self.assertNotIn("fitScore:dest.fitScore", s)
+        self.assertNotIn("r.fitScore.toFixed", s)
+        self.assertIn("||b.convictionGain-a.convictionGain", s)
+        self.assertIn("||a.overlapDelta-b.overlapDelta", s)
+        self.assertIn("||a.riskPenalty-b.riskPenalty", s)
+        self.assertIn("||b.sectorHeadroom-a.sectorHeadroom", s)
+        self.assertIn("Não existe um score composto de Portfolio Fit", s)
+
+    def test_fresh_capital_ordering_uses_explicit_dimensions_not_composite_score(self):
+        s = read("market.js")
+        block = s.split("function freshCapitalPlan(amount){", 1)[1].split("\n  function renderFreshCapitalPlan", 1)[0]
+        self.assertNotIn("let score=conv+", block)
+        self.assertNotIn("b.score-a.score", block)
+        self.assertNotIn("score,capacity", block)
+        self.assertIn("||b.conv-a.conv", block)
+        self.assertIn("||b.sectorHeadroom-a.sectorHeadroom", block)
+        self.assertIn("||a.indirect-b.indirect", block)
+        self.assertIn("||b.valuationRank-a.valuationRank", block)
+        self.assertIn("||b.tiltBonus-a.tiltBonus", block)
+
     def test_same_value_scenario_uses_canonical_move_evaluator(self):
         s = read("market.js")
         self.assertIn("const decision=evaluatePortfolioMove({mode:'scenario'", s)
