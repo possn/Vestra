@@ -34,6 +34,43 @@ for (const lens of lenses) {
     .filter(Boolean);
 }
 
+function shortlistDiagnostics(rows) {
+  const counts = key => rows.reduce((acc, stock) => {
+    const value = String(stock?.[key] || 'Unknown').trim() || 'Unknown';
+    acc[value] = (acc[value] || 0) + 1;
+    return acc;
+  }, {});
+  const maxShare = countsObj => {
+    const values = Object.values(countsObj);
+    return rows.length && values.length ? Number((Math.max(...values) / rows.length * 100).toFixed(1)) : 0;
+  };
+  const sectors = counts('sector');
+  const industries = counts('industry');
+  const drivers = rows.reduce((acc, stock) => {
+    const sleeves = api.sleeveScores?.(stock) || {};
+    const entries = Object.entries(sleeves).filter(([, value]) => Number.isFinite(Number(value)));
+    const driver = entries.sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || 'unknown';
+    acc[driver] = (acc[driver] || 0) + 1;
+    return acc;
+  }, {});
+  const archetypes = Object.fromEntries(
+    ['low52', 'emerging', 'recovery', 'value'].map(lens => [
+      lens, rows.filter(stock => api.lensEligible(stock, lens)).length,
+    ])
+  );
+  return {
+    sector_counts: sectors,
+    industry_counts: industries,
+    dominant_sleeve_counts: drivers,
+    archetype_counts: archetypes,
+    max_sector_share_pct: maxShare(sectors),
+    max_industry_share_pct: maxShare(industries),
+    distinct_sectors: Object.keys(sectors).length,
+    distinct_industries: Object.keys(industries).length,
+    distinct_dominant_sleeves: Object.keys(drivers).filter(x => x !== 'unknown').length,
+  };
+}
+
 function overlap(a, b) {
   const A = new Set(ranked[a]);
   const B = new Set(ranked[b]);
@@ -64,6 +101,8 @@ const repeated = Object.entries(appearances)
   .map(([ticker, lens_count]) => ({ ticker, lens_count }));
 
 const eligibleCounts = Object.fromEntries(lenses.map(lens => [lens, stocks.filter(stock => api.lensEligible(stock, lens)).length]));
+const allRows = api.rankLens(stocks, 'all', { limit: topN });
+const diagnostics = shortlistDiagnostics(allRows);
 const report = {
   generated_at: payload?.generated_at || null,
   universe_count: stocks.length,
@@ -72,5 +111,6 @@ const report = {
   ranked,
   pairs,
   repeated_in_3plus_lenses: repeated,
+  general_shortlist_diagnostics: diagnostics,
 };
 console.log(JSON.stringify(report, null, 2));
