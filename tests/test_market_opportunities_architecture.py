@@ -55,9 +55,12 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('const published=n(s?.opportunity_score)', source)
         self.assertIn('score:discoveryScore', source)
         self.assertNotIn('[n(s?.confidence_score),.06]', source)
-        ranking_block = ranker.split('ranking_parts = [', 1)[1].split(']', 1)[0]
-        self.assertNotIn('(conf,', ranking_block)
-        self.assertIn('raw, ranking_weight_coverage = _fixed_weighted(ranking_parts)', ranker)
+        sleeve_block = ranker.split('sleeve_parts = [', 1)[1].split(']', 1)[0]
+        self.assertIn('(strength, .36)', sleeve_block)
+        self.assertIn('(asymmetry, .28)', sleeve_block)
+        self.assertIn('(inflection, .36)', sleeve_block)
+        self.assertNotIn('(conf,', sleeve_block)
+        self.assertIn('raw, _ = _fixed_weighted(sleeve_parts)', ranker)
         self.assertIn('_gate("confidence"', ranker)
         self.assertIn('if coverage < 65 or conf < 60:', ranker)
         self.assertIn('Portfolio fit is intentionally absent', ranker)
