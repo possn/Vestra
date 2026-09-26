@@ -112,9 +112,11 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         s = read("market.js")
         self.assertIn("const decision=evaluatePortfolioMove({mode:'scenario'", s)
         self.assertIn("const {convDelta,overlapDelta,riskPenalty,autoEligible,warnings}=decision", s)
-        self.assertIn("if(autoEligible&&(convDelta>=.5||overlapDelta<=-1)) impact='Melhora'", s)
-        self.assertIn("if(convDelta<=0||overlapDelta>=2||riskPenalty>=5||!decision.evidence.strict) impact='Piora'", s)
-        self.assertIn("cruza convicção, overlap e orçamento de risco", s)
+        self.assertIn("if(convDelta<=0||overlapDelta>=2||riskPenalty>=5) impact='Piora'", s)
+        self.assertIn("else if(convDelta>=.5||overlapDelta<=-1) impact='Melhora'", s)
+        self.assertIn("const eligibility=autoEligible?'Elegível':decision.evidence.strict?'Manual':'Evidência limitada'", s)
+        self.assertNotIn("||!decision.evidence.strict) impact='Piora'", s)
+        self.assertIn("Evidência limitada não é tratada como deterioração da carteira", s)
 
     def test_fresh_capital_allocates_only_strict_candidates_with_cumulative_sector_budget(self):
         s = read("market.js")
