@@ -39,6 +39,10 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertNotIn("let health=100", block)
         self.assertNotIn("data-vpu-health=", block)
         self.assertNotIn("${health}/100", block)
+        self.assertIn("topSector&&topSector.pct>targets.maxSector", block)
+        self.assertIn("riskBudget.fit<65?{label:'Rever o Risk Budget antes de reforçar posições'", block)
+        self.assertIn("worst&&worst.resilience<70?{label:", block)
+        self.assertLess(block.index("riskBudget.fit<65?{label:'Rever o Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
 
     def test_portfolio_ui_treats_risk_fit_as_higher_is_better(self):
         s = read("vestra-portfolio-ui.js")
