@@ -299,7 +299,7 @@ async function loadStateAsync() {
       return out;
     }) : [];
     return {
-      settings: { currency: "EUR", goalMonthly: 0, returnDefaults: safeClone(DEFAULT_RETURN_SETTINGS), ...( p.settings || {}) },
+      settings: { currency: "EUR", goalMonthly: 0, returnDefaults: safeClone(DEFAULT_RETURN_SETTINGS), ...(p.settings || {}), workerUrl: String((p.settings && p.settings.workerUrl) || DEFAULT_WORKER_URL).trim() || DEFAULT_WORKER_URL },
       assets,
       liabilities: Array.isArray(p.liabilities) ? p.liabilities : [],
       transactions: Array.isArray(p.transactions) ? p.transactions : [],
@@ -10771,7 +10771,7 @@ function wire() {
 
   // Worker URL para cotações
   const workerInput = document.getElementById("settingsWorkerUrl");
-  if (workerInput) workerInput.value = state.settings.workerUrl || "";
+  if (workerInput) workerInput.value = (state.settings && state.settings.workerUrl) || DEFAULT_WORKER_URL;
   const autoQuotesInput = document.getElementById("settingsAutoQuotes");
   if (autoQuotesInput) {
     autoQuotesInput.checked = state.settings.autoRefreshQuotes !== false;
@@ -10787,9 +10787,10 @@ function wire() {
   if (btnSaveWorkerUrl) btnSaveWorkerUrl.addEventListener("click", () => {
     const val = (document.getElementById("settingsWorkerUrl").value || "").trim();
     if (!state.settings) state.settings = {};
-    state.settings.workerUrl = val;
+    state.settings.workerUrl = val || DEFAULT_WORKER_URL;
     saveState();
-    toast(val ? "✅ Worker URL guardado" : "Worker URL removido");
+    if (workerInput) workerInput.value = state.settings.workerUrl;
+    toast(val ? "✅ Worker URL guardado" : "✅ Worker global restaurado");
   });
 
   // Objetivo de rendimento
