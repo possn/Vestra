@@ -35,6 +35,21 @@ def _weighted(parts):
     return sum(v * w for v, w in vals) / den if den else None
 
 
+def _fixed_weighted(parts, neutral=50.0):
+    """Fixed nominal weights with an explicit neutral prior for missing signals.
+
+    Discovery ranking must not reward sparse dossiers by silently renormalising
+    the remaining favourable components. The returned coverage is the fraction
+    of nominal ranking weight backed by observed signals.
+    """
+    total = sum(w for _, w in parts)
+    if total <= 0:
+        return None, 0.0
+    observed = sum(w for v, w in parts if v is not None)
+    value = sum((v if v is not None else neutral) * w for v, w in parts) / total
+    return value, observed / total
+
+
 def _gate(name, passed, value=None, threshold=None, detail=None):
     out = {"name": name, "passed": bool(passed)}
     if value is not None:
@@ -313,11 +328,12 @@ def assess(row: dict) -> dict:
     # a higher confidence value must not mechanically promote an otherwise
     # identical candidate. Risk Gate is likewise applied below as a constraint.
     # Portfolio fit is intentionally absent from this cross-sectional ranking.
-    raw = _weighted([
+    ranking_parts = [
         (score, .21), (moat, .12), (cap, .09), (qarp, .15),
         (trap_inverse, .11), (sector, .06), (low52, .05), (recovery, .08),
         (valuation, .02), (timing_score, .21),
-    ])
+    ]
+    raw, ranking_weight_coverage = _fixed_weighted(ranking_parts)
 
     gate = str(row.get("risk_gate") or "clear").lower()
     reasons = list(timing.get("reasons") or [])
@@ -352,6 +368,8 @@ def assess(row: dict) -> dict:
         cautions.append("Risk Gate elevado")
     if coverage < 65:
         cautions.append("Cobertura ainda moderada")
+    if ranking_weight_coverage < .75:
+        cautions.append("Cobertura dos sinais de Discovery ainda moderada")
 
     opp = raw
     if opp is not None:
@@ -379,6 +397,14 @@ def assess(row: dict) -> dict:
             if opp > 59:
                 caps.append({"reason": "Timing fraco", "cap": 59.0})
             opp = min(opp, 59.0)
+        if ranking_weight_coverage < .60:
+            if opp > 54:
+                caps.append({"reason": "Cobertura insuficiente dos sinais de Discovery", "cap": 54.0})
+            opp = min(opp, 54.0)
+        elif ranking_weight_coverage < .75:
+            if opp > 64:
+                caps.append({"reason": "Cobertura moderada dos sinais de Discovery", "cap": 64.0})
+            opp = min(opp, 64.0)
         if coverage < 65 or conf < 60:
             if opp > 59:
                 caps.append({"reason": "Evidência apenas mínima", "cap": 59.0})
@@ -412,6 +438,7 @@ def assess(row: dict) -> dict:
         "opportunity_eligible": True,
         "opportunity_signal_count": len(observed),
         "opportunity_structural_signal_count": len(structural_observed),
+        "opportunity_ranking_weight_coverage_pct": round(ranking_weight_coverage * 100.0, 1),
         "opportunity_gates": gates,
         "opportunity_caps": caps,
         "opportunity_timing_score": timing_score,
