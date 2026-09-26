@@ -1,4 +1,4 @@
-/* Vestra Portfolio Card Classifier v1.6 — canonical identities include guided optimize actions. */
+/* Vestra Portfolio Card Classifier v1.7 — canonical identities include guided optimize actions. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -13,7 +13,7 @@
     {q:'Se substituíres pelo mesmo valor',kind:'scenario',icon:'↔',tone:'purple'},
     {q:'Onde melhora mais este capital?',kind:'rebalance',icon:'↻',tone:'teal'},
     {q:'Plano de rebalanceamento',kind:'plan',icon:'≋',tone:'blue'},
-    {q:'Aderência aos objetivos',kind:'target',icon:'✓',tone:'green'},
+    {q:'Aderência desta carteira aos objetivos',kind:'target',icon:'✓',tone:'green'},
     {q:'A carteira está a melhorar?',kind:'history',icon:'↗',tone:'blue'},
     {q:'Diversificação da carteira',kind:'risk',icon:'◇',tone:'coral'},
     {q:'Como reage a carteira?',kind:'stress',icon:'≈',tone:'amber'}
@@ -55,5 +55,5 @@
   }
   function start(){style();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.6'});
+  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.7'});
 })();

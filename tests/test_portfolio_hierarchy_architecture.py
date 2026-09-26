@@ -14,7 +14,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         loader=read('market-static-universe.js')
         runtime_loader=read('market-runtime-loader.js')
         self.assertNotIn('market-hotfix.js', h)
-        self.assertIn("portfolio-card-classifier.js?v=1.6", runtime_loader)
+        self.assertIn("portfolio-card-classifier.js?v=1.7", runtime_loader)
         self.assertNotIn('src="portfolio-card-classifier.js', h)
         for direct in (
             'src="vestra-portfolio-hierarchy.js',
@@ -41,6 +41,14 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertLess(runtime_loader.index('portfolio-collapsibles.js'), runtime_loader.index('portfolio-card-classifier.js'))
         positions = [loader.index(module) for module in expected]
         self.assertEqual(positions, sorted(positions))
+
+    def test_portfolio_fit_card_is_classified_into_monitor(self):
+        classifier=read('portfolio-card-classifier.js')
+        ui=read('vestra-portfolio-ui.js')
+        self.assertIn("{q:'Aderência desta carteira aos objetivos',kind:'target'", classifier)
+        self.assertIn("monitor:{label:'Monitorizar'", ui)
+        self.assertIn("kinds:['target','history','risk','stress']", ui)
+        self.assertIn("version:'1.7'", classifier)
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
         s=read('vestra-portfolio-hierarchy.js')

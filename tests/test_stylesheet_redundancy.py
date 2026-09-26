@@ -21,7 +21,7 @@ class StylesheetRedundancyTests(unittest.TestCase):
 
     def test_clean_stylesheet_generation_is_explicit(self):
         self.assertIn("styles.css?v=20260923v1", self.index)
-        self.assertIn("market.css?v=20260920v2", self.index)
+        self.assertIn("market.css?v=20260926v1", self.index)
 
 
 if __name__ == "__main__":

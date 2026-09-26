@@ -236,7 +236,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
             self.assertIn(token, source)
         for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
             self.assertIn(token, css)
-        self.assertIn("version:'1.6'", source)
+        self.assertIn("version:'1.7'", source)
 
     def test_weekly_rotation_is_an_explainable_proxy_not_literal_fund_flow(self):
         market = read('market.js')
@@ -255,6 +255,17 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('.market-rotation-row{', css)
         self.assertNotIn('weeklyFundFlowScore', market)
 
+
+    def test_weekly_rotation_waiting_state_is_readable_and_not_fake_interactive(self):
+        market = read('market.js')
+        css = read('market.css')
+        self.assertIn('market-rotation--waiting', market)
+        self.assertIn('market-rotation-status', market)
+        self.assertIn('A primeira leitura semanal ainda está a ser calculada.', market)
+        self.assertIn('Não tens de abrir este card.', market)
+        self.assertIn('.market-rotation--waiting{background:var(--card2);color:var(--text)', css)
+        self.assertIn('.market-rotation-wait span{', css)
+        self.assertNotIn('data-rotation-toggle', market)
 
     def test_weekly_rotation_etf_flow_is_confirmation_not_ranking_alpha(self):
         market = read('market.js')
