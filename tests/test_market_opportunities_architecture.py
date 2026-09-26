@@ -226,6 +226,24 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
             self.assertIn(token, css)
         self.assertIn("version:'1.6'", source)
 
+    def test_weekly_rotation_is_an_explainable_proxy_not_literal_fund_flow(self):
+        market = read('market.js')
+        ranker = read('scripts/opportunity_rank.py')
+        shards = read('scripts/build_market_shards.py')
+        css = read('market.css')
+        self.assertIn('const WEEKLY_ROTATION_THEMES=[', market)
+        self.assertIn('function weeklyRotationThemeRows()', market)
+        self.assertIn('function renderWeeklyRotation()', market)
+        self.assertIn('opportunity_return_5d_pct', market)
+        self.assertIn('PRICE + BREADTH PROXY', market)
+        self.assertIn('Não representa subscrições/resgates de fundos', market)
+        self.assertIn('"return_5d_pct": round(r5, 2)', ranker)
+        self.assertIn('"opportunity_return_5d_pct": timing.get("return_5d_pct")', ranker)
+        self.assertIn('"opportunity_return_5d_pct"', shards)
+        self.assertIn('.market-rotation-row{', css)
+        self.assertNotIn('weeklyFundFlowScore', market)
+
+
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
