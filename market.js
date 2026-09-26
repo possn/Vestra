@@ -1559,12 +1559,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         const scoreDelta=n(x.score)-curScore;
         const decision=evaluatePortfolioMove({mode:'alternative',sourceStock:r.stock,destination:x,rows:ranked,amount:r.value,totalAfter:analysed,sourceConv:curConv,destinationConv:conv,positionPct:r.value/analysed*100,sectorPct:sourceSectorPct,indirect,sourceIndirect:currentIndirect});
         if(!decision.autoEligible||scoreDelta<3) return null;
-        const overlapPenalty=Math.max(0,decision.overlapDelta)*4;
-        const valuationBonus=decision.evidence.valuation==='undervalued'?3:decision.evidence.valuation==='fair'?1:0;
-        const industryBonus=txt(x.industry)&&txt(x.industry)===txt(r.stock.industry)?3:0;
-        const rank=decision.convictionGain*1.35+scoreDelta*.25+valuationBonus+industryBonus-overlapPenalty;
-        return {stock:x,indirect,conv,scoreDelta,convDelta:decision.convictionGain,rank,decision};
-      }).filter(Boolean).sort((a,b)=>b.rank-a.rank)[0];
+        const valuationRank=decision.evidence.valuation==='undervalued'?2:decision.evidence.valuation==='fair'?1:0;
+        const sameIndustry=!!txt(x.industry)&&txt(x.industry)===txt(r.stock.industry);
+        return {stock:x,indirect,conv,scoreDelta,convDelta:decision.convictionGain,valuationRank,sameIndustry,decision};
+      }).filter(Boolean).sort((a,b)=>
+        b.convDelta-a.convDelta
+        ||a.decision.overlapDelta-b.decision.overlapDelta
+        ||b.scoreDelta-a.scoreDelta
+        ||Number(b.sameIndustry)-Number(a.sameIndustry)
+        ||b.valuationRank-a.valuationRank
+        ||b.conv-a.conv
+      )[0];
       if(cand){
         const fit=cand.indirect+1<currentIndirect?'better':cand.indirect>currentIndirect+1?'worse':'neutral';
         alternatives.push({from:r.stock,to:cand.stock,delta:cand.scoreDelta,convDelta:cand.convDelta,portfolioFit:fit,currentIndirect,candidateIndirect:cand.indirect,decision:cand.decision});
