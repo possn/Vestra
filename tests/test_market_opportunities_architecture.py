@@ -28,15 +28,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         for token in (
             "sc==null||sc<58||cov==null||cov<55||conf==null||conf<50",
             "return timing(s)>=48 && confirmed(s)>=2",
-            "[n(s?.score),.23]",
-            "[timing(s),.27]",
+            "const published=n(s?.opportunity_score)",
+            "[n(s?.score),.25]",
+            "[timing(s),.29]",
             "[n(s?.recovery_score),.10]",
-            "[n(s?.qarp_score),.10]",
-            "[n(s?.moat_score),.07]",
-            "[n(s?.capital_allocation_intelligence_score),.05]",
-            "[n(s?.confidence_score),.06]",
+            "[n(s?.qarp_score),.11]",
+            "[n(s?.moat_score),.08]",
+            "[n(s?.capital_allocation_intelligence_score),.06]",
             "[n(s?.value_pct),.06]",
-            "[n(s?.growth_pct),.03]",
+            "[n(s?.growth_pct),.02]",
             "[n(s?.sector_native_score),.03]",
             "Math.min(5,confirmed(s)*1.25)",
         ):
@@ -45,8 +45,24 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_opportunity_ui_does_not_alias_vestra_score_as_quality(self):
         source = read('market-opportunities.js')
         self.assertIn('Score Vestra ${Math.round(n(s?.score)||0)}', source)
-        self.assertIn('ranking de descoberta: Score Vestra + timing + sinais', source)
+        self.assertIn('prioridade para investigar agora; não mede adequação à tua carteira', source)
         self.assertNotIn('<span>Qualidade ${Math.round(n(s?.score)||0)}</span>', source)
+
+    def test_discovery_score_is_distinct_from_confidence_and_portfolio_fit(self):
+        source = read('market-opportunities.js')
+        ranker = read('scripts/opportunity_rank.py')
+        self.assertIn('function discoveryScore(s)', source)
+        self.assertIn('const published=n(s?.opportunity_score)', source)
+        self.assertIn('score:discoveryScore', source)
+        self.assertNotIn('[n(s?.confidence_score),.06]', source)
+        raw_block = ranker.split('raw = _weighted([', 1)[1].split('])', 1)[0]
+        self.assertNotIn('(conf,', raw_block)
+        self.assertIn('_gate("confidence"', ranker)
+        self.assertIn('if coverage < 65 or conf < 60:', ranker)
+        self.assertIn('Portfolio fit is intentionally absent', ranker)
+        self.assertNotIn('portfolio_fit', raw_block)
+        self.assertIn('<small>DISCOVERY</small>', source)
+        self.assertNotIn('<small>ENTRY</small>', source)
 
     def test_opportunities_reuse_canonical_market_universe_without_refetch(self):
         source = read('market-opportunities.js')
