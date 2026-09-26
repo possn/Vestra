@@ -53,11 +53,12 @@ class DiscoveryScoreContractTests(unittest.TestCase):
 
     def test_sparse_discovery_evidence_is_explicitly_capped(self):
         sparse_row = row()
-        for key in ("moat_score", "capital_allocation_intelligence_score", "sector_native_score", "low52_opportunity_score", "recovery_score", "valuation_score"):
+        for key in ("moat_score", "sector_native_score", "low52_opportunity_score", "recovery_score", "valuation_score"):
             sparse_row[key] = None
         sparse = MOD.assess(sparse_row)
         self.assertTrue(sparse["opportunity_eligible"])
         self.assertLess(sparse["opportunity_ranking_weight_coverage_pct"], 75)
+        self.assertGreaterEqual(sparse["opportunity_structural_signal_count"], 2)
         self.assertLessEqual(sparse["opportunity_score"], 64)
         self.assertTrue(any("Discovery" in cap["reason"] for cap in sparse["opportunity_caps"]))
 
