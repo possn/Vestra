@@ -287,5 +287,5 @@
   function start(){style();opportunities();const root=document.getElementById('marketPrimary');if(!root)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(root,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.4'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,dominantSleeve,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.5'});
 })();
