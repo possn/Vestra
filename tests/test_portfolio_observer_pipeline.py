@@ -165,7 +165,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("market-collapse-toolbar",collapsibles)
         self.assertNotIn(".market-collapse-toolbar{",css)
         self.assertIn("c.querySelector('.market-decision-center')",hierarchy)
-        self.assertIn("version:'1.8'",collapsibles)
+        self.assertIn("version:'1.7'",collapsibles)
         self.assertIn("function toggleCard(card)",collapsibles)
         self.assertIn("aria-expanded",collapsibles)
         self.assertIn("aria-label",collapsibles)
