@@ -22,6 +22,10 @@ SCANNER_INDEX = os.path.join(ROOT, "data", "stocks-scanner.json")
 SHARD_DIR = os.path.join(ROOT, "data", "dossiers")
 MANIFEST = os.path.join(ROOT, "data", "dossiers-manifest.json")
 PORTFOLIO_SECTORS = os.path.join(ROOT, "data", "portfolio-sectors.json")
+FUND_AUM_HISTORY = os.path.join(ROOT, "data", "fund-aum-history.json")
+FUND_FLOW_HISTORY_DAYS = 120
+FUND_FLOW_MIN_DAYS = 5
+FUND_FLOW_MAX_DAYS = 14
 
 # Startup performance budgets. The browser now prefers COLUMNAR_INDEX and falls
 # back to INDEX/SRC only when the compact payload is unavailable or invalid.
@@ -120,7 +124,113 @@ def shard_for(ticker: str) -> str:
     return f"{prefix}{bucket}"
 
 
-def index_row(row: dict) -> dict:
+def _finite_positive(value):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) and value > 0 else None
+
+
+def load_fund_aum_history(path: str = FUND_AUM_HISTORY) -> dict:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            value = json.load(f)
+        return value if isinstance(value, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+
+
+def update_fund_aum_history(rows: list[dict], as_of: str, history: dict | None = None) -> dict:
+    history = history if isinstance(history, dict) else {}
+    day = str(as_of or "")[:10]
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", day):
+        return history
+    for row in rows:
+        if str(row.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND", "FUND"}:
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        assets = _finite_positive(row.get("fund_total_assets"))
+        price = _finite_positive(row.get("current_price"))
+        if not ticker or assets is None or price is None:
+            continue
+        series = history.setdefault(ticker, {})
+        series[day] = {"assets": round(assets, 2), "price": round(price, 6)}
+        for old_day in sorted(series)[:-FUND_FLOW_HISTORY_DAYS]:
+            del series[old_day]
+    return history
+
+
+def fund_weekly_return(row: dict):
+    hist = row.get("price_history_1y") or []
+    points = []
+    for item in hist:
+        if not isinstance(item, dict):
+            continue
+        close = _finite_positive(item.get("close"))
+        day = str(item.get("date") or "")[:10]
+        if close is not None and day:
+            points.append((day, close))
+    if len(points) < 2:
+        return None
+    points.sort(key=lambda x: x[0])
+    previous, current = points[-2], points[-1]
+    if previous[1] <= 0:
+        return None
+    return round((current[1] / previous[1] - 1.0) * 100.0, 3)
+
+
+def fund_flow_metrics(row: dict, history: dict, as_of: str) -> dict:
+    result = {}
+    week_return = fund_weekly_return(row)
+    if week_return is not None:
+        result["fund_return_1w_pct"] = week_return
+    ticker = str(row.get("ticker") or "").strip().upper()
+    day = str(as_of or "")[:10]
+    series = history.get(ticker) if isinstance(history, dict) else None
+    if not ticker or not day or not isinstance(series, dict) or day not in series:
+        return result
+    try:
+        current_date = __import__("datetime").date.fromisoformat(day)
+    except ValueError:
+        return result
+    candidates = []
+    for prior_day, point in series.items():
+        if prior_day == day or not isinstance(point, dict):
+            continue
+        try:
+            prior_date = __import__("datetime").date.fromisoformat(prior_day)
+        except ValueError:
+            continue
+        gap = (current_date - prior_date).days
+        if FUND_FLOW_MIN_DAYS <= gap <= FUND_FLOW_MAX_DAYS:
+            candidates.append((abs(gap - 7), -gap, prior_day, point))
+    if not candidates:
+        return result
+    _, neg_gap, prior_day, previous = sorted(candidates)[0]
+    current = series.get(day) or {}
+    current_assets = _finite_positive(current.get("assets"))
+    prior_assets = _finite_positive(previous.get("assets"))
+    current_price = _finite_positive(current.get("price"))
+    prior_price = _finite_positive(previous.get("price"))
+    if None in {current_assets, prior_assets, current_price, prior_price}:
+        return result
+    price_ratio = current_price / prior_price
+    expected_assets_without_flow = prior_assets * price_ratio
+    flow_usd = current_assets - expected_assets_without_flow
+    flow_pct = flow_usd / expected_assets_without_flow * 100.0 if expected_assets_without_flow > 0 else None
+    if flow_pct is None or not math.isfinite(flow_pct):
+        return result
+    result.update({
+        "fund_flow_1w_pct": round(flow_pct, 3),
+        "fund_flow_1w_usd": round(flow_usd, 2),
+        "fund_flow_observation_days": -neg_gap,
+        "fund_flow_reference_date": prior_day,
+    })
+    return result
+
+
+def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> dict:
     out = {k: row.get(k) for k in INDEX_KEYS if k in row}
     ticker = str(row.get("ticker") or "").upper()
     out["ticker"] = ticker
@@ -160,6 +270,8 @@ def index_row(row: dict) -> dict:
         out.setdefault("fifty_two_week_high", max(closes))
         out.setdefault("low52_price_low", min(closes))
         out.setdefault("low52_price_high", max(closes))
+    if str(row.get("quote_type") or "").upper() in {"ETF", "MUTUALFUND", "FUND"}:
+        out.update(fund_flow_metrics(row, fund_history or {}, as_of))
     return out
 
 
@@ -246,6 +358,11 @@ def main() -> None:
             duplicate_count += 1
         rows_by_ticker[ticker] = row
     rows = list(rows_by_ticker.items())
+    fund_history = update_fund_aum_history(
+        [row for _, row in rows],
+        str(generated_at or "")[:10],
+        load_fund_aum_history(),
+    )
 
     shards: dict[str, dict[str, dict]] = defaultdict(dict)
     index_rows = []
@@ -256,7 +373,7 @@ def main() -> None:
         key = shard_for(ticker)
         shards[key][ticker] = row
         manifest[ticker] = key
-        index_rows.append(index_row(row))
+        index_rows.append(index_row(row, fund_history, str(generated_at or "")[:10]))
         results = scanner_results(row)
         if results:
             scanner_tickers[ticker] = results
@@ -279,6 +396,9 @@ def main() -> None:
     }
     with open(INDEX, "w", encoding="utf-8") as f:
         json.dump(index_payload, f, ensure_ascii=False, separators=(",", ":"))
+
+    with open(FUND_AUM_HISTORY, "w", encoding="utf-8") as f:
+        json.dump(fund_history, f, ensure_ascii=False, separators=(",", ":"))
 
     # Production startup representation. market-static-universe.js prefers this
     # field/rows payload and falls back to INDEX then SRC if it is unavailable or
