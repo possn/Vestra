@@ -55,12 +55,13 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('const published=n(s?.opportunity_score)', source)
         self.assertIn('score:discoveryScore', source)
         self.assertNotIn('[n(s?.confidence_score),.06]', source)
-        raw_block = ranker.split('raw = _weighted([', 1)[1].split('])', 1)[0]
-        self.assertNotIn('(conf,', raw_block)
+        ranking_block = ranker.split('ranking_parts = [', 1)[1].split(']', 1)[0]
+        self.assertNotIn('(conf,', ranking_block)
+        self.assertIn('raw, ranking_weight_coverage = _fixed_weighted(ranking_parts)', ranker)
         self.assertIn('_gate("confidence"', ranker)
         self.assertIn('if coverage < 65 or conf < 60:', ranker)
         self.assertIn('Portfolio fit is intentionally absent', ranker)
-        self.assertNotIn('portfolio_fit', raw_block)
+        self.assertNotIn('portfolio_fit', ranking_block)
         self.assertIn('<small>DISCOVERY</small>', source)
         self.assertNotIn('<small>ENTRY</small>', source)
 
@@ -101,6 +102,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("if(e.target.matches('[data-market-sector-select]') && e.target.value){ M.sector=e.target.value; renderPrimary(); }", market)
         self.assertNotIn("function lensMatch(row, lens)", lenses)
         self.assertNotIn("querySelectorAll('.market-list .market-row')", lenses)
+
+    def test_general_discovery_shortlist_has_diversification_guardrails(self):
+        source = read('market-opportunities.js')
+        self.assertIn('function diversify(rows,limit,{sectorCap=3,industryCap=2}={})', source)
+        self.assertIn('return diversify(selected,limit)', source)
+        self.assertIn('diversify,rankLens', source)
+        # Strategy-specific lenses remain pure rankings; only the general shortlist
+        # applies presentation-level diversification.
+        self.assertIn("if(lens!=='all')return rankedCandidates(universe,lens,sector).slice(0,limit)", source)
 
     def test_empty_lens_clears_previous_rows_instead_of_leaving_stale_candidates(self):
         source = read('market-opportunities.js')
