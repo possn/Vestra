@@ -106,6 +106,7 @@ def _timing_assessment(row):
             "label": "Dados de preço insuficientes",
             "reasons": [],
             "cautions": ["Histórico insuficiente para avaliar o timing"],
+            "return_5d_pct": None,
             "return_20d_pct": None,
             "return_60d_pct": None,
             "drawdown_from_high_pct": None,
@@ -113,6 +114,7 @@ def _timing_assessment(row):
             "severely_overextended": False,
         }
 
+    r5 = _ret(closes, 5)
     r20 = _ret(closes, 20)
     r60 = _ret(closes, 60)
     high = max(closes)
@@ -216,6 +218,7 @@ def _timing_assessment(row):
         "label": label,
         "reasons": reasons[:4],
         "cautions": cautions[:4],
+        "return_5d_pct": round(r5, 2) if r5 is not None else None,
         "return_20d_pct": round(r20, 2) if r20 is not None else None,
         "return_60d_pct": round(r60, 2) if r60 is not None else None,
         "drawdown_from_high_pct": round(dd, 2) if dd is not None else None,
@@ -243,6 +246,7 @@ def _insufficient(reason, components=None, gates=None, timing=None):
             "opportunity_timing_label": timing.get("label"),
             "opportunity_timing_reasons": timing.get("reasons", []),
             "opportunity_timing_cautions": timing.get("cautions", []),
+            "opportunity_return_5d_pct": timing.get("return_5d_pct"),
             "opportunity_return_20d_pct": timing.get("return_20d_pct"),
             "opportunity_return_60d_pct": timing.get("return_60d_pct"),
             "opportunity_drawdown_from_high_pct": timing.get("drawdown_from_high_pct"),
