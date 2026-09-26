@@ -305,6 +305,14 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('.market-rotation-wait-title{color:#18324a!important}', css)
         self.assertIn('.market-rotation-wait-copy{color:#4f6472!important;opacity:1!important}', css)
 
+    def test_weekly_rotation_exposes_partial_evidence_coverage(self):
+        market = read('market.js')
+        self.assertIn('function weeklyRotationCoverage()', market)
+        self.assertIn('weekly.length>=4', market)
+        self.assertIn("${coverage.ready}/${coverage.total} temas · 5d", market)
+        self.assertIn('Ainda a formar série:', market)
+        self.assertIn('Um tema só entra no ranking com ≥4 ações com retorno semanal.', market)
+
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
