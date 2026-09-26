@@ -132,19 +132,21 @@
     ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)||(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return ranked;
   }
-  function diversify(rows,limit,{sectorCap=3,industryCap=2}={}){
+  function diversify(rows,limit,{sectorCap=3,industryCap=2,recoveryCap=Infinity}={}){
     const source=Array.isArray(rows)?rows:[],selected=[];
-    const sectors=new Map(),industries=new Map();
+    const sectors=new Map(),industries=new Map();let recoveryCount=0;
     const key=v=>t(v)||'Unknown';
     const canAdd=candidate=>{
       const sector=key(candidate?.sector),industry=key(candidate?.industry);
-      return (sectors.get(sector)||0)<sectorCap&&(industries.get(industry)||0)<industryCap;
+      const recovery=lensEligible(candidate,'recovery');
+      return (sectors.get(sector)||0)<sectorCap&&(industries.get(industry)||0)<industryCap&&(!recovery||recoveryCount<recoveryCap);
     };
     const add=candidate=>{
       const sector=key(candidate?.sector),industry=key(candidate?.industry);
       selected.push(candidate);
       sectors.set(sector,(sectors.get(sector)||0)+1);
       industries.set(industry,(industries.get(industry)||0)+1);
+      if(lensEligible(candidate,'recovery'))recoveryCount++;
     };
     for(const candidate of source){
       if(!canAdd(candidate))continue;
@@ -215,7 +217,7 @@
     general.forEach(addPool);
     for(const bucket of buckets)bucket.rows.forEach(addPool);
     pool.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
-    return diversify(pool,limit);
+    return diversify(pool,limit,{recoveryCap:Math.min(5,limit)});
   }
   function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
   function sleeveLabel(key){return key==='strength'?'Força':key==='asymmetry'?'Assimetria':key==='inflection'?'Inflection':'';}
