@@ -26,7 +26,7 @@ class PortfolioClassifierBadgeStyleTests(unittest.TestCase):
         self.assertNotIn('./vestra-portfolio-focus.js', sw)
         self.assertNotIn('./vestra-portfolio-focus.css', sw)
         self.assertIn('window.VestraPortfolioCardClassifier', js)
-        self.assertIn("version:'1.7'", js)
+        self.assertIn("version:'1.8'", js)
 
 
 if __name__ == '__main__':

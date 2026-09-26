@@ -14,7 +14,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         loader=read('market-static-universe.js')
         runtime_loader=read('market-runtime-loader.js')
         self.assertNotIn('market-hotfix.js', h)
-        self.assertIn("portfolio-card-classifier.js?v=1.7", runtime_loader)
+        self.assertIn("portfolio-card-classifier.js?v=1.8", runtime_loader)
         self.assertNotIn('src="portfolio-card-classifier.js', h)
         for direct in (
             'src="vestra-portfolio-hierarchy.js',
@@ -48,13 +48,13 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertIn("{q:'Aderência desta carteira aos objetivos',kind:'target'", classifier)
         self.assertIn("monitor:{label:'Monitorizar'", ui)
         self.assertIn("kinds:['target','history','risk','stress']", ui)
-        self.assertIn("version:'1.7'", classifier)
+        self.assertIn("version:'1.8'", classifier)
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
         s=read('vestra-portfolio-hierarchy.js')
         for token in (
             "['research','priority','reinforce','review']",
-            "['swap','scenario','rebalance','overlap','map','plan']",
+            "['swap','etfopt','scenario','rebalance','overlap','map','plan']",
             "['target','history','risk','stress']",
             'ux454-swap-head','ux454-overlap-head','ux455-swap-summary','ux455-overlap-note',
             "rebalance:'Redistribuir capital'","plan:'Plano multi-movimento'",

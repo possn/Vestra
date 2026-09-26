@@ -16,7 +16,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         self.assertNotIn('market-hotfix.js', h)
         self.assertNotIn('market-enhancements.js', h)
         self.assertNotIn('vestra-ux-v452.js', h)
-        for module in ('portfolio-collapsibles.js?v=1.7', 'portfolio-card-classifier.js?v=1.7'):
+        for module in ('portfolio-collapsibles.js?v=1.7', 'portfolio-card-classifier.js?v=1.8'):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.1'):
@@ -75,7 +75,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
     def test_classifier_preserves_all_portfolio_kinds_hints_and_static_styles_without_hidden_shortcuts(self):
         s = read('portfolio-card-classifier.js')
         css = read('portfolio-card-classifier.css')
-        for kind in ('research','priority','map','reinforce','review','overlap','swap','scenario','target','history','risk','stress'):
+        for kind in ('research','priority','map','reinforce','review','overlap','swap','etfopt','scenario','target','history','risk','stress'):
             self.assertIn(f"kind:'{kind}'", s)
         self.assertNotIn('data-ux-jump', s)
         self.assertNotIn('jumpPortfolio', s)
@@ -92,7 +92,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         for token in ('.ux-card-badge.is-purple','.ux-card-badge.is-amber','.ux-card-badge.is-green'):
             self.assertIn(token, css)
         self.assertIn('window.VestraPortfolioCardClassifier', s)
-        self.assertIn("version:'1.7'", s)
+        self.assertIn("version:'1.8'", s)
 
     def test_portfolio_dossier_routing_delegates_navigation_exclusively(self):
         s = read('portfolio-dossier-routing.js')

@@ -5,7 +5,7 @@
   const GROUPS = {
     decide: {label:'Prioridades', title:'O que merece atenção', sub:'Research, reforços e posições que merecem atenção.', kinds:['research','priority','reinforce','review']},
     monitor:{label:'Monitorizar', title:'Como está a carteira', sub:'Saúde, objetivos, concentração e resistência da carteira.', kinds:['target','history','risk','stress']},
-    optimize:{label:'Otimizar', title:'Onde posso melhorar', sub:'Compara, simula e só depois decide onde redistribuir.', kinds:['swap','scenario','rebalance','overlap','map','plan']}
+    optimize:{label:'Otimizar', title:'Onde posso melhorar', sub:'Compara, simula e só depois decide onde redistribuir.', kinds:['swap','etfopt','scenario','rebalance','overlap','map','plan']}
   };
   const t=v=>String(v??'').trim();
   const num=v=>{const m=t(v).replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?Number(m[0]):null;};
@@ -104,7 +104,7 @@
       let cue=el.querySelector(':scope > .vpu-card-cue');
       const rows=cardCount(el),kind=t(el.dataset.uxKind);
       if(kind==='overlap')el.dataset.vpuScanTitle='Concentração e overlap';else delete el.dataset.vpuScanTitle;
-      const labels={research:'Research pendente',priority:'Prioridade',reinforce:'Possível reforço',review:'Rever',target:'Objetivos',history:'Evolução',risk:'Risco',stress:'Stress test',swap:'Comparar alternativas',scenario:'Simular impacto',rebalance:'Redistribuir capital',overlap:'Análise de apoio',map:'Mapa de decisões',plan:'Até 3 movimentos'};
+      const labels={research:'Research pendente',priority:'Prioridade',reinforce:'Possível reforço',review:'Rever',target:'Objetivos',history:'Evolução',risk:'Risco',stress:'Stress test',swap:'Comparar alternativas',etfopt:'Comparar ETFs',scenario:'Simular impacto',rebalance:'Redistribuir capital',overlap:'Análise de apoio',map:'Mapa de decisões',plan:'Até 3 movimentos'};
       if(!labels[kind]){cue?.remove();return;}
       if(!cue){cue=document.createElement('span');cue.className='vpu-card-cue';el.appendChild(cue);}
       const countable=['research','reinforce','review'].includes(kind);

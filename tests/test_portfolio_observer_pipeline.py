@@ -180,7 +180,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertNotIn("data-ux-jump",classifier)
         self.assertNotIn("jumpPortfolio",classifier)
         self.assertNotIn("ux-portfolio-shortcuts",css)
-        self.assertIn("version:'1.7'",classifier)
+        self.assertIn("version:'1.8'",classifier)
 
     def test_classifier_owns_portfolio_badges(self):
         classifier=read("portfolio-card-classifier.js")

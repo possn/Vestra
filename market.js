@@ -1002,6 +1002,109 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `Portfolio Fit: ${label} · ${parts.join(' · ')}`;
   }
 
+  function fundExpensePct(stock){
+    const raw=n(stock?.expense_ratio);
+    if(raw==null||raw<0)return null;
+    return Math.abs(raw)<=1?raw*100:raw;
+  }
+  function fundEtfScore(stock){
+    const published=n(stock?.etf_score);
+    if(published!=null)return published;
+    const assessed=window.VestraEtfIntelligence?.assess?.(stock);
+    return n(assessed?.etf_score);
+  }
+  function fundEtfCoverage(stock){
+    const published=n(stock?.etf_score_coverage_pct);
+    if(published!=null)return published;
+    const assessed=window.VestraEtfIntelligence?.assess?.(stock);
+    return n(assessed?.etf_score_coverage_pct);
+  }
+  function fundThemeKeys(stock){
+    return ETF_THEMES.filter(([key,,matcher])=>key!=='all'&&matcher.test(fundThemeText(stock))).map(([key])=>key);
+  }
+  function fundHoldingsOverlapPct(a,b){
+    const left=new Map((a?.top_holdings||[]).map(h=>[holdingSymbol(h),holdingWeight(h)]).filter(([k,w])=>k&&w!=null&&w>0));
+    const right=new Map((b?.top_holdings||[]).map(h=>[holdingSymbol(h),holdingWeight(h)]).filter(([k,w])=>k&&w!=null&&w>0));
+    if(!left.size||!right.size)return null;
+    let overlap=0;
+    for(const [ticker,w] of left)if(right.has(ticker))overlap+=Math.min(w,right.get(ticker));
+    return Math.max(0,Math.min(100,overlap));
+  }
+  function fundPortfolioDuplicationPct(stock, heldEtfs, sourceTicker=''){
+    const source=txt(sourceTicker).toUpperCase();
+    let maxOverlap=0, observed=false;
+    for(const row of heldEtfs||[]){
+      const ticker=txt(row?.stock?.ticker).toUpperCase();
+      if(!ticker||ticker===source||ticker===txt(stock?.ticker).toUpperCase())continue;
+      const overlap=fundHoldingsOverlapPct(stock,row.stock);
+      if(overlap==null)continue;
+      observed=true; maxOverlap=Math.max(maxOverlap,overlap);
+    }
+    return observed?maxOverlap:null;
+  }
+  function sameFundExposure(source,candidate){
+    const a=new Set(fundThemeKeys(source)), b=new Set(fundThemeKeys(candidate));
+    const common=[...a].filter(x=>b.has(x));
+    if(!common.length)return {match:false,common:[],overlap:null};
+    const overlap=fundHoldingsOverlapPct(source,candidate);
+    const sameCategory=txt(source?.fund_category||source?.category).toLowerCase()&&txt(source?.fund_category||source?.category).toLowerCase()===txt(candidate?.fund_category||candidate?.category).toLowerCase();
+    const specific=common.some(x=>!['world','europe','emerging','dividend','bonds'].includes(x));
+    const match=overlap==null?sameCategory||specific:overlap>=30||sameCategory;
+    return {match,common,overlap};
+  }
+  function findEtfOptimizeAlternatives(ranked,heldTickers){
+    const heldEtfs=ranked.filter(r=>isFund(r.stock));
+    const universe=M.stocks.filter(isFund);
+    const suggestions=[];
+    for(const row of heldEtfs){
+      const source=row.stock, sourceScore=fundEtfScore(source), sourceCoverage=fundEtfCoverage(source);
+      if(sourceScore==null||sourceCoverage==null||sourceCoverage<50)continue;
+      const sourceTer=fundExpensePct(source);
+      const sourceDup=fundPortfolioDuplicationPct(source,heldEtfs,txt(source.ticker));
+      const sourceDiv=n(source?.etf_score_dimensions?.diversification);
+      const candidates=universe.map(candidate=>{
+        const key=txt(candidate?.ticker).toUpperCase().replace(/.[A-Z]+$/,'');
+        if(!key||heldTickers.has(key))return null;
+        const exposure=sameFundExposure(source,candidate);
+        if(!exposure.match)return null;
+        const score=fundEtfScore(candidate), coverage=fundEtfCoverage(candidate);
+        if(score==null||coverage==null||coverage<50)return null;
+        const ter=fundExpensePct(candidate);
+        const scoreDelta=score-sourceScore;
+        const terSaving=sourceTer!=null&&ter!=null?sourceTer-ter:null;
+        const candidateDup=fundPortfolioDuplicationPct(candidate,heldEtfs,txt(source.ticker));
+        const dupDelta=sourceDup!=null&&candidateDup!=null?candidateDup-sourceDup:null;
+        const candDiv=n(candidate?.etf_score_dimensions?.diversification);
+        const divDelta=sourceDiv!=null&&candDiv!=null?candDiv-sourceDiv:null;
+        const improvements=[
+          scoreDelta>=3,
+          terSaving!=null&&terSaving>=0.05,
+          dupDelta!=null&&dupDelta<=-5,
+          divDelta!=null&&divDelta>=5,
+        ].filter(Boolean).length;
+        if(!improvements)return null;
+        if(scoreDelta<-2)return null;
+        if(terSaving!=null&&terSaving<-0.03)return null;
+        if(dupDelta!=null&&dupDelta>10)return null;
+        const evidence=[exposure.overlap!=null?1:0,terSaving!=null?1:0,dupDelta!=null?1:0,divDelta!=null?1:0].reduce((a,b)=>a+b,0);
+        return {source,candidate,sourceScore,score,scoreDelta,sourceTer,ter,terSaving,sourceDup,candidateDup,dupDelta,divDelta,exposure,improvements,evidence};
+      }).filter(Boolean).sort((a,b)=>b.improvements-a.improvements||b.scoreDelta-a.scoreDelta||(b.terSaving??-99)-(a.terSaving??-99)||(b.evidence-a.evidence));
+      if(candidates[0])suggestions.push(candidates[0]);
+    }
+    return suggestions.sort((a,b)=>b.improvements-a.improvements||b.scoreDelta-a.scoreDelta||(b.terSaving??-99)-(a.terSaving??-99)).slice(0,3);
+  }
+  function renderEtfOptimizeCard(rows){
+    if(!rows?.length)return '';
+    const meta=x=>{
+      const parts=[`ETF Score ${Math.round(x.sourceScore)}→${Math.round(x.score)}`];
+      if(x.sourceTer!=null&&x.ter!=null)parts.push(`TER ${x.sourceTer.toFixed(2)}→${x.ter.toFixed(2)}%`);
+      if(x.exposure.overlap!=null)parts.push(`overlap exposição ~${x.exposure.overlap.toFixed(0)}%`);
+      if(x.sourceDup!=null&&x.candidateDup!=null)parts.push(`duplicação carteira ${x.sourceDup.toFixed(0)}→${x.candidateDup.toFixed(0)}%`);
+      return parts.join(' · ');
+    };
+    return `<div class="market-detail-card market-etf-optimize"><div class="market-perspective-head"><div><small>ETF OPTIMIZE · MESMA EXPOSIÇÃO</small><h4>ETFs que podes comparar</h4></div><span class="market-data-age">${rows.length} candidatos</span></div><p class="market-case-note">Compara ETFs com exposição temática semelhante. A Vestra exige melhoria material em ETF Score, custo, diversificação ou duplicação e bloqueia candidatos que agravem materialmente as restantes dimensões.</p><div class="market-list">${rows.map(x=>renderRow(x.candidate,`Alternativa a ${x.source.ticker} · ${meta(x)}`)).join('')}</div><p class="market-case-note">Isto é uma shortlist de research, não uma recomendação automática de troca. Não altera Vestra Score, Discovery Score nem Portfolio Action.</p></div>`;
+  }
+
   function portfolioAction(stock, alternativesByTicker, context){
     const conviction=portfolioConviction(stock);
     const gate=txt(stock?.risk_gate);
@@ -1420,7 +1523,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const etfsForFit=ranked.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
     for(const r of ranked) r.portfolioFit=portfolioFit(r,sectorRows,analysed,etfsForFit);
 
-    const weak=ranked.slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,7);
+    const etfOptimizeRows=findEtfOptimizeAlternatives(ranked,heldTickers);
+    const etfOptimizeHtml=renderEtfOptimizeCard(etfOptimizeRows);
+
+        const weak=ranked.slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999)).slice(0,7);
     const alternatives=[];
     for(const r of weak){
       const curScore=n(r.stock.score), curConv=r.conviction; if(isFund(r.stock)||!txt(r.stock.sector)||curScore==null||curConv==null||r.value<=0) continue;
@@ -1536,6 +1642,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       <div class="market-detail-card"><h4>Posições a rever</h4>${compactRows(review,r=>`Convicção ${r.conviction==null?'—':Math.round(r.conviction)}/100 · ${txt(r.stock.risk_gate)||'clear'} · ${txt(r.stock.estimate_signal)||'expectativas —'}`)}</div>
       <div class="market-detail-card"><h4>Concentração e overlap</h4>${concHtml}</div>
       <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida do mesmo setor com convicção ≥5 pontos superior, Score ≥3 pontos superior e passa a avaliação canónica de evidência, Risk Budget e overlap.</p>${altHtml}</div>
+      ${etfOptimizeHtml}
       ${scenarioHtml}
       ${targetFitHtml}
       ${healthTimelineHtml}
