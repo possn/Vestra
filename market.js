@@ -840,23 +840,21 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function portfolioConviction(s){
-    const score=n(s?.score), conf=n(s?.confidence_score), est=n(s?.estimate_momentum_score);
+    // Conviction answers "how strong is the investment thesis?", not "how much
+    // evidence do we have?" or "is risk acceptable?". Confidence and Risk Gate
+    // remain independent decision gates so the same weakness is not counted twice.
+    const score=n(s?.score), est=n(s?.estimate_momentum_score);
     const valMap={undervalued:85,fair:65,overvalued:25,uncertain:40,insufficient:45};
     const val=valMap[txt(s?.valuation_signal)] ?? 50;
     const parts=[];
-    if(score!=null) parts.push([score,.55]);
-    if(conf!=null) parts.push([conf,.20]);
-    if(est!=null) parts.push([est,.10]);
-    parts.push([val,.15]);
+    if(score!=null) parts.push([score,.70]);
+    if(est!=null) parts.push([est,.12]);
+    parts.push([val,.18]);
     if(!parts.length) return null;
     let x=parts.reduce((a,[v,w])=>a+v*w,0)/parts.reduce((a,[,w])=>a+w,0);
     if(txt(s?.thesis_direction)==='up') x+=4;
     if(txt(s?.thesis_direction)==='down') x-=7;
     if(txt(s?.estimate_signal)==='deteriorating') x-=7;
-    const gate=txt(s?.risk_gate);
-    if(gate==='watch') x=Math.min(x,64);
-    if(gate==='high') x=Math.min(x,49);
-    if(gate==='severe') x=Math.min(x,35);
     return Math.max(0,Math.min(100,x));
   }
 
