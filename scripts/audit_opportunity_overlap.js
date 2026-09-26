@@ -116,6 +116,28 @@ const repeated = Object.entries(appearances)
 const eligibleCounts = Object.fromEntries(lenses.map(lens => [lens, stocks.filter(stock => api.lensEligible(stock, lens)).length]));
 const allRows = api.rankLens(stocks, 'all', { limit: topN });
 const diagnostics = shortlistDiagnostics(allRows);
+const scored = stocks
+  .filter(stock => Number.isFinite(Number(stock?.score)))
+  .slice()
+  .sort((a, b) => Number(b.score) - Number(a.score));
+const topScoreNames = scored.slice(0, topN).map(stock => String(stock?.ticker || '').trim()).filter(Boolean);
+const scoreDecileCount = Math.max(1, Math.ceil(scored.length * 0.10));
+const topScoreDecile = new Set(scored.slice(0, scoreDecileCount).map(stock => String(stock?.ticker || '').trim()).filter(Boolean));
+const discoveryNames = ranked.all;
+const topScoreSet = new Set(topScoreNames);
+const overlapTopScore = discoveryNames.filter(ticker => topScoreSet.has(ticker));
+const overlapTopDecile = discoveryNames.filter(ticker => topScoreDecile.has(ticker));
+const novelty = {
+  top_score_ranked: topScoreNames,
+  overlap_with_top_score_count: overlapTopScore.length,
+  overlap_with_top_score_pct: topN ? Number((overlapTopScore.length / topN * 100).toFixed(1)) : 0,
+  overlap_with_top_score: overlapTopScore,
+  top_score_decile_size: scoreDecileCount,
+  discovery_in_top_score_decile_count: overlapTopDecile.length,
+  discovery_in_top_score_decile_pct: topN ? Number((overlapTopDecile.length / topN * 100).toFixed(1)) : 0,
+  discovery_in_top_score_decile: overlapTopDecile,
+  discovery_novel_count: discoveryNames.filter(ticker => !topScoreDecile.has(ticker)).length,
+};
 const report = {
   generated_at: payload?.generated_at || null,
   universe_count: stocks.length,
@@ -125,5 +147,6 @@ const report = {
   pairs,
   repeated_in_3plus_lenses: repeated,
   general_shortlist_diagnostics: diagnostics,
+  discovery_novelty_vs_score: novelty,
 };
 console.log(JSON.stringify(report, null, 2));
