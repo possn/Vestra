@@ -132,18 +132,30 @@
     ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)||(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return ranked;
   }
-  function diversify(rows,limit,{sectorCap=3,industryCap=2}={}){
-    const source=Array.isArray(rows)?rows:[],selected=[],deferred=[];
-    const sectors=new Map(),industries=new Map();
+  function diversify(rows,limit,{sectorCap=3,industryCap=2,recoveryCap=Infinity}={}){
+    const source=Array.isArray(rows)?rows:[],selected=[];
+    const sectors=new Map(),industries=new Map();let recoveryCount=0;
     const key=v=>t(v)||'Unknown';
-    for(const candidate of source){
+    const canAdd=candidate=>{
       const sector=key(candidate?.sector),industry=key(candidate?.industry);
-      const sectorN=sectors.get(sector)||0,industryN=industries.get(industry)||0;
-      if(sectorN>=sectorCap||industryN>=industryCap){deferred.push(candidate);continue;}
-      selected.push(candidate);sectors.set(sector,sectorN+1);industries.set(industry,industryN+1);
-      if(selected.length>=limit)return selected;
+      const recovery=lensEligible(candidate,'recovery');
+      return (sectors.get(sector)||0)<sectorCap&&(industries.get(industry)||0)<industryCap&&(!recovery||recoveryCount<recoveryCap);
+    };
+    const add=candidate=>{
+      const sector=key(candidate?.sector),industry=key(candidate?.industry);
+      selected.push(candidate);
+      sectors.set(sector,(sectors.get(sector)||0)+1);
+      industries.set(industry,(industries.get(industry)||0)+1);
+      if(lensEligible(candidate,'recovery'))recoveryCount++;
+    };
+    for(const candidate of source){
+      if(!canAdd(candidate))continue;
+      add(candidate);
+      if(selected.length>=limit)break;
     }
-    for(const candidate of deferred){if(selected.length>=limit)break;selected.push(candidate);}
+    // Caps are guardrails, not preferences: never refill with names that were
+    // rejected for concentration. A shorter shortlist is more informative than
+    // twelve near-duplicates.
     return selected;
   }
   function rankLens(universe,lens,{limit=12,sector='all'}={}){
@@ -196,8 +208,19 @@
       }
     }
 
-    selected.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
-    return diversify(selected,limit);
+    // Diversify over a deeper canonical pool, not only the first twelve
+    // archetype picks. This preserves hard concentration caps without shrinking
+    // the useful shortlist when equally eligible names exist further down.
+    const pool=[],poolSeen=new Set();
+    const addPool=candidate=>{const key=t(candidate?.ticker).toUpperCase();if(key&&!poolSeen.has(key)){pool.push(candidate);poolSeen.add(key);}};
+    // Preserve the round-robin's archetype priority. Re-sorting this pool by
+    // Discovery would collapse the shortlist back toward value/recovery and
+    // erase the diversity work above. General/bucket rows only refill names
+    // rejected by concentration guardrails.
+    selected.forEach(addPool);
+    general.forEach(addPool);
+    for(const bucket of buckets)bucket.rows.forEach(addPool);
+    return diversify(pool,limit,{recoveryCap:Math.min(5,limit)});
   }
   function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
   function sleeveLabel(key){return key==='strength'?'Força':key==='asymmetry'?'Assimetria':key==='inflection'?'Inflection':'';}
@@ -287,5 +310,5 @@
   function start(){style();opportunities();const root=document.getElementById('marketPrimary');if(!root)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(root,{childList:true,subtree:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.4'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,dominantSleeve,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.5'});
 })();
