@@ -6,6 +6,28 @@ ROOT = Path(__file__).resolve().parents[1]
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
+class PortfolioSignalSeparationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.source = (ROOT / "market.js").read_text(encoding="utf-8")
+
+    def test_conviction_does_not_embed_confidence_or_risk_gate(self):
+        block = self.source.split("function portfolioConviction(s){", 1)[1].split("\n  function holdingSymbol", 1)[0]
+        self.assertNotIn("confidence_score", block)
+        self.assertNotIn("risk_gate", block)
+        self.assertIn("estimate_momentum_score", block)
+        self.assertIn("valuation_signal", block)
+        self.assertIn("thesis_direction", block)
+
+    def test_confidence_and_risk_remain_explicit_decision_gates(self):
+        action = self.source.split("function portfolioAction(", 1)[1].split("\n  const PORTFOLIO_TARGETS_KEY", 1)[0]
+        evidence = self.source.split("function portfolioMoveEvidence(", 1)[1].split("\n  function evaluatePortfolioMove", 1)[0]
+        self.assertIn("confidence_score", action)
+        self.assertIn("risk_gate", action)
+        self.assertIn("confidence_score", evidence)
+        self.assertIn("risk_gate", evidence)
+
+
 class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
     def test_same_sector_alternatives_use_canonical_move_evaluation(self):
         s = read("market.js")
