@@ -270,3 +270,44 @@ test('iPhone/WebKit: portfolio alternative card opens dossier and watch star sta
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+
+test('iPhone/WebKit: weekly rotation stays compact and explicit', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  await openMarket(page);
+  const rotation = page.locator('.market-rotation');
+  await expect(rotation).toBeVisible({ timeout: 15_000 });
+  await expect(rotation.locator('h4')).toHaveText('Para onde está a rodar o mercado?');
+
+  // The primary state is deliberately concise: no always-visible explanatory summary.
+  await expect(rotation.locator('.market-rotation-summary')).toHaveCount(0);
+
+  const waiting = await rotation.evaluate(el => el.classList.contains('market-rotation--waiting'));
+  if (!waiting) {
+    const groups = rotation.locator('.market-rotation-group');
+    await expect(groups).toHaveCount(2);
+    await expect(groups.nth(0).locator('.market-rotation-group__head strong')).toHaveText('Entradas');
+    await expect(groups.nth(1).locator('.market-rotation-group__head strong')).toHaveText('Saídas');
+
+    expect(await groups.nth(0).locator('.market-rotation-row').count()).toBeLessThanOrEqual(3);
+    expect(await groups.nth(1).locator('.market-rotation-row').count()).toBeLessThanOrEqual(3);
+
+    const method = rotation.locator('.market-rotation-method');
+    await expect(method.locator('summary')).toHaveText('Como é calculado?');
+    await expect(method.locator('.market-rotation-method__body')).toBeHidden();
+    await method.locator('summary').click();
+    await expect(method.locator('.market-rotation-method__body')).toBeVisible();
+
+    const explanatoryColors = await rotation.locator('.market-rotation-group__head small, .market-rotation-method summary').evaluateAll(nodes =>
+      nodes.map(node => getComputedStyle(node).color)
+    );
+    expect(explanatoryColors.length).toBeGreaterThan(0);
+    expect(explanatoryColors.every(color => color !== 'rgb(255, 255, 255)' && color !== 'rgba(255, 255, 255, 1)')).toBe(true);
+  } else {
+    await expect(rotation.locator('.market-rotation-wait-copy')).toHaveText('A formar a primeira leitura semanal.');
+  }
+
+  expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
