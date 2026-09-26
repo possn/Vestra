@@ -130,6 +130,11 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("cov==null||cov>=70?dom:null", source)
         self.assertIn('evidência limitada', source)
         self.assertIn('dom=credibleDominantSleeve(s)', source)
+        self.assertIn('function discoveryCaps(s)', source)
+        self.assertIn('function capSummary(s)', source)
+        self.assertIn('Limitado:', source)
+        self.assertIn('ux453-cap-note', source)
+        self.assertIn('.ux453-cap-note{', css)
 
     def test_general_discovery_shortlist_has_diversification_guardrails(self):
         source = read('market-opportunities.js')
