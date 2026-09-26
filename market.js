@@ -937,7 +937,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
     if(gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50)) return {key:'review',label:'Rever',tone:'risk',reason:reasons.slice(0,2).join(' · ')||'convicção baixa'};
     if(conviction!=null&&conviction>=70&&conf!=null&&conf>=60&&!['overvalued','uncertain'].includes(valuation)) {
-      if(ctx.fit==='concentrated') return {key:'hold',label:'Manter',tone:'neutral',reason:`boa tese · não reforçar por ${ctx.flags?.[0]||'concentração'}`};
+      if(ctx.fit==='concentrated'||ctx.fit==='watch') return {key:'hold',label:'Manter',tone:'neutral',reason:`boa tese · não reforçar por ${ctx.flags?.[0]||(ctx.fit==='watch'?'Portfolio Fit em atenção':'concentração')}`};
       return {key:'reinforce',label:'Reforçar',tone:'positive',reason:reasons.slice(0,2).join(' · ')||'convicção elevada'};
     }
     return {key:'hold',label:'Manter',tone:'neutral',reason:reasons.slice(0,2).join(' · ')||'tese sem alteração material'};
