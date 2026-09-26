@@ -30,7 +30,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'market-company-brief.js?v=2.1',
             'portfolio-sheet-navigation.js?v=1.5',
             'portfolio-collapsibles.js?v=1.7',
-            'portfolio-card-classifier.js?v=1.6',
+            'portfolio-card-classifier.js?v=1.7',
             'market-data-loader.js?v=2.6',
         ):
             self.assertIn(lazy, loader)
