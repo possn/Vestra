@@ -94,6 +94,18 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("key:'reinforce',label:'Reforçar'", action_block)
 
 
+    def test_portfolio_decision_surfaces_reuse_canonical_portfolio_action(self):
+        market = read('market.js')
+        intelligence = market.split('function portfolioIntelligence(rows,total)', 1)[1].split('function buildMultiMovePlan', 1)[0]
+        center = market.split('function renderPortfolioDecisionCenter(rows,total)', 1)[1].split('function portfolioIntelligence(rows,total)', 1)[0]
+        self.assertIn("const reinforce=actionRows.filter(r=>r.action?.key==='reinforce')", intelligence)
+        self.assertIn("const review=actionRows.filter(r=>['review','replace'].includes(r.action?.key))", intelligence)
+        self.assertIn('renderPortfolioDecisionCenter(actionRows,total)', intelligence)
+        self.assertIn("const reinforce=ranked.filter(r=>r.action?.key==='reinforce')", center)
+        self.assertIn("const review=ranked.filter(r=>['review','replace'].includes(r.action?.key))", center)
+        self.assertNotIn("const reinforce=ranked.filter(r=>r.conviction!=null&&r.conviction>=70", center)
+
+
     def test_inflation_shield_is_an_explainable_portfolio_regime_lens(self):
         market = read('market.js')
         css = read('market.css')
