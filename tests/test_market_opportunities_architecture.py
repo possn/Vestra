@@ -61,7 +61,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('_gate("confidence"', ranker)
         self.assertIn('if coverage < 65 or conf < 60:', ranker)
         self.assertIn('Portfolio fit is intentionally absent', ranker)
-        self.assertNotIn('portfolio_fit', ranking_block)
+        self.assertNotIn('portfolio_fit', sleeve_block)
         self.assertIn('<small>DISCOVERY</small>', source)
         self.assertNotIn('<small>ENTRY</small>', source)
 
