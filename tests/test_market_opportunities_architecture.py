@@ -305,6 +305,19 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('.market-rotation-wait-title{color:#18324a!important}', css)
         self.assertIn('.market-rotation-wait-copy{color:#4f6472!important;opacity:1!important}', css)
 
+    def test_weekly_rotation_separates_inflows_from_outflows(self):
+        market = read('market.js')
+        css = read('market.css')
+        self.assertIn("const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50)", market)
+        self.assertIn("const outflows=rows.filter(r=>r.med5<0 && r.breadth<=50)", market)
+        self.assertIn("renderRotationGroup('A receber capital'", market)
+        self.assertIn("renderRotationGroup('A perder capital'", market)
+        self.assertIn('Nenhum tema com entrada semanal confirmada', market)
+        self.assertIn('market-rotation-summary', market)
+        self.assertIn('market-rotation-note', market)
+        self.assertIn('.market-rotation-intro{margin:6px 0 10px;color:#4f6472!important', css)
+        self.assertIn('.market-rotation-note{color:#4f6472!important;opacity:1!important}', css)
+
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
