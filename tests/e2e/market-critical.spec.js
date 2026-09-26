@@ -311,3 +311,27 @@ test('iPhone/WebKit: weekly rotation stays compact and explicit', async ({ page 
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+
+test('iPhone/WebKit: shared Worker hydrates into legacy blank settings', async ({ page }) => {
+  const worker = 'https://delicate-bar-cc80.pedrossnunes.workers.dev';
+  await page.addInitScript(() => {
+    localStorage.setItem('PF_STATE_V6', JSON.stringify({
+      settings: { currency: 'EUR', workerUrl: '' },
+      assets: [{ id: 'legacy-worker-fixture', class: 'Ações/ETFs', name: 'Fixture', ticker: 'MSFT', value: 100 }],
+      liabilities: [], transactions: [], bankTransactions: [], dividends: [], divSummaries: [], history: [],
+      brokerData: { files: [], events: [], positions: [] }, priceHistory: {}, fxHistory: {}
+    }));
+  });
+
+  await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true);
+  await page.evaluate(() => window.setView('settings'));
+
+  const input = page.locator('#settingsWorkerUrl');
+  await expect(input).toHaveValue(worker);
+  await expect(page.locator('#quoteSyncStatus')).not.toHaveText('Worker por configurar');
+
+  const runtimeWorker = await page.evaluate(() => window.VestraRuntimeConfig?.workerUrl || '');
+  expect(runtimeWorker).toBe(worker);
+});
