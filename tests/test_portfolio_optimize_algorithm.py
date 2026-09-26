@@ -138,7 +138,12 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("||comparePortfolioReview(a.r,b.r)", s)
         self.assertIn("review[0].action?.key==='replace'?'Substituir':'Rever'", s)
         self.assertIn("e avaliar substituição", s)
-        self.assertNotIn(".sort((a,b)=>(a.conviction??999)-(b.conviction??999))", s)
+        queue = s.split("function renderResearchQueue(review){", 1)[1].split("\n  function renderPortfolioDecisionCenter", 1)[0]
+        decision = s.split("function renderPortfolioDecisionCenter(", 1)[1].split("\n  function portfolioIntelligence(", 1)[0]
+        intelligence = s.split("function portfolioIntelligence(rows,total)", 1)[1].split("\n  function buildMultiMovePlan", 1)[0]
+        self.assertNotIn("(a.r.conviction??999)-(b.r.conviction??999)", queue)
+        self.assertIn(".sort(comparePortfolioReview)", decision)
+        self.assertIn(".sort(comparePortfolioReview).slice(0,3)", intelligence)
 
     def test_same_value_scenario_uses_canonical_move_evaluator(self):
         s = read("market.js")
