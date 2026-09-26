@@ -326,9 +326,14 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("renderRotationGroup('A perder capital'", market)
         self.assertIn('Nenhum tema com entrada semanal confirmada', market)
         self.assertIn('market-rotation-summary', market)
-        self.assertIn('market-rotation-note', market)
-        self.assertIn('.market-rotation-intro{margin:6px 0 10px;color:#4f6472!important', css)
-        self.assertIn('.market-rotation-note{color:#4f6472!important;opacity:1!important}', css)
+        self.assertIn('market-rotation-method', market)
+        self.assertIn('Como é calculado · cobertura', market)
+        self.assertIn('market-rotation-group__head--compact', market)
+        self.assertIn('.market-rotation-method{', css)
+        self.assertIn('.market-rotation-group__head--compact{', css)
+        rendered = market.split('function renderWeeklyRotation()', 1)[1].split('function renderDiscover()', 1)[0]
+        self.assertNotIn('class="market-rotation-intro"', rendered)
+        self.assertNotIn('class="market-case-note market-rotation-note"', rendered)
 
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
