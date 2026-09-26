@@ -208,6 +208,42 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     ['Imobiliário',/real estate|reit|property/i],
     ['Consumo discricionário',/consumer cyclical|consumer discretionary|auto manufacturer|travel|leisure|retail/i],
   ];
+  const WEEKLY_ROTATION_ETFS={
+    'Semicondutores':['SMH','SOXX','XSD'],
+    'Biotecnologia':['XBI','IBB','ARKG'],
+    'Minerais & metais':['COPX','PICK'],
+    'Agricultura':[],
+    'Energia':['XLE','XOP'],
+    'Defesa & aeroespacial':['ITA','PPA','XAR'],
+    'IA & software':['IGV','AIQ','BOTZ','CHAT','WCLD'],
+    'Bancos':['KBE','KRE','XLF'],
+    'Imobiliário':['VNQ','IYR','XLRE'],
+    'Consumo discricionário':['XLY','VCR'],
+  };
+  function weeklyEtfConfirmation(label){
+    const tickers=WEEKLY_ROTATION_ETFS[label]||[];
+    const funds=tickers.map(t=>M.byTicker.get(t)).filter(Boolean);
+    const withFlow=funds.filter(f=>n(f.fund_flow_1w_usd)!=null);
+    const withReturn=funds.filter(f=>n(f.fund_return_1w_pct)!=null);
+    const flowUsd=withFlow.length?withFlow.reduce((a,f)=>a+n(f.fund_flow_1w_usd),0):null;
+    const etfReturn=withReturn.length?rotationMedian(withReturn.map(f=>n(f.fund_return_1w_pct)).filter(x=>x!=null)):null;
+    return {withFlow:withFlow.length,withReturn:withReturn.length,flowUsd,etfReturn};
+  }
+  function compactFlowUsd(v){
+    if(v==null)return 'baseline';
+    const sign=v>=0?'+':'-'; const x=Math.abs(v);
+    if(x>=1e9)return sign+'$'+(x/1e9).toFixed(1)+'B';
+    if(x>=1e6)return sign+'$'+(x/1e6).toFixed(0)+'M';
+    if(x>=1e3)return sign+'$'+(x/1e3).toFixed(0)+'K';
+    return sign+'$'+x.toFixed(0);
+  }
+  function rotationEtfText(r){
+    const e=r?.etf;
+    if(e?.withFlow)return 'ETF flow '+compactFlowUsd(e.flowUsd)+' · '+e.withFlow+' fundos';
+    if(e?.withReturn)return 'ETFs '+(e.etfReturn>=0?'+':'')+e.etfReturn.toFixed(1)+'% · flow a formar baseline';
+    return 'ETF flow sem cobertura';
+  }
+
   function weeklyRotationReturn(stock){
     const published=n(stock?.opportunity_return_5d_pct);
     if(published!=null) return published;
@@ -239,7 +275,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       else if(med5<=-.5&&breadth<=45){signal='A perder capital',tone='risk';}
       else if(med5>0){signal='A melhorar',tone='warn';}
       else if(med5<0){signal='A enfraquecer',tone='warn';}
-      rows.push({label,count:weekly.length,med5,breadth,med20,rank,signal,tone});
+      const etf=weeklyEtfConfirmation(label);
+      rows.push({label,count:weekly.length,med5,breadth,med20,rank,signal,tone,etf});
     }
     return rows.sort((a,b)=>b.rank-a.rank);
   }
@@ -247,7 +284,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const rows=weeklyRotationThemeRows();
     if(!rows.length) return `<div class="market-rotation market-rotation--waiting"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">5 dias</span></div><p class="market-case-note">A série semanal entra no próximo refresh do universo. A Vestra não substitui dados ausentes por uma falsa leitura de fluxos.</p></div>`;
     const leaders=rows.slice(0,8);
-    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PRICE + BREADTH PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">5 dias</span></div><p class="market-rotation-intro">Deteta rotação semanal por retorno mediano e breadth dentro de cada tema; 20d serve apenas de confirmação. Não representa subscrições/resgates de fundos.</p><div class="market-rotation-grid">${leaders.map((r,i)=>`<div class="market-rotation-row is-${r.tone}"><div class="market-rotation-rank">${i+1}</div><div class="market-rotation-name"><strong>${esc(r.label)}</strong><small>${esc(r.signal)} · ${r.count} ações</small></div><div class="market-rotation-bar"><i style="width:${Math.max(4,Math.min(100,r.breadth))}%"></i><small>breadth ${r.breadth.toFixed(0)}%</small></div><div class="market-rotation-metrics"><strong>${r.med5>=0?'+':''}${r.med5.toFixed(1)}%</strong><small>5d mediano${r.med20!=null?` · 20d ${r.med20>=0?'+':''}${r.med20.toFixed(1)}%`:''}</small></div></div>`).join('')}</div><p class="market-case-note">“Entrada” significa força relativa disseminada no preço, não fluxo monetário observado. Para fluxo real, a próxima camada deve usar variação de AUM/flows de ETFs temáticos.</p></div>`;
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · PRICE + BREADTH PROXY</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">5 dias</span></div><p class="market-rotation-intro">Deteta rotação semanal por retorno mediano e breadth dentro de cada tema; 20d serve apenas de confirmação. Não representa subscrições/resgates de fundos.</p><div class="market-rotation-grid">${leaders.map((r,i)=>`<div class="market-rotation-row is-${r.tone}"><div class="market-rotation-rank">${i+1}</div><div class="market-rotation-name"><strong>${esc(r.label)}</strong><small>${esc(r.signal)} · ${r.count} ações</small><em>${esc(rotationEtfText(r))}</em></div><div class="market-rotation-bar"><i style="width:${Math.max(4,Math.min(100,r.breadth))}%"></i><small>breadth ${r.breadth.toFixed(0)}%</small></div><div class="market-rotation-metrics"><strong>${r.med5>=0?'+':''}${r.med5.toFixed(1)}%</strong><small>5d mediano${r.med20!=null?` · 20d ${r.med20>=0?'+':''}${r.med20.toFixed(1)}%`:''}</small></div></div>`).join('')}</div><p class="market-case-note">O ranking continua baseado em preço + breadth. ETF flow é apenas confirmação: estima criações/resgates pela variação de AUM ajustada ao retorno do ETF e só aparece após uma janela observável de 5–14 dias.</p></div>`;
   }
 
   function renderDiscover(){

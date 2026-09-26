@@ -256,6 +256,25 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn('weeklyFundFlowScore', market)
 
 
+    def test_weekly_rotation_etf_flow_is_confirmation_not_ranking_alpha(self):
+        market = read('market.js')
+        shards = read('scripts/build_market_shards.py')
+        css = read('market.css')
+        self.assertIn('const WEEKLY_ROTATION_ETFS={', market)
+        self.assertIn('function weeklyEtfConfirmation(label)', market)
+        self.assertIn('fund_flow_1w_usd', market)
+        self.assertIn('fund_return_1w_pct', market)
+        self.assertIn('O ranking continua baseado em preço + breadth', market)
+        rotation_block = market.split('function weeklyRotationThemeRows()', 1)[1].split('function renderWeeklyRotation()', 1)[0]
+        self.assertIn('const rank=(med5||0)*1.4+(breadth-50)*.08+(med20||0)*.25', rotation_block)
+        self.assertNotIn('flowUsd', rotation_block.split('const rank=', 1)[1].split(';', 1)[0])
+        self.assertIn('FUND_AUM_HISTORY', shards)
+        self.assertIn('def fund_flow_metrics(row: dict, history: dict, as_of: str)', shards)
+        self.assertIn('expected_assets_without_flow = prior_assets * price_ratio', shards)
+        self.assertIn('"fund_flow_1w_usd"', shards)
+        self.assertIn('"fund_flow_1w_pct"', shards)
+        self.assertIn('.market-rotation-name em{', css)
+
     def test_service_worker_caches_canonical_modules(self):
         sw = read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-', sw)
