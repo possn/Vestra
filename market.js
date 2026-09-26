@@ -1849,30 +1849,49 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       if(targets.overlap==='reduce'&&indirect>1.5) score-=(indirect-1.5)*2.5;
       return {stock,conv,score,capacity,existingValue,sector,sectorValue,indirect,tier,warnings,autoEligible};
     }).filter(Boolean).sort((a,b)=>{ const rank={preferred:0,acceptable:1,research:2}; return Number(b.autoEligible)-Number(a.autoEligible)||(rank[a.tier]-rank[b.tier])||b.score-a.score; });
-    const allocations=[], used=new Set(), sectorAdds=new Map(); let remaining=fresh; const shares=[.5,.3,.2];
-    for(let i=0;i<shares.length&&remaining>=50;i++){
-      const cand=candidates.find(c=>{
-        if(!c.autoEligible||used.has(txt(c.stock.ticker).toUpperCase())||c.capacity<50) return false;
-        const sectorRoom=Math.max(0,afterTotal*maxSector/100-c.sectorValue-(sectorAdds.get(c.sector)||0));
-        return Math.min(c.capacity,sectorRoom)>=50;
-      }); if(!cand) break;
-      let desired=i===shares.length-1?remaining:Math.max(50,Math.round((fresh*shares[i])/50)*50);
-      const sectorRoom=Math.max(0,afterTotal*maxSector/100-cand.sectorValue-(sectorAdds.get(cand.sector)||0));
-      let alloc=Math.min(remaining,cand.capacity,sectorRoom,desired); alloc=Math.floor(alloc/50)*50; if(alloc<50){used.add(txt(cand.stock.ticker).toUpperCase()); i--; continue;}
-      used.add(txt(cand.stock.ticker).toUpperCase()); sectorAdds.set(cand.sector,(sectorAdds.get(cand.sector)||0)+alloc); remaining-=alloc;
-      const positionPct=(cand.existingValue+alloc)/afterTotal*100, sectorPct=(cand.sectorValue+(sectorAdds.get(cand.sector)||0))/afterTotal*100;
-      allocations.push({...cand,amount:alloc,positionPct,sectorPct});
-    }
-    if(remaining>=50){
-      for(const cand of candidates){
-        if(remaining<50) break; if(!cand.autoEligible||used.has(txt(cand.stock.ticker).toUpperCase())) continue;
+    const baselineRisk=portfolioRiskProfile(rows,afterTotal);
+    const riskPct=(group,name)=>baselineRisk[group].find(x=>x.name===name)?.pct||0;
+    const riskAdds={factors:new Map(),currencies:new Map(),regions:new Map()};
+    const addRisk=(group,name,delta)=>riskAdds[group].set(name,(riskAdds[group].get(name)||0)+delta);
+    const riskAddSafe=(stock,amount)=>{
+      const delta=amount/afterTotal*100, checks=[];
+      for(const name of stockRiskTags(stock)) checks.push(['factors',name,delta,n(targets.maxFactor)||45]);
+      checks.push(['currencies',stockCurrency(stock),delta,n(targets.maxCurrency)||70]);
+      checks.push(['regions',stockRegion(stock),delta,n(targets.maxRegion)||70]);
+      return checks.every(([group,name,inc,limit])=>{
+        const current=riskPct(group,name)+(riskAdds[group].get(name)||0), next=current+inc;
+        return current>limit ? next<=current+.01 : next<=limit+.01;
+      });
+    };
+    const applyRiskAdd=(stock,amount)=>{
+      const delta=amount/afterTotal*100;
+      for(const name of stockRiskTags(stock)) addRisk('factors',name,delta);
+      addRisk('currencies',stockCurrency(stock),delta);
+      addRisk('regions',stockRegion(stock),delta);
+    };
+    const allocationsByTicker=new Map(), sectorAdds=new Map(); let remaining=fresh;
+    const eligible=candidates.filter(c=>c.autoEligible).slice(0,5);
+    let progressed=true;
+    while(remaining>=50&&progressed){
+      progressed=false;
+      for(const cand of eligible){
+        if(remaining<50) break;
+        const key=txt(cand.stock.ticker).toUpperCase(), current=allocationsByTicker.get(key)||0;
         const sectorRoom=Math.max(0,afterTotal*maxSector/100-cand.sectorValue-(sectorAdds.get(cand.sector)||0));
-        let alloc=Math.min(remaining,cand.capacity,sectorRoom); alloc=Math.floor(alloc/50)*50; if(alloc<50) continue;
-        used.add(txt(cand.stock.ticker).toUpperCase()); sectorAdds.set(cand.sector,(sectorAdds.get(cand.sector)||0)+alloc); remaining-=alloc;
-        allocations.push({...cand,amount:alloc,positionPct:(cand.existingValue+alloc)/afterTotal*100,sectorPct:(cand.sectorValue+(sectorAdds.get(cand.sector)||0))/afterTotal*100});
-        if(allocations.length>=5) break;
+        const positionRoom=Math.max(0,cand.capacity-current);
+        const tranche=Math.min(50,remaining,sectorRoom,positionRoom);
+        if(tranche<50||!riskAddSafe(cand.stock,tranche)) continue;
+        allocationsByTicker.set(key,current+tranche);
+        sectorAdds.set(cand.sector,(sectorAdds.get(cand.sector)||0)+tranche);
+        applyRiskAdd(cand.stock,tranche);
+        remaining-=tranche; progressed=true;
       }
     }
+    const allocations=eligible.map(c=>{
+      const amount=allocationsByTicker.get(txt(c.stock.ticker).toUpperCase())||0;
+      if(amount<50)return null;
+      return {...c,amount,positionPct:(c.existingValue+amount)/afterTotal*100,sectorPct:(c.sectorValue+(sectorAdds.get(c.sector)||0))/afterTotal*100};
+    }).filter(Boolean);
     const currentConvRows=rows.map(r=>({...r,conv:portfolioConviction(r.stock)})).filter(r=>r.conv!=null&&r.value>0), convBase=currentConvRows.reduce((a,r)=>a+r.value,0)||1;
     const currentConv=currentConvRows.reduce((a,r)=>a+r.value*r.conv,0)/convBase;
     const added=allocations.reduce((a,x)=>a+x.amount,0), afterConv=(currentConv*convBase+allocations.reduce((a,x)=>a+x.amount*x.conv,0))/(convBase+added||1);
