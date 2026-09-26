@@ -136,5 +136,65 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertGreater(summary["factor_rank_information_coefficient"]["quality_pct"], 0)
 
 
+    def test_score_v2_readiness_stays_frozen_without_two_mature_horizons(self):
+        strong = {
+            "cohort_count": 8,
+            "cohort_capture_pct": 100,
+            "median_cohort_rank_ic": 0.08,
+            "median_cohort_top_minus_bottom_pct": 4.0,
+            "peer_shadow_comparison": {
+                "cohort_count": 8,
+                "median_production_cohort_rank_ic": 0.08,
+                "median_peer_shadow_cohort_rank_ic": 0.12,
+                "median_production_cohort_top_minus_bottom_pct": 4.0,
+                "median_peer_shadow_cohort_top_minus_bottom_pct": 5.0,
+            },
+        }
+        result = MOD.score_v2_readiness({"28": strong, "84": {}, "168": {}})
+        self.assertEqual(result["status"], "production_change_deferred")
+        self.assertTrue(result["production_weights_frozen"])
+        self.assertEqual(result["qualified_horizons"], [28])
+
+    def test_score_v2_readiness_allows_review_but_not_deployment(self):
+        def strong():
+            return {
+                "cohort_count": 8,
+                "cohort_capture_pct": 90,
+                "median_cohort_rank_ic": 0.06,
+                "median_cohort_top_minus_bottom_pct": 3.0,
+                "peer_shadow_comparison": {
+                    "cohort_count": 8,
+                    "median_production_cohort_rank_ic": 0.06,
+                    "median_peer_shadow_cohort_rank_ic": 0.10,
+                    "median_production_cohort_top_minus_bottom_pct": 3.0,
+                    "median_peer_shadow_cohort_top_minus_bottom_pct": 3.5,
+                },
+            }
+        result = MOD.score_v2_readiness({"28": strong(), "84": strong(), "168": {}})
+        self.assertEqual(result["status"], "candidate_review_allowed")
+        self.assertFalse(result["production_weights_frozen"])
+        self.assertEqual(result["qualified_horizons"], [28, 84])
+        self.assertIn("permits review, not deployment", result["rule"])
+
+    def test_score_v2_readiness_rejects_shadow_improvement_with_worse_spread(self):
+        pack = {
+            "cohort_count": 8,
+            "cohort_capture_pct": 100,
+            "median_cohort_rank_ic": 0.08,
+            "median_cohort_top_minus_bottom_pct": 4.0,
+            "peer_shadow_comparison": {
+                "cohort_count": 8,
+                "median_production_cohort_rank_ic": 0.08,
+                "median_peer_shadow_cohort_rank_ic": 0.14,
+                "median_production_cohort_top_minus_bottom_pct": 4.0,
+                "median_peer_shadow_cohort_top_minus_bottom_pct": 2.0,
+            },
+        }
+        result = MOD.score_v2_readiness({"28": pack, "84": pack, "168": {}})
+        self.assertTrue(result["production_weights_frozen"])
+        reasons = result["blockers"][0]["reasons"]
+        self.assertIn("shadow_spread_worse_or_unavailable", reasons)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
