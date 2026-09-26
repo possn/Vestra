@@ -53,13 +53,43 @@ class DiscoveryScoreContractTests(unittest.TestCase):
 
     def test_sparse_discovery_evidence_is_explicitly_capped(self):
         sparse_row = row()
-        for key in ("moat_score", "capital_allocation_intelligence_score", "low52_opportunity_score", "valuation_score"):
+        for key in ("moat_score", "sector_native_score", "low52_opportunity_score", "recovery_score", "valuation_score"):
             sparse_row[key] = None
         sparse = MOD.assess(sparse_row)
         self.assertTrue(sparse["opportunity_eligible"])
         self.assertLess(sparse["opportunity_ranking_weight_coverage_pct"], 75)
+        self.assertGreaterEqual(sparse["opportunity_structural_signal_count"], 2)
         self.assertLessEqual(sparse["opportunity_score"], 64)
         self.assertTrue(any("Discovery" in cap["reason"] for cap in sparse["opportunity_caps"]))
+
+    def test_discovery_exposes_three_explainable_sleeves(self):
+        out = MOD.assess(row())
+        self.assertEqual(set(out["opportunity_sleeves"]), {"strength", "asymmetry", "inflection"})
+        self.assertEqual(set(out["opportunity_sleeve_coverage_pct"]), {"strength", "asymmetry", "inflection"})
+        self.assertTrue(all(0 <= value <= 100 for value in out["opportunity_sleeves"].values()))
+
+    def test_correlated_strength_proxies_cannot_dominate_whole_discovery_score(self):
+        base = row()
+        weak = dict(base)
+        weak.update({"score": 40, "moat_score": 40, "capital_allocation_intelligence_score": 40, "sector_native_score": 40})
+        strong = dict(base)
+        strong.update({"score": 100, "moat_score": 100, "capital_allocation_intelligence_score": 100, "sector_native_score": 100})
+        weak_out, strong_out = MOD.assess(weak), MOD.assess(strong)
+        self.assertEqual(weak_out["opportunity_sleeves"]["asymmetry"], strong_out["opportunity_sleeves"]["asymmetry"])
+        self.assertEqual(weak_out["opportunity_sleeves"]["inflection"], strong_out["opportunity_sleeves"]["inflection"])
+        # Strength is intentionally only 36% of the final Discovery composition.
+        self.assertLess(strong_out["opportunity_score_raw"] - weak_out["opportunity_score_raw"], 25)
+
+    def test_inflection_can_outrank_slightly_higher_structural_score(self):
+        early = row()
+        mature = row()
+        early["score"] = 70
+        mature["score"] = 75
+        # A falling/late setup should not win Discovery merely via a higher Vestra Score.
+        mature["price_history_1y"] = [{"close": 100 + i * 0.9} for i in range(90)]
+        early_out, mature_out = MOD.assess(early), MOD.assess(mature)
+        self.assertGreater(early_out["opportunity_sleeves"]["inflection"], mature_out["opportunity_sleeves"]["inflection"])
+        self.assertGreater(early_out["opportunity_score"], mature_out["opportunity_score"])
 
     def test_confidence_still_gates_insufficient_evidence(self):
         out = MOD.assess(row(confidence=49))
