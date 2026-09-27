@@ -114,6 +114,16 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("return {fit,html,profile,breaches,hasBreaches,incomplete,coverage}", block)
         self.assertIn("renderRiskBudget(ranked,total)", s)
 
+    def test_inflation_shield_exposes_partial_portfolio_coverage(self):
+        s = read("market.js")
+        block = s.split("function renderInflationShield(rows,portfolioTotal=0){", 1)[1].split("\n\n  const PORTFOLIO_HEALTH_KEY", 1)[0]
+        self.assertIn("const partial=portfolioTotal>0&&coverage<35", block)
+        self.assertIn("const status=partial?'Dados parciais'", block)
+        self.assertIn("Como reage a parte classificável à inflação?", block)
+        self.assertIn("cobertura insuficiente para conclusão global", block)
+        self.assertIn("menos de 35% da carteira tiver classificação Inflation Shield", block)
+        self.assertIn("renderInflationShield(ranked,total)", s)
+
     def test_portfolio_ui_treats_risk_fit_as_higher_is_better(self):
         s = read("vestra-portfolio-ui.js")
         self.assertIn("riskFit<65", s)
