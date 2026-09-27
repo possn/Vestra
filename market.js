@@ -1546,7 +1546,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const review=ranked.filter(r=>['review','replace'].includes(r.action?.key)).sort(comparePortfolioReview);
     const activeReview=review.filter(r=>!['reviewed','snoozed'].includes(researchQueueState(r.stock.ticker).status));
     const reinforce=ranked.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction);
-    const structuralAlert=topPositionPct>targets.maxPosition||(topSector?.pct||0)>targets.maxSector||riskBudget.hasBreaches||(worst?.resilience??100)<70;
+    const structuralAlert=topPositionPct>targets.maxPosition||(topSector?.pct||0)>targets.maxSector||riskBudget.hasBreaches||(worst?.resilience??100)<75;
     const decisionState=review.length?'Rever':structuralAlert?'Atenção':'Estável';
     const tone=review.length?'is-risk':structuralAlert?'is-warn':'is-positive';
     const materialEtfOptimize=(etfOptimizeRows||[]).find(x=>x.improvements>=2||x.scoreDelta>=5||(x.terSaving!=null&&x.terSaving>=.10)||(x.dupDelta!=null&&x.dupDelta<=-10))||null;
@@ -1555,14 +1555,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(topPositionPct>targets.maxPosition&&topPosition) priorities.push({label:`${topPosition.stock.ticker} está acima do objetivo por posição (${topPositionPct.toFixed(1)}%)`,kind:'ticker',value:topPosition.stock.ticker});
     if(topSector&&topSector.pct>targets.maxSector) priorities.push({label:`${topSector.name} está acima do objetivo setorial (${topSector.pct.toFixed(1)}%)`,kind:'targets',value:'targets'});
     if(riskBudget.hasBreaches) priorities.push({label:`Risk Budget: ${riskBudget.breaches.length} ${riskBudget.breaches.length===1?'limite excedido':'limites excedidos'}`,kind:'riskbudget',value:'riskbudget'});
-    if(worst&&worst.resilience<70) priorities.push({label:`Stress mais exigente: ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label} · resiliência ${worst.resilience}/100`,kind:'stress',value:worst.key});
+    if(worst&&worst.resilience<75) priorities.push({label:`Stress mais exigente: ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label} · resiliência ${worst.resilience}/100`,kind:'stress',value:worst.key});
     if(materialEtfOptimize) priorities.push({label:`Comparar ${materialEtfOptimize.source.ticker} → ${materialEtfOptimize.candidate.ticker}: ETF Optimize encontrou ${materialEtfOptimize.improvements} melhoria${materialEtfOptimize.improvements===1?'':'s'} material${materialEtfOptimize.improvements===1?'':'is'}`,kind:'etfoptimize',value:materialEtfOptimize.source.ticker});
     if(!priorities.length&&reinforce[0]) priorities.push({label:`Carteira sem alerta dominante; ${reinforce[0].stock.ticker} é o reforço com maior convicção atual`,kind:'ticker',value:reinforce[0].stock.ticker});
     const next=activeReview[0]?{label:activeReview[0].action?.key==='replace'?`Abrir ${activeReview[0].stock.ticker} e avaliar substituição`:`Abrir ${activeReview[0].stock.ticker} e rever a tese`,kind:'ticker',value:activeReview[0].stock.ticker}
       :topPositionPct>targets.maxPosition?{label:'Usar o Rebalancer para reduzir concentração por posição',kind:'rebalancer',value:'rebalancer'}
       :topSector&&topSector.pct>targets.maxSector?{label:`Rever concentração no setor ${topSector.name}`,kind:'targets',value:'targets'}
       :riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições',kind:'riskbudget',value:'riskbudget'}
-      :worst&&worst.resilience<70?{label:`Rever o stress ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label}`,kind:'stress',value:worst.key}
+      :worst&&worst.resilience<75?{label:`Rever o stress ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label}`,kind:'stress',value:worst.key}
       :review.length?{label:'Acompanhar posições já revistas antes de novo reforço',kind:'actionmap',value:'review'}
       :materialEtfOptimize?{label:`Comparar ${materialEtfOptimize.source.ticker} com ${materialEtfOptimize.candidate.ticker} no ETF Optimize`,kind:'etfoptimize',value:materialEtfOptimize.source.ticker}
       :reinforce[0]?{label:`Avaliar reforço em ${reinforce[0].stock.ticker}`,kind:'ticker',value:reinforce[0].stock.ticker}

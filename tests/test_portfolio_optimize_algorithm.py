@@ -33,8 +33,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         s = read("market.js")
         block = s.split("function renderPortfolioDecisionCenter(", 1)[1].split("\n  function portfolioIntelligence(", 1)[0]
         self.assertIn("const structuralAlert=", block)
-        self.assertIn("(worst?.resilience??100)<70", block)
-        self.assertNotIn("(worst?.resilience||100)<70", block)
+        self.assertIn("(worst?.resilience??100)<75", block)
+        self.assertNotIn("(worst?.resilience||100)<75", block)
         self.assertIn("const decisionState=", block)
         self.assertIn("data-vpu-state=", block)
         self.assertIn("<small>Risk Fit</small>", block)
@@ -46,7 +46,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("Rever os limites excedidos no Risk Budget antes de reforçar posições", block)
         self.assertIn("topSector&&topSector.pct>targets.maxSector", block)
         self.assertIn("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'", block)
-        self.assertIn("worst&&worst.resilience<70?{label:", block)
+        self.assertIn("worst&&worst.resilience<75?{label:", block)
+        self.assertIn("r.resilience>=75?'is-positive'", s)
         self.assertLess(block.index("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
 
     def test_portfolio_health_does_not_compare_target_fit_across_target_changes(self):
