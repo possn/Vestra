@@ -1419,17 +1419,19 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const bucket=composite>=2.5?'benefit':composite>=.75?'resilient':composite>-.75?'neutral':'vulnerable';
     return {bucket,drivers,evidence,structural,composite};
   }
-  function renderInflationShield(rows){
-    const total=rows.reduce((a,r)=>a+(n(r.value)||0),0)||1;
+  function renderInflationShield(rows,portfolioTotal=0){
+    const analysedTotal=rows.reduce((a,r)=>a+(n(r.value)||0),0)||1;
+    const total=portfolioTotal>0?portfolioTotal:analysedTotal;
     const classified=rows.map(r=>({...r,inflation:inflationShieldProfile(r.stock)})).filter(r=>r.inflation&&r.value>0);
     const covered=classified.reduce((a,r)=>a+r.value,0), coverage=covered/total*100;
+    const partial=portfolioTotal>0&&coverage<35;
     const groups={benefit:[],resilient:[],neutral:[],vulnerable:[]};
     classified.forEach(r=>groups[r.inflation.bucket].push(r));
     const weight=k=>groups[k].reduce((a,r)=>a+r.value,0)/(covered||1)*100;
     Object.values(groups).forEach(xs=>xs.sort((a,b)=>b.value-a.value));
     const protective=weight('benefit')+weight('resilient'), vulnerable=weight('vulnerable');
-    const status=vulnerable>=25?'Pressão elevada':protective>=65?'Proteção relevante':protective>=45?'Proteção mista':'Proteção limitada';
-    const statusTone=vulnerable>=25?'is-risk':protective>=65?'is-positive':'is-warn';
+    const status=partial?'Dados parciais':vulnerable>=25?'Pressão elevada':protective>=65?'Proteção relevante':protective>=45?'Proteção mista':'Proteção limitada';
+    const statusTone=partial?'is-warn':vulnerable>=25?'is-risk':protective>=65?'is-positive':'is-warn';
     const zones=Object.keys(INFLATION_BUCKETS).map(k=>{
       const meta=INFLATION_BUCKETS[k], pct=weight(k), names=groups[k].slice(0,4).map(r=>esc(r.stock.ticker)).join(' · ');
       return `<div class="market-inflation-zone market-inflation-zone--${meta.tone}"><span>${esc(meta.label)}</span><strong>${pct.toFixed(0)}%</strong><small>${names||'—'}</small></div>`;
@@ -1439,7 +1441,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const meta=INFLATION_BUCKETS[r.inflation.bucket], portfolioWeight=r.value/total*100;
       return `<button type="button" class="market-inflation-row" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${esc(r.inflation.drivers.slice(0,2).join(' · '))}</small></span><em class="market-inflation-badge market-inflation-badge--${meta.tone}">${esc(meta.label)}</em><b>${portfolioWeight.toFixed(1)}%</b></button>`;
     }).join('');
-    return `<div class="market-detail-card market-inflation-shield"><div class="market-perspective-head"><div><small>INFLATION SHIELD · REGIME LENS</small><h4>Como reage a carteira à inflação?</h4></div><span class="market-inflation-status ${statusTone}">${esc(status)}</span></div><p class="market-case-note">Lente fundamental explicável para um regime de inflação persistente com taxas restritivas. Não altera Vestra Score, Discovery nem Portfolio Fit.</p><div class="market-inflation-coverage"><span>Cobertura ${coverage.toFixed(0)}%</span><small>distribuição da exposição classificada</small></div><div class="market-inflation-bar" aria-label="Distribuição Inflation Shield">${bar}</div><div class="market-inflation-zones">${zones}</div><div class="market-inflation-list">${list||'<p class="market-case-note">Sem posições classificáveis com os dados atuais.</p>'}</div><p class="market-case-note">Proxy, não backtest: usa setor, moat/profitabilidade/estabilidade, balanço/leverage/cash flow e sensibilidade a taxas. ETFs só são classificados quando o tema é explícito. Não infere correlação histórica com CPI quando essa série não existe.</p></div>`;
+    return `<div class="market-detail-card market-inflation-shield"><div class="market-perspective-head"><div><small>INFLATION SHIELD · REGIME LENS</small><h4>Como reage a parte classificável à inflação?</h4></div><span class="market-inflation-status ${statusTone}">${esc(status)}</span></div><p class="market-case-note">Lente fundamental explicável para um regime de inflação persistente com taxas restritivas. Não altera Vestra Score, Discovery nem Portfolio Fit.</p><div class="market-inflation-coverage"><span>Cobertura ${coverage.toFixed(0)}%</span><small>${partial?'cobertura insuficiente para conclusão global':'distribuição da exposição classificada'}</small></div><div class="market-inflation-bar" aria-label="Distribuição Inflation Shield">${bar}</div><div class="market-inflation-zones">${zones}</div><div class="market-inflation-list">${list||'<p class="market-case-note">Sem posições classificáveis com os dados atuais.</p>'}</div><p class="market-case-note">${partial?'O estado global fica indisponível enquanto menos de 35% da carteira tiver classificação Inflation Shield. ':''}Proxy, não backtest: usa setor, moat/profitabilidade/estabilidade, balanço/leverage/cash flow e sensibilidade a taxas. ETFs só são classificados quando o tema é explícito. Não infere correlação histórica com CPI quando essa série não existe.</p></div>`;
   }
 
   const PORTFOLIO_HEALTH_KEY='vestra_portfolio_health_v1';
@@ -1733,7 +1735,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const riskBudget=renderRiskBudget(ranked,total);
     const riskBudgetHtml=riskBudget.html;
     const stressTestHtml=renderPortfolioStressTest(ranked,total);
-    const inflationShieldHtml=renderInflationShield(ranked);
+    const inflationShieldHtml=renderInflationShield(ranked,total);
     const targetContext=[targets.maxPosition,targets.maxSector,targets.overlap].join('|');
     const riskContext=[targets.maxFactor,targets.maxCurrency,targets.maxRegion].join('|');
     const researchContext=ranked.map(r=>txt(r.stock.ticker).toUpperCase()).filter(Boolean).sort().join('|');
