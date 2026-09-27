@@ -217,7 +217,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const maxPos=Math.max(3,Math.min(30,n(targets?.maxPosition)||10))", s)
         self.assertIn("const maxSector=Math.max(10,Math.min(60,n(targets?.maxSector)||25))", s)
         self.assertIn("const portfolioTargets=loadPortfolioTargets()", s)
-        self.assertIn("portfolioFit(r,sectorRows,analysed,etfsForFit,portfolioTargets)", s)
+        self.assertIn("portfolioFit(r,sectorRows,portfolioBase,etfsForFit,portfolioTargets)", s)
         self.assertIn("const structuralDeterioration=gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50)", s)
         self.assertIn("if(structuralDeterioration||gate==='watch') return {key:'review'", s)
         self.assertIn("gate!=='watch'&&!['overvalued','uncertain'].includes(valuation)", s)
