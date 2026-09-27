@@ -1693,7 +1693,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const riskBudgetHtml=riskBudget.html;
     const stressTestHtml=renderPortfolioStressTest(ranked);
     const inflationShieldHtml=renderInflationShield(ranked);
-    const targetContext=[targets.maxPosition,targets.maxSector,targets.maxFactor,targets.maxCurrency,targets.maxRegion,targets.overlap,targets.tilt].join('|');
+    const targetContext=[targets.maxPosition,targets.maxSector,targets.overlap].join('|');
     const healthSnapshot={targetFit,targetContext,conviction:portfolioConvictionNow,topPosition:topPosPct,topSector:sectorRows[0]?.pct||0,overlapCount:ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length,riskPositions:(actionCounts.review||0)+(actionCounts.replace||0),riskFit:riskBudget.fit};
     const healthHistory=savePortfolioHealthSnapshot(healthSnapshot);
     const healthTimelineHtml=renderPortfolioHealthTimeline(healthHistory);

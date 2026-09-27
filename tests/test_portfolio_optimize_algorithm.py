@@ -49,7 +49,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
 
     def test_portfolio_health_does_not_compare_target_fit_across_target_changes(self):
         s = read("market.js")
-        self.assertIn("const targetContext=[targets.maxPosition,targets.maxSector,targets.maxFactor,targets.maxCurrency,targets.maxRegion,targets.overlap,targets.tilt].join('|')", s)
+        self.assertIn("const targetContext=[targets.maxPosition,targets.maxSector,targets.overlap].join('|')", s)
+        self.assertNotIn("targets.maxFactor,targets.maxCurrency,targets.maxRegion,targets.overlap,targets.tilt", s)
         self.assertIn("const comparableTargets=!!prev&&txt(latest.targetContext)&&txt(prev.targetContext)&&latest.targetContext===prev.targetContext", s)
         self.assertIn("comparableTargets?healthDeltaLabel(latest.targetFit,prev.targetFit,false,''):'targets alterados'", s)
         self.assertIn("Os Portfolio Targets mudaram desde o snapshot anterior", s)
