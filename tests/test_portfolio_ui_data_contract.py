@@ -20,7 +20,7 @@ class PortfolioUiDataContractTests(unittest.TestCase):
 
     def test_decision_center_exposes_structured_metrics(self):
         for token in (
-            'data-vpu-conviction="${conviction.toFixed(1)}"',
+            'data-vpu-conviction="${conviction==null?\'\':conviction.toFixed(1)}"',
             'data-vpu-risk="${riskBudget.fit}"',
             'data-vpu-review="${review.length}"',
             'data-vpu-state="${esc(decisionState)}"',
