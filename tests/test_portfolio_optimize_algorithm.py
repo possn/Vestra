@@ -33,6 +33,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         s = read("market.js")
         block = s.split("function renderPortfolioDecisionCenter(", 1)[1].split("\n  function portfolioIntelligence(", 1)[0]
         self.assertIn("const structuralAlert=", block)
+        self.assertIn("(worst?.resilience??100)<70", block)
+        self.assertNotIn("(worst?.resilience||100)<70", block)
         self.assertIn("const decisionState=", block)
         self.assertIn("data-vpu-state=", block)
         self.assertIn("<small>Risk Fit</small>", block)
