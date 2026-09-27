@@ -1539,7 +1539,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function renderPortfolioDecisionCenter(rows,total,etfOptimizeRows=[]){
-    const analysed=rows.reduce((a,r)=>a+(n(r.value)||0),0)||1;
+    const analysedValue=rows.reduce((a,r)=>a+(n(r.value)||0),0);
+    const analysed=analysedValue||1;
+    const coverage=total>0?analysedValue/total*100:0;
+    const partialCoverage=total>0&&coverage<35;
     const ranked=rows.map(r=>({...r,conviction:portfolioConviction(r.stock)}));
     const convRows=ranked.filter(r=>r.conviction!=null&&r.value>0);
     const convWeight=convRows.reduce((a,r)=>a+r.value,0);
@@ -1556,8 +1559,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const activeReview=review.filter(r=>!['reviewed','snoozed'].includes(researchQueueState(r.stock.ticker,researchReviewSignalKey(r)).status));
     const reinforce=ranked.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction);
     const structuralAlert=topPositionPct>targets.maxPosition||(topSector?.pct||0)>targets.maxSector||riskBudget.hasBreaches||(worst?.resilience??100)<75;
-    const decisionState=activeReview.length?'Rever':structuralAlert?'Atenção':review.length?'Acompanhar':'Estável';
-    const tone=activeReview.length?'is-risk':structuralAlert||review.length?'is-warn':'is-positive';
+    const decisionState=activeReview.length?'Rever':structuralAlert?'Atenção':review.length?'Acompanhar':partialCoverage?'Dados parciais':'Estável';
+    const tone=activeReview.length?'is-risk':structuralAlert||review.length||partialCoverage?'is-warn':'is-positive';
     const materialEtfOptimize=(etfOptimizeRows||[]).find(x=>x.improvements>=2||x.scoreDelta>=5||(x.terSaving!=null&&x.terSaving>=.10)||(x.dupDelta!=null&&x.dupDelta<=-10))||null;
     const priorities=[];
     if(activeReview[0]) priorities.push({label:`${activeReview[0].action?.key==='replace'?'Substituir':'Rever'} ${activeReview[0].stock.ticker}: ${activeReview[0].conviction==null?'convicção insuficiente':`convicção ${Math.round(activeReview[0].conviction)}/100`}`,kind:'ticker',value:activeReview[0].stock.ticker});
@@ -1566,6 +1569,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(riskBudget.hasBreaches) priorities.push({label:`Risk Budget: ${riskBudget.breaches.length} ${riskBudget.breaches.length===1?'limite excedido':'limites excedidos'}`,kind:'riskbudget',value:'riskbudget'});
     if(worst&&worst.resilience<75) priorities.push({label:`Stress mais exigente: ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label} · resiliência ${worst.resilience}/100`,kind:'stress',value:worst.key});
     if(materialEtfOptimize) priorities.push({label:`Comparar ${materialEtfOptimize.source.ticker} → ${materialEtfOptimize.candidate.ticker}: ETF Optimize encontrou ${materialEtfOptimize.improvements} melhoria${materialEtfOptimize.improvements===1?'':'s'} material${materialEtfOptimize.improvements===1?'':'is'}`,kind:'etfoptimize',value:materialEtfOptimize.source.ticker});
+    if(partialCoverage) priorities.push({label:`Cobertura de research insuficiente: ${coverage.toFixed(0)}% da carteira analisada`,kind:'health',value:'health'});
     if(!priorities.length&&reinforce[0]) priorities.push({label:`Carteira sem alerta dominante; ${reinforce[0].stock.ticker} é o reforço com maior convicção atual`,kind:'ticker',value:reinforce[0].stock.ticker});
     const next=activeReview[0]?{label:activeReview[0].action?.key==='replace'?`Abrir ${activeReview[0].stock.ticker} e avaliar substituição`:`Abrir ${activeReview[0].stock.ticker} e rever a tese`,kind:'ticker',value:activeReview[0].stock.ticker}
       :topPositionPct>targets.maxPosition?{label:'Usar o Rebalancer para reduzir concentração por posição',kind:'rebalancer',value:'rebalancer'}
@@ -1574,10 +1578,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       :worst&&worst.resilience<75?{label:`Rever o stress ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label}`,kind:'stress',value:worst.key}
       :review.length?{label:'Acompanhar posições já revistas antes de novo reforço',kind:'actionmap',value:'attention'}
       :materialEtfOptimize?{label:`Comparar ${materialEtfOptimize.source.ticker} com ${materialEtfOptimize.candidate.ticker} no ETF Optimize`,kind:'etfoptimize',value:materialEtfOptimize.source.ticker}
+      :partialCoverage?{label:'Completar research antes de tirar conclusões sobre a carteira',kind:'health',value:'health'}
       :reinforce[0]?{label:`Avaliar reforço em ${reinforce[0].stock.ticker}`,kind:'ticker',value:reinforce[0].stock.ticker}
       :{label:'Manter e acompanhar',kind:'health',value:'health'};
     const jumpAttrs=x=>`data-decision-jump="${esc(x.kind)}" data-decision-value="${esc(x.value||'')}"`;
-    return `<div class="market-detail-card market-decision-center" data-vpu-conviction="${conviction==null?'':conviction.toFixed(1)}" data-vpu-risk="${riskBudget.fit}" data-vpu-review="${review.length}" data-vpu-state="${esc(decisionState)}"><div class="market-perspective-head"><div><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora?</h4></div><span class="market-target-fit-score ${tone}">${esc(decisionState)}</span></div><div class="market-decision-kpis"><button type="button" ${jumpAttrs({kind:'actionmap',value:'all'})}><small>Convicção</small><strong>${conviction==null?'—':conviction.toFixed(1)}</strong></button><button type="button" ${jumpAttrs({kind:'riskbudget',value:'riskbudget'})}><small>Risk Fit</small><strong>${riskBudget.fit}</strong></button><button type="button" ${jumpAttrs({kind:'stress',value:worst?.key||'rates'})}><small>Pior stress</small><strong>${worst?worst.resilience:'—'}</strong></button><button type="button" ${jumpAttrs({kind:'actionmap',value:'attention'})}><small>Rever/Substituir</small><strong>${review.length}</strong></button></div><button type="button" class="market-decision-next" ${jumpAttrs(next)}><small>PRÓXIMA AÇÃO DE RESEARCH</small><strong>${esc(next.label)}</strong><span>→</span></button><div class="market-decision-priorities">${priorities.slice(0,4).map(x=>`<button type="button" ${jumpAttrs(x)}><span>${esc(x.label)}</span><b>→</b></button>`).join('')}</div><p class="market-case-note">Síntese executiva: prioriza sinais independentes sem os fundir num novo score de investimento.</p></div>${renderResearchQueue(review)}`;
+    return `<div class="market-detail-card market-decision-center" data-vpu-conviction="${conviction==null?'':conviction.toFixed(1)}" data-vpu-risk="${riskBudget.fit}" data-vpu-review="${review.length}" data-vpu-state="${esc(decisionState)}" data-vpu-coverage="${coverage.toFixed(0)}"><div class="market-perspective-head"><div><small>PORTFOLIO DECISION CENTER</small><h4>O que merece atenção agora?</h4></div><span class="market-target-fit-score ${tone}">${esc(decisionState)}</span></div><div class="market-decision-kpis"><button type="button" ${jumpAttrs({kind:'actionmap',value:'all'})}><small>Convicção</small><strong>${conviction==null?'—':conviction.toFixed(1)}</strong></button><button type="button" ${jumpAttrs({kind:'riskbudget',value:'riskbudget'})}><small>Risk Fit</small><strong>${riskBudget.fit}</strong></button><button type="button" ${jumpAttrs({kind:'stress',value:worst?.key||'rates'})}><small>Pior stress</small><strong>${worst?worst.resilience:'—'}</strong></button><button type="button" ${jumpAttrs({kind:'actionmap',value:'attention'})}><small>Rever/Substituir</small><strong>${review.length}</strong></button></div><button type="button" class="market-decision-next" ${jumpAttrs(next)}><small>PRÓXIMA AÇÃO DE RESEARCH</small><strong>${esc(next.label)}</strong><span>→</span></button><div class="market-decision-priorities">${priorities.slice(0,4).map(x=>`<button type="button" ${jumpAttrs(x)}><span>${esc(x.label)}</span><b>→</b></button>`).join('')}</div><p class="market-case-note">Síntese executiva: prioriza sinais independentes sem os fundir num novo score de investimento.</p></div>${renderResearchQueue(review)}`;
   }
 
   function portfolioIntelligence(rows,total){
