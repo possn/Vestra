@@ -58,6 +58,11 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("Os Portfolio Targets mudaram desde o snapshot anterior", s)
         self.assertIn("<h4>Evolução da carteira</h4>", s)
         self.assertNotIn("<h4>A carteira está a melhorar?</h4>", s)
+        self.assertIn("const riskContext=[targets.maxFactor,targets.maxCurrency,targets.maxRegion].join('|')", s)
+        self.assertIn("const comparableRisk=!!prev&&txt(latest.riskContext)&&txt(prev.riskContext)&&latest.riskContext===prev.riskContext", s)
+        self.assertIn("<small>Risk Fit</small>", s)
+        self.assertIn("riskDelta", s)
+        self.assertIn("Os limites do Risk Budget mudaram; o Risk Fit não é comparado diretamente.", s)
 
     def test_risk_budget_breach_cannot_be_labelled_healthy(self):
         s = read("market.js")
