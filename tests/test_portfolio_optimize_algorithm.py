@@ -177,7 +177,12 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("riskPenalty,diversifies,valuationRank,tiltBonus", s)
         self.assertIn("tier:decision.evidence.tier", s)
         self.assertIn("Number(b.autoEligible)-Number(a.autoEligible)", s)
-        self.assertNotIn("decision.evidence.penalty", s.split("function rebalanceSimulation", 1)[1].split("\n  function renderRebalanceResults", 1)[0])
+        rebal=s.split("function rebalanceSimulation", 1)[1].split("\n  function renderRebalanceResults", 1)[0]
+        self.assertNotIn("decision.evidence.penalty", rebal)
+        self.assertIn("const portfolioBase=researchUniverseValue(assets)||analysed", rebal)
+        self.assertIn("portfolioPct:r.value/portfolioBase*100", rebal)
+        self.assertIn("sectorValue/portfolioBase*100", rebal)
+        self.assertIn("totalAfter:portfolioBase", rebal)
 
     def test_portfolio_candidate_ordering_has_no_composite_fit_score(self):
         s = read("market.js")
@@ -201,6 +206,9 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("||a.indirect-b.indirect", block)
         self.assertIn("||b.valuationRank-a.valuationRank", block)
         self.assertIn("||b.tiltBonus-a.tiltBonus", block)
+        self.assertIn("const researchTotal=assets.reduce((sum,a)=>sum+portfolioValue(a),0)", block)
+        self.assertIn("const currentBase=researchTotal||analysed", block)
+        self.assertIn("portfolioPct:r.value/currentBase*100", block)
 
     def test_concentration_card_uses_saved_portfolio_targets(self):
         s = read("market.js")
@@ -214,6 +222,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
     def test_action_map_respects_risk_gate_and_saved_portfolio_targets(self):
         s = read("market.js")
         self.assertIn("function portfolioFit(r, sectorRows, analysed, etfs, targets=loadPortfolioTargets())", s)
+        self.assertIn("function researchUniverseValue(assets=portfolioAssets())", s)
+        self.assertIn("portfolioIntelligence(rows,researchTotal)", s)
         self.assertIn("const maxPos=Math.max(3,Math.min(30,n(targets?.maxPosition)||10))", s)
         self.assertIn("const maxSector=Math.max(10,Math.min(60,n(targets?.maxSector)||25))", s)
         self.assertIn("const portfolioTargets=loadPortfolioTargets()", s)
@@ -339,6 +349,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("return !usedDest.has(key)&&r.autoEligible&&cumulativeSectorPct<=maxSector+1", s)
         self.assertNotIn("|| sim.results.find(r=>!usedDest.has", s)
         self.assertIn("const baselineRisk=portfolioRiskProfile(rows,totalValue)", s)
+        self.assertIn("const totalValue=researchUniverseValue(assets)||rows.reduce((a,r)=>a+r.value,0)||1", s)
         self.assertIn("const riskMoveSafe=(sourceStock,destination,amount)=>", s)
         self.assertIn("current>limit ? next<=current+.01 : next<=limit+.01", s)
         self.assertIn("const usedDest=new Set(), sectorDeltas=new Map()", s)

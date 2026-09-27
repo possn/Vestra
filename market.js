@@ -53,6 +53,7 @@ function researchEligibleAsset(a){ return portfolioContext?.researchEligibleAsse
 function assetTicker(a){ return portfolioContext?.assetTicker(a) || ''; }
 function portfolioTickers(){ return portfolioContext?.portfolioTickers() || new Set(); }
 function portfolioValue(a){ return portfolioContext?.portfolioValue(a) ?? 0; }
+function researchUniverseValue(assets=portfolioAssets()){ return (assets||[]).filter(researchEligibleAsset).reduce((sum,a)=>sum+portfolioValue(a),0); }
 function euro(v){ return portfolioContext?.euro(v) || '—'; }
 function inPortfolio(ticker){ return portfolioContext?.inPortfolio(ticker) || false; }
 
@@ -1782,7 +1783,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const key=txt(stock.ticker).toUpperCase(); const prev=rowMap.get(key)||{stock,value:0}; prev.value+=portfolioValue(a); rowMap.set(key,prev);
     }
     const rows=[...rowMap.values()].map(r=>({...r,conviction:portfolioConviction(r.stock)})).filter(r=>r.conviction!=null&&r.value>0);
-    const totalValue=rows.reduce((a,r)=>a+r.value,0)||1, targets=loadPortfolioTargets();
+    const totalValue=researchUniverseValue(assets)||rows.reduce((a,r)=>a+r.value,0)||1, targets=loadPortfolioTargets();
     const maxPosition=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
     const sectors=new Map(); for(const r of rows){const k=txt(r.stock.sector)||'Sem setor';sectors.set(k,(sectors.get(k)||0)+r.value);}
     const sourceSignals=r=>{
@@ -1876,11 +1877,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
     const rows=[...rowMap.values()];
     const analysed=rows.reduce((sum,r)=>sum+r.value,0)||1;
+    const portfolioBase=researchUniverseValue(assets)||analysed;
     const src=rows.find(r=>txt(r.stock.ticker).toUpperCase()===source); if(!src) return {error:'Posição de origem não encontrada.'};
     const move=Math.max(0,Math.min(n(amount)||0,src.value)); if(move<=0) return {error:'Indica um montante válido.'};
     const srcConv=portfolioConviction(src.stock); if(srcConv==null) return {error:'A posição de origem não tem convicção calculável.'};
     const sectors=new Map(); for(const r of rows){ const k=txt(r.stock.sector)||'Sem setor'; sectors.set(k,(sectors.get(k)||0)+r.value); }
-    const etfs=rows.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
+    const etfs=rows.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/portfolioBase*100}));
     const held=new Map(rows.map(r=>[txt(r.stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,''),r]));
     const srcSector=txt(src.stock.sector)||'Sem setor';
     const srcIndirect=isFund(src.stock)?0:indirectExposurePct(src.stock,etfs);
@@ -1893,13 +1895,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       let sectorValue=sectors.get(destSector)||0;
       if(destSector===srcSector) sectorValue-=move;
       sectorValue+=move;
-      const sectorPct=sectorValue/analysed*100;
-      const positionPct=(existingValue+move)/analysed*100;
+      const sectorPct=sectorValue/portfolioBase*100;
+      const positionPct=(existingValue+move)/portfolioBase*100;
       const indirect=isFund(stock)?0:indirectExposurePct(stock,etfs);
-      const decision=evaluatePortfolioMove({mode:'replace',sourceStock:src.stock,destination:stock,rows,amount:move,totalAfter:analysed,sourceConv:srcConv,destinationConv:conv,positionPct,sectorPct,indirect,sourceIndirect:srcIndirect});
+      const decision=evaluatePortfolioMove({mode:'replace',sourceStock:src.stock,destination:stock,rows,amount:move,totalAfter:portfolioBase,sourceConv:srcConv,destinationConv:conv,positionPct,sectorPct,indirect,sourceIndirect:srcIndirect});
       const {targets,maxPos,maxSector,riskPenalty,overlapDelta,convictionGain,convDelta,autoEligible,warnings}=decision;
       const positionHeadroom=maxPos-positionPct, sectorHeadroom=maxSector-sectorPct;
-      const diversifies=destSector!==srcSector && (sectors.get(destSector)||0)/analysed*100<Math.min(20,maxSector*.75);
+      const diversifies=destSector!==srcSector && (sectors.get(destSector)||0)/portfolioBase*100<Math.min(20,maxSector*.75);
       const valuationRank=txt(stock.valuation_signal)==='undervalued'?2:txt(stock.valuation_signal)==='fair'?1:0;
       const tiltBonus=portfolioTiltBonus(stock,targets.tilt);
       return {stock,conv,convictionGain,convDelta,positionPct,sectorPct,positionHeadroom,sectorHeadroom,indirect,overlapDelta,riskPenalty,diversifies,valuationRank,tiltBonus,existing:!!existing,targets,tier:decision.evidence.tier,warnings,autoEligible};
@@ -1931,16 +1933,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function freshCapitalPlan(amount){
     const fresh=Math.max(0,n(amount)||0); if(fresh<50) return {error:'Indica pelo menos 50 € de novo capital.'};
     const assets=portfolioAssets().slice().filter(researchEligibleAsset);
+    const researchTotal=assets.reduce((sum,a)=>sum+portfolioValue(a),0);
     const rowMap=new Map();
     for(const a of assets){
       const t=assetTicker(a); if(!t) continue; const base=t.replace(/\.[A-Z]+$/,'');
       const stock=M.byTicker.get(t)||M.stocks.find(x=>txt(x.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')===base); if(!stock) continue;
       const key=txt(stock.ticker).toUpperCase(); const prev=rowMap.get(key)||{stock,value:0}; prev.value+=portfolioValue(a); rowMap.set(key,prev);
     }
-    const rows=[...rowMap.values()]; const analysed=rows.reduce((sum,r)=>sum+r.value,0)||1; const afterTotal=analysed+fresh;
+    const rows=[...rowMap.values()]; const analysed=rows.reduce((sum,r)=>sum+r.value,0)||1; const currentBase=researchTotal||analysed; const afterTotal=currentBase+fresh;
     const sectors=new Map(); for(const r of rows){ const k=txt(r.stock.sector)||'Sem setor'; sectors.set(k,(sectors.get(k)||0)+r.value); }
     const held=new Map(rows.map(r=>[txt(r.stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,''),r]));
-    const etfs=rows.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/analysed*100}));
+    const etfs=rows.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/currentBase*100}));
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
     const universe=M.stocks.filter(x=>!isFund(x)&&n(x.score)!=null&&!['watch','high','severe'].includes(txt(x.risk_gate)));
     const candidates=universe.map(stock=>{
@@ -1953,7 +1956,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const decision=evaluatePortfolioMove({mode:'fresh',destination:stock,rows,amount:Math.min(capacity,fresh),totalAfter:afterTotal,destinationConv:conv,positionPct,sectorPct,indirect});
       const {tier,strict}=decision.evidence;
       const baseEligible=strict&&(targets.overlap!=='reduce'||indirect<2);
-      const sectorNow=sectorValue/analysed*100, sectorHeadroom=maxSector-sectorNow, positionNow=existingValue/analysed*100;
+      const sectorNow=sectorValue/currentBase*100, sectorHeadroom=maxSector-sectorNow, positionNow=existingValue/currentBase*100;
       const valuationRank=txt(stock.valuation_signal)==='undervalued'?2:txt(stock.valuation_signal)==='fair'?1:0;
       const underweightExisting=!!existing&&positionNow<maxPos*.65;
       const tiltBonus=portfolioTiltBonus(stock,targets.tilt);
@@ -2049,6 +2052,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         }
         const rows=[...rowMap.values()].sort((a,b)=>b.value-a.value);
         const total=assets.reduce((sum,a)=>sum+portfolioValue(a),0);
+        const researchTotal=researchUniverseValue(assets);
         const analysed=rows.reduce((sum,r)=>sum+r.value,0);
         const first=rows.slice(0,8), rest=rows.slice(8);
         const researchRows = first.map(r=>renderRow(r.stock,`${[...r.classes].join(' · ')} · ${euro(r.value)}${r.stock.thesis_direction_label?' · '+r.stock.thesis_direction_label:''}`)).join('');
@@ -2057,8 +2061,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         const cryptoGrouped=aggregateAssets(crypto), otherGrouped=aggregateAssets(other);
         const assetPlainRow=(a,tone='other')=>`<div class="market-asset-row"><div><div class="market-asset-row__title"><strong>${esc(a.name||assetTicker(a)||'Ativo')}</strong><span class="market-class-badge market-class-badge--${tone}">${esc(a.class||'Outro')}</span></div><div class="market-asset-row__meta">${assetTicker(a)?esc(assetTicker(a))+' · ':''}${tone==='crypto'?'Criptoativo — métricas empresariais não se aplicam.':'Gerido na Carteira, fora do scanner fundamental.'}</div></div><div class="market-asset-row__value">${euro(portfolioValue(a))}</div></div>`;
         c.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">CARTEIRA × MERCADO</div><h2>As minhas posições</h2><p>Primeiro o que é analisável. Cripto e outros ativos ficam separados para não serem confundidos com empresas.</p></div><button class="market-close" data-market-close>×</button></div>
-          <div class="market-portfolio-summary" data-vpu-positions="${assets.length}" data-vpu-research="${rows.length}" data-vpu-coverage="${total>0?Math.round(analysed/total*100):0}"><div class="market-portfolio-kpi"><small>Posições</small><strong>${assets.length}</strong></div><div class="market-portfolio-kpi"><small>Com research</small><strong>${rows.length}</strong></div><div class="market-portfolio-kpi"><small>Cobertura</small><strong>${total>0?Math.round(analysed/total*100):0}%</strong></div></div>
-          ${portfolioIntelligence(rows,total)}
+          <div class="market-portfolio-summary" data-vpu-positions="${assets.length}" data-vpu-research="${rows.length}" data-vpu-coverage="${researchTotal>0?Math.round(analysed/researchTotal*100):0}"><div class="market-portfolio-kpi"><small>Posições</small><strong>${assets.length}</strong></div><div class="market-portfolio-kpi"><small>Com research</small><strong>${rows.length}</strong></div><div class="market-portfolio-kpi"><small>Cobertura</small><strong>${researchTotal>0?Math.round(analysed/researchTotal*100):0}%</strong></div></div>
+          ${portfolioIntelligence(rows,researchTotal)}
           <div class="market-portfolio-section"><div class="market-portfolio-section__head"><h3>Ações, ETFs e fundos</h3><span>${rows.length} reconhecidas</span></div><div class="market-asset-note">Ordenadas pelo valor que tens em carteira. Toca numa posição para abrir o Investment Case e ver o que mudou.</div><div class="market-list">${researchRows||'<div class="market-empty">Ainda não encontrei posições elegíveis no universo do scanner.</div>'}</div>${restRows}</div>
           ${cryptoGrouped.length?`<div class="market-portfolio-section"><div class="market-portfolio-section__head"><h3>Criptoativos</h3><span>${cryptoGrouped.length}</span></div><div class="market-asset-note">Separados de empresas de propósito. Um símbolo como ATOM não será interpretado como uma ação com o mesmo ticker.</div>${cryptoGrouped.slice(0,6).map(a=>assetPlainRow(a,'crypto')).join('')}${cryptoGrouped.length>6?`<details class="market-detail-disclosure"><summary>Ver mais ${cryptoGrouped.length-6} criptoativos</summary><div style="margin-top:7px">${cryptoGrouped.slice(6).map(a=>assetPlainRow(a,'crypto')).join('')}</div></details>`:''}</div>`:''}
           ${otherGrouped.length?`<details class="market-detail-disclosure"><summary>Outros ativos da carteira · ${otherGrouped.length}</summary><div class="market-asset-note">Depósitos, imobiliário, metais, liquidez e outros ativos continuam no património, mas não entram no research de empresas.</div>${otherGrouped.slice(0,12).map(a=>assetPlainRow(a,'other')).join('')}${otherGrouped.length>12?`<div class="market-asset-note">+ ${otherGrouped.length-12} ativos adicionais na Carteira.</div>`:''}</details>`:''}`;
