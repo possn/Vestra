@@ -291,6 +291,12 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const eligibility=autoEligible?'Elegível':decision.evidence.strict?'Manual':'Evidência limitada'", s)
         self.assertNotIn("||!decision.evidence.strict) impact='Piora'", s)
         self.assertIn("Evidência limitada não é tratada como deterioração da carteira", s)
+        self.assertIn("const convictionCoverage=portfolioBase>0?convictionWeight/portfolioBase*100:100", s)
+        self.assertIn("const scenarioPartial=convictionCoverage<35", s)
+        self.assertIn("Convicção analisável", s)
+        self.assertIn("% convicção coberta", s)
+        self.assertIn("Cobertura insuficiente para interpretar esta média como convicção global da carteira", s)
+        self.assertNotIn("Convicção carteira ${x.before.toFixed(1)}", s)
 
     def test_fresh_capital_allocates_only_strict_candidates_with_cumulative_sector_budget(self):
         s = read("market.js")
