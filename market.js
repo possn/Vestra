@@ -2228,4 +2228,29 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       row.hidden=!visible;
       if(visible) shown++;
     });
+    map.querySelectorAll('.market-detail-disclosure').forEach(d=>{
+      const any=[...d.querySelectorAll('.market-action-row[data-action-key]')].some(r=>!r.hidden);
+      d.hidden=!!next&&!any;
+      d.open=!!next&&any;
+    });
+    const status=map.querySelector('[data-action-filter-status]');
+    if(status){
+      const labels={reinforce:'a reforçar',hold:'a manter',review:'a rever',replace:'a substituir',attention:'a rever/substituir'};
+      status.textContent=next?`${shown} ${shown===1?'posição':'posições'} ${labels[next]||''}`:'Mostrar todas as posições';
+    }
+    map.querySelector('.market-action-list')?.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+  }
+
+  // v6.0.1 — Action Map summary acts as an immediate filter.
+  document.addEventListener('click', e=>{
+    const btn=e.target.closest?.('[data-action-filter]');
+    if(!btn) return;
+    const map=btn.closest('.market-action-map');
+    if(!map) return;
+    e.preventDefault();
+    const requested=btn.dataset.actionFilter||'';
+    const active=map.dataset.actionFilter||'';
+    applyActionMapFilter(map,active===requested?'':requested);
+  });
+
 })();
