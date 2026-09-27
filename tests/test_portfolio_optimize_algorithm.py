@@ -66,6 +66,10 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("<small>Risk Fit</small>", s)
         self.assertIn("riskDelta", s)
         self.assertIn("Os limites do Risk Budget mudaram; o Risk Fit não é comparado diretamente.", s)
+        self.assertIn("const portfolioConvictionNow=convictionWeight>0?", s)
+        self.assertIn("latest.conviction==null?'—':latest.conviction.toFixed(1)", s)
+        self.assertIn("x.conviction==null?'—':x.conviction.toFixed(0)", s)
+        self.assertNotIn("const convictionWeight=convRows.reduce((sum,r)=>sum+r.value,0)||1", s)
 
     def test_risk_budget_breach_cannot_be_labelled_healthy(self):
         s = read("market.js")
@@ -195,6 +199,9 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new',row.dataset.queueSignal||'')", s)
         self.assertIn("const next=activeReview[0]?", decision)
         self.assertIn("const decisionState=activeReview.length?'Rever':structuralAlert?'Atenção':review.length?'Acompanhar':'Estável'", decision)
+        self.assertIn("const conviction=convWeight>0?", decision)
+        self.assertIn("conviction==null?'—':conviction.toFixed(1)", decision)
+        self.assertNotIn("const convWeight=convRows.reduce((a,r)=>a+r.value,0)||1", decision)
         self.assertIn("const tone=activeReview.length?'is-risk':structuralAlert||review.length?'is-warn':'is-positive'", decision)
         self.assertNotIn("const decisionState=review.length?'Rever'", decision)
         self.assertIn("review.length?{label:'Acompanhar posições já revistas antes de novo reforço'", decision)
