@@ -195,6 +195,10 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new',row.dataset.queueSignal||'')", s)
         self.assertIn("const next=activeReview[0]?", decision)
         self.assertIn("review.length?{label:'Acompanhar posições já revistas antes de novo reforço'", decision)
+        self.assertIn("value:'attention'", decision)
+        self.assertIn("function applyActionMapFilter(map,requested='')", s)
+        self.assertIn("next==='attention'?['review','replace'].includes(key):key===next", s)
+        self.assertIn("applyActionMapFilter(map,value==='all'?'':value)", s)
         self.assertNotIn("const next=review[0]?", decision)
         self.assertIn(".sort(comparePortfolioReview).slice(0,3)", intelligence)
 
