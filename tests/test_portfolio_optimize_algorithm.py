@@ -45,7 +45,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("topSector&&topSector.pct>targets.maxSector", block)
         self.assertIn("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'", block)
         self.assertIn("worst&&worst.resilience<70?{label:", block)
-        self.assertLess(block.index("riskBudget.fit<65?{label:'Rever o Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
+        self.assertLess(block.index("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
 
     def test_risk_budget_breach_cannot_be_labelled_healthy(self):
         s = read("market.js")
