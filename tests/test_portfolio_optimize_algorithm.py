@@ -58,6 +58,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("comparableTargets?healthDeltaLabel(latest.targetFit,prev.targetFit,false,''):'targets alterados'", s)
         self.assertIn("Os Portfolio Targets mudaram; o Target Fit não é comparado diretamente.", s)
         self.assertIn("<h4>Evolução da carteira</h4>", s)
+        self.assertIn("const shown=inverse?Math.abs(d).toFixed(1)", s)
+        self.assertNotIn("const good=inverse?d<0:d>0; return", s)
         self.assertNotIn("<h4>A carteira está a melhorar?</h4>", s)
         self.assertIn("const riskContext=[targets.maxFactor,targets.maxCurrency,targets.maxRegion].join('|')", s)
         self.assertIn("const comparableRisk=!!prev&&txt(latest.riskContext)&&txt(prev.riskContext)&&latest.riskContext===prev.riskContext", s)
