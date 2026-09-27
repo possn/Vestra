@@ -14,7 +14,7 @@ class PortfolioUiDataContractTests(unittest.TestCase):
         for token in (
             'data-vpu-positions="${assets.length}"',
             'data-vpu-research="${rows.length}"',
-            'data-vpu-coverage="${total>0?Math.round(analysed/total*100):0}"',
+            'data-vpu-coverage="${researchTotal>0?Math.round(analysed/researchTotal*100):0}"',
         ):
             self.assertIn(token.replace('\\',''), self.market)
 
