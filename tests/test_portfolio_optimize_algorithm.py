@@ -47,6 +47,15 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("worst&&worst.resilience<70?{label:", block)
         self.assertLess(block.index("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
 
+    def test_portfolio_health_does_not_compare_target_fit_across_target_changes(self):
+        s = read("market.js")
+        self.assertIn("const targetContext=[targets.maxPosition,targets.maxSector,targets.maxFactor,targets.maxCurrency,targets.maxRegion,targets.overlap,targets.tilt].join('|')", s)
+        self.assertIn("const comparableTargets=!!prev&&txt(latest.targetContext)&&txt(prev.targetContext)&&latest.targetContext===prev.targetContext", s)
+        self.assertIn("comparableTargets?healthDeltaLabel(latest.targetFit,prev.targetFit,false,''):'targets alterados'", s)
+        self.assertIn("Os Portfolio Targets mudaram desde o snapshot anterior", s)
+        self.assertIn("<h4>Evolução da carteira</h4>", s)
+        self.assertNotIn("<h4>A carteira está a melhorar?</h4>", s)
+
     def test_risk_budget_breach_cannot_be_labelled_healthy(self):
         s = read("market.js")
         block = s.split("function renderRiskBudget(rows){", 1)[1].split("\n  const PORTFOLIO_STRESS_SCENARIOS", 1)[0]
