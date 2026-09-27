@@ -1750,7 +1750,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const riskContext=[targets.maxFactor,targets.maxCurrency,targets.maxRegion].join('|');
     const researchContext=ranked.map(r=>txt(r.stock.ticker).toUpperCase()).filter(Boolean).sort().join('|');
     const convictionContext=convRows.map(r=>txt(r.stock.ticker).toUpperCase()).filter(Boolean).sort().join('|');
-    const convictionCoverage=portfolioBase>0?convictionWeight/portfolioBase*100:0;
     const healthSnapshot={targetFit,targetContext,riskContext,researchContext,researchCoverage,convictionContext,convictionCoverage,conviction:portfolioConvictionNow,topPosition:topPosPct,topSector:sectorRows[0]?.pct||0,overlapCount:ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length,riskPositions:(actionCounts.review||0)+(actionCounts.replace||0),riskFit:riskBudget.fit};
     const healthHistory=savePortfolioHealthSnapshot(healthSnapshot);
     const healthTimelineHtml=renderPortfolioHealthTimeline(healthHistory);
