@@ -1348,13 +1348,18 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const top=detail.filter(r=>r.impact<0).sort((a,b)=>a.contribution-b.contribution).slice(0,6);
     return {key,portfolioImpact,resilience,exposedWeight,top};
   }
-  function renderStressScenario(rows,key){
+  function renderStressScenario(rows,key,total=0){
     const sc=PORTFOLIO_STRESS_SCENARIOS[key], r=portfolioStress(rows,key);
+    const analysedValue=rows.reduce((a,x)=>a+(n(x.value)||0),0);
+    const coverage=total>0?analysedValue/total*100:100;
+    const partial=total>0&&coverage<35;
     const tone=r.resilience>=75?'is-positive':r.resilience>=55?'is-warn':'is-risk';
-    return `<div class="market-stress-result" data-stress-panel="${key}" ${key==='rates'?'':'hidden'}><div class="market-stress-kpis"><div><small>Impacto proxy</small><strong>${r.portfolioImpact>=0?'+':''}${r.portfolioImpact.toFixed(1)}%</strong></div><div><small>Resiliência</small><strong class="${tone}">${r.resilience}/100</strong></div><div><small>Exposição forte</small><strong>${r.exposedWeight.toFixed(0)}%</strong></div></div><p class="market-case-note">${esc(sc.note)}</p>${r.top.length?`<div class="market-stress-list">${r.top.map(x=>`<button type="button" data-market-ticker="${esc(x.stock.ticker)}"><span><strong>${esc(x.stock.ticker)}</strong><small>peso ${x.weight.toFixed(1)}% · choque ${x.impact.toFixed(0)}%</small></span><em>${x.contribution.toFixed(2)} pp</em></button>`).join('')}</div>`:'<p class="market-case-note">Sem exposição negativa material identificada neste cenário.</p>'}<p class="market-case-note">Stress proxy, não previsão: não modela correlações dinâmicas, opções, hedges, impostos nem liquidez.</p></div>`;
+    return `<div class="market-stress-result" data-stress-panel="${key}" ${key==='rates'?'':'hidden'}><div class="market-stress-kpis"><div><small>Impacto proxy</small><strong>${r.portfolioImpact>=0?'+':''}${r.portfolioImpact.toFixed(1)}%</strong></div><div><small>Resiliência</small><strong class="${tone}">${r.resilience}/100</strong></div><div><small>Exposição forte</small><strong>${r.exposedWeight.toFixed(0)}%</strong></div></div><p class="market-case-note">${esc(sc.note)}</p>${r.top.length?`<div class="market-stress-list">${r.top.map(x=>`<button type="button" data-market-ticker="${esc(x.stock.ticker)}"><span><strong>${esc(x.stock.ticker)}</strong><small>peso ${x.weight.toFixed(1)}% · choque ${x.impact.toFixed(0)}%</small></span><em>${x.contribution.toFixed(2)} pp</em></button>`).join('')}</div>`:'<p class="market-case-note">Sem exposição negativa material identificada neste cenário.</p>'}<p class="market-case-note">${partial?`Resultado parcial: ${coverage.toFixed(0)}% da carteira tem cobertura de research; impacto e resiliência referem-se apenas à parte analisável. `:''}Stress proxy, não previsão: não modela correlações dinâmicas, opções, hedges, impostos nem liquidez.</p></div>`;
   }
-  function renderPortfolioStressTest(rows){
-    return `<div class="market-detail-card market-stress-test"><div class="market-perspective-head"><div><small>PORTFOLIO STRESS TEST · PROXY</small><h4>Como reage a carteira?</h4></div><span class="market-data-age">cenários</span></div><div class="market-stress-tabs">${Object.entries(PORTFOLIO_STRESS_SCENARIOS).map(([k,v],i)=>`<button type="button" data-stress-scenario="${k}" class="${i===0?'is-active':''}">${esc(v.label)}</button>`).join('')}</div>${Object.keys(PORTFOLIO_STRESS_SCENARIOS).map(k=>renderStressScenario(rows,k)).join('')}</div>`;
+  function renderPortfolioStressTest(rows,total=0){
+    const analysedValue=rows.reduce((a,r)=>a+(n(r.value)||0),0);
+    const coverage=total>0?analysedValue/total*100:100;
+    return `<div class="market-detail-card market-stress-test"><div class="market-perspective-head"><div><small>PORTFOLIO STRESS TEST · PROXY</small><h4>Como reage a parte analisável?</h4></div><span class="market-data-age">${coverage.toFixed(0)}% coberto</span></div><div class="market-stress-tabs">${Object.entries(PORTFOLIO_STRESS_SCENARIOS).map(([k,v],i)=>`<button type="button" data-stress-scenario="${k}" class="${i===0?'is-active':''}">${esc(v.label)}</button>`).join('')}</div>${Object.keys(PORTFOLIO_STRESS_SCENARIOS).map(k=>renderStressScenario(rows,k,total)).join('')}</div>`;
   }
 
   const INFLATION_BUCKETS={
@@ -1713,7 +1718,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const targetFitHtml=`<div class="market-detail-card market-target-fit"><div class="market-perspective-head"><div><small>PORTFOLIO FIT</small><h4>Aderência desta carteira aos objetivos</h4></div><span class="market-target-fit-score ${targetTone}">${targetFit}/100</span></div><div class="market-action-context"><span>${targetPositionBreaches.length} posições acima</span><span>${targetSectorBreaches.length} setores acima</span><span>${targetOverlapBreaches.length} overlap</span></div>${targetIssues.length?`<ul class="market-case-list">${targetIssues.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="market-case-note">A parte analisável da carteira está dentro dos objetivos definidos.</p>'}</div>`;
     const riskBudget=renderRiskBudget(ranked);
     const riskBudgetHtml=riskBudget.html;
-    const stressTestHtml=renderPortfolioStressTest(ranked);
+    const stressTestHtml=renderPortfolioStressTest(ranked,total);
     const inflationShieldHtml=renderInflationShield(ranked);
     const targetContext=[targets.maxPosition,targets.maxSector,targets.overlap].join('|');
     const riskContext=[targets.maxFactor,targets.maxCurrency,targets.maxRegion].join('|');
