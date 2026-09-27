@@ -1476,14 +1476,16 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     catch{return {};}
   }
   function saveResearchQueue(x){ try{localStorage.setItem(RESEARCH_QUEUE_KEY,JSON.stringify(x||{}));}catch{} }
-  function researchQueueState(ticker){
+  function researchQueueState(ticker,signalKey=''){
     const all=loadResearchQueue(), key=txt(ticker).toUpperCase(), x=all[key]||{};
+    const storedSignal=txt(x.signalKey), currentSignal=txt(signalKey);
+    if(['reviewed','snoozed'].includes(x.status)&&storedSignal&&currentSignal&&storedSignal!==currentSignal) return {...x,status:'new',snoozeUntil:0,signalChanged:true};
     if(x.status==='snoozed'&&Number(x.snoozeUntil||0)<=Date.now()) return {...x,status:'new',snoozeUntil:0};
-    return {status:x.status||'new',snoozeUntil:Number(x.snoozeUntil||0),updatedAt:Number(x.updatedAt||0),checkpoint:txt(x.checkpoint),note:txt(x.note),checkpointAt:Number(x.checkpointAt||0)};
+    return {status:x.status||'new',snoozeUntil:Number(x.snoozeUntil||0),updatedAt:Number(x.updatedAt||0),checkpoint:txt(x.checkpoint),note:txt(x.note),checkpointAt:Number(x.checkpointAt||0),signalKey:storedSignal};
   }
-  function setResearchQueueState(ticker,status){
+  function setResearchQueueState(ticker,status,signalKey=''){
     const all=loadResearchQueue(), key=txt(ticker).toUpperCase(); if(!key)return;
-    const prev=all[key]||{}; all[key]={...prev,status,updatedAt:Date.now(),snoozeUntil:status==='snoozed'?Date.now()+7*86400000:0};
+    const prev=all[key]||{}; all[key]={...prev,status,signalKey:txt(signalKey),updatedAt:Date.now(),snoozeUntil:status==='snoozed'?Date.now()+7*86400000:0};
     saveResearchQueue(all);
   }
   function saveResearchCheckpoint(ticker,checkpoint,note){
@@ -1508,6 +1510,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       value:n(r?.value)||0,
     };
   }
+  function researchReviewSignalKey(r){
+    const x=portfolioReviewSignals(r);
+    return [x.replace?'replace':'review',x.gateRank,x.thesisDown?1:0,x.estimatesDown?1:0,x.conviction<50?1:0].join('|');
+  }
   function comparePortfolioReview(a,b){
     const x=portfolioReviewSignals(a), y=portfolioReviewSignals(b);
     return Number(y.replace)-Number(x.replace)
@@ -1520,13 +1526,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function renderResearchQueue(review){
     const rank={new:0,in_review:1,snoozed:2,reviewed:3};
-    const items=review.map(r=>({r,state:researchQueueState(r.stock.ticker)})).sort((a,b)=>(rank[a.state.status]??9)-(rank[b.state.status]??9)||comparePortfolioReview(a.r,b.r));
+    const items=review.map(r=>{const signalKey=researchReviewSignalKey(r); return {r,signalKey,state:researchQueueState(r.stock.ticker,signalKey)}}).sort((a,b)=>(rank[a.state.status]??9)-(rank[b.state.status]??9)||comparePortfolioReview(a.r,b.r));
     const counts=items.reduce((a,x)=>{a[x.state.status]=(a[x.state.status]||0)+1;return a;},{});
     const activeItems=items.filter(x=>x.state.status!=='reviewed'&&x.state.status!=='snoozed');
     const visible=activeItems.slice(0,12);
     const label={new:'Novo',in_review:'Em revisão',reviewed:'Revisto',snoozed:'Adiado'};
     const tone={new:'is-risk',in_review:'is-warn',reviewed:'is-positive',snoozed:''};
-    const rows=visible.length?visible.map(({r,state})=>`<div class="market-research-queue-row" data-queue-ticker="${esc(r.stock.ticker)}"><button type="button" class="market-research-queue-main" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${r.conviction==null?'convicção insuficiente':`convicção ${Math.round(r.conviction)}/100`} · ${esc(txt(r.stock.risk_gate)||'clear')}</small></span><em class="${tone[state.status]||''}">${label[state.status]||'Novo'}</em></button><div class="market-research-queue-actions"><button type="button" data-queue-status="in_review">Em revisão</button><button type="button" data-queue-status="reviewed">Revisto</button><button type="button" data-queue-status="snoozed">Adiar 7d</button></div>${state.status==='in_review'||state.checkpoint?researchCheckpointEditor(r.stock.ticker,state):''}</div>`).join(''):'<p class="market-case-note">Sem revisões ativas pendentes. Itens adiados regressam automaticamente após 7 dias.</p>';
+    const rows=visible.length?visible.map(({r,state,signalKey})=>`<div class="market-research-queue-row" data-queue-ticker="${esc(r.stock.ticker)}" data-queue-signal="${esc(signalKey)}"><button type="button" class="market-research-queue-main" data-market-ticker="${esc(r.stock.ticker)}"><span><strong>${esc(r.stock.ticker)}</strong><small>${r.conviction==null?'convicção insuficiente':`convicção ${Math.round(r.conviction)}/100`} · ${esc(txt(r.stock.risk_gate)||'clear')}</small></span><em class="${tone[state.status]||''}">${label[state.status]||'Novo'}</em></button><div class="market-research-queue-actions"><button type="button" data-queue-status="in_review">Em revisão</button><button type="button" data-queue-status="reviewed">Revisto</button><button type="button" data-queue-status="snoozed">Adiar 7d</button></div>${state.status==='in_review'||state.checkpoint?researchCheckpointEditor(r.stock.ticker,state):''}</div>`).join(''):'<p class="market-case-note">Sem revisões ativas pendentes. Itens adiados regressam automaticamente após 7 dias.</p>';
     return `<div class="market-detail-card market-research-queue"><div class="market-perspective-head"><div><small>RESEARCH QUEUE · LOCAL</small><h4>Fila de revisão</h4></div><span class="market-data-age">${(counts.new||0)+(counts.in_review||0)} pendentes</span></div><div class="market-action-context"><span>${counts.new||0} novos</span><span>${counts.in_review||0} em revisão</span><span>${counts.snoozed||0} adiados</span><span>${counts.reviewed||0} revistos</span></div><p class="market-case-note">Memória operacional: organiza o research sem alterar Score Vestra, Action Map ou carteira.</p><div class="market-research-queue-list">${rows}</div>${activeItems.length>12?`<p class="market-case-note">A mostrar as 12 prioridades ativas mais urgentes de ${activeItems.length} pendentes.</p>`:''}</div>`;
   }
 
@@ -1545,7 +1551,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const topPosition=ranked.slice().sort((a,b)=>b.value-a.value)[0];
     const topPositionPct=topPosition?topPosition.value/analysed*100:0;
     const review=ranked.filter(r=>['review','replace'].includes(r.action?.key)).sort(comparePortfolioReview);
-    const activeReview=review.filter(r=>!['reviewed','snoozed'].includes(researchQueueState(r.stock.ticker).status));
+    const activeReview=review.filter(r=>!['reviewed','snoozed'].includes(researchQueueState(r.stock.ticker,researchReviewSignalKey(r)).status));
     const reinforce=ranked.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction);
     const structuralAlert=topPositionPct>targets.maxPosition||(topSector?.pct||0)>targets.maxSector||riskBudget.hasBreaches||(worst?.resilience??100)<75;
     const decisionState=review.length?'Rever':structuralAlert?'Atenção':'Estável';
@@ -2192,7 +2198,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const btn=e.target.closest?.('[data-queue-status]'); if(!btn)return;
     const row=btn.closest('.market-research-queue-row'); if(!row)return;
     e.preventDefault(); e.stopPropagation();
-    setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new');
+    setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new',row.dataset.queueSignal||'');
     if(txt($m('marketSheet')?.dataset.tool)==='portfolio'){
       openTool('portfolio');
       setTimeout(()=>document.querySelector('.market-research-queue')?.scrollIntoView?.({behavior:'smooth',block:'start'}),0);
