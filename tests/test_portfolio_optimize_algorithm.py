@@ -166,13 +166,17 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("||x.conviction-y.conviction", s)
         self.assertIn(".sort(comparePortfolioReview)", s)
         self.assertIn("||comparePortfolioReview(a.r,b.r)", s)
-        self.assertIn("review[0].action?.key==='replace'?'Substituir':'Rever'", s)
+        self.assertIn("activeReview[0].action?.key==='replace'?'Substituir':'Rever'", s)
         self.assertIn("e avaliar substituição", s)
         queue = s.split("function renderResearchQueue(review){", 1)[1].split("\n  function renderPortfolioDecisionCenter", 1)[0]
         decision = s.split("function renderPortfolioDecisionCenter(", 1)[1].split("\n  function portfolioIntelligence(", 1)[0]
         intelligence = s.split("function portfolioIntelligence(rows,total)", 1)[1].split("\n  function buildMultiMovePlan", 1)[0]
         self.assertNotIn("(a.r.conviction??999)-(b.r.conviction??999)", queue)
         self.assertIn(".sort(comparePortfolioReview)", decision)
+        self.assertIn("const activeReview=review.filter(r=>!['reviewed','snoozed'].includes(researchQueueState(r.stock.ticker).status))", decision)
+        self.assertIn("const next=activeReview[0]?", decision)
+        self.assertIn("review.length?{label:'Acompanhar posições já revistas antes de novo reforço'", decision)
+        self.assertNotIn("const next=review[0]?", decision)
         self.assertIn(".sort(comparePortfolioReview).slice(0,3)", intelligence)
 
     def test_same_value_scenario_uses_canonical_move_evaluator(self):
