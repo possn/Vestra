@@ -102,13 +102,17 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
 
     def test_risk_budget_breach_cannot_be_labelled_healthy(self):
         s = read("market.js")
-        block = s.split("function renderRiskBudget(rows){", 1)[1].split("\n  const PORTFOLIO_STRESS_SCENARIOS", 1)[0]
-        self.assertIn("const incomplete=!profile.factors.length||!profile.currencies.length||!profile.regions.length", block)
+        block = s.split("function renderRiskBudget(rows,total=0){", 1)[1].split("\n  const PORTFOLIO_STRESS_SCENARIOS", 1)[0]
+        self.assertIn("const partialCoverage=total>0&&coverage<35", block)
+        self.assertIn("const incomplete=partialCoverage||!profile.factors.length||!profile.currencies.length||!profile.regions.length", block)
         self.assertIn("fit=incomplete?null:rawFit", block)
         self.assertIn("const tone=incomplete?'is-warn'", block)
         self.assertIn("const statusLabel=incomplete?'Dados parciais'", block)
         self.assertIn("Classificação incompleta", block)
-        self.assertIn("return {fit,html,profile,breaches,hasBreaches,incomplete}", block)
+        self.assertIn("Cobertura insuficiente", block)
+        self.assertIn("o Risk Fit global fica indisponível", block)
+        self.assertIn("return {fit,html,profile,breaches,hasBreaches,incomplete,coverage}", block)
+        self.assertIn("renderRiskBudget(ranked,total)", s)
 
     def test_portfolio_ui_treats_risk_fit_as_higher_is_better(self):
         s = read("vestra-portfolio-ui.js")
