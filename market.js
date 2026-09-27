@@ -1456,7 +1456,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function healthDeltaLabel(value,prev,inverse=false,suffix=''){
     if(value==null||prev==null) return '—';
     const d=value-prev; if(Math.abs(d)<0.05) return '≈ estável';
-    const good=inverse?d<0:d>0; return `${good?'↑':'↓'} ${d>0?'+':''}${d.toFixed(1)}${suffix}`;
+    const good=inverse?d<0:d>0;
+    const shown=inverse?Math.abs(d).toFixed(1):`${d>0?'+':''}${d.toFixed(1)}`;
+    return `${good?'↑':'↓'} ${shown}${suffix}`;
   }
   function renderPortfolioHealthTimeline(history){
     if(!history?.length) return '';
