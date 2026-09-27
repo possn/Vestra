@@ -1286,14 +1286,15 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const maxFactor=n(t.maxFactor)||45, maxCurrency=n(t.maxCurrency)||70, maxRegion=n(t.maxRegion)||70;
     const breaches=[...profile.factors.filter(x=>x.pct>maxFactor).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxFactor}%`),...profile.currencies.filter(x=>x.pct>maxCurrency).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxCurrency}%`),...profile.regions.filter(x=>x.pct>maxRegion).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxRegion}%`)];
     const excess=profile.factors.reduce((a,x)=>a+Math.max(0,x.pct-maxFactor),0)+profile.currencies.reduce((a,x)=>a+Math.max(0,x.pct-maxCurrency),0)+profile.regions.reduce((a,x)=>a+Math.max(0,x.pct-maxRegion),0);
-    const fit=Math.max(0,Math.min(100,Math.round(100-excess*1.4))), tone=fit>=85?'is-positive':fit>=65?'is-warn':'is-risk';
-    const statusLabel=fit>=85?'Boa diversificação':fit>=65?'Atenção':'Concentração elevada';
+    const fit=Math.max(0,Math.min(100,Math.round(100-excess*1.4))), hasBreaches=breaches.length>0;
+    const tone=!hasBreaches&&fit>=85?'is-positive':fit>=65?'is-warn':'is-risk';
+    const statusLabel=!hasBreaches&&fit>=85?'Boa diversificação':fit>=65?'Atenção':'Concentração elevada';
     const riskRows=(items,limit,max)=>items.slice(0,limit).map(x=>{
       const over=x.pct>max, width=Math.max(2,Math.min(100,x.pct));
       return `<div class="market-risk-item ${over?'is-over':''}"><div class="market-risk-item__head"><strong>${esc(x.name)}</strong><span>${x.pct.toFixed(0)}%${over?` · limite ${max}%`:''}</span></div><div class="market-risk-bar"><i style="width:${width}%"></i></div></div>`;
     }).join('');
     const html=`<div class="market-detail-card market-risk-budget"><div class="market-perspective-head"><div><small>PORTFOLIO RISK BUDGET · PROXY</small><h4>Diversificação da carteira</h4></div><div class="market-risk-score ${tone}"><strong>${fit}/100</strong><small>${statusLabel}</small></div></div><p class="market-risk-intro">Mostra onde a carteira está mais dependente do mesmo fator, moeda ou região. Quanto maior a concentração, maior o impacto se esse risco correr mal.</p><div class="market-risk-grid"><section class="market-risk-group"><div class="market-risk-group__title"><strong>Fatores</strong><small>máx. ${maxFactor}%</small></div><div>${riskRows(profile.factors,5,maxFactor)||'<p class="market-risk-empty">Sem classificação suficiente.</p>'}</div></section><section class="market-risk-group"><div class="market-risk-group__title"><strong>Moedas</strong><small>máx. ${maxCurrency}%</small></div><div>${riskRows(profile.currencies,4,maxCurrency)||'<p class="market-risk-empty">Sem classificação suficiente.</p>'}</div></section><section class="market-risk-group"><div class="market-risk-group__title"><strong>Regiões</strong><small>máx. ${maxRegion}%</small></div><div>${riskRows(profile.regions,4,maxRegion)||'<p class="market-risk-empty">Sem classificação suficiente.</p>'}</div></section></div>${breaches.length?`<div class="market-risk-alert"><strong>${breaches.length} ${breaches.length===1?'excesso a acompanhar':'excessos a acompanhar'}</strong><ul>${breaches.slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'<div class="market-risk-ok"><strong>Dentro dos limites definidos</strong><span>Não há concentrações acima dos teus Portfolio Targets.</span></div>'}<p class="market-risk-footnote">Leitura de exposição, não previsão de volatilidade. Usa os dados disponíveis e pode conter proxies quando moeda/região não vêm explicitamente da fonte.</p></div>`;
-    return {fit,html,profile};
+    return {fit,html,profile,breaches,hasBreaches};
   }
 
   const PORTFOLIO_STRESS_SCENARIOS={
@@ -1540,7 +1541,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const topPositionPct=topPosition?topPosition.value/analysed*100:0;
     const review=ranked.filter(r=>['review','replace'].includes(r.action?.key)).sort(comparePortfolioReview);
     const reinforce=ranked.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction);
-    const structuralAlert=topPositionPct>targets.maxPosition||(topSector?.pct||0)>targets.maxSector||riskBudget.fit<65||(worst?.resilience||100)<70;
+    const structuralAlert=topPositionPct>targets.maxPosition||(topSector?.pct||0)>targets.maxSector||riskBudget.hasBreaches||(worst?.resilience||100)<70;
     const decisionState=review.length?'Rever':structuralAlert?'Atenção':'Estável';
     const tone=review.length?'is-risk':structuralAlert?'is-warn':'is-positive';
     const materialEtfOptimize=(etfOptimizeRows||[]).find(x=>x.improvements>=2||x.scoreDelta>=5||(x.terSaving!=null&&x.terSaving>=.10)||(x.dupDelta!=null&&x.dupDelta<=-10))||null;
@@ -1548,13 +1549,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(review[0]) priorities.push({label:`${review[0].action?.key==='replace'?'Substituir':'Rever'} ${review[0].stock.ticker}: ${review[0].conviction==null?'convicção insuficiente':`convicção ${Math.round(review[0].conviction)}/100`}`,kind:'ticker',value:review[0].stock.ticker});
     if(topPositionPct>targets.maxPosition&&topPosition) priorities.push({label:`${topPosition.stock.ticker} está acima do objetivo por posição (${topPositionPct.toFixed(1)}%)`,kind:'ticker',value:topPosition.stock.ticker});
     if(topSector&&topSector.pct>targets.maxSector) priorities.push({label:`${topSector.name} está acima do objetivo setorial (${topSector.pct.toFixed(1)}%)`,kind:'targets',value:'targets'});
+    if(riskBudget.hasBreaches) priorities.push({label:`Risk Budget: ${riskBudget.breaches.length} ${riskBudget.breaches.length===1?'limite excedido':'limites excedidos'}`,kind:'riskbudget',value:'riskbudget'});
     if(worst&&worst.resilience<70) priorities.push({label:`Stress mais exigente: ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label} · resiliência ${worst.resilience}/100`,kind:'stress',value:worst.key});
     if(materialEtfOptimize) priorities.push({label:`Comparar ${materialEtfOptimize.source.ticker} → ${materialEtfOptimize.candidate.ticker}: ETF Optimize encontrou ${materialEtfOptimize.improvements} melhoria${materialEtfOptimize.improvements===1?'':'s'} material${materialEtfOptimize.improvements===1?'':'is'}`,kind:'etfoptimize',value:materialEtfOptimize.source.ticker});
     if(!priorities.length&&reinforce[0]) priorities.push({label:`Carteira sem alerta dominante; ${reinforce[0].stock.ticker} é o reforço com maior convicção atual`,kind:'ticker',value:reinforce[0].stock.ticker});
     const next=review[0]?{label:review[0].action?.key==='replace'?`Abrir ${review[0].stock.ticker} e avaliar substituição`:`Abrir ${review[0].stock.ticker} e rever a tese`,kind:'ticker',value:review[0].stock.ticker}
       :topPositionPct>targets.maxPosition?{label:'Usar o Rebalancer para reduzir concentração por posição',kind:'rebalancer',value:'rebalancer'}
       :topSector&&topSector.pct>targets.maxSector?{label:`Rever concentração no setor ${topSector.name}`,kind:'targets',value:'targets'}
-      :riskBudget.fit<65?{label:'Rever o Risk Budget antes de reforçar posições',kind:'riskbudget',value:'riskbudget'}
+      :riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições',kind:'riskbudget',value:'riskbudget'}
       :worst&&worst.resilience<70?{label:`Rever o stress ${PORTFOLIO_STRESS_SCENARIOS[worst.key].label}`,kind:'stress',value:worst.key}
       :materialEtfOptimize?{label:`Comparar ${materialEtfOptimize.source.ticker} com ${materialEtfOptimize.candidate.ticker} no ETF Optimize`,kind:'etfoptimize',value:materialEtfOptimize.source.ticker}
       :reinforce[0]?{label:`Avaliar reforço em ${reinforce[0].stock.ticker}`,kind:'ticker',value:reinforce[0].stock.ticker}

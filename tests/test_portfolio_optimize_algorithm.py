@@ -39,10 +39,21 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertNotIn("let health=100", block)
         self.assertNotIn("data-vpu-health=", block)
         self.assertNotIn("${health}/100", block)
+        self.assertIn("riskBudget.hasBreaches", block)
+        self.assertIn("Risk Budget:", block)
+        self.assertIn("Rever os limites excedidos no Risk Budget antes de reforçar posições", block)
         self.assertIn("topSector&&topSector.pct>targets.maxSector", block)
-        self.assertIn("riskBudget.fit<65?{label:'Rever o Risk Budget antes de reforçar posições'", block)
+        self.assertIn("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'", block)
         self.assertIn("worst&&worst.resilience<70?{label:", block)
-        self.assertLess(block.index("riskBudget.fit<65?{label:'Rever o Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
+        self.assertLess(block.index("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
+
+    def test_risk_budget_breach_cannot_be_labelled_healthy(self):
+        s = read("market.js")
+        block = s.split("function renderRiskBudget(rows){", 1)[1].split("\n  const PORTFOLIO_STRESS_SCENARIOS", 1)[0]
+        self.assertIn("const fit=Math.max(0,Math.min(100,Math.round(100-excess*1.4))), hasBreaches=breaches.length>0", block)
+        self.assertIn("const tone=!hasBreaches&&fit>=85?'is-positive'", block)
+        self.assertIn("const statusLabel=!hasBreaches&&fit>=85?'Boa diversificação'", block)
+        self.assertIn("return {fit,html,profile,breaches,hasBreaches}", block)
 
     def test_portfolio_ui_treats_risk_fit_as_higher_is_better(self):
         s = read("vestra-portfolio-ui.js")
