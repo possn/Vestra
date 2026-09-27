@@ -1556,8 +1556,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const activeReview=review.filter(r=>!['reviewed','snoozed'].includes(researchQueueState(r.stock.ticker,researchReviewSignalKey(r)).status));
     const reinforce=ranked.filter(r=>r.action?.key==='reinforce').sort((a,b)=>b.conviction-a.conviction);
     const structuralAlert=topPositionPct>targets.maxPosition||(topSector?.pct||0)>targets.maxSector||riskBudget.hasBreaches||(worst?.resilience??100)<75;
-    const decisionState=review.length?'Rever':structuralAlert?'Atenção':'Estável';
-    const tone=review.length?'is-risk':structuralAlert?'is-warn':'is-positive';
+    const decisionState=activeReview.length?'Rever':structuralAlert?'Atenção':review.length?'Acompanhar':'Estável';
+    const tone=activeReview.length?'is-risk':structuralAlert||review.length?'is-warn':'is-positive';
     const materialEtfOptimize=(etfOptimizeRows||[]).find(x=>x.improvements>=2||x.scoreDelta>=5||(x.terSaving!=null&&x.terSaving>=.10)||(x.dupDelta!=null&&x.dupDelta<=-10))||null;
     const priorities=[];
     if(activeReview[0]) priorities.push({label:`${activeReview[0].action?.key==='replace'?'Substituir':'Rever'} ${activeReview[0].stock.ticker}: ${activeReview[0].conviction==null?'convicção insuficiente':`convicção ${Math.round(activeReview[0].conviction)}/100`}`,kind:'ticker',value:activeReview[0].stock.ticker});
