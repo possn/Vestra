@@ -48,6 +48,12 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'", block)
         self.assertIn("worst&&worst.resilience<75?{label:", block)
         self.assertIn("r.resilience>=75?'is-positive'", s)
+        self.assertIn("function renderStressScenario(rows,key,total=0)", s)
+        self.assertIn("function renderPortfolioStressTest(rows,total=0)", s)
+        self.assertIn("Como reage a parte analisável?", s)
+        self.assertIn("Resultado parcial:", s)
+        self.assertIn("renderStressScenario(rows,k,total)", s)
+        self.assertIn("renderPortfolioStressTest(ranked,total)", s)
         self.assertLess(block.index("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
 
     def test_portfolio_health_does_not_compare_target_fit_across_target_changes(self):
