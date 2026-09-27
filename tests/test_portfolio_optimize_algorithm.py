@@ -180,6 +180,10 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         decision = s.split("function renderPortfolioDecisionCenter(", 1)[1].split("\n  function portfolioIntelligence(", 1)[0]
         intelligence = s.split("function portfolioIntelligence(rows,total)", 1)[1].split("\n  function buildMultiMovePlan", 1)[0]
         self.assertNotIn("(a.r.conviction??999)-(b.r.conviction??999)", queue)
+        self.assertIn("const activeItems=items.filter(x=>x.state.status!=='reviewed'&&x.state.status!=='snoozed')", queue)
+        self.assertIn("const visible=activeItems.slice(0,12)", queue)
+        self.assertIn("activeItems.length>12", queue)
+        self.assertNotIn("items.length>12", queue)
         self.assertIn(".sort(comparePortfolioReview)", decision)
         self.assertIn("const activeReview=review.filter(r=>!['reviewed','snoozed'].includes(researchQueueState(r.stock.ticker).status))", decision)
         self.assertIn("const next=activeReview[0]?", decision)
