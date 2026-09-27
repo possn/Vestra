@@ -59,6 +59,12 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
     def test_portfolio_health_does_not_compare_target_fit_across_target_changes(self):
         s = read("market.js")
         self.assertIn("const targetContext=[targets.maxPosition,targets.maxSector,targets.overlap].join('|')", s)
+        self.assertIn("const targetIncomplete=total>0&&researchCoverage<35", s)
+        self.assertIn("const targetFit=targetIncomplete?null:rawTargetFit", s)
+        self.assertIn("targetFit==null?'—':targetFit+'/100'", s)
+        self.assertIn("Dados parciais.", s)
+        self.assertIn("latest.targetFit==null?'—':Math.round(latest.targetFit)", s)
+        self.assertIn("x.targetFit==null?'—':Math.round(x.targetFit)", s)
         self.assertNotIn("targets.maxFactor,targets.maxCurrency,targets.maxRegion,targets.overlap,targets.tilt", s)
         self.assertIn("const comparableTargets=!!prev&&txt(latest.targetContext)&&txt(prev.targetContext)&&latest.targetContext===prev.targetContext", s)
         self.assertIn("comparableTargets?healthDeltaLabel(latest.targetFit,prev.targetFit,false,''):'targets alterados'", s)
