@@ -282,7 +282,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("data-vpu-conviction-coverage=", decision)
         self.assertIn("Convicção · ${convictionCoverage.toFixed(0)}% coberta", decision)
         self.assertIn("Completar evidência de convicção antes de tirar conclusões globais", decision)
-        self.assertIn("conviction==null?'—':conviction.toFixed(1)", decision)
+        self.assertIn("conviction==null?'—':partialConviction?conviction.toFixed(1)+' · parcial':conviction.toFixed(1)", decision)
         self.assertNotIn("const convWeight=convRows.reduce((a,r)=>a+r.value,0)||1", decision)
         self.assertIn("const tone=activeReview.length?'is-risk':structuralAlert||review.length||incompleteEvidence?'is-warn':'is-positive'", decision)
         self.assertNotIn("const decisionState=review.length?'Rever'", decision)
