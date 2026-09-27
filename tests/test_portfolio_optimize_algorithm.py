@@ -34,6 +34,10 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         block = s.split("function renderPortfolioDecisionCenter(", 1)[1].split("\n  function portfolioIntelligence(", 1)[0]
         self.assertIn("const structuralAlert=", block)
         self.assertIn("(worst?.resilience??100)<75", block)
+        self.assertIn("const stressAlert=!partialCoverage&&(worst?.resilience??100)<75", block)
+        self.assertIn("if(stressAlert&&worst) priorities.push", block)
+        self.assertIn(":stressAlert&&worst?{label:", block)
+        self.assertIn("worst.resilience+' · parcial'", block)
         self.assertNotIn("(worst?.resilience||100)<75", block)
         self.assertIn("const decisionState=", block)
         self.assertIn("data-vpu-state=", block)
@@ -46,7 +50,6 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("Rever os limites excedidos no Risk Budget antes de reforçar posições", block)
         self.assertIn("topSector&&topSector.pct>targets.maxSector", block)
         self.assertIn("riskBudget.hasBreaches?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'", block)
-        self.assertIn("worst&&worst.resilience<75?{label:", block)
         self.assertIn("r.resilience>=75?'is-positive'", s)
         self.assertIn("function renderStressScenario(rows,key,total=0)", s)
         self.assertIn("function renderPortfolioStressTest(rows,total=0)", s)
