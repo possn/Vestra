@@ -85,18 +85,22 @@ class OpportunityForwardValidationTests(unittest.TestCase):
             "opportunity_rotation_breadth_pct": 72,
             "opportunity_rotation_return_5d_pct": 3.2,
             "opportunity_rotation_etf_confirmed": True,
+            "opportunity_rotation_etf_evidence_count": 2,
         }
         obs = MOD.make_observation(row)
         self.assertEqual(obs["opportunity_rotation_signal"], "strong_inflow")
         self.assertEqual(obs["opportunity_rotation_theme"], "Semicondutores")
+        self.assertEqual(obs["opportunity_rotation_etf_evidence_count"], 2)
         rows = [{
             "cohort_date": "2026-08-02", "ticker": "AAA", "opportunity_score": 82,
             "return_pct": 5, "opportunity_rotation_signal": "strong_inflow",
+            "opportunity_rotation_etf_confirmed": True,
             "opportunity_label": "Prioridade alta", "opportunity_upside_support": "strong",
             "sector": "Technology",
         }]
         pack = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
         self.assertIn("strong_inflow", pack["by_rotation_signal"])
+        self.assertIn("True", pack["by_rotation_etf_confirmation"])
 
 
     def test_market_regime_context_is_frozen_and_reported(self):
