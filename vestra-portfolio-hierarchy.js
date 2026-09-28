@@ -1,4 +1,4 @@
-/* Vestra Portfolio Hierarchy v2.3 — focus-mode exit is presentation-only within the canonical pipeline. */
+/* Vestra Portfolio Hierarchy v2.4 — focus-mode exit is presentation-only within the canonical pipeline. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -7,7 +7,7 @@
   const ORDER=[
     {id:'decide',title:'Decidir agora',sub:'As ações que podem exigir atenção.',kinds:['research','priority','reinforce','review']},
     {id:'optimize',title:'Otimizar a carteira',sub:'Trocas, overlap e eficiência da alocação.',kinds:['swap','etfopt','scenario','rebalance','overlap','map','plan']},
-    {id:'monitor',title:'Monitorizar',sub:'Saúde, objetivos e resistência da carteira.',kinds:['target','history','risk','stress']}
+    {id:'monitor',title:'Monitorizar',sub:'Saúde, objetivos e resistência da carteira.',kinds:['target','history','risk','stress','inflation']}
   ];
   const PURPOSES={
     research:'Pendências de research',priority:'O que merece atenção',map:'Como está distribuída',reinforce:'Onde colocar capital novo',review:'O que reavaliar',
@@ -166,5 +166,5 @@
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.3'});
+  window.VestraPortfolioHierarchy=Object.freeze({refresh:apply,version:'2.4'});
 })();
