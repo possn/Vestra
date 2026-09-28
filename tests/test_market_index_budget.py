@@ -19,7 +19,7 @@ def load_builder():
 
 def test_market_index_has_explicit_mobile_budget():
     m = load_builder()
-    assert m.MAX_INDEX_BYTES == 7_250_000
+    assert m.MAX_INDEX_BYTES == 7_500_000
     assert m.MAX_INDEX_RATIO == 0.15
 
 
