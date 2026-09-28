@@ -35,6 +35,20 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
         self.assertEqual(eligibility['ineligible'], [])
         self.assertEqual(eligibility['published_contract_violation_count'], 0)
         self.assertEqual(eligibility['published_contract_violations'], [])
+        funnel = report['opportunity_funnel']
+        self.assertEqual(funnel['universe_count'], report['universe_count'])
+        self.assertLessEqual(funnel['published_eligible_score_54plus_count'], funnel['published_eligible_count'])
+        self.assertLessEqual(funnel['strong_tier_count'], funnel['published_eligible_score_54plus_count'])
+        for key in (
+            'labels', 'upside_support', 'risk_gate', 'event_risk',
+            'market_regime', 'revision_evidence', 'valuation_evidence',
+            'suppressed_reasons', 'cap_reasons', 'actionable_labels',
+            'actionable_support', 'actionable_risk_gate', 'actionable_sectors',
+        ):
+            self.assertIn(key, funnel)
+        self.assertEqual(sum(funnel['labels'].values()), report['universe_count'])
+        self.assertEqual(sum(funnel['upside_support'].values()), report['universe_count'])
+        self.assertEqual(sum(funnel['risk_gate'].values()), report['universe_count'])
         diag = report['general_shortlist_diagnostics']
         self.assertLessEqual(max(diag['sector_counts'].values(), default=0), 3)
         self.assertLessEqual(max(diag['industry_counts'].values(), default=0), 2)
