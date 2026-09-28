@@ -1,3 +1,4 @@
+import datetime as dt
 import importlib.util
 from pathlib import Path
 import unittest
@@ -259,6 +260,77 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertLessEqual(out["opportunity_score"], 69)
         self.assertNotEqual(out["opportunity_label"], "Prioridade alta")
 
+
+    def test_imminent_earnings_caps_priority_without_changing_raw_alpha(self):
+        base_row = row()
+        base_row.update({
+            "score": 95, "moat_score": 92, "capital_allocation_intelligence_score": 90,
+            "qarp_score": 92, "value_trap_risk_score": 10, "sector_native_score": 90,
+            "low52_opportunity_score": 75, "recovery_score": 80, "valuation_score": 85,
+        })
+        base = MOD.assess(base_row)
+        candidate = dict(base_row)
+        candidate.update({
+            "analyst_days_to_earnings": 2,
+            "analyst_next_earnings_date": (dt.date.today() + dt.timedelta(days=2)).isoformat(),
+            "earnings_event_risk": "imminent",
+        })
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_score_raw"], base["opportunity_score_raw"])
+        self.assertLessEqual(out["opportunity_score"], 69)
+        self.assertNotEqual(out["opportunity_label"], "Prioridade alta")
+        self.assertEqual(out["opportunity_event_risk"], "earnings_imminent")
+
+    def test_dated_high_risk_catalyst_within_seven_days_caps_actionable_tiers(self):
+        candidate = row()
+        candidate.update({
+            "score": 95, "moat_score": 92, "capital_allocation_intelligence_score": 90,
+            "qarp_score": 92, "value_trap_risk_score": 10, "sector_native_score": 90,
+            "low52_opportunity_score": 75, "recovery_score": 80, "valuation_score": 85,
+            "catalyst_events": [{
+                "kind": "capital_structure",
+                "tone": "risk",
+                "importance": "high",
+                "date": (dt.date.today() + dt.timedelta(days=5)).isoformat(),
+            }],
+        })
+        out = MOD.assess(candidate)
+        self.assertLessEqual(out["opportunity_score"], 59)
+        self.assertEqual(out["opportunity_event_risk"], "high_risk_imminent")
+        self.assertTrue(any(cap["reason"] == "Catalisador de risco alto iminente" for cap in out["opportunity_caps"]))
+
+    def test_dated_high_risk_catalyst_eight_to_fourteen_days_blocks_high_priority(self):
+        candidate = row()
+        candidate.update({
+            "score": 95, "moat_score": 92, "capital_allocation_intelligence_score": 90,
+            "qarp_score": 92, "value_trap_risk_score": 10, "sector_native_score": 90,
+            "low52_opportunity_score": 75, "recovery_score": 80, "valuation_score": 85,
+            "catalyst_events": [{
+                "kind": "capital_structure",
+                "tone": "risk",
+                "importance": "high",
+                "date": (dt.date.today() + dt.timedelta(days=10)).isoformat(),
+            }],
+        })
+        out = MOD.assess(candidate)
+        self.assertLessEqual(out["opportunity_score"], 69)
+        self.assertEqual(out["opportunity_event_risk"], "high_risk_near")
+        self.assertNotEqual(out["opportunity_label"], "Prioridade alta")
+
+    def test_positive_dated_catalyst_never_adds_opportunity_alpha(self):
+        base = MOD.assess(row())
+        candidate = row()
+        candidate["catalyst_events"] = [{
+            "kind": "product",
+            "tone": "positive",
+            "importance": "high",
+            "date": (dt.date.today() + dt.timedelta(days=2)).isoformat(),
+        }]
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_score_raw"], base["opportunity_score_raw"])
+        self.assertEqual(out["opportunity_score"], base["opportunity_score"])
+        self.assertEqual(out["opportunity_event_risk"], "none")
+
     def test_upside_support_survives_compact_pipeline_and_stale_rows_clear_it(self):
         post = (ROOT / "scripts" / "postprocess_market.py").read_text(encoding="utf-8")
         shards = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
@@ -266,6 +338,10 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertIn('"opportunity_upside_reasons"', post)
         self.assertIn('"opportunity_upside_support"', shards)
         self.assertIn('"opportunity_upside_reasons"', shards)
+        self.assertIn('"opportunity_event_risk"', post)
+        self.assertIn('"opportunity_event_risk_days"', post)
+        self.assertIn('"opportunity_event_risk"', shards)
+        self.assertIn('"opportunity_event_risk_days"', shards)
 
         guard = (ROOT / "scripts" / "coverage_guard.py").read_text(encoding="utf-8")
         self.assertIn('"opportunity_missing_upside_support"', guard)

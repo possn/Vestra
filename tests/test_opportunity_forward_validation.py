@@ -128,6 +128,33 @@ class OpportunityForwardValidationTests(unittest.TestCase):
 
 
 
+    def test_binary_event_risk_is_frozen_and_reported(self):
+        row = {
+            "current_price": 100,
+            "opportunity_score": 59,
+            "opportunity_eligible": True,
+            "opportunity_label": "Interessante",
+            "opportunity_upside_support": "strong",
+            "opportunity_event_risk": "high_risk_imminent",
+            "opportunity_event_risk_days": 5,
+            "opportunity_event_risk_date": "2026-09-30",
+            "opportunity_event_risk_source": "capital_structure",
+        }
+        obs = MOD.make_observation(row)
+        self.assertEqual(obs["opportunity_event_risk"], "high_risk_imminent")
+        self.assertEqual(obs["opportunity_event_risk_days"], 5)
+        self.assertEqual(obs["opportunity_event_risk_source"], "capital_structure")
+        rows = [{
+            "cohort_date": "2026-08-02", "ticker": "AAA", "opportunity_score": 59,
+            "return_pct": -4, "opportunity_event_risk": "high_risk_imminent",
+            "opportunity_label": "Interessante", "opportunity_upside_support": "strong",
+            "sector": "Technology",
+        }]
+        pack = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
+        self.assertIn("high_risk_imminent", pack["by_event_risk"])
+
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -42,6 +42,7 @@ NUMERIC_FIELDS = (
     "opportunity_market_return_5d_pct",
     "opportunity_market_return_20d_pct",
     "opportunity_market_regime_evidence_count",
+    "opportunity_event_risk_days",
 )
 SLEEVE_FIELDS = ("strength", "asymmetry", "inflection")
 
@@ -97,6 +98,9 @@ def make_observation(row):
         "opportunity_rotation_etf_confirmed": row.get("opportunity_rotation_etf_confirmed"),
         "opportunity_market_regime": str(row.get("opportunity_market_regime") or ""),
         "opportunity_market_regime_source": str(row.get("opportunity_market_regime_source") or ""),
+        "opportunity_event_risk": str(row.get("opportunity_event_risk") or "none"),
+        "opportunity_event_risk_date": str(row.get("opportunity_event_risk_date") or ""),
+        "opportunity_event_risk_source": str(row.get("opportunity_event_risk_source") or ""),
         **{field: num(row.get(field)) for field in NUMERIC_FIELDS},
         **{f"sleeve_{field}": num(sleeves.get(field)) for field in SLEEVE_FIELDS},
     }
@@ -306,6 +310,7 @@ def summarize_horizon(vals, expected_matured_cohorts=0):
         "by_label": group_breakdown(vals, "opportunity_label"),
         "by_rotation_signal": group_breakdown(vals, "opportunity_rotation_signal"),
         "by_market_regime": group_breakdown(vals, "opportunity_market_regime"),
+        "by_event_risk": group_breakdown(vals, "opportunity_event_risk"),
         "by_sector": group_breakdown(vals, "sector"),
         "cohorts": cohorts,
         "status": validation_status(len(cohorts)),

@@ -90,6 +90,8 @@ INDEX_KEYS = {
     "opportunity_market_regime", "opportunity_market_regime_source",
     "opportunity_market_breadth_20d_pct", "opportunity_market_return_5d_pct",
     "opportunity_market_return_20d_pct", "opportunity_market_regime_evidence_count",
+    "opportunity_event_risk", "opportunity_event_risk_days",
+    "opportunity_event_risk_date", "opportunity_event_risk_source",
     "opportunity_return_5d_pct", "opportunity_return_20d_pct", "opportunity_return_60d_pct",
     "opportunity_drawdown_from_high_pct",
     # low-52 / recovery / sector-relative summaries
