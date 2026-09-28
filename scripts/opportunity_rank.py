@@ -377,11 +377,11 @@ def _upside_support(row: dict) -> dict:
     elif revisions_positive:
         reasons.append("Revisões positivas, mas evidência analista não está suficientemente fresca")
     if revisions_negative_current:
-        reasons.append("Revisões/expectativas recentes em deterioração")
+        reasons.insert(0, "Revisões/expectativas recentes em deterioração")
     elif revisions_negative:
-        reasons.append("Revisões negativas sem frescura suficiente para confirmação atual")
+        reasons.insert(0, "Revisões negativas sem frescura suficiente para confirmação atual")
     if durability_negative:
-        reasons.append("Durabilidade fundamental ainda não confirmada")
+        reasons.insert(0, "Durabilidade fundamental ainda não confirmada")
 
     if vsig == "overvalued" or (internal and fv <= 0) or (internal and mos <= -15):
         status = "negative"
