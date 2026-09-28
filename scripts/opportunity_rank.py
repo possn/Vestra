@@ -12,6 +12,8 @@ of favourable inputs.
 """
 from __future__ import annotations
 
+import datetime as dt
+
 
 def _f(v):
     try:
@@ -227,6 +229,77 @@ def _timing_assessment(row):
     }
 
 
+def _event_risk_context(row: dict) -> dict:
+    """Summarise imminent binary-event risk without adding alpha.
+
+    Earnings are inherently uncertain around the print, even when estimates are
+    improving. Separately, the Catalyst engine can identify dated high-importance
+    risk events. Only dated/explicit events constrain Opportunity priority.
+    """
+    today = dt.date.today()
+    analyst_days = row.get("analyst_days_to_earnings")
+    try:
+        analyst_days = int(analyst_days) if analyst_days is not None else None
+    except (TypeError, ValueError):
+        analyst_days = None
+    earnings_risk = str(row.get("earnings_event_risk") or "").lower()
+
+    best = {
+        "status": "none",
+        "days": None,
+        "date": None,
+        "source": None,
+    }
+
+    if (analyst_days is not None and 0 <= analyst_days <= 3) or earnings_risk == "imminent":
+        best = {
+            "status": "earnings_imminent",
+            "days": analyst_days,
+            "date": row.get("analyst_next_earnings_date"),
+            "source": "earnings",
+        }
+    elif analyst_days is not None and 0 <= analyst_days <= 14:
+        best = {
+            "status": "earnings_near",
+            "days": analyst_days,
+            "date": row.get("analyst_next_earnings_date"),
+            "source": "earnings",
+        }
+
+    dated_risks = []
+    for event in row.get("catalyst_events") or []:
+        if not isinstance(event, dict):
+            continue
+        if str(event.get("tone") or "").lower() != "risk":
+            continue
+        if str(event.get("importance") or "").lower() != "high":
+            continue
+        raw_date = str(event.get("date") or "")[:10]
+        if not raw_date:
+            continue
+        try:
+            event_date = dt.date.fromisoformat(raw_date)
+        except ValueError:
+            continue
+        days = (event_date - today).days
+        if 0 <= days <= 14:
+            dated_risks.append((days, raw_date, str(event.get("kind") or "catalyst")))
+
+    if dated_risks:
+        days, raw_date, kind = min(dated_risks)
+        status = "high_risk_imminent" if days <= 7 else "high_risk_near"
+        # A dated high-importance risk event is more constraining than the
+        # generic uncertainty of an earnings print.
+        best = {
+            "status": status,
+            "days": days,
+            "date": raw_date,
+            "source": kind or "catalyst",
+        }
+
+    return best
+
+
 def _upside_support(row: dict) -> dict:
     """Classify whether headline upside is backed by sufficiently durable evidence.
 
@@ -340,6 +413,7 @@ def assess(row: dict) -> dict:
     timing = _timing_assessment(row)
     timing_score = timing.get("score")
     upside_support = _upside_support(row)
+    event_risk = _event_risk_context(row)
 
     gates = [
         _gate("score_available", score is not None, value=score, detail="Score Vestra não pode estar suprimido"),
@@ -510,6 +584,25 @@ def assess(row: dict) -> dict:
             opp = min(opp, 69.0)
             cautions.append("Regime de mercado adverso")
 
+        event_status = str(event_risk.get("status") or "none")
+        if event_status == "high_risk_imminent":
+            if opp > 59:
+                caps.append({"reason": "Catalisador de risco alto iminente", "cap": 59.0})
+            opp = min(opp, 59.0)
+            cautions.append("Catalisador de risco alto nos próximos 7 dias")
+        elif event_status == "high_risk_near":
+            if opp > 69:
+                caps.append({"reason": "Catalisador de risco alto próximo", "cap": 69.0})
+            opp = min(opp, 69.0)
+            cautions.append("Catalisador de risco alto nos próximos 14 dias")
+        elif event_status == "earnings_imminent":
+            if opp > 69:
+                caps.append({"reason": "Resultados iminentes", "cap": 69.0})
+            opp = min(opp, 69.0)
+            cautions.append("Resultados nos próximos 3 dias: risco binário elevado")
+        elif event_status == "earnings_near":
+            cautions.append("Resultados próximos: acompanhar risco de evento")
+
         if gate == "severe":
             if opp > 35:
                 caps.append({"reason": "Risk Gate severe", "cap": 35.0})
@@ -605,6 +698,10 @@ def assess(row: dict) -> dict:
         "opportunity_market_return_5d_pct": _f(row.get("opportunity_market_return_5d_pct")),
         "opportunity_market_return_20d_pct": _f(row.get("opportunity_market_return_20d_pct")),
         "opportunity_market_regime_evidence_count": _f(row.get("opportunity_market_regime_evidence_count")),
+        "opportunity_event_risk": event_risk.get("status"),
+        "opportunity_event_risk_days": event_risk.get("days"),
+        "opportunity_event_risk_date": event_risk.get("date"),
+        "opportunity_event_risk_source": event_risk.get("source"),
         "opportunity_return_20d_pct": timing.get("return_20d_pct"),
         "opportunity_return_60d_pct": timing.get("return_60d_pct"),
         "opportunity_drawdown_from_high_pct": timing.get("drawdown_from_high_pct"),
