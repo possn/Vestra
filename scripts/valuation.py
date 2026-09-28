@@ -56,7 +56,8 @@ def assess(row: dict) -> dict:
             'fair_value_low': None, 'fair_value_mid': None, 'fair_value_high': None,
             'fair_value_upside_pct': None, 'margin_of_safety_pct': None,
             'valuation_signal': 'insufficient', 'valuation_confidence': 'low',
-            'valuation_methods': [],
+            'valuation_methods': [], 'valuation_method_count': 0,
+            'valuation_dispersion_pct': None,
             'valuation_note': 'Dados insuficientes para uma faixa de fair value explicável.'
         }
 
@@ -102,7 +103,8 @@ def assess(row: dict) -> dict:
             'fair_value_low': None, 'fair_value_mid': None, 'fair_value_high': None,
             'fair_value_upside_pct': None, 'margin_of_safety_pct': None,
             'valuation_signal': 'insufficient', 'valuation_confidence': 'low',
-            'valuation_methods': [],
+            'valuation_methods': [], 'valuation_method_count': 0,
+            'valuation_dispersion_pct': None,
             'valuation_note': ('Biotech sem earnings/FCF comparáveis: valuation genérico não é fiável.' if model=='biotech'
                                else 'Sem múltiplos/yields comparáveis suficientes para estimar fair value.')
         }
@@ -165,5 +167,7 @@ def assess(row: dict) -> dict:
         'fair_value_upside_pct': round(upside,1), 'margin_of_safety_pct': round(mos,1),
         'valuation_signal': signal, 'valuation_confidence': vconf,
         'valuation_methods': methods,
+        'valuation_method_count': len(methods),
+        'valuation_dispersion_pct': round(dispersion * 100.0, 1),
         'valuation_note': note,
     }

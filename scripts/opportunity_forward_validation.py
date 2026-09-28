@@ -45,6 +45,8 @@ NUMERIC_FIELDS = (
     "opportunity_event_risk_days",
     "opportunity_revision_evidence_age_days",
     "opportunity_revision_evidence_coverage_pct",
+    "opportunity_valuation_method_count",
+    "opportunity_valuation_dispersion_pct",
 )
 SLEEVE_FIELDS = ("strength", "asymmetry", "inflection")
 
@@ -106,6 +108,7 @@ def make_observation(row):
         "opportunity_revision_evidence": str(row.get("opportunity_revision_evidence") or "unavailable"),
         "opportunity_revision_evidence_confidence": str(row.get("opportunity_revision_evidence_confidence") or ""),
         "opportunity_revision_evidence_refresh_state": str(row.get("opportunity_revision_evidence_refresh_state") or ""),
+        "opportunity_valuation_evidence": str(row.get("opportunity_valuation_evidence") or "unavailable"),
         **{field: num(row.get(field)) for field in NUMERIC_FIELDS},
         **{f"sleeve_{field}": num(sleeves.get(field)) for field in SLEEVE_FIELDS},
     }
@@ -317,6 +320,7 @@ def summarize_horizon(vals, expected_matured_cohorts=0):
         "by_market_regime": group_breakdown(vals, "opportunity_market_regime"),
         "by_event_risk": group_breakdown(vals, "opportunity_event_risk"),
         "by_revision_evidence": group_breakdown(vals, "opportunity_revision_evidence"),
+        "by_valuation_evidence": group_breakdown(vals, "opportunity_valuation_evidence"),
         "by_sector": group_breakdown(vals, "sector"),
         "cohorts": cohorts,
         "status": validation_status(len(cohorts)),

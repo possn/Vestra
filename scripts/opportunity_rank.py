@@ -342,6 +342,18 @@ def _upside_support(row: dict) -> dict:
     revisions_positive_current = revisions_positive and revision_evidence == "current"
     revisions_negative_current = revisions_negative and revision_evidence in ("current", "limited")
     analyst_positive = pt is not None and pt >= 12
+    valuation_method_count = _f(row.get("valuation_method_count"))
+    valuation_dispersion_pct = _f(row.get("valuation_dispersion_pct"))
+    if valuation_method_count is None:
+        valuation_evidence = "unavailable"
+    elif valuation_method_count < 2:
+        valuation_evidence = "limited"
+    elif valuation_dispersion_pct is None:
+        valuation_evidence = "limited"
+    elif valuation_dispersion_pct <= 35:
+        valuation_evidence = "robust"
+    else:
+        valuation_evidence = "dispersed"
     trap = _f(row.get("value_trap_risk_score"))
     recovery = str(row.get("recovery_status") or "").lower()
     thesis = str(row.get("thesis_direction") or "").lower()
@@ -354,6 +366,10 @@ def _upside_support(row: dict) -> dict:
     reasons = []
     if internal:
         reasons.append(f"Fair value interno {fv:+.0f}% · margem de segurança {mos:+.0f}%")
+    if valuation_evidence == "robust":
+        reasons.append(f"Valuation suportado por {int(valuation_method_count)} métodos com dispersão controlada")
+    elif valuation_evidence in ("limited", "dispersed"):
+        reasons.append("Valuation interno com breadth/consistência insuficiente para confirmação forte")
     if analyst_positive:
         reasons.append(f"Consenso analistas {pt:+.0f}%")
     if revisions_positive_current:
@@ -361,15 +377,23 @@ def _upside_support(row: dict) -> dict:
     elif revisions_positive:
         reasons.append("Revisões positivas, mas evidência analista não está suficientemente fresca")
     if revisions_negative_current:
-        reasons.append("Revisões/expectativas recentes em deterioração")
+        reasons.insert(0, "Revisões/expectativas recentes em deterioração")
     elif revisions_negative:
-        reasons.append("Revisões negativas sem frescura suficiente para confirmação atual")
+        reasons.insert(0, "Revisões negativas sem frescura suficiente para confirmação atual")
     if durability_negative:
-        reasons.append("Durabilidade fundamental ainda não confirmada")
+        reasons.insert(0, "Durabilidade fundamental ainda não confirmada")
 
     if vsig == "overvalued" or (internal and fv <= 0) or (internal and mos <= -15):
         status = "negative"
-    elif internal and fv >= 18 and mos >= 0 and revisions_positive_current and not revisions_negative_current and not durability_negative:
+    elif (
+        internal
+        and fv >= 18
+        and mos >= 0
+        and valuation_evidence == "robust"
+        and revisions_positive_current
+        and not revisions_negative_current
+        and not durability_negative
+    ):
         status = "strong"
     elif internal and fv >= 10 and mos >= -8 and not revisions_negative_current and not (trap is not None and trap >= 75):
         status = "moderate"
@@ -388,6 +412,9 @@ def _upside_support(row: dict) -> dict:
         "revision_evidence_coverage_pct": analyst_coverage,
         "revision_evidence_confidence": estimate_confidence or None,
         "revision_evidence_refresh_state": analyst_refresh or None,
+        "valuation_evidence": valuation_evidence,
+        "valuation_method_count": valuation_method_count,
+        "valuation_dispersion_pct": valuation_dispersion_pct,
         "reasons": reasons[:4],
     }
 
@@ -696,6 +723,9 @@ def assess(row: dict) -> dict:
         "opportunity_revision_evidence_coverage_pct": upside_support.get("revision_evidence_coverage_pct"),
         "opportunity_revision_evidence_confidence": upside_support.get("revision_evidence_confidence"),
         "opportunity_revision_evidence_refresh_state": upside_support.get("revision_evidence_refresh_state"),
+        "opportunity_valuation_evidence": upside_support.get("valuation_evidence"),
+        "opportunity_valuation_method_count": upside_support.get("valuation_method_count"),
+        "opportunity_valuation_dispersion_pct": upside_support.get("valuation_dispersion_pct"),
         "opportunity_eligible": True,
         "opportunity_signal_count": len(observed),
         "opportunity_structural_signal_count": len(structural_observed),

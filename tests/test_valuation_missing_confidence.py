@@ -36,6 +36,27 @@ class ValuationMissingConfidenceTests(unittest.TestCase):
         self.assertEqual(result["valuation_confidence"], "low")
         self.assertNotIn("confiança global ausente", result["valuation_note"])
 
+
+    def test_single_method_exposes_limited_breadth(self):
+        result = valuation.assess(self._row(True))
+        self.assertEqual(result["valuation_method_count"], 1)
+        self.assertEqual(result["valuation_dispersion_pct"], 0.0)
+
+    def test_multiple_methods_expose_count_and_dispersion(self):
+        row = self._row(True)
+        row.update({
+            "trailing_pe": 12.0,
+            "sector_trailing_pe_median": 18.0,
+            "price_to_book": 2.0,
+            "sector_pb_median": 2.4,
+            "fcf_yield": 0.06,
+            "sector_fcf_yield_median": 0.05,
+        })
+        result = valuation.assess(row)
+        self.assertGreaterEqual(result["valuation_method_count"], 3)
+        self.assertIsNotNone(result["valuation_dispersion_pct"])
+        self.assertGreaterEqual(result["valuation_dispersion_pct"], 0)
+
     def test_source_does_not_coerce_missing_confidence_to_zero(self):
         source = (SCRIPTS / "valuation.py").read_text(encoding="utf-8")
         self.assertNotIn("_n(row.get('confidence_score')) or 0.0", source)
