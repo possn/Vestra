@@ -352,6 +352,24 @@ def portfolio_sector_row(row: dict) -> dict | None:
         result["quote_type"] = quote_type
     return result
 
+def load_portfolio_sector_fallback(path: str = PORTFOLIO_SECTORS) -> dict[str, dict]:
+    """Load the previous published sector identities for transient enrichment gaps."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+    tickers = payload.get("tickers") if isinstance(payload, dict) else None
+    if not isinstance(tickers, dict):
+        return {}
+    result = {}
+    for ticker, row in tickers.items():
+        if not isinstance(row, dict) or not str(row.get("sector") or "").strip():
+            continue
+        result[str(ticker).strip().upper()] = row
+    return result
+
+
 
 def main() -> None:
     with open(SRC, "r", encoding="utf-8") as f:
@@ -381,6 +399,7 @@ def main() -> None:
     shards: dict[str, dict[str, dict]] = defaultdict(dict)
     index_rows = []
     scanner_tickers = {}
+    previous_portfolio_sectors = load_portfolio_sector_fallback()
     portfolio_sectors = {}
     manifest = {}
     for ticker, row in rows:
@@ -394,6 +413,11 @@ def main() -> None:
         sector_row = portfolio_sector_row(row)
         if sector_row:
             portfolio_sectors[ticker] = sector_row
+        elif ticker in previous_portfolio_sectors:
+            # Keep a known identity only when the ticker is still present in the
+            # current canonical universe. This protects the portfolio UI from
+            # transient Yahoo/SEC enrichment gaps without reviving removed assets.
+            portfolio_sectors[ticker] = previous_portfolio_sectors[ticker]
 
     os.makedirs(SHARD_DIR, exist_ok=True)
     for name in os.listdir(SHARD_DIR):
