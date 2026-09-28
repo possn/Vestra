@@ -73,6 +73,32 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertEqual(result["status"], "observe_only")
         self.assertTrue(result["production_rules_frozen"])
 
+    def test_rotation_context_is_frozen_and_reported(self):
+        row = {
+            "current_price": 100,
+            "opportunity_score": 82,
+            "opportunity_eligible": True,
+            "opportunity_label": "Prioridade alta",
+            "opportunity_upside_support": "strong",
+            "opportunity_rotation_theme": "Semicondutores",
+            "opportunity_rotation_signal": "strong_inflow",
+            "opportunity_rotation_breadth_pct": 72,
+            "opportunity_rotation_return_5d_pct": 3.2,
+            "opportunity_rotation_etf_confirmed": True,
+        }
+        obs = MOD.make_observation(row)
+        self.assertEqual(obs["opportunity_rotation_signal"], "strong_inflow")
+        self.assertEqual(obs["opportunity_rotation_theme"], "Semicondutores")
+        rows = [{
+            "cohort_date": "2026-08-02", "ticker": "AAA", "opportunity_score": 82,
+            "return_pct": 5, "opportunity_rotation_signal": "strong_inflow",
+            "opportunity_label": "Prioridade alta", "opportunity_upside_support": "strong",
+            "sector": "Technology",
+        }]
+        pack = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
+        self.assertIn("strong_inflow", pack["by_rotation_signal"])
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
