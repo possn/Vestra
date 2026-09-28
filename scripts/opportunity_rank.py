@@ -478,6 +478,24 @@ def assess(row: dict) -> dict:
                 caps.append({"reason": "Upside apenas moderadamente confirmado", "cap": 77.0})
             opp = min(opp, 77.0)
 
+        rotation_signal = str(row.get("opportunity_rotation_signal") or "").lower()
+        rotation_confirmed = row.get("opportunity_rotation_etf_confirmed")
+        rotation_theme = str(row.get("opportunity_rotation_theme") or "")
+        if rotation_signal in ("strong_inflow", "inflow"):
+            reasons.insert(0, f"Rotação semanal favorável{f' em {rotation_theme}' if rotation_theme else ''}")
+        elif rotation_signal == "strong_outflow":
+            cap = 59.0 if rotation_confirmed is True else 64.0
+            if opp > cap:
+                caps.append({"reason": "Rotação semanal fortemente desfavorável", "cap": cap})
+            opp = min(opp, cap)
+            cautions.append(f"Saída forte de capital{f' em {rotation_theme}' if rotation_theme else ''}")
+        elif rotation_signal == "outflow":
+            cap = 64.0 if rotation_confirmed is True else 69.0
+            if opp > cap:
+                caps.append({"reason": "Rotação semanal desfavorável", "cap": cap})
+            opp = min(opp, cap)
+            cautions.append(f"Rotação setorial a enfraquecer{f' em {rotation_theme}' if rotation_theme else ''}")
+
         if gate == "severe":
             if opp > 35:
                 caps.append({"reason": "Risk Gate severe", "cap": 35.0})
@@ -562,6 +580,11 @@ def assess(row: dict) -> dict:
         "opportunity_timing_label": timing.get("label"),
         "opportunity_timing_reasons": timing.get("reasons", []),
         "opportunity_timing_cautions": timing.get("cautions", []),
+        "opportunity_rotation_theme": row.get("opportunity_rotation_theme"),
+        "opportunity_rotation_signal": row.get("opportunity_rotation_signal"),
+        "opportunity_rotation_breadth_pct": _f(row.get("opportunity_rotation_breadth_pct")),
+        "opportunity_rotation_return_5d_pct": _f(row.get("opportunity_rotation_return_5d_pct")),
+        "opportunity_rotation_etf_confirmed": row.get("opportunity_rotation_etf_confirmed"),
         "opportunity_return_20d_pct": timing.get("return_20d_pct"),
         "opportunity_return_60d_pct": timing.get("return_60d_pct"),
         "opportunity_drawdown_from_high_pct": timing.get("drawdown_from_high_pct"),
