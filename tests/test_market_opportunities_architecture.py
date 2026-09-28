@@ -250,6 +250,17 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn("rankedCandidates(universe,type,sector)", block)
         self.assertNotIn("fallback.push(...general)", block)
 
+    def test_general_shortlist_anchors_top_canonical_discovery_before_archetypes(self):
+        source = read('market-opportunities.js')
+        block = source.split("function rankLens(universe,lens", 1)[1].split("function brief(s)", 1)[0]
+        self.assertIn("const anchorCount=Math.min(3,limit)", block)
+        self.assertIn("for(const candidate of general.slice(0,anchorCount))", block)
+        self.assertLess(
+            block.index("for(const candidate of general.slice(0,anchorCount))"),
+            block.index("while(selected.length<limit&&progressed)"),
+        )
+        self.assertIn("return diversify(pool,limit,{recoveryCap:Math.min(5,limit)})", block)
+
     def test_general_discovery_shortlist_has_diversification_guardrails(self):
         source = read('market-opportunities.js')
         self.assertIn('function diversify(rows,limit,{sectorCap=3,industryCap=2,recoveryCap=Infinity}={})', source)
