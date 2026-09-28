@@ -993,6 +993,10 @@ function updatePassiveBar() {
   const passiveAnnualDisplay = getDisplayedPassiveAnnual(t);
   if (barA) barA.textContent = fmtEUR(passiveAnnualDisplay);
   if (barM) barM.textContent = fmtEUR(passiveAnnualDisplay / 12);
+  if (currentView === "dashboard" && dashboardPrivacyEnabled()) {
+    maskDashboardMoneyText(barA);
+    maskDashboardMoneyText(barM);
+  }
 }
 
 /* ─── 1. OBJETIVO DE RENDIMENTO PASSIVO ───────────────────── */
@@ -1418,6 +1422,64 @@ function wireBackupReminder() {
   });
 }
 
+function dashboardPrivacyEnabled() {
+  return !!(state.settings && state.settings.hideDashboardValues);
+}
+
+function maskDashboardMoneyText(root) {
+  if (!root) return;
+  const moneyRx = /([+\-−]?\s*)\d[\d\s.,]*(\s*€)(\/(?:ano|mês))?/gi;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const source = node.nodeValue || "";
+    if (!source.includes("€")) continue;
+    node.nodeValue = source.replace(moneyRx, (_all, sign, _eur, cadence) =>
+      `${sign || ""}•••• €${cadence || ""}`
+    );
+  }
+}
+
+function applyDashboardPrivacy() {
+  const hidden = dashboardPrivacyEnabled();
+  const view = document.getElementById("viewDashboard");
+  const btn = document.getElementById("btnDashboardPrivacy");
+  const label = document.getElementById("dashboardPrivacyLabel");
+  if (view) view.dataset.valuesHidden = hidden ? "true" : "false";
+  if (btn) {
+    btn.setAttribute("aria-pressed", hidden ? "true" : "false");
+    btn.title = hidden ? "Mostrar valores do Dashboard" : "Ocultar valores do Dashboard";
+    btn.classList.toggle("is-active", hidden);
+  }
+  if (label) label.textContent = hidden ? "Mostrar valores" : "Ocultar valores";
+
+  const trend = document.getElementById("trendChart");
+  let note = document.getElementById("dashboardPrivacyChartNote");
+  if (trend) trend.style.visibility = hidden ? "hidden" : "";
+  if (hidden && trend && !note) {
+    note = document.createElement("div");
+    note.id = "dashboardPrivacyChartNote";
+    note.className = "dashboard-privacy-chart-note";
+    note.textContent = "Valores ocultos";
+    trend.insertAdjacentElement("afterend", note);
+  } else if (!hidden && note) {
+    note.remove();
+  }
+
+  if (!hidden) return;
+  maskDashboardMoneyText(view);
+  maskDashboardMoneyText(document.getElementById("passivebar"));
+}
+
+function toggleDashboardPrivacy() {
+  if (!state.settings) state.settings = {};
+  state.settings.hideDashboardValues = !dashboardPrivacyEnabled();
+  saveState();
+  markViewsDirty(["dashboard"]);
+  renderDashboard();
+}
+
 function renderDashboard() {
   applyDashboardEmptyState();
   applyBackupReminder();
@@ -1522,6 +1584,7 @@ function renderDashboard() {
   renderMaturityAlerts();
   renderPortfolioQuality(rc);
   checkNegativeReturn(rc);
+  applyDashboardPrivacy();
 }
 
 /* ─── ALERTA: RENTABILIDADE NEGATIVA ────────────────────────── */

@@ -1942,3 +1942,40 @@ body{
 .portfolio-sector-disclosure__body{border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);padding:10px 12px 12px}
 .portfolio-sector-disclosure__actions{display:flex;justify-content:flex-end;margin-bottom:8px}
 @media(max-width:560px){.portfolio-sector-disclosure>summary{padding:11px 12px}.portfolio-sector-disclosure__body{padding:9px 10px 11px}}
+
+
+/* Dashboard privacy — hide absolute money while keeping percentages/context visible. */
+.dashboard-privacy-toggle{
+  margin-left:auto;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(255,255,255,.12);
+  color:#fff;
+  border-radius:999px;
+  padding:6px 10px;
+  font:700 11px/1 inherit;
+  letter-spacing:0;
+  text-transform:none;
+  cursor:pointer;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.dashboard-privacy-toggle:hover,.dashboard-privacy-toggle.is-active{background:rgba(255,255,255,.22)}
+.dashboard-privacy-toggle svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8}
+.dashboard-privacy-chart-note{
+  min-height:120px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--muted);
+  font-weight:700;
+  font-size:13px;
+  letter-spacing:.2px;
+}
+#viewDashboard[data-values-hidden="true"] .hero__value{letter-spacing:2px}
+@media(max-width:520px){
+  .dashboard-privacy-toggle{padding:6px 8px}
+  .dashboard-privacy-toggle span{display:none}
+}
