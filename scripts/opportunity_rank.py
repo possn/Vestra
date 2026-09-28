@@ -227,6 +227,64 @@ def _timing_assessment(row):
     }
 
 
+def _upside_support(row: dict) -> dict:
+    """Classify whether headline upside is backed by sufficiently durable evidence.
+
+    This is deliberately a gate/cap, not another alpha score. Internal fair value
+    is primary; analyst targets are only corroboration. A good company with good
+    timing may still be worth investigating without valuation support, but it
+    must not be promoted into the strongest opportunity labels.
+    """
+    fv = _f(row.get("fair_value_upside_pct"))
+    mos = _f(row.get("margin_of_safety_pct"))
+    pt = _f(row.get("analyst_price_target_upside_pct"))
+    vconf = str(row.get("valuation_confidence") or "").lower()
+    vsig = str(row.get("valuation_signal") or "").lower()
+    est = str(row.get("estimate_signal") or "").lower()
+    est_score = _f(row.get("estimate_momentum_score"))
+    rev_up = _f(row.get("analyst_eps_revisions_up_30d")) or 0.0
+    rev_down = _f(row.get("analyst_eps_revisions_down_30d")) or 0.0
+
+    internal = (
+        fv is not None
+        and mos is not None
+        and vconf in ("medium", "high")
+        and vsig not in ("uncertain", "insufficient")
+    )
+    revisions_positive = est == "improving" or (est_score is not None and est_score >= 60) or rev_up > rev_down
+    revisions_negative = est == "deteriorating" or (est_score is not None and est_score < 40) or rev_down > rev_up
+    analyst_positive = pt is not None and pt >= 12
+
+    reasons = []
+    if internal:
+        reasons.append(f"Fair value interno {fv:+.0f}% · margem de segurança {mos:+.0f}%")
+    if analyst_positive:
+        reasons.append(f"Consenso analistas {pt:+.0f}%")
+    if revisions_positive:
+        reasons.append("Revisões/expectativas confirmam a tese")
+    if revisions_negative:
+        reasons.append("Revisões/expectativas em deterioração")
+
+    if vsig == "overvalued" or (internal and fv <= 0) or (internal and mos <= -15):
+        status = "negative"
+    elif internal and fv >= 18 and mos >= 0 and not revisions_negative and (revisions_positive or analyst_positive):
+        status = "strong"
+    elif internal and fv >= 10 and mos >= -8 and not revisions_negative:
+        status = "moderate"
+    elif internal:
+        status = "weak"
+    else:
+        status = "unavailable"
+
+    return {
+        "status": status,
+        "fair_value_upside_pct": fv,
+        "margin_of_safety_pct": mos,
+        "analyst_price_target_upside_pct": pt,
+        "reasons": reasons[:4],
+    }
+
+
 def _insufficient(reason, components=None, gates=None, timing=None):
     out = {
         "opportunity_score": None,
@@ -235,6 +293,8 @@ def _insufficient(reason, components=None, gates=None, timing=None):
         "opportunity_reasons": [],
         "opportunity_cautions": [reason],
         "opportunity_components": components or {},
+        "opportunity_upside_support": "unavailable",
+        "opportunity_upside_reasons": [],
         "opportunity_eligible": False,
         "opportunity_suppressed_reason": reason,
         "opportunity_gates": gates or [],
@@ -269,6 +329,7 @@ def assess(row: dict) -> dict:
     reliability = str(row.get("score_reliability") or "").lower()
     timing = _timing_assessment(row)
     timing_score = timing.get("score")
+    upside_support = _upside_support(row)
 
     gates = [
         _gate("score_available", score is not None, value=score, detail="Score Vestra não pode estar suprimido"),
@@ -358,6 +419,8 @@ def assess(row: dict) -> dict:
     reasons = list(timing.get("reasons") or [])
     cautions = list(timing.get("cautions") or [])
     caps = []
+    upside_status = upside_support["status"]
+    reasons.extend(upside_support.get("reasons") or [])
     if score >= 70:
         reasons.append("Score Vestra elevado")
     if conf >= 70:
@@ -392,6 +455,19 @@ def assess(row: dict) -> dict:
 
     opp = raw
     if opp is not None:
+        if upside_status == "negative":
+            if opp > 49:
+                caps.append({"reason": "Upside fundamental não confirmado", "cap": 49.0})
+            opp = min(opp, 49.0)
+        elif upside_status in ("weak", "unavailable"):
+            if opp > 64:
+                caps.append({"reason": "Upside fundamental insuficientemente suportado", "cap": 64.0})
+            opp = min(opp, 64.0)
+        elif upside_status == "moderate":
+            if opp > 77:
+                caps.append({"reason": "Upside apenas moderadamente confirmado", "cap": 77.0})
+            opp = min(opp, 77.0)
+
         if gate == "severe":
             if opp > 35:
                 caps.append({"reason": "Risk Gate severe", "cap": 35.0})
@@ -454,6 +530,8 @@ def assess(row: dict) -> dict:
         "opportunity_reasons": reasons[:5],
         "opportunity_cautions": cautions[:5],
         "opportunity_components": components,
+        "opportunity_upside_support": upside_status,
+        "opportunity_upside_reasons": upside_support.get("reasons", []),
         "opportunity_eligible": True,
         "opportunity_signal_count": len(observed),
         "opportunity_structural_signal_count": len(structural_observed),
