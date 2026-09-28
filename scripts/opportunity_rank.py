@@ -482,7 +482,7 @@ def assess(row: dict) -> dict:
         rotation_confirmed = row.get("opportunity_rotation_etf_confirmed")
         rotation_theme = str(row.get("opportunity_rotation_theme") or "")
         if rotation_signal in ("strong_inflow", "inflow"):
-            reasons.append(f"Rotação semanal favorável{f' em {rotation_theme}' if rotation_theme else ''}")
+            reasons.insert(0, f"Rotação semanal favorável{f' em {rotation_theme}' if rotation_theme else ''}")
         elif rotation_signal == "strong_outflow":
             cap = 59.0 if rotation_confirmed is True else 64.0
             if opp > cap:
