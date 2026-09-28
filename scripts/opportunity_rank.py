@@ -496,6 +496,20 @@ def assess(row: dict) -> dict:
             opp = min(opp, cap)
             cautions.append(f"Rotação setorial a enfraquecer{f' em {rotation_theme}' if rotation_theme else ''}")
 
+        market_regime = str(row.get("opportunity_market_regime") or "").lower()
+        if market_regime == "supportive":
+            reasons.insert(0, "Regime de mercado favorável")
+        elif market_regime == "severe_adverse":
+            if opp > 59:
+                caps.append({"reason": "Regime de mercado severamente adverso", "cap": 59.0})
+            opp = min(opp, 59.0)
+            cautions.append("Regime de mercado severamente adverso")
+        elif market_regime == "adverse":
+            if opp > 69:
+                caps.append({"reason": "Regime de mercado adverso", "cap": 69.0})
+            opp = min(opp, 69.0)
+            cautions.append("Regime de mercado adverso")
+
         if gate == "severe":
             if opp > 35:
                 caps.append({"reason": "Risk Gate severe", "cap": 35.0})
@@ -585,6 +599,12 @@ def assess(row: dict) -> dict:
         "opportunity_rotation_breadth_pct": _f(row.get("opportunity_rotation_breadth_pct")),
         "opportunity_rotation_return_5d_pct": _f(row.get("opportunity_rotation_return_5d_pct")),
         "opportunity_rotation_etf_confirmed": row.get("opportunity_rotation_etf_confirmed"),
+        "opportunity_market_regime": row.get("opportunity_market_regime"),
+        "opportunity_market_regime_source": row.get("opportunity_market_regime_source"),
+        "opportunity_market_breadth_20d_pct": _f(row.get("opportunity_market_breadth_20d_pct")),
+        "opportunity_market_return_5d_pct": _f(row.get("opportunity_market_return_5d_pct")),
+        "opportunity_market_return_20d_pct": _f(row.get("opportunity_market_return_20d_pct")),
+        "opportunity_market_regime_evidence_count": _f(row.get("opportunity_market_regime_evidence_count")),
         "opportunity_return_20d_pct": timing.get("return_20d_pct"),
         "opportunity_return_60d_pct": timing.get("return_60d_pct"),
         "opportunity_drawdown_from_high_pct": timing.get("drawdown_from_high_pct"),
