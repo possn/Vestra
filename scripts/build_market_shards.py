@@ -85,6 +85,8 @@ INDEX_KEYS = {
     "opportunity_upside_support", "opportunity_upside_reasons",
     "opportunity_eligible", "opportunity_signal_count", "opportunity_structural_signal_count",
     "opportunity_timing_score", "opportunity_timing_label", "opportunity_overextended",
+    "opportunity_rotation_theme", "opportunity_rotation_signal",
+    "opportunity_rotation_breadth_pct", "opportunity_rotation_return_5d_pct", "opportunity_rotation_etf_confirmed",
     "opportunity_return_5d_pct", "opportunity_return_20d_pct", "opportunity_return_60d_pct",
     "opportunity_drawdown_from_high_pct",
     # low-52 / recovery / sector-relative summaries
