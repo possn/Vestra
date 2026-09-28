@@ -82,22 +82,22 @@ INDEX_KEYS = {
     # opportunity summaries used outside the Scanner tool
     "scanner_best", "scanner_best_score", "qarp_score", "qarp_label",
     "opportunity_score", "opportunity_score_raw", "opportunity_label",
-    "opportunity_upside_support", "opportunity_upside_reasons",
-    "opportunity_revision_evidence", "opportunity_revision_evidence_age_days",
-    "opportunity_revision_evidence_coverage_pct", "opportunity_revision_evidence_confidence",
-    "opportunity_revision_evidence_refresh_state",
-    "opportunity_valuation_evidence", "opportunity_valuation_method_count",
-    "opportunity_valuation_dispersion_pct",
+    "opportunity_upside_support", 
+    "opportunity_revision_evidence", 
+     
+    
+    "opportunity_valuation_evidence", 
+    
     "opportunity_eligible", "opportunity_signal_count", "opportunity_structural_signal_count",
     "opportunity_timing_score", "opportunity_timing_label", "opportunity_overextended",
     "opportunity_rotation_theme", "opportunity_rotation_signal",
-    "opportunity_rotation_breadth_pct", "opportunity_rotation_return_5d_pct", "opportunity_rotation_etf_confirmed",
-    "opportunity_rotation_etf_evidence_count",
-    "opportunity_market_regime", "opportunity_market_regime_source",
-    "opportunity_market_breadth_20d_pct", "opportunity_market_return_5d_pct",
-    "opportunity_market_return_20d_pct", "opportunity_market_regime_evidence_count",
-    "opportunity_event_risk", "opportunity_event_risk_days",
-    "opportunity_event_risk_date", "opportunity_event_risk_source",
+      
+    
+    "opportunity_market_regime", 
+     
+     
+    "opportunity_event_risk", 
+     
     "opportunity_return_5d_pct", "opportunity_return_20d_pct", "opportunity_return_60d_pct",
     "opportunity_drawdown_from_high_pct",
     # low-52 / recovery / sector-relative summaries
