@@ -40,7 +40,17 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
     candidate('EARLY', { estimate_signal: 'improving', recovery_status: '', thesis_direction: 'up', opportunity_timing_score: 68 }),
     candidate('RECOV', { estimate_signal: 'improving', recovery_status: 'confirmed', opportunity_timing_score: 66 }),
     candidate('LOW52', { low52_above_low_pct: 2.1, opportunity_timing_score: 55 }),
-    candidate('VALUE', { fair_value_upside_pct: 34, valuation_signal: 'undervalued', opportunity_timing_score: 57 }),
+    candidate('VALUE', {
+      fair_value_upside_pct: 34,
+      margin_of_safety_pct: 12,
+      valuation_signal: 'undervalued',
+      valuation_confidence: 'high',
+      estimate_signal: 'improving',
+      estimate_momentum_score: 70,
+      analyst_eps_revisions_up_30d: 4,
+      analyst_eps_revisions_down_30d: 1,
+      opportunity_timing_score: 57,
+    }),
   ]);
 
   const fixture = page.locator('#lensFixture');

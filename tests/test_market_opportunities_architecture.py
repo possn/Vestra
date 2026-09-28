@@ -55,6 +55,11 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         ranker = read('scripts/opportunity_rank.py')
         self.assertIn('function discoveryScore(s)', source)
         self.assertIn('const published=n(s?.opportunity_score)', source)
+        self.assertIn('function fallbackUpsideSupport(s)', source)
+        self.assertIn("if(support==='negative')x=Math.min(x,49)", source)
+        self.assertIn("else if(['weak','unavailable'].includes(support))x=Math.min(x,64)", source)
+        self.assertIn("else if(support==='moderate')x=Math.min(x,77)", source)
+        self.assertNotIn("else if(pt!=null)x+=Math.max(-5,Math.min(6,pt/7))", source)
         self.assertIn('score:discoveryScore', source)
         self.assertNotIn('[n(s?.confidence_score),.06]', source)
         sleeve_block = ranker.split('sleeve_parts = [', 1)[1].split(']', 1)[0]
@@ -362,6 +367,22 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
             self.assertIn(module, sw)
         self.assertNotIn('./vestra-portfolio-focus.js', sw)
         self.assertNotIn('./vestra-portfolio-focus.css', sw)
+
+    def test_value_lens_requires_internal_valuation_support(self):
+        source = read('market-opportunities.js')
+        block = source.split("if(lens==='value'){", 1)[1].split("}", 1)[0]
+        self.assertIn("fv!=null&&fv>=10", block)
+        self.assertIn("['moderate','strong'].includes(support)", block)
+        self.assertNotIn("pt!=null&&pt>=12", block)
+        self.assertIn("val!=='overvalued'", block)
+
+    def test_analyst_target_is_confirmation_not_fallback_alpha(self):
+        source = read('market-opportunities.js')
+        fallback = source.split('function fallbackUpsideSupport(s)', 1)[1].split('function discoveryScore(s)', 1)[0]
+        discovery = source.split('function discoveryScore(s)', 1)[1].split('function low52Above(s)', 1)[0]
+        self.assertIn('const analystPositive=pt!=null&&pt>=12', fallback)
+        self.assertIn('(revisionsPositive||analystPositive)', fallback)
+        self.assertNotIn('pt/7', discovery)
 
 
 if __name__ == '__main__':
