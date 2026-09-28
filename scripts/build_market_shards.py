@@ -86,6 +86,8 @@ INDEX_KEYS = {
     "opportunity_revision_evidence", "opportunity_revision_evidence_age_days",
     "opportunity_revision_evidence_coverage_pct", "opportunity_revision_evidence_confidence",
     "opportunity_revision_evidence_refresh_state",
+    "opportunity_valuation_evidence", "opportunity_valuation_method_count",
+    "opportunity_valuation_dispersion_pct",
     "opportunity_eligible", "opportunity_signal_count", "opportunity_structural_signal_count",
     "opportunity_timing_score", "opportunity_timing_label", "opportunity_overextended",
     "opportunity_rotation_theme", "opportunity_rotation_signal",
