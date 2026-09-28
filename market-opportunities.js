@@ -210,8 +210,15 @@
   function rankLens(universe,lens,{limit=12,sector='all'}={}){
     if(lens!=='all')return rankedCandidates(universe,lens,sector).slice(0,limit);
 
+    const canonical=(Array.isArray(universe)?universe:[]).filter(s=>eligible(s));
+    const scoped=sector==='all'?canonical:canonical.filter(s=>t(s?.sector)===sector);
+    const general=scoped.slice().sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
     const archetypes=['low52','emerging','recovery','value'];
-    const buckets=archetypes.map(type=>({type,rows:rankedCandidates(universe,type,sector),index:0}));
+    const buckets=archetypes.map(type=>({
+      type,
+      rows:general.filter(s=>lensEligible(s,type)).sort((a,b)=>lensScore(b,type)-lensScore(a,type)||(discoveryScore(b)||0)-(discoveryScore(a)||0)),
+      index:0
+    }));
     const selected=[],seen=new Set();
     const recoveryCap=Math.min(5,limit);
     let recoveryCount=0;
@@ -234,7 +241,6 @@
       }
     }
 
-    const general=rankedCandidates(universe,'all',sector);
     for(const candidate of general){
       if(selected.length>=limit)break;
       const key=t(candidate?.ticker).toUpperCase();
@@ -245,10 +251,7 @@
     }
 
     if(selected.length<limit){
-      const fallback=[];
-      for(const bucket of buckets)fallback.push(...bucket.rows);
-      fallback.push(...general);
-      fallback.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
+      const fallback=general.slice();
       for(const candidate of fallback){
         if(selected.length>=limit)break;
         const key=t(candidate?.ticker).toUpperCase();
@@ -374,7 +377,7 @@
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
     if(lens==='recovery')return ['Recuperação','Empresas com recuperação operacional ou de estimativas já confirmada.'];
     if(lens==='value')return ['Value + timing','Desconto ou upside relevante, mas apenas com timing mínimo aceitável.'];
-    return ['Oportunidades agora','Visão transversal: os melhores setups de mínimos, arranque, recuperação e value + timing, sem deixar um único arquétipo dominar a shortlist.'];
+    return ['Oportunidades agora','Só entram nomes que passam todos os critérios do gate geral; a shortlist pode ter menos de 12 quando a evidência não chega.'];
   }
 
   function opportunities(lens=activeLens,sectorOverride=''){

@@ -116,6 +116,11 @@ const repeated = Object.entries(appearances)
 const eligibleCounts = Object.fromEntries(lenses.map(lens => [lens, stocks.filter(stock => api.lensEligible(stock, lens)).length]));
 const allRows = api.rankLens(stocks, 'all', { limit: topN });
 const diagnostics = shortlistDiagnostics(allRows);
+const generalEligibility = allRows.map(stock => ({
+  ticker: String(stock?.ticker || '').trim(),
+  eligible: Boolean(api.eligible?.(stock)),
+}));
+const ineligibleGeneral = generalEligibility.filter(item => !item.eligible);
 const scored = stocks
   .filter(stock => Number.isFinite(Number(stock?.score)))
   .slice()
@@ -147,6 +152,11 @@ const report = {
   pairs,
   repeated_in_3plus_lenses: repeated,
   general_shortlist_diagnostics: diagnostics,
+  general_shortlist_eligibility: {
+    eligible_count: generalEligibility.filter(item => item.eligible).length,
+    ineligible_count: ineligibleGeneral.length,
+    ineligible: ineligibleGeneral,
+  },
   discovery_novelty_vs_score: novelty,
 };
 console.log(JSON.stringify(report, null, 2));
