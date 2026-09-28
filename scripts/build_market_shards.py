@@ -312,6 +312,14 @@ def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> d
     return out
 
 
+LEGACY_INDEX_OMIT = {"market_return_5d_pct", "market_return_20d_pct"}
+
+
+def legacy_index_row(row: dict) -> dict:
+    """Keep production-only rotation scalars out of the verbose fallback index."""
+    return {key: value for key, value in row.items() if key not in LEGACY_INDEX_OMIT}
+
+
 def pack_index_payload(index_payload: dict) -> dict:
     """Dictionary-code repeated row keys while preserving all startup values."""
     rows = index_payload.get("stocks") or []
@@ -447,13 +455,20 @@ def main() -> None:
         if name.endswith(".json"):
             os.remove(os.path.join(SHARD_DIR, name))
 
-    index_payload = {
+    startup_payload = {
         "schema_version": schema_version,
         "generated_at": generated_at,
         "data_quality": payload.get("data_quality", {}),
         "universe_counts": payload.get("universe_counts", {}),
         "category_benchmarks": payload.get("category_benchmarks", {}),
         "stocks": index_rows,
+    }
+    # The verbose JSON file is a compatibility fallback only. Keep production-only
+    # rotation scalars in the normal columnar startup payload instead of paying
+    # their key cost twice for every equity.
+    index_payload = {
+        **{k: v for k, v in startup_payload.items() if k != "stocks"},
+        "stocks": [legacy_index_row(row) for row in index_rows],
     }
     with open(INDEX, "w", encoding="utf-8") as f:
         json.dump(index_payload, f, ensure_ascii=False, separators=(",", ":"))
@@ -464,7 +479,7 @@ def main() -> None:
     # Production startup representation. market-static-universe.js prefers this
     # field/rows payload and falls back to INDEX then SRC if it is unavailable or
     # invalid, so the compact file is now the normal transfer path on iPhone/PWA.
-    packed_payload = pack_index_payload(index_payload)
+    packed_payload = pack_index_payload(startup_payload)
     with open(COLUMNAR_INDEX, "w", encoding="utf-8") as f:
         json.dump(packed_payload, f, ensure_ascii=False, separators=(",", ":"))
 
