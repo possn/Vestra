@@ -148,6 +148,56 @@ const novelty = {
   discovery_in_top_score_decile: overlapTopDecile,
   discovery_novel_count: discoveryNames.filter(ticker => !topScoreDecile.has(ticker)).length,
 };
+
+function countBy(rows, key, fallback='Unknown') {
+  return rows.reduce((acc, row) => {
+    const raw = row?.[key];
+    const value = raw === null || raw === undefined || raw === '' ? fallback : String(raw);
+    acc[value] = (acc[value] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function countCaps(rows) {
+  const out = {};
+  for (const row of rows) {
+    const caps = Array.isArray(row?.opportunity_caps) ? row.opportunity_caps : [];
+    for (const cap of caps) {
+      const reason = String(cap?.reason || 'Unknown').trim() || 'Unknown';
+      out[reason] = (out[reason] || 0) + 1;
+    }
+  }
+  return Object.fromEntries(Object.entries(out).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])));
+}
+
+function opportunityFunnel(rows) {
+  const publishedEligible = rows.filter(row => row?.opportunity_eligible === true);
+  const actionable = publishedEligible.filter(row => Number.isFinite(Number(row?.opportunity_score)) && Number(row.opportunity_score) >= 54);
+  const strongTier = actionable.filter(row => ['Prioridade alta', 'Oportunidade forte'].includes(String(row?.opportunity_label || '')));
+  return {
+    universe_count: rows.length,
+    published_eligible_count: publishedEligible.length,
+    score_54plus_count: rows.filter(row => Number.isFinite(Number(row?.opportunity_score)) && Number(row.opportunity_score) >= 54).length,
+    published_eligible_score_54plus_count: actionable.length,
+    strong_tier_count: strongTier.length,
+    labels: countBy(rows, 'opportunity_label'),
+    upside_support: countBy(rows, 'opportunity_upside_support'),
+    risk_gate: countBy(rows, 'risk_gate'),
+    event_risk: countBy(rows, 'opportunity_event_risk'),
+    market_regime: countBy(rows, 'opportunity_market_regime'),
+    revision_evidence: countBy(rows, 'opportunity_revision_evidence'),
+    valuation_evidence: countBy(rows, 'opportunity_valuation_evidence'),
+    suppressed_reasons: countBy(rows.filter(row => row?.opportunity_eligible === false), 'opportunity_suppressed_reason'),
+    cap_reasons: countCaps(rows),
+    actionable_labels: countBy(actionable, 'opportunity_label'),
+    actionable_support: countBy(actionable, 'opportunity_upside_support'),
+    actionable_risk_gate: countBy(actionable, 'risk_gate'),
+    actionable_sectors: countBy(actionable, 'sector'),
+  };
+}
+
+const funnel = opportunityFunnel(stocks);
+
 const report = {
   generated_at: payload?.generated_at || null,
   universe_count: stocks.length,
@@ -157,6 +207,7 @@ const report = {
   pairs,
   repeated_in_3plus_lenses: repeated,
   general_shortlist_diagnostics: diagnostics,
+  opportunity_funnel: funnel,
   general_shortlist_eligibility: {
     eligible_count: generalEligibility.filter(item => item.eligible).length,
     ineligible_count: ineligibleGeneral.length,
