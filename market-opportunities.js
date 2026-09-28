@@ -377,7 +377,7 @@
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
     if(lens==='recovery')return ['Recuperação','Empresas com recuperação operacional ou de estimativas já confirmada.'];
     if(lens==='value')return ['Value + timing','Desconto ou upside relevante, mas apenas com timing mínimo aceitável.'];
-    return ['Oportunidades agora','Visão transversal: os melhores setups de mínimos, arranque, recuperação e value + timing, sem deixar um único arquétipo dominar a shortlist.'];
+    return ['Oportunidades agora','Só entram nomes que passam todos os critérios do gate geral; a shortlist pode ter menos de 12 quando a evidência não chega.'];
   }
 
   function opportunities(lens=activeLens,sectorOverride=''){
