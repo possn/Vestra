@@ -222,6 +222,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('ux453-cap-note', source)
         self.assertIn('.ux453-cap-note{', css)
 
+    def test_general_shortlist_never_uses_looser_lens_eligibility_to_fill_slots(self):
+        source = read('market-opportunities.js')
+        block = source.split("function rankLens(universe,lens", 1)[1].split("function brief(s)", 1)[0]
+        self.assertIn("const canonical=(Array.isArray(universe)?universe:[]).filter(s=>eligible(s))", block)
+        self.assertIn("const general=scoped.slice().sort", block)
+        self.assertIn("rows:general.filter(s=>lensEligible(s,type))", block)
+        self.assertNotIn("rankedCandidates(universe,type,sector)", block)
+        self.assertNotIn("fallback.push(...general)", block)
+
     def test_general_discovery_shortlist_has_diversification_guardrails(self):
         source = read('market-opportunities.js')
         self.assertIn('function diversify(rows,limit,{sectorCap=3,industryCap=2,recoveryCap=Infinity}={})', source)
