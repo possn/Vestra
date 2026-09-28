@@ -997,8 +997,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function portfolioFit(r, sectorRows, analysed, etfs, targets=loadPortfolioTargets()){
     const positionPct=analysed>0?r.value/analysed*100:0;
-    const sector=txt(r.stock?.sector)||'Sem setor';
-    const sectorPct=sectorRows.find(x=>x.sector===sector)?.pct||0;
+    const sector=txt(r.stock?.sector);
+    const sectorPct=sector?sectorRows.find(x=>x.sector===sector)?.pct||0:0;
     const indirectPct=isFund(r.stock)?0:indirectExposurePct(r.stock,etfs);
     const maxPos=Math.max(3,Math.min(30,n(targets?.maxPosition)||10));
     const maxSector=Math.max(10,Math.min(60,n(targets?.maxSector)||25));
@@ -1571,7 +1571,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const riskBudget=renderRiskBudget(ranked,total);
     const stresses=Object.keys(PORTFOLIO_STRESS_SCENARIOS).map(k=>portfolioStress(ranked,k)).sort((a,b)=>a.resilience-b.resilience);
     const worst=stresses[0];
-    const sectors=new Map(); ranked.forEach(r=>{const k=txt(r.stock.sector)||'Sem setor'; sectors.set(k,(sectors.get(k)||0)+r.value)});
+    const sectors=new Map(); ranked.forEach(r=>{const k=txt(r.stock.sector); if(k) sectors.set(k,(sectors.get(k)||0)+r.value)});
     const topSector=[...sectors.entries()].map(([name,value])=>({name,pct:value/portfolioBase*100})).sort((a,b)=>b.pct-a.pct)[0];
     const topPosition=ranked.slice().sort((a,b)=>b.value-a.value)[0];
     const topPositionPct=topPosition?topPosition.value/portfolioBase*100:0;
@@ -1622,7 +1622,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const heldTickers=new Set(ranked.map(r=>txt(r.stock.ticker).toUpperCase().replace(/\.[A-Z]+$/,'')));
 
     const sectors=new Map();
-    for(const r of ranked){ const k=txt(r.stock.sector)||'Sem setor'; sectors.set(k,(sectors.get(k)||0)+r.value); }
+    for(const r of ranked){ const k=txt(r.stock.sector); if(k) sectors.set(k,(sectors.get(k)||0)+r.value); }
     const sectorRows=[...sectors.entries()].map(([sector,value])=>({sector,value,pct:value/portfolioBase*100})).sort((a,b)=>b.value-a.value);
     const topPosition=ranked.slice().sort((a,b)=>b.value-a.value)[0];
     const topPosPct=topPosition?topPosition.value/portfolioBase*100:0;
@@ -1793,9 +1793,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const rows=[...rowMap.values()].map(r=>({...r,conviction:portfolioConviction(r.stock)})).filter(r=>r.conviction!=null&&r.value>0);
     const totalValue=researchUniverseValue(assets)||rows.reduce((a,r)=>a+r.value,0)||1, targets=loadPortfolioTargets();
     const maxPosition=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
-    const sectors=new Map(); for(const r of rows){const k=txt(r.stock.sector)||'Sem setor';sectors.set(k,(sectors.get(k)||0)+r.value);}
+    const sectors=new Map(); for(const r of rows){const k=txt(r.stock.sector);if(k)sectors.set(k,(sectors.get(k)||0)+r.value);}
     const sourceSignals=r=>{
-      const gate=txt(r.stock.risk_gate), positionPct=r.value/totalValue*100, sectorPct=(sectors.get(txt(r.stock.sector)||'Sem setor')||0)/totalValue*100;
+      const gate=txt(r.stock.risk_gate), positionPct=r.value/totalValue*100, sectorKey=txt(r.stock.sector), sectorPct=sectorKey?(sectors.get(sectorKey)||0)/totalValue*100:0;
       const gateRank=gate==='severe'?3:gate==='high'?2:gate==='watch'?1:0;
       const thesisDown=txt(r.stock.thesis_direction)==='down';
       const estimatesDown=txt(r.stock.estimate_signal)==='deteriorating';
