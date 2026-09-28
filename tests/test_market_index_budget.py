@@ -57,6 +57,26 @@ def test_compact_rotation_returns_are_derived_without_shipping_history():
     assert "price_history_1y" not in compact
 
 
+def test_rotation_returns_stay_in_production_startup_but_not_legacy_fallback():
+    m = load_builder()
+    row = {
+        "ticker": "TEST",
+        "market_return_5d_pct": 1.25,
+        "market_return_20d_pct": 4.5,
+        "score": 72,
+    }
+    legacy = m.legacy_index_row(row)
+    assert legacy["ticker"] == "TEST"
+    assert legacy["score"] == 72
+    assert "market_return_5d_pct" not in legacy
+    assert "market_return_20d_pct" not in legacy
+
+    packed = m.pack_index_payload({"stocks": [row]})
+    decoded = m.unpack_index_payload(packed)
+    assert decoded["stocks"][0]["market_return_5d_pct"] == 1.25
+    assert decoded["stocks"][0]["market_return_20d_pct"] == 4.5
+
+
 def test_published_index_is_inside_new_budget():
     m = load_builder()
     index_size = (ROOT / "data" / "stocks-index.json").stat().st_size
