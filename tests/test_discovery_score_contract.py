@@ -200,6 +200,30 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertNotEqual(out["opportunity_upside_support"], "strong")
         self.assertTrue(any("Durabilidade fundamental" in r for r in out["opportunity_upside_reasons"]))
 
+    def test_strong_confirmed_outflow_caps_opportunity_below_actionable_tiers(self):
+        candidate = row()
+        candidate.update({
+            "opportunity_rotation_theme": "Semicondutores",
+            "opportunity_rotation_signal": "strong_outflow",
+            "opportunity_rotation_etf_confirmed": True,
+        })
+        out = MOD.assess(candidate)
+        self.assertLessEqual(out["opportunity_score"], 59)
+        self.assertTrue(any(cap["reason"] == "Rotação semanal fortemente desfavorável" for cap in out["opportunity_caps"]))
+
+    def test_positive_rotation_confirms_but_does_not_add_alpha(self):
+        base = MOD.assess(row())
+        candidate = row()
+        candidate.update({
+            "opportunity_rotation_theme": "Semicondutores",
+            "opportunity_rotation_signal": "strong_inflow",
+            "opportunity_rotation_etf_confirmed": True,
+        })
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_score"], base["opportunity_score"])
+        self.assertTrue(any("Rotação semanal favorável" in reason for reason in out["opportunity_reasons"]))
+
+
     def test_upside_support_survives_compact_pipeline_and_stale_rows_clear_it(self):
         post = (ROOT / "scripts" / "postprocess_market.py").read_text(encoding="utf-8")
         shards = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
