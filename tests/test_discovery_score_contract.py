@@ -338,6 +338,10 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertIn('"opportunity_upside_reasons"', post)
         self.assertIn('"opportunity_upside_support"', shards)
         self.assertIn('"opportunity_upside_reasons"', shards)
+        self.assertIn('"opportunity_event_risk"', post)
+        self.assertIn('"opportunity_event_risk_days"', post)
+        self.assertIn('"opportunity_event_risk"', shards)
+        self.assertIn('"opportunity_event_risk_days"', shards)
 
         guard = (ROOT / "scripts" / "coverage_guard.py").read_text(encoding="utf-8")
         self.assertIn('"opportunity_missing_upside_support"', guard)
