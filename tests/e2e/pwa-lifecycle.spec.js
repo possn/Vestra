@@ -4,7 +4,7 @@ test('iPhone/WebKit: service worker installs, controls reload and caches bootstr
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
-  await page.goto('/index.html', { waitUntil: 'load' });
+  await page.goto('index.html', { waitUntil: 'load' });
   await expect.poll(
     () => page.evaluate(() => 'serviceWorker' in navigator),
     { timeout: 10_000 }
