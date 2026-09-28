@@ -45,10 +45,24 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
       margin_of_safety_pct: 12,
       valuation_signal: 'undervalued',
       valuation_confidence: 'high',
+      valuation_method_count: 3,
+      valuation_dispersion_pct: 18,
       estimate_signal: 'improving',
       estimate_momentum_score: 70,
       analyst_eps_revisions_up_30d: 4,
       analyst_eps_revisions_down_30d: 1,
+      analyst_snapshot_age_days: 1,
+      analyst_refresh_state: 'fresh',
+      analyst_coverage_pct: 80,
+      estimate_confidence: 'high',
+      opportunity_upside_support: 'strong',
+      opportunity_valuation_evidence: 'robust',
+      opportunity_valuation_method_count: 3,
+      opportunity_revision_evidence: 'current',
+      opportunity_market_regime: 'supportive',
+      opportunity_rotation_signal: 'inflow',
+      opportunity_rotation_theme: 'Semiconductors',
+      opportunity_event_risk: 'none',
       opportunity_timing_score: 57,
     }),
   ]);
@@ -72,6 +86,12 @@ test('iPhone/WebKit: each opportunity lens ranks the full universe independently
   expect(recovery).toContain('RECOV');
   const value = await select('value', 'VALUE');
   expect(value).toContain('VALUE');
+  const whyNow = fixture.locator('[data-market-ticker="VALUE"] .ux453-why');
+  await expect(whyNow).toBeVisible();
+  await expect(whyNow).toContainText('Porque agora');
+  await expect(whyNow).toContainText('Valuation');
+  await expect(whyNow).toContainText('Revisões');
+  await expect(whyNow).toContainText('Timing');
   expect(new Set([low52.join(','), emerging.join(','), recovery.join(','), value.join(',')]).size).toBeGreaterThan(2);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
