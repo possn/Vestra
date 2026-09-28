@@ -28,7 +28,7 @@ class CanonicalRuntimeCleanupTests(unittest.TestCase):
             loader.index("vestra-portfolio-hierarchy.js?v=2.4"),
         )
         self.assertLess(
-            loader.index("vestra-portfolio-hierarchy.js?v=2.3"),
+            loader.index("vestra-portfolio-hierarchy.js?v=2.4"),
             loader.index("vestra-ai-brief.js?v=1.2"),
         )
         for legacy in LEGACY_RUNTIME_FILES:
