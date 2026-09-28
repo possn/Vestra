@@ -14,7 +14,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         loader=read('market-static-universe.js')
         runtime_loader=read('market-runtime-loader.js')
         self.assertNotIn('market-hotfix.js', h)
-        self.assertIn("portfolio-card-classifier.js?v=1.8", runtime_loader)
+        self.assertIn("portfolio-card-classifier.js?v=1.9", runtime_loader)
         self.assertNotIn('src="portfolio-card-classifier.js', h)
         for direct in (
             'src="vestra-portfolio-hierarchy.js',
@@ -27,10 +27,10 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             self.assertNotIn(direct, h)
         expected = (
             "vestra-swap-lab.js?v=1.2",
-            "vestra-portfolio-ui.js?v=3.2",
+            "vestra-portfolio-ui.js?v=3.3",
             "portfolio-diagnostics.js?v=1.2",
             "portfolio-dossier-routing.js?v=1.5",
-            "vestra-portfolio-hierarchy.js?v=2.3",
+            "vestra-portfolio-hierarchy.js?v=2.4",
             "vestra-ai-brief.js?v=1.2",
         )
         for module in expected:
@@ -47,15 +47,33 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         ui=read('vestra-portfolio-ui.js')
         self.assertIn("{q:'Aderência desta carteira aos objetivos',kind:'target'", classifier)
         self.assertIn("monitor:{label:'Monitorizar'", ui)
-        self.assertIn("kinds:['target','history','risk','stress']", ui)
-        self.assertIn("version:'1.8'", classifier)
+        self.assertIn("kinds:['target','history','risk','stress','inflation']", ui)
+        self.assertIn("{q:'Evolução da carteira',kind:'history'", classifier)
+        self.assertIn("{q:'Como reage a parte analisável?',kind:'stress'", classifier)
+        self.assertIn("{q:'Como reage a parte classificável à inflação?',kind:'inflation'", classifier)
+        self.assertIn("version:'1.9'", classifier)
+
+    def test_monitor_cards_cannot_escape_explore_group(self):
+        classifier=read('portfolio-card-classifier.js')
+        ui=read('vestra-portfolio-ui.js')
+        for token in (
+            "{q:'Evolução da carteira',kind:'history'",
+            "{q:'Como reage a parte analisável?',kind:'stress'",
+            "{q:'Como reage a parte classificável à inflação?',kind:'inflation'",
+        ):
+            self.assertIn(token, classifier)
+        self.assertIn("kinds:['target','history','risk','stress','inflation']", ui)
+        self.assertIn("evolução da carteira", ui)
+        self.assertIn("como reage a parte analisável", ui)
+        self.assertIn("como reage a parte classificável à inflação", ui)
+        self.assertIn("el.classList.toggle('vpu-hidden',!expanded||g!==active)", ui)
 
     def test_hierarchy_preserves_final_card_order_and_swap_hooks(self):
         s=read('vestra-portfolio-hierarchy.js')
         for token in (
             "['research','priority','reinforce','review']",
             "['swap','etfopt','scenario','rebalance','overlap','map','plan']",
-            "['target','history','risk','stress']",
+            "['target','history','risk','stress','inflation']",
             'ux454-swap-head','ux454-overlap-head','ux455-swap-summary','ux455-overlap-note',
             "rebalance:'Redistribuir capital'","plan:'Plano multi-movimento'",
         ):
@@ -65,7 +83,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertIn('function orderedCards(c)', s)
         self.assertNotIn('function makeLabel', s)
         self.assertNotIn("createElement('div');d.className='ux455-group-label'", s)
-        self.assertIn("version:'2.3'", s)
+        self.assertIn("version:'2.4'", s)
         self.assertNotIn('VestraPortfolioFocus', s)
 
     def test_swap_lab_preserves_v456_contract_under_hierarchy_observer(self):

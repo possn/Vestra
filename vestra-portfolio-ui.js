@@ -1,10 +1,10 @@
-/* Vestra Portfolio UI v3.2 — exploration focus mode separates analysis from base holdings. */
+/* Vestra Portfolio UI v3.3 — exploration focus mode separates analysis from base holdings. */
 (() => {
   'use strict';
 
   const GROUPS = {
     decide: {label:'Prioridades', title:'O que merece atenção', sub:'Research, reforços e posições que merecem atenção.', kinds:['research','priority','reinforce','review']},
-    monitor:{label:'Monitorizar', title:'Como está a carteira', sub:'Saúde, objetivos, concentração e resistência da carteira.', kinds:['target','history','risk','stress']},
+    monitor:{label:'Monitorizar', title:'Como está a carteira', sub:'Saúde, objetivos, concentração e resistência da carteira.', kinds:['target','history','risk','stress','inflation']},
     optimize:{label:'Otimizar', title:'Onde posso melhorar', sub:'Compara, simula e só depois decide onde redistribuir.', kinds:['swap','etfopt','scenario','rebalance','overlap','map','plan']}
   };
   const t=v=>String(v??'').trim();
@@ -70,7 +70,7 @@
     const kind=t(cardEl.dataset.uxKind); for(const [g,meta] of Object.entries(GROUPS)) if(meta.kinds.includes(kind)) return g;
     const x=t(cardEl.textContent).toLowerCase();
     if(/fila de revisão|prioridades da carteira|candidatos a reforço|posições a rever|capital novo.*reforçar/.test(x))return'decide';
-    if(/aderência aos objetivos|carteira está a melhorar|diversificação da carteira|como reage a carteira|objetivos da carteira/.test(x))return'monitor';
+    if(/aderência aos objetivos|evolução da carteira|diversificação da carteira|como reage a parte analisável|como reage a parte classificável à inflação|objetivos da carteira/.test(x))return'monitor';
     if(/alternativas no mesmo setor|substituíres pelo mesmo valor|concentração e overlap|mapa da carteira|onde melhora mais este capital|plano de rebalanceamento|trocas inteligentes/.test(x))return'optimize';
     return'';
   }
@@ -104,7 +104,7 @@
       let cue=el.querySelector(':scope > .vpu-card-cue');
       const rows=cardCount(el),kind=t(el.dataset.uxKind);
       if(kind==='overlap')el.dataset.vpuScanTitle='Concentração e overlap';else delete el.dataset.vpuScanTitle;
-      const labels={research:'Research pendente',priority:'Prioridade',reinforce:'Possível reforço',review:'Rever',target:'Objetivos',history:'Evolução',risk:'Risco',stress:'Stress test',swap:'Comparar alternativas',etfopt:'Comparar ETFs',scenario:'Simular impacto',rebalance:'Redistribuir capital',overlap:'Análise de apoio',map:'Mapa de decisões',plan:'Até 3 movimentos'};
+      const labels={research:'Research pendente',priority:'Prioridade',reinforce:'Possível reforço',review:'Rever',target:'Objetivos',history:'Evolução',risk:'Risco',stress:'Stress test',inflation:'Inflação',swap:'Comparar alternativas',etfopt:'Comparar ETFs',scenario:'Simular impacto',rebalance:'Redistribuir capital',overlap:'Análise de apoio',map:'Mapa de decisões',plan:'Até 3 movimentos'};
       if(!labels[kind]){cue?.remove();return;}
       if(!cue){cue=document.createElement('span');cue.className='vpu-card-cue';el.appendChild(cue);}
       const countable=['research','reinforce','review'].includes(kind);
@@ -195,6 +195,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.2'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.3'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();

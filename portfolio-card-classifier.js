@@ -1,4 +1,4 @@
-/* Vestra Portfolio Card Classifier v1.8 — canonical identities include guided optimize actions. */
+/* Vestra Portfolio Card Classifier v1.9 — canonical identities include guided optimize actions. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -15,9 +15,10 @@
     {q:'Onde melhora mais este capital?',kind:'rebalance',icon:'↻',tone:'teal'},
     {q:'Plano de rebalanceamento',kind:'plan',icon:'≋',tone:'blue'},
     {q:'Aderência desta carteira aos objetivos',kind:'target',icon:'✓',tone:'green'},
-    {q:'A carteira está a melhorar?',kind:'history',icon:'↗',tone:'blue'},
+    {q:'Evolução da carteira',kind:'history',icon:'↗',tone:'blue'},
     {q:'Diversificação da carteira',kind:'risk',icon:'◇',tone:'coral'},
-    {q:'Como reage a carteira?',kind:'stress',icon:'≈',tone:'amber'}
+    {q:'Como reage a parte analisável?',kind:'stress',icon:'≈',tone:'amber'},
+    {q:'Como reage a parte classificável à inflação?',kind:'inflation',icon:'◐',tone:'amber'}
   ];
   const BADGES={
     swap:{cls:'is-purple',text:'⇄ TROCAS INTELIGENTES'},
@@ -56,5 +57,5 @@
   }
   function start(){style();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.8'});
+  window.VestraPortfolioCardClassifier=Object.freeze({refresh:classify,version:'1.9'});
 })();
