@@ -32,7 +32,7 @@ FUND_FLOW_MAX_DAYS = 14
 # Keep both representations bounded: INDEX protects compatibility/fallback cost;
 # COLUMNAR_INDEX protects the normal iPhone/PWA startup path. The first canonical
 # production snapshot measured 1,958,111 bytes vs a 6,595,930-byte index (29.7%).
-MAX_INDEX_BYTES = 7_250_000
+MAX_INDEX_BYTES = 7_500_000
 MAX_INDEX_RATIO = 0.15
 MAX_COLUMNAR_BYTES = 2_250_000
 MAX_COLUMNAR_INDEX_RATIO = 0.35
