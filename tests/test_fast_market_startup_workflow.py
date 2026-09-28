@@ -29,6 +29,15 @@ class FastMarketStartupWorkflowTests(unittest.TestCase):
             source.index("Publish startup payloads"),
         )
 
+    def test_fast_path_rebuilds_when_builder_or_rotation_contracts_change(self):
+        source = WORKFLOW.read_text(encoding="utf-8")
+        for path in (
+            "scripts/build_market_shards.py",
+            "tests/test_market_index_budget.py",
+            "tests/test_weekly_rotation_relative_destinations.py",
+        ):
+            self.assertIn(path, source)
+
     def test_fast_path_publishes_only_generated_startup_artifacts(self):
         source = WORKFLOW.read_text(encoding="utf-8")
         self.assertNotIn("git add data/", source)
