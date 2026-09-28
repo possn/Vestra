@@ -182,6 +182,32 @@ class OpportunityForwardValidationTests(unittest.TestCase):
 
 
 
+    def test_valuation_breadth_is_frozen_and_reported(self):
+        row = {
+            "current_price": 100,
+            "opportunity_score": 77,
+            "opportunity_eligible": True,
+            "opportunity_label": "Oportunidade forte",
+            "opportunity_upside_support": "moderate",
+            "opportunity_valuation_evidence": "dispersed",
+            "opportunity_valuation_method_count": 3,
+            "opportunity_valuation_dispersion_pct": 55,
+        }
+        obs = MOD.make_observation(row)
+        self.assertEqual(obs["opportunity_valuation_evidence"], "dispersed")
+        self.assertEqual(obs["opportunity_valuation_method_count"], 3)
+        self.assertEqual(obs["opportunity_valuation_dispersion_pct"], 55)
+        rows = [{
+            "cohort_date": "2026-08-02", "ticker": "AAA", "opportunity_score": 77,
+            "return_pct": 1, "opportunity_valuation_evidence": "dispersed",
+            "opportunity_label": "Oportunidade forte", "opportunity_upside_support": "moderate",
+            "sector": "Technology",
+        }]
+        pack = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
+        self.assertIn("dispersed", pack["by_valuation_evidence"])
+
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
