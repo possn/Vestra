@@ -28,6 +28,14 @@ def row(confidence=70, risk_gate="clear"):
         "low52_opportunity_score": 60,
         "recovery_score": 64,
         "valuation_score": 62,
+        "fair_value_upside_pct": 24,
+        "margin_of_safety_pct": 8,
+        "valuation_signal": "undervalued",
+        "valuation_confidence": "medium",
+        "analyst_price_target_upside_pct": 18,
+        "analyst_eps_revisions_up_30d": 4,
+        "analyst_eps_revisions_down_30d": 1,
+        "estimate_momentum_score": 68,
         "estimate_signal": "improving",
         "recovery_status": "recovering",
         "thesis_direction": "up",
@@ -103,6 +111,62 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertEqual(clear["opportunity_score_raw"], severe["opportunity_score_raw"])
         self.assertLessEqual(severe["opportunity_score"], 35)
         self.assertTrue(any(cap["reason"] == "Risk Gate severe" for cap in severe["opportunity_caps"]))
+
+    def test_top_opportunity_requires_credible_upside_support(self):
+        supported = MOD.assess(row())
+        unsupported_row = row()
+        for key in (
+            "fair_value_upside_pct", "margin_of_safety_pct", "valuation_signal",
+            "valuation_confidence", "analyst_price_target_upside_pct",
+        ):
+            unsupported_row[key] = None
+        unsupported = MOD.assess(unsupported_row)
+        self.assertEqual(supported["opportunity_upside_support"], "strong")
+        self.assertEqual(unsupported["opportunity_upside_support"], "unavailable")
+        self.assertLessEqual(unsupported["opportunity_score"], 64)
+        self.assertTrue(any("Upside fundamental" in cap["reason"] for cap in unsupported["opportunity_caps"]))
+
+    def test_moderate_upside_can_be_strong_but_not_high_priority(self):
+        candidate = row()
+        candidate.update({
+            "fair_value_upside_pct": 12,
+            "margin_of_safety_pct": -3,
+            "analyst_price_target_upside_pct": None,
+            "analyst_eps_revisions_up_30d": 0,
+            "analyst_eps_revisions_down_30d": 0,
+        })
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "moderate")
+        self.assertLessEqual(out["opportunity_score"], 77)
+
+    def test_negative_internal_valuation_blocks_quality_timing_false_positive(self):
+        candidate = row()
+        candidate.update({
+            "score": 95,
+            "moat_score": 95,
+            "capital_allocation_intelligence_score": 95,
+            "fair_value_upside_pct": -8,
+            "margin_of_safety_pct": -20,
+            "valuation_signal": "overvalued",
+            "valuation_confidence": "high",
+        })
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "negative")
+        self.assertLessEqual(out["opportunity_score"], 49)
+        self.assertTrue(any(cap["reason"] == "Upside fundamental não confirmado" for cap in out["opportunity_caps"]))
+
+    def test_analyst_target_cannot_replace_missing_internal_valuation(self):
+        candidate = row()
+        candidate.update({
+            "fair_value_upside_pct": None,
+            "margin_of_safety_pct": None,
+            "valuation_signal": "insufficient",
+            "valuation_confidence": "low",
+            "analyst_price_target_upside_pct": 45,
+        })
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "unavailable")
+        self.assertLessEqual(out["opportunity_score"], 64)
 
 
 if __name__ == "__main__":
