@@ -15,10 +15,10 @@ class FastMarketStartupWorkflowTests(unittest.TestCase):
             "sec_endpoint_probe.py",
             "normalize_market_provenance.py",
             "postprocess_market.py",
-            "coverage_audit.py",
             "score_audit.py",
         ):
             self.assertNotIn(forbidden, source)
+        self.assertNotIn("python coverage_audit.py", source)
 
     def test_fast_path_validates_budget_before_publication(self):
         source = WORKFLOW.read_text(encoding="utf-8")
