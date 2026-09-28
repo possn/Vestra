@@ -25,7 +25,7 @@ class CanonicalRuntimeCleanupTests(unittest.TestCase):
         self.assertIn("portfolio-dossier-routing.js?v=1.5", loader)
         self.assertLess(
             loader.index("portfolio-dossier-routing.js?v=1.5"),
-            loader.index("vestra-portfolio-hierarchy.js?v=2.3"),
+            loader.index("vestra-portfolio-hierarchy.js?v=2.4"),
         )
         self.assertLess(
             loader.index("vestra-portfolio-hierarchy.js?v=2.3"),
