@@ -1,0 +1,68 @@
+name: Rebuild market startup payloads
+
+# Fast path for presentation/startup data changes that do not require a full
+# Yahoo/SEC/ESEF enrichment pass. Uses the already validated data/stocks.json
+# as source, rebuilds compact startup payloads + dossier shards, validates
+# payload budgets/contracts, then publishes only generated artifacts.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rebuild-market-startup.yml'
+      - '.github/triggers/market-startup-rebuild.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rebuild-market-startup
+  cancel-in-progress: true
+
+jobs:
+  rebuild-startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Validate startup builder
+        run: |
+          python -m py_compile scripts/build_market_shards.py
+          python -m pytest -q tests/test_market_index_budget.py tests/test_weekly_rotation_relative_destinations.py
+
+      - name: Build lightweight market index and dossier shards
+        working-directory: scripts
+        run: python build_market_shards.py
+
+      - name: Validate generated payload budgets and rotation contracts
+        run: |
+          python -m pytest -q tests/test_market_index_budget.py tests/test_weekly_rotation_relative_destinations.py
+
+      - name: Publish startup payloads
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add \
+            data/stocks-index.json \
+            data/stocks-startup.json \
+            data/stocks-scanner.json \
+            data/portfolio-sectors.json \
+            data/dossiers-manifest.json \
+            data/dossiers/ \
+            data/fund-aum-history.json
+          if git diff --cached --quiet; then
+            echo "Sem alterações nos payloads de startup."
+          else
+            git commit -m "Actualização rápida dos payloads de mercado ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            bash scripts/publish_with_retry.sh origin main
+          fi
