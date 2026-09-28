@@ -287,18 +287,26 @@ test('iPhone/WebKit: weekly rotation stays compact and explicit', async ({ page 
   const waiting = await rotation.evaluate(el => el.classList.contains('market-rotation--waiting'));
   if (!waiting) {
     const groups = rotation.locator('.market-rotation-group');
-    await expect(groups).toHaveCount(2);
-    await expect(groups.nth(0).locator('.market-rotation-group__head strong')).toHaveText('Entradas');
-    await expect(groups.nth(1).locator('.market-rotation-group__head strong')).toHaveText('Saídas');
+    const titles = await groups.locator('.market-rotation-group__head strong').allTextContents();
+    expect(titles[0]).toBe('Entradas confirmadas');
+    expect(titles.at(-1)).toBe('Saídas');
+    expect(titles.length).toBeGreaterThanOrEqual(2);
+    expect(titles.length).toBeLessThanOrEqual(3);
+    if (titles.length === 3) expect(titles[1]).toBe('A ganhar força relativa');
 
-    expect(await groups.nth(0).locator('.market-rotation-row').count()).toBeLessThanOrEqual(3);
-    expect(await groups.nth(1).locator('.market-rotation-row').count()).toBeLessThanOrEqual(3);
+    for (let i = 0; i < titles.length; i += 1) {
+      expect(await groups.nth(i).locator('.market-rotation-row').count()).toBeLessThanOrEqual(3);
+    }
 
     const method = rotation.locator('.market-rotation-method');
     await expect(method.locator('summary')).toHaveText('Como é calculado?');
     await expect(method.locator('.market-rotation-method__body')).toBeHidden();
     await method.locator('summary').click();
     await expect(method.locator('.market-rotation-method__body')).toBeVisible();
+    if (titles.includes('A ganhar força relativa')) {
+      await expect(method.locator('.market-rotation-method__body')).toContainText('sem chamar “entrada” a um retorno ainda negativo');
+      await expect(groups.nth(1).locator('.market-rotation-group__head small')).toContainText('não implica entrada líquida');
+    }
 
     const explanatoryColors = await rotation.locator('.market-rotation-group__head small, .market-rotation-method summary').evaluateAll(nodes =>
       nodes.map(node => getComputedStyle(node).color)
