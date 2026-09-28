@@ -75,6 +75,7 @@ def main() -> int:
 
         opportunity_score = _n(row.get("opportunity_score"))
         opportunity_label = str(row.get("opportunity_label") or "")
+        opportunity_upside_support = str(row.get("opportunity_upside_support") or "").lower()
         opportunity_eligible = bool(row.get("opportunity_eligible"))
         signal_count = _n(row.get("opportunity_signal_count"))
         structural_count = _n(row.get("opportunity_structural_signal_count"))
@@ -183,6 +184,27 @@ def main() -> int:
                 coverage_pct=coverage, confidence_score=confidence,
             )
 
+        if opportunity_score is not None and opportunity_upside_support not in {
+            "strong", "moderate", "weak", "negative", "unavailable"
+        }:
+            _add(
+                violations, counts, ticker, "opportunity_missing_upside_support",
+                label=opportunity_label, opportunity_score=opportunity_score,
+                upside_support=opportunity_upside_support,
+            )
+        if opportunity_label == "Oportunidade forte" and opportunity_upside_support not in {"moderate", "strong"}:
+            _add(
+                violations, counts, ticker, "strong_opportunity_without_supported_upside",
+                label=opportunity_label, opportunity_score=opportunity_score,
+                upside_support=opportunity_upside_support,
+            )
+        if opportunity_label == "Prioridade alta" and opportunity_upside_support != "strong":
+            _add(
+                violations, counts, ticker, "high_priority_without_strong_upside",
+                label=opportunity_label, opportunity_score=opportunity_score,
+                upside_support=opportunity_upside_support,
+            )
+
         if pipeline_status in {"equity_catalog_only", "equity_carried_forward"}:
             if scanner_tags:
                 _add(
@@ -221,6 +243,9 @@ def main() -> int:
             "strong_opportunity_requires_confidence_score": 60,
             "high_priority_requires_coverage_pct": 75,
             "high_priority_requires_confidence_score": 70,
+            "published_opportunity_requires_upside_support": True,
+            "strong_opportunity_requires_upside_support": ["moderate", "strong"],
+            "high_priority_requires_upside_support": "strong",
             "carried_rows_may_not_have_active_opportunity_rank": True,
         },
     }
