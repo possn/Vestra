@@ -33,6 +33,8 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         s = read("market.js")
         block = s.split("function renderPortfolioDecisionCenter(", 1)[1].split("\n  function portfolioIntelligence(", 1)[0]
         self.assertIn("const structuralAlert=", block)
+        self.assertIn("ranked.forEach(r=>{const k=txt(r.stock.sector); if(k) sectors.set", block)
+        self.assertNotIn("const k=txt(r.stock.sector)||'Sem setor'", block)
         self.assertIn("(worst?.resilience??100)<75", block)
         self.assertIn("const stressAlert=!partialCoverage&&(worst?.resilience??100)<75", block)
         self.assertIn("const portfolioBase=total>0?total:analysed", block)
@@ -68,6 +70,15 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("renderStressScenario(rows,k,total)", s)
         self.assertIn("renderPortfolioStressTest(ranked,total)", s)
         self.assertLess(block.index(":riskBudgetAlert?{label:'Rever os limites excedidos no Risk Budget antes de reforçar posições'"), block.index(":reinforce[0]?{label:"))
+
+    def test_unknown_sector_is_not_treated_as_real_sector_concentration(self):
+        s = read("market.js")
+        fit = s.split("function portfolioFit(", 1)[1].split("\n  function portfolioFitSummary", 1)[0]
+        intelligence = s.split("function portfolioIntelligence(", 1)[1].split("\n  function ", 1)[0]
+        self.assertIn("const sector=txt(r.stock?.sector);", fit)
+        self.assertIn("const sectorPct=sector?sectorRows.find", fit)
+        self.assertNotIn("const sector=txt(r.stock?.sector)||'Sem setor'", fit)
+        self.assertIn("for(const r of ranked){ const k=txt(r.stock.sector); if(k) sectors.set", intelligence)
 
     def test_portfolio_health_does_not_compare_target_fit_across_target_changes(self):
         s = read("market.js")
