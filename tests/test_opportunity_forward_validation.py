@@ -100,7 +100,7 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         }]
         pack = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
         self.assertIn("strong_inflow", pack["by_rotation_signal"])
-        self.assertIn("true", pack["by_rotation_etf_confirmation"])
+        self.assertIn("True", pack["by_rotation_etf_confirmation"])
 
 
     def test_market_regime_context_is_frozen_and_reported(self):
