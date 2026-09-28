@@ -38,6 +38,10 @@ def row(confidence=70, risk_gate="clear"):
         "analyst_eps_revisions_down_30d": 1,
         "estimate_momentum_score": 68,
         "estimate_signal": "improving",
+        "analyst_snapshot_age_days": 0,
+        "analyst_refresh_state": "fresh",
+        "analyst_coverage_pct": 80,
+        "estimate_confidence": "high",
         "recovery_status": "recovering",
         "thesis_direction": "up",
     }
@@ -261,6 +265,36 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertNotEqual(out["opportunity_label"], "Prioridade alta")
 
 
+
+    def test_stale_positive_revisions_cannot_confirm_strong_upside(self):
+        candidate = row()
+        candidate["analyst_snapshot_age_days"] = 10
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "moderate")
+        self.assertEqual(out["opportunity_revision_evidence"], "stale")
+        self.assertLessEqual(out["opportunity_score"], 77)
+
+    def test_refresh_failure_cannot_confirm_strong_upside(self):
+        candidate = row()
+        candidate["analyst_snapshot_age_days"] = 2
+        candidate["analyst_refresh_state"] = "cached_after_refresh_failure"
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "moderate")
+        self.assertEqual(out["opportunity_revision_evidence"], "stale")
+
+    def test_limited_analyst_coverage_cannot_confirm_strong_upside(self):
+        candidate = row()
+        candidate["analyst_coverage_pct"] = 35
+        candidate["estimate_confidence"] = "medium"
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "moderate")
+        self.assertEqual(out["opportunity_revision_evidence"], "limited")
+
+    def test_current_revision_evidence_can_confirm_strong_upside(self):
+        out = MOD.assess(row())
+        self.assertEqual(out["opportunity_upside_support"], "strong")
+        self.assertEqual(out["opportunity_revision_evidence"], "current")
+
     def test_imminent_earnings_caps_priority_without_changing_raw_alpha(self):
         base_row = row()
         base_row.update({
@@ -342,6 +376,10 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertIn('"opportunity_event_risk_days"', post)
         self.assertIn('"opportunity_event_risk"', shards)
         self.assertIn('"opportunity_event_risk_days"', shards)
+        self.assertIn('"opportunity_revision_evidence"', post)
+        self.assertIn('"opportunity_revision_evidence_age_days"', post)
+        self.assertIn('"opportunity_revision_evidence"', shards)
+        self.assertIn('"opportunity_revision_evidence_age_days"', shards)
 
         guard = (ROOT / "scripts" / "coverage_guard.py").read_text(encoding="utf-8")
         self.assertIn('"opportunity_missing_upside_support"', guard)

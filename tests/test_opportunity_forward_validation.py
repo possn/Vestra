@@ -155,6 +155,33 @@ class OpportunityForwardValidationTests(unittest.TestCase):
 
 
 
+    def test_revision_freshness_is_frozen_and_reported(self):
+        row = {
+            "current_price": 100,
+            "opportunity_score": 77,
+            "opportunity_eligible": True,
+            "opportunity_label": "Oportunidade forte",
+            "opportunity_upside_support": "moderate",
+            "opportunity_revision_evidence": "stale",
+            "opportunity_revision_evidence_age_days": 10,
+            "opportunity_revision_evidence_coverage_pct": 80,
+            "opportunity_revision_evidence_confidence": "high",
+            "opportunity_revision_evidence_refresh_state": "cached_rotation",
+        }
+        obs = MOD.make_observation(row)
+        self.assertEqual(obs["opportunity_revision_evidence"], "stale")
+        self.assertEqual(obs["opportunity_revision_evidence_age_days"], 10)
+        rows = [{
+            "cohort_date": "2026-08-02", "ticker": "AAA", "opportunity_score": 77,
+            "return_pct": 1, "opportunity_revision_evidence": "stale",
+            "opportunity_label": "Oportunidade forte", "opportunity_upside_support": "moderate",
+            "sector": "Technology",
+        }]
+        pack = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
+        self.assertIn("stale", pack["by_revision_evidence"])
+
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

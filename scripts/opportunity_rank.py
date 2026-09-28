@@ -317,6 +317,19 @@ def _upside_support(row: dict) -> dict:
     est_score = _f(row.get("estimate_momentum_score"))
     rev_up = _f(row.get("analyst_eps_revisions_up_30d")) or 0.0
     rev_down = _f(row.get("analyst_eps_revisions_down_30d")) or 0.0
+    analyst_age = _f(row.get("analyst_snapshot_age_days"))
+    analyst_refresh = str(row.get("analyst_refresh_state") or "").lower()
+    analyst_coverage = _f(row.get("analyst_coverage_pct"))
+    estimate_confidence = str(row.get("estimate_confidence") or "").lower()
+
+    if analyst_age is None:
+        revision_evidence = "unavailable"
+    elif analyst_refresh == "cached_after_refresh_failure" or analyst_age > 7:
+        revision_evidence = "stale"
+    elif (analyst_coverage is None or analyst_coverage < 50 or estimate_confidence != "high"):
+        revision_evidence = "limited"
+    else:
+        revision_evidence = "current"
 
     internal = (
         fv is not None
@@ -326,6 +339,8 @@ def _upside_support(row: dict) -> dict:
     )
     revisions_positive = est == "improving" or (est_score is not None and est_score >= 60) or rev_up > rev_down
     revisions_negative = est == "deteriorating" or (est_score is not None and est_score < 40) or rev_down > rev_up
+    revisions_positive_current = revisions_positive and revision_evidence == "current"
+    revisions_negative_current = revisions_negative and revision_evidence in ("current", "limited")
     analyst_positive = pt is not None and pt >= 12
     trap = _f(row.get("value_trap_risk_score"))
     recovery = str(row.get("recovery_status") or "").lower()
@@ -341,18 +356,22 @@ def _upside_support(row: dict) -> dict:
         reasons.append(f"Fair value interno {fv:+.0f}% · margem de segurança {mos:+.0f}%")
     if analyst_positive:
         reasons.append(f"Consenso analistas {pt:+.0f}%")
-    if revisions_positive:
-        reasons.append("Revisões/expectativas confirmam a tese")
-    if revisions_negative:
-        reasons.append("Revisões/expectativas em deterioração")
+    if revisions_positive_current:
+        reasons.append("Revisões/expectativas recentes confirmam a tese")
+    elif revisions_positive:
+        reasons.append("Revisões positivas, mas evidência analista não está suficientemente fresca")
+    if revisions_negative_current:
+        reasons.append("Revisões/expectativas recentes em deterioração")
+    elif revisions_negative:
+        reasons.append("Revisões negativas sem frescura suficiente para confirmação atual")
     if durability_negative:
         reasons.append("Durabilidade fundamental ainda não confirmada")
 
     if vsig == "overvalued" or (internal and fv <= 0) or (internal and mos <= -15):
         status = "negative"
-    elif internal and fv >= 18 and mos >= 0 and revisions_positive and not revisions_negative and not durability_negative:
+    elif internal and fv >= 18 and mos >= 0 and revisions_positive_current and not revisions_negative_current and not durability_negative:
         status = "strong"
-    elif internal and fv >= 10 and mos >= -8 and not revisions_negative and not (trap is not None and trap >= 75):
+    elif internal and fv >= 10 and mos >= -8 and not revisions_negative_current and not (trap is not None and trap >= 75):
         status = "moderate"
     elif internal:
         status = "weak"
@@ -364,6 +383,11 @@ def _upside_support(row: dict) -> dict:
         "fair_value_upside_pct": fv,
         "margin_of_safety_pct": mos,
         "analyst_price_target_upside_pct": pt,
+        "revision_evidence": revision_evidence,
+        "revision_evidence_age_days": analyst_age,
+        "revision_evidence_coverage_pct": analyst_coverage,
+        "revision_evidence_confidence": estimate_confidence or None,
+        "revision_evidence_refresh_state": analyst_refresh or None,
         "reasons": reasons[:4],
     }
 
@@ -667,6 +691,11 @@ def assess(row: dict) -> dict:
         "opportunity_components": components,
         "opportunity_upside_support": upside_status,
         "opportunity_upside_reasons": upside_support.get("reasons", []),
+        "opportunity_revision_evidence": upside_support.get("revision_evidence"),
+        "opportunity_revision_evidence_age_days": upside_support.get("revision_evidence_age_days"),
+        "opportunity_revision_evidence_coverage_pct": upside_support.get("revision_evidence_coverage_pct"),
+        "opportunity_revision_evidence_confidence": upside_support.get("revision_evidence_confidence"),
+        "opportunity_revision_evidence_refresh_state": upside_support.get("revision_evidence_refresh_state"),
         "opportunity_eligible": True,
         "opportunity_signal_count": len(observed),
         "opportunity_structural_signal_count": len(structural_observed),
