@@ -54,16 +54,36 @@
     if(['insufficient','suppressed'].includes(rel)||['high','severe'].includes(risk)||t(s?.zombie).toLowerCase()==='yes'||overextended(s))return false;
     return timing(s)>=48 && confirmed(s)>=2;
   }
+  function fallbackUpsideSupport(s){
+    const published=t(s?.opportunity_upside_support).toLowerCase();
+    if(['strong','moderate','weak','negative','unavailable'].includes(published))return published;
+    const fv=n(s?.fair_value_upside_pct),mos=n(s?.margin_of_safety_pct),pt=n(s?.analyst_price_target_upside_pct);
+    const vc=t(s?.valuation_confidence).toLowerCase(),vs=t(s?.valuation_signal).toLowerCase(),est=t(s?.estimate_signal).toLowerCase(),em=n(s?.estimate_momentum_score);
+    const up=n(s?.analyst_eps_revisions_up_30d)||0,down=n(s?.analyst_eps_revisions_down_30d)||0;
+    const internal=fv!=null&&mos!=null&&['medium','high'].includes(vc)&&!['uncertain','insufficient'].includes(vs);
+    const revisionsPositive=est==='improving'||(em!=null&&em>=60)||up>down;
+    const revisionsNegative=est==='deteriorating'||(em!=null&&em<40)||down>up;
+    const analystPositive=pt!=null&&pt>=12;
+    if(vs==='overvalued'||(internal&&fv<=0)||(internal&&mos<=-15))return 'negative';
+    if(internal&&fv>=18&&mos>=0&&!revisionsNegative&&(revisionsPositive||analystPositive))return 'strong';
+    if(internal&&fv>=10&&mos>=-8&&!revisionsNegative)return 'moderate';
+    if(internal)return 'weak';
+    return 'unavailable';
+  }
   function discoveryScore(s){
     const published=n(s?.opportunity_score);
     if(published!=null)return clamp(published);
     const vals=[[n(s?.score),.25],[timing(s),.29],[n(s?.recovery_score),.10],[n(s?.qarp_score),.11],[n(s?.moat_score),.08],[n(s?.capital_allocation_intelligence_score),.06],[n(s?.value_pct),.06],[n(s?.growth_pct),.02],[n(s?.sector_native_score),.03]].filter(([v])=>v!=null);
     if(!vals.length)return null;let x=vals.reduce((a,[v,w])=>a+clamp(v)*w,0)/vals.reduce((a,[,w])=>a+w,0);
-    const p=stats(s),fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);
-    if(fv!=null)x+=Math.max(-7,Math.min(8,fv/4.5));else if(pt!=null)x+=Math.max(-5,Math.min(6,pt/7));
+    const p=stats(s),fv=n(s?.fair_value_upside_pct);
+    if(fv!=null)x+=Math.max(-7,Math.min(8,fv/4.5));
     x+=Math.min(5,confirmed(s)*1.25);
     if(p.accel!=null&&p.accel>2)x+=2;
     if(t(s?.estimate_signal)==='deteriorating')x-=7;if(['failed','bounce_only'].includes(t(s?.recovery_status)))x-=7;if(t(s?.valuation_signal)==='overvalued')x-=7;
+    const support=fallbackUpsideSupport(s);
+    if(support==='negative')x=Math.min(x,49);
+    else if(['weak','unavailable'].includes(support))x=Math.min(x,64);
+    else if(support==='moderate')x=Math.min(x,77);
     return clamp(x);
   }
   function low52Above(s){
@@ -90,8 +110,8 @@
     if(lens==='emerging')return coreCandidate(s)&&!overextended(s)&&timing(s)>=55&&timing(s)<=82&&confirmed(s)>=1&&!['confirmed','recovering'].includes(rec)&&(est==='improving'||dir==='up'||(p.accel!=null&&p.accel>0));
     if(lens==='recovery')return coreCandidate(s)&&!overextended(s)&&timing(s)>=45&&(['confirmed','recovering'].includes(rec)||(est==='improving'&&confirmed(s)>=2));
     if(lens==='value'){
-      const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);
-      return coreCandidate(s)&&!overextended(s)&&timing(s)>=45&&((fv!=null&&fv>=10)||(pt!=null&&pt>=12)||val==='undervalued');
+      const fv=n(s?.fair_value_upside_pct),support=fallbackUpsideSupport(s);
+      return coreCandidate(s)&&!overextended(s)&&timing(s)>=45&&fv!=null&&fv>=10&&['moderate','strong'].includes(support)&&val!=='overvalued';
     }
     return false;
   }
