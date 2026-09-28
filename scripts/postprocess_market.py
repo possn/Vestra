@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import statistics
 
 from opportunity_rank import assess as assess_opportunity
 
@@ -36,6 +38,11 @@ STALE_DERIVED_KEYS = {
     "opportunity_structural_signal_count",
     "opportunity_gates",
     "opportunity_caps",
+    "opportunity_rotation_theme",
+    "opportunity_rotation_signal",
+    "opportunity_rotation_breadth_pct",
+    "opportunity_rotation_return_5d_pct",
+    "opportunity_rotation_etf_confirmed",
     "scanner_tags",
     "scanner_results",
     "scanner_best",
@@ -52,6 +59,94 @@ def _n(v):
         return x if x == x and abs(x) != float("inf") else None
     except (TypeError, ValueError):
         return None
+
+
+ROTATION_THEMES = [
+    ("Semicondutores", re.compile(r"semiconductor|semiconductors|chip|foundry|wafer|integrated circuit", re.I), ("SMH","SOXX","XSD")),
+    ("Biotecnologia", re.compile(r"biotech|biotechnology|genomic|genomics|gene therap|life sciences", re.I), ("XBI","IBB","ARKG")),
+    ("Minerais & metais", re.compile(r"metal|mining|miner|copper|lithium|uranium|gold|silver|steel|aluminum|aluminium|rare earth", re.I), ("COPX","PICK")),
+    ("Agricultura", re.compile(r"agricultur|agribusiness|farm|crop|seed|fertili[sz]er|grain|potash", re.I), ()),
+    ("Energia", re.compile(r"energy|oil|gas|petroleum|exploration|drilling|refin", re.I), ("XLE","XOP")),
+    ("Defesa & aeroespacial", re.compile(r"defen[cs]e|aerospace|military|weapon|missile", re.I), ("ITA","PPA","XAR")),
+    ("IA & software", re.compile(r"artificial intelligence|machine learning|software|cloud|saas|cyber|data infrastructure", re.I), ("IGV","AIQ","BOTZ","CHAT","WCLD")),
+    ("Bancos", re.compile(r"bank|banks|banking|financial services", re.I), ("KBE","KRE","XLF")),
+    ("Imobiliário", re.compile(r"real estate|reit|property", re.I), ("VNQ","IYR","XLRE")),
+    ("Consumo discricionário", re.compile(r"consumer cyclical|consumer discretionary|auto manufacturer|travel|leisure|retail", re.I), ("XLY","VCR")),
+]
+
+
+def _weekly_return(row: dict):
+    published = _n(row.get("opportunity_return_5d_pct"))
+    if published is not None:
+        return published
+    hist = row.get("price_history_1y") or []
+    closes = [_n(x.get("close")) for x in hist if isinstance(x, dict)]
+    closes = [x for x in closes if x is not None and x > 0]
+    if len(closes) <= 5:
+        return None
+    return (closes[-1] / closes[-6] - 1.0) * 100.0
+
+
+def _rotation_context(rows):
+    equities = [r for r in rows if isinstance(r, dict) and not _is_fund(r)]
+    by_ticker = {str(r.get("ticker") or "").upper(): r for r in rows if isinstance(r, dict)}
+    contexts = {}
+    for label, pattern, etfs in ROTATION_THEMES:
+        members = [r for r in equities if pattern.search(" ".join(str(r.get(k) or "") for k in ("sector","industry","name")))]
+        weekly = [(r, _weekly_return(r)) for r in members]
+        weekly = [(r, ret) for r, ret in weekly if ret is not None]
+        if len(weekly) < 4:
+            continue
+        returns = [ret for _, ret in weekly]
+        med5 = statistics.median(returns)
+        breadth = sum(1 for ret in returns if ret > 0) / len(returns) * 100.0
+        if med5 >= 2 and breadth >= 60:
+            signal = "strong_inflow"
+        elif med5 >= .5 and breadth >= 55:
+            signal = "inflow"
+        elif med5 <= -2 and breadth <= 40:
+            signal = "strong_outflow"
+        elif med5 <= -.5 and breadth <= 45:
+            signal = "outflow"
+        else:
+            signal = "mixed"
+
+        etf_rows = [by_ticker.get(t) for t in etfs]
+        etf_rows = [x for x in etf_rows if isinstance(x, dict)]
+        etf_returns = [_n(x.get("fund_return_1w_pct")) for x in etf_rows]
+        etf_returns = [x for x in etf_returns if x is not None]
+        etf_flows = [_n(x.get("fund_flow_1w_usd")) for x in etf_rows]
+        etf_flows = [x for x in etf_flows if x is not None]
+        etf_return = statistics.median(etf_returns) if etf_returns else None
+        etf_flow = sum(etf_flows) if etf_flows else None
+        etf_confirmed = None
+        if signal in {"strong_inflow","inflow"} and (etf_return is not None or etf_flow is not None):
+            etf_confirmed = bool((etf_return is not None and etf_return > 0) or (etf_flow is not None and etf_flow > 0))
+        elif signal in {"strong_outflow","outflow"} and (etf_return is not None or etf_flow is not None):
+            etf_confirmed = bool((etf_return is not None and etf_return < 0) or (etf_flow is not None and etf_flow < 0))
+        contexts[label] = {
+            "signal": signal,
+            "median_return_5d_pct": round(med5, 2),
+            "breadth_pct": round(breadth, 1),
+            "member_count": len(weekly),
+            "etf_confirmed": etf_confirmed,
+        }
+    return contexts
+
+
+def _attach_rotation_context(row: dict, contexts: dict) -> None:
+    haystack = " ".join(str(row.get(k) or "") for k in ("sector","industry","name"))
+    matched = next(((label, ctx) for label, pattern, _ in ROTATION_THEMES if pattern.search(haystack) for ctx in [contexts.get(label)] if ctx), None)
+    if not matched:
+        for key in ("opportunity_rotation_theme","opportunity_rotation_signal","opportunity_rotation_breadth_pct","opportunity_rotation_return_5d_pct","opportunity_rotation_etf_confirmed"):
+            row.pop(key, None)
+        return
+    label, ctx = matched
+    row["opportunity_rotation_theme"] = label
+    row["opportunity_rotation_signal"] = ctx["signal"]
+    row["opportunity_rotation_breadth_pct"] = ctx["breadth_pct"]
+    row["opportunity_rotation_return_5d_pct"] = ctx["median_return_5d_pct"]
+    row["opportunity_rotation_etf_confirmed"] = ctx["etf_confirmed"]
 
 
 def _is_fund(row: dict) -> bool:
@@ -138,6 +233,7 @@ def main() -> None:
     rows = payload.get("stocks") or []
     refreshed = 0
     sanitized = 0
+    rotation_contexts = _rotation_context(rows)
 
     for row in rows:
         if not isinstance(row, dict) or _is_fund(row):
@@ -148,8 +244,9 @@ def main() -> None:
             sanitized += 1
             continue
 
-        # Recalculate only the structural master rank. All source metrics and
-        # ordinary scanner strategies remain untouched.
+        # Attach same-run market-rotation context before recalculating the
+        # structural master rank. Rotation may constrain timing, never add alpha.
+        _attach_rotation_context(row, rotation_contexts)
         row.update(assess_opportunity(row))
         _refresh_best_scanner(row)
         refreshed += 1
