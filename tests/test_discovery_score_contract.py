@@ -224,6 +224,41 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertTrue(any("Rotação semanal favorável" in reason for reason in out["opportunity_reasons"]))
 
 
+
+    def test_supportive_market_regime_explains_but_does_not_add_alpha(self):
+        base = MOD.assess(row())
+        candidate = row()
+        candidate.update({
+            "opportunity_market_regime": "supportive",
+            "opportunity_market_regime_source": "broad_benchmarks",
+        })
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_score"], base["opportunity_score"])
+        self.assertTrue(any("Regime de mercado favorável" in reason for reason in out["opportunity_reasons"]))
+
+    def test_severe_adverse_market_regime_blocks_actionable_tiers(self):
+        candidate = row()
+        candidate.update({
+            "opportunity_market_regime": "severe_adverse",
+            "opportunity_market_regime_source": "broad_benchmarks",
+            "opportunity_market_breadth_20d_pct": 20,
+            "opportunity_market_return_20d_pct": -10,
+            "opportunity_market_regime_evidence_count": 6,
+        })
+        out = MOD.assess(candidate)
+        self.assertLessEqual(out["opportunity_score"], 59)
+        self.assertTrue(any(cap["reason"] == "Regime de mercado severamente adverso" for cap in out["opportunity_caps"]))
+
+    def test_adverse_market_regime_blocks_high_priority_only(self):
+        candidate = row()
+        candidate.update({
+            "opportunity_market_regime": "adverse",
+            "opportunity_market_regime_source": "equity_breadth",
+        })
+        out = MOD.assess(candidate)
+        self.assertLessEqual(out["opportunity_score"], 69)
+        self.assertNotEqual(out["opportunity_label"], "Prioridade alta")
+
     def test_upside_support_survives_compact_pipeline_and_stale_rows_clear_it(self):
         post = (ROOT / "scripts" / "postprocess_market.py").read_text(encoding="utf-8")
         shards = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
