@@ -99,6 +99,35 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertIn("strong_inflow", pack["by_rotation_signal"])
 
 
+    def test_market_regime_context_is_frozen_and_reported(self):
+        row = {
+            "current_price": 100,
+            "opportunity_score": 79,
+            "opportunity_eligible": True,
+            "opportunity_label": "Oportunidade forte",
+            "opportunity_upside_support": "strong",
+            "opportunity_market_regime": "adverse",
+            "opportunity_market_regime_source": "broad_benchmarks",
+            "opportunity_market_breadth_20d_pct": 33,
+            "opportunity_market_return_5d_pct": -2.5,
+            "opportunity_market_return_20d_pct": -5.5,
+            "opportunity_market_regime_evidence_count": 6,
+        }
+        obs = MOD.make_observation(row)
+        self.assertEqual(obs["opportunity_market_regime"], "adverse")
+        self.assertEqual(obs["opportunity_market_regime_source"], "broad_benchmarks")
+        self.assertEqual(obs["opportunity_market_breadth_20d_pct"], 33)
+        rows = [{
+            "cohort_date": "2026-08-02", "ticker": "AAA", "opportunity_score": 69,
+            "return_pct": 2, "opportunity_market_regime": "adverse",
+            "opportunity_label": "Oportunidade forte", "opportunity_upside_support": "strong",
+            "sector": "Technology",
+        }]
+        pack = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
+        self.assertIn("adverse", pack["by_market_regime"])
+
+
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
