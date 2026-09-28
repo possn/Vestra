@@ -254,6 +254,14 @@ def _upside_support(row: dict) -> dict:
     revisions_positive = est == "improving" or (est_score is not None and est_score >= 60) or rev_up > rev_down
     revisions_negative = est == "deteriorating" or (est_score is not None and est_score < 40) or rev_down > rev_up
     analyst_positive = pt is not None and pt >= 12
+    trap = _f(row.get("value_trap_risk_score"))
+    recovery = str(row.get("recovery_status") or "").lower()
+    thesis = str(row.get("thesis_direction") or "").lower()
+    durability_negative = (
+        (trap is not None and trap >= 58)
+        or recovery in ("failed", "bounce_only")
+        or thesis == "down"
+    )
 
     reasons = []
     if internal:
@@ -264,12 +272,14 @@ def _upside_support(row: dict) -> dict:
         reasons.append("Revisões/expectativas confirmam a tese")
     if revisions_negative:
         reasons.append("Revisões/expectativas em deterioração")
+    if durability_negative:
+        reasons.append("Durabilidade fundamental ainda não confirmada")
 
     if vsig == "overvalued" or (internal and fv <= 0) or (internal and mos <= -15):
         status = "negative"
-    elif internal and fv >= 18 and mos >= 0 and not revisions_negative and (revisions_positive or analyst_positive):
+    elif internal and fv >= 18 and mos >= 0 and revisions_positive and not revisions_negative and not durability_negative:
         status = "strong"
-    elif internal and fv >= 10 and mos >= -8 and not revisions_negative:
+    elif internal and fv >= 10 and mos >= -8 and not revisions_negative and not (trap is not None and trap >= 75):
         status = "moderate"
     elif internal:
         status = "weak"

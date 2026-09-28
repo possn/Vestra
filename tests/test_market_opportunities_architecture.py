@@ -381,8 +381,17 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         fallback = source.split('function fallbackUpsideSupport(s)', 1)[1].split('function discoveryScore(s)', 1)[0]
         discovery = source.split('function discoveryScore(s)', 1)[1].split('function low52Above(s)', 1)[0]
         self.assertIn('const analystPositive=pt!=null&&pt>=12', fallback)
-        self.assertIn('(revisionsPositive||analystPositive)', fallback)
+        self.assertIn("revisionsPositive&&!revisionsNegative&&!durabilityNegative", fallback)
+        self.assertIn("const analystPositive=pt!=null&&pt>=12", fallback)
+        self.assertNotIn("(revisionsPositive||analystPositive)", fallback)
         self.assertNotIn('pt/7', discovery)
+
+
+    def test_opportunity_copy_never_uses_analyst_target_as_fair_value_fallback(self):
+        source = read('market-opportunities.js')
+        self.assertNotIn("else if(pt!=null&&pt>10)b.push", source)
+        self.assertNotIn("pt!=null?`target +", source)
+
 
 
 if __name__ == '__main__':

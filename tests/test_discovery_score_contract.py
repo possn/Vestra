@@ -168,6 +168,38 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertEqual(out["opportunity_upside_support"], "unavailable")
         self.assertLessEqual(out["opportunity_score"], 64)
 
+    def test_analyst_target_alone_cannot_confirm_strong_upside(self):
+        candidate = row()
+        candidate.update({
+            "fair_value_upside_pct": 28,
+            "margin_of_safety_pct": 10,
+            "valuation_signal": "undervalued",
+            "valuation_confidence": "high",
+            "analyst_price_target_upside_pct": 35,
+            "estimate_signal": "neutral",
+            "estimate_momentum_score": 50,
+            "analyst_eps_revisions_up_30d": 1,
+            "analyst_eps_revisions_down_30d": 1,
+        })
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "moderate")
+        self.assertLessEqual(out["opportunity_score"], 77)
+
+    def test_value_trap_risk_blocks_strong_upside_support(self):
+        candidate = row()
+        candidate.update({
+            "fair_value_upside_pct": 30,
+            "margin_of_safety_pct": 12,
+            "valuation_signal": "undervalued",
+            "valuation_confidence": "high",
+            "estimate_signal": "improving",
+            "estimate_momentum_score": 70,
+            "value_trap_risk_score": 65,
+        })
+        out = MOD.assess(candidate)
+        self.assertNotEqual(out["opportunity_upside_support"], "strong")
+        self.assertTrue(any("Durabilidade fundamental" in r for r in out["opportunity_upside_reasons"]))
+
     def test_upside_support_survives_compact_pipeline_and_stale_rows_clear_it(self):
         post = (ROOT / "scripts" / "postprocess_market.py").read_text(encoding="utf-8")
         shards = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
