@@ -64,9 +64,11 @@
     const revisionsPositive=est==='improving'||(em!=null&&em>=60)||up>down;
     const revisionsNegative=est==='deteriorating'||(em!=null&&em<40)||down>up;
     const analystPositive=pt!=null&&pt>=12;
+    const trap=n(s?.value_trap_risk_score),recovery=t(s?.recovery_status).toLowerCase(),thesis=t(s?.thesis_direction).toLowerCase();
+    const durabilityNegative=(trap!=null&&trap>=58)||['failed','bounce_only'].includes(recovery)||thesis==='down';
     if(vs==='overvalued'||(internal&&fv<=0)||(internal&&mos<=-15))return 'negative';
-    if(internal&&fv>=18&&mos>=0&&!revisionsNegative&&(revisionsPositive||analystPositive))return 'strong';
-    if(internal&&fv>=10&&mos>=-8&&!revisionsNegative)return 'moderate';
+    if(internal&&fv>=18&&mos>=0&&revisionsPositive&&!revisionsNegative&&!durabilityNegative)return 'strong';
+    if(internal&&fv>=10&&mos>=-8&&!revisionsNegative&&!(trap!=null&&trap>=75))return 'moderate';
     if(internal)return 'weak';
     return 'unavailable';
   }
@@ -278,15 +280,15 @@
     if(t(s?.estimate_signal)==='improving')b.push('estimativas ↑');
     if(['confirmed','recovering'].includes(t(s?.recovery_status)))b.push('recuperação confirmada');
     if(p.accel!=null&&p.accel>2)b.push('aceleração recente');
-    const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);
-    if(fv!=null&&fv>8)b.push(`upside +${fv.toFixed(0)}%`);else if(pt!=null&&pt>10)b.push(`target +${pt.toFixed(0)}%`);
+    const fv=n(s?.fair_value_upside_pct);
+    if(fv!=null&&fv>8)b.push(`upside +${fv.toFixed(0)}%`);
     return b.slice(0,3).join(' · ')||'Discovery equilibrado';
   }
   function lensReason(s,lens){
     if(lens==='low52'){const x=low52Above(s);return x!=null?`${x.toFixed(1)}% acima do mínimo 52s · Score Vestra ${Math.round(n(s?.score)||0)} · timing ${Math.round(timing(s))}`:reason(s);}
     if(lens==='emerging')return ['setup inicial',t(s?.estimate_signal)==='improving'?'estimativas ↑':'',stats(s).accel>0?'aceleração positiva':''].filter(Boolean).join(' · ');
     if(lens==='recovery')return ['recuperação',t(s?.recovery_status)||'',confirmed(s)>=2?`${confirmed(s)} confirmações`:''].filter(Boolean).join(' · ');
-    if(lens==='value'){const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct);return ['value + timing',fv!=null?`fair value +${fv.toFixed(0)}%`:pt!=null?`target +${pt.toFixed(0)}%`:'',`timing ${Math.round(timing(s))}`].filter(Boolean).join(' · ');}
+    if(lens==='value'){const fv=n(s?.fair_value_upside_pct);return ['value + timing',fv!=null?`fair value +${fv.toFixed(0)}%`:'',`timing ${Math.round(timing(s))}`].filter(Boolean).join(' · ');}
     return reason(s);
   }
   function row(s,lens){
