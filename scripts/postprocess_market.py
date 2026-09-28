@@ -28,6 +28,8 @@ STALE_DERIVED_KEYS = {
     "opportunity_reasons",
     "opportunity_cautions",
     "opportunity_components",
+    "opportunity_upside_support",
+    "opportunity_upside_reasons",
     "opportunity_eligible",
     "opportunity_suppressed_reason",
     "opportunity_signal_count",
