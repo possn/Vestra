@@ -28,6 +28,10 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
             50.0,
             'general shortlist must not be dominated by the recovery lens',
         )
+        eligibility = report['general_shortlist_eligibility']
+        self.assertEqual(eligibility['eligible_count'], 12)
+        self.assertEqual(eligibility['ineligible_count'], 0)
+        self.assertEqual(eligibility['ineligible'], [])
         diag = report['general_shortlist_diagnostics']
         self.assertLessEqual(diag['max_sector_share_pct'], 25.0)
         self.assertLessEqual(diag['max_industry_share_pct'], 16.7)
