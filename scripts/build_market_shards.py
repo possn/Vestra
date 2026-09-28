@@ -145,6 +145,22 @@ def _finite_positive(value):
         return None
     return value if math.isfinite(value) and value > 0 else None
 
+def compact_period_return(row: dict, periods: int):
+    """Return a cheap price return for startup rotation without shipping history."""
+    hist = row.get("price_history_1y") or []
+    closes = []
+    for item in hist:
+        try:
+            value = float(item.get("close") if isinstance(item, dict) else item)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value) and value > 0:
+            closes.append(value)
+    if len(closes) <= periods:
+        return None
+    return round((closes[-1] / closes[-periods - 1] - 1.0) * 100.0, 4)
+
+
 
 def load_fund_aum_history(path: str = FUND_AUM_HISTORY) -> dict:
     try:
@@ -249,6 +265,13 @@ def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> d
     ticker = str(row.get("ticker") or "").upper()
     out["ticker"] = ticker
     out["dossier_shard"] = shard_for(ticker)
+    if str(row.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND", "FUND", "CRYPTO"}:
+        r5 = compact_period_return(row, 5)
+        r20 = compact_period_return(row, 20)
+        if r5 is not None:
+            out["market_return_5d_pct"] = r5
+        if r20 is not None:
+            out["market_return_20d_pct"] = r20
 
     # Funds need concentration before dossier hydration, but the complete holdings
     # list remains in the lazy dossier. Keep only the top-10 aggregate in startup.

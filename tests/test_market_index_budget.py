@@ -44,6 +44,19 @@ def test_detail_only_thesis_copy_does_not_enter_startup_row():
     assert "thesis_summary" not in compact
 
 
+def test_compact_rotation_returns_are_derived_without_shipping_history():
+    m = load_builder()
+    row = {
+        "ticker": "TEST",
+        "quote_type": "EQUITY",
+        "price_history_1y": [{"close": float(x)} for x in range(100, 126)],
+    }
+    compact = m.index_row(row)
+    assert compact["market_return_5d_pct"] == round((125 / 120 - 1) * 100, 4)
+    assert compact["market_return_20d_pct"] == round((125 / 105 - 1) * 100, 4)
+    assert "price_history_1y" not in compact
+
+
 def test_published_index_is_inside_new_budget():
     m = load_builder()
     index_size = (ROOT / "data" / "stocks-index.json").stat().st_size
