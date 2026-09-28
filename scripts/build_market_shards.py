@@ -92,6 +92,7 @@ INDEX_KEYS = {
     "opportunity_timing_score", "opportunity_timing_label", "opportunity_overextended",
     "opportunity_rotation_theme", "opportunity_rotation_signal",
     "opportunity_rotation_breadth_pct", "opportunity_rotation_return_5d_pct", "opportunity_rotation_etf_confirmed",
+    "opportunity_rotation_etf_evidence_count",
     "opportunity_market_regime", "opportunity_market_regime_source",
     "opportunity_market_breadth_20d_pct", "opportunity_market_return_5d_pct",
     "opportunity_market_return_20d_pct", "opportunity_market_regime_evidence_count",

@@ -216,16 +216,23 @@ def _rotation_context(rows):
         etf_return = statistics.median(etf_returns) if etf_returns else None
         etf_flow = sum(etf_flows) if etf_flows else None
         etf_confirmed = None
-        if signal in {"strong_inflow","inflow"} and (etf_return is not None or etf_flow is not None):
-            etf_confirmed = bool((etf_return is not None and etf_return > 0) or (etf_flow is not None and etf_flow > 0))
-        elif signal in {"strong_outflow","outflow"} and (etf_return is not None or etf_flow is not None):
-            etf_confirmed = bool((etf_return is not None and etf_return < 0) or (etf_flow is not None and etf_flow < 0))
+        directional = []
+        expected_sign = 1 if signal in {"strong_inflow","inflow"} else -1 if signal in {"strong_outflow","outflow"} else 0
+        if expected_sign:
+            for value in (etf_return, etf_flow):
+                if value is None or value == 0:
+                    continue
+                directional.append(1 if value > 0 else -1)
+            if directional:
+                agrees = [sign == expected_sign for sign in directional]
+                etf_confirmed = bool(all(agrees))
         contexts[label] = {
             "signal": signal,
             "median_return_5d_pct": round(med5, 2),
             "breadth_pct": round(breadth, 1),
             "member_count": len(weekly),
             "etf_confirmed": etf_confirmed,
+            "etf_evidence_count": len(directional),
         }
     return contexts
 
@@ -234,7 +241,7 @@ def _attach_rotation_context(row: dict, contexts: dict) -> None:
     haystack = " ".join(str(row.get(k) or "") for k in ("sector","industry","name"))
     matched = next(((label, ctx) for label, pattern, _ in ROTATION_THEMES if pattern.search(haystack) for ctx in [contexts.get(label)] if ctx), None)
     if not matched:
-        for key in ("opportunity_rotation_theme","opportunity_rotation_signal","opportunity_rotation_breadth_pct","opportunity_rotation_return_5d_pct","opportunity_rotation_etf_confirmed"):
+        for key in ("opportunity_rotation_theme","opportunity_rotation_signal","opportunity_rotation_breadth_pct","opportunity_rotation_return_5d_pct","opportunity_rotation_etf_confirmed","opportunity_rotation_etf_evidence_count"):
             row.pop(key, None)
         return
     label, ctx = matched
@@ -243,6 +250,7 @@ def _attach_rotation_context(row: dict, contexts: dict) -> None:
     row["opportunity_rotation_breadth_pct"] = ctx["breadth_pct"]
     row["opportunity_rotation_return_5d_pct"] = ctx["median_return_5d_pct"]
     row["opportunity_rotation_etf_confirmed"] = ctx["etf_confirmed"]
+    row["opportunity_rotation_etf_evidence_count"] = ctx["etf_evidence_count"]
 
 
 def _is_fund(row: dict) -> bool:
