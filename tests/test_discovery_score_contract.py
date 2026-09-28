@@ -33,6 +33,8 @@ def row(confidence=70, risk_gate="clear"):
         "margin_of_safety_pct": 8,
         "valuation_signal": "undervalued",
         "valuation_confidence": "medium",
+        "valuation_method_count": 3,
+        "valuation_dispersion_pct": 20,
         "analyst_price_target_upside_pct": 18,
         "analyst_eps_revisions_up_30d": 4,
         "analyst_eps_revisions_down_30d": 1,
@@ -266,6 +268,30 @@ class DiscoveryScoreContractTests(unittest.TestCase):
 
 
 
+
+    def test_single_method_valuation_cannot_confirm_strong_upside(self):
+        candidate = row()
+        candidate["valuation_method_count"] = 1
+        candidate["valuation_dispersion_pct"] = 0
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "moderate")
+        self.assertEqual(out["opportunity_valuation_evidence"], "limited")
+        self.assertLessEqual(out["opportunity_score"], 77)
+
+    def test_dispersed_valuation_cannot_confirm_strong_upside(self):
+        candidate = row()
+        candidate["valuation_method_count"] = 3
+        candidate["valuation_dispersion_pct"] = 55
+        out = MOD.assess(candidate)
+        self.assertEqual(out["opportunity_upside_support"], "moderate")
+        self.assertEqual(out["opportunity_valuation_evidence"], "dispersed")
+
+    def test_robust_multi_method_valuation_can_confirm_strong_upside(self):
+        out = MOD.assess(row())
+        self.assertEqual(out["opportunity_upside_support"], "strong")
+        self.assertEqual(out["opportunity_valuation_evidence"], "robust")
+        self.assertEqual(out["opportunity_valuation_method_count"], 3)
+
     def test_stale_positive_revisions_cannot_confirm_strong_upside(self):
         candidate = row()
         candidate["analyst_snapshot_age_days"] = 10
@@ -380,6 +406,10 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertIn('"opportunity_revision_evidence_age_days"', post)
         self.assertIn('"opportunity_revision_evidence"', shards)
         self.assertIn('"opportunity_revision_evidence_age_days"', shards)
+        self.assertIn('"opportunity_valuation_evidence"', post)
+        self.assertIn('"opportunity_valuation_method_count"', post)
+        self.assertIn('"opportunity_valuation_evidence"', shards)
+        self.assertIn('"opportunity_valuation_method_count"', shards)
 
         guard = (ROOT / "scripts" / "coverage_guard.py").read_text(encoding="utf-8")
         self.assertIn('"opportunity_missing_upside_support"', guard)
