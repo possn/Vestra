@@ -11,6 +11,7 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         cls.index = (ROOT / "index.html").read_text(encoding="utf-8")
         cls.app = (ROOT / "app.js").read_text(encoding="utf-8")
         cls.styles = (ROOT / "styles.css").read_text(encoding="utf-8")
+        cls.builder = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
         cls.sectors = json.loads((ROOT / "data" / "portfolio-sectors.json").read_text(encoding="utf-8"))["tickers"]
 
     def test_main_portfolio_contains_sector_holdings_box(self):
@@ -66,6 +67,11 @@ class PortfolioSectorBoxTests(unittest.TestCase):
         for ticker, sector in expected.items():
             with self.subTest(ticker=ticker):
                 self.assertEqual(self.sectors[ticker]["sector"], sector)
+
+    def test_sector_map_preserves_previous_identity_on_transient_gap(self):
+        self.assertIn("previous_portfolio_sectors = load_portfolio_sector_fallback()", self.builder)
+        self.assertIn("elif ticker in previous_portfolio_sectors:", self.builder)
+        self.assertIn("portfolio_sectors[ticker] = previous_portfolio_sectors[ticker]", self.builder)
 
     def test_sector_assets_keep_dossier_navigation(self):
         self.assertIn('data-sector-research=', self.app)
