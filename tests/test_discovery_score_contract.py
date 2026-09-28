@@ -176,6 +176,13 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertIn('"opportunity_upside_support"', shards)
         self.assertIn('"opportunity_upside_reasons"', shards)
 
+        guard = (ROOT / "scripts" / "coverage_guard.py").read_text(encoding="utf-8")
+        self.assertIn('"opportunity_missing_upside_support"', guard)
+        self.assertIn('"strong_opportunity_without_supported_upside"', guard)
+        self.assertIn('"high_priority_without_strong_upside"', guard)
+        self.assertIn('"strong_opportunity_requires_upside_support": ["moderate", "strong"]', guard)
+        self.assertIn('"high_priority_requires_upside_support": "strong"', guard)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
