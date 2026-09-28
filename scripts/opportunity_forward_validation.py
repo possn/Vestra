@@ -36,6 +36,8 @@ NUMERIC_FIELDS = (
     "confidence_score",
     "data_coverage_pct",
     "critical_metric_coverage_pct",
+    "opportunity_rotation_breadth_pct",
+    "opportunity_rotation_return_5d_pct",
 )
 SLEEVE_FIELDS = ("strength", "asymmetry", "inflection")
 
@@ -86,6 +88,9 @@ def make_observation(row):
         "opportunity_label": str(row.get("opportunity_label") or ""),
         "opportunity_upside_support": str(row.get("opportunity_upside_support") or "unavailable"),
         "risk_gate": str(row.get("risk_gate") or "clear"),
+        "opportunity_rotation_theme": str(row.get("opportunity_rotation_theme") or ""),
+        "opportunity_rotation_signal": str(row.get("opportunity_rotation_signal") or ""),
+        "opportunity_rotation_etf_confirmed": row.get("opportunity_rotation_etf_confirmed"),
         **{field: num(row.get(field)) for field in NUMERIC_FIELDS},
         **{f"sleeve_{field}": num(sleeves.get(field)) for field in SLEEVE_FIELDS},
     }
@@ -293,6 +298,7 @@ def summarize_horizon(vals, expected_matured_cohorts=0):
         "median_return_pct": round(median([x.get("return_pct") for x in vals]), 2) if vals else None,
         "by_upside_support": group_breakdown(vals, "opportunity_upside_support"),
         "by_label": group_breakdown(vals, "opportunity_label"),
+        "by_rotation_signal": group_breakdown(vals, "opportunity_rotation_signal"),
         "by_sector": group_breakdown(vals, "sector"),
         "cohorts": cohorts,
         "status": validation_status(len(cohorts)),
