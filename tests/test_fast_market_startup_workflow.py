@@ -9,6 +9,7 @@ class FastMarketStartupWorkflowTests(unittest.TestCase):
     def test_fast_path_does_not_run_heavy_enrichment(self):
         source = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("python build_market_shards.py", source)
+        self.assertIn("python weekly_rotation_audit.py", source)
         self.assertIn("timeout-minutes: 15", source)
         for forbidden in (
             "run_market_pipeline.py",
@@ -35,6 +36,8 @@ class FastMarketStartupWorkflowTests(unittest.TestCase):
             "scripts/build_market_shards.py",
             "tests/test_market_index_budget.py",
             "tests/test_weekly_rotation_relative_destinations.py",
+            "scripts/weekly_rotation_audit.py",
+            "tests/test_weekly_rotation_audit.py",
         ):
             self.assertIn(path, source)
 
@@ -49,6 +52,7 @@ class FastMarketStartupWorkflowTests(unittest.TestCase):
             "data/portfolio-sectors.json",
             "data/dossiers-manifest.json",
             "data/dossiers/",
+            "data/weekly-rotation-audit.json",
         ):
             self.assertIn(path, source)
 
