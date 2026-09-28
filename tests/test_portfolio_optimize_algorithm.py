@@ -131,14 +131,20 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         block = s.split("function renderRiskBudget(rows,total=0){", 1)[1].split("\n  const PORTFOLIO_STRESS_SCENARIOS", 1)[0]
         self.assertIn("const partialCoverage=total>0&&coverage<35", block)
         self.assertIn("const profile=portfolioRiskProfile(rows,total>0?total:undefined)", block)
-        self.assertIn("const incomplete=partialCoverage||!profile.factors.length||!profile.currencies.length||!profile.regions.length", block)
+        self.assertIn("const factorCoveredValue=rows.reduce", block)
+        self.assertIn("stockRiskTags(r.stock).length", block)
+        self.assertIn("const factorCoverage=factorCoveredValue/riskBase*100", block)
+        self.assertIn("const partialFactorCoverage=factorCoverage<35", block)
+        self.assertIn("const incomplete=partialCoverage||partialFactorCoverage||!profile.factors.length||!profile.currencies.length||!profile.regions.length", block)
         self.assertIn("fit=incomplete?null:rawFit", block)
         self.assertIn("const tone=incomplete?'is-warn'", block)
         self.assertIn("const statusLabel=incomplete?'Dados parciais'", block)
         self.assertIn("Classificação incompleta", block)
         self.assertIn("Cobertura insuficiente", block)
+        self.assertIn("Cobertura de fatores insuficiente", block)
+        self.assertIn("tem classificação de fatores", block)
         self.assertIn("o Risk Fit global fica indisponível", block)
-        self.assertIn("return {fit,html,profile,breaches,hasBreaches,incomplete,coverage}", block)
+        self.assertIn("return {fit,html,profile,breaches,hasBreaches,incomplete,coverage,factorCoverage}", block)
         self.assertIn("renderRiskBudget(ranked,total)", s)
 
     def test_inflation_shield_exposes_partial_portfolio_coverage(self):
