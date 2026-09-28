@@ -82,6 +82,7 @@ INDEX_KEYS = {
     # opportunity summaries used outside the Scanner tool
     "scanner_best", "scanner_best_score", "qarp_score", "qarp_label",
     "opportunity_score", "opportunity_score_raw", "opportunity_label",
+    "opportunity_upside_support", "opportunity_upside_reasons",
     "opportunity_eligible", "opportunity_signal_count", "opportunity_structural_signal_count",
     "opportunity_timing_score", "opportunity_timing_label", "opportunity_overextended",
     "opportunity_return_5d_pct", "opportunity_return_20d_pct", "opportunity_return_60d_pct",
