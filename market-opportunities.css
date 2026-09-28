@@ -21,3 +21,17 @@
 .ux453-sleeves span.is-driver{font-weight:800;box-shadow:inset 0 0 0 1px currentColor}
 
 .ux453-cap-note{margin-top:7px;font-size:9.5px;font-weight:750;color:var(--text2);line-height:1.35}
+
+
+.ux453-why{margin:9px 0 8px;padding:8px 9px;border-radius:12px;background:color-mix(in srgb,var(--soft) 72%,transparent);display:grid;gap:4px}
+.ux453-why__title{font-size:8px;letter-spacing:.11em;text-transform:uppercase;font-weight:900;color:var(--text2);margin-bottom:1px}
+.ux453-why__row{display:grid;grid-template-columns:auto 1fr;gap:6px;align-items:start;font-size:9.5px;line-height:1.35;color:var(--text2)}
+.ux453-why__row b{font-size:9px;color:var(--text);font-weight:850;white-space:nowrap}
+.ux453-why__row.is-positive b{color:var(--accent,#168e89)}
+.ux453-why__row.is-risk b{color:#b4534b}
+.ux453-why__row.is-watch b{color:#9a6b23}
+@media(max-width:620px){
+  .ux453-why{padding:7px 8px;gap:3px}
+  .ux453-why__row{grid-template-columns:1fr;font-size:9.25px;gap:1px}
+  .ux453-why__row b{white-space:normal}
+}
