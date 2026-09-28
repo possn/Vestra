@@ -65,5 +65,44 @@ class MarketRegimeContextTests(unittest.TestCase):
         self.assertEqual(ctx["evidence_count"], 0)
 
 
+    def _semiconductor_rows(self, etf_return=None, etf_flow=None):
+        rows = [
+            {
+                "ticker": f"CHIP{i}",
+                "quote_type": "EQUITY",
+                "industry": "Semiconductors",
+                "opportunity_return_5d_pct": 3.0 + i * 0.1,
+            }
+            for i in range(4)
+        ]
+        rows.append({
+            "ticker": "SMH",
+            "quote_type": "ETF",
+            "fund_return_1w_pct": etf_return,
+            "fund_flow_1w_usd": etf_flow,
+        })
+        return rows
+
+    def test_rotation_etf_confirmation_requires_available_evidence_consensus(self):
+        ctx = MOD._rotation_context(self._semiconductor_rows(etf_return=2.0, etf_flow=150_000_000))
+        semi = ctx["Semicondutores"]
+        self.assertEqual(semi["signal"], "strong_inflow")
+        self.assertIs(semi["etf_confirmed"], True)
+        self.assertEqual(semi["etf_evidence_count"], 2)
+
+    def test_rotation_etf_conflict_is_not_confirmed(self):
+        ctx = MOD._rotation_context(self._semiconductor_rows(etf_return=2.0, etf_flow=-150_000_000))
+        semi = ctx["Semicondutores"]
+        self.assertIs(semi["etf_confirmed"], False)
+        self.assertEqual(semi["etf_evidence_count"], 2)
+
+    def test_rotation_etf_neutral_or_missing_evidence_stays_unknown(self):
+        ctx = MOD._rotation_context(self._semiconductor_rows(etf_return=0.0, etf_flow=None))
+        semi = ctx["Semicondutores"]
+        self.assertIsNone(semi["etf_confirmed"])
+        self.assertEqual(semi["etf_evidence_count"], 0)
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
