@@ -1,4 +1,4 @@
-/* Vestra Market Opportunities v1.3 — canonical opportunity ranking/rendering + strategy-specific universe lenses. */
+/* Vestra Market Opportunities v1.4 — canonical opportunity ranking/rendering + strategy-specific universe lenses. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -47,6 +47,14 @@
     return clamp(x);
   }
   function eligible(s){
+    const publishedEligible=typeof s?.opportunity_eligible==='boolean'?s.opportunity_eligible:null;
+    const publishedScore=n(s?.opportunity_score);
+    if(publishedEligible!==null){
+      if(!publishedEligible)return false;
+      if(publishedScore!=null)return publishedScore>=54;
+    }
+    // Legacy fallback only: modern payloads publish the canonical Opportunity
+    // eligibility/score from scripts/opportunity_rank.py.
     const qt=t(s?.quote_type||s?.quoteType).toUpperCase();if(['ETF','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const sc=n(s?.score),cov=n(s?.data_coverage_pct),conf=n(s?.confidence_score),crit=n(s?.critical_metric_coverage_pct),rel=t(s?.score_reliability).toLowerCase(),risk=t(s?.risk_gate).toLowerCase();
     if(sc==null||sc<58||cov==null||cov<55||conf==null||conf<50)return false;

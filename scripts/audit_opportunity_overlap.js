@@ -119,8 +119,13 @@ const diagnostics = shortlistDiagnostics(allRows);
 const generalEligibility = allRows.map(stock => ({
   ticker: String(stock?.ticker || '').trim(),
   eligible: Boolean(api.eligible?.(stock)),
+  published_eligible: stock?.opportunity_eligible === true,
+  published_score: Number.isFinite(Number(stock?.opportunity_score)) ? Number(stock.opportunity_score) : null,
 }));
 const ineligibleGeneral = generalEligibility.filter(item => !item.eligible);
+const publishedContractViolations = generalEligibility.filter(
+  item => !item.published_eligible || item.published_score == null || item.published_score < 54
+);
 const scored = stocks
   .filter(stock => Number.isFinite(Number(stock?.score)))
   .slice()
@@ -156,6 +161,8 @@ const report = {
     eligible_count: generalEligibility.filter(item => item.eligible).length,
     ineligible_count: ineligibleGeneral.length,
     ineligible: ineligibleGeneral,
+    published_contract_violation_count: publishedContractViolations.length,
+    published_contract_violations: publishedContractViolations,
   },
   discovery_novelty_vs_score: novelty,
 };

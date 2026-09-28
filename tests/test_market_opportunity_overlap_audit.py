@@ -33,6 +33,8 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
         self.assertEqual(eligibility['eligible_count'], len(report['ranked']['all']))
         self.assertEqual(eligibility['ineligible_count'], 0)
         self.assertEqual(eligibility['ineligible'], [])
+        self.assertEqual(eligibility['published_contract_violation_count'], 0)
+        self.assertEqual(eligibility['published_contract_violations'], [])
         diag = report['general_shortlist_diagnostics']
         self.assertLessEqual(max(diag['sector_counts'].values(), default=0), 3)
         self.assertLessEqual(max(diag['industry_counts'].values(), default=0), 2)
