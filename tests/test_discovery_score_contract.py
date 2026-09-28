@@ -168,6 +168,14 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertEqual(out["opportunity_upside_support"], "unavailable")
         self.assertLessEqual(out["opportunity_score"], 64)
 
+    def test_upside_support_survives_compact_pipeline_and_stale_rows_clear_it(self):
+        post = (ROOT / "scripts" / "postprocess_market.py").read_text(encoding="utf-8")
+        shards = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
+        self.assertIn('"opportunity_upside_support"', post)
+        self.assertIn('"opportunity_upside_reasons"', post)
+        self.assertIn('"opportunity_upside_support"', shards)
+        self.assertIn('"opportunity_upside_reasons"', shards)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
