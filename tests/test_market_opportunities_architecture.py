@@ -204,6 +204,15 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn('discoveryScore(', why_block)
         self.assertNotIn('lensScore(', why_block)
 
+    def test_opportunity_cards_keep_metrics_beside_why_now_on_mobile(self):
+        source = read('market-opportunities.js')
+        css = read('market-opportunities.css')
+        self.assertIn('ux453-detail-grid', source)
+        self.assertIn('ux453-card-metrics', source)
+        self.assertIn('.ux453-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(112px,.34fr)', css)
+        self.assertIn('@media(max-width:620px)', css)
+        self.assertIn('.ux453-detail-grid{grid-template-columns:minmax(0,1fr) 108px', css)
+
     def test_opportunity_rows_explain_driver_and_company_vs_setup(self):
         source = read('market-opportunities.js')
         css = read('market-opportunities.css')
@@ -270,7 +279,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("const root=document.getElementById('marketPrimary');if(!root)return", source)
         self.assertIn("mo.observe(root,{childList:true,subtree:true})", source)
         self.assertNotIn("observe(document.body", source)
-        self.assertIn("market-opportunities.css?v=1.1", source)
+        self.assertIn("market-opportunities.css?v=1.2", source)
         self.assertIn("link.rel='stylesheet'", source)
         self.assertNotIn("document.createElement('style')", source)
         self.assertNotIn('s.textContent=', source)
