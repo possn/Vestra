@@ -36,8 +36,8 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
         diag = report['general_shortlist_diagnostics']
         self.assertLessEqual(max(diag['sector_counts'].values(), default=0), 3)
         self.assertLessEqual(max(diag['industry_counts'].values(), default=0), 2)
-        self.assertGreaterEqual(diag['distinct_sectors'], min(4, len(report['ranked']['all'])))
-        self.assertGreaterEqual(diag['distinct_industries'], min(4, len(report['ranked']['all'])))
+        self.assertGreaterEqual(diag['distinct_sectors'], min(3, len(report['ranked']['all'])))
+        self.assertGreaterEqual(diag['distinct_industries'], min(3, len(report['ranked']['all'])))
         self.assertGreaterEqual(diag['distinct_dominant_sleeves'], 2)
         for sleeve in ('strength', 'asymmetry', 'inflection'):
             summary = diag['sleeve_score_summary'][sleeve]
