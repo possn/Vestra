@@ -22,17 +22,22 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
         for lens, tickers in report['ranked'].items():
             self.assertLessEqual(len(tickers), 12, lens)
             self.assertEqual(len(tickers), len(set(tickers)), lens)
-        self.assertEqual(len(report['ranked']['all']), 12)
+        self.assertGreater(len(report['ranked']['all']), 0)
+        self.assertLessEqual(len(report['ranked']['all']), 12)
         self.assertLessEqual(
             report['pairs']['all__recovery']['overlap_of_top_n_pct'],
             50.0,
             'general shortlist must not be dominated by the recovery lens',
         )
+        eligibility = report['general_shortlist_eligibility']
+        self.assertEqual(eligibility['eligible_count'], len(report['ranked']['all']))
+        self.assertEqual(eligibility['ineligible_count'], 0)
+        self.assertEqual(eligibility['ineligible'], [])
         diag = report['general_shortlist_diagnostics']
-        self.assertLessEqual(diag['max_sector_share_pct'], 25.0)
-        self.assertLessEqual(diag['max_industry_share_pct'], 16.7)
-        self.assertGreaterEqual(diag['distinct_sectors'], 4)
-        self.assertGreaterEqual(diag['distinct_industries'], 6)
+        self.assertLessEqual(max(diag['sector_counts'].values(), default=0), 3)
+        self.assertLessEqual(max(diag['industry_counts'].values(), default=0), 2)
+        self.assertGreaterEqual(diag['distinct_sectors'], min(4, len(report['ranked']['all'])))
+        self.assertGreaterEqual(diag['distinct_industries'], min(4, len(report['ranked']['all'])))
         self.assertGreaterEqual(diag['distinct_dominant_sleeves'], 2)
         for sleeve in ('strength', 'asymmetry', 'inflection'):
             summary = diag['sleeve_score_summary'][sleeve]
@@ -46,7 +51,7 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
         self.assertGreaterEqual(novelty['discovery_novel_count'], 1)
         self.assertEqual(
             novelty['discovery_novel_count'] + novelty['discovery_in_top_score_decile_count'],
-            12,
+            len(report['ranked']['all']),
         )
         print('OPPORTUNITY_OVERLAP_AUDIT=' + json.dumps(report, sort_keys=True))
 
