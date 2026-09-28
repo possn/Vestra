@@ -43,6 +43,12 @@ STALE_DERIVED_KEYS = {
     "opportunity_rotation_breadth_pct",
     "opportunity_rotation_return_5d_pct",
     "opportunity_rotation_etf_confirmed",
+    "opportunity_market_regime",
+    "opportunity_market_regime_source",
+    "opportunity_market_breadth_20d_pct",
+    "opportunity_market_return_5d_pct",
+    "opportunity_market_return_20d_pct",
+    "opportunity_market_regime_evidence_count",
     "scanner_tags",
     "scanner_results",
     "scanner_best",
@@ -73,6 +79,84 @@ ROTATION_THEMES = [
     ("Imobiliário", re.compile(r"real estate|reit|property", re.I), ("VNQ","IYR","XLRE")),
     ("Consumo discricionário", re.compile(r"consumer cyclical|consumer discretionary|auto manufacturer|travel|leisure|retail", re.I), ("XLY","VCR")),
 ]
+
+
+MARKET_REGIME_BENCHMARKS = ("ACWI", "SPY", "QQQ", "IWM", "EFA", "EEM")
+
+
+def _period_return(row: dict, periods: int):
+    hist = row.get("price_history_1y") or []
+    closes = [_n(x.get("close")) for x in hist if isinstance(x, dict)]
+    closes = [x for x in closes if x is not None and x > 0]
+    if len(closes) <= periods:
+        return None
+    return (closes[-1] / closes[-periods - 1] - 1.0) * 100.0
+
+
+def _market_regime_context(rows):
+    by_ticker = {str(r.get("ticker") or "").upper(): r for r in rows if isinstance(r, dict)}
+    benchmark_rows = [by_ticker.get(t) for t in MARKET_REGIME_BENCHMARKS]
+    benchmark_rows = [r for r in benchmark_rows if isinstance(r, dict)]
+
+    def pack(candidates, source, minimum):
+        values = []
+        for row in candidates:
+            r20 = _period_return(row, 20)
+            if r20 is None:
+                continue
+            values.append((r20, _period_return(row, 5)))
+        if len(values) < minimum:
+            return None
+        returns20 = [r20 for r20, _ in values]
+        returns5 = [r5 for _, r5 in values if r5 is not None]
+        med20 = statistics.median(returns20)
+        med5 = statistics.median(returns5) if returns5 else None
+        breadth20 = sum(1 for r20 in returns20 if r20 > 0) / len(returns20) * 100.0
+        if (med20 <= -8 and breadth20 <= 30) or (med5 is not None and med5 <= -4 and breadth20 <= 35):
+            regime = "severe_adverse"
+        elif (med20 <= -4 and breadth20 <= 40) or (med5 is not None and med5 <= -2 and breadth20 <= 40):
+            regime = "adverse"
+        elif med20 >= 2 and breadth20 >= 60 and (med5 is None or med5 >= -0.5):
+            regime = "supportive"
+        else:
+            regime = "neutral"
+        return {
+            "regime": regime,
+            "source": source,
+            "breadth_20d_pct": round(breadth20, 1),
+            "median_return_5d_pct": round(med5, 2) if med5 is not None else None,
+            "median_return_20d_pct": round(med20, 2),
+            "evidence_count": len(values),
+        }
+
+    benchmark = pack(benchmark_rows, "broad_benchmarks", 3)
+    if benchmark:
+        return benchmark
+
+    equities = [
+        r for r in rows
+        if isinstance(r, dict)
+        and not _is_fund(r)
+        and str(r.get("pipeline_status") or "") not in {"equity_catalog_only", "equity_carried_forward"}
+    ]
+    broad = pack(equities, "equity_breadth", 30)
+    return broad or {
+        "regime": "unavailable",
+        "source": "insufficient_evidence",
+        "breadth_20d_pct": None,
+        "median_return_5d_pct": None,
+        "median_return_20d_pct": None,
+        "evidence_count": 0,
+    }
+
+
+def _attach_market_regime(row: dict, context: dict) -> None:
+    row["opportunity_market_regime"] = context.get("regime")
+    row["opportunity_market_regime_source"] = context.get("source")
+    row["opportunity_market_breadth_20d_pct"] = context.get("breadth_20d_pct")
+    row["opportunity_market_return_5d_pct"] = context.get("median_return_5d_pct")
+    row["opportunity_market_return_20d_pct"] = context.get("median_return_20d_pct")
+    row["opportunity_market_regime_evidence_count"] = context.get("evidence_count")
 
 
 def _weekly_return(row: dict):
@@ -234,6 +318,7 @@ def main() -> None:
     refreshed = 0
     sanitized = 0
     rotation_contexts = _rotation_context(rows)
+    market_regime = _market_regime_context(rows)
 
     for row in rows:
         if not isinstance(row, dict) or _is_fund(row):
@@ -247,6 +332,7 @@ def main() -> None:
         # Attach same-run market-rotation context before recalculating the
         # structural master rank. Rotation may constrain timing, never add alpha.
         _attach_rotation_context(row, rotation_contexts)
+        _attach_market_regime(row, market_regime)
         row.update(assess_opportunity(row))
         _refresh_best_scanner(row)
         refreshed += 1
@@ -255,6 +341,7 @@ def main() -> None:
         "opportunity_rows_refreshed": refreshed,
         "stale_rows_sanitized": sanitized,
         "same_run_recovery_used": True,
+        "market_regime": market_regime,
     }
 
     with open(STOCKS_PATH, "w", encoding="utf-8") as fh:
