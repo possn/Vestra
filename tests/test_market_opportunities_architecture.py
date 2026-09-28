@@ -14,9 +14,9 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         loader = read('market-static-universe.js')
         self.assertNotIn('src="market-opportunities.js', hotfix)
         self.assertNotIn('src="market-opportunity-lenses.js', hotfix)
-        self.assertIn("market-opportunities.js?v=1.3", loader)
+        self.assertIn("market-opportunities.js?v=1.4", loader)
         self.assertIn("market-opportunity-lenses.js?v=3.1", loader)
-        self.assertLess(loader.index("market-opportunities.js?v=1.3"), loader.index("market-opportunity-lenses.js?v=3.1"))
+        self.assertLess(loader.index("market-opportunities.js?v=1.4"), loader.index("market-opportunity-lenses.js?v=3.1"))
         self.assertNotIn('src="vestra-portfolio-focus.js', hotfix)
         self.assertNotIn("vestra-portfolio-focus.js", loader)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
@@ -26,6 +26,9 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_canonical_opportunity_engine_keeps_v453_contract(self):
         source = read('market-opportunities.js')
         for token in (
+            "const publishedEligible=typeof s?.opportunity_eligible==='boolean'?s.opportunity_eligible:null",
+            "if(!publishedEligible)return false",
+            "if(publishedScore!=null)return publishedScore>=54",
             "sc==null||sc<58||cov==null||cov<55||conf==null||conf<50",
             "return timing(s)>=48 && confirmed(s)>=2",
             "const published=n(s?.opportunity_score)",
