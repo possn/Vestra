@@ -13,7 +13,8 @@ class DashboardPrivacyTests(unittest.TestCase):
         self.assertIn('state.settings.hideDashboardValues', app)
         self.assertIn('function dashboardPrivacyEnabled()', app)
         self.assertIn('function toggleDashboardPrivacy()', app)
-        self.assertIn('saveState();', app.split('function toggleDashboardPrivacy()', 1)[1].split('}', 1)[0])
+        toggle_block = app.split('function toggleDashboardPrivacy()', 1)[1].split('function renderDashboard()', 1)[0]
+        self.assertIn('saveState();', toggle_block)
 
     def test_privacy_masks_dashboard_euro_values_but_not_percentages(self):
         app = (ROOT / "app.js").read_text(encoding="utf-8")
