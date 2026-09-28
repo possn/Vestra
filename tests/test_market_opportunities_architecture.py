@@ -14,9 +14,9 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         loader = read('market-static-universe.js')
         self.assertNotIn('src="market-opportunities.js', hotfix)
         self.assertNotIn('src="market-opportunity-lenses.js', hotfix)
-        self.assertIn("market-opportunities.js?v=1.2", loader)
+        self.assertIn("market-opportunities.js?v=1.3", loader)
         self.assertIn("market-opportunity-lenses.js?v=3.1", loader)
-        self.assertLess(loader.index("market-opportunities.js?v=1.2"), loader.index("market-opportunity-lenses.js?v=3.1"))
+        self.assertLess(loader.index("market-opportunities.js?v=1.3"), loader.index("market-opportunity-lenses.js?v=3.1"))
         self.assertNotIn('src="vestra-portfolio-focus.js', hotfix)
         self.assertNotIn("vestra-portfolio-focus.js", loader)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
@@ -184,6 +184,23 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn('confidence_score', block)
         self.assertNotIn('conf*.', block)
 
+    def test_opportunity_rows_explain_why_now_without_new_alpha(self):
+        source = read('market-opportunities.js')
+        css = read('market-opportunities.css')
+        self.assertIn('function whyNowItems(s)', source)
+        self.assertIn('function whyNowHtml(s)', source)
+        self.assertIn('Porque agora', source)
+        for token in ('opportunity_valuation_evidence', 'opportunity_revision_evidence', 'opportunity_market_regime', 'opportunity_rotation_signal', 'opportunity_event_risk'):
+            self.assertIn(token, source)
+        self.assertIn("items.push({kind:'risk',label:'Risco principal'", source)
+        self.assertIn('return items.slice(0,4)', source)
+        self.assertIn('.ux453-why{', css)
+        self.assertIn('.ux453-why__row{', css)
+        self.assertIn('@media(max-width:620px)', css)
+        why_block = source.split('function whyNowItems(s){', 1)[1].split('function whyNowHtml', 1)[0]
+        self.assertNotIn('discoveryScore(', why_block)
+        self.assertNotIn('lensScore(', why_block)
+
     def test_opportunity_rows_explain_driver_and_company_vs_setup(self):
         source = read('market-opportunities.js')
         css = read('market-opportunities.css')
@@ -234,7 +251,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("const root=document.getElementById('marketPrimary');if(!root)return", source)
         self.assertIn("mo.observe(root,{childList:true,subtree:true})", source)
         self.assertNotIn("observe(document.body", source)
-        self.assertIn("market-opportunities.css?v=1.0", source)
+        self.assertIn("market-opportunities.css?v=1.1", source)
         self.assertIn("link.rel='stylesheet'", source)
         self.assertNotIn("document.createElement('style')", source)
         self.assertNotIn('s.textContent=', source)
@@ -381,7 +398,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         fallback = source.split('function fallbackUpsideSupport(s)', 1)[1].split('function discoveryScore(s)', 1)[0]
         discovery = source.split('function discoveryScore(s)', 1)[1].split('function low52Above(s)', 1)[0]
         self.assertIn('const analystPositive=pt!=null&&pt>=12', fallback)
-        self.assertIn("revisionsPositive&&!revisionsNegative&&!durabilityNegative", fallback)
+        self.assertIn("valuationRobust&&revisionsPositiveCurrent&&!revisionsNegativeCurrent&&!durabilityNegative", fallback)
         self.assertIn("const analystPositive=pt!=null&&pt>=12", fallback)
         self.assertNotIn("(revisionsPositive||analystPositive)", fallback)
         self.assertNotIn('pt/7', discovery)
