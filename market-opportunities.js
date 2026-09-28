@@ -230,6 +230,19 @@
     const selected=[],seen=new Set();
     const recoveryCap=Math.min(5,limit);
     let recoveryCount=0;
+
+    // The general "Oportunidades agora" surface must remain anchored to the
+    // canonical Discovery rank. Archetype round-robin adds diversity, but must
+    // not displace the strongest cross-sectional candidates merely because
+    // they do not fit low52/emerging/recovery/value labels.
+    const anchorCount=Math.min(3,limit);
+    for(const candidate of general.slice(0,anchorCount)){
+      const key=t(candidate?.ticker).toUpperCase();
+      if(!key||seen.has(key))continue;
+      const isRecovery=lensEligible(candidate,'recovery');
+      selected.push(candidate);seen.add(key);if(isRecovery)recoveryCount++;
+    }
+
     let progressed=true;
 
     while(selected.length<limit&&progressed){
