@@ -123,6 +123,7 @@ jobs:
           python score_benchmark_audit.py
           python score_peer_shadow.py
           python score_forward_validation.py
+          python opportunity_forward_validation.py
 
       - name: Publish validated market data
         if: steps.coverage_guard.outcome == 'success'
