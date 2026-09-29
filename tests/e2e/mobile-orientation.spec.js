@@ -54,7 +54,7 @@ test('iPhone/WebKit: portrait -> landscape -> portrait keeps Market and dossier 
   await expect(sheet).toHaveAttribute('data-ticker', 'MSFT');
 
   await page.setViewportSize({ width: 852, height: 393 });
-  await expect(page.locator('#viewMarket')).toBeVisible();
+  await expect(page.locator('#viewMarket')).toHaveCSS('visibility', 'hidden');
   await expect(sheet).toBeVisible();
   await expect(sheet.locator('.market-detail-head h2')).toHaveText('MSFT');
   await assertNoHorizontalOverflow(page);
