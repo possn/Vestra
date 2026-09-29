@@ -69,10 +69,13 @@ const open = workbook.xtbWorkbookSheetToRows({ rows: [
   [],
   ['Note', 'Summary values and open positions'],
   ['Product', 'Instrument/Position', 'Ticker', 'Category', 'Type', 'Volume', 'Value', 'Current price', 'Open price', 'Open time (UTC)', 'Net Profit'],
-  ['My Trades', 'Example plc', 'EXM.UK', 'STOCK', '', '2', '24', '', '10', '', '4'],
+  ['My Trades', 'Example plc', 'EXM.UK', 'STOCK', '3', '2', '24', '3', '10', '3', '4'],
   ['My Trades', '1001', 'EXM.UK', '', 'BUY', '2', '24', '12', '10', '2025-01-02', '4'],
+  ['Investment Plan', 'Example plc', 'EXM.UK', 'ETF', '3', '1.5', '18', '3', '9', '3', '3'],
+  ['Investment Plan', '2001', 'EXM.UK', '', 'BUY', '1.0', '12', '12', '9', '2025-03-01', '3'],
+  ['Investment Plan', '2002', 'EXM.UK', '', 'BUY', '0.5', '6', '12', '9', '2025-03-02', '0'],
 ] });
-assert.strictEqual(open.length, 2);
+assert.strictEqual(open.length, 5);
 assert.strictEqual(open[1].Ticker, 'EXM.UK');
 
 const blocks = workbook.workbookToBrokerBlocks({
@@ -103,8 +106,11 @@ const blocks = workbook.workbookToBrokerBlocks({
       [],
       ['Note', 'Summary values and open positions'],
       ['Product', 'Instrument/Position', 'Ticker', 'Category', 'Type', 'Volume', 'Value', 'Current price', 'Open price', 'Open time (UTC)', 'Net Profit'],
-      ['My Trades', 'Example plc', 'EXM.UK', 'STOCK', '', '2', '24', '', '10', '', '4'],
+      ['My Trades', 'Example plc', 'EXM.UK', 'STOCK', '3', '2', '24', '3', '10', '3', '4'],
       ['My Trades', '1001', 'EXM.UK', '', 'BUY', '2', '24', '12', '10', '2025-01-02', '4'],
+      ['Investment Plan', 'Example plc', 'EXM.UK', 'ETF', '3', '1.5', '18', '3', '9', '3', '3'],
+      ['Investment Plan', '2001', 'EXM.UK', '', 'BUY', '1.0', '12', '12', '9', '2025-03-01', '3'],
+      ['Investment Plan', '2002', 'EXM.UK', '', 'BUY', '0.5', '6', '12', '9', '2025-03-02', '0'],
     ] },
   },
 });
@@ -129,9 +135,9 @@ const parsedPositions = context.window.VestraBrokerParsers.parseXTBPositionsRows
 );
 assert.strictEqual(parsedPositions.length, 1);
 assert.strictEqual(parsedPositions[0].ticker, 'EXM.L');
-assert.strictEqual(parsedPositions[0].qty, 2, 'summary and lot quantities must not be added together');
-assert.strictEqual(parsedPositions[0].marketValueEUR, 24, 'exact broker-reported EUR Value must win');
-assert.strictEqual(parsedPositions[0].costBasisEUR, 20, 'exact Value minus Net Profit must determine cost basis');
+assert.strictEqual(parsedPositions[0].qty, 3.5, 'summary rows must be ignored while real lots across products are combined');
+assert.strictEqual(parsedPositions[0].marketValueEUR, 42, 'real lot values across products must be combined exactly once');
+assert.strictEqual(parsedPositions[0].costBasisEUR, 35, 'cost basis must come from real lots only, across products');
 assert.strictEqual(parsedPositions[0].snapshotDate, '2026-08-23');
 
 assert.strictEqual(context.normalizeBrokerAction('Stock acquisition'), 'STOCK_DISTRIBUTION');
