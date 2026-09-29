@@ -1,5 +1,5 @@
-/* Vestra Service Worker v11.06 — authoritative broker snapshot precedence. */
-const CACHE_NAME = "vestra-cache-v228";
+/* Vestra Service Worker v11.07 — FLR canonical quote recovery. */
+const CACHE_NAME = "vestra-cache-v229";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [

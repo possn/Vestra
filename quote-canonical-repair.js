@@ -1,4 +1,4 @@
-/* Vestra Asset Identity Guard v2.4 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
+/* Vestra Asset Identity Guard v2.5 — detect identity anomalies and recover stale broker quote identities without weakening normal sanity checks. */
 (() => {
   'use strict';
 
@@ -21,6 +21,7 @@
     HHPD: 'HNHPF',
     NFC: 'NFC.DE',
     'HEI.DE': 'HEI.DE',
+    'FLR.US': 'FLR',
   });
 
   const SPECIAL_RECOVERY_RULES = Object.freeze({
@@ -38,6 +39,7 @@
     HHPD: Object.freeze({ ticker: 'HNHPF', currency: 'USD', minPrice: 1, maxPrice: 100 }),
     NFC: Object.freeze({ ticker: 'NFC.DE', currency: 'EUR', minPrice: 5, maxPrice: 300 }),
     'HEI.DE': Object.freeze({ ticker: 'HEI.DE', currency: 'EUR', minPrice: 50, maxPrice: 400 }),
+    'FLR.US': Object.freeze({ ticker: 'FLR', currency: 'USD', minPrice: 10, maxPrice: 150 }),
   });
 
   const VENUE_CURRENCY = Object.freeze({
@@ -199,7 +201,7 @@
   if (!install()) document.addEventListener('DOMContentLoaded', install, { once: true });
 
   const api = Object.freeze({
-    version: '2.4',
+    version: '2.5',
     identityMapRepairs: IDENTITY_MAP_REPAIRS,
     brokerAliasRepairs: BROKER_ALIAS_REPAIRS,
     specialRules: SPECIAL_RECOVERY_RULES,
