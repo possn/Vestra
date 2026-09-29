@@ -171,7 +171,7 @@
       return Promise.resolve(window.VestraMarketOpportunityLenses);
     }
     if (opportunitySuitePromise) return opportunitySuitePromise;
-    opportunitySuitePromise = loadOrderedCompanion('VestraMarketOpportunities','script[data-vestra-market-opportunities]','market-opportunities.js?v=1.5','vestraMarketOpportunities').then(base => {
+    opportunitySuitePromise = loadOrderedCompanion('VestraMarketOpportunities','script[data-vestra-market-opportunities]','market-opportunities.js?v=1.6','vestraMarketOpportunities').then(base => {
       if (!base) return null;
       return loadOrderedCompanion('VestraMarketOpportunityLenses','script[data-vestra-market-opportunity-lenses]','market-opportunity-lenses.js?v=3.1','vestraMarketOpportunityLenses');
     }).finally(() => { opportunitySuitePromise = null; });
