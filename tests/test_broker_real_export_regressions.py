@@ -32,6 +32,8 @@ class BrokerRealExportRegressionTests(unittest.TestCase):
         self.assertIn("range.firstDate <= oldRange.firstDate", APP)
         self.assertIn("range.lastDate >= oldRange.lastDate", APP)
         self.assertIn("logicalReplaced", APP)
+        self.assertIn("bd.events = (bd.events || []).filter", APP)
+        self.assertIn("bd.positions = (bd.positions || []).filter", APP)
 
     def test_current_t212_from_export_is_not_left_as_generic_csv(self):
         self.assertIn("function inferBrokerFromParsedImport", APP)
