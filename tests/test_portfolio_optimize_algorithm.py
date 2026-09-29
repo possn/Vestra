@@ -195,11 +195,11 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
 
     def test_canonical_move_evaluator_owns_shared_eligibility(self):
         s = read("market.js")
-        self.assertIn("function portfolioMoveEvidence(stock)", s)
+        self.assertIn("function portfolioMoveEvidence(stock, conviction=null)", s)
         self.assertIn("function evaluatePortfolioMove({mode='replace'", s)
         self.assertIn("autoEligible=sourceAutomatable&&evidence.strict&&convictionGain>=2&&convDelta>0&&overlapDelta<2", s)
         self.assertIn("positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5", s)
-        self.assertIn("autoEligible=evidence.strict&&riskPenalty<5", s)
+        self.assertIn("autoEligible=evidence.reinforceEligible&&riskPenalty<5", s)
         self.assertIn("mode==='scenario'", s)
         self.assertIn("melhoria de convicção insuficiente", s)
         self.assertIn("aumenta overlap", s)
@@ -265,7 +265,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("portfolioFit(r,sectorRows,portfolioBase,etfsForFit,portfolioTargets)", s)
         self.assertIn("const structuralDeterioration=gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50)", s)
         self.assertIn("if(structuralDeterioration||gate==='watch') return {key:'review'", s)
-        self.assertIn("gate!=='watch'&&!['overvalued','uncertain'].includes(valuation)", s)
+        self.assertIn("const reinforceEligible=strict&&conv!=null&&conv>=70&&valuation!=='uncertain'", s)
         self.assertNotIn("if(positionPct>=15||sectorPct>=35||indirectPct>=4) fit='concentrated'", s)
         self.assertNotIn("else if(positionPct>=10||sectorPct>=28||indirectPct>=2) fit='watch'", s)
 
