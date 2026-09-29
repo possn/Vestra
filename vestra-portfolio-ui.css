@@ -351,3 +351,8 @@
     z-index:2;
   }
 }
+
+/* The market dossier lives outside #viewMarket; hide the underlying surface while open so iOS cannot expose it during deep sheet scroll. */
+body.modal-open #viewMarket{
+  visibility:hidden!important;
+}
