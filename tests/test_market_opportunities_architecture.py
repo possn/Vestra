@@ -14,9 +14,9 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         loader = read('market-static-universe.js')
         self.assertNotIn('src="market-opportunities.js', hotfix)
         self.assertNotIn('src="market-opportunity-lenses.js', hotfix)
-        self.assertIn("market-opportunities.js?v=1.7", loader)
+        self.assertIn("market-opportunities.js?v=1.8", loader)
         self.assertIn("market-opportunity-lenses.js?v=3.1", loader)
-        self.assertLess(loader.index("market-opportunities.js?v=1.7"), loader.index("market-opportunity-lenses.js?v=3.1"))
+        self.assertLess(loader.index("market-opportunities.js?v=1.8"), loader.index("market-opportunity-lenses.js?v=3.1"))
         self.assertNotIn('src="vestra-portfolio-focus.js', hotfix)
         self.assertNotIn("vestra-portfolio-focus.js", loader)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
@@ -62,6 +62,18 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("elif opp >= FEATURED_OPPORTUNITY_MIN_SCORE:", ranker)
         self.assertIn('label = "Interessante"', ranker)
         
+    def test_strategy_lenses_cannot_bypass_canonical_discovery_eligibility(self):
+        source = read('market-opportunities.js')
+        start = source.index("function lensEligible(s,lens){")
+        end = source.index("function sleeveScores(s)", start)
+        block = source[start:end]
+        self.assertIn("if(lens==='all')return eligible(s);", block)
+        self.assertIn("if(!discoveryEligible(s))return false;", block)
+        self.assertLess(
+            block.index("if(!discoveryEligible(s))return false;"),
+            block.index("if(lens==='low52')"),
+        )
+
     def test_backend_owns_featured_opportunity_decision(self):
         source = read('market-opportunities.js')
         ranker = read('scripts/opportunity_rank.py')
