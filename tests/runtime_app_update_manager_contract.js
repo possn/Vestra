@@ -21,6 +21,8 @@ assert(appPos >= 0, 'index must load app.js');
 assert(uiCorePos < appPos, 'app-ui-core must load before app.js so the capture guard wins');
 assert(indexSource.includes('navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });'), 'index bootstrap must remain the canonical update checker');
 assert(indexSource.includes("navigator.serviceWorker.addEventListener('controllerchange'"), 'index bootstrap must remain the canonical controllerchange owner');
+assert(indexSource.includes("sessionStorage.setItem('vestra:sw-reloaded', '1')"), 'controllerchange must schedule exactly one fresh PWA reload');
+assert(indexSource.includes("window.location.replace(url.toString())"), 'controllerchange must activate the new frontend immediately');
 assert(!indexSource.includes('app-update-manager.js'), 'orphaned update manager must not be loaded by index');
 assert(!swSource.includes('app-update-manager.js'), 'orphaned update manager must not remain in the service-worker shell');
 
