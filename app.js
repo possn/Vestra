@@ -1426,18 +1426,36 @@ function dashboardPrivacyEnabled() {
   return !!(state.settings && state.settings.hideDashboardValues);
 }
 
-function maskDashboardMoneyText(root) {
-  if (!root) return;
-  const moneyRx = /([+\-−]?\s*)\d[\d\s.,]*(\s*€)(\/(?:ano|mês))?/gi;
+const dashboardPrivacyOriginalText = new WeakMap();
+
+function dashboardPrivacyTextNodes(root) {
+  if (!root) return [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes = [];
   while (walker.nextNode()) nodes.push(walker.currentNode);
-  for (const node of nodes) {
+  return nodes;
+}
+
+function maskDashboardMoneyText(root) {
+  if (!root) return;
+  const moneyRx = /([+\-−]?\s*)\d[\d\s.,]*(\s*€)(\/(?:ano|mês))?/gi;
+  for (const node of dashboardPrivacyTextNodes(root)) {
     const source = node.nodeValue || "";
     if (!source.includes("€")) continue;
-    node.nodeValue = source.replace(moneyRx, (_all, sign, _eur, cadence) =>
+    if (!dashboardPrivacyOriginalText.has(node)) dashboardPrivacyOriginalText.set(node, source);
+    const original = dashboardPrivacyOriginalText.get(node) || source;
+    node.nodeValue = original.replace(moneyRx, (_all, sign, _eur, cadence) =>
       `${sign || ""}•••• €${cadence || ""}`
     );
+  }
+}
+
+function restoreDashboardMoneyText(root) {
+  if (!root) return;
+  for (const node of dashboardPrivacyTextNodes(root)) {
+    if (!dashboardPrivacyOriginalText.has(node)) continue;
+    node.nodeValue = dashboardPrivacyOriginalText.get(node);
+    dashboardPrivacyOriginalText.delete(node);
   }
 }
 
@@ -1467,17 +1485,25 @@ function applyDashboardPrivacy() {
     note.remove();
   }
 
-  if (!hidden) return;
+  const passiveBar = document.getElementById("passivebar");
+  if (!hidden) {
+    restoreDashboardMoneyText(view);
+    restoreDashboardMoneyText(passiveBar);
+    return;
+  }
   maskDashboardMoneyText(view);
-  maskDashboardMoneyText(document.getElementById("passivebar"));
+  maskDashboardMoneyText(passiveBar);
 }
 
 function toggleDashboardPrivacy() {
   if (!state.settings) state.settings = {};
   state.settings.hideDashboardValues = !dashboardPrivacyEnabled();
+
+  // Privacy is a presentation toggle: update the visible DOM synchronously.
+  // A full dashboard render is intentionally avoided because it is expensive
+  // and made the eye button feel delayed/unreliable on iPhone.
+  applyDashboardPrivacy();
   saveState();
-  markViewsDirty(["dashboard"]);
-  renderDashboard();
 }
 
 function renderDashboard() {
