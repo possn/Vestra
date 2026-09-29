@@ -1148,6 +1148,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function portfolioAction(stock, alternativesByTicker, context){
     const conviction=portfolioConviction(stock);
+    const evidence=portfolioMoveEvidence(stock,conviction);
     const gate=txt(stock?.risk_gate);
     const valuation=txt(stock?.valuation_signal);
     const thesis=txt(stock?.thesis_direction);
@@ -1174,7 +1175,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       return {key:'replace',label:'Substituir',tone:'risk',reason:`${reasons[0]||'convicção fraca'} · alternativa ${alt.to.ticker} superior${fitNote}`};
     }
     if(structuralDeterioration||gate==='watch') return {key:'review',label:'Rever',tone:structuralDeterioration?'risk':'warn',reason:reasons.slice(0,2).join(' · ')||(gate==='watch'?'Risk Gate watch':'convicção baixa')};
-    if(conviction!=null&&conviction>=70&&conf!=null&&conf>=60&&gate!=='watch'&&!['overvalued','uncertain'].includes(valuation)) {
+    if(evidence.reinforceEligible) {
       if(ctx.fit==='concentrated'||ctx.fit==='watch') return {key:'hold',label:'Manter',tone:'neutral',reason:`boa tese · não reforçar por ${ctx.flags?.[0]||(ctx.fit==='watch'?'Portfolio Fit em atenção':'concentração')}`};
       return {key:'reinforce',label:'Reforçar',tone:'positive',reason:reasons.slice(0,2).join(' · ')||'convicção elevada'};
     }
@@ -1253,9 +1254,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const regAfter=regNow+delta-(srcReg===reg?delta:0); if(regAfter>maxRegion) penalty+=(regAfter-maxRegion)*.45;
     return penalty;
   }
-  function portfolioMoveEvidence(stock){
+  function portfolioMoveEvidence(stock, conviction=null){
     const conf=n(stock?.confidence_score), valuation=txt(stock?.valuation_signal), estimates=txt(stock?.estimate_signal), thesis=txt(stock?.thesis_direction), gate=txt(stock?.risk_gate);
+    const conv=n(conviction);
     const strict=conf!=null&&conf>=60&&valuation!=='overvalued'&&estimates!=='deteriorating'&&thesis!=='down'&&!['watch','high','severe'].includes(gate);
+    const reinforceEligible=strict&&conv!=null&&conv>=70&&valuation!=='uncertain';
     const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
     const warnings=[]; let penalty=0;
     if(conf==null){penalty+=7;warnings.push('confiança sem score');}
@@ -1267,11 +1270,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(gate==='watch'){penalty+=6;warnings.push('Risk Gate watch');}
     const tier=strict?'preferred':acceptable?'acceptable':'research';
     if(tier==='research') penalty+=12;
-    return {conf,valuation,estimates,thesis,gate,strict,acceptable,tier,penalty,warnings};
+    return {conf,valuation,estimates,thesis,gate,conviction:conv,strict,reinforceEligible,acceptable,tier,penalty,warnings};
   }
   function evaluatePortfolioMove({mode='replace',sourceStock=null,destination,rows=[],amount=0,totalAfter=1,sourceConv=null,destinationConv=null,positionPct=0,sectorPct=0,indirect=0,sourceIndirect=0}={}){
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
-    const evidence=portfolioMoveEvidence(destination);
+    const evidence=portfolioMoveEvidence(destination,destinationConv);
     const riskPenalty=riskBudgetPenalty(destination,rows,amount,totalAfter,sourceStock);
     const overlapDelta=indirect-sourceIndirect;
     const convictionGain=sourceConv!=null&&destinationConv!=null?destinationConv-sourceConv:null;
@@ -1279,7 +1282,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const sourceAutomatable=!sourceStock||(!isFund(sourceStock)&&n(sourceStock.score)!=null&&n(sourceStock.confidence_score)!=null);
     let autoEligible=false;
     if(mode==='fresh'){
-      autoEligible=evidence.strict&&riskPenalty<5&&(targets.overlap!=='reduce'||indirect<2)&&positionPct<=maxPos&&sectorPct<=maxSector;
+      autoEligible=evidence.reinforceEligible&&riskPenalty<5&&(targets.overlap!=='reduce'||indirect<2)&&positionPct<=maxPos&&sectorPct<=maxSector;
     }else if(mode==='alternative'){
       autoEligible=sourceAutomatable&&evidence.strict&&convictionGain>=5&&convDelta>0&&overlapDelta<1.5&&riskPenalty<5;
     }else if(mode==='scenario'){
