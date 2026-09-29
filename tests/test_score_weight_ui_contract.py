@@ -49,7 +49,7 @@ class ScoreWeightContractTests(unittest.TestCase):
         end = self.market.index("\n  function scoreRiskExplanation", start)
         block = self.market[start:end]
         for model, weights in expected.items():
-            match = re.search(rf"{model}:\[(.*?)\](?:,|\n)", block, re.S)
+            match = re.search(rf"^\s*{model}:\[(.*)\],?$", block, re.M)
             self.assertIsNotNone(match, f"missing dossier weights for {model}")
             ui_weights = [int(x) for x in re.findall(r",\s*(\d+)\]", match.group(1))]
             self.assertEqual(ui_weights, weights, f"dossier weights drifted for {model}")
