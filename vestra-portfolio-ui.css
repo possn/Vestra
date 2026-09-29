@@ -306,3 +306,25 @@
   .vpu-exit span{font-size:8.5px}
   .vpu-exit strong{font-size:10px}
 }
+
+/* v2.1 — iPhone exploration viewport ownership: keep the analysis controls reachable and prevent the base surface bleeding through. */
+#marketSheet[data-tool="portfolio"]{
+  background:var(--bg,#d1d2cc)!important;
+}
+#marketSheet[data-tool="portfolio"]>.market-sheet__panel{
+  background:var(--bg,#d1d2cc)!important;
+}
+@media(max-width:899px){
+  .vpu-portfolio[data-vpu-expanded="1"] .vpu-tabs-shell{
+    position:sticky;
+    top:max(0px,env(safe-area-inset-top,0px));
+    z-index:80;
+    background:color-mix(in srgb,var(--card) 96%,var(--bg));
+    -webkit-backdrop-filter:blur(16px) saturate(135%);
+    backdrop-filter:blur(16px) saturate(135%);
+  }
+  .vpu-portfolio[data-vpu-expanded="1"] .vpu-tabs-head>button{
+    position:relative;
+    z-index:2;
+  }
+}
