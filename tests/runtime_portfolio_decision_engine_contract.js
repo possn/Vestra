@@ -158,6 +158,24 @@ riskPenalty = 0;
 r = evaluate({ mode: 'scenario', ...base, destinationConv: 50 });
 assert.strictEqual(r.autoEligible, false, 'scenario with negative conviction delta must not be eligible');
 
+r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 70, indirect: 0.5, positionPct: 8, sectorPct: 20 });
+assert.strictEqual(r.autoEligible, true, 'fresh capital should accept the canonical reinforce gate');
+
+r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 69, indirect: 0.5, positionPct: 8, sectorPct: 20 });
+assert.strictEqual(r.autoEligible, false, 'fresh capital must not allocate below canonical reinforce conviction');
+
+r = evaluate({
+  mode: 'fresh',
+  ...base,
+  sourceStock: null,
+  destination: stock({ valuation_signal: 'uncertain' }),
+  destinationConv: 75,
+  indirect: 0.5,
+  positionPct: 8,
+  sectorPct: 20,
+});
+assert.strictEqual(r.autoEligible, false, 'fresh capital must not allocate when valuation is uncertain');
+
 r = evaluate({ mode: 'fresh', ...base, sourceStock: null, indirect: 2.1, positionPct: 8, sectorPct: 20 });
 assert.strictEqual(r.autoEligible, false, 'fresh capital must respect reduce-overlap target');
 assert(r.warnings.includes('overlap elevado'));
