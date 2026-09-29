@@ -168,10 +168,31 @@ _POSITIVE_ONLY = {
     "reit_p_ffo_proxy", "market_cap",
 }
 
+# Diagnostic only: these fields summarize how much of the model-specific
+# statement-derived pack is actually observed. They do not alter confidence,
+# reliability or the published factor score until prospective evidence supports
+# a separate gate.
+_MODEL_NATIVE_COVERAGE_FIELDS = {
+    "bank": "bank_metric_coverage_pct",
+    "reit": "reit_metric_coverage_pct",
+    "insurance": "insurance_metric_coverage_pct",
+}
+
 
 def _critical_fields(row: dict):
     model = str(row.get("score_model") or "general").strip().lower()
     return model, _CRITICAL_BY_MODEL.get(model, _CRITICAL_GENERAL)
+
+
+def _model_native_coverage(row: dict):
+    model = str(row.get("score_model") or "general").strip().lower()
+    field = _MODEL_NATIVE_COVERAGE_FIELDS.get(model)
+    if not field:
+        return None, None
+    value = _n(row.get(field))
+    if value is None:
+        return None, field
+    return max(0.0, min(100.0, value)), field
 
 
 def _critical_coverage(row: dict) -> tuple[float, str, int]:
@@ -202,6 +223,7 @@ def assess(row: dict) -> dict:
     coverage = _n(row.get("data_coverage_pct"))
     coverage_score = max(0.0, min(100.0, coverage if coverage is not None else 0.0))
     critical_coverage, critical_model, critical_field_count = _critical_coverage(row)
+    model_native_coverage, model_native_coverage_field = _model_native_coverage(row)
     source_score, has_official, source_count = _source_score(row)
     fundamental_source_count, evidence_state = _fundamental_source_context(row)
     freshness_score, age_days = _freshness_score(row)
@@ -288,6 +310,7 @@ def assess(row: dict) -> dict:
         "confidence_components": {
             "coverage": round(coverage_score, 1),
             "critical_coverage": round(critical_coverage, 1),
+            "model_native_coverage": round(model_native_coverage, 1) if model_native_coverage is not None else None,
             "source_quality": round(source_score, 1),
             "freshness": round(freshness_score, 1),
             "source_agreement": round(agreement_score, 1),
@@ -298,6 +321,8 @@ def assess(row: dict) -> dict:
         "critical_metric_coverage_pct": round(critical_coverage, 1),
         "critical_metric_model": critical_model,
         "critical_metric_field_count": critical_field_count,
+        "model_native_coverage_pct": round(model_native_coverage, 1) if model_native_coverage is not None else None,
+        "model_native_coverage_field": model_native_coverage_field,
         "score_raw": raw_factor,
         "score": round(public_factor, 1) if public_factor is not None else None,
         "score_reliability": reliability,
