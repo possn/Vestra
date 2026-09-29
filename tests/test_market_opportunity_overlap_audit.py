@@ -44,14 +44,23 @@ class MarketOpportunityOverlapAuditTests(unittest.TestCase):
             'market_regime', 'revision_evidence', 'valuation_evidence',
             'suppressed_reasons', 'cap_reasons', 'actionable_labels',
             'actionable_support', 'actionable_risk_gate', 'actionable_sectors',
+            'actionable_unknown_sector_tickers', 'actionable_unknown_industry_tickers',
         ):
             self.assertIn(key, funnel)
         self.assertEqual(sum(funnel['labels'].values()), report['universe_count'])
         self.assertEqual(sum(funnel['upside_support'].values()), report['universe_count'])
         self.assertEqual(sum(funnel['risk_gate'].values()), report['universe_count'])
+        self.assertEqual(
+            len(funnel['actionable_unknown_sector_tickers']),
+            funnel['actionable_sectors'].get('Unknown', 0),
+        )
         diag = report['general_shortlist_diagnostics']
         self.assertLessEqual(max(diag['sector_counts'].values(), default=0), 3)
         self.assertLessEqual(max(diag['industry_counts'].values(), default=0), 2)
+        self.assertIn('unknown_sector_tickers', diag)
+        self.assertIn('unknown_industry_tickers', diag)
+        self.assertEqual(len(diag['unknown_sector_tickers']), diag['sector_counts'].get('Unknown', 0))
+        self.assertEqual(len(diag['unknown_industry_tickers']), diag['industry_counts'].get('Unknown', 0))
         self.assertGreaterEqual(diag['distinct_sectors'], min(3, len(report['ranked']['all'])))
         self.assertGreaterEqual(diag['distinct_industries'], min(3, len(report['ranked']['all'])))
         self.assertGreaterEqual(diag['distinct_dominant_sleeves'], 1)
