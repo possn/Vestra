@@ -59,7 +59,7 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         self.assertIn('Persistent close controls', self.styles)
         self.assertIn('.modal__head{', self.styles)
         self.assertIn('position:sticky', self.styles)
-        self.assertIn('#marketSheet:not([hidden])>.market-close-persistent{', self.styles)
+        self.assertIn('#marketSheet:not([hidden]):not([data-ticker])>.market-close-persistent', self.styles)\n        self.assertIn('#marketSheet:not([hidden])[data-ticker=""]>.market-close-persistent', self.styles)
         self.assertIn('z-index:2147483646!important', self.styles)
 
     def test_companion_is_reachable_from_static_loader(self):
