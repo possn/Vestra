@@ -46,7 +46,7 @@
     if(['confirmed','recovering'].includes(t(s?.recovery_status)))x+=7;if(['failed','bounce_only'].includes(t(s?.recovery_status)))x-=10;
     return clamp(x);
   }
-  const FEATURED_OPPORTUNITY_MIN_SCORE=54;
+  const LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE=54;
   function discoveryEligible(s){
     const qt=t(s?.quote_type||s?.quoteType).toUpperCase();
     if(['ETF','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
@@ -63,13 +63,14 @@
   }
   function eligible(s){
     if(!discoveryEligible(s))return false;
-    const publishedEligible=typeof s?.opportunity_eligible==='boolean'?s.opportunity_eligible:null;
+    const publishedFeatured=typeof s?.opportunity_featured==='boolean'?s.opportunity_featured:null;
+    if(publishedFeatured!==null)return publishedFeatured;
+
+    // Legacy fallback only: older payloads did not publish the canonical
+    // featured-shortlist decision. Preserve the historical "Interessante"
+    // boundary while those cached snapshots age out.
     const publishedScore=n(s?.opportunity_score);
-    // Modern payloads separate universe eligibility from featured-shortlist
-    // eligibility. "Oportunidades agora" starts at the backend's "Interessante"
-    // band (54); lower-scoring eligible names remain valid Discovery research.
-    if(publishedEligible!==null)return publishedScore!=null&&publishedScore>=FEATURED_OPPORTUNITY_MIN_SCORE;
-    return true;
+    return publishedScore!=null&&publishedScore>=LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE;
   }
   function fallbackUpsideSupport(s){
     const published=t(s?.opportunity_upside_support).toLowerCase();
@@ -407,7 +408,7 @@
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
     if(lens==='recovery')return ['Recuperação','Empresas com recuperação operacional ou de estimativas já confirmada.'];
     if(lens==='value')return ['Value + timing','Desconto ou upside relevante, mas apenas com timing mínimo aceitável.'];
-    return ['Oportunidades agora',`Discovery elegível + Opportunity Score ≥${FEATURED_OPPORTUNITY_MIN_SCORE} (“Interessante” ou melhor). A shortlist pode ter menos de 12 quando não há nomes suficientes.`];
+    return ['Oportunidades agora','Discovery elegível e classificado pelo motor como “Interessante” ou melhor. A shortlist pode ter menos de 12 quando não há nomes suficientes.'];
   }
 
   function opportunities(lens=activeLens,sectorOverride=''){
@@ -459,5 +460,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,featuredMinScore:FEATURED_OPPORTUNITY_MIN_SCORE,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.11'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.12'});
 })();
