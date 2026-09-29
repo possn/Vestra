@@ -8021,6 +8021,105 @@ function renderBrokerImportStatus() {
   renderBrokerImportAudit();
 }
 
+
+function brokerImportFormatFamily(format) {
+  const f = String(format || "").trim().toLowerCase();
+  if (f === "workbook_multi") return "workbook_multi";
+  if (f === "broker_ledger") return "broker_ledger";
+  if (f === "positions" || f === "holdings_pdf") return "positions";
+  if (f.startsWith("xtb_")) return f;
+  return f || "unknown";
+}
+
+function brokerImportParsedRows(parsed) {
+  const out = [];
+  if (Array.isArray(parsed?.rows)) out.push(...parsed.rows);
+  for (const block of (parsed?.blocks || [])) {
+    if (Array.isArray(block?.rows)) out.push(...block.rows);
+  }
+  return out;
+}
+
+function brokerImportDateRangeFromParsed(parsed) {
+  const dates = [];
+  const pushDate = value => {
+    const raw = String(value || "").trim();
+    if (!raw) return;
+    const normalized = normalizeDate(raw) || (/^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.slice(0, 10) : "");
+    if (normalized && /^\d{4}-\d{2}-\d{2}$/.test(normalized)) dates.push(normalized);
+  };
+  for (const row of brokerImportParsedRows(parsed)) {
+    const r = normalizeRow(row || {});
+    for (const [key, value] of Object.entries(r)) {
+      if (/(^|_)(date|time|data)(_|$)|payment_date|trade_date|open_time|close_time/.test(key)) pushDate(value);
+    }
+  }
+  for (const block of (parsed?.blocks || [])) pushDate(block?.meta?.asOfDate);
+  dates.sort();
+  return dates.length ? { firstDate: dates[0], lastDate: dates[dates.length - 1] } : { firstDate: "", lastDate: "" };
+}
+
+function inferBrokerFromParsedImport(fileName, parsed) {
+  const named = normalizeBrokerNameFromFile(fileName);
+  if (named !== "Corretora" && named !== "Corretora CSV") return named;
+  if (String(parsed?.format || "") !== "broker_ledger") return named;
+  const sample = brokerImportParsedRows(parsed).slice(0, 12).map(r => normalizeRow(r || {}));
+  const looksT212 = sample.some(r =>
+    (r.action || r.type) &&
+    (r.isin || r.ticker || r.name) &&
+    (r.no_of_shares !== undefined || r.number_of_shares !== undefined || r.currency_total !== undefined || r.result !== undefined)
+  );
+  return looksT212 ? "Trading 212" : named;
+}
+
+function brokerStoredSourceDateRange(bd, sourceHash) {
+  const dates = [];
+  for (const e of (bd.events || [])) {
+    if (String(e?.sourceHash || "") !== String(sourceHash || "")) continue;
+    const d = String(e.dateTime || e.date || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) dates.push(d);
+  }
+  for (const p of (bd.positions || [])) {
+    if (String(p?.sourceHash || "") !== String(sourceHash || "")) continue;
+    const d = String(p.snapshotDate || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) dates.push(d);
+  }
+  dates.sort();
+  return dates.length ? { firstDate: dates[0], lastDate: dates[dates.length - 1] } : { firstDate: "", lastDate: "" };
+}
+
+function brokerFileBelongsToBroker(fileRec, broker) {
+  const oldBroker = String(fileRec?.broker || "");
+  if (oldBroker === broker) return true;
+  // Legacy Trading 212 "from_..." reports were previously mislabeled as generic CSV.
+  return broker === "Trading 212" &&
+    oldBroker === "Corretora CSV" &&
+    /^from_/i.test(String(fileRec?.name || "")) &&
+    String(fileRec?.format || "") === "broker_ledger";
+}
+
+function removeSupersededBrokerSources(bd, { hash, broker, format, range }) {
+  if (!range?.firstDate || !range?.lastDate) return 0;
+  const family = brokerImportFormatFamily(format);
+  const superseded = new Set();
+  for (const oldFile of (bd.files || [])) {
+    if (!oldFile || String(oldFile.hash || "") === String(hash || "")) continue;
+    if (!brokerFileBelongsToBroker(oldFile, broker)) continue;
+    if (brokerImportFormatFamily(oldFile.format) !== family) continue;
+    const oldRange = brokerStoredSourceDateRange(bd, oldFile.hash);
+    if (!oldRange.firstDate || !oldRange.lastDate) continue;
+    // A newer cumulative report replaces any older report fully contained in it.
+    if (range.firstDate <= oldRange.firstDate && range.lastDate >= oldRange.lastDate) {
+      superseded.add(String(oldFile.hash || ""));
+    }
+  }
+  if (!superseded.size) return 0;
+  bd.files = (bd.files || []).filter(f => !superseded.has(String(f?.hash || "")));
+  bd.events = (bd.events || []).filter(e => !superseded.has(String(e?.sourceHash || "")));
+  bd.positions = (bd.positions || []).filter(p => !superseded.has(String(p?.sourceHash || "")));
+  return superseded.size;
+}
+
 async function importBrokerFiles(files) {
   const fileArr = Array.from(files || []);
   if (!fileArr.length) throw new Error("Sem ficheiros.");
@@ -8076,7 +8175,8 @@ async function importBrokerFiles(files) {
     const parsed = await parseBrokerImportFile(file);
     const format = parsed.format;
     const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
-    const broker = normalizeBrokerNameFromFile(file.name);
+    const broker = inferBrokerFromParsedImport(file.name, parsed);
+    const parsedRange = brokerImportDateRangeFromParsed(parsed);
     const meta = {
       hash,
       name: file.name,
@@ -8087,9 +8187,13 @@ async function importBrokerFiles(files) {
       events: 0,
       positions: 0,
       snapshotTotalEUR: 0,
-      asOfDate: ""
+      asOfDate: "",
+      firstDate: parsedRange.firstDate,
+      lastDate: parsedRange.lastDate
     };
 
+    const logicalReplaced = removeSupersededBrokerSources(bd, { hash, broker, format, range: parsedRange });
+    if (logicalReplaced) replacedFiles += logicalReplaced;
     const prevCount = (bd.files || []).filter(f => f.hash === hash).length;
     bd.files = (bd.files || []).filter(f => f.hash !== hash);
     bd.events = (bd.events || []).filter(e => e.sourceHash !== hash);
