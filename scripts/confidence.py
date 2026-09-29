@@ -212,8 +212,10 @@ def _critical_coverage(row: dict) -> tuple[float, str, int]:
 
 def assess(row: dict) -> dict:
     if row.get("quote_type") in ("ETF", "CRYPTO"):
+        coverage_confidence = row.get("data_confidence") or "low"
         return {
-            "metric_confidence": row.get("data_confidence") or "low",
+            "score_coverage_confidence": coverage_confidence,
+            "metric_confidence": coverage_confidence,
             "confidence_score": None,
             "confidence_label": row.get("data_confidence") or "low",
             "confidence_components": {},
@@ -302,8 +304,12 @@ def assess(row: dict) -> dict:
         reliability = "moderate_evidence"
         reliability_reason = "Score moderado pela confiança da evidência."
 
+    coverage_confidence = row.get("data_confidence") or "low"
     return {
-        "metric_confidence": row.get("data_confidence") or "low",
+        "score_coverage_confidence": coverage_confidence,
+        # Backward-compatible alias; new consumers should use
+        # score_coverage_confidence for the preliminary scoring-input label.
+        "metric_confidence": coverage_confidence,
         "data_confidence": label,
         "confidence_score": score,
         "confidence_label": label,
