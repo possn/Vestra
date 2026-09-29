@@ -79,10 +79,14 @@ test('iPhone/WebKit: Portfolio Explorer keeps close control visible and hides ba
 
   await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
   await page.waitForTimeout(80);
-  const close = sheet.locator('.vpu-tabs-head [data-vpu-toggle]');
+  const close = sheet.locator('.vpu-reveal [data-vpu-toggle]');
   await expect(close).toBeVisible();
+  await expect(close).toHaveText('Fechar ×');
   const box = await close.boundingBox();
   expect(box).not.toBeNull();
   expect(box.y).toBeGreaterThanOrEqual(0);
   expect(box.y + box.height).toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight));
+
+  await close.click();
+  await expect(sheet.locator('.vpu-tabs-shell')).toBeHidden();
 });
