@@ -27,6 +27,18 @@ class BrokerRealExportRegressionTests(unittest.TestCase):
         self.assertIn('if (e.type === "CASH_ADJUSTMENT")', APP)
         self.assertIn('category: "Ajuste corretora"', APP)
 
+    def test_newer_broker_reports_replace_contained_older_sources(self):
+        self.assertIn("function removeSupersededBrokerSources", APP)
+        self.assertIn("range.firstDate <= oldRange.firstDate", APP)
+        self.assertIn("range.lastDate >= oldRange.lastDate", APP)
+        self.assertIn("logicalReplaced", APP)
+
+    def test_current_t212_from_export_is_not_left_as_generic_csv(self):
+        self.assertIn("function inferBrokerFromParsedImport", APP)
+        self.assertIn('looksT212 ? "Trading 212" : named', APP)
+        self.assertIn('oldBroker === "Corretora CSV"', APP)
+        self.assertIn('/^from_/i.test', APP)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
