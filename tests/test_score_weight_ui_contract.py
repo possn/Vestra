@@ -1,4 +1,5 @@
 from pathlib import Path
+import ast
 import re
 import unittest
 
@@ -9,6 +10,7 @@ class ScoreWeightContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.score = (ROOT / "scripts" / "score.py").read_text(encoding="utf-8")
+        cls.audit = (ROOT / "scripts" / "score_audit.py").read_text(encoding="utf-8")
         cls.market = (ROOT / "market.js").read_text(encoding="utf-8")
 
     def test_production_and_dossier_weight_vectors_match(self):
@@ -50,6 +52,18 @@ class ScoreWeightContractTests(unittest.TestCase):
             self.assertIsNotNone(match, f"missing dossier weights for {model}")
             ui_weights = [int(x) for x in re.findall(r",\s*(\d+)\]", match.group(1))]
             self.assertEqual(ui_weights, weights, f"dossier weights drifted for {model}")
+
+        tree = ast.parse(self.audit)
+        audit_weights = None
+        for node in tree.body:
+            if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "MODEL_WEIGHTS" for target in node.targets):
+                audit_weights = ast.literal_eval(node.value)
+                break
+        self.assertIsNotNone(audit_weights, "score audit weight pack missing")
+        for model, weights in expected.items():
+            self.assertIn(model, audit_weights)
+            audit_vector = [round(value * 100) for value in audit_weights[model].values()]
+            self.assertEqual(audit_vector, weights, f"score audit weights drifted for {model}")
 
     def test_dossier_explains_weights_as_base_weights(self):
         self.assertIn("Os pesos-base do modelo", self.market)
