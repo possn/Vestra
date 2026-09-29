@@ -11,6 +11,7 @@ if str(SCRIPTS) not in sys.path:
 import scanner  # noqa: E402
 
 
+# Contract: scanner_best must remain the highest scored scanner strategy.
 class ScannerFeaturedOpportunityTests(unittest.TestCase):
     def base_row(self):
         return {
