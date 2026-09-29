@@ -210,12 +210,19 @@ def _critical_coverage(row: dict) -> tuple[float, str, int]:
     return present / len(fields) * 100.0, model, len(fields)
 
 
+def _metric_confidence(row: dict) -> str:
+    # score.py owns metric coverage; confidence.py owns evidence confidence.
+    # Keep a legacy fallback while old carried-forward snapshots age out.
+    return str(row.get("metric_confidence") or row.get("data_confidence") or "low")
+
+
 def assess(row: dict) -> dict:
+    metric_confidence = _metric_confidence(row)
     if row.get("quote_type") in ("ETF", "CRYPTO"):
         return {
-            "metric_confidence": row.get("data_confidence") or "low",
+            "metric_confidence": metric_confidence,
             "confidence_score": None,
-            "confidence_label": row.get("data_confidence") or "low",
+            "confidence_label": metric_confidence,
             "confidence_components": {},
             "confidence_reasons": [],
         }
@@ -303,7 +310,7 @@ def assess(row: dict) -> dict:
         reliability_reason = "Score moderado pela confiança da evidência."
 
     return {
-        "metric_confidence": row.get("data_confidence") or "low",
+        "metric_confidence": metric_confidence,
         "data_confidence": label,
         "confidence_score": score,
         "confidence_label": label,
