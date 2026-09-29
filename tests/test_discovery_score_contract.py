@@ -106,6 +106,15 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertGreater(early_out["opportunity_sleeves"]["inflection"], mature_out["opportunity_sleeves"]["inflection"])
         self.assertGreater(early_out["opportunity_score"], mature_out["opportunity_score"])
 
+    def test_crypto_quote_type_aliases_are_excluded_from_equity_opportunities(self):
+        for quote_type in ("CRYPTO", "CRYPTOCURRENCY"):
+            candidate = row()
+            candidate["quote_type"] = quote_type
+            out = MOD.assess(candidate)
+            self.assertFalse(out["opportunity_eligible"], quote_type)
+            self.assertIsNone(out["opportunity_score"], quote_type)
+            self.assertIn("fora do ranking", out["opportunity_suppressed_reason"])
+
     def test_confidence_still_gates_insufficient_evidence(self):
         out = MOD.assess(row(confidence=49))
         self.assertFalse(out["opportunity_eligible"])
