@@ -6,7 +6,9 @@ show that a global cross-sectional benchmark is economically inappropriate.
 
 Policy:
 - Prefer the economically coherent peer pool when it has enough observed values.
-- Fall back to the wider/global pool when peers are too sparse.
+- Fall back to the wider/global pool only when that pool is itself deep enough.
+- Sparse peer and sparse global samples remain unscored rather than presenting a
+  fragile percentile as a robust benchmark.
 - Missing values remain missing; they are never converted to zero.
 - Return benchmark metadata so dossiers/audits can explain the comparison scope.
 """
@@ -72,9 +74,17 @@ def peer_first_percentile(
             peer_observations=len(peers),
             global_observations=len(global_clean),
         )
+    minimum = max(1, int(min_peers))
+    if len(global_clean) >= minimum:
+        return BenchmarkResult(
+            score=percentile_rank(value, global_clean, invert=invert),
+            scope="global_fallback",
+            peer_observations=len(peers),
+            global_observations=len(global_clean),
+        )
     return BenchmarkResult(
-        score=percentile_rank(value, global_clean, invert=invert),
-        scope="global_fallback",
+        score=None,
+        scope="insufficient_sample",
         peer_observations=len(peers),
         global_observations=len(global_clean),
     )
