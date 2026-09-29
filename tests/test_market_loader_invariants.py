@@ -25,7 +25,7 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         runtime_loader = read("market-runtime-loader.js")
         self.assertIn('market-data-loader.js?v=2.6', runtime_loader)
         self.assertNotIn('src="portfolio-sheet-navigation.js', index)
-        self.assertIn('portfolio-sheet-navigation.js?v=1.5', runtime_loader)
+        self.assertIn('portfolio-sheet-navigation.js?v=1.6', runtime_loader)
 
     def test_market_loading_is_native_and_loader_only_hydrates_dossiers(self):
         market = read("market.js")
