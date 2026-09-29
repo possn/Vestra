@@ -306,3 +306,81 @@
   .vpu-exit span{font-size:8.5px}
   .vpu-exit strong{font-size:10px}
 }
+
+/* v2.1 — iPhone exploration viewport ownership: keep the analysis controls reachable and prevent the base surface bleeding through. */
+#marketSheet[data-tool="portfolio"]{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+  max-height:100dvh!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  z-index:2200!important;
+  pointer-events:auto!important;
+  isolation:isolate!important;
+  background:var(--bg,#d1d2cc)!important;
+}
+#marketSheet[data-tool="portfolio"]::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:auto;
+  background:var(--bg,#d1d2cc);
+}
+#marketSheet[data-tool="portfolio"]>.market-sheet__panel{
+  position:relative!important;
+  z-index:1!important;
+  width:100%!important;
+  min-height:100dvh!important;
+  background:var(--bg,#d1d2cc)!important;
+}
+@media(max-width:899px){
+  .vpu-portfolio[data-vpu-expanded="1"] .vpu-tabs-shell{
+    position:sticky;
+    top:max(0px,env(safe-area-inset-top,0px));
+    z-index:80;
+    background:color-mix(in srgb,var(--card) 96%,var(--bg));
+    -webkit-backdrop-filter:blur(16px) saturate(135%);
+    backdrop-filter:blur(16px) saturate(135%);
+  }
+  .vpu-portfolio[data-vpu-expanded="1"] .vpu-tabs-head>button{
+    position:relative;
+    z-index:2;
+  }
+}
+
+/* The market dossier lives outside #viewMarket; hide the underlying surface while open so iOS cannot expose it during deep sheet scroll. */
+body.modal-open #viewMarket{
+  visibility:hidden!important;
+}
+
+/* v2.2 — portfolio sheet is the sole iPhone viewport owner while open. */
+@media(max-width:899px){
+  #marketSheet[data-tool="portfolio"]:not([hidden]){
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    max-height:100dvh!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    z-index:2147483000!important;
+    isolation:isolate!important;
+    background:#d1d2cc!important;
+    overscroll-behavior:contain!important;
+  }
+  #marketSheet[data-tool="portfolio"]:not([hidden])>.market-sheet__panel{
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    min-height:100dvh!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    background:#d1d2cc!important;
+  }
+}
