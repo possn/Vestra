@@ -10,6 +10,7 @@ const candidate = (ticker, extra = {}) => ({
   critical_metric_coverage_pct: 70,
   score_reliability: 'good',
   risk_gate: 'low',
+  opportunity_eligible: true,
   opportunity_timing_score: 60,
   ...extra,
 });
@@ -21,7 +22,7 @@ async function waitForLaunch(page) {
   await page.waitForFunction(() => Boolean(window.VestraMarketOpportunityLenses && window.VestraMarketOpportunities));
 }
 
-test('iPhone/WebKit: each opportunity lens ranks the full universe independently', async ({ page }) => {
+test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independently', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await waitForLaunch(page);
