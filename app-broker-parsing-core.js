@@ -351,6 +351,7 @@ function brokerExternalIdScope(evt) {
   // inferred broker label. This keeps the same movement identical when a later
   // export is renamed or when an old import was stored as generic "Corretora".
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(extId)) return "TRADING212";
+  if (/^EOF\d+$/i.test(extId)) return "TRADING212";
   if (/^\d+$/.test(extId)) return "XTB";
   const broker = normStr(evt?.broker || "");
   if (broker.includes("212") || broker.includes("t212")) return "TRADING212";
