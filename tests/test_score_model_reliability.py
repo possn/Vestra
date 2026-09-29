@@ -99,6 +99,30 @@ class ScoreModelReliabilityTests(unittest.TestCase):
         self.assertIsNone(out["model_native_coverage_pct"])
         self.assertIsNone(out["model_native_coverage_field"])
 
+    def test_preliminary_coverage_label_does_not_own_final_evidence_confidence(self):
+        fields = mod._CRITICAL_BY_MODEL["general"]
+        base = {key: 1.0 for key in fields}
+        base.update({
+            "ticker": "OWNERSHIP",
+            "quote_type": "EQUITY",
+            "score_model": "general",
+            "score": 80,
+            "data_coverage_pct": 90,
+            "data_sources": ["Yahoo Finance"],
+        })
+        low = dict(base, data_confidence="low")
+        high = dict(base, data_confidence="high")
+        low_out = mod.assess(low)
+        high_out = mod.assess(high)
+        self.assertEqual(low_out["score_coverage_confidence"], "low")
+        self.assertEqual(high_out["score_coverage_confidence"], "high")
+        self.assertEqual(low_out["metric_confidence"], "low")
+        self.assertEqual(high_out["metric_confidence"], "high")
+        self.assertEqual(low_out["data_confidence"], high_out["data_confidence"])
+        self.assertEqual(low_out["confidence_score"], high_out["confidence_score"])
+        self.assertEqual(low_out["score_reliability"], high_out["score_reliability"])
+        self.assertEqual(low_out["score"], high_out["score"])
+
     def test_assess_emits_model_aware_gate_metadata(self):
         row = {
             "ticker": "TEST",
