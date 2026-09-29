@@ -14,9 +14,9 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         loader = read('market-static-universe.js')
         self.assertNotIn('src="market-opportunities.js', hotfix)
         self.assertNotIn('src="market-opportunity-lenses.js', hotfix)
-        self.assertIn("market-opportunities.js?v=1.6", loader)
+        self.assertIn("market-opportunities.js?v=1.7", loader)
         self.assertIn("market-opportunity-lenses.js?v=3.1", loader)
-        self.assertLess(loader.index("market-opportunities.js?v=1.6"), loader.index("market-opportunity-lenses.js?v=3.1"))
+        self.assertLess(loader.index("market-opportunities.js?v=1.7"), loader.index("market-opportunity-lenses.js?v=3.1"))
         self.assertNotIn('src="vestra-portfolio-focus.js', hotfix)
         self.assertNotIn("vestra-portfolio-focus.js", loader)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
@@ -26,11 +26,11 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_canonical_opportunity_engine_keeps_v453_contract(self):
         source = read('market-opportunities.js')
         for token in (
-            "const FEATURED_OPPORTUNITY_MIN_SCORE=54",
+            "const LEGACY_LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE=54",
             "function discoveryEligible(s)",
             "if(publishedEligible!==null)return publishedEligible",
             "if(!discoveryEligible(s))return false",
-            "publishedScore!=null&&publishedScore>=FEATURED_OPPORTUNITY_MIN_SCORE",
+            "publishedScore!=null&&publishedScore>=LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE",
             "sc==null||sc<58||cov==null||cov<55||conf==null||conf<50",
             "return timing(s)>=48 && confirmed(s)>=2",
             "const published=n(s?.opportunity_score)",
@@ -54,13 +54,24 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         featured = source.split('function eligible(s){', 1)[1].split('function fallbackUpsideSupport', 1)[0]
         self.assertIn("if(publishedEligible!==null)return publishedEligible", discovery)
         self.assertNotIn('opportunity_score', discovery)
-        self.assertIn('FEATURED_OPPORTUNITY_MIN_SCORE=54', source)
-        self.assertIn('publishedScore!=null&&publishedScore>=FEATURED_OPPORTUNITY_MIN_SCORE', featured)
-        self.assertIn('Discovery elegível + Opportunity Score ≥', source)
+        self.assertIn('LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE=54', source)
+        self.assertIn('publishedScore!=null&&publishedScore>=LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE', featured)
+        self.assertIn('Discovery elegível e classificado pelo motor', source)
         self.assertIn('“Interessante” ou melhor', source)
-        self.assertIn("elif opp >= 54:", ranker)
+        self.assertIn("FEATURED_OPPORTUNITY_MIN_SCORE = 54.0", ranker)
+        self.assertIn("elif opp >= FEATURED_OPPORTUNITY_MIN_SCORE:", ranker)
         self.assertIn('label = "Interessante"', ranker)
-        self.assertIn('featuredMinScore:FEATURED_OPPORTUNITY_MIN_SCORE', source)
+        
+    def test_backend_owns_featured_opportunity_decision(self):
+        source = read('market-opportunities.js')
+        ranker = read('scripts/opportunity_rank.py')
+        self.assertIn('"opportunity_featured": False', ranker)
+        self.assertIn('"opportunity_featured": bool(opp is not None and opp >= FEATURED_OPPORTUNITY_MIN_SCORE)', ranker)
+        self.assertIn('"opportunity_featured_min_score": FEATURED_OPPORTUNITY_MIN_SCORE', ranker)
+        self.assertIn("const publishedFeatured=typeof s?.opportunity_featured==='boolean'?s.opportunity_featured:null", source)
+        self.assertIn("if(publishedFeatured!==null)return publishedFeatured", source)
+        self.assertIn("LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE=54", source)
+        self.assertNotIn("featuredMinScore:", source)
 
     def test_opportunity_ui_does_not_alias_vestra_score_as_quality(self):
         source = read('market-opportunities.js')
