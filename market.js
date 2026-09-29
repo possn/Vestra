@@ -970,9 +970,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function portfolioConviction(s){
     // Conviction answers "how strong is the investment thesis?", not "how much
-    // evidence do we have?" or "is risk acceptable?". Confidence and Risk Gate
-    // remain independent decision gates so the same weakness is not counted twice.
-    const score=n(s?.score), est=n(s?.estimate_momentum_score);
+    // evidence do we have?" or "is risk acceptable?". A public score must exist
+    // (so insufficient evidence stays excluded), but thesis strength uses the
+    // pre-gates score to avoid counting Confidence/Risk Gate twice.
+    const published=n(s?.score);
+    const preGates=n(s?.score_pre_gates);
+    const raw=n(s?.score_raw);
+    const score=published==null?null:(preGates??raw??published), est=n(s?.estimate_momentum_score);
     const valMap={undervalued:85,fair:65,overvalued:25,uncertain:40,insufficient:45};
     const val=valMap[txt(s?.valuation_signal)] ?? 50;
     const parts=[];
