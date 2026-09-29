@@ -628,20 +628,10 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             r.dividend_fcf_coverage,
         ]
         metric_coverage = sum(v is not None for v in metric_values) / len(metric_values) * 100
-        confidence = "high" if metric_coverage >= 70 else "medium" if metric_coverage >= 40 else "low"
-        if risk_gate == "severe":
-            confidence = "low"
-        elif risk_gate == "high" and confidence == "high":
-            confidence = "medium"
-        if model == "bank" and confidence == "high":
-            confidence = "medium"
-        if model == "insurance":
-            if (r.insurance_metric_coverage_pct or 0) < 40:
-                confidence = "low"
-            elif confidence == "high":
-                confidence = "medium"
-        if model == "reit" and confidence == "high" and (r.reit_metric_coverage_pct or 0) < 60:
-            confidence = "medium"
+        # This label describes scoring-input coverage only. Evidence quality,
+        # source agreement, model-native completeness and publication reliability
+        # are owned by confidence.py later in the pipeline.
+        coverage_confidence = "high" if metric_coverage >= 70 else "medium" if metric_coverage >= 40 else "low"
 
         # Peer-relative valuation context. We deliberately compare within sector,
         # not across the full market, because structurally different sectors trade
@@ -666,7 +656,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             ticker=r.ticker, name=r.name, business_summary=r.business_summary, sector=r.sector, industry=r.industry,
             market_cap=r.market_cap, currency=r.currency, quote_type=r.quote_type,
             score=round(composite, 1) if composite is not None else None,
-            data_confidence=confidence, data_coverage_pct=round(metric_coverage, 1),
+            data_confidence=coverage_confidence, data_coverage_pct=round(metric_coverage, 1),
             zombie=zombie, interest_coverage=round(coverage, 2) if coverage is not None else None,
             profitability_pct=round(quality, 1) if quality is not None else None,
             leverage_pct=round(balance, 1) if balance is not None else None,
