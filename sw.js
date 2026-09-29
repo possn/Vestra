@@ -1,5 +1,5 @@
-/* Vestra Service Worker v11.07 — FLR canonical quote recovery. */
-const CACHE_NAME = "vestra-cache-v229";
+/* Vestra Service Worker v11.08 — XTB open-position summary repair. */
+const CACHE_NAME = "vestra-cache-v230";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [

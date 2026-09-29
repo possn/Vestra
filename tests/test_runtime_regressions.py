@@ -43,10 +43,10 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertIn("app-broker-identity-data.js?v=1.0", loader)
         self.assertIn("app-xtb-normalization.js?v=1.0", loader)
         self.assertIn("app-broker-workbook.js?v=1.3", loader)
-        self.assertIn("app-broker-parsers.js?v=1.2", loader)
+        self.assertIn("app-broker-parsers.js?v=1.3", loader)
         self.assertLess(
             loader.index("app-broker-workbook.js?v=1.3"),
-            loader.index("app-broker-parsers.js?v=1.2"),
+            loader.index("app-broker-parsers.js?v=1.3"),
         )
 
     def test_all_app_modules_are_syntax_checked_by_ci(self):

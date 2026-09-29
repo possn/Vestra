@@ -16,6 +16,10 @@ class BrokerRealExportRegressionTests(unittest.TestCase):
         self.assertIn("reportedValueEUR - reportedNetProfitEUR", PARSERS)
         self.assertIn("lotMktVal = reportedValueEUR", PARSERS)
 
+    def test_xtb_summary_rows_are_never_counted_as_lots(self):
+        self.assertIn("const rowType = String(r.type || r.tipo ||", PARSERS)
+        self.assertIn("!/^(BUY|SELL)$/.test(rowType)", PARSERS)
+
     def test_xtb_snapshot_accepts_iso_datetime_from_sheetjs(self):
         self.assertIn("const iso = s.match", WORKBOOK)
         self.assertIn("if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`", WORKBOOK)
