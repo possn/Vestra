@@ -1,4 +1,4 @@
-/* Vestra broker parsers v1.2 — file/row transformation only. */
+/* Vestra broker parsers v1.3 — file/row transformation only. */
 (() => {
   'use strict';
 
@@ -182,9 +182,12 @@ function parseXTBPositionsRows(rows, meta) {
   for (const raw of (rows || [])) {
     const r = normalizeRow(raw);
     // Current XTB workbooks put a security summary before its individual lots.
-    // In that layout Instrument/Position is the lot id and Ticker is the identity;
-    // ignore the summary (blank Type) or quantity/value would be counted twice.
-    if (r.instrument_position && r.ticker && !String(r.type || r.tipo || "").trim()) continue;
+    // In real exports the summary "Type" cell is not reliably blank: some reports
+    // contain the placeholder "3". Only BUY/SELL rows are actual lots; any other
+    // typed row with Instrument/Position + Ticker is the summary and must be skipped,
+    // otherwise the summary quantity is added to all its lots a second time.
+    const rowType = String(r.type || r.tipo || "").trim().toUpperCase();
+    if (r.instrument_position && r.ticker && !/^(BUY|SELL)$/.test(rowType)) continue;
     const symbol   = String(r.symbol || r.simbolo || r.ticker || r.instrument || r.instrumento || r.instrument_position || "").trim();
     const vol      = parseNumberSmart(r.volume || r.qty || r.quantity);
     const openPx   = parseNumberSmart(r.open_price || r["open price"] || r.openprice || r.preco_de_abertura || r.preco_abertura || r.preco_entrada);
