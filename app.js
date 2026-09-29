@@ -1492,7 +1492,7 @@ function applyDashboardPrivacy() {
     return;
   }
   maskDashboardMoneyText(view);
-  maskDashboardMoneyText(passiveBar);
+  maskDashboardMoneyText(document.getElementById("passivebar"));
 }
 
 function toggleDashboardPrivacy() {
