@@ -1,4 +1,4 @@
-/* Vestra broker parsing core v1.3 — pure identity, format and key helpers. */
+/* Vestra broker parsing core v1.4 — canonical broker identity and idempotent import keys. */
 (() => {
   'use strict';
 
@@ -306,9 +306,10 @@ function detectBrokerTextFormat(text) {
 function normalizeBrokerNameFromFile(fileName) {
   const n = normStr(fileName || "");
   if (n.includes("divtracker")) return "DivTracker";
-  if (n.includes("confirmation-of-holdings") || n.includes("confirmacao") || n.includes("holdings") || n.includes("trading212") || n.includes("trade212")) return "Trading 212";
-  if (n.includes("trade republic") || n.includes("from_")) return "Corretora CSV";
+  if (n.includes("t212") || n.includes("trading 212") || n.includes("trading212") || n.includes("trade212") ||
+      n.includes("confirmation-of-holdings") || n.includes("confirmacao") || n.includes("holdings")) return "Trading 212";
   if (n.includes("xtb")) return "XTB";
+  if (n.includes("trade republic") || n.includes("from_")) return "Corretora CSV";
   return "Corretora";
 }
 
@@ -342,14 +343,27 @@ function brokerPositionClassFromTicker(ticker) {
   return isCrypto ? "Cripto" : "Ações/ETFs";
 }
 
+function brokerExternalIdScope(evt) {
+  const extId = String(evt?.extId || "").trim();
+  if (!extId) return "";
+  // Trading 212 uses UUID transaction IDs; XTB uses numeric operation IDs.
+  // Derive identity from the broker-issued ID namespace instead of the filename-
+  // inferred broker label. This keeps the same movement identical when a later
+  // export is renamed or when an old import was stored as generic "Corretora".
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(extId)) return "TRADING212";
+  if (/^EOF\d+$/i.test(extId)) return "TRADING212";
+  if (/^\d+$/.test(extId)) return "XTB";
+  const broker = normStr(evt?.broker || "");
+  if (broker.includes("212") || broker.includes("t212")) return "TRADING212";
+  if (broker.includes("xtb")) return "XTB";
+  return broker.replace(/\s+/g, "_") || "BROKER";
+}
+
 function brokerEventKey(evt) {
-  // v63b: brokers assign a unique transaction ID per row (XTB "ID" column).
-  // XTB pays several identical lots of the same ticker within the SAME second, and
-  // the Excel export truncates sub-second precision, so type+time+ticker+amount is
-  // NOT unique: 2709 of 4456 dividend rows collided and were silently dropped on
-  // import (-1326.85 EUR). When a broker row ID exists, it alone identifies the row.
+  // Broker-issued row IDs are the strongest identity. Scope them canonically so
+  // changing the report filename/broker label cannot manufacture a new event.
   const extId = String(evt.extId || "").trim();
-  if (extId) return [evt.broker || "", evt.type || "", extId].join("|");
+  if (extId) return [brokerExternalIdScope(evt), evt.type || "", extId].join("|");
   return [
     evt.type || "", evt.dateTime || evt.date || "", evt.ticker || "", evt.isin || "", evt.name || "",
     Math.round(parseNum(evt.qty) * 1e8) / 1e8,
@@ -366,8 +380,7 @@ function brokerPositionKey(pos) {
     Math.round(parseNum(pos.costBasisEUR) * 100) / 100,
     Math.round(parseNum(pos.marketValueEUR) * 100) / 100,
     pos.positionKind || "",
-    pos.snapshotDate || "",
-    pos.sourceName || ""
+    pos.snapshotDate || ""
   ].join("|");
 }
 
