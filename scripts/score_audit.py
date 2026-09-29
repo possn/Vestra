@@ -251,6 +251,7 @@ def model_audit(model, rows):
         effective_weight_profile(r.get("score_dimensions"), weights)
         for r in rows
     ]
+    row_weight_profiles = list(zip(rows, weight_profiles))
     missing_weights = [x["missing_weight_pct"] for x in weight_profiles]
     dominant_shares = [
         x["max_effective_dimension_share"]
@@ -290,6 +291,20 @@ def model_audit(model, rows):
             "max_missing_weight_pct": round(max(missing_weights), 2) if missing_weights else 0.0,
             "rows_missing_at_least_20pct_weight": sum(1 for x in missing_weights if x >= 20),
             "rows_missing_at_least_35pct_weight": sum(1 for x in missing_weights if x >= 35),
+            "published_rows_missing_at_least_20pct_weight": sum(
+                1 for row, profile in row_weight_profiles
+                if profile["missing_weight_pct"] >= 20 and num(row.get("score")) is not None
+            ),
+            "published_rows_missing_at_least_35pct_weight": sum(
+                1 for row, profile in row_weight_profiles
+                if profile["missing_weight_pct"] >= 35 and num(row.get("score")) is not None
+            ),
+            "robust_rows_missing_at_least_35pct_weight": sum(
+                1 for row, profile in row_weight_profiles
+                if profile["missing_weight_pct"] >= 35
+                and num(row.get("score")) is not None
+                and str(row.get("score_reliability") or "") == "robust"
+            ),
             "mean_renormalization_factor": round(mean(renorm_factors) or 0, 4),
             "max_renormalization_factor": round(max(renorm_factors), 4) if renorm_factors else None,
             "mean_max_effective_dimension_share_pct": round((mean(dominant_shares) or 0) * 100, 2),
@@ -361,6 +376,14 @@ def main():
                 "rows": renorm["rows_missing_at_least_35pct_weight"],
                 "max_missing_weight_pct": renorm.get("max_missing_weight_pct"),
             })
+        if renorm.get("published_rows_missing_at_least_35pct_weight", 0):
+            flags.append({
+                "type": "published_score_under_heavy_renormalization",
+                "score_model": model["score_model"],
+                "severity": "investigate",
+                "published_rows": renorm["published_rows_missing_at_least_35pct_weight"],
+                "robust_rows": renorm.get("robust_rows_missing_at_least_35pct_weight", 0),
+            })
         elif renorm.get("rows_missing_at_least_20pct_weight", 0):
             flags.append({
                 "type": "missing_data_renormalization",
@@ -377,7 +400,7 @@ def main():
         flags.append({"type": "sector_concentration", "severity": "review", "sectors": [x["sector"] for x in skewed]})
 
     out = {
-        "schema_version": 4,
+        "schema_version": 5,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "rows_analysed": len(rows),
         "methodology": {
@@ -386,7 +409,7 @@ def main():
             "weight_perturbations": [.5, .8, 1.2, 1.5],
             "redundancy_threshold": "absolute Spearman >= 0.75",
             "material_sensitivity": "rank Spearman < 0.95 or top-decile Jaccard < 0.75",
-            "missing_weight_renormalization": "measure nominal weight absent per row and the largest effective dimension share after production-style renormalization",
+            "missing_weight_renormalization": "measure nominal weight absent per row, the largest effective dimension share after production-style renormalization, and whether heavily renormalized rows still publish a score",
             "structural_unavailability": "flag dimensions with positive nominal weight but zero observed coverage across the entire score model; do not silently treat them as ordinary row-level missingness",
             "sector_bias_note": "descriptive concentration only; not causal evidence",
             "reconstruction_parity": "reconstruct score_dimensions, apply structural score_cap, compare with score_raw; public score moderation by evidence confidence is reported separately",
@@ -398,7 +421,7 @@ def main():
         "next_step": "Combine cross-sectional stability with prospective 4/12/24-week rank IC and top-minus-bottom return spreads before changing production weights or normalization universes.",
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-    print(f"Score audit v3: {len(rows)} equities across {len(model_results)} score models; flags={len(flags)}")
+    print(f"Score audit v5: {len(rows)} equities across {len(model_results)} score models; flags={len(flags)}")
 
 
 if __name__ == "__main__":
