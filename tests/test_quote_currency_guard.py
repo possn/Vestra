@@ -7,8 +7,8 @@ def read(p): return (ROOT/p).read_text(encoding="utf-8")
 class QuoteCurrencyGuardTests(unittest.TestCase):
     def test_broker_base_currency_is_not_treated_as_native_quote_currency(self):
         app=read("app.js")
-        self.assertIn("storedPriceCcy !== portfolioCcy",app)
         self.assertIn("asset.generatedFromBroker",app)
+        self.assertIn('? ""\n    : (storedPriceCcy || storedAssetCcy)',app)
         self.assertIn("if (asset.generatedFromBroker && ccy) asset.priceCurrency = ccy",app)
         self.assertIn("Cotação suspeita: moeda ${quoteCcy} não coincide com ${assetCcy}",app)
 
@@ -18,7 +18,7 @@ class QuoteCurrencyGuardTests(unittest.TestCase):
 
     def test_fresh_bundle_is_published(self):
         index=read("index.html")
-        self.assertIn("app.js?v=20260926v13",index)
+        self.assertIn("app.js?v=20260929v1",index)
         sw=read("sw.js")
         self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
         self.assertIn("staleWhileRevalidate",sw)
