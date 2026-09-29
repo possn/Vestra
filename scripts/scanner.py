@@ -33,6 +33,7 @@ def _empty(reason=None):
         "scanner_tags": [], "scanner_results": {}, "scanner_best": None,
         "scanner_best_score": None, "opportunity_score": None,
         "opportunity_label": "Dados insuficientes", "opportunity_eligible": False,
+        "opportunity_featured": False,
     }
     if reason:
         out["scanner_suppressed_reason"] = reason
@@ -174,7 +175,10 @@ def assess(row: dict) -> dict:
     # market.js. This avoids a second frontend-specific data path and keeps all
     # opportunity surfaces under the same evidence gate.
     opp = _n(base.get("opportunity_score"))
-    if opp is not None and bool(base.get("opportunity_eligible")):
+    # "Best Opportunities" is the Scanner view of the same featured decision
+    # used by "Oportunidades agora". Discovery eligibility alone is broader and
+    # must not silently promote watch/research candidates into the best list.
+    if opp is not None and bool(base.get("opportunity_featured")):
         reasons = list(base.get("opportunity_reasons") or [])
         cautions = list(base.get("opportunity_cautions") or [])
         scanner_results = dict(base.get("scanner_results") or {})
