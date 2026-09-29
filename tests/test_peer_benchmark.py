@@ -17,6 +17,19 @@ class PeerBenchmarkTests(unittest.TestCase):
         self.assertEqual(result.peer_observations, 2)
         self.assertAlmostEqual(result.score, 50.0)
 
+    def test_sparse_global_fallback_stays_unscored(self):
+        result = peer_first_percentile(5, range(1, 10), range(1, 16), min_peers=20)
+        self.assertEqual(result.scope, "insufficient_sample")
+        self.assertEqual(result.peer_observations, 9)
+        self.assertEqual(result.global_observations, 15)
+        self.assertIsNone(result.score)
+
+    def test_global_fallback_requires_minimum_depth(self):
+        result = peer_first_percentile(15, range(1, 10), range(1, 21), min_peers=20)
+        self.assertEqual(result.scope, "global_fallback")
+        self.assertEqual(result.global_observations, 20)
+        self.assertIsNotNone(result.score)
+
     def test_missing_value_stays_missing(self):
         result = peer_first_percentile(None, range(20), range(100), min_peers=20)
         self.assertIsNone(result.score)
