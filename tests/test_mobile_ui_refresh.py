@@ -65,6 +65,20 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         self.assertIn('position:fixed!important', self.dossier_styles)
         self.assertIn('top:max(calc(env(safe-area-inset-top,0px) + 62px),72px)!important', self.dossier_styles)
 
+    def test_iphone_fixed_navigation_avoids_backdrop_recomposition(self):
+        self.assertIn('iPhone interaction fast path', self.styles)
+        self.assertIn('.topbar,.bottomnav{', self.styles)
+        self.assertIn('-webkit-backdrop-filter:none!important', self.styles)
+        self.assertIn('backdrop-filter:none!important', self.styles)
+        self.assertIn('touch-action:manipulation', self.styles)
+
+    def test_view_switch_defers_forced_scroll_out_of_tap_handler(self):
+        marker = 'Keep forced layout/scroll work out of the tap handler'
+        self.assertIn(marker, self.app)
+        section = self.app[self.app.index(marker):self.app.index(marker) + 320]
+        self.assertIn('requestAnimationFrame(() => {', section)
+        self.assertIn('window.scrollTo(0, 0)', section)
+
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn('ensureMobileUiRefresh', self.loader)
         self.assertIn('mobile-ui-refresh.js?v=1.4', self.loader)
