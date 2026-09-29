@@ -46,22 +46,30 @@
     if(['confirmed','recovering'].includes(t(s?.recovery_status)))x+=7;if(['failed','bounce_only'].includes(t(s?.recovery_status)))x-=10;
     return clamp(x);
   }
-  function eligible(s){
+  const FEATURED_OPPORTUNITY_MIN_SCORE=54;
+  function discoveryEligible(s){
     const qt=t(s?.quote_type||s?.quoteType).toUpperCase();
     if(['ETF','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const publishedEligible=typeof s?.opportunity_eligible==='boolean'?s.opportunity_eligible:null;
-    const publishedScore=n(s?.opportunity_score);
-    if(publishedEligible!==null){
-      if(!publishedEligible)return false;
-      if(publishedScore!=null)return publishedScore>=54;
-    }
-    // Legacy fallback only: modern payloads publish the canonical Opportunity
-    // eligibility/score from scripts/opportunity_rank.py.
+    if(publishedEligible!==null)return publishedEligible;
+
+    // Legacy fallback only: modern payloads publish canonical Discovery
+    // eligibility from scripts/opportunity_rank.py.
     const sc=n(s?.score),cov=n(s?.data_coverage_pct),conf=n(s?.confidence_score),crit=n(s?.critical_metric_coverage_pct),rel=t(s?.score_reliability).toLowerCase(),risk=t(s?.risk_gate).toLowerCase();
     if(sc==null||sc<58||cov==null||cov<55||conf==null||conf<50)return false;
     if(crit!=null&&crit<35)return false;
     if(['insufficient','suppressed'].includes(rel)||['high','severe'].includes(risk)||t(s?.zombie).toLowerCase()==='yes'||overextended(s))return false;
     return timing(s)>=48 && confirmed(s)>=2;
+  }
+  function eligible(s){
+    if(!discoveryEligible(s))return false;
+    const publishedEligible=typeof s?.opportunity_eligible==='boolean'?s.opportunity_eligible:null;
+    const publishedScore=n(s?.opportunity_score);
+    // Modern payloads separate universe eligibility from featured-shortlist
+    // eligibility. "Oportunidades agora" starts at the backend's "Interessante"
+    // band (54); lower-scoring eligible names remain valid Discovery research.
+    if(publishedEligible!==null)return publishedScore!=null&&publishedScore>=FEATURED_OPPORTUNITY_MIN_SCORE;
+    return true;
   }
   function fallbackUpsideSupport(s){
     const published=t(s?.opportunity_upside_support).toLowerCase();
@@ -399,7 +407,7 @@
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
     if(lens==='recovery')return ['Recuperação','Empresas com recuperação operacional ou de estimativas já confirmada.'];
     if(lens==='value')return ['Value + timing','Desconto ou upside relevante, mas apenas com timing mínimo aceitável.'];
-    return ['Oportunidades agora','Só entram nomes que passam todos os critérios do gate geral; a shortlist pode ter menos de 12 quando a evidência não chega.'];
+    return ['Oportunidades agora',`Discovery elegível + Opportunity Score ≥${FEATURED_OPPORTUNITY_MIN_SCORE} (“Interessante” ou melhor). A shortlist pode ter menos de 12 quando não há nomes suficientes.`];
   }
 
   function opportunities(lens=activeLens,sectorOverride=''){
@@ -451,5 +459,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.10'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,featuredMinScore:FEATURED_OPPORTUNITY_MIN_SCORE,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.11'});
 })();
