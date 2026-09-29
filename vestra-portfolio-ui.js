@@ -127,7 +127,7 @@
     const guide=tabs.querySelector('.vpu-optimize-guide'); if(guide)guide.hidden=!expanded||active!=='optimize';
     c.querySelectorAll('.market-detail-card[data-collapsible="1"],[data-ux-kind]').forEach(el=>{const g=classify(el);if(!g)return;el.classList.add('vpu-section-card');el.dataset.vpuGroup=g;el.classList.toggle('vpu-hidden',!expanded||g!==active);});
     syncGroupScan(c,tabs);
-    const btn=reveal.querySelector('[data-vpu-toggle]'),label=expanded?'Fechar':'Começar'; if(btn&&btn.textContent!==label)btn.textContent=label;
+    const btn=reveal.querySelector('[data-vpu-toggle]'),label=expanded?'Fechar ×':'Começar'; if(btn&&btn.textContent!==label)btn.textContent=label;
   }
   function focusCard(c,target){
     if(!target)return null;
@@ -190,7 +190,7 @@
     }
     const exit=e.target.closest?.('[data-vpu-exit]'); if(exit){const c=root();if(!c)return;e.preventDefault();c.dataset.vpuExpanded='0';apply();setTimeout(()=>c.querySelector(':scope > .market-portfolio-section,:scope > details.market-detail-disclosure')?.scrollIntoView({behavior:'smooth',block:'start'}),20);return;}
     const j=e.target.closest?.('[data-vpu-jump]'); if(j){e.preventDefault();jump(j.dataset.vpuJump);return;}
-    const q=e.target.closest?.('[data-vpu-toggle]'); if(q){const c=root();if(!c)return;const opening=c.dataset.vpuExpanded!=='1';c.dataset.vpuExpanded=opening?'1':'0';apply();if(opening){collapseActive(c);setTimeout(()=>c.querySelector('.vpu-tabs-shell')?.scrollIntoView({behavior:'smooth',block:'start'}),20);}return;}
+    const q=e.target.closest?.('[data-vpu-toggle]'); if(q){const c=root();if(!c)return;const opening=c.dataset.vpuExpanded!=='1';c.dataset.vpuExpanded=opening?'1':'0';apply();if(opening){collapseActive(c);setTimeout(()=>c.querySelector('.vpu-reveal')?.scrollIntoView({behavior:'smooth',block:'start'}),20);}return;}
     const tab=e.target.closest?.('[data-vpu-tab]'); if(tab){active=tab.dataset.vpuTab||'decide';try{localStorage.setItem('vestra.portfolio.analysisTab',active);}catch{}apply();const c=root();if(c){collapseActive(c);setTimeout(()=>c.querySelector('.vpu-tab-intro')?.scrollIntoView({behavior:'smooth',block:'nearest'}),30);}return;}
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);

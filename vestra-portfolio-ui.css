@@ -306,3 +306,22 @@
   .vpu-exit span{font-size:8.5px}
   .vpu-exit strong{font-size:10px}
 }
+
+
+/* v2.1 — mobile exploration owns the analysis viewport. */
+.vpu-portfolio[data-vpu-expanded="1"] > .vpu-exit ~ *{display:none!important}
+@media(max-width:899px){
+  .vpu-portfolio[data-vpu-expanded="1"] > .vpu-reveal{
+    position:sticky;
+    top:0;
+    z-index:100;
+    margin-top:0;
+    padding:10px 12px;
+    background:var(--card);
+    box-shadow:0 8px 24px rgba(18,38,51,.16);
+  }
+  .vpu-portfolio[data-vpu-expanded="1"] > .vpu-reveal small,
+  .vpu-portfolio[data-vpu-expanded="1"] > .vpu-reveal span{display:none}
+  .vpu-portfolio[data-vpu-expanded="1"] > .vpu-reveal strong{font-size:13px}
+  .vpu-portfolio[data-vpu-expanded="1"] > .vpu-reveal button{padding:8px 12px}
+}

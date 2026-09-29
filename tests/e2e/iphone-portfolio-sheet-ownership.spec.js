@@ -47,3 +47,46 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   await expect(sheet.locator('.market-detail-head h2')).toHaveText('As minhas posições');
   await expect(sheet).not.toContainText('CF Industries · ENTRY 90');
 });
+
+
+test('iPhone/WebKit: Portfolio Explorer keeps close control visible and hides base holdings', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function');
+  await page.evaluate(() => window.setView('market'));
+  await page.waitForFunction(() => window.VestraMarket?.ensureLoaded);
+  await page.evaluate(() => window.VestraMarket.ensureLoaded());
+
+  await page.locator('[data-market-tool="portfolio"]').first().click();
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator('.vpu-reveal')).toBeVisible({ timeout: 15_000 });
+
+  await sheet.locator('.vpu-reveal [data-vpu-toggle]').click();
+  await expect(sheet.locator('.vpu-tabs-shell')).toBeVisible();
+
+  const exit = sheet.locator('.vpu-exit');
+  await expect(exit).toBeVisible();
+  const hiddenAfterExit = await exit.evaluate(el => {
+    const siblings = [];
+    let node = el.nextElementSibling;
+    while (node) {
+      siblings.push(getComputedStyle(node).display === 'none');
+      node = node.nextElementSibling;
+    }
+    return siblings.length === 0 || siblings.every(Boolean);
+  });
+  expect(hiddenAfterExit).toBeTruthy();
+
+  await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await page.waitForTimeout(80);
+  const close = sheet.locator('.vpu-reveal [data-vpu-toggle]');
+  await expect(close).toBeVisible();
+  await expect(close).toHaveText('Fechar ×');
+  const box = await close.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.y + box.height).toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight));
+
+  await close.click();
+  await expect(sheet.locator('.vpu-tabs-shell')).toBeHidden();
+});
