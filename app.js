@@ -1488,13 +1488,12 @@ function applyDashboardPrivacy() {
     note.remove();
   }
 
-  const passiveBar = document.getElementById("passivebar");
   if (hidden) {
     maskDashboardMoneyText(view);
-    maskDashboardMoneyText(passiveBar);
+    maskDashboardMoneyText(document.getElementById("passivebar"));
   } else {
     restoreDashboardMoneyText(view);
-    restoreDashboardMoneyText(passiveBar);
+    restoreDashboardMoneyText(document.getElementById("passivebar"));
   }
 }
 
