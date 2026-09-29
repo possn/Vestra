@@ -15,6 +15,9 @@ from __future__ import annotations
 import datetime as dt
 
 
+FEATURED_OPPORTUNITY_MIN_SCORE = 54.0
+
+
 def _f(v):
     try:
         if v is None or v == "":
@@ -430,6 +433,8 @@ def _insufficient(reason, components=None, gates=None, timing=None):
         "opportunity_upside_support": "unavailable",
         "opportunity_upside_reasons": [],
         "opportunity_eligible": False,
+        "opportunity_featured": False,
+        "opportunity_featured_min_score": FEATURED_OPPORTUNITY_MIN_SCORE,
         "opportunity_suppressed_reason": reason,
         "opportunity_gates": gates or [],
         "opportunity_caps": [],
@@ -702,7 +707,7 @@ def assess(row: dict) -> dict:
         label = "Prioridade alta"
     elif opp >= 66 and coverage >= 65 and conf >= 60 and timing_score >= 55:
         label = "Oportunidade forte"
-    elif opp >= 54:
+    elif opp >= FEATURED_OPPORTUNITY_MIN_SCORE:
         label = "Interessante"
     elif opp >= 42:
         label = "Acompanhar"
@@ -727,6 +732,8 @@ def assess(row: dict) -> dict:
         "opportunity_valuation_method_count": upside_support.get("valuation_method_count"),
         "opportunity_valuation_dispersion_pct": upside_support.get("valuation_dispersion_pct"),
         "opportunity_eligible": True,
+        "opportunity_featured": bool(opp is not None and opp >= FEATURED_OPPORTUNITY_MIN_SCORE),
+        "opportunity_featured_min_score": FEATURED_OPPORTUNITY_MIN_SCORE,
         "opportunity_signal_count": len(observed),
         "opportunity_structural_signal_count": len(structural_observed),
         "opportunity_ranking_weight_coverage_pct": round(ranking_weight_coverage * 100.0, 1),
