@@ -315,13 +315,13 @@ def score_v2_readiness(horizons):
         cohorts = int(pack.get("cohort_count") or 0)
         capture = num(pack.get("cohort_capture_pct"))
         prod_ic = num(pack.get("median_cohort_rank_ic"))
-        prod_spread = num(pack.get("median_cohort_top_minus_bottom_pct"))
+        prod_spread = num(pack.get("median_cohort_robust_spread_pct"))
         peer = pack.get("peer_shadow_comparison") or {}
         peer_cohorts = int(peer.get("cohort_count") or 0)
         prod_peer_ic = num(peer.get("median_production_cohort_rank_ic"))
         cand_ic = num(peer.get("median_peer_shadow_cohort_rank_ic"))
-        prod_peer_spread = num(peer.get("median_production_cohort_top_minus_bottom_pct"))
-        cand_spread = num(peer.get("median_peer_shadow_cohort_top_minus_bottom_pct"))
+        prod_peer_spread = num(peer.get("median_production_cohort_robust_spread_pct"))
+        cand_spread = num(peer.get("median_peer_shadow_cohort_robust_spread_pct"))
 
         reasons = []
         if cohorts < 8:
@@ -372,6 +372,8 @@ def peer_shadow_comparison(vals):
     production_ics = []
     candidate_spreads = []
     production_spreads = []
+    candidate_robust_spreads = []
+    production_robust_spreads = []
     for date, rows in sorted(groups.items()):
         prod = metric_pack(rows, "score")
         peer = metric_pack(rows, "peer_shadow_score")
@@ -379,6 +381,8 @@ def peer_shadow_comparison(vals):
         c_ic = num(peer.get("rank_information_coefficient"))
         p_spread = num(prod.get("top_minus_bottom_pct"))
         c_spread = num(peer.get("top_minus_bottom_pct"))
+        p_robust_spread = num(prod.get("winsorized_top_minus_bottom_pct"))
+        c_robust_spread = num(peer.get("winsorized_top_minus_bottom_pct"))
         if p_ic is not None:
             production_ics.append(p_ic)
         if c_ic is not None:
@@ -387,6 +391,10 @@ def peer_shadow_comparison(vals):
             production_spreads.append(p_spread)
         if c_spread is not None:
             candidate_spreads.append(c_spread)
+        if p_robust_spread is not None:
+            production_robust_spreads.append(p_robust_spread)
+        if c_robust_spread is not None:
+            candidate_robust_spreads.append(c_robust_spread)
         cohorts.append({
             "cohort_date": date,
             "n": len(rows),
@@ -394,6 +402,7 @@ def peer_shadow_comparison(vals):
             "peer_shadow": peer,
             "rank_ic_delta": round(c_ic - p_ic, 4) if c_ic is not None and p_ic is not None else None,
             "top_minus_bottom_delta_pct": round(c_spread - p_spread, 2) if c_spread is not None and p_spread is not None else None,
+            "robust_spread_delta_pct": round(c_robust_spread - p_robust_spread, 2) if c_robust_spread is not None and p_robust_spread is not None else None,
         })
 
     return {
@@ -405,6 +414,8 @@ def peer_shadow_comparison(vals):
         "median_peer_shadow_cohort_rank_ic": round(statistics.median(candidate_ics), 4) if candidate_ics else None,
         "median_production_cohort_top_minus_bottom_pct": round(statistics.median(production_spreads), 2) if production_spreads else None,
         "median_peer_shadow_cohort_top_minus_bottom_pct": round(statistics.median(candidate_spreads), 2) if candidate_spreads else None,
+        "median_production_cohort_robust_spread_pct": round(statistics.median(production_robust_spreads), 2) if production_robust_spreads else None,
+        "median_peer_shadow_cohort_robust_spread_pct": round(statistics.median(candidate_robust_spreads), 2) if candidate_robust_spreads else None,
         "positive_peer_shadow_ic_cohorts": sum(1 for x in candidate_ics if x > 0),
         "positive_peer_shadow_spread_cohorts": sum(1 for x in candidate_spreads if x > 0),
         "cohorts": cohorts,
@@ -419,6 +430,8 @@ def summarize_horizon(vals, expected_matured_cohorts=0):
     cohort_ics = [x for x in cohort_ics if x is not None]
     cohort_spreads = [num(x.get("top_minus_bottom_pct")) for x in cohorts]
     cohort_spreads = [x for x in cohort_spreads if x is not None]
+    cohort_robust_spreads = [num(x.get("winsorized_top_minus_bottom_pct")) for x in cohorts]
+    cohort_robust_spreads = [x for x in cohort_robust_spreads if x is not None]
     pack.update({
         "cohort_count": len(cohorts),
         "expected_matured_cohorts": expected_matured_cohorts,
@@ -427,6 +440,8 @@ def summarize_horizon(vals, expected_matured_cohorts=0):
         "positive_ic_cohorts": sum(1 for x in cohort_ics if x > 0),
         "median_cohort_top_minus_bottom_pct": round(statistics.median(cohort_spreads), 2) if cohort_spreads else None,
         "positive_spread_cohorts": sum(1 for x in cohort_spreads if x > 0),
+        "median_cohort_robust_spread_pct": round(statistics.median(cohort_robust_spreads), 2) if cohort_robust_spreads else None,
+        "positive_robust_spread_cohorts": sum(1 for x in cohort_robust_spreads if x > 0),
         "factor_rank_information_coefficient": factor_ics(vals),
         "by_score_model": grouped_breakdown(vals, "score_model"),
         "by_sector": grouped_breakdown(vals, "sector"),
