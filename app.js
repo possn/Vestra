@@ -437,7 +437,7 @@ function migrateDividendRecords() {
   return changed;
 }
 
-const BROKER_REBUILD_SCHEMA_VERSION = 47; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
+const BROKER_REBUILD_SCHEMA_VERSION = 48; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
 
 function getReturnSettings() {
   return normalizeReturnSettings((state && state.settings && state.settings.returnDefaults) || {}, parseNum);
@@ -7115,6 +7115,9 @@ function normalizeCanonicalBrokerCorporateActions(eventsInput, positionsInput) {
 
 function rebuildBrokerGeneratedData() {
   const bd = ensureBrokerData();
+  // Re-key and collapse legacy duplicates before any accounting reconstruction.
+  // This also self-heals data created by older imports after a schema-version bump.
+  canonicalizeStoredBrokerKeys(bd);
   state.assets = (state.assets || []).filter(a => !a.generatedFromBroker);
   state.dividends = (state.dividends || []).filter(d => !d.generatedFromBroker);
   state.transactions = (state.transactions || []).filter(t => !t.generatedFromBroker);
