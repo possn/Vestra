@@ -814,7 +814,11 @@ function setView(view) {
   const _navView = view === "import" ? "cashflow" : view;
   for (const b of _navEls) b.classList.toggle("navbtn--active", b.dataset.view === _navView);
   for (const b of _sideNavEls) b.classList.toggle("sidenavbtn--active", b.dataset.view === _navView);
-  try { window.scrollTo(0, 0); } catch (_) {}
+  // Keep forced layout/scroll work out of the tap handler; the visible view switches above.
+  requestAnimationFrame(() => {
+    if (currentView !== view) return;
+    try { window.scrollTo(0, 0); } catch (_) {}
+  });
   if (view === "market") {
     // Load the heavy market core only when Market is actually opened.
     window.VestraMarketLoader?.ensure?.({ loadData: true }).catch(err => {
