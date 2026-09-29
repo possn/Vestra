@@ -1,5 +1,5 @@
-/* Vestra Service Worker v11.05 — idempotent broker report replacement. */
-const CACHE_NAME = "vestra-cache-v227";
+/* Vestra Service Worker v11.06 — authoritative broker snapshot precedence. */
+const CACHE_NAME = "vestra-cache-v228";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [
