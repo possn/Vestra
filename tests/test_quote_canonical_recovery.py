@@ -186,7 +186,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
     def test_bootstrap_loads_identity_guard_without_parallel_quote_fast_lane(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("loadCanonicalQuoteRepair();", text)
-        self.assertIn("quote-canonical-repair.js?v=2.5", text)
+        self.assertIn("quote-canonical-repair.js?v=2.6", text)
         self.assertIn("window.VestraAssetIdentityGuard", text)
         self.assertNotIn("loadQuoteRefreshPerformance", text)
         self.assertNotIn("quote-refresh-performance.js", text)
