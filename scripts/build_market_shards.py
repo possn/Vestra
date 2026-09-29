@@ -393,6 +393,24 @@ def load_portfolio_sector_fallback(path: str = PORTFOLIO_SECTORS) -> dict[str, d
     return result
 
 
+def apply_market_identity_fallback(row: dict, fallback: dict | None) -> dict:
+    """Preserve known sector/industry across transient metadata gaps only."""
+    if not isinstance(fallback, dict):
+        return row
+    sector = str(row.get("sector") or "").strip()
+    industry = str(row.get("industry") or "").strip()
+    fallback_sector = str(fallback.get("sector") or "").strip()
+    fallback_industry = str(fallback.get("industry") or "").strip()
+    if (sector or not fallback_sector) and (industry or not fallback_industry):
+        return row
+    enriched = dict(row)
+    if not sector and fallback_sector:
+        enriched["sector"] = fallback_sector
+    if not industry and fallback_industry:
+        enriched["industry"] = fallback_industry
+    return enriched
+
+
 
 def main() -> None:
     with open(SRC, "r", encoding="utf-8") as f:
@@ -426,6 +444,7 @@ def main() -> None:
     portfolio_sectors = {}
     manifest = {}
     for ticker, row in rows:
+        row = apply_market_identity_fallback(row, previous_portfolio_sectors.get(ticker))
         key = shard_for(ticker)
         shards[key][ticker] = row
         manifest[ticker] = key
