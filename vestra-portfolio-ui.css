@@ -322,7 +322,17 @@
   isolation:isolate!important;
   background:var(--bg,#d1d2cc)!important;
 }
+#marketSheet[data-tool="portfolio"]::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:auto;
+  background:var(--bg,#d1d2cc);
+}
 #marketSheet[data-tool="portfolio"]>.market-sheet__panel{
+  position:relative!important;
+  z-index:1!important;
   width:100%!important;
   min-height:100dvh!important;
   background:var(--bg,#d1d2cc)!important;
