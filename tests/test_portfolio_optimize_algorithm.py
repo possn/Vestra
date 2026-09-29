@@ -351,7 +351,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const riskAddSafe=(stock,amount)=>", s)
         self.assertIn("current>limit ? next<=current+.01 : next<=limit+.01", s)
         self.assertIn("const allocationsByTicker=new Map(), sectorAdds=new Map()", s)
-        self.assertIn("const baseEligible=strict&&(targets.overlap!=='reduce'||indirect<2)", s)
+        self.assertIn("const baseEligible=decision.autoEligible", s)
         self.assertIn("const eligible=candidates.filter(c=>c.baseEligible).slice(0,5)", s)
         self.assertNotIn("const eligible=candidates.filter(c=>c.autoEligible).slice(0,5)", s)
         self.assertIn("while(remaining>=50&&progressed)", s)
