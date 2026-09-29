@@ -47,15 +47,28 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
     await navigator.serviceWorker.ready;
   });
 
-  // skipWaiting + clients.claim should make the first loaded client controlled.
-  // Allow WebKit a short lifecycle turn; if it still is not controlled, one reload
-  // is legitimate and mirrors opening an already-installed PWA again.
+  // skipWaiting + clients.claim should make the client controlled. The canonical
+  // bootstrap now also reloads once after controllerchange so the new app.js is
+  // the code actually running on iOS. Let that lifecycle settle before probing UI.
   try {
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 5_000 });
   } catch (_) {
     await page.reload({ waitUntil: 'load' });
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 10_000 });
   }
+
+  if (!new URL(page.url()).searchParams.has('_sw')) {
+    try {
+      await page.waitForURL(url => url.searchParams.has('_sw'), { timeout: 3_000 });
+    } catch (_) {
+      await Promise.all([
+        page.waitForURL(url => url.searchParams.has('_sw'), { timeout: 10_000 }),
+        page.evaluate(() => navigator.serviceWorker.dispatchEvent(new Event('controllerchange'))),
+      ]);
+    }
+  }
+  await page.waitForLoadState('load');
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 10_000 });
 
   const pwa = await readPwaState(page);
 
@@ -83,16 +96,7 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   });
   expect(safeCaptureOwnsClick).toBeTruthy();
 
-  // A controller swap now deliberately reloads the installed PWA once so the
-  // new app.js generation actually becomes the running frontend.
-  await page.evaluate(() => {
-    navigator.serviceWorker.dispatchEvent(new Event('controllerchange'));
-  });
-  await page.waitForURL(url => url.searchParams.has('_sw'), { timeout: 10_000 });
-  await page.waitForLoadState('load');
-  const afterSwap = await readPwaState(page);
-  expect(afterSwap.controlled).toBeTruthy();
-  expect(afterSwap.safeUpdateApiReady).toBeTruthy();
+  expect(new URL(page.url()).searchParams.has('_sw')).toBeTruthy();
 
   // WebKit can emit this transient pageerror when controllerchange replaces the
   // execution context during first install. readPwaState explicitly recovers from
