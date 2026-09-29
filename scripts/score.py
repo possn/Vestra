@@ -36,6 +36,9 @@ class ScoredTicker:
     quote_type: str | None
 
     score: float | None
+    # Fundamental attractiveness before structural Risk Gate and evidence-confidence
+    # moderation. Kept separate so downstream Conviction does not double-count gates.
+    score_pre_gates: float | None
     data_confidence: str
     data_coverage_pct: float
 
@@ -573,6 +576,11 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             earnings_quality = None
             capital_allocation = None
 
+        # Preserve fundamental attractiveness before any structural/evidence gates.
+        # Confidence moderation happens later in confidence.py; the Risk Gate below
+        # remains an independent structural constraint.
+        score_pre_gates = composite
+
         # v4.1 Risk Gate: weighted averages cannot wash away structural red flags.
         # Generic and explainable rules only; no ticker blacklist.
         risk_flags = []
@@ -666,6 +674,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             ticker=r.ticker, name=r.name, business_summary=r.business_summary, sector=r.sector, industry=r.industry,
             market_cap=r.market_cap, currency=r.currency, quote_type=r.quote_type,
             score=round(composite, 1) if composite is not None else None,
+            score_pre_gates=round(score_pre_gates, 1) if score_pre_gates is not None else None,
             data_confidence=confidence, data_coverage_pct=round(metric_coverage, 1),
             zombie=zombie, interest_coverage=round(coverage, 2) if coverage is not None else None,
             profitability_pct=round(quality, 1) if quality is not None else None,
