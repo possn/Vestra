@@ -208,9 +208,11 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         nav=read("portfolio-sheet-navigation.js")
         self.assertEqual(nav.count("new MutationObserver"),1)
         self.assertIn("const sh=sheet();",nav)
-        self.assertIn("mo.observe(sh,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']})",nav)
+        self.assertIn("mo.observe(sh,{childList:true,attributes:true,attributeFilter:['hidden']})",nav)
+        self.assertIn("if(c) mo.observe(c,{childList:true})",nav)
+        self.assertNotIn("subtree:true",nav)
         self.assertNotIn("mo.observe(document.body",nav)
-        self.assertIn("attributeFilter:['hidden','class']",nav)
+        self.assertNotIn("attributeFilter:['hidden','class']",nav)
         self.assertIn("prepareDossierOrigin(origin)",nav)
 
     def test_static_bundle_keeps_canonical_order(self):
