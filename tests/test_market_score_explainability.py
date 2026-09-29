@@ -34,6 +34,14 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
         self.assertIn('5 · Decisão de carteira.', self.market)
         self.assertIn('scoreModelWeights', self.market)
 
+    def test_data_quality_separates_coverage_confidence_and_reliability(self):
+        self.assertIn('Confiança da evidência', self.market)
+        self.assertIn('Fiabilidade do Score', self.market)
+        self.assertIn('Cobertura nativa do modelo', self.market)
+        self.assertIn('scoreReliabilityLabel', self.market)
+        self.assertIn('qualidade e atualidade das fontes', self.market)
+        self.assertNotIn('A confiança mede cobertura, não certeza do investimento.', self.market)
+
     def test_public_score_moderation_is_explained(self):
         self.assertIn('score_raw', self.market)
         self.assertIn('critical_metric_coverage_pct', self.market)
