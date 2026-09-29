@@ -57,7 +57,7 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
         for scored in out:
             self.assertIsNone(scored.score)
             self.assertEqual(scored.data_coverage_pct, 0)
-            self.assertEqual(scored.data_confidence, "low")
+            self.assertEqual(scored.metric_confidence, "low")
         self.assertEqual({x.quote_type for x in out}, {"MUTUALFUND", "FUND"})
 
     def test_failed_explicit_fund_is_preserved_but_never_scored(self):
@@ -68,6 +68,13 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
         self.assertEqual(out[0].quote_type, "FUND")
         self.assertIsNone(out[0].score)
         self.assertEqual(out[0].data_coverage_pct, 0)
+
+    def test_scoring_boundary_names_metric_confidence_explicitly(self):
+        raw = [row("MF", "MUTUALFUND")]
+        with mock.patch.object(score_contract, "_load_core", return_value=(FakeScoredTicker, lambda items: [])):
+            out = score_contract.score_universe(raw)
+        self.assertEqual(out[0].metric_confidence, "low")
+        self.assertFalse(hasattr(out[0], "data_confidence"))
 
     def test_run_routes_through_boundary_and_core_score_source_is_untouched(self):
         run_source = (SCRIPTS / "run.py").read_text(encoding="utf-8")
