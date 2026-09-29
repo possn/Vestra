@@ -11,6 +11,7 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         cls.styles = (ROOT / 'mobile-ui-refresh.css').read_text(encoding='utf-8')
         cls.loader = (ROOT / 'market-static-universe.js').read_text(encoding='utf-8')
         cls.app = (ROOT / 'app.js').read_text(encoding='utf-8')
+        cls.dossier_styles = (ROOT / 'market-dossier-controls.css').read_text(encoding='utf-8')
 
     def test_mobile_topbar_keeps_sidebar_access_and_removes_only_settings(self):
         self.assertIn('@media(max-width:720px)', self.styles)
@@ -55,12 +56,14 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         self.assertNotIn('localStorage', self.source)
         self.assertNotIn('indexedDB', self.source)
 
-    def test_mobile_close_controls_remain_visible_during_scroll(self):
+    def test_mobile_close_controls_have_single_stylesheet_owner(self):
         self.assertIn('Persistent close controls', self.styles)
         self.assertIn('.modal__head{', self.styles)
         self.assertIn('position:sticky', self.styles)
-        self.assertIn('#marketSheet:not([hidden])>.market-close-persistent{', self.styles)
-        self.assertIn('z-index:2147483646!important', self.styles)
+        self.assertNotIn('#marketSheet:not([hidden])>.market-close-persistent{', self.styles)
+        self.assertIn('> .market-close-persistent{', self.dossier_styles)
+        self.assertIn('position:fixed!important', self.dossier_styles)
+        self.assertIn('top:max(calc(env(safe-area-inset-top,0px) + 62px),72px)!important', self.dossier_styles)
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn('ensureMobileUiRefresh', self.loader)
