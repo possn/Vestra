@@ -136,8 +136,8 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             if (!rioWithoutIsin.ok || !rioWithoutIsin.canonicalRecovery) process.exit(27);
 
             const flr = window.quoteSanityCheck(
-              {ticker:'FLR.US', yahooTicker:'FLR'},
-              {ticker:'FLR', currency:'USD', price:50.02},
+              {{ticker:'FLR.US', yahooTicker:'FLR'}},
+              {{ticker:'FLR', currency:'USD', price:50.02}},
               43.98, 'FLR', 'FLR'
             );
             if (!flr.ok || !flr.canonicalRecovery) process.exit(29);
