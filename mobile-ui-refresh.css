@@ -48,7 +48,7 @@
     background:var(--card);
   }
   .modal__close{flex:0 0 auto;touch-action:manipulation}
-  #marketSheet:not([hidden])>.market-close-persistent{
+  #marketSheet:not([hidden]):not([data-ticker])>.market-close-persistent,\n  #marketSheet:not([hidden])[data-ticker=""]>.market-close-persistent{
     display:grid!important;
     visibility:visible!important;
     pointer-events:auto!important;
