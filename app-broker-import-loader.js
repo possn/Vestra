@@ -100,7 +100,7 @@
     if (window.VestraBrokerParsers) return Promise.resolve(window.VestraBrokerParsers);
     if (!parsersPromise) {
       parsersPromise = Promise.all([ensureWorkbook(), ensureXtbNormalization()])
-        .then(() => load('VestraBrokerParsers', 'app-broker-parsers.js?v=1.2', 'parsers'))
+        .then(() => load('VestraBrokerParsers', 'app-broker-parsers.js?v=1.3', 'parsers'))
         .catch(err => {
           parsersPromise = null;
           throw err;
