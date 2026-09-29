@@ -429,8 +429,27 @@
 
   function style(){if(document.getElementById('vestra-market-opportunities-style'))return;const link=document.createElement('link');link.id='vestra-market-opportunities-style';link.rel='stylesheet';link.href='market-opportunities.css?v=1.2';document.head.appendChild(link);}
 
-  function start(){style();opportunities();const root=document.getElementById('marketPrimary');if(!root)return;let pending=false;const mo=new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;opportunities();});});mo.observe(root,{childList:true,subtree:true});}
+  function observerNeedsRefresh(root){
+    const section=[...root.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));
+    const list=section?.querySelector('.market-list');
+    return !!list && !list.dataset.ux453;
+  }
+
+  function start(){
+    style();
+    opportunities();
+    const root=document.getElementById('marketPrimary');if(!root)return;
+    let pending=false;
+    const mo=new MutationObserver(()=>{
+      // Direct render handoff already leaves a canonical signature on the list.
+      // The observer is now only a recovery path for native/fallback rerenders.
+      if(pending||!observerNeedsRefresh(root))return;
+      pending=true;
+      requestAnimationFrame(()=>{pending=false;if(observerNeedsRefresh(root))opportunities();});
+    });
+    mo.observe(root,{childList:true,subtree:true});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.9'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.10'});
 })();
