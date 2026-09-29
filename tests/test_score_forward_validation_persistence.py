@@ -197,8 +197,12 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
             })
         rows[0]["return_pct"] = 1000.0
         summary = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
-        self.assertLess(summary["median_cohort_top_minus_bottom_pct"], 0)
+        self.assertGreater(summary["median_cohort_top_minus_bottom_pct"], 40)
         self.assertEqual(summary["median_cohort_robust_spread_pct"], 4.0)
+        self.assertGreater(
+            summary["median_cohort_top_minus_bottom_pct"],
+            summary["median_cohort_robust_spread_pct"] * 10,
+        )
         self.assertEqual(summary["positive_robust_spread_cohorts"], 1)
 
     def test_score_v2_readiness_uses_robust_not_raw_spread(self):
