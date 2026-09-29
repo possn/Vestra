@@ -58,6 +58,32 @@ class ScannerFeaturedOpportunityTests(unittest.TestCase):
         self.assertEqual(out["scanner_best"], "best_opportunities")
         self.assertEqual(out["scanner_best_score"], 72.0)
 
+    def test_scanner_best_remains_highest_strategy_score(self):
+        row = self.base_row()
+        row.update({
+            "score": 95,
+            "quality_pct": 95,
+            "value_pct": 95,
+            "valuation_signal": "undervalued",
+            "margin_of_safety_pct": 20,
+            "confidence_score": 95,
+        })
+        overlay = {
+            "opportunity_score": 72.0,
+            "opportunity_label": "Oportunidade forte",
+            "opportunity_eligible": True,
+            "opportunity_featured": True,
+            "opportunity_reasons": ["Discovery forte"],
+            "opportunity_cautions": [],
+        }
+        with mock.patch.object(scanner, "_structural_overlays", return_value=overlay):
+            out = scanner.assess(row)
+        self.assertIn("best_opportunities", out["scanner_results"])
+        self.assertIn("qarp", out["scanner_results"])
+        self.assertGreater(out["scanner_results"]["qarp"]["score"], 72.0)
+        self.assertEqual(out["scanner_best"], "qarp")
+        self.assertEqual(out["scanner_best_score"], out["scanner_results"]["qarp"]["score"])
+
     def test_suppressed_scanner_payload_explicitly_marks_not_featured(self):
         out = scanner._empty("Sem evidência")
         self.assertFalse(out["opportunity_eligible"])
