@@ -8021,6 +8021,143 @@ function renderBrokerImportStatus() {
   renderBrokerImportAudit();
 }
 
+
+function brokerImportLooksLikeTrading212(rows) {
+  const sample = (rows || []).slice(0, 40);
+  if (!sample.length) return false;
+  let signals = 0;
+  for (const raw of sample) {
+    const r = normalizeRow(raw || {});
+    if (r.action) signals++;
+    if (r.id) signals++;
+    if (r.time || r.time_utc) signals++;
+    if (r.no_of_shares || r.price_share || r.price_per_share) signals++;
+    if (r.currency_price_share || r.currency_total || r.exchange_rate) signals++;
+  }
+  return signals >= Math.max(6, sample.length * 2);
+}
+
+function brokerImportRows(parsed) {
+  if (!parsed) return [];
+  if (Array.isArray(parsed.rows) && parsed.rows.length) return parsed.rows;
+  const out = [];
+  for (const block of (parsed.blocks || [])) {
+    if (Array.isArray(block?.rows)) out.push(...block.rows);
+  }
+  return out;
+}
+
+function inferBrokerNameFromParsedImport(fileName, parsed) {
+  const byName = normalizeBrokerNameFromFile(fileName);
+  const rows = brokerImportRows(parsed);
+  if (brokerImportLooksLikeTrading212(rows)) return "Trading 212";
+  return byName;
+}
+
+function brokerImportDateFromRecord(raw) {
+  if (!raw || typeof raw !== "object") return "";
+  const r = normalizeRow(raw);
+  const candidates = [
+    r.time_utc, r.time, r.date, r.datetime, r.date_time,
+    r.close_time_utc, r.close_time, r.open_time_utc, r.open_time,
+    r.payment_date, r.trade_date, r.record_date
+  ];
+  for (const value of candidates) {
+    const s = String(value || "").trim();
+    const m = s.match(/(20\d{2}-\d{2}-\d{2})/);
+    if (m) return m[1];
+  }
+  return "";
+}
+
+function brokerParsedCoverage(parsed) {
+  let min = "", max = "";
+  for (const raw of brokerImportRows(parsed)) {
+    const d = brokerImportDateFromRecord(raw);
+    if (!d) continue;
+    if (!min || d < min) min = d;
+    if (!max || d > max) max = d;
+  }
+  for (const block of (parsed?.blocks || [])) {
+    const d = String(block?.meta?.asOfDate || "").slice(0, 10);
+    if (!/^20\d{2}-\d{2}-\d{2}$/.test(d)) continue;
+    if (!min || d < min) min = d;
+    if (!max || d > max) max = d;
+  }
+  return min && max ? { min, max } : null;
+}
+
+function brokerStoredSourceCoverage(bd, sourceHash) {
+  let min = "", max = "";
+  const take = value => {
+    const d = String(value || "").slice(0, 10);
+    if (!/^20\d{2}-\d{2}-\d{2}$/.test(d)) return;
+    if (!min || d < min) min = d;
+    if (!max || d > max) max = d;
+  };
+  for (const e of (bd.events || [])) {
+    if (String(e?.sourceHash || "") !== String(sourceHash || "")) continue;
+    take(e.dateTime || e.date);
+  }
+  for (const p of (bd.positions || [])) {
+    if (String(p?.sourceHash || "") !== String(sourceHash || "")) continue;
+    take(p.snapshotDate);
+  }
+  return min && max ? { min, max } : null;
+}
+
+function canonicalBrokerImportLabel(fileRecord) {
+  const nameLabel = normalizeBrokerNameFromFile(fileRecord?.name || "");
+  const brokerLabel = String(fileRecord?.broker || "");
+  const joined = normStr(nameLabel + " " + brokerLabel);
+  if (joined.includes("212") || joined.includes("t212")) return "Trading 212";
+  if (joined.includes("xtb")) return "XTB";
+  if (joined.includes("divtracker")) return "DivTracker";
+  return brokerLabel || nameLabel || "Corretora";
+}
+
+function purgeSupersededBrokerReports(bd, { hash, broker, coverage, rowCount }) {
+  if (!coverage) return 0;
+  const target = canonicalBrokerImportLabel({ broker });
+  const removeHashes = new Set();
+  for (const f of (bd.files || [])) {
+    if (!f || String(f.hash || "") === String(hash || "")) continue;
+    if (canonicalBrokerImportLabel(f) !== target) continue;
+    const old = brokerStoredSourceCoverage(bd, f.hash);
+    if (!old) continue;
+    const coversOld = coverage.min <= old.min && coverage.max >= old.max;
+    const extendsOld = coverage.min < old.min || coverage.max > old.max;
+    const atLeastAsComplete = parseNum(rowCount) >= parseNum(f.rows);
+    if (coversOld && (extendsOld || atLeastAsComplete)) removeHashes.add(String(f.hash));
+  }
+  if (!removeHashes.size) return 0;
+  bd.files = (bd.files || []).filter(f => !removeHashes.has(String(f?.hash || "")));
+  bd.events = (bd.events || []).filter(e => !removeHashes.has(String(e?.sourceHash || "")));
+  bd.positions = (bd.positions || []).filter(p => !removeHashes.has(String(p?.sourceHash || "")));
+  return removeHashes.size;
+}
+
+function canonicalizeStoredBrokerKeys(bd) {
+  const seenEvents = new Set();
+  bd.events = (bd.events || []).filter(e => {
+    if (!e) return false;
+    const key = brokerEventKey(e);
+    e.key = key;
+    if (seenEvents.has(key)) return false;
+    seenEvents.add(key);
+    return true;
+  });
+  const seenPositions = new Set();
+  bd.positions = (bd.positions || []).filter(p => {
+    if (!p) return false;
+    const key = brokerPositionKey(p);
+    p.key = key;
+    if (seenPositions.has(key)) return false;
+    seenPositions.add(key);
+    return true;
+  });
+}
+
 async function importBrokerFiles(files) {
   const fileArr = Array.from(files || []);
   if (!fileArr.length) throw new Error("Sem ficheiros.");
@@ -8064,6 +8201,7 @@ async function importBrokerFiles(files) {
   const existingEventKeys = new Set();
   const existingPosKeys = new Set();
   const refreshKeySets = () => {
+    canonicalizeStoredBrokerKeys(bd);
     existingEventKeys.clear();
     existingPosKeys.clear();
     (bd.events || []).forEach(e => existingEventKeys.add(e.key));
@@ -8076,7 +8214,8 @@ async function importBrokerFiles(files) {
     const parsed = await parseBrokerImportFile(file);
     const format = parsed.format;
     const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
-    const broker = normalizeBrokerNameFromFile(file.name);
+    const broker = inferBrokerNameFromParsedImport(file.name, parsed);
+    const coverage = brokerParsedCoverage(parsed);
     const meta = {
       hash,
       name: file.name,
@@ -8094,8 +8233,14 @@ async function importBrokerFiles(files) {
     bd.files = (bd.files || []).filter(f => f.hash !== hash);
     bd.events = (bd.events || []).filter(e => e.sourceHash !== hash);
     bd.positions = (bd.positions || []).filter(p => p.sourceHash !== hash);
-    refreshKeySets();
     if (prevCount) replacedFiles++;
+    replacedFiles += purgeSupersededBrokerReports(bd, {
+      hash,
+      broker,
+      coverage,
+      rowCount: brokerImportRows(parsed).length || rows.length || 0
+    });
+    refreshKeySets();
     __recordFileFormat(hash, format);
 
     if (format === "workbook_multi") {
