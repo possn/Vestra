@@ -128,6 +128,10 @@
   }
   function lensEligible(s,lens){
     if(lens==='all')return eligible(s);
+    // Strategy lenses are views over the canonical Discovery universe, not
+    // independent eligibility engines. A backend-rejected name must never
+    // re-enter through a local lens.
+    if(!discoveryEligible(s))return false;
     const p=stats(s),rec=t(s?.recovery_status),est=t(s?.estimate_signal),dir=t(s?.thesis_direction),val=t(s?.valuation_signal);
     if(lens==='low52'){
       const above=low52Above(s);
@@ -460,5 +464,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.12'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.13'});
 })();
