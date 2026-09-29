@@ -11,6 +11,7 @@ class ScoreWeightContractTests(unittest.TestCase):
     def setUpClass(cls):
         cls.score = (ROOT / "scripts" / "score.py").read_text(encoding="utf-8")
         cls.audit = (ROOT / "scripts" / "score_audit.py").read_text(encoding="utf-8")
+        cls.shadow = (ROOT / "scripts" / "score_peer_shadow.py").read_text(encoding="utf-8")
         cls.market = (ROOT / "market.js").read_text(encoding="utf-8")
 
     def test_production_and_dossier_weight_vectors_match(self):
@@ -64,6 +65,17 @@ class ScoreWeightContractTests(unittest.TestCase):
             self.assertIn(model, audit_weights)
             audit_vector = [round(value * 100) for value in audit_weights[model].values()]
             self.assertEqual(audit_vector, weights, f"score audit weights drifted for {model}")
+
+        shadow_tokens = {
+            "bank": "score = weighted([\n        (quality, .22), (efficiency, .13), (asset_quality, .10), (capital, .15),\n        (growth, .15), (value, .15), (income, .05), (stability, .05),\n    ])",
+            "reit": "score = weighted([\n        (quality, .22), (growth, .16), (leverage, .20),\n        (value, .20), (distribution, .17), (stability, .05),\n    ])",
+            "insurance": "score = weighted([\n        (quality, .22), (underwriting, .18), (capital, .18), (growth, .12),\n        (value, .17), (income, .08), (stability, .05),\n    ])",
+            "utility": "score = weighted([\n        (quality, .18), (balance, .22), (income, .18), (value, .17),\n        (growth, .10), (stability, .10), (cashflow, .05),\n    ])",
+            "growth_tech": "score = weighted([\n        (quality, .20), (growth, .22), (balance, .12), (cashflow, .10),\n        (value, .07), (execution, .12), (earnings_quality, .09),\n        (capital_allocation, .05), (stability, .03),\n    ])",
+        }
+        for model, token in shadow_tokens.items():
+            self.assertIn(token, self.shadow, f"peer shadow weights drifted for {model}")
+        self.assertIn("weights\": \"identical to the production specialist pack", self.shadow)
 
     def test_dossier_explains_weights_as_base_weights(self):
         self.assertIn("Os pesos-base do modelo", self.market)
