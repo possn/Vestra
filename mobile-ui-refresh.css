@@ -49,3 +49,21 @@
   }
   .modal__close{flex:0 0 auto;touch-action:manipulation}
 }
+
+
+/* iPhone interaction fast path — fixed chrome must not continuously recomposite the page behind it. */
+@media(max-width:899px){
+  .topbar,.bottomnav{
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+  }
+  .topbar{background:rgba(222,224,218,.995)!important}
+  .bottomnav{background:rgba(222,224,218,.995)!important}
+  .bottomnav .navbtn,.topbar button,.topbar .fab{
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .bottomnav .navbtn{
+    transition:transform .07s ease,color .07s ease!important;
+  }
+}
