@@ -190,6 +190,13 @@ def assess(row: dict) -> dict:
         tags = ["best_opportunities"] + [x for x in (base.get("scanner_tags") or []) if x != "best_opportunities"]
         base["scanner_results"] = scanner_results
         base["scanner_tags"] = tags
-        base["scanner_best"] = "best_opportunities"
-        base["scanner_best_score"] = round(opp, 1)
+        ranked_results = [
+            (key, item, _n(item.get("score")))
+            for key, item in scanner_results.items()
+            if isinstance(item, dict) and _n(item.get("score")) is not None
+        ]
+        if ranked_results:
+            best_key, _best_item, best_score = max(ranked_results, key=lambda item: item[2])
+            base["scanner_best"] = best_key
+            base["scanner_best_score"] = round(best_score, 1)
     return base
