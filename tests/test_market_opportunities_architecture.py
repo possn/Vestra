@@ -26,7 +26,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
     def test_canonical_opportunity_engine_keeps_v453_contract(self):
         source = read('market-opportunities.js')
         for token in (
-            "const LEGACY_LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE=54",
+            "const LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE=54",
             "function discoveryEligible(s)",
             "if(publishedEligible!==null)return publishedEligible",
             "if(!discoveryEligible(s))return false",
