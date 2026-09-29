@@ -71,6 +71,8 @@ class ScoreWeightContractTests(unittest.TestCase):
             "reit": "score = weighted([\n        (quality, .22), (growth, .16), (leverage, .20),\n        (value, .20), (distribution, .17), (stability, .05),\n    ])",
             "insurance": "score = weighted([\n        (quality, .22), (underwriting, .18), (capital, .18), (growth, .12),\n        (value, .17), (income, .08), (stability, .05),\n    ])",
             "utility": "score = weighted([\n        (quality, .18), (balance, .22), (income, .18), (value, .17),\n        (growth, .10), (stability, .10), (cashflow, .05),\n    ])",
+            "energy": "score = weighted([\n        (quality, .20), (cashflow, .22), (balance, .18), (value, .20),\n        (growth, .10), (stability, .10),\n    ])",
+            "biotech": "score = weighted([\n        (runway_score, .25), (net_cash, .15), (dilution, .20),\n        (growth, .20), (quality, .10), (stability, .10),\n    ])",
             "growth_tech": "score = weighted([\n        (quality, .20), (growth, .22), (balance, .12), (cashflow, .10),\n        (value, .07), (execution, .12), (earnings_quality, .09),\n        (capital_allocation, .05), (stability, .03),\n    ])",
         }
         for model, token in shadow_tokens.items():
