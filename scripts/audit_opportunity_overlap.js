@@ -70,9 +70,16 @@ function shortlistDiagnostics(rows) {
       lens, rows.filter(stock => api.lensEligible(stock, lens)).length,
     ])
   );
+  const unknownTickers = key => rows
+    .filter(stock => !String(stock?.[key] || '').trim())
+    .map(stock => String(stock?.ticker || '').trim())
+    .filter(Boolean)
+    .sort();
   return {
     sector_counts: sectors,
     industry_counts: industries,
+    unknown_sector_tickers: unknownTickers('sector'),
+    unknown_industry_tickers: unknownTickers('industry'),
     dominant_sleeve_counts: drivers,
     sleeve_score_summary: sleeveSummary,
     archetype_counts: archetypes,
@@ -193,6 +200,16 @@ function opportunityFunnel(rows) {
     actionable_support: countBy(actionable, 'opportunity_upside_support'),
     actionable_risk_gate: countBy(actionable, 'risk_gate'),
     actionable_sectors: countBy(actionable, 'sector'),
+    actionable_unknown_sector_tickers: actionable
+      .filter(row => !String(row?.sector || '').trim())
+      .map(row => String(row?.ticker || '').trim())
+      .filter(Boolean)
+      .sort(),
+    actionable_unknown_industry_tickers: actionable
+      .filter(row => !String(row?.industry || '').trim())
+      .map(row => String(row?.ticker || '').trim())
+      .filter(Boolean)
+      .sort(),
   };
 }
 
