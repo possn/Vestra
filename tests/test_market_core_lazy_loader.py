@@ -17,7 +17,7 @@ class LazyMarketCoreTests(unittest.TestCase):
         self.assertNotIn('src="market.js?v=20260831v2"', self.index)
         self.assertIn('src="market-runtime-loader.js?v=2.1"', self.index)
         self.assertNotIn('src="portfolio-sheet-navigation.js', self.index)
-        self.assertIn('portfolio-sheet-navigation.js?v=1.6', self.loader)
+        self.assertIn('portfolio-sheet-navigation.js?v=1.7', self.loader)
         self.assertNotIn('src="market-data-loader.js', self.index)
         self.assertIn('market-data-loader.js?v=2.6', self.loader)
 
@@ -46,7 +46,7 @@ class LazyMarketCoreTests(unittest.TestCase):
         self.assertIn("api.ensureLoaded()", self.loader)
 
     def test_portfolio_helpers_load_in_dependency_order_before_core(self):
-        navigation = self.loader.index("portfolio-sheet-navigation.js?v=1.6")
+        navigation = self.loader.index("portfolio-sheet-navigation.js?v=1.7")
         dossier_data = self.loader.index("market-data-loader.js?v=2.6", navigation)
         collapsibles = self.loader.index("portfolio-collapsibles.js?v=1.7", navigation)
         classifier = self.loader.index("portfolio-card-classifier.js?v=1.9", collapsibles)
