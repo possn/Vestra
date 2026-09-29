@@ -142,12 +142,15 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
             "cohort_capture_pct": 100,
             "median_cohort_rank_ic": 0.08,
             "median_cohort_top_minus_bottom_pct": 4.0,
+            "median_cohort_robust_spread_pct": 4.0,
             "peer_shadow_comparison": {
                 "cohort_count": 8,
                 "median_production_cohort_rank_ic": 0.08,
                 "median_peer_shadow_cohort_rank_ic": 0.12,
                 "median_production_cohort_top_minus_bottom_pct": 4.0,
                 "median_peer_shadow_cohort_top_minus_bottom_pct": 5.0,
+                "median_production_cohort_robust_spread_pct": 4.0,
+                "median_peer_shadow_cohort_robust_spread_pct": 5.0,
             },
         }
         result = MOD.score_v2_readiness({"28": strong, "84": {}, "168": {}})
@@ -162,12 +165,15 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
                 "cohort_capture_pct": 90,
                 "median_cohort_rank_ic": 0.06,
                 "median_cohort_top_minus_bottom_pct": 3.0,
+                "median_cohort_robust_spread_pct": 3.0,
                 "peer_shadow_comparison": {
                     "cohort_count": 8,
                     "median_production_cohort_rank_ic": 0.06,
                     "median_peer_shadow_cohort_rank_ic": 0.10,
                     "median_production_cohort_top_minus_bottom_pct": 3.0,
                     "median_peer_shadow_cohort_top_minus_bottom_pct": 3.5,
+                    "median_production_cohort_robust_spread_pct": 3.0,
+                    "median_peer_shadow_cohort_robust_spread_pct": 3.5,
                 },
             }
         result = MOD.score_v2_readiness({"28": strong(), "84": strong(), "168": {}})
@@ -176,18 +182,66 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(result["qualified_horizons"], [28, 84])
         self.assertIn("permits review, not deployment", result["rule"])
 
+    def test_summary_exposes_winsorized_cohort_spread_for_readiness(self):
+        rows = []
+        for i in range(100):
+            score = 100 - i
+            realised = 5.0 if i < 20 else (1.0 if i >= 80 else 2.0)
+            rows.append({
+                "cohort_date": "2026-08-02",
+                "ticker": f"T{i}",
+                "score": score,
+                "return_pct": realised,
+                "score_model": "general",
+                "sector": "Technology",
+            })
+        rows[0]["return_pct"] = 1000.0
+        summary = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
+        self.assertGreater(summary["median_cohort_top_minus_bottom_pct"], 40)
+        self.assertEqual(summary["median_cohort_robust_spread_pct"], 4.0)
+        self.assertGreater(
+            summary["median_cohort_top_minus_bottom_pct"],
+            summary["median_cohort_robust_spread_pct"] * 10,
+        )
+        self.assertEqual(summary["positive_robust_spread_cohorts"], 1)
+
+    def test_score_v2_readiness_uses_robust_not_raw_spread(self):
+        def pack():
+            return {
+                "cohort_count": 8,
+                "cohort_capture_pct": 100,
+                "median_cohort_rank_ic": 0.08,
+                "median_cohort_top_minus_bottom_pct": -20.0,
+                "median_cohort_robust_spread_pct": 4.0,
+                "peer_shadow_comparison": {
+                    "cohort_count": 8,
+                    "median_production_cohort_rank_ic": 0.08,
+                    "median_peer_shadow_cohort_rank_ic": 0.12,
+                    "median_production_cohort_top_minus_bottom_pct": -20.0,
+                    "median_peer_shadow_cohort_top_minus_bottom_pct": -25.0,
+                    "median_production_cohort_robust_spread_pct": 4.0,
+                    "median_peer_shadow_cohort_robust_spread_pct": 5.0,
+                },
+            }
+        result = MOD.score_v2_readiness({"28": pack(), "84": pack(), "168": {}})
+        self.assertEqual(result["status"], "candidate_review_allowed")
+        self.assertEqual(result["qualified_horizons"], [28, 84])
+
     def test_score_v2_readiness_rejects_shadow_improvement_with_worse_spread(self):
         pack = {
             "cohort_count": 8,
             "cohort_capture_pct": 100,
             "median_cohort_rank_ic": 0.08,
             "median_cohort_top_minus_bottom_pct": 4.0,
+            "median_cohort_robust_spread_pct": 4.0,
             "peer_shadow_comparison": {
                 "cohort_count": 8,
                 "median_production_cohort_rank_ic": 0.08,
                 "median_peer_shadow_cohort_rank_ic": 0.14,
                 "median_production_cohort_top_minus_bottom_pct": 4.0,
                 "median_peer_shadow_cohort_top_minus_bottom_pct": 2.0,
+                "median_production_cohort_robust_spread_pct": 4.0,
+                "median_peer_shadow_cohort_robust_spread_pct": 2.0,
             },
         }
         result = MOD.score_v2_readiness({"28": pack, "84": pack, "168": {}})
