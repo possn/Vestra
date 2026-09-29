@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.5 — instant dossier open + portfolio close/return rules. */
+/* Vestra Portfolio Sheet Navigation v1.6 — instant dossier open + scoped repair scheduling. */
 (() => {
   'use strict';
-  const VERSION='1.5';
+  const VERSION='1.6';
   // Normal companion navigation is guarded to flow through VestraNavigation.openCompany().
   let pending=false;
   let openingFromPortfolio=false;
@@ -209,8 +209,18 @@
     ensureStyles(); repair();
     const sh=sheet();
     if(!sh) return;
-    const mo=new MutationObserver(()=>{
-      if(pending)return;
+    const mutationNeedsRepair=mutation=>{
+      if(!mutation) return false;
+      if(mutation.type==='childList') return true;
+      if(mutation.type!=='attributes') return false;
+      if(mutation.target===sh) return true;
+      const target=mutation.target;
+      return target?.parentElement===sh && target?.matches?.('[data-market-close].market-close-persistent');
+    };
+    const mo=new MutationObserver(mutations=>{
+      // The dossier changes many descendant classes while tabs/cards update.
+      // Those presentation mutations do not require a full navigation repair.
+      if(!mutations.some(mutationNeedsRepair) || pending) return;
       pending=true;
       requestAnimationFrame(()=>{pending=false;repair();});
     });
