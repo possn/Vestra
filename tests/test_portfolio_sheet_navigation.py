@@ -10,7 +10,7 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         index=read("index.html")
         loader=read("market-runtime-loader.js")
         self.assertNotIn('src="portfolio-sheet-navigation.js',index)
-        self.assertIn("loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.6')",loader)
+        self.assertIn("loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.7')",loader)
         self.assertNotIn('portfolio-navigation-fix.js',index)
         self.assertNotIn('market-close-controller.js',index)
 
@@ -29,8 +29,11 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         self.assertEqual(s.count('new MutationObserver'),1)
         self.assertIn("mutations.some(mutationNeedsRepair)",s)
         self.assertIn("mutation.type==='childList'",s)
-        self.assertIn("mutation.target===sh",s)
-        self.assertIn("target?.parentElement===sh",s)
+        self.assertIn("mutation.target===sh || mutation.target===c",s)
+        self.assertIn("mutation.type==='attributes' && mutation.target===sh && mutation.attributeName==='hidden'",s)
+        self.assertIn("mo.observe(sh,{childList:true,attributes:true,attributeFilter:['hidden']})",s)
+        self.assertIn("if(c) mo.observe(c,{childList:true})",s)
+        self.assertNotIn("subtree:true",s)
         self.assertIn("market-close-persistent",s)
         self.assertIn('window.VestraPortfolioSheetNavigation',s)
 
