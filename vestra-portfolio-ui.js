@@ -127,7 +127,7 @@
     const guide=tabs.querySelector('.vpu-optimize-guide'); if(guide)guide.hidden=!expanded||active!=='optimize';
     c.querySelectorAll('.market-detail-card[data-collapsible="1"],[data-ux-kind]').forEach(el=>{const g=classify(el);if(!g)return;el.classList.add('vpu-section-card');el.dataset.vpuGroup=g;el.classList.toggle('vpu-hidden',!expanded||g!==active);});
     syncGroupScan(c,tabs);
-    const btn=reveal.querySelector('[data-vpu-toggle]'),label=expanded?'Fechar':'Começar'; if(btn&&btn.textContent!==label)btn.textContent=label;
+    const btn=reveal.querySelector('[data-vpu-toggle]'),label=expanded?'Fechar ×':'Começar'; if(btn&&btn.textContent!==label)btn.textContent=label;
   }
   function focusCard(c,target){
     if(!target)return null;
