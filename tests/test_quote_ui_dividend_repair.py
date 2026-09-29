@@ -32,7 +32,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     a=read('app.js')
     self.assertIn('for (const e of events) {',a)
     self.assertIn('const net = e.type === "DIVIDEND_ADJ" ? rawNet : Math.max(0, rawNet);',a)
-    self.assertIn('const BROKER_REBUILD_SCHEMA_VERSION = 47;',a)
+    self.assertIn('const BROKER_REBUILD_SCHEMA_VERSION = 48;',a)
   def test_real_t212_semantics_examples(self):
     pfe_gross=5.23; pfe_tax_usd=1.00; pfe_fx=0.924978
     self.assertAlmostEqual(pfe_gross-pfe_tax_usd*pfe_fx,4.305022,places=6)
@@ -43,7 +43,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     self.assertIn('parseNum(d.amount) - tax',norm)
   def test_bundle_generation(self):
     i=read('index.html'); sw=read('sw.js')
-    self.assertIn('app-broker-parsing-core.js?v=1.3',i)
+    self.assertIn('app-broker-parsing-core.js?v=1.4',i)
     self.assertIn('app-asset-identity.js?v=20260829v2',i)
     self.assertIn('app.js?v=20260926v13',i)
     self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
