@@ -47,3 +47,47 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   await expect(sheet.locator('.market-detail-head h2')).toHaveText('As minhas posições');
   await expect(sheet).not.toContainText('CF Industries · ENTRY 90');
 });
+
+
+test('iPhone/WebKit: expanded portfolio explorer keeps close controls reachable and owns the viewport', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.setView === 'function');
+  await page.evaluate(() => window.setView('market'));
+  await page.waitForFunction(() => window.VestraMarket?.ensureLoaded);
+  await page.evaluate(() => window.VestraMarket.ensureLoaded());
+
+  await page.evaluate(() => {
+    const sentinel = document.createElement('div');
+    sentinel.id = 'explorerUnderlyingSentinel';
+    sentinel.textContent = 'UNDERLYING MARKET MUST NOT BLEED';
+    sentinel.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:120px;z-index:1;background:red';
+    document.getElementById('viewMarket').appendChild(sentinel);
+  });
+
+  await page.locator('[data-market-tool="portfolio"]').first().click();
+  const sheet = page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
+
+  const toggle = sheet.locator('[data-vpu-toggle]').first();
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+  await expect(sheet.locator('.vpu-tabs-shell')).toBeVisible();
+
+  const inflation = sheet.locator('[data-ux-kind="inflation"]');
+  if (await inflation.count()) {
+    await sheet.locator('[data-vpu-tab="monitor"]').click();
+    await inflation.scrollIntoViewIfNeeded();
+  } else {
+    await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  }
+
+  await expect(sheet.locator('.vpu-tabs-head [data-vpu-toggle]')).toBeVisible();
+  expect(await page.evaluate(() => {
+    const top = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 12);
+    return Boolean(top?.closest('#marketSheet'));
+  })).toBeTruthy();
+  await expect(sheet).not.toContainText('UNDERLYING MARKET MUST NOT BLEED');
+
+  await sheet.locator('.vpu-tabs-head [data-vpu-toggle]').click();
+  await expect(sheet.locator('.vpu-tabs-shell')).toBeHidden();
+});
