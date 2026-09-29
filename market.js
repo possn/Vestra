@@ -332,18 +332,22 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const moreSectors = sectors.filter(x=>!visibleSectors.includes(x));
     const hiddenActive = M.sector!=='all' && !visibleSectors.includes(M.sector);
     const qs = M.query.toLowerCase();
-    let rows = M.stocks.filter(s=>!isFund(s));
-    if(qs) rows=rows.filter(s=>`${s.ticker} ${s.name} ${s.sector} ${s.industry}`.toLowerCase().includes(qs));
-    else rows=rows.filter(s=>n(s.opportunity_score)!=null && s.opportunity_eligible===true && n(s.opportunity_timing_score)>=55 && s.opportunity_overextended!==true && n(s.data_coverage_pct)>=55 && n(s.confidence_score)>=50 && txt(s.zombie)!=='yes');
-    if(M.sector!=='all') rows=rows.filter(s=>s.sector===M.sector);
-    if(!qs){
-      rows.sort((a,b)=>{
-        const ob=n(b.opportunity_score)||0, oa=n(a.opportunity_score)||0;
-        if(ob!==oa) return ob-oa;
-        return (n(b.opportunity_timing_score)||0)-(n(a.opportunity_timing_score)||0);
-      });
-    } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
-    rows=rows.slice(0,20);
+    const canonicalOpportunityRenderer=!qs&&!!window.VestraMarketOpportunities?.refresh;
+    let rows = [];
+    if(!canonicalOpportunityRenderer){
+      rows=M.stocks.filter(s=>!isFund(s));
+      if(qs) rows=rows.filter(s=>`${s.ticker} ${s.name} ${s.sector} ${s.industry}`.toLowerCase().includes(qs));
+      else rows=rows.filter(s=>n(s.opportunity_score)!=null && s.opportunity_eligible===true && n(s.opportunity_timing_score)>=55 && s.opportunity_overextended!==true && n(s.data_coverage_pct)>=55 && n(s.confidence_score)>=50 && txt(s.zombie)!=='yes');
+      if(M.sector!=='all') rows=rows.filter(s=>s.sector===M.sector);
+      if(!qs){
+        rows.sort((a,b)=>{
+          const ob=n(b.opportunity_score)||0, oa=n(a.opportunity_score)||0;
+          if(ob!==oa) return ob-oa;
+          return (n(b.opportunity_timing_score)||0)-(n(a.opportunity_timing_score)||0);
+        });
+      } else rows.sort((a,b)=>(n(b.score)||0)-(n(a.score)||0));
+      rows=rows.slice(0,20);
+    }
     return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Oportunidades emergentes · empresas robustas com momentum a começar, sem preço excessivamente esticado'}</p></div><span class="market-data-age">${ageText()}</span></div>
       ${!qs&&M.sector==='all'?renderWeeklyRotation():''}
       <div class="market-sector-grid" role="group" aria-label="Setores">
@@ -351,7 +355,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         ${visibleSectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}" title="${esc(x)}">${esc(x)}</button>`).join('')}
         <label class="market-sector-more ${hiddenActive?'is-active':''}"><span>${hiddenActive?esc(M.sector):'Mais'}</span><select data-market-sector-select aria-label="Mais setores"><option value="">Mais setores</option>${moreSectors.map(x=>`<option value="${esc(x)}" ${M.sector===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
       </div>
-      <div class="market-list">${rows.length?rows.map(s=>renderRow(s,qs?'':[`Opportunity ${Math.round(n(s.opportunity_score))}/100`,txt(s.opportunity_label),txt(s.opportunity_timing_label),n(s.opportunity_timing_score)!=null?`Momento ${Math.round(n(s.opportunity_timing_score))}/100`:'',n(s.opportunity_return_20d_pct)!=null?`20d ${n(s.opportunity_return_20d_pct)>=0?'+':''}${num(s.opportunity_return_20d_pct)}%`:''].filter(Boolean).join(' · '),qs?null:s.opportunity_score)).join(''):'<div class="market-empty market-empty--filters"><strong>Sem resultados neste filtro.</strong><span>Experimenta outro setor ou remove a pesquisa.</span></div>'}</div></section>`;
+      <div class="market-list">${canonicalOpportunityRenderer?'':rows.length?rows.map(s=>renderRow(s,qs?'':[`Opportunity ${Math.round(n(s.opportunity_score))}/100`,txt(s.opportunity_label),txt(s.opportunity_timing_label),n(s.opportunity_timing_score)!=null?`Momento ${Math.round(n(s.opportunity_timing_score))}/100`:'',n(s.opportunity_return_20d_pct)!=null?`20d ${n(s.opportunity_return_20d_pct)>=0?'+':''}${num(s.opportunity_return_20d_pct)}%`:''].filter(Boolean).join(' · '),qs?null:s.opportunity_score)).join(''):'<div class="market-empty market-empty--filters"><strong>Sem resultados neste filtro.</strong><span>Experimenta outro setor ou remove a pesquisa.</span></div>'}</div></section>`;
   }
 
 
@@ -535,6 +539,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
     root.dataset.metalsActive='0';
     root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover();
+    if(M.mode==='discover'&&!M.query&&window.VestraMarketOpportunities?.refresh){
+      // Direct handoff avoids rendering a disposable native shortlist and then
+      // replacing it one animation frame later via the companion observer.
+      window.VestraMarketOpportunities.refresh();
+    }
   }
 
   const marketSearchSuggestions = window.VestraMarketSearchSuggestions?.create({
