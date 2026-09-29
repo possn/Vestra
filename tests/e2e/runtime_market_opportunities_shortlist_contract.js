@@ -1,3 +1,4 @@
+// CI-executed runtime contract for the canonical Opportunity shortlist.
 const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
