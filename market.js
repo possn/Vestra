@@ -1164,9 +1164,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(thesis==='up') reasons.push('tese a melhorar');
     if(estimates==='improving') reasons.push('expectativas a melhorar');
     if(conf!=null&&conf<60) reasons.push('confiança limitada');
-    if(ctx.indirectPct>=2) reasons.push(`overlap indireto ${ctx.indirectPct.toFixed(1)}%`);
-    if(ctx.positionPct>=10) reasons.push(`peso ${ctx.positionPct.toFixed(0)}%`);
-    if(ctx.sectorPct>=28) reasons.push(`setor ${ctx.sectorPct.toFixed(0)}%`);
+    // Portfolio construction context must come from portfolioFit(), which already
+    // applies the user's current targets and overlap policy. Do not reintroduce
+    // fixed thresholds here or the explanation can disagree with the decision.
+    if(Array.isArray(ctx.flags)) reasons.push(...ctx.flags.slice(0,2));
     const structuralDeterioration=gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50);
     if(alt && alt.portfolioFit!=='worse' && structuralDeterioration) {
       const fitNote=alt.portfolioFit==='better'?' · melhora diversificação':'';
