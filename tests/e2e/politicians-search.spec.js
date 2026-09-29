@@ -1,5 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
+// This test mocks disclosure feeds via routing; a controlling PWA service worker
+// can satisfy those requests before Playwright sees them, making the fixture nondeterministic.
+test.use({ serviceWorkers: 'block' });
+
 async function waitForLaunch(page) {
   await page.goto('/index.html');
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 10_000 });
