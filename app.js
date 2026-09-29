@@ -11086,6 +11086,10 @@ function getRawTickerForAssetSafe(asset) {
   return "";
 }
 
+const QUOTE_NATIVE_CURRENCY_OVERRIDES = Object.freeze({
+  "IB1T.DE": "EUR",
+});
+
 function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "") {
   if (!asset || !q || !Number.isFinite(priceEur) || priceEur <= 0) return { ok:false, reason:"Cotação inválida" };
 
@@ -11098,9 +11102,11 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "
   // priceCurrency. That is accounting currency, not evidence that GOOGL/TSLA/LSE
   // instruments themselves trade in EUR. Only a non-base broker price currency is
   // strong enough to veto Yahoo here; manual assets keep their explicit currency guard.
-  const assetCcy = asset.generatedFromBroker
+  const normalizedRawTicker = String(rawTicker || "").trim().toUpperCase();
+  const nativeCurrencyOverride = QUOTE_NATIVE_CURRENCY_OVERRIDES[normalizedRawTicker] || "";
+  const assetCcy = nativeCurrencyOverride || (asset.generatedFromBroker
     ? ((storedPriceCcy && storedPriceCcy !== portfolioCcy) ? storedPriceCcy : "")
-    : (storedPriceCcy || storedAssetCcy);
+    : (storedPriceCcy || storedAssetCcy));
   if (assetCcy && quoteCcy && assetCcy !== quoteCcy && !(assetCcy === "GBX" && quoteCcy === "GBP")) {
     if (!String(rawTicker || "").includes("=") && !String(rawTicker || "").endsWith("-USD")) {
       return { ok:false, reason:`Cotação suspeita: moeda ${quoteCcy} não coincide com ${assetCcy}` };
@@ -11605,6 +11611,16 @@ function strictVenueSuffixForAsset(asset) {
 function isQuoteCandidateAcceptable(asset, candidate) {
   if (!asset) return true;
   const cand = normalizeResolvedYahoo(candidate);
+  const clsNorm = String(asset.class || "").trim().toLowerCase();
+  if (clsNorm === "cripto" || clsNorm === "crypto") {
+    const rawCrypto = String(asset.ticker || asset.symbol || "").trim();
+    const cryptoName = String(asset.name || "").trim();
+    const cryptoHead = cryptoName.split(/[—\-·]/)[0].trim();
+    const cryptoExpected = normalizeResolvedYahoo(
+      cryptoToYahoo(rawCrypto) || cryptoToYahoo(cryptoName) || cryptoToYahoo(cryptoHead) || ""
+    );
+    return !!cryptoExpected && cand === cryptoExpected;
+  }
   const known = normalizeResolvedYahoo(getKnownBrokerYahooOverride({
     isin: asset.isin || "",
     ticker: asset.ticker || "",
@@ -11824,6 +11840,8 @@ async function fetchQuoteWithFallback(ref) {
     // of the portfolio accounting currency carried by older imports.
     asset.yahooTicker = _resolvedYahoo || yahoo || asset.yahooTicker || "";
     if (asset.generatedFromBroker && ccy) asset.priceCurrency = ccy;
+    const resolvedQuoteTicker = String(_resolvedYahoo || yahoo || "").trim().toUpperCase();
+    if (ccy && QUOTE_NATIVE_CURRENCY_OVERRIDES[resolvedQuoteTicker]) asset.priceCurrency = ccy;
 
     const priceLabel = ccy === "EUR"
       ? fmtEUR2(priceEur)

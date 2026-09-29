@@ -14,6 +14,21 @@ class RemainingQuoteIdentityTests(unittest.TestCase):
         self.assertIn('const splitFactors = [2, 3, 4, 5, 10, 20]',a)
         self.assertIn('explicitIdentity && splitLike',a)
         self.assertIn('Cotação suspeita rejeitada',a)
+    def test_crypto_candidates_use_crypto_identity_not_equity_identity(self):
+        a=read("app.js")
+        block=a[a.index("function isQuoteCandidateAcceptable"):a.index("async function fetchQuoteWithFallback")]
+        self.assertIn('clsNorm === "cripto" || clsNorm === "crypto"', block)
+        self.assertIn("cryptoToYahoo(rawCrypto)", block)
+        self.assertIn("return !!cryptoExpected && cand === cryptoExpected", block)
+        for ticker in ("STX", "ATOM", "NEAR", "POL"):
+            self.assertIn(f'"{ticker}"', read("app-asset-identity.js"))
+
+    def test_ib1t_native_quote_currency_is_repaired_narrowly(self):
+        a=read("app.js")
+        self.assertIn('"IB1T.DE": "EUR"', a)
+        self.assertIn("QUOTE_NATIVE_CURRENCY_OVERRIDES[normalizedRawTicker]", a)
+        self.assertIn("QUOTE_NATIVE_CURRENCY_OVERRIDES[resolvedQuoteTicker]", a)
+
     def test_fresh_bundle(self):
         self.assertIn('app.js?v=20260926v13',read('index.html'))
         sw=read('sw.js')

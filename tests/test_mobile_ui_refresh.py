@@ -55,6 +55,13 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         self.assertNotIn('localStorage', self.source)
         self.assertNotIn('indexedDB', self.source)
 
+    def test_mobile_close_controls_remain_visible_during_scroll(self):
+        self.assertIn('Persistent close controls', self.styles)
+        self.assertIn('.modal__head{', self.styles)
+        self.assertIn('position:sticky', self.styles)
+        self.assertIn('#marketSheet:not([hidden])>.market-close-persistent{', self.styles)
+        self.assertIn('z-index:2147483646!important', self.styles)
+
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn('ensureMobileUiRefresh', self.loader)
         self.assertIn('mobile-ui-refresh.js?v=1.4', self.loader)

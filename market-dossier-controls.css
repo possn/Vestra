@@ -61,3 +61,17 @@
 #marketSheet[hidden] > .market-close-persistent,
 #marketSheet[hidden] > .market-watch--detail,
 #marketSheet[hidden] #marketSheetContent .market-detail-actions{display:none!important}
+
+/* iPhone dossier action pair: keep favorite and persistent close on the same reachable row. */
+@media(max-width:899px){
+  #marketSheet[data-ticker]:not([data-ticker=""]) > .market-watch--detail,
+  #marketSheet[data-ticker]:not([data-ticker=""]) > .market-close-persistent{
+    top:max(calc(env(safe-area-inset-top,0px) + 62px),72px)!important;
+  }
+  #marketSheet[data-ticker]:not([data-ticker=""]) > .market-watch--detail{
+    right:max(calc(env(safe-area-inset-right,0px) + 66px),66px)!important;
+  }
+  #marketSheet[data-ticker]:not([data-ticker=""]) > .market-close-persistent{
+    right:max(calc(env(safe-area-inset-right,0px) + 14px),14px)!important;
+  }
+}
