@@ -1719,9 +1719,7 @@
         window.__vestraSwReloadScheduled = true;
         const externalReturn = document.documentElement.dataset.externalReturnBootstrap === '1';
         const url = new URL(window.location.href);
-        const alreadyReloaded = sessionStorage.getItem('vestra:sw-reloaded') === '1';
-        if (!externalReturn && !alreadyReloaded) {
-          sessionStorage.setItem('vestra:sw-reloaded', '1');
+        if (!externalReturn) {
           url.searchParams.set('_sw', Date.now().toString(36));
           setTimeout(() => window.location.replace(url.toString()), 80);
         }
