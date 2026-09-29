@@ -1426,18 +1426,39 @@ function dashboardPrivacyEnabled() {
   return !!(state.settings && state.settings.hideDashboardValues);
 }
 
-function maskDashboardMoneyText(root) {
-  if (!root) return;
-  const moneyRx = /([+\-−]?\s*)\d[\d\s.,]*(\s*€)(\/(?:ano|mês))?/gi;
+const dashboardPrivacyOriginalText = new WeakMap();
+
+function dashboardMoneyTextNodes(root) {
+  if (!root) return [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes = [];
   while (walker.nextNode()) nodes.push(walker.currentNode);
-  for (const node of nodes) {
+  return nodes;
+}
+
+function maskDashboardMoneyText(root) {
+  if (!root) return;
+  const moneyRx = /([+\-−]?\s*)\d[\d\s.,]*(\s*€)(\/(?:ano|mês))?/gi;
+  for (const node of dashboardMoneyTextNodes(root)) {
     const source = node.nodeValue || "";
     if (!source.includes("€")) continue;
-    node.nodeValue = source.replace(moneyRx, (_all, sign, _eur, cadence) =>
+    const masked = source.replace(moneyRx, (_all, sign, _eur, cadence) =>
       `${sign || ""}•••• €${cadence || ""}`
     );
+    if (masked === source) continue;
+    // Keep the latest real value for this exact text node. Dashboard renders can
+    // replace values while privacy is active; the next mask refreshes the source.
+    dashboardPrivacyOriginalText.set(node, source);
+    node.nodeValue = masked;
+  }
+}
+
+function restoreDashboardMoneyText(root) {
+  if (!root) return;
+  for (const node of dashboardMoneyTextNodes(root)) {
+    if (!dashboardPrivacyOriginalText.has(node)) continue;
+    node.nodeValue = dashboardPrivacyOriginalText.get(node);
+    dashboardPrivacyOriginalText.delete(node);
   }
 }
 
@@ -1467,17 +1488,28 @@ function applyDashboardPrivacy() {
     note.remove();
   }
 
-  if (!hidden) return;
-  maskDashboardMoneyText(view);
-  maskDashboardMoneyText(document.getElementById("passivebar"));
+  if (hidden) {
+    maskDashboardMoneyText(view);
+    maskDashboardMoneyText(document.getElementById("passivebar"));
+  } else {
+    restoreDashboardMoneyText(view);
+    restoreDashboardMoneyText(document.getElementById("passivebar"));
+  }
 }
 
 function toggleDashboardPrivacy() {
   if (!state.settings) state.settings = {};
   state.settings.hideDashboardValues = !dashboardPrivacyEnabled();
-  saveState();
-  markViewsDirty(["dashboard"]);
-  renderDashboard();
+
+  // Privacy is a presentation toggle, not a financial-data render. Apply the
+  // visual state synchronously so the tap is reflected in the same frame.
+  applyDashboardPrivacy();
+
+  // Persistence is deliberately moved off the tap task. Re-rendering the whole
+  // Dashboard here made this control wait for charts and portfolio calculations.
+  setTimeout(() => {
+    try { saveState(); } catch (_) {}
+  }, 0);
 }
 
 function renderDashboard() {
