@@ -47,6 +47,8 @@
     return clamp(x);
   }
   function eligible(s){
+    const qt=t(s?.quote_type||s?.quoteType).toUpperCase();
+    if(['ETF','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const publishedEligible=typeof s?.opportunity_eligible==='boolean'?s.opportunity_eligible:null;
     const publishedScore=n(s?.opportunity_score);
     if(publishedEligible!==null){
@@ -55,7 +57,6 @@
     }
     // Legacy fallback only: modern payloads publish the canonical Opportunity
     // eligibility/score from scripts/opportunity_rank.py.
-    const qt=t(s?.quote_type||s?.quoteType).toUpperCase();if(['ETF','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const sc=n(s?.score),cov=n(s?.data_coverage_pct),conf=n(s?.confidence_score),crit=n(s?.critical_metric_coverage_pct),rel=t(s?.score_reliability).toLowerCase(),risk=t(s?.risk_gate).toLowerCase();
     if(sc==null||sc<58||cov==null||cov<55||conf==null||conf<50)return false;
     if(crit!=null&&crit<35)return false;
@@ -109,7 +110,7 @@
     return current!=null&&current>0&&low!=null&&low>0?(current/low-1)*100:null;
   }
   function coreCandidate(s,{scoreMin=54,coverageMin=50,confidenceMin=45,criticalMin=30}={}){
-    const qt=t(s?.quote_type||s?.quoteType).toUpperCase();if(['ETF','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
+    const qt=t(s?.quote_type||s?.quoteType).toUpperCase();if(['ETF','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const sc=n(s?.score),cov=n(s?.data_coverage_pct),conf=n(s?.confidence_score),crit=n(s?.critical_metric_coverage_pct),rel=t(s?.score_reliability).toLowerCase(),risk=t(s?.risk_gate).toLowerCase();
     if(sc==null||sc<scoreMin||cov==null||cov<coverageMin||conf==null||conf<confidenceMin)return false;
     if(crit!=null&&crit<criticalMin)return false;

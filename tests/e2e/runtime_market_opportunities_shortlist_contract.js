@@ -86,4 +86,19 @@ function candidate(ticker, score, sector, industry) {
   assert([...industryCounts.values()].every(x => x <= 2), 'industry cap must remain <=2');
 }
 
+{
+  for (const quoteType of ['ETF','CRYPTO','CRYPTOCURRENCY','MUTUALFUND']) {
+    const blocked = candidate(`BLOCKED-${quoteType}`, 99, 'Technology', 'Software');
+    blocked.quote_type = quoteType;
+    blocked.opportunity_eligible = true;
+    const rows = api.rankLens([blocked], 'all', {limit: 12, sector: 'all'});
+    assert.strictEqual(rows.length, 0,
+      `${quoteType} must stay excluded even if stale payload marks it opportunity_eligible`);
+    for (const lens of ['low52','emerging','recovery','value']) {
+      assert.strictEqual(api.lensEligible(blocked, lens), false,
+        `${quoteType} must stay excluded from ${lens} lens`);
+    }
+  }
+}
+
 console.log('opportunity shortlist runtime contract: ok');

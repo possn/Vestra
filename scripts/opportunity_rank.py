@@ -451,7 +451,7 @@ def _insufficient(reason, components=None, gates=None, timing=None):
 
 def assess(row: dict) -> dict:
     quote_type = str(row.get("quote_type") or "").upper()
-    if quote_type in ("ETF", "CRYPTO", "MUTUALFUND"):
+    if quote_type in ("ETF", "CRYPTO", "CRYPTOCURRENCY", "MUTUALFUND"):
         return _insufficient("Instrumento fora do ranking de ações", gates=[
             _gate("equity", False, detail="Apenas ações entram no Best Opportunities")
         ])
