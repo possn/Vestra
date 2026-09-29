@@ -98,6 +98,7 @@ class ShadowContext:
             "metric": metric,
             "scope": result.scope,
             "peer_observations": result.peer_observations,
+            "global_observations": result.global_observations,
         })
         return result.score
 
@@ -535,7 +536,7 @@ def main():
         "methodology": {
             "models": list(SPECIALIST_MODELS),
             "min_peer_observations": MIN_PEERS,
-            "fallback": "global equity universe per metric when fewer than 20 finite same-model observations exist",
+            "fallback": "global equity universe per metric only when at least 20 finite global observations exist; otherwise the metric remains unscored",
             "weights": "identical to the production specialist pack",
             "risk_caps": "existing production score_cap applied unchanged",
             "comparison_layer": "peer candidate compared with score_raw; public confidence moderation remains separate",
