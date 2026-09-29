@@ -309,9 +309,22 @@
 
 /* v2.1 — iPhone exploration viewport ownership: keep the analysis controls reachable and prevent the base surface bleeding through. */
 #marketSheet[data-tool="portfolio"]{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+  max-height:100dvh!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  z-index:2200!important;
+  pointer-events:auto!important;
+  isolation:isolate!important;
   background:var(--bg,#d1d2cc)!important;
 }
 #marketSheet[data-tool="portfolio"]>.market-sheet__panel{
+  width:100%!important;
+  min-height:100dvh!important;
   background:var(--bg,#d1d2cc)!important;
 }
 @media(max-width:899px){
