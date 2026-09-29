@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260509v68").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260929v1").catch(() => {});
     });
   }
 } catch (_) {}
@@ -11313,7 +11313,7 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "
   const normalizedRawTicker = String(rawTicker || "").trim().toUpperCase();
   const nativeCurrencyOverride = QUOTE_NATIVE_CURRENCY_OVERRIDES[normalizedRawTicker] || "";
   const assetCcy = nativeCurrencyOverride || (asset.generatedFromBroker
-    ? ((storedPriceCcy && storedPriceCcy !== portfolioCcy) ? storedPriceCcy : "")
+    ? ""
     : (storedPriceCcy || storedAssetCcy));
   if (assetCcy && quoteCcy && assetCcy !== quoteCcy && !(assetCcy === "GBX" && quoteCcy === "GBP")) {
     if (!String(rawTicker || "").includes("=") && !String(rawTicker || "").endsWith("-USD")) {

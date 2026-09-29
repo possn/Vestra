@@ -1,5 +1,5 @@
-/* Vestra Service Worker v11.08 — XTB open-position summary repair. */
-const CACHE_NAME = "vestra-cache-v230";
+/* Vestra Service Worker v11.09 — deterministic iOS rollout. */
+const CACHE_NAME = "vestra-cache-v231";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [

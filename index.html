@@ -68,8 +68,8 @@
 <script defer="" src="app-quote-errors.js?v=1.0"></script>
 <script defer="" src="app-return-assumptions.js?v=1.0"></script>
 <script defer="" src="app-financial-engine.js?v=1.2"></script>
-<script defer="" fetchpriority="high" src="app.js?v=20260926v13"></script>
-<script defer="" src="quote-canonical-repair.js?v=2.5"></script>
+<script defer="" fetchpriority="high" src="app.js?v=20260929v1"></script>
+<script defer="" src="quote-canonical-repair.js?v=2.6"></script>
 <script defer="" src="market-static-universe.js?v=1.30"></script>
 <script defer="" src="market-runtime-loader.js?v=2.1"></script>
 </head>
@@ -1712,12 +1712,18 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      // A controller swap means the new worker is active. Do not reload the
-      // visible PWA here: on iPhone this can fire while returning from Safari
-      // and would look like a full app restart. The next natural navigation or
-      // cold launch will use the new shell.
       window.__vestraServiceWorkerUpdated = true;
       try { window.dispatchEvent(new Event('vestra:service-worker-updated')); } catch (_) {}
+      try {
+        if (window.__vestraSwReloadScheduled) return;
+        window.__vestraSwReloadScheduled = true;
+        const externalReturn = document.documentElement.dataset.externalReturnBootstrap === '1';
+        const url = new URL(window.location.href);
+        if (!externalReturn) {
+          url.searchParams.set('_sw', Date.now().toString(36));
+          setTimeout(() => window.location.replace(url.toString()), 80);
+        }
+      } catch (_) {}
     });
   }
 </script>

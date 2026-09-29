@@ -38,6 +38,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
             "NFC: 'NFC.DE'",
             "'HEI.DE': 'HEI.DE'",
             "'FLR.US': 'FLR'",
+            "'SHA.DE': 'SHA0.DE'",
         ]
         for mapping in expected:
             self.assertIn(mapping, text)
@@ -160,8 +161,8 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
 
     def test_quote_repair_is_available_before_any_manual_refresh(self):
         html = INDEX.read_text(encoding="utf-8")
-        app_pos = html.index('app.js?v=20260926v13')
-        guard_pos = html.index('quote-canonical-repair.js?v=2.5')
+        app_pos = html.index('app.js?v=20260929v1')
+        guard_pos = html.index('quote-canonical-repair.js?v=2.6')
         market_pos = html.index('market-static-universe.js?v=1.30')
         self.assertLess(app_pos, guard_pos)
         self.assertLess(guard_pos, market_pos)
@@ -185,7 +186,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
     def test_bootstrap_loads_identity_guard_without_parallel_quote_fast_lane(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("loadCanonicalQuoteRepair();", text)
-        self.assertIn("quote-canonical-repair.js?v=2.5", text)
+        self.assertIn("quote-canonical-repair.js?v=2.6", text)
         self.assertIn("window.VestraAssetIdentityGuard", text)
         self.assertNotIn("loadQuoteRefreshPerformance", text)
         self.assertNotIn("quote-refresh-performance.js", text)
