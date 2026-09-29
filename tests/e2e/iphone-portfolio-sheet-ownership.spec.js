@@ -64,7 +64,7 @@ test('iPhone/WebKit: expanded portfolio explorer hides base market and keeps clo
 
   const explorer = sheet.locator('.vpu-tabs-shell');
   await expect(explorer).toBeVisible();
-  await expect(sheet.locator('.vpu-portfolio[data-vpu-expanded="1"] > .market-portfolio-section')).toHaveCount(0);
+  await expect(sheet.locator('.vpu-portfolio[data-vpu-expanded="1"] > .market-portfolio-section')).toBeHidden();
 
   const inflation = sheet.locator('[data-ux-kind="inflation"]');
   if (await inflation.count()) {
