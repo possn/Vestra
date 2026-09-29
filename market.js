@@ -1994,8 +1994,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const capacity=Math.min(strictPosCapacity,strictSectorCapacity,fresh); if(capacity<50) return null;
       const positionPct=(existingValue+Math.min(capacity,fresh))/afterTotal*100, sectorPct=(sectorValue+Math.min(capacity,fresh))/afterTotal*100;
       const decision=evaluatePortfolioMove({mode:'fresh',destination:stock,rows,amount:Math.min(capacity,fresh),totalAfter:afterTotal,destinationConv:conv,positionPct,sectorPct,indirect});
-      const {tier,strict}=decision.evidence;
-      const baseEligible=strict&&(targets.overlap!=='reduce'||indirect<2);
+      const {tier}=decision.evidence;
+      // Fresh Capital must consume the canonical decision gate. Rebuilding only
+      // part of the rule here can bypass risk-budget or target constraints.
+      const baseEligible=decision.autoEligible;
       const sectorNow=sectorValue/currentBase*100, sectorHeadroom=maxSector-sectorNow, positionNow=existingValue/currentBase*100;
       const valuationRank=txt(stock.valuation_signal)==='undervalued'?2:txt(stock.valuation_signal)==='fair'?1:0;
       const underweightExisting=!!existing&&positionNow<maxPos*.65;
