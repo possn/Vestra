@@ -437,7 +437,7 @@ function migrateDividendRecords() {
   return changed;
 }
 
-const BROKER_REBUILD_SCHEMA_VERSION = 48; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
+const BROKER_REBUILD_SCHEMA_VERSION = 49; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
 
 function getReturnSettings() {
   return normalizeReturnSettings((state && state.settings && state.settings.returnDefaults) || {}, parseNum);
@@ -7158,6 +7158,24 @@ function rebuildBrokerGeneratedData() {
   const rebuildEvents = corporateActionInput.events;
   const rebuildPositions = corporateActionInput.positions;
 
+  // An authoritative broker snapshot already states the CURRENT holding for that
+  // broker/security. Historical BUY/SELL/STOCK_DISTRIBUTION rows from the same
+  // broker must not be added on top of it. They remain useful for dividends and
+  // realised P&L, but not for current quantity/cost reconstruction.
+  const authoritativeSnapshotKeys = new Set();
+  for (const p of rebuildPositions) {
+    if (!p || p.positionKind !== "market_snapshot") continue;
+    const broker = String(p.broker || "").trim();
+    const sec = makeBrokerSecurityKey(p);
+    if (broker && sec) authoritativeSnapshotKeys.add(`${broker}|${sec}`);
+  }
+  const coveredByAuthoritativeSnapshot = record => {
+    if (!record) return false;
+    const broker = String(record.broker || "").trim();
+    const sec = makeBrokerSecurityKey(record);
+    return !!(broker && sec && authoritativeSnapshotKeys.has(`${broker}|${sec}`));
+  };
+
   // v6.6.9: BUY/SELL events are the authoritative ledger for a security+source.
   // Older imports could also leave a reconstructed non-snapshot bd.positions row for the
   // same instrument. Adding both created phantom holdings after a position was fully closed
@@ -7348,6 +7366,7 @@ function rebuildBrokerGeneratedData() {
     const e = events[i];
     const cls = brokerPositionClassFromTicker(e.ticker);
     if (e.type === "BUY") {
+      if (coveredByAuthoritativeSnapshot(e)) continue;
       const pos = touchPos({ ticker: e.ticker, isin: e.isin, name: e.name, cls, sourceName: e.sourceName, currency: e.localCurrency || e.totalCurrency || "EUR" });
       pos.qty += parseNum(e.qty);
       const buyCost = Math.max(0, parseNum(e.totalEUR) + parseNum(e.feeEUR));
@@ -7358,16 +7377,19 @@ function rebuildBrokerGeneratedData() {
     if (e.type === "SELL") {
       const pos = touchPos({ ticker: e.ticker, isin: e.isin, name: e.name, cls, sourceName: e.sourceName, currency: e.localCurrency || e.totalCurrency || "EUR" });
       const sellQty = Math.abs(parseNum(e.qty));
+      const covered = coveredByAuthoritativeSnapshot(e);
       const avg = pos.qty > 0 ? pos.costBasis / pos.qty : 0;
-      pos.qty = Math.max(0, pos.qty - sellQty);
-      pos.costBasis = Math.max(0, pos.costBasis - sellQty * avg);
+      if (!covered) {
+        pos.qty = Math.max(0, pos.qty - sellQty);
+        pos.costBasis = Math.max(0, pos.costBasis - sellQty * avg);
+      }
       // Accumulate realised P&L: use broker-reported Result when available (T212 provides this exactly)
       const brokerPnL = parseNum(e.resultEUR);
       if (!pos.realizedPnL) pos.realizedPnL = 0;
       if (Number.isFinite(brokerPnL) && brokerPnL !== 0) {
         pos.realizedPnL += brokerPnL;
-      } else {
-        // Fallback: proceeds - avg_cost * qty
+      } else if (!covered) {
+        // Fallback: proceeds - avg_cost * qty only when the ledger owns quantity/cost.
         const proceeds = parseNum(e.totalEUR);
         if (proceeds > 0 && avg > 0) pos.realizedPnL += proceeds - sellQty * avg;
       }
@@ -7376,6 +7398,7 @@ function rebuildBrokerGeneratedData() {
       continue;
     }
     if (e.type === "SPLIT_OPEN" || e.type === "SPLIT_CLOSE") {
+      if (coveredByAuthoritativeSnapshot(e)) continue;
       const next = events[i + 1];
       const sameGroup = next && (makeBrokerSecurityKey(next) === makeBrokerSecurityKey(e)) && String(next.dateTime || next.date) === String(e.dateTime || e.date) && ((e.type === "SPLIT_OPEN" && next.type === "SPLIT_CLOSE") || (e.type === "SPLIT_CLOSE" && next.type === "SPLIT_OPEN"));
       if (sameGroup) {
@@ -7388,6 +7411,7 @@ function rebuildBrokerGeneratedData() {
       continue;
     }
     if (e.type === "STOCK_DISTRIBUTION") {
+      if (coveredByAuthoritativeSnapshot(e)) continue;
       const pos = touchPos({ ticker: e.ticker, isin: e.isin, name: e.name, cls, sourceName: e.sourceName, currency: e.localCurrency || e.totalCurrency || "EUR" });
       pos.qty += Math.max(0, parseNum(e.qty));
       continue;

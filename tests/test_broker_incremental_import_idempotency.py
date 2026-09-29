@@ -32,7 +32,14 @@ class BrokerIncrementalImportIdempotencyTests(unittest.TestCase):
         self.assertIn("const key = brokerPositionKey(p)", APP)
         rebuild = APP[APP.index("function rebuildBrokerGeneratedData()"):APP.index("function getBrokerImportDiagnostics()")]
         self.assertIn("canonicalizeStoredBrokerKeys(bd);", rebuild)
-        self.assertIn("const BROKER_REBUILD_SCHEMA_VERSION = 48;", APP)
+        self.assertIn("const BROKER_REBUILD_SCHEMA_VERSION = 49;", APP)
+
+    def test_authoritative_snapshot_replaces_same_broker_ledger_position(self):
+        rebuild = APP[APP.index("function rebuildBrokerGeneratedData()"):APP.index("function getBrokerImportDiagnostics()")]
+        self.assertIn("const authoritativeSnapshotKeys = new Set()", rebuild)
+        self.assertIn("coveredByAuthoritativeSnapshot", rebuild)
+        self.assertIn('if (coveredByAuthoritativeSnapshot(e)) continue;', rebuild)
+        self.assertIn("if (!covered)", rebuild)
 
 
 if __name__ == "__main__":
