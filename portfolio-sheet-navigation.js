@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.6 — instant dossier open + scoped repair scheduling. */
+/* Vestra Portfolio Sheet Navigation v1.7 — instant dossier open + shallow repair observation. */
 (() => {
   'use strict';
-  const VERSION='1.6';
+  const VERSION='1.7';
   // Normal companion navigation is guarded to flow through VestraNavigation.openCompany().
   let pending=false;
   let openingFromPortfolio=false;
@@ -207,24 +207,23 @@
 
   function start(){
     ensureStyles(); repair();
-    const sh=sheet();
+    const sh=sheet(), c=content();
     if(!sh) return;
     const mutationNeedsRepair=mutation=>{
       if(!mutation) return false;
-      if(mutation.type==='childList') return true;
-      if(mutation.type!=='attributes') return false;
-      if(mutation.target===sh) return true;
-      const target=mutation.target;
-      return target?.parentElement===sh && target?.matches?.('[data-market-close].market-close-persistent');
+      if(mutation.type==='childList') return mutation.target===sh || mutation.target===c;
+      return mutation.type==='attributes' && mutation.target===sh && mutation.attributeName==='hidden';
     };
     const mo=new MutationObserver(mutations=>{
-      // The dossier changes many descendant classes while tabs/cards update.
-      // Those presentation mutations do not require a full navigation repair.
+      // Company dossiers can mutate many descendant cards/tabs during hydration.
+      // Navigation repair only needs sheet-level structure, direct content
+      // replacement, or the sheet visibility boundary.
       if(!mutations.some(mutationNeedsRepair) || pending) return;
       pending=true;
       requestAnimationFrame(()=>{pending=false;repair();});
     });
-    mo.observe(sh,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']});
+    mo.observe(sh,{childList:true,attributes:true,attributeFilter:['hidden']});
+    if(c) mo.observe(c,{childList:true});
   }
 
   window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany});
