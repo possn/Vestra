@@ -35,18 +35,36 @@ test('iPhone/WebKit: portfolio privacy toggles immediately without a Dashboard r
   await expect(button).toContainText('Ocultar valores');
   await expect(net).toContainText('€');
 
-  await button.click();
-  await expect(button).toContainText('Mostrar valores');
-  await expect(button).toHaveAttribute('aria-pressed', 'true');
-  await expect(net).toContainText('•••• €');
-  expect(await page.evaluate(() => window.__privacyRenderCalls)).toBe(0);
+  const hiddenNow = await page.evaluate(() => {
+    window.__privacyRenderCalls = 0;
+    document.getElementById('btnDashboardPrivacy').click();
+    return {
+      renderCalls: window.__privacyRenderCalls,
+      label: document.getElementById('dashboardPrivacyLabel').textContent,
+      pressed: document.getElementById('btnDashboardPrivacy').getAttribute('aria-pressed'),
+      net: document.getElementById('kpiNet').textContent,
+    };
+  });
+  expect(hiddenNow.renderCalls).toBe(0);
+  expect(hiddenNow.label).toContain('Mostrar valores');
+  expect(hiddenNow.pressed).toBe('true');
+  expect(hiddenNow.net).toContain('•••• €');
 
-  await button.click();
-  await expect(button).toContainText('Ocultar valores');
-  await expect(button).toHaveAttribute('aria-pressed', 'false');
-  await expect(net).not.toContainText('••••');
-  await expect(net).toContainText('12');
-  expect(await page.evaluate(() => window.__privacyRenderCalls)).toBe(0);
+  const visibleNow = await page.evaluate(() => {
+    window.__privacyRenderCalls = 0;
+    document.getElementById('btnDashboardPrivacy').click();
+    return {
+      renderCalls: window.__privacyRenderCalls,
+      label: document.getElementById('dashboardPrivacyLabel').textContent,
+      pressed: document.getElementById('btnDashboardPrivacy').getAttribute('aria-pressed'),
+      net: document.getElementById('kpiNet').textContent,
+    };
+  });
+  expect(visibleNow.renderCalls).toBe(0);
+  expect(visibleNow.label).toContain('Ocultar valores');
+  expect(visibleNow.pressed).toBe('false');
+  expect(visibleNow.net).not.toContain('••••');
+  expect(visibleNow.net).toContain('12');
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
