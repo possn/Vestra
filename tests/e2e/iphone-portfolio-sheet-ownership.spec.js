@@ -49,29 +49,25 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
 });
 
 
-test('iPhone/WebKit: expanded portfolio explorer keeps close controls reachable and owns the viewport', async ({ page }) => {
+test('iPhone/WebKit: expanded portfolio explorer hides base market and keeps close control in viewport', async ({ page }) => {
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
   await page.waitForFunction(() => window.VestraMarket?.ensureLoaded);
   await page.evaluate(() => window.VestraMarket.ensureLoaded());
 
-  await page.evaluate(() => {
-    const sentinel = document.createElement('div');
-    sentinel.id = 'explorerUnderlyingSentinel';
-    sentinel.textContent = 'UNDERLYING MARKET MUST NOT BLEED';
-    sentinel.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:120px;z-index:1;background:red';
-    document.getElementById('viewMarket').appendChild(sentinel);
-  });
-
   await page.locator('[data-market-tool="portfolio"]').first().click();
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
+  await expect(page.locator('#viewMarket')).toHaveCSS('visibility', 'hidden');
 
   const toggle = sheet.locator('[data-vpu-toggle]').first();
   await expect(toggle).toBeVisible();
   await toggle.click();
-  await expect(sheet.locator('.vpu-tabs-shell')).toBeVisible();
+
+  const explorer = sheet.locator('.vpu-tabs-shell');
+  await expect(explorer).toBeVisible();
+  await expect(sheet.locator('.vpu-portfolio[data-vpu-expanded="1"] > .market-portfolio-section')).toHaveCount(0);
 
   const inflation = sheet.locator('[data-ux-kind="inflation"]');
   if (await inflation.count()) {
@@ -81,13 +77,14 @@ test('iPhone/WebKit: expanded portfolio explorer keeps close controls reachable 
     await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
   }
 
-  await expect(sheet.locator('.vpu-tabs-head [data-vpu-toggle]')).toBeVisible();
-  expect(await page.evaluate(() => {
-    const top = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 12);
-    return Boolean(top?.closest('#marketSheet'));
-  })).toBeTruthy();
-  await expect(sheet).not.toContainText('UNDERLYING MARKET MUST NOT BLEED');
+  const closeExplorer = sheet.locator('.vpu-tabs-head [data-vpu-toggle]');
+  await expect(closeExplorer).toBeVisible();
+  const box = await closeExplorer.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
 
-  await sheet.locator('.vpu-tabs-head [data-vpu-toggle]').click();
-  await expect(sheet.locator('.vpu-tabs-shell')).toBeHidden();
+  await closeExplorer.click();
+  await expect(explorer).toBeHidden();
 });
