@@ -16,7 +16,7 @@ General-company dimensions / weights (v3):
   Capital alloc.    8%  dilution/buybacks, ROCE, dividend FCF coverage
   Stability         5%  beta (lower is better)
 
-A data confidence score is also emitted, based on metric coverage.
+A metric-confidence label is emitted from scoring coverage; evidence confidence is added later by confidence.py.
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ class ScoredTicker:
     quote_type: str | None
 
     score: float | None
-    data_confidence: str
+    metric_confidence: str
     data_coverage_pct: float
 
     zombie: str
@@ -666,7 +666,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             ticker=r.ticker, name=r.name, business_summary=r.business_summary, sector=r.sector, industry=r.industry,
             market_cap=r.market_cap, currency=r.currency, quote_type=r.quote_type,
             score=round(composite, 1) if composite is not None else None,
-            data_confidence=confidence, data_coverage_pct=round(metric_coverage, 1),
+            metric_confidence=confidence, data_coverage_pct=round(metric_coverage, 1),
             zombie=zombie, interest_coverage=round(coverage, 2) if coverage is not None else None,
             profitability_pct=round(quality, 1) if quality is not None else None,
             leverage_pct=round(balance, 1) if balance is not None else None,
@@ -741,7 +741,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         out.append(ScoredTicker(
             ticker=r.ticker, name=r.name, business_summary=r.business_summary, sector="Crypto", industry="Digital Assets",
             market_cap=r.market_cap, currency=r.currency, quote_type="CRYPTO",
-            score=None, data_confidence="low", data_coverage_pct=0,
+            score=None, metric_confidence="low", data_coverage_pct=0,
             zombie="unknown", interest_coverage=None,
             profitability_pct=None, leverage_pct=None, value_pct=None, stability_pct=None,
             quality_pct=None, growth_pct=None, balance_pct=None, cashflow_pct=None, execution_pct=None,
@@ -783,7 +783,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         out.append(ScoredTicker(
             ticker=r.ticker, name=r.name, business_summary=r.business_summary, sector=r.sector, industry=r.industry,
             market_cap=r.market_cap, currency=r.currency, quote_type="ETF",
-            score=None, data_confidence="low", data_coverage_pct=0,
+            score=None, metric_confidence="low", data_coverage_pct=0,
             zombie="unknown", interest_coverage=None,
             profitability_pct=None, leverage_pct=None, value_pct=None, stability_pct=None,
             quality_pct=None, growth_pct=None, balance_pct=None, cashflow_pct=None, execution_pct=None,
