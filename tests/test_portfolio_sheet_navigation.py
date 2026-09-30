@@ -10,7 +10,7 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         index=read("index.html")
         loader=read("market-runtime-loader.js")
         self.assertNotIn('src="portfolio-sheet-navigation.js',index)
-        self.assertIn("loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.7')",loader)
+        self.assertIn("loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.8')",loader)
         self.assertNotIn('portfolio-navigation-fix.js',index)
         self.assertNotIn('market-close-controller.js',index)
 
@@ -29,6 +29,8 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         self.assertEqual(s.count('new MutationObserver'),0)
         self.assertIn("vestra:market-sheet-changed",s)
         self.assertIn("window.addEventListener('vestra:market-sheet-changed',repair)",s)
+        self.assertNotIn("document.addEventListener('click'",s)
+        self.assertIn("sh.addEventListener('click',handleSheetClick,true)",s)
         self.assertIn("market-close-persistent",s)
         self.assertIn('window.VestraPortfolioSheetNavigation',s)
 
