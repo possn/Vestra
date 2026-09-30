@@ -2238,8 +2238,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     applyActionMapFilter(map,active===requested?'':requested);
   }
 
-  document.addEventListener('click', e=>{
-    const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
+  const marketEventRoots=[$m('viewMarket'),$m('marketSheet')].filter(Boolean);
+  function addMarketSurfaceListener(type,handler){
+    marketEventRoots.forEach(root=>root.addEventListener(type,handler));
+  }
+
+  addMarketSurfaceListener('click', e=>{
     const mode=e.target.closest('[data-market-mode]'); if(mode){const nextMode=mode.dataset.marketMode; if(nextMode==='funds'&&M.mode!=='funds'){ M.fundTheme=''; M.fundLimit=100; } M.mode=nextMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}
     const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
     const fundTheme=e.target.closest('[data-market-fund-theme]'); if(fundTheme){M.fundTheme=fundTheme.dataset.marketFundTheme||'';M.fundLimit=100;renderPrimary();return;}
@@ -2314,21 +2318,21 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
   });
 
-  document.addEventListener('change', e=>{
+  const marketView=$m('viewMarket');
+  marketView?.addEventListener('change', e=>{
     if(e.target.matches('[data-market-sector-select]') && e.target.value){ M.sector=e.target.value; renderPrimary(); }
   });
 
-  document.addEventListener('input', e=>{
+  marketView?.addEventListener('input', e=>{
     if(e.target.id==='marketSearch'){
       M.query=e.target.value.trim(); ensureLoaded().then(()=>{ renderSearchSuggestions(); renderPrimary(); });
     }
   });
 
-
-  document.addEventListener('focusin', e=>{
+  marketView?.addEventListener('focusin', e=>{
     if(e.target?.id==='marketSearch' && M.query) ensureLoaded().then(renderSearchSuggestions);
   });
-  document.addEventListener('focusout', e=>{
+  marketView?.addEventListener('focusout', e=>{
     if(e.target?.id==='marketSearch') setTimeout(()=>{
       const active=document.activeElement;
       if(!active?.closest?.('#marketSuggestions')) hideSearchSuggestions();
