@@ -1,5 +1,5 @@
-/* Vestra Service Worker v11.09 — deterministic iOS rollout. */
-const CACHE_NAME = "vestra-cache-v231";
+/* Vestra Service Worker v11.10 — deterministic iOS rollout. */
+const CACHE_NAME = "vestra-cache-v232";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [
