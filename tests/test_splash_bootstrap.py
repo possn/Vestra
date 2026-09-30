@@ -41,9 +41,9 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertIn('Do not swap animation names here', UI)
 
     def test_release_keeps_single_fade_owner_and_short_hold_contract(self):
-        self.assertIn('copyReadyMs = 900', UI)
-        self.assertIn('minimumVisibleMs = 1500', UI)
-        self.assertIn('failsafeMs = 4000', UI)
+        self.assertIn('copyReadyMs = 450', UI)
+        self.assertIn('minimumVisibleMs = 700', UI)
+        self.assertIn('failsafeMs = 2500', UI)
         self.assertIn('transition:opacity .52s cubic-bezier(.4,0,.2,1)!important', UI)
         self.assertIn('never block an already-hydrated portfolio for several extra seconds', UI)
         self.assertIn("splash.classList.add('vestra-splash--leaving')", UI)
