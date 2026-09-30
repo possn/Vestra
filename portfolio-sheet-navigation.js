@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.7 — semantic sheet lifecycle, zero mutation observers. */
+/* Vestra Portfolio Sheet Navigation v1.8 — sheet-scoped interaction ownership. */
 (() => {
   'use strict';
-  const VERSION='1.7';
+  const VERSION='1.8';
   // Normal companion navigation is guarded to flow through VestraNavigation.openCompany().
   let openingFromPortfolio=false;
   let navigationSequence=0;
@@ -116,9 +116,18 @@
     return true;
   }
 
+  function isPortfolioSheet(sh=sheet()){
+    const c=content();
+    return !!(sh && !sh.hidden && !sh.dataset.ticker && (
+      sh.dataset.tool==='portfolio' ||
+      sh.dataset.returnView==='assets' ||
+      c?.querySelector?.('.market-portfolio-summary')
+    ));
+  }
+
   function closePortfolioToMarket(){
     const sh=sheet();
-    if(!sh || sh.hidden || sh.dataset.tool!=='portfolio' || sh.dataset.ticker) return false;
+    if(!isPortfolioSheet(sh)) return false;
     sh.hidden=true;
     sh.setAttribute('aria-hidden','true');
     sh.dataset.liveReady='0';
@@ -127,7 +136,11 @@
     document.documentElement.classList.remove('modal-open');
     document.body.classList.remove('modal-open');
     sh.scrollTop=0; sh.scrollLeft=0;
-    document.querySelectorAll('[data-view]').forEach(el=>{
+    // The former document-capture ordering let Market's own close handler
+    // switch the base view before this companion stopped propagation. With
+    // sheet-scoped capture we own that transition explicitly.
+    if(typeof window.setView==='function') window.setView('market');
+    else document.querySelectorAll('[data-view]').forEach(el=>{
       if(el.dataset.view==='market') el.classList.add('is-active');
       else if(el.dataset.view==='assets') el.classList.remove('is-active');
     });
@@ -163,19 +176,19 @@
     document.head.appendChild(link);
   }
 
-  document.addEventListener('click',e=>{
+  function handleSheetClick(e){
     const sh=sheet();
-    if(!sh) return;
+    if(!sh || !sh.contains(e.target)) return false;
 
     const ticker=e.target.closest?.('[data-market-ticker]');
     const watch=e.target.closest?.('[data-market-watch]');
-    const portfolioSheet=!sh.hidden && sh.dataset.tool==='portfolio';
+    const portfolioSheet=isPortfolioSheet(sh);
 
     if(watch && portfolioSheet && content()?.contains(watch)){
       e.preventDefault();
       e.stopImmediatePropagation();
       window.VestraMarket?.toggleWatch?.(watch.dataset.marketWatch);
-      return;
+      return true;
     }
 
     if(ticker && portfolioSheet && content()?.contains(ticker)){
@@ -183,26 +196,28 @@
       e.stopImmediatePropagation();
       openingFromPortfolio=true;
       void openCompany(ticker.dataset.marketTicker,{origin:'portfolio',sourceNode:ticker});
-      return;
+      return true;
     }
 
     const close=e.target.closest?.('[data-market-close]');
-    if(!close || sh.hidden) return;
+    if(!close || sh.hidden) return false;
 
     if(sh.dataset.ticker && sh.dataset.returnView==='portfolio'){
       e.preventDefault();
       e.stopImmediatePropagation();
       reopenPortfolioAnalysis();
-      return;
+      return true;
     }
 
-    if(sh.dataset.tool==='portfolio' && !sh.dataset.ticker){
+    if(isPortfolioSheet(sh)){
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
       closePortfolioToMarket();
+      return true;
     }
-  },true);
+    return false;
+  }
 
   function start(){
     ensureStyles();
@@ -213,7 +228,7 @@
     window.addEventListener('vestra:market-sheet-changed',repair);
   }
 
-  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany});
+  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany,handleSheetClick,isPortfolioSheet});
   window.VestraPortfolioSheetNavigation={version:VERSION,repair,reopenPortfolioAnalysis,closePortfolioToMarket,openCompany};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();

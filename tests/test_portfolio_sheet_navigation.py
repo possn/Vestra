@@ -10,7 +10,7 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         index=read("index.html")
         loader=read("market-runtime-loader.js")
         self.assertNotIn('src="portfolio-sheet-navigation.js',index)
-        self.assertIn("loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.7')",loader)
+        self.assertIn("loadHelper('VestraNavigation', 'portfolio-sheet-navigation.js?v=1.8')",loader)
         self.assertNotIn('portfolio-navigation-fix.js',index)
         self.assertNotIn('market-close-controller.js',index)
 
@@ -31,6 +31,15 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         self.assertIn("window.addEventListener('vestra:market-sheet-changed',repair)",s)
         self.assertIn("market-close-persistent",s)
         self.assertIn('window.VestraPortfolioSheetNavigation',s)
+
+    def test_interactions_are_scoped_to_market_sheet(self):
+        s=read("portfolio-sheet-navigation.js")
+        self.assertNotIn("document.addEventListener('click'",s)
+        self.assertNotIn("addEventListener('click',handleSheetClick",s)
+        self.assertIn("function handleSheetClick(e)",s)
+        self.assertIn("window.setView('market')",s)
+        market=read("market.js")
+        self.assertIn("window.VestraNavigation?.handleSheetClick?.(e)",market)
 
     def test_market_emits_semantic_sheet_lifecycle(self):
         market=read("market.js")

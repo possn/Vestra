@@ -2239,6 +2239,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   document.addEventListener('click', e=>{
+    // Portfolio dossier controls share this canonical Market click owner.
+    // The navigation companion returns true only for interactions it owns,
+    // avoiding another document- or sheet-level listener.
+    if(window.VestraNavigation?.handleSheetClick?.(e)) return;
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
     const mode=e.target.closest('[data-market-mode]'); if(mode){const nextMode=mode.dataset.marketMode; if(nextMode==='funds'&&M.mode!=='funds'){ M.fundTheme=''; M.fundLimit=100; } M.mode=nextMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}
     const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}

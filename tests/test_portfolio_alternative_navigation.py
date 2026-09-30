@@ -11,7 +11,7 @@ class PortfolioAlternativeNavigationTests(unittest.TestCase):
     def test_portfolio_ticker_click_opens_company_directly(self):
         source = self.source
         self.assertIn("const ticker=e.target.closest?.('[data-market-ticker]');", source)
-        self.assertIn("const portfolioSheet=!sh.hidden && sh.dataset.tool==='portfolio';", source)
+        self.assertIn("const portfolioSheet=isPortfolioSheet(sh);", source)
         self.assertIn("if(ticker && portfolioSheet && content()?.contains(ticker))", source)
         self.assertIn("e.stopImmediatePropagation();", source)
         self.assertIn("void openCompany(ticker.dataset.marketTicker,{origin:'portfolio',sourceNode:ticker});", source)
