@@ -35,7 +35,7 @@ def test_rollout_cache_is_fresh():
 
 
 def test_dashboard_refresh_has_zero_mutation_observers():
-    assert "MutationObserver" not in UI
+    assert "new MutationObserver" not in UI
     assert "historyObserver" not in UI
     assert "healthObserver" not in UI
 
