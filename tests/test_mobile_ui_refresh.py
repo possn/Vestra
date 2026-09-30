@@ -76,6 +76,12 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         self.assertIn('.view:not([hidden]){', self.styles)
         self.assertIn('animation:none!important', self.styles)
 
+    def test_mobile_fullscreen_overlays_avoid_backdrop_recomposition(self):
+        self.assertIn('.modal__bg,.sidebar-backdrop,.market-sheet{', self.styles)
+        self.assertIn('-webkit-backdrop-filter:none!important', self.styles)
+        self.assertIn('backdrop-filter:none!important', self.styles)
+        self.assertIn('.modal__box,.modal__panel{', self.styles)
+
     def test_view_switch_defers_forced_scroll_out_of_tap_handler(self):
         marker = 'Keep forced layout/scroll work out of the tap handler'
         self.assertIn(marker, self.app)

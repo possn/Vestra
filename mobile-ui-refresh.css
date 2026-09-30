@@ -72,4 +72,18 @@
   .view:not([hidden]){
     animation:none!important;
   }
+
+  /* Full-screen blur layers are expensive on iPhone/WebKit because they
+     continuously recompose everything behind the overlay. Keep separation
+     with a solid translucent scrim and make open/close immediate. */
+  .modal__bg,.sidebar-backdrop,.market-sheet{
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+  }
+  .modal__bg,.sidebar-backdrop{
+    animation:none!important;
+  }
+  .modal__box,.modal__panel{
+    animation:none!important;
+  }
 }
