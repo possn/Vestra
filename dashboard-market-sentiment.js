@@ -1,4 +1,4 @@
-/* Vestra Dashboard Market Sentiment v1.5 — compact transparent market barometer. */
+/* Vestra Dashboard Market Sentiment v1.6 — compact transparent market barometer. */
 (() => {
   'use strict';
 
