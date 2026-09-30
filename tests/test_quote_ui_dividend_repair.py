@@ -15,7 +15,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
   def test_sanity_resets_only_on_identity_change(self):
     a=read('app.js')
     self.assertIn('const authoritativeLegacyRepair = !!(',a)
-    self.assertIn('(identityChanged || authoritativeLegacyRepair) ? 0 :',a)
+    self.assertIn('(identityChanged || authoritativeLegacyRepair || brokerRecovery) ? 0 :',a)
     self.assertIn('_previousYahooTicker',a)
     self.assertIn('asset.yahooTicker = _resolvedYahoo',a)
     self.assertIn('"OD7F.DE","OD7F"',a)
