@@ -10237,6 +10237,9 @@ function setupFixedBarSpacing() {
   // a sobreposição em vez de só reduzir o risco dela acontecer.
   let scrollTimer = null;
   window.addEventListener("scroll", () => {
+    // The passive bar only exists visually on Dashboard/Portfolio. Avoid
+    // mutating <body> and arming timers on every scroll in all other views.
+    if (currentView !== "dashboard" && currentView !== "assets") return;
     document.body.classList.add("is-scrolling");
     clearTimeout(scrollTimer);
     scrollTimer = setTimeout(() => {
