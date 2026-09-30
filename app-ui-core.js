@@ -250,9 +250,9 @@ function installPremiumSplashWatchdog() {
   // Do not swap animation names here; only settle copy, hold, then fade once.
   // The entrance animation settles in under 800 ms. Keep a short premium hold,
   // but never block an already-hydrated portfolio for several extra seconds.
-  const copyReadyMs = 900;
-  const minimumVisibleMs = 1500;
-  const failsafeMs = 4000;
+  const copyReadyMs = 450;
+  const minimumVisibleMs = 700;
+  const failsafeMs = 2500;
   let releasing = false;
   let releaseTimer = null;
 

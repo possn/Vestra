@@ -400,7 +400,10 @@
       const view = String(event?.detail?.view || '');
       if (view === 'dashboard' || view === 'cashflow') refresh();
     });
-    document.addEventListener('quotesUpdated', refresh);
+    document.addEventListener('quotesUpdated', () => {
+      const view = String(document.body?.dataset?.view || '');
+      if (view === 'dashboard' || view === 'cashflow') refresh();
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });

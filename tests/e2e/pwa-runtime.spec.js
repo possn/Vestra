@@ -26,8 +26,6 @@ async function readPwaState(page) {
         };
       });
     } catch (error) {
-      // On first install the canonical index bootstrap can reload after
-      // controllerchange. WebKit can destroy the evaluate context there.
       if (!/Execution context was destroyed|navigation/i.test(String(error?.message || error)) || attempt === 2) throw error;
       await page.waitForLoadState('load');
       await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 10_000 });
@@ -47,9 +45,9 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
     await navigator.serviceWorker.ready;
   });
 
-  // skipWaiting + clients.claim should make the client controlled. The canonical
-  // bootstrap now also reloads once after controllerchange so the new app.js is
-  // the code actually running on iOS. Let that lifecycle settle before probing UI.
+  // skipWaiting + clients.claim should make the client controlled without
+  // restarting an active session. A controllerchange must never force a hidden
+  // cache-busted navigation or replay the launch splash mid-use.
   try {
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 5_000 });
   } catch (_) {
@@ -57,17 +55,15 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 10_000 });
   }
 
-  if (!new URL(page.url()).searchParams.has('_sw')) {
-    try {
-      await page.waitForURL(url => url.searchParams.has('_sw'), { timeout: 3_000 });
-    } catch (_) {
-      await Promise.all([
-        page.waitForURL(url => url.searchParams.has('_sw'), { timeout: 10_000 }),
-        page.evaluate(() => navigator.serviceWorker.dispatchEvent(new Event('controllerchange'))),
-      ]);
-    }
-  }
-  await page.waitForLoadState('load');
+  const beforeControllerChangeUrl = page.url();
+  await page.evaluate(() => {
+    window.__vestraServiceWorkerUpdated = false;
+    navigator.serviceWorker.dispatchEvent(new Event('controllerchange'));
+  });
+  await page.waitForTimeout(250);
+  expect(page.url()).toBe(beforeControllerChangeUrl);
+  expect(new URL(page.url()).searchParams.has('_sw')).toBeFalsy();
+  await expect.poll(() => page.evaluate(() => window.__vestraServiceWorkerUpdated)).toBeTruthy();
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), null, { timeout: 10_000 });
 
   const pwa = await readPwaState(page);
@@ -96,11 +92,10 @@ test('iPhone/WebKit: installed PWA runtime gains a service-worker controller and
   });
   expect(safeCaptureOwnsClick).toBeTruthy();
 
-  expect(new URL(page.url()).searchParams.has('_sw')).toBeTruthy();
+  expect(new URL(page.url()).searchParams.has('_sw')).toBeFalsy();
 
-  // WebKit can emit this transient pageerror when controllerchange replaces the
-  // execution context during first install. readPwaState explicitly recovers from
-  // that navigation; keep every other browser error fatal.
+  // Controller takeover is deliberately navigation-free; keep every browser
+  // error fatal now that no execution-context replacement is expected.
   const unexpectedPageErrors = pageErrors.filter(message => message !== 'Context is stopped');
   expect(unexpectedPageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
