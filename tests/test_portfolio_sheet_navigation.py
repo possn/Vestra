@@ -32,6 +32,12 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         self.assertIn("market-close-persistent",s)
         self.assertIn('window.VestraPortfolioSheetNavigation',s)
 
+    def test_market_emits_semantic_sheet_lifecycle(self):
+        market=read("market.js")
+        self.assertIn("function notifyMarketSheetChanged",market)
+        for reason in ("ticker-open","ticker-rerender","tool-open","close"):
+            self.assertIn(f"notifyMarketSheetChanged('{reason}')",market)
+
     def test_latest_navigation_request_opens_before_background_hydration(self):
         s=read("portfolio-sheet-navigation.js")
         self.assertNotIn("await Promise.resolve(hydrate(tk))",s)
