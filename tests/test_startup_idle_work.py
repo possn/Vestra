@@ -20,7 +20,7 @@ class StartupIdleWorkTests(unittest.TestCase):
         self.assertIn("autoSnapshotIfNeeded()", block)
         self.assertIn("checkAndNotifyMaturities()", block)
         self.assertIn("autoRefreshQuotesIfStale()", block)
-        self.assertIn("{ timeoutMs: 1200, fallbackDelayMs: 500 }", block)
+        self.assertIn("{ timeoutMs: 3000, fallbackDelayMs: 1800 }", block)
         self.assertNotIn("}, 150);", block)
 
     def test_foreground_quote_refresh_is_idle_deferred(self):
@@ -29,8 +29,13 @@ class StartupIdleWorkTests(unittest.TestCase):
         block = APP[start:end]
         self.assertIn("scheduleWhenIdle(", block)
         self.assertIn("autoRefreshQuotesIfStale()", block)
-        self.assertIn("{ timeoutMs: 700, fallbackDelayMs: 250 }", block)
+        self.assertIn("{ timeoutMs: 1800, fallbackDelayMs: 900 }", block)
         self.assertNotIn("}, 100);", block)
+
+    def test_quote_render_work_is_scoped_to_visible_portfolio(self):
+        self.assertIn('if (currentView === "assets") renderEquityPnL();', APP)
+        self.assertIn('else markViewsDirty(["assets"]);', APP)
+        self.assertNotIn('document.addEventListener("quotesUpdated", renderEquityPnL);', APP)
 
     def test_hydration_boundary_stays_before_deferred_work(self):
         hydrated = APP.index("window.__vestraAppHydrated = true")
