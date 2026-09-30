@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.7 — semantic sheet lifecycle, zero mutation observers. */
+/* Vestra Portfolio Sheet Navigation v1.8 — sheet-scoped interaction ownership, zero mutation observers. */
 (() => {
   'use strict';
-  const VERSION='1.7';
+  const VERSION='1.8';
   // Normal companion navigation is guarded to flow through VestraNavigation.openCompany().
   let openingFromPortfolio=false;
   let navigationSequence=0;
@@ -163,9 +163,9 @@
     document.head.appendChild(link);
   }
 
-  document.addEventListener('click',e=>{
+  function handleSheetClick(e){
     const sh=sheet();
-    if(!sh) return;
+    if(!sh || e.currentTarget!==sh) return;
 
     const ticker=e.target.closest?.('[data-market-ticker]');
     const watch=e.target.closest?.('[data-market-watch]');
@@ -202,11 +202,16 @@
       e.stopImmediatePropagation();
       closePortfolioToMarket();
     }
-  },true);
+  }
 
   function start(){
     ensureStyles();
     repair();
+    const sh=sheet();
+    if(sh && sh.dataset.vestraNavigationClickOwner!=='1'){
+      sh.dataset.vestraNavigationClickOwner='1';
+      sh.addEventListener('click',handleSheetClick,true);
+    }
     // Market owns sheet rendering and emits one semantic signal after each
     // meaningful open/close/rerender. Avoid observing every descendant class
     // mutation while tabs, live data and cards update on iPhone.
