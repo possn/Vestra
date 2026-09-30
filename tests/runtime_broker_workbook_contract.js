@@ -153,4 +153,24 @@ assert.strictEqual(corporateActions[0].qty, 25.333);
 assert.strictEqual(corporateActions[1].type, 'CASH_ADJUSTMENT');
 assert.strictEqual(corporateActions[1].totalEUR, 0.42);
 
+// Real-export quantity invariant (2026-09-30):
+// XTB current snapshot + Trading 212 net ledger, counted exactly once.
+const { buildAuthoritativeBrokerQuantityMap, brokerCurrentQuantityKey } = context.window.VestraBrokerParsingCore;
+const quantityMap = buildAuthoritativeBrokerQuantityMap([
+  { broker:'Trading 212', type:'BUY', ticker:'O', isin:'US7561091049', qty:42 },
+  { broker:'Trading 212', type:'BUY', ticker:'MSFT', isin:'US5949181045', qty:10 },
+  { broker:'Trading 212', type:'BUY', ticker:'INTC', isin:'US4581401001', qty:10 },
+], [
+  { broker:'XTB', sourceHash:'xtb-a', positionKind:'market_snapshot', snapshotDate:'2026-08-23', ticker:'O', qty:96 },
+  // duplicate copy of the same latest report must replace, never add
+  { broker:'XTB', sourceHash:'xtb-duplicate', positionKind:'market_snapshot', snapshotDate:'2026-08-23', ticker:'O', qty:96 },
+  { broker:'XTB', sourceHash:'xtb-a', positionKind:'market_snapshot', snapshotDate:'2026-08-23', ticker:'MSFT', qty:6 },
+  { broker:'XTB', sourceHash:'xtb-a', positionKind:'market_snapshot', snapshotDate:'2026-08-23', ticker:'GOOGL', qty:7 },
+  { broker:'XTB', sourceHash:'xtb-a', positionKind:'market_snapshot', snapshotDate:'2026-08-23', ticker:'INTC', qty:14 },
+]);
+assert.strictEqual(quantityMap.get(brokerCurrentQuantityKey({ ticker:'O', isin:'US7561091049' })), 138);
+assert.strictEqual(quantityMap.get(brokerCurrentQuantityKey({ ticker:'MSFT', isin:'US5949181045' })), 16);
+assert.strictEqual(quantityMap.get(brokerCurrentQuantityKey({ ticker:'GOOGL' })), 7);
+assert.strictEqual(quantityMap.get(brokerCurrentQuantityKey({ ticker:'INTC', isin:'US4581401001' })), 24);
+
 console.log('runtime broker workbook contract: ok');
