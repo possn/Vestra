@@ -819,6 +819,9 @@ function setView(view) {
   // Keep forced layout/scroll work out of the tap handler; the visible view switches above.
   requestAnimationFrame(() => {
     if (currentView !== view) return;
+    // Avoid a synthetic scroll event/layout pass when the document is already
+    // at the top. This was happening on most bottom-nav taps on iPhone.
+    if (Math.abs(Number(window.scrollY || 0)) <= 1) return;
     try { window.scrollTo(0, 0); } catch (_) {}
   });
   if (view === "market") {
