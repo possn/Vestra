@@ -1,9 +1,8 @@
-/* Vestra Portfolio Sheet Navigation v1.6 — instant dossier open + scoped repair scheduling. */
+/* Vestra Portfolio Sheet Navigation v1.7 — semantic sheet lifecycle, zero mutation observers. */
 (() => {
   'use strict';
-  const VERSION='1.6';
+  const VERSION='1.7';
   // Normal companion navigation is guarded to flow through VestraNavigation.openCompany().
-  let pending=false;
   let openingFromPortfolio=false;
   let navigationSequence=0;
 
@@ -206,25 +205,12 @@
   },true);
 
   function start(){
-    ensureStyles(); repair();
-    const sh=sheet();
-    if(!sh) return;
-    const mutationNeedsRepair=mutation=>{
-      if(!mutation) return false;
-      if(mutation.type==='childList') return true;
-      if(mutation.type!=='attributes') return false;
-      if(mutation.target===sh) return true;
-      const target=mutation.target;
-      return target?.parentElement===sh && target?.matches?.('[data-market-close].market-close-persistent');
-    };
-    const mo=new MutationObserver(mutations=>{
-      // The dossier changes many descendant classes while tabs/cards update.
-      // Those presentation mutations do not require a full navigation repair.
-      if(!mutations.some(mutationNeedsRepair) || pending) return;
-      pending=true;
-      requestAnimationFrame(()=>{pending=false;repair();});
-    });
-    mo.observe(sh,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']});
+    ensureStyles();
+    repair();
+    // Market owns sheet rendering and emits one semantic signal after each
+    // meaningful open/close/rerender. Avoid observing every descendant class
+    // mutation while tabs, live data and cards update on iPhone.
+    window.addEventListener('vestra:market-sheet-changed',repair);
   }
 
   window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany});
