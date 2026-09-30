@@ -101,6 +101,7 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         self.assertNotIn("new MutationObserver", self.source)
         self.assertIn("vestra:view-rendered", self.source)
         self.assertIn("quotesUpdated", self.source)
+        self.assertIn("view === 'dashboard' || view === 'cashflow'", self.source)
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
