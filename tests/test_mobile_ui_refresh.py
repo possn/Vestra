@@ -72,6 +72,10 @@ class MobileUiRefreshContractTests(unittest.TestCase):
         self.assertIn('backdrop-filter:none!important', self.styles)
         self.assertIn('touch-action:manipulation', self.styles)
 
+    def test_mobile_view_switch_has_no_entry_animation(self):
+        self.assertIn('.view:not([hidden]){', self.styles)
+        self.assertIn('animation:none!important', self.styles)
+
     def test_view_switch_defers_forced_scroll_out_of_tap_handler(self):
         marker = 'Keep forced layout/scroll work out of the tap handler'
         self.assertIn(marker, self.app)
