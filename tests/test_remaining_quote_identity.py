@@ -30,7 +30,7 @@ class RemainingQuoteIdentityTests(unittest.TestCase):
         self.assertIn("QUOTE_NATIVE_CURRENCY_OVERRIDES[resolvedQuoteTicker]", a)
 
     def test_fresh_bundle(self):
-        self.assertIn('app.js?v=20260930v2',read('index.html'))
+        self.assertIn('app.js?v=20260930v3',read('index.html'))
         sw=read('sw.js')
         self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
         self.assertIn('staleWhileRevalidate',sw)
