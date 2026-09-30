@@ -1,4 +1,4 @@
-/* Vestra Broker Import runtime loader v1.5 — load broker-only helpers on demand. */
+/* Vestra Broker Import runtime loader v1.7 — load broker-only helpers on demand. */
 (() => {
   'use strict';
 
@@ -100,7 +100,7 @@
     if (window.VestraBrokerParsers) return Promise.resolve(window.VestraBrokerParsers);
     if (!parsersPromise) {
       parsersPromise = Promise.all([ensureWorkbook(), ensureXtbNormalization()])
-        .then(() => load('VestraBrokerParsers', 'app-broker-parsers.js?v=1.3', 'parsers'))
+        .then(() => load('VestraBrokerParsers', 'app-broker-parsers.js?v=1.4', 'parsers'))
         .catch(err => {
           parsersPromise = null;
           throw err;
@@ -115,6 +115,6 @@
     ensureWorkbook,
     ensureParsers,
     timeoutMs: TIMEOUT_MS,
-    version: '1.5',
+    version: '1.7',
   });
 })();
