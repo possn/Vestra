@@ -1635,6 +1635,7 @@ function checkNegativeReturn(rc) {
   } else {
     el.style.display = "none";
   }
+  try { window.dispatchEvent(new CustomEvent("vestra:dashboard-health-updated")); } catch (_) {}
 }
 
 function renderSummary() {
@@ -1786,6 +1787,7 @@ function renderTrendChart() {
       ? `<div style="margin-top:8px"><div style="font-size:11px;color:#94a3b8;margin-bottom:4px">Últimos snapshots</div>${rows}</div>`
       : "";
   }
+  try { window.dispatchEvent(new CustomEvent("vestra:dashboard-history-updated")); } catch (_) {}
 }
 
 function snapshotMonth() {
