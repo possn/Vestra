@@ -10237,6 +10237,15 @@ function setupFixedBarSpacing() {
   // a sobreposição em vez de só reduzir o risco dela acontecer.
   let scrollTimer = null;
   window.addEventListener("scroll", () => {
+    // The passive bar only exists on Dashboard/Portfolio. Avoid class churn,
+    // timers and a follow-up layout measurement while scrolling every other
+    // screen (Market, Analysis, Cashflow, Dividends, Settings).
+    if (currentView !== "dashboard" && currentView !== "assets") {
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = null;
+      document.body.classList.remove("is-scrolling");
+      return;
+    }
     document.body.classList.add("is-scrolling");
     clearTimeout(scrollTimer);
     scrollTimer = setTimeout(() => {
