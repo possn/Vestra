@@ -32,3 +32,16 @@ def test_rollout_cache_is_fresh():
     assert 'sw.js?v=20260930v4' in APP
     assert 'const CACHE_NAME = "vestra-cache-v236";' in SW
     assert "Service Worker v11.14" in SW
+
+
+def test_dashboard_refresh_has_zero_mutation_observers():
+    assert "new MutationObserver" not in UI
+    assert "historyObserver" not in UI
+    assert "healthObserver" not in UI
+
+
+def test_health_and_history_use_semantic_component_events():
+    assert 'new CustomEvent("vestra:dashboard-health-updated")' in APP
+    assert 'new CustomEvent("vestra:dashboard-history-updated")' in APP
+    assert "vestra:dashboard-health-updated" in UI
+    assert "vestra:dashboard-history-updated" in UI
