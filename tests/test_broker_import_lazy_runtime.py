@@ -13,7 +13,7 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertNotIn('src="app-broker-workbook.js', INDEX)
         self.assertNotIn('src="app-broker-parsers.js', INDEX)
         self.assertNotIn('src="app-xtb-normalization.js', INDEX)
-        self.assertIn('src="app-broker-import-loader.js?v=1.6"', INDEX)
+        self.assertIn('src="app-broker-import-loader.js?v=1.7"', INDEX)
 
     def test_loader_preserves_dependency_order_and_retryability(self):
         self.assertIn("function ensureIdentityData()", LOADER)
@@ -23,11 +23,11 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertIn("app-xtb-normalization.js?v=1.0", LOADER)
         self.assertIn("Promise.all([ensureWorkbook(), ensureXtbNormalization()])", LOADER)
         self.assertIn("app-broker-workbook.js?v=1.3", LOADER)
-        self.assertIn("app-broker-parsers.js?v=1.3", LOADER)
+        self.assertIn("app-broker-parsers.js?v=1.4", LOADER)
         self.assertIn("app-broker-identity-data.js?v=1.0", LOADER)
         self.assertLess(
             LOADER.index("ensureWorkbook()"),
-            LOADER.index("app-broker-parsers.js?v=1.3"),
+            LOADER.index("app-broker-parsers.js?v=1.4"),
         )
         self.assertIn("workbookPromise = null;", LOADER)
         self.assertIn("parsersPromise = null;", LOADER)
@@ -60,7 +60,7 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertNotIn("function autoCategorise", APP)
 
     def test_app_rollout_is_versioned(self):
-        self.assertIn("app.js?v=20260929v1", INDEX)
+        self.assertIn("app.js?v=20260930v1", INDEX)
 
     def test_identity_repairs_are_deferred_but_precede_quote_refresh(self):
         self.assertIn("await ensureAndRepairBrokerIdentities({ persist: true });", APP)
