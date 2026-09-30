@@ -40,6 +40,14 @@ class LifecycleSingleOwnerTests(unittest.TestCase):
         self.assertIn('window.visualViewport.addEventListener("resize", scheduleFixedBarSync, { passive: true });', app)
         self.assertIn("new ResizeObserver(scheduleFixedBarSync)", app)
 
+    def test_navigation_reuses_coalesced_fixed_bar_scheduler(self):
+        app = (ROOT / "app.js").read_text(encoding="utf-8")
+        start = app.index("function setView(view)")
+        end = app.index("function openModal", start)
+        block = app[start:end]
+        self.assertIn("scheduleFixedBarSync();", block)
+        self.assertNotIn("syncFixedBarHeights();", block)
+
     def test_fixed_bar_css_variables_are_not_rewritten_when_unchanged(self):
         app = (ROOT / "app.js").read_text(encoding="utf-8")
         self.assertIn("function setFixedBarHeight(root, property, height)", app)
