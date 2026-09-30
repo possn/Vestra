@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260930v1").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260930v3").catch(() => {});
     });
   }
 } catch (_) {}
@@ -437,7 +437,7 @@ function migrateDividendRecords() {
   return changed;
 }
 
-const BROKER_REBUILD_SCHEMA_VERSION = 49; // v64e: fix the real root cause of the footer clipping — offsetParent is always null for position:fixed elements in WebKit/Safari, so the visibility check was zeroing --passivebar-h on every measurement (no bump needed for v64f: ticker-eligibility fix touches no stored schema)
+const BROKER_REBUILD_SCHEMA_VERSION = 50; // authoritative current-quantity reconciliation from broker snapshots + event ledgers
 
 function getReturnSettings() {
   return normalizeReturnSettings((state && state.settings && state.settings.returnDefaults) || {}, parseNum);
@@ -6955,6 +6955,8 @@ const {
   sameSecurityName,
   sameBrokerSecurityIdentity,
   makeBrokerSecurityKey,
+  brokerCurrentQuantityKey,
+  buildAuthoritativeBrokerQuantityMap,
   detectBrokerRowsFormat,
   detectBrokerTextFormat,
   normalizeBrokerNameFromFile,
@@ -6965,7 +6967,7 @@ const {
 } = window.VestraBrokerParsingCore || {};
 if ([normalizeISIN, normalizeSecurityNameKey, getKnownBrokerYahooOverride, canonicalBrokerTickerBase,
      inferPreferredVenueTicker, venueFromIsinAndCurrency, inferYahooTickerFromIdentity, sameSecurityName,
-     sameBrokerSecurityIdentity, makeBrokerSecurityKey, detectBrokerRowsFormat, detectBrokerTextFormat,
+     sameBrokerSecurityIdentity, makeBrokerSecurityKey, brokerCurrentQuantityKey, buildAuthoritativeBrokerQuantityMap, detectBrokerRowsFormat, detectBrokerTextFormat,
      normalizeBrokerNameFromFile, normalizeBrokerAction, brokerPositionClassFromTicker, brokerEventKey,
      brokerPositionKey].some(fn => typeof fn !== 'function') || !KNOWN_BROKER_YAHOO_OVERRIDES) {
   throw new Error('VestraBrokerParsingCore não foi carregado antes de app.js');
@@ -7723,6 +7725,33 @@ function rebuildBrokerGeneratedData() {
       a.notes = a.notes.replace(/Qty=[\d.,]+/, "Qty=" + fmt(parseNum(a.qty), 6));
     });
   })();
+
+  // Final current-quantity invariant. The UI quantity must equal exactly:
+  //   latest broker snapshot (when present) OR broker event ledger,
+  // aggregated once across brokers. This deliberately ignores the intermediate
+  // posMap accumulation path so no import/identity merge can silently count the
+  // same holding twice.
+  const authoritativeQty = buildAuthoritativeBrokerQuantityMap(rebuildEvents, rebuildPositions);
+  for (const a of (state.assets || [])) {
+    if (!a || !a.generatedFromBroker) continue;
+    const key = brokerCurrentQuantityKey(a);
+    const expectedQty = parseNum(authoritativeQty.get(key));
+    if (!(expectedQty > 0)) continue;
+    const oldQty = parseNum(a.qty);
+    if (oldQty > 0 && Math.abs(oldQty - expectedQty) > 1e-8) {
+      // Preserve the current per-share valuation until the next live quote.
+      const ratio = expectedQty / oldQty;
+      if (parseNum(a.value) > 0) a.value = parseNum(a.value) * ratio;
+      if (parseNum(a.valueLocal) > 0) a.valueLocal = parseNum(a.valueLocal) * ratio;
+      if (parseNum(a.costBasis) > 0) a.costBasis = parseNum(a.costBasis) * ratio;
+      console.warn("[broker quantity repair]", a.name || a.ticker, oldQty, "→", expectedQty);
+    }
+    a.qty = expectedQty;
+    if (parseNum(a.costBasis) > 0) a.pmOriginal = parseNum(a.costBasis) / expectedQty;
+    if (a.notes && /Qty=/.test(a.notes)) {
+      a.notes = a.notes.replace(/Qty=[\d.,]+/, "Qty=" + fmt(expectedQty, 6));
+    }
+  }
 }
 
 
