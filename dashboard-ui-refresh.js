@@ -1,4 +1,4 @@
-/* Vestra Dashboard UI Refresh v1.7 — semantic refresh events, no broad dashboard observer. */
+/* Vestra Dashboard UI Refresh v1.8 — event-driven refresh with zero dashboard MutationObservers. */
 (() => {
   'use strict';
 
@@ -10,8 +10,6 @@
   const PORTFOLIO_HEADING_ID = 'dashboardPortfolioHeading';
   const TODAY_BRIEF_ID = 'dashboardTodayBrief';
   let historyOpen = false;
-  let historyObserver = null;
-  let healthObserver = null;
   let todayRenderQueued = false;
 
   const shared = window.VestraUtils;
@@ -380,19 +378,6 @@
     if (icon) icon.textContent = '↕︎';
   }
 
-  function installObserver() {
-    const table = document.getElementById('snapshotTable');
-    if (table && !historyObserver) {
-      historyObserver = new MutationObserver(() => syncHistoryCompact());
-      historyObserver.observe(table, { childList: true, subtree: true });
-    }
-    const alert = document.getElementById('negReturnAlert');
-    if (alert && !healthObserver) {
-      healthObserver = new MutationObserver(() => queueMicrotask(renderPortfolioHealth));
-      healthObserver.observe(alert, { childList: true, attributes: true, attributeFilter: ['style'] });
-    }
-  }
-
   function refresh() {
     ensureStyles();
     normalizeBottomNav();
@@ -402,7 +387,6 @@
     renderUpcomingDividendTile();
     renderPortfolioHealth();
     syncHistoryCompact();
-    installObserver();
   }
 
   function boot() {
@@ -420,5 +404,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.7' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.8' });
 })();
