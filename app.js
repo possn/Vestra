@@ -11298,6 +11298,22 @@ const QUOTE_NATIVE_CURRENCY_OVERRIDES = Object.freeze({
   "IB1T.DE": "EUR",
 });
 
+const BROKER_QUOTE_RECOVERY_RULES = Object.freeze({
+  "FLR.US": Object.freeze({ ticker: "FLR", currency: "USD", minPrice: 10, maxPrice: 150 }),
+  "SHA.DE": Object.freeze({ ticker: "SHA0.DE", currency: "EUR", minPrice: 1, maxPrice: 30 }),
+});
+
+function brokerQuoteRecoveryMatches(asset, q, rawTicker) {
+  if (!asset || !q) return false;
+  const local = String(asset.ticker || asset.symbol || "").trim().toUpperCase();
+  const rule = BROKER_QUOTE_RECOVERY_RULES[local];
+  if (!rule) return false;
+  const qt = String((q && (q.ticker || q.symbol)) || rawTicker || "").trim().toUpperCase();
+  const qc = String(q.currency || "").trim().toUpperCase();
+  const qp = Number(q.price);
+  return qt === rule.ticker && qc === rule.currency && Number.isFinite(qp) && qp >= rule.minPrice && qp <= rule.maxPrice;
+}
+
 function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "") {
   if (!asset || !q || !Number.isFinite(priceEur) || priceEur <= 0) return { ok:false, reason:"Cotação inválida" };
 
@@ -11352,7 +11368,8 @@ function quoteSanityCheck(asset, q, priceEur, rawTicker, previousYahooTicker = "
     ((exactIsinIdentity && nextIdentity === exactIsinIdentity) || brokerAuthoritative));
   // A corrected/authoritative identity must not be compared to an unattributed legacy price.
   // The accepted quote becomes the new baseline and subsequent history carries quoteTicker.
-  const ref = (identityChanged || authoritativeLegacyRepair) ? 0 : (historical > 0 ? historical : baseline);
+  const brokerRecovery = brokerQuoteRecoveryMatches(asset, q, nextIdentity);
+  const ref = (identityChanged || authoritativeLegacyRepair || brokerRecovery) ? 0 : (historical > 0 ? historical : baseline);
   if (ref > 0) {
     const ratio = priceEur / ref;
     if (ratio > 5 || ratio < 0.2) {
@@ -11715,6 +11732,14 @@ async function refreshLiveQuotesCore(options = {}) {
       return out;
     }
     const rawBroker = String(raw || "").trim().toUpperCase();
+    const ccy = String(asset.priceCurrency || asset.currency || "").trim().toUpperCase();
+    const knownOverride = getKnownBrokerYahooOverride({
+      isin, ticker: raw || asset.ticker || "", name: asset.name || "", currency: ccy, priceCurrency: ccy
+    });
+    if (knownOverride) {
+      push(knownOverride);
+      return out;
+    }
     const usBroker = rawBroker.match(/^(.+)\.US$/);
     if (usBroker && usBroker[1]) {
       push(usBroker[1]);
@@ -11724,8 +11749,7 @@ async function refreshLiveQuotesCore(options = {}) {
       push(rawBroker);
       return out;
     }
-    const ccy = String(asset.priceCurrency || asset.currency || "").trim().toUpperCase();
-    const knownOverride = getKnownBrokerYahooOverride({
+    const inferredKnownOverride = getKnownBrokerYahooOverride({
       isin, ticker: raw || asset.ticker || "", name: asset.name || "", currency: ccy, priceCurrency: ccy
     });
     const inferredYahoo = inferYahooTickerFromIdentity({
@@ -11736,9 +11760,9 @@ async function refreshLiveQuotesCore(options = {}) {
       currency: ccy,
       priceCurrency: ccy
     });
-    const directMapped = knownOverride || (isin && ISIN_YAHOO_MAP[isin]) || inferredYahoo || YAHOO_TICKER_OVERRIDES[raw] || "";
+    const directMapped = inferredKnownOverride || (isin && ISIN_YAHOO_MAP[isin]) || inferredYahoo || YAHOO_TICKER_OVERRIDES[raw] || "";
 
-    if (knownOverride) push(knownOverride);
+    if (inferredKnownOverride) push(inferredKnownOverride);
     if (asset.generatedFromBroker && raw && ccy === "USD" && /^[A-Z0-9.-]{1,10}$/.test(canonicalBrokerTickerBase(raw))) push(canonicalBrokerTickerBase(raw));
     if (inferredYahoo) push(inferredYahoo);
     if (isin && ISIN_YAHOO_MAP[isin]) push(ISIN_YAHOO_MAP[isin]);
@@ -11746,7 +11770,7 @@ async function refreshLiveQuotesCore(options = {}) {
     if (storedYahoo) push(storedYahoo);
 
     const rawBase = canonicalBrokerTickerBase(raw);
-    const highConfidence = normalizeResolvedYahoo(knownOverride || inferredYahoo || storedYahoo || "");
+    const highConfidence = normalizeResolvedYahoo(inferredKnownOverride || inferredYahoo || storedYahoo || "");
     if (["MPW", "CRSP", "UNA.AS"].includes(highConfidence) || ["MPW", "CRSP", "UNA"].includes(rawBase)) {
       return highConfidence ? [highConfidence] : (rawBase ? [rawBase] : out);
     }
