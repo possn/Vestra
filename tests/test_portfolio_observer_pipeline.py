@@ -204,13 +204,12 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("host.dataset.signature",diagnostics)
         self.assertIn("function setText(el,value)",diagnostics)
 
-    def test_navigation_observer_remains_separate_and_sheet_scoped(self):
+    def test_navigation_repair_uses_semantic_sheet_lifecycle(self):
         nav=read("portfolio-sheet-navigation.js")
-        self.assertEqual(nav.count("new MutationObserver"),1)
-        self.assertIn("const sh=sheet();",nav)
-        self.assertIn("mo.observe(sh,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class']})",nav)
-        self.assertNotIn("mo.observe(document.body",nav)
-        self.assertIn("attributeFilter:['hidden','class']",nav)
+        market=read("market.js")
+        self.assertEqual(nav.count("new MutationObserver"),0)
+        self.assertIn("window.addEventListener('vestra:market-sheet-changed',repair)",nav)
+        self.assertIn("function notifyMarketSheetChanged",market)
         self.assertIn("prepareDossierOrigin(origin)",nav)
 
     def test_static_bundle_keeps_canonical_order(self):
