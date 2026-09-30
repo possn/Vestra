@@ -41,17 +41,12 @@ function forceFreshReload() {
   }, 40);
 }
 
-function isUpdateButton(target) {
-  if (!target) return false;
-  if (target.id === 'btnForceUpdate') return true;
-  return Boolean(target.closest?.('#btnForceUpdate'));
-}
-
 function installSafeUpdateGuard() {
   if (safeUpdateCaptureInstalled) return false;
+  const button = document.getElementById('btnForceUpdate');
+  if (!button) return false;
   safeUpdateCaptureInstalled = true;
-  document.addEventListener('click', event => {
-    if (!isUpdateButton(event.target)) return;
+  button.addEventListener('click', event => {
     event.preventDefault();
     event.stopImmediatePropagation();
     forceFreshReload();

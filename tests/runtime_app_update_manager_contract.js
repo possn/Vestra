@@ -8,7 +8,7 @@ const swSource = fs.readFileSync('sw.js', 'utf8');
 
 assert(source.includes('function installSafeUpdateGuard()'), 'app-ui-core must own the safe update guard');
 assert(source.includes('function forceFreshReload()'), 'app-ui-core must own the safe update navigation');
-assert(source.includes("document.addEventListener('click'"), 'safe update guard must be document-level');
+assert(source.includes("document.getElementById('btnForceUpdate')"), 'safe update guard must bind directly to the update button');
 assert(source.includes('stopImmediatePropagation()'), 'capture guard must block the legacy destructive target handler');
 assert(!source.includes('getRegistrations()'), 'safe update path must not enumerate registrations for removal');
 assert(!source.includes('.unregister('), 'safe update path must never unregister service workers');
@@ -34,6 +34,11 @@ const runtime = {
 };
 const documentListeners = [];
 const windowListeners = [];
+const buttonListeners = [];
+const button = {
+  id: 'btnForceUpdate',
+  addEventListener(type, handler, options) { buttonListeners.push({ type, handler, options }); },
+};
 
 const context = {
   console,
@@ -46,7 +51,7 @@ const context = {
   requestAnimationFrame(fn) { fn(); return 1; },
   document: {
     visibilityState: 'visible',
-    getElementById() { return null; },
+    getElementById(id) { return id === 'btnForceUpdate' ? button : null; },
     querySelectorAll() { return []; },
     addEventListener(type, handler, options) { documentListeners.push({ type, handler, options }); },
   },
@@ -62,15 +67,11 @@ context.window.window = context.window;
 vm.createContext(context);
 vm.runInContext(source, context, { filename: 'app-ui-core.js' });
 
-const guards = documentListeners.filter(x => x.type === 'click');
-assert.strictEqual(guards.length, 1, 'safe update capture guard must be installed exactly once');
+const guards = buttonListeners.filter(x => x.type === 'click');
+assert.strictEqual(guards.length, 1, 'safe update capture guard must be installed exactly once on the button');
 assert.strictEqual(guards[0].options, true, 'safe update guard must run in capture phase');
 
 let legacyRan = false;
-const button = {
-  id: 'btnForceUpdate',
-  closest(selector) { return selector === '#btnForceUpdate' ? this : null; },
-};
 const event = {
   target: button,
   defaultPrevented: false,
@@ -89,8 +90,8 @@ assert(runtime.timers.length > 0, 'safe update must schedule cache-busted naviga
 runtime.timers.shift()();
 assert(runtime.replacedUrl.includes('_v='), 'safe update must finish with a cache-busted navigation');
 
-const before = documentListeners.length;
+const before = buttonListeners.length;
 context.window.VestraUiCore.installSafeUpdateGuard();
-assert.strictEqual(documentListeners.length, before, 'safe update guard installation must be idempotent');
+assert.strictEqual(buttonListeners.length, before, 'safe update guard installation must be idempotent');
 
 console.log('runtime_app_update_manager_contract: ok');
