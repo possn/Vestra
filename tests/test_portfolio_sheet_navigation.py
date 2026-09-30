@@ -38,6 +38,8 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
         self.assertIn("sh?.addEventListener('click',handleSheetClick,true)",s)
         self.assertIn("function handleSheetClick(e)",s)
 
+        self.assertIn("window.setView('market')",s)
+
     def test_market_emits_semantic_sheet_lifecycle(self):
         market=read("market.js")
         self.assertIn("function notifyMarketSheetChanged",market)
