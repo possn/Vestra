@@ -61,12 +61,12 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn(".catch(() => null)", self.runtime)
 
     def test_companion_is_versioned_reachable_and_offline_capable(self):
-        self.assertIn("dashboard-daily-news.js?v=1.8", self.loader)
+        self.assertIn("dashboard-daily-news.js?v=1.9", self.loader)
         self.assertIn("ensureDashboardDailyNews()", self.loader)
         self.assertIn('"./dashboard-daily-news.js"', self.sw)
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
         self.assertIn("dashboard-daily-news.css?v=1.1", self.runtime)
-        self.assertIn("version: '1.8'", self.runtime)
+        self.assertIn("version: '1.9'", self.runtime)
 
     def test_news_runtime_is_network_first_so_interaction_fixes_are_not_stale(self):
         network_first = self.sw.split('const BOOTSTRAP_NETWORK_FIRST = new Set([', 1)[1].split(']);', 1)[0]
@@ -94,8 +94,8 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn("existing.isEqualNode(next)", self.runtime)
         self.assertIn("new MutationObserver(queueRender)", self.runtime)
         self.assertIn("const dashboard = document.getElementById('viewDashboard')", self.runtime)
-        self.assertIn("observer.observe(dashboard, { childList: true, subtree: true })", self.runtime)
-        self.assertNotIn("observer.observe(document.body, { childList: true, subtree: true })", self.runtime)
+        self.assertIn("observer.observe(dashboard, { childList: true })", self.runtime)
+        self.assertNotIn("observer.observe(dashboard, { childList: true, subtree: true })", self.runtime)
         self.assertNotIn("const NEWS_RETURN_KEY", self.runtime)
 
     def test_card_stays_compact_and_has_external_link_hardening(self):
