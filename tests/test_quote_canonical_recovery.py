@@ -161,7 +161,7 @@ class CanonicalQuoteRecoveryTests(unittest.TestCase):
 
     def test_quote_repair_is_available_before_any_manual_refresh(self):
         html = INDEX.read_text(encoding="utf-8")
-        app_pos = html.index('app.js?v=20260930v1')
+        app_pos = html.index('app.js?v=20260930v2')
         guard_pos = html.index('quote-canonical-repair.js?v=2.6')
         market_pos = html.index('market-static-universe.js?v=1.30')
         self.assertLess(app_pos, guard_pos)
