@@ -2319,13 +2319,28 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   });
 
   const marketView=$m('viewMarket');
+  let marketSearchRenderTimer=null;
+  function scheduleMarketSearchPrimaryRender(){
+    if(marketSearchRenderTimer!==null) clearTimeout(marketSearchRenderTimer);
+    marketSearchRenderTimer=setTimeout(()=>{
+      marketSearchRenderTimer=null;
+      renderPrimary();
+    },90);
+  }
   marketView?.addEventListener('change', e=>{
     if(e.target.matches('[data-market-sector-select]') && e.target.value){ M.sector=e.target.value; renderPrimary(); }
   });
 
   marketView?.addEventListener('input', e=>{
     if(e.target.id==='marketSearch'){
-      M.query=e.target.value.trim(); ensureLoaded().then(()=>{ renderSearchSuggestions(); renderPrimary(); });
+      M.query=e.target.value.trim();
+      ensureLoaded().then(()=>{
+        // Suggestions stay immediate, while the heavier market surface update is
+        // coalesced across rapid keystrokes so WebKit does not rebuild the full
+        // results DOM on every character.
+        renderSearchSuggestions();
+        scheduleMarketSearchPrimaryRender();
+      });
     }
   });
 
