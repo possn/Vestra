@@ -24,6 +24,9 @@ class NavigationPostPaintTests(unittest.TestCase):
         block = APP[start:start + 1400]
         self.assertEqual(block.count("requestAnimationFrame(() => {"), 1)
 
+    def test_navigation_skips_noop_scroll_to_top(self):
+        self.assertIn("if (Math.abs(Number(window.scrollY || 0)) <= 1) return;", APP)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
