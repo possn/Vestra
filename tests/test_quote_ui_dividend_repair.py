@@ -22,7 +22,8 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
   def test_quote_errors_are_bridged_to_non_blocking_sheet(self):
     q=read('app-quote-errors.js')
     self.assertIn('showQuoteErrorSheetFromModal',q)
-    self.assertIn("observer.observe(modal,{attributes:true,attributeFilter:['aria-hidden']})",q)
+    self.assertNotIn('new MutationObserver',q)
+    self.assertIn("window.addEventListener('vestra:modal-opened'",q)
     self.assertIn("if(modal.getAttribute('aria-hidden')==='false') showQuoteErrorSheetFromModal()",q)
     self.assertIn("close.addEventListener('click',closeQuoteErrorSheet)",q)
     self.assertIn("document.body.classList.remove('modal-open')",q)
