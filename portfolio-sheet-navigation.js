@@ -1,7 +1,7 @@
-/* Vestra Portfolio Sheet Navigation v1.7 — semantic sheet lifecycle, zero mutation observers. */
+/* Vestra Portfolio Sheet Navigation v1.8 — scoped sheet click ownership, zero mutation observers. */
 (() => {
   'use strict';
-  const VERSION='1.7';
+  const VERSION='1.8';
   // Normal companion navigation is guarded to flow through VestraNavigation.openCompany().
   let openingFromPortfolio=false;
   let navigationSequence=0;
@@ -127,10 +127,16 @@
     document.documentElement.classList.remove('modal-open');
     document.body.classList.remove('modal-open');
     sh.scrollTop=0; sh.scrollLeft=0;
-    document.querySelectorAll('[data-view]').forEach(el=>{
-      if(el.dataset.view==='market') el.classList.add('is-active');
-      else if(el.dataset.view==='assets') el.classList.remove('is-active');
-    });
+    // Restore the underlying Market view through the canonical navigation owner.
+    // This keeps the actual section visibility, nav state and lazy Market runtime
+    // in sync instead of only toggling button classes.
+    if(typeof window.setView==='function') window.setView('market');
+    else {
+      document.querySelectorAll('[data-view]').forEach(el=>{
+        if(el.dataset.view==='market') el.hidden=false;
+        else if(el.classList?.contains('view')) el.hidden=true;
+      });
+    }
     return true;
   }
 
@@ -163,7 +169,7 @@
     document.head.appendChild(link);
   }
 
-  document.addEventListener('click',e=>{
+  function handleSheetClick(e){
     const sh=sheet();
     if(!sh) return;
 
@@ -202,11 +208,20 @@
       e.stopImmediatePropagation();
       closePortfolioToMarket();
     }
-  },true);
+  }
+
+  function installSheetClickOwner(){
+    const sh=sheet();
+    if(!sh || sh.dataset.vestraPortfolioClickOwner==='1') return false;
+    sh.dataset.vestraPortfolioClickOwner='1';
+    sh.addEventListener('click',handleSheetClick,true);
+    return true;
+  }
 
   function start(){
     ensureStyles();
     repair();
+    installSheetClickOwner();
     // Market owns sheet rendering and emits one semantic signal after each
     // meaningful open/close/rerender. Avoid observing every descendant class
     // mutation while tabs, live data and cards update on iPhone.

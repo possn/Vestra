@@ -28,7 +28,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'market-row-ui.js?v=1.0',
             'market-metric-cleanup.js?v=1.2',
             'market-company-brief.js?v=2.1',
-            'portfolio-sheet-navigation.js?v=1.7',
+            'portfolio-sheet-navigation.js?v=1.8',
             'portfolio-collapsibles.js?v=1.7',
             'portfolio-card-classifier.js?v=1.9',
             'market-data-loader.js?v=2.6',
