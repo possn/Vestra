@@ -85,9 +85,10 @@ class MobileUiRefreshContractTests(unittest.TestCase):
     def test_view_switch_defers_forced_scroll_out_of_tap_handler(self):
         marker = 'Keep forced layout/scroll work out of the tap handler'
         self.assertIn(marker, self.app)
-        section = self.app[self.app.index(marker):self.app.index(marker) + 320]
+        section = self.app[self.app.index(marker):self.app.index(marker) + 520]
         self.assertIn('requestAnimationFrame(() => {', section)
         self.assertIn('window.scrollTo(0, 0)', section)
+        self.assertIn('window.scrollY', section)
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn('ensureMobileUiRefresh', self.loader)
