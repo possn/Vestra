@@ -5,7 +5,8 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = (ROOT / "app.js").read_text(encoding="utf-8")
 CORE = (ROOT / "app-broker-parsing-core.js").read_text(encoding="utf-8")
 PARSERS = (ROOT / "app-broker-parsers.js").read_text(encoding="utf-8")
-WORKBOOK = (ROOT / "app-broker-workbook.js").read_text(encoding="utf-8")\nLOADER = (ROOT / "app-broker-import-loader.js").read_text(encoding="utf-8")
+WORKBOOK = (ROOT / "app-broker-workbook.js").read_text(encoding="utf-8")
+LOADER = (ROOT / "app-broker-import-loader.js").read_text(encoding="utf-8")
 
 
 class BrokerRealExportRegressionTests(unittest.TestCase):
