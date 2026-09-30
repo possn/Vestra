@@ -11,7 +11,7 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardMarketSentimentTests(unittest.TestCase):
     def test_runtime_is_reachable_without_blocking_market_load(self):
         self.assertIn("ensureDashboardMarketSentiment", LOADER)
-        self.assertIn("dashboard-market-sentiment.js?v=1.5", LOADER)
+        self.assertIn("dashboard-market-sentiment.js?v=1.6", LOADER)
         tail = LOADER[LOADER.index("// Dashboard/mobile companions remain eager"):]
         self.assertIn("ensureDashboardMarketSentiment();", tail)
         self.assertIn("requestIdleCallback", JS)
@@ -43,7 +43,7 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn("Ver como é calculado", JS)
         self.assertIn("dms-detail", JS)
         self.assertIn(".dms-detail[hidden]", CSS)
-        self.assertIn("version:'1.5'", JS)
+        self.assertIn("version:'1.6'", JS)
 
     def test_aaii_retail_sentiment_is_integrated_without_a_second_dashboard_card(self):
         data = (ROOT / "data" / "aaii-sentiment.json").read_text(encoding="utf-8")
