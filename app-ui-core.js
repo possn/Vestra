@@ -1,4 +1,4 @@
-/* Vestra UI core v2.6 — DOM, lazy Chart infrastructure, safe update action and canonical launch lifecycle. */
+/* Vestra UI core v2.7 — scoped safe update ownership and canonical launch lifecycle. */
 (() => {
   'use strict';
 /* ─── DOM HELPER ──────────────────────────────────────────── */
@@ -49,8 +49,10 @@ function isUpdateButton(target) {
 
 function installSafeUpdateGuard() {
   if (safeUpdateCaptureInstalled) return false;
+  const button = document.getElementById('btnForceUpdate');
+  if (!button) return false;
   safeUpdateCaptureInstalled = true;
-  document.addEventListener('click', event => {
+  button.addEventListener('click', event => {
     if (!isUpdateButton(event.target)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -59,7 +61,15 @@ function installSafeUpdateGuard() {
   return true;
 }
 
-try { installSafeUpdateGuard(); } catch (_) {}
+function armSafeUpdateGuard() {
+  if (installSafeUpdateGuard()) return true;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', installSafeUpdateGuard, { once: true });
+  }
+  return false;
+}
+
+try { armSafeUpdateGuard(); } catch (_) {}
 
 const EXTERNAL_RETURN_KEY = 'vestra:external-return-v1';
 const DAILY_NEWS_RETURN_KEY = 'vestra:daily-news-return-v1'; // legacy compatibility
