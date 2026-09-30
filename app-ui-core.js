@@ -343,19 +343,37 @@ function resizeVisibleCharts(root = document) {
   return resized;
 }
 
+let chartStabilizeFrame = null;
+let chartStabilizeTimer = null;
+
 function scheduleChartStabilization(root = document) {
   const token = ++chartStabilizeToken;
   const run = () => {
     if (token !== chartStabilizeToken) return;
     try { resizeVisibleCharts(root); } catch (_) {}
   };
-  if (typeof requestAnimationFrame === "function") {
-    requestAnimationFrame(() => requestAnimationFrame(run));
-  } else {
-    setTimeout(run, 0);
+
+  if (chartStabilizeFrame !== null && typeof cancelAnimationFrame === "function") {
+    try { cancelAnimationFrame(chartStabilizeFrame); } catch (_) {}
   }
-  setTimeout(run, 140);
-  setTimeout(run, 420);
+  if (chartStabilizeTimer !== null) clearTimeout(chartStabilizeTimer);
+
+  if (typeof requestAnimationFrame === "function") {
+    chartStabilizeFrame = requestAnimationFrame(() => {
+      chartStabilizeFrame = null;
+      run();
+    });
+  } else {
+    run();
+  }
+
+  // One trailing pass after viewport/layout settles is enough. Repeated resize,
+  // orientation and keyboard events now replace the pending work instead of
+  // stacking three layout/chart passes per event on iPhone/WebKit.
+  chartStabilizeTimer = setTimeout(() => {
+    chartStabilizeTimer = null;
+    run();
+  }, 180);
   return token;
 }
 

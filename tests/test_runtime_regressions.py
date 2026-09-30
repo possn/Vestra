@@ -10,6 +10,18 @@ def read(name):
 
 
 class RuntimeRegressionTests(unittest.TestCase):
+
+    def test_chart_stabilization_is_coalesced(self):
+        src = (ROOT / "app-ui-core.js").read_text(encoding="utf-8")
+        self.assertIn("let chartStabilizeFrame = null;", src)
+        self.assertIn("let chartStabilizeTimer = null;", src)
+        self.assertIn("cancelAnimationFrame(chartStabilizeFrame)", src)
+        self.assertIn("clearTimeout(chartStabilizeTimer)", src)
+        self.assertIn("}, 180);", src)
+        self.assertNotIn("setTimeout(run, 140);", src)
+        self.assertNotIn("setTimeout(run, 420);", src)
+
+
     def test_app_module_load_order(self):
         html = read("index.html")
         ordered = [
