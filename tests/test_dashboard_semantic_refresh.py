@@ -38,3 +38,10 @@ def test_dashboard_refresh_has_zero_mutation_observers():
     assert "MutationObserver" not in UI
     assert "historyObserver" not in UI
     assert "healthObserver" not in UI
+
+
+def test_health_and_history_use_semantic_component_events():
+    assert 'new CustomEvent("vestra:dashboard-health-updated")' in APP
+    assert 'new CustomEvent("vestra:dashboard-history-updated")' in APP
+    assert "vestra:dashboard-health-updated" in UI
+    assert "vestra:dashboard-history-updated" in UI
