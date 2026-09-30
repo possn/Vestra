@@ -23,7 +23,8 @@ class RuntimeWorkerRefreshV2Tests(unittest.TestCase):
     def test_update_owner_is_navigation_only_and_never_wipes_runtime(self):
         text = UI_CORE.read_text(encoding="utf-8")
         self.assertIn("function installSafeUpdateGuard()", text)
-        self.assertIn("document.addEventListener('click'", text)
+        self.assertIn("button.addEventListener('click'", text)
+        self.assertNotIn("document.addEventListener('click'", text)
         self.assertIn("}, true);", text)
         self.assertIn("stopImmediatePropagation", text)
         self.assertIn("window.location.replace", text)
