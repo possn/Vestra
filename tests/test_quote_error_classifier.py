@@ -19,7 +19,9 @@ class QuoteErrorClassifierTests(unittest.TestCase):
         self.assertIn('vestra:modal-opened',app)
         self.assertIn("window.addEventListener('vestra:modal-opened'",module)
         self.assertNotIn('new MutationObserver',module)
-        self.assertIn("version:'1.3'",module)
+        self.assertNotIn("document.addEventListener('click',forceCloseQuoteErrorsModal,true)",module)
+        self.assertIn("modal.querySelectorAll('[data-close=\"modalQuoteErrors\"]')",module)
+        self.assertIn("version:'1.4'",module)
 
     def test_module_load_order_and_cache(self):
         idx=read("index.html")
