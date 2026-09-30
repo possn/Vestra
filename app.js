@@ -827,17 +827,16 @@ function setView(view) {
     });
   }
 
-  // Phase 2 (deferred): render content after browser has painted the new tab frame.
-  // Using double-RAF ensures one paint cycle completes before heavy DOM work starts,
-  // making the tab feel instantly responsive even when render takes >100ms.
+  // Phase 2 (deferred): render on the next frame, after the synchronous view switch.
+  // A second RAF added a visible extra-frame delay to every navigation on iPhone.
+  // renderView already skips clean views, so one frame preserves responsiveness
+  // without making every tab/button transition feel sticky.
   if (pendingViewRenderFrame) { try { cancelAnimationFrame(pendingViewRenderFrame); } catch(_){} }
   pendingViewRenderFrame = requestAnimationFrame(() => {
-    pendingViewRenderFrame = requestAnimationFrame(() => {
-      pendingViewRenderFrame = null;
-      if (currentView !== view) return; // user navigated away before render
-      if (view === "assets") updateQuoteErrorIndicator();
-      renderView(view, { force: false, sync: true });
-    });
+    pendingViewRenderFrame = null;
+    if (currentView !== view) return; // user navigated away before render
+    if (view === "assets") updateQuoteErrorIndicator();
+    renderView(view, { force: false, sync: true });
   });
 }
 
@@ -11328,7 +11327,11 @@ const QUOTE_NATIVE_CURRENCY_OVERRIDES = Object.freeze({
 });
 
 const BROKER_QUOTE_RECOVERY_RULES = Object.freeze({
+  // XTB imports may already have normalized FLR.US -> FLR before quote refresh.
+  // Keep both local identities so a stale legacy quote cannot block the canonical
+  // Fluor Corp quote with an absurd ratio against the previously poisoned baseline.
   "FLR.US": Object.freeze({ ticker: "FLR", currency: "USD", minPrice: 10, maxPrice: 150 }),
+  "FLR": Object.freeze({ ticker: "FLR", currency: "USD", minPrice: 10, maxPrice: 150 }),
   "SHA.DE": Object.freeze({ ticker: "SHA0.DE", currency: "EUR", minPrice: 1, maxPrice: 30 }),
 });
 
