@@ -13,6 +13,14 @@ class QuoteErrorClassifierTests(unittest.TestCase):
         self.assertIn("Categoria:</b>",app)
         self.assertIn("summarizeQuoteErrors(errors || [])",app)
         self.assertNotIn("classifyQuoteError(asset",app)
+    def test_quote_modal_bridge_is_event_driven(self):
+        app=read("app.js")
+        module=read("app-quote-errors.js")
+        self.assertIn('vestra:modal-opened',app)
+        self.assertIn("window.addEventListener('vestra:modal-opened'",module)
+        self.assertNotIn('new MutationObserver',module)
+        self.assertIn("version:'1.3'",module)
+
     def test_module_load_order_and_cache(self):
         idx=read("index.html")
         self.assertLess(idx.index('src="app-quote-errors.js'),idx.index('src="app.js'))
