@@ -800,7 +800,9 @@ function setView(view) {
   document.body.dataset.view = view;
   const passive = document.getElementById("passivebar");
   if (passive) passive.style.display = ["dashboard", "assets"].includes(view) ? "" : "none";
-  requestAnimationFrame(() => { try { syncFixedBarHeights(); } catch (_) {} });
+  // Coalesce fixed-bar measurements across rapid tab changes instead of
+  // scheduling a fresh layout read for every tap.
+  try { scheduleFixedBarSync(); } catch (_) {}
   if (view === "dashboard" && prevView !== "dashboard") summaryExpanded = false;
   if (view === "assets" && prevView !== "assets") {
     itemsView = 'top5';
@@ -11224,7 +11226,10 @@ function wire() {
   }
 
   // ── P&L on quote update (ex-wirePnL) ─────────────────────────
-  document.addEventListener("quotesUpdated", renderEquityPnL);
+  document.addEventListener("quotesUpdated", () => {
+    if (currentView === "assets") renderEquityPnL();
+    else markViewsDirty(["assets"]);
+  });
 
   // Init
   setModeLiabs(false);
@@ -12684,7 +12689,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       .finally(() => {
         try { autoRefreshQuotesIfStale(); } catch (e) { console.error("Falha no auto-refresh de cotações", e); }
       });
-  }, { timeoutMs: 1200, fallbackDelayMs: 500 });
+  }, { timeoutMs: 3000, fallbackDelayMs: 1800 });
   window.openDividendBaseModal = openDividendBaseModal;
   window.setDividendYieldDisplayMode = setDividendYieldDisplayMode;
   window.applyPreferredDividendYieldToProjection = applyPreferredDividendYieldToProjection;
@@ -12716,7 +12721,7 @@ document.addEventListener("visibilitychange", () => {
     try { renderQuoteSyncStatus(); } catch (_) {}
     scheduleWhenIdle(
       () => { try { autoRefreshQuotesIfStale(); } catch (_) {} },
-      { timeoutMs: 700, fallbackDelayMs: 250 }
+      { timeoutMs: 1800, fallbackDelayMs: 900 }
     );
   }
 });
