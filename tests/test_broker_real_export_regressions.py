@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = (ROOT / "app.js").read_text(encoding="utf-8")
 CORE = (ROOT / "app-broker-parsing-core.js").read_text(encoding="utf-8")
 PARSERS = (ROOT / "app-broker-parsers.js").read_text(encoding="utf-8")
-WORKBOOK = (ROOT / "app-broker-workbook.js").read_text(encoding="utf-8")
+WORKBOOK = (ROOT / "app-broker-workbook.js").read_text(encoding="utf-8")\nLOADER = (ROOT / "app-broker-import-loader.js").read_text(encoding="utf-8")
 
 
 class BrokerRealExportRegressionTests(unittest.TestCase):
@@ -19,6 +19,8 @@ class BrokerRealExportRegressionTests(unittest.TestCase):
     def test_xtb_summary_rows_are_never_counted_as_lots(self):
         self.assertIn("const rowType = String(r.type || r.tipo ||", PARSERS)
         self.assertIn("!/^(BUY|SELL)$/.test(rowType)", PARSERS)
+        self.assertIn("Vestra broker parsers v1.4", PARSERS)
+        self.assertIn("app-broker-parsers.js?v=1.4", LOADER)
 
     def test_xtb_snapshot_accepts_iso_datetime_from_sheetjs(self):
         self.assertIn("const iso = s.match", WORKBOOK)
