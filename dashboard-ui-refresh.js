@@ -1,4 +1,4 @@
-/* Vestra Dashboard UI Refresh v1.6 — editorial daily brief + portfolio context. */
+/* Vestra Dashboard UI Refresh v1.7 — semantic refresh events, no broad dashboard observer. */
 (() => {
   'use strict';
 
@@ -12,7 +12,6 @@
   let historyOpen = false;
   let historyObserver = null;
   let healthObserver = null;
-  let todayObserver = null;
   let todayRenderQueued = false;
 
   const shared = window.VestraUtils;
@@ -387,11 +386,6 @@
       historyObserver = new MutationObserver(() => syncHistoryCompact());
       historyObserver.observe(table, { childList: true, subtree: true });
     }
-    const dashboard = document.getElementById('viewDashboard');
-    if (dashboard && !todayObserver) {
-      todayObserver = new MutationObserver(queueTodayBrief);
-      todayObserver.observe(dashboard, { childList: true, subtree: true, characterData: true });
-    }
     const alert = document.getElementById('negReturnAlert');
     if (alert && !healthObserver) {
       healthObserver = new MutationObserver(() => queueMicrotask(renderPortfolioHealth));
@@ -415,13 +409,16 @@
     refresh();
     window.addEventListener('vestra:app-ready', refresh);
     window.addEventListener('vestra:market-ready', refresh);
-    document.addEventListener('click', event => {
-      if (event.target?.closest?.('[data-view="dashboard"], [data-view="cashflow"]')) setTimeout(refresh, 60);
+    window.addEventListener('vestra:dashboard-signal-updated', queueTodayBrief);
+    window.addEventListener('vestra:view-rendered', event => {
+      const view = String(event?.detail?.view || '');
+      if (view === 'dashboard' || view === 'cashflow') refresh();
     });
+    document.addEventListener('quotesUpdated', refresh);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.6' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.7' });
 })();

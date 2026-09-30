@@ -153,6 +153,7 @@
     else if (mount.before) mount.parent.insertBefore(next, mount.before);
     else mount.parent.appendChild(next);
     renderedMarkup = markup;
+    try { window.dispatchEvent(new CustomEvent('vestra:dashboard-signal-updated', { detail: { source: 'daily-news' } })); } catch (_) {}
     return true;
   }
 
@@ -259,6 +260,6 @@
 
   window.VestraDashboardDailyNews = Object.freeze({
     load, refresh: () => load(true), render, rankedItems, safeNewsUrl,
-    rememberNewsReturn, version: '1.7'
+    rememberNewsReturn, version: '1.8'
   });
 })();
