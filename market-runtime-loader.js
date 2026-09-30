@@ -1,4 +1,4 @@
-/* Vestra Market runtime loader v2.1 — replay early market mode intent after lazy core load. */
+/* Vestra Market runtime loader v2.2 — release bootstrap click capture after lazy core load. */
 (() => {
   'use strict';
 
@@ -156,13 +156,18 @@
     }
   }
 
-  document.addEventListener?.('click', event => {
-    if (window.VestraMarket?.ensureLoaded) return;
+  function captureEarlyModeIntent(event) {
+    if (window.VestraMarket?.ensureLoaded) {
+      document.removeEventListener?.('click', captureEarlyModeIntent, true);
+      return;
+    }
     const button = event.target?.closest?.('[data-market-mode]');
     if (!button) return;
     pendingMode = String(button.dataset.marketMode || '').trim();
     if (pendingMode) ensure({ loadData: true }).catch(() => {});
-  }, true);
+  }
+
+  document.addEventListener?.('click', captureEarlyModeIntent, true);
 
   function loadCore() {
     if (window.VestraMarket?.ensureLoaded) return Promise.resolve(window.VestraMarket);
@@ -190,8 +195,9 @@
           reject(error);
           return;
         }
+        document.removeEventListener?.('click', captureEarlyModeIntent, true);
         try {
-          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '2.1' } }));
+          window.dispatchEvent(new CustomEvent('vestra:market-core-ready', { detail: { version: '2.2' } }));
         } catch (_) {}
         replayPendingSearch();
         replayPendingMode();
@@ -257,6 +263,6 @@
     ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '2.1',
+    version: '2.2',
   });
 })();

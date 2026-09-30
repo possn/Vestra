@@ -118,6 +118,16 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertLess(loader.index("market-live-overlay.js?v=1.2"), loader.index("script.src = 'market.js?v=20260926rotation4';"))
         self.assertIn('"./market-live-overlay.js"', sw)
 
+    def test_non_market_global_click_listeners_are_released(self):
+        mobile = read("mobile-ui-refresh.js")
+        loader = read("market-runtime-loader.js")
+        html = read("index.html")
+        self.assertNotIn("document.addEventListener('click'", mobile)
+        self.assertIn("vestra:view-rendered", mobile)
+        self.assertIn("function captureEarlyModeIntent(event)", loader)
+        self.assertIn("document.removeEventListener?.('click', captureEarlyModeIntent, true)", loader)
+        self.assertIn("market-runtime-loader.js?v=2.2", html)
+
     def test_lifecycle_persistence_is_blocked_until_hydration(self):
         app = read("app.js")
         self.assertIn("function saveStateOnLifecycleExit()", app)
