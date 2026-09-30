@@ -249,6 +249,87 @@ function makeBrokerSecurityKey({ isin = "", ticker = "", name = "", currency = "
   return `NAME:${n}`;
 }
 
+
+function brokerCurrentQuantityKey(record = {}) {
+  const yahoo = inferYahooTickerFromIdentity({
+    isin: record.isin || "",
+    ticker: record.yahooTicker || record.ticker || record.symbol || "",
+    yahooTicker: record.yahooTicker || "",
+    name: record.name || "",
+    currency: record.priceCurrency || record.localCurrency || record.totalCurrency || record.currency || "",
+    priceCurrency: record.priceCurrency || record.localCurrency || record.totalCurrency || record.currency || ""
+  });
+  if (yahoo) return `YAHOO:${String(yahoo).trim().toUpperCase()}`;
+  // Parsed broker snapshots already carry Yahoo-normalized tickers (e.g. XTB
+  // O.US -> O, MSFT.US -> MSFT, NESN.CH -> NESN.SW). Use that exact market
+  // identity before falling back to the more fragmented ISIN/ticker key space.
+  const ticker = String(record.yahooTicker || record.ticker || record.symbol || "").trim().toUpperCase();
+  if (ticker && /^[A-Z0-9.^=\-]+(?:\.[A-Z0-9]{1,6})?$/.test(ticker)) return `YAHOO:${ticker}`;
+  return makeBrokerSecurityKey(record);
+}
+
+function buildAuthoritativeBrokerQuantityMap(eventsInput, positionsInput) {
+  const events = Array.isArray(eventsInput) ? eventsInput.filter(Boolean) : [];
+  const positions = Array.isArray(positionsInput) ? positionsInput.filter(Boolean) : [];
+
+  // First collapse snapshot rows inside each physical source file/security/date.
+  // This supports exports that contain several lots while preventing two copies of
+  // the same report from being added together.
+  const snapshotsBySource = new Map();
+  for (const p of positions) {
+    if (p.positionKind !== "market_snapshot" && p.positionKind !== "cost_snapshot") continue;
+    const broker = String(p.broker || "").trim() || "Corretora";
+    const sec = brokerCurrentQuantityKey(p);
+    if (!sec) continue;
+    const date = String(p.snapshotDate || "").slice(0, 10);
+    const source = String(p.sourceHash || p.sourceName || "").trim() || "source";
+    const k = `${broker}|${sec}|${source}|${date}`;
+    snapshotsBySource.set(k, (snapshotsBySource.get(k) || 0) + Math.max(0, parseNum(p.qty)));
+  }
+
+  // For each broker/security, keep one authoritative latest snapshot. If two
+  // reports have the same latest date, use the larger complete quantity rather
+  // than summing duplicate reports.
+  const latestSnapshot = new Map();
+  for (const [k, qty] of snapshotsBySource) {
+    const parts = k.split("|");
+    const date = parts.pop() || "";
+    parts.pop(); // source
+    const brokerSec = parts.join("|");
+    const prev = latestSnapshot.get(brokerSec);
+    if (!prev || date > prev.date) latestSnapshot.set(brokerSec, { date, qty });
+    else if (date === prev.date && qty > prev.qty) latestSnapshot.set(brokerSec, { date, qty });
+  }
+
+  // Reconstruct current quantity from the canonical event ledger for broker/security.
+  const ledgerQty = new Map();
+  for (const e of events) {
+    const broker = String(e.broker || "").trim() || "Corretora";
+    const sec = brokerCurrentQuantityKey(e);
+    if (!sec) continue;
+    const k = `${broker}|${sec}`;
+    const q = Math.max(0, Math.abs(parseNum(e.qty)));
+    let delta = 0;
+    if (e.type === "BUY" || e.type === "STOCK_DISTRIBUTION" || e.type === "SPLIT_OPEN") delta = q;
+    else if (e.type === "SELL" || e.type === "SPLIT_CLOSE") delta = -q;
+    if (delta) ledgerQty.set(k, (ledgerQty.get(k) || 0) + delta);
+  }
+
+  // A current snapshot is authoritative for that broker/security. Otherwise use
+  // the net event ledger. Finally aggregate across brokers by canonical security.
+  const combined = new Map();
+  const brokerSecurityKeys = new Set([...latestSnapshot.keys(), ...ledgerQty.keys()]);
+  for (const brokerSec of brokerSecurityKeys) {
+    const sep = brokerSec.indexOf("|");
+    const sec = sep >= 0 ? brokerSec.slice(sep + 1) : brokerSec;
+    const snap = latestSnapshot.get(brokerSec);
+    const qty = snap ? snap.qty : Math.max(0, ledgerQty.get(brokerSec) || 0);
+    if (!(qty > 0) || !sec) continue;
+    combined.set(sec, (combined.get(sec) || 0) + qty);
+  }
+  return combined;
+}
+
 function detectBrokerRowsFormat(rows) {
   if (!Array.isArray(rows) || !rows.length) return "unknown";
   const sample = rows.slice(0, 8).map(normalizeRow);
@@ -400,6 +481,8 @@ function brokerPositionKey(pos) {
     sameSecurityName,
     sameBrokerSecurityIdentity,
     makeBrokerSecurityKey,
+    brokerCurrentQuantityKey,
+    buildAuthoritativeBrokerQuantityMap,
     detectBrokerRowsFormat,
     detectBrokerTextFormat,
     normalizeBrokerNameFromFile,
