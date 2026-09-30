@@ -35,10 +35,11 @@ class PortfolioSheetNavigationTests(unittest.TestCase):
     def test_interactions_are_scoped_to_market_sheet(self):
         s=read("portfolio-sheet-navigation.js")
         self.assertNotIn("document.addEventListener('click'",s)
-        self.assertIn("sh?.addEventListener('click',handleSheetClick,true)",s)
+        self.assertNotIn("addEventListener('click',handleSheetClick",s)
         self.assertIn("function handleSheetClick(e)",s)
-
         self.assertIn("window.setView('market')",s)
+        market=read("market.js")
+        self.assertIn("window.VestraNavigation?.handleSheetClick?.(e)",market)
 
     def test_market_emits_semantic_sheet_lifecycle(self):
         market=read("market.js")
