@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260930v3").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260930v4").catch(() => {});
     });
   }
 } catch (_) {}
@@ -837,6 +837,7 @@ function setView(view) {
     if (currentView !== view) return; // user navigated away before render
     if (view === "assets") updateQuoteErrorIndicator();
     renderView(view, { force: false, sync: true });
+    try { window.dispatchEvent(new CustomEvent("vestra:view-rendered", { detail: { view } })); } catch (_) {}
   });
 }
 

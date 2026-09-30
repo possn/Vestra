@@ -1,4 +1,4 @@
-/* Vestra Dashboard Market Sentiment v1.5 — compact transparent market barometer. */
+/* Vestra Dashboard Market Sentiment v1.6 — compact transparent market barometer. */
 (() => {
   'use strict';
 
@@ -337,6 +337,7 @@
     if(existing) existing.replaceWith(next);
     else if(mount.anchor) mount.anchor.insertAdjacentElement('afterend',next);
     else mount.dashboard.prepend(next);
+    try { window.dispatchEvent(new CustomEvent('vestra:dashboard-signal-updated', { detail: { source: 'market-sentiment' } })); } catch (_) {}
     return true;
   }
 
@@ -429,7 +430,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.5',
+    version:'1.6',
     computeSnapshot,
     labelFor,
     load,
