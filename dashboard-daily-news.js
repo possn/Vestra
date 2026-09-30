@@ -1,4 +1,4 @@
-/* Vestra Dashboard Daily News v1.8 — editorial compact market + portfolio-aware daily briefing. */
+/* Vestra Dashboard Daily News v1.9 — editorial compact market + portfolio-aware daily briefing. */
 (() => {
   'use strict';
 
@@ -210,7 +210,9 @@
     load();
     const dashboard = document.getElementById('viewDashboard');
     const observer = typeof MutationObserver === 'function' ? new MutationObserver(queueRender) : null;
-    if (observer && dashboard) observer.observe(dashboard, { childList: true, subtree: true });
+    // The news card is a direct Dashboard child. Watching every descendant made
+    // unrelated card/text updates schedule redundant news renders on iPhone.
+    if (observer && dashboard) observer.observe(dashboard, { childList: true });
     let wasBackgrounded = false;
     let outboundNewsPending = false;
     let resumeRefreshPending = false;
@@ -228,8 +230,11 @@
         rememberNewsReturn();
         outboundNewsPending = true;
       }
-      if (event.target.closest?.('.sidenavbtn[data-view="dashboard"], .navbtn[data-view="dashboard"]')) queueRender();
     }, true);
+
+    window.addEventListener?.('vestra:view-rendered', event => {
+      if (String(event?.detail?.view || '') === 'dashboard') queueRender();
+    });
 
     const resume = () => {
       if (!wasBackgrounded && !outboundNewsPending) return false;
@@ -260,6 +265,6 @@
 
   window.VestraDashboardDailyNews = Object.freeze({
     load, refresh: () => load(true), render, rankedItems, safeNewsUrl,
-    rememberNewsReturn, version: '1.8'
+    rememberNewsReturn, version: '1.9'
   });
 })();
