@@ -44,8 +44,8 @@ class LazyMarketPureHelpersTests(unittest.TestCase):
             self.assertIn(f'"./{path}"', SW)
 
     def test_loader_rollout_is_versioned(self):
-        self.assertIn('market-runtime-loader.js?v=2.1', INDEX)
-        self.assertIn("version: '2.1'", LOADER)
+        self.assertIn('market-runtime-loader.js?v=2.2', INDEX)
+        self.assertIn("version: '2.2'", LOADER)
 
 
 if __name__ == "__main__":
