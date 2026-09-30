@@ -81,9 +81,9 @@ class MobileUiRefreshContractTests(unittest.TestCase):
 
     def test_companion_is_reachable_from_static_loader(self):
         self.assertIn('ensureMobileUiRefresh', self.loader)
-        self.assertIn('mobile-ui-refresh.js?v=1.4', self.loader)
+        self.assertIn('mobile-ui-refresh.js?v=1.5', self.loader)
         self.assertIn("version: '1.30'", self.loader)
-        self.assertIn("version:'1.4'", self.source)
+        self.assertIn("version:'1.5'", self.source)
 
 
 if __name__ == '__main__':
