@@ -853,6 +853,7 @@ function openModal(id) {
   if (!el) return;
   el.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
+  try { window.dispatchEvent(new CustomEvent("vestra:modal-opened", { detail: { id } })); } catch (_) {}
   // v64f: focar o primeiro campo preenchível assim que a animação de entrada acaba —
   // poupa um toque a quem vai logo escrever. Sem forçar em ecrãs pequenos (o teclado
   // a abrir de repente é mais intrusivo que útil em iOS quando o modal ainda está a animar).
