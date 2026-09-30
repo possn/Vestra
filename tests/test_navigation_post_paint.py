@@ -27,6 +27,13 @@ class NavigationPostPaintTests(unittest.TestCase):
     def test_navigation_skips_noop_scroll_to_top(self):
         self.assertIn("if (Math.abs(Number(window.scrollY || 0)) <= 1) return;", APP)
 
+    def test_passivebar_scroll_work_is_scoped_to_visible_views(self):
+        start = APP.index('window.addEventListener("scroll", () => {')
+        block = APP[start:start + 700]
+        guard = block.index('if (currentView !== "dashboard" && currentView !== "assets") return;')
+        mutate = block.index('document.body.classList.add("is-scrolling")')
+        self.assertLess(guard, mutate)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
