@@ -161,6 +161,7 @@ class AppMarketClientTests(unittest.TestCase):
         q=read("app-quote-errors.js")
         self.assertIn("showQuoteErrorSheetFromModal",q)
         self.assertIn("closeQuoteErrorSheet",q)
-        self.assertIn("MutationObserver",q)
+        self.assertNotIn("new MutationObserver",q)
+        self.assertIn("vestra:modal-opened",q)
 
 if __name__=='__main__': unittest.main(verbosity=2)
