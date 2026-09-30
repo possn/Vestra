@@ -829,17 +829,19 @@ function setView(view) {
     });
   }
 
-  // Phase 2 (deferred): render on the next frame, after the synchronous view switch.
-  // A second RAF added a visible extra-frame delay to every navigation on iPhone.
-  // renderView already skips clean views, so one frame preserves responsiveness
-  // without making every tab/button transition feel sticky.
+  // Phase 2 (post-paint): let the browser commit the synchronous section switch
+  // before any potentially expensive view renderer runs. requestAnimationFrame
+  // callbacks execute before paint; the zero-delay task yields that paint first,
+  // so taps feel immediate even when a dirty view needs heavy DOM/chart work.
   if (pendingViewRenderFrame) { try { cancelAnimationFrame(pendingViewRenderFrame); } catch(_){} }
   pendingViewRenderFrame = requestAnimationFrame(() => {
     pendingViewRenderFrame = null;
-    if (currentView !== view) return; // user navigated away before render
-    if (view === "assets") updateQuoteErrorIndicator();
-    renderView(view, { force: false, sync: true });
-    try { window.dispatchEvent(new CustomEvent("vestra:view-rendered", { detail: { view } })); } catch (_) {}
+    setTimeout(() => {
+      if (currentView !== view) return; // user navigated away before render
+      if (view === "assets") updateQuoteErrorIndicator();
+      renderView(view, { force: false, sync: true });
+      try { window.dispatchEvent(new CustomEvent("vestra:view-rendered", { detail: { view } })); } catch (_) {}
+    }, 0);
   });
 }
 
