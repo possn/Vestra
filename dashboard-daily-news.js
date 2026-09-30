@@ -1,4 +1,4 @@
-/* Vestra Dashboard Daily News v1.7 — editorial compact market + portfolio-aware daily briefing. */
+/* Vestra Dashboard Daily News v1.8 — editorial compact market + portfolio-aware daily briefing. */
 (() => {
   'use strict';
 
