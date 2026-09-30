@@ -1712,18 +1712,12 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      // Never hard-reload an active session when a new worker takes control.
+      // Reloading here restarts hydration/splash in the middle of navigation and
+      // is especially disruptive on iPhone. The fresh worker owns subsequent
+      // requests immediately; explicit "Forçar actualização" remains available.
       window.__vestraServiceWorkerUpdated = true;
       try { window.dispatchEvent(new Event('vestra:service-worker-updated')); } catch (_) {}
-      try {
-        if (window.__vestraSwReloadScheduled) return;
-        window.__vestraSwReloadScheduled = true;
-        const externalReturn = document.documentElement.dataset.externalReturnBootstrap === '1';
-        const url = new URL(window.location.href);
-        if (!externalReturn) {
-          url.searchParams.set('_sw', Date.now().toString(36));
-          setTimeout(() => window.location.replace(url.toString()), 80);
-        }
-      } catch (_) {}
     });
   }
 </script>
