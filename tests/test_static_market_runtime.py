@@ -8,6 +8,16 @@ def read(path):
     return (ROOT / path).read_text(encoding="utf-8")
 
 class StaticMarketRuntimeTests(unittest.TestCase):
+
+    def test_market_search_full_render_is_debounced(self):
+        src = (ROOT / "market.js").read_text(encoding="utf-8")
+        self.assertIn("let marketSearchRenderTimer=null;", src)
+        self.assertIn("scheduleMarketSearchPrimaryRender();", src)
+        self.assertIn("clearTimeout(marketSearchRenderTimer)", src)
+        self.assertIn("},90);", src)
+        self.assertNotIn("renderSearchSuggestions(); renderPrimary();", src)
+
+
     def test_index_owns_market_auxiliary_order_with_lazy_core(self):
         index = read("index.html")
         loader = read("market-runtime-loader.js")
