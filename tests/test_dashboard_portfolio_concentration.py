@@ -12,10 +12,10 @@ INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 class DashboardPortfolioConcentrationTests(unittest.TestCase):
     def test_companion_is_reachable_and_offline_capable(self):
         self.assertIn("ensureDashboardPortfolioConcentration", LOADER)
-        self.assertIn("dashboard-portfolio-concentration.js?v=2.5", LOADER)
+        self.assertIn("dashboard-portfolio-concentration.js?v=2.6", LOADER)
         self.assertIn('"./dashboard-portfolio-concentration.js"', SW)
         self.assertIn('"./dashboard-portfolio-concentration.css"', SW)
-        self.assertIn("version:'2.5'", JS)
+        self.assertIn("version:'2.6'", JS)
 
     def test_explicit_non_market_classes_override_stale_quote_metadata(self):
         self.assertIn("function isExplicitNonMarketAsset", JS)
@@ -106,8 +106,10 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
         self.assertNotIn("themeWeights", JS)
 
     def test_selected_theme_survives_live_value_rerenders(self):
-        self.assertIn("const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};render();scheduleLookthrough();});", JS)
-        self.assertNotIn("const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};S.selectedTheme='';render();scheduleLookthrough();});", JS)
+        self.assertIn("function refreshFromPortfolioState()", JS)
+        self.assertIn("vestra:view-rendered", JS)
+        self.assertNotIn("new MutationObserver", JS)
+        self.assertNotIn("setTimeout(()=>{render();scheduleLookthrough();},60)", JS)
 
     def test_theme_evidence_keeps_contributor_provenance_and_drilldown(self):
         self.assertIn("contributors:new Map()", JS)
@@ -151,7 +153,7 @@ class DashboardPortfolioConcentrationTests(unittest.TestCase):
 
     def test_assets_and_liabilities_do_not_share_analysis_cards(self):
         self.assertIn("portfolioShowsAssets", JS)
-        self.assertIn("#segAssets,#segLiabs", JS)
+        self.assertIn("vestra:portfolio-mode-changed", JS)
         self.assertIn("document.getElementById(CARD_ID)?.remove()", JS)
         self.assertIn("document.getElementById(THEME_CARD_ID)?.remove()", JS)
 

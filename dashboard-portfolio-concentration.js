@@ -559,15 +559,19 @@
     else setTimeout(run,1200);
   }
 
+  function refreshFromPortfolioState(){
+    S.lookthrough=null; S.themes=null; S.details={};
+    render(); scheduleLookthrough();
+  }
+
   function boot(){
     render(); scheduleLookthrough();
     window.addEventListener('vestra:app-ready',()=>{S.lookthrough=null;S.themes=null;S.details={};S.selectedTheme='';render();scheduleLookthrough();});
     window.addEventListener('vestra:market-ready',()=>{render();scheduleLookthrough();});
-    const net=document.getElementById('kpiNet');
-    if(net&&typeof MutationObserver==='function'){
-      const observer=new MutationObserver(()=>{S.lookthrough=null;S.themes=null;S.details={};render();scheduleLookthrough();});
-      observer.observe(net,{childList:true,subtree:true,characterData:true});
-    }
+    window.addEventListener('vestra:view-rendered',event=>{
+      if(String(event?.detail?.view||'')==='assets') refreshFromPortfolioState();
+    });
+    window.addEventListener('vestra:portfolio-mode-changed',()=>{render();scheduleLookthrough();});
     document.addEventListener('toggle',event=>{
       const details=event.target?.closest?.('.dpc-method[data-dpc-method]');
       if(!details) return;
@@ -616,13 +620,12 @@
         if(mode==='lookthrough') void hydrateLookthrough(false);
         return;
       }
-      if(event.target?.closest?.('[data-view="assets"],#segAssets,#segLiabs')) setTimeout(()=>{render();scheduleLookthrough();},60);
     });
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 
   window.VestraDashboardPortfolioConcentration=Object.freeze({
-    version:'2.5',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
+    version:'2.6',directHoldings,marketHoldings,isExplicitNonMarketAsset,concentrationSnapshot,buildLookthrough,buildThemeExposure,primaryTheme,hydrateLookthrough,render
   });
 })();

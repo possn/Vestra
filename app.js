@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260930v5").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260930v6").catch(() => {});
     });
   }
 } catch (_) {}
@@ -761,6 +761,7 @@ function scheduleRenderView(view, opts = {}) {
     pendingViewRenderFrame = null;
     if (token !== pendingViewRenderToken) return;
     renderView(view, opts);
+    try { window.dispatchEvent(new CustomEvent("vestra:view-rendered", { detail: { view } })); } catch (_) {}
   };
   if (opts && opts.sync) run();
   else pendingViewRenderFrame = requestAnimationFrame(run);
@@ -1817,6 +1818,7 @@ function setModeLiabs(on) {
   if (heroSub) heroSub.textContent = showingLiabs ? "Responsabilidades financeiras num só lugar." : "As tuas posições, sem ruído.";
   rebuildClassFilter();
   renderItems();
+  try { window.dispatchEvent(new CustomEvent("vestra:portfolio-mode-changed", { detail: { showingLiabs } })); } catch (_) {}
 }
 
 function rebuildClassFilter() {
