@@ -394,6 +394,8 @@
     window.addEventListener('vestra:app-ready', refresh);
     window.addEventListener('vestra:market-ready', refresh);
     window.addEventListener('vestra:dashboard-signal-updated', queueTodayBrief);
+    window.addEventListener('vestra:dashboard-health-updated', renderPortfolioHealth);
+    window.addEventListener('vestra:dashboard-history-updated', syncHistoryCompact);
     window.addEventListener('vestra:view-rendered', event => {
       const view = String(event?.detail?.view || '');
       if (view === 'dashboard' || view === 'cashflow') refresh();
