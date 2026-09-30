@@ -26,6 +26,9 @@
   };
 
   const $m = id => document.getElementById(id);
+  function notifyMarketSheetChanged(reason='update'){
+    try { window.dispatchEvent(new CustomEvent('vestra:market-sheet-changed',{detail:{reason}})); } catch (_) {}
+  }
   const n = v => {
     // Missing fundamentals are not zero. Number(null) and Number('') are 0,
     // which previously made absent Yahoo fields look like real 0 values.
@@ -122,7 +125,7 @@ function toggleWatch(ticker){
   saveWatchlist(); if(M.loaded) syncSnapshots(); renderPrimary();
   const sh=$m('marketSheet');
   if(sh && sh.dataset.ticker && sh.dataset.ticker.toUpperCase()===t){
-    const s=M.byTicker.get(t); if(s){ const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview'; $m('marketSheetContent').innerHTML=detailBase(s); renderDetailTab(s,active); const tab=sh.querySelector(`[data-detail-tab="${active}"]`); if(tab){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));} }
+    const s=M.byTicker.get(t); if(s){ const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview'; $m('marketSheetContent').innerHTML=detailBase(s); renderDetailTab(s,active); const tab=sh.querySelector(`[data-detail-tab="${active}"]`); if(tab){sh.querySelectorAll('.market-tab').forEach(x=>x.classList.toggle('is-active',x===tab));} notifyMarketSheetChanged('ticker-rerender'); }
   }
 }
 function snapshotStock(s){ return watchSnapshots?.snapshotStock(s) || {}; }
@@ -975,6 +978,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     document.documentElement.classList.add('modal-open');
     document.body.classList.add('modal-open');
     sh.hidden=false; sh.setAttribute('aria-hidden','false');
+    notifyMarketSheetChanged('ticker-open');
     resetDossierViewport();
     enrichTickerLive(s);
   }
@@ -982,6 +986,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const sh=$m('marketSheet'); if(!sh)return;
     const returnView=txt(sh.dataset.returnView);
     sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.liveReady='0'; sh.dataset.tool=''; sh.dataset.returnView='';
+    notifyMarketSheetChanged('close');
     document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     const panel=sheetPanel(); if(panel){panel.scrollTop=0;panel.scrollLeft=0;}
     if(returnView==='assets' && typeof setView==='function') setView('assets');
@@ -2143,7 +2148,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         c.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">NOTÍCIAS</div><h2>Notícias das tuas posições</h2><p>Abre uma posição para ver o feed específico.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-list">${picks.length?picks.map(s=>renderRow(s,'Abrir notícias e dossier')).join(''):'<div class="market-empty">Sem posições reconhecidas.</div>'}</div>`;
       }
       if(tool==='scanner') c.innerHTML=renderScanner('best_opportunities');
-      // Replace the previous tool first, then reset the actual scroll owner.
+      // Replace the previous tool first, then notify navigation companions once.
+      notifyMarketSheetChanged('tool-open');
       // WebKit can retain the old document anchor when scrollTop is reset before
       // innerHTML, reopening a portfolio half-way down its content.
       resetDossierViewport();
