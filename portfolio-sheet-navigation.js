@@ -127,7 +127,11 @@
     document.documentElement.classList.remove('modal-open');
     document.body.classList.remove('modal-open');
     sh.scrollTop=0; sh.scrollLeft=0;
-    document.querySelectorAll('[data-view]').forEach(el=>{
+    // The former document-capture ordering let Market's own close handler
+    // switch the base view before this companion stopped propagation. With
+    // sheet-scoped capture we own that transition explicitly.
+    if(typeof window.setView==='function') window.setView('market');
+    else document.querySelectorAll('[data-view]').forEach(el=>{
       if(el.dataset.view==='market') el.classList.add('is-active');
       else if(el.dataset.view==='assets') el.classList.remove('is-active');
     });
