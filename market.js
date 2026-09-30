@@ -2180,6 +2180,58 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
   // v2.6: bounded grids no longer need custom touch interception.
 
+  function handleDecisionClick(e){
+    const btn=e.target.closest?.('[data-decision-jump]');
+    if(!btn) return;
+    const kind=btn.dataset.decisionJump||'', value=btn.dataset.decisionValue||'';
+    e.preventDefault();
+    const scrollTo=el=>{ if(el) el.scrollIntoView?.({behavior:'smooth',block:'start'}); };
+    if(kind==='ticker'&&value){ openTicker(value); return; }
+    if(kind==='riskbudget'){ scrollTo(document.querySelector('.market-risk-budget')); return; }
+    if(kind==='targets'){ scrollTo(document.querySelector('.market-target-fit')||document.querySelector('.market-target-engine')); return; }
+    if(kind==='rebalancer'){ scrollTo(document.querySelector('.market-rebalancer')); return; }
+    if(kind==='etfoptimize'){ scrollTo(document.querySelector('.market-etf-optimize')); return; }
+    if(kind==='health'){ scrollTo(document.querySelector('.market-health-timeline')); return; }
+    if(kind==='stress'){
+      const box=document.querySelector('.market-stress-test'); scrollTo(box);
+      const tab=box?.querySelector(`[data-stress-scenario="${CSS.escape(value||'rates')}"]`); tab?.click(); return;
+    }
+    if(kind==='actionmap'){
+      const map=document.querySelector('.market-action-map'); scrollTo(map);
+      if(map) applyActionMapFilter(map,value==='all'?'':value);
+    }
+  }
+
+  function handleResearchQueueClick(e){
+    const btn=e.target.closest?.('[data-queue-status]'); if(!btn)return;
+    const row=btn.closest('.market-research-queue-row'); if(!row)return;
+    e.preventDefault(); e.stopPropagation();
+    setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new',row.dataset.queueSignal||'');
+    if(txt($m('marketSheet')?.dataset.tool)==='portfolio'){
+      openTool('portfolio');
+      setTimeout(()=>document.querySelector('.market-research-queue')?.scrollIntoView?.({behavior:'smooth',block:'start'}),0);
+    } else renderPrimary();
+  }
+
+  function handleCheckpointClick(e){
+    const btn=e.target.closest?.('[data-checkpoint-save]'); if(!btn)return;
+    const box=btn.closest('.market-research-checkpoint'); if(!box)return;
+    e.preventDefault(); e.stopPropagation();
+    saveResearchCheckpoint(box.dataset.checkpointTicker||'',box.querySelector('[data-checkpoint-select]')?.value||'',box.querySelector('[data-checkpoint-note]')?.value||'');
+    btn.textContent='Guardado'; setTimeout(()=>{btn.textContent='Guardar';},900);
+  }
+
+  function handleActionMapClick(e){
+    const btn=e.target.closest?.('[data-action-filter]');
+    if(!btn) return;
+    const map=btn.closest('.market-action-map');
+    if(!map) return;
+    e.preventDefault();
+    const requested=btn.dataset.actionFilter||'';
+    const active=map.dataset.actionFilter||'';
+    applyActionMapFilter(map,active===requested?'':requested);
+  }
+
   document.addEventListener('click', e=>{
     const marketNav=e.target.closest('[data-view="market"]'); if(marketNav) setTimeout(ensureLoaded,0);
     const mode=e.target.closest('[data-market-mode]'); if(mode){const nextMode=mode.dataset.marketMode; if(nextMode==='funds'&&M.mode!=='funds'){ M.fundTheme=''; M.fundLimit=100; } M.mode=nextMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}
@@ -2236,6 +2288,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const tool=e.target.closest('[data-market-tool]'); if(tool) openTool(tool.dataset.marketTool);
     if(e.target.closest('#marketCompareGo')) compareNow();
     if(e.target.closest('[data-market-retry]')) { M.loaded=false; M.loading=null; ensureLoaded(); }
+
+    // Keep all Market click ownership on this single delegated listener. The
+    // order mirrors the former listeners so behaviour stays stable while each
+    // tap avoids four extra document-level callbacks.
+    handleDecisionClick(e);
+    handleResearchQueueClick(e);
+    handleCheckpointClick(e);
+    handleActionMapClick(e);
   });
 
   document.addEventListener('keydown', e=>{
@@ -2272,51 +2332,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   loadWatchlist();
   window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,upsertRemoteStock,toggleWatch};
 
-  // v6.1 — Decision Center is a navigation surface, not a passive summary.
-  document.addEventListener('click', e=>{
-    const btn=e.target.closest?.('[data-decision-jump]');
-    if(!btn) return;
-    const kind=btn.dataset.decisionJump||'', value=btn.dataset.decisionValue||'';
-    e.preventDefault();
-    const scrollTo=el=>{ if(el) el.scrollIntoView?.({behavior:'smooth',block:'start'}); };
-    if(kind==='ticker'&&value){ openTicker(value); return; }
-    if(kind==='riskbudget'){ scrollTo(document.querySelector('.market-risk-budget')); return; }
-    if(kind==='targets'){ scrollTo(document.querySelector('.market-target-fit')||document.querySelector('.market-target-engine')); return; }
-    if(kind==='rebalancer'){ scrollTo(document.querySelector('.market-rebalancer')); return; }
-    if(kind==='etfoptimize'){ scrollTo(document.querySelector('.market-etf-optimize')); return; }
-    if(kind==='health'){ scrollTo(document.querySelector('.market-health-timeline')); return; }
-    if(kind==='stress'){
-      const box=document.querySelector('.market-stress-test'); scrollTo(box);
-      const tab=box?.querySelector(`[data-stress-scenario="${CSS.escape(value||'rates')}"]`); tab?.click(); return;
-    }
-    if(kind==='actionmap'){
-      const map=document.querySelector('.market-action-map'); scrollTo(map);
-      if(map) applyActionMapFilter(map,value==='all'?'':value);
-      return;
-    }
-  });
-
-  // v6.2 — Research Queue state is local operational memory.
-  document.addEventListener('click', e=>{
-    const btn=e.target.closest?.('[data-queue-status]'); if(!btn)return;
-    const row=btn.closest('.market-research-queue-row'); if(!row)return;
-    e.preventDefault(); e.stopPropagation();
-    setResearchQueueState(row.dataset.queueTicker||'',btn.dataset.queueStatus||'new',row.dataset.queueSignal||'');
-    if(txt($m('marketSheet')?.dataset.tool)==='portfolio'){
-      openTool('portfolio');
-      setTimeout(()=>document.querySelector('.market-research-queue')?.scrollIntoView?.({behavior:'smooth',block:'start'}),0);
-    } else renderPrimary();
-  });
-
-  // v6.3 — Thesis checkpoint + note for Research Queue.
-  document.addEventListener('click', e=>{
-    const btn=e.target.closest?.('[data-checkpoint-save]'); if(!btn)return;
-    const box=btn.closest('.market-research-checkpoint'); if(!box)return;
-    e.preventDefault(); e.stopPropagation();
-    saveResearchCheckpoint(box.dataset.checkpointTicker||'',box.querySelector('[data-checkpoint-select]')?.value||'',box.querySelector('[data-checkpoint-note]')?.value||'');
-    btn.textContent='Guardado'; setTimeout(()=>{btn.textContent='Guardar';},900);
-  });
-
   function applyActionMapFilter(map,requested=''){
     if(!map)return;
     const next=requested||'';
@@ -2341,17 +2356,5 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
     map.querySelector('.market-action-list')?.scrollIntoView?.({behavior:'smooth',block:'nearest'});
   }
-
-  // v6.0.1 — Action Map summary acts as an immediate filter.
-  document.addEventListener('click', e=>{
-    const btn=e.target.closest?.('[data-action-filter]');
-    if(!btn) return;
-    const map=btn.closest('.market-action-map');
-    if(!map) return;
-    e.preventDefault();
-    const requested=btn.dataset.actionFilter||'';
-    const active=map.dataset.actionFilter||'';
-    applyActionMapFilter(map,active===requested?'':requested);
-  });
 
 })();
