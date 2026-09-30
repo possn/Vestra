@@ -116,9 +116,18 @@
     return true;
   }
 
+  function isPortfolioSheet(sh=sheet()){
+    const c=content();
+    return !!(sh && !sh.hidden && !sh.dataset.ticker && (
+      sh.dataset.tool==='portfolio' ||
+      sh.dataset.returnView==='assets' ||
+      c?.querySelector?.('.market-portfolio-summary')
+    ));
+  }
+
   function closePortfolioToMarket(){
     const sh=sheet();
-    if(!sh || sh.hidden || sh.dataset.tool!=='portfolio' || sh.dataset.ticker) return false;
+    if(!isPortfolioSheet(sh)) return false;
     sh.hidden=true;
     sh.setAttribute('aria-hidden','true');
     sh.dataset.liveReady='0';
@@ -173,7 +182,7 @@
 
     const ticker=e.target.closest?.('[data-market-ticker]');
     const watch=e.target.closest?.('[data-market-watch]');
-    const portfolioSheet=!sh.hidden && sh.dataset.tool==='portfolio';
+    const portfolioSheet=isPortfolioSheet(sh);
 
     if(watch && portfolioSheet && content()?.contains(watch)){
       e.preventDefault();
@@ -200,7 +209,7 @@
       return true;
     }
 
-    if(sh.dataset.tool==='portfolio' && !sh.dataset.ticker){
+    if(isPortfolioSheet(sh)){
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
@@ -219,7 +228,7 @@
     window.addEventListener('vestra:market-sheet-changed',repair);
   }
 
-  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany,handleSheetClick});
+  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany,handleSheetClick,isPortfolioSheet});
   window.VestraPortfolioSheetNavigation={version:VERSION,repair,reopenPortfolioAnalysis,closePortfolioToMarket,openCompany};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
