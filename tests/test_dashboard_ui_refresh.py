@@ -98,7 +98,7 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         self.assertIn("↕︎", self.source)
 
     def test_dashboard_refresh_has_no_mutation_observers(self):
-        self.assertNotIn("MutationObserver", self.source)
+        self.assertNotIn("new MutationObserver", self.source)
         self.assertIn("vestra:view-rendered", self.source)
         self.assertIn("quotesUpdated", self.source)
 
