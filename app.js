@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260930v2").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260930v3").catch(() => {});
     });
   }
 } catch (_) {}
@@ -7743,6 +7743,7 @@ function rebuildBrokerGeneratedData() {
       const ratio = expectedQty / oldQty;
       if (parseNum(a.value) > 0) a.value = parseNum(a.value) * ratio;
       if (parseNum(a.valueLocal) > 0) a.valueLocal = parseNum(a.valueLocal) * ratio;
+      if (parseNum(a.costBasis) > 0) a.costBasis = parseNum(a.costBasis) * ratio;
       console.warn("[broker quantity repair]", a.name || a.ticker, oldQty, "→", expectedQty);
     }
     a.qty = expectedQty;
