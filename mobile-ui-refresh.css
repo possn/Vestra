@@ -66,4 +66,10 @@
   .bottomnav .navbtn{
     transition:transform .07s ease,color .07s ease!important;
   }
+  /* Screen changes on iPhone should feel immediate. The generic 220ms
+     viewEnter transform/opacity animation made every tab switch look slower
+     even when the DOM swap itself was already synchronous. */
+  .view:not([hidden]){
+    animation:none!important;
+  }
 }
