@@ -13,7 +13,7 @@
 try {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js?v=20260930v1").catch(() => {});
+      navigator.serviceWorker.register("sw.js?v=20260930v2").catch(() => {});
     });
   }
 } catch (_) {}
