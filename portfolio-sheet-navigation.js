@@ -169,7 +169,7 @@
 
   function handleSheetClick(e){
     const sh=sheet();
-    if(!sh) return;
+    if(!sh || !sh.contains(e.target)) return false;
 
     const ticker=e.target.closest?.('[data-market-ticker]');
     const watch=e.target.closest?.('[data-market-watch]');
@@ -179,7 +179,7 @@
       e.preventDefault();
       e.stopImmediatePropagation();
       window.VestraMarket?.toggleWatch?.(watch.dataset.marketWatch);
-      return;
+      return true;
     }
 
     if(ticker && portfolioSheet && content()?.contains(ticker)){
@@ -187,17 +187,17 @@
       e.stopImmediatePropagation();
       openingFromPortfolio=true;
       void openCompany(ticker.dataset.marketTicker,{origin:'portfolio',sourceNode:ticker});
-      return;
+      return true;
     }
 
     const close=e.target.closest?.('[data-market-close]');
-    if(!close || sh.hidden) return;
+    if(!close || sh.hidden) return false;
 
     if(sh.dataset.ticker && sh.dataset.returnView==='portfolio'){
       e.preventDefault();
       e.stopImmediatePropagation();
       reopenPortfolioAnalysis();
-      return;
+      return true;
     }
 
     if(sh.dataset.tool==='portfolio' && !sh.dataset.ticker){
@@ -205,24 +205,21 @@
       e.stopPropagation();
       e.stopImmediatePropagation();
       closePortfolioToMarket();
+      return true;
     }
+    return false;
   }
 
   function start(){
     ensureStyles();
     repair();
-    const sh=sheet();
-    // Every handled control lives inside the persistent Market sheet. Bind the
-    // capture listener there instead of running this companion on every click
-    // across the whole application.
-    sh?.addEventListener('click',handleSheetClick,true);
     // Market owns sheet rendering and emits one semantic signal after each
     // meaningful open/close/rerender. Avoid observing every descendant class
     // mutation while tabs, live data and cards update on iPhone.
     window.addEventListener('vestra:market-sheet-changed',repair);
   }
 
-  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany});
+  window.VestraNavigation=Object.freeze({version:VERSION,normalizeTicker,inferOrigin,prepareDossierOrigin,applyDossierOrigin,openCompany,handleSheetClick});
   window.VestraPortfolioSheetNavigation={version:VERSION,repair,reopenPortfolioAnalysis,closePortfolioToMarket,openCompany};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
