@@ -1,4 +1,4 @@
-/* Vestra Quote Errors v1.3 — semantic modal bridge without DOM observation. */
+/* Vestra Quote Errors v1.4 — scoped close listeners + semantic modal bridge. */
 (() => {
   'use strict';
 
@@ -104,16 +104,18 @@
   function installNonBlockingBridge() {
     const modal=document.getElementById('modalQuoteErrors');
     if(!modal) return;
+    // Bind only the legacy quote-modal close controls instead of running a
+    // capture listener on every click across the whole application.
+    modal.querySelectorAll('[data-close="modalQuoteErrors"]').forEach(trigger=>{
+      trigger.addEventListener('click',forceCloseQuoteErrorsModal,true);
+    });
     // app.js owns modal lifecycle and emits a semantic event when a modal opens.
-    // Avoid observing aria-hidden forever on every DOM mutation cycle.
     window.addEventListener('vestra:modal-opened',event=>{
       if(String(event?.detail?.id||'')!=='modalQuoteErrors') return;
       showQuoteErrorSheetFromModal();
     });
     if(modal.getAttribute('aria-hidden')==='false') showQuoteErrorSheetFromModal();
   }
-
-  document.addEventListener('click',forceCloseQuoteErrorsModal,true);
   document.addEventListener('keydown',event=>{
     if(event.key!=='Escape') return;
     closeQuoteErrorSheet();
@@ -122,7 +124,7 @@
   else installNonBlockingBridge();
 
   window.VestraQuoteErrors=Object.freeze({
-    version:'1.3',
+    version:'1.4',
     classifyQuoteError,
     summarizeQuoteErrors,
     decorateQuoteError,
