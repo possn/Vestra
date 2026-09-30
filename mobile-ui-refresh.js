@@ -1,4 +1,4 @@
-/* Vestra Mobile UI Refresh v1.4 — compact topbar + presentation-only mobile polish + useful More shortcuts. */
+/* Vestra Mobile UI Refresh v1.5 — view-event refresh without a global click listener. */
 (() => {
   'use strict';
 
@@ -72,8 +72,8 @@
   function boot() {
     refresh();
     window.addEventListener('vestra:app-ready', refresh);
-    document.addEventListener('click', event => {
-      if (event.target?.closest?.('[data-view="settings"]')) setTimeout(refresh, 40);
+    window.addEventListener('vestra:view-rendered', event => {
+      if (String(event?.detail?.view || '') === 'settings') refresh();
     });
   }
 
@@ -82,5 +82,5 @@
 
   // Sidebar state and event wiring are intentionally owned by app.js (wireSidebar).
   // This module is presentation-only so iPhone/WebKit never receives duplicate drawer listeners.
-  window.VestraMobileUiRefresh = Object.freeze({ refresh, version:'1.4' });
+  window.VestraMobileUiRefresh = Object.freeze({ refresh, version:'1.5' });
 })();
