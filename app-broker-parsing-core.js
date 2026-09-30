@@ -260,6 +260,11 @@ function brokerCurrentQuantityKey(record = {}) {
     priceCurrency: record.priceCurrency || record.localCurrency || record.totalCurrency || record.currency || ""
   });
   if (yahoo) return `YAHOO:${String(yahoo).trim().toUpperCase()}`;
+  // Parsed broker snapshots already carry Yahoo-normalized tickers (e.g. XTB
+  // O.US -> O, MSFT.US -> MSFT, NESN.CH -> NESN.SW). Use that exact market
+  // identity before falling back to the more fragmented ISIN/ticker key space.
+  const ticker = String(record.yahooTicker || record.ticker || record.symbol || "").trim().toUpperCase();
+  if (ticker && /^[A-Z0-9.^=\-]+(?:\.[A-Z0-9]{1,6})?$/.test(ticker)) return `YAHOO:${ticker}`;
   return makeBrokerSecurityKey(record);
 }
 
