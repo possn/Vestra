@@ -15,7 +15,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
   def test_sanity_resets_only_on_identity_change(self):
     a=read('app.js')
     self.assertIn('const authoritativeLegacyRepair = !!(',a)
-    self.assertIn('(identityChanged || authoritativeLegacyRepair) ? 0 :',a)
+    self.assertIn('(identityChanged || authoritativeLegacyRepair || brokerRecovery) ? 0 :',a)
     self.assertIn('_previousYahooTicker',a)
     self.assertIn('asset.yahooTicker = _resolvedYahoo',a)
     self.assertIn('"OD7F.DE","OD7F"',a)
@@ -45,7 +45,7 @@ class QuoteUiDividendRepairTests(unittest.TestCase):
     i=read('index.html'); sw=read('sw.js')
     self.assertIn('app-broker-parsing-core.js?v=1.4',i)
     self.assertIn('app-asset-identity.js?v=20260829v2',i)
-    self.assertIn('app.js?v=20260929v1',i)
+    self.assertIn('app.js?v=20260930v1',i)
     self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
     self.assertIn('staleWhileRevalidate',sw)
     self.assertIn('./market-live-overlay.js',sw)

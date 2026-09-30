@@ -16,9 +16,18 @@ class QuoteCurrencyGuardTests(unittest.TestCase):
         app=read("app.js")
         self.assertIn(": (storedPriceCcy || storedAssetCcy)",app)
 
+    def test_poisoned_history_can_be_recovered_only_for_exact_broker_aliases(self):
+        app=read("app.js")
+        core=read("app-broker-parsing-core.js")
+        self.assertIn('"FLR.US": Object.freeze({ ticker: "FLR"', app)
+        self.assertIn('"SHA.DE": Object.freeze({ ticker: "SHA0.DE"', app)
+        self.assertIn("brokerQuoteRecoveryMatches(asset, q, nextIdentity)", app)
+        self.assertIn('"|FLR.US": "FLR"', core)
+        self.assertIn('"|SHA.DE": "SHA0.DE"', core)
+
     def test_fresh_bundle_is_published(self):
         index=read("index.html")
-        self.assertIn("app.js?v=20260929v1",index)
+        self.assertIn("app.js?v=20260930v1",index)
         sw=read("sw.js")
         self.assertIn('const CACHE_NAME = "vestra-cache-',sw)
         self.assertIn("staleWhileRevalidate",sw)

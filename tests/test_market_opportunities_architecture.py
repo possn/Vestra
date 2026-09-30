@@ -415,7 +415,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('workerInput.value = (state.settings && state.settings.workerUrl) || DEFAULT_WORKER_URL', app)
         self.assertIn('state.settings.workerUrl = val || DEFAULT_WORKER_URL', app)
         self.assertIn('Worker global restaurado', app)
-        self.assertIn('app.js?v=20260929v1', html)
+        self.assertIn('app.js?v=20260930v1', html)
 
     def test_shared_worker_default_and_rotation_contrast_are_explicit(self):
         app = read('app.js')

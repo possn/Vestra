@@ -1,4 +1,4 @@
-/* Vestra broker parsers v1.3 — file/row transformation only. */
+/* Vestra broker parsers v1.4 — file/row transformation only. */
 (() => {
   'use strict';
 
