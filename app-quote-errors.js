@@ -1,4 +1,4 @@
-/* Vestra Quote Errors v1.2 — classify failures and render diagnostics without locking the app. */
+/* Vestra Quote Errors v1.3 — semantic modal bridge without DOM observation. */
 (() => {
   'use strict';
 
@@ -104,13 +104,12 @@
   function installNonBlockingBridge() {
     const modal=document.getElementById('modalQuoteErrors');
     if(!modal) return;
-    // Any legacy/openModal call is immediately converted into a small sheet.
-    // This covers the toolbar button and clickable refresh toasts without
-    // changing the large legacy app.js during the stability hotfix.
-    const observer=new MutationObserver(()=>{
-      if(modal.getAttribute('aria-hidden')==='false') showQuoteErrorSheetFromModal();
+    // app.js owns modal lifecycle and emits a semantic event when a modal opens.
+    // Avoid observing aria-hidden forever on every DOM mutation cycle.
+    window.addEventListener('vestra:modal-opened',event=>{
+      if(String(event?.detail?.id||'')!=='modalQuoteErrors') return;
+      showQuoteErrorSheetFromModal();
     });
-    observer.observe(modal,{attributes:true,attributeFilter:['aria-hidden']});
     if(modal.getAttribute('aria-hidden')==='false') showQuoteErrorSheetFromModal();
   }
 
@@ -123,7 +122,7 @@
   else installNonBlockingBridge();
 
   window.VestraQuoteErrors=Object.freeze({
-    version:'1.2',
+    version:'1.3',
     classifyQuoteError,
     summarizeQuoteErrors,
     decorateQuoteError,
