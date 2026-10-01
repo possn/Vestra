@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.9 — body-level iPhone action portal. */
+/* Vestra Market Dossier Controls v2.0 — compact body-level iPhone action portal. */
 (() => {
   'use strict';
 
@@ -9,7 +9,7 @@
     const link = document.createElement('link');
     link.id = STYLE_ID;
     link.rel = 'stylesheet';
-    link.href = 'market-dossier-controls.css?v=1.3';
+    link.href = 'market-dossier-controls.css?v=1.4';
     document.head.appendChild(link);
   }
 
@@ -22,7 +22,7 @@
     portal.id = PORTAL_ID;
     portal.className = 'market-dossier-action-portal';
     portal.hidden = true;
-    portal.innerHTML = '<div class="market-dossier-action-portal__identity"><strong data-portal-ticker></strong><span data-portal-name></span><small data-portal-meta></small></div><button type="button" class="market-watch market-watch--portal" data-portal-watch aria-label="Guardar para acompanhar">☆</button><button type="button" class="market-close market-close--portal" data-portal-close aria-label="Fechar dossier">×</button>';
+    portal.innerHTML = '<button type="button" class="market-watch market-watch--portal" data-portal-watch aria-label="Guardar para acompanhar">☆</button><button type="button" class="market-close market-close--portal" data-portal-close aria-label="Fechar dossier">×</button>';
     portal.addEventListener('click', event => {
       const sheet = document.getElementById('marketSheet');
       if (!sheet || sheet.hidden) return;
@@ -48,13 +48,6 @@
     const visible = Boolean(sheet && !sheet.hidden && ticker);
     portal.hidden = !visible;
     if (!visible) return;
-
-    const header = sheet.querySelector('#marketSheetContent .market-detail-head--editorial');
-    const name = header?.querySelector('h1')?.textContent?.trim() || ticker;
-    const meta = header?.querySelector('.market-kicker')?.textContent?.trim() || '';
-    portal.querySelector('[data-portal-ticker]').textContent = ticker;
-    portal.querySelector('[data-portal-name]').textContent = name;
-    portal.querySelector('[data-portal-meta]').textContent = meta;
 
     const original = sheet.querySelector(':scope > .market-watch--detail');
     const watch = portal.querySelector('[data-portal-watch]');
@@ -138,7 +131,7 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.9',
+    version: '2.0',
     closeMarketSheet,
     installStyle,
     normalizeButtons,

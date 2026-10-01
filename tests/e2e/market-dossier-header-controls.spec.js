@@ -22,7 +22,7 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
 
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
-  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.9');
+  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '2.0');
   await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.3');
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
@@ -34,8 +34,7 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
   await expect(watch).toBeVisible();
   await expect(close).toBeHidden();
   await expect(persistentClose).toBeVisible();
-  await expect(portal.locator('[data-portal-ticker]')).toHaveText('MSFT');
-  await expect(portal.locator('[data-portal-name]')).not.toHaveText('');
+  await expect(portal.locator('.market-dossier-action-portal__identity')).toHaveCount(0);
   expect(await portal.evaluate(el => el.parentElement === document.body)).toBe(true);
 
   const geometry = await page.evaluate(() => {

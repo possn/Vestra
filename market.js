@@ -832,6 +832,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     escapeHtml: esc,
     formatShortDate: shortDate,
   }) || null;
+  function evidencePanel(s){ return dossierSignals?.evidencePanel(s) || ''; }
   function catalystPanel(s){ return dossierSignals?.catalystPanel(s) || ''; }
   function recoveryPanel(s){ return dossierSignals?.recoveryPanel(s) || ''; }
   function drawdownPanel(s){ return dossierSignals?.drawdownPanel(s) || ''; }
@@ -895,13 +896,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function dossierScoreBoard(s){
     const score=n(s.score);
-    const dims=scoreDims(s).map(([label,value])=>({label,value:n(value)})).filter(x=>x.value!=null);
-    const bars=dims.slice(0,8).map(x=>`<div class="market-dossier-pillar"><span>${esc(x.label)}</span><div class="market-dossier-pillar__track"><i style="width:${Math.max(0,Math.min(100,x.value))}%"></i></div><strong>${Math.round(x.value)}</strong></div>`).join('');
     const history=dossierScoreHistory(s);
     const historyHtml=history.length>=2
       ? `<div class="market-dossier-score-history"><div class="market-dossier-section-label">Histórico do Score</div><div class="market-dossier-history-bars">${history.map(x=>`<div class="market-dossier-history-bar"><i style="height:${Math.max(8,Math.min(100,x.value))}%"></i><strong>${Math.round(x.value)}</strong><span>${esc(x.label)}</span></div>`).join('')}</div></div>`
       : `<div class="market-dossier-score-history market-dossier-score-history--empty"><div class="market-dossier-section-label">Histórico do Score</div><p>A série histórica ainda não está disponível para este ativo.</p></div>`;
-    return `<section class="market-dossier-scoreboard"><div class="market-dossier-scorehero"><div><small>VESTRA SCORE</small><strong>${score==null?'—':Math.round(score)}</strong><span>/100</span></div><p>${score==null?'Score não publicável com a evidência atual.':esc(scoreBand(score))}</p></div><div class="market-dossier-pillars">${bars||'<p class="market-dossier-muted">Sem pilares suficientes para decompor o score.</p>'}</div>${historyHtml}</section>`;
+    return `<section class="market-dossier-scoreboard"><div class="market-dossier-scorehero"><div><small>VESTRA SCORE</small><strong>${score==null?'—':Math.round(score)}</strong><span>/100</span></div><p>${score==null?'Score não publicável com a evidência atual.':esc(scoreBand(score))}</p></div>${historyHtml}</section>`;
   }
 
   function dossierFullPicture(s){
@@ -932,18 +931,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       ['Free cash flow',n(s.free_cash_flow)],
       ['Cash flow operacional',n(s.operating_cash_flow)],
       ['Caixa líquido / dívida',n(s.net_cash)],
-      ['Margem operacional',n(s.operating_margin),'pct'],
-      ['Margem líquida',n(s.profit_margin),'pct'],
-      ['ROE',n(s.roe),'pct']
+      ['Debt / Equity',n(s.debt_to_equity),'num'],
+      ['Current ratio',n(s.current_ratio),'num'],
+      ['Margem líquida',n(s.profit_margin),'pct']
     ];
     const rows=metrics.filter(([,value])=>value!=null).slice(0,8);
     if(!rows.length) return '';
-    return `<section class="market-dossier-editorial-card market-dossier-financial-snapshot"><div class="market-dossier-section-label">FINANCIAL SNAPSHOT</div><div class="market-dossier-card-head"><h3>Saúde financeira em resumo</h3><span>${rows.length} métricas</span></div><div class="market-dossier-financial-grid">${rows.map(([label,value,kind])=>`<div><small>${esc(label)}</small><strong>${kind==='pct'?pct(value):compact(value)}</strong></div>`).join('')}</div><p class="market-dossier-interpretation">Leitura rápida dos últimos dados disponíveis; o detalhe completo continua na tab Financeiro.</p></section>`;
+    return `<section class="market-dossier-editorial-card market-dossier-financial-snapshot"><div class="market-dossier-section-label">FINANCIAL SNAPSHOT</div><div class="market-dossier-card-head"><h3>Saúde financeira em resumo</h3><span>${rows.length} métricas</span></div><div class="market-dossier-financial-grid">${rows.map(([label,value,kind])=>`<div><small>${esc(label)}</small><strong>${kind==='pct'?pct(value):kind==='num'?num(value):compact(value)}</strong></div>`).join('')}</div><p class="market-dossier-interpretation">Leitura rápida dos últimos dados disponíveis; o detalhe completo continua na tab Financeiro.</p></section>`;
   }
 
   function dossierGrowthProfile(s){
     const metrics=[
-      ['Receita YoY',n(s.revenue_yoy_latest??s.revenue_growth)],
       ['EPS YoY',n(s.eps_yoy_latest??s.eps_growth)],
       ['Margem operacional',n(s.operating_margin)],
       ['FCF margin',n(s.fcf_margin)],
@@ -1087,7 +1085,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function renderDetailTab(s,tab){
     const body=$m('marketDetailBody'); if(!body) return;
-    if(tab==='overview') body.innerHTML=`${changePanel(s)}${recoveryPanel(s)}${drawdownPanel(s)}${catalystPanel(s)}${investmentCase(s)}${scoreExplanation(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares · percentis relativos</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
+    if(tab==='overview') body.innerHTML=`${changePanel(s)}${recoveryPanel(s)}${drawdownPanel(s)}${evidencePanel(s)}${investmentCase(s)}${scoreExplanation(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares · percentis relativos</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
     if(tab==='perspective') {
       const buys=(n(s.analyst_strong_buy)||0)+(n(s.analyst_buy)||0), holds=n(s.analyst_hold)||0, sells=(n(s.analyst_sell)||0)+(n(s.analyst_strong_sell)||0);
       const revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;
