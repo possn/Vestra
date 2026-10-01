@@ -187,8 +187,10 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('market-dossier-editorial-card', css)
         self.assertNotIn('market-dossier-score-history--empty', css)
         self.assertNotIn('A série histórica ainda não está disponível', market)
-        for field in ('current_price', 'forward_pe', 'roe', 'revenue_growth', 'fcf_yield'):
-            self.assertIn(f'data-live-field="{field}"', market)
+        self.assertIn('data-live-field="current_price"', market)
+        price_row = market.split('<div class="market-dossier-price-row">', 1)[1].split('${dossierScoreBoard(s)}', 1)[0]
+        for field in ('forward_pe', 'roe', 'revenue_growth', 'fcf_yield'):
+            self.assertNotIn(f'data-live-field="{field}"', price_row)
 
 
     @classmethod
