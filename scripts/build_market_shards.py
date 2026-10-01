@@ -23,6 +23,8 @@ SHARD_DIR = os.path.join(ROOT, "data", "dossiers")
 MANIFEST = os.path.join(ROOT, "data", "dossiers-manifest.json")
 PORTFOLIO_SECTORS = os.path.join(ROOT, "data", "portfolio-sectors.json")
 FUND_AUM_HISTORY = os.path.join(ROOT, "data", "fund-aum-history.json")
+SCORE_HISTORY = os.path.join(ROOT, "data", "score-history.json")
+SCORE_HISTORY_MAX_QUARTERS = 8
 FUND_FLOW_HISTORY_DAYS = 120
 FUND_FLOW_MIN_DAYS = 5
 FUND_FLOW_MAX_DAYS = 14
@@ -144,6 +146,76 @@ def _finite_positive(value):
     except (TypeError, ValueError):
         return None
     return value if math.isfinite(value) and value > 0 else None
+
+
+def _finite_score(value):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(value) or value < 0 or value > 100:
+        return None
+    return value
+
+
+def score_quarter(day: str) -> str:
+    day = str(day or "")[:10]
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", day):
+        return ""
+    try:
+        month = int(day[5:7])
+    except ValueError:
+        return ""
+    if month < 1 or month > 12:
+        return ""
+    return f"{day[:4]}-Q{((month - 1) // 3) + 1}"
+
+
+def load_score_history(path: str = SCORE_HISTORY) -> dict:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            value = json.load(f)
+        return value if isinstance(value, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+
+
+def update_score_history(rows: list[dict], as_of: str, history: dict | None = None) -> dict:
+    """Persist only real observed Vestra scores, one latest point per quarter."""
+    history = history if isinstance(history, dict) else {}
+    day = str(as_of or "")[:10]
+    quarter = score_quarter(day)
+    if not quarter:
+        return history
+
+    for row in rows:
+        ticker = str(row.get("ticker") or "").strip().upper()
+        score = _finite_score(row.get("score"))
+        if not ticker or score is None:
+            continue
+        previous = history.get(ticker)
+        points = previous if isinstance(previous, list) else []
+        by_quarter = {}
+        for point in points:
+            if not isinstance(point, dict):
+                continue
+            label = str(point.get("quarter") or "").strip()
+            old_score = _finite_score(point.get("score"))
+            old_day = str(point.get("date") or "")[:10]
+            if re.match(r"^\d{4}-Q[1-4]$", label) and old_score is not None:
+                by_quarter[label] = {
+                    "quarter": label,
+                    "date": old_day,
+                    "score": round(old_score, 2),
+                }
+        by_quarter[quarter] = {
+            "quarter": quarter,
+            "date": day,
+            "score": round(score, 2),
+        }
+        history[ticker] = [by_quarter[key] for key in sorted(by_quarter)[-SCORE_HISTORY_MAX_QUARTERS:]]
+    return history
+
 
 def compact_period_return(row: dict, periods: int):
     """Return a cheap price return for startup rotation without shipping history."""
@@ -436,6 +508,11 @@ def main() -> None:
         str(generated_at or "")[:10],
         load_fund_aum_history(),
     )
+    score_history = update_score_history(
+        [row for _, row in rows],
+        str(generated_at or "")[:10],
+        load_score_history(),
+    )
 
     shards: dict[str, dict[str, dict]] = defaultdict(dict)
     index_rows = []
@@ -445,6 +522,10 @@ def main() -> None:
     manifest = {}
     for ticker, row in rows:
         row = apply_market_identity_fallback(row, previous_portfolio_sectors.get(ticker))
+        row = dict(row)
+        observed_scores = score_history.get(ticker)
+        if isinstance(observed_scores, list) and observed_scores:
+            row["score_history_quarterly"] = observed_scores
         key = shard_for(ticker)
         shards[key][ticker] = row
         manifest[ticker] = key
@@ -479,6 +560,9 @@ def main() -> None:
 
     with open(FUND_AUM_HISTORY, "w", encoding="utf-8") as f:
         json.dump(fund_history, f, ensure_ascii=False, separators=(",", ":"))
+
+    with open(SCORE_HISTORY, "w", encoding="utf-8") as f:
+        json.dump(score_history, f, ensure_ascii=False, separators=(",", ":"))
 
     # Production startup representation. market-static-universe.js prefers this
     # field/rows payload and falls back to INDEX then SRC if it is unavailable or
