@@ -91,7 +91,7 @@ test('iPhone/WebKit: global ticker uses canonical dossier and can return to Mark
   await expect(content).not.toContainText('DOSSIER GLOBAL · LIVE');
   await expect(content).not.toContainText('Não tem ainda Score Vestra pré-calculado');
 
-  const close = sheet.locator(':scope > [data-market-close].market-close-persistent');
+  const close = page.locator('#marketDossierActionPortal [data-portal-close]');
   await expect(close).toBeVisible();
   await close.tap();
   await expect(sheet).toBeHidden({ timeout: 3_000 });

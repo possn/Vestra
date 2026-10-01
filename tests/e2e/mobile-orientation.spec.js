@@ -72,8 +72,8 @@ test('iPhone/WebKit: portrait -> landscape -> portrait keeps Market and dossier 
 
   // The dossier intentionally covers the topbar. First prove that rotation kept
   // it alive, then close it and verify the portrait drawer is usable again.
-  const persistentClose = sheet.locator(':scope > .market-close-persistent');
-  await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
+  const persistentClose = page.locator('#marketDossierActionPortal [data-portal-close]');
+  await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
   await expect(persistentClose).toBeVisible();
   const closeBox = await persistentClose.boundingBox();
   expect(closeBox).not.toBeNull();

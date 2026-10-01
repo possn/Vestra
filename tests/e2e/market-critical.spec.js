@@ -60,8 +60,8 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(sheet.locator('.market-tabs')).toBeVisible();
   await expect(sheet.locator('#marketSheetContent svg').first()).toBeVisible();
 
-  const watchStar = sheet.locator(':scope > .market-watch--detail');
-  const frozenClose = sheet.locator(':scope > .market-close-persistent');
+  const watchStar = page.locator('#marketDossierActionPortal [data-portal-watch]');
+  const frozenClose = page.locator('#marketDossierActionPortal [data-portal-close]');
   await expect(watchStar).toBeVisible();
   await expect(frozenClose).toBeVisible();
   const [watchBox, closeBox] = await Promise.all([watchStar.boundingBox(), frozenClose.boundingBox()]);
@@ -83,7 +83,7 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
   await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
   await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
-  const persistentClose = sheet.locator(':scope > .market-close-persistent');
+  const persistentClose = page.locator('#marketDossierActionPortal [data-portal-close]');
   await expect(persistentClose).toBeVisible();
   await expect(sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]')).toBeHidden();
   await persistentClose.click();
@@ -124,7 +124,7 @@ test('iPhone/WebKit: ETF discovery opens a usable fund dossier', async ({ page }
   await expect(sheet.locator('[data-detail-tab="overview"]')).toHaveClass(/is-active/);
   await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
-  const persistentClose = sheet.locator(':scope > .market-close-persistent');
+  const persistentClose = page.locator('#marketDossierActionPortal [data-portal-close]');
   await expect(persistentClose).toBeVisible();
   await persistentClose.click();
   await expect(sheet).toBeHidden();

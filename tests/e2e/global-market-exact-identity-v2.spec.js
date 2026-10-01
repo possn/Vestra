@@ -130,7 +130,7 @@ test('iPhone/WebKit: SPIE.PA keeps exact provider identity in the canonical doss
   expect(learned.provider_symbol).toBe('SPIE.PA');
   expect(learned.identity_verified).toBe(true);
 
-  const close = sheet.locator('[data-market-close]:visible').first();
+  const close = page.locator('#marketDossierActionPortal [data-portal-close]');
   await expect(close).toBeVisible();
   await close.tap();
   await expect(sheet).toBeHidden();
