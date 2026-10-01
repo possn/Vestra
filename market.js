@@ -906,8 +906,23 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function dossierFullPicture(s){
     const summary=txt(s.long_business_summary)||txt(s.business_summary)||txt(s.thesis_summary);
-    const sector=[txt(s.sector),txt(s.industry)].filter(Boolean).join(' · ');
-    return `<section class="market-dossier-editorial-card market-dossier-full-picture"><div class="market-dossier-section-label">THE FULL PICTURE</div><h3>O negócio em poucas linhas</h3><p>${esc(summary||'Ainda não existe uma descrição de negócio suficientemente robusta para este ativo.')}</p><div class="market-dossier-facts"><span>${esc(sector||'Setor não classificado')}</span>${n(s.market_cap)!=null?`<span>Market cap ${compact(s.market_cap)}</span>`:''}${txt(s.currency)?`<span>${esc(s.currency)}</span>`:''}</div></section>`;
+    const sector=txt(s.sector), industry=txt(s.industry);
+    const geography=txt(s.country)||txt(s.region);
+    const exchange=txt(s.exchange)||txt(s.exchange_name);
+    const quoteType=txt(s.quote_type);
+    const facts=[
+      ['Setor',sector],
+      ['Indústria',industry],
+      ['País / região',geography],
+      ['Bolsa',exchange],
+      ['Tipo',quoteType],
+      ['Market cap',n(s.market_cap)!=null?compact(s.market_cap):''],
+      ['Moeda',txt(s.currency)]
+    ].filter(([,value])=>value);
+    const factsHtml=facts.length
+      ? `<div class="market-dossier-company-facts">${facts.map(([label,value])=>`<div><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join('')}</div>`
+      : '<p class="market-dossier-muted">A ficha de identificação ainda está incompleta para este ativo.</p>';
+    return `<section class="market-dossier-editorial-card market-dossier-full-picture"><div class="market-dossier-section-label">THE FULL PICTURE</div><h3>O negócio em poucas linhas</h3><p>${esc(summary||'Ainda não existe uma descrição de negócio suficientemente robusta para este ativo.')}</p><div class="market-dossier-company-identity"><h4>Ficha da empresa</h4>${factsHtml}</div></section>`;
   }
 
   function dossierGrowthProfile(s){
