@@ -120,7 +120,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('<h2 class="market-dossier-symbol">', market)
         self.assertIn('market-dossier-scoreboard', css)
         self.assertIn('market-dossier-editorial-card', css)
-        self.assertIn('market-dossier-score-history--empty', css)
+        self.assertNotIn('market-dossier-score-history--empty', css)
         self.assertIn('A série histórica ainda não está disponível', market)
         for field in ('current_price', 'forward_pe', 'roe', 'revenue_growth', 'fcf_yield'):
             self.assertIn(f'data-live-field="{field}"', market)
