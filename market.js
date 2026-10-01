@@ -989,9 +989,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function dossierPillarCards(s){
     const dims=scoreDims(s).map(([label,value])=>({label,value:n(value)})).filter(x=>x.value!=null);
     if(!dims.length) return '';
-    return `<section class="market-dossier-breakdown"><div class="market-dossier-section-label">SCORE BREAKDOWN</div><div class="market-dossier-breakdown-head"><h3>Porque tem este Score?</h3><p>Percentis relativos do modelo Vestra, com as métricas-base disponíveis.</p></div><div class="market-dossier-breakdown-grid">${dims.map(({label,value})=>{
+    return `<section class="market-dossier-breakdown"><div class="market-dossier-section-label">SCORE BREAKDOWN</div><div class="market-dossier-breakdown-head"><h3>Porque tem este Score?</h3><p>Percentis relativos do modelo Vestra; o detalhe quantitativo fica nas tabs e na explicação do Score.</p></div><div class="market-dossier-breakdown-grid">${dims.map(({label,value})=>{
       const band=dossierPillarBand(value);
-      return `<article class="market-dossier-breakdown-card"><div class="market-dossier-breakdown-card__head"><div><span>${esc(label)}</span><strong>${Math.round(value)}</strong></div><em class="${band.tone}">${esc(band.label)}</em></div><div class="market-dossier-breakdown-track"><i style="width:${Math.max(0,Math.min(100,value))}%"></i></div>${pillarMetricSummary(s,label)}</article>`;
+      return `<article class="market-dossier-breakdown-card"><div class="market-dossier-breakdown-card__head"><div><span>${esc(label)}</span><strong>${Math.round(value)}</strong></div><em class="${band.tone}">${esc(band.label)}</em></div><div class="market-dossier-breakdown-track"><i style="width:${Math.max(0,Math.min(100,value))}%"></i></div></article>`;
     }).join('')}</div><p class="market-dossier-interpretation">Os pilares são rankings relativos; não representam probabilidade de valorização. Métricas em falta não são tratadas como zero.</p></section>`;
   }
 
