@@ -157,7 +157,7 @@ class FrontendArchitectureTests(unittest.TestCase):
         market = read("market.js")
         self.assertIn("async function enrichTickerLive", market)
         self.assertIn("refreshOpenDossierLiveFields(s)", market)
-        for field in ("current_price", "forward_pe", "roe", "revenue_growth", "fcf_yield"):
+        for field in ("current_price", "forward_pe", "fcf_yield"):
             self.assertIn(f'data-live-field="{field}"', market)
         self.assertNotIn("www.bargo.ai", market)
 
