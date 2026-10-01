@@ -865,14 +865,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(txt(s.estimate_signal)==='deteriorating') watch.push(`Expectativas a deteriorar · ${n(s.estimate_momentum_score)==null?'—':Math.round(n(s.estimate_momentum_score))}/100`);
     if(txt(s.thesis_direction)==='up') watch.push('Tese quantitativa a melhorar');
     if(txt(s.thesis_direction)==='down') watch.push('Tese quantitativa a piorar');
-    const why=evidence.length?evidence.slice(0,3):[s.thesis_summary||s.business_summary||'Ainda não existe evidência suficiente para resumir a tese.'];
+    const why=evidence.length?evidence.slice(0,3):[s.thesis_summary||'Ainda não existe evidência suficiente para resumir a tese.'];
     const catalystPool=[...estimateDrivers,...drivers];
     const catalysts=catalystPool.length?catalystPool.slice(0,3):[txt(s.thesis_evolution_summary)||'Sem catalisador quantitativo claro identificado nos dados atuais.'];
     const riskItems=[...risks.slice(0,3),...weak.slice(0,Math.max(0,3-risks.length))].slice(0,3);
     if(!riskItems.length) riskItems.push('Sem risco específico suficientemente forte identificado pelo modelo; rever métricas e negócio antes de decidir.');
     const list=arr=>`<ul class="market-case-list">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
     return `<div class="market-case">
-      <div class="market-case__top"><div><small>INVESTMENT CASE</small><h4>${esc(s.thesis_type||'Leitura do ativo')}</h4><p>${esc(s.thesis_summary||s.business_summary||'Síntese ainda limitada pelos dados disponíveis.')}</p></div><span class="market-case__confidence">Confiança ${esc(txt(s.thesis_confidence)||'—')}</span></div>
+      <div class="market-case__top"><div><small>INVESTMENT CASE</small><h4>${esc(s.thesis_type||'Leitura do ativo')}</h4><p>${esc(s.thesis_summary||evidence[0]||'Síntese ainda limitada pelos dados disponíveis.')}</p></div><span class="market-case__confidence">Confiança ${esc(txt(s.thesis_confidence)||'—')}</span></div>
       <div class="market-case-grid">
         <section><div class="market-case-label"><span>01</span> Porque interessa</div>${list(why)}</section>
         <section><div class="market-case-label"><span>02</span> O que pode correr bem</div>${list(catalysts)}</section>
@@ -905,7 +905,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function dossierFullPicture(s){
-    const summary=txt(s.long_business_summary)||txt(s.business_summary)||txt(s.thesis_summary);
+    const summary=txt(s.long_business_summary)||txt(s.business_summary);
     const industry=txt(s.industry);
     const geography=txt(s.country)||txt(s.region);
     const quoteType=txt(s.quote_type);

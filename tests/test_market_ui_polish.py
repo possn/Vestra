@@ -133,6 +133,17 @@ class MarketUiPolishContractTests(unittest.TestCase):
 
 
 
+    def test_full_picture_business_description_is_separate_from_investment_thesis(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        full_picture = market.split('function dossierFullPicture(s)', 1)[1].split('function dossierFinancialSnapshot(s)', 1)[0]
+        investment = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
+        self.assertIn('long_business_summary', full_picture)
+        self.assertIn('business_summary', full_picture)
+        self.assertNotIn('thesis_summary', full_picture)
+        self.assertIn('thesis_summary', investment)
+        self.assertNotIn('s.business_summary', investment)
+
+
     def test_editorial_dossier_includes_company_identity_facts(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         css = (ROOT / 'market.css').read_text(encoding='utf-8')
