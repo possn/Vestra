@@ -936,19 +936,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function dossierGrowthProfile(s){
-    const metrics=[
-      ['EPS YoY',n(s.eps_yoy_latest??s.eps_growth)],
-      ['Margem operacional',n(s.operating_margin)],
-      ['FCF margin',n(s.fcf_margin)],
-    ];
-    const metricHtml=metrics.map(([label,value])=>{
-      const magnitude=value==null?0:Math.min(100,Math.max(8,Math.abs(value)*100));
-      const tone=value==null?'':value>0?'is-positive':'is-negative';
-      return `<div class="market-dossier-growth-metric ${tone}"><div><span>${esc(label)}</span><strong>${value==null?'—':pct(value)}</strong></div><div class="market-dossier-mini-track"><i style="width:${magnitude}%"></i></div></div>`;
-    }).join('');
-    const growth=n(s.growth_pct), estimate=n(s.estimate_momentum_score);
+    const growth=n(s.growth_pct);
     const note=growth!=null&&growth>=70?'Crescimento acima da maioria dos comparáveis.':growth!=null&&growth<45?'Crescimento é atualmente um dos pontos mais frágeis do perfil.':'Crescimento sem extremo claro face aos comparáveis.';
-    return `<section class="market-dossier-editorial-card"><div class="market-dossier-section-label">GROWTH PROFILE</div><div class="market-dossier-card-head"><h3>Tração do negócio</h3><span>${growth==null?'—':Math.round(growth)+'/100'}</span></div><div class="market-dossier-growth-grid">${metricHtml}</div><p class="market-dossier-interpretation">${esc(note)}${estimate==null?'':` Expectation momentum ${Math.round(estimate)}/100.`}</p></section>`;
+    return `<section class="market-dossier-editorial-card"><div class="market-dossier-section-label">GROWTH PROFILE</div><div class="market-dossier-card-head"><h3>Tração do negócio</h3><span>${growth==null?'—':Math.round(growth)+'/100'}</span></div><p>${esc(note)} O detalhe de receita, lucro, EPS e restantes métricas de execução está na tab Growth.</p></section>`;
   }
 
   function dossierExpectationsContext(s){

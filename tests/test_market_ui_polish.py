@@ -5,6 +5,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_growth_profile_top_level_is_editorial_summary_not_duplicate_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierGrowthProfile(s)', 1)[1].split('function dossierExpectationsContext(s)', 1)[0]
+        self.assertIn('GROWTH PROFILE', block)
+        self.assertIn('tab Growth', block)
+        self.assertIn('growth_pct', block)
+        self.assertNotIn('market-dossier-growth-grid', block)
+        self.assertNotIn('EPS YoY', block)
+        self.assertNotIn('Margem operacional', block)
+        self.assertNotIn('FCF margin', block)
+        self.assertNotIn('estimate_momentum_score', block)
+
+
     def test_smart_money_top_level_is_editorial_summary_not_duplicate_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierSmartMoney(s)', 1)[1].split('function detailBase(s)', 1)[0]
