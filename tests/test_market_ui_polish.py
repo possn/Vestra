@@ -5,6 +5,25 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+
+    def test_editorial_company_dossier_hierarchy(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        for token in ('dossierScoreBoard', 'dossierFullPicture', 'dossierGrowthProfile', 'dossierSmartMoney'):
+            self.assertIn(token, market)
+        self.assertIn('THE FULL PICTURE', market)
+        self.assertIn('SMART MONEY MAP', market)
+        self.assertIn('GROWTH PROFILE', market)
+        self.assertIn('<h1>', market)
+        self.assertIn('<h2 class="market-dossier-symbol">', market)
+        self.assertIn('market-dossier-scoreboard', css)
+        self.assertIn('market-dossier-editorial-card', css)
+        self.assertIn('market-dossier-score-history--empty', css)
+        self.assertIn('A série histórica ainda não está disponível', market)
+        for field in ('current_price', 'forward_pe', 'roe', 'revenue_growth', 'fcf_yield'):
+            self.assertIn(f'data-live-field="{field}"', market)
+
+
     @classmethod
     def setUpClass(cls):
         cls.source = (ROOT / 'market-ui-polish.js').read_text(encoding='utf-8')

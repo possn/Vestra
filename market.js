@@ -882,13 +882,69 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     </div>`;
   }
 
+  function dossierScoreHistory(s){
+    const raw=s?.score_history_quarterly ?? s?.score_history_4q ?? s?.score_history ?? s?.historical_scores;
+    const rows=Array.isArray(raw)?raw:[];
+    return rows.map((x,i)=>{
+      if(typeof x==='number') return {label:`T${i+1}`,value:n(x)};
+      const value=n(x?.score ?? x?.value ?? x?.vestra_score);
+      const label=txt(x?.quarter ?? x?.period ?? x?.label ?? x?.date) || `T${i+1}`;
+      return {label,value};
+    }).filter(x=>x.value!=null).slice(-6);
+  }
+
+  function dossierScoreBoard(s){
+    const score=n(s.score);
+    const dims=scoreDims(s).map(([label,value])=>({label,value:n(value)})).filter(x=>x.value!=null);
+    const bars=dims.slice(0,8).map(x=>`<div class="market-dossier-pillar"><span>${esc(x.label)}</span><div class="market-dossier-pillar__track"><i style="width:${Math.max(0,Math.min(100,x.value))}%"></i></div><strong>${Math.round(x.value)}</strong></div>`).join('');
+    const history=dossierScoreHistory(s);
+    const historyHtml=history.length>=2
+      ? `<div class="market-dossier-score-history"><div class="market-dossier-section-label">Histórico do Score</div><div class="market-dossier-history-bars">${history.map(x=>`<div class="market-dossier-history-bar"><i style="height:${Math.max(8,Math.min(100,x.value))}%"></i><strong>${Math.round(x.value)}</strong><span>${esc(x.label)}</span></div>`).join('')}</div></div>`
+      : `<div class="market-dossier-score-history market-dossier-score-history--empty"><div class="market-dossier-section-label">Histórico do Score</div><p>A série histórica ainda não está disponível para este ativo.</p></div>`;
+    return `<section class="market-dossier-scoreboard"><div class="market-dossier-scorehero"><div><small>VESTRA SCORE</small><strong>${score==null?'—':Math.round(score)}</strong><span>/100</span></div><p>${score==null?'Score não publicável com a evidência atual.':esc(scoreBand(score))}</p></div><div class="market-dossier-pillars">${bars||'<p class="market-dossier-muted">Sem pilares suficientes para decompor o score.</p>'}</div>${historyHtml}</section>`;
+  }
+
+  function dossierFullPicture(s){
+    const summary=txt(s.long_business_summary)||txt(s.business_summary)||txt(s.thesis_summary);
+    const sector=[txt(s.sector),txt(s.industry)].filter(Boolean).join(' · ');
+    return `<section class="market-dossier-editorial-card market-dossier-full-picture"><div class="market-dossier-section-label">THE FULL PICTURE</div><h3>O negócio em poucas linhas</h3><p>${esc(summary||'Ainda não existe uma descrição de negócio suficientemente robusta para este ativo.')}</p><div class="market-dossier-facts"><span>${esc(sector||'Setor não classificado')}</span>${n(s.market_cap)!=null?`<span>Market cap ${compact(s.market_cap)}</span>`:''}${txt(s.currency)?`<span>${esc(s.currency)}</span>`:''}</div></section>`;
+  }
+
+  function dossierGrowthProfile(s){
+    const metrics=[
+      ['Receita YoY',n(s.revenue_yoy_latest??s.revenue_growth)],
+      ['EPS YoY',n(s.eps_yoy_latest??s.eps_growth)],
+      ['Margem operacional',n(s.operating_margin)],
+      ['FCF margin',n(s.fcf_margin)],
+    ];
+    const metricHtml=metrics.map(([label,value])=>{
+      const magnitude=value==null?0:Math.min(100,Math.max(8,Math.abs(value)*100));
+      const tone=value==null?'':value>0?'is-positive':'is-negative';
+      return `<div class="market-dossier-growth-metric ${tone}"><div><span>${esc(label)}</span><strong>${value==null?'—':pct(value)}</strong></div><div class="market-dossier-mini-track"><i style="width:${magnitude}%"></i></div></div>`;
+    }).join('');
+    const growth=n(s.growth_pct), estimate=n(s.estimate_momentum_score);
+    const note=growth!=null&&growth>=70?'Crescimento acima da maioria dos comparáveis.':growth!=null&&growth<45?'Crescimento é atualmente um dos pontos mais frágeis do perfil.':'Crescimento sem extremo claro face aos comparáveis.';
+    return `<section class="market-dossier-editorial-card"><div class="market-dossier-section-label">GROWTH PROFILE</div><div class="market-dossier-card-head"><h3>Tração do negócio</h3><span>${growth==null?'—':Math.round(growth)+'/100'}</span></div><div class="market-dossier-growth-grid">${metricHtml}</div><p class="market-dossier-interpretation">${esc(note)}${estimate==null?'':` Expectation momentum ${Math.round(estimate)}/100.`}</p></section>`;
+  }
+
+  function dossierSmartMoney(s){
+    const buys=n(s.insider_buy_count_30d)||0, sells=n(s.insider_sell_count_30d)||0;
+    const buyValue=n(s.insider_buy_value_30d)||0, sellValue=n(s.insider_sell_value_30d)||0;
+    const congress=Array.isArray(s.congress_trades)?s.congress_trades:[];
+    const net=buyValue-sellValue;
+    const flowTone=net>0?'is-positive':net<0?'is-negative':'';
+    return `<section class="market-dossier-editorial-card market-dossier-smart"><div class="market-dossier-section-label">SMART MONEY MAP</div><div class="market-dossier-card-head"><h3>Insiders e divulgações políticas</h3><span class="${flowTone}">${net>0?'Fluxo comprador':net<0?'Fluxo vendedor':'Sem fluxo líquido'}</span></div><div class="market-dossier-smart-grid"><div><small>Compras insider · 30d</small><strong>${buys}</strong><span>${money(buyValue,'USD')}</span></div><div><small>Vendas insider · 30d</small><strong>${sells}</strong><span>${money(sellValue,'USD')}</span></div><div><small>Trades Congresso</small><strong>${congress.length}</strong><span>divulgações recentes</span></div></div><p class="market-dossier-interpretation">Os dados de insiders e Congresso são contexto de comportamento declarado; não alteram diretamente o Score Vestra.</p></section>`;
+  }
+
   function detailBase(s){
     const watched=isWatched(s.ticker), held=inPortfolio(s.ticker);
-    return `<div class="market-detail-head"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h2>${esc(s.ticker)}</h2>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><p>${esc(s.name||'')}</p>${compactLiveBadge(s)}</div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
-      ${sparkSvg(s.price_history_1y)}
-      ${vestraRead(s)}
-      <div class="market-metrics"><div class="market-metric"><small>Score Vestra</small><strong>${n(s.score)==null?'—':Math.round(s.score)}/100</strong></div><div class="market-metric"><small>Preço</small><strong data-live-field="current_price">${money(s.current_price,s.currency)}</strong></div><div class="market-metric"><small>Forward P/E</small><strong data-live-field="forward_pe">${num(s.forward_pe)}</strong></div><div class="market-metric"><small>ROE</small><strong data-live-field="roe">${pct(s.roe)}</strong></div><div class="market-metric"><small>Receita YoY</small><strong data-live-field="revenue_growth">${pct(s.revenue_growth)}</strong></div><div class="market-metric"><small>FCF yield</small><strong data-live-field="fcf_yield">${pct(s.fcf_yield)}</strong></div></div>
-      <div class="market-tabs" role="tablist" aria-label="Dossier"><button class="market-tab is-active" data-detail-tab="overview">Resumo</button><button class="market-tab" data-detail-tab="perspective">Perspetiva</button><button class="market-tab" data-detail-tab="growth">Growth</button><button class="market-tab" data-detail-tab="valuation">Valuation</button><button class="market-tab" data-detail-tab="earnings">Resultados</button><button class="market-tab" data-detail-tab="financials">Financeiro</button><button class="market-tab" data-detail-tab="smart">Smart</button><button class="market-tab" data-detail-tab="news">Notícias</button></div><div id="marketDetailBody"></div>`;
+    return `<div class="market-dossier-shell"><div class="market-detail-head market-detail-head--editorial"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h1>${esc(s.name||s.ticker)}</h1>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><h2 class="market-dossier-symbol">${esc(s.ticker)}</h2>${txt(s.exchange)?`<p class="market-dossier-exchange">${esc(s.exchange)}</p>`:''}${compactLiveBadge(s)}</div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
+      <div class="market-dossier-price-row"><div><small>PREÇO</small><strong data-live-field="current_price">${money(s.current_price,s.currency)}</strong></div>${n(s.market_cap)!=null?`<div><small>MARKET CAP</small><strong>${compact(s.market_cap)}</strong></div>`:''}<div><small>FORWARD P/E</small><strong data-live-field="forward_pe">${num(s.forward_pe)}</strong></div><div><small>ROE</small><strong data-live-field="roe">${pct(s.roe)}</strong></div><div><small>RECEITA YOY</small><strong data-live-field="revenue_growth">${pct(s.revenue_growth)}</strong></div><div><small>FCF YIELD</small><strong data-live-field="fcf_yield">${pct(s.fcf_yield)}</strong></div></div>
+      ${dossierScoreBoard(s)}
+      ${dossierFullPicture(s)}
+      ${dossierGrowthProfile(s)}
+      ${dossierSmartMoney(s)}
+      <div class="market-tabs market-tabs--dossier" role="tablist" aria-label="Dossier"><button class="market-tab is-active" data-detail-tab="overview">Síntese</button><button class="market-tab" data-detail-tab="perspective">Perspetiva</button><button class="market-tab" data-detail-tab="growth">Growth</button><button class="market-tab" data-detail-tab="valuation">Valuation</button><button class="market-tab" data-detail-tab="earnings">Resultados</button><button class="market-tab" data-detail-tab="financials">Financeiro</button><button class="market-tab" data-detail-tab="smart">Smart money</button><button class="market-tab" data-detail-tab="news">Notícias</button></div><div id="marketDetailBody"></div></div>`;
   }
 
   function renderDetailTab(s,tab){
