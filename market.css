@@ -555,3 +555,23 @@ html.modal-open,body.modal-open{
 .market-tabs--dossier{position:sticky;top:0;z-index:5;padding:10px 0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .market-dossier-muted{font-size:11px;color:var(--muted)}
 @media(max-width:720px){.market-dossier-scoreboard{grid-template-columns:1fr;gap:16px}.market-dossier-scorehero small{position:static;transform:none;display:block;margin-bottom:12px}.market-dossier-score-history{border-left:0;border-top:1px solid var(--line);padding:14px 0 0}.market-dossier-growth-grid{grid-template-columns:1fr}.market-dossier-smart-grid{grid-template-columns:1fr 1fr}.market-dossier-smart-grid>div:last-child{grid-column:1/-1}.market-detail-head--editorial h1{font-size:30px}.market-dossier-scorehero strong{font-size:58px}.market-dossier-price-row{gap:12px}.market-dossier-price-row>div{min-width:calc(33.333% - 12px)}}
+
+
+/* v4.2 — compact score breakdown cards */
+.market-dossier-breakdown{padding:22px 4px;border-bottom:1px solid var(--line)}
+.market-dossier-breakdown-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin:5px 0 14px}
+.market-dossier-breakdown-head h3{font-size:22px;letter-spacing:-.035em;margin:0}
+.market-dossier-breakdown-head p{margin:0;max-width:440px;font-size:11px;line-height:1.45;color:var(--text2);text-align:right}
+.market-dossier-breakdown-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.market-dossier-breakdown-card{padding:13px 14px;border:1px solid var(--line);border-radius:16px;background:var(--card2);min-width:0}
+.market-dossier-breakdown-card__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.market-dossier-breakdown-card__head>div{display:flex;align-items:baseline;gap:8px;min-width:0}
+.market-dossier-breakdown-card__head span{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-dossier-breakdown-card__head strong{font-size:19px;letter-spacing:-.035em}
+.market-dossier-breakdown-card__head em{font-style:normal;font-size:9px;font-weight:850;color:var(--text2);white-space:nowrap}
+.market-dossier-breakdown-card__head em.is-positive{color:#34764a}.market-dossier-breakdown-card__head em.is-caution{color:#9b6744}.market-dossier-breakdown-card__head em.is-muted{color:var(--muted)}
+.market-dossier-breakdown-track{height:5px;margin:9px 0;border-radius:999px;overflow:hidden;background:var(--line2)}
+.market-dossier-breakdown-track i{display:block;height:100%;border-radius:inherit;background:var(--vio)}
+.market-dossier-breakdown-card .market-dim__evidence{font-size:9px;line-height:1.45;color:var(--text2)}
+.market-dossier-breakdown-card .market-dim__evidence strong{font-size:9px}
+@media(max-width:720px){.market-dossier-breakdown-head{display:block}.market-dossier-breakdown-head p{margin-top:6px;text-align:left}.market-dossier-breakdown-grid{grid-template-columns:1fr}}

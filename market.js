@@ -927,6 +927,24 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<section class="market-dossier-editorial-card"><div class="market-dossier-section-label">GROWTH PROFILE</div><div class="market-dossier-card-head"><h3>Tração do negócio</h3><span>${growth==null?'—':Math.round(growth)+'/100'}</span></div><div class="market-dossier-growth-grid">${metricHtml}</div><p class="market-dossier-interpretation">${esc(note)}${estimate==null?'':` Expectation momentum ${Math.round(estimate)}/100.`}</p></section>`;
   }
 
+  function dossierPillarBand(value){
+    const v=n(value);
+    if(v==null) return {label:'Sem score',tone:'is-muted'};
+    if(v>=75) return {label:'Forte',tone:'is-positive'};
+    if(v>=60) return {label:'Acima da média',tone:'is-positive'};
+    if(v>=40) return {label:'Intermédio',tone:'is-neutral'};
+    return {label:'Abaixo da média',tone:'is-caution'};
+  }
+
+  function dossierPillarCards(s){
+    const dims=scoreDims(s).map(([label,value])=>({label,value:n(value)})).filter(x=>x.value!=null);
+    if(!dims.length) return '';
+    return `<section class="market-dossier-breakdown"><div class="market-dossier-section-label">SCORE BREAKDOWN</div><div class="market-dossier-breakdown-head"><h3>Porque tem este Score?</h3><p>Percentis relativos do modelo Vestra, com as métricas-base disponíveis.</p></div><div class="market-dossier-breakdown-grid">${dims.map(({label,value})=>{
+      const band=dossierPillarBand(value);
+      return `<article class="market-dossier-breakdown-card"><div class="market-dossier-breakdown-card__head"><div><span>${esc(label)}</span><strong>${Math.round(value)}</strong></div><em class="${band.tone}">${esc(band.label)}</em></div><div class="market-dossier-breakdown-track"><i style="width:${Math.max(0,Math.min(100,value))}%"></i></div>${pillarMetricSummary(s,label)}</article>`;
+    }).join('')}</div><p class="market-dossier-interpretation">Os pilares são rankings relativos; não representam probabilidade de valorização. Métricas em falta não são tratadas como zero.</p></section>`;
+  }
+
   function dossierSmartMoney(s){
     const buys=n(s.insider_buy_count_30d)||0, sells=n(s.insider_sell_count_30d)||0;
     const buyValue=n(s.insider_buy_value_30d)||0, sellValue=n(s.insider_sell_value_30d)||0;
@@ -941,6 +959,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<div class="market-dossier-shell"><div class="market-detail-head market-detail-head--editorial"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h1>${esc(s.name||s.ticker)}</h1>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><h2 class="market-dossier-symbol">${esc(s.ticker)}</h2>${txt(s.exchange)?`<p class="market-dossier-exchange">${esc(s.exchange)}</p>`:''}${compactLiveBadge(s)}</div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
       <div class="market-dossier-price-row"><div><small>PREÇO</small><strong data-live-field="current_price">${money(s.current_price,s.currency)}</strong></div>${n(s.market_cap)!=null?`<div><small>MARKET CAP</small><strong>${compact(s.market_cap)}</strong></div>`:''}<div><small>FORWARD P/E</small><strong data-live-field="forward_pe">${num(s.forward_pe)}</strong></div><div><small>ROE</small><strong data-live-field="roe">${pct(s.roe)}</strong></div><div><small>RECEITA YOY</small><strong data-live-field="revenue_growth">${pct(s.revenue_growth)}</strong></div><div><small>FCF YIELD</small><strong data-live-field="fcf_yield">${pct(s.fcf_yield)}</strong></div></div>
       ${dossierScoreBoard(s)}
+      ${dossierPillarCards(s)}
       ${dossierFullPicture(s)}
       ${dossierGrowthProfile(s)}
       ${dossierSmartMoney(s)}

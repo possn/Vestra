@@ -6,6 +6,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class MarketUiPolishContractTests(unittest.TestCase):
 
+    def test_editorial_dossier_has_compact_score_breakdown_cards(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        self.assertIn('function dossierPillarCards(s)', market)
+        self.assertIn('SCORE BREAKDOWN', market)
+        self.assertIn('Porque tem este Score?', market)
+        self.assertIn('pillarMetricSummary(s,label)', market)
+        self.assertIn('Os pilares são rankings relativos', market)
+        self.assertIn('market-dossier-breakdown-grid', css)
+        self.assertIn('grid-template-columns:repeat(2,minmax(0,1fr))', css)
+
+
+
     def test_editorial_company_dossier_hierarchy(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         css = (ROOT / 'market.css').read_text(encoding='utf-8')
