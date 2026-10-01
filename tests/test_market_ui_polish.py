@@ -6,6 +6,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class MarketUiPolishContractTests(unittest.TestCase):
 
+    def test_editorial_dossier_surfaces_catalysts_and_risks(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        self.assertIn('function dossierCatalystsRisks(s)', market)
+        self.assertIn('CATALYSTS & RISKS', market)
+        self.assertIn('O que pode mudar a tese', market)
+        for token in ('catalyst_events', 'thesis_evolution_drivers', 'earnings_intelligence_drivers', 'thesis_risks'):
+            self.assertIn(token, market)
+        self.assertIn('market-dossier-catalyst-grid', css)
+        self.assertIn('grid-template-columns:1fr 1fr', css)
+
+
+
     def test_editorial_dossier_includes_financial_snapshot(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         css = (ROOT / 'market.css').read_text(encoding='utf-8')

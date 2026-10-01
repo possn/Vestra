@@ -993,6 +993,22 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<section class="market-dossier-editorial-card market-dossier-expectations"><div class="market-dossier-section-label">MARKET EXPECTATIONS</div><div class="market-dossier-card-head"><h3>O que o mercado está a descontar</h3><span class="${signalTone}">${esc(signalLabel)}</span></div><div class="market-dossier-expectations-grid"><div><small>Momentum</small><strong>${momentum==null?'—':Math.round(momentum)+'/100'}</strong><span>${revisionBreadth==null?'breadth —':`breadth ${revisionBreadth>=0?'+':''}${num(revisionBreadth)}%`}</span></div><div><small>Revisões EPS · 30d</small><strong>${revUp} ↑ · ${revDown} ↓</strong><span>direção das estimativas</span></div><div><small>Target analistas</small><strong>${targetUpside==null?'—':`${targetUpside>=0?'+':''}${num(targetUpside)}%`}</strong><span>upside/downside implícito</span></div><div><small>Fair value Vestra</small><strong class="${valuationTone}">${fairUpside==null?'—':`${fairUpside>=0?'+':''}${num(fairUpside)}%`}</strong><span>${esc(valuationLabel)}</span></div><div><small>Próximos resultados</small><strong>${esc(nextEarnings||'—')}</strong><span>catalisador temporal</span></div><div><small>Confiança</small><strong>${esc(txt(s.estimate_confidence)||'—')}</strong><span>qualidade do sinal</span></div></div><p class="market-dossier-interpretation">${esc(interpretation)} Targets e fair value são contexto separado do Score Vestra e não são previsões de preço.</p></section>`;
   }
 
+  function dossierCatalystsRisks(s){
+    const events=Array.isArray(s.catalyst_events)?s.catalyst_events.filter(Boolean):[];
+    const positives=events.filter(x=>txt(x?.tone)==='positive').map(x=>txt(x?.label||x?.evidence)).filter(Boolean);
+    const eventSignals=events.filter(x=>txt(x?.tone)==='event').map(x=>txt(x?.label||x?.evidence)).filter(Boolean);
+    const risks=events.filter(x=>txt(x?.tone)==='risk').map(x=>txt(x?.label||x?.evidence)).filter(Boolean);
+    const thesisDrivers=Array.isArray(s.thesis_evolution_drivers)?s.thesis_evolution_drivers.filter(Boolean):[];
+    const earningsDrivers=Array.isArray(s.earnings_intelligence_drivers)?s.earnings_intelligence_drivers.filter(Boolean):[];
+    const thesisRisks=Array.isArray(s.thesis_risks)?s.thesis_risks.filter(Boolean):[];
+    const catalysts=[...positives,...eventSignals,...earningsDrivers,...thesisDrivers].filter(Boolean).slice(0,3);
+    const riskItems=[...risks,...thesisRisks].filter(Boolean).slice(0,3);
+    if(!catalysts.length&&!riskItems.length) return '';
+    const items=(rows,tone)=>rows.map(x=>`<li class="${tone}">${esc(x)}</li>`).join('');
+    const next=s.catalyst_next_date?shortDate(s.catalyst_next_date):(s.analyst_next_earnings_date?shortDate(s.analyst_next_earnings_date):'—');
+    return `<section class="market-dossier-editorial-card market-dossier-catalysts"><div class="market-dossier-section-label">CATALYSTS & RISKS</div><div class="market-dossier-card-head"><h3>O que pode mudar a tese</h3><span>Próximo evento · ${esc(next)}</span></div><div class="market-dossier-catalyst-grid"><div><small>CATALISADORES</small>${catalysts.length?`<ul>${items(catalysts,'is-positive')}</ul>`:'<p>Sem catalisador robusto identificado.</p>'}</div><div><small>RISCOS</small>${riskItems.length?`<ul>${items(riskItems,'is-negative')}</ul>`:'<p>Sem risco específico forte identificado.</p>'}</div></div><p class="market-dossier-interpretation">Síntese baseada em eventos e evidência já publicados no dossier; não altera diretamente o Score Vestra.</p></section>`;
+  }
+
   function dossierPillarBand(value){
     const v=n(value);
     if(v==null) return {label:'Sem score',tone:'is-muted'};
@@ -1064,6 +1080,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       ${dossierFinancialSnapshot(s)}
       ${dossierGrowthProfile(s)}
       ${dossierExpectationsContext(s)}
+      ${dossierCatalystsRisks(s)}
       ${dossierSmartMoney(s)}
       <div class="market-tabs market-tabs--dossier" role="tablist" aria-label="Dossier"><button class="market-tab is-active" data-detail-tab="overview">Síntese</button><button class="market-tab" data-detail-tab="perspective">Perspetiva</button><button class="market-tab" data-detail-tab="growth">Growth</button><button class="market-tab" data-detail-tab="valuation">Valuation</button><button class="market-tab" data-detail-tab="earnings">Resultados</button><button class="market-tab" data-detail-tab="financials">Financeiro</button><button class="market-tab" data-detail-tab="smart">Smart money</button><button class="market-tab" data-detail-tab="news">Notícias</button></div><div id="marketDetailBody"></div></div>`;
   }

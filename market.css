@@ -619,3 +619,15 @@ html.modal-open,body.modal-open{
 .market-dossier-financial-grid small{display:block;font-size:8px;font-weight:850;color:var(--muted);letter-spacing:.03em;text-transform:uppercase}
 .market-dossier-financial-grid strong{display:block;margin-top:4px;font-size:15px;line-height:1.15;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:720px){.market-dossier-financial-grid{grid-template-columns:1fr 1fr}}
+
+
+/* v4.7 — catalysts & risks summary */
+.market-dossier-catalyst-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.market-dossier-catalyst-grid>div{padding:12px 13px;border:1px solid var(--line);border-radius:14px;background:var(--card2)}
+.market-dossier-catalyst-grid small{font-size:8px;font-weight:900;letter-spacing:.05em;color:var(--muted)}
+.market-dossier-catalyst-grid ul{margin:8px 0 0;padding-left:17px}
+.market-dossier-catalyst-grid li{margin:5px 0;font-size:11px;line-height:1.35}
+.market-dossier-catalyst-grid li.is-positive::marker{color:var(--good)}
+.market-dossier-catalyst-grid li.is-negative::marker{color:var(--bad)}
+.market-dossier-catalyst-grid p{margin:8px 0 0;font-size:11px;color:var(--muted)}
+@media(max-width:720px){.market-dossier-catalyst-grid{grid-template-columns:1fr}}
