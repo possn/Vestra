@@ -6,6 +6,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class MarketUiPolishContractTests(unittest.TestCase):
 
+    def test_editorial_dossier_includes_company_identity_facts(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        self.assertIn('Ficha da empresa', market)
+        for token in ("['Setor',sector]", "['Indústria',industry]", "['País / região',geography]", "['Bolsa',exchange]", "['Tipo',quoteType]", "['Market cap'", "['Moeda'"):
+            self.assertIn(token, market)
+        self.assertIn('market-dossier-company-facts', css)
+        self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr))', css)
+
+
+
 
     def test_smart_money_tab_maps_declared_events_without_invented_performance(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
