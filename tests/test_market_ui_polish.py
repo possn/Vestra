@@ -85,17 +85,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
 
 
 
-    def test_editorial_dossier_surfaces_catalysts_and_risks(self):
+    def test_editorial_dossier_surfaces_compact_catalysts_and_risks(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
-        css = (ROOT / 'market.css').read_text(encoding='utf-8')
-        self.assertIn('function dossierCatalystsRisks(s)', market)
-        self.assertIn('CATALYSTS & RISKS', market)
-        self.assertIn('O que pode mudar a tese', market)
+        block = market.split('function dossierCatalystsRisks(s)', 1)[1].split('function dossierPillarBand', 1)[0]
+        self.assertIn('CATALYSTS & RISKS', block)
+        self.assertIn('O que pode mudar a tese', block)
+        self.assertIn('Investment Case', block)
         for token in ('catalyst_events', 'thesis_evolution_drivers', 'earnings_intelligence_drivers', 'thesis_risks'):
-            self.assertIn(token, market)
-        self.assertIn('market-dossier-catalyst-grid', css)
-        self.assertIn('grid-template-columns:1fr 1fr', css)
-
+            self.assertIn(token, block)
+        self.assertNotIn('market-dossier-catalyst-grid', block)
+        self.assertNotIn('<ul>', block)
 
 
     def test_editorial_dossier_includes_financial_snapshot(self):

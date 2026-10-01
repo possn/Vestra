@@ -964,12 +964,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const thesisDrivers=Array.isArray(s.thesis_evolution_drivers)?s.thesis_evolution_drivers.filter(Boolean):[];
     const earningsDrivers=Array.isArray(s.earnings_intelligence_drivers)?s.earnings_intelligence_drivers.filter(Boolean):[];
     const thesisRisks=Array.isArray(s.thesis_risks)?s.thesis_risks.filter(Boolean):[];
-    const catalysts=[...positives,...eventSignals,...earningsDrivers,...thesisDrivers].filter(Boolean).slice(0,3);
-    const riskItems=[...risks,...thesisRisks].filter(Boolean).slice(0,3);
+    const unique=rows=>[...new Set(rows.map(x=>txt(x)).filter(Boolean))];
+    const catalysts=unique([...positives,...eventSignals,...earningsDrivers,...thesisDrivers]);
+    const riskItems=unique([...risks,...thesisRisks]);
     if(!catalysts.length&&!riskItems.length) return '';
-    const items=(rows,tone)=>rows.map(x=>`<li class="${tone}">${esc(x)}</li>`).join('');
     const next=s.catalyst_next_date?shortDate(s.catalyst_next_date):(s.analyst_next_earnings_date?shortDate(s.analyst_next_earnings_date):'—');
-    return `<section class="market-dossier-editorial-card market-dossier-catalysts"><div class="market-dossier-section-label">CATALYSTS & RISKS</div><div class="market-dossier-card-head"><h3>O que pode mudar a tese</h3><span>Próximo evento · ${esc(next)}</span></div><div class="market-dossier-catalyst-grid"><div><small>CATALISADORES</small>${catalysts.length?`<ul>${items(catalysts,'is-positive')}</ul>`:'<p>Sem catalisador robusto identificado.</p>'}</div><div><small>RISCOS</small>${riskItems.length?`<ul>${items(riskItems,'is-negative')}</ul>`:'<p>Sem risco específico forte identificado.</p>'}</div></div><p class="market-dossier-interpretation">Síntese baseada em eventos e evidência já publicados no dossier; não altera diretamente o Score Vestra.</p></section>`;
+    const balance=catalysts.length&&riskItems.length
+      ? `${catalysts.length} catalisador${catalysts.length===1?'':'es'} e ${riskItems.length} risco${riskItems.length===1?'':'s'} identificados.`
+      : catalysts.length
+        ? `${catalysts.length} catalisador${catalysts.length===1?'':'es'} identificado${catalysts.length===1?'':'s'}, sem risco específico adicional neste bloco.`
+        : `${riskItems.length} risco${riskItems.length===1?'':'s'} identificado${riskItems.length===1?'':'s'}, sem catalisador robusto adicional neste bloco.`;
+    return `<section class="market-dossier-editorial-card market-dossier-catalysts"><div class="market-dossier-section-label">CATALYSTS & RISKS</div><div class="market-dossier-card-head"><h3>O que pode mudar a tese</h3><span>Próximo evento · ${esc(next)}</span></div><p>${esc(balance)} O detalhe qualitativo está na tab Síntese, dentro do Investment Case.</p></section>`;
   }
 
   function dossierPillarBand(value){
