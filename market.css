@@ -575,3 +575,13 @@ html.modal-open,body.modal-open{
 .market-dossier-breakdown-card .market-dim__evidence{font-size:9px;line-height:1.45;color:var(--text2)}
 .market-dossier-breakdown-card .market-dim__evidence strong{font-size:9px}
 @media(max-width:720px){.market-dossier-breakdown-head{display:block}.market-dossier-breakdown-head p{margin-top:6px;text-align:left}.market-dossier-breakdown-grid{grid-template-columns:1fr}}
+
+
+/* v4.3 — market expectations context */
+.market-dossier-expectations-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.market-dossier-expectations-grid>div{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card2);min-width:0}
+.market-dossier-expectations-grid small{display:block;font-size:9px;font-weight:850;color:var(--muted);letter-spacing:.02em}
+.market-dossier-expectations-grid strong{display:block;margin-top:4px;font-size:18px;letter-spacing:-.025em}
+.market-dossier-expectations-grid strong.is-positive{color:#34764a}.market-dossier-expectations-grid strong.is-negative{color:#9b4b44}
+.market-dossier-expectations-grid span{display:block;margin-top:3px;font-size:9px;line-height:1.35;color:var(--text2)}
+@media(max-width:720px){.market-dossier-expectations-grid{grid-template-columns:1fr 1fr}.market-dossier-expectations-grid>div:last-child{grid-column:auto}}
