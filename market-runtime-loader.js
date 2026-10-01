@@ -127,7 +127,7 @@
     }
     if (!enhancementsPromise) {
       enhancementsPromise = loadHelper('VestraMarketMetricCleanup', 'market-metric-cleanup.js?v=1.2')
-        .then(() => loadHelper('VestraMarketCompanyBrief', 'market-company-brief.js?v=2.1'))
+        .then(() => loadHelper('VestraMarketCompanyBrief', 'market-company-brief.js?v=2.2'))
         .catch(err => {
           enhancementsPromise = null;
           throw err;

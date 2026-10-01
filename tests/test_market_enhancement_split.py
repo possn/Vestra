@@ -9,6 +9,14 @@ def read(path: str) -> str:
 
 
 class MarketEnhancementSplitTests(unittest.TestCase):
+
+    def test_editorial_dossier_does_not_repeat_company_brief_in_header(self):
+        s = read('market-company-brief.js')
+        self.assertIn("const editorial=!!sh.querySelector('.market-dossier-shell .market-detail-head--editorial')", s)
+        self.assertIn("if(editorial){node?.remove();return;}", s)
+        self.assertIn("version:'2.2'", s)
+
+
     def test_hotfix_uses_canonical_modules_not_legacy_overlays(self):
         h = read('index.html')
         loader = read('market-static-universe.js')
@@ -19,7 +27,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
         for module in ('portfolio-collapsibles.js?v=1.7', 'portfolio-card-classifier.js?v=1.9'):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
-        for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.1'):
+        for module in ('market-metric-cleanup.js?v=1.2', 'market-company-brief.js?v=2.2'):
             self.assertIn(module, runtime_loader)
             self.assertNotIn(f'src="{module.split("?")[0]}', h)
         for module in (
