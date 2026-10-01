@@ -32,8 +32,8 @@ test('iPhone/WebKit: dossier close is independent and favorite stays circular', 
   page.on('pageerror', error => pageErrors.push(error.message));
 
   const sheet = await openMsftDossier(page);
-  const favorite = sheet.locator('.market-watch--detail');
-  const close = sheet.locator(':scope > .market-close-persistent');
+  const favorite = page.locator('#marketDossierActionPortal [data-portal-watch]');
+  const close = page.locator('#marketDossierActionPortal [data-portal-close]');
   await expect(favorite).toBeVisible();
   await expect(close).toBeVisible();
   await expect(sheet.locator('.market-detail-actions [data-market-close]')).toBeHidden();
@@ -44,13 +44,13 @@ test('iPhone/WebKit: dossier close is independent and favorite stays circular', 
     return {
       width: box.width,
       height: box.height,
-      flexShrink: style.flexShrink,
+      pointerEvents: style.pointerEvents,
       borderRadius: style.borderRadius,
     };
   });
   expect(Math.abs(geometry.width - geometry.height)).toBeLessThan(0.5);
   expect(geometry.width).toBeGreaterThanOrEqual(40);
-  expect(geometry.flexShrink).toBe('0');
+  expect(geometry.pointerEvents).toBe('auto');
   const closeEdge = await close.evaluate(el => {
     const box = el.getBoundingClientRect();
     return { right: box.right, left: box.left, top: box.top, viewport: window.innerWidth };

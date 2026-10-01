@@ -22,22 +22,31 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
 
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
-  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.8');
+  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '1.9');
   await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.3');
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
-  const watch = sheet.locator(':scope > .market-watch--detail');
+  const portal = page.locator('#marketDossierActionPortal');
+  const watch = portal.locator('[data-portal-watch]');
   const close = actions.locator('[data-market-close]');
-  const persistentClose = sheet.locator(':scope > .market-close-persistent');
+  const persistentClose = portal.locator('[data-portal-close]');
+  await expect(portal).toBeVisible();
   await expect(watch).toBeVisible();
   await expect(close).toBeHidden();
   await expect(persistentClose).toBeVisible();
+  await expect(portal.locator('[data-portal-ticker]')).toHaveText('MSFT');
+  await expect(portal.locator('[data-portal-name]')).not.toHaveText('');
+  expect(await portal.evaluate(el => el.parentElement === document.body)).toBe(true);
 
   const geometry = await page.evaluate(() => {
-    const watch = document.querySelector('#marketSheet > .market-watch--detail').getBoundingClientRect();
-    const persistent = document.querySelector('#marketSheet > .market-close-persistent').getBoundingClientRect();
-    const watchStyle = getComputedStyle(document.querySelector('#marketSheet > .market-watch--detail'));
+    const watchEl = document.querySelector('#marketDossierActionPortal [data-portal-watch]');
+    const persistentEl = document.querySelector('#marketDossierActionPortal [data-portal-close]');
+    const watch = watchEl.getBoundingClientRect();
+    const persistent = persistentEl.getBoundingClientRect();
+    const watchStyle = getComputedStyle(watchEl);
+    const portalStyle = getComputedStyle(document.getElementById('marketDossierActionPortal'));
     return {
+      portalPosition: portalStyle.position,
       watchPosition: watchStyle.position,
       watchLeft: watch.left,
       watchTop: watch.top,
@@ -52,7 +61,8 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
     };
   });
 
-  expect(geometry.watchPosition).toBe('fixed');
+  expect(geometry.portalPosition).toBe('fixed');
+  expect(['static', 'relative']).toContain(geometry.watchPosition);
   expect(geometry.watchWidth).toBeGreaterThanOrEqual(44);
   expect(Math.abs(geometry.watchWidth - geometry.watchHeight)).toBeLessThanOrEqual(1);
   expect(geometry.persistentWidth).toBeGreaterThanOrEqual(40);
@@ -66,7 +76,7 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
   expect(gapBefore).toBeGreaterThanOrEqual(6);
   expect(gapBefore).toBeLessThanOrEqual(12);
 
-  await sheet.locator('.market-sheet__panel').evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
   await page.waitForTimeout(100);
   const [afterWatch, afterClose] = await Promise.all([watch.boundingBox(), persistentClose.boundingBox()]);
   expect(Math.abs(afterWatch.y - beforeWatch.y)).toBeLessThanOrEqual(1);
