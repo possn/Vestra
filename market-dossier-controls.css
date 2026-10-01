@@ -1,4 +1,4 @@
-/* Vestra dossier controls v1.9 — body-level iPhone action portal. */
+/* Vestra dossier controls v2.0 — compact body-level iPhone action portal. */
 #marketSheet[data-ticker]:not([data-ticker=""]) > .market-close-persistent{
   display:grid!important;
   visibility:visible!important;
@@ -90,32 +90,14 @@
     position:fixed!important;
     z-index:10050!important;
     top:max(calc(env(safe-area-inset-top,0px) + 58px),68px)!important;
-    left:max(calc(env(safe-area-inset-left,0px) + 14px),14px)!important;
+    left:auto!important;
     right:max(calc(env(safe-area-inset-right,0px) + 14px),14px)!important;
     display:grid!important;
-    grid-template-columns:minmax(0,1fr) 44px 44px;
+    grid-template-columns:44px 44px;
     align-items:center;
     gap:8px;
     pointer-events:none;
   }
-  .market-dossier-action-portal__identity{
-    min-width:0;
-    padding:7px 10px;
-    border:1px solid rgba(115,132,137,.45);
-    border-radius:14px;
-    background:rgba(239,239,233,.94);
-    box-shadow:0 6px 22px rgba(24,43,54,.10);
-    backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
-  }
-  .market-dossier-action-portal__identity strong,
-  .market-dossier-action-portal__identity span,
-  .market-dossier-action-portal__identity small{
-    display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
-  }
-  .market-dossier-action-portal__identity strong{font-size:11px;letter-spacing:.05em}
-  .market-dossier-action-portal__identity span{font-size:10px;font-weight:750;margin-top:1px}
-  .market-dossier-action-portal__identity small{font-size:8px;color:var(--muted);margin-top:1px}
   .market-dossier-action-portal .market-watch--portal,
   .market-dossier-action-portal .market-close--portal{
     pointer-events:auto!important;

@@ -5,6 +5,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_editorial_dossier_avoids_repeated_top_level_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        scoreboard = market.split('function dossierScoreBoard(s)', 1)[1].split('function dossierFullPicture(s)', 1)[0]
+        snapshot = market.split('function dossierFinancialSnapshot(s)', 1)[1].split('function dossierGrowthProfile(s)', 1)[0]
+        growth = market.split('function dossierGrowthProfile(s)', 1)[1].split('function dossierExpectationsContext(s)', 1)[0]
+        overview = market.split("if(tab==='overview')", 1)[1].split("if(tab==='perspective')", 1)[0]
+        self.assertNotIn('market-dossier-pillars', scoreboard)
+        self.assertNotIn("['ROE'", snapshot)
+        self.assertNotIn("['Margem operacional'", snapshot)
+        self.assertNotIn("['Receita YoY'", growth)
+        self.assertIn('${evidencePanel(s)}', overview)
+        self.assertNotIn('${catalystPanel(s)}', overview)
+
+
 
     def test_editorial_dossier_surfaces_catalysts_and_risks(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
@@ -116,7 +130,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('market-detail-actions', self.source)
         self.assertNotIn("document.createElement('style')", self.source)
         self.assertNotIn('style.textContent', self.source)
-        self.assertIn("market-dossier-controls.css?v=1.3", self.dossier)
+        self.assertIn("market-dossier-controls.css?v=1.4", self.dossier)
         self.assertNotIn("document.createElement('style')", self.dossier)
         self.assertNotIn('style.textContent', self.dossier)
         self.assertIn('.market-detail-actions{', self.dossier_css)
@@ -131,12 +145,13 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('visibility:visible!important', self.dossier_css)
         self.assertIn('pointer-events:auto!important', self.dossier_css)
         self.assertIn("version: '1.3'", self.source)
-        self.assertIn("version: '1.9'", self.dossier)
+        self.assertIn("version: '2.0'", self.dossier)
         self.assertIn('right:max(calc(env(safe-area-inset-right) + 66px),66px)!important', self.dossier_css)
         self.assertIn('.market-detail-actions .market-close{\n  display:none!important', self.dossier_css)
         self.assertIn('market-dossier-action-portal', self.dossier_css)
         self.assertIn('position:fixed!important', self.dossier_css)
         self.assertIn("PORTAL_ID = 'marketDossierActionPortal'", self.dossier)
+        self.assertNotIn('market-dossier-action-portal__identity', self.dossier)
         self.assertIn('syncPortal(sheet)', self.dossier)
         self.assertNotIn('MutationObserver', self.dossier)
 
