@@ -906,17 +906,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function dossierFullPicture(s){
     const summary=txt(s.long_business_summary)||txt(s.business_summary)||txt(s.thesis_summary);
-    const sector=txt(s.sector), industry=txt(s.industry);
+    const industry=txt(s.industry);
     const geography=txt(s.country)||txt(s.region);
-    const exchange=txt(s.exchange)||txt(s.exchange_name);
     const quoteType=txt(s.quote_type);
     const facts=[
-      ['Setor',sector],
       ['Indústria',industry],
       ['País / região',geography],
-      ['Bolsa',exchange],
       ['Tipo',quoteType],
-      ['Market cap',n(s.market_cap)!=null?compact(s.market_cap):''],
       ['Moeda',txt(s.currency)]
     ].filter(([,value])=>value);
     const factsHtml=facts.length

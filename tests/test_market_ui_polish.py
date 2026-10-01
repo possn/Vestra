@@ -70,8 +70,11 @@ class MarketUiPolishContractTests(unittest.TestCase):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         css = (ROOT / 'market.css').read_text(encoding='utf-8')
         self.assertIn('Ficha da empresa', market)
-        for token in ("['Setor',sector]", "['Indústria',industry]", "['País / região',geography]", "['Bolsa',exchange]", "['Tipo',quoteType]", "['Market cap'", "['Moeda'"):
+        for token in ("['Indústria',industry]", "['País / região',geography]", "['Tipo',quoteType]", "['Moeda'"):
             self.assertIn(token, market)
+        full_picture = market.split('function dossierFullPicture(s)', 1)[1].split('function dossierFinancialSnapshot(s)', 1)[0]
+        for duplicate in ("['Setor'", "['Bolsa'", "['Market cap'"):
+            self.assertNotIn(duplicate, full_picture)
         self.assertIn('market-dossier-company-facts', css)
         self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr))', css)
 
