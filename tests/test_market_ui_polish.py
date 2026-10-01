@@ -5,6 +5,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_editorial_header_keeps_only_non_repeated_market_snapshot_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        header = market.split('function detailBase(s)', 1)[1].split('${dossierScoreBoard(s)}', 1)[0]
+        for label in ('PREÇO', 'MARKET CAP', 'FORWARD P/E', 'FCF YIELD'):
+            self.assertIn(label, header)
+        self.assertNotIn('<small>ROE</small>', header)
+        self.assertNotIn('<small>RECEITA YOY</small>', header)
+
+
     def test_overview_does_not_repeat_score_pillars_or_risks(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         overview = market.split("if(tab==='overview')", 1)[1].split("if(tab==='perspective')", 1)[0]
