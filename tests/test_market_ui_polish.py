@@ -5,6 +5,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_smart_money_top_level_is_editorial_summary_not_duplicate_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierSmartMoney(s)', 1)[1].split('function detailBase(s)', 1)[0]
+        self.assertIn('SMART MONEY MAP', block)
+        self.assertIn('tab Smart money', block)
+        self.assertNotIn('market-dossier-smart-grid', block)
+        self.assertNotIn('Compras insider · 30d', block)
+        self.assertNotIn('Vendas insider · 30d', block)
+        self.assertNotIn('Trades Congresso', block)
+
+
     def test_market_expectations_top_level_is_summary_not_duplicate_grid(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]
