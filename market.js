@@ -1086,7 +1086,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function renderDetailTab(s,tab){
     const body=$m('marketDetailBody'); if(!body) return;
-    if(tab==='overview') body.innerHTML=`${changePanel(s)}${recoveryPanel(s)}${drawdownPanel(s)}${evidencePanel(s)}${investmentCase(s)}${scoreExplanation(s)}<details class="market-detail-disclosure"><summary>Ver pilares e detalhe quantitativo</summary><div class="market-detail-card"><h4>Pilares · percentis relativos</h4>${dimRows(s)}</div>${Array.isArray(s.thesis_risks)&&s.thesis_risks.length?`<div class="market-detail-card"><h4>Riscos adicionais</h4><ul>${s.thesis_risks.slice(0,6).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</details>`;
+    if(tab==='overview') body.innerHTML=`${changePanel(s)}${recoveryPanel(s)}${drawdownPanel(s)}${evidencePanel(s)}${investmentCase(s)}${scoreExplanation(s)}`;
     if(tab==='perspective') {
       const buys=(n(s.analyst_strong_buy)||0)+(n(s.analyst_buy)||0), holds=n(s.analyst_hold)||0, sells=(n(s.analyst_sell)||0)+(n(s.analyst_strong_sell)||0);
       const revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;

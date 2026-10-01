@@ -23,8 +23,9 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
         self.assertIn('Os pesos dos pilares disponíveis são renormalizados', self.market)
 
     def test_overview_renders_explanation(self):
-        self.assertIn('${scoreExplanation(s)}<details', self.market)
-        self.assertIn('Pilares · percentis relativos', self.market)
+        self.assertIn('${scoreExplanation(s)}`;', self.market)
+        overview = self.market.split("if(tab==='overview')", 1)[1].split("if(tab==='perspective')", 1)[0]
+        self.assertNotIn('Pilares · percentis relativos', overview)
 
     def test_score_layers_are_explicit(self):
         self.assertIn('1 · Ranking fundamental.', self.market)
