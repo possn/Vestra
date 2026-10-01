@@ -928,17 +928,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function dossierFinancialSnapshot(s){
     const metrics=[
       ['Receitas',n(s.total_revenue??s.revenue)],
-      ['Lucro líquido',n(s.net_income)],
-      ['Free cash flow',n(s.free_cash_flow)],
-      ['Cash flow operacional',n(s.operating_cash_flow)],
-      ['Caixa líquido / dívida',n(s.net_cash)],
-      ['Debt / Equity',n(s.debt_to_equity),'num'],
-      ['Current ratio',n(s.current_ratio),'num'],
-      ['Margem líquida',n(s.profit_margin),'pct']
+      ['Lucro líquido',n(s.net_income)]
     ];
-    const rows=metrics.filter(([,value])=>value!=null).slice(0,8);
+    const rows=metrics.filter(([,value])=>value!=null);
     if(!rows.length) return '';
-    return `<section class="market-dossier-editorial-card market-dossier-financial-snapshot"><div class="market-dossier-section-label">FINANCIAL SNAPSHOT</div><div class="market-dossier-card-head"><h3>Saúde financeira em resumo</h3><span>${rows.length} métricas</span></div><div class="market-dossier-financial-grid">${rows.map(([label,value,kind])=>`<div><small>${esc(label)}</small><strong>${kind==='pct'?pct(value):kind==='num'?num(value):compact(value)}</strong></div>`).join('')}</div><p class="market-dossier-interpretation">Leitura rápida dos últimos dados disponíveis; o detalhe completo continua na tab Financeiro.</p></section>`;
+    return `<section class="market-dossier-editorial-card market-dossier-financial-snapshot"><div class="market-dossier-section-label">FINANCIAL SNAPSHOT</div><div class="market-dossier-card-head"><h3>Escala do negócio</h3><span>Receita · lucro</span></div><div class="market-dossier-financial-grid">${rows.map(([label,value])=>`<div><small>${esc(label)}</small><strong>${compact(value)}</strong></div>`).join('')}</div><p class="market-dossier-interpretation">Escala e lucro em leitura rápida; geração de caixa, rácios, margens e balanço estão na tab Financeiro.</p></section>`;
   }
 
   function dossierGrowthProfile(s){

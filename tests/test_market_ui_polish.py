@@ -27,6 +27,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('Fair value Vestra', block)
 
 
+    def test_financial_snapshot_top_level_keeps_only_scale_and_profit(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierFinancialSnapshot(s)', 1)[1].split('function dossierGrowthProfile(s)', 1)[0]
+        for token in ("['Receitas'", "['Lucro líquido'"):
+            self.assertIn(token, block)
+        for token in ("['Free cash flow'", "['Cash flow operacional'", "['Caixa líquido / dívida'", "['Debt / Equity'", "['Current ratio'", "['Margem líquida'"):
+            self.assertNotIn(token, block)
+        self.assertIn('tab Financeiro', block)
+
+
     def test_overview_does_not_repeat_score_pillars_or_risks(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         overview = market.split("if(tab==='overview')", 1)[1].split("if(tab==='perspective')", 1)[0]
@@ -80,11 +90,11 @@ class MarketUiPolishContractTests(unittest.TestCase):
         css = (ROOT / 'market.css').read_text(encoding='utf-8')
         self.assertIn('function dossierFinancialSnapshot(s)', market)
         self.assertIn('FINANCIAL SNAPSHOT', market)
-        self.assertIn('Saúde financeira em resumo', market)
+        self.assertIn('Escala do negócio', market)
         for token in ('free_cash_flow', 'operating_cash_flow', 'net_cash', 'operating_margin', 'profit_margin', 'roe'):
             self.assertIn(token, market)
         self.assertIn('market-dossier-financial-grid', css)
-        self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr))', css)
+        self.assertIn('grid-template-columns:repeat(2,minmax(0,1fr))', css)
 
 
 
