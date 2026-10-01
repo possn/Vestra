@@ -5,6 +5,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_market_expectations_top_level_is_summary_not_duplicate_grid(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]
+        self.assertIn('O que o mercado está a descontar', block)
+        self.assertIn('tab Perspetiva', block)
+        self.assertNotIn('market-dossier-expectations-grid', block)
+        self.assertNotIn('Revisões EPS · 30d', block)
+        self.assertNotIn('Target analistas', block)
+        self.assertNotIn('Fair value Vestra', block)
+
+
     def test_overview_does_not_repeat_score_pillars_or_risks(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         overview = market.split("if(tab==='overview')", 1)[1].split("if(tab==='perspective')", 1)[0]
@@ -90,17 +101,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('market-smart-marker--congress', css)
 
 
-    def test_editorial_dossier_surfaces_market_expectations_context(self):
+    def test_editorial_dossier_keeps_expectations_detail_in_perspective_data(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
-        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]
         self.assertIn('function dossierExpectationsContext(s)', market)
         self.assertIn('MARKET EXPECTATIONS', market)
         self.assertIn('O que o mercado está a descontar', market)
-        self.assertIn('Targets e fair value são contexto separado do Score Vestra', market)
+        self.assertIn('tab Perspetiva', block)
         for token in ('analyst_eps_revisions_up_30d', 'estimate_momentum_score', 'fair_value_upside_pct'):
             self.assertIn(token, market)
-        self.assertIn('market-dossier-expectations-grid', css)
-        self.assertIn('grid-template-columns:repeat(3,minmax(0,1fr))', css)
+        self.assertNotIn('market-dossier-expectations-grid', block)
 
 
 
