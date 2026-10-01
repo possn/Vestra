@@ -585,3 +585,19 @@ html.modal-open,body.modal-open{
 .market-dossier-expectations-grid strong.is-positive{color:#34764a}.market-dossier-expectations-grid strong.is-negative{color:#9b4b44}
 .market-dossier-expectations-grid span{display:block;margin-top:3px;font-size:9px;line-height:1.35;color:var(--text2)}
 @media(max-width:720px){.market-dossier-expectations-grid{grid-template-columns:1fr 1fr}.market-dossier-expectations-grid>div:last-child{grid-column:auto}}
+
+
+/* v4.4 — Smart Money map with dated declared-operation markers */
+.market-smart-timeline svg{width:100%;height:220px;margin-top:12px;overflow:visible;color:var(--vio)}
+.market-smart-price-line{opacity:.72}
+.market-smart-marker{stroke:var(--bg);stroke-width:1.1;vector-effect:non-scaling-stroke}
+.market-smart-marker--insider,.market-smart-dot--insider{fill:#34764a;background:#34764a}
+.market-smart-marker--congress,.market-smart-dot--congress{fill:#8a63c7;background:#8a63c7}
+.market-smart-marker--sell{fill:#9b4b44}.market-smart-marker--other{fill:#8a8a8a}
+.market-smart-legend{display:flex;gap:14px;align-items:center;margin-top:7px;font-size:10px;color:var(--text2);font-weight:750}
+.market-smart-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.market-smart-events{display:grid;gap:6px;margin-top:12px}
+.market-smart-event{display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:7px;font-size:10px}
+.market-smart-event span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.market-smart-event em{font-style:normal;color:var(--muted);font-size:9px}
+.market-smart-event .market-smart-dot{margin:0}
+@media(max-width:720px){.market-smart-timeline svg{height:180px}.market-smart-event{grid-template-columns:10px 1fr}.market-smart-event em{grid-column:2}}
