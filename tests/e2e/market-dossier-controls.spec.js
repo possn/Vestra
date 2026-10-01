@@ -44,13 +44,13 @@ test('iPhone/WebKit: dossier close is independent and favorite stays circular', 
     return {
       width: box.width,
       height: box.height,
-      flexShrink: style.flexShrink,
+      pointerEvents: style.pointerEvents,
       borderRadius: style.borderRadius,
     };
   });
   expect(Math.abs(geometry.width - geometry.height)).toBeLessThan(0.5);
   expect(geometry.width).toBeGreaterThanOrEqual(40);
-  expect(geometry.flexShrink).toBe('0');
+  expect(geometry.pointerEvents).toBe('auto');
   const closeEdge = await close.evaluate(el => {
     const box = el.getBoundingClientRect();
     return { right: box.right, left: box.left, top: box.top, viewport: window.innerWidth };

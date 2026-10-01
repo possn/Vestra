@@ -44,7 +44,9 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
     const watch = watchEl.getBoundingClientRect();
     const persistent = persistentEl.getBoundingClientRect();
     const watchStyle = getComputedStyle(watchEl);
+    const portalStyle = getComputedStyle(document.getElementById('marketDossierActionPortal'));
     return {
+      portalPosition: portalStyle.position,
       watchPosition: watchStyle.position,
       watchLeft: watch.left,
       watchTop: watch.top,
@@ -59,7 +61,8 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
     };
   });
 
-  expect(geometry.watchPosition).toBe('fixed');
+  expect(geometry.portalPosition).toBe('fixed');
+  expect(['static', 'relative']).toContain(geometry.watchPosition);
   expect(geometry.watchWidth).toBeGreaterThanOrEqual(44);
   expect(Math.abs(geometry.watchWidth - geometry.watchHeight)).toBeLessThanOrEqual(1);
   expect(geometry.persistentWidth).toBeGreaterThanOrEqual(40);
