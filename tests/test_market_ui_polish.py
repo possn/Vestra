@@ -28,6 +28,19 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('dimRows(s)', score_explanation)
 
 
+    def test_removed_editorial_layouts_leave_no_dead_css(self):
+        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        for selector in (
+            'market-dossier-growth-grid',
+            'market-dossier-growth-metric',
+            'market-dossier-mini-track',
+            'market-dossier-smart-grid',
+            'market-dossier-expectations-grid',
+            'market-dossier-catalyst-grid',
+        ):
+            self.assertNotIn(selector, css)
+
+
     def test_growth_profile_top_level_is_editorial_summary_not_duplicate_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierGrowthProfile(s)', 1)[1].split('function dossierExpectationsContext(s)', 1)[0]
