@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v1.8 — frozen fixed star + close action pair. */
+/* Vestra Market Dossier Controls v1.9 — body-level iPhone action portal. */
 (() => {
   'use strict';
 
@@ -9,8 +9,59 @@
     const link = document.createElement('link');
     link.id = STYLE_ID;
     link.rel = 'stylesheet';
-    link.href = 'market-dossier-controls.css?v=1.2';
+    link.href = 'market-dossier-controls.css?v=1.3';
     document.head.appendChild(link);
+  }
+
+  const PORTAL_ID = 'marketDossierActionPortal';
+
+  function ensurePortal() {
+    let portal = document.getElementById(PORTAL_ID);
+    if (portal) return portal;
+    portal = document.createElement('div');
+    portal.id = PORTAL_ID;
+    portal.className = 'market-dossier-action-portal';
+    portal.hidden = true;
+    portal.innerHTML = '<div class="market-dossier-action-portal__identity"><strong data-portal-ticker></strong><span data-portal-name></span><small data-portal-meta></small></div><button type="button" class="market-watch market-watch--portal" data-portal-watch aria-label="Guardar para acompanhar">☆</button><button type="button" class="market-close market-close--portal" data-portal-close aria-label="Fechar dossier">×</button>';
+    portal.addEventListener('click', event => {
+      const sheet = document.getElementById('marketSheet');
+      if (!sheet || sheet.hidden) return;
+      if (event.target.closest('[data-portal-watch]')) {
+        event.preventDefault();
+        event.stopPropagation();
+        sheet.querySelector(':scope > .market-watch--detail')?.click();
+        return;
+      }
+      if (event.target.closest('[data-portal-close]')) {
+        event.preventDefault();
+        event.stopPropagation();
+        sheet.querySelector(':scope > .market-close-persistent')?.click();
+      }
+    });
+    document.body.appendChild(portal);
+    return portal;
+  }
+
+  function syncPortal(sheet) {
+    const portal = ensurePortal();
+    const ticker = String(sheet?.dataset?.ticker || '').trim().toUpperCase();
+    const visible = Boolean(sheet && !sheet.hidden && ticker);
+    portal.hidden = !visible;
+    if (!visible) return;
+
+    const header = sheet.querySelector('#marketSheetContent .market-detail-head--editorial');
+    const name = header?.querySelector('h1')?.textContent?.trim() || ticker;
+    const meta = header?.querySelector('.market-kicker')?.textContent?.trim() || '';
+    portal.querySelector('[data-portal-ticker]').textContent = ticker;
+    portal.querySelector('[data-portal-name]').textContent = name;
+    portal.querySelector('[data-portal-meta]').textContent = meta;
+
+    const original = sheet.querySelector(':scope > .market-watch--detail');
+    const watch = portal.querySelector('[data-portal-watch]');
+    const active = original?.classList.contains('is-active');
+    watch.textContent = active ? '★' : '☆';
+    watch.classList.toggle('is-active', Boolean(active));
+    watch.setAttribute('aria-label', original?.getAttribute('aria-label') || (active ? 'Remover da lista' : 'Guardar para acompanhar'));
   }
 
   function closeMarketSheet(event) {
@@ -41,6 +92,8 @@
     panel.scrollTop = 0;
     panel.scrollLeft = 0;
 
+    syncPortal(sheet);
+
     if (returnView === 'assets') {
       const assetsNav = document.querySelector('[data-view="assets"]');
       if (assetsNav instanceof HTMLElement) assetsNav.click();
@@ -68,10 +121,12 @@
       directWatch?.remove();
       sheet.appendChild(nestedWatch);
     }
+    syncPortal(sheet);
   }
 
   function start() {
     installStyle();
+    ensurePortal();
     normalizeButtons();
     // Dossier mutation ownership stays in market-company-brief.js. That single
     // sheet-scoped observer calls normalizeButtons() after every dossier render.
@@ -83,9 +138,10 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '1.8',
+    version: '1.9',
     closeMarketSheet,
     installStyle,
     normalizeButtons,
+    syncPortal,
   });
 })();
