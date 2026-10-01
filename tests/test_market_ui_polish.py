@@ -27,12 +27,12 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('Fair value Vestra', block)
 
 
-    def test_financial_snapshot_top_level_keeps_only_scale_profit_and_cash(self):
+    def test_financial_snapshot_top_level_keeps_only_scale_and_profit(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierFinancialSnapshot(s)', 1)[1].split('function dossierGrowthProfile(s)', 1)[0]
-        for token in ("['Receitas'", "['Lucro líquido'", "['Free cash flow'"):
+        for token in ("['Receitas'", "['Lucro líquido'"):
             self.assertIn(token, block)
-        for token in ("['Cash flow operacional'", "['Caixa líquido / dívida'", "['Debt / Equity'", "['Current ratio'", "['Margem líquida'"):
+        for token in ("['Free cash flow'", "['Cash flow operacional'", "['Caixa líquido / dívida'", "['Debt / Equity'", "['Current ratio'", "['Margem líquida'"):
             self.assertNotIn(token, block)
         self.assertIn('tab Financeiro', block)
 
@@ -94,7 +94,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         for token in ('free_cash_flow', 'operating_cash_flow', 'net_cash', 'operating_margin', 'profit_margin', 'roe'):
             self.assertIn(token, market)
         self.assertIn('market-dossier-financial-grid', css)
-        self.assertIn('grid-template-columns:repeat(3,minmax(0,1fr))', css)
+        self.assertIn('grid-template-columns:repeat(2,minmax(0,1fr))', css)
 
 
 
