@@ -966,22 +966,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       insufficient:'Cobertura insuficiente'
     }[signal]||'Cobertura insuficiente';
     const signalTone=signal==='improving'?'is-positive':signal==='deteriorating'?'is-negative':'';
-    const revUp=n(s.analyst_eps_revisions_up_30d)||0;
-    const revDown=n(s.analyst_eps_revisions_down_30d)||0;
-    const targetUpside=n(s.analyst_price_target_upside_pct);
-    const fairUpside=n(s.fair_value_upside_pct);
-    const valuationSignal=txt(s.valuation_signal);
-    const valuationLabel={
-      undervalued:'Abaixo da faixa peer-relative',
-      fair:'Próximo da faixa peer-relative',
-      overvalued:'Acima da faixa peer-relative',
-      uncertain:'Leitura de valuation incerta',
-      insufficient:'Valuation insuficiente'
-    }[valuationSignal]||'Sem leitura robusta';
-    const valuationTone=valuationSignal==='undervalued'?'is-positive':valuationSignal==='overvalued'?'is-negative':'';
-    const momentum=n(s.estimate_momentum_score);
-    const revisionBreadth=n(s.estimate_revision_breadth_pct);
-    const nextEarnings=shortDate(s.analyst_next_earnings_date);
     const interpretation=signal==='improving'
       ? 'As estimativas recentes estão a mover-se na direção positiva.'
       : signal==='deteriorating'
@@ -989,7 +973,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         : signal==='neutral'
           ? 'As expectativas não mostram uma direção material neste momento.'
           : 'Ainda não existe cobertura suficiente para ler a direção das expectativas.';
-    return `<section class="market-dossier-editorial-card market-dossier-expectations"><div class="market-dossier-section-label">MARKET EXPECTATIONS</div><div class="market-dossier-card-head"><h3>O que o mercado está a descontar</h3><span class="${signalTone}">${esc(signalLabel)}</span></div><div class="market-dossier-expectations-grid"><div><small>Momentum</small><strong>${momentum==null?'—':Math.round(momentum)+'/100'}</strong><span>${revisionBreadth==null?'breadth —':`breadth ${revisionBreadth>=0?'+':''}${num(revisionBreadth)}%`}</span></div><div><small>Revisões EPS · 30d</small><strong>${revUp} ↑ · ${revDown} ↓</strong><span>direção das estimativas</span></div><div><small>Target analistas</small><strong>${targetUpside==null?'—':`${targetUpside>=0?'+':''}${num(targetUpside)}%`}</strong><span>upside/downside implícito</span></div><div><small>Fair value Vestra</small><strong class="${valuationTone}">${fairUpside==null?'—':`${fairUpside>=0?'+':''}${num(fairUpside)}%`}</strong><span>${esc(valuationLabel)}</span></div><div><small>Próximos resultados</small><strong>${esc(nextEarnings||'—')}</strong><span>catalisador temporal</span></div><div><small>Confiança</small><strong>${esc(txt(s.estimate_confidence)||'—')}</strong><span>qualidade do sinal</span></div></div><p class="market-dossier-interpretation">${esc(interpretation)} Targets e fair value são contexto separado do Score Vestra e não são previsões de preço.</p></section>`;
+    return `<section class="market-dossier-editorial-card market-dossier-expectations"><div class="market-dossier-section-label">MARKET EXPECTATIONS</div><div class="market-dossier-card-head"><h3>O que o mercado está a descontar</h3><span class="${signalTone}">${esc(signalLabel)}</span></div><p>${esc(interpretation)} O detalhe de revisões, targets, fair value e próximos resultados está na tab Perspetiva.</p></section>`;
   }
 
   function dossierCatalystsRisks(s){
