@@ -15,6 +15,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
             self.assertNotIn(token, row)
 
 
+    def test_score_breakdown_top_level_keeps_pillars_not_duplicate_base_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierPillarCards(s)', 1)[1].split('function smartMoneyEventType', 1)[0]
+        self.assertIn('SCORE BREAKDOWN', block)
+        self.assertIn('dossierPillarBand', block)
+        self.assertIn('detalhe quantitativo fica nas tabs', block)
+        self.assertNotIn('pillarMetricSummary(s,label)', block)
+        self.assertNotIn('market-dim__evidence', block)
+
+
     def test_growth_profile_top_level_is_editorial_summary_not_duplicate_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierGrowthProfile(s)', 1)[1].split('function dossierExpectationsContext(s)', 1)[0]
