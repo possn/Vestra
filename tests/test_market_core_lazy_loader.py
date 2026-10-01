@@ -27,7 +27,7 @@ class LazyMarketCoreTests(unittest.TestCase):
         self.assertIn("function ensurePortfolioHelpers()", self.loader)
         self.assertIn("function ensureEnhancements()", self.loader)
         self.assertIn("market-metric-cleanup.js?v=1.2", self.loader)
-        self.assertIn("market-company-brief.js?v=2.1", self.loader)
+        self.assertIn("market-company-brief.js?v=2.2", self.loader)
         self.assertNotIn("ensureEnhancements().then(() => window.VestraMarket)", self.loader)
         self.assertNotIn("ensureEnhancements().then(() => api)", self.loader)
         self.assertIn("ensureEnhancements().catch(err => console.warn", self.loader)
