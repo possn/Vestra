@@ -906,17 +906,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function dossierFullPicture(s){
     const summary=txt(s.long_business_summary)||txt(s.business_summary)||txt(s.thesis_summary);
-    const sector=txt(s.sector), industry=txt(s.industry);
+    const industry=txt(s.industry);
     const geography=txt(s.country)||txt(s.region);
-    const exchange=txt(s.exchange)||txt(s.exchange_name);
     const quoteType=txt(s.quote_type);
     const facts=[
-      ['Setor',sector],
       ['Indústria',industry],
       ['País / região',geography],
-      ['Bolsa',exchange],
       ['Tipo',quoteType],
-      ['Market cap',n(s.market_cap)!=null?compact(s.market_cap):''],
       ['Moeda',txt(s.currency)]
     ].filter(([,value])=>value);
     const factsHtml=facts.length
@@ -928,33 +924,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function dossierFinancialSnapshot(s){
     const metrics=[
       ['Receitas',n(s.total_revenue??s.revenue)],
-      ['Lucro líquido',n(s.net_income)],
-      ['Free cash flow',n(s.free_cash_flow)],
-      ['Cash flow operacional',n(s.operating_cash_flow)],
-      ['Caixa líquido / dívida',n(s.net_cash)],
-      ['Debt / Equity',n(s.debt_to_equity),'num'],
-      ['Current ratio',n(s.current_ratio),'num'],
-      ['Margem líquida',n(s.profit_margin),'pct']
+      ['Lucro líquido',n(s.net_income)]
     ];
-    const rows=metrics.filter(([,value])=>value!=null).slice(0,8);
+    const rows=metrics.filter(([,value])=>value!=null);
     if(!rows.length) return '';
-    return `<section class="market-dossier-editorial-card market-dossier-financial-snapshot"><div class="market-dossier-section-label">FINANCIAL SNAPSHOT</div><div class="market-dossier-card-head"><h3>Saúde financeira em resumo</h3><span>${rows.length} métricas</span></div><div class="market-dossier-financial-grid">${rows.map(([label,value,kind])=>`<div><small>${esc(label)}</small><strong>${kind==='pct'?pct(value):kind==='num'?num(value):compact(value)}</strong></div>`).join('')}</div><p class="market-dossier-interpretation">Leitura rápida dos últimos dados disponíveis; o detalhe completo continua na tab Financeiro.</p></section>`;
+    return `<section class="market-dossier-editorial-card market-dossier-financial-snapshot"><div class="market-dossier-section-label">FINANCIAL SNAPSHOT</div><div class="market-dossier-card-head"><h3>Escala do negócio</h3><span>Receita · lucro</span></div><div class="market-dossier-financial-grid">${rows.map(([label,value])=>`<div><small>${esc(label)}</small><strong>${compact(value)}</strong></div>`).join('')}</div><p class="market-dossier-interpretation">Escala e lucro em leitura rápida; geração de caixa, rácios, margens e balanço estão na tab Financeiro.</p></section>`;
   }
 
   function dossierGrowthProfile(s){
-    const metrics=[
-      ['EPS YoY',n(s.eps_yoy_latest??s.eps_growth)],
-      ['Margem operacional',n(s.operating_margin)],
-      ['FCF margin',n(s.fcf_margin)],
-    ];
-    const metricHtml=metrics.map(([label,value])=>{
-      const magnitude=value==null?0:Math.min(100,Math.max(8,Math.abs(value)*100));
-      const tone=value==null?'':value>0?'is-positive':'is-negative';
-      return `<div class="market-dossier-growth-metric ${tone}"><div><span>${esc(label)}</span><strong>${value==null?'—':pct(value)}</strong></div><div class="market-dossier-mini-track"><i style="width:${magnitude}%"></i></div></div>`;
-    }).join('');
-    const growth=n(s.growth_pct), estimate=n(s.estimate_momentum_score);
+    const growth=n(s.growth_pct);
     const note=growth!=null&&growth>=70?'Crescimento acima da maioria dos comparáveis.':growth!=null&&growth<45?'Crescimento é atualmente um dos pontos mais frágeis do perfil.':'Crescimento sem extremo claro face aos comparáveis.';
-    return `<section class="market-dossier-editorial-card"><div class="market-dossier-section-label">GROWTH PROFILE</div><div class="market-dossier-card-head"><h3>Tração do negócio</h3><span>${growth==null?'—':Math.round(growth)+'/100'}</span></div><div class="market-dossier-growth-grid">${metricHtml}</div><p class="market-dossier-interpretation">${esc(note)}${estimate==null?'':` Expectation momentum ${Math.round(estimate)}/100.`}</p></section>`;
+    return `<section class="market-dossier-editorial-card"><div class="market-dossier-section-label">GROWTH PROFILE</div><div class="market-dossier-card-head"><h3>Tração do negócio</h3><span>${growth==null?'—':Math.round(growth)+'/100'}</span></div><p>${esc(note)} O detalhe de receita, lucro, EPS e restantes métricas de execução está na tab Growth.</p></section>`;
   }
 
   function dossierExpectationsContext(s){
@@ -966,22 +946,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       insufficient:'Cobertura insuficiente'
     }[signal]||'Cobertura insuficiente';
     const signalTone=signal==='improving'?'is-positive':signal==='deteriorating'?'is-negative':'';
-    const revUp=n(s.analyst_eps_revisions_up_30d)||0;
-    const revDown=n(s.analyst_eps_revisions_down_30d)||0;
-    const targetUpside=n(s.analyst_price_target_upside_pct);
-    const fairUpside=n(s.fair_value_upside_pct);
-    const valuationSignal=txt(s.valuation_signal);
-    const valuationLabel={
-      undervalued:'Abaixo da faixa peer-relative',
-      fair:'Próximo da faixa peer-relative',
-      overvalued:'Acima da faixa peer-relative',
-      uncertain:'Leitura de valuation incerta',
-      insufficient:'Valuation insuficiente'
-    }[valuationSignal]||'Sem leitura robusta';
-    const valuationTone=valuationSignal==='undervalued'?'is-positive':valuationSignal==='overvalued'?'is-negative':'';
-    const momentum=n(s.estimate_momentum_score);
-    const revisionBreadth=n(s.estimate_revision_breadth_pct);
-    const nextEarnings=shortDate(s.analyst_next_earnings_date);
     const interpretation=signal==='improving'
       ? 'As estimativas recentes estão a mover-se na direção positiva.'
       : signal==='deteriorating'
@@ -989,7 +953,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         : signal==='neutral'
           ? 'As expectativas não mostram uma direção material neste momento.'
           : 'Ainda não existe cobertura suficiente para ler a direção das expectativas.';
-    return `<section class="market-dossier-editorial-card market-dossier-expectations"><div class="market-dossier-section-label">MARKET EXPECTATIONS</div><div class="market-dossier-card-head"><h3>O que o mercado está a descontar</h3><span class="${signalTone}">${esc(signalLabel)}</span></div><div class="market-dossier-expectations-grid"><div><small>Momentum</small><strong>${momentum==null?'—':Math.round(momentum)+'/100'}</strong><span>${revisionBreadth==null?'breadth —':`breadth ${revisionBreadth>=0?'+':''}${num(revisionBreadth)}%`}</span></div><div><small>Revisões EPS · 30d</small><strong>${revUp} ↑ · ${revDown} ↓</strong><span>direção das estimativas</span></div><div><small>Target analistas</small><strong>${targetUpside==null?'—':`${targetUpside>=0?'+':''}${num(targetUpside)}%`}</strong><span>upside/downside implícito</span></div><div><small>Fair value Vestra</small><strong class="${valuationTone}">${fairUpside==null?'—':`${fairUpside>=0?'+':''}${num(fairUpside)}%`}</strong><span>${esc(valuationLabel)}</span></div><div><small>Próximos resultados</small><strong>${esc(nextEarnings||'—')}</strong><span>catalisador temporal</span></div><div><small>Confiança</small><strong>${esc(txt(s.estimate_confidence)||'—')}</strong><span>qualidade do sinal</span></div></div><p class="market-dossier-interpretation">${esc(interpretation)} Targets e fair value são contexto separado do Score Vestra e não são previsões de preço.</p></section>`;
+    return `<section class="market-dossier-editorial-card market-dossier-expectations"><div class="market-dossier-section-label">MARKET EXPECTATIONS</div><div class="market-dossier-card-head"><h3>O que o mercado está a descontar</h3><span class="${signalTone}">${esc(signalLabel)}</span></div><p>${esc(interpretation)} O detalhe de revisões, targets, fair value e próximos resultados está na tab Perspetiva.</p></section>`;
   }
 
   function dossierCatalystsRisks(s){
@@ -1061,12 +1025,15 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function dossierSmartMoney(s){
-    const buys=n(s.insider_buy_count_30d)||0, sells=n(s.insider_sell_count_30d)||0;
     const buyValue=n(s.insider_buy_value_30d)||0, sellValue=n(s.insider_sell_value_30d)||0;
-    const congress=Array.isArray(s.congress_trades)?s.congress_trades:[];
     const net=buyValue-sellValue;
     const flowTone=net>0?'is-positive':net<0?'is-negative':'';
-    return `<section class="market-dossier-editorial-card market-dossier-smart"><div class="market-dossier-section-label">SMART MONEY MAP</div><div class="market-dossier-card-head"><h3>Insiders e divulgações políticas</h3><span class="${flowTone}">${net>0?'Fluxo comprador':net<0?'Fluxo vendedor':'Sem fluxo líquido'}</span></div><div class="market-dossier-smart-grid"><div><small>Compras insider · 30d</small><strong>${buys}</strong><span>${money(buyValue,'USD')}</span></div><div><small>Vendas insider · 30d</small><strong>${sells}</strong><span>${money(sellValue,'USD')}</span></div><div><small>Trades Congresso</small><strong>${congress.length}</strong><span>divulgações recentes</span></div></div><p class="market-dossier-interpretation">Os dados de insiders e Congresso são contexto de comportamento declarado; não alteram diretamente o Score Vestra.</p></section>`;
+    const interpretation=net>0
+      ? 'O fluxo insider declarado nos últimos 30 dias é líquido comprador.'
+      : net<0
+        ? 'O fluxo insider declarado nos últimos 30 dias é líquido vendedor.'
+        : 'Não existe fluxo insider líquido material nos últimos 30 dias.';
+    return `<section class="market-dossier-editorial-card market-dossier-smart"><div class="market-dossier-section-label">SMART MONEY MAP</div><div class="market-dossier-card-head"><h3>Insiders e divulgações políticas</h3><span class="${flowTone}">${net>0?'Fluxo comprador':net<0?'Fluxo vendedor':'Sem fluxo líquido'}</span></div><p>${esc(interpretation)} O detalhe de compras, vendas, operações do Congresso e respetivo mapa temporal está na tab Smart money.</p></section>`;
   }
 
   function detailBase(s){

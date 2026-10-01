@@ -14,6 +14,51 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('<small>RECEITA YOY</small>', header)
 
 
+    def test_growth_profile_top_level_is_editorial_summary_not_duplicate_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierGrowthProfile(s)', 1)[1].split('function dossierExpectationsContext(s)', 1)[0]
+        self.assertIn('GROWTH PROFILE', block)
+        self.assertIn('tab Growth', block)
+        self.assertIn('growth_pct', block)
+        self.assertNotIn('market-dossier-growth-grid', block)
+        self.assertNotIn('EPS YoY', block)
+        self.assertNotIn('Margem operacional', block)
+        self.assertNotIn('FCF margin', block)
+        self.assertNotIn('estimate_momentum_score', block)
+
+
+    def test_smart_money_top_level_is_editorial_summary_not_duplicate_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierSmartMoney(s)', 1)[1].split('function detailBase(s)', 1)[0]
+        self.assertIn('SMART MONEY MAP', block)
+        self.assertIn('tab Smart money', block)
+        self.assertNotIn('market-dossier-smart-grid', block)
+        self.assertNotIn('Compras insider · 30d', block)
+        self.assertNotIn('Vendas insider · 30d', block)
+        self.assertNotIn('Trades Congresso', block)
+
+
+    def test_market_expectations_top_level_is_summary_not_duplicate_grid(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]
+        self.assertIn('O que o mercado está a descontar', block)
+        self.assertIn('tab Perspetiva', block)
+        self.assertNotIn('market-dossier-expectations-grid', block)
+        self.assertNotIn('Revisões EPS · 30d', block)
+        self.assertNotIn('Target analistas', block)
+        self.assertNotIn('Fair value Vestra', block)
+
+
+    def test_financial_snapshot_top_level_keeps_only_scale_and_profit(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierFinancialSnapshot(s)', 1)[1].split('function dossierGrowthProfile(s)', 1)[0]
+        for token in ("['Receitas'", "['Lucro líquido'"):
+            self.assertIn(token, block)
+        for token in ("['Free cash flow'", "['Cash flow operacional'", "['Caixa líquido / dívida'", "['Debt / Equity'", "['Current ratio'", "['Margem líquida'"):
+            self.assertNotIn(token, block)
+        self.assertIn('tab Financeiro', block)
+
+
     def test_overview_does_not_repeat_score_pillars_or_risks(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         overview = market.split("if(tab==='overview')", 1)[1].split("if(tab==='perspective')", 1)[0]
@@ -67,11 +112,11 @@ class MarketUiPolishContractTests(unittest.TestCase):
         css = (ROOT / 'market.css').read_text(encoding='utf-8')
         self.assertIn('function dossierFinancialSnapshot(s)', market)
         self.assertIn('FINANCIAL SNAPSHOT', market)
-        self.assertIn('Saúde financeira em resumo', market)
+        self.assertIn('Escala do negócio', market)
         for token in ('free_cash_flow', 'operating_cash_flow', 'net_cash', 'operating_margin', 'profit_margin', 'roe'):
             self.assertIn(token, market)
         self.assertIn('market-dossier-financial-grid', css)
-        self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr))', css)
+        self.assertIn('grid-template-columns:repeat(2,minmax(0,1fr))', css)
 
 
 
@@ -79,8 +124,11 @@ class MarketUiPolishContractTests(unittest.TestCase):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         css = (ROOT / 'market.css').read_text(encoding='utf-8')
         self.assertIn('Ficha da empresa', market)
-        for token in ("['Setor',sector]", "['Indústria',industry]", "['País / região',geography]", "['Bolsa',exchange]", "['Tipo',quoteType]", "['Market cap'", "['Moeda'"):
+        for token in ("['Indústria',industry]", "['País / região',geography]", "['Tipo',quoteType]", "['Moeda'"):
             self.assertIn(token, market)
+        full_picture = market.split('function dossierFullPicture(s)', 1)[1].split('function dossierFinancialSnapshot(s)', 1)[0]
+        for duplicate in ("['Setor'", "['Bolsa'", "['Market cap'"):
+            self.assertNotIn(duplicate, full_picture)
         self.assertIn('market-dossier-company-facts', css)
         self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr))', css)
 
@@ -99,17 +147,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('market-smart-marker--congress', css)
 
 
-    def test_editorial_dossier_surfaces_market_expectations_context(self):
+    def test_editorial_dossier_keeps_expectations_detail_in_perspective_data(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
-        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]
         self.assertIn('function dossierExpectationsContext(s)', market)
         self.assertIn('MARKET EXPECTATIONS', market)
         self.assertIn('O que o mercado está a descontar', market)
-        self.assertIn('Targets e fair value são contexto separado do Score Vestra', market)
+        self.assertIn('tab Perspetiva', block)
         for token in ('analyst_eps_revisions_up_30d', 'estimate_momentum_score', 'fair_value_upside_pct'):
             self.assertIn(token, market)
-        self.assertIn('market-dossier-expectations-grid', css)
-        self.assertIn('grid-template-columns:repeat(3,minmax(0,1fr))', css)
+        self.assertNotIn('market-dossier-expectations-grid', block)
 
 
 
