@@ -5,6 +5,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_overview_does_not_repeat_score_pillars_or_risks(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        overview = market.split("if(tab==='overview')", 1)[1].split("if(tab==='perspective')", 1)[0]
+        self.assertNotIn('Ver pilares e detalhe quantitativo', overview)
+        self.assertNotIn('Pilares · percentis relativos', overview)
+        self.assertNotIn('Riscos adicionais', overview)
+        self.assertIn('${scoreExplanation(s)}', overview)
+
+
 
     def test_score_history_is_compact_when_no_real_series_exists(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
