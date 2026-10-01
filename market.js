@@ -1045,12 +1045,15 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function dossierSmartMoney(s){
-    const buys=n(s.insider_buy_count_30d)||0, sells=n(s.insider_sell_count_30d)||0;
     const buyValue=n(s.insider_buy_value_30d)||0, sellValue=n(s.insider_sell_value_30d)||0;
-    const congress=Array.isArray(s.congress_trades)?s.congress_trades:[];
     const net=buyValue-sellValue;
     const flowTone=net>0?'is-positive':net<0?'is-negative':'';
-    return `<section class="market-dossier-editorial-card market-dossier-smart"><div class="market-dossier-section-label">SMART MONEY MAP</div><div class="market-dossier-card-head"><h3>Insiders e divulgações políticas</h3><span class="${flowTone}">${net>0?'Fluxo comprador':net<0?'Fluxo vendedor':'Sem fluxo líquido'}</span></div><div class="market-dossier-smart-grid"><div><small>Compras insider · 30d</small><strong>${buys}</strong><span>${money(buyValue,'USD')}</span></div><div><small>Vendas insider · 30d</small><strong>${sells}</strong><span>${money(sellValue,'USD')}</span></div><div><small>Trades Congresso</small><strong>${congress.length}</strong><span>divulgações recentes</span></div></div><p class="market-dossier-interpretation">Os dados de insiders e Congresso são contexto de comportamento declarado; não alteram diretamente o Score Vestra.</p></section>`;
+    const interpretation=net>0
+      ? 'O fluxo insider declarado nos últimos 30 dias é líquido comprador.'
+      : net<0
+        ? 'O fluxo insider declarado nos últimos 30 dias é líquido vendedor.'
+        : 'Não existe fluxo insider líquido material nos últimos 30 dias.';
+    return `<section class="market-dossier-editorial-card market-dossier-smart"><div class="market-dossier-section-label">SMART MONEY MAP</div><div class="market-dossier-card-head"><h3>Insiders e divulgações políticas</h3><span class="${flowTone}">${net>0?'Fluxo comprador':net<0?'Fluxo vendedor':'Sem fluxo líquido'}</span></div><p>${esc(interpretation)} O detalhe de compras, vendas, operações do Congresso e respetivo mapa temporal está na tab Smart money.</p></section>`;
   }
 
   function detailBase(s){
