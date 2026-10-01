@@ -5,6 +5,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_top_market_identity_row_does_not_repeat_analysis_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        detail = market.split('function detailBase(s)', 1)[1].split('function renderDetailTab', 1)[0]
+        row = detail.split('<div class="market-dossier-price-row">', 1)[1].split('${dossierScoreBoard(s)}', 1)[0]
+        self.assertIn('PREÇO', row)
+        self.assertIn('MARKET CAP', row)
+        for token in ('FORWARD P/E', 'ROE', 'RECEITA YOY', 'FCF YIELD'):
+            self.assertNotIn(token, row)
+
+
     def test_growth_profile_top_level_is_editorial_summary_not_duplicate_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierGrowthProfile(s)', 1)[1].split('function dossierExpectationsContext(s)', 1)[0]
@@ -177,8 +187,10 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('market-dossier-editorial-card', css)
         self.assertNotIn('market-dossier-score-history--empty', css)
         self.assertNotIn('A série histórica ainda não está disponível', market)
-        for field in ('current_price', 'forward_pe', 'roe', 'revenue_growth', 'fcf_yield'):
-            self.assertIn(f'data-live-field="{field}"', market)
+        self.assertIn('data-live-field="current_price"', market)
+        price_row = market.split('<div class="market-dossier-price-row">', 1)[1].split('${dossierScoreBoard(s)}', 1)[0]
+        for field in ('forward_pe', 'roe', 'revenue_growth', 'fcf_yield'):
+            self.assertNotIn(f'data-live-field="{field}"', price_row)
 
 
     @classmethod

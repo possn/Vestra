@@ -155,10 +155,12 @@ class PoliticiansAndCongressTests(unittest.TestCase):
 class FrontendArchitectureTests(unittest.TestCase):
     def test_market_is_static_first_with_safe_live_overlay(self):
         market = read("market.js")
+        overlay = read("market-live-overlay.js")
         self.assertIn("async function enrichTickerLive", market)
         self.assertIn("refreshOpenDossierLiveFields(s)", market)
-        for field in ("current_price", "forward_pe", "roe", "revenue_growth", "fcf_yield"):
-            self.assertIn(f'data-live-field="{field}"', market)
+        self.assertIn('data-live-field="current_price"', market)
+        for field in ("forward_pe", "roe", "revenue_growth", "fcf_yield"):
+            self.assertIn(field, overlay)
         self.assertNotIn("www.bargo.ai", market)
 
     def test_lazy_loader_prefers_native_index_and_shards(self):
