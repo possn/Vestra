@@ -1,4 +1,4 @@
-/* Vestra Market Company Brief v2.1 — canonical dossier/company description repair + dossier normalization pipeline. */
+/* Vestra Market Company Brief v2.2 — canonical dossier/company description repair + dossier normalization pipeline. */
 (() => {
 'use strict';
 const SCRIPT_LOAD_TIMEOUT_MS=8000;
