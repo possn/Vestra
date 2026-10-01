@@ -23,6 +23,9 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('detalhe quantitativo fica nas tabs', block)
         self.assertNotIn('pillarMetricSummary(s,label)', block)
         self.assertNotIn('market-dim__evidence', block)
+        score_explanation = market.split('function scoreExplanation(s)', 1)[1].split('function vestraRead(s)', 1)[0]
+        self.assertIn('DETALHE QUANTITATIVO DOS PILARES', score_explanation)
+        self.assertIn('dimRows(s)', score_explanation)
 
 
     def test_growth_profile_top_level_is_editorial_summary_not_duplicate_metrics(self):
