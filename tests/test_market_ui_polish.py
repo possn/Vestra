@@ -6,6 +6,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class MarketUiPolishContractTests(unittest.TestCase):
 
+
+    def test_smart_money_tab_maps_declared_events_without_invented_performance(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        self.assertIn('function smartMoneyTimeline(s)', market)
+        self.assertIn('Preço e operações declaradas', market)
+        self.assertIn('price_history_1y', market)
+        self.assertIn('transaction_date', market)
+        self.assertIn('Não calculamos retorno pós-operação nem taxa de acerto', market)
+        self.assertIn('market-smart-marker--insider', css)
+        self.assertIn('market-smart-marker--congress', css)
+
+
     def test_editorial_dossier_surfaces_market_expectations_context(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         css = (ROOT / 'market.css').read_text(encoding='utf-8')

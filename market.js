@@ -980,6 +980,40 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }).join('')}</div><p class="market-dossier-interpretation">Os pilares são rankings relativos; não representam probabilidade de valorização. Métricas em falta não são tratadas como zero.</p></section>`;
   }
 
+  function smartMoneyEventType(raw){
+    const value=txt(raw).toLowerCase();
+    if(/buy|purchase|acquir/.test(value)) return 'buy';
+    if(/sell|sale|dispos/.test(value)) return 'sell';
+    return 'other';
+  }
+
+  function smartMoneyTimeline(s){
+    const prices=(Array.isArray(s.price_history_1y)?s.price_history_1y:[])
+      .map(x=>({date:txt(x?.date),close:n(x?.close??x?.price)}))
+      .filter(x=>x.date&&x.close!=null);
+    if(prices.length<2) return '<p class="market-case-note">Histórico de preço insuficiente para mapear operações.</p>';
+    const points=prices.slice(-120);
+    const dateValue=d=>{ const t=Date.parse(d); return Number.isFinite(t)?t:null; };
+    const dated=points.map(x=>({...x,t:dateValue(x.date)})).filter(x=>x.t!=null);
+    if(dated.length<2) return '<p class="market-case-note">Histórico de preço insuficiente para mapear operações.</p>';
+    const minT=dated[0].t,maxT=dated[dated.length-1].t,minP=Math.min(...dated.map(x=>x.close)),maxP=Math.max(...dated.map(x=>x.close)),range=maxP-minP||1;
+    const xy=x=>({x:(x.t-minT)/(maxT-minT||1)*100,y:90-(x.close-minP)/range*72});
+    const line=dated.map(x=>{const p=xy(x);return `${p.x.toFixed(2)},${p.y.toFixed(2)}`}).join(' ');
+    const nearest=t=>dated.reduce((best,x)=>!best||Math.abs(x.t-t)<Math.abs(best.t-t)?x:best,null);
+    const events=[];
+    for(const x of (Array.isArray(s.insider_transactions)?s.insider_transactions:[]).slice(0,12)){
+      const date=txt(x?.date||x?.transaction_date),t=dateValue(date); if(t==null||t<minT||t>maxT) continue;
+      const p=xy(nearest(t)); events.push({kind:'insider',type:smartMoneyEventType(x?.type||x?.transaction_type),date,label:txt(x?.name||x?.insider||'Insider'),x:p.x,y:p.y});
+    }
+    for(const x of (Array.isArray(s.congress_trades)?s.congress_trades:[]).slice(0,12)){
+      const date=txt(x?.transaction_date||x?.date),t=dateValue(date); if(t==null||t<minT||t>maxT) continue;
+      const p=xy(nearest(t)); events.push({kind:'congress',type:smartMoneyEventType(x?.type||x?.transaction),date,label:txt(x?.member||x?.representative||x?.name||'Congresso'),x:p.x,y:p.y});
+    }
+    const markers=events.map(e=>`<circle class="market-smart-marker market-smart-marker--${e.kind} market-smart-marker--${e.type}" cx="${e.x.toFixed(2)}" cy="${e.y.toFixed(2)}" r="2.6"><title>${esc(e.label)} · ${esc(shortDate(e.date))}</title></circle>`).join('');
+    const rows=events.slice(0,10).map(e=>`<div class="market-smart-event"><i class="market-smart-dot market-smart-dot--${e.kind} market-smart-dot--${e.type}"></i><span><strong>${esc(e.kind==='insider'?'Insider':'Congresso')}</strong> · ${esc(e.label)}</span><em>${esc(shortDate(e.date))}</em></div>`).join('');
+    return `<div class="market-smart-timeline"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Preço e operações declaradas"><polyline points="${line}" fill="none" stroke="currentColor" stroke-width="1.6" vector-effect="non-scaling-stroke" class="market-smart-price-line"/>${markers}</svg><div class="market-smart-legend"><span><i class="market-smart-dot market-smart-dot--insider"></i>Insider</span><span><i class="market-smart-dot market-smart-dot--congress"></i>Congresso</span></div>${rows?`<div class="market-smart-events">${rows}</div>`:'<p class="market-case-note">Sem operações datadas no intervalo visível.</p>'}<p class="market-case-note">Os marcadores mostram a data declarada sobre o preço semanal mais próximo. Não calculamos retorno pós-operação nem taxa de acerto sem evidência suficiente.</p></div>`;
+  }
+
   function dossierSmartMoney(s){
     const buys=n(s.insider_buy_count_30d)||0, sells=n(s.insider_sell_count_30d)||0;
     const buyValue=n(s.insider_buy_value_30d)||0, sellValue=n(s.insider_sell_value_30d)||0;
@@ -1027,7 +1061,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(tab==='smart') {
       const ins=Array.isArray(s.insider_transactions)?s.insider_transactions.slice(0,8):[];
       const con=Array.isArray(s.congress_trades)?s.congress_trades.slice(0,8):[];
-      body.innerHTML=`<div class="market-detail-card"><h4>Insiders · 30 dias</h4><p>${n(s.insider_buy_count_30d)||0} compras (${money(s.insider_buy_value_30d,'USD')}) · ${n(s.insider_sell_count_30d)||0} vendas (${money(s.insider_sell_value_30d,'USD')})</p>${ins.length?`<ul>${ins.map(x=>`<li>${esc(x.name||x.insider||'Insider')} · ${esc(x.transaction_type||x.type||'')} · ${money(x.value||x.transaction_value,'USD')}</li>`).join('')}</ul>`:''}</div><div class="market-detail-card"><h4>Congresso</h4>${con.length?`<ul>${con.map(x=>`<li>${esc(x.representative||x.member||x.name||'')} · ${esc(x.type||x.transaction||'')} · ${esc(x.amount||x.amount_range||'—')}</li>`).join('')}</ul>`:'<p id="marketCongressEmpty">A verificar divulgações recentes…</p>'}</div>`;
+      body.innerHTML=`<div class="market-detail-card market-smart-map-card"><div class="market-perspective-head"><div><small>SMART MONEY MAP</small><h4>Preço e operações declaradas</h4></div><span class="market-data-age">12 meses</span></div>${smartMoneyTimeline(s)}</div><div class="market-detail-card"><h4>Insiders · 30 dias</h4><p>${n(s.insider_buy_count_30d)||0} compras (${money(s.insider_buy_value_30d,'USD')}) · ${n(s.insider_sell_count_30d)||0} vendas (${money(s.insider_sell_value_30d,'USD')})</p>${ins.length?`<ul>${ins.map(x=>`<li>${esc(x.name||x.insider||'Insider')} · ${esc(x.transaction_type||x.type||'')} · ${money(x.value||x.transaction_value,'USD')}</li>`).join('')}</ul>`:''}</div><div class="market-detail-card"><h4>Congresso</h4>${con.length?`<ul>${con.map(x=>`<li>${esc(x.representative||x.member||x.name||'')} · ${esc(x.type||x.transaction||'')} · ${esc(x.amount||x.amount_range||'—')}</li>`).join('')}</ul>`:'<p id="marketCongressEmpty">A verificar divulgações recentes…</p>'}</div>`;
       if(!con.length) loadCongressLive(s.ticker).then(trades=>{
         if(!$m('marketSheet')?.hidden && txt($m('marketSheet')?.dataset.ticker).toUpperCase()===txt(s.ticker).toUpperCase() && $m('marketCongressEmpty')){
           if(trades.length) renderDetailTab(s,'smart'); else $m('marketCongressEmpty').textContent='Sem operações recentes registadas.';
