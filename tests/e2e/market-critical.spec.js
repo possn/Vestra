@@ -56,7 +56,8 @@ test('iPhone/WebKit: pesquisa -> dossier -> métricas -> tabs -> fechar -> reabr
 
   await expect(sheet.locator('.market-detail-head h2')).toHaveText('MSFT');
   await expect(sheet.locator('[data-live-field="current_price"]')).toBeVisible();
-  await expect(sheet.locator('[data-live-field="forward_pe"]')).toBeVisible();
+  await expect(sheet.locator('.market-dossier-price-row')).toContainText('MARKET CAP');
+  await expect(sheet.locator('.market-dossier-price-row')).not.toContainText('FORWARD P/E');
   await expect(sheet.locator('.market-tabs')).toBeVisible();
   await expect(sheet.locator('#marketSheetContent svg').first()).toBeVisible();
 
