@@ -5,6 +5,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+
+    def test_score_history_is_compact_when_no_real_series_exists(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        scoreboard = market.split('function dossierScoreBoard(s)', 1)[1].split('function dossierFullPicture(s)', 1)[0]
+        self.assertIn("const historyClass=historyHtml?' market-dossier-scoreboard--with-history':'';", scoreboard)
+        self.assertNotIn('A série histórica ainda não está disponível para este ativo.', scoreboard)
+        self.assertNotIn('market-dossier-score-history--empty', scoreboard)
+        self.assertIn('.market-dossier-scoreboard--with-history{grid-template-columns:minmax(150px,220px) minmax(220px,1fr)}', css)
+
+
     def test_editorial_dossier_avoids_repeated_top_level_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         scoreboard = market.split('function dossierScoreBoard(s)', 1)[1].split('function dossierFullPicture(s)', 1)[0]

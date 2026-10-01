@@ -899,8 +899,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const history=dossierScoreHistory(s);
     const historyHtml=history.length>=2
       ? `<div class="market-dossier-score-history"><div class="market-dossier-section-label">Histórico do Score</div><div class="market-dossier-history-bars">${history.map(x=>`<div class="market-dossier-history-bar"><i style="height:${Math.max(8,Math.min(100,x.value))}%"></i><strong>${Math.round(x.value)}</strong><span>${esc(x.label)}</span></div>`).join('')}</div></div>`
-      : `<div class="market-dossier-score-history market-dossier-score-history--empty"><div class="market-dossier-section-label">Histórico do Score</div><p>A série histórica ainda não está disponível para este ativo.</p></div>`;
-    return `<section class="market-dossier-scoreboard"><div class="market-dossier-scorehero"><div><small>VESTRA SCORE</small><strong>${score==null?'—':Math.round(score)}</strong><span>/100</span></div><p>${score==null?'Score não publicável com a evidência atual.':esc(scoreBand(score))}</p></div>${historyHtml}</section>`;
+      : '';
+    const historyClass=historyHtml?' market-dossier-scoreboard--with-history':'';
+    return `<section class="market-dossier-scoreboard${historyClass}"><div class="market-dossier-scorehero"><div><small>VESTRA SCORE</small><strong>${score==null?'—':Math.round(score)}</strong><span>/100</span></div><p>${score==null?'Score não publicável com a evidência atual.':esc(scoreBand(score))}</p></div>${historyHtml}</section>`;
   }
 
   function dossierFullPicture(s){
