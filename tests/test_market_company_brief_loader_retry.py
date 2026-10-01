@@ -36,7 +36,7 @@ class MarketCompanyBriefLoaderRetryTests(unittest.TestCase):
         self.assertIn("market-learned-universe.js?v=3.0", SOURCE)
         self.assertIn("app-runtime-bridge.js?v=1.1", SOURCE)
         self.assertIn("loadRuntimeBridge();", SOURCE)
-        self.assertIn("version:'2.1'", SOURCE)
+        self.assertIn("version:'2.2'", SOURCE)
 
 
 if __name__ == '__main__':
