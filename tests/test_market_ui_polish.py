@@ -90,7 +90,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         css = (ROOT / 'market.css').read_text(encoding='utf-8')
         self.assertIn('function dossierFinancialSnapshot(s)', market)
         self.assertIn('FINANCIAL SNAPSHOT', market)
-        self.assertIn('Saúde financeira em resumo', market)
+        self.assertIn('Escala do negócio', market)
         for token in ('free_cash_flow', 'operating_cash_flow', 'net_cash', 'operating_margin', 'profit_margin', 'roe'):
             self.assertIn(token, market)
         self.assertIn('market-dossier-financial-grid', css)
