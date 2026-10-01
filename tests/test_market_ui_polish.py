@@ -6,6 +6,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class MarketUiPolishContractTests(unittest.TestCase):
 
+    def test_editorial_dossier_includes_financial_snapshot(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        css = (ROOT / 'market.css').read_text(encoding='utf-8')
+        self.assertIn('function dossierFinancialSnapshot(s)', market)
+        self.assertIn('FINANCIAL SNAPSHOT', market)
+        self.assertIn('Saúde financeira em resumo', market)
+        for token in ('free_cash_flow', 'operating_cash_flow', 'net_cash', 'operating_margin', 'profit_margin', 'roe'):
+            self.assertIn(token, market)
+        self.assertIn('market-dossier-financial-grid', css)
+        self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr))', css)
+
+
+
     def test_editorial_dossier_includes_company_identity_facts(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         css = (ROOT / 'market.css').read_text(encoding='utf-8')
