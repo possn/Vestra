@@ -181,7 +181,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
     def test_investment_case_watchpoints_do_not_repeat_detailed_market_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory', 1)[0]
-        self.assertIn('Próximo evento', block)
+        self.assertNotIn('Próximo evento ·', block)
         self.assertIn('Tese quantitativa a melhorar', block)
         self.assertNotIn('Revisões EPS ·', block)
         self.assertNotIn('Target consenso ·', block)
