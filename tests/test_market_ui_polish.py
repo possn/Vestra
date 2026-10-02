@@ -202,6 +202,12 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('money(s.fair_value_low', block)
         self.assertNotIn('Math.abs(valuationDelta)', block)
 
+    def test_investment_case_why_fallback_does_not_repeat_thesis_summary(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory', 1)[0]
+        self.assertIn("Sem evidência específica adicional para além da síntese da tese.", block)
+        self.assertNotIn("const why=evidence.length?evidence.slice(0,3):[s.thesis_summary", block)
+
     def test_investment_case_watchpoints_do_not_repeat_market_expectations_direction(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory', 1)[0]
