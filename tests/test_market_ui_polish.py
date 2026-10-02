@@ -156,6 +156,14 @@ class MarketUiPolishContractTests(unittest.TestCase):
             self.assertNotIn(stale, block)
 
 
+    def test_score_evidence_does_not_default_to_robust_without_classification(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function scoreEvidenceExplanation(s)', 1)[1].split('function scoreWeightExplanation(s)', 1)[0]
+        self.assertIn("let tone='Evidência não classificada';", block)
+        self.assertIn("if(reliability==='robust') tone='Evidência robusta';", block)
+        self.assertNotIn("let tone='Evidência robusta';", block)
+
+
     def test_unpublished_score_uses_readable_reliability_fallback(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
