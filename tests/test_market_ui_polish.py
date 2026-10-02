@@ -222,6 +222,14 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('dimRows(s)', block)
 
 
+    def test_investment_case_does_not_claim_no_risk_when_risk_gate_has_flags(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
+        self.assertIn("const riskFlags=Array.isArray(s.risk_flags)?s.risk_flags.filter(Boolean):[];", block)
+        self.assertIn("if(riskFlags.length) riskItems.push('O Risk Gate regista sinais estruturais; consulta o Travão de risco na explicação do Score.');", block)
+        self.assertLess(block.index("if(riskFlags.length)"), block.index("Sem risco específico suficientemente forte identificado pelo modelo"))
+
+
     def test_investment_case_explicit_valuation_uncertainty_beats_peer_fallback(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
