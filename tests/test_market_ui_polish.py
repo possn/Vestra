@@ -145,6 +145,13 @@ class MarketUiPolishContractTests(unittest.TestCase):
             self.assertNotIn(stale, block)
 
 
+    def test_unpublished_score_uses_readable_reliability_fallback(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
+        self.assertIn("const confidence=txt(s.data_confidence)||scoreReliabilityLabel(s.score_reliability);", block)
+        self.assertNotIn("txt(s.data_confidence)||txt(s.score_reliability)", block)
+
+
     def test_score_explanation_does_not_recompute_unused_sorted_dimensions(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
