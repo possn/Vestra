@@ -24,6 +24,13 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('A limitar a avaliação:', block)
         self.assertNotIn('${Math.round(score)}/100', block)
 
+    def test_dead_congress_wrappers_stay_removed(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        for name in ('normalizeCongressLive', 'politiciansSnapshotFresh', 'attachCongressToStocks'):
+            self.assertNotIn(f'function {name}(', market)
+        self.assertIn("async function loadCongressLive(ticker='')", market)
+        self.assertIn('congressLiveFeed?.load(ticker)', market)
+
     def test_additional_dead_market_helpers_stay_removed(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         for name in ('refreshActiveTabFromLive', 'sparkSvg', 'bestStocks', 'wireVisibleRails', 'wireHorizontalRail'):
