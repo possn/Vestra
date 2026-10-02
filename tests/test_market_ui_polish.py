@@ -136,6 +136,13 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('Trades Congresso', block)
 
 
+    def test_score_explanation_does_not_recompute_unused_sorted_dimensions(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
+        self.assertNotIn('const dims=scoreDims(s)', block)
+        self.assertIn('dimRows(s)', block)
+
+
     def test_investment_case_header_does_not_repeat_first_evidence_fallback(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
