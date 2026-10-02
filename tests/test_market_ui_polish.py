@@ -136,6 +136,15 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('Trades Congresso', block)
 
 
+    def test_score_weight_labels_match_visible_dossier_pillars(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function scoreModelWeights(model)', 1)[1].split('function scoreRiskExplanation(s)', 1)[0]
+        for label in ('Qualidade do crédito','Capitalização','P/FFO','Qualidade seguradora','Subscrição','Qualidade utility','Qualidade energia','Runway de caixa','Caixa líquida'):
+            self.assertIn(label, block)
+        for stale in ("'Qualidade dos ativos'","'P/FFO / valuation'","'Underwriting'","'Cash runway'","'Net cash'"):
+            self.assertNotIn(stale, block)
+
+
     def test_score_explanation_does_not_recompute_unused_sorted_dimensions(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
