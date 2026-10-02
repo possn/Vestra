@@ -105,4 +105,14 @@ assert(badge.includes('market-change'));
 const panel = rotated.changePanel(stocks[0]);
 assert(panel.includes('O QUE MUDOU'));
 
+state.previousSnapshot = null;
+const noReferencePanel = rotated.changePanel({ ...stocks[0], thesis_score_delta_7d: null });
+assert.strictEqual(noReferencePanel, '', 'without historical reference or explicit 7d delta, the panel must stay hidden');
+const deltaPanel = rotated.changePanel({ ...stocks[0], thesis_score_delta_7d: 2 });
+assert(deltaPanel.includes('Últimos 7 dias'));
+assert(deltaPanel.includes('Score 7d +2.0'));
+assert(!deltaPanel.includes('Tese a melhorar'));
+assert(!deltaPanel.includes('Revisões EPS'));
+assert(!deltaPanel.includes('Insiders a comprar'));
+
 console.log('market watch snapshots contract: ok');
