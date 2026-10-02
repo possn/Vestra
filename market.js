@@ -190,15 +190,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return stock;
   }
 
-  function bestStocks(){
-    return M.stocks.filter(s=>!isFund(s) && n(s.score)!=null && n(s.data_coverage_pct)>=65 && txt(s.zombie)!=='yes')
-      .sort((a,b)=>{
-        const dir = x => txt(x.thesis_direction)==='up'?5:txt(x.thesis_direction)==='down'?-5:0;
-        return (n(b.score)||0)+dir(b)-(n(a.score)||0)-dir(a);
-      }).slice(0,7);
-  }
-
-  function renderRow(s, meta='', displayScore=null){ return marketRowUI?.renderRow(s,meta,displayScore) || ''; }
+    function renderRow(s, meta='', displayScore=null){ return marketRowUI?.renderRow(s,meta,displayScore) || ''; }
 
   const WEEKLY_ROTATION_THEMES=[
     ['Semicondutores',/semiconductor|semiconductors|chip|foundry|wafer|integrated circuit/i],
@@ -581,15 +573,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return true;
   }
 
-  function sparkSvg(history){
-    const arr=(Array.isArray(history)?history:[]).map(x=>typeof x==='number'?x:n(x.close??x.price)).filter(Number.isFinite);
-    if(arr.length<2) return '';
-    const vals=arr.slice(-120), min=Math.min(...vals), max=Math.max(...vals), range=max-min||1;
-    const pts=vals.map((v,i)=>`${(i/(vals.length-1)*100).toFixed(2)},${(92-(v-min)/range*78).toFixed(2)}`).join(' ');
-    return `<svg class="market-spark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Preço 1 ano"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" style="color:var(--vio)"/></svg>`;
-  }
-
-  function scoreDimensionLabel(label){
+    function scoreDimensionLabel(label){
     const labels={
       'Quality':'Qualidade','Growth':'Crescimento','Balance':'Balanço','Cash Flow':'Cash flow','Valuation':'Valuation',
       'Execution':'Execução','Earnings Quality':'Qualidade dos lucros','Capital Allocation':'Alocação de capital','Stability':'Estabilidade',
@@ -1081,15 +1065,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     // One delayed reset after layout is enough; repeated RAF writes can fight iOS momentum.
     setTimeout(()=>{ if(!$m('marketSheet')?.hidden){ panel.scrollTop=0; panel.scrollLeft=0; } }, 35);
   }
-  function refreshActiveTabFromLive(){
-    const sh=$m('marketSheet'); if(!sh || sh.hidden || !sh.dataset.ticker || sh.dataset.liveReady!=='1') return;
-    const s=M.byTicker.get(sh.dataset.ticker.toUpperCase()); if(!s) return;
-    sh.dataset.liveReady='0';
-    const active=sh.querySelector('.market-tab.is-active')?.dataset.detailTab||'overview';
-    renderDetailTab(s,active);
-  }
-
-  function openTicker(ticker){
+    function openTicker(ticker){
     const s=M.byTicker.get(txt(ticker).toUpperCase()); if(!s) return;
     hideSearchSuggestions();
     try{ window.scrollTo({left:0,top:window.scrollY,behavior:'auto'}); }catch(_){ window.scrollTo(0,window.scrollY); }
@@ -2295,27 +2271,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     out.innerHTML=`<div class="market-detail-card" style="overflow:auto"><table class="market-table"><thead><tr><th>Métrica</th>${ss.map(s=>`<th>${esc(s.ticker)}</th>`).join('')}</tr></thead><tbody>${metrics.map(([l,k,f])=>`<tr><td>${l}</td>${ss.map(s=>`<td>${f(s[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
 
-  function wireHorizontalRail(root){
-    if(!root || root.dataset.railWired==='1') return;
-    root.dataset.railWired='1';
-    let sx=0, sy=0, sl=0, dragging=false, horizontal=false;
-    root.addEventListener('touchstart',e=>{
-      const t=e.touches&&e.touches[0]; if(!t)return;
-      sx=t.clientX; sy=t.clientY; sl=root.scrollLeft; dragging=true; horizontal=false;
-    },{passive:true});
-    root.addEventListener('touchmove',e=>{
-      if(!dragging)return; const t=e.touches&&e.touches[0]; if(!t)return;
-      const dx=t.clientX-sx, dy=t.clientY-sy;
-      if(!horizontal && Math.abs(dx)>8 && Math.abs(dx)>Math.abs(dy)*1.15) horizontal=true;
-      if(horizontal){ root.scrollLeft=sl-dx; if(e.cancelable)e.preventDefault(); }
-    },{passive:false});
-    root.addEventListener('touchend',()=>{dragging=false;horizontal=false},{passive:true});
-    root.addEventListener('touchcancel',()=>{dragging=false;horizontal=false},{passive:true});
-  }
-  function wireVisibleRails(){
-    document.querySelectorAll('.market-chipbar,.market-tabs').forEach(wireHorizontalRail);
-  }
-  // v2.6: bounded grids no longer need custom touch interception.
+      // v2.6: bounded grids no longer need custom touch interception.
 
   function handleDecisionClick(e){
     const btn=e.target.closest?.('[data-decision-jump]');
