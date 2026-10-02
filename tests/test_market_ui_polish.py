@@ -110,8 +110,9 @@ class MarketUiPolishContractTests(unittest.TestCase):
     def test_smart_money_missing_data_is_not_presented_as_zero_flow(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierSmartMoney(s)', 1)[1].split('function detailBase(s)', 1)[0]
-        self.assertIn("const hasValue=buyValue!=null||sellValue!=null", block)
-        self.assertIn("const hasCount=buyCount!=null||sellCount!=null", block)
+        self.assertIn("const hasCompleteValue=buyValue!=null&&sellValue!=null", block)
+        self.assertIn("const hasCompleteCount=buyCount!=null&&sellCount!=null", block)
+        self.assertIn('Cobertura parcial', block)
         self.assertIn('Cobertura insuficiente', block)
         self.assertIn('Ainda não há dados insider suficientes', block)
         self.assertNotIn("const buyValue=n(s.insider_buy_value_30d)||0", block)
@@ -123,6 +124,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('Cobertura insider insuficiente nos últimos 30 dias.', block)
         self.assertNotIn("n(s.insider_buy_count_30d)||0", block)
         self.assertNotIn("n(s.insider_sell_count_30d)||0", block)
+
+
+    def test_smart_money_top_level_requires_complete_sides_for_direction(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierSmartMoney(s)', 1)[1].split('function detailBase(s)', 1)[0]
+        self.assertIn('const hasCompleteValue=buyValue!=null&&sellValue!=null;', block)
+        self.assertIn('const hasCompleteCount=buyCount!=null&&sellCount!=null;', block)
+        self.assertIn("const flowLabel=partial?'Cobertura parcial'", block)
+        self.assertNotIn('const hasValue=buyValue!=null||sellValue!=null;', block)
+        self.assertNotIn('(buyValue||0)-(sellValue||0)', block)
 
 
     def test_smart_money_top_level_is_editorial_summary_not_duplicate_metrics(self):
