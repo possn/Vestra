@@ -675,10 +675,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function scoreRiskExplanation(s){
-    const gate=txt(s.risk_gate)||'clear', cap=n(s.score_cap), flags=Array.isArray(s.risk_flags)?s.risk_flags:[];
+    const gate=txt(s.risk_gate), cap=n(s.score_cap), flags=Array.isArray(s.risk_flags)?s.risk_flags:[];
+    const capText=cap!=null?` O score fica limitado a ${Math.round(cap)}/100.`:'';
+    if(!gate) return flags.length
+      ? `<strong>Risk Gate não classificado:</strong> existem sinais estruturais registados, mas o nível do gate não está disponível.${capText}`
+      : '<strong>Risk Gate:</strong> não classificado com a evidência atual.';
     if(gate==='clear'&&!flags.length) return '<strong>Risk Gate:</strong> sem bloqueios estruturais materiais detetados.';
     const label=({watch:'vigilância',high:'elevado',severe:'severo'})[gate]||gate;
-    const capText=cap!=null?` O score fica limitado a ${Math.round(cap)}/100.`:'';
     return `<strong>Risk Gate ${esc(label)}:</strong> existem sinais estruturais que não podem ser compensados por outros pilares.${capText}`;
   }
 
