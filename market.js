@@ -981,15 +981,25 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function dossierSmartMoney(s){
-    const buyValue=n(s.insider_buy_value_30d)||0, sellValue=n(s.insider_sell_value_30d)||0;
-    const net=buyValue-sellValue;
-    const flowTone=net>0?'is-positive':net<0?'is-negative':'';
-    const interpretation=net>0
-      ? 'O fluxo insider declarado nos últimos 30 dias é líquido comprador.'
-      : net<0
-        ? 'O fluxo insider declarado nos últimos 30 dias é líquido vendedor.'
-        : 'Não existe fluxo insider líquido material nos últimos 30 dias.';
-    return `<section class="market-dossier-editorial-card market-dossier-smart"><div class="market-dossier-section-label">SMART MONEY MAP</div><div class="market-dossier-card-head"><h3>Insiders e divulgações políticas</h3><span class="${flowTone}">${net>0?'Fluxo comprador':net<0?'Fluxo vendedor':'Sem fluxo líquido'}</span></div><p>${esc(interpretation)} O detalhe de compras, vendas, operações do Congresso e respetivo mapa temporal está na tab Smart money.</p></section>`;
+    const buyValue=n(s.insider_buy_value_30d), sellValue=n(s.insider_sell_value_30d);
+    const buyCount=n(s.insider_buy_count_30d), sellCount=n(s.insider_sell_count_30d);
+    const hasValue=buyValue!=null||sellValue!=null;
+    const hasCount=buyCount!=null||sellCount!=null;
+    const net=hasValue
+      ? (buyValue||0)-(sellValue||0)
+      : hasCount
+        ? (buyCount||0)-(sellCount||0)
+        : null;
+    const flowTone=net==null?'':net>0?'is-positive':net<0?'is-negative':'';
+    const flowLabel=net==null?'Cobertura insuficiente':net>0?'Fluxo comprador':net<0?'Fluxo vendedor':'Sem fluxo líquido';
+    const interpretation=net==null
+      ? 'Ainda não há dados insider suficientes para classificar o fluxo dos últimos 30 dias.'
+      : net>0
+        ? 'O fluxo insider declarado nos últimos 30 dias é líquido comprador.'
+        : net<0
+          ? 'O fluxo insider declarado nos últimos 30 dias é líquido vendedor.'
+          : 'Não existe fluxo insider líquido material nos últimos 30 dias.';
+    return `<section class="market-dossier-editorial-card market-dossier-smart"><div class="market-dossier-section-label">SMART MONEY MAP</div><div class="market-dossier-card-head"><h3>Insiders e divulgações políticas</h3><span class="${flowTone}">${flowLabel}</span></div><p>${esc(interpretation)} O detalhe de compras, vendas, operações do Congresso e respetivo mapa temporal está na tab Smart money.</p></section>`;
   }
 
   function detailBase(s){
