@@ -812,8 +812,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const watch=[];
     if(txt(s.thesis_direction)==='up') watch.push('Tese quantitativa a melhorar');
     if(txt(s.thesis_direction)==='down') watch.push('Tese quantitativa a piorar');
-    if(txt(s.estimate_signal)==='improving') watch.push('Expectativas a melhorar');
-    if(txt(s.estimate_signal)==='deteriorating') watch.push('Expectativas a piorar');
     const why=evidence.length?evidence.slice(0,3):[s.thesis_summary||'Ainda não existe evidência suficiente para resumir a tese.'];
     const catalystPool=[...estimateDrivers,...drivers];
     const catalysts=catalystPool.length?catalystPool.slice(0,3):[txt(s.thesis_evolution_summary)||'Sem catalisador quantitativo claro identificado nos dados atuais.'];
