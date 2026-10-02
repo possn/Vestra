@@ -804,6 +804,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const drivers=Array.isArray(s.thesis_evolution_drivers)?s.thesis_evolution_drivers.filter(Boolean):[];
     const estimateDrivers=Array.isArray(s.earnings_intelligence_drivers)?s.earnings_intelligence_drivers.filter(Boolean):[];
     const risks=Array.isArray(s.thesis_risks)?s.thesis_risks.filter(Boolean):[];
+    const riskFlags=Array.isArray(s.risk_flags)?s.risk_flags.filter(Boolean):[];
     const dims=scoreDims(s);
     const weak=dims.filter(([,v])=>n(v)!=null&&n(v)<48).sort((a,b)=>n(a[1])-n(b[1])).map(([k,v])=>`${k} ${Math.round(n(v))}/100`);
     const fwdVs=n(s.forward_pe_vs_sector_pct), trailVs=n(s.trailing_pe_vs_sector_pct), evVs=n(s.ev_ebitda_vs_sector_pct);
@@ -827,7 +828,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const catalystPool=[...estimateDrivers,...drivers];
     const catalysts=catalystPool.length?catalystPool.slice(0,3):[txt(s.thesis_evolution_summary)||'Sem catalisador quantitativo claro identificado nos dados atuais.'];
     const riskItems=[...risks.slice(0,3),...weak.slice(0,Math.max(0,3-risks.length))].slice(0,3);
-    if(!riskItems.length) riskItems.push('Sem risco específico suficientemente forte identificado pelo modelo; rever métricas e negócio antes de decidir.');
+    if(!riskItems.length){
+      if(riskFlags.length) riskItems.push('O Risk Gate regista sinais estruturais; consulta o Travão de risco na explicação do Score.');
+      else riskItems.push('Sem risco específico suficientemente forte identificado pelo modelo; rever métricas e negócio antes de decidir.');
+    }
     const list=arr=>`<ul class="market-case-list">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
     return `<div class="market-case">
       <div class="market-case__top"><div><small>INVESTMENT CASE</small><h4>${esc(s.thesis_type||'Leitura do ativo')}</h4><p>${esc(s.thesis_summary||'Síntese ainda limitada pelos dados disponíveis.')}</p></div><span class="market-case__confidence">Confiança ${esc(txt(s.thesis_confidence)||'—')}</span></div>
