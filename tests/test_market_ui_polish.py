@@ -160,6 +160,17 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn("const why=evidence.length?evidence.slice(0,3)", block)
 
 
+    def test_perspective_missing_analyst_data_is_not_coerced_to_neutral_zeroes(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split("if(tab==='perspective')", 1)[1].split("if(tab==='growth')", 1)[0]
+        self.assertIn("!hasConsensus?'Cobertura insuficiente'", block)
+        self.assertIn("!hasDirectionalConsensus?'Cobertura parcial'", block)
+        self.assertIn("const revisionSummary=revUp==null&&revDown==null?'—'", block)
+        self.assertNotIn("n(s.analyst_hold)||0", block)
+        self.assertNotIn("n(s.analyst_eps_revisions_up_30d)||0", block)
+        self.assertNotIn("n(s.analyst_eps_revisions_down_30d)||0", block)
+
+
     def test_market_expectations_top_level_is_summary_not_duplicate_grid(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]
