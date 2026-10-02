@@ -158,6 +158,20 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn("trendLabel[text(d.trend)]||'estável'", block)
 
 
+    def test_missing_score_model_is_not_presented_as_general(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        label_block = market.split('function scoreModelLabel(model)', 1)[1].split('function scoreModelWeights(model)', 1)[0]
+        rationale_block = market.split('function scoreModelRationale(s)', 1)[1].split('function peerScoreContext(s)', 1)[0]
+        financials_block = market.split("if(tab==='financials')", 1)[1].split("if(tab==='smart')", 1)[0]
+        self.assertIn("'Não classificado'", label_block)
+        self.assertNotIn("||'Geral'", label_block)
+        self.assertIn("const model=txt(s?.score_model);", rationale_block)
+        self.assertIn("if(!model) return '';", rationale_block)
+        self.assertNotIn("s?.score_model||'general'", rationale_block)
+        self.assertIn("scoreModelLabel(s.score_model)", financials_block)
+        self.assertNotIn("txt(s.score_model)||'general'", financials_block)
+
+
     def test_score_weight_labels_match_visible_dossier_pillars(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreModelWeights(model)', 1)[1].split('function scoreRiskExplanation(s)', 1)[0]
