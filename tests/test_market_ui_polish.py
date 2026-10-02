@@ -133,6 +133,17 @@ class MarketUiPolishContractTests(unittest.TestCase):
 
 
 
+    def test_investment_case_watchpoints_do_not_repeat_detailed_market_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory', 1)[0]
+        self.assertIn('Próximo evento', block)
+        self.assertIn('Tese quantitativa a melhorar', block)
+        self.assertNotIn('Revisões EPS ·', block)
+        self.assertNotIn('Target consenso ·', block)
+        self.assertNotIn('Insiders 30d ·', block)
+        self.assertNotIn('estimate_momentum_score', block)
+
+
     def test_full_picture_business_description_is_separate_from_investment_thesis(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         full_picture = market.split('function dossierFullPicture(s)', 1)[1].split('function dossierFinancialSnapshot(s)', 1)[0]
