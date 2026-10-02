@@ -12,10 +12,13 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
         self.assertIn('não é uma previsão de retorno', self.market)
         self.assertIn('percentil 80', self.market)
 
-    def test_strengths_and_weaknesses_are_explained(self):
-        self.assertIn('A puxar para cima:', self.market)
-        self.assertIn('A limitar a avaliação:', self.market)
-        self.assertIn('sort((a,b)=>b.value-a.value)', self.market)
+    def test_pillar_strengths_and_weaknesses_stay_visible_without_duplicate_summary(self):
+        self.assertIn('SCORE BREAKDOWN', self.market)
+        self.assertIn('dossierPillarBand', self.market)
+        self.assertIn('DETALHE QUANTITATIVO DOS PILARES', self.market)
+        explanation=self.market.split('function scoreExplanation(s)',1)[1].split('function vestraRead(s)',1)[0]
+        self.assertNotIn('A puxar para cima:', explanation)
+        self.assertNotIn('A limitar a avaliação:', explanation)
 
     def test_coverage_model_and_missing_data_are_visible(self):
         self.assertIn('scoreModelLabel', self.market)
