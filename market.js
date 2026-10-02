@@ -671,7 +671,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       energy:[['Qualidade energia',20],['Cash flow',22],['Balanço',18],['Valuation',20],['Crescimento',10],['Estabilidade',10]],
       biotech:[['Runway de caixa',25],['Caixa líquida',15],['Disciplina de diluição',20],['Crescimento',20],['Qualidade operacional',10],['Estabilidade',10]]
     };
-    return packs[txt(model)]||packs.general;
+    return packs[txt(model)]||[];
   }
 
   function scoreRiskExplanation(s){
@@ -711,6 +711,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function scoreWeightExplanation(s){
     const weights=scoreModelWeights(s.score_model);
+    if(!weights.length) return 'Pesos indisponíveis sem modelo classificado.';
     return weights.map(([label,w])=>`${esc(label)} ${w}%`).join(' · ');
   }
 

@@ -158,6 +158,15 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn("trendLabel[text(d.trend)]||'estável'", block)
 
 
+    def test_missing_score_model_does_not_invent_general_weights(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        weights_block = market.split('function scoreModelWeights(model)', 1)[1].split('function scoreRiskExplanation(s)', 1)[0]
+        explanation_block = market.split('function scoreWeightExplanation(s)', 1)[1].split('function scoreBand(value)', 1)[0]
+        self.assertIn("return packs[txt(model)]||[];", weights_block)
+        self.assertNotIn("return packs[txt(model)]||packs.general;", weights_block)
+        self.assertIn("if(!weights.length) return 'Pesos indisponíveis sem modelo classificado.';", explanation_block)
+
+
     def test_missing_score_model_is_not_presented_as_general(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         label_block = market.split('function scoreModelLabel(model)', 1)[1].split('function scoreModelWeights(model)', 1)[0]
