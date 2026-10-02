@@ -15,6 +15,15 @@ class MarketUiPolishContractTests(unittest.TestCase):
             self.assertNotIn(token, row)
 
 
+    def test_score_evidence_layer_keeps_model_specific_quality_not_duplicate_global_metrics(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function scoreEvidenceExplanation(s)', 1)[1].split('function scoreWeightExplanation(s)', 1)[0]
+        self.assertNotIn('Cobertura global', block)
+        self.assertNotIn('confiança da evidência ${Math.round(conf)', block)
+        self.assertIn('Métricas críticas', block)
+        self.assertIn('Cobertura nativa do modelo', block)
+        self.assertIn('Fiabilidade do Score', block)
+
     def test_published_score_explanation_does_not_repeat_evidence_summary_strip(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
