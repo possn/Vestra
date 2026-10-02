@@ -24,6 +24,13 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('A limitar a avaliação:', block)
         self.assertNotIn('${Math.round(score)}/100', block)
 
+    def test_dead_dossier_helpers_stay_removed(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        self.assertNotIn('function marketSearchMatches(', market)
+        self.assertNotIn('function scrollDossierTop(', market)
+        self.assertIn('function renderSearchSuggestions()', market)
+        self.assertIn('function resetDossierViewport()', market)
+
     def test_dead_vestra_read_summary_is_removed(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         self.assertNotIn('function vestraRead(s)', market)
