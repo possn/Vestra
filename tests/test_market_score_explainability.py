@@ -16,7 +16,7 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
         self.assertIn('SCORE BREAKDOWN', self.market)
         self.assertIn('dossierPillarBand', self.market)
         self.assertIn('DETALHE QUANTITATIVO DOS PILARES', self.market)
-        explanation=self.market.split('function scoreExplanation(s)',1)[1].split('function vestraRead(s)',1)[0]
+        explanation=self.market.split('function scoreExplanation(s)',1)[1].split('function shortDate(v)',1)[0]
         self.assertNotIn('A puxar para cima:', explanation)
         self.assertNotIn('A limitar a avaliação:', explanation)
 
