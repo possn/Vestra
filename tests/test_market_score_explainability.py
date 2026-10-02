@@ -62,8 +62,10 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
     def test_specialist_model_weights_are_visible(self):
         for token in ('growth_tech', 'bank', 'reit', 'insurance', 'utility', 'energy', 'biotech'):
             self.assertIn(token, self.market)
-        self.assertIn("['Cash runway',25]", self.market)
+        self.assertIn("['Runway de caixa',25]", self.market)
+        self.assertIn("['Caixa líquida',15]", self.market)
         self.assertIn("['Qualidade bancária',22]", self.market)
+        self.assertIn("['Qualidade do crédito',10]", self.market)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
