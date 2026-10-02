@@ -116,6 +116,15 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('Ainda não há dados insider suficientes', block)
         self.assertNotIn("const buyValue=n(s.insider_buy_value_30d)||0", block)
 
+    def test_smart_money_detail_does_not_coerce_missing_insider_counts_to_zero(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split("if(tab==='smart')", 1)[1].split("if(tab==='news')", 1)[0]
+        self.assertIn("const hasInsiderSummary=buyCount!=null||sellCount!=null||buyValue!=null||sellValue!=null", block)
+        self.assertIn('Cobertura insider insuficiente nos últimos 30 dias.', block)
+        self.assertNotIn("n(s.insider_buy_count_30d)||0", block)
+        self.assertNotIn("n(s.insider_sell_count_30d)||0", block)
+
+
     def test_smart_money_top_level_is_editorial_summary_not_duplicate_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierSmartMoney(s)', 1)[1].split('function detailBase(s)', 1)[0]
