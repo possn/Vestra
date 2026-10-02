@@ -885,7 +885,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function dossierGrowthProfile(s){
     const growth=n(s.growth_pct);
-    const note=growth!=null&&growth>=70?'Crescimento acima da maioria dos comparáveis.':growth!=null&&growth<45?'Crescimento é atualmente um dos pontos mais frágeis do perfil.':'Crescimento sem extremo claro face aos comparáveis.';
+    const note=growth==null?'Cobertura insuficiente para classificar o crescimento face aos comparáveis.':growth>=70?'Crescimento acima da maioria dos comparáveis.':growth<45?'Crescimento é atualmente um dos pontos mais frágeis do perfil.':'Crescimento sem extremo claro face aos comparáveis.';
     return `<section class="market-dossier-editorial-card"><div class="market-dossier-section-label">GROWTH PROFILE</div><div class="market-dossier-card-head"><h3>Tração do negócio</h3><span>${growth==null?'—':Math.round(growth)+'/100'}</span></div><p>${esc(note)} O detalhe de receita, lucro, EPS e restantes métricas de execução está na tab Growth.</p></section>`;
   }
 

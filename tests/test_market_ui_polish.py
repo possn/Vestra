@@ -183,6 +183,14 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn("n(s.analyst_eps_revisions_down_30d)||0", block)
 
 
+    def test_growth_profile_missing_score_is_not_described_as_neutral(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierGrowthProfile(s)', 1)[1].split('function dossierExpectationsContext(s)', 1)[0]
+        self.assertIn("growth==null?'Cobertura insuficiente para classificar o crescimento face aos comparáveis.'", block)
+        self.assertIn("growth>=70?'Crescimento acima da maioria dos comparáveis.'", block)
+        self.assertIn("growth<45?'Crescimento é atualmente um dos pontos mais frágeis do perfil.'", block)
+
+
     def test_market_expectations_top_level_is_summary_not_duplicate_grid(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]
