@@ -649,7 +649,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function dimRows(s){
     const dims=scoreDims(s);
-    return dims.map(([k,v])=>`<div class="market-dim"><div><div class="market-dim__label"><span>${k}</span><strong>${n(v)==null?'—':Math.round(v)}</strong></div><div class="market-bar"><span style="width:${Math.max(0,Math.min(100,n(v)||0))}%"></span></div>${pillarMetricSummary(s,k)}</div><span></span></div>`).join('');
+    return dims.map(([k])=>{
+      const evidence=pillarMetricSummary(s,k);
+      if(!evidence) return '';
+      return `<div class="market-dim market-dim--evidence-only"><div><div class="market-dim__label"><span>${k}</span></div>${evidence}</div></div>`;
+    }).filter(Boolean).join('');
   }
 
   function scoreModelLabel(model){
