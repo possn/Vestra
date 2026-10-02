@@ -15,6 +15,15 @@ class MarketUiPolishContractTests(unittest.TestCase):
             self.assertNotIn(token, row)
 
 
+    def test_score_explanation_does_not_repeat_top_level_score_or_rank_extremes(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function scoreExplanation(s)', 1)[1].split('function vestraRead(s)', 1)[0]
+        self.assertIn('Como se forma a avaliação', block)
+        self.assertIn('DETALHE QUANTITATIVO DOS PILARES', block)
+        self.assertNotIn('A puxar para cima:', block)
+        self.assertNotIn('A limitar a avaliação:', block)
+        self.assertNotIn('${Math.round(score)}/100', block)
+
     def test_score_breakdown_top_level_keeps_pillars_not_duplicate_base_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierPillarCards(s)', 1)[1].split('function smartMoneyEventType', 1)[0]
