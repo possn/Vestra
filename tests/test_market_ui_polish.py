@@ -147,6 +147,17 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('Trades Congresso', block)
 
 
+    def test_drawdown_missing_diagnostics_are_not_coerced_to_zero_or_stable(self):
+        signals = (ROOT / 'market-dossier-signals.js').read_text(encoding='utf-8')
+        block = signals.split('function drawdownPanel(s={})', 1)[1].split('return Object.freeze', 1)[0]
+        self.assertIn("peerCount==null?'—':Math.round(peerCount)", block)
+        self.assertIn("strength==null?'—':Math.round(strength)", block)
+        self.assertIn("trendLabel[trend]||'sem tendência classificada'", block)
+        self.assertNotIn("number(s.sector_relative_peer_count)||0", block)
+        self.assertNotIn("Math.round(number(d.strength)||0)", block)
+        self.assertNotIn("trendLabel[text(d.trend)]||'estável'", block)
+
+
     def test_score_weight_labels_match_visible_dossier_pillars(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreModelWeights(model)', 1)[1].split('function scoreRiskExplanation(s)', 1)[0]
