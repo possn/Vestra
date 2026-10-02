@@ -811,7 +811,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       else valuation='Em linha com o setor';
     }
     const watch=[];
-    if(s.analyst_next_earnings_date) watch.push(`Próximo evento · ${shortDate(s.analyst_next_earnings_date)}`);
     if(txt(s.thesis_direction)==='up') watch.push('Tese quantitativa a melhorar');
     if(txt(s.thesis_direction)==='down') watch.push('Tese quantitativa a piorar');
     if(txt(s.estimate_signal)==='improving') watch.push('Expectativas a melhorar');
