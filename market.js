@@ -787,7 +787,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     formatShortDate: shortDate,
   }) || null;
   function evidencePanel(s){ return dossierSignals?.evidencePanel(s) || ''; }
-  function catalystPanel(s){ return dossierSignals?.catalystPanel(s) || ''; }
   function recoveryPanel(s){ return dossierSignals?.recoveryPanel(s) || ''; }
   function drawdownPanel(s){ return dossierSignals?.drawdownPanel(s) || ''; }
 
