@@ -688,7 +688,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function scoreEvidenceExplanation(s){
-    const conf=n(s.confidence_score), coverage=n(s.data_coverage_pct), critical=n(s.critical_metric_coverage_pct);
+    const conf=n(s.confidence_score), critical=n(s.critical_metric_coverage_pct);
     const native=n(s.model_native_coverage_pct);
     const reliability=txt(s.score_reliability);
     const raw=n(s.score_raw), published=n(s.score);
@@ -698,7 +698,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     else if(reliability==='moderate_evidence') tone='Evidência moderada';
     else if(conf!=null&&conf<60) tone='Confiança baixa';
     const moderation=raw!=null&&published!=null&&published<raw-0.1?` O score quantitativo bruto era ${Math.round(raw)}, mas a publicação foi moderada para ${Math.round(published)} pela qualidade/cobertura da evidência.`:'';
-    return `<strong>${esc(tone)}.</strong> Cobertura global ${coverage==null?'—':Math.round(coverage)+'%'}${critical==null?'':` · métricas críticas ${Math.round(critical)}%`}${native==null?'':` · cobertura nativa do modelo ${Math.round(native)}%`}${conf==null?'':` · confiança da evidência ${Math.round(conf)}/100`} · fiabilidade do Score ${esc(scoreReliabilityLabel(reliability))}.${moderation}`;
+    return `<strong>${esc(tone)}.</strong>${critical==null?'':` Métricas críticas ${Math.round(critical)}%.`}${native==null?'':` Cobertura nativa do modelo ${Math.round(native)}%.`} Fiabilidade do Score ${esc(scoreReliabilityLabel(reliability))}.${moderation}`;
   }
 
   function scoreWeightExplanation(s){
