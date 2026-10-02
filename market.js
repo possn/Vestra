@@ -664,12 +664,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const packs={
       general:[['Qualidade',18],['Crescimento',15],['Balanço',14],['Cash flow',8],['Valuation',12],['Execução',10],['Qualidade dos lucros',10],['Alocação de capital',8],['Estabilidade',5]],
       growth_tech:[['Qualidade',20],['Crescimento',22],['Balanço',12],['Cash flow',10],['Valuation',7],['Execução',12],['Qualidade dos lucros',9],['Alocação de capital',5],['Estabilidade',3]],
-      bank:[['Qualidade bancária',22],['Eficiência',13],['Qualidade dos ativos',10],['Capital',15],['Crescimento',15],['Valuation',15],['Rendimento',5],['Estabilidade',5]],
-      reit:[['Qualidade REIT',22],['Crescimento',16],['Alavancagem',20],['P/FFO / valuation',20],['Distribuição',17],['Estabilidade',5]],
-      insurance:[['Qualidade',22],['Underwriting',18],['Capital',18],['Crescimento',12],['Valuation',17],['Rendimento',8],['Estabilidade',5]],
-      utility:[['Qualidade',18],['Balanço',22],['Rendimento',18],['Valuation',17],['Crescimento',10],['Estabilidade',10],['Cash flow',5]],
-      energy:[['Qualidade',20],['Cash flow',22],['Balanço',18],['Valuation',20],['Crescimento',10],['Estabilidade',10]],
-      biotech:[['Cash runway',25],['Net cash',15],['Disciplina de diluição',20],['Crescimento',20],['Qualidade operacional',10],['Estabilidade',10]]
+      bank:[['Qualidade bancária',22],['Eficiência',13],['Qualidade do crédito',10],['Capitalização',15],['Crescimento',15],['Valuation',15],['Rendimento',5],['Estabilidade',5]],
+      reit:[['Qualidade REIT',22],['Crescimento',16],['Alavancagem',20],['P/FFO',20],['Distribuição',17],['Estabilidade',5]],
+      insurance:[['Qualidade seguradora',22],['Subscrição',18],['Capitalização',18],['Crescimento',12],['Valuation',17],['Rendimento',8],['Estabilidade',5]],
+      utility:[['Qualidade utility',18],['Balanço',22],['Rendimento',18],['Valuation',17],['Crescimento',10],['Estabilidade',10],['Cash flow',5]],
+      energy:[['Qualidade energia',20],['Cash flow',22],['Balanço',18],['Valuation',20],['Crescimento',10],['Estabilidade',10]],
+      biotech:[['Runway de caixa',25],['Caixa líquida',15],['Disciplina de diluição',20],['Crescimento',20],['Qualidade operacional',10],['Estabilidade',10]]
     };
     return packs[txt(model)]||packs.general;
   }
