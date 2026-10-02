@@ -93,9 +93,6 @@ function inPortfolio(ticker){ return portfolioContext?.inPortfolio(ticker) || fa
     getStocks: () => M.stocks,
     text: txt,
   }) || null;
-  function normalizeCongressLive(x){ return congressLiveFeed?.normalize(x) || {}; }
-  function politiciansSnapshotFresh(d){ return congressLiveFeed?.snapshotFresh(d) || false; }
-  function attachCongressToStocks(trades){ return congressLiveFeed?.attachToStocks(trades); }
   async function loadCongressLive(ticker=''){ return congressLiveFeed?.load(ticker) ?? []; }
 
 
