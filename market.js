@@ -696,8 +696,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const native=n(s.model_native_coverage_pct);
     const reliability=txt(s.score_reliability);
     const raw=n(s.score_raw), published=n(s.score);
-    let tone='Evidência robusta';
-    if(reliability==='insufficient_data') tone='Evidência insuficiente';
+    let tone='Evidência não classificada';
+    if(reliability==='robust') tone='Evidência robusta';
+    else if(reliability==='insufficient_data') tone='Evidência insuficiente';
     else if(reliability==='limited_evidence') tone='Evidência limitada';
     else if(reliability==='moderate_evidence') tone='Evidência moderada';
     else if(conf!=null&&conf<60) tone='Confiança baixa';
