@@ -41,6 +41,12 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('A limitar a avaliação:', block)
         self.assertNotIn('${Math.round(score)}/100', block)
 
+    def test_dead_catalyst_wrapper_stays_removed(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        self.assertNotIn('function catalystPanel(s)', market)
+        self.assertIn('window.VestraMarketDossierSignals?.create', market)
+        self.assertIn('dossierCatalystsRisks(s)', market)
+
     def test_dead_congress_wrappers_stay_removed(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         for name in ('normalizeCongressLive', 'politiciansSnapshotFresh', 'attachCongressToStocks'):
