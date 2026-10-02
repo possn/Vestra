@@ -903,7 +903,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         : signal==='neutral'
           ? 'As expectativas não mostram uma direção material neste momento.'
           : 'Ainda não existe cobertura suficiente para ler a direção das expectativas.';
-    return `<section class="market-dossier-editorial-card market-dossier-expectations"><div class="market-dossier-section-label">MARKET EXPECTATIONS</div><div class="market-dossier-card-head"><h3>O que o mercado está a descontar</h3><span class="${signalTone}">${esc(signalLabel)}</span></div><p>${esc(interpretation)} O detalhe de revisões, targets, fair value e próximos resultados está na tab Perspetiva.</p></section>`;
+    return `<section class="market-dossier-editorial-card market-dossier-expectations"><div class="market-dossier-section-label">MARKET EXPECTATIONS</div><div class="market-dossier-card-head"><h3>O que o mercado está a descontar</h3><span class="${signalTone}">${esc(signalLabel)}</span></div><p>${esc(interpretation)} O detalhe de revisões, targets e próximos resultados está na tab Perspetiva; o fair value está na tab Valuation.</p></section>`;
   }
 
   function dossierCatalystsRisks(s){
