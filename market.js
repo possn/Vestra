@@ -807,6 +807,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(valuationSignal==='undervalued'){ valuation='Abaixo do fair value'; valuationClass='is-positive'; }
     else if(valuationSignal==='overvalued'){ valuation='Acima do fair value'; valuationClass='is-caution'; }
     else if(valuationSignal==='fair'){ valuation='Próximo do fair value'; }
+    else if(valuationSignal==='uncertain'){ valuation='Leitura não acionável'; }
+    else if(valuationSignal==='insufficient'){ valuation='Dados insuficientes'; }
     else if(valuationDelta!=null){
       if(valuationDelta<=-15){ valuation='A desconto vs setor'; valuationClass='is-positive'; }
       else if(valuationDelta>=20){ valuation='Com prémio vs setor'; valuationClass='is-caution'; }
