@@ -133,6 +133,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
 
 
 
+    def test_investment_case_valuation_is_editorial_not_duplicate_numbers(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory', 1)[0]
+        self.assertIn('Está caro ou barato?', block)
+        self.assertIn('tab Valuation', block)
+        self.assertIn('Abaixo do fair value', block)
+        self.assertNotIn('fair_value_upside_pct', block)
+        self.assertNotIn('money(s.fair_value_low', block)
+        self.assertNotIn('Math.abs(valuationDelta)', block)
+
     def test_investment_case_watchpoints_do_not_repeat_detailed_market_metrics(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory', 1)[0]
