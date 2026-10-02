@@ -24,6 +24,13 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('A limitar a avaliação:', block)
         self.assertNotIn('${Math.round(score)}/100', block)
 
+    def test_additional_dead_market_helpers_stay_removed(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        for name in ('refreshActiveTabFromLive', 'sparkSvg', 'bestStocks', 'wireVisibleRails', 'wireHorizontalRail'):
+            self.assertNotIn(f'function {name}(', market)
+        self.assertIn('function resetDossierViewport()', market)
+        self.assertIn('window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,upsertRemoteStock,toggleWatch}', market)
+
     def test_dead_dossier_helpers_stay_removed(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         self.assertNotIn('function marketSearchMatches(', market)
