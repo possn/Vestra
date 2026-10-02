@@ -771,7 +771,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   function scoreExplanation(s){
     const score=n(s.score), coverage=n(s.data_coverage_pct);
-    const dims=scoreDims(s).map(([label,value])=>({label,value:n(value)})).filter(x=>x.value!=null).sort((a,b)=>b.value-a.value);
     const confidence=txt(s.data_confidence)||txt(s.score_reliability)||'—';
     if(score==null){
       return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>COMO LER A AVALIAÇÃO</small><h4>Score não publicado</h4></div><span class="market-data-age">evidência insuficiente</span></div><p>Não há dados suficientes para produzir uma avaliação comparável com segurança. A ausência de score não significa uma empresa fraca.</p><div class="market-action-context"><span>Modelo ${esc(scoreModelLabel(s.score_model))}</span><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span></div></div>`;
