@@ -795,29 +795,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<div class="market-detail-card market-score-explain"><div class="market-perspective-head"><div><small>PORQUE TEM ESTE SCORE</small><h4>Como se forma a avaliação</h4></div><span class="market-data-age">${esc(scoreModelLabel(s.score_model))}</span></div><p><strong>O Score Vestra é um ranking relativo do perfil fundamental — não é uma previsão de retorno nem uma probabilidade de valorização.</strong> Um pilar em 80 significa aproximadamente percentil 80 no conjunto comparável usado por esse pilar; não significa 80% de probabilidade de subir.</p><div class="market-action-context"><span>Cobertura ${coverage==null?'—':Math.round(coverage)+'%'}</span><span>Confiança ${esc(confidence)}</span><span>${dims.length} pilares disponíveis</span></div><div class="market-score-detail"><div class="market-dossier-section-label">DETALHE QUANTITATIVO DOS PILARES</div>${dimRows(s)}</div>${scoreModelRationale(s)?`<p class="market-case-note"><strong>Modelo usado.</strong> ${esc(scoreModelRationale(s))}</p>`:''}${peerScoreContext(s)}<div class="market-score-layers"><p class="market-case-note"><strong>1 · Ranking fundamental.</strong> Os pesos-base do modelo ${esc(scoreModelLabel(s.score_model))} são: ${scoreWeightExplanation(s)}. Quando falta um pilar, ele não vale zero. Os pesos dos pilares disponíveis são renormalizados.</p><p class="market-case-note"><strong>2 · Qualidade da evidência.</strong> ${scoreEvidenceExplanation(s)}</p><p class="market-case-note"><strong>3 · Travão de risco.</strong> ${scoreRiskExplanation(s)}</p><p class="market-case-note"><strong>4 · Valuation, tese e expectativas.</strong> A faixa de fair value e os sinais de tese/analistas são camadas separadas. Podem mudar a leitura e a ação sem reescrever artificialmente o score fundamental.</p><p class="market-case-note"><strong>5 · Decisão de carteira.</strong> “Reforçar”, “Manter”, “Rever” ou “Substituir” considera ainda peso da posição, concentração setorial, overlap e alternativas. Uma empresa excelente pode por isso ficar em “Manter”.</p></div><p class="market-case-note">Scores com coberturas muito diferentes devem ser comparados com cautela. A validação prospetiva ainda está a recolher cohorts; o score deve ser usado como screener explicável, não como promessa de performance futura.</p></div>`;
   }
 
-  function vestraRead(s){
-    const score=n(s.score);
-    const dims=scoreDims(s);
-    const strengths=dims.filter(([,v])=>n(v)!=null&&n(v)>=68).sort((a,b)=>n(b[1])-n(a[1])).slice(0,2).map(([k])=>k);
-    const cautions=dims.filter(([,v])=>n(v)!=null&&n(v)<48).sort((a,b)=>n(a[1])-n(b[1])).slice(0,2).map(([k])=>k);
-    const direction=txt(s.thesis_direction);
-    let label='Acompanhar', cls='is-watch', copy='Perfil intermédio: vale a pena abrir os pilares antes de tirar conclusões.';
-    const evidenceConfidence=n(s.confidence_score); const gate=txt(s.risk_gate);
-    if(score!=null&&score>=72&&evidenceConfidence!=null&&evidenceConfidence>=60&&!['high','severe'].includes(gate)){label='Sinal forte';cls='';copy='Métricas fortes com evidência suficientemente robusta para justificar investigação aprofundada.';}
-    else if(score!=null&&score>=72){label='Sinal quantitativo';cls='is-watch';copy='O score é elevado, mas a confiança dos dados ou o Risk Gate não permite tratar o sinal como forte.';}
-    else if(score!=null&&score<52){label='Mais exigente';cls='is-risk';copy='Há fragilidades relevantes nas métricas; o score pede análise adicional antes de qualquer decisão.';}
-    if(isFund(s)) copy='Leitura agregada do fundo com foco em custo, qualidade e encaixe — não substitui análise da composição.';
-    const signals=[];
-    strengths.forEach(x=>signals.push(`<span class="market-signal">↑ ${esc(x)}</span>`));
-    cautions.forEach(x=>signals.push(`<span class="market-signal market-signal--warn">! ${esc(x)}</span>`));
-    if(direction==='up') signals.push('<span class="market-signal">↗ Tese a melhorar</span>');
-    if(direction==='down') signals.push('<span class="market-signal market-signal--warn">↘ Tese a piorar</span>');
-    if(txt(s.estimate_signal)==='improving') signals.push('<span class="market-signal">↑ Expectativas a melhorar</span>');
-    if(txt(s.estimate_signal)==='deteriorating') signals.push('<span class="market-signal market-signal--warn">↓ Expectativas a piorar</span>');
-    if(n(s.insider_buy_count_30d)>0) signals.push('<span class="market-signal market-signal--gold">Insiders a comprar</span>');
-    return `<div class="market-verdict"><div class="market-verdict__score ${cls}">${score==null?'—':Math.round(score)}</div><div class="market-verdict__copy"><small>Leitura Vestra</small><strong>${label}</strong><p>${copy}</p>${signals.length?`<div class="market-signal-row">${signals.slice(0,4).join('')}</div>`:''}</div></div>`;
-  }
-
   function shortDate(v){
     if(!v) return '—'; const d=new Date(v); if(Number.isNaN(d.valueOf())) return esc(v);
     return new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short',year:'numeric'}).format(d);
