@@ -846,14 +846,15 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const weak=dims.filter(([,v])=>n(v)!=null&&n(v)<48).sort((a,b)=>n(a[1])-n(b[1])).map(([k,v])=>`${k} ${Math.round(n(v))}/100`);
     const fwdVs=n(s.forward_pe_vs_sector_pct), trailVs=n(s.trailing_pe_vs_sector_pct), evVs=n(s.ev_ebitda_vs_sector_pct);
     const valuationDelta=fwdVs??trailVs??evVs;
-    let valuation='Sem leitura relativa suficiente', valuationClass='';
-    if(n(s.fair_value_low)!=null&&n(s.fair_value_high)!=null){
-      valuation=`Fair value ${money(s.fair_value_low,s.currency)} – ${money(s.fair_value_high,s.currency)} · ${n(s.fair_value_upside_pct)>=0?'+':''}${num(s.fair_value_upside_pct)}% ao centro`;
-      valuationClass=txt(s.valuation_signal)==='undervalued'?'is-positive':txt(s.valuation_signal)==='overvalued'?'is-caution':'';
-    } else if(valuationDelta!=null){
-      if(valuationDelta<=-15){valuation=`Desconto de ${Math.abs(valuationDelta).toFixed(0)}% vs setor`;valuationClass='is-positive';}
-      else if(valuationDelta>=20){valuation=`Prémio de ${valuationDelta.toFixed(0)}% vs setor`;valuationClass='is-caution';}
-      else {valuation=`Próximo do setor (${valuationDelta>0?'+':''}${valuationDelta.toFixed(0)}%)`;}
+    const valuationSignal=txt(s.valuation_signal);
+    let valuation='Sem leitura robusta', valuationClass='';
+    if(valuationSignal==='undervalued'){ valuation='Abaixo do fair value'; valuationClass='is-positive'; }
+    else if(valuationSignal==='overvalued'){ valuation='Acima do fair value'; valuationClass='is-caution'; }
+    else if(valuationSignal==='fair'){ valuation='Próximo do fair value'; }
+    else if(valuationDelta!=null){
+      if(valuationDelta<=-15){ valuation='A desconto vs setor'; valuationClass='is-positive'; }
+      else if(valuationDelta>=20){ valuation='Com prémio vs setor'; valuationClass='is-caution'; }
+      else valuation='Em linha com o setor';
     }
     const watch=[];
     if(s.analyst_next_earnings_date) watch.push(`Próximo evento · ${shortDate(s.analyst_next_earnings_date)}`);
@@ -873,7 +874,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         <section><div class="market-case-label"><span>01</span> Porque interessa</div>${list(why)}</section>
         <section><div class="market-case-label"><span>02</span> O que pode correr bem</div>${list(catalysts)}</section>
         <section><div class="market-case-label"><span>03</span> O que pode quebrar a tese</div>${list(riskItems)}</section>
-        <section><div class="market-case-label"><span>04</span> Está caro ou barato?</div><div class="market-value-call ${valuationClass}">${esc(valuation)}</div><p class="market-case-note">Leitura relativa; não é um valor intrínseco.</p></section>
+        <section><div class="market-case-label"><span>04</span> Está caro ou barato?</div><div class="market-value-call ${valuationClass}">${esc(valuation)}</div><p class="market-case-note">Conclusão editorial; fair value, múltiplos e margens de segurança estão na tab Valuation.</p></section>
       </div>
       <div class="market-watchpoints"><div class="market-case-label"><span>05</span> O que vigiar</div>${watch.length?watch.slice(0,4).map(x=>`<span>${esc(x)}</span>`).join(''):'<p class="market-case-note">Sem evento ou alteração quantitativa relevante identificada.</p>'}</div>
     </div>`;
