@@ -109,6 +109,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]
         self.assertIn('O que o mercado está a descontar', block)
         self.assertIn('tab Perspetiva', block)
+        self.assertIn('tab Valuation', block)
         self.assertNotIn('market-dossier-expectations-grid', block)
         self.assertNotIn('Revisões EPS · 30d', block)
         self.assertNotIn('Target analistas', block)
@@ -251,6 +252,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('MARKET EXPECTATIONS', market)
         self.assertIn('O que o mercado está a descontar', market)
         self.assertIn('tab Perspetiva', block)
+        self.assertIn('tab Valuation', block)
         for token in ('analyst_eps_revisions_up_30d', 'estimate_momentum_score', 'fair_value_upside_pct'):
             self.assertIn(token, market)
         self.assertNotIn('market-dossier-expectations-grid', block)
