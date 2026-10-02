@@ -559,7 +559,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     escapeHtml: esc,
     isFund,
   }) || null;
-  function marketSearchMatches(query, limit=7){ return marketSearchSuggestions?.matches(query,limit) || []; }
   function hideSearchSuggestions(){ return marketSearchSuggestions?.hide(); }
   function renderSearchSuggestions(){ return marketSearchSuggestions?.render(); }
 
@@ -1076,10 +1075,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function sheetPanel(){ return $m('marketSheet')||null; }
-  function scrollDossierTop(){
-    const panel=sheetPanel(); if(!panel) return;
-    panel.scrollTo ? panel.scrollTo({top:0,left:0,behavior:'auto'}) : (panel.scrollTop=0);
-  }
   function resetDossierViewport(){
     const panel=sheetPanel(); if(!panel) return;
     panel.scrollTop=0; panel.scrollLeft=0;
