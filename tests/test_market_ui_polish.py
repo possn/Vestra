@@ -182,6 +182,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn("txt(s.data_confidence)||txt(s.score_reliability)", block)
 
 
+    def test_missing_risk_gate_is_not_assumed_clear(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function scoreRiskExplanation(s)', 1)[1].split('function scoreReliabilityLabel(value)', 1)[0]
+        self.assertIn("const gate=txt(s.risk_gate)", block)
+        self.assertNotIn("txt(s.risk_gate)||'clear'", block)
+        self.assertIn("if(!gate) return flags.length", block)
+        self.assertIn("Risk Gate não classificado", block)
+        self.assertIn("não classificado com a evidência atual", block)
+
+
     def test_score_explanation_does_not_recompute_unused_sorted_dimensions(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
