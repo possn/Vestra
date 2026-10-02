@@ -15,6 +15,14 @@ class MarketUiPolishContractTests(unittest.TestCase):
             self.assertNotIn(token, row)
 
 
+    def test_published_score_explanation_does_not_repeat_evidence_summary_strip(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
+        published = block.split("if(score==null)", 1)[1].split('return `<div class="market-detail-card market-score-explain">', 1)[1]
+        self.assertNotIn('<div class="market-action-context"><span>Cobertura', published)
+        self.assertIn('2 · Qualidade da evidência.', published)
+        self.assertIn('scoreEvidenceExplanation(s)', published)
+
     def test_score_explanation_does_not_repeat_top_level_score_or_rank_extremes(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
