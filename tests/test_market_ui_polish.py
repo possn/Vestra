@@ -136,6 +136,14 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('Trades Congresso', block)
 
 
+    def test_investment_case_header_does_not_repeat_first_evidence_fallback(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
+        self.assertIn("s.thesis_summary||'Síntese ainda limitada pelos dados disponíveis.'", block)
+        self.assertNotIn("s.thesis_summary||evidence[0]", block)
+        self.assertIn("const why=evidence.length?evidence.slice(0,3)", block)
+
+
     def test_market_expectations_top_level_is_summary_not_duplicate_grid(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function dossierExpectationsContext(s)', 1)[1].split('function dossierCatalystsRisks(s)', 1)[0]

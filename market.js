@@ -823,7 +823,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(!riskItems.length) riskItems.push('Sem risco específico suficientemente forte identificado pelo modelo; rever métricas e negócio antes de decidir.');
     const list=arr=>`<ul class="market-case-list">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
     return `<div class="market-case">
-      <div class="market-case__top"><div><small>INVESTMENT CASE</small><h4>${esc(s.thesis_type||'Leitura do ativo')}</h4><p>${esc(s.thesis_summary||evidence[0]||'Síntese ainda limitada pelos dados disponíveis.')}</p></div><span class="market-case__confidence">Confiança ${esc(txt(s.thesis_confidence)||'—')}</span></div>
+      <div class="market-case__top"><div><small>INVESTMENT CASE</small><h4>${esc(s.thesis_type||'Leitura do ativo')}</h4><p>${esc(s.thesis_summary||'Síntese ainda limitada pelos dados disponíveis.')}</p></div><span class="market-case__confidence">Confiança ${esc(txt(s.thesis_confidence)||'—')}</span></div>
       <div class="market-case-grid">
         <section><div class="market-case-label"><span>01</span> Porque interessa</div>${list(why)}</section>
         <section><div class="market-case-label"><span>02</span> O que pode correr bem</div>${list(catalysts)}</section>
