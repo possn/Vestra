@@ -855,16 +855,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       else if(valuationDelta>=20){valuation=`Prémio de ${valuationDelta.toFixed(0)}% vs setor`;valuationClass='is-caution';}
       else {valuation=`Próximo do setor (${valuationDelta>0?'+':''}${valuationDelta.toFixed(0)}%)`;}
     }
-    const upside=n(s.analyst_price_target_upside_pct), revUp=n(s.analyst_eps_revisions_up_30d)||0, revDown=n(s.analyst_eps_revisions_down_30d)||0;
     const watch=[];
-    if(s.analyst_next_earnings_date) watch.push(`Resultados · ${shortDate(s.analyst_next_earnings_date)}`);
-    if(revUp||revDown) watch.push(`Revisões EPS · ${revUp} ↑ / ${revDown} ↓`);
-    if(upside!=null) watch.push(`Target consenso · ${pct(upside)}`);
-    if(n(s.insider_buy_count_30d)>0||n(s.insider_sell_count_30d)>0) watch.push(`Insiders 30d · ${n(s.insider_buy_count_30d)||0} compras / ${n(s.insider_sell_count_30d)||0} vendas`);
-    if(txt(s.estimate_signal)==='improving') watch.push(`Expectativas a melhorar · ${n(s.estimate_momentum_score)==null?'—':Math.round(n(s.estimate_momentum_score))}/100`);
-    if(txt(s.estimate_signal)==='deteriorating') watch.push(`Expectativas a deteriorar · ${n(s.estimate_momentum_score)==null?'—':Math.round(n(s.estimate_momentum_score))}/100`);
+    if(s.analyst_next_earnings_date) watch.push(`Próximo evento · ${shortDate(s.analyst_next_earnings_date)}`);
     if(txt(s.thesis_direction)==='up') watch.push('Tese quantitativa a melhorar');
     if(txt(s.thesis_direction)==='down') watch.push('Tese quantitativa a piorar');
+    if(txt(s.estimate_signal)==='improving') watch.push('Expectativas a melhorar');
+    if(txt(s.estimate_signal)==='deteriorating') watch.push('Expectativas a piorar');
     const why=evidence.length?evidence.slice(0,3):[s.thesis_summary||'Ainda não existe evidência suficiente para resumir a tese.'];
     const catalystPool=[...estimateDrivers,...drivers];
     const catalysts=catalystPool.length?catalystPool.slice(0,3):[txt(s.thesis_evolution_summary)||'Sem catalisador quantitativo claro identificado nos dados atuais.'];
