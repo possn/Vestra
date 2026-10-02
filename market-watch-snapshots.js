@@ -150,9 +150,18 @@
     }
 
     function changePanel(stock) {
-      const changes = changeSignals(stock);
       const prev = previousFor(stock);
-      const label = prev ? `Desde ${formatShortDate(state.previousSnapshot?.generatedAt || state.previousSnapshot?.savedAt)}` : 'Sinais recentes';
+      let changes = [];
+      let label = '';
+      if (prev) {
+        changes = changeSignals(stock);
+        label = `Desde ${formatShortDate(state.previousSnapshot?.generatedAt || state.previousSnapshot?.savedAt)}`;
+      } else {
+        const delta7 = number(stock?.thesis_score_delta_7d);
+        if (delta7 == null || Math.abs(delta7) < 1) return '';
+        changes = [{ tone: delta7 > 0 ? 'up' : 'down', label: `Score 7d ${delta7 > 0 ? '+' : ''}${delta7.toFixed(1)}` }];
+        label = 'Últimos 7 dias';
+      }
       return `<div class="market-change-panel"><div class="market-change-panel__head"><div><small>O QUE MUDOU</small><h4>${escapeHtml(label)}</h4></div><span>${changes.length ? `${changes.length} ${changes.length === 1 ? 'alteração' : 'alterações'}` : 'Estável'}</span></div>${changes.length ? `<div class="market-change-list">${changes.map(signal => { const icon = signal.tone === 'up' ? '↗' : signal.tone === 'down' ? '↘' : signal.tone === 'event' ? '◷' : '•'; return `<div class="market-change-item market-change-item--${signal.tone}"><b>${icon}</b><span>${escapeHtml(signal.label)}</span></div>`; }).join('')}</div>` : '<p>Sem mudança material identificada desde a referência disponível.</p>'}</div>`;
     }
 
