@@ -32,6 +32,14 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('2 · Qualidade da evidência.', published)
         self.assertIn('scoreEvidenceExplanation(s)', published)
 
+    def test_detailed_pillar_metrics_do_not_repeat_top_level_percentiles_or_bars(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dimRows(s)', 1)[1].split('function scoreModelLabel', 1)[0]
+        self.assertIn('pillarMetricSummary(s,k)', block)
+        self.assertIn('market-dim--evidence-only', block)
+        self.assertNotIn('Math.round(v)', block)
+        self.assertNotIn('market-bar', block)
+
     def test_score_explanation_does_not_repeat_top_level_score_or_rank_extremes(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function scoreExplanation(s)', 1)[1].split('function shortDate(v)', 1)[0]
