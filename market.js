@@ -1327,7 +1327,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     // applies the user's current targets and overlap policy. Do not reintroduce
     // fixed thresholds here or the explanation can disagree with the decision.
     if(Array.isArray(ctx.flags)) reasons.push(...ctx.flags.slice(0,2));
-    const structuralDeterioration=gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50);
+    // Thesis direction and estimate momentum already belong to Conviction.
+    // Portfolio Action must not apply those signals a second time; Risk Gate
+    // remains an independent safety layer and portfolio context remains separate.
+    const structuralDeterioration=gate==='high'||gate==='severe'||(conviction!=null&&conviction<50);
     if(alt && alt.portfolioFit!=='worse' && structuralDeterioration) {
       const fitNote=alt.portfolioFit==='better'?' · melhora diversificação':'';
       return {key:'replace',label:'Substituir',tone:'risk',reason:`${reasons[0]||'convicção fraca'} · alternativa ${alt.to.ticker} superior${fitNote}`};
@@ -1725,22 +1728,18 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return {
       replace:r?.action?.key==='replace',
       gateRank:gate==='severe'?3:gate==='high'?2:gate==='watch'?1:0,
-      thesisDown:txt(r?.stock?.thesis_direction)==='down',
-      estimatesDown:txt(r?.stock?.estimate_signal)==='deteriorating',
       conviction:r?.conviction??999,
       value:n(r?.value)||0,
     };
   }
   function researchReviewSignalKey(r){
     const x=portfolioReviewSignals(r);
-    return [x.replace?'replace':'review',x.gateRank,x.thesisDown?1:0,x.estimatesDown?1:0,x.conviction<50?1:0].join('|');
+    return [x.replace?'replace':'review',x.gateRank,x.conviction<50?1:0].join('|');
   }
   function comparePortfolioReview(a,b){
     const x=portfolioReviewSignals(a), y=portfolioReviewSignals(b);
     return Number(y.replace)-Number(x.replace)
       ||y.gateRank-x.gateRank
-      ||Number(y.thesisDown)-Number(x.thesisDown)
-      ||Number(y.estimatesDown)-Number(x.estimatesDown)
       ||x.conviction-y.conviction
       ||y.value-x.value;
   }
@@ -1923,7 +1922,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
     const rebalSourceRows=actionRows.filter(r=>r.value>0&&r.conviction!=null).slice().sort((a,b)=>(a.conviction??999)-(b.conviction??999));
     const defaultSource=rebalSourceRows[0]||null;
-    const rebalancerHtml=defaultSource?`<div class="market-detail-card market-rebalancer" data-rebalancer-card><div class="market-perspective-head"><div><small>ASSISTED REBALANCER</small><h4>Onde melhora mais este capital?</h4></div><span class="market-data-age">simulação</span></div><p class="market-case-note">Escolhe a posição de origem e o montante. A Vestra mantém o valor total da carteira e compara destinos elegíveis por convicção, concentração, overlap e valuation.</p><div class="market-rebalancer-controls"><label><span>Libertar de</span><select data-rebalance-source>${rebalSourceRows.map(r=>`<option value="${esc(r.stock.ticker)}">${esc(r.stock.ticker)} · ${euro(r.value)} · conv. ${Math.round(r.conviction)}</option>`).join('')}</select></label><label><span>Montante</span><input data-rebalance-amount type="number" min="1" max="${Math.max(1,Math.floor(defaultSource.value))}" step="1" value="${Math.max(1,Math.min(1000,Math.round(defaultSource.value)||1))}"></label><button type="button" data-rebalance-run>Simular</button></div><div class="market-rebalancer-results" data-rebalance-results><p class="market-case-note">Toca em Simular para comparar os melhores destinos.</p></div><p class="market-case-note">Research assistido; não considera fiscalidade, custos de transação, liquidez pessoal ou ordens reais.</p></div>`:'';
+    const rebalancerHtml=defaultSource?`<div class="market-detail-card market-rebalancer" data-rebalancer-card><div class="market-perspective-head"><div><small>ASSISTED REBALANCER</small><h4>Onde melhora mais este capital?</h4></div><span class="market-data-age">simulação</span></div><p class="market-case-note">Escolhe a posição de origem e o montante. A Vestra mantém o valor total da carteira e compara destinos elegíveis por convicção, concentração, overlap e Risk Budget.</p><div class="market-rebalancer-controls"><label><span>Libertar de</span><select data-rebalance-source>${rebalSourceRows.map(r=>`<option value="${esc(r.stock.ticker)}">${esc(r.stock.ticker)} · ${euro(r.value)} · conv. ${Math.round(r.conviction)}</option>`).join('')}</select></label><label><span>Montante</span><input data-rebalance-amount type="number" min="1" max="${Math.max(1,Math.floor(defaultSource.value))}" step="1" value="${Math.max(1,Math.min(1000,Math.round(defaultSource.value)||1))}"></label><button type="button" data-rebalance-run>Simular</button></div><div class="market-rebalancer-results" data-rebalance-results><p class="market-case-note">Toca em Simular para comparar os melhores destinos.</p></div><p class="market-case-note">Research assistido; não considera fiscalidade, custos de transação, liquidez pessoal ou ordens reais.</p></div>`:'';
     const targets=loadPortfolioTargets();
     const targetPositionBreaches=ranked.map(r=>({ticker:r.stock.ticker,pct:r.value/portfolioBase*100})).filter(x=>x.pct>targets.maxPosition).sort((a,b)=>b.pct-a.pct);
     const targetSectorBreaches=sectorRows.filter(x=>x.pct>targets.maxSector);
@@ -1956,7 +1955,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const healthHistory=savePortfolioHealthSnapshot(healthSnapshot);
     const healthTimelineHtml=renderPortfolioHealthTimeline(healthHistory);
     const targetHtml=`<div class="market-detail-card market-target-engine" data-target-engine><div class="market-perspective-head"><div><small>PORTFOLIO TARGETS</small><h4>Objetivos da carteira</h4></div><span class="market-data-age">guardado localmente</span></div><p class="market-case-note">Estes objetivos passam a orientar o Rebalancer e o plano multi-movimento. Não alteram a carteira por si só.</p><div class="market-target-grid"><label><span>Máx. por posição</span><div><input data-target-position type="number" min="3" max="30" step="1" value="${targets.maxPosition}"><em>%</em></div></label><label><span>Máx. por setor</span><div><input data-target-sector type="number" min="10" max="60" step="1" value="${targets.maxSector}"><em>%</em></div></label><label><span>Máx. fator</span><div><input data-target-factor type="number" min="20" max="80" step="5" value="${targets.maxFactor}"><em>%</em></div></label><label><span>Máx. moeda</span><div><input data-target-currency type="number" min="30" max="100" step="5" value="${targets.maxCurrency}"><em>%</em></div></label><label><span>Máx. região</span><div><input data-target-region type="number" min="30" max="100" step="5" value="${targets.maxRegion}"><em>%</em></div></label><label><span>Overlap ETF</span><select data-target-overlap><option value="reduce" ${targets.overlap==='reduce'?'selected':''}>Reduzir</option><option value="neutral" ${targets.overlap==='neutral'?'selected':''}>Neutro</option></select></label><label><span>Prioridade</span><select data-target-tilt><option value="balanced" ${targets.tilt==='balanced'?'selected':''}>Equilibrado</option><option value="quality" ${targets.tilt==='quality'?'selected':''}>Quality</option><option value="growth" ${targets.tilt==='growth'?'selected':''}>Growth</option><option value="dividend" ${targets.tilt==='dividend'?'selected':''}>Dividendos</option></select></label></div><button type="button" class="market-plan-run" data-target-save>Guardar objetivos</button><span class="market-target-status" data-target-status></span></div>`;
-    const freshCapitalHtml=`<div class="market-detail-card market-fresh-capital" data-fresh-capital-card><div class="market-perspective-head"><div><small>FRESH CAPITAL PLANNER</small><h4>Entrou capital novo. Onde reforçar?</h4></div><span class="market-data-age">sem vendas</span></div><p class="market-case-note">Distribui novo capital por até 3 destinos elegíveis, respeitando os Portfolio Targets e sem vender posições existentes.</p><div class="market-fresh-controls"><label><span>Novo capital</span><div><input data-fresh-amount type="number" min="50" step="50" value="1000"><em>€</em></div></label><button type="button" data-fresh-run>Distribuir</button></div><div data-fresh-results><p class="market-case-note">A simulação privilegia convicção, margem de segurança, espaço dentro dos limites e a prioridade da carteira.</p></div></div>`;
+    const freshCapitalHtml=`<div class="market-detail-card market-fresh-capital" data-fresh-capital-card><div class="market-perspective-head"><div><small>FRESH CAPITAL PLANNER</small><h4>Entrou capital novo. Onde reforçar?</h4></div><span class="market-data-age">sem vendas</span></div><p class="market-case-note">Distribui novo capital por até 3 destinos elegíveis, respeitando os Portfolio Targets e sem vender posições existentes.</p><div class="market-fresh-controls"><label><span>Novo capital</span><div><input data-fresh-amount type="number" min="50" step="50" value="1000"><em>€</em></div></label><button type="button" data-fresh-run>Distribuir</button></div><div data-fresh-results><p class="market-case-note">A simulação privilegia convicção, espaço dentro dos limites, overlap e a prioridade da carteira.</p></div></div>`;
     const planHtml=`<div class="market-detail-card market-rebalance-plan" data-rebalance-plan-card><div class="market-perspective-head"><div><small>MULTI-MOVE PLAN · TARGET AWARE</small><h4>Plano de rebalanceamento</h4></div><span class="market-data-age">até 3 movimentos</span></div><p class="market-case-note">Gera um plano a partir das posições mais frágeis e respeita os objetivos guardados acima.</p><button type="button" class="market-plan-run" data-rebalance-plan>Gerar plano</button><div data-rebalance-plan-results><p class="market-case-note">Nenhuma alteração é aplicada à carteira.</p></div></div>`;
     const concentratedCount=ranked.filter(r=>r.portfolioFit?.fit==='concentrated').length;
     const overlapCount=ranked.filter(r=>(r.portfolioFit?.indirectPct||0)>=2).length;
@@ -1999,19 +1998,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const sourceSignals=r=>{
       const gate=txt(r.stock.risk_gate), positionPct=r.value/totalValue*100, sectorKey=txt(r.stock.sector), sectorPct=sectorKey?(sectors.get(sectorKey)||0)/totalValue*100:0;
       const gateRank=gate==='severe'?3:gate==='high'?2:gate==='watch'?1:0;
-      const thesisDown=txt(r.stock.thesis_direction)==='down';
-      const estimatesDown=txt(r.stock.estimate_signal)==='deteriorating';
       const positionExcess=Math.max(0,positionPct-maxPosition);
       const sectorExcess=Math.max(0,sectorPct-maxSector);
       const lowConviction=r.conviction<55;
-      const pressured=gateRank>0||thesisDown||estimatesDown||positionExcess>0||sectorExcess>0||lowConviction;
-      return {gateRank,thesisDown,estimatesDown,positionExcess,sectorExcess,lowConviction,pressured};
+      // Source pressure is portfolio context + independent Risk Gate + canonical
+      // Conviction. Thesis/estimate signals must not be re-applied here.
+      const pressured=gateRank>0||positionExcess>0||sectorExcess>0||lowConviction;
+      return {gateRank,positionExcess,sectorExcess,lowConviction,pressured};
     };
     const planSources=rows.filter(r=>!isFund(r.stock)&&n(r.stock.score)!=null&&n(r.stock.confidence_score)!=null);
     const sources=planSources.map(r=>({...r,sourceSignals:sourceSignals(r)})).filter(r=>r.sourceSignals.pressured).sort((a,b)=>
       b.sourceSignals.gateRank-a.sourceSignals.gateRank
-      ||Number(b.sourceSignals.thesisDown)-Number(a.sourceSignals.thesisDown)
-      ||Number(b.sourceSignals.estimatesDown)-Number(a.sourceSignals.estimatesDown)
       ||b.sourceSignals.positionExcess-a.sourceSignals.positionExcess
       ||b.sourceSignals.sectorExcess-a.sourceSignals.sectorExcess
       ||a.conviction-b.conviction
