@@ -90,9 +90,9 @@ class LearnedUniversePipelineTests(unittest.TestCase):
 
     def test_run_pipeline_fetches_learned_names_before_other_portfolio_names(self):
         source = (ROOT / "scripts" / "run.py").read_text(encoding="utf-8")
-        learned = source.index("raw_learned = fetch_many(learned_tickers, workers_override=1, retries=3")
-        portfolio = source.index("raw_portfolio = fetch_many(portfolio_remainder, workers_override=3, retries=2")
-        remainder = source.index("raw_remainder = fetch_many(remainder_refresh, retries=1)")
+        learned = source.index("raw_learned = fetch_many(learned_tickers, workers_override=1, retries=2")
+        portfolio = source.index("raw_portfolio = fetch_many(portfolio_refresh, workers_override=2, retries=1")
+        remainder = source.index("raw_remainder = fetch_many(remainder_refresh, retries=0)")
         self.assertLess(learned, portfolio)
         self.assertLess(portfolio, remainder)
         self.assertIn("missing_learned = [t for t in learned_tickers if t not in scored_now]", source)
