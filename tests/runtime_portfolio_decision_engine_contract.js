@@ -70,7 +70,7 @@ vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
 
 const conviction = stock => context.portfolioConviction(stock);
-assert.strictEqual(conviction({ score: 80, estimate_momentum_score: 70, valuation_signal: 'fair', thesis_direction: 'flat' }), 76.1, 'conviction must keep fixed 70/12/18 weights');
+assert(Math.abs(conviction({ score: 80, estimate_momentum_score: 70, valuation_signal: 'fair', thesis_direction: 'flat' }) - 76.1) < 1e-9, 'conviction must keep fixed 70/12/18 weights');
 assert.strictEqual(conviction({ score: 80, thesis_direction: 'flat' }), 71, 'missing secondary signals must be neutral, not silently renormalised');
 assert.strictEqual(conviction({ score: null, estimate_momentum_score: 90, valuation_signal: 'undervalued' }), null, 'conviction requires canonical Vestra Score');
 assert.strictEqual(
