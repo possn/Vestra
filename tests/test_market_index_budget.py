@@ -20,7 +20,18 @@ def load_builder():
 def test_market_index_has_explicit_mobile_budget():
     m = load_builder()
     assert m.MAX_INDEX_BYTES == 7_500_000
+    assert m.MAX_INDEX_HARD_BYTES == 9_000_000
+    assert m.MAX_INDEX_BYTES < m.MAX_INDEX_HARD_BYTES
     assert m.MAX_INDEX_RATIO == 0.15
+
+
+def test_legacy_index_soft_overage_does_not_block_compact_market_publish():
+    source = BUILDER.read_text(encoding="utf-8")
+    assert "if idx_size > MAX_INDEX_HARD_BYTES:" in source
+    assert "if idx_size > MAX_INDEX_BYTES:" in source
+    advisory = source.split("if idx_size > MAX_INDEX_BYTES:", 1)[1].split("if src_size > 0", 1)[0]
+    assert "WARNING: legacy market index exceeds advisory budget" in advisory
+    assert "raise RuntimeError" not in advisory
 
 
 def test_detail_only_thesis_copy_does_not_enter_startup_row():
