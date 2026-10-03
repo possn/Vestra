@@ -159,6 +159,43 @@ def _load_learned_tickers() -> list[str]:
         return []
 
 
+def _select_nonpriority_refresh(tickers, previous_rows, budget, *, today=None):
+    """Select a bounded daily refresh slice while prioritising uncached names.
+
+    Portfolio/search-priority names are handled separately and always refresh.
+    This selector is only for the broad non-priority universe. Names without a
+    usable prior snapshot are refreshed first; the remaining cached universe is
+    covered by a deterministic daily rotation so every name is revisited without
+    hammering Yahoo with the full catalogue on every canonical rebuild.
+    """
+    tickers = list(dict.fromkeys(tickers))
+    budget = max(0, int(budget))
+    if budget <= 0 or len(tickers) <= budget:
+        return tickers
+
+    previous_rows = previous_rows or {}
+    missing = [
+        t for t in tickers
+        if t not in previous_rows
+        or (previous_rows.get(t) or {}).get("pipeline_status") in {"metadata_only", "equity_catalog_only", "catalog_only"}
+    ]
+    selected = list(missing[:budget])
+    slots = budget - len(selected)
+    if slots <= 0:
+        return selected
+
+    cached = [t for t in tickers if t not in set(selected)]
+    if len(cached) <= slots:
+        selected.extend(cached)
+        return selected
+
+    today = today or datetime.date.today()
+    start = ((today.toordinal() * slots) % len(cached)) if cached else 0
+    rotated = cached[start:] + cached[:start]
+    selected.extend(rotated[:slots])
+    return selected
+
+
 def main():
     # Preserve previously enriched ETF catalogue rows. The wider fund universe is
     # refreshed in rotation, so a name not fetched today should keep yesterday's
@@ -193,9 +230,19 @@ def main():
     learned_set = set(learned_tickers)
     portfolio_remainder = [t for t in portfolio_tickers if t not in learned_set]
     remainder_tickers = [t for t in all_tickers if t not in portfolio_set]
+    previous_rows = dict(previous_equities)
+    previous_rows.update(previous_etfs)
+    nonpriority_budget = max(1, int(os.getenv("FINSCANNER_FUNDAMENTALS_NONPRIORITY_REFRESH", "450")))
+    remainder_refresh = _select_nonpriority_refresh(
+        remainder_tickers,
+        previous_rows,
+        nonpriority_budget,
+    )
     log.info(
-        "Total universe: %d tickers (%d learned-priority, %d other portfolio-priority)",
+        "Total universe: %d tickers (%d learned-priority, %d other portfolio-priority); "
+        "non-priority fundamentals refresh %d/%d",
         len(all_tickers), len(learned_tickers), len(portfolio_remainder),
+        len(remainder_refresh), len(remainder_tickers),
     )
 
     if not all_tickers:
@@ -210,7 +257,7 @@ def main():
 
     # Fetch the user's remaining holdings next, then the broad universe.
     raw_portfolio = fetch_many(portfolio_remainder, workers_override=3, retries=2, pause=0.05)
-    raw_remainder = fetch_many(remainder_tickers, retries=1)
+    raw_remainder = fetch_many(remainder_refresh, retries=1)
     raw_by_symbol = {r.ticker: r for r in raw_remainder}
     raw_by_symbol.update({r.ticker: r for r in raw_portfolio})
     raw_by_symbol.update({r.ticker: r for r in raw_learned})
@@ -455,7 +502,11 @@ def main():
             carried["industry"] = meta.get("industry") or carried.get("industry")
             carried["stock_theme"] = meta.get("theme") or carried.get("stock_theme")
             carried["region"] = meta.get("region") or carried.get("region") or region_for_equity(ticker)
-            carried["pipeline_status"] = "equity_carried_forward"
+            _hist = insider_price_map.get(ticker) or carried.get("price_history_1y") or []
+            carried["price_history_1y"] = _hist
+            if _hist:
+                carried["current_price"] = _hist[-1].get("close")
+            carried["pipeline_status"] = "equity_carried_forward_rotating"
             rows.append(carried)
             continue
         if meta:
