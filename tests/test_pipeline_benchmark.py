@@ -33,11 +33,24 @@ class PipelineBenchmarkTests(unittest.TestCase):
         )
         self.assertIsNone(out["fetches"][-1]["duration_seconds"])
 
+    def test_stage_markers_are_summarised(self):
+        log = """2026-10-03 08:00:00,000 INFO run: PIPELINE_STAGE start fundamentals
+2026-10-03 08:02:10,000 INFO run: PIPELINE_STAGE done fundamentals elapsed=130.0s
+2026-10-03 08:02:10,010 INFO run: PIPELINE_STAGE start pre_score_enrichment
+2026-10-03 08:03:40,000 INFO run: PIPELINE_STAGE done pre_score_enrichment elapsed=89.9s
+"""
+        out = summarise(log)
+        self.assertEqual(out["stage_durations_seconds"]["fundamentals"], 130.0)
+        self.assertEqual(out["stage_durations_seconds"]["pre_score_enrichment"], 89.9)
+        self.assertEqual(out["pipeline_stage_total_seconds"], 219.9)
+
     def test_missing_markers_stay_null_instead_of_zero(self):
         out = summarise("2026-09-03 08:00:00,000 INFO run: hello\n")
         self.assertIsNone(out["broad_fetch"])
         self.assertIsNone(out["analyst_duration_seconds"])
         self.assertIsNone(out["insider_duration_seconds"])
+        self.assertIsNone(out["pipeline_stage_total_seconds"])
+        self.assertEqual(out["stage_durations_seconds"], {})
         self.assertEqual(out["rate_limit_log_events"], 0)
 
 
