@@ -29,10 +29,10 @@ concurrency:
 jobs:
   update-data:
     runs-on: ubuntu-latest
-    # The complete universe plus SEC/ESEF/Yahoo fallbacks can legitimately
-    # exceed the old 55-minute budget. A job timeout kills the runner before
-    # diagnostics can be persisted, so allow a complete evidence-gated rebuild.
-    timeout-minutes: 120
+    # The canonical rebuild is intentionally bounded. Slow evidence lanes rotate
+    # and cached rows carry forward, so a run that approaches 45 minutes is no
+    # longer normal work — it is a regression or upstream incident.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,7 +75,16 @@ jobs:
         working-directory: scripts
         env:
           FINSCANNER_FETCH_WORKERS: "2"
+          FINSCANNER_FUNDAMENTALS_PORTFOLIO_REFRESH: "140"
+          FINSCANNER_FUNDAMENTALS_NONPRIORITY_REFRESH: "180"
+          FINSCANNER_ESEF_NONPRIORITY_REFRESH: "60"
+          FINSCANNER_GAP_REFRESH: "80"
+          FINSCANNER_QUARTERLY_GAP_REFRESH: "80"
+          FINSCANNER_ANALYST_PRIORITY_REFRESH: "100"
+          FINSCANNER_ANALYST_NONPRIORITY_REFRESH: "80"
           FINSCANNER_ANALYST_ENDPOINT_CONCURRENCY: "2"
+          FINSCANNER_CAPITAL_RISK_PRIORITY_REFRESH: "80"
+          FINSCANNER_CAPITAL_RISK_NONPRIORITY_REFRESH: "30"
         run: python run_market_pipeline.py
 
       - name: Normalize canonical source provenance
