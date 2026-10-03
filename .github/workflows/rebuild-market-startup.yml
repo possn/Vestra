@@ -21,8 +21,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: rebuild-market-startup
-  cancel-in-progress: true
+  group: market-data-publish
+  cancel-in-progress: false
 
 jobs:
   rebuild-startup:
