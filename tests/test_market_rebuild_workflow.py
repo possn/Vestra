@@ -11,6 +11,23 @@ class MarketRebuildWorkflowTests(unittest.TestCase):
         self.assertIn("group: market-data-publish", source)
         self.assertIn("cancel-in-progress: false", source)
 
+    def test_canonical_rebuild_is_bounded(self):
+        source = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("timeout-minutes: 45", source)
+        expected = {
+            'FINSCANNER_FUNDAMENTALS_PORTFOLIO_REFRESH: "140"',
+            'FINSCANNER_FUNDAMENTALS_NONPRIORITY_REFRESH: "180"',
+            'FINSCANNER_ESEF_NONPRIORITY_REFRESH: "60"',
+            'FINSCANNER_GAP_REFRESH: "80"',
+            'FINSCANNER_QUARTERLY_GAP_REFRESH: "80"',
+            'FINSCANNER_ANALYST_PRIORITY_REFRESH: "100"',
+            'FINSCANNER_ANALYST_NONPRIORITY_REFRESH: "80"',
+            'FINSCANNER_CAPITAL_RISK_PRIORITY_REFRESH: "80"',
+            'FINSCANNER_CAPITAL_RISK_NONPRIORITY_REFRESH: "30"',
+        }
+        for item in expected:
+            self.assertIn(item, source)
+
     def test_production_preflight_compiles_current_runtime_layers(self):
         source = WORKFLOW.read_text(encoding="utf-8")
         required = (
