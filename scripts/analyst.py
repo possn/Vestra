@@ -381,19 +381,19 @@ def _cached_copy(snapshot: dict[str, Any], state: str, now: datetime) -> dict[st
 
 
 def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> dict[str, dict[str, Any]]:
-    """Refresh priority analyst evidence and rotate the rest of the universe.
+    """Refresh analyst evidence incrementally, with priority-first rotation.
 
-    Portfolio/priority names are refreshed on every run. Non-priority names are
-    refreshed from a bounded rotating budget ordered by missing/stale snapshots
-    and then by score/market cap. Recent validated snapshots are carried forward
-    for a short TTL so reducing Yahoo request pressure does not make dossiers
-    oscillate between rich data and ``not_requested``. Cached analyst evidence is
-    contextual only and never enters the core score.
+    Priority names remain first-class: any missing/expired priority snapshot is
+    always refreshed. Recent validated priority snapshots are carried forward and
+    only a bounded slice is refreshed on each rebuild. Non-priority names use a
+    smaller rotating budget. Analyst evidence is contextual only and never enters
+    the core score, so this reduces Yahoo pressure without changing score semantics.
     """
     priority_tickers = set(priority_tickers or set())
     equities = [r for r in rows if r.get("quote_type") != "ETF" and r.get("ticker")]
     max_rows = max(50, int(os.getenv("FINSCANNER_ANALYST_MAX", "800")))
-    nonpriority_budget = max(0, int(os.getenv("FINSCANNER_ANALYST_NONPRIORITY_REFRESH", "220")))
+    priority_budget = max(0, int(os.getenv("FINSCANNER_ANALYST_PRIORITY_REFRESH", "140")))
+    nonpriority_budget = max(0, int(os.getenv("FINSCANNER_ANALYST_NONPRIORITY_REFRESH", "120")))
     max_cache_age = max(1.0, float(os.getenv("FINSCANNER_ANALYST_CACHE_MAX_AGE_DAYS", "14")))
     now = datetime.now(timezone.utc)
     previous = _load_previous_snapshots()
@@ -415,10 +415,16 @@ def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> di
             str(ticker),
         )
 
+    priority_due = [r for r in priority if not _cacheable(previous.get(r.get("ticker")), max_cache_age, now=now)]
+    priority_cached = [r for r in priority if _cacheable(previous.get(r.get("ticker")), max_cache_age, now=now)]
+    priority_cached.sort(key=rotation_key, reverse=True)
+    priority_extra_slots = max(0, priority_budget - len(priority_due))
+    priority_targets = priority_due + priority_cached[:priority_extra_slots]
+
     other.sort(key=rotation_key, reverse=True)
-    available_slots = max(0, max_rows - len(priority))
+    available_slots = max(0, max_rows - len(priority_targets))
     refresh_slots = min(nonpriority_budget, available_slots)
-    targets = priority + other[:refresh_slots]
+    targets = priority_targets + other[:refresh_slots]
 
     dedup = {}
     for r in targets:
@@ -428,8 +434,10 @@ def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> di
 
     workers = max(1, min(12, int(os.getenv("FINSCANNER_ANALYST_WORKERS", "8"))))
     log.info(
-        "Analyst intelligence: refreshing %d/%d equities (%d priority, %d rotating), workers=%d; previous usable snapshots=%d",
-        len(targets), len(equities), len(priority), max(0, len(targets) - len(priority)), workers,
+        "Analyst intelligence: refreshing %d/%d equities (%d priority due, %d priority rotation, %d nonpriority rotation), workers=%d; previous usable snapshots=%d",
+        len(targets), len(equities), len(priority_due),
+        max(0, len(priority_targets) - len(priority_due)),
+        max(0, len(targets) - len(priority_targets)), workers,
         sum(_cacheable(v, max_cache_age, now=now) for v in previous.values()),
     )
 
@@ -473,3 +481,4 @@ def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> di
     if carried:
         log.info("Analyst intelligence: carried %d recent validated snapshots without Yahoo refresh", carried)
     return out
+
