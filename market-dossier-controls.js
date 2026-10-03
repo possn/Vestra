@@ -45,16 +45,23 @@
   function syncPortal(sheet) {
     const portal = ensurePortal();
     const ticker = String(sheet?.dataset?.ticker || '').trim().toUpperCase();
-    const visible = Boolean(sheet && !sheet.hidden && ticker);
+    const visible = Boolean(sheet && !sheet.hidden);
     portal.hidden = !visible;
+    portal.classList.toggle('market-dossier-action-portal--tool', visible && !ticker);
     if (!visible) return;
 
     const original = sheet.querySelector(':scope > .market-watch--detail');
     const watch = portal.querySelector('[data-portal-watch]');
-    const active = original?.classList.contains('is-active');
+    const hasWatchTarget = Boolean(ticker && original);
+    watch.classList.toggle('is-unavailable', !hasWatchTarget);
+    watch.setAttribute('aria-hidden', hasWatchTarget ? 'false' : 'true');
+    watch.tabIndex = hasWatchTarget ? 0 : -1;
+    if (!hasWatchTarget) return;
+
+    const active = original.classList.contains('is-active');
     watch.textContent = active ? '★' : '☆';
     watch.classList.toggle('is-active', Boolean(active));
-    watch.setAttribute('aria-label', original?.getAttribute('aria-label') || (active ? 'Remover da lista' : 'Guardar para acompanhar'));
+    watch.setAttribute('aria-label', original.getAttribute('aria-label') || (active ? 'Remover da lista' : 'Guardar para acompanhar'));
   }
 
   function closeMarketSheet(event) {
@@ -131,7 +138,7 @@
   else start();
 
   window.VestraMarketDossierControls = Object.freeze({
-    version: '2.0',
+    version: '2.1',
     closeMarketSheet,
     installStyle,
     normalizeButtons,
