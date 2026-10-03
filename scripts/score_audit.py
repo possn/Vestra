@@ -111,22 +111,27 @@ def spearman_pairs(pairs):
 
 
 def weighted_dimensions(dimensions, weights):
-    parts = []
-    for name, weight in weights.items():
-        value = num((dimensions or {}).get(name))
-        if value is not None:
-            parts.append((value, weight))
-    if not parts:
+    observed = [
+        num((dimensions or {}).get(name))
+        for name in weights
+    ]
+    if not any(value is not None for value in observed):
         return None
-    total = sum(w for _, w in parts)
-    return sum(v * w for v, w in parts) / total if total else None
+    total = sum(weights.values())
+    if total <= 0:
+        return None
+    return sum(
+        (50.0 if num((dimensions or {}).get(name)) is None else num((dimensions or {}).get(name))) * weight
+        for name, weight in weights.items()
+    ) / total
 
 
 def effective_weight_profile(dimensions, weights):
-    """Describe how missing dimensions change the effective weight pack.
+    """Describe fixed-weight missing-data handling.
 
-    Production deliberately renormalizes over observed dimensions. This helper
-    does not change scoring; it makes the resulting concentration measurable.
+    Missing dimensions keep their nominal weight and contribute neutral 50.
+    The observed dimensions therefore never inherit extra weight from missing
+    evidence; coverage remains visible as a separate evidence property.
     """
     nominal_total = sum(weights.values())
     present = {
@@ -134,23 +139,33 @@ def effective_weight_profile(dimensions, weights):
         if num((dimensions or {}).get(name)) is not None
     }
     present_total = sum(present.values())
-    if nominal_total <= 0 or present_total <= 0:
+    if nominal_total <= 0:
         return {
             "nominal_weight_sum": nominal_total,
             "present_weight_sum": 0.0,
             "missing_weight_pct": 100.0,
-            "renormalization_factor": None,
-            "max_effective_dimension_share": None,
-            "dominant_dimension": None,
+            "neutral_fill_weight_pct": 100.0,
+            "max_observed_dimension_share": None,
+            "dominant_observed_dimension": None,
+        }
+    missing_pct = max(0.0, (nominal_total - present_total) / nominal_total * 100.0)
+    if not present:
+        return {
+            "nominal_weight_sum": nominal_total,
+            "present_weight_sum": 0.0,
+            "missing_weight_pct": missing_pct,
+            "neutral_fill_weight_pct": missing_pct,
+            "max_observed_dimension_share": None,
+            "dominant_observed_dimension": None,
         }
     dominant = max(present.items(), key=lambda item: item[1])
     return {
         "nominal_weight_sum": nominal_total,
         "present_weight_sum": present_total,
-        "missing_weight_pct": max(0.0, (nominal_total - present_total) / nominal_total * 100.0),
-        "renormalization_factor": nominal_total / present_total,
-        "max_effective_dimension_share": dominant[1] / present_total,
-        "dominant_dimension": dominant[0],
+        "missing_weight_pct": missing_pct,
+        "neutral_fill_weight_pct": missing_pct,
+        "max_observed_dimension_share": dominant[1] / nominal_total,
+        "dominant_observed_dimension": dominant[0],
     }
 
 
@@ -254,17 +269,12 @@ def model_audit(model, rows):
     row_weight_profiles = list(zip(rows, weight_profiles))
     missing_weights = [x["missing_weight_pct"] for x in weight_profiles]
     dominant_shares = [
-        x["max_effective_dimension_share"]
+        x["max_observed_dimension_share"]
         for x in weight_profiles
-        if x["max_effective_dimension_share"] is not None
-    ]
-    renorm_factors = [
-        x["renormalization_factor"]
-        for x in weight_profiles
-        if x["renormalization_factor"] is not None
+        if x["max_observed_dimension_share"] is not None
     ]
     dominant_counts = Counter(
-        x["dominant_dimension"] for x in weight_profiles if x["dominant_dimension"]
+        x["dominant_observed_dimension"] for x in weight_profiles if x["dominant_observed_dimension"]
     )
     return {
         "score_model": model,
@@ -286,7 +296,8 @@ def model_audit(model, rows):
         ],
         "effective_dimension_count_distribution": dict(sorted(effective.items())),
         "weight_pack_sum": round(sum(weights.values()), 6),
-        "missing_weight_renormalization": {
+        "missing_weight_handling": {
+            "policy": "fixed_weights_neutral_50",
             "mean_missing_weight_pct": round(mean(missing_weights) or 0, 2),
             "max_missing_weight_pct": round(max(missing_weights), 2) if missing_weights else 0.0,
             "rows_missing_at_least_20pct_weight": sum(1 for x in missing_weights if x >= 20),
@@ -305,11 +316,9 @@ def model_audit(model, rows):
                 and num(row.get("score")) is not None
                 and str(row.get("score_reliability") or "") == "robust"
             ),
-            "mean_renormalization_factor": round(mean(renorm_factors) or 0, 4),
-            "max_renormalization_factor": round(max(renorm_factors), 4) if renorm_factors else None,
-            "mean_max_effective_dimension_share_pct": round((mean(dominant_shares) or 0) * 100, 2),
-            "max_effective_dimension_share_pct": round(max(dominant_shares) * 100, 2) if dominant_shares else None,
-            "dominant_dimension_counts": dict(dominant_counts.most_common()),
+            "mean_max_observed_dimension_share_pct": round((mean(dominant_shares) or 0) * 100, 2),
+            "max_observed_dimension_share_pct": round(max(dominant_shares) * 100, 2) if dominant_shares else None,
+            "dominant_observed_dimension_counts": dict(dominant_counts.most_common()),
         },
         "dimension_correlations": correlations,
         "weight_sensitivity": sensitivity,
@@ -367,30 +376,30 @@ def main():
                 "severity": "investigate",
                 "dimensions": structural,
             })
-        renorm = model.get("missing_weight_renormalization") or {}
-        if renorm.get("rows_missing_at_least_35pct_weight", 0):
+        missing = model.get("missing_weight_handling") or {}
+        if missing.get("rows_missing_at_least_35pct_weight", 0):
             flags.append({
-                "type": "missing_data_renormalization",
+                "type": "missing_data_neutralization",
                 "score_model": model["score_model"],
                 "severity": "investigate",
-                "rows": renorm["rows_missing_at_least_35pct_weight"],
-                "max_missing_weight_pct": renorm.get("max_missing_weight_pct"),
+                "rows": missing["rows_missing_at_least_35pct_weight"],
+                "max_missing_weight_pct": missing.get("max_missing_weight_pct"),
             })
-        if renorm.get("published_rows_missing_at_least_35pct_weight", 0):
+        if missing.get("published_rows_missing_at_least_35pct_weight", 0):
             flags.append({
-                "type": "published_score_under_heavy_renormalization",
+                "type": "published_score_with_heavy_missing_weight",
                 "score_model": model["score_model"],
                 "severity": "investigate",
-                "published_rows": renorm["published_rows_missing_at_least_35pct_weight"],
-                "robust_rows": renorm.get("robust_rows_missing_at_least_35pct_weight", 0),
+                "published_rows": missing["published_rows_missing_at_least_35pct_weight"],
+                "robust_rows": missing.get("robust_rows_missing_at_least_35pct_weight", 0),
             })
-        elif renorm.get("rows_missing_at_least_20pct_weight", 0):
+        elif missing.get("rows_missing_at_least_20pct_weight", 0):
             flags.append({
-                "type": "missing_data_renormalization",
+                "type": "missing_data_neutralization",
                 "score_model": model["score_model"],
                 "severity": "review",
-                "rows": renorm["rows_missing_at_least_20pct_weight"],
-                "max_missing_weight_pct": renorm.get("max_missing_weight_pct"),
+                "rows": missing["rows_missing_at_least_20pct_weight"],
+                "max_missing_weight_pct": missing.get("max_missing_weight_pct"),
             })
         rho = model.get("raw_vs_reconstructed_rank_spearman")
         if rho is not None and rho < .98:
@@ -400,7 +409,7 @@ def main():
         flags.append({"type": "sector_concentration", "severity": "review", "sectors": [x["sector"] for x in skewed]})
 
     out = {
-        "schema_version": 5,
+        "schema_version": 6,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "rows_analysed": len(rows),
         "methodology": {
@@ -409,7 +418,7 @@ def main():
             "weight_perturbations": [.5, .8, 1.2, 1.5],
             "redundancy_threshold": "absolute Spearman >= 0.75",
             "material_sensitivity": "rank Spearman < 0.95 or top-decile Jaccard < 0.75",
-            "missing_weight_renormalization": "measure nominal weight absent per row, the largest effective dimension share after production-style renormalization, and whether heavily renormalized rows still publish a score",
+            "missing_weight_handling": "production keeps nominal weights fixed; missing dimensions contribute neutral percentile 50 while evidence coverage remains separate",
             "structural_unavailability": "flag dimensions with positive nominal weight but zero observed coverage across the entire score model; do not silently treat them as ordinary row-level missingness",
             "sector_bias_note": "descriptive concentration only; not causal evidence",
             "reconstruction_parity": "reconstruct score_dimensions, apply structural score_cap, compare with score_raw; public score moderation by evidence confidence is reported separately",
@@ -417,11 +426,11 @@ def main():
         "model_audits": model_results,
         "sector_top_decile_bias": sector_bias,
         "flags": flags,
-        "known_methodological_issue_to_test": "Several specialist packs still inherit globally-ranked base components such as growth, stability or interest coverage before model-specific weighting. Missing dimensions are also renormalized over the surviving weight pack. Both effects are diagnostic-only until prospective validation can compare alternatives out of sample.",
+        "known_methodological_issue_to_test": "Several specialist packs still inherit globally-ranked base components such as growth, stability or interest coverage before model-specific weighting. Missing dimensions now stay neutral at percentile 50 rather than changing the weight pack; benchmark-scope normalization remains the next methodological question for prospective validation.",
         "next_step": "Combine cross-sectional stability with prospective 4/12/24-week rank IC and top-minus-bottom return spreads before changing production weights or normalization universes.",
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-    print(f"Score audit v5: {len(rows)} equities across {len(model_results)} score models; flags={len(flags)}")
+    print(f"Score audit v6: {len(rows)} equities across {len(model_results)} score models; flags={len(flags)}")
 
 
 if __name__ == "__main__":
