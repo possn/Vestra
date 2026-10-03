@@ -50,6 +50,11 @@ def tech_row(i):
 
 
 class ScorePeerShadowModelTests(unittest.TestCase):
+    def test_peer_shadow_is_explicitly_parity_not_candidate(self):
+        self.assertEqual(mod.SHADOW_ROLE, "production_parity_reconstruction")
+        self.assertFalse(mod.SHADOW_CANDIDATE_ACTIVE)
+        self.assertIsNone(mod.SHADOW_CANDIDATE_ID)
+
     def test_growth_tech_fcf_yield_keeps_higher_is_better_direction(self):
         peers = [tech_row(i) for i in range(20)]
         row = peers[-1]
