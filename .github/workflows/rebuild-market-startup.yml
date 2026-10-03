@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: market-data-publish
@@ -57,7 +58,14 @@ jobs:
         run: |
           python -m pytest -q tests/test_market_index_budget.py tests/test_weekly_rotation_relative_destinations.py tests/test_rotation_coverage_audit.py
 
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+
       - name: Publish startup payloads
+        if: steps.publish_window.outputs.defer != 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"

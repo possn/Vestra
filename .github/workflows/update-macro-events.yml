@@ -38,6 +38,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: update-macro-events-${{ github.ref }}
@@ -146,8 +147,14 @@ jobs:
           print(f"Validated {len(events)} events; {len(future)} future")
           PY
 
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+
       - name: Publish refreshed calendar
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.publish_window.outputs.defer != 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
