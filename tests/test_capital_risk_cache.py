@@ -120,6 +120,44 @@ def test_cache_round_trip_is_version_gated():
         assert capital_risk._load_previous(path=path) == {}
 
 
+def test_incremental_selector_prioritizes_missing_cache_and_bounds_cached_rotation():
+    class Metrics:
+        def __init__(self, ticker):
+            self.ticker = ticker
+
+    candidates = [Metrics("A"), Metrics("B"), Metrics("C"), Metrics("D"), Metrics("E")]
+    priority = {"A", "B", "C"}
+    previous = {
+        "B": {"scanner_version": capital_risk.CAPITAL_RISK_SCANNER_VERSION},
+        "C": {"scanner_version": capital_risk.CAPITAL_RISK_SCANNER_VERSION},
+        "D": {"scanner_version": capital_risk.CAPITAL_RISK_SCANNER_VERSION},
+        "E": {"scanner_version": capital_risk.CAPITAL_RISK_SCANNER_VERSION},
+    }
+    selected = capital_risk._select_refresh_tickers(
+        candidates, priority, previous, max_priority=2, max_nonpriority=1, day_key="2026-10-03"
+    )
+    assert "A" in selected
+    assert len(selected & priority) == 2
+    assert len(selected - priority) == 1
+
+
+def test_cached_result_can_be_carried_without_discovery():
+    metrics = DummyMetrics()
+    previous = {
+        "scanner_version": capital_risk.CAPITAL_RISK_SCANNER_VERSION,
+        "filings_fingerprint": "abc",
+        "capital_structure_flags": ["atm_offering"],
+        "capital_structure_risk": "watch",
+        "reverse_split_count_24m": 0,
+        "reverse_split_latest_date": None,
+        "capital_risk_filings_checked": 3,
+    }
+    assert capital_risk._apply_cached_result(metrics, previous) is True
+    assert metrics.capital_structure_flags == ["atm_offering"]
+    assert metrics.capital_risk_checked is True
+    assert metrics.capital_risk_reused is True
+
+
 if __name__ == "__main__":
     if not REQUESTS_AVAILABLE:
         print("capital-risk contract skipped in dependency-free historical suite")
@@ -129,3 +167,5 @@ if __name__ == "__main__":
         test_archive_url_participates_in_fingerprint()
         test_previous_result_reused_only_for_exact_version_and_fingerprint()
         test_cache_round_trip_is_version_gated()
+        test_incremental_selector_prioritizes_missing_cache_and_bounds_cached_rotation()
+        test_cached_result_can_be_carried_without_discovery()
