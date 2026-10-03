@@ -14,9 +14,9 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         loader = read('market-static-universe.js')
         self.assertNotIn('src="market-opportunities.js', hotfix)
         self.assertNotIn('src="market-opportunity-lenses.js', hotfix)
-        self.assertIn("market-opportunities.js?v=1.8", loader)
+        self.assertIn("market-opportunities.js?v=1.9", loader)
         self.assertIn("market-opportunity-lenses.js?v=3.1", loader)
-        self.assertLess(loader.index("market-opportunities.js?v=1.8"), loader.index("market-opportunity-lenses.js?v=3.1"))
+        self.assertLess(loader.index("market-opportunities.js?v=1.9"), loader.index("market-opportunity-lenses.js?v=3.1"))
         self.assertNotIn('src="vestra-portfolio-focus.js', hotfix)
         self.assertNotIn("vestra-portfolio-focus.js", loader)
         self.assertNotIn("vestra-ux-v452.js", hotfix)
@@ -215,7 +215,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         market = read('market.js')
         self.assertIn("function rankLens(universe,lens", source)
         self.assertIn(".filter(s=>lensEligible(s,lens))", source)
-        self.assertIn("ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)", source)
+        self.assertIn("ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0))", source)
         self.assertIn("const rows=rankLens(universe,activeLens,{limit:12,sector:sec})", source)
         self.assertIn("function lensEligible(s,lens)", source)
         self.assertIn("function lensScore(s,lens)", source)
@@ -236,14 +236,17 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertNotIn("function lensMatch(row, lens)", lenses)
         self.assertNotIn("querySelectorAll('.market-list .market-row')", lenses)
 
-    def test_strategy_lenses_are_tilts_not_second_alpha_engines(self):
+    def test_strategy_lenses_preserve_canonical_discovery_order(self):
         source = read('market-opportunities.js')
         block = source.split('function lensScore(s,lens){', 1)[1].split('function rankedCandidates', 1)[0]
-        self.assertIn('const discovery=discoveryScore(s)||0', block)
-        self.assertIn('discovery*.82', block)
-        self.assertIn('lensTilt(s,lens)', block)
+        ranked = source.split('function rankedCandidates(universe,lens,sector=\'all\'){', 1)[1].split('function diversify', 1)[0]
+        buckets = source.split("const buckets=archetypes.map(type=>({", 1)[1].split("}));", 1)[0]
+        self.assertIn('return discoveryScore(s)||0', block)
+        self.assertNotIn('lensTilt', source)
+        self.assertNotIn('discovery*.82', source)
+        self.assertIn("ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0))", ranked)
+        self.assertIn("rows:general.filter(s=>lensEligible(s,type)).sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0))", buckets)
         self.assertNotIn('confidence_score', block)
-        self.assertNotIn('conf*.', block)
 
     def test_opportunity_rows_explain_why_now_without_new_alpha(self):
         source = read('market-opportunities.js')
