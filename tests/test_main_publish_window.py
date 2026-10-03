@@ -26,6 +26,8 @@ class MainPublishWindowTests(unittest.TestCase):
         self.assertIn('".github/triggers/market-data-rebuild.txt"', source)
         self.assertIn('".github/triggers/market-startup-rebuild.txt"', source)
         self.assertIn("any(path and not _is_safe_path(path) for path in changed)", source)
+        self.assertIn('compare/main...{head_sha}', source)
+        self.assertIn('if int(compare.get("behind_by") or 0) > 0:', source)
 
     def test_every_main_writer_uses_same_publish_window_guard(self):
         for name in WRITERS:
