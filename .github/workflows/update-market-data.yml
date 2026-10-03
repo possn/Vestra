@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 # Market builds are evidence-gated and publish only after the pipeline completes.
 # If a newer deliberate rebuild starts, an older run is obsolete and should not
@@ -125,8 +126,14 @@ jobs:
           python score_forward_validation.py
           python opportunity_forward_validation.py
 
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+
       - name: Publish validated market data
-        if: steps.coverage_guard.outcome == 'success'
+        if: steps.coverage_guard.outcome == 'success' && steps.publish_window.outputs.defer != 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -139,7 +146,7 @@ jobs:
           fi
 
       - name: Persist blocked-build diagnostics
-        if: steps.coverage_guard.outcome != 'success'
+        if: steps.coverage_guard.outcome != 'success' && steps.publish_window.outputs.defer != 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
