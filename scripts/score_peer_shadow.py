@@ -383,9 +383,12 @@ def growth_tech_shadow(ctx):
         ctx.p("accrual_ratio", invert=True),
         ctx.p("fcf_margin"),
     ])
+    buyback_signal = positive_score(ctx.row.get("repurchases_last_quarter"))
+    dividend_cover = ctx.p("dividend_fcf_coverage") if n(ctx.row.get("dividend_fcf_coverage")) is not None else None
     capital_allocation = avg([
         ctx.p("diluted_shares_yoy", invert=True),
-        ctx.p("roce_proxy"),
+        buyback_signal,
+        dividend_cover,
     ])
     value = avg([
         ctx.p("forward_pe", invert=True, positive_only=True),

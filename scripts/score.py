@@ -612,9 +612,15 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
                 _percentile_rank(accrual_ratios[idx],peer_derived_values(peers,accrual_ratios),invert=True),
                 _percentile_rank(fcf_margins[idx],peer_derived_values(peers,fcf_margins)),
             ])
+            tech_buyback_signal = _positive_score(r.repurchases_last_quarter)
+            tech_dividend_cover = _percentile_rank(
+                r.dividend_fcf_coverage,
+                peer_attr_values(peers, "dividend_fcf_coverage"),
+            ) if r.dividend_fcf_coverage is not None else None
             capital_allocation = _avg([
                 _percentile_rank(r.diluted_shares_yoy,peer_attr_values(peers,"diluted_shares_yoy"),invert=True),
-                _percentile_rank(r.roce_proxy,peer_attr_values(peers,"roce_proxy")),
+                tech_buyback_signal,
+                tech_dividend_cover,
             ])
             tech_value = _avg([
                 _percentile_rank(r.forward_pe,peer_attr_values(peers,"forward_pe"),invert=True) if r.forward_pe and r.forward_pe>0 else None,
@@ -624,7 +630,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             composite = _weighted([(tech_quality,.20),(tech_growth,.22),(tech_balance,.12),(tech_cashflow,.10),(tech_value,.07),(execution,.12),(earnings_quality,.09),(capital_allocation,.05),(tech_stability,.03)])
             quality,growth,balance,cashflow,value,stability=tech_quality,tech_growth,tech_balance,tech_cashflow,tech_value,tech_stability
             score_dimensions={"Quality":tech_quality,"Growth":tech_growth,"Balance":tech_balance,"Cash Flow":tech_cashflow,"Valuation":tech_value,"Execution":execution,"Earnings Quality":earnings_quality,"Capital Allocation":capital_allocation,"Stability":tech_stability}
-            model_note = "Growth-tech model: growth, quality, execution and cash conversion dominate; valuation remains relevant but cannot overwhelm superior or deteriorating operating evidence."
+            model_note = "Growth-tech model: growth, quality, execution and cash conversion dominate; capital allocation is limited to per-share dilution discipline, reported buybacks and dividend FCF coverage so profitability is not counted twice."
 
         else:
             # Execution is operating momentum, deliberately separated from

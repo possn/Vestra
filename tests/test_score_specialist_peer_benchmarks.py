@@ -64,8 +64,11 @@ class ScoreSpecialistPeerBenchmarkTests(unittest.TestCase):
             "peer_derived_values(peers,accrual_ratios)",
             "peer_derived_values(peers,fcf_margins)",
             "tech_stability = peer_stability_score(r, peers)",
+            "tech_buyback_signal = _positive_score(r.repurchases_last_quarter)",
+            'peer_attr_values(peers, "dividend_fcf_coverage")',
         ):
             self.assertIn(token, block)
+        self.assertNotIn('peer_attr_values(peers,"roce_proxy")', block)
         self.assertNotIn("composite = _weighted([(quality,.20),(growth,.22),(balance,.12),(cashflow,.10)", block)
 
     def test_general_model_keeps_global_cross_section(self):
