@@ -180,19 +180,20 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
 
     def test_same_sector_alternatives_use_canonical_move_evaluation(self):
         s = read("market.js")
+        block = s.split("const alternatives=[];", 1)[1].split("const alternativesByTicker", 1)[0]
         self.assertIn("mode==='alternative'", s)
         self.assertIn("convictionGain>=5&&convDelta>0&&overlapDelta<1.5&&riskPenalty<5", s)
-        self.assertIn("const decision=evaluatePortfolioMove({mode:'alternative'", s)
-        self.assertIn("if(!decision.autoEligible) return null", s)
-        self.assertNotIn("if(!decision.autoEligible||scoreDelta<3) return null", s)
-        self.assertIn("const sameIndustry=!!txt(x.industry)&&txt(x.industry)===txt(r.stock.industry)", s)
-        self.assertIn("||a.decision.overlapDelta-b.decision.overlapDelta", s)
-        self.assertIn("||a.decision.riskPenalty-b.decision.riskPenalty", s)
-        self.assertIn("||Number(b.sameIndustry)-Number(a.sameIndustry)", s)
-        self.assertNotIn("||b.scoreDelta-a.scoreDelta", s)
-        self.assertNotIn("||b.valuationRank-a.valuationRank", s)
-        self.assertNotIn("decision.convictionGain*1.35+scoreDelta*.25", s)
-        self.assertNotIn("const rank=decision.convictionGain", s)
+        self.assertIn("const decision=evaluatePortfolioMove({mode:'alternative'", block)
+        self.assertIn("if(!decision.autoEligible) return null", block)
+        self.assertNotIn("if(!decision.autoEligible||scoreDelta<3) return null", block)
+        self.assertIn("const sameIndustry=!!txt(x.industry)&&txt(x.industry)===txt(r.stock.industry)", block)
+        self.assertIn("||a.decision.overlapDelta-b.decision.overlapDelta", block)
+        self.assertIn("||a.decision.riskPenalty-b.decision.riskPenalty", block)
+        self.assertIn("||Number(b.sameIndustry)-Number(a.sameIndustry)", block)
+        self.assertNotIn("||b.scoreDelta-a.scoreDelta", block)
+        self.assertNotIn("||b.valuationRank-a.valuationRank", block)
+        self.assertNotIn("decision.convictionGain*1.35+scoreDelta*.25", block)
+        self.assertNotIn("const rank=decision.convictionGain", block)
         self.assertIn("Convicção +${a.convDelta.toFixed(0)}", s)
 
     def test_canonical_move_evaluator_owns_shared_eligibility(self):
