@@ -32,7 +32,7 @@ class DossierObserverPipelineTests(unittest.TestCase):
         self.assertIn("version:'2.2'", company)
         self.assertIn('refresh:repair', metric)
         self.assertIn('normalizeButtons,', controls)
-        self.assertIn("market-dossier-controls.js?v=2.0", company)
+        self.assertIn("market-dossier-controls.js?v=2.1", company)
 
     def test_ai_brief_keeps_separate_sheet_scoped_dossier_lifecycle(self):
         ai = read('vestra-ai-brief.js')
