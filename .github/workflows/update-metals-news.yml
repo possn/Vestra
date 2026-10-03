@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: metals-news
@@ -42,7 +43,14 @@ jobs:
           assert all(x.get('metal') in valid and x.get('title') and x.get('url') for x in d['items'])
           print(f"validated {len(d['items'])} metals headlines")
           PY
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+
       - name: Commit snapshot
+        if: steps.publish_window.outputs.defer != 'true'
         run: |
           git add data/metals-news.json
           if git diff --cached --quiet -- data/metals-news.json; then
