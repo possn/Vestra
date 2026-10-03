@@ -20,8 +20,8 @@ class PipelineExplicitEquityRoutingTests(unittest.TestCase):
             'us_tickers = [s.ticker for s in scored if "." not in s.ticker and is_equity_candidate(s.quote_type)]',
             RUN,
         )
-        self.assertIn("insider_map = annotate_insiders(us_tickers)", RUN)
-        self.assertIn("congress_map = fetch_congress_for_universe(us_tickers)", RUN)
+        self.assertIn("pool.submit(annotate_insiders, us_tickers)", RUN)
+        self.assertIn("pool.submit(fetch_congress_for_universe, us_tickers)", RUN)
 
     def test_us_equity_quality_denominator_excludes_explicit_non_equities(self):
         self.assertIn(
