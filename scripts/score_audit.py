@@ -413,7 +413,7 @@ def main():
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "rows_analysed": len(rows),
         "methodology": {
-            "purpose": "diagnostic only; production score/weights are unchanged",
+            "purpose": "diagnostic only; production weights are unchanged and fixed-weight missing-data handling is reconstructed explicitly",
             "source": "full stocks.json score_dimensions, so each specialist model is tested with its real production weight pack",
             "weight_perturbations": [.5, .8, 1.2, 1.5],
             "redundancy_threshold": "absolute Spearman >= 0.75",
