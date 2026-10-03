@@ -14,7 +14,7 @@ class Low52UiContractTests(unittest.TestCase):
     def test_visual_shortlist_is_equities_only_and_within_five_percent(self):
         self.assertIn("M.stocks.filter(s=>!isFund(s))", self.source)
         self.assertIn("x.stats.above>=-0.5 && x.stats.above<=5", self.source)
-        self.assertIn("Sem empresas até 5% do mínimo de 52 semanas.", self.source)
+        self.assertIn("Sem oportunidades Discovery elegíveis até 5% do mínimo de 52 semanas.", self.source)
 
     def test_visual_shortlist_can_use_compact_52_week_bounds(self):
         self.assertIn("n(s?.low52_price_low)??n(s?.fifty_two_week_low)", self.source)
