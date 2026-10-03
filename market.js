@@ -1433,14 +1433,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function portfolioMoveEvidence(stock, conviction=null){
     const conf=n(stock?.confidence_score), valuation=txt(stock?.valuation_signal), estimates=txt(stock?.estimate_signal), thesis=txt(stock?.thesis_direction), gate=txt(stock?.risk_gate);
     const conv=n(conviction);
-    const strict=conf!=null&&conf>=60&&gate==='clear'&&valuation!=='overvalued'&&estimates!=='deteriorating'&&thesis!=='down';
-    const reinforceEligible=strict&&conv!=null&&conv>=70&&valuation!=='uncertain';
+    const actionableValuation=['undervalued','fair'].includes(valuation);
+    const strict=conf!=null&&conf>=60&&gate==='clear'&&actionableValuation&&estimates!=='deteriorating'&&thesis!=='down';
+    const reinforceEligible=strict&&conv!=null&&conv>=70;
     const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
     const warnings=[]; let penalty=0;
     if(conf==null){penalty+=7;warnings.push('confiança sem score');}
     else if(conf<60){penalty+=(60-conf)*.35+3;warnings.push(`confiança ${Math.round(conf)}`);}
-    if(valuation==='overvalued'){penalty+=9;warnings.push('valuation exigente');}
+    if(!valuation){penalty+=5;warnings.push('valuation sem sinal');}
+    else if(valuation==='overvalued'){penalty+=9;warnings.push('valuation exigente');}
     else if(valuation==='uncertain'){penalty+=3;warnings.push('valuation incerto');}
+    else if(valuation==='insufficient'){penalty+=5;warnings.push('valuation insuficiente');}
     if(estimates==='deteriorating'){penalty+=8;warnings.push('expectativas a piorar');}
     if(thesis==='down'){penalty+=7;warnings.push('tese a deteriorar');}
     if(!gate){penalty+=6;warnings.push('Risk Gate não classificado');}
