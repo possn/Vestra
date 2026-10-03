@@ -81,8 +81,28 @@ class ScoreWeightContractTests(unittest.TestCase):
 
     def test_dossier_explains_weights_as_base_weights(self):
         self.assertIn("Os pesos-base do modelo", self.market)
-        self.assertIn("Quando falta um pilar, ele não vale zero", self.market)
-        self.assertIn("Os pesos dos pilares disponíveis são renormalizados", self.market)
+        self.assertIn("Quando falta um pilar, ele não vale zero nem aumenta o peso dos restantes", self.market)
+        self.assertIn("entra como neutro 50", self.market)
+        self.assertIn("Reliability/Confidence", self.market)
+        self.assertNotIn("Os pesos dos pilares disponíveis são renormalizados", self.market)
+
+    def test_production_weighted_missing_dimension_is_neutral_not_renormalized(self):
+        tree = ast.parse(self.score)
+        fn = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "_weighted")
+        ns = {}
+        exec(compile(ast.Module(body=[fn], type_ignores=[]), "<score-weighted>", "exec"), ns)
+        weighted = ns["_weighted"]
+        self.assertAlmostEqual(weighted([(80.0, .8), (None, .2)]), 74.0, places=9)
+        self.assertAlmostEqual(weighted([(80.0, .8), (20.0, .2)]), 68.0, places=9)
+        self.assertIsNone(weighted([(None, .8), (None, .2)]))
+
+    def test_peer_shadow_uses_same_missing_dimension_policy(self):
+        tree = ast.parse(self.shadow)
+        fn = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "weighted")
+        helper = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "n")
+        ns = {"math": __import__("math")}
+        exec(compile(ast.Module(body=[helper, fn], type_ignores=[]), "<shadow-weighted>", "exec"), ns)
+        self.assertAlmostEqual(ns["weighted"]([(80.0, .8), (None, .2)]), 74.0, places=9)
 
 
 if __name__ == "__main__":

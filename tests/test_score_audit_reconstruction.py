@@ -42,20 +42,21 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
         for model, weights in mod.MODEL_WEIGHTS.items():
             self.assertAlmostEqual(sum(weights.values()), 1.0, places=9, msg=model)
 
-    def test_effective_weight_profile_quantifies_missing_dimension_renormalization(self):
+    def test_effective_weight_profile_keeps_missing_dimensions_neutral(self):
         weights = mod.MODEL_WEIGHTS["general"]
         dims = {name: 50.0 for name in weights}
         full = mod.effective_weight_profile(dims, weights)
         self.assertAlmostEqual(full["missing_weight_pct"], 0.0, places=6)
-        self.assertAlmostEqual(full["renormalization_factor"], 1.0, places=6)
+        self.assertAlmostEqual(full["neutral_fill_weight_pct"], 0.0, places=6)
 
         sparse = dict(dims)
         sparse["Quality"] = None
         sparse["Growth"] = None
         profile = mod.effective_weight_profile(sparse, weights)
         self.assertAlmostEqual(profile["missing_weight_pct"], 33.0, places=6)
-        self.assertGreater(profile["renormalization_factor"], 1.4)
-        self.assertIsNotNone(profile["dominant_dimension"])
+        self.assertAlmostEqual(profile["neutral_fill_weight_pct"], 33.0, places=6)
+        self.assertLessEqual(profile["max_observed_dimension_share"], max(weights.values()) + 1e-9)
+        self.assertIsNotNone(profile["dominant_observed_dimension"])
 
     def test_model_audit_reports_material_missing_weight(self):
         rows = [general_row(i) for i in range(10)]
@@ -63,19 +64,20 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
             row["score_dimensions"]["Quality"] = None
             row["score_dimensions"]["Growth"] = None
         result = mod.model_audit("general", rows)
-        renorm = result["missing_weight_renormalization"]
-        self.assertEqual(renorm["rows_missing_at_least_20pct_weight"], 10)
-        self.assertEqual(renorm["rows_missing_at_least_35pct_weight"], 0)
+        missing = result["missing_weight_handling"]
+        self.assertEqual(missing["rows_missing_at_least_20pct_weight"], 10)
+        self.assertEqual(missing["rows_missing_at_least_35pct_weight"], 0)
         self.assertAlmostEqual(result["weight_pack_sum"], 1.0, places=9)
 
     def test_model_audit_exposes_missing_weight_contract(self):
         rows = [general_row(i) for i in range(10)]
         result = mod.model_audit("general", rows)
         self.assertEqual(result["weight_pack_sum"], 1.0)
-        renorm = result["missing_weight_renormalization"]
+        missing = result["missing_weight_handling"]
         self.assertEqual(
-            set(renorm),
+            set(missing),
             {
+                "policy",
                 "mean_missing_weight_pct",
                 "max_missing_weight_pct",
                 "rows_missing_at_least_20pct_weight",
@@ -83,11 +85,9 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
                 "published_rows_missing_at_least_20pct_weight",
                 "published_rows_missing_at_least_35pct_weight",
                 "robust_rows_missing_at_least_35pct_weight",
-                "mean_renormalization_factor",
-                "max_renormalization_factor",
-                "mean_max_effective_dimension_share_pct",
-                "max_effective_dimension_share_pct",
-                "dominant_dimension_counts",
+                "mean_max_observed_dimension_share_pct",
+                "max_observed_dimension_share_pct",
+                "dominant_observed_dimension_counts",
             },
         )
 
@@ -110,8 +110,8 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
                 mod.OUT = original_out
             self.assertEqual(stocks.read_bytes(), before)
             report = json.loads(out.read_text(encoding="utf-8"))
-            self.assertEqual(report["methodology"]["purpose"], "diagnostic only; production score/weights are unchanged")
-            self.assertIn("missing_weight_renormalization", report["methodology"])
+            self.assertEqual(report["methodology"]["purpose"], "diagnostic only; production weights are unchanged and fixed-weight missing-data handling is reconstructed explicitly")
+            self.assertIn("missing_weight_handling", report["methodology"])
             self.assertIn("model_audits", report)
             self.assertIn("flags", report)
 
@@ -134,7 +134,7 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
                     "published_vs_raw_rank_spearman": x.get("published_vs_raw_rank_spearman"),
                     "redundant_pair_count": x.get("redundant_pair_count"),
                     "material_sensitivity_count": x.get("material_sensitivity_count"),
-                    "missing_weight_renormalization": x.get("missing_weight_renormalization"),
+                    "missing_weight_handling": x.get("missing_weight_handling"),
                     "dimension_coverage": x.get("dimension_coverage"),
                 }
                 for x in report["model_audits"]
