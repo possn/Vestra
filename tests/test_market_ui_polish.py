@@ -117,6 +117,19 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('Ainda não há dados insider suficientes', block)
         self.assertNotIn("const buyValue=n(s.insider_buy_value_30d)||0", block)
 
+    def test_smart_money_congress_error_is_not_presented_as_no_activity(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split("if(tab==='smart')", 1)[1].split("if(tab==='news')", 1)[0]
+        self.assertIn("M.congressError", block)
+        self.assertIn("Divulgações do Congresso indisponíveis neste momento.", block)
+        self.assertIn("Sem operações recentes registadas.", block)
+        error_pos = block.index("M.congressError")
+        unavailable_pos = block.index("Divulgações do Congresso indisponíveis neste momento.")
+        no_activity_pos = block.index("Sem operações recentes registadas.")
+        self.assertLess(error_pos, unavailable_pos)
+        self.assertLess(unavailable_pos, no_activity_pos)
+
+
     def test_smart_money_detail_does_not_coerce_missing_insider_counts_to_zero(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split("if(tab==='smart')", 1)[1].split("if(tab==='news')", 1)[0]
