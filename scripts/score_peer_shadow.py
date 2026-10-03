@@ -531,10 +531,13 @@ def main():
     equities, shadow_rows, summaries = build_shadow(rows)
 
     out = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "production_unchanged": True,
-        "phase": "all_specialist_peer_normalization_shadow",
+        "role": "production_parity_reconstruction",
+        "candidate_active": False,
+        "candidate_id": None,
+        "phase": "specialist_peer_parity_reconstruction",
         "methodology": {
             "models": list(SPECIALIST_MODELS),
             "min_peer_observations": MIN_PEERS,
@@ -548,8 +551,8 @@ def main():
         "model_summaries": summaries,
         "rows": shadow_rows,
         "activation_rule": (
-            "Shadow only. Do not activate peer-first production scoring until prospective "
-            "28/84/168-day cohorts show stable improvement across multiple matured cohorts."
+            "Parity-only reconstruction of the current production specialist benchmark ownership. "
+            "It must never be interpreted as an independent Score v2 challenger."
         ),
     }
     OUT.write_text(
