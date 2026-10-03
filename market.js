@@ -1432,14 +1432,21 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
   function portfolioMoveEvidence(stock, conviction=null){
     const conf=n(stock?.confidence_score), valuation=txt(stock?.valuation_signal), estimates=txt(stock?.estimate_signal), thesis=txt(stock?.thesis_direction), gate=txt(stock?.risk_gate);
+    const reliability=txt(stock?.score_reliability).toLowerCase(), coverage=n(stock?.data_coverage_pct), critical=n(stock?.critical_metric_coverage_pct);
     const conv=n(conviction);
     const actionableValuation=['undervalued','fair'].includes(valuation);
-    const strict=conf!=null&&conf>=60&&gate==='clear'&&actionableValuation&&estimates!=='deteriorating'&&thesis!=='down';
+    const reliabilityReady=['robust','moderate_evidence'].includes(reliability);
+    const evidenceReady=reliabilityReady&&coverage!=null&&coverage>=65&&critical!=null&&critical>=50;
+    const strict=conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation&&estimates!=='deteriorating'&&thesis!=='down';
     const reinforceEligible=strict&&conv!=null&&conv>=70;
-    const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
+    const acceptable=(conf==null||conf>=45)&&reliability!=='insufficient_data'&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
     const warnings=[]; let penalty=0;
     if(conf==null){penalty+=7;warnings.push('confiança sem score');}
     else if(conf<60){penalty+=(60-conf)*.35+3;warnings.push(`confiança ${Math.round(conf)}`);}
+    if(!reliability){penalty+=7;warnings.push('fiabilidade do Score não classificada');}
+    else if(!reliabilityReady){penalty+=8;warnings.push(`fiabilidade ${reliability}`);}
+    if(coverage==null||coverage<65){penalty+=6;warnings.push('cobertura fundamental insuficiente');}
+    if(critical==null||critical<50){penalty+=6;warnings.push('cobertura crítica insuficiente');}
     if(!valuation){penalty+=5;warnings.push('valuation sem sinal');}
     else if(valuation==='overvalued'){penalty+=9;warnings.push('valuation exigente');}
     else if(valuation==='uncertain'){penalty+=3;warnings.push('valuation incerto');}
@@ -1450,7 +1457,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     else if(gate==='watch'){penalty+=6;warnings.push('Risk Gate watch');}
     const tier=strict?'preferred':acceptable?'acceptable':'research';
     if(tier==='research') penalty+=12;
-    return {conf,valuation,estimates,thesis,gate,conviction:conv,strict,reinforceEligible,acceptable,tier,penalty,warnings};
+    return {conf,reliability,coverage,critical,valuation,estimates,thesis,gate,conviction:conv,evidenceReady,strict,reinforceEligible,acceptable,tier,penalty,warnings};
   }
   function evaluatePortfolioMove({mode='replace',sourceStock=null,destination,rows=[],amount=0,totalAfter=1,sourceConv=null,destinationConv=null,positionPct=0,sectorPct=0,indirect=0,sourceIndirect=0}={}){
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
