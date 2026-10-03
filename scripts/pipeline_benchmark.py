@@ -35,6 +35,7 @@ def summarise(text: str) -> dict:
     active = None
     analyst_start = analyst_end = None
     insider_start = insider_end = None
+    stages = {}
 
     for line in lines:
         ts = _ts(line)
@@ -61,6 +62,10 @@ def summarise(text: str) -> dict:
             active["end"] = ts
             fetches.append(active)
             active = None
+
+        stage_match = re.search(r"PIPELINE_STAGE done ([a-zA-Z0-9_\-]+) elapsed=([0-9.]+)s", line)
+        if stage_match:
+            stages[stage_match.group(1)] = float(stage_match.group(2))
 
         lower = line.lower()
         if analyst_start is None and ("analyst" in lower and ("retriev" in lower or "fetch" in lower)):
@@ -98,6 +103,8 @@ def summarise(text: str) -> dict:
         "broad_fetch": broad,
         "analyst_duration_seconds": _seconds(analyst_start, analyst_end),
         "insider_duration_seconds": _seconds(insider_start, insider_end),
+        "stage_durations_seconds": stages,
+        "pipeline_stage_total_seconds": round(sum(stages.values()), 3) if stages else None,
     }
 
 
