@@ -570,7 +570,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('visibility:visible!important', self.dossier_css)
         self.assertIn('pointer-events:auto!important', self.dossier_css)
         self.assertIn("version: '1.3'", self.source)
-        self.assertIn("version: '2.0'", self.dossier)
+        self.assertIn("version: '2.1'", self.dossier)
         self.assertIn('right:max(calc(env(safe-area-inset-right) + 66px),66px)!important', self.dossier_css)
         self.assertIn('.market-detail-actions .market-close{\n  display:none!important', self.dossier_css)
         self.assertIn('market-dossier-action-portal', self.dossier_css)
