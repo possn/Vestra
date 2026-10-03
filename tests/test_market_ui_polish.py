@@ -240,6 +240,13 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertLess(block.index("if(riskFlags.length)"), block.index("Sem risco específico suficientemente forte identificado pelo modelo"))
 
 
+    def test_investment_case_peer_fallback_requires_missing_valuation_signal(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
+        self.assertIn("else if(!valuationSignal&&valuationDelta!=null)", block)
+        self.assertNotIn("else if(valuationDelta!=null)", block)
+
+
     def test_investment_case_explicit_valuation_uncertainty_beats_peer_fallback(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
