@@ -5,6 +5,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_portfolio_action_does_not_call_missing_conviction_stable_thesis(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function portfolioAction(stock, alternativesByTicker, context)', 1)[1].split("const PORTFOLIO_TARGETS_KEY", 1)[0]
+        self.assertIn("if(conviction==null) return {key:'hold',label:'Manter',tone:'neutral',reason:reasons.slice(0,2).join(' · ')||'convicção indisponível com a evidência atual'};", block)
+        self.assertLess(block.index("if(conviction==null)"), block.index("tese sem alteração material"))
+
+
     def test_portfolio_conviction_does_not_invent_neutral_valuation_when_missing(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function portfolioConviction(s)', 1)[1].split('function holdingSymbol(h)', 1)[0]
