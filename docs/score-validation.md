@@ -69,3 +69,7 @@ Do not optimize weights until there are multiple independent cohorts and enough 
 - do not lower data coverage or create incentives to reward missing information.
 
 A proposed model should be evaluated out of sample before replacing the production model. The existing score should remain the control until evidence is strong enough to justify a versioned change.
+
+
+### Shadow lineage
+The current specialist peer-shadow is a **production parity reconstruction**, not a Score v2 candidate. It may be persisted alongside weekly cohorts to verify parity and preserve prospective lineage, but it cannot unlock a production-weight review. A future challenger must declare `role=candidate`, provide a non-empty `candidate_id`, and then pass the same-row 4/12/24-week gates. Historical `peer_shadow_score` fields are retained for backward compatibility and must not be reinterpreted as an active challenger.
