@@ -6,10 +6,13 @@ WORKFLOW = ROOT / ".github" / "workflows" / "update-market-data.yml"
 
 
 class MarketRebuildWorkflowTests(unittest.TestCase):
-    def test_market_publishers_are_serialized(self):
+    def test_market_publishers_are_serialized_and_canonical_runs_supersede_obsolete_work(self):
         source = WORKFLOW.read_text(encoding="utf-8")
+        startup = (ROOT / ".github" / "workflows" / "rebuild-market-startup.yml").read_text(encoding="utf-8")
         self.assertIn("group: market-data-publish", source)
-        self.assertIn("cancel-in-progress: false", source)
+        self.assertIn("group: market-data-publish", startup)
+        self.assertIn("cancel-in-progress: true", source)
+        self.assertIn("cancel-in-progress: false", startup)
 
     def test_canonical_rebuild_is_bounded(self):
         source = WORKFLOW.read_text(encoding="utf-8")
