@@ -6,6 +6,12 @@ WORKFLOW = ROOT / ".github" / "workflows" / "rebuild-market-startup.yml"
 
 
 class FastMarketStartupWorkflowTests(unittest.TestCase):
+    def test_fast_path_shares_market_publish_concurrency_group(self):
+        source = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("group: market-data-publish", source)
+        self.assertIn("cancel-in-progress: false", source)
+
+
     def test_fast_path_does_not_run_heavy_enrichment(self):
         source = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("python build_market_shards.py", source)

@@ -22,8 +22,8 @@ permissions:
 # If a newer deliberate rebuild starts, an older run is obsolete and should not
 # consume another hour of Yahoo/SEC/ESEF traffic before publishing stale inputs.
 concurrency:
-  group: update-market-data
-  cancel-in-progress: true
+  group: market-data-publish
+  cancel-in-progress: false
 
 jobs:
   update-data:

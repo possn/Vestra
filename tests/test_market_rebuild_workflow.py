@@ -6,10 +6,10 @@ WORKFLOW = ROOT / ".github" / "workflows" / "update-market-data.yml"
 
 
 class MarketRebuildWorkflowTests(unittest.TestCase):
-    def test_latest_rebuild_supersedes_obsolete_run(self):
+    def test_market_publishers_are_serialized(self):
         source = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("group: update-market-data", source)
-        self.assertIn("cancel-in-progress: true", source)
+        self.assertIn("group: market-data-publish", source)
+        self.assertIn("cancel-in-progress: false", source)
 
     def test_production_preflight_compiles_current_runtime_layers(self):
         source = WORKFLOW.read_text(encoding="utf-8")
