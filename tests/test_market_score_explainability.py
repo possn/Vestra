@@ -39,6 +39,9 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
         self.assertIn('4 · Valuation, tese e expectativas.', self.market)
         self.assertIn('5 · Decisão de carteira.', self.market)
         self.assertIn('scoreModelWeights', self.market)
+        self.assertIn('peers do mesmo modelo', self.market)
+        self.assertIn('pelo menos 20 observações válidas', self.market)
+        self.assertIn('recuam para o universo global', self.market)
 
     def test_data_quality_separates_coverage_confidence_and_reliability(self):
         self.assertIn('Confiança da evidência', self.market)

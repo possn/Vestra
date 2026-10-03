@@ -27,13 +27,13 @@ class ScoreWeightContractTests(unittest.TestCase):
         }
 
         production_tokens = {
-            "bank": "composite = _weighted([(bank_quality,.22),(bank_efficiency,.13),(bank_asset_quality,.10),(bank_capital,.15),(bank_growth,.15),(bank_value,.15),(income,.05),(stability,.05)])",
-            "reit": "composite = _weighted([(reit_quality,.22),(growth,.16),(reit_leverage,.20),(reit_value,.20),(reit_distribution,.17),(stability,.05)])",
-            "insurance": "composite = _weighted([(ins_quality,.22),(ins_underwriting,.18),(ins_capital,.18),(growth,.12),(ins_value,.17),(ins_income_quality,.08),(stability,.05)])",
-            "utility": "composite = _weighted([(util_quality,.18),(util_balance,.22),(util_income,.18),(util_value,.17),(growth,.10),(stability,.10),(util_cash,.05)])",
-            "energy": "composite = _weighted([(energy_quality,.20),(energy_cash,.22),(energy_balance,.18),(energy_value,.20),(growth,.10),(stability,.10)])",
-            "biotech": "composite = _weighted([(runway_score,.25),(biotech_cash,.15),(biotech_dilution,.20),(growth,.20),(biotech_quality,.10),(stability,.10)])",
-            "growth_tech": "composite = _weighted([(quality,.20),(growth,.22),(balance,.12),(cashflow,.10),(tech_value,.07),(execution,.12),(earnings_quality,.09),(capital_allocation,.05),(stability,.03)])",
+            "bank": "composite = _weighted([(bank_quality,.22),(bank_efficiency,.13),(bank_asset_quality,.10),(bank_capital,.15),(bank_growth,.15),(bank_value,.15),(bank_income,.05),(bank_stability,.05)])",
+            "reit": "composite = _weighted([(reit_quality,.22),(reit_growth,.16),(reit_leverage,.20),(reit_value,.20),(reit_distribution,.17),(reit_stability,.05)])",
+            "insurance": "composite = _weighted([(ins_quality,.22),(ins_underwriting,.18),(ins_capital,.18),(ins_growth,.12),(ins_value,.17),(ins_income_quality,.08),(ins_stability,.05)])",
+            "utility": "composite = _weighted([(util_quality,.18),(util_balance,.22),(util_income,.18),(util_value,.17),(util_growth,.10),(util_stability,.10),(util_cash,.05)])",
+            "energy": "composite = _weighted([(energy_quality,.20),(energy_cash,.22),(energy_balance,.18),(energy_value,.20),(energy_growth,.10),(energy_stability,.10)])",
+            "biotech": "composite = _weighted([(runway_score,.25),(biotech_cash,.15),(biotech_dilution,.20),(biotech_growth,.20),(biotech_quality,.10),(biotech_stability,.10)])",
+            "growth_tech": "composite = _weighted([(tech_quality,.20),(tech_growth,.22),(tech_balance,.12),(tech_cashflow,.10),(tech_value,.07),(execution,.12),(earnings_quality,.09),(capital_allocation,.05),(tech_stability,.03)])",
         }
         for model, token in production_tokens.items():
             self.assertIn(token, self.score, f"production weights changed for {model}")

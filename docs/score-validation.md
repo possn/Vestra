@@ -21,7 +21,7 @@ That does **not** validate Vestra's exact metrics or weights. Academic factor re
 
 1. **No exact weight has scientific status yet.** The current vectors are product priors.
 2. **Accrual quality is useful context, not a guaranteed anomaly.** Later research found that the classic accrual return anomaly weakened materially, so earnings-quality signals should not receive weight simply because an older anomaly once existed.
-3. **Sector normalization is incomplete.** REIT, insurance, utility, energy and biotech packs use many model-specific peer comparisons, but some inherited components (for example growth, stability or interest coverage in certain packs) may still have been ranked against the full equity universe. This can create structural sector effects.
+3. **Specialist benchmark ownership is peer-first.** Bank, REIT, insurance, utility, energy, biotech and growth-tech metrics are ranked against companies using the same `score_model` whenever that metric has at least 20 finite peer observations. Sparse metrics fall back to the full equity universe rather than relying on an unstable tiny peer sample.
 4. **Missing data must not change factor ownership.** Production keeps the declared weights fixed; an unavailable dimension contributes neutral percentile 50, while Reliability/Confidence records the weaker evidence separately.
 5. **Current cross-sectional fit cannot establish predictive validity.** Any weight tuning from today's data alone risks overfitting.
 

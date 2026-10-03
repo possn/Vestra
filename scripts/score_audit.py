@@ -426,7 +426,7 @@ def main():
         "model_audits": model_results,
         "sector_top_decile_bias": sector_bias,
         "flags": flags,
-        "known_methodological_issue_to_test": "Several specialist packs still inherit globally-ranked base components such as growth, stability or interest coverage before model-specific weighting. Missing dimensions now stay neutral at percentile 50 rather than changing the weight pack; benchmark-scope normalization remains the next methodological question for prospective validation.",
+        "known_methodological_issue_to_test": "Specialist packs now use same-model peer benchmarks when a metric has at least 20 finite observations, with a global fallback for sparse metrics. The remaining benchmark-scope question is whether the 20-observation fallback threshold and model taxonomy remain stable out of sample.",
         "next_step": "Combine cross-sectional stability with prospective 4/12/24-week rank IC and top-minus-bottom return spreads before changing production weights or normalization universes.",
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
