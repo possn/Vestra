@@ -19,7 +19,7 @@ class LearnedPromotionPriorityTests(unittest.TestCase):
         broad = src.index("raw_remainder = fetch_many(remainder_refresh")
         self.assertLess(learned, portfolio)
         self.assertLess(portfolio, broad)
-        self.assertIn("workers_override=1, retries=3", src)
+        self.assertIn("workers_override=1, retries=2", src)
 
     def test_learned_result_wins_dedup_and_missing_promotion_is_visible(self):
         src = RUN.read_text(encoding="utf-8")
