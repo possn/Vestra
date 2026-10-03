@@ -153,7 +153,11 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
                 "median_peer_shadow_cohort_robust_spread_pct": 5.0,
             },
         }
-        result = MOD.score_v2_readiness({"28": strong, "84": {}, "168": {}})
+        result = MOD.score_v2_readiness(
+            {"28": strong, "84": {}, "168": {}},
+            candidate_role="candidate",
+            candidate_id="test-v2",
+        )
         self.assertEqual(result["status"], "production_change_deferred")
         self.assertTrue(result["production_weights_frozen"])
         self.assertEqual(result["qualified_horizons"], [28])
@@ -176,7 +180,11 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
                     "median_peer_shadow_cohort_robust_spread_pct": 3.5,
                 },
             }
-        result = MOD.score_v2_readiness({"28": strong(), "84": strong(), "168": {}})
+        result = MOD.score_v2_readiness(
+            {"28": strong(), "84": strong(), "168": {}},
+            candidate_role="candidate",
+            candidate_id="test-v2",
+        )
         self.assertEqual(result["status"], "candidate_review_allowed")
         self.assertFalse(result["production_weights_frozen"])
         self.assertEqual(result["qualified_horizons"], [28, 84])
@@ -223,9 +231,42 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
                     "median_peer_shadow_cohort_robust_spread_pct": 5.0,
                 },
             }
-        result = MOD.score_v2_readiness({"28": pack(), "84": pack(), "168": {}})
+        result = MOD.score_v2_readiness(
+            {"28": pack(), "84": pack(), "168": {}},
+            candidate_role="candidate",
+            candidate_id="test-v2",
+        )
         self.assertEqual(result["status"], "candidate_review_allowed")
         self.assertEqual(result["qualified_horizons"], [28, 84])
+
+    def test_score_v2_readiness_rejects_production_parity_shadow(self):
+        strong = {
+            "cohort_count": 8,
+            "cohort_capture_pct": 100,
+            "median_cohort_rank_ic": 0.08,
+            "median_cohort_top_minus_bottom_pct": 4.0,
+            "median_cohort_robust_spread_pct": 4.0,
+            "peer_shadow_comparison": {
+                "cohort_count": 8,
+                "median_production_cohort_rank_ic": 0.08,
+                "median_peer_shadow_cohort_rank_ic": 0.12,
+                "median_production_cohort_top_minus_bottom_pct": 4.0,
+                "median_peer_shadow_cohort_top_minus_bottom_pct": 5.0,
+                "median_production_cohort_robust_spread_pct": 4.0,
+                "median_peer_shadow_cohort_robust_spread_pct": 5.0,
+            },
+        }
+        result = MOD.score_v2_readiness(
+            {"28": strong, "84": strong, "168": strong},
+            candidate_role="production_parity_reconstruction",
+            candidate_id=None,
+        )
+        self.assertEqual(result["status"], "production_change_deferred")
+        self.assertTrue(result["production_weights_frozen"])
+        self.assertFalse(result["independent_candidate_active"])
+        self.assertEqual(result["qualified_horizons"], [])
+        for blocker in result["blockers"]:
+            self.assertIn("no_independent_score_candidate", blocker["reasons"])
 
     def test_score_v2_readiness_rejects_shadow_improvement_with_worse_spread(self):
         pack = {
@@ -244,7 +285,11 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
                 "median_peer_shadow_cohort_robust_spread_pct": 2.0,
             },
         }
-        result = MOD.score_v2_readiness({"28": pack, "84": pack, "168": {}})
+        result = MOD.score_v2_readiness(
+            {"28": pack, "84": pack, "168": {}},
+            candidate_role="candidate",
+            candidate_id="test-v2",
+        )
         self.assertTrue(result["production_weights_frozen"])
         reasons = result["blockers"][0]["reasons"]
         self.assertIn("shadow_spread_worse_or_unavailable", reasons)
