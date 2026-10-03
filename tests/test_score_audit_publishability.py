@@ -15,7 +15,7 @@ SPEC.loader.exec_module(mod)
 
 
 class ScoreAuditPublishabilityTests(unittest.TestCase):
-    def test_heavily_renormalized_published_rows_are_counted(self):
+    def test_heavily_missing_published_rows_are_counted(self):
         rows = [
             {
                 "ticker": "A",
@@ -43,10 +43,10 @@ class ScoreAuditPublishabilityTests(unittest.TestCase):
             },
         ]
         out = mod.model_audit("general", rows)
-        renorm = out["missing_weight_renormalization"]
-        self.assertEqual(renorm["rows_missing_at_least_35pct_weight"], 2)
-        self.assertEqual(renorm["published_rows_missing_at_least_35pct_weight"], 1)
-        self.assertEqual(renorm["robust_rows_missing_at_least_35pct_weight"], 1)
+        missing = out["missing_weight_handling"]
+        self.assertEqual(missing["rows_missing_at_least_35pct_weight"], 2)
+        self.assertEqual(missing["published_rows_missing_at_least_35pct_weight"], 1)
+        self.assertEqual(missing["robust_rows_missing_at_least_35pct_weight"], 1)
 
     def test_publishability_diagnostic_does_not_change_reconstructed_score(self):
         rows = [{
@@ -63,7 +63,7 @@ class ScoreAuditPublishabilityTests(unittest.TestCase):
         }]
         out = mod.model_audit("general", rows)
         self.assertIn("raw_vs_reconstructed_rank_spearman", out)
-        self.assertIn("missing_weight_renormalization", out)
+        self.assertIn("missing_weight_handling", out)
 
 
 if __name__ == "__main__":
