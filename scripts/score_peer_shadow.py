@@ -38,12 +38,11 @@ def avg(values):
 
 
 def weighted(parts):
-    usable = [(n(v), w) for v, w in parts]
-    usable = [(v, w) for v, w in usable if v is not None]
-    if not usable:
+    parts = [(n(v), w) for v, w in parts]
+    if not parts or not any(v is not None for v, _ in parts):
         return None
-    den = sum(w for _, w in usable)
-    return sum(v * w for v, w in usable) / den if den else None
+    den = sum(w for _, w in parts)
+    return sum((50.0 if v is None else v) * w for v, w in parts) / den if den else None
 
 
 def positive_score(value):
@@ -537,7 +536,7 @@ def main():
             "models": list(SPECIALIST_MODELS),
             "min_peer_observations": MIN_PEERS,
             "fallback": "global equity universe per metric only when at least 20 finite global observations exist; otherwise the metric remains unscored",
-            "weights": "identical to the production specialist pack",
+            "weights": "identical to the production specialist pack; missing dimensions are neutral at 50 rather than renormalized",
             "risk_caps": "existing production score_cap applied unchanged",
             "comparison_layer": "peer candidate compared with score_raw; public confidence moderation remains separate",
         },
