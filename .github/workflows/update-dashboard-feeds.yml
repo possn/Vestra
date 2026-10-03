@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: update-dashboard-news
@@ -43,7 +44,14 @@ jobs:
           assert 0 <= age < 900, f'stale dashboard news payload: {age}s'
           print(f"Validated {len(p['items'])} dashboard headlines")
           PY
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+
       - name: Publish dashboard news
+        if: steps.publish_window.outputs.defer != 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
