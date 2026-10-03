@@ -555,7 +555,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertNotIn('market-detail-actions', self.source)
         self.assertNotIn("document.createElement('style')", self.source)
         self.assertNotIn('style.textContent', self.source)
-        self.assertIn("market-dossier-controls.css?v=1.4", self.dossier)
+        self.assertIn("market-dossier-controls.css?v=1.5", self.dossier)
         self.assertNotIn("document.createElement('style')", self.dossier)
         self.assertNotIn('style.textContent', self.dossier)
         self.assertIn('.market-detail-actions{', self.dossier_css)
