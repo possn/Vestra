@@ -57,6 +57,7 @@ const context = {
   console,
   txt: v => String(v ?? '').trim(),
   n: v => {
+    if (v === null || v === undefined || v === '') return null;
     const x = Number(v);
     return Number.isFinite(x) ? x : null;
   },
@@ -65,8 +66,21 @@ const context = {
   riskBudgetPenalty: () => riskPenalty,
 };
 vm.createContext(context);
+vm.runInContext(extractFunction('portfolioConviction'), context);
 vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
+
+const conviction = stock => context.portfolioConviction(stock);
+assert(Math.abs(conviction({ score: 80, estimate_momentum_score: 70, valuation_signal: 'fair', thesis_direction: 'flat' }) - 76.1) < 1e-9, 'conviction must keep fixed 70/12/18 weights');
+assert.strictEqual(conviction({ score: 80, thesis_direction: 'flat' }), 71, 'missing secondary signals must be neutral, not silently renormalised');
+assert.strictEqual(conviction({ score: null, estimate_momentum_score: 90, valuation_signal: 'undervalued' }), null, 'conviction requires canonical Vestra Score');
+assert.strictEqual(
+  conviction({ score: 80, estimate_momentum_score: 30, valuation_signal: 'fair', estimate_signal: 'deteriorating', thesis_direction: 'flat' }),
+  conviction({ score: 80, estimate_momentum_score: 30, valuation_signal: 'fair', estimate_signal: 'stable', thesis_direction: 'flat' }),
+  'estimate_signal must not add a second momentum penalty outside estimate_momentum_score'
+);
+assert(!source.includes('||b.valuationRank-a.valuationRank'), 'portfolio ranking must not re-score valuation after Conviction');
+assert(!source.includes('if(!decision.autoEligible||scoreDelta<3)'), 'alternative selection must not add a second Score gate after canonical move eligibility');
 
 const evaluate = args => context.evaluatePortfolioMove(args);
 const stock = overrides => ({

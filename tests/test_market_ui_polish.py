@@ -37,14 +37,15 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertLess(block.index("if(conviction==null)"), block.index("tese sem alteração material"))
 
 
-    def test_portfolio_conviction_does_not_invent_neutral_valuation_when_missing(self):
+    def test_portfolio_conviction_keeps_fixed_weights_when_secondary_signals_are_missing(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function portfolioConviction(s)', 1)[1].split('function holdingSymbol(h)', 1)[0]
         self.assertIn("const valuationSignal=txt(s?.valuation_signal);", block)
         self.assertIn("Object.prototype.hasOwnProperty.call(valMap,valuationSignal)", block)
-        self.assertIn("if(val!=null) parts.push([val,.18]);", block)
-        self.assertNotIn("?? 50", block)
-        self.assertNotIn("parts.push([val,.18]);", block.replace("if(val!=null) parts.push([val,.18]);", ""))
+        self.assertIn("if(score==null) return null;", block)
+        self.assertIn("score*.70+(est??50)*.12+(val??50)*.18", block)
+        self.assertNotIn("parts.reduce", block)
+        self.assertNotIn("if(txt(s?.estimate_signal)==='deteriorating')", block)
 
 
     def test_top_market_identity_row_does_not_repeat_analysis_metrics(self):

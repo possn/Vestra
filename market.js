@@ -1136,15 +1136,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const valMap={undervalued:85,fair:65,overvalued:25,uncertain:40,insufficient:45};
     const valuationSignal=txt(s?.valuation_signal);
     const val=Object.prototype.hasOwnProperty.call(valMap,valuationSignal)?valMap[valuationSignal]:null;
-    const parts=[];
-    if(score!=null) parts.push([score,.70]);
-    if(est!=null) parts.push([est,.12]);
-    if(val!=null) parts.push([val,.18]);
-    if(!parts.length) return null;
-    let x=parts.reduce((a,[v,w])=>a+v*w,0)/parts.reduce((a,[,w])=>a+w,0);
+    // Score is the required owner of fundamental alpha. Missing secondary signals
+    // stay neutral rather than silently renormalising the remaining weights upward.
+    if(score==null) return null;
+    let x=score*.70+(est??50)*.12+(val??50)*.18;
     if(txt(s?.thesis_direction)==='up') x+=4;
     if(txt(s?.thesis_direction)==='down') x-=7;
-    if(txt(s?.estimate_signal)==='deteriorating') x-=7;
     return Math.max(0,Math.min(100,x));
   }
 
@@ -1849,17 +1846,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         const indirect=indirectExposurePct(x,etfsForFit), conv=portfolioConviction(x); if(conv==null) return null;
         const scoreDelta=n(x.score)-curScore;
         const decision=evaluatePortfolioMove({mode:'alternative',sourceStock:r.stock,destination:x,rows:ranked,amount:r.value,totalAfter:portfolioBase,sourceConv:curConv,destinationConv:conv,positionPct:r.value/portfolioBase*100,sectorPct:sourceSectorPct,indirect,sourceIndirect:currentIndirect});
-        if(!decision.autoEligible||scoreDelta<3) return null;
-        const valuationRank=decision.evidence.valuation==='undervalued'?2:decision.evidence.valuation==='fair'?1:0;
+        if(!decision.autoEligible) return null;
         const sameIndustry=!!txt(x.industry)&&txt(x.industry)===txt(r.stock.industry);
-        return {stock:x,indirect,conv,scoreDelta,convDelta:decision.convictionGain,valuationRank,sameIndustry,decision};
+        return {stock:x,indirect,conv,scoreDelta,convDelta:decision.convictionGain,sameIndustry,decision};
       }).filter(Boolean).sort((a,b)=>
         b.convDelta-a.convDelta
         ||a.decision.overlapDelta-b.decision.overlapDelta
-        ||b.scoreDelta-a.scoreDelta
+        ||a.decision.riskPenalty-b.decision.riskPenalty
         ||Number(b.sameIndustry)-Number(a.sameIndustry)
-        ||b.valuationRank-a.valuationRank
-        ||b.conv-a.conv
       )[0];
       if(cand){
         const fit=cand.indirect+1<currentIndirect?'better':cand.indirect>currentIndirect+1?'worse':'neutral';
@@ -2118,9 +2112,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const {targets,maxPos,maxSector,riskPenalty,overlapDelta,convictionGain,convDelta,autoEligible,warnings}=decision;
       const positionHeadroom=maxPos-positionPct, sectorHeadroom=maxSector-sectorPct;
       const diversifies=destSector!==srcSector && (sectors.get(destSector)||0)/portfolioBase*100<Math.min(20,maxSector*.75);
-      const valuationRank=txt(stock.valuation_signal)==='undervalued'?2:txt(stock.valuation_signal)==='fair'?1:0;
       const tiltBonus=portfolioTiltBonus(stock,targets.tilt);
-      return {stock,conv,convictionGain,convDelta,positionPct,sectorPct,positionHeadroom,sectorHeadroom,indirect,overlapDelta,riskPenalty,diversifies,valuationRank,tiltBonus,existing:!!existing,targets,tier:decision.evidence.tier,warnings,autoEligible};
+      return {stock,conv,convictionGain,convDelta,positionPct,sectorPct,positionHeadroom,sectorHeadroom,indirect,overlapDelta,riskPenalty,diversifies,tiltBonus,existing:!!existing,targets,tier:decision.evidence.tier,warnings,autoEligible};
     }).filter(Boolean).sort((a,b)=>{
       const rank={preferred:0,acceptable:1,research:2};
       return Number(b.autoEligible)-Number(a.autoEligible)
@@ -2131,9 +2124,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         ||Number(b.diversifies)-Number(a.diversifies)
         ||b.sectorHeadroom-a.sectorHeadroom
         ||b.positionHeadroom-a.positionHeadroom
-        ||b.valuationRank-a.valuationRank
-        ||b.tiltBonus-a.tiltBonus
-        ||b.conv-a.conv;
+        ||b.tiltBonus-a.tiltBonus;
     }).slice(0,5);
     return {source:src.stock,amount:move,sourceConv:srcConv,results:ranked};
   }
@@ -2175,11 +2166,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       // part of the rule here can bypass risk-budget or target constraints.
       const baseEligible=decision.autoEligible;
       const sectorNow=sectorValue/currentBase*100, sectorHeadroom=maxSector-sectorNow, positionNow=existingValue/currentBase*100;
-      const valuationRank=txt(stock.valuation_signal)==='undervalued'?2:txt(stock.valuation_signal)==='fair'?1:0;
       const underweightExisting=!!existing&&positionNow<maxPos*.65;
       const tiltBonus=portfolioTiltBonus(stock,targets.tilt);
       const warnings=[...decision.evidence.warnings];
-      return {stock,conv,capacity,existingValue,sector,sectorValue,sectorHeadroom,indirect,tier,warnings,baseEligible,valuationRank,underweightExisting,tiltBonus};
+      return {stock,conv,capacity,existingValue,sector,sectorValue,sectorHeadroom,indirect,tier,warnings,baseEligible,underweightExisting,tiltBonus};
     }).filter(Boolean).sort((a,b)=>{
       const rank={preferred:0,acceptable:1,research:2};
       return Number(b.baseEligible)-Number(a.baseEligible)
@@ -2187,7 +2177,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         ||b.conv-a.conv
         ||b.sectorHeadroom-a.sectorHeadroom
         ||a.indirect-b.indirect
-        ||b.valuationRank-a.valuationRank
         ||Number(b.underweightExisting)-Number(a.underweightExisting)
         ||b.tiltBonus-a.tiltBonus;
     });
@@ -2246,7 +2235,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const manual=plan?.manual?.length?`<div class="market-fresh-list">${plan.manual.map(x=>`<button type="button" class="market-fresh-row" data-market-ticker="${esc(x.stock.ticker)}"><span><strong>${esc(x.stock.ticker)}</strong><small>Comparação manual · conv. ${Math.round(x.conv)} · ${esc(x.sector)}</small><small>${x.warnings?.length?'⚠ '+esc(x.warnings.slice(0,2).join(' · ')):'Não cumpre os filtros automáticos.'}</small></span></button>`).join('')}</div>`:''; 
       return `<p class="market-case-note">Não encontrei destinos robustos para distribuição automática dentro dos targets atuais. O capital fica por alocar.</p>${manual}`;
     }
-    return `<div class="market-fresh-summary"><strong>${euro(plan.allocated)} distribuídos</strong><span>Convicção ponderada ${plan.currentConv.toFixed(1)} → ${plan.afterConv.toFixed(1)}${plan.remaining>=50?` · ${euro(plan.remaining)} ficam por alocar`:''}</span></div><div class="market-fresh-list">${plan.allocations.map((x,i)=>`<button type="button" class="market-fresh-row" data-market-ticker="${esc(x.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(x.stock.ticker)} · ${euro(x.amount)}</strong><small>Elegível p/ capital novo · ${x.existingValue>0?'reforço existente':'nova posição'} · conv. ${Math.round(x.conv)} · ${esc(x.sector)}</small><small>Peso ${x.positionPct.toFixed(1)}% · setor ${x.sectorPct.toFixed(1)}%${x.warnings?.length?' · ⚠ '+esc(x.warnings.slice(0,2).join(' · ')):''}</small></span></button>`).join('')}</div><p class="market-case-note">A distribuição automática usa apenas candidatos com evidência forte, dentro dos targets e sem pressão material de risco/overlap. A ordem usa critérios explícitos — convicção, headroom setorial, overlap, valuation e tilt — sem score composto. O montante que não cumprir estes critérios fica por alocar.</p>`;
+    return `<div class="market-fresh-summary"><strong>${euro(plan.allocated)} distribuídos</strong><span>Convicção ponderada ${plan.currentConv.toFixed(1)} → ${plan.afterConv.toFixed(1)}${plan.remaining>=50?` · ${euro(plan.remaining)} ficam por alocar`:''}</span></div><div class="market-fresh-list">${plan.allocations.map((x,i)=>`<button type="button" class="market-fresh-row" data-market-ticker="${esc(x.stock.ticker)}"><span class="market-rebalance-rank">${i+1}</span><span><strong>${esc(x.stock.ticker)} · ${euro(x.amount)}</strong><small>Elegível p/ capital novo · ${x.existingValue>0?'reforço existente':'nova posição'} · conv. ${Math.round(x.conv)} · ${esc(x.sector)}</small><small>Peso ${x.positionPct.toFixed(1)}% · setor ${x.sectorPct.toFixed(1)}%${x.warnings?.length?' · ⚠ '+esc(x.warnings.slice(0,2).join(' · ')):''}</small></span></button>`).join('')}</div><p class="market-case-note">A distribuição automática usa apenas candidatos com evidência forte, dentro dos targets e sem pressão material de risco/overlap. A ordem usa critérios explícitos — convicção, headroom setorial, overlap e tilt — sem voltar a pontuar valuation fora da Conviction. O montante que não cumprir estes critérios fica por alocar.</p>`;
   }
 
   function openTool(tool){
