@@ -252,7 +252,7 @@ class MarketUiPolishContractTests(unittest.TestCase):
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
         uncertain = block.index("valuationSignal==='uncertain'")
         insufficient = block.index("valuationSignal==='insufficient'")
-        fallback = block.index("else if(valuationDelta!=null)")
+        fallback = block.index("else if(!valuationSignal&&valuationDelta!=null)")
         self.assertLess(uncertain, fallback)
         self.assertLess(insufficient, fallback)
         self.assertIn("valuation='Leitura não acionável'", block)
