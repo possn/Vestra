@@ -43,11 +43,22 @@ class FundamentalsRotationTests(unittest.TestCase):
         self.assertTrue(set(day1).issubset(tickers))
         self.assertTrue(set(day2).issubset(tickers))
 
-    def test_pipeline_fetches_only_selected_nonpriority_slice(self):
+    def test_pipeline_fetches_only_bounded_portfolio_and_nonpriority_slices(self):
         source = RUN_PATH.read_text(encoding="utf-8")
-        self.assertIn('FINSCANNER_FUNDAMENTALS_NONPRIORITY_REFRESH", "450"', source)
-        self.assertIn("raw_remainder = fetch_many(remainder_refresh, retries=1)", source)
-        self.assertNotIn("raw_remainder = fetch_many(remainder_tickers, retries=1)", source)
+        self.assertIn('FINSCANNER_FUNDAMENTALS_PORTFOLIO_REFRESH", "140"', source)
+        self.assertIn('FINSCANNER_FUNDAMENTALS_NONPRIORITY_REFRESH", "180"', source)
+        self.assertIn("portfolio_refresh = _select_nonpriority_refresh(", source)
+        self.assertIn("raw_portfolio = fetch_many(portfolio_refresh, workers_override=2, retries=1", source)
+        self.assertIn("raw_remainder = fetch_many(remainder_refresh, retries=0)", source)
+        self.assertNotIn("raw_portfolio = fetch_many(portfolio_remainder", source)
+        self.assertNotIn("raw_remainder = fetch_many(remainder_tickers", source)
+
+    def test_slow_enrichment_lanes_have_explicit_budgets_and_stage_timers(self):
+        source = RUN_PATH.read_text(encoding="utf-8")
+        self.assertIn('FINSCANNER_ESEF_NONPRIORITY_REFRESH", "60"', source)
+        self.assertIn('FINSCANNER_GAP_REFRESH", "80"', source)
+        self.assertIn('FINSCANNER_QUARTERLY_GAP_REFRESH", "80"', source)
+        self.assertIn('PIPELINE_STAGE done %s elapsed=%.1fs', source)
 
     def test_carried_equities_receive_latest_price_history(self):
         source = RUN_PATH.read_text(encoding="utf-8")
