@@ -16,7 +16,7 @@ class LearnedPromotionPriorityTests(unittest.TestCase):
         src = RUN.read_text(encoding="utf-8")
         learned = src.index("raw_learned = fetch_many(learned_tickers")
         portfolio = src.index("raw_portfolio = fetch_many(portfolio_remainder")
-        broad = src.index("raw_remainder = fetch_many(remainder_tickers")
+        broad = src.index("raw_remainder = fetch_many(remainder_refresh")
         self.assertLess(learned, portfolio)
         self.assertLess(portfolio, broad)
         self.assertIn("workers_override=1, retries=3", src)
