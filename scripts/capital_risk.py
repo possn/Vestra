@@ -286,7 +286,47 @@ def _validated_ticker_map():
     return cached[0] if cached else {}
 
 
-def enrich(raw, priority=None, max_nonpriority=120):
+def _refresh_rotation_key(ticker: str, day_key: str | None = None) -> str:
+    """Stable daily rotation key; changes each UTC day without persistent state."""
+    day_key = day_key or _dt.datetime.now(_dt.timezone.utc).date().isoformat()
+    return hashlib.sha256(f"{day_key}:{ticker}".encode("utf-8")).hexdigest()
+
+
+def _apply_cached_result(m, previous: dict | None) -> bool:
+    """Carry a validated prior capital-risk result without network discovery."""
+    if not isinstance(previous, dict):
+        return False
+    if previous.get("scanner_version") != CAPITAL_RISK_SCANNER_VERSION:
+        return False
+    for key in CACHE_FIELDS:
+        setattr(m, key, previous.get(key))
+    setattr(m, "capital_risk_checked", True)
+    setattr(m, "capital_risk_reused", True)
+    return True
+
+
+def _select_refresh_tickers(candidates, priority: set[str], previous: dict[str, dict],
+                            max_priority: int, max_nonpriority: int, day_key: str | None = None):
+    """Select missing-cache names first, then rotate recent cached names."""
+    tickers = [str(getattr(m, "ticker", "") or "").upper() for m in candidates]
+    priority_names = [t for t in tickers if t in priority]
+    nonpriority_names = [t for t in tickers if t not in priority]
+
+    priority_missing = [t for t in priority_names if t not in previous]
+    priority_cached = [t for t in priority_names if t in previous]
+    priority_cached.sort(key=lambda t: _refresh_rotation_key(t, day_key))
+    priority_slots = max(0, int(max_priority) - len(priority_missing))
+    selected_priority = priority_missing + priority_cached[:priority_slots]
+
+    non_missing = [t for t in nonpriority_names if t not in previous]
+    non_cached = [t for t in nonpriority_names if t in previous]
+    non_missing.sort()
+    non_cached.sort(key=lambda t: _refresh_rotation_key(t, day_key))
+    selected_non = (non_missing + non_cached)[:max(0, int(max_nonpriority))]
+    return set(selected_priority + selected_non)
+
+
+def enrich(raw, priority=None, max_nonpriority=None, max_priority=None):
     priority = {str(x).upper() for x in (priority or [])}
     previous = _load_previous()
     next_cache = dict(previous)
@@ -294,6 +334,29 @@ def enrich(raw, priority=None, max_nonpriority=120):
     if not cmap:
         log.warning("Capital risk unavailable: validated SEC ticker/CIK snapshot missing")
         return raw
+
+    if max_priority is None:
+        max_priority = max(0, int(os.getenv("FINSCANNER_CAPITAL_RISK_PRIORITY_REFRESH", "160")))
+    if max_nonpriority is None:
+        max_nonpriority = max(0, int(os.getenv("FINSCANNER_CAPITAL_RISK_NONPRIORITY_REFRESH", "60")))
+
+    candidates = []
+    by_ticker = {}
+    for m in raw:
+        t = str(getattr(m, "ticker", "") or "").upper()
+        if t in cmap and _candidate(m, priority):
+            candidates.append(m)
+            by_ticker[t] = m
+
+    refresh_tickers = _select_refresh_tickers(
+        candidates, priority, previous, max_priority, max_nonpriority
+    )
+
+    carried = 0
+    for m in candidates:
+        t = str(getattr(m, "ticker", "") or "").upper()
+        if t not in refresh_tickers and _apply_cached_result(m, previous.get(t)):
+            carried += 1
 
     api_ua = os.getenv("SEC_USER_AGENT", "").strip()
     api_session = None
@@ -310,18 +373,18 @@ def enrich(raw, priority=None, max_nonpriority=120):
             archive_by_cik = _archive_rows_by_cik(archive_client)
         return list(archive_by_cik.get(int(cik), []))
 
-    non = checked = flagged = reused = rescanned = 0
+    checked = flagged = reused = rescanned = 0
     api_discovery = archive_discovery = discovery_failed = 0
 
-    for m in raw:
-        t = str(getattr(m, "ticker", "") or "").upper()
-        if t not in cmap or not _candidate(m, priority):
-            continue
-        if t not in priority:
-            non += 1
-            if non > max_nonpriority:
-                continue
+    log.info(
+        "Capital-risk incremental refresh: selected=%d/%d (priority budget=%d, nonpriority budget=%d); carried=%d",
+        len(refresh_tickers), len(candidates), max_priority, max_nonpriority, carried,
+    )
 
+    for t in sorted(refresh_tickers):
+        m = by_ticker.get(t)
+        if m is None:
+            continue
         cik = int(cmap[t])
         rows = []
         scan_client = archive_client
@@ -363,6 +426,7 @@ def enrich(raw, priority=None, max_nonpriority=120):
             time.sleep(0.11)
         except Exception as exc:
             log.debug("Capital risk %s: %s", t, exc)
+            _apply_cached_result(m, previous.get(t))
 
     try:
         _write_cache(next_cache)
@@ -370,7 +434,8 @@ def enrich(raw, priority=None, max_nonpriority=120):
         log.warning("Capital-risk cache write failed: %s", exc)
 
     log.info(
-        "Capital-structure risk checked %d issuers; %d flagged; %d unchanged reused; %d rescanned; discovery api=%d archives=%d missing=%d",
-        checked, flagged, reused, rescanned, api_discovery, archive_discovery, discovery_failed,
+        "Capital-structure risk refreshed %d issuers; %d flagged; %d unchanged reused; %d rescanned; %d carried without discovery; discovery api=%d archives=%d missing=%d",
+        checked, flagged, reused, rescanned, carried, api_discovery, archive_discovery, discovery_failed,
     )
     return raw
+
