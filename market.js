@@ -365,34 +365,20 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return {low,high:high??low,current,above};
   }
 
-  function low52OpportunityRank(s,stats){
-    const low=n(s.low52_score), recovery=n(s.recovery_score), quality=n(s.quality_pct), confidence=n(s.confidence_score);
-    const rel=n(s.sector_relative_return_1y_pct), upside=n(s.fair_value_upside_pct);
-    const risk=txt(s.risk_gate).toLowerCase(), lowStatus=txt(s.low52_status), rec=txt(s.recovery_status);
-    let parts=[], weight=0;
-    const add=(v,w)=>{ if(v!=null){ parts.push(Math.max(0,Math.min(100,v))*w); weight+=w; } };
-    add(low,0.35); add(recovery,0.25); add(quality,0.15); add(confidence,0.05);
-    if(upside!=null) add(Math.max(0,Math.min(100,50+upside)),0.10);
-    if(rel!=null) add(Math.max(0,Math.min(100,50+rel)),0.10);
-    let score=weight?parts.reduce((a,b)=>a+b,0)/weight:50;
-    if(lowStatus==='opportunity') score+=7;
-    if(lowStatus==='watch') score+=2;
-    if(lowStatus==='value_trap_risk') score-=18;
-    if(lowStatus==='structural_risk') score-=30;
-    if(rec==='confirmed') score+=8;
-    else if(rec==='recovering') score+=5;
-    else if(rec==='stabilizing') score+=2;
-    else if(rec==='bounce_only') score-=7;
-    else if(rec==='failed') score-=16;
-    if(risk==='high') score-=25; else if(risk==='severe') score-=40;
-    const dist=stats?.above; if(dist!=null && dist<=2) score+=2;
-    return Math.round(Math.max(0,Math.min(100,score)));
+  function low52OpportunityRank(s){
+    // The 52-week-low surface is a lens over canonical Discovery, not a
+    // second alpha engine. Eligibility, evidence quality, Risk Gate and score
+    // caps are owned by scripts/opportunity_rank.py and published in the row.
+    if(s?.opportunity_eligible!==true) return null;
+    const score=n(s?.opportunity_score);
+    return score==null?null:Math.round(Math.max(0,Math.min(100,score)));
   }
 
   function renderLows(){
     let rows=M.stocks.filter(s=>!isFund(s)).map(s=>({s,stats:low52Stats(s)}))
       .filter(x=>x.stats && x.stats.above>=-0.5 && x.stats.above<=5)
-      .map(x=>({...x,opportunityRank:low52OpportunityRank(x.s,x.stats)}))
+      .map(x=>({...x,opportunityRank:low52OpportunityRank(x.s)}))
+      .filter(x=>x.opportunityRank!=null)
       .sort((a,b)=>b.opportunityRank-a.opportunityRank||a.stats.above-b.stats.above);
     const total=rows.length;
     rows=rows.slice(0,30);
@@ -405,8 +391,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const recoveryLabel=txt(s.recovery_label), recoveryScore=n(s.recovery_score);
       const meta=[`Opportunity ${opportunityRank}/100`,`${dist.toFixed(1)}% acima do mínimo`,label,lowScore!=null?`Low52 ${Math.round(lowScore)}/100`:'',cause,trendText,recoveryLabel,recoveryScore!=null?`Recovery ${Math.round(recoveryScore)}/100`:'' ].filter(Boolean).join(' · ');
       return renderRow(s,meta);
-    }).join(''):'<div class="market-empty"><strong>Sem empresas até 5% do mínimo de 52 semanas.</strong><br><span>O universo será recalculado quando os dados de mercado forem atualizados.</span></div>';
-    return `<section class="market-section"><div class="market-section__head"><div><h3>Mínimos de 52 semanas</h3><p>Até 5% do mínimo, ordenados pelo Opportunity Rank: qualidade + valuation + causa da queda + setor + confirmação de recuperação.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
+    }).join(''):'<div class="market-empty"><strong>Sem oportunidades Discovery elegíveis até 5% do mínimo de 52 semanas.</strong><br><span>O universo será recalculado quando os dados de mercado forem atualizados.</span></div>';
+    return `<section class="market-section"><div class="market-section__head"><div><h3>Mínimos de 52 semanas</h3><p>Até 5% do mínimo, filtrados e ordenados pelo Discovery canónico. Esta vista não calcula um segundo score.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
   }
 
   const ETF_THEMES=[
