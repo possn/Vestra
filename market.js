@@ -1080,7 +1080,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       body.innerHTML=`<div class="market-detail-card market-smart-map-card"><div class="market-perspective-head"><div><small>SMART MONEY MAP</small><h4>Preço e operações declaradas</h4></div><span class="market-data-age">12 meses</span></div>${smartMoneyTimeline(s)}</div><div class="market-detail-card"><h4>Insiders · 30 dias</h4><p>${esc(insiderSummary)}</p>${ins.length?`<ul>${ins.map(x=>`<li>${esc(x.name||x.insider||'Insider')} · ${esc(x.transaction_type||x.type||'')} · ${money(x.value||x.transaction_value,'USD')}</li>`).join('')}</ul>`:''}</div><div class="market-detail-card"><h4>Congresso</h4>${con.length?`<ul>${con.map(x=>`<li>${esc(x.representative||x.member||x.name||'')} · ${esc(x.type||x.transaction||'')} · ${esc(x.amount||x.amount_range||'—')}</li>`).join('')}</ul>`:'<p id="marketCongressEmpty">A verificar divulgações recentes…</p>'}</div>`;
       if(!con.length) loadCongressLive(s.ticker).then(trades=>{
         if(!$m('marketSheet')?.hidden && txt($m('marketSheet')?.dataset.ticker).toUpperCase()===txt(s.ticker).toUpperCase() && $m('marketCongressEmpty')){
-          if(trades.length) renderDetailTab(s,'smart'); else $m('marketCongressEmpty').textContent='Sem operações recentes registadas.';
+          if(trades.length) renderDetailTab(s,'smart');
+          else $m('marketCongressEmpty').textContent=M.congressError
+            ? 'Divulgações do Congresso indisponíveis neste momento.'
+            : 'Sem operações recentes registadas.';
         }
       });
     }
