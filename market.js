@@ -1148,11 +1148,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     // remain independent decision gates so the same weakness is not counted twice.
     const score=n(s?.score), est=n(s?.estimate_momentum_score);
     const valMap={undervalued:85,fair:65,overvalued:25,uncertain:40,insufficient:45};
-    const val=valMap[txt(s?.valuation_signal)] ?? 50;
+    const valuationSignal=txt(s?.valuation_signal);
+    const val=Object.prototype.hasOwnProperty.call(valMap,valuationSignal)?valMap[valuationSignal]:null;
     const parts=[];
     if(score!=null) parts.push([score,.70]);
     if(est!=null) parts.push([est,.12]);
-    parts.push([val,.18]);
+    if(val!=null) parts.push([val,.18]);
     if(!parts.length) return null;
     let x=parts.reduce((a,[v,w])=>a+v*w,0)/parts.reduce((a,[,w])=>a+w,0);
     if(txt(s?.thesis_direction)==='up') x+=4;
