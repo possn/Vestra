@@ -20,6 +20,9 @@ ROOT = Path(__file__).resolve().parents[1]
 STOCKS = ROOT / "data" / "stocks.json"
 OUT = ROOT / "data" / "score_peer_shadow.json"
 MIN_PEERS = 20
+SHADOW_ROLE = "production_parity_reconstruction"
+SHADOW_CANDIDATE_ACTIVE = False
+SHADOW_CANDIDATE_ID = None
 SPECIALIST_MODELS = ("bank", "reit", "insurance", "utility", "energy", "biotech", "growth_tech")
 
 
@@ -534,9 +537,9 @@ def main():
         "schema_version": 3,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "production_unchanged": True,
-        "role": "production_parity_reconstruction",
-        "candidate_active": False,
-        "candidate_id": None,
+        "role": SHADOW_ROLE,
+        "candidate_active": SHADOW_CANDIDATE_ACTIVE,
+        "candidate_id": SHADOW_CANDIDATE_ID,
         "phase": "specialist_peer_parity_reconstruction",
         "methodology": {
             "models": list(SPECIALIST_MODELS),
