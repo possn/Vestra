@@ -100,7 +100,7 @@ class ScoreWeightContractTests(unittest.TestCase):
         tree = ast.parse(self.shadow)
         fn = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "weighted")
         helper = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "n")
-        ns = {}
+        ns = {"math": __import__("math")}
         exec(compile(ast.Module(body=[helper, fn], type_ignores=[]), "<shadow-weighted>", "exec"), ns)
         self.assertAlmostEqual(ns["weighted"]([(80.0, .8), (None, .2)]), 74.0, places=9)
 
