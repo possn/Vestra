@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: update-aaii-sentiment
@@ -46,7 +47,14 @@ jobs:
               assert 99.0 <= total <= 101.0, (row, total)
           print('AAII payload valid:', weeks[0]['date'])
           PY
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+
       - name: Publish AAII snapshot
+        if: steps.publish_window.outputs.defer != 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
