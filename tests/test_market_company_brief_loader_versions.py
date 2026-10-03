@@ -14,7 +14,7 @@ class MarketCompanyBriefLoaderVersionTests(unittest.TestCase):
 
     def test_dossier_controls_fallback_tracks_canonical_version(self):
         self.assertIn("market-dossier-controls.js?v=2.1", self.company)
-        self.assertIn("version: '2.0'", self.dossier)
+        self.assertIn("version: '2.1'", self.dossier)
         self.assertNotIn("market-dossier-controls.js?v=1.5", self.company)
 
     def test_company_brief_presentation_has_static_css_owner(self):
