@@ -252,6 +252,20 @@ def _weighted(parts):
     return sum((50.0 if value is None else value) * weight for value, weight in parts) / wsum
 
 
+MIN_SPECIALIST_PEER_OBSERVATIONS = 20
+
+
+def _benchmark_values(peer_values, global_values, min_observations=MIN_SPECIALIST_PEER_OBSERVATIONS):
+    """Use same-model peers when the metric has a defensible sample.
+
+    Sparse specialist metrics fall back to the full equity universe rather than
+    pretending a tiny peer sample is a stable percentile benchmark.
+    """
+    peer_values = list(peer_values)
+    observed = sum(value is not None for value in peer_values)
+    return peer_values if observed >= min_observations else list(global_values)
+
+
 AI_EXPOSED_TICKERS = {
     "MSFT", "NVDA", "GOOGL", "GOOG", "AMZN", "META", "ORCL", "AVGO",
     "AMD", "PLTR", "CRM", "NOW", "SNOW", "SMCI", "ARM", "TSM", "ASML",
@@ -296,6 +310,56 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         (r.free_cash_flow / rev) if r.free_cash_flow is not None and rev not in (None, 0) else None
         for r, rev in zip(equities, ttm_revenues)
     ]
+
+    # Specialist models benchmark raw metrics against same-model peers whenever
+    # the metric has enough finite observations. Sparse metrics fall back to the
+    # full equity universe, matching the peer-shadow validation contract.
+    model_by_id = {id(x): _score_model_for(x) for x in equities}
+    peers_by_model = {}
+    for x in equities:
+        peers_by_model.setdefault(model_by_id[id(x)], []).append(x)
+    index_by_id = {id(x): i for i, x in enumerate(equities)}
+
+    def peer_attr_values(peers, attr):
+        return _benchmark_values([getattr(x, attr) for x in peers], arr(attr))
+
+    def peer_derived_values(peers, global_values):
+        return _benchmark_values(
+            [global_values[index_by_id[id(x)]] for x in peers],
+            global_values,
+        )
+
+    def interest_coverage_value(x):
+        if x.ebit is None or x.interest_expense in (None, 0):
+            return None
+        return x.ebit / x.interest_expense
+
+    all_interest_coverages = [interest_coverage_value(x) for x in equities]
+
+    def peer_interest_coverages(peers):
+        return _benchmark_values(
+            [interest_coverage_value(x) for x in peers],
+            all_interest_coverages,
+        )
+
+    def peer_growth_score(stock, peers):
+        return _avg([
+            _percentile_rank(stock.revenue_growth, peer_attr_values(peers, "revenue_growth")),
+            _percentile_rank(stock.earnings_growth, peer_attr_values(peers, "earnings_growth")),
+            _percentile_rank(stock.earnings_quarterly_growth, peer_attr_values(peers, "earnings_quarterly_growth")),
+        ])
+
+    def peer_stability_score(stock, peers):
+        return _percentile_rank(stock.beta, peer_attr_values(peers, "beta"), invert=True) if stock.beta is not None else None
+
+    def peer_cashflow_score(stock, peers, stock_fcf_yield):
+        peer_fcf = peer_derived_values(peers, fcf_yields)
+        peer_fcf = [v if v is None or abs(v) <= 0.30 else None for v in peer_fcf]
+        scored_fcf = stock_fcf_yield if stock_fcf_yield is None or abs(stock_fcf_yield) <= 0.30 else None
+        return _avg([
+            _percentile_rank(scored_fcf, peer_fcf),
+            _positive_score(stock.operating_cash_flow),
+        ])
 
     out: list[ScoredTicker] = []
 
@@ -362,178 +426,206 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
 
         stability = _percentile_rank(r.beta, arr("beta"), invert=True) if r.beta is not None else None
 
-        model = _score_model_for(r)
+        model = model_by_id[id(r)]
         income = _percentile_rank(r.dividend_yield, arr("dividend_yield")) if r.dividend_yield is not None else None
 
         # Sector-aware score packs. These deliberately use only metrics that are
         # economically meaningful for the business model. Specialist packs are
         # marked as proxy models until regulatory / FFO-AFFO datasets are added.
         if model == "bank":
+            peers = peers_by_model["bank"]
             bank_quality = _avg([
-                _percentile_rank(r.roe, arr("roe")),
-                _percentile_rank(r.roa, arr("roa")),
-                _percentile_rank(r.profit_margin, arr("profit_margin")),
+                _percentile_rank(r.roe, peer_attr_values(peers, "roe")),
+                _percentile_rank(r.roa, peer_attr_values(peers, "roa")),
+                _percentile_rank(r.profit_margin, peer_attr_values(peers, "profit_margin")),
             ])
-            bank_efficiency = _percentile_rank(r.efficiency_ratio_proxy, arr("efficiency_ratio_proxy"), invert=True)
-            bank_asset_quality = _percentile_rank(r.provision_to_revenue, arr("provision_to_revenue"), invert=True)
-            bank_capital = _percentile_rank(r.equity_to_assets, arr("equity_to_assets"))
-            bank_nii_growth = _percentile_rank(r.net_interest_income_yoy, arr("net_interest_income_yoy"))
-            bank_growth = _avg([growth, bank_nii_growth])
+            bank_efficiency = _percentile_rank(r.efficiency_ratio_proxy, peer_attr_values(peers, "efficiency_ratio_proxy"), invert=True)
+            bank_asset_quality = _percentile_rank(r.provision_to_revenue, peer_attr_values(peers, "provision_to_revenue"), invert=True)
+            bank_capital = _percentile_rank(r.equity_to_assets, peer_attr_values(peers, "equity_to_assets"))
+            bank_nii_growth = _percentile_rank(r.net_interest_income_yoy, peer_attr_values(peers, "net_interest_income_yoy"))
+            bank_growth = _avg([peer_growth_score(r, peers), bank_nii_growth])
             bank_value = _avg([
-                _percentile_rank(r.price_to_book, arr("price_to_book"), invert=True) if r.price_to_book and r.price_to_book > 0 else None,
-                _percentile_rank(r.trailing_pe, arr("trailing_pe"), invert=True) if r.trailing_pe and r.trailing_pe > 0 else None,
-                _percentile_rank(r.forward_pe, arr("forward_pe"), invert=True) if r.forward_pe and r.forward_pe > 0 else None,
+                _percentile_rank(r.price_to_book, peer_attr_values(peers, "price_to_book"), invert=True) if r.price_to_book and r.price_to_book > 0 else None,
+                _percentile_rank(r.trailing_pe, peer_attr_values(peers, "trailing_pe"), invert=True) if r.trailing_pe and r.trailing_pe > 0 else None,
+                _percentile_rank(r.forward_pe, peer_attr_values(peers, "forward_pe"), invert=True) if r.forward_pe and r.forward_pe > 0 else None,
             ])
-            composite = _weighted([(bank_quality,.22),(bank_efficiency,.13),(bank_asset_quality,.10),(bank_capital,.15),(bank_growth,.15),(bank_value,.15),(income,.05),(stability,.05)])
+            bank_income = _percentile_rank(r.dividend_yield, peer_attr_values(peers, "dividend_yield")) if r.dividend_yield is not None else None
+            bank_stability = peer_stability_score(r, peers)
+            composite = _weighted([(bank_quality,.22),(bank_efficiency,.13),(bank_asset_quality,.10),(bank_capital,.15),(bank_growth,.15),(bank_value,.15),(bank_income,.05),(bank_stability,.05)])
             quality = _avg([bank_quality, bank_efficiency, bank_asset_quality, bank_capital])
-            growth = bank_growth
-            value = bank_value
-            balance = bank_capital
-            score_dimensions = {"Bank Quality": bank_quality, "Efficiency": bank_efficiency, "Asset Quality": bank_asset_quality, "Capital Proxy": bank_capital, "Growth": bank_growth, "Valuation": bank_value, "Income": income, "Stability": stability}
-            model_note = "Bank-native proxy model: profitability, statement-derived efficiency, credit-loss provision intensity, equity/assets capital proxy, net-interest-income growth, P/B-P/E valuation and income. CET1 and NPL remain unavailable because they require regulatory filings."
+            growth, value, balance, stability, income = bank_growth, bank_value, bank_capital, bank_stability, bank_income
+            score_dimensions = {"Bank Quality": bank_quality, "Efficiency": bank_efficiency, "Asset Quality": bank_asset_quality, "Capital Proxy": bank_capital, "Growth": bank_growth, "Valuation": bank_value, "Income": bank_income, "Stability": bank_stability}
+            model_note = "Bank-native proxy model: profitability, statement-derived efficiency, credit-loss provision intensity, equity/assets capital proxy, net-interest-income growth, P/B-P-E valuation and income. CET1 and NPL remain unavailable because they require regulatory filings."
         elif model == "reit":
-            # Compare REIT-native metrics against REIT peers only. This avoids
-            # ranking P/FFO or payout against structurally unrelated companies.
-            reit_peers = [x for x in equities if _score_model_for(x) == "reit"]
-            reit_ffo_quality = _percentile_rank(r.reit_ffo_per_share_proxy, [x.reit_ffo_per_share_proxy for x in reit_peers])
+            peers = peers_by_model["reit"]
+            reit_ffo_quality = _percentile_rank(r.reit_ffo_per_share_proxy, peer_attr_values(peers, "reit_ffo_per_share_proxy"))
             reit_quality = _avg([
                 reit_ffo_quality,
-                _percentile_rank(r.roe, [x.roe for x in reit_peers]),
-                _percentile_rank(r.profit_margin, [x.profit_margin for x in reit_peers]),
+                _percentile_rank(r.roe, peer_attr_values(peers, "roe")),
+                _percentile_rank(r.profit_margin, peer_attr_values(peers, "profit_margin")),
             ])
+            reit_coverage = _percentile_rank(coverage, peer_interest_coverages(peers)) if coverage is not None else None
             reit_leverage = _avg([
-                _percentile_rank(r.reit_net_debt_to_ebitda, [x.reit_net_debt_to_ebitda for x in reit_peers], invert=True),
-                coverage_pct,
+                _percentile_rank(r.reit_net_debt_to_ebitda, peer_attr_values(peers, "reit_net_debt_to_ebitda"), invert=True),
+                reit_coverage,
             ])
             reit_value = _avg([
-                _percentile_rank(r.reit_p_ffo_proxy, [x.reit_p_ffo_proxy for x in reit_peers], invert=True) if r.reit_p_ffo_proxy and r.reit_p_ffo_proxy > 0 else None,
-                _percentile_rank(r.price_to_book, [x.price_to_book for x in reit_peers], invert=True) if r.price_to_book and r.price_to_book > 0 else None,
+                _percentile_rank(r.reit_p_ffo_proxy, peer_attr_values(peers, "reit_p_ffo_proxy"), invert=True) if r.reit_p_ffo_proxy and r.reit_p_ffo_proxy > 0 else None,
+                _percentile_rank(r.price_to_book, peer_attr_values(peers, "price_to_book"), invert=True) if r.price_to_book and r.price_to_book > 0 else None,
             ])
+            reit_income = _percentile_rank(r.dividend_yield, peer_attr_values(peers, "dividend_yield")) if r.dividend_yield is not None else None
             reit_distribution = _avg([
-                income,
-                _percentile_rank(r.reit_ffo_payout_proxy, [x.reit_ffo_payout_proxy for x in reit_peers], invert=True) if r.reit_ffo_payout_proxy is not None and r.reit_ffo_payout_proxy >= 0 else None,
+                reit_income,
+                _percentile_rank(r.reit_ffo_payout_proxy, peer_attr_values(peers, "reit_ffo_payout_proxy"), invert=True) if r.reit_ffo_payout_proxy is not None and r.reit_ffo_payout_proxy >= 0 else None,
             ])
-            composite = _weighted([(reit_quality,.22),(growth,.16),(reit_leverage,.20),(reit_value,.20),(reit_distribution,.17),(stability,.05)])
-            quality, balance, value = reit_quality, reit_leverage, reit_value
-            score_dimensions = {"REIT Quality": reit_quality, "Growth": growth, "Leverage": reit_leverage, "P/FFO Value": reit_value, "Distribution": reit_distribution, "Stability": stability}
+            reit_growth = peer_growth_score(r, peers)
+            reit_stability = peer_stability_score(r, peers)
+            composite = _weighted([(reit_quality,.22),(reit_growth,.16),(reit_leverage,.20),(reit_value,.20),(reit_distribution,.17),(reit_stability,.05)])
+            quality, growth, balance, value, stability, income = reit_quality, reit_growth, reit_leverage, reit_value, reit_stability, reit_income
+            score_dimensions = {"REIT Quality": reit_quality, "Growth": reit_growth, "Leverage": reit_leverage, "P/FFO Value": reit_value, "Distribution": reit_distribution, "Stability": reit_stability}
             model_note = "REIT-native proxy model: statement-derived FFO proxy, P/FFO proxy, FFO payout proxy, net-debt/EBITDA, growth and distributions. AFFO, NAV and occupancy remain unavailable rather than inferred."
         elif model == "insurance":
-            insurance_peers = [x for x in equities if _score_model_for(x) == "insurance"]
+            peers = peers_by_model["insurance"]
             ins_quality = _avg([
-                _percentile_rank(r.roe, [x.roe for x in insurance_peers]),
-                _percentile_rank(r.roa, [x.roa for x in insurance_peers]),
-                _percentile_rank(r.profit_margin, [x.profit_margin for x in insurance_peers]),
+                _percentile_rank(r.roe, peer_attr_values(peers, "roe")),
+                _percentile_rank(r.roa, peer_attr_values(peers, "roa")),
+                _percentile_rank(r.profit_margin, peer_attr_values(peers, "profit_margin")),
             ])
             ins_underwriting = _avg([
-                _percentile_rank(r.insurance_claims_to_revenue, [x.insurance_claims_to_revenue for x in insurance_peers], invert=True),
-                _percentile_rank(r.insurance_operating_ratio_proxy, [x.insurance_operating_ratio_proxy for x in insurance_peers], invert=True),
+                _percentile_rank(r.insurance_claims_to_revenue, peer_attr_values(peers, "insurance_claims_to_revenue"), invert=True),
+                _percentile_rank(r.insurance_operating_ratio_proxy, peer_attr_values(peers, "insurance_operating_ratio_proxy"), invert=True),
             ])
             ins_capital = _avg([
-                _percentile_rank(r.insurance_equity_to_assets, [x.insurance_equity_to_assets for x in insurance_peers]),
-                _percentile_rank(r.debt_to_equity, [x.debt_to_equity for x in insurance_peers], invert=True),
+                _percentile_rank(r.insurance_equity_to_assets, peer_attr_values(peers, "insurance_equity_to_assets")),
+                _percentile_rank(r.debt_to_equity, peer_attr_values(peers, "debt_to_equity"), invert=True),
             ])
             ins_value = _avg([
-                _percentile_rank(r.price_to_book, [x.price_to_book for x in insurance_peers], invert=True) if r.price_to_book and r.price_to_book > 0 else None,
-                _percentile_rank(r.trailing_pe, [x.trailing_pe for x in insurance_peers], invert=True) if r.trailing_pe and r.trailing_pe > 0 else None,
+                _percentile_rank(r.price_to_book, peer_attr_values(peers, "price_to_book"), invert=True) if r.price_to_book and r.price_to_book > 0 else None,
+                _percentile_rank(r.trailing_pe, peer_attr_values(peers, "trailing_pe"), invert=True) if r.trailing_pe and r.trailing_pe > 0 else None,
             ])
-            ins_income_quality = _avg([
-                income,
-                _positive_score(r.insurance_net_investment_income),
-            ])
-            composite = _weighted([(ins_quality,.22),(ins_underwriting,.18),(ins_capital,.18),(growth,.12),(ins_value,.17),(ins_income_quality,.08),(stability,.05)])
-            quality, balance, value = _avg([ins_quality, ins_underwriting]), ins_capital, ins_value
-            score_dimensions = {"Insurance Quality": ins_quality, "Underwriting Proxy": ins_underwriting, "Capital Proxy": ins_capital, "Growth": growth, "Valuation": ins_value, "Income": ins_income_quality, "Stability": stability}
-            model_note = "Insurance-native proxy model: profitability, claims/cost-load proxies, accounting capitalisation, growth, P/B-P/E valuation and income. It does not fabricate statutory combined ratio or solvency capital."
+            ins_dividend = _percentile_rank(r.dividend_yield, peer_attr_values(peers, "dividend_yield")) if r.dividend_yield is not None else None
+            ins_income_quality = _avg([ins_dividend, _positive_score(r.insurance_net_investment_income)])
+            ins_growth = peer_growth_score(r, peers)
+            ins_stability = peer_stability_score(r, peers)
+            composite = _weighted([(ins_quality,.22),(ins_underwriting,.18),(ins_capital,.18),(ins_growth,.12),(ins_value,.17),(ins_income_quality,.08),(ins_stability,.05)])
+            quality, growth, balance, value, stability, income = _avg([ins_quality, ins_underwriting]), ins_growth, ins_capital, ins_value, ins_stability, ins_dividend
+            score_dimensions = {"Insurance Quality": ins_quality, "Underwriting Proxy": ins_underwriting, "Capital Proxy": ins_capital, "Growth": ins_growth, "Valuation": ins_value, "Income": ins_income_quality, "Stability": ins_stability}
+            model_note = "Insurance-native proxy model: profitability, claims/cost-load proxies, accounting capitalisation, growth, P/B-P-E valuation and income. It does not fabricate statutory combined ratio or solvency capital."
         elif model == "utility":
-            peers = [x for x in equities if _score_model_for(x) == "utility"]
+            peers = peers_by_model["utility"]
             util_quality = _avg([
-                _percentile_rank(r.roe, [x.roe for x in peers]),
-                _percentile_rank(r.operating_margin, [x.operating_margin for x in peers]),
-                _percentile_rank(r.roce_proxy, [x.roce_proxy for x in peers]),
+                _percentile_rank(r.roe, peer_attr_values(peers, "roe")),
+                _percentile_rank(r.operating_margin, peer_attr_values(peers, "operating_margin")),
+                _percentile_rank(r.roce_proxy, peer_attr_values(peers, "roce_proxy")),
             ])
+            util_coverage = _percentile_rank(coverage, peer_interest_coverages(peers)) if coverage is not None else None
             util_balance = _avg([
-                _percentile_rank(r.debt_to_equity, [x.debt_to_equity for x in peers], invert=True),
-                coverage_pct,
+                _percentile_rank(r.debt_to_equity, peer_attr_values(peers, "debt_to_equity"), invert=True),
+                util_coverage,
             ])
             util_income = _avg([
-                _percentile_rank(r.dividend_yield, [x.dividend_yield for x in peers]),
-                _percentile_rank(r.payout_ratio, [x.payout_ratio for x in peers], invert=True) if r.payout_ratio is not None else None,
+                _percentile_rank(r.dividend_yield, peer_attr_values(peers, "dividend_yield")),
+                _percentile_rank(r.payout_ratio, peer_attr_values(peers, "payout_ratio"), invert=True) if r.payout_ratio is not None else None,
             ])
             util_value = _avg([
-                _percentile_rank(r.forward_pe, [x.forward_pe for x in peers], invert=True) if r.forward_pe and r.forward_pe > 0 else None,
-                _percentile_rank(r.trailing_pe, [x.trailing_pe for x in peers], invert=True) if r.trailing_pe and r.trailing_pe > 0 else None,
-                _percentile_rank(r.price_to_book, [x.price_to_book for x in peers], invert=True) if r.price_to_book and r.price_to_book > 0 else None,
+                _percentile_rank(r.forward_pe, peer_attr_values(peers, "forward_pe"), invert=True) if r.forward_pe and r.forward_pe > 0 else None,
+                _percentile_rank(r.trailing_pe, peer_attr_values(peers, "trailing_pe"), invert=True) if r.trailing_pe and r.trailing_pe > 0 else None,
+                _percentile_rank(r.price_to_book, peer_attr_values(peers, "price_to_book"), invert=True) if r.price_to_book and r.price_to_book > 0 else None,
             ])
-            util_cash = _avg([cashflow, _positive_score(r.operating_cash_flow)])
-            composite = _weighted([(util_quality,.18),(util_balance,.22),(util_income,.18),(util_value,.17),(growth,.10),(stability,.10),(util_cash,.05)])
-            quality, balance, value, cashflow = util_quality, util_balance, util_value, util_cash
-            score_dimensions = {"Utility Quality":util_quality,"Balance":util_balance,"Income":util_income,"Valuation":util_value,"Growth":growth,"Stability":stability,"Cash Flow":util_cash}
+            util_growth = peer_growth_score(r, peers)
+            util_stability = peer_stability_score(r, peers)
+            util_cash = peer_cashflow_score(r, peers, fcf_yield)
+            composite = _weighted([(util_quality,.18),(util_balance,.22),(util_income,.18),(util_value,.17),(util_growth,.10),(util_stability,.10),(util_cash,.05)])
+            quality, growth, balance, value, cashflow, stability = util_quality, util_growth, util_balance, util_value, util_cash, util_stability
+            score_dimensions = {"Utility Quality":util_quality,"Balance":util_balance,"Income":util_income,"Valuation":util_value,"Growth":util_growth,"Stability":util_stability,"Cash Flow":util_cash}
             model_note = "Utility model: balance-sheet resilience, regulated-style income durability, profitability, peer valuation and stability receive more weight than headline growth."
         elif model == "energy":
-            peers = [x for x in equities if _score_model_for(x) == "energy"]
-            peer_fcf = [(x.free_cash_flow/x.market_cap) if x.free_cash_flow is not None and x.market_cap and x.market_cap>0 else None for x in peers]
+            peers = peers_by_model["energy"]
+            peer_fcf = [v if v is None or abs(v) <= 0.30 else None for v in peer_derived_values(peers, fcf_yields)]
             energy_quality = _avg([
-                _percentile_rank(r.roe, [x.roe for x in peers]),
-                _percentile_rank(r.operating_margin, [x.operating_margin for x in peers]),
-                _percentile_rank(r.roce_proxy, [x.roce_proxy for x in peers]),
+                _percentile_rank(r.roe, peer_attr_values(peers, "roe")),
+                _percentile_rank(r.operating_margin, peer_attr_values(peers, "operating_margin")),
+                _percentile_rank(r.roce_proxy, peer_attr_values(peers, "roce_proxy")),
             ])
-            energy_cash = _avg([
-                _percentile_rank(fcf_yield_for_score, peer_fcf),
-                _positive_score(r.operating_cash_flow),
-            ])
+            energy_cash = _avg([_percentile_rank(fcf_yield_for_score, peer_fcf), _positive_score(r.operating_cash_flow)])
+            energy_coverage = _percentile_rank(coverage, peer_interest_coverages(peers)) if coverage is not None else None
             energy_balance = _avg([
-                _percentile_rank(r.debt_to_equity, [x.debt_to_equity for x in peers], invert=True),
-                _percentile_rank(net_cash_to_cap[idx], [((x.total_cash or 0)-(x.total_debt or 0))/x.market_cap if x.market_cap and (x.total_cash is not None or x.total_debt is not None) else None for x in peers]),
-                coverage_pct,
+                _percentile_rank(r.debt_to_equity, peer_attr_values(peers, "debt_to_equity"), invert=True),
+                _percentile_rank(net_cash_to_cap[idx], peer_derived_values(peers, net_cash_to_cap)),
+                energy_coverage,
             ])
             energy_value = _avg([
-                _percentile_rank(r.trailing_pe, [x.trailing_pe for x in peers], invert=True) if r.trailing_pe and r.trailing_pe>0 else None,
-                _percentile_rank(r.forward_pe, [x.forward_pe for x in peers], invert=True) if r.forward_pe and r.forward_pe>0 else None,
-                _percentile_rank(r.enterprise_to_ebitda, [x.enterprise_to_ebitda for x in peers], invert=True) if r.enterprise_to_ebitda and r.enterprise_to_ebitda>0 else None,
+                _percentile_rank(r.trailing_pe, peer_attr_values(peers, "trailing_pe"), invert=True) if r.trailing_pe and r.trailing_pe>0 else None,
+                _percentile_rank(r.forward_pe, peer_attr_values(peers, "forward_pe"), invert=True) if r.forward_pe and r.forward_pe>0 else None,
+                _percentile_rank(r.enterprise_to_ebitda, peer_attr_values(peers, "enterprise_to_ebitda"), invert=True) if r.enterprise_to_ebitda and r.enterprise_to_ebitda>0 else None,
             ])
-            composite = _weighted([(energy_quality,.20),(energy_cash,.22),(energy_balance,.18),(energy_value,.20),(growth,.10),(stability,.10)])
-            quality,balance,value,cashflow=energy_quality,energy_balance,energy_value,energy_cash
-            score_dimensions={"Energy Quality":energy_quality,"Cash Flow":energy_cash,"Balance":energy_balance,"Valuation":energy_value,"Growth":growth,"Stability":stability}
+            energy_growth = peer_growth_score(r, peers)
+            energy_stability = peer_stability_score(r, peers)
+            composite = _weighted([(energy_quality,.20),(energy_cash,.22),(energy_balance,.18),(energy_value,.20),(energy_growth,.10),(energy_stability,.10)])
+            quality,growth,balance,value,cashflow,stability=energy_quality,energy_growth,energy_balance,energy_value,energy_cash,energy_stability
+            score_dimensions={"Energy Quality":energy_quality,"Cash Flow":energy_cash,"Balance":energy_balance,"Valuation":energy_value,"Growth":energy_growth,"Stability":energy_stability}
             model_note = "Energy model: cash generation, capital efficiency, leverage and peer valuation dominate; cyclical growth receives a lower weight."
         elif model == "biotech":
-            peers = [x for x in equities if _score_model_for(x) == "biotech"]
+            peers = peers_by_model["biotech"]
             runway = (r.total_cash/abs(r.free_cash_flow)) if r.total_cash is not None and r.total_cash>0 and r.free_cash_flow is not None and r.free_cash_flow<0 else None
-            runways=[(x.total_cash/abs(x.free_cash_flow)) if x.total_cash is not None and x.total_cash>0 and x.free_cash_flow is not None and x.free_cash_flow<0 else None for x in peers]
+            global_runways=[(x.total_cash/abs(x.free_cash_flow)) if x.total_cash is not None and x.total_cash>0 and x.free_cash_flow is not None and x.free_cash_flow<0 else None for x in equities]
+            runways=_benchmark_values([(x.total_cash/abs(x.free_cash_flow)) if x.total_cash is not None and x.total_cash>0 and x.free_cash_flow is not None and x.free_cash_flow<0 else None for x in peers], global_runways)
             runway_score = 100.0 if r.free_cash_flow is not None and r.free_cash_flow>=0 else _percentile_rank(runway,runways)
-            biotech_cash = _percentile_rank(net_cash_to_cap[idx], [((x.total_cash or 0)-(x.total_debt or 0))/x.market_cap if x.market_cap and (x.total_cash is not None or x.total_debt is not None) else None for x in peers])
-            biotech_dilution = _percentile_rank(r.diluted_shares_yoy,[x.diluted_shares_yoy for x in peers],invert=True)
+            biotech_cash = _percentile_rank(net_cash_to_cap[idx], peer_derived_values(peers, net_cash_to_cap))
+            biotech_dilution = _percentile_rank(r.diluted_shares_yoy,peer_attr_values(peers,"diluted_shares_yoy"),invert=True)
             biotech_quality = _avg([
-                _percentile_rank(r.gross_margin,[x.gross_margin for x in peers]),
-                _percentile_rank(r.roa,[x.roa for x in peers]),
+                _percentile_rank(r.gross_margin,peer_attr_values(peers,"gross_margin")),
+                _percentile_rank(r.roa,peer_attr_values(peers,"roa")),
             ])
-            composite = _weighted([(runway_score,.25),(biotech_cash,.15),(biotech_dilution,.20),(growth,.20),(biotech_quality,.10),(stability,.10)])
-            quality=_avg([biotech_quality,runway_score]); balance=_avg([runway_score,biotech_cash]); value=None
-            score_dimensions={"Cash Runway":runway_score,"Net Cash":biotech_cash,"Dilution Discipline":biotech_dilution,"Growth":growth,"Operating Quality":biotech_quality,"Stability":stability}
+            biotech_growth = peer_growth_score(r, peers)
+            biotech_stability = peer_stability_score(r, peers)
+            composite = _weighted([(runway_score,.25),(biotech_cash,.15),(biotech_dilution,.20),(biotech_growth,.20),(biotech_quality,.10),(biotech_stability,.10)])
+            quality=_avg([biotech_quality,runway_score]); growth=biotech_growth; balance=_avg([runway_score,biotech_cash]); value=None; stability=biotech_stability
+            score_dimensions={"Cash Runway":runway_score,"Net Cash":biotech_cash,"Dilution Discipline":biotech_dilution,"Growth":biotech_growth,"Operating Quality":biotech_quality,"Stability":biotech_stability}
             model_note = "Biotech model: cash runway, net cash, dilution and operating progress dominate. Generic P/E valuation is deliberately excluded for pre-profit companies; pipeline quality/catalysts are not fabricated from accounting data."
         elif model == "growth_tech":
-            peers = [x for x in equities if _score_model_for(x) == "growth_tech"]
+            peers = peers_by_model["growth_tech"]
+            tech_quality = _avg([
+                _percentile_rank(r.roe, peer_attr_values(peers, "roe")),
+                _percentile_rank(r.roa, peer_attr_values(peers, "roa")),
+                _percentile_rank(r.profit_margin, peer_attr_values(peers, "profit_margin")),
+                _percentile_rank(r.operating_margin, peer_attr_values(peers, "operating_margin")),
+                _percentile_rank(r.gross_margin, peer_attr_values(peers, "gross_margin")),
+            ])
+            tech_growth = peer_growth_score(r, peers)
+            tech_coverage = _percentile_rank(coverage, peer_interest_coverages(peers)) if coverage is not None else None
+            tech_balance = _avg([
+                _percentile_rank(r.current_ratio, peer_attr_values(peers, "current_ratio")),
+                _percentile_rank(r.quick_ratio, peer_attr_values(peers, "quick_ratio")),
+                _percentile_rank(r.debt_to_equity, peer_attr_values(peers, "debt_to_equity"), invert=True),
+                _percentile_rank(net_cash_to_cap[idx], peer_derived_values(peers, net_cash_to_cap)),
+                tech_coverage,
+            ])
+            tech_cashflow = peer_cashflow_score(r, peers, fcf_yield)
             execution = _avg([
-                _percentile_rank(r.revenue_yoy_acceleration_pp,[x.revenue_yoy_acceleration_pp for x in peers]),
-                _percentile_rank(r.net_margin_yoy_change_pp,[x.net_margin_yoy_change_pp for x in peers]),
-                _percentile_rank(r.eps_yoy_acceleration_pp,[x.eps_yoy_acceleration_pp for x in peers]),
+                _percentile_rank(r.revenue_yoy_acceleration_pp,peer_attr_values(peers,"revenue_yoy_acceleration_pp")),
+                _percentile_rank(r.net_margin_yoy_change_pp,peer_attr_values(peers,"net_margin_yoy_change_pp")),
+                _percentile_rank(r.eps_yoy_acceleration_pp,peer_attr_values(peers,"eps_yoy_acceleration_pp")),
             ])
             earnings_quality = _avg([
-                _percentile_rank(cash_conversion[idx],cash_conversion),
-                _percentile_rank(accrual_ratios[idx],accrual_ratios,invert=True),
-                _percentile_rank(fcf_margins[idx],fcf_margins),
+                _percentile_rank(cash_conversion[idx],peer_derived_values(peers,cash_conversion)),
+                _percentile_rank(accrual_ratios[idx],peer_derived_values(peers,accrual_ratios),invert=True),
+                _percentile_rank(fcf_margins[idx],peer_derived_values(peers,fcf_margins)),
             ])
             capital_allocation = _avg([
-                _percentile_rank(r.diluted_shares_yoy,[x.diluted_shares_yoy for x in peers],invert=True),
-                _percentile_rank(r.roce_proxy,[x.roce_proxy for x in peers]),
+                _percentile_rank(r.diluted_shares_yoy,peer_attr_values(peers,"diluted_shares_yoy"),invert=True),
+                _percentile_rank(r.roce_proxy,peer_attr_values(peers,"roce_proxy")),
             ])
             tech_value = _avg([
-                _percentile_rank(r.forward_pe,[x.forward_pe for x in peers],invert=True) if r.forward_pe and r.forward_pe>0 else None,
-                _percentile_rank(fcf_yield_for_score,[(x.free_cash_flow/x.market_cap) if x.free_cash_flow is not None and x.market_cap and x.market_cap>0 else None for x in peers]),
+                _percentile_rank(r.forward_pe,peer_attr_values(peers,"forward_pe"),invert=True) if r.forward_pe and r.forward_pe>0 else None,
+                _percentile_rank(fcf_yield_for_score,peer_derived_values(peers,plausible_fcf_yields)),
             ])
-            composite = _weighted([(quality,.20),(growth,.22),(balance,.12),(cashflow,.10),(tech_value,.07),(execution,.12),(earnings_quality,.09),(capital_allocation,.05),(stability,.03)])
-            value=tech_value
-            score_dimensions={"Quality":quality,"Growth":growth,"Balance":balance,"Cash Flow":cashflow,"Valuation":tech_value,"Execution":execution,"Earnings Quality":earnings_quality,"Capital Allocation":capital_allocation,"Stability":stability}
+            tech_stability = peer_stability_score(r, peers)
+            composite = _weighted([(tech_quality,.20),(tech_growth,.22),(tech_balance,.12),(tech_cashflow,.10),(tech_value,.07),(execution,.12),(earnings_quality,.09),(capital_allocation,.05),(tech_stability,.03)])
+            quality,growth,balance,cashflow,value,stability=tech_quality,tech_growth,tech_balance,tech_cashflow,tech_value,tech_stability
+            score_dimensions={"Quality":tech_quality,"Growth":tech_growth,"Balance":tech_balance,"Cash Flow":tech_cashflow,"Valuation":tech_value,"Execution":execution,"Earnings Quality":earnings_quality,"Capital Allocation":capital_allocation,"Stability":tech_stability}
             model_note = "Growth-tech model: growth, quality, execution and cash conversion dominate; valuation remains relevant but cannot overwhelm superior or deteriorating operating evidence."
+
         else:
             # Execution is operating momentum, deliberately separated from
             # shareholder-capital decisions so a buyback cannot disguise weak
@@ -575,6 +667,9 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
                 "Capital Allocation": capital_allocation, "Stability": stability
             }
             model_note = "General company model v3: adds cash-conversion/accrual quality and separates capital allocation from operating execution."
+
+        if model != "general":
+            model_note += " Percentiles use same-model peers when at least 20 finite observations exist; sparse metrics fall back to the full equity universe."
 
         if model not in ("general", "growth_tech"):
             execution = None

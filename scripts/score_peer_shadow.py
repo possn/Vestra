@@ -1,10 +1,10 @@
-"""Peer-first shadow candidates for specialist Vestra score packs.
+"""Independent peer-first reconstruction for specialist Vestra score packs.
 
-This module never changes production scores. It rebuilds specialist score packs
-with the same production weights and structural risk caps, but ranks each raw
-metric against peers from the same score model whenever at least MIN_PEERS
-finite observations exist. Sparse metrics fall back to the global equity
-universe. The output is consumed by prospective validation only.
+Production now uses the same benchmark ownership: raw specialist metrics rank
+against peers from the same score model whenever at least MIN_PEERS finite
+observations exist, with the full equity universe as a sparse-metric fallback.
+This module remains read-only and independently reconstructs that policy for
+prospective validation and parity diagnostics.
 """
 from __future__ import annotations
 
