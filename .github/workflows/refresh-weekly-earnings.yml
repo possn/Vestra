@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: refresh-weekly-earnings
@@ -51,7 +52,14 @@ jobs:
       - name: Refresh near-term company earnings
         run: python scripts/refresh_weekly_earnings.py
 
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+
       - name: Publish refreshed startup earnings
+        if: steps.publish_window.outputs.defer != 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
