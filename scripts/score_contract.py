@@ -1,6 +1,6 @@
-"""Identity-safe boundary around the frozen Vestra scoring engine.
+"""Identity-safe boundary around the Vestra scoring engine.
 
-The core score implementation in score.py is intentionally left untouched.
+The boundary keeps instrument identity isolation separate from score math.
 Explicit FUND/MUTUALFUND rows and canonical preferred-share issues are removed
 from the cross-sectional common-equity input and re-attached as neutral,
 non-scored rows. If a transient fetch loses the quote type entirely, exact
@@ -118,7 +118,7 @@ def _apply_exact_override(r, override):
 
 
 def score_universe(raw, previous_path=STOCKS_SNAPSHOT):
-    """Delegate score math unchanged after identity-safe non-equity isolation."""
+    """Delegate score math after identity-safe non-equity isolation."""
     scored_cls, core_score_universe = _load_core()
     previous_funds = _previous_funds(previous_path)
     neutral_rows = []
