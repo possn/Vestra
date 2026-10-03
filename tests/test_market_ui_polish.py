@@ -5,6 +5,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
+    def test_automatic_portfolio_moves_require_explicit_clear_risk_gate(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function portfolioMoveEvidence(stock, conviction=null)', 1)[1].split('function evaluatePortfolioMove', 1)[0]
+        self.assertIn("gate==='clear'", block)
+        self.assertIn("if(!gate){penalty+=6;warnings.push('Risk Gate não classificado');}", block)
+        self.assertNotIn("!['watch','high','severe'].includes(gate)", block.split("const strict=",1)[1].split(";",1)[0])
+
+
     def test_portfolio_review_does_not_present_missing_risk_gate_as_clear(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('<h4>Posições a rever</h4>', 1)[1].split('<h4>Concentração e overlap</h4>', 1)[0]
