@@ -110,7 +110,7 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
                 mod.OUT = original_out
             self.assertEqual(stocks.read_bytes(), before)
             report = json.loads(out.read_text(encoding="utf-8"))
-            self.assertEqual(report["methodology"]["purpose"], "diagnostic only; production score/weights are unchanged")
+            self.assertEqual(report["methodology"]["purpose"], "diagnostic only; production weights are unchanged and fixed-weight missing-data handling is reconstructed explicitly")
             self.assertIn("missing_weight_handling", report["methodology"])
             self.assertIn("model_audits", report)
             self.assertIn("flags", report)
