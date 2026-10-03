@@ -23,7 +23,9 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
     def test_coverage_model_and_missing_data_are_visible(self):
         self.assertIn('scoreModelLabel', self.market)
         self.assertIn('Cobertura ${coverage', self.market)
-        self.assertIn('Os pesos dos pilares disponíveis são renormalizados', self.market)
+        self.assertIn('não vale zero nem aumenta o peso dos restantes', self.market)
+        self.assertIn('entra como neutro 50', self.market)
+        self.assertIn('Reliability/Confidence', self.market)
 
     def test_overview_renders_explanation(self):
         self.assertIn('${scoreExplanation(s)}`;', self.market)
