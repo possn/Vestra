@@ -222,6 +222,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn('dimRows(s)', block)
 
 
+    def test_catalysts_summary_respects_risk_gate_flags(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function dossierCatalystsRisks(s)', 1)[1].split('function dossierPillarBand(value)', 1)[0]
+        self.assertIn("const riskFlags=Array.isArray(s.risk_flags)?s.risk_flags.filter(Boolean):[];", block)
+        self.assertIn("const hasStructuralRisk=riskFlags.length>0;", block)
+        self.assertIn("if(!catalysts.length&&!riskItems.length&&!hasStructuralRisk) return '';", block)
+        self.assertIn("o Risk Gate regista sinais estruturais adicionais", block)
+        self.assertIn("O Risk Gate regista sinais estruturais; consulta o Travão de risco na explicação do Score.", block)
+
+
     def test_investment_case_does_not_claim_no_risk_when_risk_gate_has_flags(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
