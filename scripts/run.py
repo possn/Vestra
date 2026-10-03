@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 
 from fundamentals import fetch_many
 from sec_enrich import enrich as enrich_sec
@@ -232,14 +233,25 @@ def main():
     elif learned_tickers:
         log.info("Learned ticker promotion complete: %s", ", ".join(learned_tickers))
 
-    analyst_map = fetch_analyst_many(
-        [dataclasses.asdict(s) for s in scored if is_equity_candidate(s.quote_type)],
-        priority_tickers=set(universe.get("EXTRA", [])),
-    )
-
+    analyst_rows = [dataclasses.asdict(s) for s in scored if is_equity_candidate(s.quote_type)]
     us_tickers = [s.ticker for s in scored if "." not in s.ticker and is_equity_candidate(s.quote_type)]
-    insider_map = annotate_insiders(us_tickers)
-    congress_map = fetch_congress_for_universe(us_tickers)
+
+    # These post-score enrichments are independent and use different upstreams:
+    # analyst evidence is Yahoo-backed, while insiders are SEC-backed and
+    # congressional disclosures use their own official feeds. Running them
+    # concurrently preserves exact result semantics while removing avoidable
+    # wall-clock serialization from the canonical rebuild.
+    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="postscore") as pool:
+        analyst_future = pool.submit(
+            fetch_analyst_many,
+            analyst_rows,
+            priority_tickers=set(universe.get("EXTRA", [])),
+        )
+        insider_future = pool.submit(annotate_insiders, us_tickers)
+        congress_future = pool.submit(fetch_congress_for_universe, us_tickers)
+        analyst_map = analyst_future.result()
+        insider_map = insider_future.result()
+        congress_map = congress_future.result()
     # v0.97: price history is dossier infrastructure, not only an insider helper.
     # Fetch weekly 1y histories in Yahoo batches for the live universe + complete ETF catalogue.
     price_history_tickers = sorted(set(all_tickers) | set(ETF_UNIVERSE.keys()))
