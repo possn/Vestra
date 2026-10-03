@@ -265,7 +265,9 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("portfolioFit(r,sectorRows,portfolioBase,etfsForFit,portfolioTargets)", s)
         self.assertIn("const structuralDeterioration=gate==='high'||gate==='severe'||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50)", s)
         self.assertIn("if(structuralDeterioration||gate==='watch') return {key:'review'", s)
-        self.assertIn("const reinforceEligible=strict&&conv!=null&&conv>=70&&valuation!=='uncertain'", s)
+        self.assertIn("const actionableValuation=['undervalued','fair'].includes(valuation)", s)
+        self.assertIn("const strict=conf!=null&&conf>=60&&gate==='clear'&&actionableValuation", s)
+        self.assertIn("const reinforceEligible=strict&&conv!=null&&conv>=70", s)
         self.assertNotIn("if(positionPct>=15||sectorPct>=35||indirectPct>=4) fit='concentrated'", s)
         self.assertNotIn("else if(positionPct>=10||sectorPct>=28||indirectPct>=2) fit='watch'", s)
 
