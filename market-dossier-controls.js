@@ -1,4 +1,4 @@
-/* Vestra Market Dossier Controls v2.0 — compact body-level iPhone action portal. */
+/* Vestra Market Dossier Controls v2.1 — compact body-level iPhone action portal. */
 (() => {
   'use strict';
 
