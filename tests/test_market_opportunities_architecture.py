@@ -62,6 +62,21 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("elif opp >= FEATURED_OPPORTUNITY_MIN_SCORE:", ranker)
         self.assertIn('label = "Interessante"', ranker)
         
+    def test_legacy_low52_surface_reuses_canonical_discovery_instead_of_second_score(self):
+        market = read('market.js')
+        start = market.index('function low52OpportunityRank')
+        end = market.index('function renderLows', start)
+        block = market[start:end]
+        self.assertIn("if(s?.opportunity_eligible!==true) return null;", block)
+        self.assertIn("const score=n(s?.opportunity_score);", block)
+        self.assertNotIn("confidence_score", block)
+        self.assertNotIn("low52_score", block)
+        self.assertNotIn("recovery_score", block)
+        self.assertNotIn("risk_gate", block)
+        render = market.split('function renderLows(){', 1)[1].split('const ETF_THEMES', 1)[0]
+        self.assertIn(".filter(x=>x.opportunityRank!=null)", render)
+        self.assertIn("Discovery canónico", render)
+
     def test_strategy_lenses_cannot_bypass_canonical_discovery_eligibility(self):
         source = read('market-opportunities.js')
         start = source.index("function lensEligible(s,lens){")
