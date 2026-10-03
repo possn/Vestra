@@ -178,29 +178,16 @@
     const first=caps[0],extra=caps.length-1;
     return `Limitado: ${first.reason}${first.cap!=null?` ≤ ${Math.round(first.cap)}`:''}${extra>0?` · +${extra}`:''}`;
   }
-  function lensTilt(s,lens){
-    const p=stats(s);
-    if(lens==='all')return 0;
-    if(lens==='low52'){const above=Math.max(0,low52Above(s)??5);return clamp(100-above*20)-50;}
-    if(lens==='emerging')return p.accel==null?0:Math.max(-50,Math.min(50,p.accel*7));
-    if(lens==='recovery')return (n(s?.recovery_score)??clamp(confirmed(s)*20))-50;
-    if(lens==='value'){
-      const fv=n(s?.fair_value_upside_pct),pt=n(s?.analyst_price_target_upside_pct),up=Math.max(fv??-100,pt??-100);
-      return clamp(50+Math.max(-40,Math.min(50,up))*1.15)-50;
-    }
-    return 0;
-  }
   function lensScore(s,lens){
-    const discovery=discoveryScore(s)||0;
-    if(lens==='all')return discovery;
-    // Strategy lenses reorder the canonical Discovery shortlist; they are not
-    // independent alpha engines. Confidence remains a gate/cap upstream.
-    return clamp(discovery*.82+(50+lensTilt(s,lens))*.18);
+    // Lenses are canonical Discovery views: they may filter the universe and
+    // apply diversification guardrails, but they must never create a second
+    // alpha signal or reweight the canonical opportunity ranking.
+    return discoveryScore(s)||0;
   }
   function rankedCandidates(universe,lens,sector='all'){
     let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
     if(sector!=='all')ranked=ranked.filter(s=>t(s?.sector)===sector);
-    ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens)||(discoveryScore(b)||0)-(discoveryScore(a)||0));
+    ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return ranked;
   }
   function diversify(rows,limit,{sectorCap=3,industryCap=2,recoveryCap=Infinity}={}){
@@ -238,7 +225,7 @@
     const archetypes=['low52','emerging','recovery','value'];
     const buckets=archetypes.map(type=>({
       type,
-      rows:general.filter(s=>lensEligible(s,type)).sort((a,b)=>lensScore(b,type)-lensScore(a,type)||(discoveryScore(b)||0)-(discoveryScore(a)||0)),
+      rows:general.filter(s=>lensEligible(s,type)).sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0)),
       index:0
     }));
     const selected=[],seen=new Set();
@@ -464,5 +451,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.13'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.14'});
 })();
