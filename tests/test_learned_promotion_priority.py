@@ -15,7 +15,7 @@ class LearnedPromotionPriorityTests(unittest.TestCase):
     def test_learned_names_are_fetched_before_bulk_portfolio(self):
         src = RUN.read_text(encoding="utf-8")
         learned = src.index("raw_learned = fetch_many(learned_tickers")
-        portfolio = src.index("raw_portfolio = fetch_many(portfolio_remainder")
+        portfolio = src.index("raw_portfolio = fetch_many(portfolio_refresh")
         broad = src.index("raw_remainder = fetch_many(remainder_refresh")
         self.assertLess(learned, portfolio)
         self.assertLess(portfolio, broad)
