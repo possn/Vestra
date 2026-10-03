@@ -101,4 +101,22 @@ function candidate(ticker, score, sector, industry) {
   }
 }
 
+
+{
+  const stronger = candidate('DISCOVERY80', 80, 'Technology', 'Software');
+  stronger.low52_above_low_pct = 5;
+  stronger.opportunity_timing_score = 60;
+  const weaker = candidate('DISCOVERY79', 79, 'Healthcare', 'Biotechnology');
+  weaker.low52_above_low_pct = 0;
+  weaker.opportunity_timing_score = 60;
+
+  const rows = api.rankLens([weaker, stronger], 'low52', {limit: 12, sector: 'all'});
+  assert.deepStrictEqual(Array.from(rows, x => x.ticker), ['DISCOVERY80','DISCOVERY79'],
+    'strategy lenses must preserve canonical Discovery order instead of adding local alpha tilts');
+  assert.strictEqual(api.lensScore(stronger, 'low52'), 80,
+    'lens score must be the canonical Discovery score');
+  assert.strictEqual(api.lensScore(weaker, 'low52'), 79,
+    'lens metadata must not reweight canonical Discovery');
+}
+
 console.log('opportunity shortlist runtime contract: ok');
