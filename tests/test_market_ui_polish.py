@@ -232,6 +232,16 @@ class MarketUiPolishContractTests(unittest.TestCase):
         self.assertIn("O Risk Gate regista sinais estruturais; consulta o Travão de risco na explicação do Score.", block)
 
 
+    def test_investment_case_watchpoints_respect_risk_gate_flags(self):
+        market = (ROOT / 'market.js').read_text(encoding='utf-8')
+        block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
+        self.assertIn("if(riskFlags.length) watch.push('Risk Gate com sinais estruturais a acompanhar');", block)
+        self.assertLess(
+            block.index("if(riskFlags.length) watch.push('Risk Gate com sinais estruturais a acompanhar');"),
+            block.index("Sem evento ou alteração quantitativa relevante identificada.")
+        )
+
+
     def test_investment_case_does_not_claim_no_risk_when_risk_gate_has_flags(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
         block = market.split('function investmentCase(s)', 1)[1].split('function dossierScoreHistory(s)', 1)[0]
