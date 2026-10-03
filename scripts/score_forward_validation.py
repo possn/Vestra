@@ -107,7 +107,7 @@ def current_rows():
     return out
 
 
-def peer_shadow_scores():
+def peer_shadow_state():
     payload = load_json(PEER_SHADOW, {})
     out = {}
     for row in payload.get("rows") or []:
@@ -117,7 +117,20 @@ def peer_shadow_scores():
         score = num(row.get("peer_shadow_score"))
         if ticker and score is not None:
             out[ticker] = score
-    return out
+    role = str(payload.get("role") or "legacy_candidate")
+    candidate_active = bool(payload.get("candidate_active")) and role == "candidate"
+    candidate_id = payload.get("candidate_id") if candidate_active else None
+    return {
+        "scores": out,
+        "role": role,
+        "candidate_active": candidate_active,
+        "candidate_id": candidate_id,
+    }
+
+
+def peer_shadow_scores():
+    """Backward-compatible score map for tests and historical callers."""
+    return peer_shadow_state()["scores"]
 
 
 def make_snapshot(today, rows, shadow_scores=None):
@@ -298,7 +311,7 @@ def validation_status(cohort_count):
     return "multiple_cohorts_available"
 
 
-def score_v2_readiness(horizons):
+def score_v2_readiness(horizons, candidate_role="none", candidate_id=None):
     """Conservative gate for considering a production score experiment.
 
     This is intentionally stricter than validation_status(): having several
@@ -310,6 +323,7 @@ def score_v2_readiness(horizons):
     """
     qualified = []
     blockers = []
+    independent_candidate = candidate_role == "candidate" and bool(candidate_id)
     for horizon in HORIZONS:
         pack = horizons.get(str(horizon)) or {}
         cohorts = int(pack.get("cohort_count") or 0)
@@ -324,6 +338,8 @@ def score_v2_readiness(horizons):
         cand_spread = num(peer.get("median_peer_shadow_cohort_robust_spread_pct"))
 
         reasons = []
+        if not independent_candidate:
+            reasons.append("no_independent_score_candidate")
         if cohorts < 8:
             reasons.append("fewer_than_8_matured_cohorts")
         if capture is None or capture < 80:
@@ -350,15 +366,19 @@ def score_v2_readiness(horizons):
         "production_weights_frozen": not ready,
         "qualified_horizons": qualified,
         "required_qualified_horizons": 2,
+        "candidate_role": candidate_role,
+        "candidate_id": candidate_id if independent_candidate else None,
+        "independent_candidate_active": independent_candidate,
         "blockers": blockers,
         "rule": (
-            "A Score v2 candidate may enter production review only after at least two horizons "
-            "independently satisfy the prospective evidence gate. Passing permits review, not deployment."
+            "A genuinely independent Score v2 candidate may enter production review only after at least two horizons "
+            "independently satisfy the prospective evidence gate. A production-parity reconstruction cannot qualify. "
+            "Passing permits review, not deployment."
         ),
     }
 
 
-def peer_shadow_comparison(vals):
+def peer_shadow_comparison(vals, role="legacy_candidate", candidate_active=False, candidate_id=None):
     peer_vals = [x for x in vals if num(x.get("peer_shadow_score")) is not None]
     production = metric_pack(peer_vals, "score")
     candidate = metric_pack(peer_vals, "peer_shadow_score")
@@ -406,6 +426,10 @@ def peer_shadow_comparison(vals):
         })
 
     return {
+        "role": role,
+        "candidate_active": bool(candidate_active and role == "candidate"),
+        "candidate_id": candidate_id if candidate_active and role == "candidate" else None,
+        "eligible_for_candidate_readiness": bool(candidate_active and role == "candidate" and candidate_id),
         "eligible_n": len(peer_vals),
         "cohort_count": len(cohorts),
         "production_same_subset": production,
@@ -422,10 +446,15 @@ def peer_shadow_comparison(vals):
     }
 
 
-def summarize_horizon(vals, expected_matured_cohorts=0):
+def summarize_horizon(vals, expected_matured_cohorts=0, shadow_role="legacy_candidate", shadow_candidate_active=False, shadow_candidate_id=None):
     cohorts = cohort_summaries(vals)
     pack = metric_pack(vals)
-    pack["peer_shadow_comparison"] = peer_shadow_comparison(vals)
+    pack["peer_shadow_comparison"] = peer_shadow_comparison(
+        vals,
+        role=shadow_role,
+        candidate_active=shadow_candidate_active,
+        candidate_id=shadow_candidate_id,
+    )
     cohort_ics = [num(x.get("rank_information_coefficient")) for x in cohorts]
     cohort_ics = [x for x in cohort_ics if x is not None]
     cohort_spreads = [num(x.get("top_minus_bottom_pct")) for x in cohorts]
@@ -481,7 +510,8 @@ def maturity_dates(today, snapshots, horizon):
 def main():
     today = dt.date.today()
     rows = current_rows()
-    shadow_scores = peer_shadow_scores()
+    shadow_state = peer_shadow_state()
+    shadow_scores = shadow_state["scores"]
     history = load_json(HISTORY, {"schema_version": 3, "snapshots": [], "outcomes": []})
     snapshots = history.setdefault("snapshots", [])
     outcomes = history.setdefault("outcomes", [])
@@ -536,7 +566,13 @@ def main():
     for horizon in HORIZONS:
         vals = [x for x in outcomes if int(x.get("horizon_days") or 0) == horizon]
         expected = expected_matured_count(today, snapshots, horizon)
-        summary = summarize_horizon(vals, expected)
+        summary = summarize_horizon(
+            vals,
+            expected,
+            shadow_role=shadow_state["role"],
+            shadow_candidate_active=shadow_state["candidate_active"],
+            shadow_candidate_id=shadow_state["candidate_id"],
+        )
         first_maturity, next_maturity = maturity_dates(today, snapshots, horizon)
         summary["first_possible_maturity_date"] = first_maturity.isoformat() if first_maturity else None
         summary["next_pending_maturity_date"] = next_maturity.isoformat() if next_maturity else None
@@ -560,14 +596,18 @@ def main():
         "realised_outcomes": len(outcomes),
         "new_outcomes_this_run": added,
         "horizons": report_horizons,
-        "score_v2_readiness": score_v2_readiness(report_horizons),
+        "score_v2_readiness": score_v2_readiness(
+            report_horizons,
+            candidate_role=shadow_state["role"] if shadow_state["candidate_active"] else "none",
+            candidate_id=shadow_state["candidate_id"],
+        ),
         "interpretation": {
             "rank_ic": "Spearman correlation between the score known at cohort date and realised forward return.",
             "top_minus_bottom": "Raw mean return spread between highest and lowest score quintiles; retain it for transparency but inspect robust companions when tails are extreme.",
             "robust_quintile_spreads": "Median and 5% winsorized-mean top-minus-bottom spreads are reported alongside the raw mean. They are diagnostics, not replacements chosen after seeing outcomes.",
             "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap.",
             "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
-            "peer_shadow": "Head-to-head specialist-model experiment. Production and peer-normalized candidate are compared on the exact same eligible rows; the candidate never changes the published score.",
+            "peer_shadow": "The current peer shadow is a production-parity reconstruction, not an independent challenger. Historical peer_shadow_score values are retained for lineage/parity diagnostics but cannot unlock Score v2 readiness unless a future shadow is explicitly marked role=candidate with a non-empty candidate_id.",
         },
         "decision_rule": (
             "Do not optimize production weights from pooled n alone. Require multiple matured weekly cohorts, "
