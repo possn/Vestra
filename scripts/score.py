@@ -3,7 +3,7 @@ score.py — explainable multi-factor investment scoring engine.
 
 The score is cross-sectional: each metric is ranked against the currently
 fetched equity universe. It is a screening model, not a return forecast.
-Missing data are excluded rather than treated as zero.
+Missing dimensions are neutral at percentile 50; evidence coverage is handled separately rather than converted into alpha.
 
 General-company dimensions / weights (v3):
   Quality          18%  ROE, ROA, net/operating/gross margins
@@ -237,11 +237,19 @@ def _score_model_for(r: RawMetrics) -> str:
 
 
 def _weighted(parts):
-    present = [(value, weight) for value, weight in parts if value is not None]
-    if not present:
+    """Apply the declared weight pack without turning missingness into alpha.
+
+    Missing dimensions are neutral at percentile 50, while the evidence layer
+    separately records that the dimension was unavailable. If every dimension
+    is missing there is still no score at all.
+    """
+    parts = list(parts)
+    if not parts or not any(value is not None for value, _ in parts):
         return None
-    wsum = sum(weight for _, weight in present)
-    return sum(value * weight for value, weight in present) / wsum
+    wsum = sum(weight for _, weight in parts)
+    if not wsum:
+        return None
+    return sum((50.0 if value is None else value) * weight for value, weight in parts) / wsum
 
 
 AI_EXPOSED_TICKERS = {
