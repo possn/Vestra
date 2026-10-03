@@ -9,7 +9,7 @@
     const link = document.createElement('link');
     link.id = STYLE_ID;
     link.rel = 'stylesheet';
-    link.href = 'market-dossier-controls.css?v=1.4';
+    link.href = 'market-dossier-controls.css?v=1.5';
     document.head.appendChild(link);
   }
 
