@@ -55,7 +55,8 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
         profile = mod.effective_weight_profile(sparse, weights)
         self.assertAlmostEqual(profile["missing_weight_pct"], 33.0, places=6)
         self.assertAlmostEqual(profile["neutral_fill_weight_pct"], 33.0, places=6)
-        self.assertLessEqual(profile["max_observed_dimension_share"], max(weights.values()) + 1e-9)\n        self.assertIsNotNone(profile["dominant_observed_dimension"])
+        self.assertLessEqual(profile["max_observed_dimension_share"], max(weights.values()) + 1e-9)
+        self.assertIsNotNone(profile["dominant_observed_dimension"])
 
     def test_model_audit_reports_material_missing_weight(self):
         rows = [general_row(i) for i in range(10)]
@@ -76,6 +77,7 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
         self.assertEqual(
             set(missing),
             {
+                "policy",
                 "mean_missing_weight_pct",
                 "max_missing_weight_pct",
                 "rows_missing_at_least_20pct_weight",
@@ -83,11 +85,9 @@ class ScoreAuditReconstructionTests(unittest.TestCase):
                 "published_rows_missing_at_least_20pct_weight",
                 "published_rows_missing_at_least_35pct_weight",
                 "robust_rows_missing_at_least_35pct_weight",
-                "mean_renormalization_factor",
-                "max_renormalization_factor",
-                "mean_max_effective_dimension_share_pct",
-                "max_effective_dimension_share_pct",
-                "dominant_dimension_counts",
+                "mean_max_observed_dimension_share_pct",
+                "max_observed_dimension_share_pct",
+                "dominant_observed_dimension_counts",
             },
         )
 
