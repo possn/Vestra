@@ -77,6 +77,9 @@ const stock = overrides => ({
   estimate_signal: 'stable',
   thesis_direction: 'flat',
   risk_gate: 'clear',
+  score_reliability: 'robust',
+  data_coverage_pct: 82,
+  critical_metric_coverage_pct: 75,
   ...overrides,
 });
 const sourceStock = overrides => stock({ ticker: 'SRC', score: 64, confidence_score: 75, ...overrides });
@@ -99,6 +102,18 @@ let r = evaluate({ mode: 'replace', ...base });
 assert.strictEqual(r.autoEligible, true, 'robust replacement should be auto-eligible');
 assert(r.convictionGain >= 2);
 assert(r.convDelta > 0);
+
+r = evaluate({ mode: 'replace', ...base, destination: stock({ score_reliability: 'limited_evidence' }) });
+assert.strictEqual(r.autoEligible, false, 'limited evidence must block automatic action');
+assert(r.warnings.some(w => w.includes('fiabilidade')));
+
+r = evaluate({ mode: 'replace', ...base, destination: stock({ data_coverage_pct: 60 }) });
+assert.strictEqual(r.autoEligible, false, 'low fundamental coverage must block automatic action');
+assert(r.warnings.includes('cobertura fundamental insuficiente'));
+
+r = evaluate({ mode: 'replace', ...base, destination: stock({ critical_metric_coverage_pct: 45 }) });
+assert.strictEqual(r.autoEligible, false, 'low critical coverage must block automatic action');
+assert(r.warnings.includes('cobertura crítica insuficiente'));
 
 r = evaluate({ mode: 'replace', ...base, destination: stock({ risk_gate: 'watch' }) });
 assert.strictEqual(r.autoEligible, false, 'Risk Gate watch must block automatic action');
