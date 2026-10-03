@@ -1433,7 +1433,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function portfolioMoveEvidence(stock, conviction=null){
     const conf=n(stock?.confidence_score), valuation=txt(stock?.valuation_signal), estimates=txt(stock?.estimate_signal), thesis=txt(stock?.thesis_direction), gate=txt(stock?.risk_gate);
     const conv=n(conviction);
-    const strict=conf!=null&&conf>=60&&valuation!=='overvalued'&&estimates!=='deteriorating'&&thesis!=='down'&&!['watch','high','severe'].includes(gate);
+    const strict=conf!=null&&conf>=60&&gate==='clear'&&valuation!=='overvalued'&&estimates!=='deteriorating'&&thesis!=='down';
     const reinforceEligible=strict&&conv!=null&&conv>=70&&valuation!=='uncertain';
     const acceptable=(conf==null||conf>=45)&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
     const warnings=[]; let penalty=0;
@@ -1443,7 +1443,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     else if(valuation==='uncertain'){penalty+=3;warnings.push('valuation incerto');}
     if(estimates==='deteriorating'){penalty+=8;warnings.push('expectativas a piorar');}
     if(thesis==='down'){penalty+=7;warnings.push('tese a deteriorar');}
-    if(gate==='watch'){penalty+=6;warnings.push('Risk Gate watch');}
+    if(!gate){penalty+=6;warnings.push('Risk Gate não classificado');}
+    else if(gate==='watch'){penalty+=6;warnings.push('Risk Gate watch');}
     const tier=strict?'preferred':acceptable?'acceptable':'research';
     if(tier==='research') penalty+=12;
     return {conf,valuation,estimates,thesis,gate,conviction:conv,strict,reinforceEligible,acceptable,tier,penalty,warnings};
