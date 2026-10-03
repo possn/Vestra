@@ -118,6 +118,54 @@ class AnalystRotationTests(unittest.TestCase):
         fetch_one.assert_not_called()
         self.assertNotIn("C", out)
 
+    def test_fresh_priority_can_be_carried_when_priority_rotation_budget_is_zero(self):
+        previous = {"P": self._fresh_previous("P")}
+        env = {
+            "FINSCANNER_ANALYST_MAX": "10",
+            "FINSCANNER_ANALYST_PRIORITY_REFRESH": "0",
+            "FINSCANNER_ANALYST_NONPRIORITY_REFRESH": "0",
+            "FINSCANNER_ANALYST_CACHE_MAX_AGE_DAYS": "14",
+            "FINSCANNER_ANALYST_WORKERS": "1",
+        }
+        with patch.dict(os.environ, env, clear=False), \
+             patch.object(analyst, "_load_previous_snapshots", return_value=previous), \
+             patch.object(analyst, "fetch_one") as fetch_one:
+            out = analyst.fetch_many([self._row("P")], priority_tickers={"P"})
+
+        fetch_one.assert_not_called()
+        self.assertEqual(out["P"]["refresh_state"], "cached_rotation")
+        self.assertEqual(out["P"]["eps_next_q"], 1.23)
+
+    def test_expired_priority_is_refreshed_even_when_priority_budget_is_zero(self):
+        old = self._fresh_previous("P")
+        old["fetched_at"] = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        called = []
+
+        def fake_fetch(ticker, current_price=None):
+            called.append(ticker)
+            return analyst.AnalystSnapshot(
+                ticker=ticker,
+                status="ok",
+                coverage_pct=66.7,
+                fetched_at=datetime.now(timezone.utc).isoformat(),
+                eps_next_q=2.0,
+            )
+
+        env = {
+            "FINSCANNER_ANALYST_MAX": "10",
+            "FINSCANNER_ANALYST_PRIORITY_REFRESH": "0",
+            "FINSCANNER_ANALYST_NONPRIORITY_REFRESH": "0",
+            "FINSCANNER_ANALYST_CACHE_MAX_AGE_DAYS": "14",
+            "FINSCANNER_ANALYST_WORKERS": "1",
+        }
+        with patch.dict(os.environ, env, clear=False), \
+             patch.object(analyst, "_load_previous_snapshots", return_value={"P": old}), \
+             patch.object(analyst, "fetch_one", side_effect=fake_fetch):
+            out = analyst.fetch_many([self._row("P")], priority_tickers={"P"})
+
+        self.assertEqual(called, ["P"])
+        self.assertEqual(out["P"]["refresh_state"], "fresh")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
