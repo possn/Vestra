@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 import traceback
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 from fundamentals import fetch_many
@@ -196,6 +197,19 @@ def _select_nonpriority_refresh(tickers, previous_rows, budget, *, today=None):
     return selected
 
 
+
+def _stage_timer(name: str):
+    """Return a monotonic start time and emit a canonical stage marker."""
+    log.info("PIPELINE_STAGE start %s", name)
+    return time.perf_counter()
+
+
+def _stage_done(name: str, started: float):
+    elapsed = max(0.0, time.perf_counter() - started)
+    log.info("PIPELINE_STAGE done %s elapsed=%.1fs", name, elapsed)
+    return elapsed
+
+
 def main():
     # Preserve previously enriched ETF catalogue rows. The wider fund universe is
     # refreshed in rotation, so a name not fetched today should keep yesterday's
@@ -232,16 +246,28 @@ def main():
     remainder_tickers = [t for t in all_tickers if t not in portfolio_set]
     previous_rows = dict(previous_equities)
     previous_rows.update(previous_etfs)
-    nonpriority_budget = max(1, int(os.getenv("FINSCANNER_FUNDAMENTALS_NONPRIORITY_REFRESH", "450")))
+
+    # Canonical builds must be bounded. Search-learned names always refresh;
+    # persistent EXTRA coverage is not synonymous with "needs full fundamentals
+    # every day", so cached portfolio rows rotate on a short cadence. Broad
+    # discovery rotates more slowly. Missing/metadata-only rows always win both
+    # selectors and carried rows still receive fresh price history later.
+    portfolio_budget = max(1, int(os.getenv("FINSCANNER_FUNDAMENTALS_PORTFOLIO_REFRESH", "140")))
+    nonpriority_budget = max(1, int(os.getenv("FINSCANNER_FUNDAMENTALS_NONPRIORITY_REFRESH", "180")))
+    portfolio_refresh = _select_nonpriority_refresh(
+        portfolio_remainder,
+        previous_rows,
+        portfolio_budget,
+    )
     remainder_refresh = _select_nonpriority_refresh(
         remainder_tickers,
         previous_rows,
         nonpriority_budget,
     )
     log.info(
-        "Total universe: %d tickers (%d learned-priority, %d other portfolio-priority); "
-        "non-priority fundamentals refresh %d/%d",
-        len(all_tickers), len(learned_tickers), len(portfolio_remainder),
+        "Total universe: %d tickers (%d learned always-refresh, portfolio fundamentals %d/%d, "
+        "non-priority fundamentals %d/%d)",
+        len(all_tickers), len(learned_tickers), len(portfolio_refresh), len(portfolio_remainder),
         len(remainder_refresh), len(remainder_tickers),
     )
 
@@ -250,25 +276,36 @@ def main():
         return
 
     # Search-discovered names are fetched first in a tiny isolated pool. They are
-    # new to the canonical catalogue and have no previous scored row to fall back
-    # to, so letting them sit near the end of a 400+ ticker portfolio batch makes
-    # them disproportionately vulnerable to a late Yahoo rate-limit.
-    raw_learned = fetch_many(learned_tickers, workers_override=1, retries=3, pause=0.10)
+    # the only group that remains an unconditional fundamentals refresh.
+    _stage = _stage_timer("fundamentals")
+    raw_learned = fetch_many(learned_tickers, workers_override=1, retries=2, pause=0.10)
 
-    # Fetch the user's remaining holdings next, then the broad universe.
-    raw_portfolio = fetch_many(portfolio_remainder, workers_override=3, retries=2, pause=0.05)
-    raw_remainder = fetch_many(remainder_refresh, retries=1)
+    # Persistent portfolio coverage and broad discovery are bounded rotations.
+    # Portfolio gets one retry; broad discovery is single-pass so a Yahoo throttle
+    # cannot turn one daily build into an hour-long retry storm.
+    raw_portfolio = fetch_many(portfolio_refresh, workers_override=2, retries=1, pause=0.05)
+    raw_remainder = fetch_many(remainder_refresh, retries=0)
     raw_by_symbol = {r.ticker: r for r in raw_remainder}
     raw_by_symbol.update({r.ticker: r for r in raw_portfolio})
     raw_by_symbol.update({r.ticker: r for r in raw_learned})
     raw = [raw_by_symbol[t] for t in all_tickers if t in raw_by_symbol]
+    _stage_done("fundamentals", _stage)
+
+    # Slow enrichment lanes are deliberately bounded too. These enrichments fill
+    # gaps/context; they do not need to rediscover hundreds of stable issuers on
+    # every canonical build.
+    _stage = _stage_timer("pre_score_enrichment")
     raw = enrich_sec(raw, priority=portfolio_set)
-    raw = enrich_esef(raw, priority=portfolio_set)
-    raw = enrich_gap_retrieval(raw, priority=portfolio_set)
-    raw = enrich_quarterly_gap_retrieval(raw, priority=portfolio_set)
+    raw = enrich_esef(raw, priority=portfolio_set, max_nonpriority=max(20, int(os.getenv("FINSCANNER_ESEF_NONPRIORITY_REFRESH", "60"))))
+    raw = enrich_gap_retrieval(raw, priority=portfolio_set, max_rows=max(20, int(os.getenv("FINSCANNER_GAP_REFRESH", "80"))))
+    raw = enrich_quarterly_gap_retrieval(raw, priority=portfolio_set, max_rows=max(20, int(os.getenv("FINSCANNER_QUARTERLY_GAP_REFRESH", "80"))))
     raw = enrich_derived_fundamentals(raw)
     raw = enrich_capital_risk(raw, priority=portfolio_set)
+    _stage_done("pre_score_enrichment", _stage)
+
+    _stage = _stage_timer("score")
     scored = score_universe(raw)
+    _stage_done("score", _stage)
     scored_now = {s.ticker for s in scored}
     missing_learned = [t for t in learned_tickers if t not in scored_now]
     if missing_learned:
@@ -288,6 +325,7 @@ def main():
     # congressional disclosures use their own official feeds. Running them
     # concurrently preserves exact result semantics while removing avoidable
     # wall-clock serialization from the canonical rebuild.
+    _stage = _stage_timer("post_score_intelligence")
     with ThreadPoolExecutor(max_workers=3, thread_name_prefix="postscore") as pool:
         analyst_future = pool.submit(
             fetch_analyst_many,
@@ -299,10 +337,13 @@ def main():
         analyst_map = analyst_future.result()
         insider_map = insider_future.result()
         congress_map = congress_future.result()
+    _stage_done("post_score_intelligence", _stage)
     # v0.97: price history is dossier infrastructure, not only an insider helper.
     # Fetch weekly 1y histories in Yahoo batches for the live universe + complete ETF catalogue.
+    _stage = _stage_timer("price_history")
     price_history_tickers = sorted(set(all_tickers) | set(ETF_UNIVERSE.keys()))
     insider_price_map = fetch_insider_prices(price_history_tickers)
+    _stage_done("price_history", _stage)
     raw_by_ticker = {r.ticker: r for r in raw}
     today = datetime.date.today().isoformat()
     thesis_history = thesis_history_mod.load(THESIS_HISTORY_PATH)
@@ -651,6 +692,7 @@ def main():
 
     log.info("Wrote %d rows to %s", len(rows), OUT_PATH)
 
+    _stage = _stage_timer("metals_fx_history_news")
     metals_payload = build_metals_payload()
     metals_history = metals_history_mod.load(METALS_HISTORY_PATH)
     metals_history = metals_history_mod.update(metals_history, metals_payload, today)
