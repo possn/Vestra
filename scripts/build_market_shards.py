@@ -32,9 +32,14 @@ FUND_FLOW_MAX_DAYS = 14
 # Startup performance budgets. The browser now prefers COLUMNAR_INDEX and falls
 # back to INDEX/SRC only when the compact payload is unavailable or invalid.
 # Keep both representations bounded: INDEX protects compatibility/fallback cost;
-# COLUMNAR_INDEX protects the normal iPhone/PWA startup path. The first canonical
-# production snapshot measured 1,958,111 bytes vs a 6,595,930-byte index (29.7%).
+# COLUMNAR_INDEX protects the normal iPhone/PWA startup path. The browser normally
+# uses COLUMNAR_INDEX, so a small legacy INDEX overage must not freeze all market
+# publication. Keep 7.5 MB as an advisory target, a 9 MB emergency hard cap, and
+# retain the relative ratio as a blocking guard.
+# The first canonical production snapshot measured 1,958,111 bytes vs a
+# 6,595,930-byte index (29.7%).
 MAX_INDEX_BYTES = 7_500_000
+MAX_INDEX_HARD_BYTES = 9_000_000
 MAX_INDEX_RATIO = 0.15
 MAX_COLUMNAR_BYTES = 2_250_000
 MAX_COLUMNAR_INDEX_RATIO = 0.35
@@ -629,9 +634,14 @@ def main() -> None:
         raise RuntimeError("Market shard manifest/index cardinality mismatch")
     if len(scanner_tickers) > len(index_rows):
         raise RuntimeError("Scanner payload cardinality exceeds market index")
-    if idx_size > MAX_INDEX_BYTES:
+    if idx_size > MAX_INDEX_HARD_BYTES:
         raise RuntimeError(
-            f"Market startup index exceeds absolute budget: {idx_size} > {MAX_INDEX_BYTES} bytes"
+            f"Market startup index exceeds hard absolute budget: {idx_size} > {MAX_INDEX_HARD_BYTES} bytes"
+        )
+    if idx_size > MAX_INDEX_BYTES:
+        print(
+            f"WARNING: legacy market index exceeds advisory budget: "
+            f"{idx_size} > {MAX_INDEX_BYTES} bytes; compact startup remains authoritative"
         )
     if src_size > 0 and ratio > MAX_INDEX_RATIO:
         raise RuntimeError(
