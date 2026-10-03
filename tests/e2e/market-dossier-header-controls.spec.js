@@ -22,7 +22,7 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
 
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
-  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '2.0');
+  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '2.1');
   await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.3');
 
   const actions = sheet.locator('#marketSheetContent .market-detail-actions');
@@ -88,4 +88,41 @@ test('iPhone/WebKit: favorito fica fixo e fechar usa controlo persistente seguro
   await expect(sheet).toHaveAttribute('aria-hidden', 'true');
 
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+});
+
+test('iPhone/WebKit: Scanner mantém fechar fixo no topo durante scroll', async ({ page }) => {
+  await openMarket(page);
+  await page.evaluate(() => {
+    const details = document.querySelector('.market-tools');
+    if (details && 'open' in details) details.open = true;
+  });
+  const scanner = page.locator('[data-market-tool="scanner"]').first();
+  await expect(scanner).toBeVisible();
+  await scanner.click();
+
+  const sheet = page.locator('#marketSheet');
+  const portal = page.locator('#marketDossierActionPortal');
+  const watch = portal.locator('[data-portal-watch]');
+  const close = portal.locator('[data-portal-close]');
+
+  await expect(sheet).toBeVisible();
+  await page.waitForFunction(() => window.VestraMarketDossierControls?.version === '2.1');
+  await expect(portal).toBeVisible();
+  await expect(watch).toBeHidden();
+  await expect(close).toBeVisible();
+
+  const before = await close.boundingBox();
+  expect(before).not.toBeNull();
+
+  await sheet.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await page.waitForTimeout(100);
+
+  const after = await close.boundingBox();
+  expect(after).not.toBeNull();
+  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
+
+  await close.click();
+  await expect(sheet).toBeHidden();
+  await expect(sheet).toHaveAttribute('aria-hidden', 'true');
 });
