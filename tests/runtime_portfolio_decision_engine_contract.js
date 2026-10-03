@@ -81,6 +81,12 @@ assert.strictEqual(
 );
 assert(!source.includes('||b.valuationRank-a.valuationRank'), 'portfolio ranking must not re-score valuation after Conviction');
 assert(!source.includes('if(!decision.autoEligible||scoreDelta<3)'), 'alternative selection must not add a second Score gate after canonical move eligibility');
+assert(!source.includes("||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50)"), 'Portfolio Action must not re-apply thesis/estimate signals after Conviction');
+assert(!source.includes('||Number(y.thesisDown)-Number(x.thesisDown)'), 'research review ordering must not reweight thesis direction after Conviction');
+assert(!source.includes('||Number(y.estimatesDown)-Number(x.estimatesDown)'), 'research review ordering must not reweight estimate direction after Conviction');
+const multiMoveBlock = source.split('function buildMultiMovePlan(){', 2)[1]?.split('\n  function renderMultiMovePlan', 1)[0] || '';
+assert(!multiMoveBlock.includes('thesisDown'), 'multi-move source selection must not re-apply thesis direction after Conviction');
+assert(!multiMoveBlock.includes('estimatesDown'), 'multi-move source selection must not re-apply estimate direction after Conviction');
 
 const evaluate = args => context.evaluatePortfolioMove(args);
 const stock = overrides => ({
