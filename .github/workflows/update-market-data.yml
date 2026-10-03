@@ -24,7 +24,7 @@ permissions:
 # consume another hour of Yahoo/SEC/ESEF traffic before publishing stale inputs.
 concurrency:
   group: market-data-publish
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   update-data:
