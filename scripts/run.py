@@ -745,6 +745,7 @@ def main():
     with open(NEWS_PATH, "w") as f:
         json.dump(_json_safe(news_payload), f, separators=(",", ":"))
     log.info("Wrote news for %d tickers to %s", len(news_payload["tickers"]), NEWS_PATH)
+    _stage_done("metals_fx_history_news", _stage)
 
 
 if __name__ == "__main__":
