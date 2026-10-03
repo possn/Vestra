@@ -57,6 +57,7 @@ const context = {
   console,
   txt: v => String(v ?? '').trim(),
   n: v => {
+    if (v === null || v === undefined || v === '') return null;
     const x = Number(v);
     return Number.isFinite(x) ? x : null;
   },
