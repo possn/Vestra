@@ -11,6 +11,15 @@ def read(name):
 
 class RuntimeRegressionTests(unittest.TestCase):
 
+    def test_market_pipeline_guards_score_validation_report_before_publish(self):
+        workflow = (ROOT / ".github" / "workflows" / "update-market-data.yml").read_text(encoding="utf-8")
+        guard_name = "Validate score validation report contract"
+        publish_name = "Publish validated market data"
+        self.assertIn(guard_name, workflow)
+        self.assertIn("evaluate_report_freshness(report)", workflow)
+        self.assertIn('"composition_stability" not in model_pack', workflow)
+        self.assertLess(workflow.index(guard_name), workflow.index(publish_name))
+
     def test_chart_stabilization_is_coalesced(self):
         src = (ROOT / "app-ui-core.js").read_text(encoding="utf-8")
         self.assertIn("let chartStabilizeFrame = null;", src)
