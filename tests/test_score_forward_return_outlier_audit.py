@@ -1,10 +1,17 @@
 import json
 import math
+import sys
 import unittest
 from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+import score_forward_validation as forward_validation
+
 HISTORY = ROOT / "data" / "score_validation_history.json"
 COMMON_SPLIT_FACTORS = (2, 3, 4, 5, 10, 20, 25, 50, 100)
 
@@ -29,13 +36,16 @@ class ScoreForwardReturnOutlierAuditTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         payload = json.loads(HISTORY.read_text(encoding="utf-8"))
-        cls.outcomes = [
-            row for row in (payload.get("outcomes") or [])
+        cls.raw_outcomes = [
+            dict(row) for row in (payload.get("outcomes") or [])
             if isinstance(row, dict) and int(row.get("horizon_days") or 0) == 28
         ]
+        cls.outcomes = [dict(row) for row in cls.raw_outcomes]
+        cls.repaired = forward_validation.repair_persisted_split_outcomes(cls.outcomes)
 
     def test_audit_realised_return_outliers_and_split_like_ratios(self):
         self.assertGreater(len(self.outcomes), 100)
+        self.assertGreaterEqual(self.repaired, 6)
 
         ranked = sorted(
             self.outcomes,
@@ -77,6 +87,16 @@ class ScoreForwardReturnOutlierAuditTests(unittest.TestCase):
         before = len(self.outcomes)
         after = len([row for row in self.outcomes if finite(row.get("return_pct")) is not None])
         self.assertEqual(before, after)
+
+        repaired_by_ticker = {
+            row["ticker"]: row
+            for row in self.outcomes
+            if row.get("corporate_action_adjusted")
+        }
+        for ticker, factor in (("GOSS", 80.0), ("NFE", 50.0), ("ALCPB.PA", 10.0)):
+            self.assertIn(ticker, repaired_by_ticker)
+            self.assertEqual(repaired_by_ticker[ticker]["split_adjustment_factor"], factor)
+            self.assertLess(abs(repaired_by_ticker[ticker]["return_pct"]), 100)
 
 
 if __name__ == "__main__":
