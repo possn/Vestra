@@ -148,6 +148,46 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(summary["cohort_count"], 1)
         self.assertEqual(summary["status"], "collecting_evidence")
 
+    def test_score_model_breakdown_is_cohort_aware_not_just_pooled(self):
+        rows = []
+        for cohort, date in enumerate(("2026-08-01", "2026-08-08")):
+            for i in range(40):
+                score = i
+                realised = i if cohort == 0 else (40 - i)
+                rows.append({
+                    "cohort_date": date,
+                    "ticker": f"T{cohort}_{i}",
+                    "score": score,
+                    "return_pct": realised,
+                    "score_model": "bank",
+                    "sector": "Financial Services",
+                })
+        summary = MOD.summarize_horizon(rows, expected_matured_cohorts=2)
+        bank = summary["by_score_model"]["bank"]
+        self.assertEqual(bank["cohort_count"], 2)
+        self.assertEqual(bank["status"], "collecting_evidence")
+        self.assertEqual(len(bank["cohorts"]), 2)
+        self.assertEqual(bank["positive_ic_cohorts"], 1)
+        self.assertAlmostEqual(bank["median_cohort_rank_ic"], 0.0, places=4)
+
+    def test_model_status_requires_multiple_cohorts_even_with_large_pooled_n(self):
+        rows = [
+            {
+                "cohort_date": "2026-08-01",
+                "ticker": f"B{i}",
+                "score": i,
+                "return_pct": i,
+                "score_model": "biotech",
+                "sector": "Healthcare",
+            }
+            for i in range(200)
+        ]
+        summary = MOD.summarize_horizon(rows, expected_matured_cohorts=1)
+        biotech = summary["by_score_model"]["biotech"]
+        self.assertEqual(biotech["n"], 200)
+        self.assertEqual(biotech["cohort_count"], 1)
+        self.assertEqual(biotech["status"], "collecting_evidence")
+
     def test_multiple_cohorts_unlock_stronger_status(self):
         rows = []
         for cohort in range(8):
