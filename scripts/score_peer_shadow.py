@@ -393,15 +393,8 @@ def growth_tech_shadow(ctx):
         buyback_signal,
         dividend_cover,
     ])
-    value = avg([
-        ctx.p("forward_pe", invert=True, positive_only=True),
-        ctx.value(
-            "fcf_yield",
-            plausible_fcf_yield(ctx.row),
-            [plausible_fcf_yield(x) for x in ctx.peers],
-            [plausible_fcf_yield(x) for x in ctx.all_rows],
-        ),
-    ])
+    # Mirror production's single-owner rule: FCF yield is owned by Cash Flow.
+    value = ctx.p("forward_pe", invert=True, positive_only=True)
     stability = ctx.stability()
     score = weighted([
         (quality, .20), (growth, .22), (balance, .12), (cashflow, .10),

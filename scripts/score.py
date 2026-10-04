@@ -622,10 +622,17 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
                 tech_buyback_signal,
                 tech_dividend_cover,
             ])
-            tech_value = _avg([
-                _percentile_rank(r.forward_pe,peer_attr_values(peers,"forward_pe"),invert=True) if r.forward_pe and r.forward_pe>0 else None,
-                _percentile_rank(fcf_yield_for_score,peer_derived_values(peers,plausible_fcf_yields)),
-            ])
+            # Single-owner rule: FCF yield belongs to Cash Flow, not Valuation.
+            # Growth-tech valuation therefore uses forward P/E only.
+            tech_value = (
+                _percentile_rank(
+                    r.forward_pe,
+                    peer_attr_values(peers, "forward_pe"),
+                    invert=True,
+                )
+                if r.forward_pe and r.forward_pe > 0
+                else None
+            )
             tech_stability = peer_stability_score(r, peers)
             composite = _weighted([(tech_quality,.20),(tech_growth,.22),(tech_balance,.12),(tech_cashflow,.10),(tech_value,.07),(execution,.12),(earnings_quality,.09),(capital_allocation,.05),(tech_stability,.03)])
             quality,growth,balance,cashflow,value,stability=tech_quality,tech_growth,tech_balance,tech_cashflow,tech_value,tech_stability
