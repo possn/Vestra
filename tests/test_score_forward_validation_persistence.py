@@ -69,6 +69,45 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(MOD.repair_persisted_split_outcomes(outcomes), 0)
         self.assertEqual(outcomes[0], first)
 
+    def test_spinoff_total_return_includes_distributed_child_value(self):
+        adjusted = MOD.corporate_action_adjusted_return(
+            "CTVA",
+            "2026-09-03",
+            "2026-10-01",
+            89.97,
+            11.92,
+            end_rows={"VYLR": {"current_price": 68.26}},
+        )
+        self.assertTrue(adjusted["corporate_action_adjusted"])
+        self.assertFalse(adjusted["corporate_action_unresolved"])
+        self.assertTrue(adjusted["validation_eligible"])
+        self.assertEqual(adjusted["distribution_value_per_parent"], 68.26)
+        self.assertLess(abs(adjusted["return_pct"]), 15)
+        self.assertLess(adjusted["raw_return_pct"], -80)
+
+    def test_unresolved_spinoff_is_retained_but_not_validation_eligible(self):
+        adjusted = MOD.corporate_action_adjusted_return(
+            "CTVA",
+            "2026-09-03",
+            "2026-10-01",
+            89.97,
+            11.92,
+            end_rows={},
+        )
+        self.assertTrue(adjusted["corporate_action_unresolved"])
+        self.assertFalse(adjusted["validation_eligible"])
+        self.assertEqual(adjusted["unresolved_distributions"], ["VYLR"])
+        self.assertLess(adjusted["return_pct"], -80)
+
+    def test_snapshot_keeps_distribution_reference_price_even_without_score(self):
+        snap = MOD.make_snapshot(
+            dt.date(2026, 10, 1),
+            {"CTVA": {"current_price": 11.92, "score": 50}},
+            {},
+            {"VYLR": {"current_price": 68.26}},
+        )
+        self.assertEqual(snap["corporate_action_reference_prices"]["VYLR"], 68.26)
+
     def test_large_unsplit_return_is_not_clipped(self):
         adjusted = MOD.split_adjusted_return(
             "FEAM",
