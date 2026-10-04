@@ -21,6 +21,7 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
             "freshness": {"valid_through": "2026-10-05T00:00:00+00:00"},
             "horizons": {
                 "28": {
+                    "score_model_assignment_stability": {},
                     "by_score_model": {
                         "general": {
                             "stability": {},
