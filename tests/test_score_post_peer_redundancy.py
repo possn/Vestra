@@ -51,6 +51,23 @@ class ScorePostPeerRedundancyTests(unittest.TestCase):
     def test_growth_tech_shadow_has_enough_rows_for_redundancy_diagnostic(self):
         self.assertGreaterEqual(len(self.by_model["growth_tech"]), 40)
 
+    def test_growth_tech_fcf_yield_has_single_dimension_owner(self):
+        rows = self.by_model["growth_tech"]
+        self.assertGreaterEqual(len(rows), 40)
+        duplicate_owners = []
+        for row in rows:
+            uses = [
+                meta for meta in (row.get("benchmark_scopes") or [])
+                if str(meta.get("metric") or "") == "fcf_yield"
+            ]
+            if len(uses) != 1:
+                duplicate_owners.append((row.get("ticker"), len(uses)))
+        self.assertEqual(
+            duplicate_owners,
+            [],
+            "growth-tech FCF yield must be owned only by Cash Flow: " + repr(duplicate_owners[:10]),
+        )
+
     def test_all_well_sampled_specialist_models_stay_below_redundancy_threshold(self):
         failures = []
         checked = []

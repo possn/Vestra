@@ -187,13 +187,15 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
     await expect(sheet.locator('.market-detail-head h2')).toHaveText(ticker);
     await expect(sheet.locator('#marketDetailBody')).not.toBeEmpty();
 
-    // Canonical dossier contract: the persistent close is the single visible
-    // close owner on iPhone, so it remains reachable independently of content.
+    // Canonical iPhone dossier contract: body-level portal owns the visible
+    // close action so WebKit cannot move it with the scrolling sheet.
     const persistentClose = sheet.locator(':scope > .market-close-persistent[data-market-close]');
-    await expect(persistentClose, `${ticker} persistent dossier close missing`).toBeVisible();
+    await expect(persistentClose).toBeHidden();
+    const portalClose = page.locator('#marketDossierActionPortal .market-close--portal[data-portal-close]');
+    await expect(portalClose, `${ticker} portal dossier close missing`).toBeVisible();
     const inlineClose = sheet.locator('#marketSheetContent .market-detail-actions [data-market-close]').first();
     await expect(inlineClose).toBeHidden();
-    await persistentClose.click();
+    await portalClose.click();
     await expect(sheet).toBeHidden();
   }
 

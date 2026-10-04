@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 import importlib.util
 from pathlib import Path
 import unittest
@@ -12,6 +13,39 @@ SPEC.loader.exec_module(MOD)
 
 
 class ScoreForwardValidationPersistenceTests(unittest.TestCase):
+    def test_report_contract_centralizes_freshness_and_model_diagnostics(self):
+        now = dt.datetime(2026, 10, 4, 12, 0, tzinfo=dt.timezone.utc)
+        report = {
+            "schema_version": MOD.REPORT_SCHEMA_VERSION,
+            "generator_version": MOD.REPORT_GENERATOR_VERSION,
+            "freshness": {"valid_through": "2026-10-05T00:00:00+00:00"},
+            "horizons": {
+                "28": {
+                    "by_score_model": {
+                        "general": {
+                            "stability": {},
+                            "composition_stability": {},
+                        }
+                    }
+                }
+            },
+        }
+        ok = MOD.validate_report_contract(report, now=now)
+        self.assertTrue(ok["is_valid"])
+        self.assertEqual(ok["reasons"], [])
+
+        missing = json.loads(json.dumps(report))
+        del missing["horizons"]["28"]["by_score_model"]["general"]["composition_stability"]
+        invalid = MOD.validate_report_contract(missing, now=now)
+        self.assertFalse(invalid["is_valid"])
+        self.assertIn("missing_composition_stability:28:general", invalid["reasons"])
+
+        expired = json.loads(json.dumps(report))
+        expired["freshness"]["valid_through"] = "2026-10-03T00:00:00+00:00"
+        invalid = MOD.validate_report_contract(expired, now=now)
+        self.assertFalse(invalid["is_valid"])
+        self.assertIn("report_expired", invalid["reasons"])
+
     def test_materialised_outcome_is_not_duplicated(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{

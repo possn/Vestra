@@ -11,6 +11,15 @@ def read(name):
 
 class RuntimeRegressionTests(unittest.TestCase):
 
+    def test_score_validation_contract_is_shared_by_pipeline_and_production_smoke(self):
+        market = (ROOT / ".github" / "workflows" / "update-market-data.yml").read_text(encoding="utf-8")
+        smoke = (ROOT / ".github" / "workflows" / "production-smoke.yml").read_text(encoding="utf-8")
+        self.assertIn("validate_report_contract(report)", market)
+        self.assertIn("Validate published score report contract", smoke)
+        self.assertIn("validate_report_contract(report)", smoke)
+        self.assertIn("score_validation_report.json", smoke)
+        self.assertNotIn("evaluate_report_freshness(report)", market)
+
     def test_market_pipeline_guards_score_validation_report_before_publish(self):
         workflow = (ROOT / ".github" / "workflows" / "update-market-data.yml").read_text(encoding="utf-8")
         guard_name = "Validate score validation report contract"
