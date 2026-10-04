@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "generated_at": "2026-10-04T15:05:01.975657+00:00",
   "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
   "horizons_days": [
@@ -51,7 +51,7 @@
       },
       "cohort_count": 2,
       "expected_matured_cohorts": 2,
-      "cohort_capture_pct": 100.0,
+      "cohort_capture_pct": 100,
       "median_cohort_rank_ic": 0.1124,
       "positive_ic_cohorts": 2,
       "median_cohort_top_minus_bottom_pct": 3.33,
@@ -164,7 +164,7 @@
               "bottom_quintile_median_return_pct": -12.59,
               "median_top_minus_bottom_pct": 5.62,
               "top_quintile_winsorized_mean_return_pct": -7.32,
-              "bottom_quintile_winsorized_mean_return_pct": -15.0,
+              "bottom_quintile_winsorized_mean_return_pct": -15,
               "winsorized_top_minus_bottom_pct": 7.67
             }
           ]
@@ -813,5 +813,14 @@
     "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
     "peer_shadow": "The current peer shadow is a production-parity reconstruction, not an independent challenger. Historical peer_shadow_score values are retained for lineage/parity diagnostics but cannot unlock Score v2 readiness unless a future shadow is explicitly marked role=candidate with a non-empty candidate_id."
   },
-  "decision_rule": "Do not optimize production weights from pooled n alone. Require multiple matured weekly cohorts, preferably at least 8 per horizon and evidence across at least two horizons, with stable positive median cohort rank IC and top-minus-bottom spread across score models/sectors."
+  "decision_rule": "Do not optimize production weights from pooled n alone. Require multiple matured weekly cohorts, preferably at least 8 per horizon and evidence across at least two horizons, with stable positive median cohort rank IC and top-minus-bottom spread across score models/sectors.",
+  "generator_version": "score-forward-validation/cohort-aware-model-evidence-v1",
+  "freshness": {
+    "status": "current_at_generation",
+    "as_of_date": "2026-10-04",
+    "valid_through": "2026-10-06T03:05:01.975Z",
+    "validity_hours": 36,
+    "latest_snapshot_date": "2026-10-01",
+    "stale_if": "expired valid_through or generator/schema version differs from the current validator"
+  }
 }

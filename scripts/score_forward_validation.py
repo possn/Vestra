@@ -29,6 +29,9 @@ MAX_HORIZON_LATENESS_DAYS = 10
 RETENTION_DAYS = 800
 MIN_CORRELATION_N = 20
 MIN_BREAKDOWN_N = 30
+REPORT_SCHEMA_VERSION = 5
+REPORT_GENERATOR_VERSION = "score-forward-validation/cohort-aware-model-evidence-v1"
+REPORT_VALIDITY_HOURS = 36
 
 # Price-basis corporate actions that cross prospective validation windows.
 # numerator/denominator describes NEW shares / OLD shares. A reverse split
@@ -750,6 +753,33 @@ def maturity_dates(today, snapshots, horizon):
     return first, (pending[0] if pending else None)
 
 
+
+def evaluate_report_freshness(report, now=None):
+    """Machine-check whether a validation report is still safe to interpret as current."""
+    now = now or dt.datetime.now(dt.timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=dt.timezone.utc)
+    reasons = []
+    if int(report.get("schema_version") or 0) != REPORT_SCHEMA_VERSION:
+        reasons.append("schema_version_mismatch")
+    if str(report.get("generator_version") or "") != REPORT_GENERATOR_VERSION:
+        reasons.append("generator_version_mismatch")
+    freshness = report.get("freshness") if isinstance(report.get("freshness"), dict) else {}
+    try:
+        valid_through = dt.datetime.fromisoformat(str(freshness.get("valid_through") or ""))
+        if valid_through.tzinfo is None:
+            valid_through = valid_through.replace(tzinfo=dt.timezone.utc)
+        if now > valid_through:
+            reasons.append("report_expired")
+    except Exception:
+        reasons.append("missing_or_invalid_valid_through")
+    return {
+        "is_current": not reasons,
+        "reasons": reasons,
+        "expected_schema_version": REPORT_SCHEMA_VERSION,
+        "expected_generator_version": REPORT_GENERATOR_VERSION,
+    }
+
 def main():
     today = dt.date.today()
     rows = current_rows()
@@ -836,9 +866,19 @@ def main():
         encoding="utf-8",
     )
 
+    report_generated_at = dt.datetime.now(dt.timezone.utc)
     report = {
-        "schema_version": 4,
-        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "generator_version": REPORT_GENERATOR_VERSION,
+        "generated_at": report_generated_at.isoformat(),
+        "freshness": {
+            "status": "current_at_generation",
+            "as_of_date": today.isoformat(),
+            "valid_through": (report_generated_at + dt.timedelta(hours=REPORT_VALIDITY_HOURS)).isoformat(),
+            "validity_hours": REPORT_VALIDITY_HOURS,
+            "latest_snapshot_date": latest_date.isoformat() if latest_date else None,
+            "stale_if": "expired valid_through or generator/schema version differs from the current validator",
+        },
         "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
         "horizons_days": list(HORIZONS),
         "snapshots_available": len(snapshots),

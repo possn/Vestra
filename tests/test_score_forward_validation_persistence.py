@@ -148,6 +148,29 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(summary["cohort_count"], 1)
         self.assertEqual(summary["status"], "collecting_evidence")
 
+    def test_report_freshness_rejects_expired_or_wrong_generator_reports(self):
+        now = dt.datetime(2026, 10, 4, 16, 0, tzinfo=dt.timezone.utc)
+        current = {
+            "schema_version": MOD.REPORT_SCHEMA_VERSION,
+            "generator_version": MOD.REPORT_GENERATOR_VERSION,
+            "freshness": {"valid_through": "2026-10-05T04:00:00+00:00"},
+        }
+        self.assertTrue(MOD.evaluate_report_freshness(current, now)["is_current"])
+
+        expired = dict(current)
+        expired["freshness"] = {"valid_through": "2026-10-04T15:00:00+00:00"}
+        self.assertEqual(
+            MOD.evaluate_report_freshness(expired, now)["reasons"],
+            ["report_expired"],
+        )
+
+        wrong_generator = dict(current)
+        wrong_generator["generator_version"] = "legacy-validator"
+        self.assertIn(
+            "generator_version_mismatch",
+            MOD.evaluate_report_freshness(wrong_generator, now)["reasons"],
+        )
+
     def test_score_model_breakdown_is_cohort_aware_not_just_pooled(self):
         rows = []
         for cohort, date in enumerate(("2026-08-01", "2026-08-08")):
