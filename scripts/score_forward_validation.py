@@ -515,6 +515,37 @@ def cohort_summaries(vals):
     return out
 
 
+def grouped_cohort_evidence(vals, field):
+    groups = defaultdict(list)
+    for row in vals:
+        groups[str(row.get(field) or "Unknown")].append(row)
+    out = {}
+    for key, rows in sorted(groups.items()):
+        if len(rows) < MIN_BREAKDOWN_N:
+            continue
+        cohorts = cohort_summaries(rows)
+        cohort_ics = [
+            num(x.get("rank_information_coefficient")) for x in cohorts
+            if num(x.get("rank_information_coefficient")) is not None
+        ]
+        cohort_spreads = [
+            num(x.get("winsorized_top_minus_bottom_pct")) for x in cohorts
+            if num(x.get("winsorized_top_minus_bottom_pct")) is not None
+        ]
+        pooled = metric_pack(rows)
+        pooled.update({
+            "cohort_count": len(cohorts),
+            "median_cohort_rank_ic": round(statistics.median(cohort_ics), 4) if cohort_ics else None,
+            "positive_ic_cohorts": sum(1 for x in cohort_ics if x > 0),
+            "median_cohort_robust_spread_pct": round(statistics.median(cohort_spreads), 2) if cohort_spreads else None,
+            "positive_robust_spread_cohorts": sum(1 for x in cohort_spreads if x > 0),
+            "status": validation_status(len(cohorts)),
+            "cohorts": cohorts,
+        })
+        out[key] = pooled
+    return out
+
+
 def validation_status(cohort_count):
     if cohort_count < 4:
         return "collecting_evidence"
@@ -684,7 +715,7 @@ def summarize_horizon(vals, expected_matured_cohorts=0, shadow_role="legacy_cand
         "median_cohort_robust_spread_pct": round(statistics.median(cohort_robust_spreads), 2) if cohort_robust_spreads else None,
         "positive_robust_spread_cohorts": sum(1 for x in cohort_robust_spreads if x > 0),
         "factor_rank_information_coefficient": factor_ics(vals),
-        "by_score_model": grouped_breakdown(vals, "score_model"),
+        "by_score_model": grouped_cohort_evidence(vals, "score_model"),
         "by_sector": grouped_breakdown(vals, "sector"),
         "cohorts": cohorts,
         "status": validation_status(len(cohorts)),
@@ -825,7 +856,7 @@ def main():
             "top_minus_bottom": "Raw mean return spread between highest and lowest score quintiles; retain it for transparency but inspect robust companions when tails are extreme.",
             "robust_quintile_spreads": "Median and 5% winsorized-mean top-minus-bottom spreads are reported alongside the raw mean. They are diagnostics, not replacements chosen after seeing outcomes.",
             "corporate_actions": "Known splits/reverse splits are normalized onto the end-date share-price basis. Stock distributions/spin-offs add the distributed child value when an end-date reference price is available; unresolved corporate-action outcomes are retained for auditability but excluded from validation metrics.",
-            "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap.",
+            "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap. Score-model breakdowns include their own cohort_count, medians and positive-cohort counts; model status is never inferred from pooled n alone.",
             "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
             "peer_shadow": "The current peer shadow is a production-parity reconstruction, not an independent challenger. Historical peer_shadow_score values are retained for lineage/parity diagnostics but cannot unlock Score v2 readiness unless a future shadow is explicitly marked role=candidate with a non-empty candidate_id.",
         },
