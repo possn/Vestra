@@ -29,6 +29,23 @@ MAX_HORIZON_LATENESS_DAYS = 10
 RETENTION_DAYS = 800
 MIN_CORRELATION_N = 20
 MIN_BREAKDOWN_N = 30
+
+# Price-basis corporate actions that cross prospective validation windows.
+# numerator/denominator describes NEW shares / OLD shares. A reverse split
+# therefore increases the comparable pre-action price basis by denominator /
+# numerator. Keep this registry explicit: extreme returns are never clipped
+# merely because they are large.
+VALIDATION_SPLITS = (
+    {"ticker": "GOSS", "effective_date": "2026-09-11", "numerator": 1, "denominator": 80},
+    {"ticker": "NFE", "effective_date": "2026-09-14", "numerator": 1, "denominator": 50},
+    {"ticker": "ALCPB.PA", "effective_date": "2026-09-08", "numerator": 1, "denominator": 10},
+)
+
+# Stock distributions/spin-offs change shareholder value without changing the
+# parent ticker's price basis. Total shareholder return must include the child.
+VALIDATION_DISTRIBUTIONS = (
+    {"parent": "CTVA", "effective_date": "2026-10-01", "child": "VYLR", "shares_per_parent": 1.0},
+)
 FIELDS = (
     "score", "quality_pct", "growth_pct", "balance_pct", "cashflow_pct",
     "value_pct", "execution_pct", "earnings_quality_pct",
@@ -42,6 +59,160 @@ def num(v):
         return x if math.isfinite(x) else None
     except (TypeError, ValueError):
         return None
+
+
+def split_price_basis_factor(ticker, start_date, end_date):
+    """Return the factor that puts a pre-action price on the end-date share basis."""
+    try:
+        start = dt.date.fromisoformat(str(start_date)[:10])
+        end = dt.date.fromisoformat(str(end_date)[:10])
+    except Exception:
+        return 1.0
+    symbol = str(ticker or "").strip().upper()
+    factor = 1.0
+    for action in VALIDATION_SPLITS:
+        if symbol != action["ticker"]:
+            continue
+        effective = dt.date.fromisoformat(action["effective_date"])
+        if start < effective <= end:
+            numerator = num(action.get("numerator"))
+            denominator = num(action.get("denominator"))
+            if numerator and denominator and numerator > 0 and denominator > 0:
+                factor *= denominator / numerator
+    return factor
+
+
+def distribution_terminal_value(ticker, start_date, end_date, end_rows=None):
+    """Return distributed child value per parent share, or unresolved metadata."""
+    try:
+        start = dt.date.fromisoformat(str(start_date)[:10])
+        end = dt.date.fromisoformat(str(end_date)[:10])
+    except Exception:
+        return 0.0, []
+    symbol = str(ticker or "").strip().upper()
+    end_rows = end_rows or {}
+    value = 0.0
+    unresolved = []
+    for action in VALIDATION_DISTRIBUTIONS:
+        if symbol != action["parent"]:
+            continue
+        effective = dt.date.fromisoformat(action["effective_date"])
+        if not (start < effective <= end):
+            continue
+        child = str(action["child"]).upper()
+        row = end_rows.get(child) or {}
+        child_price = num(row.get("current_price") if isinstance(row, dict) else row)
+        shares = num(action.get("shares_per_parent"))
+        if child_price is None or child_price < 0 or shares is None or shares <= 0:
+            unresolved.append(child)
+            continue
+        value += child_price * shares
+    return value, unresolved
+
+
+def corporate_action_adjusted_return(
+    ticker, start_date, end_date, start_price, end_price, end_rows=None
+):
+    p0, p1 = num(start_price), num(end_price)
+    if p0 is None or p1 is None or p0 <= 0:
+        return None
+    split_factor = split_price_basis_factor(ticker, start_date, end_date)
+    comparable_start = p0 * split_factor
+    if comparable_start <= 0:
+        return None
+    distribution_value, unresolved = distribution_terminal_value(
+        ticker, start_date, end_date, end_rows
+    )
+    raw_return = (p1 / p0 - 1.0) * 100.0
+    if unresolved:
+        return {
+            "return_pct": raw_return,
+            "raw_return_pct": raw_return,
+            "split_adjustment_factor": split_factor,
+            "distribution_value_per_parent": None,
+            "corporate_action_adjusted": split_factor != 1.0,
+            "corporate_action_unresolved": True,
+            "unresolved_distributions": unresolved,
+            "validation_eligible": False,
+        }
+    terminal_value = p1 + distribution_value
+    return {
+        "return_pct": (terminal_value / comparable_start - 1.0) * 100.0,
+        "raw_return_pct": raw_return,
+        "split_adjustment_factor": split_factor,
+        "distribution_value_per_parent": distribution_value,
+        "corporate_action_adjusted": split_factor != 1.0 or distribution_value != 0.0,
+        "corporate_action_unresolved": False,
+        "unresolved_distributions": [],
+        "validation_eligible": True,
+    }
+
+
+def split_adjusted_return(ticker, start_date, end_date, start_price, end_price):
+    """Backward-compatible split-only helper."""
+    return corporate_action_adjusted_return(
+        ticker, start_date, end_date, start_price, end_price, end_rows={}
+    )
+
+
+def _reference_prices_for_date(snapshots, date):
+    for snap in snapshots or []:
+        if str(snap.get("date") or "") != str(date or "")[:10]:
+            continue
+        out = {}
+        for ticker, price in (snap.get("corporate_action_reference_prices") or {}).items():
+            if num(price) is not None:
+                out[str(ticker).upper()] = {"current_price": num(price)}
+        for ticker, obs in (snap.get("observations") or {}).items():
+            if isinstance(obs, dict) and num(obs.get("price")) is not None:
+                out.setdefault(str(ticker).upper(), {"current_price": num(obs.get("price"))})
+        return out
+    return {}
+
+
+def repair_persisted_split_outcomes(outcomes, snapshots=None):
+    """Idempotently repair already-materialised outcomes that crossed known splits."""
+    repaired = 0
+    for item in outcomes:
+        if not isinstance(item, dict):
+            continue
+        end_rows = _reference_prices_for_date(snapshots, item.get("evaluated_date"))
+        result = corporate_action_adjusted_return(
+            item.get("ticker"),
+            item.get("cohort_date"),
+            item.get("evaluated_date"),
+            item.get("start_price"),
+            item.get("end_price"),
+            end_rows=end_rows,
+        )
+        if not result or (
+            not result["corporate_action_adjusted"]
+            and not result["corporate_action_unresolved"]
+        ):
+            continue
+        new_return = round(result["return_pct"], 6)
+        new_raw = round(result["raw_return_pct"], 6)
+        changed = any([
+            num(item.get("return_pct")) != new_return,
+            num(item.get("raw_return_pct")) != new_raw,
+            num(item.get("split_adjustment_factor")) != num(result["split_adjustment_factor"]),
+            num(item.get("distribution_value_per_parent")) != num(result["distribution_value_per_parent"]),
+            bool(item.get("corporate_action_adjusted")) != bool(result["corporate_action_adjusted"]),
+            bool(item.get("corporate_action_unresolved")) != bool(result["corporate_action_unresolved"]),
+            list(item.get("unresolved_distributions") or []) != list(result["unresolved_distributions"]),
+            item.get("validation_eligible") is not result["validation_eligible"],
+        ])
+        if changed:
+            repaired += 1
+        item["raw_return_pct"] = new_raw
+        item["return_pct"] = new_return
+        item["split_adjustment_factor"] = result["split_adjustment_factor"]
+        item["distribution_value_per_parent"] = result["distribution_value_per_parent"]
+        item["corporate_action_adjusted"] = result["corporate_action_adjusted"]
+        item["corporate_action_unresolved"] = result["corporate_action_unresolved"]
+        item["unresolved_distributions"] = result["unresolved_distributions"]
+        item["validation_eligible"] = result["validation_eligible"]
+    return repaired
 
 
 def rank(values):
@@ -107,6 +278,25 @@ def current_rows():
     return out
 
 
+def current_price_rows():
+    """Live equity prices used to value outcomes and distributed child shares."""
+    payload = load_json(INDEX, {})
+    out = {}
+    for r in payload.get("stocks") or []:
+        if not isinstance(r, dict):
+            continue
+        ticker = str(r.get("ticker") or "").strip().upper()
+        price = num(r.get("current_price"))
+        if not ticker or price is None or price <= 0:
+            continue
+        if str(r.get("quote_type") or "").upper() in {"ETF", "CRYPTO", "FUND", "MUTUALFUND"}:
+            continue
+        if str(r.get("pipeline_status") or "") in {"equity_catalog_only", "equity_carried_forward"}:
+            continue
+        out[ticker] = r
+    return out
+
+
 def peer_shadow_state():
     payload = load_json(PEER_SHADOW, {})
     out = {}
@@ -133,7 +323,7 @@ def peer_shadow_scores():
     return peer_shadow_state()["scores"]
 
 
-def make_snapshot(today, rows, shadow_scores=None):
+def make_snapshot(today, rows, shadow_scores=None, reference_prices=None):
     observations = {}
     shadow_scores = shadow_scores or {}
     for ticker, r in rows.items():
@@ -146,7 +336,17 @@ def make_snapshot(today, rows, shadow_scores=None):
             "peer_shadow_score": num(shadow_scores.get(ticker)),
             **{field: num(r.get(field)) for field in FIELDS},
         }
-    return {"date": today.isoformat(), "observations": observations}
+    reference_prices = reference_prices or {}
+    corporate_action_reference_prices = {
+        action["child"]: num((reference_prices.get(action["child"]) or {}).get("current_price"))
+        for action in VALIDATION_DISTRIBUTIONS
+        if num((reference_prices.get(action["child"]) or {}).get("current_price")) is not None
+    }
+    return {
+        "date": today.isoformat(),
+        "observations": observations,
+        "corporate_action_reference_prices": corporate_action_reference_prices,
+    }
 
 
 def outcome_key(cohort_date, horizon, ticker):
@@ -182,7 +382,12 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                 score = num(old.get("score"))
                 if p0 is None or p1 is None or p0 <= 0 or score is None:
                     continue
-                realised = (p1 / p0 - 1.0) * 100.0
+                adjusted = corporate_action_adjusted_return(
+                    ticker, snap["date"], today.isoformat(), p0, p1, end_rows=rows
+                )
+                if not adjusted:
+                    continue
+                realised = adjusted["return_pct"]
                 item = {
                     "cohort_date": snap["date"],
                     "evaluated_date": today.isoformat(),
@@ -192,6 +397,13 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                     "start_price": round(p0, 8),
                     "end_price": round(p1, 8),
                     "return_pct": round(realised, 6),
+                    "raw_return_pct": round(adjusted["raw_return_pct"], 6),
+                    "split_adjustment_factor": adjusted["split_adjustment_factor"],
+                    "corporate_action_adjusted": adjusted["corporate_action_adjusted"],
+                    "distribution_value_per_parent": adjusted["distribution_value_per_parent"],
+                    "corporate_action_unresolved": adjusted["corporate_action_unresolved"],
+                    "unresolved_distributions": adjusted["unresolved_distributions"],
+                    "validation_eligible": adjusted["validation_eligible"],
                     "sector": old.get("sector") or "Unknown",
                     "score_model": old.get("score_model") or "general",
                     "confidence_score": num(old.get("confidence_score")),
@@ -510,6 +722,7 @@ def maturity_dates(today, snapshots, horizon):
 def main():
     today = dt.date.today()
     rows = current_rows()
+    price_rows = current_price_rows()
     shadow_state = peer_shadow_state()
     shadow_scores = shadow_state["scores"]
     history = load_json(HISTORY, {"schema_version": 3, "snapshots": [], "outcomes": []})
@@ -542,7 +755,7 @@ def main():
     if latest_date is None or (today - latest_date).days >= 7 or (
         needs_peer_shadow_baseline and latest_date != today
     ):
-        snapshots.append(make_snapshot(today, rows, shadow_scores))
+        snapshots.append(make_snapshot(today, rows, shadow_scores, price_rows))
     elif needs_peer_shadow_baseline and latest_date == today and latest_snapshot:
         # Same-day upgrade is still prospective: attach only the candidate that
         # exists now to today's already-recorded observations, never to older dates.
@@ -560,11 +773,16 @@ def main():
         if isinstance(x, dict) and dt.date.fromisoformat(str(x.get("cohort_date"))) >= cutoff
     ]
 
-    added = materialise_outcomes(today, snapshots, rows, outcomes)
+    added = materialise_outcomes(today, snapshots, price_rows, outcomes)
+    repaired = repair_persisted_split_outcomes(outcomes, snapshots)
 
     report_horizons = {}
     for horizon in HORIZONS:
-        vals = [x for x in outcomes if int(x.get("horizon_days") or 0) == horizon]
+        vals = [
+            x for x in outcomes
+            if int(x.get("horizon_days") or 0) == horizon
+            and x.get("validation_eligible") is not False
+        ]
         expected = expected_matured_count(today, snapshots, horizon)
         summary = summarize_horizon(
             vals,
@@ -578,7 +796,7 @@ def main():
         summary["next_pending_maturity_date"] = next_maturity.isoformat() if next_maturity else None
         report_horizons[str(horizon)] = summary
 
-    history["schema_version"] = 3
+    history["schema_version"] = 4
     history["updated_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     history["snapshot_count"] = len(snapshots)
     history["outcome_count"] = len(outcomes)
@@ -588,13 +806,14 @@ def main():
     )
 
     report = {
-        "schema_version": 3,
+        "schema_version": 4,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
         "horizons_days": list(HORIZONS),
         "snapshots_available": len(snapshots),
         "realised_outcomes": len(outcomes),
         "new_outcomes_this_run": added,
+        "repaired_corporate_action_outcomes_this_run": repaired,
         "horizons": report_horizons,
         "score_v2_readiness": score_v2_readiness(
             report_horizons,
@@ -605,6 +824,7 @@ def main():
             "rank_ic": "Spearman correlation between the score known at cohort date and realised forward return.",
             "top_minus_bottom": "Raw mean return spread between highest and lowest score quintiles; retain it for transparency but inspect robust companions when tails are extreme.",
             "robust_quintile_spreads": "Median and 5% winsorized-mean top-minus-bottom spreads are reported alongside the raw mean. They are diagnostics, not replacements chosen after seeing outcomes.",
+            "corporate_actions": "Known splits/reverse splits are normalized onto the end-date share-price basis. Stock distributions/spin-offs add the distributed child value when an end-date reference price is available; unresolved corporate-action outcomes are retained for auditability but excluded from validation metrics.",
             "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap.",
             "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
             "peer_shadow": "The current peer shadow is a production-parity reconstruction, not an independent challenger. Historical peer_shadow_score values are retained for lineage/parity diagnostics but cannot unlock Score v2 readiness unless a future shadow is explicitly marked role=candidate with a non-empty candidate_id.",
