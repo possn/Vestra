@@ -887,6 +887,33 @@ def evaluate_report_freshness(report, now=None):
         "expected_generator_version": REPORT_GENERATOR_VERSION,
     }
 
+def validate_report_contract(report, now=None):
+    """Validate the full published-report contract from one canonical implementation."""
+    freshness = evaluate_report_freshness(report, now=now)
+    reasons = list(freshness["reasons"])
+    horizons = report.get("horizons") if isinstance(report.get("horizons"), dict) else {}
+    if not horizons:
+        reasons.append("missing_horizons")
+    else:
+        for horizon_days, pack in horizons.items():
+            models = (pack or {}).get("by_score_model") if isinstance(pack, dict) else None
+            models = models if isinstance(models, dict) else {}
+            for model_name, model_pack in models.items():
+                if not isinstance(model_pack, dict):
+                    reasons.append(f"invalid_model_pack:{horizon_days}:{model_name}")
+                    continue
+                if "stability" not in model_pack:
+                    reasons.append(f"missing_stability:{horizon_days}:{model_name}")
+                if "composition_stability" not in model_pack:
+                    reasons.append(f"missing_composition_stability:{horizon_days}:{model_name}")
+    return {
+        "is_valid": not reasons,
+        "reasons": reasons,
+        "freshness": freshness,
+        "generator_version": report.get("generator_version"),
+        "schema_version": report.get("schema_version"),
+    }
+
 def main():
     today = dt.date.today()
     rows = current_rows()

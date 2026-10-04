@@ -146,31 +146,13 @@ jobs:
           with open("../data/score_validation_report.json", "r", encoding="utf-8") as handle:
               report = json.load(handle)
 
-          freshness = sf.evaluate_report_freshness(report)
-          if not freshness["is_current"]:
+          result = sf.validate_report_contract(report)
+          if not result["is_valid"]:
               raise SystemExit(
-                  "score validation report is not current: "
-                  + ",".join(freshness["reasons"])
+                  "score validation report contract failed: "
+                  + ",".join(result["reasons"])
               )
-
-          horizons = report.get("horizons") or {}
-          for horizon_days, pack in horizons.items():
-              models = (pack or {}).get("by_score_model") or {}
-              for model_name, model_pack in models.items():
-                  if "stability" not in model_pack:
-                      raise SystemExit(
-                          f"missing stability diagnostics: horizon={horizon_days} model={model_name}"
-                      )
-                  if "composition_stability" not in model_pack:
-                      raise SystemExit(
-                          f"missing composition stability: horizon={horizon_days} model={model_name}"
-                      )
-
-          print(
-              "score validation report contract ok:",
-              report.get("generator_version"),
-              freshness,
-          )
+          print("score validation report contract ok:", result)
           PY
 
       - name: Check automated main publish window

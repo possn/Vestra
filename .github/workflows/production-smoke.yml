@@ -6,6 +6,8 @@ on:
     - cron: '25 */6 * * *'
   pull_request:
     paths:
+      - 'scripts/score_forward_validation.py'
+      - 'data/score_validation_report.json'
       - 'tests/e2e/production-smoke.spec.js'
       - 'tests/e2e/playwright.production.config.js'
       - 'package.json'
@@ -23,6 +25,8 @@ on:
       - 'data/stocks-scanner.json'
       - 'data/dossiers-manifest.json'
       - 'data/dossiers/**'
+      - 'data/score_validation_report.json'
+      - 'scripts/score_forward_validation.py'
       - 'tests/e2e/production-smoke.spec.js'
       - 'tests/e2e/playwright.production.config.js'
       - 'package.json'
@@ -48,6 +52,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: package.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
       - name: Install Playwright test runner
         run: npm install --no-audit --no-fund
       - name: Install WebKit browser
@@ -69,6 +76,38 @@ jobs:
           done
           echo "GitHub Pages não ficou disponível para o smoke."
           exit 1
+      - name: Validate published score report contract
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          report_file="$(mktemp)"
+          trap 'rm -f "$report_file"' EXIT
+          for attempt in $(seq 1 12); do
+            if curl -fsSL --retry 2 --connect-timeout 10 \
+              "${VESTRA_PRODUCTION_URL}data/score_validation_report.json?smoke=${GITHUB_RUN_ID}-${attempt}" \
+              -o "$report_file" && \
+              PYTHONPATH=scripts python - "$report_file" <<'PY'
+          import json
+          import sys
+          import score_forward_validation as sf
+
+          with open(sys.argv[1], "r", encoding="utf-8") as handle:
+              report = json.load(handle)
+
+          result = sf.validate_report_contract(report)
+          if not result["is_valid"]:
+              raise SystemExit(",".join(result["reasons"]))
+          print("published score validation report contract ok:", result)
+          PY
+            then
+              exit 0
+            fi
+            echo "Score validation report publicado ainda não satisfaz o contrato (tentativa ${attempt}/12)."
+            sleep 10
+          done
+          echo "Score validation report publicado falhou o contrato."
+          exit 1
+
       - name: Run published iPhone/WebKit smoke
         run: npm run test:e2e:production
       - name: Upload production smoke diagnostics
