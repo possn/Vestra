@@ -45,7 +45,7 @@ class ScoreForwardReturnOutlierAuditTests(unittest.TestCase):
 
     def test_audit_realised_return_outliers_and_split_like_ratios(self):
         self.assertGreater(len(self.outcomes), 100)
-        self.assertGreaterEqual(self.repaired, 6)
+        self.assertGreaterEqual(self.repaired, 0)
 
         eligible_outcomes = [
             row for row in self.outcomes
@@ -97,6 +97,13 @@ class ScoreForwardReturnOutlierAuditTests(unittest.TestCase):
             for row in self.outcomes
             if row.get("corporate_action_adjusted")
         }
+        # The checked-in history may already have been repaired by the automatic
+        # validation run. The contract is therefore state-based and idempotent,
+        # not dependent on how many rows this particular test invocation mutates.
+        self.assertEqual(
+            forward_validation.repair_persisted_split_outcomes(self.outcomes),
+            0,
+        )
         ctva_rows = [row for row in self.outcomes if row.get("ticker") == "CTVA"]
         self.assertTrue(ctva_rows)
         self.assertTrue(all(
