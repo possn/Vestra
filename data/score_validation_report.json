@@ -1,6 +1,15 @@
 {
   "schema_version": 5,
-  "generated_at": "2026-10-04T15:05:01.975657+00:00",
+  "generator_version": "score-forward-validation/cohort-aware-model-evidence-v2",
+  "generated_at": "2026-10-04T18:05:27.098339+00:00",
+  "freshness": {
+    "status": "current_at_generation",
+    "as_of_date": "2026-10-04",
+    "valid_through": "2026-10-06T06:05:27.098339+00:00",
+    "validity_hours": 36,
+    "latest_snapshot_date": "2026-10-04",
+    "stale_if": "expired valid_through or generator/schema version differs from the current validator"
+  },
   "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
   "horizons_days": [
     28,
@@ -8,13 +17,13 @@
     168
   ],
   "snapshots_available": 7,
-  "realised_outcomes": 3002,
-  "new_outcomes_this_run": 0,
+  "realised_outcomes": 3004,
+  "new_outcomes_this_run": 2,
   "repaired_corporate_action_outcomes_this_run": 0,
   "horizons": {
     "28": {
-      "n": 3001,
-      "rank_information_coefficient": 0.1119,
+      "n": 3003,
+      "rank_information_coefficient": 0.1113,
       "top_quintile_mean_return_pct": -3.15,
       "bottom_quintile_mean_return_pct": -6.54,
       "top_minus_bottom_pct": 3.39,
@@ -51,24 +60,24 @@
       },
       "cohort_count": 2,
       "expected_matured_cohorts": 2,
-      "cohort_capture_pct": 100,
-      "median_cohort_rank_ic": 0.1124,
+      "cohort_capture_pct": 100.0,
+      "median_cohort_rank_ic": 0.1118,
       "positive_ic_cohorts": 2,
-      "median_cohort_top_minus_bottom_pct": 3.33,
+      "median_cohort_top_minus_bottom_pct": 3.31,
       "positive_spread_cohorts": 2,
-      "median_cohort_robust_spread_pct": 3.46,
+      "median_cohort_robust_spread_pct": 3.44,
       "positive_robust_spread_cohorts": 2,
       "factor_rank_information_coefficient": {
-        "score": 0.1119,
-        "quality_pct": 0.0455,
-        "growth_pct": 0.1205,
-        "balance_pct": 0.0554,
+        "score": 0.1113,
+        "quality_pct": 0.0446,
+        "growth_pct": 0.1208,
+        "balance_pct": 0.0562,
         "cashflow_pct": 0.0038,
-        "value_pct": -0.0624,
-        "execution_pct": -0.0019,
-        "earnings_quality_pct": 0.0398,
-        "capital_allocation_pct": -0.009,
-        "stability_pct": -0.0329
+        "value_pct": -0.0625,
+        "execution_pct": 0.0002,
+        "earnings_quality_pct": 0.0395,
+        "capital_allocation_pct": -0.0085,
+        "stability_pct": -0.0338
       },
       "by_score_model": {
         "bank": {
@@ -88,6 +97,48 @@
           "positive_ic_cohorts": 0,
           "median_cohort_robust_spread_pct": -5.75,
           "positive_robust_spread_cohorts": 0,
+          "stability": {
+            "rank_ic": {
+              "min": -0.265,
+              "max": -0.0986,
+              "range": 0.1664,
+              "median_absolute_deviation": 0.0832
+            },
+            "robust_spread_pct": {
+              "min": -7.42,
+              "max": -4.09,
+              "range": 3.33,
+              "median_absolute_deviation": 1.67
+            },
+            "cohorts_with_both_metrics": 2,
+            "joint_positive_cohorts": 0,
+            "joint_positive_share_pct": 0.0,
+            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
+          },
+          "composition_stability": {
+            "cohort_count": 2,
+            "cohort_size": {
+              "min": 83,
+              "max": 85,
+              "median": 84.0,
+              "range": 2
+            },
+            "adjacent_pair_count": 1,
+            "median_adjacent_jaccard_pct": 93.1,
+            "min_adjacent_jaccard_pct": 93.1,
+            "median_adjacent_overlap_n": 81,
+            "pairs": [
+              {
+                "from_cohort_date": "2026-08-27",
+                "to_cohort_date": "2026-09-03",
+                "from_n": 83,
+                "to_n": 85,
+                "overlap_n": 81,
+                "jaccard_pct": 93.1
+              }
+            ],
+            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
+          },
           "status": "collecting_evidence",
           "cohorts": [
             {
@@ -118,49 +169,7 @@
               "bottom_quintile_winsorized_mean_return_pct": -2.37,
               "winsorized_top_minus_bottom_pct": -4.09
             }
-          ],
-          "stability": {
-            "rank_ic": {
-              "min": -0.265,
-              "max": -0.0986,
-              "range": 0.1664,
-              "median_absolute_deviation": 0.0832
-            },
-            "robust_spread_pct": {
-              "min": -7.42,
-              "max": -4.09,
-              "range": 3.33,
-              "median_absolute_deviation": 1.67
-            },
-            "cohorts_with_both_metrics": 2,
-            "joint_positive_cohorts": 0,
-            "joint_positive_share_pct": 0,
-            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
-          },
-          "composition_stability": {
-            "cohort_count": 2,
-            "cohort_size": {
-              "min": 83,
-              "max": 85,
-              "median": 84,
-              "range": 2
-            },
-            "adjacent_pair_count": 1,
-            "median_adjacent_jaccard_pct": 93.1,
-            "min_adjacent_jaccard_pct": 93.1,
-            "median_adjacent_overlap_n": 81,
-            "pairs": [
-              {
-                "from_cohort_date": "2026-08-27",
-                "to_cohort_date": "2026-09-03",
-                "from_n": 83,
-                "to_n": 85,
-                "overlap_n": 81,
-                "jaccard_pct": 93.1
-              }
-            ],
-            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
-          }
+          ]
         },
         "biotech": {
           "n": 269,
@@ -179,6 +188,48 @@
           "positive_ic_cohorts": 2,
           "median_cohort_robust_spread_pct": 6.69,
           "positive_robust_spread_cohorts": 2,
+          "stability": {
+            "rank_ic": {
+              "min": 0.1918,
+              "max": 0.2308,
+              "range": 0.039,
+              "median_absolute_deviation": 0.0195
+            },
+            "robust_spread_pct": {
+              "min": 5.71,
+              "max": 7.67,
+              "range": 1.96,
+              "median_absolute_deviation": 0.98
+            },
+            "cohorts_with_both_metrics": 2,
+            "joint_positive_cohorts": 2,
+            "joint_positive_share_pct": 100.0,
+            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
+          },
+          "composition_stability": {
+            "cohort_count": 2,
+            "cohort_size": {
+              "min": 128,
+              "max": 141,
+              "median": 134.5,
+              "range": 13
+            },
+            "adjacent_pair_count": 1,
+            "median_adjacent_jaccard_pct": 81.8,
+            "min_adjacent_jaccard_pct": 81.8,
+            "median_adjacent_overlap_n": 121,
+            "pairs": [
+              {
+                "from_cohort_date": "2026-08-27",
+                "to_cohort_date": "2026-09-03",
+                "from_n": 141,
+                "to_n": 128,
+                "overlap_n": 121,
+                "jaccard_pct": 81.8
+              }
+            ],
+            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
+          },
           "status": "collecting_evidence",
           "cohorts": [
             {
@@ -206,52 +257,10 @@
               "bottom_quintile_median_return_pct": -12.59,
               "median_top_minus_bottom_pct": 5.62,
               "top_quintile_winsorized_mean_return_pct": -7.32,
-              "bottom_quintile_winsorized_mean_return_pct": -15,
+              "bottom_quintile_winsorized_mean_return_pct": -15.0,
               "winsorized_top_minus_bottom_pct": 7.67
             }
-          ],
-          "stability": {
-            "rank_ic": {
-              "min": 0.1918,
-              "max": 0.2308,
-              "range": 0.039,
-              "median_absolute_deviation": 0.0195
-            },
-            "robust_spread_pct": {
-              "min": 5.71,
-              "max": 7.67,
-              "range": 1.96,
-              "median_absolute_deviation": 0.98
-            },
-            "cohorts_with_both_metrics": 2,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 100,
-            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
-          },
-          "composition_stability": {
-            "cohort_count": 2,
-            "cohort_size": {
-              "min": 128,
-              "max": 141,
-              "median": 134.5,
-              "range": 13
-            },
-            "adjacent_pair_count": 1,
-            "median_adjacent_jaccard_pct": 81.8,
-            "min_adjacent_jaccard_pct": 81.8,
-            "median_adjacent_overlap_n": 121,
-            "pairs": [
-              {
-                "from_cohort_date": "2026-08-27",
-                "to_cohort_date": "2026-09-03",
-                "from_n": 141,
-                "to_n": 128,
-                "overlap_n": 121,
-                "jaccard_pct": 81.8
-              }
-            ],
-            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
-          }
+          ]
         },
         "energy": {
           "n": 169,
@@ -270,6 +279,48 @@
           "positive_ic_cohorts": 2,
           "median_cohort_robust_spread_pct": 16.02,
           "positive_robust_spread_cohorts": 2,
+          "stability": {
+            "rank_ic": {
+              "min": 0.511,
+              "max": 0.6424,
+              "range": 0.1314,
+              "median_absolute_deviation": 0.0657
+            },
+            "robust_spread_pct": {
+              "min": 12.37,
+              "max": 19.67,
+              "range": 7.3,
+              "median_absolute_deviation": 3.65
+            },
+            "cohorts_with_both_metrics": 2,
+            "joint_positive_cohorts": 2,
+            "joint_positive_share_pct": 100.0,
+            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
+          },
+          "composition_stability": {
+            "cohort_count": 2,
+            "cohort_size": {
+              "min": 83,
+              "max": 86,
+              "median": 84.5,
+              "range": 3
+            },
+            "adjacent_pair_count": 1,
+            "median_adjacent_jaccard_pct": 89.9,
+            "min_adjacent_jaccard_pct": 89.9,
+            "median_adjacent_overlap_n": 80,
+            "pairs": [
+              {
+                "from_cohort_date": "2026-08-27",
+                "to_cohort_date": "2026-09-03",
+                "from_n": 86,
+                "to_n": 83,
+                "overlap_n": 80,
+                "jaccard_pct": 89.9
+              }
+            ],
+            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
+          },
           "status": "collecting_evidence",
           "cohorts": [
             {
@@ -300,53 +351,11 @@
               "bottom_quintile_winsorized_mean_return_pct": -15.3,
               "winsorized_top_minus_bottom_pct": 12.37
             }
-          ],
-          "stability": {
-            "rank_ic": {
-              "min": 0.511,
-              "max": 0.6424,
-              "range": 0.1314,
-              "median_absolute_deviation": 0.0657
-            },
-            "robust_spread_pct": {
-              "min": 12.37,
-              "max": 19.67,
-              "range": 7.3,
-              "median_absolute_deviation": 3.65
-            },
-            "cohorts_with_both_metrics": 2,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 100,
-            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
-          },
-          "composition_stability": {
-            "cohort_count": 2,
-            "cohort_size": {
-              "min": 83,
-              "max": 86,
-              "median": 84.5,
-              "range": 3
-            },
-            "adjacent_pair_count": 1,
-            "median_adjacent_jaccard_pct": 89.9,
-            "min_adjacent_jaccard_pct": 89.9,
-            "median_adjacent_overlap_n": 80,
-            "pairs": [
-              {
-                "from_cohort_date": "2026-08-27",
-                "to_cohort_date": "2026-09-03",
-                "from_n": 86,
-                "to_n": 83,
-                "overlap_n": 80,
-                "jaccard_pct": 89.9
-              }
-            ],
-            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
-          }
+          ]
         },
         "general": {
-          "n": 1645,
-          "rank_information_coefficient": 0.0505,
+          "n": 1646,
+          "rank_information_coefficient": 0.0502,
           "top_quintile_mean_return_pct": -5.62,
           "bottom_quintile_mean_return_pct": -6.18,
           "top_minus_bottom_pct": 0.56,
@@ -357,10 +366,52 @@
           "bottom_quintile_winsorized_mean_return_pct": -6.46,
           "winsorized_top_minus_bottom_pct": 0.58,
           "cohort_count": 2,
-          "median_cohort_rank_ic": 0.0503,
+          "median_cohort_rank_ic": 0.0499,
           "positive_ic_cohorts": 2,
           "median_cohort_robust_spread_pct": 0.47,
           "positive_robust_spread_cohorts": 2,
+          "stability": {
+            "rank_ic": {
+              "min": 0.0225,
+              "max": 0.0773,
+              "range": 0.0548,
+              "median_absolute_deviation": 0.0274
+            },
+            "robust_spread_pct": {
+              "min": 0.38,
+              "max": 0.56,
+              "range": 0.18,
+              "median_absolute_deviation": 0.09
+            },
+            "cohorts_with_both_metrics": 2,
+            "joint_positive_cohorts": 2,
+            "joint_positive_share_pct": 100.0,
+            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
+          },
+          "composition_stability": {
+            "cohort_count": 2,
+            "cohort_size": {
+              "min": 807,
+              "max": 839,
+              "median": 823.0,
+              "range": 32
+            },
+            "adjacent_pair_count": 1,
+            "median_adjacent_jaccard_pct": 88.3,
+            "min_adjacent_jaccard_pct": 88.3,
+            "median_adjacent_overlap_n": 772,
+            "pairs": [
+              {
+                "from_cohort_date": "2026-08-27",
+                "to_cohort_date": "2026-09-03",
+                "from_n": 839,
+                "to_n": 807,
+                "overlap_n": 772,
+                "jaccard_pct": 88.3
+              }
+            ],
+            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
+          },
           "status": "collecting_evidence",
           "cohorts": [
             {
@@ -379,8 +430,8 @@
             },
             {
               "cohort_date": "2026-09-03",
-              "n": 806,
-              "rank_information_coefficient": 0.078,
+              "n": 807,
+              "rank_information_coefficient": 0.0773,
               "top_quintile_mean_return_pct": -5.61,
               "bottom_quintile_mean_return_pct": -5.9,
               "top_minus_bottom_pct": 0.3,
@@ -391,53 +442,11 @@
               "bottom_quintile_winsorized_mean_return_pct": -6.15,
               "winsorized_top_minus_bottom_pct": 0.56
             }
-          ],
-          "stability": {
-            "rank_ic": {
-              "min": 0.0225,
-              "max": 0.078,
-              "range": 0.0555,
-              "median_absolute_deviation": 0.0278
-            },
-            "robust_spread_pct": {
-              "min": 0.38,
-              "max": 0.56,
-              "range": 0.18,
-              "median_absolute_deviation": 0.09
-            },
-            "cohorts_with_both_metrics": 2,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 100,
-            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
-          },
-          "composition_stability": {
-            "cohort_count": 2,
-            "cohort_size": {
-              "min": 806,
-              "max": 839,
-              "median": 822.5,
-              "range": 33
-            },
-            "adjacent_pair_count": 1,
-            "median_adjacent_jaccard_pct": 88.4,
-            "min_adjacent_jaccard_pct": 88.4,
-            "median_adjacent_overlap_n": 772,
-            "pairs": [
-              {
-                "from_cohort_date": "2026-08-27",
-                "to_cohort_date": "2026-09-03",
-                "from_n": 839,
-                "to_n": 806,
-                "overlap_n": 772,
-                "jaccard_pct": 88.4
-              }
-            ],
-            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
-          }
+          ]
         },
         "growth_tech": {
-          "n": 383,
-          "rank_information_coefficient": 0.0028,
+          "n": 384,
+          "rank_information_coefficient": 0.0014,
           "top_quintile_mean_return_pct": 3.28,
           "bottom_quintile_mean_return_pct": 3.46,
           "top_minus_bottom_pct": -0.18,
@@ -448,10 +457,52 @@
           "bottom_quintile_winsorized_mean_return_pct": 4.07,
           "winsorized_top_minus_bottom_pct": -0.1,
           "cohort_count": 2,
-          "median_cohort_rank_ic": -0.0013,
+          "median_cohort_rank_ic": -0.0022,
           "positive_ic_cohorts": 1,
           "median_cohort_robust_spread_pct": -0.22,
           "positive_robust_spread_cohorts": 1,
+          "stability": {
+            "rank_ic": {
+              "min": -0.0273,
+              "max": 0.0229,
+              "range": 0.0502,
+              "median_absolute_deviation": 0.0251
+            },
+            "robust_spread_pct": {
+              "min": -0.47,
+              "max": 0.03,
+              "range": 0.5,
+              "median_absolute_deviation": 0.25
+            },
+            "cohorts_with_both_metrics": 2,
+            "joint_positive_cohorts": 1,
+            "joint_positive_share_pct": 50.0,
+            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
+          },
+          "composition_stability": {
+            "cohort_count": 2,
+            "cohort_size": {
+              "min": 189,
+              "max": 195,
+              "median": 192.0,
+              "range": 6
+            },
+            "adjacent_pair_count": 1,
+            "median_adjacent_jaccard_pct": 93.9,
+            "min_adjacent_jaccard_pct": 93.9,
+            "median_adjacent_overlap_n": 186,
+            "pairs": [
+              {
+                "from_cohort_date": "2026-08-27",
+                "to_cohort_date": "2026-09-03",
+                "from_n": 195,
+                "to_n": 189,
+                "overlap_n": 186,
+                "jaccard_pct": 93.9
+              }
+            ],
+            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
+          },
           "status": "collecting_evidence",
           "cohorts": [
             {
@@ -470,8 +521,8 @@
             },
             {
               "cohort_date": "2026-09-03",
-              "n": 188,
-              "rank_information_coefficient": 0.0247,
+              "n": 189,
+              "rank_information_coefficient": 0.0229,
               "top_quintile_mean_return_pct": 6.21,
               "bottom_quintile_mean_return_pct": 6.03,
               "top_minus_bottom_pct": 0.18,
@@ -482,49 +533,7 @@
               "bottom_quintile_winsorized_mean_return_pct": 6.17,
               "winsorized_top_minus_bottom_pct": 0.03
             }
-          ],
-          "stability": {
-            "rank_ic": {
-              "min": -0.0273,
-              "max": 0.0247,
-              "range": 0.052,
-              "median_absolute_deviation": 0.026
-            },
-            "robust_spread_pct": {
-              "min": -0.47,
-              "max": 0.03,
-              "range": 0.5,
-              "median_absolute_deviation": 0.25
-            },
-            "cohorts_with_both_metrics": 2,
-            "joint_positive_cohorts": 1,
-            "joint_positive_share_pct": 50,
-            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
-          },
-          "composition_stability": {
-            "cohort_count": 2,
-            "cohort_size": {
-              "min": 188,
-              "max": 195,
-              "median": 191.5,
-              "range": 7
-            },
-            "adjacent_pair_count": 1,
-            "median_adjacent_jaccard_pct": 93.4,
-            "min_adjacent_jaccard_pct": 93.4,
-            "median_adjacent_overlap_n": 185,
-            "pairs": [
-              {
-                "from_cohort_date": "2026-08-27",
-                "to_cohort_date": "2026-09-03",
-                "from_n": 195,
-                "to_n": 188,
-                "overlap_n": 185,
-                "jaccard_pct": 93.4
-              }
-            ],
-            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
-          }
+          ]
         },
         "insurance": {
           "n": 98,
@@ -543,6 +552,48 @@
           "positive_ic_cohorts": 1,
           "median_cohort_robust_spread_pct": 0.44,
           "positive_robust_spread_cohorts": 1,
+          "stability": {
+            "rank_ic": {
+              "min": -0.0135,
+              "max": 0.1491,
+              "range": 0.1626,
+              "median_absolute_deviation": 0.0813
+            },
+            "robust_spread_pct": {
+              "min": -0.33,
+              "max": 1.21,
+              "range": 1.54,
+              "median_absolute_deviation": 0.77
+            },
+            "cohorts_with_both_metrics": 2,
+            "joint_positive_cohorts": 1,
+            "joint_positive_share_pct": 50.0,
+            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
+          },
+          "composition_stability": {
+            "cohort_count": 2,
+            "cohort_size": {
+              "min": 49,
+              "max": 49,
+              "median": 49.0,
+              "range": 0
+            },
+            "adjacent_pair_count": 1,
+            "median_adjacent_jaccard_pct": 96.0,
+            "min_adjacent_jaccard_pct": 96.0,
+            "median_adjacent_overlap_n": 48,
+            "pairs": [
+              {
+                "from_cohort_date": "2026-08-27",
+                "to_cohort_date": "2026-09-03",
+                "from_n": 49,
+                "to_n": 49,
+                "overlap_n": 48,
+                "jaccard_pct": 96.0
+              }
+            ],
+            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
+          },
           "status": "collecting_evidence",
           "cohorts": [
             {
@@ -573,49 +624,7 @@
               "bottom_quintile_winsorized_mean_return_pct": -5.85,
               "winsorized_top_minus_bottom_pct": 1.21
             }
-          ],
-          "stability": {
-            "rank_ic": {
-              "min": -0.0135,
-              "max": 0.1491,
-              "range": 0.1626,
-              "median_absolute_deviation": 0.0813
-            },
-            "robust_spread_pct": {
-              "min": -0.33,
-              "max": 1.21,
-              "range": 1.54,
-              "median_absolute_deviation": 0.77
-            },
-            "cohorts_with_both_metrics": 2,
-            "joint_positive_cohorts": 1,
-            "joint_positive_share_pct": 50,
-            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
-          },
-          "composition_stability": {
-            "cohort_count": 2,
-            "cohort_size": {
-              "min": 49,
-              "max": 49,
-              "median": 49,
-              "range": 0
-            },
-            "adjacent_pair_count": 1,
-            "median_adjacent_jaccard_pct": 96,
-            "min_adjacent_jaccard_pct": 96,
-            "median_adjacent_overlap_n": 48,
-            "pairs": [
-              {
-                "from_cohort_date": "2026-08-27",
-                "to_cohort_date": "2026-09-03",
-                "from_n": 49,
-                "to_n": 49,
-                "overlap_n": 48,
-                "jaccard_pct": 96
-              }
-            ],
-            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
-          }
+          ]
         },
         "reit": {
           "n": 135,
@@ -634,6 +643,48 @@
           "positive_ic_cohorts": 2,
           "median_cohort_robust_spread_pct": 0.49,
           "positive_robust_spread_cohorts": 2,
+          "stability": {
+            "rank_ic": {
+              "min": 0.0369,
+              "max": 0.0579,
+              "range": 0.021,
+              "median_absolute_deviation": 0.0105
+            },
+            "robust_spread_pct": {
+              "min": 0.18,
+              "max": 0.8,
+              "range": 0.62,
+              "median_absolute_deviation": 0.31
+            },
+            "cohorts_with_both_metrics": 2,
+            "joint_positive_cohorts": 2,
+            "joint_positive_share_pct": 100.0,
+            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
+          },
+          "composition_stability": {
+            "cohort_count": 2,
+            "cohort_size": {
+              "min": 67,
+              "max": 68,
+              "median": 67.5,
+              "range": 1
+            },
+            "adjacent_pair_count": 1,
+            "median_adjacent_jaccard_pct": 95.7,
+            "min_adjacent_jaccard_pct": 95.7,
+            "median_adjacent_overlap_n": 66,
+            "pairs": [
+              {
+                "from_cohort_date": "2026-08-27",
+                "to_cohort_date": "2026-09-03",
+                "from_n": 67,
+                "to_n": 68,
+                "overlap_n": 66,
+                "jaccard_pct": 95.7
+              }
+            ],
+            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
+          },
           "status": "collecting_evidence",
           "cohorts": [
             {
@@ -664,49 +715,7 @@
               "bottom_quintile_winsorized_mean_return_pct": -8.83,
               "winsorized_top_minus_bottom_pct": 0.18
             }
-          ],
-          "stability": {
-            "rank_ic": {
-              "min": 0.0369,
-              "max": 0.0579,
-              "range": 0.021,
-              "median_absolute_deviation": 0.0105
-            },
-            "robust_spread_pct": {
-              "min": 0.18,
-              "max": 0.8,
-              "range": 0.62,
-              "median_absolute_deviation": 0.31
-            },
-            "cohorts_with_both_metrics": 2,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 100,
-            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
-          },
-          "composition_stability": {
-            "cohort_count": 2,
-            "cohort_size": {
-              "min": 67,
-              "max": 68,
-              "median": 67.5,
-              "range": 1
-            },
-            "adjacent_pair_count": 1,
-            "median_adjacent_jaccard_pct": 95.7,
-            "min_adjacent_jaccard_pct": 95.7,
-            "median_adjacent_overlap_n": 66,
-            "pairs": [
-              {
-                "from_cohort_date": "2026-08-27",
-                "to_cohort_date": "2026-09-03",
-                "from_n": 67,
-                "to_n": 68,
-                "overlap_n": 66,
-                "jaccard_pct": 95.7
-              }
-            ],
-            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
-          }
+          ]
         },
         "utility": {
           "n": 134,
@@ -725,6 +734,48 @@
           "positive_ic_cohorts": 2,
           "median_cohort_robust_spread_pct": 5.91,
           "positive_robust_spread_cohorts": 2,
+          "stability": {
+            "rank_ic": {
+              "min": 0.363,
+              "max": 0.4345,
+              "range": 0.0715,
+              "median_absolute_deviation": 0.0358
+            },
+            "robust_spread_pct": {
+              "min": 4.78,
+              "max": 7.04,
+              "range": 2.26,
+              "median_absolute_deviation": 1.13
+            },
+            "cohorts_with_both_metrics": 2,
+            "joint_positive_cohorts": 2,
+            "joint_positive_share_pct": 100.0,
+            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
+          },
+          "composition_stability": {
+            "cohort_count": 2,
+            "cohort_size": {
+              "min": 67,
+              "max": 67,
+              "median": 67.0,
+              "range": 0
+            },
+            "adjacent_pair_count": 1,
+            "median_adjacent_jaccard_pct": 97.1,
+            "min_adjacent_jaccard_pct": 97.1,
+            "median_adjacent_overlap_n": 66,
+            "pairs": [
+              {
+                "from_cohort_date": "2026-08-27",
+                "to_cohort_date": "2026-09-03",
+                "from_n": 67,
+                "to_n": 67,
+                "overlap_n": 66,
+                "jaccard_pct": 97.1
+              }
+            ],
+            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
+          },
           "status": "collecting_evidence",
           "cohorts": [
             {
@@ -755,49 +806,7 @@
               "bottom_quintile_winsorized_mean_return_pct": -8.54,
               "winsorized_top_minus_bottom_pct": 7.04
             }
-          ],
-          "stability": {
-            "rank_ic": {
-              "min": 0.363,
-              "max": 0.4345,
-              "range": 0.0715,
-              "median_absolute_deviation": 0.0358
-            },
-            "robust_spread_pct": {
-              "min": 4.78,
-              "max": 7.04,
-              "range": 2.26,
-              "median_absolute_deviation": 1.13
-            },
-            "cohorts_with_both_metrics": 2,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 100,
-            "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
-          },
-          "composition_stability": {
-            "cohort_count": 2,
-            "cohort_size": {
-              "min": 67,
-              "max": 67,
-              "median": 67,
-              "range": 0
-            },
-            "adjacent_pair_count": 1,
-            "median_adjacent_jaccard_pct": 97.1,
-            "min_adjacent_jaccard_pct": 97.1,
-            "median_adjacent_overlap_n": 66,
-            "pairs": [
-              {
-                "from_cohort_date": "2026-08-27",
-                "to_cohort_date": "2026-09-03",
-                "from_n": 67,
-                "to_n": 67,
-                "overlap_n": 66,
-                "jaccard_pct": 97.1
-              }
-            ],
-            "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
-          }
+          ]
         }
       },
       "by_sector": {
@@ -867,8 +876,8 @@
           "winsorized_top_minus_bottom_pct": 16.99
         },
         "Financial Services": {
-          "n": 435,
-          "rank_information_coefficient": -0.1779,
+          "n": 436,
+          "rank_information_coefficient": -0.1768,
           "top_quintile_mean_return_pct": -6.88,
           "bottom_quintile_mean_return_pct": -1.21,
           "top_minus_bottom_pct": -5.67,
@@ -919,8 +928,8 @@
           "winsorized_top_minus_bottom_pct": 0.55
         },
         "Technology": {
-          "n": 482,
-          "rank_information_coefficient": 0.003,
+          "n": 483,
+          "rank_information_coefficient": 0.0017,
           "top_quintile_mean_return_pct": 1.87,
           "bottom_quintile_mean_return_pct": 3.46,
           "top_minus_bottom_pct": -1.59,
@@ -962,17 +971,17 @@
         },
         {
           "cohort_date": "2026-09-03",
-          "n": 1474,
-          "rank_information_coefficient": 0.1234,
-          "top_quintile_mean_return_pct": -2.67,
-          "bottom_quintile_mean_return_pct": -6.36,
-          "top_minus_bottom_pct": 3.69,
-          "top_quintile_median_return_pct": -4.58,
-          "bottom_quintile_median_return_pct": -7.45,
-          "median_top_minus_bottom_pct": 2.87,
-          "top_quintile_winsorized_mean_return_pct": -2.8,
-          "bottom_quintile_winsorized_mean_return_pct": -6.59,
-          "winsorized_top_minus_bottom_pct": 3.79
+          "n": 1476,
+          "rank_information_coefficient": 0.1222,
+          "top_quintile_mean_return_pct": -2.68,
+          "bottom_quintile_mean_return_pct": -6.33,
+          "top_minus_bottom_pct": 3.65,
+          "top_quintile_median_return_pct": -4.59,
+          "bottom_quintile_median_return_pct": -7.35,
+          "median_top_minus_bottom_pct": 2.75,
+          "top_quintile_winsorized_mean_return_pct": -2.82,
+          "bottom_quintile_winsorized_mean_return_pct": -6.57,
+          "winsorized_top_minus_bottom_pct": 3.75
         }
       ],
       "status": "collecting_evidence",
@@ -1147,18 +1156,7 @@
     "corporate_actions": "Known splits/reverse splits are normalized onto the end-date share-price basis. Stock distributions/spin-offs add the distributed child value when an end-date reference price is available; unresolved corporate-action outcomes are retained for auditability but excluded from validation metrics.",
     "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap. Score-model breakdowns include their own cohort_count, medians and positive-cohort counts; model status is never inferred from pooled n alone.",
     "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
-    "peer_shadow": "The current peer shadow is a production-parity reconstruction, not an independent challenger. Historical peer_shadow_score values are retained for lineage/parity diagnostics but cannot unlock Score v2 readiness unless a future shadow is explicitly marked role=candidate with a non-empty candidate_id.",
-    "model_stability": "Per-model stability reports cross-cohort range, median absolute deviation and joint positive IC/robust-spread share. Descriptive only; no tuning threshold is implied.",
-    "model_composition_stability": "Per-model cohort composition reports adjacent overlap/Jaccard and cohort-size dispersion so signal drift is not confused with universe drift. Descriptive only."
+    "peer_shadow": "The current peer shadow is a production-parity reconstruction, not an independent challenger. Historical peer_shadow_score values are retained for lineage/parity diagnostics but cannot unlock Score v2 readiness unless a future shadow is explicitly marked role=candidate with a non-empty candidate_id."
   },
-  "decision_rule": "Do not optimize production weights from pooled n alone. Require multiple matured weekly cohorts, preferably at least 8 per horizon and evidence across at least two horizons, with stable positive median cohort rank IC and top-minus-bottom spread across score models/sectors.",
-  "generator_version": "score-forward-validation/cohort-aware-model-evidence-v2",
-  "freshness": {
-    "status": "current_at_generation",
-    "as_of_date": "2026-10-04",
-    "valid_through": "2026-10-06T03:05:01.975Z",
-    "validity_hours": 36,
-    "latest_snapshot_date": "2026-10-01",
-    "stale_if": "expired valid_through or generator/schema version differs from the current validator"
-  }
+  "decision_rule": "Do not optimize production weights from pooled n alone. Require multiple matured weekly cohorts, preferably at least 8 per horizon and evidence across at least two horizons, with stable positive median cohort rank IC and top-minus-bottom spread across score models/sectors."
 }
