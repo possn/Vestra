@@ -569,6 +569,60 @@ def cohort_stability_diagnostics(cohorts):
     }
 
 
+def cohort_composition_diagnostics(rows):
+    """Describe whether adjacent prospective cohorts contain broadly the same names."""
+    groups = defaultdict(set)
+    for row in rows:
+        ticker = str(row.get("ticker") or "").strip().upper()
+        cohort_date = str(row.get("cohort_date") or "")
+        if ticker and cohort_date:
+            groups[cohort_date].add(ticker)
+
+    ordered = [(date, groups[date]) for date in sorted(groups)]
+    sizes = [len(tickers) for _, tickers in ordered]
+    pairs = []
+    jaccards = []
+    overlaps = []
+    for (date_a, tickers_a), (date_b, tickers_b) in zip(ordered, ordered[1:]):
+        intersection = len(tickers_a & tickers_b)
+        union = len(tickers_a | tickers_b)
+        jaccard = (intersection / union * 100.0) if union else None
+        if jaccard is not None:
+            jaccards.append(jaccard)
+        overlaps.append(intersection)
+        pairs.append({
+            "from_cohort_date": date_a,
+            "to_cohort_date": date_b,
+            "from_n": len(tickers_a),
+            "to_n": len(tickers_b),
+            "overlap_n": intersection,
+            "jaccard_pct": round(jaccard, 1) if jaccard is not None else None,
+        })
+
+    return {
+        "cohort_count": len(ordered),
+        "cohort_size": {
+            "min": min(sizes) if sizes else None,
+            "max": max(sizes) if sizes else None,
+            "median": round(statistics.median(sizes), 1) if sizes else None,
+            "range": (max(sizes) - min(sizes)) if sizes else None,
+        },
+        "adjacent_pair_count": len(pairs),
+        "median_adjacent_jaccard_pct": (
+            round(statistics.median(jaccards), 1) if jaccards else None
+        ),
+        "min_adjacent_jaccard_pct": round(min(jaccards), 1) if jaccards else None,
+        "median_adjacent_overlap_n": (
+            round(statistics.median(overlaps), 1) if overlaps else None
+        ),
+        "pairs": pairs,
+        "interpretation": (
+            "Descriptive only. Low adjacent overlap can make apparent model-performance "
+            "changes partly reflect a changing universe rather than a changing model signal."
+        ),
+    }
+
+
 def grouped_cohort_evidence(vals, field):
     groups = defaultdict(list)
     for row in vals:
@@ -594,6 +648,7 @@ def grouped_cohort_evidence(vals, field):
             "median_cohort_robust_spread_pct": round(statistics.median(cohort_spreads), 2) if cohort_spreads else None,
             "positive_robust_spread_cohorts": sum(1 for x in cohort_spreads if x > 0),
             "stability": cohort_stability_diagnostics(cohorts),
+            "composition_stability": cohort_composition_diagnostics(rows),
             "status": validation_status(len(cohorts)),
             "cohorts": cohorts,
         })

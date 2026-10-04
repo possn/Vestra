@@ -228,6 +228,35 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertIsNotNone(stability["robust_spread_pct"]["range"])
         self.assertIn("Descriptive only", stability["interpretation"])
 
+    def test_model_composition_stability_tracks_adjacent_universe_overlap(self):
+        rows = []
+        first = [f"T{i}" for i in range(40)]
+        second = [f"T{i}" for i in range(10, 50)]
+        third = [f"T{i}" for i in range(20, 60)]
+        for date, tickers in [
+            ("2026-08-01", first),
+            ("2026-08-08", second),
+            ("2026-08-15", third),
+        ]:
+            for i, ticker in enumerate(tickers):
+                rows.append({
+                    "cohort_date": date,
+                    "ticker": ticker,
+                    "score": i,
+                    "return_pct": i,
+                    "score_model": "general",
+                    "sector": "Technology",
+                })
+        diag = MOD.cohort_composition_diagnostics(rows)
+        self.assertEqual(diag["cohort_count"], 3)
+        self.assertEqual(diag["adjacent_pair_count"], 2)
+        self.assertEqual(diag["cohort_size"]["min"], 40)
+        self.assertEqual(diag["cohort_size"]["max"], 40)
+        self.assertEqual(diag["median_adjacent_overlap_n"], 30.0)
+        self.assertEqual(diag["median_adjacent_jaccard_pct"], 60.0)
+        self.assertEqual(diag["min_adjacent_jaccard_pct"], 60.0)
+        self.assertIn("Descriptive only", diag["interpretation"])
+
     def test_model_status_requires_multiple_cohorts_even_with_large_pooled_n(self):
         rows = [
             {
