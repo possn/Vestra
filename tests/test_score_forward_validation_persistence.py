@@ -37,6 +37,50 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(MOD.materialise_outcomes(today, snapshots, rows, outcomes), 0)
         self.assertEqual(len(outcomes), 1)
 
+    def test_reverse_split_normalizes_forward_return_and_preserves_raw_return(self):
+        adjusted = MOD.split_adjusted_return(
+            "NFE",
+            "2026-09-03",
+            "2026-10-01",
+            0.2761,
+            6.57,
+        )
+        self.assertTrue(adjusted["corporate_action_adjusted"])
+        self.assertEqual(adjusted["split_adjustment_factor"], 50.0)
+        self.assertGreater(adjusted["raw_return_pct"], 2200)
+        self.assertAlmostEqual(adjusted["return_pct"], -52.4085, places=3)
+
+    def test_persisted_split_outcomes_are_repaired_idempotently(self):
+        outcomes = [{
+            "cohort_date": "2026-08-27",
+            "evaluated_date": "2026-09-24",
+            "horizon_days": 28,
+            "ticker": "GOSS",
+            "start_price": 0.1739,
+            "end_price": 10.93,
+            "return_pct": 6185.221392,
+        }]
+        self.assertEqual(MOD.repair_persisted_split_outcomes(outcomes), 1)
+        first = dict(outcomes[0])
+        self.assertTrue(first["corporate_action_adjusted"])
+        self.assertEqual(first["split_adjustment_factor"], 80.0)
+        self.assertGreater(first["raw_return_pct"], 6000)
+        self.assertLess(abs(first["return_pct"]), 30)
+        self.assertEqual(MOD.repair_persisted_split_outcomes(outcomes), 0)
+        self.assertEqual(outcomes[0], first)
+
+    def test_large_unsplit_return_is_not_clipped(self):
+        adjusted = MOD.split_adjusted_return(
+            "FEAM",
+            "2026-09-03",
+            "2026-10-01",
+            1.56,
+            3.88,
+        )
+        self.assertFalse(adjusted["corporate_action_adjusted"])
+        self.assertEqual(adjusted["split_adjustment_factor"], 1.0)
+        self.assertAlmostEqual(adjusted["return_pct"], 148.717949, places=5)
+
     def test_late_horizon_is_not_backfilled_with_wrong_return(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{
