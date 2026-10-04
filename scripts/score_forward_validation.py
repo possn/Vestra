@@ -29,6 +29,17 @@ MAX_HORIZON_LATENESS_DAYS = 10
 RETENTION_DAYS = 800
 MIN_CORRELATION_N = 20
 MIN_BREAKDOWN_N = 30
+
+# Price-basis corporate actions that cross prospective validation windows.
+# numerator/denominator describes NEW shares / OLD shares. A reverse split
+# therefore increases the comparable pre-action price basis by denominator /
+# numerator. Keep this registry explicit: extreme returns are never clipped
+# merely because they are large.
+VALIDATION_SPLITS = (
+    {"ticker": "GOSS", "effective_date": "2026-09-11", "numerator": 1, "denominator": 80},
+    {"ticker": "NFE", "effective_date": "2026-09-14", "numerator": 1, "denominator": 50},
+    {"ticker": "ALCPB.PA", "effective_date": "2026-09-08", "numerator": 1, "denominator": 10},
+)
 FIELDS = (
     "score", "quality_pct", "growth_pct", "balance_pct", "cashflow_pct",
     "value_pct", "execution_pct", "earnings_quality_pct",
@@ -42,6 +53,68 @@ def num(v):
         return x if math.isfinite(x) else None
     except (TypeError, ValueError):
         return None
+
+
+def split_price_basis_factor(ticker, start_date, end_date):
+    """Return the factor that puts a pre-action price on the end-date share basis."""
+    try:
+        start = dt.date.fromisoformat(str(start_date)[:10])
+        end = dt.date.fromisoformat(str(end_date)[:10])
+    except Exception:
+        return 1.0
+    symbol = str(ticker or "").strip().upper()
+    factor = 1.0
+    for action in VALIDATION_SPLITS:
+        if symbol != action["ticker"]:
+            continue
+        effective = dt.date.fromisoformat(action["effective_date"])
+        if start < effective <= end:
+            numerator = num(action.get("numerator"))
+            denominator = num(action.get("denominator"))
+            if numerator and denominator and numerator > 0 and denominator > 0:
+                factor *= denominator / numerator
+    return factor
+
+
+def split_adjusted_return(ticker, start_date, end_date, start_price, end_price):
+    p0, p1 = num(start_price), num(end_price)
+    if p0 is None or p1 is None or p0 <= 0:
+        return None
+    factor = split_price_basis_factor(ticker, start_date, end_date)
+    comparable_start = p0 * factor
+    if comparable_start <= 0:
+        return None
+    return {
+        "return_pct": (p1 / comparable_start - 1.0) * 100.0,
+        "raw_return_pct": (p1 / p0 - 1.0) * 100.0,
+        "split_adjustment_factor": factor,
+        "corporate_action_adjusted": factor != 1.0,
+    }
+
+
+def repair_persisted_split_outcomes(outcomes):
+    """Idempotently repair already-materialised outcomes that crossed known splits."""
+    repaired = 0
+    for item in outcomes:
+        if not isinstance(item, dict):
+            continue
+        result = split_adjusted_return(
+            item.get("ticker"),
+            item.get("cohort_date"),
+            item.get("evaluated_date"),
+            item.get("start_price"),
+            item.get("end_price"),
+        )
+        if not result or not result["corporate_action_adjusted"]:
+            continue
+        new_return = round(result["return_pct"], 6)
+        if num(item.get("return_pct")) != new_return or not item.get("corporate_action_adjusted"):
+            repaired += 1
+        item["raw_return_pct"] = round(result["raw_return_pct"], 6)
+        item["return_pct"] = new_return
+        item["split_adjustment_factor"] = result["split_adjustment_factor"]
+        item["corporate_action_adjusted"] = True
+    return repaired
 
 
 def rank(values):
@@ -182,7 +255,10 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                 score = num(old.get("score"))
                 if p0 is None or p1 is None or p0 <= 0 or score is None:
                     continue
-                realised = (p1 / p0 - 1.0) * 100.0
+                adjusted = split_adjusted_return(ticker, snap["date"], today.isoformat(), p0, p1)
+                if not adjusted:
+                    continue
+                realised = adjusted["return_pct"]
                 item = {
                     "cohort_date": snap["date"],
                     "evaluated_date": today.isoformat(),
@@ -192,6 +268,9 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                     "start_price": round(p0, 8),
                     "end_price": round(p1, 8),
                     "return_pct": round(realised, 6),
+                    "raw_return_pct": round(adjusted["raw_return_pct"], 6),
+                    "split_adjustment_factor": adjusted["split_adjustment_factor"],
+                    "corporate_action_adjusted": adjusted["corporate_action_adjusted"],
                     "sector": old.get("sector") or "Unknown",
                     "score_model": old.get("score_model") or "general",
                     "confidence_score": num(old.get("confidence_score")),
@@ -561,6 +640,7 @@ def main():
     ]
 
     added = materialise_outcomes(today, snapshots, rows, outcomes)
+    repaired = repair_persisted_split_outcomes(outcomes)
 
     report_horizons = {}
     for horizon in HORIZONS:
@@ -578,7 +658,7 @@ def main():
         summary["next_pending_maturity_date"] = next_maturity.isoformat() if next_maturity else None
         report_horizons[str(horizon)] = summary
 
-    history["schema_version"] = 3
+    history["schema_version"] = 4
     history["updated_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     history["snapshot_count"] = len(snapshots)
     history["outcome_count"] = len(outcomes)
@@ -588,13 +668,14 @@ def main():
     )
 
     report = {
-        "schema_version": 3,
+        "schema_version": 4,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "methodology": "prospective weekly cohorts; persistent realised outcomes; no reconstructed historical scores",
         "horizons_days": list(HORIZONS),
         "snapshots_available": len(snapshots),
         "realised_outcomes": len(outcomes),
         "new_outcomes_this_run": added,
+        "repaired_corporate_action_outcomes_this_run": repaired,
         "horizons": report_horizons,
         "score_v2_readiness": score_v2_readiness(
             report_horizons,
@@ -605,6 +686,7 @@ def main():
             "rank_ic": "Spearman correlation between the score known at cohort date and realised forward return.",
             "top_minus_bottom": "Raw mean return spread between highest and lowest score quintiles; retain it for transparency but inspect robust companions when tails are extreme.",
             "robust_quintile_spreads": "Median and 5% winsorized-mean top-minus-bottom spreads are reported alongside the raw mean. They are diagnostics, not replacements chosen after seeing outcomes.",
+            "corporate_actions": "Known splits/reverse splits are normalized onto the end-date share-price basis before realised returns are computed. The unadjusted raw return is retained for auditability.",
             "cohort_statistics": "Median cohort IC/spread is preferred to one pooled number because weekly cross-sections overlap.",
             "factor_ics": "Diagnostic only. Do not change factor weights from a small sample or one market regime.",
             "peer_shadow": "The current peer shadow is a production-parity reconstruction, not an independent challenger. Historical peer_shadow_score values are retained for lineage/parity diagnostics but cannot unlock Score v2 readiness unless a future shadow is explicitly marked role=candidate with a non-empty candidate_id.",
