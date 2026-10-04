@@ -46,6 +46,26 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertFalse(invalid["is_valid"])
         self.assertIn("report_expired", invalid["reasons"])
 
+
+        missing_breakdown = json.loads(json.dumps(report))
+        missing_breakdown["horizons"]["28"]["n"] = 100
+        missing_breakdown["horizons"]["28"]["cohort_count"] = 1
+        missing_breakdown["horizons"]["28"]["by_score_model"] = {}
+        invalid = MOD.validate_report_contract(missing_breakdown, now=now)
+        self.assertFalse(invalid["is_valid"])
+        self.assertIn("missing_score_model_breakdown:28", invalid["reasons"])
+
+        partial_capture = json.loads(json.dumps(report))
+        partial_capture["horizons"]["28"]["n"] = 100
+        partial_capture["horizons"]["28"]["cohort_count"] = 1
+        partial_capture["horizons"]["28"]["by_score_model"]["general"]["n"] = 90
+        invalid = MOD.validate_report_contract(partial_capture, now=now)
+        self.assertFalse(invalid["is_valid"])
+        self.assertIn(
+            "score_model_breakdown_capture_below_98pct:28:90.0",
+            invalid["reasons"],
+        )
+
     def test_materialised_outcome_is_not_duplicated(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{
