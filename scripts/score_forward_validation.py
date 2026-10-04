@@ -518,6 +518,57 @@ def cohort_summaries(vals):
     return out
 
 
+def cohort_stability_diagnostics(cohorts):
+    """Describe cross-cohort stability without creating a tuning rule."""
+    ic_values = []
+    spread_values = []
+    joint = []
+    for cohort in cohorts:
+        ic = num(cohort.get("rank_information_coefficient"))
+        spread = num(cohort.get("winsorized_top_minus_bottom_pct"))
+        if ic is not None:
+            ic_values.append(ic)
+        if spread is not None:
+            spread_values.append(spread)
+        if ic is not None and spread is not None:
+            joint.append((ic, spread))
+
+    def dispersion(values, digits):
+        if not values:
+            return {
+                "min": None,
+                "max": None,
+                "range": None,
+                "median_absolute_deviation": None,
+            }
+        median = statistics.median(values)
+        return {
+            "min": round(min(values), digits),
+            "max": round(max(values), digits),
+            "range": round(max(values) - min(values), digits),
+            "median_absolute_deviation": round(
+                statistics.median(abs(x - median) for x in values),
+                digits,
+            ),
+        }
+
+    joint_positive = sum(1 for ic, spread in joint if ic > 0 and spread > 0)
+    return {
+        "rank_ic": dispersion(ic_values, 4),
+        "robust_spread_pct": dispersion(spread_values, 2),
+        "cohorts_with_both_metrics": len(joint),
+        "joint_positive_cohorts": joint_positive,
+        "joint_positive_share_pct": (
+            round(joint_positive / len(joint) * 100, 1) if joint else None
+        ),
+        "interpretation": (
+            "Descriptive only. Dispersion and sign consistency across matured cohorts "
+            "must accumulate prospectively and must not be used to retune production weights "
+            "from a small sample."
+        ),
+    }
+
+
 def grouped_cohort_evidence(vals, field):
     groups = defaultdict(list)
     for row in vals:
@@ -542,6 +593,7 @@ def grouped_cohort_evidence(vals, field):
             "positive_ic_cohorts": sum(1 for x in cohort_ics if x > 0),
             "median_cohort_robust_spread_pct": round(statistics.median(cohort_spreads), 2) if cohort_spreads else None,
             "positive_robust_spread_cohorts": sum(1 for x in cohort_spreads if x > 0),
+            "stability": cohort_stability_diagnostics(cohorts),
             "status": validation_status(len(cohorts)),
             "cohorts": cohorts,
         })

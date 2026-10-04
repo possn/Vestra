@@ -193,6 +193,41 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(bank["positive_ic_cohorts"], 1)
         self.assertAlmostEqual(bank["median_cohort_rank_ic"], 0.0, places=4)
 
+    def test_model_stability_diagnostics_are_descriptive_and_cohort_based(self):
+        rows = []
+        cohort_specs = [
+            ("2026-08-01", 0.10, 4.0),
+            ("2026-08-08", 0.30, 8.0),
+            ("2026-08-15", -0.10, -2.0),
+            ("2026-08-22", 0.20, 6.0),
+        ]
+        for cohort_date, ic_direction, spread_direction in cohort_specs:
+            for i in range(40):
+                score = i
+                if ic_direction >= 0:
+                    realised = i
+                else:
+                    realised = 40 - i
+                # Use a deterministic top/bottom separation sign without relying
+                # on an exact target magnitude.
+                realised += (spread_direction / 100.0) * i
+                rows.append({
+                    "cohort_date": cohort_date,
+                    "ticker": f"{cohort_date}_{i}",
+                    "score": score,
+                    "return_pct": realised,
+                    "score_model": "general",
+                    "sector": "Technology",
+                })
+        summary = MOD.summarize_horizon(rows, expected_matured_cohorts=4)
+        stability = summary["by_score_model"]["general"]["stability"]
+        self.assertEqual(stability["cohorts_with_both_metrics"], 4)
+        self.assertGreaterEqual(stability["joint_positive_cohorts"], 3)
+        self.assertIsNotNone(stability["rank_ic"]["range"])
+        self.assertIsNotNone(stability["rank_ic"]["median_absolute_deviation"])
+        self.assertIsNotNone(stability["robust_spread_pct"]["range"])
+        self.assertIn("Descriptive only", stability["interpretation"])
+
     def test_model_status_requires_multiple_cohorts_even_with_large_pooled_n(self):
         rows = [
             {
