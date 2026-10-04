@@ -11,6 +11,16 @@ class MarketDataRebuildTriggerTests(unittest.TestCase):
         self.assertIn("python postprocess_market.py", workflow)
         self.assertIn("python build_market_shards.py", workflow)
 
+    def test_rebuild_marker_regenerates_cohort_aware_score_validation(self):
+        marker = (ROOT / ".github" / "triggers" / "market-data-rebuild.txt").read_text(encoding="utf-8").lower()
+        for token in (
+            "cohort-aware score validation",
+            "#913",
+            "per-model cohort evidence",
+            "corporate-action-normalized outcomes",
+        ):
+            self.assertIn(token, marker)
+
     def test_current_rebuild_marker_targets_latest_opportunity_context(self):
         marker = (ROOT / ".github" / "triggers" / "market-data-rebuild.txt").read_text(encoding="utf-8").lower()
         for token in (
