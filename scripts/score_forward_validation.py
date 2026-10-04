@@ -191,9 +191,20 @@ def repair_persisted_split_outcomes(outcomes, snapshots=None):
         ):
             continue
         new_return = round(result["return_pct"], 6)
-        if num(item.get("return_pct")) != new_return or not item.get("corporate_action_adjusted"):
+        new_raw = round(result["raw_return_pct"], 6)
+        changed = any([
+            num(item.get("return_pct")) != new_return,
+            num(item.get("raw_return_pct")) != new_raw,
+            num(item.get("split_adjustment_factor")) != num(result["split_adjustment_factor"]),
+            num(item.get("distribution_value_per_parent")) != num(result["distribution_value_per_parent"]),
+            bool(item.get("corporate_action_adjusted")) != bool(result["corporate_action_adjusted"]),
+            bool(item.get("corporate_action_unresolved")) != bool(result["corporate_action_unresolved"]),
+            list(item.get("unresolved_distributions") or []) != list(result["unresolved_distributions"]),
+            item.get("validation_eligible") is not result["validation_eligible"],
+        ])
+        if changed:
             repaired += 1
-        item["raw_return_pct"] = round(result["raw_return_pct"], 6)
+        item["raw_return_pct"] = new_raw
         item["return_pct"] = new_return
         item["split_adjustment_factor"] = result["split_adjustment_factor"]
         item["distribution_value_per_parent"] = result["distribution_value_per_parent"]
