@@ -898,6 +898,22 @@ def validate_report_contract(report, now=None):
         for horizon_days, pack in horizons.items():
             models = (pack or {}).get("by_score_model") if isinstance(pack, dict) else None
             models = models if isinstance(models, dict) else {}
+            pack_n = int((pack or {}).get("n") or 0) if isinstance(pack, dict) else 0
+            pack_cohorts = int((pack or {}).get("cohort_count") or 0) if isinstance(pack, dict) else 0
+            if pack_cohorts > 0 and pack_n >= MIN_BREAKDOWN_N:
+                if not models:
+                    reasons.append(f"missing_score_model_breakdown:{horizon_days}")
+                else:
+                    captured_n = sum(
+                        int((model_pack or {}).get("n") or 0)
+                        for model_pack in models.values()
+                        if isinstance(model_pack, dict)
+                    )
+                    capture_pct = (captured_n / pack_n * 100.0) if pack_n else 0.0
+                    if capture_pct < 98.0:
+                        reasons.append(
+                            f"score_model_breakdown_capture_below_98pct:{horizon_days}:{capture_pct:.1f}"
+                        )
             for model_name, model_pack in models.items():
                 if not isinstance(model_pack, dict):
                     reasons.append(f"invalid_model_pack:{horizon_days}:{model_name}")
