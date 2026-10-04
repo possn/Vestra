@@ -30,7 +30,7 @@ RETENTION_DAYS = 800
 MIN_CORRELATION_N = 20
 MIN_BREAKDOWN_N = 30
 REPORT_SCHEMA_VERSION = 5
-REPORT_GENERATOR_VERSION = "score-forward-validation/cohort-aware-model-evidence-v1"
+REPORT_GENERATOR_VERSION = "score-forward-validation/cohort-aware-model-evidence-v2"
 REPORT_VALIDITY_HOURS = 36
 
 # Price-basis corporate actions that cross prospective validation windows.
