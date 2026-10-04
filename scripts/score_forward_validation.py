@@ -30,7 +30,7 @@ RETENTION_DAYS = 800
 MIN_CORRELATION_N = 20
 MIN_BREAKDOWN_N = 30
 REPORT_SCHEMA_VERSION = 5
-REPORT_GENERATOR_VERSION = "score-forward-validation/cohort-aware-model-evidence-v2"
+REPORT_GENERATOR_VERSION = "score-forward-validation/cohort-aware-model-evidence-v3"
 REPORT_VALIDITY_HOURS = 36
 
 # Price-basis corporate actions that cross prospective validation windows.
@@ -623,6 +623,83 @@ def cohort_composition_diagnostics(rows):
     }
 
 
+
+def score_model_assignment_stability(rows):
+    """Track whether the same tickers retain the same score model across adjacent cohorts."""
+    groups = defaultdict(dict)
+    for row in rows:
+        ticker = str(row.get("ticker") or "").strip().upper()
+        cohort_date = str(row.get("cohort_date") or "")
+        model = str(row.get("score_model") or "general").strip() or "general"
+        if ticker and cohort_date:
+            groups[cohort_date][ticker] = model
+
+    ordered = [(date, groups[date]) for date in sorted(groups)]
+    pairs = []
+    retention_pcts = []
+    migrated_total = 0
+    transition_counts = defaultdict(int)
+
+    for (date_a, models_a), (date_b, models_b) in zip(ordered, ordered[1:]):
+        overlap = sorted(set(models_a) & set(models_b))
+        retained = 0
+        migrated = 0
+        pair_transitions = defaultdict(int)
+        for ticker in overlap:
+            model_a = models_a[ticker]
+            model_b = models_b[ticker]
+            if model_a == model_b:
+                retained += 1
+            else:
+                migrated += 1
+                key = (model_a, model_b)
+                pair_transitions[key] += 1
+                transition_counts[key] += 1
+
+        retention_pct = (retained / len(overlap) * 100.0) if overlap else None
+        if retention_pct is not None:
+            retention_pcts.append(retention_pct)
+        migrated_total += migrated
+        pairs.append({
+            "from_cohort_date": date_a,
+            "to_cohort_date": date_b,
+            "overlap_n": len(overlap),
+            "retained_model_n": retained,
+            "migrated_model_n": migrated,
+            "model_retention_pct": round(retention_pct, 1) if retention_pct is not None else None,
+            "transitions": [
+                {"from_model": a, "to_model": b, "n": n}
+                for (a, b), n in sorted(
+                    pair_transitions.items(),
+                    key=lambda item: (-item[1], item[0][0], item[0][1]),
+                )
+            ],
+        })
+
+    return {
+        "cohort_count": len(ordered),
+        "adjacent_pair_count": len(pairs),
+        "median_adjacent_model_retention_pct": (
+            round(statistics.median(retention_pcts), 1) if retention_pcts else None
+        ),
+        "min_adjacent_model_retention_pct": (
+            round(min(retention_pcts), 1) if retention_pcts else None
+        ),
+        "migrated_model_assignments": migrated_total,
+        "top_transitions": [
+            {"from_model": a, "to_model": b, "n": n}
+            for (a, b), n in sorted(
+                transition_counts.items(),
+                key=lambda item: (-item[1], item[0][0], item[0][1]),
+            )[:10]
+        ],
+        "pairs": pairs,
+        "interpretation": (
+            "Descriptive only. Low retention means longitudinal model evidence may partly "
+            "reflect score-model reassignment of the same tickers rather than signal drift."
+        ),
+    }
+
 def grouped_cohort_evidence(vals, field):
     groups = defaultdict(list)
     for row in vals:
@@ -825,6 +902,7 @@ def summarize_horizon(vals, expected_matured_cohorts=0, shadow_role="legacy_cand
         "median_cohort_robust_spread_pct": round(statistics.median(cohort_robust_spreads), 2) if cohort_robust_spreads else None,
         "positive_robust_spread_cohorts": sum(1 for x in cohort_robust_spreads if x > 0),
         "factor_rank_information_coefficient": factor_ics(vals),
+        "score_model_assignment_stability": score_model_assignment_stability(vals),
         "by_score_model": grouped_cohort_evidence(vals, "score_model"),
         "by_sector": grouped_breakdown(vals, "sector"),
         "cohorts": cohorts,
@@ -900,6 +978,8 @@ def validate_report_contract(report, now=None):
             models = models if isinstance(models, dict) else {}
             pack_n = int((pack or {}).get("n") or 0) if isinstance(pack, dict) else 0
             pack_cohorts = int((pack or {}).get("cohort_count") or 0) if isinstance(pack, dict) else 0
+            if pack_cohorts >= 2 and "score_model_assignment_stability" not in (pack or {}):
+                reasons.append(f"missing_score_model_assignment_stability:{horizon_days}")
             if pack_cohorts > 0 and pack_n >= MIN_BREAKDOWN_N:
                 if not models:
                     reasons.append(f"missing_score_model_breakdown:{horizon_days}")
