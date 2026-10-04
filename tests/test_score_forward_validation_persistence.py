@@ -21,6 +21,7 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
             "freshness": {"valid_through": "2026-10-05T00:00:00+00:00"},
             "horizons": {
                 "28": {
+                    "score_model_assignment_stability": {},
                     "by_score_model": {
                         "general": {
                             "stability": {},
@@ -45,6 +46,18 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         invalid = MOD.validate_report_contract(expired, now=now)
         self.assertFalse(invalid["is_valid"])
         self.assertIn("report_expired", invalid["reasons"])
+
+
+        missing_assignment = json.loads(json.dumps(report))
+        missing_assignment["horizons"]["28"]["n"] = 100
+        missing_assignment["horizons"]["28"]["cohort_count"] = 2
+        del missing_assignment["horizons"]["28"]["score_model_assignment_stability"]
+        invalid = MOD.validate_report_contract(missing_assignment, now=now)
+        self.assertFalse(invalid["is_valid"])
+        self.assertIn(
+            "missing_score_model_assignment_stability:28",
+            invalid["reasons"],
+        )
 
 
         missing_breakdown = json.loads(json.dumps(report))
@@ -281,6 +294,32 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertIsNotNone(stability["rank_ic"]["median_absolute_deviation"])
         self.assertIsNotNone(stability["robust_spread_pct"]["range"])
         self.assertIn("Descriptive only", stability["interpretation"])
+
+    def test_score_model_assignment_stability_tracks_migrations_between_cohorts(self):
+        rows = [
+            {"cohort_date": "2026-08-01", "ticker": "AAA", "score_model": "general"},
+            {"cohort_date": "2026-08-01", "ticker": "BBB", "score_model": "bank"},
+            {"cohort_date": "2026-08-01", "ticker": "CCC", "score_model": "energy"},
+            {"cohort_date": "2026-08-08", "ticker": "AAA", "score_model": "general"},
+            {"cohort_date": "2026-08-08", "ticker": "BBB", "score_model": "general"},
+            {"cohort_date": "2026-08-08", "ticker": "CCC", "score_model": "energy"},
+            {"cohort_date": "2026-08-15", "ticker": "AAA", "score_model": "growth_tech"},
+            {"cohort_date": "2026-08-15", "ticker": "BBB", "score_model": "general"},
+            {"cohort_date": "2026-08-15", "ticker": "CCC", "score_model": "energy"},
+        ]
+        diag = MOD.score_model_assignment_stability(rows)
+        self.assertEqual(diag["cohort_count"], 3)
+        self.assertEqual(diag["adjacent_pair_count"], 2)
+        self.assertEqual(diag["median_adjacent_model_retention_pct"], 66.7)
+        self.assertEqual(diag["min_adjacent_model_retention_pct"], 66.7)
+        self.assertEqual(diag["migrated_model_assignments"], 2)
+        self.assertEqual(
+            diag["top_transitions"],
+            [
+                {"from_model": "bank", "to_model": "general", "n": 1},
+                {"from_model": "general", "to_model": "growth_tech", "n": 1},
+            ],
+        )
 
     def test_model_composition_stability_tracks_adjacent_universe_overlap(self):
         rows = []
