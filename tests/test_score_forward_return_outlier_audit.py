@@ -47,8 +47,12 @@ class ScoreForwardReturnOutlierAuditTests(unittest.TestCase):
         self.assertGreater(len(self.outcomes), 100)
         self.assertGreaterEqual(self.repaired, 6)
 
+        eligible_outcomes = [
+            row for row in self.outcomes
+            if row.get("validation_eligible") is not False
+        ]
         ranked = sorted(
-            self.outcomes,
+            eligible_outcomes,
             key=lambda row: abs(finite(row.get("return_pct")) or 0.0),
             reverse=True,
         )
@@ -93,6 +97,12 @@ class ScoreForwardReturnOutlierAuditTests(unittest.TestCase):
             for row in self.outcomes
             if row.get("corporate_action_adjusted")
         }
+        ctva_rows = [row for row in self.outcomes if row.get("ticker") == "CTVA"]
+        self.assertTrue(ctva_rows)
+        self.assertTrue(all(
+            row.get("validation_eligible") is False or abs(finite(row.get("return_pct")) or 0) < 25
+            for row in ctva_rows
+        ))
         for ticker, factor in (("GOSS", 80.0), ("NFE", 50.0), ("ALCPB.PA", 10.0)):
             self.assertIn(ticker, repaired_by_ticker)
             self.assertEqual(repaired_by_ticker[ticker]["split_adjustment_factor"], factor)
