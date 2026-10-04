@@ -256,6 +256,11 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(diag["median_adjacent_jaccard_pct"], 60.0)
         self.assertEqual(diag["min_adjacent_jaccard_pct"], 60.0)
         self.assertIn("Descriptive only", diag["interpretation"])
+        summary = MOD.summarize_horizon(rows, expected_matured_cohorts=3)
+        integrated = summary["by_score_model"]["general"]["composition_stability"]
+        self.assertEqual(integrated["median_adjacent_jaccard_pct"], 60.0)
+        self.assertEqual(integrated["adjacent_pair_count"], 2)
+
 
     def test_model_status_requires_multiple_cohorts_even_with_large_pooled_n(self):
         rows = [
