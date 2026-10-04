@@ -55,14 +55,15 @@ class ScorePeerShadowModelTests(unittest.TestCase):
         self.assertFalse(mod.SHADOW_CANDIDATE_ACTIVE)
         self.assertIsNone(mod.SHADOW_CANDIDATE_ID)
 
-    def test_growth_tech_fcf_yield_keeps_higher_is_better_direction(self):
+    def test_growth_tech_fcf_yield_is_owned_by_cash_flow_not_valuation(self):
         peers = [tech_row(i) for i in range(20)]
         row = peers[-1]
         ctx = mod.ShadowContext(row, peers, peers)
         _, dims = mod.growth_tech_shadow(ctx)
         # Forward P/E is tied and therefore contributes 0 after inversion.
-        # The highest plausible FCF yield must contribute 100, leaving valuation at 50.
-        self.assertAlmostEqual(dims["Valuation"], 50.0)
+        # The highest plausible FCF yield belongs only to Cash Flow.
+        self.assertAlmostEqual(dims["Cash Flow"], 100.0)
+        self.assertAlmostEqual(dims["Valuation"], 0.0)
 
     def test_biotech_native_peer_pillars_are_preserved_exactly(self):
         row = {
