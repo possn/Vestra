@@ -63,15 +63,20 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
   const brand = page.locator('.vestra-splash__brand');
   const tagline = page.locator('.vestra-splash__tagline');
 
-  await expect(splash).toBeVisible();
-  await expect(mark).toBeVisible();
   await expect(brand).toHaveText('Vestra');
   await expect(tagline).toHaveText('Finance, made simple.');
 
+  // The splash can legitimately begin leaving before DOMContentLoaded assertions
+  // run on a fast WebKit pass. Prove the entrance from the earliest animation
+  // timeline captured by addInitScript instead of racing current visibility.
   await expect.poll(
     () => page.evaluate(() => window.__vestraSplashInitialCss),
     { timeout: 2_000 }
   ).not.toBeNull();
+  await expect.poll(
+    () => page.evaluate(() => (window.__vestraSplashTimeline?.animationStarts || []).some(item => item.name === 'vestraMarkIn')),
+    { timeout: 2_000 }
+  ).toBe(true);
   const css = await page.evaluate(() => window.__vestraSplashInitialCss);
 
   expect(css.backgroundColor).toBe('rgb(238, 240, 236)');
