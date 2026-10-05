@@ -96,6 +96,20 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertEqual(row["low52_price_low"], 95.0)
         self.assertEqual(row["low52_price_high"], 140.0)
 
+    def test_fund_weekly_return_uses_five_trading_sessions(self):
+        row = {
+            "price_history_1y": [
+                {"date": "2026-09-28", "close": 100.0},
+                {"date": "2026-09-29", "close": 101.0},
+                {"date": "2026-09-30", "close": 102.0},
+                {"date": "2026-10-01", "close": 103.0},
+                {"date": "2026-10-02", "close": 104.0},
+                {"date": "2026-10-05", "close": 110.0},
+            ]
+        }
+        self.assertEqual(shards.fund_weekly_return(row), 10.0)
+        self.assertIsNone(shards.fund_weekly_return({"price_history_1y": row["price_history_1y"][-5:]}))
+
     def test_funds_keep_compact_aum_and_top10_concentration_without_holdings_list(self):
         row = shards.index_row({
             "ticker": "FUND",

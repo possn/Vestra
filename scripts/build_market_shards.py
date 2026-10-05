@@ -281,7 +281,9 @@ def fund_weekly_return(row: dict):
     if len(points) < 2:
         return None
     points.sort(key=lambda x: x[0])
-    previous, current = points[-2], points[-1]
+    if len(points) <= 5:
+        return None
+    previous, current = points[-6], points[-1]
     if previous[1] <= 0:
         return None
     return round((current[1] / previous[1] - 1.0) * 100.0, 3)
