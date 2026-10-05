@@ -468,7 +468,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("renderRotationGroup('Entradas confirmadas'", market)
         self.assertIn("renderRotationGroup('A ganhar força relativa'", market)
         self.assertIn("renderRotationGroup('Saídas confirmadas'", market)
-        self.assertIn('Sem entradas confirmadas esta semana', market)
+        self.assertIn('Sem entradas absolutas confirmadas esta semana', market)
         self.assertIn('Preço forte · ETF não confirma', market)
         self.assertIn('Sem saídas confirmadas esta semana', market)
         self.assertNotIn('market-rotation-summary', market)
