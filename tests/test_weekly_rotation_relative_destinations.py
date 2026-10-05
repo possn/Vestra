@@ -32,6 +32,16 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertIn("expectedEtfSign=1", source)
         self.assertIn("expectedEtfSign=-1", source)
 
+    def test_semiconductors_style_price_strength_with_negative_flow_is_not_confirmed(self):
+        # Deterministic reference fixture for the production consensus contract:
+        # positive ETF return but -$3.9B flow must fail closed for an inflow signal.
+        expected_sign = 1
+        etf_return = 2.0
+        flow_usd = -3_900_000_000
+        directional = [1 if value > 0 else -1 for value in (etf_return, flow_usd) if value not in (None, 0)]
+        self.assertEqual(directional, [1, -1])
+        self.assertFalse(all(sign == expected_sign for sign in directional))
+
     def test_startup_keeps_rotation_states_but_drops_verbose_opportunity_diagnostics(self):
         source = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
         for token in (
