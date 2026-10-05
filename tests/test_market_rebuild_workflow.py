@@ -31,6 +31,16 @@ class MarketRebuildWorkflowTests(unittest.TestCase):
         for item in expected:
             self.assertIn(item, source)
 
+    def test_canonical_rebuild_materializes_rotation_before_startup_payloads(self):
+        source = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("run: python postprocess_market.py", source)
+        self.assertIn("run: python build_market_shards.py", source)
+        self.assertLess(
+            source.index("run: python postprocess_market.py"),
+            source.index("run: python build_market_shards.py"),
+        )
+        self.assertIn(".github/triggers/market-data-rebuild.txt", source)
+
     def test_production_preflight_compiles_current_runtime_layers(self):
         source = WORKFLOW.read_text(encoding="utf-8")
         required = (
