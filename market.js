@@ -305,16 +305,18 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50 && rotationEtfConfirms(r.etf,1)).slice(0,3);
     const inflowLabels=new Set(inflows.map(r=>r.label));
     const medianRank=rotationMedian(rows.map(r=>r.rank));
-    const relativeDestinations=rows
-      .filter(r=>!inflowLabels.has(r.label) && (r.rank>medianRank || (r.med5>0 && r.breadth>=50)))
-      .slice(0,3)
-      .map(r=>({
-        ...r,
-        signal:r.med5>0 && r.breadth>=50
-          ?'Preço forte · ETF não confirma'
-          :r.med5<0?'Mais resiliente · ainda negativo':'A ganhar força relativa',
-        tone:'neutral'
-      }));
+    const relativeDestinations=!inflows.length
+      ?rows
+        .filter(r=>!inflowLabels.has(r.label) && (r.rank>medianRank || (r.med5>0 && r.breadth>=50)))
+        .slice(0,3)
+        .map(r=>({
+          ...r,
+          signal:r.med5>0 && r.breadth>=50
+            ?'Preço forte · ETF não confirma'
+            :r.med5<0?'Mais resiliente · ainda negativo':'A ganhar força relativa',
+          tone:'neutral'
+        }))
+      :[];
     const relativeLabels=new Set(relativeDestinations.map(r=>r.label));
     const outflows=rows
       .filter(r=>r.med5<0 && r.breadth<=50 && rotationEtfConfirms(r.etf,-1) && !relativeLabels.has(r.label))
