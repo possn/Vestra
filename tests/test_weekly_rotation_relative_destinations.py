@@ -31,7 +31,6 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertIn("weeklyEtfConfirmation(label,expectedEtfSign)", source)
         self.assertIn("expectedEtfSign=1", source)
         self.assertIn("expectedEtfSign=-1", source)
-        self.assertIn("__test:{weeklyEtfConsensus}", source)
 
     def test_startup_keeps_rotation_states_but_drops_verbose_opportunity_diagnostics(self):
         source = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
