@@ -14,6 +14,14 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertIn("Mais resiliente · ainda negativo", source)
         self.assertIn("Sem entradas absolutas confirmadas esta semana", source)
 
+    def test_confirmed_rotation_requires_etf_evidence_to_agree(self):
+        source = (ROOT / "market.js").read_text(encoding="utf-8")
+        self.assertIn("function rotationEtfConfirms(etf,direction)", source)
+        self.assertIn("r.med5>0 && r.breadth>=50 && rotationEtfConfirms(r.etf,1)", source)
+        self.assertIn("r.med5<0 && r.breadth<=50 && rotationEtfConfirms(r.etf,-1)", source)
+        self.assertIn("Preço forte · ETF não confirma", source)
+        self.assertIn("Preço + breadth + confirmação ETF alinhados", source)
+
     def test_startup_publishes_rotation_returns_independent_of_opportunity_eligibility(self):
         builder = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
         market = (ROOT / "market.js").read_text(encoding="utf-8")

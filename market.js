@@ -237,6 +237,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return 'ETF flow sem cobertura';
   }
 
+  function rotationEtfConfirms(etf,direction){
+    if(!etf||!direction)return false;
+    const evidence=[];
+    if(etf.withReturn&&Number.isFinite(etf.etfReturn)&&etf.etfReturn!==0)evidence.push(Math.sign(etf.etfReturn));
+    if(etf.withFlow&&Number.isFinite(etf.flowUsd)&&etf.flowUsd!==0)evidence.push(Math.sign(etf.flowUsd));
+    return evidence.length>0&&evidence.every(sign=>sign===direction);
+  }
+
   function weeklyRotationReturn(stock){
     const marketReturn=n(stock?.market_return_5d_pct);
     if(marketReturn!=null) return marketReturn;
@@ -294,18 +302,24 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function renderWeeklyRotation(){
     const rows=weeklyRotationThemeRows(), coverage=weeklyRotationCoverage();
     if(!rows.length) return `<div class="market-rotation market-rotation--waiting" aria-live="polite"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-rotation-status">A preparar</span></div><div class="market-rotation-wait"><span class="market-rotation-wait-copy">A formar a primeira leitura semanal.</span></div></div>`;
-    const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50).slice(0,3);
+    const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50 && rotationEtfConfirms(r.etf,1)).slice(0,3);
+    const inflowLabels=new Set(inflows.map(r=>r.label));
     const medianRank=rotationMedian(rows.map(r=>r.rank));
     const relativeDestinations=!inflows.length
-      ?rows.filter(r=>r.rank>medianRank).slice(0,3).map(r=>({
-        ...r,
-        signal:r.med5<0?'Mais resiliente · ainda negativo':'A ganhar força relativa',
-        tone:'neutral'
-      }))
+      ?rows
+        .filter(r=>!inflowLabels.has(r.label) && (r.rank>medianRank || (r.med5>0 && r.breadth>=50)))
+        .slice(0,3)
+        .map(r=>({
+          ...r,
+          signal:r.med5>0 && r.breadth>=50
+            ?'Preço forte · ETF não confirma'
+            :r.med5<0?'Mais resiliente · ainda negativo':'A ganhar força relativa',
+          tone:'neutral'
+        }))
       :[];
     const relativeLabels=new Set(relativeDestinations.map(r=>r.label));
     const outflows=rows
-      .filter(r=>r.med5<0 && r.breadth<=50 && !relativeLabels.has(r.label))
+      .filter(r=>r.med5<0 && r.breadth<=50 && rotationEtfConfirms(r.etf,-1) && !relativeLabels.has(r.label))
       .sort((a,b)=>a.rank-b.rank)
       .slice(0,3);
     const pending=coverage.pending.map(x=>x.label).slice(0,4);
@@ -313,7 +327,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const relativeBlock=relativeDestinations.length
       ?renderRotationGroup('A ganhar força relativa','Melhor rank relativo · não implica entrada líquida',relativeDestinations,'relative','')
       :'';
-    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas confirmadas','Retorno 5d positivo · breadth ≥50%',inflows,'in','Sem entradas absolutas confirmadas esta semana')}${relativeBlock}${renderRotationGroup('Saídas','Retorno 5d negativo · breadth ≤50%',outflows,'out','Sem saídas confirmadas esta semana')}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking continua baseado em preço + breadth; 20d serve apenas como confirmação.</p><p>Quando não existem entradas absolutas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais, sem chamar “entrada” a um retorno ainda negativo.</p><p>ETF flows são apenas confirmação e resultam da variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas confirmadas','Preço + breadth + confirmação ETF alinhados',inflows,'in','Sem entradas absolutas confirmadas esta semana')}${relativeBlock}${renderRotationGroup('Saídas confirmadas','Preço + breadth + confirmação ETF alinhados',outflows,'out','Sem saídas confirmadas esta semana')}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking continua baseado em preço + breadth; 20d serve apenas como confirmação.</p><p>“Entradas confirmadas” e “Saídas confirmadas” exigem que a evidência ETF disponível (retorno e flow proxy) esteja alinhada com o sinal de preço + breadth. Se houver contradição, o tema não é apresentado como fluxo confirmado.</p><p>Quando não existe confirmação absoluta, mostramos os temas mais fortes como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais, sem chamar “entrada” a um retorno ainda negativo e sem confundir força de preço com entrada líquida confirmada.</p><p>ETF flows são uma confirmação proxy e resultam da variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
   }
 
   function renderDiscover(){
