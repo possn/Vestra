@@ -71,6 +71,15 @@ class WeeklyRotationContractParityTests(unittest.TestCase):
         self.assertIn("weekly = [(r, _weekly_return(r)) for r in members]", self.backend)
         self.assertIn("closes[-6]", self.backend)
 
+    def test_backend_prefers_price_history_before_opportunity_fallback(self):
+        weekly = self.backend.split("def _weekly_return(row: dict):", 1)[1].split("def _rotation_context", 1)[0]
+        history_return = 'return (closes[-1] / closes[-6] - 1.0) * 100.0'
+        fallback = 'return _n(row.get("opportunity_return_5d_pct"))'
+        self.assertIn("if len(closes) > 5:", weekly)
+        self.assertIn(history_return, weekly)
+        self.assertIn(fallback, weekly)
+        self.assertLess(weekly.index(history_return), weekly.index(fallback))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
