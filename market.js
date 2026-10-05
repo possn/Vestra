@@ -219,7 +219,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       .filter(v=>v!=null&&v!==0)
       .map(v=>v>0?1:-1);
     if(!directional.length) return {confirmed:null,evidenceCount:0};
-    return {confirmed:directional.every(sign=>sign===expectedSign),evidenceCount:directional.length};
+    if(!directional.every(sign=>sign===expectedSign)) return {confirmed:false,evidenceCount:directional.length};
+    const flowSign=flowUsd!=null&&flowUsd!==0?(flowUsd>0?1:-1):0;
+    return {confirmed:flowSign===expectedSign?true:null,evidenceCount:directional.length};
   }
   function weeklyEtfConfirmation(label,expectedSign=0){
     const tickers=WEEKLY_ROTATION_ETFS[label]||[];

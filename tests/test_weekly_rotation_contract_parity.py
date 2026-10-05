@@ -60,11 +60,14 @@ class WeeklyRotationContractParityTests(unittest.TestCase):
     def test_etf_confirmation_is_fail_closed_on_both_sides(self):
         self.assertIn("directional.every(sign=>sign===expectedSign)", self.market)
         self.assertIn("expectedSign!==1&&expectedSign!==-1", self.market)
+        self.assertIn("flowSign===expectedSign?true:null", self.market)
         self.assertIn(
             'expected_sign = 1 if signal in {"strong_inflow","inflow"} else -1 if signal in {"strong_outflow","outflow"} else 0',
             self.backend,
         )
-        self.assertIn("etf_confirmed = bool(all(agrees))", self.backend)
+        self.assertIn("if not all(agrees):", self.backend)
+        self.assertIn("elif etf_flow is not None and etf_flow != 0:", self.backend)
+        self.assertIn("etf_confirmed = True", self.backend)
 
     def test_rotation_return_window_is_five_observations_on_both_paths(self):
         self.assertIn("closes[closes.length-6]", self.market)

@@ -225,7 +225,10 @@ def _rotation_context(rows):
                 directional.append(1 if value > 0 else -1)
             if directional:
                 agrees = [sign == expected_sign for sign in directional]
-                etf_confirmed = bool(all(agrees))
+                if not all(agrees):
+                    etf_confirmed = False
+                elif etf_flow is not None and etf_flow != 0:
+                    etf_confirmed = True
         contexts[label] = {
             "signal": signal,
             "median_return_5d_pct": round(med5, 2),

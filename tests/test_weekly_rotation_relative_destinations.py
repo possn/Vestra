@@ -42,6 +42,16 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertEqual(directional, [1, -1])
         self.assertFalse(all(sign == expected_sign for sign in directional))
 
+    def test_matching_etf_return_without_flow_is_not_called_confirmed(self):
+        expected_sign = 1
+        etf_return = 2.0
+        flow_usd = None
+        directional = [1 if value > 0 else -1 for value in (etf_return, flow_usd) if value not in (None, 0)]
+        all_agree = bool(directional) and all(sign == expected_sign for sign in directional)
+        has_aligned_flow = flow_usd not in (None, 0) and (1 if flow_usd > 0 else -1) == expected_sign
+        self.assertTrue(all_agree)
+        self.assertFalse(has_aligned_flow)
+
     def test_startup_keeps_rotation_states_but_drops_verbose_opportunity_diagnostics(self):
         source = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
         for token in (
