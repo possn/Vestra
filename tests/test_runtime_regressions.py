@@ -11,6 +11,16 @@ def read(name):
 
 class RuntimeRegressionTests(unittest.TestCase):
 
+    def test_weekly_rotation_confirmed_labels_require_etf_flow_direction(self):
+        market = (ROOT / "market.js").read_text(encoding="utf-8")
+        self.assertIn("function rotationFlowDirection", market)
+        self.assertIn("r.med5>0 && r.breadth>=50 && rotationFlowDirection(r)>0", market)
+        self.assertIn("r.med5<0 && r.breadth<=50 && rotationFlowDirection(r)<0", market)
+        self.assertIn("Sinais divergentes", market)
+        self.assertIn("ETF flow >0", market)
+        self.assertIn("ETF flow <0", market)
+        self.assertIn("Sem cobertura de flow, o tema não é rotulado como confirmado.", market)
+
     def test_score_validation_contract_is_shared_by_pipeline_and_production_smoke(self):
         market = (ROOT / ".github" / "workflows" / "update-market-data.yml").read_text(encoding="utf-8")
         smoke = (ROOT / ".github" / "workflows" / "production-smoke.yml").read_text(encoding="utf-8")

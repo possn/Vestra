@@ -222,6 +222,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const etfReturn=withReturn.length?rotationMedian(withReturn.map(f=>n(f.fund_return_1w_pct)).filter(x=>x!=null)):null;
     return {withFlow:withFlow.length,withReturn:withReturn.length,flowUsd,etfReturn};
   }
+  function rotationFlowDirection(r){
+    const e=r?.etf;
+    const flow=n(e?.flowUsd);
+    if(!e?.withFlow||flow==null||flow===0)return 0;
+    return flow>0?1:-1;
+  }
+
   function compactFlowUsd(v){
     if(v==null)return 'baseline';
     const sign=v>=0?'+':'-'; const x=Math.abs(v);
@@ -294,26 +301,51 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function renderWeeklyRotation(){
     const rows=weeklyRotationThemeRows(), coverage=weeklyRotationCoverage();
     if(!rows.length) return `<div class="market-rotation market-rotation--waiting" aria-live="polite"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-rotation-status">A preparar</span></div><div class="market-rotation-wait"><span class="market-rotation-wait-copy">A formar a primeira leitura semanal.</span></div></div>`;
-    const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50).slice(0,3);
+    const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50 && rotationFlowDirection(r)>0).slice(0,3);
     const medianRank=rotationMedian(rows.map(r=>r.rank));
     const relativeDestinations=!inflows.length
       ?rows.filter(r=>r.rank>medianRank).slice(0,3).map(r=>({
         ...r,
-        signal:r.med5<0?'Mais resiliente · ainda negativo':'A ganhar força relativa',
+        signal:rotationFlowDirection(r)<0
+          ?'Força relativa · flow ETF vendedor'
+          :r.med5<0?'Mais resiliente · ainda negativo':'A ganhar força relativa',
         tone:'neutral'
       }))
       :[];
     const relativeLabels=new Set(relativeDestinations.map(r=>r.label));
     const outflows=rows
-      .filter(r=>r.med5<0 && r.breadth<=50 && !relativeLabels.has(r.label))
+      .filter(r=>r.med5<0 && r.breadth<=50 && rotationFlowDirection(r)<0 && !relativeLabels.has(r.label))
       .sort((a,b)=>a.rank-b.rank)
       .slice(0,3);
+    const divergenceRows=rows
+      .filter(r=>{
+        if(relativeLabels.has(r.label))return false;
+        const flow=rotationFlowDirection(r);
+        return (r.med5>0 && r.breadth>=50 && flow<0)
+          || (r.med5<0 && r.breadth<=50 && flow>0);
+      })
+      .sort((a,b)=>Math.abs(n(b.etf?.flowUsd)||0)-Math.abs(n(a.etf?.flowUsd)||0))
+      .slice(0,3)
+      .map(r=>({
+        ...r,
+        signal:rotationFlowDirection(r)>0
+          ?'Preço fraco · flow ETF comprador'
+          :'Preço forte · flow ETF vendedor',
+        tone:'neutral'
+      }));
     const pending=coverage.pending.map(x=>x.label).slice(0,4);
     const pendingText=pending.length?`Ainda a formar série: ${esc(pending.join(', '))}${coverage.pending.length>pending.length?` +${coverage.pending.length-pending.length}`:''}. Um tema só entra no ranking com ≥4 ações com retorno semanal.`:'Todos os temas têm cobertura semanal suficiente.';
     const relativeBlock=relativeDestinations.length
       ?renderRotationGroup('A ganhar força relativa','Melhor rank relativo · não implica entrada líquida',relativeDestinations,'relative','')
       :'';
-    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas confirmadas','Retorno 5d positivo · breadth ≥50%',inflows,'in','Sem entradas absolutas confirmadas esta semana')}${relativeBlock}${renderRotationGroup('Saídas','Retorno 5d negativo · breadth ≤50%',outflows,'out','Sem saídas confirmadas esta semana')}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking continua baseado em preço + breadth; 20d serve apenas como confirmação.</p><p>Quando não existem entradas absolutas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais, sem chamar “entrada” a um retorno ainda negativo.</p><p>ETF flows são apenas confirmação e resultam da variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
+    // Keep the card bounded to at most three visible groups. When there are no
+    // confirmed inflows we already spend one slot on relative destinations, so
+    // divergences replace an empty outflow slot rather than creating a fourth block.
+    const showDivergences=divergenceRows.length && (!relativeDestinations.length || !outflows.length);
+    const divergenceBlock=showDivergences
+      ?renderRotationGroup('Sinais divergentes','Preço/breadth e ETF flow em sentidos opostos',divergenceRows,'relative','')
+      :'';
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas confirmadas','Retorno 5d positivo · breadth ≥50% · ETF flow >0',inflows,'in','Sem entradas confirmadas por preço + breadth + ETF flow')}${relativeBlock}${renderRotationGroup('Saídas confirmadas','Retorno 5d negativo · breadth ≤50% · ETF flow <0',outflows,'out','Sem saídas confirmadas por preço + breadth + ETF flow')}${divergenceBlock}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking continua baseado em preço + breadth (retorno 5d + breadth); 20d serve apenas como confirmação de contexto.</p><p>“Entrada confirmada” e “Saída confirmada” exigem que preço/breadth e o ETF flow semanal apontem no mesmo sentido. Sem cobertura de flow, o tema não é rotulado como confirmado.</p><p>Quando não existem entradas confirmadas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais sem chamar “entrada” a um movimento não confirmado por fluxo.</p><p>Sinais divergentes ficam explícitos quando preço/breadth e ETF flow apontam em sentidos opostos.</p><p>ETF flows resultam da variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
   }
 
   function renderDiscover(){

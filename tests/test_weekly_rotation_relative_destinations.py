@@ -12,7 +12,7 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertIn("A ganhar força relativa", source)
         self.assertIn("não implica entrada líquida", source)
         self.assertIn("Mais resiliente · ainda negativo", source)
-        self.assertIn("Sem entradas absolutas confirmadas esta semana", source)
+        self.assertIn("Sem entradas confirmadas por preço + breadth + ETF flow", source)
 
     def test_startup_publishes_rotation_returns_independent_of_opportunity_eligibility(self):
         builder = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
