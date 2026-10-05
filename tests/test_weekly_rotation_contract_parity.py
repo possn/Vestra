@@ -68,7 +68,7 @@ class WeeklyRotationContractParityTests(unittest.TestCase):
 
     def test_rotation_return_window_is_five_observations_on_both_paths(self):
         self.assertIn("closes[closes.length-6]", self.market)
-        self.assertIn("_weekly_return(row)", self.backend)
+        self.assertIn("weekly = [(r, _weekly_return(r)) for r in members]", self.backend)
         self.assertIn("closes[-6]", self.backend)
 
 
