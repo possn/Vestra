@@ -289,8 +289,8 @@ test('iPhone/WebKit: weekly rotation stays compact and explicit', async ({ page 
   if (!waiting) {
     const groups = rotation.locator('.market-rotation-group');
     const titles = await groups.locator('.market-rotation-group__head strong').allTextContents();
-    expect(titles[0]).toBe('Entradas confirmadas');
-    expect(titles.at(-1)).toBe('Saídas');
+    expect(titles[0]).toBe('Entradas por preço');
+    expect(titles.at(-1)).toBe('Saídas por preço');
     expect(titles.length).toBeGreaterThanOrEqual(2);
     expect(titles.length).toBeLessThanOrEqual(3);
     if (titles.length === 3) expect(titles[1]).toBe('A ganhar força relativa');
@@ -298,6 +298,17 @@ test('iPhone/WebKit: weekly rotation stays compact and explicit', async ({ page 
     for (let i = 0; i < titles.length; i += 1) {
       expect(await groups.nth(i).locator('.market-rotation-row').count()).toBeLessThanOrEqual(3);
     }
+
+    const consensus = await page.evaluate(() => ({
+      contradicts: window.VestraMarket.__test.weeklyEtfConsensus(1, 2.0, -3_900_000_000),
+      confirmsIn: window.VestraMarket.__test.weeklyEtfConsensus(1, 2.0, 500_000_000),
+      confirmsOut: window.VestraMarket.__test.weeklyEtfConsensus(-1, -2.0, -500_000_000),
+      uncovered: window.VestraMarket.__test.weeklyEtfConsensus(1, null, null),
+    }));
+    expect(consensus.contradicts).toEqual({ confirmed: false, evidenceCount: 2 });
+    expect(consensus.confirmsIn).toEqual({ confirmed: true, evidenceCount: 2 });
+    expect(consensus.confirmsOut).toEqual({ confirmed: true, evidenceCount: 2 });
+    expect(consensus.uncovered).toEqual({ confirmed: null, evidenceCount: 0 });
 
     const method = rotation.locator('.market-rotation-method');
     await expect(method.locator('summary')).toHaveText('Como é calculado?');
