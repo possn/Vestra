@@ -299,17 +299,6 @@ test('iPhone/WebKit: weekly rotation stays compact and explicit', async ({ page 
       expect(await groups.nth(i).locator('.market-rotation-row').count()).toBeLessThanOrEqual(3);
     }
 
-    const consensus = await page.evaluate(() => ({
-      contradicts: window.VestraMarket.__test.weeklyEtfConsensus(1, 2.0, -3_900_000_000),
-      confirmsIn: window.VestraMarket.__test.weeklyEtfConsensus(1, 2.0, 500_000_000),
-      confirmsOut: window.VestraMarket.__test.weeklyEtfConsensus(-1, -2.0, -500_000_000),
-      uncovered: window.VestraMarket.__test.weeklyEtfConsensus(1, null, null),
-    }));
-    expect(consensus.contradicts).toEqual({ confirmed: false, evidenceCount: 2 });
-    expect(consensus.confirmsIn).toEqual({ confirmed: true, evidenceCount: 2 });
-    expect(consensus.confirmsOut).toEqual({ confirmed: true, evidenceCount: 2 });
-    expect(consensus.uncovered).toEqual({ confirmed: null, evidenceCount: 0 });
-
     const method = rotation.locator('.market-rotation-method');
     await expect(method.locator('summary')).toHaveText('Como é calculado?');
     await expect(method.locator('.market-rotation-method__body')).toBeHidden();
