@@ -334,21 +334,16 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         return priceDirection && flowDirection && priceDirection!==flowDirection && !relativeLabels.has(r.label);
       })
       .sort((a,b)=>Math.abs(b.med5)-Math.abs(a.med5))
-      .slice(0,3)
-      .map(r=>({
-        ...r,
-        signal:rotationPriceDirection(r)>0?'Preço forte · flow vendedor':'Preço fraco · flow comprador',
-        tone:'neutral'
-      }));
+      .slice(0,3);
     const pending=coverage.pending.map(x=>x.label).slice(0,4);
     const pendingText=pending.length?`Ainda a formar série: ${esc(pending.join(', '))}${coverage.pending.length>pending.length?` +${coverage.pending.length-pending.length}`:''}. Um tema só entra no ranking com ≥4 ações com retorno semanal.`:'Todos os temas têm cobertura semanal suficiente.';
     const relativeBlock=relativeDestinations.length
       ?renderRotationGroup('A ganhar força relativa','Melhor rank relativo · não implica entrada líquida',relativeDestinations,'relative','')
       :'';
-    const conflictBlock=conflicts.length
-      ?renderRotationGroup('Sinais em conflito','Preço/breadth e ETF flow apontam em sentidos opostos',conflicts,'relative','')
+    const conflictSummary=conflicts.length
+      ?`<div class="market-rotation-conflicts"><strong>Sinais em conflito</strong><span>${conflicts.map(r=>`${esc(r.label)} · ${rotationFlowDirection(r)>0?'flow comprador':'flow vendedor'}`).join(' · ')}</span></div>`
       :'';
-    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas confirmadas','Preço/breadth positivos · ETF flow comprador',inflows,'in','Sem entradas confirmadas por fluxo esta semana')}${relativeBlock}${renderRotationGroup('Saídas confirmadas','Preço/breadth negativos · ETF flow vendedor',outflows,'out','Sem saídas confirmadas por fluxo esta semana')}${conflictBlock}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking continua baseado em preço + breadth; 20d serve como contexto.</p><p>Chamamos entrada ou saída “confirmada” apenas quando o ETF flow disponível tem o mesmo sentido do preço/breadth. Se o flow aponta no sentido oposto, o tema aparece em “Sinais em conflito” em vez de ser apresentado como entrada/saída.</p><p>Quando não existem entradas confirmadas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais sem confundir força relativa com fluxo líquido.</p><p>ETF flows são estimativas derivadas da variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas confirmadas','Preço/breadth positivos · ETF flow comprador',inflows,'in','Sem entradas confirmadas por fluxo esta semana')}${relativeBlock}${renderRotationGroup('Saídas confirmadas','Preço/breadth negativos · ETF flow vendedor',outflows,'out','Sem saídas confirmadas por fluxo esta semana')}${conflictSummary}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking continua baseado em preço + breadth; 20d serve como contexto.</p><p>Chamamos entrada ou saída “confirmada” apenas quando o ETF flow disponível tem o mesmo sentido do preço/breadth. Se o flow aponta no sentido oposto, o tema aparece em “Sinais em conflito” em vez de ser apresentado como entrada/saída.</p><p>Quando não existem entradas confirmadas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais sem confundir força relativa com fluxo líquido.</p><p>ETF flows são estimativas derivadas da variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
   }
 
   function renderDiscover(){

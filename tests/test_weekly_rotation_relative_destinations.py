@@ -20,6 +20,7 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertIn("const inflows=rows.filter(r=>rotationConfirmedDirection(r)===1)", source)
         self.assertIn("rotationConfirmedDirection(r)===-1", source)
         self.assertIn("Sinais em conflito", source)
+        self.assertIn("market-rotation-conflicts", source)
         self.assertIn("Preço/breadth e ETF flow apontam em sentidos opostos", source)
         self.assertIn("Sem entradas confirmadas por fluxo esta semana", source)
         self.assertIn("Sem saídas confirmadas por fluxo esta semana", source)

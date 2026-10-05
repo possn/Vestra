@@ -468,7 +468,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("renderRotationGroup('Entradas confirmadas'", market)
         self.assertIn("renderRotationGroup('A ganhar força relativa'", market)
         self.assertIn("renderRotationGroup('Saídas confirmadas'", market)
-        self.assertIn("renderRotationGroup('Sinais em conflito'", market)
+        self.assertIn('market-rotation-conflicts', market)
         self.assertIn('Sem entradas confirmadas por fluxo esta semana', market)
         self.assertIn('não implica entrada líquida', market)
         self.assertIn('Sem saídas confirmadas por fluxo esta semana', market)
