@@ -465,7 +465,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("!relativeLabels.has(r.label)", market)
         self.assertIn("renderRotationGroup('Entradas confirmadas'", market)
         self.assertIn("renderRotationGroup('A ganhar força relativa'", market)
-        self.assertIn("renderRotationGroup('Saídas'", market)
+        self.assertIn("renderRotationGroup('Saídas confirmadas'", market)
         self.assertIn("rotationFlowDirection(r)<0", market)
         self.assertIn("renderRotationGroup('Sinais divergentes'", market)
         self.assertIn('Preço/breadth e ETF flow em sentidos opostos', market)
