@@ -50,6 +50,7 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
             '"opportunity_upside_reasons"',
             '"opportunity_rotation_breadth_pct"',
             '"opportunity_rotation_return_5d_pct"',
+            '"opportunity_rotation_etf_confirmed"',
             '"opportunity_rotation_etf_evidence_count"',
             '"opportunity_market_regime_source"',
             '"opportunity_market_regime_evidence_count"',
