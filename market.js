@@ -338,7 +338,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const relativeBlock=relativeDestinations.length
       ?renderRotationGroup('A ganhar força relativa','Melhor rank relativo · não implica entrada líquida',relativeDestinations,'relative','')
       :'';
-    const divergenceBlock=divergenceRows.length
+    // Keep the card bounded to at most three visible groups. When there are no
+    // confirmed inflows we already spend one slot on relative destinations, so
+    // divergences replace an empty outflow slot rather than creating a fourth block.
+    const showDivergences=divergenceRows.length && (!relativeDestinations.length || !outflows.length);
+    const divergenceBlock=showDivergences
       ?renderRotationGroup('Sinais divergentes','Preço/breadth e ETF flow em sentidos opostos',divergenceRows,'relative','')
       :'';
     return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas confirmadas','Retorno 5d positivo · breadth ≥50% · ETF flow >0',inflows,'in','Sem entradas confirmadas por preço + breadth + ETF flow')}${relativeBlock}${renderRotationGroup('Saídas confirmadas','Retorno 5d negativo · breadth ≤50% · ETF flow <0',outflows,'out','Sem saídas confirmadas por preço + breadth + ETF flow')}${divergenceBlock}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking continua baseado em preço + breadth (retorno 5d + breadth); 20d serve apenas como confirmação de contexto.</p><p>“Entrada confirmada” e “Saída confirmada” exigem que preço/breadth e o ETF flow semanal apontem no mesmo sentido. Sem cobertura de flow, o tema não é rotulado como confirmado.</p><p>Quando não existem entradas confirmadas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais sem chamar “entrada” a um movimento não confirmado por fluxo.</p><p>Sinais divergentes ficam explícitos quando preço/breadth e ETF flow apontam em sentidos opostos.</p><p>ETF flows resultam da variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
