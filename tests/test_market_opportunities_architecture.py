@@ -409,7 +409,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('function weeklyEtfConfirmation(label,expectedSign=0)', market)
         self.assertIn('fund_flow_1w_usd', market)
         self.assertIn('fund_return_1w_pct', market)
-        self.assertIn('O ranking continua baseado em preço + breadth', market)
+        self.assertIn('O ranking combina retorno 5d, breadth e retorno 20d.', market)
         rotation_block = market.split('function weeklyRotationThemeRows()', 1)[1].split('function renderWeeklyRotation()', 1)[0]
         self.assertIn('const rank=(med5||0)*1.4+(breadth-50)*.08+(med20||0)*.25', rotation_block)
         self.assertNotIn('flowUsd', rotation_block.split('const rank=', 1)[1].split(';', 1)[0])
