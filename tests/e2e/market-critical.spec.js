@@ -289,8 +289,8 @@ test('iPhone/WebKit: weekly rotation stays compact and explicit', async ({ page 
   if (!waiting) {
     const groups = rotation.locator('.market-rotation-group');
     const titles = await groups.locator('.market-rotation-group__head strong').allTextContents();
-    expect(titles[0]).toBe('Entradas confirmadas');
-    expect(titles.at(-1)).toBe('Saídas');
+    expect(titles[0]).toBe('Entradas por preço');
+    expect(titles.at(-1)).toBe('Saídas por preço');
     expect(titles.length).toBeGreaterThanOrEqual(2);
     expect(titles.length).toBeLessThanOrEqual(3);
     if (titles.length === 3) expect(titles[1]).toBe('A ganhar força relativa');

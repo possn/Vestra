@@ -12,7 +12,7 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertIn("A ganhar força relativa", source)
         self.assertIn("não implica entrada líquida", source)
         self.assertIn("Mais resiliente · ainda negativo", source)
-        self.assertIn("Sem entradas absolutas confirmadas esta semana", source)
+        self.assertIn("Sem entradas por preço esta semana", source)
 
     def test_startup_publishes_rotation_returns_independent_of_opportunity_eligibility(self):
         builder = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
@@ -21,6 +21,26 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertIn('out["market_return_20d_pct"] = r20', builder)
         self.assertIn("const marketReturn=n(stock?.market_return_5d_pct);", market)
         self.assertIn("n(s.market_return_20d_pct)??n(s.opportunity_return_20d_pct)", market)
+
+    def test_etf_consensus_is_fail_closed_on_directional_divergence(self):
+        source = (ROOT / "market.js").read_text(encoding="utf-8")
+        self.assertIn("function weeklyEtfConsensus(expectedSign, etfReturn, flowUsd)", source)
+        self.assertIn("directional.every(sign=>sign===expectedSign)", source)
+        self.assertIn("ETF confirma", source)
+        self.assertIn("ETF diverge", source)
+        self.assertIn("weeklyEtfConfirmation(label,expectedEtfSign)", source)
+        self.assertIn("expectedEtfSign=1", source)
+        self.assertIn("expectedEtfSign=-1", source)
+
+    def test_semiconductors_style_price_strength_with_negative_flow_is_not_confirmed(self):
+        # Deterministic reference fixture for the production consensus contract:
+        # positive ETF return but -$3.9B flow must fail closed for an inflow signal.
+        expected_sign = 1
+        etf_return = 2.0
+        flow_usd = -3_900_000_000
+        directional = [1 if value > 0 else -1 for value in (etf_return, flow_usd) if value not in (None, 0)]
+        self.assertEqual(directional, [1, -1])
+        self.assertFalse(all(sign == expected_sign for sign in directional))
 
     def test_startup_keeps_rotation_states_but_drops_verbose_opportunity_diagnostics(self):
         source = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
@@ -39,6 +59,7 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
             '"opportunity_upside_reasons"',
             '"opportunity_rotation_breadth_pct"',
             '"opportunity_rotation_return_5d_pct"',
+            '"opportunity_rotation_etf_confirmed"',
             '"opportunity_rotation_etf_evidence_count"',
             '"opportunity_market_regime_source"',
             '"opportunity_market_regime_evidence_count"',

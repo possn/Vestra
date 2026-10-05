@@ -213,14 +213,23 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     'Imobiliário':['VNQ','IYR','XLRE'],
     'Consumo discricionário':['XLY','VCR'],
   };
-  function weeklyEtfConfirmation(label){
+  function weeklyEtfConsensus(expectedSign, etfReturn, flowUsd){
+    if(expectedSign!==1&&expectedSign!==-1) return {confirmed:null,evidenceCount:0};
+    const directional=[etfReturn,flowUsd]
+      .filter(v=>v!=null&&v!==0)
+      .map(v=>v>0?1:-1);
+    if(!directional.length) return {confirmed:null,evidenceCount:0};
+    return {confirmed:directional.every(sign=>sign===expectedSign),evidenceCount:directional.length};
+  }
+  function weeklyEtfConfirmation(label,expectedSign=0){
     const tickers=WEEKLY_ROTATION_ETFS[label]||[];
     const funds=tickers.map(t=>M.byTicker.get(t)).filter(Boolean);
     const withFlow=funds.filter(f=>n(f.fund_flow_1w_usd)!=null);
     const withReturn=funds.filter(f=>n(f.fund_return_1w_pct)!=null);
     const flowUsd=withFlow.length?withFlow.reduce((a,f)=>a+n(f.fund_flow_1w_usd),0):null;
     const etfReturn=withReturn.length?rotationMedian(withReturn.map(f=>n(f.fund_return_1w_pct)).filter(x=>x!=null)):null;
-    return {withFlow:withFlow.length,withReturn:withReturn.length,flowUsd,etfReturn};
+    const consensus=weeklyEtfConsensus(expectedSign,etfReturn,flowUsd);
+    return {withFlow:withFlow.length,withReturn:withReturn.length,flowUsd,etfReturn,...consensus};
   }
   function compactFlowUsd(v){
     if(v==null)return 'baseline';
@@ -232,9 +241,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
   function rotationEtfText(r){
     const e=r?.etf;
-    if(e?.withFlow)return 'ETF flow '+compactFlowUsd(e.flowUsd)+' · '+e.withFlow+' fundos';
-    if(e?.withReturn)return 'ETFs '+(e.etfReturn>=0?'+':'')+e.etfReturn.toFixed(1)+'% · flow a formar baseline';
-    return 'ETF flow sem cobertura';
+    const state=e?.confirmed===true?'ETF confirma':e?.confirmed===false?'ETF diverge':'ETF sem confirmação';
+    if(e?.withFlow)return state+' · flow '+compactFlowUsd(e.flowUsd)+' · '+e.withFlow+' fundos';
+    if(e?.withReturn)return state+' · retorno '+(e.etfReturn>=0?'+':'')+e.etfReturn.toFixed(1)+'% · flow a formar baseline';
+    return 'ETF sem cobertura';
   }
 
   function weeklyRotationReturn(stock){
@@ -272,14 +282,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const breadth=weekly.filter(x=>x.r5>0).length/weekly.length*100;
       const med20=rotationMedian(weekly.map(x=>x.r20).filter(x=>x!=null));
       const rank=(med5||0)*1.4+(breadth-50)*.08+(med20||0)*.25;
-      let signal='Rotação mista',tone='neutral';
-      if(med5>=2&&breadth>=60){signal='Entrada forte',tone='positive';}
-      else if(med5>=.5&&breadth>=55){signal='A receber capital',tone='positive';}
-      else if(med5<=-2&&breadth<=40){signal='Saída forte',tone='risk';}
-      else if(med5<=-.5&&breadth<=45){signal='A perder capital',tone='risk';}
+      let signal='Rotação mista',tone='neutral',expectedEtfSign=0;
+      if(med5>=2&&breadth>=60){signal='Entrada forte',tone='positive',expectedEtfSign=1;}
+      else if(med5>=.5&&breadth>=55){signal='A receber capital',tone='positive',expectedEtfSign=1;}
+      else if(med5<=-2&&breadth<=40){signal='Saída forte',tone='risk',expectedEtfSign=-1;}
+      else if(med5<=-.5&&breadth<=45){signal='A perder capital',tone='risk',expectedEtfSign=-1;}
       else if(med5>0){signal='A melhorar',tone='warn';}
       else if(med5<0){signal='A enfraquecer',tone='warn';}
-      const etf=weeklyEtfConfirmation(label);
+      const etf=weeklyEtfConfirmation(label,expectedEtfSign);
       rows.push({label,count:weekly.length,med5,breadth,med20,rank,signal,tone,etf});
     }
     return rows.sort((a,b)=>b.rank-a.rank);
@@ -313,7 +323,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const relativeBlock=relativeDestinations.length
       ?renderRotationGroup('A ganhar força relativa','Melhor rank relativo · não implica entrada líquida',relativeDestinations,'relative','')
       :'';
-    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas confirmadas','Retorno 5d positivo · breadth ≥50%',inflows,'in','Sem entradas absolutas confirmadas esta semana')}${relativeBlock}${renderRotationGroup('Saídas','Retorno 5d negativo · breadth ≤50%',outflows,'out','Sem saídas confirmadas esta semana')}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking continua baseado em preço + breadth; 20d serve apenas como confirmação.</p><p>Quando não existem entradas absolutas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais, sem chamar “entrada” a um retorno ainda negativo.</p><p>ETF flows são apenas confirmação e resultam da variação de AUM ajustada ao retorno do ETF. Não representa subscrições/resgates de fundos observados diretamente.</p><p>${pendingText}</p></div></details></div>`;
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas por preço','Retorno 5d positivo · breadth ≥50%',inflows,'in','Sem entradas por preço esta semana')}${relativeBlock}${renderRotationGroup('Saídas por preço','Retorno 5d negativo · breadth ≤50%',outflows,'out','Sem saídas por preço esta semana')}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking combina retorno 5d, breadth e retorno 20d. A direção principal continua a ser definida por preço + breadth.</p><p>Quando não existem entradas absolutas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais, sem chamar “entrada” a um retorno ainda negativo.</p><p>A confirmação ETF compara a direção do retorno semanal e do flow com o sinal de preço: só diz “ETF confirma” quando toda a evidência direcional disponível concorda; qualquer contradição aparece como “ETF diverge”. O flow resulta da variação de AUM ajustada ao retorno e não representa subscrições/resgates diretamente observados.</p><p>${pendingText}</p></div></details></div>`;
   }
 
   function renderDiscover(){
