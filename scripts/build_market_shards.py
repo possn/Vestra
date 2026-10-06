@@ -329,6 +329,9 @@ def fund_flow_metrics(row: dict, history: dict, as_of: str) -> dict:
     series = history.get(ticker) if isinstance(history, dict) else None
     if not ticker or not day or not isinstance(series, dict) or day not in series:
         return result
+    current_point = series.get(day)
+    if not isinstance(current_point, dict) or current_point.get("aum_observed") is not True:
+        return result
     try:
         current_date = __import__("datetime").date.fromisoformat(day)
     except ValueError:
@@ -336,6 +339,8 @@ def fund_flow_metrics(row: dict, history: dict, as_of: str) -> dict:
     candidates = []
     for prior_day, point in series.items():
         if prior_day == day or not isinstance(point, dict):
+            continue
+        if point.get("aum_observed") is not True:
             continue
         try:
             prior_date = __import__("datetime").date.fromisoformat(prior_day)
