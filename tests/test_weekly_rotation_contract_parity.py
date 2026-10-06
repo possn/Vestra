@@ -97,8 +97,9 @@ class WeeklyRotationContractParityTests(unittest.TestCase):
         rotation = self.backend.split('def _rotation_context(rows, fund_history=None, as_of=""):', 1)[1].split(
             "def _attach_rotation_context", 1
         )[0]
-        self.assertIn("fund_flow_metrics(x, fund_history or {}, as_of)", rotation)
-        self.assertNotIn('x.get("fund_flow_1w_usd")', rotation)
+        self.assertIn("if fund_history is not None and as_of:", rotation)
+        self.assertIn("fund_flow_metrics(x, fund_history, as_of)", rotation)
+        self.assertIn("etf_metrics = etf_rows", rotation)
 
 
 if __name__ == "__main__":
