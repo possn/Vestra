@@ -61,6 +61,42 @@ class FundWeeklyReturnTests(unittest.TestCase):
         metrics = MOD.fund_flow_metrics(rows[0], updated, "2026-10-06")
         self.assertNotIn("fund_flow_1w_usd", metrics)
 
+    def test_carried_fund_purges_untagged_same_day_snapshot(self):
+        history = {
+            "SMH": {
+                "2026-09-29": {"assets": 10_000_000_000.0, "price": 600.0},
+                "2026-10-06": {"assets": 10_000_000_000.0, "price": 630.0},
+            }
+        }
+        rows = [{
+            "ticker": "SMH",
+            "quote_type": "ETF",
+            "fund_total_assets": 10_000_000_000.0,
+            "current_price": 630.0,
+            "pipeline_status": "catalog_carried_forward",
+        }]
+        updated = MOD.update_fund_aum_history(rows, "2026-10-06", history)
+        self.assertNotIn("2026-10-06", updated["SMH"])
+        self.assertNotIn("fund_flow_1w_usd", MOD.fund_flow_metrics(rows[0], updated, "2026-10-06"))
+
+    def test_carried_fund_keeps_explicitly_observed_same_day_snapshot(self):
+        history = {
+            "SMH": {
+                "2026-09-29": {"assets": 10_000_000_000.0, "price": 600.0},
+                "2026-10-06": {"assets": 10_500_000_000.0, "price": 630.0, "aum_observed": True},
+            }
+        }
+        rows = [{
+            "ticker": "SMH",
+            "quote_type": "ETF",
+            "fund_total_assets": 10_500_000_000.0,
+            "current_price": 630.0,
+            "pipeline_status": "catalog_carried_forward",
+        }]
+        updated = MOD.update_fund_aum_history(rows, "2026-10-06", history)
+        self.assertIn("2026-10-06", updated["SMH"])
+        self.assertTrue(updated["SMH"]["2026-10-06"]["aum_observed"])
+
     def test_fresh_fund_aum_creates_today_flow_snapshot(self):
         history = {
             "SMH": {
@@ -75,6 +111,7 @@ class FundWeeklyReturnTests(unittest.TestCase):
         }]
         updated = MOD.update_fund_aum_history(rows, "2026-10-06", history)
         self.assertIn("2026-10-06", updated["SMH"])
+        self.assertTrue(updated["SMH"]["2026-10-06"]["aum_observed"])
         metrics = MOD.fund_flow_metrics(rows[0], updated, "2026-10-06")
         self.assertIn("fund_flow_1w_usd", metrics)
 
