@@ -264,18 +264,25 @@ def update_fund_aum_history(rows: list[dict], as_of: str, history: dict | None =
     for row in rows:
         if str(row.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND", "FUND"}:
             continue
-        if str(row.get("pipeline_status") or "").strip() in {"catalog_carried_forward", "catalog_only"}:
-            # Carried catalogue rows may combine an old observed AUM with a newly
-            # refreshed price. Treating that pair as today's AUM snapshot would
-            # manufacture a synthetic weekly flow, so fail closed.
-            continue
         ticker = str(row.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
+        if str(row.get("pipeline_status") or "").strip() in {"catalog_carried_forward", "catalog_only"}:
+            # A carried row can inherit old AUM while receiving a new price. If
+            # an earlier builder run already persisted that synthetic pair for
+            # today, remove it unless it was explicitly tagged as a fresh AUM
+            # observation. This repairs same-day contamination fail-closed.
+            series = history.get(ticker)
+            point = series.get(day) if isinstance(series, dict) else None
+            if isinstance(point, dict) and point.get("aum_observed") is not True:
+                series.pop(day, None)
+            continue
         assets = _finite_positive(row.get("fund_total_assets"))
         price = _finite_positive(row.get("current_price"))
-        if not ticker or assets is None or price is None:
+        if assets is None or price is None:
             continue
         series = history.setdefault(ticker, {})
-        series[day] = {"assets": round(assets, 2), "price": round(price, 6)}
+        series[day] = {"assets": round(assets, 2), "price": round(price, 6), "aum_observed": True}
         for old_day in sorted(series)[:-FUND_FLOW_HISTORY_DAYS]:
             del series[old_day]
     return history
