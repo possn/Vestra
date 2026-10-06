@@ -960,6 +960,99 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }).join('')}</div><p class="market-dossier-interpretation">Os pilares são rankings relativos; não representam probabilidade de valorização. Métricas em falta não são tratadas como zero.</p></section>`;
   }
 
+  function dossierRadarClamp(value){
+    const v=n(value);
+    return v==null?null:Math.max(0,Math.min(100,v));
+  }
+
+  function dossierRadarBlend(rows){
+    let total=0, weight=0, observed=false;
+    for(const [raw,w] of rows){
+      const value=dossierRadarClamp(raw);
+      const ww=Number.isFinite(Number(w))?Number(w):0;
+      if(ww<=0) continue;
+      total+=(value==null?50:value)*ww;
+      weight+=ww;
+      if(value!=null) observed=true;
+    }
+    return observed&&weight>0?Math.max(0,Math.min(100,total/weight)):null;
+  }
+
+  function dossierDividendRadar(s){
+    const rawYield=n(s?.dividend_yield);
+    if(rawYield==null||rawYield<=0) return null;
+    const yieldPct=Math.abs(rawYield)<=1?rawYield*100:rawYield;
+    const sectorRaw=n(s?.sector_dividend_yield_median);
+    const sectorYield=sectorRaw==null?null:(Math.abs(sectorRaw)<=1?sectorRaw*100:sectorRaw);
+    const yieldScore=sectorYield!=null&&sectorYield>0
+      ? Math.max(0,Math.min(100,50*(yieldPct/sectorYield)))
+      : Math.max(0,Math.min(100,(yieldPct/4)*100));
+
+    const rawPayout=n(s?.payout_ratio);
+    const payout=rawPayout==null?null:(Math.abs(rawPayout)<=1?rawPayout*100:rawPayout);
+    let payoutScore=null;
+    if(payout!=null){
+      if(payout<=0) payoutScore=50;
+      else if(payout<25) payoutScore=60+(payout/25)*20;
+      else if(payout<=70) payoutScore=90;
+      else if(payout<=100) payoutScore=90-((payout-70)/30)*60;
+      else payoutScore=Math.max(0,30-(payout-100));
+    }
+
+    const coverage=n(s?.dividend_fcf_coverage);
+    let coverageScore=null;
+    if(coverage!=null){
+      if(coverage>=2) coverageScore=100;
+      else if(coverage>=1) coverageScore=60+(coverage-1)*40;
+      else if(coverage>=0) coverageScore=20+coverage*40;
+      else coverageScore=0;
+    }
+    return dossierRadarBlend([[yieldScore,.35],[payoutScore,.30],[coverageScore,.35]]);
+  }
+
+  function dossierRadarAxes(s){
+    return [
+      {key:'value',label:'Valor',value:dossierRadarClamp(s?.value_pct),detail:'Valuation relativo do modelo Vestra.'},
+      {key:'future',label:'Futuro',value:dossierRadarBlend([[s?.growth_pct,.65],[s?.estimate_momentum_score,.35]]),detail:'Growth e direção das estimativas.'},
+      {key:'past',label:'Histórico',value:dossierRadarBlend([[s?.quality_pct,.45],[s?.stability_pct,.30],[s?.execution_pct,.25]]),detail:'Qualidade, estabilidade e execução observada.'},
+      {key:'health',label:'Saúde',value:dossierRadarBlend([[s?.balance_pct,.40],[s?.cashflow_pct,.35],[s?.earnings_quality_pct,.25]]),detail:'Balanço, cash flow e qualidade dos lucros.'},
+      {key:'dividend',label:'Dividendo',value:dossierDividendRadar(s),detail:'Yield contextualizado e sustentabilidade por payout/FCF.'},
+    ];
+  }
+
+  function dossierRadarPoint(index,value,radius=82){
+    const angle=(-90+index*72)*Math.PI/180;
+    const r=radius*(Math.max(0,Math.min(100,value))/100);
+    return {x:120+Math.cos(angle)*r,y:120+Math.sin(angle)*r};
+  }
+
+  function dossierRadarChart(s){
+    if(isFund(s)) return '';
+    const axes=dossierRadarAxes(s);
+    if(!axes.some(x=>x.value!=null)) return '';
+    const geometry=axes.map(x=>x.value==null?50:x.value);
+    const polygon=geometry.map((v,i)=>{const p=dossierRadarPoint(i,v);return `${p.x.toFixed(1)},${p.y.toFixed(1)}`}).join(' ');
+    const grid=[20,40,60,80,100].map(level=>{
+      const points=axes.map((_,i)=>{const p=dossierRadarPoint(i,level);return `${p.x.toFixed(1)},${p.y.toFixed(1)}`}).join(' ');
+      return `<polygon points="${points}" class="market-dossier-radar-grid" />`;
+    }).join('');
+    const spokes=axes.map((_,i)=>{const p=dossierRadarPoint(i,100);return `<line x1="120" y1="120" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" class="market-dossier-radar-spoke" />`;}).join('');
+    const anchors=['middle','start','start','end','end'];
+    const labelRadius=104;
+    const labels=axes.map((axis,i)=>{
+      const p=dossierRadarPoint(i,100,labelRadius);
+      const score=axis.value==null?'N/A':Math.round(axis.value);
+      return `<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="${anchors[i]}" class="market-dossier-radar-label"><tspan x="${p.x.toFixed(1)}" dy="0">${esc(axis.label)}</tspan><tspan x="${p.x.toFixed(1)}" dy="11" class="market-dossier-radar-label__value">${score}</tspan></text>`;
+    }).join('');
+    const dots=axes.map((axis,i)=>{
+      if(axis.value==null) return '';
+      const p=dossierRadarPoint(i,axis.value);
+      return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.8" class="market-dossier-radar-dot"><title>${esc(axis.label)} · ${Math.round(axis.value)}/100</title></circle>`;
+    }).join('');
+    const aria=axes.map(x=>`${x.label} ${x.value==null?'não aplicável':Math.round(x.value)+'/100'}`).join(', ');
+    return `<section class="market-dossier-radar"><div class="market-dossier-radar-copy"><div class="market-dossier-section-label">PERFIL VESTRA · 5 EIXOS</div><h3>Assinatura fundamental</h3><p>Resumo visual de cinco dimensões independentes. Não cria um novo Score nem altera Conviction ou Risk Gate.</p><div class="market-dossier-radar-legend">${axes.map(x=>`<div title="${esc(x.detail)}"><span>${esc(x.label)}</span><strong>${x.value==null?'—':Math.round(x.value)}</strong></div>`).join('')}</div><p class="market-dossier-interpretation">Métricas em falta entram como neutro 50 apenas dentro de um eixo com evidência parcial. Se o eixo inteiro não for aplicável, aparece N/A. Empresas sem dividendo não são penalizadas.</p></div><div class="market-dossier-radar-visual"><svg viewBox="0 0 240 240" role="img" aria-label="${esc(aria)}">${grid}${spokes}<polygon points="${polygon}" class="market-dossier-radar-area"/>${dots}${labels}</svg></div></section>`;
+  }
+
   function smartMoneyEventType(raw){
     const value=txt(raw).toLowerCase();
     if(/buy|purchase|acquir/.test(value)) return 'buy';
@@ -1025,6 +1118,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<div class="market-dossier-shell"><div class="market-detail-head market-detail-head--editorial"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h1>${esc(s.name||s.ticker)}</h1>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><h2 class="market-dossier-symbol">${esc(s.ticker)}</h2>${txt(s.exchange)?`<p class="market-dossier-exchange">${esc(s.exchange)}</p>`:''}${compactLiveBadge(s)}</div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
       <div class="market-dossier-price-row"><div><small>PREÇO</small><strong data-live-field="current_price">${money(s.current_price,s.currency)}</strong></div>${n(s.market_cap)!=null?`<div><small>MARKET CAP</small><strong>${compact(s.market_cap)}</strong></div>`:''}</div>
       ${dossierScoreBoard(s)}
+      ${dossierRadarChart(s)}
       ${dossierPillarCards(s)}
       ${dossierFullPicture(s)}
       ${dossierFinancialSnapshot(s)}
