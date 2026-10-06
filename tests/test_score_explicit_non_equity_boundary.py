@@ -58,6 +58,10 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
             self.assertIsNone(scored.score)
             self.assertEqual(scored.data_coverage_pct, 0)
             self.assertEqual(scored.metric_confidence, "low")
+            self.assertEqual(scored.zombie_risk_state, "not_applicable")
+            self.assertEqual(scored.zombie_risk_years, 0)
+            self.assertEqual(scored.zombie_risk_support, [])
+            self.assertEqual(scored.annual_zombie_history, [])
         self.assertEqual({x.quote_type for x in out}, {"MUTUALFUND", "FUND"})
 
     def test_failed_explicit_fund_is_preserved_but_never_scored(self):
@@ -75,6 +79,30 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
             out = score_contract.score_universe(raw)
         self.assertEqual(out[0].metric_confidence, "low")
         self.assertFalse(hasattr(out[0], "data_confidence"))
+
+
+    def test_every_core_scoredticker_constructor_sets_zombie_contract(self):
+        score_source = (SCRIPTS / "score.py").read_text(encoding="utf-8")
+        starts = []
+        pos = 0
+        while True:
+            pos = score_source.find("ScoredTicker(", pos)
+            if pos < 0:
+                break
+            starts.append(pos)
+            pos += len("ScoredTicker(")
+        self.assertGreaterEqual(len(starts), 3)
+        for i, start in enumerate(starts):
+            end = starts[i + 1] if i + 1 < len(starts) else score_source.find("\n\n    return out", start)
+            block = score_source[start:end]
+            for field in (
+                "zombie_risk_state=",
+                "zombie_risk_years=",
+                "zombie_risk_reason=",
+                "zombie_risk_support=",
+                "annual_zombie_history=",
+            ):
+                self.assertIn(field, block, f"{field} missing from ScoredTicker constructor #{i + 1}")
 
     def test_run_routes_through_boundary_and_core_score_source_is_untouched(self):
         run_source = (SCRIPTS / "run.py").read_text(encoding="utf-8")
