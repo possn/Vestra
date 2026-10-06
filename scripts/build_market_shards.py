@@ -277,6 +277,7 @@ def update_fund_aum_history(rows: list[dict], as_of: str, history: dict | None =
 
 
 def fund_weekly_return(row: dict):
+    """Return a true ~1-week price move regardless of history granularity."""
     hist = row.get("price_history_1y") or []
     points = []
     for item in hist:
@@ -284,15 +285,26 @@ def fund_weekly_return(row: dict):
             continue
         close = _finite_positive(item.get("close"))
         day = str(item.get("date") or "")[:10]
-        if close is not None and day:
-            points.append((day, close))
+        if close is None or not day:
+            continue
+        try:
+            date = __import__("datetime").date.fromisoformat(day)
+        except ValueError:
+            continue
+        points.append((date, close))
     if len(points) < 2:
         return None
     points.sort(key=lambda x: x[0])
-    previous, current = points[-2], points[-1]
-    if previous[1] <= 0:
+    current_date, current_close = points[-1]
+    candidates = []
+    for prior_date, prior_close in points[:-1]:
+        gap = (current_date - prior_date).days
+        if FUND_FLOW_MIN_DAYS <= gap <= FUND_FLOW_MAX_DAYS:
+            candidates.append((abs(gap - 7), -gap, prior_date, prior_close))
+    if not candidates:
         return None
-    return round((current[1] / previous[1] - 1.0) * 100.0, 3)
+    _, _, _, previous_close = sorted(candidates)[0]
+    return round((current_close / previous_close - 1.0) * 100.0, 3)
 
 
 def fund_flow_metrics(row: dict, history: dict, as_of: str) -> dict:
