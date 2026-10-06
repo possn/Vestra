@@ -123,6 +123,10 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertEqual(row["zombie"], "yes")
         self.assertEqual(row["zombie_risk_state"], "probable")
         self.assertEqual(row["zombie_risk_years"], 3)
+        self.assertIn("zombie_risk_state", shards.INDEX_KEYS)
+        self.assertIn("zombie_risk_years", shards.INDEX_KEYS)
+        self.assertNotIn("zombie_risk_reason", shards.INDEX_KEYS)
+        self.assertNotIn("annual_zombie_history", shards.INDEX_KEYS)
         self.assertNotIn("zombie_risk_reason", row)
         self.assertNotIn("annual_zombie_history", row)
 
