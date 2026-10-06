@@ -35,6 +35,13 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
         self.assertIn("expectedEtfSign=1", source)
         self.assertIn("expectedEtfSign=-1", source)
 
+    def test_etf_flow_text_surfaces_effective_observation_window(self):
+        source = (ROOT / "market.js").read_text(encoding="utf-8")
+        self.assertIn("fund_flow_observation_days", source)
+        self.assertIn("flowWindowMin", source)
+        self.assertIn("flowWindowMax", source)
+        self.assertIn("' · janela '", source)
+
     def test_semiconductors_style_price_strength_with_negative_flow_is_not_confirmed(self):
         # Deterministic reference fixture for the production consensus contract:
         # positive ETF return but -$3.9B flow must fail closed for an inflow signal.
