@@ -83,6 +83,24 @@ class WeeklyRotationContractParityTests(unittest.TestCase):
         self.assertIn(fallback, weekly)
         self.assertLess(weekly.index(history_return), weekly.index(fallback))
 
+    def test_backend_recomputes_current_run_etf_flow_before_rotation_context(self):
+        self.assertIn(
+            "from build_market_shards import fund_flow_metrics, load_fund_aum_history, update_fund_aum_history",
+            self.backend,
+        )
+        main = self.backend.split("def main() -> None:", 1)[1]
+        history_call = "fund_history = update_fund_aum_history(rows, as_of, load_fund_aum_history())"
+        rotation_call = "rotation_contexts = _rotation_context(rows, fund_history=fund_history, as_of=as_of)"
+        self.assertIn(history_call, main)
+        self.assertIn(rotation_call, main)
+        self.assertLess(main.index(history_call), main.index(rotation_call))
+        rotation = self.backend.split('def _rotation_context(rows, fund_history=None, as_of=""):', 1)[1].split(
+            "def _attach_rotation_context", 1
+        )[0]
+        self.assertIn("if fund_history is not None and as_of:", rotation)
+        self.assertIn("fund_flow_metrics(x, fund_history, as_of)", rotation)
+        self.assertIn("etf_metrics = etf_rows", rotation)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
