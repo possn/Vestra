@@ -274,7 +274,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertNotIn("||estimates==='deteriorating'", action)
         self.assertIn("const actionableValuation=['undervalued','fair'].includes(valuation)", s)
         self.assertIn("const evidenceReady=reliabilityReady&&coverage!=null&&coverage>=65&&critical!=null&&critical>=50;", s)
-        self.assertIn("const strict=conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation", s)
+        self.assertIn("const strict=score!=null&&conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation", s)
         self.assertIn("const reinforceEligible=strict&&conv!=null&&conv>=70", s)
         self.assertNotIn("if(positionPct>=15||sectorPct>=35||indirectPct>=4) fit='concentrated'", s)
         self.assertNotIn("else if(positionPct>=10||sectorPct>=28||indirectPct>=2) fit='watch'", s)
