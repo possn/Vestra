@@ -123,7 +123,7 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertEqual(row["zombie"], "yes")
         self.assertEqual(row["zombie_risk_state"], "probable")
         self.assertEqual(row["zombie_risk_years"], 3)
-        self.assertIn("3 exercícios", row["zombie_risk_reason"])
+        self.assertNotIn("zombie_risk_reason", row)
         self.assertNotIn("annual_zombie_history", row)
 
     def test_columnar_startup_budget_is_production_grade(self):
