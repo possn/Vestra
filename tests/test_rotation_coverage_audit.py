@@ -35,4 +35,4 @@ def test_rotation_coverage_audit_defines_same_ten_themes():
 def test_rotation_coverage_prefers_market_return():
     m = load_module()
     assert m.weekly_return({"market_return_5d_pct": 3.0, "opportunity_return_5d_pct": -2.0}) == 3.0
-    assert m.weekly_return({"opportunity_return_5d_pct": -2.0}) == -2.0
+    assert m.weekly_return({"opportunity_return_5d_pct": -2.0}) is None
