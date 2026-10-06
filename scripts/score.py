@@ -41,6 +41,11 @@ class ScoredTicker:
 
     zombie: str
     interest_coverage: float | None
+    zombie_risk_state: str
+    zombie_risk_years: int
+    zombie_risk_reason: str | None
+    zombie_risk_support: list[str] | None
+    annual_zombie_history: list[dict] | None
 
     # dimension scores
     profitability_pct: float | None  # retained for backward-compatible UI
@@ -365,13 +370,13 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
 
     for idx, r in enumerate(equities):
         coverage = None
-        zombie = "unknown"
+        zombie_state = str(getattr(r, "zombie_risk_state", "insufficient_data") or "insufficient_data")
+        zombie = "yes" if zombie_state == "probable" else ("candidate" if zombie_state == "candidate" else ("no" if zombie_state in ("clear", "fragile", "not_applicable") else "unknown"))
         if r.ebit is not None and r.interest_expense is not None:
             if r.interest_expense == 0:
-                zombie, coverage = "no", None
+                coverage = None
             else:
                 coverage = r.ebit / r.interest_expense
-                zombie = "yes" if coverage < 1.0 else "no"
 
         quality = _avg([
             _percentile_rank(r.roe, arr("roe")),
@@ -692,8 +697,10 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         # v4.1 Risk Gate: weighted averages cannot wash away structural red flags.
         # Generic and explainable rules only; no ticker blacklist.
         risk_flags = []
-        if zombie == "yes" and model not in ("bank", "insurance"):
+        if zombie_state == "probable" and model not in ("bank", "insurance"):
             risk_flags.append("zombie_interest_coverage")
+        elif zombie_state == "candidate" and model not in ("bank", "insurance"):
+            risk_flags.append("zombie_candidate_interest_coverage")
         if fcf_yield is not None and abs(fcf_yield) > 0.30:
             risk_flags.append("extreme_fcf_yield")
         if quality is not None and quality < 40:
@@ -784,6 +791,11 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             score=round(composite, 1) if composite is not None else None,
             metric_confidence=confidence, data_coverage_pct=round(metric_coverage, 1),
             zombie=zombie, interest_coverage=round(coverage, 2) if coverage is not None else None,
+            zombie_risk_state=zombie_state,
+            zombie_risk_years=int(getattr(r, "zombie_risk_years", 0) or 0),
+            zombie_risk_reason=getattr(r, "zombie_risk_reason", None),
+            zombie_risk_support=list(getattr(r, "zombie_risk_support", []) or []),
+            annual_zombie_history=list(getattr(r, "annual_zombie_history", []) or []),
             profitability_pct=round(quality, 1) if quality is not None else None,
             leverage_pct=round(balance, 1) if balance is not None else None,
             value_pct=round(value, 1) if value is not None else None,

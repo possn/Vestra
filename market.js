@@ -1904,6 +1904,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     concentration.push(...overlaps.slice(0,3));
 
     const compactRows=(arr,metaFn)=>arr.length?`<div class="market-list">${arr.map(r=>renderRow(r.stock,metaFn(r))).join('')}</div>`:'<p class="market-case-note">Nenhuma posição cumpre este filtro com os dados atuais.</p>';
+    const zombieRank={probable:0,candidate:1,fragile:2};
+    const zombieRows=ranked.filter(r=>Object.prototype.hasOwnProperty.call(zombieRank,txt(r.stock.zombie_risk_state))).sort((a,b)=>(zombieRank[txt(a.stock.zombie_risk_state)]??9)-(zombieRank[txt(b.stock.zombie_risk_state)]??9)||b.value-a.value);
+    const zombieLabels={probable:'Zombie provável',candidate:'Candidato zombie',fragile:'Fragilidade financeira'};
+    const zombieHtml=`<div class="market-detail-card" data-ux-kind="risk"><div class="market-perspective-head"><div><small>STRUCTURAL RISK · ZOMBIE</small><h4>Empresas zombie na carteira</h4></div><span class="market-data-age">${zombieRows.length} sinais</span></div><p class="market-case-note">Classificação independente do Vestra Score. “Provável” exige EBIT/juros &lt;1 durante ≥3 exercícios consecutivos e evidência adicional de dependência financeira; um único mau ano nunca basta.</p>${zombieRows.length?`<div class="market-list">${zombieRows.map(r=>renderRow(r.stock,`${zombieLabels[txt(r.stock.zombie_risk_state)]||txt(r.stock.zombie_risk_state)} · ${txt(r.stock.zombie_risk_reason)||'sem detalhe'} · peso ${(r.value/portfolioBase*100).toFixed(1)}%`)).join('')}</div>`:'<p class="market-case-note">Nenhuma posição analisável apresenta atualmente padrão zombie, candidato persistente ou fragilidade de cobertura de juros.</p>'}</div>`;
     const altHtml=alternatives.length?`<div class="market-list">${alternatives.map(a=>renderRow(a.to,`Alternativa a ${a.from.ticker} · Convicção +${a.convDelta.toFixed(0)} · Score +${a.delta.toFixed(0)} · ${a.portfolioFit==='better'?'reduz overlap':a.portfolioFit==='worse'?'aumenta overlap':'impacto neutro'}`)).join('')}</div>`:'<p class="market-case-note">Sem alternativa claramente superior identificada no mesmo setor.</p>';
     const concHtml=concentration.length?`<ul class="market-case-list">${[...new Set(concentration)].slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p class="market-case-note">Sem concentração material detetada com os dados disponíveis.</p>';
 
@@ -1977,6 +1981,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       ${actionMapHtml}
       <div class="market-detail-card"><h4>Candidatos a reforço</h4>${compactRows(reinforce,r=>`Convicção ${Math.round(r.conviction)}/100 · ${txt(r.stock.valuation_signal)||'valuation sem sinal'}`)}</div>
       <div class="market-detail-card"><h4>Posições a rever</h4>${compactRows(review,r=>`Convicção ${r.conviction==null?'—':Math.round(r.conviction)}/100 · ${txt(r.stock.risk_gate)||'Risk Gate não classificado'} · ${txt(r.stock.estimate_signal)||'expectativas —'}`)}</div>
+      ${zombieHtml}
       <div class="market-detail-card"><h4>Concentração e overlap</h4>${concHtml}</div>
       <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida do mesmo setor com convicção ≥5 pontos superior, Score ≥3 pontos superior e passa a avaliação canónica de evidência, Risk Budget e overlap.</p>${altHtml}</div>
       ${etfOptimizeHtml}

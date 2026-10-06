@@ -72,6 +72,7 @@ class RawMetrics:
     roce_proxy: float | None = None
     dividend_fcf_coverage: float | None = None
     annual_quality_history: list[dict] = field(default_factory=list)
+    annual_zombie_history: list[dict] = field(default_factory=list)
     annual_dividend_history: list[dict] = field(default_factory=list)
 
     # cash flow
@@ -533,6 +534,7 @@ def fetch_one(ticker: str) -> RawMetrics:
             try:
                 fin = t.financials
                 bs = t.balance_sheet
+                cf = t.cashflow
                 if fin is not None and not fin.empty:
                     cols = list(fin.columns)[:4]
                     def row_at(frame, labels, col):
@@ -543,16 +545,22 @@ def fetch_one(ticker: str) -> RawMetrics:
                                 return _as_float(frame.loc[label, col])
                         return None
                     hist=[]
+                    zombie_hist=[]
                     for c in cols:
                         revenue=row_at(fin,("Total Revenue","Operating Revenue"),c)
                         gross=row_at(fin,("Gross Profit",),c)
                         op=row_at(fin,("Operating Income","EBIT"),c)
                         net=row_at(fin,("Net Income","Net Income Common Stockholders"),c)
                         ebit=row_at(fin,("EBIT","Operating Income"),c)
+                        interest=row_at(fin,("Interest Expense","Interest Expense Non Operating"),c)
                         assets=row_at(bs,("Total Assets",),c) if bs is not None else None
                         equity=row_at(bs,("Stockholders Equity","Total Stockholder Equity","Common Stock Equity"),c) if bs is not None else None
                         cur_liab=row_at(bs,("Current Liabilities","Total Current Liabilities"),c) if bs is not None else None
-                        item={"date": str(getattr(c,"date",lambda:c)())}
+                        debt=row_at(bs,("Total Debt",),c) if bs is not None else None
+                        cash=row_at(bs,("Cash Cash Equivalents And Short Term Investments","Cash And Cash Equivalents","Cash"),c) if bs is not None else None
+                        fcf=row_at(cf,("Free Cash Flow",),c) if cf is not None else None
+                        date=str(getattr(c,"date",lambda:c)())
+                        item={"date": date}
                         if revenue not in (None,0):
                             if gross is not None: item["gross_margin"]=gross/revenue
                             if op is not None: item["operating_margin"]=op/revenue
@@ -562,7 +570,15 @@ def fetch_one(ticker: str) -> RawMetrics:
                         if assets is not None and cur_liab is not None and ebit is not None and (assets-cur_liab)>0:
                             item["roce_proxy"]=ebit/(assets-cur_liab)
                         if len(item)>1: hist.append(item)
+                        zitem={"date":date}
+                        if ebit is not None: zitem["ebit"]=ebit
+                        if interest is not None: zitem["interest_expense"]=abs(interest)
+                        if fcf is not None: zitem["free_cash_flow"]=fcf
+                        if debt is not None: zitem["total_debt"]=debt
+                        if cash is not None: zitem["total_cash"]=cash
+                        if len(zitem)>1: zombie_hist.append(zitem)
                     m.annual_quality_history=hist
+                    m.annual_zombie_history=zombie_hist
             except Exception as e:
                 log.debug("%s: annual quality history unavailable (%s)", ticker, e)
 

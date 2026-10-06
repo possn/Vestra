@@ -9,6 +9,11 @@ from __future__ import annotations
 
 import logging
 
+try:
+    from .zombie_risk import classify_zombie_risk
+except ImportError:  # scripts executed directly by run.py
+    from zombie_risk import classify_zombie_risk
+
 log = logging.getLogger("derived_fundamentals")
 
 
@@ -85,6 +90,17 @@ def enrich(raw):
                     _tag("enterprise_to_ebitda", model)
                     changed = True
                     derived_values += 1
+
+        zombie = classify_zombie_risk(
+            getattr(model, "annual_zombie_history", None),
+            sector=getattr(model, "sector", None),
+            industry=getattr(model, "industry", None),
+        )
+        model.zombie_risk_state = zombie["state"]
+        model.zombie_risk_years = zombie["years_below_one"]
+        model.zombie_risk_reason = zombie["reason"]
+        model.zombie_risk_support = zombie["support"]
+        model.zombie_interest_coverage_latest = zombie["latest_interest_coverage"]
 
         if changed:
             derived_rows += 1
