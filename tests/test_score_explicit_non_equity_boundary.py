@@ -58,6 +58,10 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
             self.assertIsNone(scored.score)
             self.assertEqual(scored.data_coverage_pct, 0)
             self.assertEqual(scored.metric_confidence, "low")
+            self.assertEqual(scored.zombie_risk_state, "not_applicable")
+            self.assertEqual(scored.zombie_risk_years, 0)
+            self.assertEqual(scored.zombie_risk_support, [])
+            self.assertEqual(scored.annual_zombie_history, [])
         self.assertEqual({x.quote_type for x in out}, {"MUTUALFUND", "FUND"})
 
     def test_failed_explicit_fund_is_preserved_but_never_scored(self):
@@ -83,6 +87,9 @@ class ScoreExplicitNonEquityBoundaryTests(unittest.TestCase):
         self.assertNotIn("from score import score_universe", run_source)
         self.assertIn('equities = [r for r in raw if r.quote_type not in ("ETF", "CRYPTO") and r.error is None]', score_source)
         self.assertNotIn("from asset_types import", score_source)
+        self.assertGreaterEqual(score_source.count('zombie_risk_state="not_applicable"'), 2)
+        contract_source = (SCRIPTS / "score_contract.py").read_text(encoding="utf-8")
+        self.assertIn('zombie_risk_state="not_applicable"', contract_source)
 
 
 if __name__ == "__main__":
