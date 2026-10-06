@@ -36,3 +36,32 @@ def test_rotation_coverage_prefers_market_return():
     m = load_module()
     assert m.weekly_return({"market_return_5d_pct": 3.0, "opportunity_return_5d_pct": -2.0}) == 3.0
     assert m.weekly_return({"opportunity_return_5d_pct": -2.0}) is None
+
+def test_rotation_coverage_audit_fails_closed_without_daily_inputs(tmp_path):
+    m = load_module()
+    payload = {
+        "generated_at": "2026-10-06T00:00:00Z",
+        "stocks": [
+            {
+                "ticker": "CHIP1",
+                "quote_type": "EQUITY",
+                "industry": "Semiconductors",
+                "opportunity_return_5d_pct": 3.0,
+            }
+        ],
+    }
+    index = tmp_path / "stocks-index.json"
+    out = tmp_path / "rotation_coverage_audit.json"
+    index.write_text(json.dumps(payload), encoding="utf-8")
+    original_index, original_out = m.INDEX, m.OUT
+    try:
+        m.INDEX, m.OUT = index, out
+        try:
+            m.main()
+        except SystemExit as exc:
+            assert "daily inputs absent" in str(exc)
+        else:
+            raise AssertionError("expected fail-closed audit")
+    finally:
+        m.INDEX, m.OUT = original_index, original_out
+

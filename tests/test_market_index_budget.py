@@ -55,17 +55,27 @@ def test_detail_only_thesis_copy_does_not_enter_startup_row():
     assert "thesis_summary" not in compact
 
 
-def test_compact_rotation_returns_are_derived_without_shipping_history():
+def test_compact_rotation_returns_use_observed_daily_scalars_without_shipping_history():
     m = load_builder()
     row = {
         "ticker": "TEST",
         "quote_type": "EQUITY",
         "price_history_1y": [{"close": float(x)} for x in range(100, 126)],
+        "market_return_5d_pct": 4.1667,
+        "market_return_20d_pct": 19.0476,
     }
     compact = m.index_row(row)
-    assert compact["market_return_5d_pct"] == round((125 / 120 - 1) * 100, 4)
-    assert compact["market_return_20d_pct"] == round((125 / 105 - 1) * 100, 4)
+    assert compact["market_return_5d_pct"] == 4.1667
+    assert compact["market_return_20d_pct"] == 19.0476
     assert "price_history_1y" not in compact
+
+    no_daily = m.index_row({
+        "ticker": "NODAILY",
+        "quote_type": "EQUITY",
+        "price_history_1y": [{"close": float(x)} for x in range(100, 126)],
+    })
+    assert "market_return_5d_pct" not in no_daily
+    assert "market_return_20d_pct" not in no_daily
 
 
 def test_published_index_is_inside_new_budget():
