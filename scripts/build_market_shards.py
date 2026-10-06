@@ -119,6 +119,8 @@ INDEX_KEYS = {
     "recovery_fundamental_score", "recovery_return_20d_pct", "recovery_return_60d_pct",
     # structural overlays used by ranking/portfolio UI
     "capital_allocation_intelligence_score", "capital_allocation_intelligence_label",
+    "zombie_risk_status", "zombie_risk_label", "zombie_risk_evidence_years",
+    "zombie_risk_weak_years", "zombie_risk_latest_interest_coverage",
     "moat_score", "moat_label", "sector_native_score", "sector_native_label",
     "value_trap_risk_score", "value_trap_label",
     # fund list
