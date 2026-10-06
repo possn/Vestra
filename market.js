@@ -230,8 +230,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const withReturn=funds.filter(f=>n(f.fund_return_1w_pct)!=null);
     const flowUsd=withFlow.length?withFlow.reduce((a,f)=>a+n(f.fund_flow_1w_usd),0):null;
     const etfReturn=withReturn.length?rotationMedian(withReturn.map(f=>n(f.fund_return_1w_pct)).filter(x=>x!=null)):null;
+    const flowWindows=withFlow.map(f=>n(f.fund_flow_observation_days)).filter(x=>x!=null&&x>0).sort((a,b)=>a-b);
+    const flowWindowMin=flowWindows.length?flowWindows[0]:null;
+    const flowWindowMax=flowWindows.length?flowWindows[flowWindows.length-1]:null;
     const consensus=weeklyEtfConsensus(expectedSign,etfReturn,flowUsd);
-    return {withFlow:withFlow.length,withReturn:withReturn.length,flowUsd,etfReturn,...consensus};
+    return {withFlow:withFlow.length,withReturn:withReturn.length,flowUsd,etfReturn,flowWindowMin,flowWindowMax,...consensus};
   }
   function compactFlowUsd(v){
     if(v==null)return 'baseline';
@@ -244,7 +247,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function rotationEtfText(r){
     const e=r?.etf;
     const state=e?.confirmed===true?'ETF confirma':e?.confirmed===false?'ETF diverge':'ETF sem confirmação';
-    if(e?.withFlow)return state+' · flow '+compactFlowUsd(e.flowUsd)+' · '+e.withFlow+' fundos';
+    const flowWindow=e?.flowWindowMin==null?'':e.flowWindowMin===e.flowWindowMax?' · janela '+Math.round(e.flowWindowMin)+'d':' · janela '+Math.round(e.flowWindowMin)+'–'+Math.round(e.flowWindowMax)+'d';
+    if(e?.withFlow)return state+' · flow '+compactFlowUsd(e.flowUsd)+' · '+e.withFlow+' fundos'+flowWindow;
     if(e?.withReturn)return state+' · retorno '+(e.etfReturn>=0?'+':'')+e.etfReturn.toFixed(1)+'% · flow a formar baseline';
     return 'ETF sem cobertura';
   }
