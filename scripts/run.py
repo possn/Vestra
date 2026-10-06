@@ -59,6 +59,7 @@ from universe import build_universe, ETF_UNIVERSE, STOCK_DISCOVERY_CATALOG, regi
 from gap_retrieval import enrich as enrich_gap_retrieval
 from quarterly_gap_retrieval import enrich as enrich_quarterly_gap_retrieval
 from derived_fundamentals import enrich as enrich_derived_fundamentals
+from zombie_risk import enrich as enrich_zombie_risk
 from capital_allocation_intelligence import assess as assess_capital_allocation
 from moat import assess as assess_moat
 from sector_native import assess as assess_sector_native
@@ -91,7 +92,7 @@ _fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
 _handler_stream.setFormatter(_fmt)
 _handler_console.setFormatter(_fmt)
 logging.basicConfig(level=logging.WARNING, handlers=[_handler_stream, _handler_console], force=True)
-for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "derived_fundamentals", "capital_risk", "confidence", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
+for _name in ("run", "universe", "fundamentals", "sec_enrich", "esef_enrich", "derived_fundamentals", "zombie_risk", "capital_risk", "confidence", "analyst", "insiders", "insider_prices", "congress", "score", "thesis", "metals", "fx", "fx_history", "history", "valuation_history", "thesis_history", "news"):
     logging.getLogger(_name).setLevel(logging.INFO)
 log = logging.getLogger("run")
 
@@ -300,6 +301,7 @@ def main():
     raw = enrich_gap_retrieval(raw, priority=portfolio_set, max_rows=max(20, int(os.getenv("FINSCANNER_GAP_REFRESH", "80"))))
     raw = enrich_quarterly_gap_retrieval(raw, priority=portfolio_set, max_rows=max(20, int(os.getenv("FINSCANNER_QUARTERLY_GAP_REFRESH", "80"))))
     raw = enrich_derived_fundamentals(raw)
+    raw = enrich_zombie_risk(raw)
     raw = enrich_capital_risk(raw, priority=portfolio_set)
     _stage_done("pre_score_enrichment", _stage)
 
@@ -440,6 +442,16 @@ def main():
         if insider.get("status") not in (None,"not_available","error"): row["data_sources"].append("SEC Form 4")
         if row.get("congress_trades"): row["data_sources"].append("U.S. House Clerk / STOCK Act")
         if rm is not None:
+            # Independent structural diagnostic: copied after scoring so it
+            # cannot alter Vestra Score, Conviction or the canonical Risk Gate.
+            row["zombie_risk_status"] = getattr(rm, "zombie_risk_status", None)
+            row["zombie_risk_label"] = getattr(rm, "zombie_risk_label", None)
+            row["zombie_risk_evidence_years"] = getattr(rm, "zombie_risk_evidence_years", 0)
+            row["zombie_risk_weak_years"] = getattr(rm, "zombie_risk_weak_years", 0)
+            row["zombie_risk_latest_interest_coverage"] = getattr(rm, "zombie_risk_latest_interest_coverage", None)
+            row["zombie_risk_reasons"] = list(getattr(rm, "zombie_risk_reasons", []) or [])
+            row["zombie_risk_model_version"] = getattr(rm, "zombie_risk_model_version", None)
+            row["annual_zombie_history"] = list(getattr(rm, "annual_zombie_history", []) or [])
             if getattr(rm, "capital_risk_checked", False):
                 row["data_sources"].append("SEC Capital Structure")
                 row["capital_structure_flags"] = getattr(rm, "capital_structure_flags", [])
