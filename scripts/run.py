@@ -51,6 +51,21 @@ from asset_types import is_equity_candidate
 from thesis import classify as classify_thesis, evolve as evolve_thesis
 import thesis_history as thesis_history_mod
 from universe import build_universe, ETF_UNIVERSE, STOCK_DISCOVERY_CATALOG, region_for_equity
+
+# ETF baskets used as Weekly Rotation confirmation evidence. These names need
+# observed AUM often enough to form a 5–14 day flow baseline, so they have a
+# dedicated fundamentals lane outside the broad discovery refresh budget.
+WEEKLY_ROTATION_ETF_PRIORITY = (
+    "SMH", "SOXX", "XSD",
+    "XBI", "IBB", "ARKG",
+    "COPX", "PICK",
+    "XLE", "XOP",
+    "ITA", "PPA", "XAR",
+    "IGV", "AIQ", "BOTZ", "CHAT", "WCLD",
+    "KBE", "KRE", "XLF",
+    "VNQ", "IYR", "XLRE",
+    "XLY", "VCR",
+)
 # v1.1 (auditoria): estes 6 módulos já existiam no repositório mas não eram
 # chamados por ninguém — construídos, nunca ligados. gap_retrieval e
 # quarterly_gap_retrieval dizem no seu próprio docstring quando devem correr
@@ -240,10 +255,12 @@ def main():
     all_tickers = sorted({t for tickers in universe.values() for t in tickers})
     portfolio_tickers = list(dict.fromkeys(universe.get("EXTRA", [])))
     portfolio_set = set(portfolio_tickers)
-    learned_tickers = [t for t in _load_learned_tickers() if t in portfolio_set]
+    rotation_etf_set = set(WEEKLY_ROTATION_ETF_PRIORITY)
+    rotation_etf_refresh = [t for t in WEEKLY_ROTATION_ETF_PRIORITY if t in all_tickers]
+    learned_tickers = [t for t in _load_learned_tickers() if t in portfolio_set and t not in rotation_etf_set]
     learned_set = set(learned_tickers)
-    portfolio_remainder = [t for t in portfolio_tickers if t not in learned_set]
-    remainder_tickers = [t for t in all_tickers if t not in portfolio_set]
+    portfolio_remainder = [t for t in portfolio_tickers if t not in learned_set and t not in rotation_etf_set]
+    remainder_tickers = [t for t in all_tickers if t not in portfolio_set and t not in rotation_etf_set]
     previous_rows = dict(previous_equities)
     previous_rows.update(previous_etfs)
 
@@ -265,10 +282,10 @@ def main():
         nonpriority_budget,
     )
     log.info(
-        "Total universe: %d tickers (%d learned always-refresh, portfolio fundamentals %d/%d, "
-        "non-priority fundamentals %d/%d)",
-        len(all_tickers), len(learned_tickers), len(portfolio_refresh), len(portfolio_remainder),
-        len(remainder_refresh), len(remainder_tickers),
+        "Total universe: %d tickers (%d rotation ETFs always-refresh, %d learned always-refresh, "
+        "portfolio fundamentals %d/%d, non-priority fundamentals %d/%d)",
+        len(all_tickers), len(rotation_etf_refresh), len(learned_tickers),
+        len(portfolio_refresh), len(portfolio_remainder), len(remainder_refresh), len(remainder_tickers),
     )
 
     if not all_tickers:
@@ -279,6 +296,7 @@ def main():
     # the only group that remains an unconditional fundamentals refresh.
     _stage = _stage_timer("fundamentals")
     raw_learned = fetch_many(learned_tickers, workers_override=1, retries=2, pause=0.10)
+    raw_rotation_etfs = fetch_many(rotation_etf_refresh, workers_override=2, retries=1, pause=0.05)
 
     # Persistent portfolio coverage and broad discovery are bounded rotations.
     # Portfolio gets one retry; broad discovery is single-pass so a Yahoo throttle
@@ -287,6 +305,7 @@ def main():
     raw_remainder = fetch_many(remainder_refresh, retries=0)
     raw_by_symbol = {r.ticker: r for r in raw_remainder}
     raw_by_symbol.update({r.ticker: r for r in raw_portfolio})
+    raw_by_symbol.update({r.ticker: r for r in raw_rotation_etfs})
     raw_by_symbol.update({r.ticker: r for r in raw_learned})
     raw = [raw_by_symbol[t] for t in all_tickers if t in raw_by_symbol]
     _stage_done("fundamentals", _stage)
