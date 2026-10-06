@@ -133,7 +133,7 @@ class FundWeeklyReturnTests(unittest.TestCase):
     def test_fresh_fund_aum_creates_today_flow_snapshot(self):
         history = {
             "SMH": {
-                "2026-09-29": {"assets": 10_000_000_000.0, "price": 600.0},
+                "2026-09-29": {"assets": 10_000_000_000.0, "price": 600.0, "aum_observed": True},
             }
         }
         rows = [{
