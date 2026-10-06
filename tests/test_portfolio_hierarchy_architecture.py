@@ -47,7 +47,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         ui=read('vestra-portfolio-ui.js')
         self.assertIn("{q:'Aderência desta carteira aos objetivos',kind:'target'", classifier)
         self.assertIn("monitor:{label:'Monitorizar'", ui)
-        self.assertIn("kinds:['target','history','risk','stress','inflation']", ui)
+        self.assertIn("kinds:['target','history','risk','zombie','stress','inflation']", ui)
         self.assertIn("{q:'Evolução da carteira',kind:'history'", classifier)
         self.assertIn("{q:'Como reage a parte analisável?',kind:'stress'", classifier)
         self.assertIn("{q:'Como reage a parte classificável à inflação?',kind:'inflation'", classifier)
@@ -62,7 +62,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
             "{q:'Como reage a parte classificável à inflação?',kind:'inflation'",
         ):
             self.assertIn(token, classifier)
-        self.assertIn("kinds:['target','history','risk','stress','inflation']", ui)
+        self.assertIn("kinds:['target','history','risk','zombie','stress','inflation']", ui)
         self.assertIn("evolução da carteira", ui)
         self.assertIn("como reage a parte analisável", ui)
         self.assertIn("como reage a parte classificável à inflação", ui)
@@ -73,7 +73,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         for token in (
             "['research','priority','reinforce','review']",
             "['swap','etfopt','scenario','rebalance','overlap','map','plan']",
-            "['target','history','risk','stress','inflation']",
+            "['target','history','risk','zombie','stress','inflation']",
             'ux454-swap-head','ux454-overlap-head','ux455-swap-summary','ux455-overlap-note',
             "rebalance:'Redistribuir capital'","plan:'Plano multi-movimento'",
         ):
@@ -83,7 +83,7 @@ class PortfolioHierarchyArchitectureTests(unittest.TestCase):
         self.assertIn('function orderedCards(c)', s)
         self.assertNotIn('function makeLabel', s)
         self.assertNotIn("createElement('div');d.className='ux455-group-label'", s)
-        self.assertIn("version:'2.4'", s)
+        self.assertIn("version:'2.5'", s)
         self.assertNotIn('VestraPortfolioFocus', s)
 
     def test_swap_lab_preserves_v456_contract_under_hierarchy_observer(self):
