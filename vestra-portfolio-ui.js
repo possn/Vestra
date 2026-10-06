@@ -1,10 +1,10 @@
-/* Vestra Portfolio UI v3.3 — exploration focus mode separates analysis from base holdings. */
+/* Vestra Portfolio UI v3.4 — exploration focus mode separates analysis from base holdings. */
 (() => {
   'use strict';
 
   const GROUPS = {
     decide: {label:'Prioridades', title:'O que merece atenção', sub:'Research, reforços e posições que merecem atenção.', kinds:['research','priority','reinforce','review']},
-    monitor:{label:'Monitorizar', title:'Como está a carteira', sub:'Saúde, objetivos, concentração e resistência da carteira.', kinds:['target','history','risk','stress','inflation']},
+    monitor:{label:'Monitorizar', title:'Como está a carteira', sub:'Saúde, objetivos, concentração e resistência da carteira.', kinds:['target','history','risk','zombie','stress','inflation']},
     optimize:{label:'Otimizar', title:'Onde posso melhorar', sub:'Compara, simula e só depois decide onde redistribuir.', kinds:['swap','etfopt','scenario','rebalance','overlap','map','plan']}
   };
   const t=v=>String(v??'').trim();
@@ -104,7 +104,7 @@
       let cue=el.querySelector(':scope > .vpu-card-cue');
       const rows=cardCount(el),kind=t(el.dataset.uxKind);
       if(kind==='overlap')el.dataset.vpuScanTitle='Concentração e overlap';else delete el.dataset.vpuScanTitle;
-      const labels={research:'Research pendente',priority:'Prioridade',reinforce:'Possível reforço',review:'Rever',target:'Objetivos',history:'Evolução',risk:'Risco',stress:'Stress test',inflation:'Inflação',swap:'Comparar alternativas',etfopt:'Comparar ETFs',scenario:'Simular impacto',rebalance:'Redistribuir capital',overlap:'Análise de apoio',map:'Mapa de decisões',plan:'Até 3 movimentos'};
+      const labels={research:'Research pendente',priority:'Prioridade',reinforce:'Possível reforço',review:'Rever',target:'Objetivos',history:'Evolução',risk:'Risco',zombie:'Zombie risk',stress:'Stress test',inflation:'Inflação',swap:'Comparar alternativas',etfopt:'Comparar ETFs',scenario:'Simular impacto',rebalance:'Redistribuir capital',overlap:'Análise de apoio',map:'Mapa de decisões',plan:'Até 3 movimentos'};
       if(!labels[kind]){cue?.remove();return;}
       if(!cue){cue=document.createElement('span');cue.className='vpu-card-cue';el.appendChild(cue);}
       const countable=['research','reinforce','review'].includes(kind);
@@ -195,6 +195,6 @@
     const guide=e.target.closest?.('[data-vpu-guide]'); if(guide){const c=root();if(!c)return;const target=optimizeTarget(c,guide.dataset.vpuGuide);if(!target)return;focusCard(c,target);syncOptimizeGuide(c,target);setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),30);return;}
   },true);
   function start(){style();try{const saved=localStorage.getItem('vestra.portfolio.analysisTab');if(GROUPS[saved])active=saved;}catch{}}
-  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.3'});
+  window.VestraPortfolioUI=Object.freeze({refresh:apply,version:'3.4'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
 })();
