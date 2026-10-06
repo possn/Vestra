@@ -1427,16 +1427,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return penalty;
   }
   function portfolioMoveEvidence(stock, conviction=null){
-    const conf=n(stock?.confidence_score), valuation=txt(stock?.valuation_signal), estimates=txt(stock?.estimate_signal), thesis=txt(stock?.thesis_direction), gate=txt(stock?.risk_gate);
+    const score=n(stock?.score), conf=n(stock?.confidence_score), valuation=txt(stock?.valuation_signal), estimates=txt(stock?.estimate_signal), thesis=txt(stock?.thesis_direction), gate=txt(stock?.risk_gate);
     const reliability=txt(stock?.score_reliability).toLowerCase(), coverage=n(stock?.data_coverage_pct), critical=n(stock?.critical_metric_coverage_pct);
     const conv=n(conviction);
     const actionableValuation=['undervalued','fair'].includes(valuation);
     const reliabilityReady=['robust','moderate_evidence'].includes(reliability);
     const evidenceReady=reliabilityReady&&coverage!=null&&coverage>=65&&critical!=null&&critical>=50;
-    const strict=conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation&&estimates!=='deteriorating'&&thesis!=='down';
+    const strict=score!=null&&conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation&&estimates!=='deteriorating'&&thesis!=='down';
     const reinforceEligible=strict&&conv!=null&&conv>=70;
-    const acceptable=(conf==null||conf>=45)&&reliability!=='insufficient_data'&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
+    const acceptable=score!=null&&(conf==null||conf>=45)&&reliability!=='insufficient_data'&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
     const warnings=[]; let penalty=0;
+    if(score==null){penalty+=12;warnings.push('Vestra Score indisponível');}
     if(conf==null){penalty+=7;warnings.push('confiança sem score');}
     else if(conf<60){penalty+=(60-conf)*.35+3;warnings.push(`confiança ${Math.round(conf)}`);}
     if(!reliability){penalty+=7;warnings.push('fiabilidade do Score não classificada');}
