@@ -43,6 +43,41 @@ class FundWeeklyReturnTests(unittest.TestCase):
         }
         self.assertIsNone(MOD.fund_weekly_return(row))
 
+    def test_carried_fund_aum_does_not_create_today_flow_snapshot(self):
+        history = {
+            "SMH": {
+                "2026-09-29": {"assets": 10_000_000_000.0, "price": 600.0},
+            }
+        }
+        rows = [{
+            "ticker": "SMH",
+            "quote_type": "ETF",
+            "fund_total_assets": 10_000_000_000.0,
+            "current_price": 630.0,
+            "pipeline_status": "catalog_carried_forward",
+        }]
+        updated = MOD.update_fund_aum_history(rows, "2026-10-06", history)
+        self.assertNotIn("2026-10-06", updated["SMH"])
+        metrics = MOD.fund_flow_metrics(rows[0], updated, "2026-10-06")
+        self.assertNotIn("fund_flow_1w_usd", metrics)
+
+    def test_fresh_fund_aum_creates_today_flow_snapshot(self):
+        history = {
+            "SMH": {
+                "2026-09-29": {"assets": 10_000_000_000.0, "price": 600.0},
+            }
+        }
+        rows = [{
+            "ticker": "SMH",
+            "quote_type": "ETF",
+            "fund_total_assets": 10_500_000_000.0,
+            "current_price": 630.0,
+        }]
+        updated = MOD.update_fund_aum_history(rows, "2026-10-06", history)
+        self.assertIn("2026-10-06", updated["SMH"])
+        metrics = MOD.fund_flow_metrics(rows[0], updated, "2026-10-06")
+        self.assertIn("fund_flow_1w_usd", metrics)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

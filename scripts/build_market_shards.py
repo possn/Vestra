@@ -264,6 +264,11 @@ def update_fund_aum_history(rows: list[dict], as_of: str, history: dict | None =
     for row in rows:
         if str(row.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND", "FUND"}:
             continue
+        if str(row.get("pipeline_status") or "").strip() in {"catalog_carried_forward", "catalog_only"}:
+            # Carried catalogue rows may combine an old observed AUM with a newly
+            # refreshed price. Treating that pair as today's AUM snapshot would
+            # manufacture a synthetic weekly flow, so fail closed.
+            continue
         ticker = str(row.get("ticker") or "").strip().upper()
         assets = _finite_positive(row.get("fund_total_assets"))
         price = _finite_positive(row.get("current_price"))
