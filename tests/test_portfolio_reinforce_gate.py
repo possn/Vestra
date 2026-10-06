@@ -17,7 +17,7 @@ class PortfolioReinforceGateTests(unittest.TestCase):
         self.assertIn("const actionableValuation=['undervalued','fair'].includes(valuation);", block)
         self.assertIn("const reliabilityReady=['robust','moderate_evidence'].includes(reliability);", block)
         self.assertIn("const evidenceReady=reliabilityReady&&coverage!=null&&coverage>=65&&critical!=null&&critical>=50;", block)
-        self.assertIn("const strict=conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation", block)
+        self.assertIn("const strict=score!=null&&conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation", block)
         self.assertIn("const reinforceEligible=strict&&conv!=null&&conv>=70;", block)
         self.assertIn("reinforceEligible", block)
 
