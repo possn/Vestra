@@ -41,6 +41,12 @@ class MarketRebuildWorkflowTests(unittest.TestCase):
         )
         self.assertIn(".github/triggers/market-data-rebuild.txt", source)
 
+    def test_fast_startup_rebuild_keeps_official_trigger_wired(self):
+        startup = (ROOT / ".github" / "workflows" / "rebuild-market-startup.yml").read_text(encoding="utf-8")
+        self.assertIn(".github/triggers/market-startup-rebuild.txt", startup)
+        self.assertIn("scripts/build_market_shards.py", startup)
+        self.assertIn("python rotation_coverage_audit.py", startup)
+
     def test_production_preflight_compiles_current_runtime_layers(self):
         source = WORKFLOW.read_text(encoding="utf-8")
         required = (
