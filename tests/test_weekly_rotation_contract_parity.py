@@ -69,19 +69,21 @@ class WeeklyRotationContractParityTests(unittest.TestCase):
         self.assertIn("elif etf_flow is not None and etf_flow != 0:", self.backend)
         self.assertIn("etf_confirmed = True", self.backend)
 
-    def test_rotation_return_window_is_five_observations_on_both_paths(self):
-        self.assertIn("closes[closes.length-6]", self.market)
-        self.assertIn("weekly = [(r, _weekly_return(r)) for r in members]", self.backend)
-        self.assertIn("closes[-6]", self.backend)
-
-    def test_backend_prefers_price_history_before_opportunity_fallback(self):
+    def test_rotation_uses_true_daily_scalar_without_weekly_history_fallback(self):
         weekly = self.backend.split("def _weekly_return(row: dict):", 1)[1].split("def _rotation_context", 1)[0]
-        history_return = 'return (closes[-1] / closes[-6] - 1.0) * 100.0'
-        fallback = 'return _n(row.get("opportunity_return_5d_pct"))'
-        self.assertIn("if len(closes) > 5:", weekly)
-        self.assertIn(history_return, weekly)
-        self.assertIn(fallback, weekly)
-        self.assertLess(weekly.index(history_return), weekly.index(fallback))
+        self.assertIn('return _n(row.get("market_return_5d_pct"))', weekly)
+        self.assertNotIn("price_history_1y", weekly)
+        self.assertNotIn("opportunity_return_5d_pct", weekly)
+        frontend = self.market.split("function weeklyRotationReturn(stock)", 1)[1].split("function rotationMedian", 1)[0]
+        self.assertIn("return n(stock?.market_return_5d_pct);", frontend)
+        self.assertNotIn("price_history_1y", frontend)
+        self.assertNotIn("opportunity_return_5d_pct", frontend)
+
+    def test_market_regime_uses_daily_scalar_windows(self):
+        period = self.backend.split("def _period_return(row: dict, periods: int):", 1)[1].split("def _market_regime_context", 1)[0]
+        self.assertIn('5: "market_return_5d_pct"', period)
+        self.assertIn('20: "market_return_20d_pct"', period)
+        self.assertNotIn("price_history_1y", period)
 
     def test_backend_recomputes_current_run_etf_flow_before_rotation_context(self):
         self.assertIn(
