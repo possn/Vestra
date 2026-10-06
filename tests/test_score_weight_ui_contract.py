@@ -79,6 +79,24 @@ class ScoreWeightContractTests(unittest.TestCase):
             self.assertIn(token, self.shadow, f"peer shadow weights drifted for {model}")
         self.assertIn("weights\": \"identical to the production specialist pack", self.shadow)
 
+    def test_forward_validation_is_read_only_with_respect_to_production_weights(self):
+        validator = (ROOT / "scripts" / "score_forward_validation.py").read_text(encoding="utf-8")
+
+        # Production scoring must not consume validation artifacts. Forward
+        # validation is diagnostic evidence only until the explicit readiness
+        # gate permits a separately reviewed candidate.
+        self.assertNotIn("score_validation_report", self.score)
+        self.assertNotIn("score_validation_history", self.score)
+        self.assertNotIn("score_v2_readiness", self.score)
+
+        # The validator may write its report/history, but must never rewrite or
+        # patch the production scoring module itself.
+        self.assertNotIn('write_text("scripts/score.py"', validator)
+        self.assertNotIn("open(SCORE", validator)
+        self.assertNotIn("score.py\", \"w", validator)
+        self.assertIn("production_weights_frozen", validator)
+        self.assertIn("required_qualified_horizons", validator)
+
     def test_dossier_explains_weights_as_base_weights(self):
         self.assertIn("Os pesos-base do modelo", self.market)
         self.assertIn("Quando falta um pilar, ele não vale zero nem aumenta o peso dos restantes", self.market)
