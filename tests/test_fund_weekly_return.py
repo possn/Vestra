@@ -79,6 +79,39 @@ class FundWeeklyReturnTests(unittest.TestCase):
         self.assertNotIn("2026-10-06", updated["SMH"])
         self.assertNotIn("fund_flow_1w_usd", MOD.fund_flow_metrics(rows[0], updated, "2026-10-06"))
 
+    def test_flow_ignores_legacy_untagged_history_points(self):
+        history = {
+            "SMH": {
+                "2026-09-29": {"assets": 10_000_000_000.0, "price": 600.0},
+                "2026-10-06": {"assets": 10_500_000_000.0, "price": 630.0, "aum_observed": True},
+            }
+        }
+        row = {
+            "ticker": "SMH",
+            "quote_type": "ETF",
+            "fund_total_assets": 10_500_000_000.0,
+            "current_price": 630.0,
+        }
+        metrics = MOD.fund_flow_metrics(row, history, "2026-10-06")
+        self.assertNotIn("fund_flow_1w_usd", metrics)
+
+    def test_flow_requires_observed_provenance_on_both_endpoints(self):
+        history = {
+            "SMH": {
+                "2026-09-29": {"assets": 10_000_000_000.0, "price": 600.0, "aum_observed": True},
+                "2026-10-06": {"assets": 10_500_000_000.0, "price": 630.0, "aum_observed": True},
+            }
+        }
+        row = {
+            "ticker": "SMH",
+            "quote_type": "ETF",
+            "fund_total_assets": 10_500_000_000.0,
+            "current_price": 630.0,
+        }
+        metrics = MOD.fund_flow_metrics(row, history, "2026-10-06")
+        self.assertIn("fund_flow_1w_usd", metrics)
+        self.assertEqual(metrics["fund_flow_observation_days"], 7)
+
     def test_carried_fund_keeps_explicitly_observed_same_day_snapshot(self):
         history = {
             "SMH": {
