@@ -17,10 +17,13 @@ class WeeklyRotationRelativeDestinationTests(unittest.TestCase):
     def test_startup_publishes_rotation_returns_independent_of_opportunity_eligibility(self):
         builder = (ROOT / "scripts" / "build_market_shards.py").read_text(encoding="utf-8")
         market = (ROOT / "market.js").read_text(encoding="utf-8")
-        self.assertIn('out["market_return_5d_pct"] = r5', builder)
-        self.assertIn('out["market_return_20d_pct"] = r20', builder)
-        self.assertIn("const marketReturn=n(stock?.market_return_5d_pct);", market)
-        self.assertIn("n(s.market_return_20d_pct)??n(s.opportunity_return_20d_pct)", market)
+        self.assertIn('r5 = _finite_number(row.get("market_return_5d_pct"))', builder)
+        self.assertIn('r20 = _finite_number(row.get("market_return_20d_pct"))', builder)
+        self.assertIn('out["market_return_5d_pct"] = round(r5, 4)', builder)
+        self.assertIn('out["market_return_20d_pct"] = round(r20, 4)', builder)
+        self.assertIn("return n(stock?.market_return_5d_pct);", market)
+        self.assertIn("r20:n(s.market_return_20d_pct)", market)
+        self.assertNotIn("opportunity_return_20d_pct)})).filter", market)
 
     def test_etf_consensus_is_fail_closed_on_directional_divergence(self):
         source = (ROOT / "market.js").read_text(encoding="utf-8")
