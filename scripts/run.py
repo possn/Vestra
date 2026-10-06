@@ -38,7 +38,7 @@ from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
 from insiders import annotate as annotate_insiders
-from insider_prices import fetch_many as fetch_insider_prices
+from insider_prices import fetch_many as fetch_insider_prices, fetch_daily_returns
 from congress import fetch_congress_for_universe
 from metals import build_metals_payload
 from metals_brief import build_metals_brief
@@ -343,6 +343,7 @@ def main():
     _stage = _stage_timer("price_history")
     price_history_tickers = sorted(set(all_tickers) | set(ETF_UNIVERSE.keys()))
     insider_price_map = fetch_insider_prices(price_history_tickers)
+    daily_return_map = fetch_daily_returns(price_history_tickers, workers=2)
     _stage_done("price_history", _stage)
     raw_by_ticker = {r.ticker: r for r in raw}
     today = datetime.date.today().isoformat()
@@ -633,6 +634,14 @@ def main():
 
     rows = assess_peer_drawdown(rows)
     rows = assess_recovery_confirmation(rows)
+
+    # Keep dossier history compact/weekly, but attach true daily-session return
+    # windows as scalars for rotation/regime consumers.
+    for row in rows:
+        ticker = str(row.get("ticker") or "").strip()
+        metrics = daily_return_map.get(ticker) or {}
+        if metrics:
+            row.update(metrics)
 
     payload = {
         "schema_version": 521,
