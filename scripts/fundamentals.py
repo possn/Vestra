@@ -86,6 +86,14 @@ class RawMetrics:
     total_debt: float | None = None
     ebit: float | None = None
     interest_expense: float | None = None
+    annual_zombie_history: list[dict] = field(default_factory=list)
+    zombie_risk_status: str | None = None
+    zombie_risk_label: str | None = None
+    zombie_risk_evidence_years: int = 0
+    zombie_risk_weak_years: int = 0
+    zombie_risk_latest_interest_coverage: float | None = None
+    zombie_risk_reasons: list[str] = field(default_factory=list)
+    zombie_risk_model_version: str | None = None
 
     # valuation
     trailing_pe: float | None = None
@@ -505,6 +513,64 @@ def fetch_one(ticker: str) -> RawMetrics:
                             break
             except Exception as e:
                 log.debug("%s: financials unavailable (%s)", ticker, e)
+
+            # Annual debt-service history for the independent Zombie Risk Engine.
+            # Only statement-observed values are retained; missing periods stay
+            # missing and are never converted to zero.
+            try:
+                fin = t.financials
+                cf = t.cashflow
+                bs = t.balance_sheet
+                if fin is not None and not fin.empty:
+                    cols = list(fin.columns)[:4]
+
+                    def annual_row(frame, labels, col):
+                        if frame is None or frame.empty:
+                            return None
+                        for label in labels:
+                            if label not in frame.index:
+                                continue
+                            try:
+                                if col in frame.columns:
+                                    return _as_float(frame.loc[label, col])
+                                target = str(getattr(col, "date", lambda: col)())
+                                for candidate in frame.columns:
+                                    if str(getattr(candidate, "date", lambda: candidate)()) == target:
+                                        return _as_float(frame.loc[label, candidate])
+                            except Exception:
+                                continue
+                        return None
+
+                    history = []
+                    for col in cols:
+                        ebit = annual_row(fin, ("EBIT", "Operating Income"), col)
+                        interest = annual_row(fin, ("Interest Expense", "Interest Expense Non Operating"), col)
+                        fcf = annual_row(cf, ("Free Cash Flow",), col)
+                        if fcf is None:
+                            ocf = annual_row(cf, ("Operating Cash Flow", "Total Cash From Operating Activities"), col)
+                            capex = annual_row(cf, ("Capital Expenditure", "Capital Expenditures"), col)
+                            if ocf is not None and capex is not None:
+                                fcf = ocf + capex if capex < 0 else ocf - capex
+                        debt = annual_row(bs, ("Total Debt",), col)
+                        cash = annual_row(bs, ("Cash Cash Equivalents And Short Term Investments", "Cash And Cash Equivalents"), col)
+                        item = {"date": str(getattr(col, "date", lambda: col)())}
+                        if ebit is not None:
+                            item["ebit"] = ebit
+                        if interest is not None:
+                            item["interest_expense"] = abs(interest)
+                            if abs(interest) > 0 and ebit is not None:
+                                item["interest_coverage"] = ebit / abs(interest)
+                        if fcf is not None:
+                            item["free_cash_flow"] = fcf
+                        if debt is not None:
+                            item["total_debt"] = debt
+                        if cash is not None:
+                            item["total_cash"] = cash
+                        if len(item) > 1:
+                            history.append(item)
+                    m.annual_zombie_history = history
+            except Exception as e:
+                log.debug("%s: annual zombie-risk history unavailable (%s)", ticker, e)
 
             # Balance-sheet anchors and capital-efficiency proxy. Keeping total
             # assets/equity for every company lets the scoring layer calculate
