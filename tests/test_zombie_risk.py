@@ -1,6 +1,6 @@
 import unittest
 
-from zombie_risk import classify_zombie_risk
+from scripts.zombie_risk import classify_zombie_risk
 
 
 def row(ebit, interest, fcf=10, debt=50, cash=20):
