@@ -24,7 +24,7 @@ class CompanyDossierRadarContractTests(unittest.TestCase):
         self.assertIn("value==null?50:value", radar)
         self.assertIn("return observed&&weight>0", radar)
         self.assertIn("if(rawYield==null||rawYield<=0) return null", radar)
-        self.assertIn("x.value==null?'N/A'", radar)
+        self.assertIn("axis.value==null?'N/A'", radar)
 
     def test_radar_css_is_responsive(self):
         css = (ROOT / "market.css").read_text(encoding="utf-8")
