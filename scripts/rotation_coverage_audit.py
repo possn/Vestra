@@ -72,14 +72,24 @@ def main():
             "breadth_pct": round(breadth, 2) if breadth is not None else None,
         })
 
+    daily_return_rows = sum(
+        1 for stock in stocks
+        if number(stock.get("market_return_5d_pct")) is not None
+        and str(stock.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND"}
+    )
     result = {
         "schema_version": 1,
         "source_generated_at": payload.get("generated_at"),
+        "daily_return_rows": daily_return_rows,
         "total_themes": len(rows),
         "ready_themes": sum(1 for row in rows if row["ready"]),
         "rows": rows,
     }
     OUT.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if daily_return_rows == 0:
+        raise SystemExit(
+            "weekly rotation daily inputs absent: run the canonical market rebuild before publishing startup payloads"
+        )
     print(f"weekly rotation coverage: {result['ready_themes']}/{result['total_themes']} themes ready")
     for row in rows:
         state = "ready" if row["ready"] else "pending"
