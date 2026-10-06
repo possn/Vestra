@@ -52,6 +52,33 @@ class PriceHistoryIdentityTests(unittest.TestCase):
         self.assertEqual(result["BTC.CC"][-1]["close"], 2.0)
         self.assertEqual(result["BITF"][-1]["close"], 2.0)
 
+    def test_compact_daily_returns_use_trading_session_windows(self):
+        closes = [100.0 + i for i in range(61)]
+        out = insider_prices._compact_daily_returns(closes)
+        self.assertAlmostEqual(out["market_return_5d_pct"], round((160.0 / 155.0 - 1.0) * 100.0, 4))
+        self.assertAlmostEqual(out["market_return_20d_pct"], round((160.0 / 140.0 - 1.0) * 100.0, 4))
+        self.assertAlmostEqual(out["market_return_60d_pct"], 60.0)
+
+    def test_daily_return_results_map_back_to_canonical_ticker(self):
+        original_batch = insider_prices._download_daily_return_batch
+        original_direct = insider_prices._download_direct_daily_returns
+        calls = []
+        try:
+            def fake_batch(batch):
+                calls.extend(batch)
+                return {symbol: {"market_return_5d_pct": 1.25} for symbol in batch}
+
+            insider_prices._download_daily_return_batch = fake_batch
+            insider_prices._download_direct_daily_returns = lambda ticker: {}
+            result = insider_prices.fetch_daily_returns(["BTC.CC", "BITF", "MSFT"], workers=1, batch_size=10)
+        finally:
+            insider_prices._download_daily_return_batch = original_batch
+            insider_prices._download_direct_daily_returns = original_direct
+
+        self.assertEqual(set(calls), {"BTC-USD", "KEEL", "MSFT"})
+        self.assertEqual(result["BTC.CC"]["market_return_5d_pct"], 1.25)
+        self.assertEqual(result["BITF"]["market_return_5d_pct"], 1.25)
+
     def test_direct_fallback_uses_retrieval_symbol_but_canonical_output_key(self):
         original_batch = insider_prices._download_batch
         original_direct = insider_prices._download_direct
