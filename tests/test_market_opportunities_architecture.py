@@ -379,7 +379,10 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn('const WEEKLY_ROTATION_THEMES=[', market)
         self.assertIn('function weeklyRotationThemeRows()', market)
         self.assertIn('function renderWeeklyRotation()', market)
-        self.assertIn('opportunity_return_5d_pct', market)
+        self.assertIn('market_return_5d_pct', market)
+        rotation = market.split('function weeklyRotationReturn(stock)', 1)[1].split('function rotationMedian', 1)[0]
+        self.assertNotIn('opportunity_return_5d_pct', rotation)
+        self.assertNotIn('price_history_1y', rotation)
         self.assertIn('WEEKLY ROTATION · 5D', market)
         self.assertIn('O ranking combina retorno 5d, breadth e retorno 20d.', market)
         self.assertIn('não representa subscrições/resgates diretamente observados', market)
