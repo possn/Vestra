@@ -81,9 +81,10 @@
   }
   function zombieRiskModel(){
     const rows=resolvedRows(),total=rows.reduce((sum,row)=>sum+row.value,0)||1;
-    const classified=rows.filter(row=>['clear','fragile','candidate','probable'].includes(t(row.stock?.zombie_risk_status).toLowerCase()));
+    const applicable=rows.filter(row=>t(row.stock?.zombie_risk_status).toLowerCase()!=='not_applicable');
+    const classified=applicable.filter(row=>['clear','fragile','candidate','probable'].includes(t(row.stock?.zombie_risk_status).toLowerCase()));
     const flagged=classified.filter(row=>['fragile','candidate','probable'].includes(t(row.stock?.zombie_risk_status).toLowerCase())).map(row=>({...row,status:t(row.stock.zombie_risk_status).toLowerCase(),weight:row.value/total*100})).sort((a,b)=>{const rank={probable:3,candidate:2,fragile:1};return (rank[b.status]||0)-(rank[a.status]||0)||b.weight-a.weight;});
-    return {rows,total,classified,flagged};
+    return {rows,total,applicable,classified,flagged};
   }
   function syncZombieRisk(c){
     const model=zombieRiskModel();
@@ -91,7 +92,7 @@
     if(!card){card=document.createElement('section');card.className='market-detail-card vpd-zombie-card';card.dataset.uxKind='zombie';const riskCard=c.querySelector('[data-ux-kind="risk"]');riskCard?.insertAdjacentElement('afterend',card)||c.appendChild(card);}
     const signature=JSON.stringify(model.flagged.map(row=>[row.stock?.ticker,row.status,row.weight.toFixed(4),row.stock?.zombie_risk_latest_interest_coverage,row.stock?.zombie_risk_weak_years,row.stock?.zombie_risk_evidence_years]).concat([[model.classified.length,model.rows.length]]));
     if(card.dataset.signature===signature)return;card.dataset.signature=signature;
-    const coverage=model.rows.length?Math.round(model.classified.length/model.rows.length*100):0;
+    const coverage=model.applicable.length?Math.round(model.classified.length/model.applicable.length*100):0;
     const severe=model.flagged.filter(row=>row.status==='probable'||row.status==='candidate');
     const title=severe.length?`${severe.length} ${severe.length===1?'posição exige':'posições exigem'} atenção`:'Sem zombies confirmados nos dados classificados';
     const items=model.flagged.slice(0,8).map(row=>{const s=row.stock||{},ic=n(s.zombie_risk_latest_interest_coverage),label=s.zombie_risk_label||({probable:'Zombie provável',candidate:'Candidato a zombie',fragile:'Fragilidade financeira'}[row.status]||row.status),evidence=n(s.zombie_risk_evidence_years),weak=n(s.zombie_risk_weak_years),detail=[ic==null?'ICR atual —':`ICR ${ic.toFixed(2)}×`,weak==null?'':`${Math.round(weak)} anos fracos`,evidence==null?'':`${Math.round(evidence)} anos observados`].filter(Boolean).join(' · ');return `<div class="vpd-zombie-row is-${esc(row.status)}"><div><small>${esc(label)}</small><strong>${esc(s.ticker||'—')}</strong><span>${esc(detail)}</span></div><b>${row.weight.toFixed(2)}%</b></div>`;}).join('');
