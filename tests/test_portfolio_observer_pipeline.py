@@ -53,7 +53,7 @@ class PortfolioObserverPipelineTests(unittest.TestCase):
         self.assertIn("window.VestraPortfolioUI=Object.freeze({refresh:apply",ui)
         self.assertIn("window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply",diagnostics)
         self.assertIn("window.VestraPortfolioDossierRouting={version:VERSION,tickerFrom,decorate,openTicker}",routing)
-        self.assertIn("version:'1.3'",swap)
+        self.assertIn("version:'1.2'",swap)
         self.assertIn("version:'3.4'",ui)
         self.assertIn("version:'1.3'",diagnostics)
         self.assertIn("const VERSION='1.5'",routing)
