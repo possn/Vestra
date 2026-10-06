@@ -1,4 +1,4 @@
-/* Vestra Portfolio Diagnostics v1.2 — diagnosis state, coverage semantics and measurable overlap. */
+/* Vestra Portfolio Diagnostics v1.3 — diagnosis state, coverage semantics and measurable overlap. */
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
@@ -79,6 +79,24 @@
     const uniq=new Map();for(const x of items){const k=`${x.type}|${x.title}`;if(!uniq.has(k)||uniq.get(k).impact<x.impact)uniq.set(k,x);}
     return {rows,total,allEtfs,etfs,items:[...uniq.values()].sort((a,b)=>b.impact-a.impact).slice(0,10)};
   }
+  function zombieRiskModel(){
+    const rows=resolvedRows(),total=rows.reduce((sum,row)=>sum+row.value,0)||1;
+    const classified=rows.filter(row=>['clear','fragile','candidate','probable'].includes(t(row.stock?.zombie_risk_status).toLowerCase()));
+    const flagged=classified.filter(row=>['fragile','candidate','probable'].includes(t(row.stock?.zombie_risk_status).toLowerCase())).map(row=>({...row,status:t(row.stock.zombie_risk_status).toLowerCase(),weight:row.value/total*100})).sort((a,b)=>{const rank={probable:3,candidate:2,fragile:1};return (rank[b.status]||0)-(rank[a.status]||0)||b.weight-a.weight;});
+    return {rows,total,classified,flagged};
+  }
+  function syncZombieRisk(c){
+    const model=zombieRiskModel();
+    let card=c.querySelector('[data-ux-kind="zombie"]');
+    if(!card){card=document.createElement('section');card.className='market-detail-card vpd-zombie-card';card.dataset.uxKind='zombie';const riskCard=c.querySelector('[data-ux-kind="risk"]');riskCard?.insertAdjacentElement('afterend',card)||c.appendChild(card);}
+    const signature=JSON.stringify(model.flagged.map(row=>[row.stock?.ticker,row.status,row.weight.toFixed(4),row.stock?.zombie_risk_latest_interest_coverage,row.stock?.zombie_risk_weak_years,row.stock?.zombie_risk_evidence_years]).concat([[model.classified.length,model.rows.length]]));
+    if(card.dataset.signature===signature)return;card.dataset.signature=signature;
+    const coverage=model.rows.length?Math.round(model.classified.length/model.rows.length*100):0;
+    const severe=model.flagged.filter(row=>row.status==='probable'||row.status==='candidate');
+    const title=severe.length?`${severe.length} ${severe.length===1?'posição exige':'posições exigem'} atenção`:'Sem zombies confirmados nos dados classificados';
+    const items=model.flagged.slice(0,8).map(row=>{const s=row.stock||{},ic=n(s.zombie_risk_latest_interest_coverage),label=s.zombie_risk_label||({probable:'Zombie provável',candidate:'Candidato a zombie',fragile:'Fragilidade financeira'}[row.status]||row.status),evidence=n(s.zombie_risk_evidence_years),weak=n(s.zombie_risk_weak_years),detail=[ic==null?'ICR atual —':`ICR ${ic.toFixed(2)}×`,weak==null?'':`${Math.round(weak)} anos fracos`,evidence==null?'':`${Math.round(evidence)} anos observados`].filter(Boolean).join(' · ');return `<div class="vpd-zombie-row is-${esc(row.status)}"><div><small>${esc(label)}</small><strong>${esc(s.ticker||'—')}</strong><span>${esc(detail)}</span></div><b>${row.weight.toFixed(2)}%</b></div>`;}).join('');
+    card.innerHTML=`<div class="vpd-zombie-head"><div><small>RISCO ESTRUTURAL · ZOMBIE</small><strong>${esc(title)}</strong><span>Persistência de cobertura de juros insuficiente; não altera automaticamente o Vestra Score.</span></div><b>${coverage}% coberto</b></div>${items?`<div class="vpd-zombie-list">${items}</div>`:'<p class="vpd-zombie-empty">A classificação fica em branco quando não há histórico anual suficiente. Bancos e seguradoras usam modelos próprios e não entram neste teste genérico.</p>'}`;
+  }
   function syncOverlap(c){
     const card=c.querySelector('[data-ux-kind="overlap"]');if(!card)return;const model=overlapModel();
     let host=card.querySelector('.vpd-overlap-results');if(!host){host=document.createElement('div');host.className='vpd-overlap-results';const anchor=card.querySelector('.ux455-overlap-note')||card.querySelector('.ux454-overlap-head');anchor?anchor.insertAdjacentElement('afterend',host):card.prepend(host);}
@@ -94,9 +112,9 @@
     }
   }
   function style(){if(document.getElementById('vestra-portfolio-diagnostics-style'))return;const link=document.createElement('link');link.id='vestra-portfolio-diagnostics-style';link.rel='stylesheet';link.href='portfolio-diagnostics.css?v=1.0';document.head.appendChild(link);}
-  function apply(){const c=root();if(!c)return;syncCoverage(c);syncDiagnosis(c);syncOverlap(c);}
+  function apply(){const c=root();if(!c)return;syncCoverage(c);syncDiagnosis(c);syncZombieRisk(c);syncOverlap(c);}
   document.addEventListener('click',e=>{const btn=e.target.closest?.('[data-vpu-detail]');if(!btn)return;const c=root();if(!c)return;const dc=decisionCenter(c);if(!dc)return;const open=!dc.hidden;c.dataset.vpdDiagnosis=open?'1':'0';requestAnimationFrame(()=>{syncDiagnosis(c);if(open)dc.scrollIntoView?.({behavior:'smooth',block:'start'});});},true);
   function start(){style();}
-  window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply,overlapModel,version:'1.2'});
+  window.VestraPortfolioDiagnostics=Object.freeze({refresh:apply,overlapModel,zombieRiskModel,version:'1.3'});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
