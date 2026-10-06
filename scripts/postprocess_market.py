@@ -210,7 +210,12 @@ def _rotation_context(rows, fund_history=None, as_of=""):
 
         etf_rows = [by_ticker.get(t) for t in etfs]
         etf_rows = [x for x in etf_rows if isinstance(x, dict)]
-        etf_metrics = [fund_flow_metrics(x, fund_history or {}, as_of) for x in etf_rows]
+        if fund_history is not None and as_of:
+            etf_metrics = [fund_flow_metrics(x, fund_history, as_of) for x in etf_rows]
+        else:
+            # Preserve isolated/unit callers that provide already-materialized
+            # ETF evidence. Production main() always supplies current-run history.
+            etf_metrics = etf_rows
         etf_returns = [_n(x.get("fund_return_1w_pct")) for x in etf_metrics]
         etf_returns = [x for x in etf_returns if x is not None]
         etf_flows = [_n(x.get("fund_flow_1w_usd")) for x in etf_metrics]
