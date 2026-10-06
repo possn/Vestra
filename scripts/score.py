@@ -41,11 +41,11 @@ class ScoredTicker:
 
     zombie: str
     interest_coverage: float | None
-    zombie_risk_state: str = "insufficient_data"
-    zombie_risk_years: int = 0
-    zombie_risk_reason: str | None = None
-    zombie_risk_support: list[str] | None = None
-    annual_zombie_history: list[dict] | None = None
+    zombie_risk_state: str
+    zombie_risk_years: int
+    zombie_risk_reason: str | None
+    zombie_risk_support: list[str] | None
+    annual_zombie_history: list[dict] | None
 
     # dimension scores
     profitability_pct: float | None  # retained for backward-compatible UI
