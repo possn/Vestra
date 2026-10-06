@@ -111,6 +111,21 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertEqual(row["fund_top10_weight_pct"], 20.0)
         self.assertNotIn("top_holdings", row)
 
+    def test_zombie_risk_diagnostics_survive_startup_index(self):
+        row = shards.index_row({
+            "ticker": "ZMB",
+            "zombie": "yes",
+            "zombie_risk_state": "probable",
+            "zombie_risk_years": 3,
+            "zombie_risk_reason": "EBIT não cobre juros há 3 exercícios consecutivos.",
+            "annual_zombie_history": [{"date": "2025-12-31", "ebit": 5, "interest_expense": 10}],
+        })
+        self.assertEqual(row["zombie"], "yes")
+        self.assertEqual(row["zombie_risk_state"], "probable")
+        self.assertEqual(row["zombie_risk_years"], 3)
+        self.assertIn("3 exercícios", row["zombie_risk_reason"])
+        self.assertNotIn("annual_zombie_history", row)
+
     def test_columnar_startup_budget_is_production_grade(self):
         self.assertEqual(shards.MAX_COLUMNAR_BYTES, 2_250_000)
         self.assertEqual(shards.MAX_COLUMNAR_INDEX_RATIO, 0.35)
