@@ -123,6 +123,20 @@ assert.strictEqual(r.autoEligible, true, 'robust replacement should be auto-elig
 assert(r.convictionGain >= 2);
 assert(r.convDelta > 0);
 
+r = evaluate({ mode: 'replace', ...base, destination: stock({ score: null }), destinationConv: 70 });
+assert.strictEqual(r.autoEligible, false, 'missing destination Score must block automatic action even if a caller injects Conviction');
+assert.strictEqual(r.evidence.strict, false, 'missing destination Score must never be strict evidence');
+assert.strictEqual(r.evidence.acceptable, false, 'missing destination Score must not be ranked as acceptable evidence');
+assert(r.warnings.includes('Vestra Score indisponível'));
+
+r = evaluate({ mode: 'replace', ...base, destination: stock({ confidence_score: null }) });
+assert.strictEqual(r.autoEligible, false, 'missing destination Confidence must block automatic action');
+assert(r.warnings.includes('confiança sem score'));
+
+r = evaluate({ mode: 'replace', ...base, destination: stock({ risk_gate: null }) });
+assert.strictEqual(r.autoEligible, false, 'missing destination Risk Gate must block automatic action');
+assert(r.warnings.includes('Risk Gate não classificado'));
+
 r = evaluate({ mode: 'replace', ...base, destination: stock({ score_reliability: 'limited_evidence' }) });
 assert.strictEqual(r.autoEligible, false, 'limited evidence must block automatic action');
 assert(r.warnings.some(w => w.includes('fiabilidade')));
