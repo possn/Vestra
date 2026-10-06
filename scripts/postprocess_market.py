@@ -18,6 +18,7 @@ import os
 import re
 import statistics
 
+from build_market_shards import fund_flow_metrics, load_fund_aum_history, update_fund_aum_history
 from opportunity_rank import assess as assess_opportunity
 
 BASE = os.path.dirname(__file__)
@@ -183,7 +184,7 @@ def _weekly_return(row: dict):
     return _n(row.get("opportunity_return_5d_pct"))
 
 
-def _rotation_context(rows):
+def _rotation_context(rows, fund_history=None, as_of=""):
     equities = [r for r in rows if isinstance(r, dict) and not _is_fund(r)]
     by_ticker = {str(r.get("ticker") or "").upper(): r for r in rows if isinstance(r, dict)}
     contexts = {}
@@ -209,9 +210,10 @@ def _rotation_context(rows):
 
         etf_rows = [by_ticker.get(t) for t in etfs]
         etf_rows = [x for x in etf_rows if isinstance(x, dict)]
-        etf_returns = [_n(x.get("fund_return_1w_pct")) for x in etf_rows]
+        etf_metrics = [fund_flow_metrics(x, fund_history or {}, as_of) for x in etf_rows]
+        etf_returns = [_n(x.get("fund_return_1w_pct")) for x in etf_metrics]
         etf_returns = [x for x in etf_returns if x is not None]
-        etf_flows = [_n(x.get("fund_flow_1w_usd")) for x in etf_rows]
+        etf_flows = [_n(x.get("fund_flow_1w_usd")) for x in etf_metrics]
         etf_flows = [x for x in etf_flows if x is not None]
         etf_return = statistics.median(etf_returns) if etf_returns else None
         etf_flow = sum(etf_flows) if etf_flows else None
@@ -340,7 +342,9 @@ def main() -> None:
     rows = payload.get("stocks") or []
     refreshed = 0
     sanitized = 0
-    rotation_contexts = _rotation_context(rows)
+    as_of = str(payload.get("generated_at") or "")[:10]
+    fund_history = update_fund_aum_history(rows, as_of, load_fund_aum_history())
+    rotation_contexts = _rotation_context(rows, fund_history=fund_history, as_of=as_of)
     market_regime = _market_regime_context(rows)
 
     for row in rows:
