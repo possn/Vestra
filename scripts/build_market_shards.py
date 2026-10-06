@@ -153,6 +153,14 @@ def _finite_positive(value):
     return value if math.isfinite(value) and value > 0 else None
 
 
+def _finite_number(value):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) else None
+
+
 def _finite_score(value):
     try:
         value = float(value)
@@ -343,12 +351,12 @@ def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> d
     out["ticker"] = ticker
     out["dossier_shard"] = shard_for(ticker)
     if str(row.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND", "FUND", "CRYPTO"}:
-        r5 = compact_period_return(row, 5)
-        r20 = compact_period_return(row, 20)
+        r5 = _finite_number(row.get("market_return_5d_pct"))
+        r20 = _finite_number(row.get("market_return_20d_pct"))
         if r5 is not None:
-            out["market_return_5d_pct"] = r5
+            out["market_return_5d_pct"] = round(r5, 4)
         if r20 is not None:
-            out["market_return_20d_pct"] = r20
+            out["market_return_20d_pct"] = round(r20, 4)
 
     # Funds need concentration before dossier hydration, but the complete holdings
     # list remains in the lazy dossier. Keep only the top-10 aggregate in startup.

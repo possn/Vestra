@@ -175,3 +175,137 @@ def fetch_many(tickers: list[str], workers: int = 4, batch_size: int = 60) -> di
                 if done % 50 == 0 or done == len(missing):
                     log.info("price histories fallback %d/%d",done,len(missing))
     return out
+
+DAILY_RETURN_WINDOWS = (
+    (5, "market_return_5d_pct"),
+    (20, "market_return_20d_pct"),
+    (60, "market_return_60d_pct"),
+)
+
+
+def _compact_daily_returns(closes) -> dict:
+    values = []
+    for raw in closes or []:
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value) and value > 0:
+            values.append(value)
+    out = {}
+    for periods, key in DAILY_RETURN_WINDOWS:
+        if len(values) <= periods:
+            continue
+        base = values[-periods - 1]
+        if base <= 0:
+            continue
+        out[key] = round((values[-1] / base - 1.0) * 100.0, 4)
+    return out
+
+
+def _download_daily_return_batch(batch: list[str]) -> dict[str, dict]:
+    out = {t: {} for t in batch}
+    if not batch:
+        return out
+    try:
+        df = yf.download(
+            tickers=batch,
+            period="6mo",
+            interval="1d",
+            auto_adjust=False,
+            progress=False,
+            group_by="ticker",
+            threads=True,
+            timeout=30,
+        )
+        if df is None or df.empty:
+            return out
+        if len(batch) == 1:
+            t = batch[0]
+            if "Close" in df.columns:
+                out[t] = _compact_daily_returns(df["Close"].dropna().tolist())
+            return out
+
+        lvl0 = set(map(str, df.columns.get_level_values(0))) if getattr(df.columns, "nlevels", 1) > 1 else set()
+        lvl1 = set(map(str, df.columns.get_level_values(1))) if getattr(df.columns, "nlevels", 1) > 1 else set()
+        for t in batch:
+            series = None
+            try:
+                if t in lvl0:
+                    part = df[t]
+                    if "Close" in part.columns:
+                        series = part["Close"]
+                elif "Close" in lvl0 and t in lvl1:
+                    series = df["Close"][t]
+            except Exception:
+                series = None
+            if series is not None:
+                out[t] = _compact_daily_returns(series.dropna().tolist())
+    except Exception as exc:
+        log.warning("daily return batch failed (%d tickers): %s", len(batch), exc)
+    return out
+
+
+def _download_direct_daily_returns(ticker: str) -> dict:
+    try:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(ticker, safe='')}"
+        r = requests.get(
+            url,
+            params={"range":"6mo","interval":"1d","events":"history","includeAdjustedClose":"true"},
+            headers={"User-Agent":"Mozilla/5.0 Finscanner/0.98"},
+            timeout=8,
+        )
+        if r.status_code != 200:
+            return {}
+        data = r.json()
+        result = (((data or {}).get("chart") or {}).get("result") or [None])[0] or {}
+        q = (((result.get("indicators") or {}).get("quote") or [{}])[0] or {})
+        return _compact_daily_returns(q.get("close") or [])
+    except Exception as exc:
+        log.debug("direct daily return fallback failed for %s: %s", ticker, exc)
+        return {}
+
+
+def fetch_daily_returns(tickers: list[str], workers: int = 3, batch_size: int = 60) -> dict[str, dict]:
+    canonical = sorted(set(str(t).strip() for t in tickers if t and str(t).strip()))
+    out: dict[str, dict] = {t: {} for t in canonical}
+    if not canonical:
+        return out
+
+    retrieval_by_canonical = {t: _history_symbol(t) for t in canonical}
+    retrieval = sorted(set(retrieval_by_canonical.values()))
+    batches = [retrieval[i:i+batch_size] for i in range(0, len(retrieval), batch_size)]
+    retrieved: dict[str, dict] = {t: {} for t in retrieval}
+
+    with ThreadPoolExecutor(max_workers=max(1, min(workers, 4))) as pool:
+        futures = {pool.submit(_download_daily_return_batch, batch): batch for batch in batches}
+        done = 0
+        for fut in as_completed(futures):
+            batch = futures[fut]
+            try:
+                retrieved.update(fut.result())
+            except Exception as exc:
+                log.warning("daily return batch crashed: %s", exc)
+            done += len(batch)
+            log.info("daily returns batch phase %d/%d", min(done, len(retrieval)), len(retrieval))
+
+    for ticker, symbol in retrieval_by_canonical.items():
+        metrics = retrieved.get(symbol) or {}
+        if metrics:
+            out[ticker] = metrics
+
+    missing = [t for t in canonical if "market_return_5d_pct" not in out.get(t, {})]
+    if missing:
+        log.info("daily returns direct fallback for %d missing tickers", len(missing))
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            futures = {pool.submit(_download_direct_daily_returns, retrieval_by_canonical[t]): t for t in missing}
+            for fut in as_completed(futures):
+                ticker = futures[fut]
+                try:
+                    metrics = fut.result()
+                    if metrics:
+                        out[ticker] = metrics
+                except Exception as exc:
+                    log.debug("daily return fallback crashed for %s: %s", ticker, exc)
+    return out
+

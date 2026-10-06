@@ -28,6 +28,8 @@ class MarketRegimeContextTests(unittest.TestCase):
                 "ticker": ticker,
                 "quote_type": "ETF",
                 "price_history_1y": prices(r5=1.0, r20=5.0),
+                "market_return_5d_pct": 1.0,
+                "market_return_20d_pct": 5.0,
             })
         ctx = MOD._market_regime_context(rows)
         self.assertEqual(ctx["source"], "broad_benchmarks")
@@ -41,6 +43,8 @@ class MarketRegimeContextTests(unittest.TestCase):
                 "ticker": ticker,
                 "quote_type": "ETF",
                 "price_history_1y": prices(r5=-5.0, r20=-10.0 if i < 5 else 2.0),
+                "market_return_5d_pct": -5.0,
+                "market_return_20d_pct": -10.0 if i < 5 else 2.0,
             })
         ctx = MOD._market_regime_context(rows)
         self.assertEqual(ctx["regime"], "severe_adverse")
@@ -54,6 +58,8 @@ class MarketRegimeContextTests(unittest.TestCase):
                 "quote_type": "EQUITY",
                 "pipeline_status": "fresh",
                 "price_history_1y": prices(r5=-1.0, r20=-5.0 if i < 25 else 2.0),
+                "market_return_5d_pct": -1.0,
+                "market_return_20d_pct": -5.0 if i < 25 else 2.0,
             })
         ctx = MOD._market_regime_context(rows)
         self.assertEqual(ctx["source"], "equity_breadth")
@@ -71,7 +77,7 @@ class MarketRegimeContextTests(unittest.TestCase):
                 "ticker": f"CHIP{i}",
                 "quote_type": "EQUITY",
                 "industry": "Semiconductors",
-                "opportunity_return_5d_pct": 3.0 + i * 0.1,
+                "market_return_5d_pct": 3.0 + i * 0.1,
             }
             for i in range(4)
         ]

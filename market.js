@@ -250,13 +250,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function weeklyRotationReturn(stock){
-    const marketReturn=n(stock?.market_return_5d_pct);
-    if(marketReturn!=null) return marketReturn;
-    const published=n(stock?.opportunity_return_5d_pct);
-    if(published!=null) return published;
-    const hist=Array.isArray(stock?.price_history_1y)?stock.price_history_1y:[];
-    const closes=hist.map(x=>n(x?.close)).filter(x=>x!=null&&x>0);
-    return closes.length>5?(closes[closes.length-1]/closes[closes.length-6]-1)*100:null;
+    return n(stock?.market_return_5d_pct);
   }
   function rotationMedian(values){
     const xs=values.filter(v=>Number.isFinite(v)).sort((a,b)=>a-b);
@@ -278,7 +272,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const rows=[];
     for(const [label,re] of WEEKLY_ROTATION_THEMES){
       const members=stocks.filter(s=>re.test(`${txt(s.sector)} ${txt(s.industry)} ${txt(s.name)}`));
-      const weekly=members.map(s=>({stock:s,r5:weeklyRotationReturn(s),r20:n(s.market_return_20d_pct)??n(s.opportunity_return_20d_pct)})).filter(x=>x.r5!=null);
+      const weekly=members.map(s=>({stock:s,r5:weeklyRotationReturn(s),r20:n(s.market_return_20d_pct)})).filter(x=>x.r5!=null);
       if(weekly.length<4) continue;
       const med5=rotationMedian(weekly.map(x=>x.r5));
       const breadth=weekly.filter(x=>x.r5>0).length/weekly.length*100;

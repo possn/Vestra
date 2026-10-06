@@ -42,7 +42,7 @@ def median(values):
 
 
 def weekly_return(row):
-    return number(row.get("market_return_5d_pct")) if number(row.get("market_return_5d_pct")) is not None else number(row.get("opportunity_return_5d_pct"))
+    return number(row.get("market_return_5d_pct"))
 
 
 def main():
