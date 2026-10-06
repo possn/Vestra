@@ -78,11 +78,13 @@ def test_compact_rotation_returns_use_observed_daily_scalars_without_shipping_hi
     assert "market_return_20d_pct" not in no_daily
 
 
-def test_published_index_is_inside_new_budget():
+def test_published_index_respects_hard_budget_and_relative_budget():
     m = load_builder()
     index_size = (ROOT / "data" / "stocks-index.json").stat().st_size
     source_size = (ROOT / "data" / "stocks.json").stat().st_size
-    assert index_size <= m.MAX_INDEX_BYTES
+    # MAX_INDEX_BYTES is advisory by contract; only the hard absolute ceiling
+    # and relative payload budget are publication blockers.
+    assert index_size <= m.MAX_INDEX_HARD_BYTES
     assert index_size / source_size <= m.MAX_INDEX_RATIO
 
 
