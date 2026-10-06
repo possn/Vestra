@@ -62,7 +62,7 @@ INDEX_KEYS = {
     # identity / search / filters
     "ticker", "name", "sector", "industry", "region", "country", "currency",
     "quote_type", "market_cap", "current_price", "zombie",
-    "zombie_risk_state", "zombie_risk_years", "zombie_risk_reason",
+    "zombie_risk_state", "zombie_risk_years",
     # main score / evidence confidence
     "score", "data_confidence", "data_coverage_pct", "confidence_score",
     "confidence_label", "metric_confidence", "score_reliability", "risk_gate",
