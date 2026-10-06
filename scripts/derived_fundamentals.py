@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import logging
 
-from zombie_risk import classify_zombie_risk
+try:
+    from .zombie_risk import classify_zombie_risk
+except ImportError:  # scripts executed directly by run.py
+    from zombie_risk import classify_zombie_risk
 
 log = logging.getLogger("derived_fundamentals")
 
