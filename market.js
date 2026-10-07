@@ -1236,7 +1236,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     // Conviction answers "how strong is the investment thesis?", not "how much
     // evidence do we have?" or "is risk acceptable?". Confidence and Risk Gate
     // remain independent decision gates so the same weakness is not counted twice.
-    const score=n(s?.score), est=n(s?.estimate_momentum_score);
+    // Prefer score_raw because confidence.py may cap/suppress the published score.
+    // The public score remains the UI/evidence-gated score; Conviction owns
+    // attractiveness while evidence quality is enforced separately below.
+    const score=n(s?.score_raw??s?.score), est=n(s?.estimate_momentum_score);
     const valMap={undervalued:85,fair:65,overvalued:25,uncertain:40,insufficient:45};
     const valuationSignal=txt(s?.valuation_signal);
     const val=Object.prototype.hasOwnProperty.call(valMap,valuationSignal)?valMap[valuationSignal]:null;
