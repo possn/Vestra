@@ -32,6 +32,9 @@ const ctx = {
 };
 vm.createContext(ctx);
 vm.runInContext(extractFunction('cryptoBarometer'),ctx);
+vm.runInContext(extractFunction('cryptoRegime'),ctx);
+vm.runInContext(extractFunction('cryptoDispersion'),ctx);
+vm.runInContext(extractFunction('cryptoFundingLabel'),ctx);
 
 const neutral = ctx.cryptoBarometer([
   {symbol:'BTC',change_pct:0,fifty_two_week_high:100,price:80},
@@ -64,3 +67,33 @@ assert(!source.includes("portfolioConviction(row)"),'Crypto market rows must not
 assert(source.includes("Esta posição continua separada do motor fundamental, Conviction e Risk Gate de equities."),'Crypto dossier must explicitly preserve equity-engine separation');
 
 console.log('crypto market deterministic contract: ok');
+
+
+const regimeAlt = ctx.cryptoRegime([
+  {symbol:'BTC',change_pct:1},
+  {symbol:'ETH',change_pct:4},
+  {symbol:'SOL',change_pct:5},
+  {symbol:'XRP',change_pct:3}
+], {global:{btc_dominance_pct:52}});
+assert.strictEqual(regimeAlt.label,'Altcoins a liderar');
+assert.strictEqual(regimeAlt.dominance,52);
+
+const regimeBtc = ctx.cryptoRegime([
+  {symbol:'BTC',change_pct:5},
+  {symbol:'ETH',change_pct:1},
+  {symbol:'SOL',change_pct:0},
+  {symbol:'XRP',change_pct:1}
+], {});
+assert.strictEqual(regimeBtc.label,'Bitcoin a liderar');
+
+assert(ctx.cryptoDispersion([{change_pct:-2},{change_pct:0},{change_pct:2}]) > 0,'cross-sectional crypto dispersion must be measurable');
+assert.strictEqual(ctx.cryptoFundingLabel(null),'—','missing funding must stay unavailable, never neutral');
+assert.strictEqual(ctx.cryptoFundingLabel(0.06),'Longs muito carregados');
+assert.strictEqual(ctx.cryptoFundingLabel(-0.06),'Shorts muito carregados');
+
+const worker = fs.readFileSync('worker.js','utf8');
+assert(worker.includes('"/crypto-intelligence"'),'Worker must expose the Crypto intelligence endpoint');
+assert(worker.includes('https://api.alternative.me/fng/'),'Fear & Greed source must remain explicit');
+assert(worker.includes('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT'),'BTC funding must use a public derivatives endpoint');
+assert(worker.includes('https://api.coingecko.com/api/v3/global'),'global dominance/market-cap source must remain explicit');
+assert(worker.includes('source: globalData?.data ? "CoinGecko" : null'),'missing global source must stay null instead of fabricated');

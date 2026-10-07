@@ -87,6 +87,87 @@ function positiveNumber(...vals) {
   return null;
 }
 
+function finiteNumber(v) {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : null;
+}
+
+async function fetchCryptoIntelligence(ctx) {
+  const cache = caches.default;
+  const cacheUrl = "https://cache.internal/crypto-intelligence-v1";
+  const cached = await cache.match(cacheUrl);
+  if (cached) {
+    const data = await cached.json();
+    data._cached = true;
+    return data;
+  }
+
+  const [globalData, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist] = await Promise.all([
+    fetchJsonMaybe("https://api.coingecko.com/api/v3/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
+    fetchJsonMaybe("https://api.alternative.me/fng/?limit=2&format=json", { headers: { "Accept": "application/json" } }, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=ETHUSDT", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/openInterest?symbol=ETHUSDT", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=25", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=ETHUSDT&period=1h&limit=25", {}, 5000),
+  ]);
+
+  const g = globalData?.data || {};
+  const fngNow = Array.isArray(fearGreed?.data) ? fearGreed.data[0] : null;
+  const fngPrev = Array.isArray(fearGreed?.data) ? fearGreed.data[1] : null;
+
+  const oiChangePct = (hist) => {
+    if (!Array.isArray(hist) || hist.length < 2) return null;
+    const first = finiteNumber(hist[0]?.sumOpenInterestValue);
+    const last = finiteNumber(hist[hist.length - 1]?.sumOpenInterestValue);
+    return first && last ? (last / first - 1) * 100 : null;
+  };
+
+  const out = {
+    global: {
+      total_market_cap_usd: finiteNumber(g?.total_market_cap?.usd),
+      total_volume_24h_usd: finiteNumber(g?.total_volume?.usd),
+      market_cap_change_24h_pct: finiteNumber(g?.market_cap_change_percentage_24h_usd),
+      volume_change_24h_pct: finiteNumber(g?.volume_change_percentage_24h_usd),
+      btc_dominance_pct: finiteNumber(g?.market_cap_percentage?.btc),
+      eth_dominance_pct: finiteNumber(g?.market_cap_percentage?.eth),
+      active_cryptocurrencies: finiteNumber(g?.active_cryptocurrencies),
+      source: globalData?.data ? "CoinGecko" : null,
+    },
+    fear_greed: {
+      value: finiteNumber(fngNow?.value),
+      label: String(fngNow?.value_classification || ""),
+      previous_value: finiteNumber(fngPrev?.value),
+      timestamp: finiteNumber(fngNow?.timestamp),
+      source: fngNow ? "Alternative.me" : null,
+    },
+    derivatives: {
+      btc: {
+        funding_rate_pct: finiteNumber(btcPremium?.lastFundingRate) == null ? null : finiteNumber(btcPremium?.lastFundingRate) * 100,
+        mark_price: finiteNumber(btcPremium?.markPrice),
+        open_interest: finiteNumber(btcOi?.openInterest),
+        open_interest_change_24h_pct: oiChangePct(btcOiHist),
+      },
+      eth: {
+        funding_rate_pct: finiteNumber(ethPremium?.lastFundingRate) == null ? null : finiteNumber(ethPremium?.lastFundingRate) * 100,
+        mark_price: finiteNumber(ethPremium?.markPrice),
+        open_interest: finiteNumber(ethOi?.openInterest),
+        open_interest_change_24h_pct: oiChangePct(ethOiHist),
+      },
+      source: (btcPremium || ethPremium || btcOi || ethOi) ? "Binance Futures" : null,
+    },
+    updated: new Date().toISOString(),
+  };
+
+  try {
+    ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(out), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300" }
+    })));
+  } catch (_) {}
+  return out;
+}
+
 async function fetchYahooQuoteCore(ticker, ctx) {
   const cacheKey = `quote47:${ticker.toUpperCase()}`;
   const cache = caches.default;
@@ -632,12 +713,18 @@ export default {
           { headers: { ...cors, "Content-Type": "application/json" } });
       }
 
+      if (url.pathname === "/crypto-intelligence") {
+        const data = await fetchCryptoIntelligence(ctx);
+        return new Response(JSON.stringify(data),
+          { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "public, max-age=300" } });
+      }
+
       if (url.pathname === "/health") {
         return new Response(JSON.stringify({
           service: "Vestra Market Proxy",
           version: "4.7",
           build_id: String(env?.BUILD_ID || "unknown"),
-          capabilities: ["quote", "quotes", "market"],
+          capabilities: ["quote", "quotes", "market", "crypto-intelligence"],
           quote_cache_ttl_seconds: QUOTE_CACHE_TTL,
           market_cache_ttl_seconds: MARKET_CACHE_TTL,
           missing_numeric_policy: "null"
@@ -648,7 +735,7 @@ export default {
         return new Response(JSON.stringify({
           service: "Vestra Market Proxy v4.7",
           build_id: String(env?.BUILD_ID || "unknown"),
-          endpoints: ["/health", "/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT"]
+          endpoints: ["/health", "/quote?ticker=VWCE.DE", "/quotes?tickers=VWCE.DE,IWDA.L", "/market?ticker=MSFT", "/crypto-intelligence"]
         }), { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
       }
 

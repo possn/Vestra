@@ -24,6 +24,30 @@ test('iPhone/WebKit: Crypto tab renders barometer, live rows, search and dedicat
   await page.route(/\/quotes\?tickers=/, async route => {
     await route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify(fixture) });
   });
+  await page.route(/\/crypto-intelligence$/, async route => {
+    await route.fulfill({
+      status:200,
+      contentType:'application/json',
+      body:JSON.stringify({
+        global:{
+          total_market_cap_usd:4200000000000,
+          total_volume_24h_usd:210000000000,
+          market_cap_change_24h_pct:2.2,
+          volume_change_24h_pct:5.5,
+          btc_dominance_pct:54.2,
+          eth_dominance_pct:13.8,
+          active_cryptocurrencies:17000,
+          source:'CoinGecko'
+        },
+        fear_greed:{value:74,label:'Greed',previous_value:69,source:'Alternative.me'},
+        derivatives:{
+          btc:{funding_rate_pct:0.012,open_interest_change_24h_pct:4.5},
+          eth:{funding_rate_pct:-0.004,open_interest_change_24h_pct:-1.2},
+          source:'Binance Futures'
+        }
+      })
+    });
+  });
 
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
@@ -35,6 +59,12 @@ test('iPhone/WebKit: Crypto tab renders barometer, live rows, search and dedicat
   await expect(page.locator('.market-crypto-row[data-crypto-symbol="BTC"]')).toBeVisible();
   await expect(page.locator('.market-crypto-barometer')).toContainText('CRYPTO BARÓMETRO');
   await expect(page.locator('.market-crypto-barometer')).toContainText('Breadth 24h');
+  await expect(page.locator('.market-crypto-intelligence')).toContainText('BTC dominance');
+  await expect(page.locator('.market-crypto-intelligence')).toContainText('54.2%');
+  await expect(page.locator('.market-crypto-signal').first()).toContainText('Fear & Greed');
+  await expect(page.locator('.market-crypto-signal').first()).toContainText('74');
+  await expect(page.locator('.market-crypto-derivatives')).toContainText('BTC funding');
+  await expect(page.locator('.market-crypto-derivatives')).toContainText('BTC OI 24h');
 
   const search = page.locator('#marketSearch');
   await search.fill('Solana');
