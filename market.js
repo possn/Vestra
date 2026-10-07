@@ -643,6 +643,28 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         <div class="market-crypto-kpis"><div><small>Breadth 24h</small><strong>${bar.breadth==null?'—':bar.breadth.toFixed(0)+'%'}</strong></div><div><small>Mediana 24h</small><strong>${bar.median==null?'—':(bar.median>=0?'+':'')+bar.median.toFixed(2)+'%'}</strong></div><div><small>Distância máx. 52s</small><strong>${bar.drawdown==null?'—':bar.drawdown.toFixed(0)+'%'}</strong></div><div><small>Universo</small><strong>${rows.length}</strong></div></div>
         <p class="market-case-note">Leitura transparente: breadth, mediana diária, BTC/ETH e distância aos máximos de 52 semanas. Não é um score de investimento nem previsão de preço.</p>
       </section>
+
+      <section class="market-detail-card market-crypto-intelligence">
+        <div class="market-perspective-head"><div><small>REGIME DE MERCADO</small><h4>${esc(regime.label)}</h4></div><span class="market-data-age">${global.source?esc(global.source):'parcial'}</span></div>
+        <div class="market-crypto-kpis">
+          <div><small>BTC dominance</small><strong>${n(global.btc_dominance_pct)==null?'—':n(global.btc_dominance_pct).toFixed(1)+'%'}</strong></div>
+          <div><small>ETH dominance</small><strong>${n(global.eth_dominance_pct)==null?'—':n(global.eth_dominance_pct).toFixed(1)+'%'}</strong></div>
+          <div><small>Volume / market cap</small><strong>${volumeToCap==null?'—':volumeToCap.toFixed(1)+'%'}</strong></div>
+          <div><small>Dispersão 24h</small><strong>${dispersion==null?'—':dispersion.toFixed(2)+' pp'}</strong></div>
+        </div>
+        <div class="market-crypto-regime-line"><span>BTC 24h <strong>${regime.btc==null?'—':(regime.btc>=0?'+':'')+regime.btc.toFixed(2)+'%'}</strong></span><span>Mediana altcoins <strong>${regime.altMedian==null?'—':(regime.altMedian>=0?'+':'')+regime.altMedian.toFixed(2)+'%'}</strong></span><span>Relativo <strong>${regime.relative==null?'—':(regime.relative>=0?'+':'')+regime.relative.toFixed(2)+' pp'}</strong></span></div>
+      </section>
+      <div class="market-crypto-columns">
+        <section class="market-detail-card market-crypto-signal"><div class="market-perspective-head"><div><small>SENTIMENTO</small><h4>Fear & Greed</h4></div><span class="market-data-age">${fng.source?esc(fng.source):'indisponível'}</span></div><div class="market-crypto-signal-value"><strong>${n(fng.value)==null?'—':Math.round(n(fng.value))}</strong><span>${esc(fng.label||'Sem leitura')}</span></div>${n(fng.previous_value)!=null?`<p class="market-case-note">Anterior: ${Math.round(n(fng.previous_value))}. Fonte: Alternative.me.</p>`:'<p class="market-case-note">Sem histórico curto disponível.</p>'}</section>
+        <section class="market-detail-card market-crypto-signal"><div class="market-perspective-head"><div><small>DERIVATIVES</small><h4>Funding & open interest</h4></div><span class="market-data-age">${deriv.source?esc(deriv.source):'indisponível'}</span></div>
+          <div class="market-crypto-derivatives">
+            <div><span>BTC funding</span><strong>${n(deriv?.btc?.funding_rate_pct)==null?'—':n(deriv.btc.funding_rate_pct).toFixed(4)+'%'}</strong><small>${cryptoFundingLabel(deriv?.btc?.funding_rate_pct)}</small></div>
+            <div><span>BTC OI 24h</span><strong>${n(deriv?.btc?.open_interest_change_24h_pct)==null?'—':(n(deriv.btc.open_interest_change_24h_pct)>=0?'+':'')+n(deriv.btc.open_interest_change_24h_pct).toFixed(1)+'%'}</strong><small>Binance Futures</small></div>
+            <div><span>ETH funding</span><strong>${n(deriv?.eth?.funding_rate_pct)==null?'—':n(deriv.eth.funding_rate_pct).toFixed(4)+'%'}</strong><small>${cryptoFundingLabel(deriv?.eth?.funding_rate_pct)}</small></div>
+            <div><span>ETH OI 24h</span><strong>${n(deriv?.eth?.open_interest_change_24h_pct)==null?'—':(n(deriv.eth.open_interest_change_24h_pct)>=0?'+':'')+n(deriv.eth.open_interest_change_24h_pct).toFixed(1)+'%'}</strong><small>Binance Futures</small></div>
+          </div>
+        </section>
+      </div>
       <section class="market-section"><div class="market-section__head"><div><h3>${q?'Crypto · pesquisa':'Principais criptomoedas'}</h3><p>${q?`Resultados para ${esc(M.query)}.`:'Preço, variação 24h, posição no ciclo e exposição pessoal.'}</p></div><span class="market-data-age">USD · live</span></div><div class="market-crypto-list">${topCap.length?topCap.map(rowHtml).join(''):'<div class="market-empty">Sem criptomoedas encontradas.</div>'}</div></section>
       <div class="market-crypto-columns">
         <section class="market-detail-card"><div class="market-perspective-head"><div><small>MOMENTUM 24H</small><h4>Mais fortes</h4></div></div><div class="market-crypto-mini">${gainers.length?gainers.map(r=>`<span><strong>${esc(r.symbol)}</strong><em class="is-positive">+${n(r.change_pct).toFixed(2)}%</em></span>`).join(''):'<p class="market-case-note">Sem subidas no universo.</p>'}</div></section>
