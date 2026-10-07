@@ -85,6 +85,21 @@ class ScoreModelReliabilityTests(unittest.TestCase):
         self.assertEqual(low_out["score_reliability"], high_out["score_reliability"])
         self.assertEqual(low_out["confidence_score"], high_out["confidence_score"])
 
+    def test_confidence_preserves_pre_risk_raw_score(self):
+        row = {key: 1.0 for key in mod._CRITICAL_GENERAL}
+        row.update({
+            "ticker": "RAW",
+            "quote_type": "EQUITY",
+            "score_model": "general",
+            "score": 45.0,
+            "score_raw": 82.0,
+            "data_coverage_pct": 90,
+            "data_sources": ["Yahoo Finance"],
+        })
+        out = mod.assess(row)
+        self.assertEqual(out["score_raw"], 82.0)
+        self.assertEqual(out["score"], 45.0)
+
     def test_non_specialist_model_has_no_native_coverage_field(self):
         row = {key: 1.0 for key in mod._CRITICAL_GENERAL}
         row.update({
