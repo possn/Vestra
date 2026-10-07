@@ -474,7 +474,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         plan = s.split("function buildMultiMovePlan(){", 1)[1].split("\n  function renderMultiMovePlan", 1)[0]
         self.assertNotIn("thesisDown", plan)
         self.assertNotIn("estimatesDown", plan)
-        self.assertIn("const planSources=rows.filter(r=>!isFund(r.stock)", s)
+        self.assertIn("const planSources=rows.filter(r=>portfolioSourceEvidenceReady(r.stock));", s)
         self.assertIn("||b.sourceSignals.positionExcess-a.sourceSignals.positionExcess", s)
         self.assertIn("||b.sourceSignals.sectorExcess-a.sourceSignals.sectorExcess", s)
         self.assertIn("const queue=sources.slice(0,6)", s)
