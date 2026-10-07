@@ -588,8 +588,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(M.cryptoError&&!M.cryptoRows.length){
       return `<section class="market-section market-crypto"><div class="market-empty"><strong>Crypto indisponível.</strong><br><span>${esc(M.cryptoError)}</span></div></section>`;
     }
-    const rows=M.cryptoRows, bar=cryptoBarometer(rows), topCap=rows.slice(0,10);
-    const movers=rows.slice().sort((a,b)=>(n(b.change_pct)||-999)-(n(a.change_pct)||-999));
+    const rows=M.cryptoRows, bar=cryptoBarometer(rows);
+    const q=txt(M.query).toLowerCase();
+    const visibleRows=q?rows.filter(r=>`${r.symbol} ${r.name}`.toLowerCase().includes(q)):rows;
+    const topCap=visibleRows.slice(0,10);
+    const movers=visibleRows.slice().sort((a,b)=>(n(b.change_pct)||-999)-(n(a.change_pct)||-999));
     const gainers=movers.filter(r=>n(r.change_pct)>0).slice(0,3), losers=movers.slice().reverse().filter(r=>n(r.change_pct)<0).slice(0,3);
     const portfolioCrypto=rows.filter(r=>cryptoPortfolioValue(r.symbol)>0);
     const barClass=bar.score==null?'':bar.score>=57?'is-positive':bar.score<43?'is-risk':'is-warn';
@@ -604,7 +607,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         <div class="market-crypto-kpis"><div><small>Breadth 24h</small><strong>${bar.breadth==null?'—':bar.breadth.toFixed(0)+'%'}</strong></div><div><small>Mediana 24h</small><strong>${bar.median==null?'—':(bar.median>=0?'+':'')+bar.median.toFixed(2)+'%'}</strong></div><div><small>Distância máx. 52s</small><strong>${bar.drawdown==null?'—':bar.drawdown.toFixed(0)+'%'}</strong></div><div><small>Universo</small><strong>${rows.length}</strong></div></div>
         <p class="market-case-note">Leitura transparente: breadth, mediana diária, BTC/ETH e distância aos máximos de 52 semanas. Não é um score de investimento nem previsão de preço.</p>
       </section>
-      <section class="market-section"><div class="market-section__head"><div><h3>Principais criptomoedas</h3><p>Preço, variação 24h, posição no ciclo e exposição pessoal.</p></div><span class="market-data-age">USD · live</span></div><div class="market-crypto-list">${topCap.map(rowHtml).join('')}</div></section>
+      <section class="market-section"><div class="market-section__head"><div><h3>${q?'Crypto · pesquisa':'Principais criptomoedas'}</h3><p>${q?`Resultados para ${esc(M.query)}.`:'Preço, variação 24h, posição no ciclo e exposição pessoal.'}</p></div><span class="market-data-age">USD · live</span></div><div class="market-crypto-list">${topCap.length?topCap.map(rowHtml).join(''):'<div class="market-empty">Sem criptomoedas encontradas.</div>'}</div></section>
       <div class="market-crypto-columns">
         <section class="market-detail-card"><div class="market-perspective-head"><div><small>MOMENTUM 24H</small><h4>Mais fortes</h4></div></div><div class="market-crypto-mini">${gainers.length?gainers.map(r=>`<span><strong>${esc(r.symbol)}</strong><em class="is-positive">+${n(r.change_pct).toFixed(2)}%</em></span>`).join(''):'<p class="market-case-note">Sem subidas no universo.</p>'}</div></section>
         <section class="market-detail-card"><div class="market-perspective-head"><div><small>PRESSÃO 24H</small><h4>Mais fracas</h4></div></div><div class="market-crypto-mini">${losers.length?losers.map(r=>`<span><strong>${esc(r.symbol)}</strong><em class="is-risk">${n(r.change_pct).toFixed(2)}%</em></span>`).join(''):'<p class="market-case-note">Sem quedas no universo.</p>'}</div></section>
