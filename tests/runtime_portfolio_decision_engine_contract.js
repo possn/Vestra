@@ -83,6 +83,10 @@ assert.strictEqual(
 assert(!source.includes('||b.valuationRank-a.valuationRank'), 'portfolio ranking must not re-score valuation after Conviction');
 assert(!source.includes('if(!decision.autoEligible||scoreDelta<3)'), 'alternative selection must not add a second Score gate after canonical move eligibility');
 assert(!source.includes("||thesis==='down'||estimates==='deteriorating'||(conviction!=null&&conviction<50)"), 'Portfolio Action must not re-apply thesis/estimate signals after Conviction');
+const evidenceBlock = source.split('function portfolioMoveEvidence(stock, conviction=null){', 2)[1]?.split('\n  function evaluatePortfolioMove', 1)[0] || '';
+assert(!evidenceBlock.includes('valuation_signal'), 'Evidence gate must not re-apply valuation after Conviction');
+assert(!evidenceBlock.includes('estimate_signal'), 'Evidence gate must not re-apply estimate momentum after Conviction');
+assert(!evidenceBlock.includes('thesis_direction'), 'Evidence gate must not re-apply thesis direction after Conviction');
 assert(!source.includes('||Number(y.thesisDown)-Number(x.thesisDown)'), 'research review ordering must not reweight thesis direction after Conviction');
 assert(!source.includes('||Number(y.estimatesDown)-Number(x.estimatesDown)'), 'research review ordering must not reweight estimate direction after Conviction');
 const multiMoveBlock = source.split('function buildMultiMovePlan(){', 2)[1]?.split('\n  function renderMultiMovePlan', 1)[0] || '';
@@ -225,13 +229,15 @@ r = evaluate({
   mode: 'fresh',
   ...base,
   sourceStock: null,
-  destination: stock({ valuation_signal: 'uncertain' }),
+  destination: stock({ valuation_signal: 'uncertain', estimate_signal: 'deteriorating', thesis_direction: 'down' }),
   destinationConv: 75,
   indirect: 0.5,
   positionPct: 8,
   sectorPct: 20,
 });
-assert.strictEqual(r.autoEligible, false, 'fresh capital must not allocate when valuation is uncertain');
+assert.strictEqual(r.autoEligible, true, 'valuation, estimates and thesis must affect auto-allocation only through canonical Conviction, not a second evidence gate');
+assert.strictEqual(r.evidence.tier, 'preferred', 'strong evidence must stay preferred regardless of signals already owned by Conviction');
+assert(!r.warnings.some(w => /valuation|expectativas|tese/.test(w)), 'evidence warnings must not duplicate Conviction inputs');
 
 r = evaluate({ mode: 'fresh', ...base, sourceStock: null, indirect: 2.1, positionPct: 8, sectorPct: 20 });
 assert.strictEqual(r.autoEligible, false, 'fresh capital must respect reduce-overlap target');
