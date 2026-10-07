@@ -1530,6 +1530,15 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const regAfter=regNow+delta-(srcReg===reg?delta:0); penalty+=incrementalExcess(regNow,regAfter,maxRegion)*.45;
     return penalty;
   }
+  function riskBudgetCoverage(rows,total){
+    const base=Math.max(0,n(total)||0);
+    if(base<=0) return {ready:false,researchCoverage:0,factorCoverage:0};
+    const analysedValue=(rows||[]).reduce((sum,r)=>sum+(n(r?.value)||0),0);
+    const factorCoveredValue=(rows||[]).reduce((sum,r)=>sum+(stockRiskTags(r?.stock).length?(n(r?.value)||0):0),0);
+    const researchCoverage=analysedValue/base*100;
+    const factorCoverage=factorCoveredValue/base*100;
+    return {ready:researchCoverage>=35&&factorCoverage>=35,researchCoverage,factorCoverage};
+  }
   function portfolioMoveEvidence(stock, conviction=null){
     const score=n(stock?.score), conf=n(stock?.confidence_score), gate=txt(stock?.risk_gate);
     const reliability=txt(stock?.score_reliability).toLowerCase(), coverage=n(stock?.data_coverage_pct), critical=n(stock?.critical_metric_coverage_pct);
@@ -1556,11 +1565,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(tier==='research') penalty+=12;
     return {conf,reliability,coverage,critical,gate,conviction:conv,evidenceReady,strict,reinforceEligible,acceptable,tier,penalty,warnings};
   }
-  function evaluatePortfolioMove({mode='replace',sourceStock=null,destination,rows=[],amount=0,totalAfter=1,sourceConv=null,destinationConv=null,positionPct=0,sectorPct=0,indirect=0,sourceIndirect=0}={}){
+  function evaluatePortfolioMove({mode='replace',sourceStock=null,destination,rows=[],amount=0,totalAfter=1,riskBase=null,sourceConv=null,destinationConv=null,positionPct=0,sectorPct=0,indirect=0,sourceIndirect=0}={}){
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
     const evidence=portfolioMoveEvidence(destination,destinationConv);
     const riskPenalty=riskBudgetPenalty(destination,rows,amount,totalAfter,sourceStock);
-    const riskBudgetReady=stockRiskTags(destination).length>0;
+    const riskCoverage=riskBudgetCoverage(rows,riskBase??totalAfter);
+    const destinationRiskReady=stockRiskTags(destination).length>0;
+    const riskBudgetReady=destinationRiskReady&&riskCoverage.ready;
     const overlapDelta=indirect-sourceIndirect;
     const convictionGain=sourceConv!=null&&destinationConv!=null?destinationConv-sourceConv:null;
     const convDelta=convictionGain==null?null:convictionGain*(amount/(totalAfter||1));
@@ -1582,11 +1593,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(mode==='alternative'&&overlapDelta>=1.5) warnings.push('aumenta overlap');
     else if(mode!=='fresh'&&overlapDelta>=2) warnings.push('aumenta overlap');
     if(mode==='fresh'&&targets.overlap==='reduce'&&indirect>=2) warnings.push('overlap elevado');
-    if(!riskBudgetReady) warnings.push('Risk Budget sem classificação de fatores');
+    if(!destinationRiskReady) warnings.push('Risk Budget sem classificação de fatores');
+    if(!riskCoverage.ready) warnings.push('Risk Budget da carteira com cobertura insuficiente');
     if(riskPenalty>=5) warnings.push('pressiona orçamento de risco');
     if(positionPct>(mode==='replace'?maxPos+1:maxPos)) warnings.push('excede objetivo por posição');
     if(sectorPct>(mode==='replace'?maxSector+1:maxSector)) warnings.push('excede objetivo setorial');
-    return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty,overlapDelta,convictionGain,convDelta,sourceAutomatable,autoEligible,warnings};
+    return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskCoverage,riskPenalty,overlapDelta,convictionGain,convDelta,sourceAutomatable,autoEligible,warnings};
   }
 
   function renderRiskBudget(rows,total=0){
@@ -2276,7 +2288,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const strictPosCapacity=Math.max(0,afterTotal*maxPos/100-existingValue), strictSectorCapacity=Math.max(0,afterTotal*maxSector/100-sectorValue);
       const capacity=Math.min(strictPosCapacity,strictSectorCapacity,fresh); if(capacity<50) return null;
       const positionPct=(existingValue+Math.min(capacity,fresh))/afterTotal*100, sectorPct=(sectorValue+Math.min(capacity,fresh))/afterTotal*100;
-      const decision=evaluatePortfolioMove({mode:'fresh',destination:stock,rows,amount:Math.min(capacity,fresh),totalAfter:afterTotal,destinationConv:conv,positionPct,sectorPct,indirect});
+      const decision=evaluatePortfolioMove({mode:'fresh',destination:stock,rows,amount:Math.min(capacity,fresh),totalAfter:afterTotal,riskBase:currentBase,destinationConv:conv,positionPct,sectorPct,indirect});
       const {tier}=decision.evidence;
       // Fresh Capital must consume the canonical decision gate. Rebuilding only
       // part of the rule here can bypass risk-budget or target constraints.
