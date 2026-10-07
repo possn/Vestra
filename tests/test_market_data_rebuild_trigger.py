@@ -21,6 +21,11 @@ class MarketDataRebuildTriggerTests(unittest.TestCase):
         ):
             self.assertIn(token, marker)
 
+    def test_metric_confidence_retry_marker_is_explicit(self):
+        marker = (ROOT / ".github" / "triggers" / "market-data-rebuild.txt").read_text(encoding="utf-8").lower()
+        self.assertIn("retry full rebuild after #958 merge", marker)
+        self.assertIn("metric_confidence/risk gate separation", marker)
+
     def test_current_rebuild_marker_targets_latest_opportunity_context(self):
         marker = (ROOT / ".github" / "triggers" / "market-data-rebuild.txt").read_text(encoding="utf-8").lower()
         for token in (
