@@ -1536,7 +1536,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const evidenceReady=reliabilityReady&&coverage!=null&&coverage>=65&&critical!=null&&critical>=50;
     const strict=score!=null&&conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation&&estimates!=='deteriorating'&&thesis!=='down';
     const reinforceEligible=strict&&conv!=null&&conv>=70;
-    const acceptable=score!=null&&(conf==null||conf>=45)&&reliability!=='insufficient_data'&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
+    const acceptable=score!=null&&conf!=null&&conf>=45&&!!reliability&&reliability!=='insufficient_data'&&!!gate&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
     const warnings=[]; let penalty=0;
     if(score==null){penalty+=12;warnings.push('Vestra Score indisponível');}
     if(conf==null){penalty+=7;warnings.push('confiança sem score');}

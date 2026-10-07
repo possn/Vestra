@@ -132,11 +132,18 @@ assert(r.warnings.includes('Vestra Score indisponível'));
 
 r = evaluate({ mode: 'replace', ...base, destination: stock({ confidence_score: null }) });
 assert.strictEqual(r.autoEligible, false, 'missing destination Confidence must block automatic action');
+assert.strictEqual(r.evidence.tier, 'research', 'missing Confidence must not be promoted to acceptable manual evidence');
 assert(r.warnings.includes('confiança sem score'));
 
 r = evaluate({ mode: 'replace', ...base, destination: stock({ risk_gate: null }) });
 assert.strictEqual(r.autoEligible, false, 'missing destination Risk Gate must block automatic action');
+assert.strictEqual(r.evidence.tier, 'research', 'missing Risk Gate must not be promoted to acceptable manual evidence');
 assert(r.warnings.includes('Risk Gate não classificado'));
+
+r = evaluate({ mode: 'replace', ...base, destination: stock({ score_reliability: '' }) });
+assert.strictEqual(r.autoEligible, false, 'missing Score Reliability must block automatic action');
+assert.strictEqual(r.evidence.tier, 'research', 'missing Score Reliability must remain research-only');
+assert(r.warnings.includes('fiabilidade do Score não classificada'));
 
 r = evaluate({ mode: 'replace', ...base, destination: stock({ score_reliability: 'limited_evidence' }) });
 assert.strictEqual(r.autoEligible, false, 'limited evidence must block automatic action');
