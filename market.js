@@ -1291,14 +1291,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const posSevere=maxPos*1.5, sectorSevere=maxSector*1.4;
     const overlapWatch=targets?.overlap==='reduce'?2:Infinity, overlapSevere=targets?.overlap==='reduce'?4:Infinity;
     const flags=[];
-    if(positionPct>=posSevere) flags.push(`posição ${positionPct.toFixed(0)}% > objetivo ${maxPos}%`);
-    else if(positionPct>=maxPos) flags.push(`posição acima do objetivo ${positionPct.toFixed(0)}% > ${maxPos}%`);
-    if(sectorPct>=sectorSevere) flags.push(`setor concentrado ${sectorPct.toFixed(0)}% > objetivo ${maxSector}%`);
-    else if(sectorPct>=maxSector) flags.push(`setor acima do objetivo ${sectorPct.toFixed(0)}% > ${maxSector}%`);
+    if(positionPct>posSevere+.01) flags.push(`posição ${positionPct.toFixed(0)}% > objetivo ${maxPos}%`);
+    else if(positionPct>maxPos+.01) flags.push(`posição acima do objetivo ${positionPct.toFixed(0)}% > ${maxPos}%`);
+    if(sectorPct>sectorSevere+.01) flags.push(`setor concentrado ${sectorPct.toFixed(0)}% > objetivo ${maxSector}%`);
+    else if(sectorPct>maxSector+.01) flags.push(`setor acima do objetivo ${sectorPct.toFixed(0)}% > ${maxSector}%`);
     if(indirectPct>=overlapWatch) flags.push(`+${indirectPct.toFixed(1)}% indireto via ETFs`);
     let fit='balanced';
-    if(positionPct>=posSevere||sectorPct>=sectorSevere||indirectPct>=overlapSevere) fit='concentrated';
-    else if(positionPct>=maxPos||sectorPct>=maxSector||indirectPct>=overlapWatch) fit='watch';
+    if(positionPct>posSevere+.01||sectorPct>sectorSevere+.01||indirectPct>=overlapSevere) fit='concentrated';
+    else if(positionPct>maxPos+.01||sectorPct>maxSector+.01||indirectPct>=overlapWatch) fit='watch';
     return {positionPct,sectorPct,indirectPct,fit,flags,maxPos,maxSector};
   }
   function portfolioActionRiskContext(stock,profile,coverage,targets=loadPortfolioTargets()){
