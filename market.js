@@ -694,15 +694,19 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const conf=n(s.confidence_score), critical=n(s.critical_metric_coverage_pct);
     const native=n(s.model_native_coverage_pct);
     const reliability=txt(s.score_reliability);
-    const raw=n(s.score_raw), published=n(s.score);
+    const raw=n(s.score_raw), published=n(s.score), cap=n(s.score_cap);
     let tone='Evidência não classificada';
     if(reliability==='robust') tone='Evidência robusta';
     else if(reliability==='insufficient_data') tone='Evidência insuficiente';
     else if(reliability==='limited_evidence') tone='Evidência limitada';
     else if(reliability==='moderate_evidence') tone='Evidência moderada';
     else if(conf!=null&&conf<60) tone='Confiança baixa';
-    const moderation=raw!=null&&published!=null&&published<raw-0.1?` O score quantitativo bruto era ${Math.round(raw)}, mas a publicação foi moderada para ${Math.round(published)} pela qualidade/cobertura da evidência.`:'';
-    return `<strong>${esc(tone)}.</strong>${critical==null?'':` Métricas críticas ${Math.round(critical)}%.`}${native==null?'':` Cobertura nativa do modelo ${Math.round(native)}%.`} Fiabilidade do Score ${esc(scoreReliabilityLabel(reliability))}.${moderation}`;
+    const postRisk=raw!=null&&cap!=null?Math.min(raw,cap):raw;
+    const layers=[];
+    if(raw!=null&&postRisk!=null&&postRisk<raw-0.1) layers.push(` O score fundamental bruto era ${Math.round(raw)}; o Risk Gate limitou-o a ${Math.round(postRisk)}.`);
+    if(postRisk!=null&&published==null) layers.push(' A publicação do Score foi suprimida por evidência insuficiente.');
+    else if(postRisk!=null&&published!=null&&published<postRisk-0.1) layers.push(` A qualidade/cobertura da evidência moderou depois o Score para ${Math.round(published)}.`);
+    return `<strong>${esc(tone)}.</strong>${critical==null?'':` Métricas críticas ${Math.round(critical)}%.`}${native==null?'':` Cobertura nativa do modelo ${Math.round(native)}%.`} Fiabilidade do Score ${esc(scoreReliabilityLabel(reliability))}.${layers.join('')}`;
   }
 
   function scoreWeightExplanation(s){
