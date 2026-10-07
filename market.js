@@ -1528,15 +1528,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return penalty;
   }
   function portfolioMoveEvidence(stock, conviction=null){
-    const score=n(stock?.score), conf=n(stock?.confidence_score), valuation=txt(stock?.valuation_signal), estimates=txt(stock?.estimate_signal), thesis=txt(stock?.thesis_direction), gate=txt(stock?.risk_gate);
+    const score=n(stock?.score), conf=n(stock?.confidence_score), gate=txt(stock?.risk_gate);
     const reliability=txt(stock?.score_reliability).toLowerCase(), coverage=n(stock?.data_coverage_pct), critical=n(stock?.critical_metric_coverage_pct);
     const conv=n(conviction);
-    const actionableValuation=['undervalued','fair'].includes(valuation);
     const reliabilityReady=['robust','moderate_evidence'].includes(reliability);
     const evidenceReady=reliabilityReady&&coverage!=null&&coverage>=65&&critical!=null&&critical>=50;
-    const strict=score!=null&&conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation&&estimates!=='deteriorating'&&thesis!=='down';
+    // Evidence quality and structural risk are independent from Conviction.
+    // Valuation, estimate momentum and thesis direction already belong to
+    // Conviction and must not be counted again here.
+    const strict=score!=null&&conf!=null&&conf>=60&&evidenceReady&&gate==='clear';
     const reinforceEligible=strict&&conv!=null&&conv>=70;
-    const acceptable=score!=null&&conf!=null&&conf>=45&&!!reliability&&reliability!=='insufficient_data'&&!!gate&&!(valuation==='overvalued'&&estimates==='deteriorating')&&thesis!=='down'&&!['high','severe'].includes(gate);
+    const acceptable=score!=null&&conf!=null&&conf>=45&&!!reliability&&reliability!=='insufficient_data'&&!!gate&&!['high','severe'].includes(gate);
     const warnings=[]; let penalty=0;
     if(score==null){penalty+=12;warnings.push('Vestra Score indisponível');}
     if(conf==null){penalty+=7;warnings.push('confiança sem score');}
@@ -1545,17 +1547,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     else if(!reliabilityReady){penalty+=8;warnings.push(`fiabilidade ${reliability}`);}
     if(coverage==null||coverage<65){penalty+=6;warnings.push('cobertura fundamental insuficiente');}
     if(critical==null||critical<50){penalty+=6;warnings.push('cobertura crítica insuficiente');}
-    if(!valuation){penalty+=5;warnings.push('valuation sem sinal');}
-    else if(valuation==='overvalued'){penalty+=9;warnings.push('valuation exigente');}
-    else if(valuation==='uncertain'){penalty+=3;warnings.push('valuation incerto');}
-    else if(valuation==='insufficient'){penalty+=5;warnings.push('valuation insuficiente');}
-    if(estimates==='deteriorating'){penalty+=8;warnings.push('expectativas a piorar');}
-    if(thesis==='down'){penalty+=7;warnings.push('tese a deteriorar');}
     if(!gate){penalty+=6;warnings.push('Risk Gate não classificado');}
     else if(gate==='watch'){penalty+=6;warnings.push('Risk Gate watch');}
     const tier=strict?'preferred':acceptable?'acceptable':'research';
     if(tier==='research') penalty+=12;
-    return {conf,reliability,coverage,critical,valuation,estimates,thesis,gate,conviction:conv,evidenceReady,strict,reinforceEligible,acceptable,tier,penalty,warnings};
+    return {conf,reliability,coverage,critical,gate,conviction:conv,evidenceReady,strict,reinforceEligible,acceptable,tier,penalty,warnings};
   }
   function evaluatePortfolioMove({mode='replace',sourceStock=null,destination,rows=[],amount=0,totalAfter=1,sourceConv=null,destinationConv=null,positionPct=0,sectorPct=0,indirect=0,sourceIndirect=0}={}){
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
