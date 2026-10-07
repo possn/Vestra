@@ -74,23 +74,29 @@ vm.runInContext(extractFunction('portfolioSourceEvidenceReady'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
 
 
-let riskProfile = {
-  factors:[{name:'Growth',pct:55}],
-  currencies:[{name:'USD',pct:80},{name:'EUR',pct:20}],
-  regions:[{name:'Am. Norte',pct:75},{name:'Europa',pct:25}],
-};
+let riskProfileValues = { factor:550, usd:800, northAmerica:750, total:1000 };
 const riskContext = {
   n: context.n,
   loadPortfolioTargets: () => ({ maxFactor:45, maxCurrency:70, maxRegion:70 }),
-  portfolioRiskProfile: () => riskProfile,
+  portfolioRiskProfile: (_rows,total) => ({
+    factors:[{name:'Growth',value:riskProfileValues.factor,pct:riskProfileValues.factor/total*100}],
+    currencies:[
+      {name:'USD',value:riskProfileValues.usd,pct:riskProfileValues.usd/total*100},
+      {name:'EUR',value:riskProfileValues.total-riskProfileValues.usd,pct:(riskProfileValues.total-riskProfileValues.usd)/total*100},
+    ],
+    regions:[
+      {name:'Am. Norte',value:riskProfileValues.northAmerica,pct:riskProfileValues.northAmerica/total*100},
+      {name:'Europa',value:riskProfileValues.total-riskProfileValues.northAmerica,pct:(riskProfileValues.total-riskProfileValues.northAmerica)/total*100},
+    ],
+  }),
   stockRiskTags: stock => stock?.tags || [],
   stockCurrency: stock => stock?.currency || 'USD',
   stockRegion: stock => stock?.region || 'Am. Norte',
 };
 vm.createContext(riskContext);
 vm.runInContext(extractFunction('riskBudgetPenalty'), riskContext);
-const riskBudget = (destination, source=null, amount=100, totalAfter=1000) =>
-  riskContext.riskBudgetPenalty(destination, [], amount, totalAfter, source);
+const riskBudget = (destination, source=null, amount=100, totalAfter=1000, totalBefore=null) =>
+  riskContext.riskBudgetPenalty(destination, [], amount, totalAfter, source, totalBefore);
 
 assert.strictEqual(
   riskBudget({tags:['Growth'],currency:'USD',region:'Am. Norte'},{tags:['Growth'],currency:'USD',region:'Am. Norte'}),
@@ -102,18 +108,29 @@ assert.strictEqual(
   0,
   'move that reduces inherited concentration must not be penalised'
 );
-const worsened = riskBudget({tags:['Growth'],currency:'USD',region:'Am. Norte'},null);
-assert(Math.abs(worsened-(10*.65+10*.55+10*.45))<1e-9, 'fresh exposure must pay only the incremental excess above existing breaches');
+const worsened = riskBudget(
+  {tags:['Growth'],currency:'USD',region:'Am. Norte'},
+  {tags:[],currency:'EUR',region:'Europa'}
+);
+assert(Math.abs(worsened-(10*.65+10*.55+10*.45))<1e-9, 'replacement that worsens existing breaches must pay only the incremental excess');
 
-riskProfile = {
-  factors:[{name:'Growth',pct:40}],
-  currencies:[{name:'USD',pct:65}],
-  regions:[{name:'Am. Norte',pct:65}],
-};
-const crossedLimit = riskBudget({tags:['Growth'],currency:'USD',region:'Am. Norte'},null);
+riskProfileValues = { factor:440, usd:690, northAmerica:690, total:1000 };
+const crossedLimit = riskBudget({tags:['Growth'],currency:'USD',region:'Am. Norte'},null,100,1100,1000);
+const crossedExpected=((540/1100*100-45)*.65)+((790/1100*100-70)*.55)+((790/1100*100-70)*.45);
 assert(
-  Math.abs(crossedLimit-(5*.65+5*.55+5*.45))<1e-9,
+  Math.abs(crossedLimit-crossedExpected)<1e-9,
   'move from below the limit must pay only the newly-created excess above each Risk Budget limit'
+);
+
+riskProfileValues = { factor:550, usd:800, northAmerica:750, total:1000 };
+const freshIntoInheritedBreach = riskBudget({tags:['Growth'],currency:'USD',region:'Am. Norte'},null,100,1100,1000);
+const inheritedExpected=
+  (((650/1100*100-45)-(55-45))*.65)+
+  (((900/1100*100-70)-(80-70))*.55)+
+  (((850/1100*100-70)-(75-70))*.45);
+assert(
+  Math.abs(freshIntoInheritedBreach-inheritedExpected)<1e-9,
+  'fresh capital must compare after-trade excess with the true pre-trade portfolio, not a diluted totalAfter baseline'
 );
 
 const conviction = stock => context.portfolioConviction(stock);
