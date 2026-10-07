@@ -377,9 +377,9 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const baseEligible=decision.autoEligible", s)
         self.assertIn("const warnings=[...decision.evidence.warnings]", s)
         self.assertNotIn("if(!c.autoEligible||used.has", s)
-        self.assertIn("const baselineRisk=portfolioRiskProfile(rows,afterTotal)", s)
+        self.assertIn("const baselineRisk=portfolioRiskProfile(rows,currentBase)", s)
         self.assertIn("const riskAddSafe=(stock,amount)=>", s)
-        self.assertIn("current>limit ? next<=current+.01 : next<=limit+.01", s)
+        self.assertIn("Math.max(0,after-limit)<=Math.max(0,before-limit)+.01", s)
         self.assertIn("const allocationsByTicker=new Map(), sectorAdds=new Map()", s)
         self.assertIn("const baseEligible=decision.autoEligible", s)
         self.assertIn("const eligible=candidates.filter(c=>c.baseEligible).slice(0,5)", s)
@@ -437,7 +437,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
 
     def test_fresh_capital_risk_budget_uses_current_portfolio_baseline(self):
         s = read("market.js")
-        block = s.split("function buildFreshCapitalPlan(", 1)[1].split("\n  function renderFreshCapitalPlan", 1)[0]
+        block = s.split("function freshCapitalPlan(", 1)[1].split("\n  function renderFreshCapitalPlan", 1)[0]
         self.assertIn("const baselineRisk=portfolioRiskProfile(rows,currentBase)", block)
         self.assertIn("const after=(((row?.value)||0)+(riskAdds[group].get(name)||0)+amount)/afterTotal*100", block)
         self.assertIn("Math.max(0,after-limit)<=Math.max(0,before-limit)+.01", block)
