@@ -5,14 +5,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class MarketUiPolishContractTests(unittest.TestCase):
-    def test_automatic_portfolio_moves_require_actionable_valuation(self):
+    def test_automatic_portfolio_moves_do_not_double_gate_valuation(self):
         market = (ROOT / 'market.js').read_text(encoding='utf-8')
-        block = market.split('function portfolioMoveEvidence(stock, conviction=null)', 1)[1].split('function evaluatePortfolioMove', 1)[0]
-        self.assertIn("const actionableValuation=['undervalued','fair'].includes(valuation);", block)
-        self.assertIn("&&actionableValuation&&", block)
-        self.assertIn("if(!valuation){penalty+=5;warnings.push('valuation sem sinal');}", block)
-        self.assertIn("else if(valuation==='insufficient'){penalty+=5;warnings.push('valuation insuficiente');}", block)
-        self.assertNotIn("valuation!=='overvalued'", block.split("const strict=",1)[1].split(";",1)[0])
+        evidence = market.split('function portfolioMoveEvidence(stock, conviction=null)', 1)[1].split('function evaluatePortfolioMove', 1)[0]
+        conviction = market.split('function portfolioConviction(s)', 1)[1].split('function holdingSymbol', 1)[0]
+        self.assertIn("valuation_signal", conviction)
+        self.assertIn("valMap", conviction)
+        self.assertNotIn("valuation_signal", evidence)
+        self.assertNotIn("actionableValuation", evidence)
+        self.assertNotIn("valuation exigente", evidence)
+        self.assertNotIn("valuation insuficiente", evidence)
 
 
     def test_automatic_portfolio_moves_require_explicit_clear_risk_gate(self):
