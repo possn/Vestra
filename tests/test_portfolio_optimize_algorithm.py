@@ -408,6 +408,15 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const etfOptimizeRows=findEtfOptimizeAlternatives(ranked,heldTickers)", intelligence)
         self.assertIn("${etfOptimizeHtml}", intelligence)
 
+    def test_automatic_moves_require_factor_classification(self):
+        s = read("market.js")
+        block = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
+        self.assertIn("const riskBudgetReady=stockRiskTags(destination).length>0;", block)
+        self.assertIn("Risk Budget sem classificação de fatores", block)
+        self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5", block)
+        self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=5", block)
+        self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty", block)
+
     def test_risk_budget_penalises_only_incremental_excess(self):
         s = read("market.js")
         block = s.split("function riskBudgetPenalty(", 1)[1].split("\n  function portfolioMoveEvidence", 1)[0]
