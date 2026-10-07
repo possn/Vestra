@@ -22,7 +22,11 @@
     congressLive: [],
     congressLoaded: false,
     congressLoading: null,
-    congressError: ""
+    congressError: "",
+    cryptoRows: [],
+    cryptoLoaded: false,
+    cryptoLoading: null,
+    cryptoError: ""
   };
 
   const $m = id => document.getElementById(id);
@@ -519,6 +523,113 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<div class="market-detail-head"><div><div class="market-kicker">SCANNER VESTRA</div><h2>${esc(meta[1])}</h2><p>${esc(meta[2])}. Estratégias independentes do core score, com filtros de confiança e risco.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-chipbar" style="margin-bottom:12px">${chips}</div><section class="market-section"><div class="market-section__head"><div><h3>Candidatos</h3><p>Ordenados pelo score específico desta estratégia.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
   }
 
+  const CRYPTO_UNIVERSE=[
+    ['BTC-USD','BTC','Bitcoin'],['ETH-USD','ETH','Ethereum'],['BNB-USD','BNB','BNB'],
+    ['SOL-USD','SOL','Solana'],['XRP-USD','XRP','XRP'],['ADA-USD','ADA','Cardano'],
+    ['DOGE-USD','DOGE','Dogecoin'],['AVAX-USD','AVAX','Avalanche'],['LINK-USD','LINK','Chainlink'],
+    ['DOT-USD','DOT','Polkadot'],['BCH-USD','BCH','Bitcoin Cash'],['LTC-USD','LTC','Litecoin'],
+    ['XLM-USD','XLM','Stellar'],['SUI-USD','SUI','Sui']
+  ];
+  function cryptoDisplayPrice(row){
+    const p=n(row?.price); if(p==null)return '—';
+    if(p>=1000)return new Intl.NumberFormat('pt-PT',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(p);
+    if(p>=1)return new Intl.NumberFormat('pt-PT',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(p);
+    return new Intl.NumberFormat('pt-PT',{style:'currency',currency:'USD',maximumSignificantDigits:4}).format(p);
+  }
+  function cryptoPortfolioValue(symbol){
+    const key=txt(symbol).toUpperCase();
+    return portfolioAssets().filter(a=>txt(a?.class).toLowerCase().includes('cripto')&&assetTicker(a).replace(/-USD$/,'')===key).reduce((sum,a)=>sum+portfolioValue(a),0);
+  }
+  function cryptoBarometer(rows){
+    const valid=(rows||[]).filter(r=>n(r.change_pct)!=null);
+    if(!valid.length)return {score:null,label:'Sem leitura',breadth:null,median:null,drawdown:null};
+    const changes=valid.map(r=>n(r.change_pct)).sort((a,b)=>a-b);
+    const median=changes.length%2?changes[(changes.length-1)/2]:(changes[changes.length/2-1]+changes[changes.length/2])/2;
+    const breadth=valid.filter(r=>n(r.change_pct)>0).length/valid.length*100;
+    const drawdowns=valid.map(r=>{
+      const p=n(r.price), hi=n(r.fifty_two_week_high);
+      return p!=null&&hi>0?(p/hi-1)*100:null;
+    }).filter(v=>v!=null);
+    const drawdown=drawdowns.length?drawdowns.reduce((a,b)=>a+b,0)/drawdowns.length:null;
+    const btc=n(valid.find(r=>r.symbol==='BTC')?.change_pct)??0;
+    const eth=n(valid.find(r=>r.symbol==='ETH')?.change_pct)??0;
+    const score=Math.round(Math.max(0,Math.min(100,50+(breadth-50)*.45+median*4+btc*1.2+eth*.8+(drawdown==null?0:Math.max(-12,drawdown*.18)))));
+    const label=score>=70?'Apetite forte':score>=57?'Construtivo':score>=43?'Neutro':score>=30?'Defensivo':'Stress';
+    return {score,label,breadth,median,drawdown};
+  }
+  async function loadCryptoMarket(){
+    if(M.cryptoLoaded)return M.cryptoRows;
+    if(M.cryptoLoading)return M.cryptoLoading;
+    M.cryptoLoading=(async()=>{
+      try{
+        const base=workerBase(); if(!base) throw new Error('Worker não configurado');
+        const tickers=CRYPTO_UNIVERSE.map(x=>x[0]).join(',');
+        const resp=await fetch(`${base}/quotes?tickers=${encodeURIComponent(tickers)}`,{cache:'no-store'});
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const payload=await resp.json();
+        M.cryptoRows=CRYPTO_UNIVERSE.map(([ticker,symbol,name])=>({ticker,symbol,name,...(payload?.[ticker]||{})}))
+          .filter(r=>n(r.price)!=null)
+          .sort((a,b)=>(n(b.market_cap)||0)-(n(a.market_cap)||0));
+        M.cryptoError='';
+        M.cryptoLoaded=true;
+        return M.cryptoRows;
+      }catch(err){
+        M.cryptoError=err?.message||'Falha ao carregar crypto';
+        M.cryptoRows=[];
+        return [];
+      }finally{M.cryptoLoading=null;}
+    })();
+    return M.cryptoLoading;
+  }
+  function renderCrypto(){
+    if(!M.cryptoLoaded){
+      return `<section class="market-section market-crypto"><div class="market-section__head"><div><h3>Crypto</h3><p>Mercado, momentum e risco sem métricas empresariais.</p></div><span class="market-data-age">live</span></div><div class="market-loader"><span></span><div>A carregar mercado crypto…</div></div></section>`;
+    }
+    if(M.cryptoError&&!M.cryptoRows.length){
+      return `<section class="market-section market-crypto"><div class="market-empty"><strong>Crypto indisponível.</strong><br><span>${esc(M.cryptoError)}</span></div></section>`;
+    }
+    const rows=M.cryptoRows, bar=cryptoBarometer(rows);
+    const q=txt(M.query).toLowerCase();
+    const visibleRows=q?rows.filter(r=>`${r.symbol} ${r.name}`.toLowerCase().includes(q)):rows;
+    const topCap=visibleRows.slice(0,10);
+    const movers=visibleRows.slice().sort((a,b)=>(n(b.change_pct)||-999)-(n(a.change_pct)||-999));
+    const gainers=movers.filter(r=>n(r.change_pct)>0).slice(0,3), losers=movers.slice().reverse().filter(r=>n(r.change_pct)<0).slice(0,3);
+    const portfolioCrypto=rows.filter(r=>cryptoPortfolioValue(r.symbol)>0);
+    const barClass=bar.score==null?'':bar.score>=57?'is-positive':bar.score<43?'is-risk':'is-warn';
+    const rowHtml=r=>{
+      const ch=n(r.change_pct), hi=n(r.fifty_two_week_high), p=n(r.price), dd=hi>0&&p!=null?(p/hi-1)*100:null;
+      const pv=cryptoPortfolioValue(r.symbol);
+      return `<button type="button" class="market-crypto-row" data-crypto-symbol="${esc(r.symbol)}"><span class="market-crypto-id"><strong>${esc(r.symbol)}</strong><small>${esc(r.name)}</small></span><span class="market-crypto-price"><strong>${cryptoDisplayPrice(r)}</strong><small class="${ch>0?'is-positive':ch<0?'is-risk':''}">${ch==null?'—':(ch>=0?'+':'')+ch.toFixed(2)+'%'} · 24h</small></span><span class="market-crypto-risk"><strong>${dd==null?'—':dd.toFixed(0)+'%'}</strong><small>vs máx. 52s</small></span>${pv>0?`<span class="market-crypto-held"><strong>${euro(pv)}</strong><small>na carteira</small></span>`:''}</button>`;
+    };
+    return `<div class="market-crypto-shell">
+      <section class="market-detail-card market-crypto-barometer">
+        <div class="market-perspective-head"><div><small>CRYPTO BARÓMETRO</small><h4>${esc(bar.label)}</h4></div><span class="market-target-fit-score ${barClass}">${bar.score==null?'—':bar.score+'/100'}</span></div>
+        <div class="market-crypto-kpis"><div><small>Breadth 24h</small><strong>${bar.breadth==null?'—':bar.breadth.toFixed(0)+'%'}</strong></div><div><small>Mediana 24h</small><strong>${bar.median==null?'—':(bar.median>=0?'+':'')+bar.median.toFixed(2)+'%'}</strong></div><div><small>Distância máx. 52s</small><strong>${bar.drawdown==null?'—':bar.drawdown.toFixed(0)+'%'}</strong></div><div><small>Universo</small><strong>${rows.length}</strong></div></div>
+        <p class="market-case-note">Leitura transparente: breadth, mediana diária, BTC/ETH e distância aos máximos de 52 semanas. Não é um score de investimento nem previsão de preço.</p>
+      </section>
+      <section class="market-section"><div class="market-section__head"><div><h3>${q?'Crypto · pesquisa':'Principais criptomoedas'}</h3><p>${q?`Resultados para ${esc(M.query)}.`:'Preço, variação 24h, posição no ciclo e exposição pessoal.'}</p></div><span class="market-data-age">USD · live</span></div><div class="market-crypto-list">${topCap.length?topCap.map(rowHtml).join(''):'<div class="market-empty">Sem criptomoedas encontradas.</div>'}</div></section>
+      <div class="market-crypto-columns">
+        <section class="market-detail-card"><div class="market-perspective-head"><div><small>MOMENTUM 24H</small><h4>Mais fortes</h4></div></div><div class="market-crypto-mini">${gainers.length?gainers.map(r=>`<span><strong>${esc(r.symbol)}</strong><em class="is-positive">+${n(r.change_pct).toFixed(2)}%</em></span>`).join(''):'<p class="market-case-note">Sem subidas no universo.</p>'}</div></section>
+        <section class="market-detail-card"><div class="market-perspective-head"><div><small>PRESSÃO 24H</small><h4>Mais fracas</h4></div></div><div class="market-crypto-mini">${losers.length?losers.map(r=>`<span><strong>${esc(r.symbol)}</strong><em class="is-risk">${n(r.change_pct).toFixed(2)}%</em></span>`).join(''):'<p class="market-case-note">Sem quedas no universo.</p>'}</div></section>
+      </div>
+      ${portfolioCrypto.length?`<section class="market-section"><div class="market-section__head"><div><h3>Na tua carteira</h3><p>Cripto identificada no património, sem contaminar research de equities.</p></div><span class="market-data-age">${portfolioCrypto.length}</span></div><div class="market-crypto-list">${portfolioCrypto.map(rowHtml).join('')}</div></section>`:''}
+    </div>`;
+  }
+  function openCrypto(symbol){
+    const row=M.cryptoRows.find(r=>r.symbol===txt(symbol).toUpperCase()); if(!row)return;
+    const sh=$m('marketSheet'), content=$m('marketSheetContent'); if(!sh||!content)return;
+    const p=n(row.price), hi=n(row.fifty_two_week_high), lo=n(row.fifty_two_week_low), ch=n(row.change_pct), cap=n(row.market_cap);
+    const pos52=hi>lo&&p!=null?((p-lo)/(hi-lo))*100:null, drawdown=hi>0&&p!=null?(p/hi-1)*100:null, held=cryptoPortfolioValue(row.symbol);
+    sh.hidden=true; sh.setAttribute('aria-hidden','true'); sh.dataset.ticker=''; sh.dataset.tool='crypto'; sh.dataset.crypto=row.symbol;
+    content.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">CRYPTO DOSSIER</div><h2>${esc(row.symbol)} · ${esc(row.name)}</h2><p>Preço, momentum e risco de mercado. Sem métricas fundamentais de empresas.</p></div><button class="market-close" data-market-close>×</button></div>
+      <div class="market-verdict"><div class="market-verdict__score ${ch<0?'is-risk':ch<1?'is-watch':''}">${ch==null?'—':(ch>=0?'+':'')+ch.toFixed(1)+'%'}</div><div class="market-verdict__copy"><small>24 HORAS</small><strong>${cryptoDisplayPrice(row)}</strong><p>${drawdown==null?'Sem máximo de 52 semanas disponível.':`Está ${Math.abs(drawdown).toFixed(0)}% abaixo do máximo de 52 semanas.`}</p></div></div>
+      <div class="market-metrics"><div class="market-metric"><span>Market cap</span><strong>${cap==null?'—':compact(cap)}</strong></div><div class="market-metric"><span>Máx. 52s</span><strong>${hi==null?'—':money(hi,'USD')}</strong></div><div class="market-metric"><span>Mín. 52s</span><strong>${lo==null?'—':money(lo,'USD')}</strong></div><div class="market-metric"><span>Posição 52s</span><strong>${pos52==null?'—':pos52.toFixed(0)+'%'}</strong></div></div>
+      <div class="market-detail-card"><div class="market-perspective-head"><div><small>RISCO DE CICLO</small><h4>Onde está no intervalo anual?</h4></div></div><div class="market-crypto-range"><i style="width:${pos52==null?0:Math.max(0,Math.min(100,pos52))}%"></i></div><p class="market-case-note">0% = mínimo de 52 semanas; 100% = máximo. Mede posição no intervalo, não valor intrínseco.</p></div>
+      ${held>0?`<div class="market-detail-card"><div class="market-perspective-head"><div><small>EXPOSIÇÃO PESSOAL</small><h4>Na tua carteira</h4></div><span class="market-data-age">${euro(held)}</span></div><p class="market-case-note">Esta posição continua separada do motor fundamental, Conviction e Risk Gate de equities.</p></div>`:''}`;
+    document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
+    sh.hidden=false; sh.setAttribute('aria-hidden','false'); notifyMarketSheetChanged('crypto-open'); resetDossierViewport();
+  }
+
   function renderPrimary(){
     const root=$m('marketPrimary'); if(!root || !M.loaded) return;
     if(M.mode==='metals' && window.VestraMetals?.renderInto){
@@ -526,7 +637,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       return;
     }
     root.dataset.metalsActive='0';
-    root.innerHTML = M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover();
+    root.innerHTML = M.mode==='crypto'?renderCrypto():M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover();
+    if(M.mode==='crypto'&&!M.cryptoLoaded&&!M.cryptoLoading) loadCryptoMarket().then(()=>{ if(M.mode==='crypto') renderPrimary(); });
     if(M.mode==='discover'&&!M.query&&window.VestraMarketOpportunities?.refresh){
       // Direct handoff avoids rendering a disposable native shortlist and then
       // replacing it one animation frame later via the companion observer.
@@ -2534,6 +2646,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
   addMarketSurfaceListener('click', e=>{
     const mode=e.target.closest('[data-market-mode]'); if(mode){const nextMode=mode.dataset.marketMode; if(nextMode==='funds'&&M.mode!=='funds'){ M.fundTheme=''; M.fundLimit=100; } M.mode=nextMode; document.querySelectorAll('[data-market-mode]').forEach(x=>x.classList.toggle('is-active',x===mode)); renderPrimary(); if(M.mode==='smart') loadCongressLive().then(()=>renderPrimary());}
+    const cryptoRow=e.target.closest('[data-crypto-symbol]'); if(cryptoRow){e.preventDefault();e.stopPropagation();openCrypto(cryptoRow.dataset.cryptoSymbol);return;}
     const sec=e.target.closest('[data-market-sector]'); if(sec){M.sector=sec.dataset.marketSector;renderPrimary();}
     const fundTheme=e.target.closest('[data-market-fund-theme]'); if(fundTheme){M.fundTheme=fundTheme.dataset.marketFundTheme||'';M.fundLimit=100;renderPrimary();return;}
     const fundMore=e.target.closest('[data-market-fund-more]'); if(fundMore){M.fundLimit+=100;renderPrimary();return;}
