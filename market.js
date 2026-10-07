@@ -701,7 +701,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     else if(reliability==='limited_evidence') tone='Evidência limitada';
     else if(reliability==='moderate_evidence') tone='Evidência moderada';
     else if(conf!=null&&conf<60) tone='Confiança baixa';
-    const moderation=raw!=null&&published!=null&&published<raw-0.1?` O score quantitativo bruto era ${Math.round(raw)}, mas a publicação foi moderada para ${Math.round(published)} pela qualidade/cobertura da evidência.`:'';
+    const moderation=raw!=null&&published!=null&&published<raw-0.1?` O score após o Risk Gate era ${Math.round(raw)}, mas a publicação foi moderada para ${Math.round(published)} pela qualidade/cobertura da evidência.`:'';
     return `<strong>${esc(tone)}.</strong>${critical==null?'':` Métricas críticas ${Math.round(critical)}%.`}${native==null?'':` Cobertura nativa do modelo ${Math.round(native)}%.`} Fiabilidade do Score ${esc(scoreReliabilityLabel(reliability))}.${moderation}`;
   }
 
