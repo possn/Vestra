@@ -130,24 +130,24 @@ assert(!multiMoveBlock.includes('estimatesDown'), 'multi-move source selection m
 
 const coverageContext = {
   n: context.n,
-  stockRiskTags: stock => stock?.riskTags || [],
+  stockRiskClassification: stock => ({ coveragePct: stock?.riskCoveragePct ?? 0 }),
 };
 vm.createContext(coverageContext);
 vm.runInContext(extractFunction('riskBudgetCoverage'), coverageContext);
 let coverageState = coverageContext.riskBudgetCoverage([
-  { value: 20, stock:{riskTags:['Growth']} },
-  { value: 10, stock:{riskTags:[]} },
+  { value: 20, stock:{riskCoveragePct:100} },
+  { value: 10, stock:{riskCoveragePct:0} },
 ], 100);
 assert.strictEqual(coverageState.ready, false, 'Risk Budget must fail closed when portfolio research/factor coverage is below 35%');
 assert.strictEqual(coverageState.researchCoverage, 30);
 assert.strictEqual(coverageState.factorCoverage, 20);
 coverageState = coverageContext.riskBudgetCoverage([
-  { value: 30, stock:{riskTags:['Growth']} },
-  { value: 10, stock:{riskTags:[]} },
+  { value: 30, stock:{riskCoveragePct:100} },
+  { value: 10, stock:{riskCoveragePct:0} },
 ], 100);
 assert.strictEqual(coverageState.ready, false, 'research coverage alone is insufficient when factor coverage is below 35%');
 coverageState = coverageContext.riskBudgetCoverage([
-  { value: 40, stock:{riskTags:['Growth']} },
+  { value: 40, stock:{riskCoveragePct:100} },
 ], 100);
 assert.strictEqual(coverageState.ready, true, 'portfolio Risk Budget becomes ready once both research and factor coverage reach the existing 35% threshold');
 
