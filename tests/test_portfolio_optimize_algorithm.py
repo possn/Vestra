@@ -431,7 +431,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("Risk Budget sem classificação de fatores", block)
         self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&overlapEvidenceReady&&riskPenalty<5", block)
         self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&overlapEvidenceReady&&convictionGain>=5", block)
-        self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty", block)
+        self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,overlapEvidenceReady,riskPenalty", block)
 
     def test_risk_budget_penalises_only_incremental_excess(self):
         s = read("market.js")
