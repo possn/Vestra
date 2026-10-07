@@ -1301,6 +1301,28 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     else if(positionPct>=maxPos||sectorPct>=maxSector||indirectPct>=overlapWatch) fit='watch';
     return {positionPct,sectorPct,indirectPct,fit,flags,maxPos,maxSector};
   }
+  function portfolioActionRiskContext(stock,profile,coverage,targets=loadPortfolioTargets()){
+    const tags=stockRiskTags(stock), breaches=[], flags=[];
+    const factorLimit=n(targets?.maxFactor)||45, currencyLimit=n(targets?.maxCurrency)||70, regionLimit=n(targets?.maxRegion)||70;
+    const addBreach=(kind,name,pct,limit)=>{
+      if(pct>limit+.01){
+        breaches.push({kind,name,pct,limit});
+        flags.push(`Risk Budget ${kind} ${name} ${pct.toFixed(0)}% > ${limit}%`);
+      }
+    };
+    for(const tag of tags){
+      const pct=profile?.factors?.find(x=>x.name===tag)?.pct||0;
+      addBreach('factor',tag,pct,factorLimit);
+    }
+    const currency=stockCurrency(stock), currencyPct=profile?.currencies?.find(x=>x.name===currency)?.pct||0;
+    addBreach('moeda',currency,currencyPct,currencyLimit);
+    const region=stockRegion(stock), regionPct=profile?.regions?.find(x=>x.name===region)?.pct||0;
+    addBreach('região',region,regionPct,regionLimit);
+    const ready=tags.length>0&&coverage?.ready===true;
+    if(!tags.length) flags.unshift('Risk Budget sem classificação de fatores');
+    else if(coverage?.ready!==true) flags.unshift('Risk Budget da carteira com cobertura insuficiente');
+    return {riskBudgetReady:ready,riskBudgetBlocked:!ready||breaches.length>0,riskBudgetBreaches:breaches,riskBudgetFlags:flags};
+  }
   function portfolioFitSummary(ctx){
     const fit=ctx||{};
     const label=fit.fit==='concentrated'?'Concentrado':fit.fit==='watch'?'Atenção':'Equilibrado';
@@ -1438,6 +1460,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     // applies the user's current targets and overlap policy. Do not reintroduce
     // fixed thresholds here or the explanation can disagree with the decision.
     if(Array.isArray(ctx.flags)) reasons.push(...ctx.flags.slice(0,2));
+    if(Array.isArray(ctx.riskBudgetFlags)) reasons.push(...ctx.riskBudgetFlags.slice(0,1));
     // Thesis direction and estimate momentum already belong to Conviction.
     // Portfolio Action must not apply those signals a second time; Risk Gate
     // remains an independent safety layer and portfolio context remains separate.
@@ -1448,6 +1471,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
     if(structuralDeterioration||gate==='watch') return {key:'review',label:'Rever',tone:structuralDeterioration?'risk':'warn',reason:reasons.slice(0,2).join(' · ')||(gate==='watch'?'Risk Gate watch':'convicção baixa')};
     if(evidence.reinforceEligible) {
+      if(ctx.riskBudgetBlocked) return {key:'hold',label:'Manter',tone:'neutral',reason:`boa tese · não reforçar por ${ctx.riskBudgetFlags?.[0]||'Risk Budget'}`};
       if(ctx.fit==='concentrated'||ctx.fit==='watch') return {key:'hold',label:'Manter',tone:'neutral',reason:`boa tese · não reforçar por ${ctx.flags?.[0]||(ctx.fit==='watch'?'Portfolio Fit em atenção':'concentração')}`};
       return {key:'reinforce',label:'Reforçar',tone:'positive',reason:reasons.slice(0,2).join(' · ')||'convicção elevada'};
     }
@@ -1969,7 +1993,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
 
     const etfsForFit=ranked.filter(r=>isFund(r.stock)&&Array.isArray(r.stock.top_holdings)&&r.stock.top_holdings.length).map(r=>({...r,portfolioPct:r.value/portfolioBase*100}));
     const portfolioTargets=loadPortfolioTargets();
-    for(const r of ranked) r.portfolioFit=portfolioFit(r,sectorRows,portfolioBase,etfsForFit,portfolioTargets);
+    const actionRiskProfile=portfolioRiskProfile(ranked,portfolioBase);
+    const actionRiskCoverage=riskBudgetCoverage(ranked,portfolioBase);
+    for(const r of ranked){
+      const fit=portfolioFit(r,sectorRows,portfolioBase,etfsForFit,portfolioTargets);
+      r.portfolioFit={...fit,...portfolioActionRiskContext(r.stock,actionRiskProfile,actionRiskCoverage,portfolioTargets)};
+    }
 
     const etfOptimizeRows=findEtfOptimizeAlternatives(ranked,heldTickers);
     const etfOptimizeHtml=renderEtfOptimizeCard(etfOptimizeRows);

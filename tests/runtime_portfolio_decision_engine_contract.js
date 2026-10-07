@@ -73,6 +73,42 @@ vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('portfolioSourceEvidenceReady'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
 
+const portfolioActionBlock = source.split('function portfolioAction(stock, alternativesByTicker, context){',2)[1]?.split('\n  const PORTFOLIO_TARGETS_KEY',1)[0] || '';
+assert(portfolioActionBlock.includes('ctx.riskBudgetBlocked'), 'Portfolio Action must consume the Risk Budget block flag before Reforçar');
+assert(portfolioActionBlock.includes("key:'hold',label:'Manter'"), 'blocked reinforcement must resolve to Manter rather than Reforçar');
+assert(portfolioActionBlock.indexOf('ctx.riskBudgetBlocked') < portfolioActionBlock.indexOf("key:'reinforce'"), 'Risk Budget must be checked before the Reforçar return path');
+
+const actionRiskContext = {
+  n: context.n,
+  stockRiskTags: stock => stock?.riskTags || [],
+  stockCurrency: stock => stock?.currency || 'USD',
+  stockRegion: stock => stock?.region || 'Am. Norte',
+  loadPortfolioTargets: () => ({ maxFactor:45, maxCurrency:70, maxRegion:70 }),
+};
+vm.createContext(actionRiskContext);
+vm.runInContext(extractFunction('portfolioActionRiskContext'), actionRiskContext);
+let actionRisk = actionRiskContext.portfolioActionRiskContext(
+  {riskTags:['Growth'],currency:'USD',region:'Am. Norte'},
+  {
+    factors:[{name:'Growth',pct:55}],
+    currencies:[{name:'USD',pct:80}],
+    regions:[{name:'Am. Norte',pct:60}],
+  },
+  {ready:true},
+  {maxFactor:45,maxCurrency:70,maxRegion:70}
+);
+assert.strictEqual(actionRisk.riskBudgetBlocked,true,'current relevant Risk Budget breach must block generic reinforcement');
+assert(actionRisk.riskBudgetFlags.some(x=>x.includes('Growth')),'factor breach must be explicit');
+assert(actionRisk.riskBudgetFlags.some(x=>x.includes('USD')),'currency breach must be explicit');
+actionRisk = actionRiskContext.portfolioActionRiskContext(
+  {riskTags:['Growth'],currency:'USD',region:'Am. Norte'},
+  {factors:[{name:'Growth',pct:30}],currencies:[{name:'USD',pct:50}],regions:[{name:'Am. Norte',pct:50}]},
+  {ready:false,researchCoverage:30,factorCoverage:20},
+  {maxFactor:45,maxCurrency:70,maxRegion:70}
+);
+assert.strictEqual(actionRisk.riskBudgetBlocked,true,'incomplete Risk Budget coverage must fail closed for Portfolio Action reinforcement');
+assert(actionRisk.riskBudgetFlags[0].includes('cobertura insuficiente'));
+
 
 let riskProfileValues = { factor:550, usd:800, northAmerica:750, total:1000 };
 const riskContext = {
