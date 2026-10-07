@@ -202,7 +202,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("function evaluatePortfolioMove({mode='replace'", s)
         self.assertIn("autoEligible=sourceAutomatable&&evidence.strict&&riskBudgetReady&&overlapEvidenceReady&&convictionGain>=2&&convDelta>0&&overlapDelta<2", s)
         self.assertIn("positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5", s)
-        self.assertIn("autoEligible=evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5", s)
+        self.assertIn("autoEligible=evidence.reinforceEligible&&riskBudgetReady&&overlapEvidenceReady&&riskPenalty<5", s)
         self.assertIn("mode==='scenario'", s)
         self.assertIn("melhoria de convicção insuficiente", s)
         self.assertIn("aumenta overlap", s)
@@ -266,7 +266,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const maxPos=Math.max(3,Math.min(30,n(targets?.maxPosition)||10))", s)
         self.assertIn("const maxSector=Math.max(10,Math.min(60,n(targets?.maxSector)||25))", s)
         self.assertIn("const portfolioTargets=loadPortfolioTargets()", s)
-        self.assertIn("portfolioFit(r,sectorRows,portfolioBase,etfsForFit,portfolioTargets)", s)
+        self.assertIn("portfolioFit(r,sectorRows,portfolioBase,etfsForFit,overlapReady,portfolioTargets)", s)
         self.assertIn("const structuralDeterioration=gate==='high'||gate==='severe'||(conviction!=null&&conviction<50)", s)
         self.assertIn("if(structuralDeterioration||gate==='watch') return {key:'review'", s)
         action = s.split("function portfolioAction(", 1)[1].split("\n  const PORTFOLIO_TARGETS_KEY", 1)[0]
@@ -430,7 +430,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const riskBudgetReady=stockRiskTags(destination).length>0;", block)
         self.assertIn("Risk Budget sem classificação de fatores", block)
         self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&overlapEvidenceReady&&riskPenalty<5", block)
-        self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=5", block)
+        self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&overlapEvidenceReady&&convictionGain>=5", block)
         self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty", block)
 
     def test_risk_budget_penalises_only_incremental_excess(self):
