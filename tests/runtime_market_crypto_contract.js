@@ -35,6 +35,8 @@ vm.runInContext(extractFunction('cryptoBarometer'),ctx);
 vm.runInContext(extractFunction('cryptoRegime'),ctx);
 vm.runInContext(extractFunction('cryptoDispersion'),ctx);
 vm.runInContext(extractFunction('cryptoFundingLabel'),ctx);
+vm.runInContext(extractFunction('cryptoSigned'),ctx);
+vm.runInContext(extractFunction('cryptoRegimeChange'),ctx);
 
 const neutral = ctx.cryptoBarometer([
   {symbol:'BTC',change_pct:0,fifty_two_week_high:100,price:80},
@@ -97,3 +99,25 @@ assert(worker.includes('https://api.alternative.me/fng/'),'Fear & Greed source m
 assert(worker.includes('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT'),'BTC funding must use a public derivatives endpoint');
 assert(worker.includes('https://api.coingecko.com/api/v3/global'),'global dominance/market-cap source must remain explicit');
 assert(worker.includes('source: globalData?.data ? "CoinGecko" : null'),'missing global source must stay null instead of fabricated');
+
+
+const improving = ctx.cryptoRegimeChange(
+  {change_7d:12,change_30d:20},
+  {btc:{open_interest_change_7d_pct:8,funding_rate_pct:0.02,funding_avg_30d_pct:0.01}}
+);
+assert.strictEqual(improving.label,'Apetite e alavancagem a subir');
+assert(improving.parts.some(x=>x.includes('sentimento 7d +12 pts')));
+
+const deleveraging = ctx.cryptoRegimeChange(
+  {change_7d:-15,change_30d:-22},
+  {btc:{open_interest_change_7d_pct:-9,funding_rate_pct:-0.01,funding_avg_30d_pct:0.01}}
+);
+assert.strictEqual(deleveraging.label,'Desalavancagem defensiva');
+
+assert(worker.includes('limit=31&format=json'),'Fear & Greed history must request enough observations for 30-day context');
+assert(worker.includes('fundingRate?symbol=BTCUSDT&limit=100'),'BTC funding history must cover roughly 30 days');
+assert(worker.includes('period=1d&limit=30'),'open-interest history must use daily observations for the 30-day window');
+assert(worker.includes('history_30d: fngHistory'),'Worker must expose the Fear & Greed time series');
+assert(worker.includes('open_interest_change_7d_pct'),'Worker must expose 7-day open-interest change');
+assert(worker.includes('funding_avg_30d_pct'),'Worker must expose 30-day funding baseline');
+assert(!worker.includes('btc_dominance_history'),'Dominance history must not be fabricated without persistent storage or a verified source');
