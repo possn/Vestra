@@ -1,8 +1,8 @@
-/* Vestra Market runtime loader v2.2 — release bootstrap click capture after lazy core load. */
+/* Vestra Market runtime loader v2.2 — release bootstrap click capture after lazy core load + crypto generation. */
 (() => {
   'use strict';
 
-  const SRC = 'market.js?v=20260926rotation4';
+  const SRC = 'market.js?v=20261007crypto1';
   const TIMEOUT_MS = 12000;
   let portfolioHelpersPromise = null;
   let helpersPromise = null;
@@ -220,7 +220,7 @@
       );
 
       if (!existing) {
-        script.src = 'market.js?v=20260926rotation4';
+        script.src = SRC;
         script.async = true;
         script.dataset.vestraMarketCore = '1';
         document.head.appendChild(script);
@@ -263,6 +263,6 @@
     ensureEnhancements,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '2.2',
+    version: '2.3',
   });
 })();
