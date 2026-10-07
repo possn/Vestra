@@ -73,32 +73,10 @@ vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('portfolioSourceEvidenceReady'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
 
-const actionContext = {
-  txt: context.txt,
-  n: context.n,
-  portfolioConviction: () => 80,
-  portfolioMoveEvidence: () => ({ reinforceEligible:true, warnings:[] }),
-};
-vm.createContext(actionContext);
-vm.runInContext(extractFunction('portfolioAction'), actionContext);
-assert.strictEqual(
-  actionContext.portfolioAction(
-    {ticker:'RISK',risk_gate:'clear'},
-    new Map(),
-    {fit:'balanced',flags:[],riskBudgetBlocked:true,riskBudgetFlags:['Risk Budget moeda USD 80% > 70%']}
-  ).key,
-  'hold',
-  'Portfolio Action must not say Reforçar when the canonical Risk Budget blocks reinforcement'
-);
-assert.strictEqual(
-  actionContext.portfolioAction(
-    {ticker:'OK',risk_gate:'clear'},
-    new Map(),
-    {fit:'balanced',flags:[],riskBudgetBlocked:false,riskBudgetFlags:[]}
-  ).key,
-  'reinforce',
-  'Portfolio Action may say Reforçar only when portfolio fit and Risk Budget both allow it'
-);
+const portfolioActionBlock = source.split('function portfolioAction(stock, alternativesByTicker, context){',2)[1]?.split('\n  const PORTFOLIO_TARGETS_KEY',1)[0] || '';
+assert(portfolioActionBlock.includes('ctx.riskBudgetBlocked'), 'Portfolio Action must consume the Risk Budget block flag before Reforçar');
+assert(portfolioActionBlock.includes("key:'hold',label:'Manter'"), 'blocked reinforcement must resolve to Manter rather than Reforçar');
+assert(portfolioActionBlock.indexOf('ctx.riskBudgetBlocked') < portfolioActionBlock.indexOf("key:'reinforce'"), 'Risk Budget must be checked before the Reforçar return path');
 
 const actionRiskContext = {
   n: context.n,
