@@ -70,6 +70,7 @@ const context = {
 vm.createContext(context);
 vm.runInContext(extractFunction('portfolioConviction'), context);
 vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
+vm.runInContext(extractFunction('portfolioSourceEvidenceReady'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
 
 
@@ -238,6 +239,22 @@ assert(r.warnings.includes('melhoria de convicção insuficiente'));
 r = evaluate({ mode: 'replace', ...base, sourceStock: sourceStock({ kind: 'ETF' }) });
 assert.strictEqual(r.autoEligible, false, 'ETF source must not be auto-replaced by stock logic');
 assert(r.warnings.includes('origem apenas para análise manual'));
+
+r = evaluate({ mode: 'replace', ...base, sourceStock: sourceStock({ score_reliability: 'limited_evidence' }) });
+assert.strictEqual(r.autoEligible, false, 'source with limited evidence must remain manual-only');
+assert(r.warnings.includes('origem apenas para análise manual'));
+
+r = evaluate({ mode: 'replace', ...base, sourceStock: sourceStock({ data_coverage_pct: 50 }) });
+assert.strictEqual(r.autoEligible, false, 'source with low fundamental coverage must remain manual-only');
+
+r = evaluate({ mode: 'replace', ...base, sourceStock: sourceStock({ critical_metric_coverage_pct: 40 }) });
+assert.strictEqual(r.autoEligible, false, 'source with low critical coverage must remain manual-only');
+
+r = evaluate({ mode: 'replace', ...base, sourceStock: sourceStock({ risk_gate: null }) });
+assert.strictEqual(r.autoEligible, false, 'source with unclassified Risk Gate must remain manual-only');
+
+r = evaluate({ mode: 'replace', ...base, sourceStock: sourceStock({ risk_gate: 'severe' }) });
+assert.strictEqual(r.autoEligible, true, 'a severe source Risk Gate must not block replacement when source evidence itself is reliable');
 
 r = evaluate({
   mode: 'fresh',

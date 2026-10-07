@@ -1565,6 +1565,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(tier==='research') penalty+=12;
     return {conf,reliability,coverage,critical,gate,conviction:conv,evidenceReady,strict,reinforceEligible,acceptable,tier,penalty,warnings};
   }
+  function portfolioSourceEvidenceReady(stock){
+    if(!stock||isFund(stock)) return false;
+    const score=n(stock?.score), conf=n(stock?.confidence_score), gate=txt(stock?.risk_gate);
+    const reliability=txt(stock?.score_reliability).toLowerCase();
+    const coverage=n(stock?.data_coverage_pct), critical=n(stock?.critical_metric_coverage_pct);
+    return score!=null&&conf!=null&&conf>=60
+      &&['robust','moderate_evidence'].includes(reliability)
+      &&coverage!=null&&coverage>=65
+      &&critical!=null&&critical>=50
+      &&!!gate;
+  }
   function evaluatePortfolioMove({mode='replace',sourceStock=null,destination,rows=[],amount=0,totalAfter=1,riskBase=null,sourceConv=null,destinationConv=null,positionPct=0,sectorPct=0,indirect=0,sourceIndirect=0}={}){
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
     const evidence=portfolioMoveEvidence(destination,destinationConv);
@@ -1575,7 +1586,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const overlapDelta=indirect-sourceIndirect;
     const convictionGain=sourceConv!=null&&destinationConv!=null?destinationConv-sourceConv:null;
     const convDelta=convictionGain==null?null:convictionGain*(amount/(totalAfter||1));
-    const sourceAutomatable=!sourceStock||(!isFund(sourceStock)&&n(sourceStock.score)!=null&&n(sourceStock.confidence_score)!=null);
+    const sourceAutomatable=!sourceStock||portfolioSourceEvidenceReady(sourceStock);
     let autoEligible=false;
     if(mode==='fresh'){
       autoEligible=evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5&&(targets.overlap!=='reduce'||indirect<2)&&positionPct<=maxPos&&sectorPct<=maxSector;
@@ -2137,7 +2148,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const pressured=gateRank>0||positionExcess>0||sectorExcess>0||lowConviction;
       return {gateRank,positionExcess,sectorExcess,lowConviction,pressured};
     };
-    const planSources=rows.filter(r=>!isFund(r.stock)&&n(r.stock.score)!=null&&n(r.stock.confidence_score)!=null);
+    const planSources=rows.filter(r=>portfolioSourceEvidenceReady(r.stock));
     const sources=planSources.map(r=>({...r,sourceSignals:sourceSignals(r)})).filter(r=>r.sourceSignals.pressured).sort((a,b)=>
       b.sourceSignals.gateRank-a.sourceSignals.gateRank
       ||b.sourceSignals.positionExcess-a.sourceSignals.positionExcess

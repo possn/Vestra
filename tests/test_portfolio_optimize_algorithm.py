@@ -209,6 +209,20 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("origem apenas para análise manual", s)
         self.assertGreaterEqual(s.count("evaluatePortfolioMove({"), 5)
 
+    def test_automatic_replacements_require_reliable_source_evidence(self):
+        s = read("market.js")
+        helper = s.split("function portfolioSourceEvidenceReady(", 1)[1].split("\n  function evaluatePortfolioMove", 1)[0]
+        decision = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
+        plan = s.split("function buildMultiMovePlan(){", 1)[1].split("\n  function renderMultiMovePlan", 1)[0]
+        self.assertIn("conf>=60", helper)
+        self.assertIn("['robust','moderate_evidence'].includes(reliability)", helper)
+        self.assertIn("coverage!=null&&coverage>=65", helper)
+        self.assertIn("critical!=null&&critical>=50", helper)
+        self.assertIn("&&!!gate", helper)
+        self.assertNotIn("gate==='clear'", helper)
+        self.assertIn("const sourceAutomatable=!sourceStock||portfolioSourceEvidenceReady(sourceStock);", decision)
+        self.assertIn("const planSources=rows.filter(r=>portfolioSourceEvidenceReady(r.stock));", plan)
+
     def test_rebalancer_consumes_canonical_move_evaluator(self):
         s = read("market.js")
         self.assertIn("const decision=evaluatePortfolioMove({mode:'replace'", s)
@@ -460,7 +474,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         plan = s.split("function buildMultiMovePlan(){", 1)[1].split("\n  function renderMultiMovePlan", 1)[0]
         self.assertNotIn("thesisDown", plan)
         self.assertNotIn("estimatesDown", plan)
-        self.assertIn("const planSources=rows.filter(r=>!isFund(r.stock)", s)
+        self.assertIn("const planSources=rows.filter(r=>portfolioSourceEvidenceReady(r.stock));", s)
         self.assertIn("||b.sourceSignals.positionExcess-a.sourceSignals.positionExcess", s)
         self.assertIn("||b.sourceSignals.sectorExcess-a.sourceSignals.sectorExcess", s)
         self.assertIn("const queue=sources.slice(0,6)", s)
