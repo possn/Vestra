@@ -408,6 +408,15 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const etfOptimizeRows=findEtfOptimizeAlternatives(ranked,heldTickers)", intelligence)
         self.assertIn("${etfOptimizeHtml}", intelligence)
 
+    def test_risk_budget_penalises_only_incremental_excess(self):
+        s = read("market.js")
+        block = s.split("function riskBudgetPenalty(", 1)[1].split("\n  function portfolioMoveEvidence", 1)[0]
+        self.assertIn("const incrementalExcess=(now,after,limit)=>", block)
+        self.assertIn("Math.max(0,after-limit)-Math.max(0,now-limit)", block)
+        self.assertNotIn("if(after>maxFactor) penalty+=(after-maxFactor)", block)
+        self.assertNotIn("if(curAfter>maxCurrency) penalty+=(curAfter-maxCurrency)", block)
+        self.assertNotIn("if(regAfter>maxRegion) penalty+=(regAfter-maxRegion)", block)
+
     def test_multi_move_plan_never_falls_back_to_worsening_candidate(self):
         s = read("market.js")
         self.assertIn("return !usedDest.has(key)&&r.autoEligible&&cumulativeSectorPct<=maxSector+1", s)
