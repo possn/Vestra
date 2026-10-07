@@ -1519,12 +1519,15 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function riskBudgetPenalty(stock,rows,amount,totalAfter,sourceStock=null){
     const targets=loadPortfolioTargets(); const maxFactor=n(targets.maxFactor)||45, maxCurrency=n(targets.maxCurrency)||70, maxRegion=n(targets.maxRegion)||70;
     const prof=portfolioRiskProfile(rows,totalAfter); const a=Math.max(0,n(amount)||0), delta=a/(totalAfter||1)*100;
+    // Penalise only NEW concentration. An inherited breach is portfolio context,
+    // not a reason to reject a replacement that leaves it unchanged or improves it.
+    const incrementalExcess=(now,after,limit)=>Math.max(0,Math.max(0,after-limit)-Math.max(0,now-limit));
     let penalty=0; const factors=stockRiskTags(stock), srcFactors=sourceStock?stockRiskTags(sourceStock):[];
-    for(const tag of factors){ const now=prof.factors.find(x=>x.name===tag)?.pct||0; const after=now+delta-(srcFactors.includes(tag)?delta:0); if(after>maxFactor) penalty+=(after-maxFactor)*.65; }
+    for(const tag of factors){ const now=prof.factors.find(x=>x.name===tag)?.pct||0; const after=now+delta-(srcFactors.includes(tag)?delta:0); penalty+=incrementalExcess(now,after,maxFactor)*.65; }
     const cur=stockCurrency(stock), srcCur=sourceStock?stockCurrency(sourceStock):null, curNow=prof.currencies.find(x=>x.name===cur)?.pct||0;
-    const curAfter=curNow+delta-(srcCur===cur?delta:0); if(curAfter>maxCurrency) penalty+=(curAfter-maxCurrency)*.55;
+    const curAfter=curNow+delta-(srcCur===cur?delta:0); penalty+=incrementalExcess(curNow,curAfter,maxCurrency)*.55;
     const reg=stockRegion(stock), srcReg=sourceStock?stockRegion(sourceStock):null, regNow=prof.regions.find(x=>x.name===reg)?.pct||0;
-    const regAfter=regNow+delta-(srcReg===reg?delta:0); if(regAfter>maxRegion) penalty+=(regAfter-maxRegion)*.45;
+    const regAfter=regNow+delta-(srcReg===reg?delta:0); penalty+=incrementalExcess(regNow,regAfter,maxRegion)*.45;
     return penalty;
   }
   function portfolioMoveEvidence(stock, conviction=null){
