@@ -24,6 +24,7 @@
     congressLoading: null,
     congressError: "",
     cryptoRows: [],
+    cryptoIntelligence: null,
     cryptoLoaded: false,
     cryptoLoading: null,
     cryptoError: ""
@@ -564,9 +565,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       try{
         const base=workerBase(); if(!base) throw new Error('Worker não configurado');
         const tickers=CRYPTO_UNIVERSE.map(x=>x[0]).join(',');
-        const resp=await fetch(`${base}/quotes?tickers=${encodeURIComponent(tickers)}`,{cache:'no-store'});
-        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const payload=await resp.json();
+        const [quotesResp,intelResp]=await Promise.all([
+          fetch(`${base}/quotes?tickers=${encodeURIComponent(tickers)}`,{cache:'no-store'}),
+          fetch(`${base}/crypto-intelligence`,{cache:'no-store'}).catch(()=>null),
+        ]);
+        if(!quotesResp.ok) throw new Error(`HTTP ${quotesResp.status}`);
+        const payload=await quotesResp.json();
+        M.cryptoIntelligence=intelResp?.ok?await intelResp.json():null;
         M.cryptoRows=CRYPTO_UNIVERSE.map(([ticker,symbol,name])=>({ticker,symbol,name,...(payload?.[ticker]||{})}))
           .filter(r=>n(r.price)!=null)
           .sort((a,b)=>(n(b.market_cap)||0)-(n(a.market_cap)||0));
