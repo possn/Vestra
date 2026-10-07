@@ -200,22 +200,34 @@ function quoteFromChartResult(result0, expectedTicker){
   const meta = result0?.meta;
   const symbol = txt(meta?.symbol).toUpperCase();
   if (!meta || !ticker || symbol !== ticker) return null;
-  const closes = result0?.indicators?.quote?.[0]?.close || [];
-  const rawPrice = finitePositive(meta?.regularMarketPrice,meta?.previousClose,...[...closes].reverse());
-  if (!rawPrice) return null;
-  const normalized = normalizedQuotePrice(rawPrice,meta.currency);
+  const quote = result0?.indicators?.quote?.[0] || {};
+  const closes = Array.isArray(quote.close) ? quote.close.filter(v=>Number.isFinite(Number(v))&&Number(v)>0).map(Number) : [];
+  const highs = Array.isArray(quote.high) ? quote.high.filter(v=>Number.isFinite(Number(v))&&Number(v)>0).map(Number) : [];
+  const lows = Array.isArray(quote.low) ? quote.low.filter(v=>Number.isFinite(Number(v))&&Number(v)>0).map(Number) : [];
+  const lastClose = closes.at(-1) ?? null;
+  const prevClose = Number.isFinite(Number(meta.previousClose)) && Number(meta.previousClose)>0
+    ? Number(meta.previousClose)
+    : (closes.length>=2 ? closes.at(-2) : null);
+  const marketPrice = finitePositive(meta?.regularMarketPrice,lastClose,meta?.previousClose);
+  if (!marketPrice) return null;
+  const normalized = normalizedQuotePrice(marketPrice,meta.currency);
   if (!normalized.price) return null;
+  const currentForChange = finitePositive(meta?.regularMarketPrice,lastClose);
+  const high52 = finitePositive(meta?.fiftyTwoWeekHigh, highs.length ? Math.max(...highs) : null);
+  const low52 = finitePositive(meta?.fiftyTwoWeekLow, lows.length ? Math.min(...lows) : null);
   return {
     symbol,
     ticker,
     price:normalized.price,
     currency:normalized.currency,
     name:txt(meta.shortName || meta.longName || meta.symbol || ticker),
-    change_pct:(Number.isFinite(Number(meta.regularMarketPrice)) && Number.isFinite(Number(meta.previousClose)) && Number(meta.previousClose)>0)
-      ? ((Number(meta.regularMarketPrice)-Number(meta.previousClose))/Number(meta.previousClose))*100 : null,
+    change_pct:(currentForChange && prevClose) ? ((currentForChange-prevClose)/prevClose)*100 : null,
     quote_type:txt(meta.instrumentType).toUpperCase(),
     exchange:txt(meta.exchangeName),
     sector:'',industry:'',country:'',
+    market_cap:Number.isFinite(Number(meta.marketCap)) ? Number(meta.marketCap) : null,
+    fifty_two_week_high:high52,
+    fifty_two_week_low:low52,
     updated:new Date().toISOString(),
     source:'yahoo_exact_chart',
   };
@@ -224,8 +236,8 @@ function quoteFromChartResult(result0, expectedTicker){
 async function fetchYahooExactChartIdentity(ticker, timeoutMs=EXACT_FETCH_TIMEOUT_MS){
   const headers = quoteHeaders();
   const targets = [
-    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`,
-    `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=5d`,
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1y`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1y`,
   ];
   for (const target of targets) {
     try {

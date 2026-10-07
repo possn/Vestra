@@ -133,3 +133,18 @@ assert(runtimeLoader.includes("const SRC = 'market.js?v=20261007crypto1';"),'Mar
 assert(runtimeLoader.includes("script.src = 'market.js?v=20261007crypto1';"),'Market loader must expose a literal versioned core URL so the reachability audit can follow it');
 assert(serviceWorker.includes('const CACHE_NAME = "vestra-cache-v239";'),'service worker cache generation must advance with the Crypto release');
 assert(/BOOTSTRAP_NETWORK_FIRST[\s\S]*"market\.js"/.test(serviceWorker),'installed PWA must fetch market.js network-first instead of serving a stale exact cache entry');
+
+
+const router = fs.readFileSync('worker-router.js','utf8');
+assert(router.includes('?interval=1d&range=1y'),'Crypto quote fallback must fetch enough history for 52-week range');
+assert(router.includes('const highs = Array.isArray(quote.high)'),'chart fallback must derive 52-week highs');
+assert(router.includes('const lows = Array.isArray(quote.low)'),'chart fallback must derive 52-week lows');
+assert(router.includes('closes.length>=2 ? closes.at(-2) : null'),'chart fallback must derive previous close when Yahoo meta omits it');
+assert(router.includes('fifty_two_week_high:high52'),'chart fallback must expose the 52-week high');
+assert(router.includes('fifty_two_week_low:low52'),'chart fallback must expose the 52-week low');
+
+assert(worker.includes('https://api.coinpaprika.com/v1/global'),'global Crypto intelligence must have a second public source');
+assert(worker.includes('"CoinPaprika"'),'global source attribution must expose CoinPaprika fallback');
+assert(worker.includes('https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT'),'derivatives must have a public Bybit fallback');
+assert(worker.includes('"Bybit"'),'derivatives source attribution must expose Bybit fallback');
+assert(worker.includes('crypto-intelligence-v2'),'Crypto intelligence cache key must advance so stale partial payloads are not reused');
