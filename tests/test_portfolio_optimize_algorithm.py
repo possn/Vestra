@@ -411,11 +411,13 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
     def test_automatic_moves_require_factor_classification(self):
         s = read("market.js")
         block = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
-        self.assertIn("const riskBudgetReady=stockRiskTags(destination).length>0;", block)
+        self.assertIn("const destinationRiskReady=stockRiskTags(destination).length>0;", block)
+        self.assertIn("const riskBudgetReady=destinationRiskReady&&riskCoverage.ready;", block)
         self.assertIn("Risk Budget sem classificação de fatores", block)
+        self.assertIn("Risk Budget da carteira com cobertura insuficiente", block)
         self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5", block)
         self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=5", block)
-        self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty", block)
+        self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskCoverage,riskPenalty", block)
 
     def test_automatic_moves_require_portfolio_risk_budget_coverage(self):
         s = read("market.js")
