@@ -1560,19 +1560,20 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
     const evidence=portfolioMoveEvidence(destination,destinationConv);
     const riskPenalty=riskBudgetPenalty(destination,rows,amount,totalAfter,sourceStock);
+    const riskBudgetReady=stockRiskTags(destination).length>0;
     const overlapDelta=indirect-sourceIndirect;
     const convictionGain=sourceConv!=null&&destinationConv!=null?destinationConv-sourceConv:null;
     const convDelta=convictionGain==null?null:convictionGain*(amount/(totalAfter||1));
     const sourceAutomatable=!sourceStock||(!isFund(sourceStock)&&n(sourceStock.score)!=null&&n(sourceStock.confidence_score)!=null);
     let autoEligible=false;
     if(mode==='fresh'){
-      autoEligible=evidence.reinforceEligible&&riskPenalty<5&&(targets.overlap!=='reduce'||indirect<2)&&positionPct<=maxPos&&sectorPct<=maxSector;
+      autoEligible=evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5&&(targets.overlap!=='reduce'||indirect<2)&&positionPct<=maxPos&&sectorPct<=maxSector;
     }else if(mode==='alternative'){
-      autoEligible=sourceAutomatable&&evidence.strict&&convictionGain>=5&&convDelta>0&&overlapDelta<1.5&&riskPenalty<5;
+      autoEligible=sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=5&&convDelta>0&&overlapDelta<1.5&&riskPenalty<5;
     }else if(mode==='scenario'){
-      autoEligible=evidence.strict&&convDelta>0&&overlapDelta<2&&riskPenalty<5;
+      autoEligible=evidence.strict&&riskBudgetReady&&convDelta>0&&overlapDelta<2&&riskPenalty<5;
     }else{
-      autoEligible=sourceAutomatable&&evidence.strict&&convictionGain>=2&&convDelta>0&&overlapDelta<2&&positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5;
+      autoEligible=sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=2&&convDelta>0&&overlapDelta<2&&positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5;
     }
     const warnings=[...evidence.warnings];
     if(sourceStock&&!sourceAutomatable) warnings.push('origem apenas para análise manual');
@@ -1581,10 +1582,11 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(mode==='alternative'&&overlapDelta>=1.5) warnings.push('aumenta overlap');
     else if(mode!=='fresh'&&overlapDelta>=2) warnings.push('aumenta overlap');
     if(mode==='fresh'&&targets.overlap==='reduce'&&indirect>=2) warnings.push('overlap elevado');
+    if(!riskBudgetReady) warnings.push('Risk Budget sem classificação de fatores');
     if(riskPenalty>=5) warnings.push('pressiona orçamento de risco');
     if(positionPct>(mode==='replace'?maxPos+1:maxPos)) warnings.push('excede objetivo por posição');
     if(sectorPct>(mode==='replace'?maxSector+1:maxSector)) warnings.push('excede objetivo setorial');
-    return {targets,maxPos,maxSector,evidence,riskPenalty,overlapDelta,convictionGain,convDelta,sourceAutomatable,autoEligible,warnings};
+    return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty,overlapDelta,convictionGain,convDelta,sourceAutomatable,autoEligible,warnings};
   }
 
   function renderRiskBudget(rows,total=0){
