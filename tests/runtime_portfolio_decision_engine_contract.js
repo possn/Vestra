@@ -70,6 +70,37 @@ vm.runInContext(extractFunction('portfolioConviction'), context);
 vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
 
+
+const riskContext = {
+  n: context.n,
+  loadPortfolioTargets: () => ({ maxFactor:45, maxCurrency:70, maxRegion:70 }),
+  portfolioRiskProfile: () => ({
+    factors:[{name:'Growth',pct:55}],
+    currencies:[{name:'USD',pct:80},{name:'EUR',pct:20}],
+    regions:[{name:'Am. Norte',pct:75},{name:'Europa',pct:25}],
+  }),
+  stockRiskTags: stock => stock?.tags || [],
+  stockCurrency: stock => stock?.currency || 'USD',
+  stockRegion: stock => stock?.region || 'Am. Norte',
+};
+vm.createContext(riskContext);
+vm.runInContext(extractFunction('riskBudgetPenalty'), riskContext);
+const riskBudget = (destination, source=null, amount=100, totalAfter=1000) =>
+  riskContext.riskBudgetPenalty(destination, [], amount, totalAfter, source);
+
+assert.strictEqual(
+  riskBudget({tags:['Growth'],currency:'USD',region:'Am. Norte'},{tags:['Growth'],currency:'USD',region:'Am. Norte'}),
+  0,
+  'replacement with identical already-over-limit exposures must not pay inherited Risk Budget excess again'
+);
+assert.strictEqual(
+  riskBudget({tags:[],currency:'EUR',region:'Europa'},{tags:['Growth'],currency:'USD',region:'Am. Norte'}),
+  0,
+  'move that reduces inherited concentration must not be penalised'
+);
+const worsened = riskBudget({tags:['Growth'],currency:'USD',region:'Am. Norte'},null);
+assert(Math.abs(worsened-(10*.65+10*.55+10*.45))<1e-9, 'fresh exposure must pay only the incremental excess above existing breaches');
+
 const conviction = stock => context.portfolioConviction(stock);
 assert(Math.abs(conviction({ score: 80, score_raw: 80, estimate_momentum_score: 70, valuation_signal: 'fair', thesis_direction: 'flat' }) - 76.1) < 1e-9, 'conviction must keep fixed 70/12/18 weights');
 assert.strictEqual(conviction({ score: 59, score_raw: 80, thesis_direction: 'flat' }), 71, 'Conviction must use raw fundamental attractiveness, not the confidence-capped public Score');
