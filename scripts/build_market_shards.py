@@ -64,7 +64,7 @@ INDEX_KEYS = {
     "quote_type", "market_cap", "current_price", "zombie",
     "zombie_risk_state", "zombie_risk_years",
     # main score / evidence confidence
-    "score", "data_confidence", "data_coverage_pct", "confidence_score",
+    "score", "score_raw", "data_confidence", "data_coverage_pct", "confidence_score",
     "confidence_label", "metric_confidence", "score_reliability", "risk_gate",
     "score_model",
     # dimensions used by list/portfolio ranking
