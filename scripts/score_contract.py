@@ -85,6 +85,7 @@ def _neutral_asset(r, scored_cls, previous=None, quote_type=None):
         currency=_value(r, previous, "currency"),
         quote_type=normalized_quote_type(quote_type or getattr(r, "quote_type", None) or (previous or {}).get("quote_type")),
         score=None,
+        score_raw=None,
         metric_confidence="low",
         data_coverage_pct=0,
         zombie="unknown",
