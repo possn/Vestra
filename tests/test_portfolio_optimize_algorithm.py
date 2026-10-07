@@ -443,6 +443,16 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("Math.max(0,after-limit)<=Math.max(0,before-limit)+.01", block)
         self.assertNotIn("portfolioRiskProfile(rows,afterTotal)", block)
 
+    def test_portfolio_action_reinforcement_consumes_risk_budget_context(self):
+        s = read("market.js")
+        action = s.split("function portfolioAction(", 1)[1].split("\n  const PORTFOLIO_TARGETS_KEY", 1)[0]
+        self.assertIn("ctx.riskBudgetBlocked", action)
+        self.assertIn("ctx.riskBudgetFlags", action)
+        intelligence = s.split("function portfolioIntelligence(rows,total)", 1)[1].split("function buildMultiMovePlan", 1)[0]
+        self.assertIn("const actionRiskProfile=portfolioRiskProfile(ranked,portfolioBase);", intelligence)
+        self.assertIn("const actionRiskCoverage=riskBudgetCoverage(ranked,portfolioBase);", intelligence)
+        self.assertIn("portfolioActionRiskContext(r.stock,actionRiskProfile,actionRiskCoverage,portfolioTargets)", intelligence)
+
     def test_automatic_moves_require_factor_classification(self):
         s = read("market.js")
         block = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
