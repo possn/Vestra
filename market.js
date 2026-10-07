@@ -621,7 +621,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(M.cryptoError&&!M.cryptoRows.length){
       return `<section class="market-section market-crypto"><div class="market-empty"><strong>Crypto indisponível.</strong><br><span>${esc(M.cryptoError)}</span></div></section>`;
     }
-    const rows=M.cryptoRows, bar=cryptoBarometer(rows);
+    const rows=M.cryptoRows, bar=cryptoBarometer(rows), intel=M.cryptoIntelligence||{};
+    const regime=cryptoRegime(rows,intel), dispersion=cryptoDispersion(rows);
+    const global=intel.global||{}, fng=intel.fear_greed||{}, deriv=intel.derivatives||{};
+    const volumeToCap=n(global.total_volume_24h_usd)!=null&&n(global.total_market_cap_usd)>0?n(global.total_volume_24h_usd)/n(global.total_market_cap_usd)*100:null;
     const q=txt(M.query).toLowerCase();
     const visibleRows=q?rows.filter(r=>`${r.symbol} ${r.name}`.toLowerCase().includes(q)):rows;
     const topCap=visibleRows.slice(0,10);
