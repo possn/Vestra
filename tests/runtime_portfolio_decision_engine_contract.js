@@ -69,6 +69,7 @@ const context = {
 };
 vm.createContext(context);
 vm.runInContext(extractFunction('portfolioConviction'), context);
+vm.runInContext(extractFunction('stockRiskClassification'), context);
 vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('portfolioSourceEvidenceReady'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
@@ -129,30 +130,37 @@ assert(!multiMoveBlock.includes('estimatesDown'), 'multi-move source selection m
 
 const coverageContext = {
   n: context.n,
-  stockRiskTags: stock => stock?.riskTags || [],
+  stockRiskClassification: stock => ({ coveragePct: stock?.riskCoveragePct ?? 0 }),
 };
 vm.createContext(coverageContext);
 vm.runInContext(extractFunction('riskBudgetCoverage'), coverageContext);
 let coverageState = coverageContext.riskBudgetCoverage([
-  { value: 20, stock:{riskTags:['Growth']} },
-  { value: 10, stock:{riskTags:[]} },
+  { value: 20, stock:{riskCoveragePct:100} },
+  { value: 10, stock:{riskCoveragePct:0} },
 ], 100);
 assert.strictEqual(coverageState.ready, false, 'Risk Budget must fail closed when portfolio research/factor coverage is below 35%');
 assert.strictEqual(coverageState.researchCoverage, 30);
 assert.strictEqual(coverageState.factorCoverage, 20);
 coverageState = coverageContext.riskBudgetCoverage([
-  { value: 30, stock:{riskTags:['Growth']} },
-  { value: 10, stock:{riskTags:[]} },
+  { value: 30, stock:{riskCoveragePct:100} },
+  { value: 10, stock:{riskCoveragePct:0} },
 ], 100);
 assert.strictEqual(coverageState.ready, false, 'research coverage alone is insufficient when factor coverage is below 35%');
 coverageState = coverageContext.riskBudgetCoverage([
-  { value: 40, stock:{riskTags:['Growth']} },
+  { value: 40, stock:{riskCoveragePct:100} },
 ], 100);
 assert.strictEqual(coverageState.ready, true, 'portfolio Risk Budget becomes ready once both research and factor coverage reach the existing 35% threshold');
 
 const evaluate = args => context.evaluatePortfolioMove(args);
 const stock = overrides => ({
   ticker: 'DEST',
+  score_model: 'general',
+  growth_pct: 50,
+  revenue_growth: 0.05,
+  value_pct: 50,
+  dividend_yield: 0,
+  market_cap: 10000000000,
+  sector: 'Technology',
   score: 82,
   confidence_score: 80,
   valuation_signal: 'fair',
@@ -295,10 +303,14 @@ assert.strictEqual(r.autoEligible, false, 'scenario with negative conviction del
 r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 70, indirect: 0.5, positionPct: 8, sectorPct: 20 });
 assert.strictEqual(r.autoEligible, true, 'fresh capital should accept the canonical reinforce gate');
 
-r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destination: stock({ riskTags: [] }), destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
+r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destination: stock({ score_model:'', growth_pct:null, revenue_growth:null, value_pct:null, dividend_yield:null, market_cap:null, sector:'', industry:'' }), destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
 assert.strictEqual(r.autoEligible, false, 'missing factor classification must fail closed for automatic moves');
 assert.strictEqual(r.riskBudgetReady, false, 'missing factor classification must be explicit in canonical decision output');
 assert(r.warnings.includes('Risk Budget sem classificação de fatores'));
+
+r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destination: stock({ riskTags: [] }), destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
+assert.strictEqual(r.riskBudgetReady, true, 'fully observed neutral stock with zero triggered tags must still be risk-classified');
+assert.strictEqual(r.autoEligible, true, 'neutral factor profile must not be mistaken for missing Risk Budget data');
 
 context.riskBudgetCoverage = () => ({ ready:false, researchCoverage:30, factorCoverage:20 });
 r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });

@@ -1504,6 +1504,20 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(model==='reit'||/real estate|reit|utilities|utility/.test(sec+' '+ind)||model==='growth') tags.push('Sensível a taxas');
     return [...new Set(tags)];
   }
+  function stockRiskClassification(stock){
+    const model=txt(stock?.score_model).toLowerCase(), sec=txt(stock?.sector).toLowerCase(), ind=txt(stock?.industry).toLowerCase();
+    const growth=n(stock?.growth_pct), revenueGrowth=n(stock?.revenue_growth), value=n(stock?.value_pct);
+    const dividend=n(stock?.dividend_yield), cap=n(stock?.market_cap??stock?.marketCap);
+    const observed=[
+      !!model||growth!=null||revenueGrowth!=null,
+      value!=null,
+      dividend!=null,
+      cap!=null&&cap>0,
+      !!model||!!sec||!!ind,
+    ].filter(Boolean).length;
+    const coveragePct=observed/5*100;
+    return {tags:stockRiskTags(stock),coveragePct,ready:coveragePct>=60};
+  }
   function riskMapAdd(map,key,value){ if(!key||!Number.isFinite(value)) return; map.set(key,(map.get(key)||0)+value); }
   function portfolioRiskProfile(rows,totalOverride){
     const total=totalOverride||rows.reduce((a,r)=>a+(n(r.value)||0),0)||1;
@@ -1534,7 +1548,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const base=Math.max(0,n(total)||0);
     if(base<=0) return {ready:false,researchCoverage:0,factorCoverage:0};
     const analysedValue=(rows||[]).reduce((sum,r)=>sum+(n(r?.value)||0),0);
-    const factorCoveredValue=(rows||[]).reduce((sum,r)=>sum+(stockRiskTags(r?.stock).length?(n(r?.value)||0):0),0);
+    const factorCoveredValue=(rows||[]).reduce((sum,r)=>sum+(n(r?.value)||0)*(stockRiskClassification(r?.stock).coveragePct/100),0);
     const researchCoverage=analysedValue/base*100;
     const factorCoverage=factorCoveredValue/base*100;
     return {ready:researchCoverage>=35&&factorCoverage>=35,researchCoverage,factorCoverage};
@@ -1581,7 +1595,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const evidence=portfolioMoveEvidence(destination,destinationConv);
     const riskPenalty=riskBudgetPenalty(destination,rows,amount,totalAfter,sourceStock);
     const riskCoverage=riskBudgetCoverage(rows,riskBase??totalAfter);
-    const destinationRiskReady=stockRiskTags(destination).length>0;
+    const destinationRiskReady=stockRiskClassification(destination).ready;
     const riskBudgetReady=destinationRiskReady&&riskCoverage.ready;
     const overlapDelta=indirect-sourceIndirect;
     const convictionGain=sourceConv!=null&&destinationConv!=null?destinationConv-sourceConv:null;
@@ -1618,13 +1632,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const riskBase=total>0?total:(analysedValue||1);
     const coverage=total>0?analysedValue/total*100:100;
     const partialCoverage=total>0&&coverage<35;
-    const factorCoveredValue=rows.reduce((a,r)=>a+(stockRiskTags(r.stock).length?(n(r.value)||0):0),0);
+    const factorCoveredValue=rows.reduce((a,r)=>a+(n(r.value)||0)*(stockRiskClassification(r.stock).coveragePct/100),0);
     const factorCoverage=factorCoveredValue/riskBase*100;
     const partialFactorCoverage=factorCoverage<35;
     const maxFactor=n(t.maxFactor)||45, maxCurrency=n(t.maxCurrency)||70, maxRegion=n(t.maxRegion)||70;
     const breaches=[...profile.factors.filter(x=>x.pct>maxFactor).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxFactor}%`),...profile.currencies.filter(x=>x.pct>maxCurrency).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxCurrency}%`),...profile.regions.filter(x=>x.pct>maxRegion).map(x=>`${x.name} ${x.pct.toFixed(0)}% > ${maxRegion}%`)];
     const excess=profile.factors.reduce((a,x)=>a+Math.max(0,x.pct-maxFactor),0)+profile.currencies.reduce((a,x)=>a+Math.max(0,x.pct-maxCurrency),0)+profile.regions.reduce((a,x)=>a+Math.max(0,x.pct-maxRegion),0);
-    const incomplete=partialCoverage||partialFactorCoverage||!profile.factors.length||!profile.currencies.length||!profile.regions.length;
+    const incomplete=partialCoverage||partialFactorCoverage||!profile.currencies.length||!profile.regions.length;
     const rawFit=Math.max(0,Math.min(100,Math.round(100-excess*1.4))), fit=incomplete?null:rawFit, hasBreaches=breaches.length>0;
     const tone=incomplete?'is-warn':!hasBreaches&&fit>=85?'is-positive':fit>=65?'is-warn':'is-risk';
     const statusLabel=incomplete?'Dados parciais':!hasBreaches&&fit>=85?'Boa diversificação':fit>=65?'Atenção':'Concentração elevada';
@@ -1632,7 +1646,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const over=x.pct>max, width=Math.max(2,Math.min(100,x.pct));
       return `<div class="market-risk-item ${over?'is-over':''}"><div class="market-risk-item__head"><strong>${esc(x.name)}</strong><span>${x.pct.toFixed(0)}%${over?` · limite ${max}%`:''}</span></div><div class="market-risk-bar"><i style="width:${width}%"></i></div></div>`;
     }).join('');
-    const html=`<div class="market-detail-card market-risk-budget"><div class="market-perspective-head"><div><small>PORTFOLIO RISK BUDGET · PROXY</small><h4>Diversificação da carteira</h4></div><div class="market-risk-score ${tone}"><strong>${fit==null?'—':fit+'/100'}</strong><small>${statusLabel}</small></div></div><p class="market-risk-intro">Mostra onde a carteira está mais dependente do mesmo fator, moeda ou região. Quanto maior a concentração, maior o impacto se esse risco correr mal.</p><div class="market-risk-grid"><section class="market-risk-group"><div class="market-risk-group__title"><strong>Fatores</strong><small>máx. ${maxFactor}%</small></div><div>${riskRows(profile.factors,5,maxFactor)||'<p class="market-risk-empty">Sem classificação suficiente.</p>'}</div></section><section class="market-risk-group"><div class="market-risk-group__title"><strong>Moedas</strong><small>máx. ${maxCurrency}%</small></div><div>${riskRows(profile.currencies,4,maxCurrency)||'<p class="market-risk-empty">Sem classificação suficiente.</p>'}</div></section><section class="market-risk-group"><div class="market-risk-group__title"><strong>Regiões</strong><small>máx. ${maxRegion}%</small></div><div>${riskRows(profile.regions,4,maxRegion)||'<p class="market-risk-empty">Sem classificação suficiente.</p>'}</div></section></div>${incomplete?`<div class="market-risk-alert"><strong>${partialCoverage?'Cobertura insuficiente':partialFactorCoverage?'Cobertura de fatores insuficiente':'Classificação incompleta'}</strong><span>${partialCoverage?`Só ${coverage.toFixed(0)}% da carteira tem research; o Risk Fit global fica indisponível.`:partialFactorCoverage?`Só ${factorCoverage.toFixed(0)}% da carteira tem classificação de fatores; o Risk Fit global fica indisponível.`:'O Risk Fit fica indisponível até existirem dados para fatores, moedas e regiões.'}</span></div>`:breaches.length?`<div class="market-risk-alert"><strong>${breaches.length} ${breaches.length===1?'excesso a acompanhar':'excessos a acompanhar'}</strong><ul>${breaches.slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'<div class="market-risk-ok"><strong>Dentro dos limites definidos</strong><span>Não há concentrações acima dos teus Portfolio Targets.</span></div>'}<p class="market-risk-footnote">Leitura de exposição, não previsão de volatilidade. Usa os dados disponíveis e pode conter proxies quando moeda/região não vêm explicitamente da fonte.</p></div>`;
+    const html=`<div class="market-detail-card market-risk-budget"><div class="market-perspective-head"><div><small>PORTFOLIO RISK BUDGET · PROXY</small><h4>Diversificação da carteira</h4></div><div class="market-risk-score ${tone}"><strong>${fit==null?'—':fit+'/100'}</strong><small>${statusLabel}</small></div></div><p class="market-risk-intro">Mostra onde a carteira está mais dependente do mesmo fator, moeda ou região. Quanto maior a concentração, maior o impacto se esse risco correr mal.</p><div class="market-risk-grid"><section class="market-risk-group"><div class="market-risk-group__title"><strong>Fatores</strong><small>máx. ${maxFactor}%</small></div><div>${riskRows(profile.factors,5,maxFactor)||(partialFactorCoverage?'<p class="market-risk-empty">Sem classificação suficiente.</p>':'<p class="market-risk-empty">Sem fatores especiais acima dos limiares proxy.</p>')}</div></section><section class="market-risk-group"><div class="market-risk-group__title"><strong>Moedas</strong><small>máx. ${maxCurrency}%</small></div><div>${riskRows(profile.currencies,4,maxCurrency)||'<p class="market-risk-empty">Sem classificação suficiente.</p>'}</div></section><section class="market-risk-group"><div class="market-risk-group__title"><strong>Regiões</strong><small>máx. ${maxRegion}%</small></div><div>${riskRows(profile.regions,4,maxRegion)||'<p class="market-risk-empty">Sem classificação suficiente.</p>'}</div></section></div>${incomplete?`<div class="market-risk-alert"><strong>${partialCoverage?'Cobertura insuficiente':partialFactorCoverage?'Cobertura de fatores insuficiente':'Classificação incompleta'}</strong><span>${partialCoverage?`Só ${coverage.toFixed(0)}% da carteira tem research; o Risk Fit global fica indisponível.`:partialFactorCoverage?`Só ${factorCoverage.toFixed(0)}% da carteira tem classificação de fatores; o Risk Fit global fica indisponível.`:'O Risk Fit fica indisponível até existirem dados para fatores, moedas e regiões.'}</span></div>`:breaches.length?`<div class="market-risk-alert"><strong>${breaches.length} ${breaches.length===1?'excesso a acompanhar':'excessos a acompanhar'}</strong><ul>${breaches.slice(0,5).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'<div class="market-risk-ok"><strong>Dentro dos limites definidos</strong><span>Não há concentrações acima dos teus Portfolio Targets.</span></div>'}<p class="market-risk-footnote">Leitura de exposição, não previsão de volatilidade. Usa os dados disponíveis e pode conter proxies quando moeda/região não vêm explicitamente da fonte.</p></div>`;
     return {fit,html,profile,breaches,hasBreaches,incomplete,coverage,factorCoverage};
   }
 
