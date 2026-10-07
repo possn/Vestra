@@ -408,6 +408,22 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const etfOptimizeRows=findEtfOptimizeAlternatives(ranked,heldTickers)", intelligence)
         self.assertIn("${etfOptimizeHtml}", intelligence)
 
+    def test_overlap_missing_lookthrough_is_not_treated_as_zero(self):
+        s = read("market.js")
+        fit = s.split("function portfolioFit(", 1)[1].split("\n  function portfolioFitSummary", 1)[0]
+        move = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
+        self.assertIn("const overlapEvidenceReady=targets?.overlap!=='reduce'||overlapReady;", fit)
+        self.assertIn("overlap ETF por classificar", fit)
+        self.assertIn("||!overlapEvidenceReady) fit='watch'", fit)
+        self.assertIn("const overlapEvidenceReady=targets.overlap!=='reduce'||overlapReady;", move)
+        self.assertIn("overlap ETF sem holdings suficientes", move)
+        self.assertIn("riskBudgetReady&&overlapEvidenceReady&&riskPenalty<5", move)
+        self.assertIn("const overlapReady=heldEtfs.length===etfsForFit.length;", s)
+        self.assertIn("const overlapReady=heldEtfs.length===etfs.length;", s)
+        self.assertIn("sourceIndirect:currentIndirect,overlapReady", s)
+        self.assertIn("sourceIndirect:srcIndirect,overlapReady", s)
+        self.assertIn("positionPct,sectorPct,indirect,overlapReady", s)
+
     def test_automatic_moves_require_factor_classification(self):
         s = read("market.js")
         block = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
