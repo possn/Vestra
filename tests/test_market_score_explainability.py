@@ -56,7 +56,9 @@ class MarketScoreExplainabilityTests(unittest.TestCase):
         self.assertIn('critical_metric_coverage_pct', self.market)
         self.assertIn('score_reliability', self.market)
         self.assertIn('score_cap', self.market)
-        self.assertIn('Risk Gate', self.market)
+        self.assertIn('score fundamental bruto', self.market)
+        self.assertIn('o Risk Gate limitou-o', self.market)
+        self.assertIn('A qualidade/cobertura da evidência moderou depois o Score', self.market)
 
     def test_decision_signal_labels_stay_semantically_separate(self):
         self.assertIn('Convicção sintetiza Score Vestra, valuation, expectativas e direção da tese.', self.market)
