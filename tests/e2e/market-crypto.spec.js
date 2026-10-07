@@ -39,10 +39,23 @@ test('iPhone/WebKit: Crypto tab renders barometer, live rows, search and dedicat
           active_cryptocurrencies:17000,
           source:'CoinGecko'
         },
-        fear_greed:{value:74,label:'Greed',previous_value:69,source:'Alternative.me'},
+        fear_greed:{
+          value:74,label:'Greed',previous_value:69,
+          week_ago_value:61,month_ago_value:52,change_7d:13,change_30d:22,
+          history_30d:Array.from({length:31},(_,i)=>({value:52+Math.min(22,i),timestamp:1700000000+i*86400})),
+          source:'Alternative.me'
+        },
         derivatives:{
-          btc:{funding_rate_pct:0.012,open_interest_change_24h_pct:4.5},
-          eth:{funding_rate_pct:-0.004,open_interest_change_24h_pct:-1.2},
+          btc:{
+            funding_rate_pct:0.012,open_interest_change_24h_pct:4.5,
+            open_interest_change_7d_pct:8.4,open_interest_change_30d_pct:18.2,
+            funding_avg_7d_pct:0.009,funding_avg_30d_pct:0.006
+          },
+          eth:{
+            funding_rate_pct:-0.004,open_interest_change_24h_pct:-1.2,
+            open_interest_change_7d_pct:2.1,open_interest_change_30d_pct:9.4,
+            funding_avg_7d_pct:-0.002,funding_avg_30d_pct:0.001
+          },
           source:'Binance Futures'
         }
       })
@@ -64,7 +77,12 @@ test('iPhone/WebKit: Crypto tab renders barometer, live rows, search and dedicat
   await expect(page.locator('.market-crypto-signal').first()).toContainText('Fear & Greed');
   await expect(page.locator('.market-crypto-signal').first()).toContainText('74');
   await expect(page.locator('.market-crypto-derivatives')).toContainText('BTC funding');
-  await expect(page.locator('.market-crypto-derivatives')).toContainText('BTC OI 24h');
+  await expect(page.locator('.market-crypto-derivatives')).toContainText('BTC OI');
+  await expect(page.locator('.market-crypto-sparkline')).toBeVisible();
+  await expect(page.locator('.market-crypto-history-grid')).toContainText('+13 pts');
+  await expect(page.locator('.market-crypto-history-grid')).toContainText('+22 pts');
+  await expect(page.locator('.market-crypto-regime-change')).toContainText('Apetite e alavancagem a subir');
+  await expect(page.locator('.market-crypto-regime-change')).toContainText('OI BTC 7d +8.4%');
 
   const search = page.locator('#marketSearch');
   await search.fill('Solana');
