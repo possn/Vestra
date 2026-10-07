@@ -417,6 +417,17 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=5", block)
         self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty", block)
 
+    def test_automatic_moves_require_portfolio_risk_budget_coverage(self):
+        s = read("market.js")
+        helper = s.split("function riskBudgetCoverage(", 1)[1].split("\n  function portfolioMoveEvidence", 1)[0]
+        decision = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
+        fresh = s.split("function freshCapitalPlan(amount){", 1)[1].split("\n  function renderFreshCapitalPlan", 1)[0]
+        self.assertIn("researchCoverage>=35&&factorCoverage>=35", helper)
+        self.assertIn("const riskCoverage=riskBudgetCoverage(rows,riskBase??totalAfter);", decision)
+        self.assertIn("const riskBudgetReady=destinationRiskReady&&riskCoverage.ready;", decision)
+        self.assertIn("Risk Budget da carteira com cobertura insuficiente", decision)
+        self.assertIn("riskBase:currentBase", fresh)
+
     def test_risk_budget_penalises_only_incremental_excess(self):
         s = read("market.js")
         block = s.split("function riskBudgetPenalty(", 1)[1].split("\n  function portfolioMoveEvidence", 1)[0]
