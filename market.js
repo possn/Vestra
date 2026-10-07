@@ -1516,18 +1516,21 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const pctRows=m=>[...m.entries()].map(([name,value])=>({name,value,pct:value/total*100})).sort((a,b)=>b.pct-a.pct);
     return {total,factors:pctRows(factors),currencies:pctRows(currencies),regions:pctRows(regions)};
   }
-  function riskBudgetPenalty(stock,rows,amount,totalAfter,sourceStock=null){
+  function riskBudgetPenalty(stock,rows,amount,totalAfter,sourceStock=null,totalBefore=null){
     const targets=loadPortfolioTargets(); const maxFactor=n(targets.maxFactor)||45, maxCurrency=n(targets.maxCurrency)||70, maxRegion=n(targets.maxRegion)||70;
-    const prof=portfolioRiskProfile(rows,totalAfter); const a=Math.max(0,n(amount)||0), delta=a/(totalAfter||1)*100;
+    const a=Math.max(0,n(amount)||0), afterBase=Math.max(1,n(totalAfter)||1);
+    const beforeBase=Math.max(1,n(totalBefore)??(sourceStock?afterBase:Math.max(1,afterBase-a)));
+    const prof=portfolioRiskProfile(rows,beforeBase);
     // Penalise only NEW concentration. An inherited breach is portfolio context,
     // not a reason to reject a replacement that leaves it unchanged or improves it.
     const incrementalExcess=(now,after,limit)=>Math.max(0,Math.max(0,after-limit)-Math.max(0,now-limit));
+    const projectedPct=(row,sourceShares)=>((((row?.value)||0)+a-(sourceShares?a:0))/afterBase)*100;
     let penalty=0; const factors=stockRiskTags(stock), srcFactors=sourceStock?stockRiskTags(sourceStock):[];
-    for(const tag of factors){ const now=prof.factors.find(x=>x.name===tag)?.pct||0; const after=now+delta-(srcFactors.includes(tag)?delta:0); penalty+=incrementalExcess(now,after,maxFactor)*.65; }
-    const cur=stockCurrency(stock), srcCur=sourceStock?stockCurrency(sourceStock):null, curNow=prof.currencies.find(x=>x.name===cur)?.pct||0;
-    const curAfter=curNow+delta-(srcCur===cur?delta:0); penalty+=incrementalExcess(curNow,curAfter,maxCurrency)*.55;
-    const reg=stockRegion(stock), srcReg=sourceStock?stockRegion(sourceStock):null, regNow=prof.regions.find(x=>x.name===reg)?.pct||0;
-    const regAfter=regNow+delta-(srcReg===reg?delta:0); penalty+=incrementalExcess(regNow,regAfter,maxRegion)*.45;
+    for(const tag of factors){ const row=prof.factors.find(x=>x.name===tag), now=row?.pct||0; const after=projectedPct(row,srcFactors.includes(tag)); penalty+=incrementalExcess(now,after,maxFactor)*.65; }
+    const cur=stockCurrency(stock), srcCur=sourceStock?stockCurrency(sourceStock):null, curRow=prof.currencies.find(x=>x.name===cur), curNow=curRow?.pct||0;
+    const curAfter=projectedPct(curRow,srcCur===cur); penalty+=incrementalExcess(curNow,curAfter,maxCurrency)*.55;
+    const reg=stockRegion(stock), srcReg=sourceStock?stockRegion(sourceStock):null, regRow=prof.regions.find(x=>x.name===reg), regNow=regRow?.pct||0;
+    const regAfter=projectedPct(regRow,srcReg===reg); penalty+=incrementalExcess(regNow,regAfter,maxRegion)*.45;
     return penalty;
   }
   function riskBudgetCoverage(rows,total){
@@ -1579,7 +1582,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   function evaluatePortfolioMove({mode='replace',sourceStock=null,destination,rows=[],amount=0,totalAfter=1,riskBase=null,sourceConv=null,destinationConv=null,positionPct=0,sectorPct=0,indirect=0,sourceIndirect=0}={}){
     const targets=loadPortfolioTargets(), maxPos=Math.max(3,Math.min(30,n(targets.maxPosition)||10)), maxSector=Math.max(10,Math.min(60,n(targets.maxSector)||25));
     const evidence=portfolioMoveEvidence(destination,destinationConv);
-    const riskPenalty=riskBudgetPenalty(destination,rows,amount,totalAfter,sourceStock);
+    const riskPenalty=riskBudgetPenalty(destination,rows,amount,totalAfter,sourceStock,riskBase);
     const riskCoverage=riskBudgetCoverage(rows,riskBase??totalAfter);
     const destinationRiskReady=stockRiskTags(destination).length>0;
     const riskBudgetReady=destinationRiskReady&&riskCoverage.ready;
@@ -2319,25 +2322,25 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         ||Number(b.underweightExisting)-Number(a.underweightExisting)
         ||b.tiltBonus-a.tiltBonus;
     });
-    const baselineRisk=portfolioRiskProfile(rows,afterTotal);
-    const riskPct=(group,name)=>baselineRisk[group].find(x=>x.name===name)?.pct||0;
+    const baselineRisk=portfolioRiskProfile(rows,currentBase);
+    const riskRow=(group,name)=>baselineRisk[group].find(x=>x.name===name)||null;
     const riskAdds={factors:new Map(),currencies:new Map(),regions:new Map()};
-    const addRisk=(group,name,delta)=>riskAdds[group].set(name,(riskAdds[group].get(name)||0)+delta);
+    const addRisk=(group,name,amount)=>riskAdds[group].set(name,(riskAdds[group].get(name)||0)+amount);
     const riskAddSafe=(stock,amount)=>{
-      const delta=amount/afterTotal*100, checks=[];
-      for(const name of stockRiskTags(stock)) checks.push(['factors',name,delta,n(targets.maxFactor)||45]);
-      checks.push(['currencies',stockCurrency(stock),delta,n(targets.maxCurrency)||70]);
-      checks.push(['regions',stockRegion(stock),delta,n(targets.maxRegion)||70]);
-      return checks.every(([group,name,inc,limit])=>{
-        const current=riskPct(group,name)+(riskAdds[group].get(name)||0), next=current+inc;
-        return current>limit ? next<=current+.01 : next<=limit+.01;
+      const checks=[];
+      for(const name of stockRiskTags(stock)) checks.push(['factors',name,n(targets.maxFactor)||45]);
+      checks.push(['currencies',stockCurrency(stock),n(targets.maxCurrency)||70]);
+      checks.push(['regions',stockRegion(stock),n(targets.maxRegion)||70]);
+      return checks.every(([group,name,limit])=>{
+        const row=riskRow(group,name), before=row?.pct||0;
+        const after=(((row?.value)||0)+(riskAdds[group].get(name)||0)+amount)/afterTotal*100;
+        return Math.max(0,after-limit)<=Math.max(0,before-limit)+.01;
       });
     };
     const applyRiskAdd=(stock,amount)=>{
-      const delta=amount/afterTotal*100;
-      for(const name of stockRiskTags(stock)) addRisk('factors',name,delta);
-      addRisk('currencies',stockCurrency(stock),delta);
-      addRisk('regions',stockRegion(stock),delta);
+      for(const name of stockRiskTags(stock)) addRisk('factors',name,amount);
+      addRisk('currencies',stockCurrency(stock),amount);
+      addRisk('regions',stockRegion(stock),amount);
     };
     const allocationsByTicker=new Map(), sectorAdds=new Map(); let remaining=fresh;
     const eligible=candidates.filter(c=>c.baseEligible).slice(0,5);
