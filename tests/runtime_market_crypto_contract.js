@@ -130,6 +130,6 @@ const serviceWorker = fs.readFileSync('sw.js','utf8');
 assert(indexHtml.includes('data-market-mode="crypto"'),'Crypto tab button must ship in the app shell');
 assert(indexHtml.includes('market-runtime-loader.js?v=2.3'),'index must request the Crypto-aware Market loader generation');
 assert(runtimeLoader.includes("const SRC = 'market.js?v=20261007crypto1';"),'Market core URL must change when the Crypto generation ships');
-assert(runtimeLoader.includes('script.src = SRC;'),'Market loader must use its canonical versioned core URL');
+assert(runtimeLoader.includes("script.src = 'market.js?v=20261007crypto1';"),'Market loader must expose a literal versioned core URL so the reachability audit can follow it');
 assert(serviceWorker.includes('const CACHE_NAME = "vestra-cache-v239";'),'service worker cache generation must advance with the Crypto release');
 assert(/BOOTSTRAP_NETWORK_FIRST[\s\S]*"market\.js"/.test(serviceWorker),'installed PWA must fetch market.js network-first instead of serving a stale exact cache entry');
