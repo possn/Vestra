@@ -287,8 +287,12 @@ def assess(row: dict) -> dict:
     elif has_official:
         reasons.append("Cross-check ainda insuficiente")
 
-    raw_factor = _n(row.get("score"))
-    public_factor = raw_factor
+    # score_raw is the pure fundamental factor before Risk Gate and Confidence.
+    # score is the structurally risk-capped score entering the evidence gate.
+    raw_factor = _n(row.get("score_raw"))
+    if raw_factor is None:
+        raw_factor = _n(row.get("score"))
+    public_factor = _n(row.get("score"))
     reliability = "robust"
     reliability_reason = None
 

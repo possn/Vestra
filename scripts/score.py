@@ -36,6 +36,7 @@ class ScoredTicker:
     quote_type: str | None
 
     score: float | None
+    score_raw: float | None
     metric_confidence: str
     data_coverage_pct: float
 
@@ -694,7 +695,12 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             earnings_quality = None
             capital_allocation = None
 
-        # v4.1 Risk Gate: weighted averages cannot wash away structural red flags.
+        # Preserve pure fundamental attractiveness before any structural-risk cap.
+        # Conviction consumes this raw factor while Risk Gate remains an independent
+        # decision layer. The published score below may still be capped for safety.
+        fundamental_score = composite
+
+                # v4.1 Risk Gate: weighted averages cannot wash away structural red flags.
         # Generic and explainable rules only; no ticker blacklist.
         risk_flags = []
         if zombie_state == "probable" and model not in ("bank", "insurance"):
@@ -789,6 +795,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             ticker=r.ticker, name=r.name, business_summary=r.business_summary, sector=r.sector, industry=r.industry,
             market_cap=r.market_cap, currency=r.currency, quote_type=r.quote_type,
             score=round(composite, 1) if composite is not None else None,
+            score_raw=round(fundamental_score, 1) if fundamental_score is not None else None,
             metric_confidence=confidence, data_coverage_pct=round(metric_coverage, 1),
             zombie=zombie, interest_coverage=round(coverage, 2) if coverage is not None else None,
             zombie_risk_state=zombie_state,
@@ -869,7 +876,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         out.append(ScoredTicker(
             ticker=r.ticker, name=r.name, business_summary=r.business_summary, sector="Crypto", industry="Digital Assets",
             market_cap=r.market_cap, currency=r.currency, quote_type="CRYPTO",
-            score=None, metric_confidence="low", data_coverage_pct=0,
+            score=None, score_raw=None, metric_confidence="low", data_coverage_pct=0,
             zombie="unknown", interest_coverage=None,
             zombie_risk_state="not_applicable", zombie_risk_years=0,
             zombie_risk_reason="Modelo zombie não aplicável a criptoativos.",
@@ -914,7 +921,7 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         out.append(ScoredTicker(
             ticker=r.ticker, name=r.name, business_summary=r.business_summary, sector=r.sector, industry=r.industry,
             market_cap=r.market_cap, currency=r.currency, quote_type="ETF",
-            score=None, metric_confidence="low", data_coverage_pct=0,
+            score=None, score_raw=None, metric_confidence="low", data_coverage_pct=0,
             zombie="unknown", interest_coverage=None,
             zombie_risk_state="not_applicable", zombie_risk_years=0,
             zombie_risk_reason="Modelo zombie não aplicável a fundos.",
