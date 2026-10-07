@@ -586,6 +586,44 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(x<=-.015)return 'Shorts carregados';
     return 'Equilibrado';
   }
+  function cryptoSigned(v,digits=0,suffix=''){
+    const x=n(v); if(x==null)return '—';
+    return `${x>0?'+':''}${x.toFixed(digits)}${suffix}`;
+  }
+  function cryptoHistorySparkline(rows){
+    const vals=(rows||[]).map(r=>n(r?.value)).filter(v=>v!=null);
+    if(vals.length<2)return '';
+    const min=Math.min(...vals), max=Math.max(...vals), span=Math.max(1,max-min);
+    const w=240,h=54,pad=4;
+    const points=vals.slice().reverse().map((v,i)=>{
+      const x=pad+(i/(vals.length-1))*(w-pad*2);
+      const y=h-pad-((v-min)/span)*(h-pad*2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg class="market-crypto-sparkline" viewBox="0 0 ${w} ${h}" role="img" aria-label="Fear & Greed últimos 30 dias"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2.4" vector-effect="non-scaling-stroke"/></svg>`;
+  }
+  function cryptoRegimeChange(fng,deriv){
+    const f7=n(fng?.change_7d), f30=n(fng?.change_30d);
+    const btcOi7=n(deriv?.btc?.open_interest_change_7d_pct);
+    const btcFundingNow=n(deriv?.btc?.funding_rate_pct), btcFunding30=n(deriv?.btc?.funding_avg_30d_pct);
+    const parts=[];
+    if(f7!=null) parts.push(`sentimento 7d ${cryptoSigned(f7,0,' pts')}`);
+    if(btcOi7!=null) parts.push(`OI BTC 7d ${cryptoSigned(btcOi7,1,'%')}`);
+    if(btcFundingNow!=null&&btcFunding30!=null){
+      const d=btcFundingNow-btcFunding30;
+      parts.push(`funding vs média 30d ${cryptoSigned(d,4,'%')}`);
+    }
+    let label='Sem mudança clara';
+    if(f7!=null&&btcOi7!=null){
+      if(f7>=8&&btcOi7>5) label='Apetite e alavancagem a subir';
+      else if(f7<=-8&&btcOi7<-5) label='Desalavancagem defensiva';
+      else if(f7<=-8&&btcOi7>5) label='Alavancagem a subir com sentimento pior';
+      else if(f7>=8&&btcOi7<-5) label='Sentimento melhora com desalavancagem';
+    } else if(f30!=null){
+      label=f30>=10?'Sentimento melhorou no mês':f30<=-10?'Sentimento deteriorou no mês':'Regime relativamente estável';
+    }
+    return {label,parts};
+  }
   async function loadCryptoMarket(){
     if(M.cryptoLoaded)return M.cryptoRows;
     if(M.cryptoLoading)return M.cryptoLoading;
@@ -624,6 +662,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const rows=M.cryptoRows, bar=cryptoBarometer(rows), intel=M.cryptoIntelligence||{};
     const regime=cryptoRegime(rows,intel), dispersion=cryptoDispersion(rows);
     const global=intel.global||{}, fng=intel.fear_greed||{}, deriv=intel.derivatives||{};
+    const regimeChange=cryptoRegimeChange(fng,deriv);
     const volumeToCap=n(global.total_volume_24h_usd)!=null&&n(global.total_market_cap_usd)>0?n(global.total_volume_24h_usd)/n(global.total_market_cap_usd)*100:null;
     const q=txt(M.query).toLowerCase();
     const visibleRows=q?rows.filter(r=>`${r.symbol} ${r.name}`.toLowerCase().includes(q)):rows;
@@ -655,16 +694,17 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         <div class="market-crypto-regime-line"><span>BTC 24h <strong>${regime.btc==null?'—':(regime.btc>=0?'+':'')+regime.btc.toFixed(2)+'%'}</strong></span><span>Mediana altcoins <strong>${regime.altMedian==null?'—':(regime.altMedian>=0?'+':'')+regime.altMedian.toFixed(2)+'%'}</strong></span><span>Relativo <strong>${regime.relative==null?'—':(regime.relative>=0?'+':'')+regime.relative.toFixed(2)+' pp'}</strong></span></div>
       </section>
       <div class="market-crypto-columns">
-        <section class="market-detail-card market-crypto-signal"><div class="market-perspective-head"><div><small>SENTIMENTO</small><h4>Fear & Greed</h4></div><span class="market-data-age">${fng.source?esc(fng.source):'indisponível'}</span></div><div class="market-crypto-signal-value"><strong>${n(fng.value)==null?'—':Math.round(n(fng.value))}</strong><span>${esc(fng.label||'Sem leitura')}</span></div>${n(fng.previous_value)!=null?`<p class="market-case-note">Anterior: ${Math.round(n(fng.previous_value))}. Fonte: Alternative.me.</p>`:'<p class="market-case-note">Sem histórico curto disponível.</p>'}</section>
+        <section class="market-detail-card market-crypto-signal"><div class="market-perspective-head"><div><small>SENTIMENTO · 30 DIAS</small><h4>Fear & Greed</h4></div><span class="market-data-age">${fng.source?esc(fng.source):'indisponível'}</span></div><div class="market-crypto-signal-value"><strong>${n(fng.value)==null?'—':Math.round(n(fng.value))}</strong><span>${esc(fng.label||'Sem leitura')}</span></div>${cryptoHistorySparkline(fng.history_30d)}<div class="market-crypto-history-grid"><span><small>7d</small><strong>${cryptoSigned(fng.change_7d,0,' pts')}</strong></span><span><small>30d</small><strong>${cryptoSigned(fng.change_30d,0,' pts')}</strong></span><span><small>Há 7d</small><strong>${n(fng.week_ago_value)==null?'—':Math.round(n(fng.week_ago_value))}</strong></span><span><small>Há 30d</small><strong>${n(fng.month_ago_value)==null?'—':Math.round(n(fng.month_ago_value))}</strong></span></div><p class="market-case-note">Fonte: Alternative.me. A série mede sentimento, não retorno esperado.</p></section>
         <section class="market-detail-card market-crypto-signal"><div class="market-perspective-head"><div><small>DERIVATIVES</small><h4>Funding & open interest</h4></div><span class="market-data-age">${deriv.source?esc(deriv.source):'indisponível'}</span></div>
           <div class="market-crypto-derivatives">
-            <div><span>BTC funding</span><strong>${n(deriv?.btc?.funding_rate_pct)==null?'—':n(deriv.btc.funding_rate_pct).toFixed(4)+'%'}</strong><small>${cryptoFundingLabel(deriv?.btc?.funding_rate_pct)}</small></div>
-            <div><span>BTC OI 24h</span><strong>${n(deriv?.btc?.open_interest_change_24h_pct)==null?'—':(n(deriv.btc.open_interest_change_24h_pct)>=0?'+':'')+n(deriv.btc.open_interest_change_24h_pct).toFixed(1)+'%'}</strong><small>Binance Futures</small></div>
-            <div><span>ETH funding</span><strong>${n(deriv?.eth?.funding_rate_pct)==null?'—':n(deriv.eth.funding_rate_pct).toFixed(4)+'%'}</strong><small>${cryptoFundingLabel(deriv?.eth?.funding_rate_pct)}</small></div>
-            <div><span>ETH OI 24h</span><strong>${n(deriv?.eth?.open_interest_change_24h_pct)==null?'—':(n(deriv.eth.open_interest_change_24h_pct)>=0?'+':'')+n(deriv.eth.open_interest_change_24h_pct).toFixed(1)+'%'}</strong><small>Binance Futures</small></div>
+            <div><span>BTC funding</span><strong>${n(deriv?.btc?.funding_rate_pct)==null?'—':n(deriv.btc.funding_rate_pct).toFixed(4)+'%'}</strong><small>média 7d ${n(deriv?.btc?.funding_avg_7d_pct)==null?'—':n(deriv.btc.funding_avg_7d_pct).toFixed(4)+'%'}</small></div>
+            <div><span>BTC OI</span><strong>${cryptoSigned(deriv?.btc?.open_interest_change_7d_pct,1,'%')} · 7d</strong><small>30d ${cryptoSigned(deriv?.btc?.open_interest_change_30d_pct,1,'%')}</small></div>
+            <div><span>ETH funding</span><strong>${n(deriv?.eth?.funding_rate_pct)==null?'—':n(deriv.eth.funding_rate_pct).toFixed(4)+'%'}</strong><small>média 7d ${n(deriv?.eth?.funding_avg_7d_pct)==null?'—':n(deriv.eth.funding_avg_7d_pct).toFixed(4)+'%'}</small></div>
+            <div><span>ETH OI</span><strong>${cryptoSigned(deriv?.eth?.open_interest_change_7d_pct,1,'%')} · 7d</strong><small>30d ${cryptoSigned(deriv?.eth?.open_interest_change_30d_pct,1,'%')}</small></div>
           </div>
         </section>
       </div>
+      <section class="market-detail-card market-crypto-regime-change"><div class="market-perspective-head"><div><small>MUDANÇA DE REGIME</small><h4>${esc(regimeChange.label)}</h4></div><span class="market-data-age">7–30d</span></div><div class="market-crypto-regime-line">${regimeChange.parts.length?regimeChange.parts.map(x=>`<span>${esc(x)}</span>`).join(''):'<span>Histórico insuficiente para leitura temporal.</span>'}</div><p class="market-case-note">Síntese descritiva de sentimento, funding e open interest. Não altera o Crypto Barómetro e não é sinal de compra/venda.</p></section>
       <section class="market-section"><div class="market-section__head"><div><h3>${q?'Crypto · pesquisa':'Principais criptomoedas'}</h3><p>${q?`Resultados para ${esc(M.query)}.`:'Preço, variação 24h, posição no ciclo e exposição pessoal.'}</p></div><span class="market-data-age">USD · live</span></div><div class="market-crypto-list">${topCap.length?topCap.map(rowHtml).join(''):'<div class="market-empty">Sem criptomoedas encontradas.</div>'}</div></section>
       <div class="market-crypto-columns">
         <section class="market-detail-card"><div class="market-perspective-head"><div><small>MOMENTUM 24H</small><h4>Mais fortes</h4></div></div><div class="market-crypto-mini">${gainers.length?gainers.map(r=>`<span><strong>${esc(r.symbol)}</strong><em class="is-positive">+${n(r.change_pct).toFixed(2)}%</em></span>`).join(''):'<p class="market-case-note">Sem subidas no universo.</p>'}</div></section>
