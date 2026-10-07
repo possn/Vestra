@@ -3,7 +3,9 @@
 Confidence is separate from attractiveness, but sparse evidence is not allowed to
 be communicated as a strong investment score.  The raw factor score is retained
 as ``score_raw`` for diagnostics; ``score`` is suppressed/capped when critical
-fundamental coverage is inadequate.
+fundamental coverage is inadequate. ``score_raw`` is the pre-Confidence score
+(after any independent Risk Gate cap); ``score_fundamental`` is preserved upstream
+as the pre-Risk-Gate attractiveness layer.
 """
 from __future__ import annotations
 
@@ -287,6 +289,8 @@ def assess(row: dict) -> dict:
     elif has_official:
         reasons.append("Cross-check ainda insuficiente")
 
+    # This is intentionally the score entering the Confidence gate. Structural
+    # Risk Gate caps have already been applied upstream in score.py.
     raw_factor = _n(row.get("score"))
     public_factor = raw_factor
     reliability = "robust"

@@ -71,10 +71,10 @@ vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
 
 const conviction = stock => context.portfolioConviction(stock);
-assert(Math.abs(conviction({ score: 80, score_raw: 80, estimate_momentum_score: 70, valuation_signal: 'fair', thesis_direction: 'flat' }) - 76.1) < 1e-9, 'conviction must keep fixed 70/12/18 weights');
-assert.strictEqual(conviction({ score: 59, score_raw: 80, thesis_direction: 'flat' }), 71, 'Conviction must use raw fundamental attractiveness, not the confidence-capped public Score');
-assert.strictEqual(conviction({ score: null, score_raw: 80, estimate_momentum_score: 90, valuation_signal: 'undervalued' }), 82.1, 'suppressed public Score must not erase Conviction when raw factor evidence exists');
-assert.strictEqual(conviction({ score: null, score_raw: null, estimate_momentum_score: 90, valuation_signal: 'undervalued' }), null, 'Conviction still requires a fundamental factor score');
+assert(Math.abs(conviction({ score: 80, score_raw: 80, score_fundamental: 80, estimate_momentum_score: 70, valuation_signal: 'fair', thesis_direction: 'flat' }) - 76.1) < 1e-9, 'conviction must keep fixed 70/12/18 weights');
+assert.strictEqual(conviction({ score: 45, score_raw: 45, score_fundamental: 80, thesis_direction: 'flat' }), 71, 'Conviction must use pre-Risk-Gate fundamental attractiveness, not the risk/confidence-capped public Score');
+assert.strictEqual(conviction({ score: null, score_raw: 59, score_fundamental: 80, estimate_momentum_score: 90, valuation_signal: 'undervalued' }), 82.1, 'suppressed public Score must not erase Conviction when fundamental attractiveness exists');
+assert.strictEqual(conviction({ score: null, score_raw: null, score_fundamental: null, estimate_momentum_score: 90, valuation_signal: 'undervalued' }), null, 'Conviction still requires a fundamental factor score');
 assert.strictEqual(
   conviction({ score: 80, estimate_momentum_score: 30, valuation_signal: 'fair', estimate_signal: 'deteriorating', thesis_direction: 'flat' }),
   conviction({ score: 80, estimate_momentum_score: 30, valuation_signal: 'fair', estimate_signal: 'stable', thesis_direction: 'flat' }),

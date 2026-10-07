@@ -131,17 +131,19 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertNotIn("annual_zombie_history", row)
 
 
-    def test_raw_score_reaches_startup_for_conviction_without_replacing_public_score(self):
+    def test_fundamental_score_reaches_startup_for_conviction_without_replacing_public_score(self):
         row = shards.index_row({
             "ticker": "TEST",
-            "score": 59.0,
-            "score_raw": 82.0,
+            "score": 45.0,
+            "score_raw": 59.0,
+            "score_fundamental": 82.0,
             "confidence_score": 58.0,
             "score_reliability": "limited_evidence",
         })
-        self.assertEqual(row["score"], 59.0)
-        self.assertEqual(row["score_raw"], 82.0)
-        self.assertIn("score_raw", shards.INDEX_KEYS)
+        self.assertEqual(row["score"], 45.0)
+        self.assertEqual(row["score_fundamental"], 82.0)
+        self.assertIn("score_fundamental", shards.INDEX_KEYS)
+        self.assertNotIn("score_raw", shards.INDEX_KEYS)
 
     def test_columnar_startup_budget_is_production_grade(self):
         self.assertEqual(shards.MAX_COLUMNAR_BYTES, 2_250_000)
