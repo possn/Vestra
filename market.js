@@ -558,6 +558,34 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const label=score>=70?'Apetite forte':score>=57?'Construtivo':score>=43?'Neutro':score>=30?'Defensivo':'Stress';
     return {score,label,breadth,median,drawdown};
   }
+  function cryptoRegime(rows,intel){
+    const btc=n(rows?.find(r=>r.symbol==='BTC')?.change_pct);
+    const altChanges=(rows||[]).filter(r=>r.symbol!=='BTC'&&n(r.change_pct)!=null).map(r=>n(r.change_pct)).sort((a,b)=>a-b);
+    const altMedian=altChanges.length?(altChanges.length%2?altChanges[(altChanges.length-1)/2]:(altChanges[altChanges.length/2-1]+altChanges[altChanges.length/2])/2):null;
+    const relative=btc!=null&&altMedian!=null?altMedian-btc:null;
+    const dominance=n(intel?.global?.btc_dominance_pct);
+    let label='Indefinido';
+    if(relative!=null){
+      if(relative>=2) label='Altcoins a liderar';
+      else if(relative<=-2) label='Bitcoin a liderar';
+      else label='Regime misto';
+    }
+    return {label,btc,altMedian,relative,dominance};
+  }
+  function cryptoDispersion(rows){
+    const xs=(rows||[]).map(r=>n(r.change_pct)).filter(v=>v!=null);
+    if(xs.length<2)return null;
+    const mean=xs.reduce((a,b)=>a+b,0)/xs.length;
+    return Math.sqrt(xs.reduce((sum,x)=>sum+(x-mean)*(x-mean),0)/(xs.length-1));
+  }
+  function cryptoFundingLabel(v){
+    const x=n(v); if(x==null)return '—';
+    if(x>=.05)return 'Longs muito carregados';
+    if(x>=.015)return 'Longs carregados';
+    if(x<=-.05)return 'Shorts muito carregados';
+    if(x<=-.015)return 'Shorts carregados';
+    return 'Equilibrado';
+  }
   async function loadCryptoMarket(){
     if(M.cryptoLoaded)return M.cryptoRows;
     if(M.cryptoLoading)return M.cryptoLoading;
