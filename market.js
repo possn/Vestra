@@ -1236,10 +1236,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     // Conviction answers "how strong is the investment thesis?", not "how much
     // evidence do we have?" or "is risk acceptable?". Confidence and Risk Gate
     // remain independent decision gates so the same weakness is not counted twice.
-    // Prefer score_raw because confidence.py may cap/suppress the published score.
+    // Prefer score_fundamental, captured before Risk Gate and Confidence caps.
     // The public score remains the UI/evidence-gated score; Conviction owns
-    // attractiveness while evidence quality is enforced separately below.
-    const score=n(s?.score_raw??s?.score), est=n(s?.estimate_momentum_score);
+    // attractiveness while Risk Gate and evidence quality are enforced separately.
+    const score=n(s?.score_fundamental??s?.score_raw??s?.score), est=n(s?.estimate_momentum_score);
     const valMap={undervalued:85,fair:65,overvalued:25,uncertain:40,insufficient:45};
     const valuationSignal=txt(s?.valuation_signal);
     const val=Object.prototype.hasOwnProperty.call(valMap,valuationSignal)?valMap[valuationSignal]:null;
@@ -2081,7 +2081,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       <div class="market-detail-card"><h4>Posições a rever</h4>${compactRows(review,r=>`Convicção ${r.conviction==null?'—':Math.round(r.conviction)}/100 · ${txt(r.stock.risk_gate)||'Risk Gate não classificado'} · ${txt(r.stock.estimate_signal)||'expectativas —'}`)}</div>
       ${zombieHtml}
       <div class="market-detail-card"><h4>Concentração e overlap</h4>${concHtml}</div>
-      <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida do mesmo setor com convicção ≥5 pontos superior, Score ≥3 pontos superior e passa a avaliação canónica de evidência, Risk Budget e overlap.</p>${altHtml}</div>
+      <div class="market-detail-card"><h4>Alternativas no mesmo setor</h4><p class="market-case-note">Só aparecem quando há uma empresa não detida do mesmo setor com convicção ≥5 pontos superior e passa a avaliação canónica de evidência, Risk Budget e overlap. O Score publicado é mostrado como contexto, não como segundo gate.</p>${altHtml}</div>
       ${etfOptimizeHtml}
       ${scenarioHtml}
       ${targetFitHtml}
