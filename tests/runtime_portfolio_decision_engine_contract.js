@@ -63,6 +63,7 @@ const context = {
   },
   isFund: stock => stock?.kind === 'ETF' || stock?.asset_type === 'ETF',
   stockRiskTags: stock => stock?.riskTags ?? ['Core'],
+  riskBudgetCoverage: () => ({ ready:true, researchCoverage:100, factorCoverage:100 }),
   loadPortfolioTargets: () => ({ ...targets }),
   riskBudgetPenalty: () => riskPenalty,
 };
@@ -124,6 +125,29 @@ assert(!source.includes('||Number(y.estimatesDown)-Number(x.estimatesDown)'), 'r
 const multiMoveBlock = source.split('function buildMultiMovePlan(){', 2)[1]?.split('\n  function renderMultiMovePlan', 1)[0] || '';
 assert(!multiMoveBlock.includes('thesisDown'), 'multi-move source selection must not re-apply thesis direction after Conviction');
 assert(!multiMoveBlock.includes('estimatesDown'), 'multi-move source selection must not re-apply estimate direction after Conviction');
+
+const coverageContext = {
+  n: context.n,
+  stockRiskTags: stock => stock?.riskTags || [],
+};
+vm.createContext(coverageContext);
+vm.runInContext(extractFunction('riskBudgetCoverage'), coverageContext);
+let coverageState = coverageContext.riskBudgetCoverage([
+  { value: 20, stock:{riskTags:['Growth']} },
+  { value: 10, stock:{riskTags:[]} },
+], 100);
+assert.strictEqual(coverageState.ready, false, 'Risk Budget must fail closed when portfolio research/factor coverage is below 35%');
+assert.strictEqual(coverageState.researchCoverage, 30);
+assert.strictEqual(coverageState.factorCoverage, 20);
+coverageState = coverageContext.riskBudgetCoverage([
+  { value: 30, stock:{riskTags:['Growth']} },
+  { value: 10, stock:{riskTags:[]} },
+], 100);
+assert.strictEqual(coverageState.ready, false, 'research coverage alone is insufficient when factor coverage is below 35%');
+coverageState = coverageContext.riskBudgetCoverage([
+  { value: 40, stock:{riskTags:['Growth']} },
+], 100);
+assert.strictEqual(coverageState.ready, true, 'portfolio Risk Budget becomes ready once both research and factor coverage reach the existing 35% threshold');
 
 const evaluate = args => context.evaluatePortfolioMove(args);
 const stock = overrides => ({
@@ -258,6 +282,13 @@ r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destination: stock({ r
 assert.strictEqual(r.autoEligible, false, 'missing factor classification must fail closed for automatic moves');
 assert.strictEqual(r.riskBudgetReady, false, 'missing factor classification must be explicit in canonical decision output');
 assert(r.warnings.includes('Risk Budget sem classificação de fatores'));
+
+context.riskBudgetCoverage = () => ({ ready:false, researchCoverage:30, factorCoverage:20 });
+r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
+assert.strictEqual(r.autoEligible, false, 'incomplete portfolio Risk Budget coverage must fail closed for automatic moves');
+assert.strictEqual(r.riskBudgetReady, false);
+assert(r.warnings.includes('Risk Budget da carteira com cobertura insuficiente'));
+context.riskBudgetCoverage = () => ({ ready:true, researchCoverage:100, factorCoverage:100 });
 
 
 
