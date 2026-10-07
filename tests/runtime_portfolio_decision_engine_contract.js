@@ -62,6 +62,7 @@ const context = {
     return Number.isFinite(x) ? x : null;
   },
   isFund: stock => stock?.kind === 'ETF' || stock?.asset_type === 'ETF',
+  stockRiskTags: stock => stock?.riskTags ?? ['Core'],
   loadPortfolioTargets: () => ({ ...targets }),
   riskBudgetPenalty: () => riskPenalty,
 };
@@ -252,6 +253,13 @@ assert.strictEqual(r.autoEligible, false, 'scenario with negative conviction del
 
 r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 70, indirect: 0.5, positionPct: 8, sectorPct: 20 });
 assert.strictEqual(r.autoEligible, true, 'fresh capital should accept the canonical reinforce gate');
+
+r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destination: stock({ riskTags: [] }), destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
+assert.strictEqual(r.autoEligible, false, 'missing factor classification must fail closed for automatic moves');
+assert.strictEqual(r.riskBudgetReady, false, 'missing factor classification must be explicit in canonical decision output');
+assert(r.warnings.includes('Risk Budget sem classificação de fatores'));
+
+
 
 r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 69, indirect: 0.5, positionPct: 8, sectorPct: 20 });
 assert.strictEqual(r.autoEligible, false, 'fresh capital must not allocate below canonical reinforce conviction');
