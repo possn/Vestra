@@ -69,6 +69,7 @@ const context = {
 };
 vm.createContext(context);
 vm.runInContext(extractFunction('portfolioConviction'), context);
+vm.runInContext(extractFunction('stockRiskClassification'), context);
 vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('portfolioSourceEvidenceReady'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
@@ -153,6 +154,13 @@ assert.strictEqual(coverageState.ready, true, 'portfolio Risk Budget becomes rea
 const evaluate = args => context.evaluatePortfolioMove(args);
 const stock = overrides => ({
   ticker: 'DEST',
+  score_model: 'general',
+  growth_pct: 50,
+  revenue_growth: 0.05,
+  value_pct: 50,
+  dividend_yield: 0,
+  market_cap: 10000000000,
+  sector: 'Technology',
   score: 82,
   confidence_score: 80,
   valuation_signal: 'fair',
@@ -295,10 +303,14 @@ assert.strictEqual(r.autoEligible, false, 'scenario with negative conviction del
 r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 70, indirect: 0.5, positionPct: 8, sectorPct: 20 });
 assert.strictEqual(r.autoEligible, true, 'fresh capital should accept the canonical reinforce gate');
 
-r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destination: stock({ riskTags: [] }), destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
+r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destination: stock({ score_model:'', growth_pct:null, revenue_growth:null, value_pct:null, dividend_yield:null, market_cap:null, sector:'', industry:'' }), destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
 assert.strictEqual(r.autoEligible, false, 'missing factor classification must fail closed for automatic moves');
 assert.strictEqual(r.riskBudgetReady, false, 'missing factor classification must be explicit in canonical decision output');
 assert(r.warnings.includes('Risk Budget sem classificação de fatores'));
+
+r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destination: stock({ riskTags: [] }), destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
+assert.strictEqual(r.riskBudgetReady, true, 'fully observed neutral stock with zero triggered tags must still be risk-classified');
+assert.strictEqual(r.autoEligible, true, 'neutral factor profile must not be mistaken for missing Risk Budget data');
 
 context.riskBudgetCoverage = () => ({ ready:false, researchCoverage:30, factorCoverage:20 });
 r = evaluate({ mode: 'fresh', ...base, sourceStock: null, destinationConv: 80, indirect: 0.5, positionPct: 8, sectorPct: 20 });
