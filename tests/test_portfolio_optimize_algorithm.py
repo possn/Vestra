@@ -377,9 +377,9 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const baseEligible=decision.autoEligible", s)
         self.assertIn("const warnings=[...decision.evidence.warnings]", s)
         self.assertNotIn("if(!c.autoEligible||used.has", s)
-        self.assertIn("const baselineRisk=portfolioRiskProfile(rows,afterTotal)", s)
+        self.assertIn("const baselineRisk=portfolioRiskProfile(rows,currentBase)", s)
         self.assertIn("const riskAddSafe=(stock,amount)=>", s)
-        self.assertIn("current>limit ? next<=current+.01 : next<=limit+.01", s)
+        self.assertIn("Math.max(0,after-limit)<=Math.max(0,before-limit)+.01", s)
         self.assertIn("const allocationsByTicker=new Map(), sectorAdds=new Map()", s)
         self.assertIn("const baseEligible=decision.autoEligible", s)
         self.assertIn("const eligible=candidates.filter(c=>c.baseEligible).slice(0,5)", s)
@@ -425,11 +425,23 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
     def test_risk_budget_penalises_only_incremental_excess(self):
         s = read("market.js")
         block = s.split("function riskBudgetPenalty(", 1)[1].split("\n  function riskBudgetCoverage", 1)[0]
+        self.assertIn("sourceStock=null,totalBefore=null", block)
         self.assertIn("const incrementalExcess=(now,after,limit)=>", block)
         self.assertIn("Math.max(0,after-limit)-Math.max(0,now-limit)", block)
+        self.assertIn("const prof=portfolioRiskProfile(rows,beforeBase)", block)
+        self.assertIn("const projectedPct=(row,sourceShares)=>", block)
+        self.assertNotIn("portfolioRiskProfile(rows,totalAfter)", block)
         self.assertNotIn("if(after>maxFactor) penalty+=(after-maxFactor)", block)
         self.assertNotIn("if(curAfter>maxCurrency) penalty+=(curAfter-maxCurrency)", block)
         self.assertNotIn("if(regAfter>maxRegion) penalty+=(regAfter-maxRegion)", block)
+
+    def test_fresh_capital_risk_budget_uses_current_portfolio_baseline(self):
+        s = read("market.js")
+        block = s.split("function freshCapitalPlan(", 1)[1].split("\n  function renderFreshCapitalPlan", 1)[0]
+        self.assertIn("const baselineRisk=portfolioRiskProfile(rows,currentBase)", block)
+        self.assertIn("const after=(((row?.value)||0)+(riskAdds[group].get(name)||0)+amount)/afterTotal*100", block)
+        self.assertIn("Math.max(0,after-limit)<=Math.max(0,before-limit)+.01", block)
+        self.assertNotIn("portfolioRiskProfile(rows,afterTotal)", block)
 
     def test_automatic_moves_require_factor_classification(self):
         s = read("market.js")
