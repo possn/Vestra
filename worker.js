@@ -102,27 +102,54 @@ async function fetchCryptoIntelligence(ctx) {
     return data;
   }
 
-  const [globalData, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist] = await Promise.all([
+  const [globalData, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist, btcFundingHist, ethFundingHist] = await Promise.all([
     fetchJsonMaybe("https://api.coingecko.com/api/v3/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
-    fetchJsonMaybe("https://api.alternative.me/fng/?limit=2&format=json", { headers: { "Accept": "application/json" } }, 5000),
+    fetchJsonMaybe("https://api.alternative.me/fng/?limit=31&format=json", { headers: { "Accept": "application/json" } }, 5000),
     fetchJsonMaybe("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT", {}, 5000),
     fetchJsonMaybe("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=ETHUSDT", {}, 5000),
     fetchJsonMaybe("https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT", {}, 5000),
     fetchJsonMaybe("https://fapi.binance.com/fapi/v1/openInterest?symbol=ETHUSDT", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=25", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=ETHUSDT&period=1h&limit=25", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=30", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=ETHUSDT&period=1d&limit=30", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=100", {}, 5000),
+    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=100", {}, 5000),
   ]);
 
   const g = globalData?.data || {};
-  const fngNow = Array.isArray(fearGreed?.data) ? fearGreed.data[0] : null;
-  const fngPrev = Array.isArray(fearGreed?.data) ? fearGreed.data[1] : null;
+  const fngRows = Array.isArray(fearGreed?.data) ? fearGreed.data : [];
+  const fngNow = fngRows[0] || null;
+  const fngPrev = fngRows[1] || null;
 
-  const oiChangePct = (hist) => {
-    if (!Array.isArray(hist) || hist.length < 2) return null;
-    const first = finiteNumber(hist[0]?.sumOpenInterestValue);
-    const last = finiteNumber(hist[hist.length - 1]?.sumOpenInterestValue);
-    return first && last ? (last / first - 1) * 100 : null;
+  const pctChange = (first, last) => first && last ? (last / first - 1) * 100 : null;
+  const mean = (xs) => {
+    const vals = (xs || []).map(finiteNumber).filter(v => v !== null);
+    return vals.length ? vals.reduce((a,b)=>a+b,0) / vals.length : null;
   };
+  const oiChangePct = (hist, days=1) => {
+    if (!Array.isArray(hist) || hist.length < 2) return null;
+    const rows = hist.slice(-Math.max(2, days + 1));
+    const first = finiteNumber(rows[0]?.sumOpenInterestValue);
+    const last = finiteNumber(rows[rows.length - 1]?.sumOpenInterestValue);
+    return pctChange(first, last);
+  };
+  const fundingSummary = (hist, days) => {
+    if (!Array.isArray(hist) || !hist.length) return null;
+    const cutoff = Date.now() - days * 86400000;
+    const vals = hist.filter(r => finiteNumber(r?.fundingTime) >= cutoff)
+      .map(r => finiteNumber(r?.fundingRate))
+      .filter(v => v !== null)
+      .map(v => v * 100);
+    return mean(vals);
+  };
+  const fngPoint = (index) => {
+    const row = fngRows[index];
+    return row ? { value: finiteNumber(row.value), label: String(row.value_classification || ""), timestamp: finiteNumber(row.timestamp) } : null;
+  };
+  const fngHistory = fngRows.slice(0,31).map(row => ({
+    value: finiteNumber(row?.value),
+    label: String(row?.value_classification || ""),
+    timestamp: finiteNumber(row?.timestamp),
+  })).filter(row => row.value !== null && row.timestamp !== null);
 
   const out = {
     global: {
@@ -139,7 +166,12 @@ async function fetchCryptoIntelligence(ctx) {
       value: finiteNumber(fngNow?.value),
       label: String(fngNow?.value_classification || ""),
       previous_value: finiteNumber(fngPrev?.value),
+      week_ago_value: fngPoint(7)?.value ?? null,
+      month_ago_value: fngPoint(30)?.value ?? null,
+      change_7d: fngPoint(7)?.value == null || finiteNumber(fngNow?.value) == null ? null : finiteNumber(fngNow?.value) - fngPoint(7).value,
+      change_30d: fngPoint(30)?.value == null || finiteNumber(fngNow?.value) == null ? null : finiteNumber(fngNow?.value) - fngPoint(30).value,
       timestamp: finiteNumber(fngNow?.timestamp),
+      history_30d: fngHistory,
       source: fngNow ? "Alternative.me" : null,
     },
     derivatives: {
@@ -147,13 +179,21 @@ async function fetchCryptoIntelligence(ctx) {
         funding_rate_pct: finiteNumber(btcPremium?.lastFundingRate) == null ? null : finiteNumber(btcPremium?.lastFundingRate) * 100,
         mark_price: finiteNumber(btcPremium?.markPrice),
         open_interest: finiteNumber(btcOi?.openInterest),
-        open_interest_change_24h_pct: oiChangePct(btcOiHist),
+        open_interest_change_24h_pct: oiChangePct(btcOiHist,1),
+        open_interest_change_7d_pct: oiChangePct(btcOiHist,7),
+        open_interest_change_30d_pct: oiChangePct(btcOiHist,29),
+        funding_avg_7d_pct: fundingSummary(btcFundingHist,7),
+        funding_avg_30d_pct: fundingSummary(btcFundingHist,30),
       },
       eth: {
         funding_rate_pct: finiteNumber(ethPremium?.lastFundingRate) == null ? null : finiteNumber(ethPremium?.lastFundingRate) * 100,
         mark_price: finiteNumber(ethPremium?.markPrice),
         open_interest: finiteNumber(ethOi?.openInterest),
-        open_interest_change_24h_pct: oiChangePct(ethOiHist),
+        open_interest_change_24h_pct: oiChangePct(ethOiHist,1),
+        open_interest_change_7d_pct: oiChangePct(ethOiHist,7),
+        open_interest_change_30d_pct: oiChangePct(ethOiHist,29),
+        funding_avg_7d_pct: fundingSummary(ethFundingHist,7),
+        funding_avg_30d_pct: fundingSummary(ethFundingHist,30),
       },
       source: (btcPremium || ethPremium || btcOi || ethOi) ? "Binance Futures" : null,
     },
