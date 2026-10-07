@@ -203,6 +203,17 @@ assert.strictEqual(r.autoEligible, false, 'risk-budget penalty >=5 must block au
 assert(r.warnings.includes('pressiona orçamento de risco'));
 
 riskPenalty = 0;
+r = evaluate({ mode: 'replace', ...base, overlapReady: false });
+assert.strictEqual(r.autoEligible, false, 'missing ETF look-through must fail closed when overlap reduction is a target');
+assert.strictEqual(r.overlapEvidenceReady, false, 'overlap evidence readiness must be explicit in canonical decision output');
+assert(r.warnings.includes('overlap ETF sem holdings suficientes'));
+
+targets.overlap = 'neutral';
+r = evaluate({ mode: 'replace', ...base, overlapReady: false });
+assert.strictEqual(r.autoEligible, true, 'missing ETF look-through must not block automation when overlap is not an active target');
+targets.overlap = 'reduce';
+
+riskPenalty = 0;
 r = evaluate({ mode: 'alternative', ...base, indirect: 2.0, sourceIndirect: 0.5 });
 assert.strictEqual(r.autoEligible, false, 'alternative overlap increase >=1.5pp must be rejected');
 assert(r.warnings.includes('aumenta overlap'));

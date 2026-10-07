@@ -200,9 +200,9 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         s = read("market.js")
         self.assertIn("function portfolioMoveEvidence(stock, conviction=null)", s)
         self.assertIn("function evaluatePortfolioMove({mode='replace'", s)
-        self.assertIn("autoEligible=sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=2&&convDelta>0&&overlapDelta<2", s)
+        self.assertIn("autoEligible=sourceAutomatable&&evidence.strict&&riskBudgetReady&&overlapEvidenceReady&&convictionGain>=2&&convDelta>0&&overlapDelta<2", s)
         self.assertIn("positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5", s)
-        self.assertIn("autoEligible=evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5", s)
+        self.assertIn("autoEligible=evidence.reinforceEligible&&riskBudgetReady&&overlapEvidenceReady&&riskPenalty<5", s)
         self.assertIn("mode==='scenario'", s)
         self.assertIn("melhoria de convicção insuficiente", s)
         self.assertIn("aumenta overlap", s)
@@ -260,13 +260,13 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
 
     def test_action_map_respects_risk_gate_and_saved_portfolio_targets(self):
         s = read("market.js")
-        self.assertIn("function portfolioFit(r, sectorRows, analysed, etfs, targets=loadPortfolioTargets())", s)
+        self.assertIn("function portfolioFit(r, sectorRows, analysed, etfs, overlapReady=true, targets=loadPortfolioTargets())", s)
         self.assertIn("function researchUniverseValue(assets=portfolioAssets())", s)
         self.assertIn("portfolioIntelligence(rows,researchTotal)", s)
         self.assertIn("const maxPos=Math.max(3,Math.min(30,n(targets?.maxPosition)||10))", s)
         self.assertIn("const maxSector=Math.max(10,Math.min(60,n(targets?.maxSector)||25))", s)
         self.assertIn("const portfolioTargets=loadPortfolioTargets()", s)
-        self.assertIn("portfolioFit(r,sectorRows,portfolioBase,etfsForFit,portfolioTargets)", s)
+        self.assertIn("portfolioFit(r,sectorRows,portfolioBase,etfsForFit,overlapReady,portfolioTargets)", s)
         self.assertIn("const structuralDeterioration=gate==='high'||gate==='severe'||(conviction!=null&&conviction<50)", s)
         self.assertIn("if(structuralDeterioration||gate==='watch') return {key:'review'", s)
         action = s.split("function portfolioAction(", 1)[1].split("\n  const PORTFOLIO_TARGETS_KEY", 1)[0]
@@ -408,14 +408,30 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const etfOptimizeRows=findEtfOptimizeAlternatives(ranked,heldTickers)", intelligence)
         self.assertIn("${etfOptimizeHtml}", intelligence)
 
+    def test_overlap_missing_lookthrough_is_not_treated_as_zero(self):
+        s = read("market.js")
+        fit = s.split("function portfolioFit(", 1)[1].split("\n  function portfolioFitSummary", 1)[0]
+        move = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
+        self.assertIn("const overlapEvidenceReady=targets?.overlap!=='reduce'||overlapReady;", fit)
+        self.assertIn("overlap ETF por classificar", fit)
+        self.assertIn("||!overlapEvidenceReady) fit='watch'", fit)
+        self.assertIn("const overlapEvidenceReady=targets.overlap!=='reduce'||overlapReady;", move)
+        self.assertIn("overlap ETF sem holdings suficientes", move)
+        self.assertIn("riskBudgetReady&&overlapEvidenceReady&&riskPenalty<5", move)
+        self.assertIn("const overlapReady=heldEtfs.length===etfsForFit.length;", s)
+        self.assertIn("const overlapReady=heldEtfs.length===etfs.length;", s)
+        self.assertIn("sourceIndirect:currentIndirect,overlapReady", s)
+        self.assertIn("sourceIndirect:srcIndirect,overlapReady", s)
+        self.assertIn("positionPct,sectorPct,indirect,overlapReady", s)
+
     def test_automatic_moves_require_factor_classification(self):
         s = read("market.js")
         block = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
         self.assertIn("const riskBudgetReady=stockRiskTags(destination).length>0;", block)
         self.assertIn("Risk Budget sem classificação de fatores", block)
-        self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5", block)
-        self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=5", block)
-        self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty", block)
+        self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&overlapEvidenceReady&&riskPenalty<5", block)
+        self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&overlapEvidenceReady&&convictionGain>=5", block)
+        self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,overlapEvidenceReady,riskPenalty", block)
 
     def test_risk_budget_penalises_only_incremental_excess(self):
         s = read("market.js")
