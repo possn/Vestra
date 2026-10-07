@@ -14,11 +14,17 @@ class PortfolioReinforceGateTests(unittest.TestCase):
             self.market.index("function portfolioMoveEvidence"):
             self.market.index("function evaluatePortfolioMove")
         ]
-        self.assertIn("const actionableValuation=['undervalued','fair'].includes(valuation);", block)
+        conviction = self.market[
+            self.market.index("function portfolioConviction"):
+            self.market.index("function holdingSymbol")
+        ]
         self.assertIn("const reliabilityReady=['robust','moderate_evidence'].includes(reliability);", block)
         self.assertIn("const evidenceReady=reliabilityReady&&coverage!=null&&coverage>=65&&critical!=null&&critical>=50;", block)
-        self.assertIn("const strict=score!=null&&conf!=null&&conf>=60&&evidenceReady&&gate==='clear'&&actionableValuation", block)
+        self.assertIn("const strict=score!=null&&conf!=null&&conf>=60&&evidenceReady&&gate==='clear';", block)
         self.assertIn("const reinforceEligible=strict&&conv!=null&&conv>=70;", block)
+        self.assertIn("valuation_signal", conviction)
+        self.assertNotIn("valuation_signal", block)
+        self.assertNotIn("actionableValuation", block)
         self.assertIn("reinforceEligible", block)
 
     def test_action_and_fresh_capital_share_reinforce_gate(self):
