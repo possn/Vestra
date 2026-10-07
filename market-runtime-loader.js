@@ -220,7 +220,7 @@
       );
 
       if (!existing) {
-        script.src = SRC;
+        script.src = 'market.js?v=20261007crypto1';
         script.async = true;
         script.dataset.vestraMarketCore = '1';
         document.head.appendChild(script);
