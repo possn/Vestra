@@ -8,6 +8,7 @@ ACTIVE_WORKFLOWS = {
     'architecture-invariants.yml',
     'browser-e2e.yml',
     'capital-risk-regression.yml',
+    'crypto-production-smoke.yml',
     'production-smoke.yml',
     'rebuild-market-startup.yml',
     'refresh-weekly-earnings.yml',

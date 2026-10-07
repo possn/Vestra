@@ -1,0 +1,29 @@
+name: Crypto Production Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'worker.js'
+      - 'worker-router.js'
+      - 'scripts/verify_crypto_production.py'
+      - '.github/workflows/crypto-production-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  crypto-production-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Verify deployed Crypto data
+        run: python scripts/verify_crypto_production.py --attempts 12 --delay 30 --timeout 15
