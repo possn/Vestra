@@ -146,7 +146,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertNotIn('src="market-live-overlay.js', html)
         loader = read("market-runtime-loader.js")
         self.assertIn("loadHelper('VestraMarketLiveOverlay', 'market-live-overlay.js?v=1.2')", loader)
-        self.assertLess(loader.index("market-live-overlay.js?v=1.2"), loader.index("script.src = 'market.js?v=20260926rotation4';"))
+        self.assertLess(loader.index("market-live-overlay.js?v=1.2"), loader.index("script.src = 'market.js?v=20261007crypto1';"))
         self.assertIn('"./market-live-overlay.js"', sw)
 
     def test_non_market_global_click_listeners_are_released(self):

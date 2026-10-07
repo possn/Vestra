@@ -121,3 +121,15 @@ assert(worker.includes('history_30d: fngHistory'),'Worker must expose the Fear &
 assert(worker.includes('open_interest_change_7d_pct'),'Worker must expose 7-day open-interest change');
 assert(worker.includes('funding_avg_30d_pct'),'Worker must expose 30-day funding baseline');
 assert(!worker.includes('btc_dominance_history'),'Dominance history must not be fabricated without persistent storage or a verified source');
+
+
+const indexHtml = fs.readFileSync('index.html','utf8');
+const runtimeLoader = fs.readFileSync('market-runtime-loader.js','utf8');
+const serviceWorker = fs.readFileSync('sw.js','utf8');
+
+assert(indexHtml.includes('data-market-mode="crypto"'),'Crypto tab button must ship in the app shell');
+assert(indexHtml.includes('market-runtime-loader.js?v=2.3'),'index must request the Crypto-aware Market loader generation');
+assert(runtimeLoader.includes("const SRC = 'market.js?v=20261007crypto1';"),'Market core URL must change when the Crypto generation ships');
+assert(runtimeLoader.includes("script.src = 'market.js?v=20261007crypto1';"),'Market loader must expose a literal versioned core URL so the reachability audit can follow it');
+assert(serviceWorker.includes('const CACHE_NAME = "vestra-cache-v239";'),'service worker cache generation must advance with the Crypto release');
+assert(/BOOTSTRAP_NETWORK_FIRST[\s\S]*"market\.js"/.test(serviceWorker),'installed PWA must fetch market.js network-first instead of serving a stale exact cache entry');
