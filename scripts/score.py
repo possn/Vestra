@@ -758,10 +758,6 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         ]
         metric_coverage = sum(v is not None for v in metric_values) / len(metric_values) * 100
         confidence = "high" if metric_coverage >= 70 else "medium" if metric_coverage >= 40 else "low"
-        if risk_gate == "severe":
-            confidence = "low"
-        elif risk_gate == "high" and confidence == "high":
-            confidence = "medium"
         if model == "bank" and confidence == "high":
             confidence = "medium"
         if model == "insurance":
