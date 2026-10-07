@@ -73,6 +73,41 @@ vm.runInContext(extractFunction('portfolioMoveEvidence'), context);
 vm.runInContext(extractFunction('portfolioSourceEvidenceReady'), context);
 vm.runInContext(extractFunction('evaluatePortfolioMove'), context);
 
+const fitContext = {
+  txt: context.txt,
+  n: context.n,
+  isFund: () => false,
+  indirectExposurePct: stock => Number(stock?.indirectPct || 0),
+  loadPortfolioTargets: () => ({maxPosition:10,maxSector:25,overlap:'reduce'}),
+};
+vm.createContext(fitContext);
+vm.runInContext(extractFunction('portfolioFit'), fitContext);
+let fitBoundary = fitContext.portfolioFit(
+  {value:100,stock:{sector:'Tech',indirectPct:0}},
+  [{sector:'Tech',pct:25}],
+  1000,
+  [],
+  {maxPosition:10,maxSector:25,overlap:'reduce'}
+);
+assert.strictEqual(fitBoundary.fit,'balanced','being exactly at position/sector targets must remain within Target Fit');
+assert.strictEqual(fitBoundary.flags.length,0,'exact target equality must not be described as above the target');
+fitBoundary = fitContext.portfolioFit(
+  {value:101,stock:{sector:'Tech',indirectPct:0}},
+  [{sector:'Tech',pct:25.1}],
+  1000,
+  [],
+  {maxPosition:10,maxSector:25,overlap:'reduce'}
+);
+assert.strictEqual(fitBoundary.fit,'watch','a real position/sector excess must still trigger Target Fit watch');
+fitBoundary = fitContext.portfolioFit(
+  {value:100,stock:{sector:'Tech',indirectPct:2}},
+  [{sector:'Tech',pct:25}],
+  1000,
+  [],
+  {maxPosition:10,maxSector:25,overlap:'reduce'}
+);
+assert.strictEqual(fitBoundary.fit,'watch','overlap boundary stays strict because canonical fresh allocation requires indirect < 2');
+
 const portfolioActionBlock = source.split('function portfolioAction(stock, alternativesByTicker, context){',2)[1]?.split('\n  const PORTFOLIO_TARGETS_KEY',1)[0] || '';
 assert(portfolioActionBlock.includes('ctx.riskBudgetBlocked'), 'Portfolio Action must consume the Risk Budget block flag before Reforçar');
 assert(portfolioActionBlock.includes("key:'hold',label:'Manter'"), 'blocked reinforcement must resolve to Manter rather than Reforçar');
