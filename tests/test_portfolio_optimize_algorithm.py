@@ -425,9 +425,11 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
     def test_automatic_moves_require_factor_classification(self):
         s = read("market.js")
         block = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
-        self.assertIn("const destinationRiskReady=stockRiskTags(destination).length>0;", block)
+        self.assertIn("const destinationRiskReady=stockRiskClassification(destination).ready;", block)
         self.assertIn("const riskBudgetReady=destinationRiskReady&&riskCoverage.ready;", block)
         self.assertIn("Risk Budget sem classificação de fatores", block)
+        self.assertIn("function stockRiskClassification(stock)", s)
+        self.assertIn("coveragePct>=60", s)
         self.assertIn("Risk Budget da carteira com cobertura insuficiente", block)
         self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5", block)
         self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=5", block)
@@ -443,6 +445,18 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         self.assertIn("const riskBudgetReady=destinationRiskReady&&riskCoverage.ready;", decision)
         self.assertIn("Risk Budget da carteira com cobertura insuficiente", decision)
         self.assertIn("riskBase:currentBase", fresh)
+
+    def test_neutral_factor_profile_is_classified_not_missing(self):
+        s = read("market.js")
+        helper = s.split("function stockRiskClassification(stock){", 1)[1].split("\n  function riskMapAdd", 1)[0]
+        coverage = s.split("function riskBudgetCoverage(", 1)[1].split("\n  function portfolioMoveEvidence", 1)[0]
+        render = s.split("function renderRiskBudget(", 1)[1].split("\n  const PORTFOLIO_STRESS_SCENARIOS", 1)[0]
+        self.assertIn("const coveragePct=observed/5*100;", helper)
+        self.assertIn("ready:coveragePct>=60", helper)
+        self.assertIn("stockRiskClassification(r?.stock).coveragePct/100", coverage)
+        self.assertNotIn("stockRiskTags(r?.stock).length?", coverage)
+        self.assertNotIn("!profile.factors.length", render)
+        self.assertIn("Sem fatores especiais acima dos limiares proxy.", render)
 
     def test_risk_budget_penalises_only_incremental_excess(self):
         s = read("market.js")
