@@ -200,7 +200,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         s = read("market.js")
         self.assertIn("function portfolioMoveEvidence(stock, conviction=null)", s)
         self.assertIn("function evaluatePortfolioMove({mode='replace'", s)
-        self.assertIn("autoEligible=sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=2&&convDelta>0&&overlapDelta<2", s)
+        self.assertIn("autoEligible=sourceAutomatable&&evidence.strict&&riskBudgetReady&&overlapEvidenceReady&&convictionGain>=2&&convDelta>0&&overlapDelta<2", s)
         self.assertIn("positionPct<=maxPos+1&&sectorPct<=maxSector+1&&riskPenalty<5", s)
         self.assertIn("autoEligible=evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5", s)
         self.assertIn("mode==='scenario'", s)
@@ -260,7 +260,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
 
     def test_action_map_respects_risk_gate_and_saved_portfolio_targets(self):
         s = read("market.js")
-        self.assertIn("function portfolioFit(r, sectorRows, analysed, etfs, targets=loadPortfolioTargets())", s)
+        self.assertIn("function portfolioFit(r, sectorRows, analysed, etfs, overlapReady=true, targets=loadPortfolioTargets())", s)
         self.assertIn("function researchUniverseValue(assets=portfolioAssets())", s)
         self.assertIn("portfolioIntelligence(rows,researchTotal)", s)
         self.assertIn("const maxPos=Math.max(3,Math.min(30,n(targets?.maxPosition)||10))", s)
@@ -429,7 +429,7 @@ class PortfolioOptimizeAlgorithmTests(unittest.TestCase):
         block = s.split("function evaluatePortfolioMove(", 1)[1].split("\n  function renderRiskBudget", 1)[0]
         self.assertIn("const riskBudgetReady=stockRiskTags(destination).length>0;", block)
         self.assertIn("Risk Budget sem classificação de fatores", block)
-        self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&riskPenalty<5", block)
+        self.assertIn("evidence.reinforceEligible&&riskBudgetReady&&overlapEvidenceReady&&riskPenalty<5", block)
         self.assertIn("sourceAutomatable&&evidence.strict&&riskBudgetReady&&convictionGain>=5", block)
         self.assertIn("return {targets,maxPos,maxSector,evidence,riskBudgetReady,riskPenalty", block)
 
