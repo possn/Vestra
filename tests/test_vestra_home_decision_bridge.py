@@ -27,6 +27,8 @@ class HomeDecisionBridgeTests(unittest.TestCase):
   self.assertIn("data-vestra-horizon-ledger",html)
   self.assertIn("data-vestra-cohort-trend",html)
   self.assertIn("cohorts.filter",js)
+  self.assertIn(r"/^\d{4}-\d{2}-\d{2}$/",js)
+  self.assertNotIn(r"/^\\\\d{4}-\\\\d{2}-\\\\d{2}$/",js)
   self.assertIn("não é uma previsão",js)
   self.assertIn("[28, 84, 168]",js)
   self.assertIn("amostra temporal insuficiente",js)
