@@ -9,7 +9,7 @@ test('iPhone/WebKit: politician picker supports live name search', async ({ page
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
-  await page.route('**/data/politicians.json?*', async route => {
+  await page.route(/\/data\/politicians\.json(?:\?.*)?$/, async route => {
     await route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify({
@@ -39,12 +39,14 @@ test('iPhone/WebKit: politician picker supports live name search', async ({ page
       }),
     });
   });
-  await page.route('**/data/executives.json?*', async route => {
+  await page.route(/\/data\/executives\.json(?:\?.*)?$/, async route => {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ people: [], trades: [] }) });
   });
 
   await waitForLaunch(page);
   await page.evaluate(() => window.setView?.('market'));
+  await page.waitForFunction(() => window.VestraMarket && typeof window.VestraMarket.ensureLoaded === 'function');
+  await page.evaluate(() => window.VestraMarket.ensureLoaded());
   const politiciansMode = page.locator('[data-politicians-mode]');
   await expect(politiciansMode).toBeVisible();
   await politiciansMode.tap();
