@@ -236,6 +236,14 @@
 <!-- Important losses stay in the decision area, not behind secondary tools. -->
 <!-- v16.1: alerta rentabilidade negativa -->
 <div id="negReturnAlert" style="display:none;padding:10px 14px;background:#fef2f2;border-left:3px solid var(--red);border-radius:var(--r-sm);margin-bottom:12px;font-size:13px;color:#dc2626"></div>
+<!-- v15: Alertas de concentração de risco -->
+<div class="card v2-home-attention-card" id="riskAlertCard" style="display:none;border-left:4px solid #ef4444">
+<div class="card__head">
+<div><div class="card__title" style="color:#dc2626">⚠️ Concentração de risco</div>
+<div class="card__muted">Um activo ou classe representa &gt;40% do portfólio</div></div>
+</div>
+<div class="list" id="riskAlertContent"></div>
+</div>
 <!-- KPIs secundários: 4 métricas rápidas — layout 2×2 compacto -->
 <div class="v2-home-section-label"><span>01 / INDICADORES</span><h2>Rendimento e desempenho</h2><p>O que está a acontecer na carteira.</p></div>
 <div class="card kpi-quick">
@@ -376,14 +384,6 @@
 <div><div class="card__title">📊 Saúde Financeira</div><div class="card__muted">Rácios chave do portfólio</div></div>
 </div>
 <div id="debtRatioContent"></div>
-</div>
-<!-- v15: Alertas de concentração de risco -->
-<div class="card dash-secondary" id="riskAlertCard" style="display:none;border-left:4px solid #ef4444">
-<div class="card__head">
-<div><div class="card__title" style="color:#dc2626">⚠️ Concentração de risco</div>
-<div class="card__muted">Um activo ou classe representa &gt;40% do portfólio</div></div>
-</div>
-<div class="list" id="riskAlertContent"></div>
 </div>
 <!-- v15: Simulador "E se?" (v64m: avançado por defeito) -->
 <div class="card advanced-only">
