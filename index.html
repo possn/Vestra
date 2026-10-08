@@ -25,6 +25,7 @@
 <link href="vestra-intelligence.css?v=1" rel="stylesheet"/>
 <link href="vestra-design-v2.css?v=1" rel="stylesheet"/>
 <link href="vestra-home-v2.css?v=1" rel="stylesheet"/>
+<link href="vestra-home-stage-v2.css?v=1" rel="stylesheet"/>
 <script>
   // iOS standalone PWAs can be discarded while Safari is showing an external
   // article. Mark a known external-return boot synchronously, before deferred
@@ -166,15 +167,17 @@
   </div>
 </section>
 
-<div class="dashboard-welcome">
+<div class="dashboard-welcome v2-home-intro">
 <div>
-<div class="dashboard-welcome__eyebrow">O teu património</div>
-<h1>Visão geral</h1>
+<div class="dashboard-welcome__eyebrow">VESTRA / O TEU CENTRO DE DECISÃO</div>
+<h1>O essencial.<br><span>Sem ruído.</span></h1>
+<p class="v2-home-intro__deck">O património, o rendimento e o que merece a tua atenção. Num só lugar.</p>
 </div>
-<button class="dashboard-welcome__market" onclick="setView('market')">Pesquisar mercado <span>→</span></button>
+<button class="dashboard-welcome__market" onclick="setView('market')">Explorar mercados <span aria-hidden="true">↗</span></button>
 </div>
-<!-- Hero: Net Worth + variação -->
-<div class="card hero">
+<!-- Vestra 2 editorial decision stage: primary financial values and distinct primary navigation. -->
+<div class="card hero v2-home-stage" aria-label="Resumo patrimonial e decisões">
+<div class="v2-home-stage__eyebrow">01 <span>O teu património</span></div>
 <div class="hero__label">
         <span>Património líquido</span>
         <button class="info-btn" onclick="openTip('netWorth')" title="Saber mais">ℹ️</button>
@@ -187,6 +190,14 @@
 <div class="hero__sub" id="kpiAP">Ativos 0 € | Passivos 0 €</div>
 <!-- Variação MoM e YoY -->
 <div id="kpiChanges" style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap"></div>
+<aside class="v2-home-stage__aside" aria-label="Ações principais">
+  <div class="v2-home-stage__aside-top"><span>02 / EXPLORAR</span><span aria-hidden="true">✳</span></div>
+  <h2>Do número<br>à decisão.</h2>
+  <p>Analisa o que tens. Investiga o que mudou.</p>
+  <button type="button" onclick="setView('assets')"><span>01</span><strong>A minha carteira</strong><span aria-hidden="true">↗</span></button>
+  <button type="button" onclick="setView('market')"><span>02</span><strong>Explorar oportunidades</strong><span aria-hidden="true">↗</span></button>
+  <div class="v2-home-stage__foot">RESEARCH FIRST · EVIDÊNCIA ANTES DE CONVICÇÃO</div>
+</aside>
 </div>
 <!-- v64s: lembrete de backup — os dados vivem só neste dispositivo (IndexedDB),
          sem isto o utilizador só percebe o risco quando já é tarde de mais. -->

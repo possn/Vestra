@@ -1,0 +1,36 @@
+/* Vestra 2 — visibly new Home composition. Keep all existing data IDs and privacy controls. */
+#viewDashboard .v2-home-intro{padding:26px 4px 25px;margin:0;align-items:end}
+#viewDashboard .v2-home-intro .dashboard-welcome__eyebrow{font-size:10px;letter-spacing:.19em;color:var(--vio);margin-bottom:14px}
+#viewDashboard .v2-home-intro h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:clamp(42px,6vw,78px);font-weight:730;line-height:.98;letter-spacing:-.075em}
+#viewDashboard .v2-home-intro h1 span{color:#8c9b9d}
+#viewDashboard .v2-home-intro__deck{font-size:14px;line-height:1.65;color:var(--muted);max-width:52ch;margin-top:17px}
+#viewDashboard .v2-home-intro .dashboard-welcome__market{min-height:45px;padding:11px 17px;border-radius:14px}
+#viewDashboard > .v2-home-stage.card.hero {
+ display:grid;grid-template-columns:minmax(0,1.6fr) minmax(265px,1fr);
+ column-gap:clamp(22px,4vw,50px);row-gap:16px;align-items:start;
+ padding:clamp(22px,3vw,38px)!important;
+ border:1px solid rgba(255,255,255,.12)!important;
+ border-radius:28px!important;background:#162d36!important;
+ box-shadow:0 12px 40px rgba(20,42,48,.14)!important;
+ min-width:0;overflow:visible;
+}
+#viewDashboard > .v2-home-stage.card.hero > :not(.v2-home-stage__aside){grid-column:1;min-width:0}
+#viewDashboard > .v2-home-stage.card.hero > .v2-home-stage__aside{grid-column:2;grid-row:1 / span 5;align-self:stretch}
+#viewDashboard .v2-home-stage__eyebrow{font-size:10px;color:#9cbbb8;letter-spacing:.17em;font-weight:750}
+#viewDashboard .v2-home-stage__eyebrow span{margin-left:12px;color:#edf7f4;letter-spacing:.09em}
+#viewDashboard > .v2-home-stage.card.hero :is(.hero__label,.hero__value,.hero__sub){color:#fff}
+#viewDashboard > .v2-home-stage.card.hero .hero__value{font-size:clamp(38px,5.8vw,67px)}
+#viewDashboard .v2-home-stage__aside{min-width:0;border-radius:28px;padding:clamp(22px,2.7vw,32px);background:#e9eeea;color:#1a343b;display:flex;flex-direction:column}
+#viewDashboard .v2-home-stage__aside-top{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.15em;font-weight:800;color:#53746e}
+#viewDashboard .v2-home-stage__aside h2{font-size:clamp(26px,3.3vw,43px);font-weight:730;letter-spacing:-.065em;line-height:1.07;margin:30px 0 12px}
+#viewDashboard .v2-home-stage__aside p{font-size:13px;line-height:1.65;color:#607976;margin:0 0 26px}
+#viewDashboard .v2-home-stage__aside button{display:grid;grid-template-columns:22px 1fr 22px;gap:8px;align-items:center;background:transparent;color:inherit;border:0;border-top:1px solid #c6d3cf;padding:17px 0;text-align:left;cursor:pointer;font:inherit}
+#viewDashboard .v2-home-stage__aside button span:first-child{font-size:11px;color:#69847c}
+#viewDashboard .v2-home-stage__aside button strong{font-size:14px;font-weight:720}
+#viewDashboard .v2-home-stage__aside button span:last-child{text-align:right}
+#viewDashboard .v2-home-stage__aside button:focus-visible{outline:2px solid #287f7c;outline-offset:3px}
+#viewDashboard .v2-home-stage__foot{margin-top:auto;padding-top:24px;font-size:9px;font-weight:750;letter-spacing:.13em;color:#69847c}
+#viewDashboard .kpi-quick{margin-top:10px}
+@media(min-width:1100px){body:has(#viewDashboard:not([hidden])) .main{max-width:min(1180px,calc(100vw - 64px));width:100%}}
+@media(max-width:790px){#viewDashboard > .v2-home-stage.card.hero{grid-template-columns:1fr}#viewDashboard > .v2-home-stage.card.hero > .v2-home-stage__aside{grid-column:1;grid-row:auto}#viewDashboard .v2-home-stage__aside h2{margin-top:18px}}
+@media(max-width:600px){#viewDashboard .v2-home-intro{padding-top:15px;align-items:start}#viewDashboard .v2-home-intro h1{font-size:46px}#viewDashboard .v2-home-intro .dashboard-welcome__market{font-size:12px}#viewDashboard > .v2-home-stage.card.hero{padding:18px!important}#viewDashboard .v2-home-stage__aside{border-radius:23px;padding:22px}}
