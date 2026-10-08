@@ -94,7 +94,7 @@ function finiteNumber(v) {
 
 async function fetchCryptoIntelligence(ctx) {
   const cache = caches.default;
-  const cacheUrl = "https://cache.internal/crypto-intelligence-v2";
+  const cacheUrl = "https://cache.internal/crypto-intelligence-v3";
   const cached = await cache.match(cacheUrl);
   if (cached) {
     const data = await cached.json();
@@ -102,9 +102,14 @@ async function fetchCryptoIntelligence(ctx) {
     return data;
   }
 
-  const [globalData, globalFallback, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist, btcFundingHist, ethFundingHist, btcBybit, ethBybit, btcBybitOi, ethBybitOi, btcBybitFunding, ethBybitFunding] = await Promise.all([
+  const [
+    globalData, globalFallback, globalFallback2, fearGreed,
+    btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist, btcFundingHist, ethFundingHist,
+    btcOkxFunding, ethOkxFunding, btcOkxOi, ethOkxOi, btcOkxOiHist, ethOkxOiHist, btcOkxFundingHist, ethOkxFundingHist
+  ] = await Promise.all([
     fetchJsonMaybe("https://api.coingecko.com/api/v3/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
     fetchJsonMaybe("https://api.coinpaprika.com/v1/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
+    fetchJsonMaybe("https://api.coinlore.net/api/global/", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
     fetchJsonMaybe("https://api.alternative.me/fng/?limit=31&format=json", { headers: { "Accept": "application/json" } }, 5000),
     fetchJsonMaybe("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT", {}, 5000),
     fetchJsonMaybe("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=ETHUSDT", {}, 5000),
@@ -114,18 +119,21 @@ async function fetchCryptoIntelligence(ctx) {
     fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=ETHUSDT&period=1d&limit=30", {}, 5000),
     fetchJsonMaybe("https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=100", {}, 5000),
     fetchJsonMaybe("https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=100", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/tickers?category=linear&symbol=ETHUSDT", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/open-interest?category=linear&symbol=BTCUSDT&intervalTime=1d&limit=30", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/open-interest?category=linear&symbol=ETHUSDT&intervalTime=1d&limit=30", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=100", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/funding/history?category=linear&symbol=ETHUSDT&limit=100", {}, 5000),
+    fetchJsonMaybe("https://www.okx.com/api/v5/public/funding-rate?instId=BTC-USDT-SWAP", {}, 5000),
+    fetchJsonMaybe("https://www.okx.com/api/v5/public/funding-rate?instId=ETH-USDT-SWAP", {}, 5000),
+    fetchJsonMaybe("https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId=BTC-USDT-SWAP", {}, 5000),
+    fetchJsonMaybe("https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId=ETH-USDT-SWAP", {}, 5000),
+    fetchJsonMaybe("https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?instId=BTC-USDT-SWAP&period=1D&limit=30", {}, 5000),
+    fetchJsonMaybe("https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?instId=ETH-USDT-SWAP&period=1D&limit=30", {}, 5000),
+    fetchJsonMaybe("https://www.okx.com/api/v5/public/funding-rate-history?instId=BTC-USDT-SWAP&limit=100", {}, 5000),
+    fetchJsonMaybe("https://www.okx.com/api/v5/public/funding-rate-history?instId=ETH-USDT-SWAP&limit=100", {}, 5000),
   ]);
 
   const g = globalData?.data || {};
   const gp = globalFallback || {};
-  const bybitRow = (payload) => Array.isArray(payload?.result?.list) ? payload.result.list[0] : null;
-  const bybitHist = (payload) => Array.isArray(payload?.result?.list) ? payload.result.list : [];
+  const gl = Array.isArray(globalFallback2) ? (globalFallback2[0] || {}) : {};
+  const okxRow = (payload) => Array.isArray(payload?.data) ? (payload.data[0] || null) : null;
+  const okxHist = (payload) => Array.isArray(payload?.data) ? payload.data : [];
   const fngRows = Array.isArray(fearGreed?.data) ? fearGreed.data : [];
   const fngNow = fngRows[0] || null;
   const fngPrev = fngRows[1] || null;
@@ -151,15 +159,17 @@ async function fetchCryptoIntelligence(ctx) {
       .map(v => v * 100);
     return mean(vals);
   };
-  const oiChangePctFlexible = (binanceHist, bybitPayload, days=1) => {
-    const primary = oiChangePct(binanceHist, days);
-    if (primary !== null) return primary;
-    const rows = bybitHist(bybitPayload).slice().reverse();
+  const okxOiChangePct = (payload, days=1) => {
+    const rows = okxHist(payload)
+      .filter(row => Array.isArray(row) && finiteNumber(row[0]) !== null && finiteNumber(row[1]) !== null)
+      .sort((a,b)=>Number(a[0])-Number(b[0]));
     if (rows.length < 2) return null;
     const scoped = rows.slice(-Math.max(2, days + 1));
-    const first = finiteNumber(scoped[0]?.openInterest);
-    const last = finiteNumber(scoped[scoped.length - 1]?.openInterest);
-    return pctChange(first,last);
+    return pctChange(finiteNumber(scoped[0]?.[1]), finiteNumber(scoped[scoped.length - 1]?.[1]));
+  };
+  const oiChangePctFlexible = (binanceHist, okxPayload, days=1) => {
+    const primary = oiChangePct(binanceHist, days);
+    return primary !== null ? primary : okxOiChangePct(okxPayload, days);
   };
   const fngPoint = (index) => {
     const row = fngRows[index];
@@ -173,14 +183,14 @@ async function fetchCryptoIntelligence(ctx) {
 
   const out = {
     global: {
-      total_market_cap_usd: finiteNumber(g?.total_market_cap?.usd) ?? finiteNumber(gp?.market_cap_usd),
-      total_volume_24h_usd: finiteNumber(g?.total_volume?.usd) ?? finiteNumber(gp?.volume_24h_usd),
-      market_cap_change_24h_pct: finiteNumber(g?.market_cap_change_percentage_24h_usd) ?? finiteNumber(gp?.market_cap_change_24h),
-      volume_change_24h_pct: finiteNumber(g?.volume_change_percentage_24h_usd) ?? finiteNumber(gp?.volume_24h_change_24h),
-      btc_dominance_pct: finiteNumber(g?.market_cap_percentage?.btc) ?? finiteNumber(gp?.bitcoin_dominance_percentage),
-      eth_dominance_pct: finiteNumber(g?.market_cap_percentage?.eth),
-      active_cryptocurrencies: finiteNumber(g?.active_cryptocurrencies) ?? finiteNumber(gp?.cryptocurrencies_number),
-      source: globalData?.data ? "CoinGecko" : (finiteNumber(gp?.market_cap_usd) ? "CoinPaprika" : null),
+      total_market_cap_usd: finiteNumber(g?.total_market_cap?.usd) ?? finiteNumber(gp?.market_cap_usd) ?? finiteNumber(gl?.total_mcap),
+      total_volume_24h_usd: finiteNumber(g?.total_volume?.usd) ?? finiteNumber(gp?.volume_24h_usd) ?? finiteNumber(gl?.total_volume),
+      market_cap_change_24h_pct: finiteNumber(g?.market_cap_change_percentage_24h_usd) ?? finiteNumber(gp?.market_cap_change_24h) ?? finiteNumber(gl?.mcap_change),
+      volume_change_24h_pct: finiteNumber(g?.volume_change_percentage_24h_usd) ?? finiteNumber(gp?.volume_24h_change_24h) ?? finiteNumber(gl?.volume_change),
+      btc_dominance_pct: finiteNumber(g?.market_cap_percentage?.btc) ?? finiteNumber(gp?.bitcoin_dominance_percentage) ?? finiteNumber(gl?.btc_d),
+      eth_dominance_pct: finiteNumber(g?.market_cap_percentage?.eth) ?? finiteNumber(gl?.eth_d),
+      active_cryptocurrencies: finiteNumber(g?.active_cryptocurrencies) ?? finiteNumber(gp?.cryptocurrencies_number) ?? finiteNumber(gl?.coins_count),
+      source: globalData?.data ? "CoinGecko" : (finiteNumber(gp?.market_cap_usd) ? "CoinPaprika" : (finiteNumber(gl?.total_mcap) ? "CoinLore" : null)),
     },
     fear_greed: {
       value: finiteNumber(fngNow?.value),
@@ -196,26 +206,26 @@ async function fetchCryptoIntelligence(ctx) {
     },
     derivatives: {
       btc: {
-        funding_rate_pct: finiteNumber(btcPremium?.lastFundingRate) != null ? finiteNumber(btcPremium?.lastFundingRate) * 100 : (finiteNumber(bybitRow(btcBybit)?.fundingRate) != null ? finiteNumber(bybitRow(btcBybit)?.fundingRate) * 100 : null),
-        mark_price: finiteNumber(btcPremium?.markPrice) ?? finiteNumber(bybitRow(btcBybit)?.markPrice),
-        open_interest: finiteNumber(btcOi?.openInterest) ?? finiteNumber(bybitRow(btcBybit)?.openInterest),
-        open_interest_change_24h_pct: oiChangePctFlexible(btcOiHist,btcBybitOi,1),
-        open_interest_change_7d_pct: oiChangePctFlexible(btcOiHist,btcBybitOi,7),
-        open_interest_change_30d_pct: oiChangePctFlexible(btcOiHist,btcBybitOi,29),
-        funding_avg_7d_pct: fundingSummary(btcFundingHist,7) ?? fundingSummary(bybitHist(btcBybitFunding),7),
-        funding_avg_30d_pct: fundingSummary(btcFundingHist,30) ?? fundingSummary(bybitHist(btcBybitFunding),30),
+        funding_rate_pct: finiteNumber(btcPremium?.lastFundingRate) != null ? finiteNumber(btcPremium?.lastFundingRate) * 100 : (finiteNumber(okxRow(btcOkxFunding)?.fundingRate) != null ? finiteNumber(okxRow(btcOkxFunding)?.fundingRate) * 100 : null),
+        mark_price: finiteNumber(btcPremium?.markPrice),
+        open_interest: finiteNumber(btcOi?.openInterest) ?? finiteNumber(okxRow(btcOkxOi)?.oi),
+        open_interest_change_24h_pct: oiChangePctFlexible(btcOiHist,btcOkxOiHist,1),
+        open_interest_change_7d_pct: oiChangePctFlexible(btcOiHist,btcOkxOiHist,7),
+        open_interest_change_30d_pct: oiChangePctFlexible(btcOiHist,btcOkxOiHist,29),
+        funding_avg_7d_pct: fundingSummary(btcFundingHist,7) ?? fundingSummary(okxHist(btcOkxFundingHist),7),
+        funding_avg_30d_pct: fundingSummary(btcFundingHist,30) ?? fundingSummary(okxHist(btcOkxFundingHist),30),
       },
       eth: {
-        funding_rate_pct: finiteNumber(ethPremium?.lastFundingRate) != null ? finiteNumber(ethPremium?.lastFundingRate) * 100 : (finiteNumber(bybitRow(ethBybit)?.fundingRate) != null ? finiteNumber(bybitRow(ethBybit)?.fundingRate) * 100 : null),
-        mark_price: finiteNumber(ethPremium?.markPrice) ?? finiteNumber(bybitRow(ethBybit)?.markPrice),
-        open_interest: finiteNumber(ethOi?.openInterest) ?? finiteNumber(bybitRow(ethBybit)?.openInterest),
-        open_interest_change_24h_pct: oiChangePctFlexible(ethOiHist,ethBybitOi,1),
-        open_interest_change_7d_pct: oiChangePctFlexible(ethOiHist,ethBybitOi,7),
-        open_interest_change_30d_pct: oiChangePctFlexible(ethOiHist,ethBybitOi,29),
-        funding_avg_7d_pct: fundingSummary(ethFundingHist,7) ?? fundingSummary(bybitHist(ethBybitFunding),7),
-        funding_avg_30d_pct: fundingSummary(ethFundingHist,30) ?? fundingSummary(bybitHist(ethBybitFunding),30),
+        funding_rate_pct: finiteNumber(ethPremium?.lastFundingRate) != null ? finiteNumber(ethPremium?.lastFundingRate) * 100 : (finiteNumber(okxRow(ethOkxFunding)?.fundingRate) != null ? finiteNumber(okxRow(ethOkxFunding)?.fundingRate) * 100 : null),
+        mark_price: finiteNumber(ethPremium?.markPrice),
+        open_interest: finiteNumber(ethOi?.openInterest) ?? finiteNumber(okxRow(ethOkxOi)?.oi),
+        open_interest_change_24h_pct: oiChangePctFlexible(ethOiHist,ethOkxOiHist,1),
+        open_interest_change_7d_pct: oiChangePctFlexible(ethOiHist,ethOkxOiHist,7),
+        open_interest_change_30d_pct: oiChangePctFlexible(ethOiHist,ethOkxOiHist,29),
+        funding_avg_7d_pct: fundingSummary(ethFundingHist,7) ?? fundingSummary(okxHist(ethOkxFundingHist),7),
+        funding_avg_30d_pct: fundingSummary(ethFundingHist,30) ?? fundingSummary(okxHist(ethOkxFundingHist),30),
       },
-      source: (btcPremium || ethPremium || btcOi || ethOi) ? "Binance Futures" : ((bybitRow(btcBybit) || bybitRow(ethBybit)) ? "Bybit" : null),
+      source: (btcPremium || ethPremium || btcOi || ethOi) ? "Binance Futures" : ((okxRow(btcOkxFunding) || okxRow(ethOkxFunding) || okxRow(btcOkxOi) || okxRow(ethOkxOi)) ? "OKX" : null),
     },
     updated: new Date().toISOString(),
   };
