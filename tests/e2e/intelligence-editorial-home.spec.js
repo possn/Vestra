@@ -4,8 +4,8 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/index.html?vestra2=1');
-  await page.waitForFunction(() => typeof window.setView === 'function');
-  await page.evaluate(() => window.setView('dashboard'));
+  // Wait for initial app navigation/hydration rather than racing setView().
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
   const home = page.locator('#vestraIntelligenceHome');
   await expect(home).toBeVisible();
   await expect(home.getByText('O essencial, sem ruído.')).toBeVisible();
@@ -24,8 +24,8 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
 
 test('iPhone/WebKit: legacy dashboard remains the default without preview flag', async ({page}) => {
   await page.goto('/index.html');
-  await page.waitForFunction(() => typeof window.setView === 'function');
-  await page.evaluate(() => window.setView('dashboard'));
+  // Wait for initial app navigation/hydration rather than racing setView().
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
   await expect(page.locator('#vestraIntelligenceHome')).toBeHidden();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
 });
