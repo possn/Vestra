@@ -25,8 +25,8 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   expect(errors).toEqual([]);
 });
 
-test('iPhone/WebKit: legacy dashboard remains the default without preview flag', async ({page}) => {
-  await page.goto('/index.html');
+test('iPhone/WebKit: legacy dashboard available with explicit rollback flag', async ({page}) => {
+  await page.goto('/index.html?vestra2=0');
   // Wait for initial app navigation/hydration rather than racing setView().
   await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
   await expect(page.locator('#vestraIntelligenceHome')).toBeHidden();
