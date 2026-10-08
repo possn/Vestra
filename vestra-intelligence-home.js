@@ -98,6 +98,30 @@
       : scoreValid || oppValid ? 'stale' : 'missing';
     output.textContent = 'Validação prospetiva · ' + scoreText + ' · ' + oppText +
       ' · Fonte: relatórios prospetivos independentes';
+    const panel = host.querySelector('[data-vestra-horizon-ledger]');
+    if (panel) {
+      const reportSummary = (report, valid, key) => {
+        if (!valid) return key + ': indisponível ou desatualizado';
+        return [28, 84, 168].map(days => {
+          const row = report?.horizons?.[String(days)];
+          const count = row?.n;
+          const groups = row?.cohort_count;
+          const rank = row?.rank_information_coefficient;
+          if (!Number.isInteger(count) || count < 0 ||
+              !Number.isInteger(groups) || groups < 0 ||
+              !(rank == null || (typeof rank === 'number' && Number.isFinite(rank))))
+            return days + 'd: dados não verificados';
+          return days + 'd: ' + count.toLocaleString('pt-PT') +
+            ' resultados / ' + groups + ' coortes' +
+            (rank == null ? '' : ' / Rank IC ' + rank.toFixed(3)) +
+            (groups < 5 ? ' · amostra temporal insuficiente' : ' · observacional');
+        }).join('  |  ');
+      };
+      panel.textContent = 'Score — ' + reportSummary(score, scoreValid, 'Score') +
+        ' · Oportunidades — ' + reportSummary(opportunity, oppValid, 'Oportunidades') +
+        ' · Coortes sobrepostas não equivalem a ensaios independentes.';
+      panel.dataset.status = scoreValid || oppValid ? 'observed' : 'missing';
+    }
   }
 
   function syncExistingBarometer(host) {
