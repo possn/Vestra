@@ -336,3 +336,11 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 @media (prefers-reduced-motion: reduce) {
   #vestraIntelligenceHome .vi-action { transition: none; }
 }
+
+/* Explicitly expose the classic-dashboard return control even when the new
+   Intelligence Home is the default entry, without unmounting any legacy host. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome[data-legacy-open="true"] ~ .vi-back-to-intelligence {
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
