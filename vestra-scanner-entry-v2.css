@@ -1,0 +1,28 @@
+/* Scanner discovery — one prominent entry, same data-market-tool handler. */
+#viewMarket .market-scanner-entry {
+  display:flex; align-items:center; gap:14px; width:100%; min-width:0;
+  padding:17px 18px; color:var(--text); text-align:left; cursor:pointer;
+  border:1px solid var(--line); border-radius:20px;
+  background:var(--card); box-shadow:0 3px 18px rgba(22,45,55,.045);
+  font:inherit;
+}
+#viewMarket .market-scanner-entry__symbol {
+  width:42px; height:42px; border-radius:14px; flex:0 0 42px;
+  display:grid; place-items:center; font-size:22px;
+  background:var(--pill-aqua); color:var(--vio);
+}
+#viewMarket .market-scanner-entry__copy { min-width:0; flex:1; }
+#viewMarket .market-scanner-entry__copy strong {
+  display:block; font-size:15px; font-weight:730; letter-spacing:-.02em;
+}
+#viewMarket .market-scanner-entry__copy small {
+  display:block; margin-top:3px; font-size:12px; line-height:1.45; color:var(--muted);
+}
+#viewMarket .market-scanner-entry__arrow { font-size:22px; color:var(--muted); }
+#viewMarket .market-scanner-entry:focus-visible {
+  outline:2px solid var(--vio); outline-offset:3px;
+}
+@media(max-width:520px) {
+  #viewMarket .market-scanner-entry { padding:14px 13px; gap:10px; }
+  #viewMarket .market-scanner-entry__symbol { width:38px; height:38px; flex-basis:38px; }
+}
