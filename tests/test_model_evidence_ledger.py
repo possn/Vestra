@@ -20,6 +20,11 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(result["models"]["quality"]["brier"], 0.04)
         self.assertEqual(result["models"]["quality"]["status"], "observed_insufficient_sample")
 
+    def test_duplicate_prediction_not_double_counted(self):
+        result = evaluate([BASE, dict(BASE)], "2026-01-01T00:00:00Z")
+        self.assertEqual(result["eligible_count"], 1)
+        self.assertEqual(result["rejected"]["duplicate_prediction"], 1)
+
     def test_no_lookahead(self):
         future = dict(BASE, outcome_observed_at="2027-01-01T00:00:00Z")
         result = evaluate([future], "2026-01-01T00:00:00Z")
