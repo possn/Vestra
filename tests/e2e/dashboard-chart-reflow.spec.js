@@ -5,7 +5,7 @@ test('iPhone/WebKit: portfolio hydration does not depend on the Chart.js CDN', a
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.route('**/chart.js@4.4.3/**', route => route.abort());
 
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => window.__vestraAppHydrated === true);
 
   expect(await page.evaluate(() => typeof window.Chart)).toBe('undefined');
@@ -18,7 +18,7 @@ test('iPhone/WebKit: dashboard charts fill their cards after render and viewport
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraUiCore?.scheduleChartStabilization));
   await page.evaluate(() => window.VestraChartLoader.ensure());
 
