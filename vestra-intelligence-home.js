@@ -128,6 +128,14 @@
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
     window.addEventListener('vestra:market-sheet-changed', () => syncDecisionCenter(host));
+    window.addEventListener('vestra:local-state-writing', () => {
+      lastDecision = null;
+      const output = host.querySelector('[data-vestra-decision-state]');
+      if (output) {
+        output.dataset.status = 'missing';
+        output.textContent = 'Decision Center · carteira ou estado local alterado · reabrir análise para atualizar';
+      }
+    });
     window.addEventListener('vestra:dashboard-signal-updated', event => {
       if (event?.detail?.source === 'market-sentiment') syncExistingBarometer(host);
     });
