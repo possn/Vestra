@@ -48,3 +48,22 @@ test('iPhone/WebKit: legacy dashboard remains the default without preview flag',
   await expect(entry).toHaveAttribute('href', '?vestra2=1');
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
 });
+
+
+test('Desktop: Intelligence editorial priorities form a reading spread without overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/index.html?vestra2=1');
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
+  const home = page.locator('#vestraIntelligenceHome');
+  await expect(home).toBeVisible();
+  const priorities = home.locator('.vi-priorities');
+  await expect(priorities).toHaveCSS('display', 'grid');
+  const columns = await priorities.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean));
+  expect(columns).toHaveLength(2);
+  const widths = await priorities.evaluate(el => ({
+    content: el.scrollWidth, visible: el.clientWidth
+  }));
+  expect(widths.content).toBeLessThanOrEqual(widths.visible + 1);
+  await expect(home.locator('.vi-action')).toHaveCount(3);
+  await expect(home.locator('.vi-research-details')).not.toHaveAttribute('open', '');
+});
