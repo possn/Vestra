@@ -7,6 +7,7 @@
 
   async function showCoverage(host) {
     const label = host.querySelector('[data-vestra-coverage]');
+    const evidence = host.querySelector('[data-vestra-model-evidence]');
     if (!label) return;
     label.textContent = 'A verificar cobertura dos dados publicados…';
     try {
@@ -27,6 +28,11 @@
       const ageHours = (Date.now() - date) / 3600000;
       const fresh = ageHours >= 0 && ageHours <= 36;
       const valid = guard.ok === true && violations === 0;
+      if (evidence) {
+        evidence.dataset.status = valid && fresh && rows > 0 ? 'observed' : 'stale';
+        evidence.textContent = 'Model Evidence · integridade ' + (valid && fresh && rows > 0 ? 'verificada' : 'não confirmada') +
+          ' · validação preditiva e fora da amostra não demonstrada neste relatório';
+      }
       label.dataset.status = !valid ? 'bad' : fresh ? 'observed' : 'stale';
       const timestamp = new Date(date).toLocaleString('pt-PT');
       label.textContent = 'Cobertura publicada · ' + rows.toLocaleString('pt-PT') +
@@ -34,6 +40,10 @@
         (valid ? (fresh ? 'verificada' : 'relatório antigo') : 'atenção') +
         ' · ' + timestamp + ' · Fonte: coverage_guard.json';
     } catch (_) {
+      if (evidence) {
+        evidence.dataset.status = 'missing';
+        evidence.textContent = 'Model Evidence · integridade e validação preditiva não verificadas';
+      }
       label.dataset.status = 'missing';
       label.textContent = 'Cobertura publicada indisponível · sem confirmação de integridade';
     }
