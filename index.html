@@ -259,30 +259,6 @@
 </div>
 </div>
 </div>
-<div class="card dash-secondary" id="portfolioSourcesCard" style="display:none">
-<div class="card__head">
-<div><div class="card__title">Fontes activas da carteira</div><div class="card__muted">Origem dos dados que estão a alimentar os cálculos</div></div>
-</div>
-<div id="portfolioSourcesBody"></div>
-</div>
-<!-- Objetivo de rendimento passivo -->
-<div class="card dash-secondary" id="goalCard">
-<div class="card__head">
-<div>
-<div class="card__title">Objetivo de rendimento</div>
-<div class="card__muted" id="goalSubtitle">Define um objetivo mensal</div>
-</div>
-<button class="link" id="btnEditGoal">Definir</button>
-</div>
-<div id="goalProgressWrap" style="display:none">
-<div class="progress-bar-bg"><div class="progress-bar-fill" id="goalProgressFill"></div></div>
-<div class="row" style="justify-content:space-between;margin-top:6px">
-<span class="card__muted" id="goalCurrent"></span>
-<span class="card__muted" id="goalTarget"></span>
-</div>
-<div id="goalBreakdown" style="display:none;font-size:11px;color:#64748b;margin-top:8px;line-height:1.6"></div>
-</div>
-</div>
 <!-- v63v: "Vencimentos próximos" (30d) merged into "Vencimentos (60 dias)" below —
          same data (assets with maturityDate), same window logic, shown as two
          separate cards with different styling. Kept #alertsCard as a hidden
@@ -336,6 +312,31 @@
 <button class="btn btn--primary btn--sm" id="btnSnapshot">📸 Registar snapshot</button>
 <button class="btn btn--primary btn--sm" id="btnAddDiv">💰 + Dividendo</button>
 <button class="btn btn--ghost btn--sm" id="btnPrintDashboard" title="Imprimir / PDF">🖨️ PDF</button>
+</div>
+</div>
+<!-- Portfolio goal and data provenance live with tools, not between KPI and history. -->
+<div class="card dash-secondary" id="portfolioSourcesCard" style="display:none">
+<div class="card__head">
+<div><div class="card__title">Fontes activas da carteira</div><div class="card__muted">Origem dos dados que estão a alimentar os cálculos</div></div>
+</div>
+<div id="portfolioSourcesBody"></div>
+</div>
+<!-- Objetivo de rendimento passivo -->
+<div class="card dash-secondary" id="goalCard">
+<div class="card__head">
+<div>
+<div class="card__title">Objetivo de rendimento</div>
+<div class="card__muted" id="goalSubtitle">Define um objetivo mensal</div>
+</div>
+<button class="link" id="btnEditGoal">Definir</button>
+</div>
+<div id="goalProgressWrap" style="display:none">
+<div class="progress-bar-bg"><div class="progress-bar-fill" id="goalProgressFill"></div></div>
+<div class="row" style="justify-content:space-between;margin-top:6px">
+<span class="card__muted" id="goalCurrent"></span>
+<span class="card__muted" id="goalTarget"></span>
+</div>
+<div id="goalBreakdown" style="display:none;font-size:11px;color:#64748b;margin-top:8px;line-height:1.6"></div>
 </div>
 </div>
 <!-- v15: Metas (milestones) — collapsible, só mostra se há dados -->
