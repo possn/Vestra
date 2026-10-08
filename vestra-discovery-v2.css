@@ -17,3 +17,30 @@
 @media(min-width:1100px){body:has(#viewMarket:not([hidden])) .main{max-width:min(1180px,calc(100vw - 64px));width:100%}}
 @media(max-width:600px){#viewMarket .market-hero-simple h2{font-size:35px}#viewMarket .market-mode{padding:10px 12px}}
 @media(prefers-reduced-motion:reduce){#viewMarket .market-row:hover{transform:none}}
+
+/* Intelligence 2.0 — Markets editorial reading surface.
+   Scoped visual hierarchy; real data freshness remains supplied by existing renderers. */
+#viewMarket .market-shell { gap: clamp(18px,2.6vw,30px); }
+#viewMarket .market-hero-simple { padding: clamp(20px,3vw,36px) 2px 18px; border-bottom: 1px solid var(--line); }
+#viewMarket .market-hero-simple h2 { font-size:clamp(35px,5vw,54px); font-weight:750; letter-spacing:-.06em; line-height:1.04; text-wrap:balance; }
+#viewMarket .market-hero-simple p { color:var(--muted); line-height:1.65; }
+#viewMarket .market-search input { box-shadow:none; border:1px solid var(--line); border-radius:16px; }
+#viewMarket .market-section { box-shadow:none; border:1px solid var(--line); border-radius:20px; }
+#viewMarket .market-section__head { align-items:baseline; gap:12px; margin-bottom:17px; }
+#viewMarket .market-section__head h3 { font-size:clamp(18px,2vw,23px); font-weight:730; letter-spacing:-.04em; }
+#viewMarket .market-data-age { font-variant-numeric:tabular-nums; font-weight:650; color:var(--muted); }
+#viewMarket .market-list { gap:0; }
+#viewMarket .market-row { border-radius:0; border:0; border-bottom:1px solid var(--line2,var(--line)); background:transparent; padding:16px 5px; }
+#viewMarket .market-row:first-child { border-top:1px solid var(--line2,var(--line)); }
+#viewMarket .market-row:hover { transform:none; background:var(--card2); }
+#viewMarket .market-row__ticker { letter-spacing:-.025em; font-variant-numeric:tabular-nums; }
+#viewMarket .market-mode { border-radius:12px; }
+#viewMarket .market-mode.is-active { box-shadow:none; }
+#viewMarket :is(.market-mode,.market-row,.market-chip,.market-search input):focus-visible { outline:2px solid var(--vio); outline-offset:3px; }
+@media (max-width:600px) {
+  #viewMarket .market-hero-simple { padding-top:22px; }
+  #viewMarket .market-hero-simple h2 { font-size:clamp(33px,8.5vw,42px); }
+  #viewMarket .market-section { padding:17px 15px; }
+  #viewMarket .market-row { padding:14px 3px; }
+}
+@media (prefers-reduced-motion:reduce) { #viewMarket .market-row { transition:none; } }
