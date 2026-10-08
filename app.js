@@ -318,8 +318,11 @@ async function loadStateAsync() {
   } catch { return safeClone(DEFAULT_STATE); }
 }
 
-function saveState() { invalidateRenderCache(); return storageSet(JSON.stringify(state)); }
-async function saveStateAsync() { invalidateRenderCache(); const ok = await storageSet(JSON.stringify(state)); if (!ok) throw new Error('Falha ao guardar o estado local.'); return true; }
+function notifyPortfolioEvidenceStale() {
+  try { window.dispatchEvent(new Event('vestra:local-state-writing')); } catch (_) {}
+}
+function saveState() { invalidateRenderCache(); notifyPortfolioEvidenceStale(); return storageSet(JSON.stringify(state)); }
+async function saveStateAsync() { invalidateRenderCache(); notifyPortfolioEvidenceStale(); const ok = await storageSet(JSON.stringify(state)); if (!ok) throw new Error('Falha ao guardar o estado local.'); return true; }
 
 /* ─── TOTALS ──────────────────────────────────────────────── */
 function getLegacyPassiveMeta(it) {
