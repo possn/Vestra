@@ -11,8 +11,13 @@ class StorageWriteFailureSurfaceTests(unittest.TestCase):
         cls.index = (ROOT / 'index.html').read_text(encoding='utf-8')
 
     def test_async_save_rejects_false_storage_result(self):
-        expected = "async function saveStateAsync() { invalidateRenderCache(); const ok = await storageSet(JSON.stringify(state)); if (!ok) throw new Error('Falha ao guardar o estado local.'); return true; }"
-        self.assertIn(expected, self.app)
+        start = self.app.index('async function saveStateAsync()')
+        body = self.app[start:self.app.index('\n', start)]
+        self.assertIn('const ok = await storageSet(JSON.stringify(state));', body)
+        self.assertIn("if (!ok) throw new Error('Falha ao guardar o estado local.');", body)
+        self.assertLess(body.index('const ok = await storageSet('), body.index('if (!ok) throw'))
+        self.assertLess(body.index('if (!ok) throw'), body.index('return true;'))
+        self.assertIn('notifyPortfolioEvidenceStale();', body)
 
     def test_reset_success_toast_stays_after_awaited_save(self):
         block = self.app.split('async function resetAll()', 1)[1].split('/* ─── SETTINGS', 1)[0]
