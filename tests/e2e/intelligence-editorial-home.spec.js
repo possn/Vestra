@@ -20,6 +20,9 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeHidden();
   await home.locator('[data-vestra-go="dashboard"]').click();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
+  await page.locator('#btnReturnIntelligence').click();
+  await expect(page.locator('#viewDashboard .v2-home-stage')).toBeHidden();
+  await expect(home).toBeVisible();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toHaveCount(1);
   await expect(page.locator('#kpiNet')).toHaveCount(1);
   expect(errors).toEqual([]);
