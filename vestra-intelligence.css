@@ -159,3 +159,8 @@
 
 /* Keep financial calculation hosts mounted but visually subordinate until drill-down. */
 #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="false"]) > :not(#vestraIntelligenceHome){display:none!important}
+
+#viewDashboard .vi-back-to-intelligence{display:none;margin:14px 0 8px}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vi-back-to-intelligence{display:block}
+#viewDashboard .vi-back-to-intelligence button{background:transparent;border:1px solid var(--line,#c8cfcb);border-radius:12px;padding:11px 14px;color:var(--text,#24343b);font:650 13px/1.35 system-ui;cursor:pointer}
+#viewDashboard .vi-back-to-intelligence button:focus-visible{outline:2px solid var(--vio,#287f7c);outline-offset:3px}
