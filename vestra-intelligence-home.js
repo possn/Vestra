@@ -277,6 +277,8 @@
     const host = document.getElementById('vestraIntelligenceHome');
     if (!view || !host) return;
     host.hidden = false;
+    view.classList.add('vi-preview-active');
+    host.dataset.legacyOpen = 'false';
     syncExistingBarometer(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
@@ -303,6 +305,7 @@
       if (!['market', 'portfolio', 'dashboard'].includes(target)) return;
       if (target === 'dashboard') {
         if (typeof window.setView === 'function') window.setView('dashboard');
+        host.dataset.legacyOpen = 'true';
         const legacy = document.querySelector('#viewDashboard .dashboard-welcome');
         if (legacy && typeof legacy.scrollIntoView === 'function') legacy.scrollIntoView({behavior:'smooth', block:'start'});
         return;
