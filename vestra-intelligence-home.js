@@ -78,6 +78,28 @@
     }
   }
 
+
+  function syncDecisionCenter(host) {
+    const output = host.querySelector('[data-vestra-decision-state]');
+    if (!output) return;
+    const sheet = document.getElementById('marketSheet');
+    const center = sheet && !sheet.hidden && sheet.dataset.tool === 'portfolio'
+      ? sheet.querySelector('.market-decision-center[data-vpu-state]') : null;
+    const state = center?.dataset.vpuState || '';
+    const coverage = Number(center?.dataset.vpuCoverage);
+    const known = ['Rever', 'Atenção', 'Acompanhar', 'Dados parciais', 'Estável'];
+    if (!center || !known.includes(state) || !Number.isFinite(coverage) ||
+        coverage < 0 || coverage > 100) {
+      output.dataset.status = 'missing';
+      output.textContent = 'Decision Center · sem leitura verificada nesta sessão · abrir análise da Carteira';
+      return;
+    }
+    output.dataset.status = state === 'Rever' || state === 'Atenção' ? 'bad' :
+      state === 'Estável' && coverage >= 99.5 ? 'observed' : 'stale';
+    output.textContent = 'Decision Center · ' + state +
+      ' · cobertura ' + Math.round(coverage) + '% · Fonte: motor de decisão da carteira';
+  }
+
   function init() {
     const view = document.getElementById('viewDashboard');
     const host = document.getElementById('vestraIntelligenceHome');
@@ -85,6 +107,8 @@
     host.hidden = false;
     syncExistingBarometer(host);
     syncPortfolioEvidence(host);
+    syncDecisionCenter(host);
+    window.addEventListener('vestra:market-sheet-changed', () => syncDecisionCenter(host));
     window.addEventListener('vestra:dashboard-signal-updated', event => {
       if (event?.detail?.source === 'market-sentiment') syncExistingBarometer(host);
     });
