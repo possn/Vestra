@@ -84,10 +84,10 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(lossAlert).toHaveCount(1);
   expect(await lossAlert.evaluate(node => node.compareDocumentPosition(document.querySelector('#viewDashboard .kpi-quick')) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
   // Real concentration warnings must not be gated by the occasional-tools toggle.
-  const concentration = page.locator('#riskAlertCard');
-  await expect(concentration).toHaveCount(1);
-  expect(await concentration.evaluate(node => Boolean(node.compareDocumentPosition(document.querySelector('#viewDashboard .kpi-quick')) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
-  await expect(concentration).not.toHaveClass(/dash-secondary/);
+  const riskWarning = page.locator('#riskAlertCard');
+  await expect(riskWarning).toHaveCount(1);
+  expect(await riskWarning.evaluate(node => Boolean(node.compareDocumentPosition(document.querySelector('#viewDashboard .kpi-quick')) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  await expect(riskWarning).not.toHaveClass(/dash-secondary/);
   const quickRecords = page.locator('#dashboardQuickRecordsCard');
   await expect(quickRecords).toBeHidden();
   await page.locator('#btnToggleDashSecondary').click();
