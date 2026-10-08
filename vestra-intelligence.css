@@ -156,3 +156,6 @@
 
 /* The opt-in root must explicitly override legacy dashboard visibility selectors. The [hidden] rule above still takes precedence for normal mode. */
 #viewDashboard #vestraIntelligenceHome:not([hidden]){display:block!important;visibility:visible;opacity:1}
+
+/* Keep financial calculation hosts mounted but visually subordinate until drill-down. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="false"]) > :not(#vestraIntelligenceHome){display:none!important}
