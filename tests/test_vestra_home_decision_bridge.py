@@ -27,7 +27,7 @@ class HomeDecisionBridgeTests(unittest.TestCase):
   self.assertIn("data-vestra-horizon-ledger",html)
   self.assertIn("[28, 84, 168]",js)
   self.assertIn("amostra temporal insuficiente",js)
-  self.assertIn("Coortes sobrepostas",js)
+  self.assertIn("coortes independentes",js)
   self.assertIn("positive_ic_cohorts",js)
   self.assertIn("median_cohort_rank_ic",js)
   self.assertIn("VESTRA · EVIDÊNCIA DOS MODELOS",js)
