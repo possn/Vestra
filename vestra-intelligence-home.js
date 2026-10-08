@@ -114,7 +114,15 @@
           return days + 'd: ' + count.toLocaleString('pt-PT') +
             ' resultados / ' + groups + ' coortes' +
             (rank == null ? '' : ' / Rank IC ' + rank.toFixed(3)) +
-            (groups < 5 ? ' · amostra temporal insuficiente' : ' · observacional');
+            (groups < 5 ? ' · amostra temporal insuficiente' : ' · observacional') +
+            (Number.isInteger(row?.positive_ic_cohorts) &&
+              row.positive_ic_cohorts >= 0 && row.positive_ic_cohorts <= groups && groups > 0
+                ? ' · IC positivo em ' + row.positive_ic_cohorts + '/' + groups + ' coortes'
+                : '') +
+            (typeof row?.median_cohort_rank_ic === 'number' &&
+              Number.isFinite(row.median_cohort_rank_ic)
+                ? ' · IC mediano ' + row.median_cohort_rank_ic.toFixed(3)
+                : '');
         }).join('  |  ');
       };
       panel.textContent = 'Score — ' + reportSummary(score, scoreValid, 'Score') +
