@@ -94,3 +94,23 @@
 #vestraIntelligenceHome .vi-action strong{display:block;margin-bottom:7px;font-size:15px}
 #vestraIntelligenceHome .vi-action span{font-size:12px;line-height:1.5;color:var(--vi-muted)}
 @media(max-width:760px){#vestraIntelligenceHome .vi-decisions{grid-template-columns:1fr}}
+
+/* Vestra 2.0 minimal brand palette — scoped to optional preview. */
+[data-vestra-intelligence="1"] {
+  --vi-ink: #2d2c29;
+  --vi-muted: #77736d;
+  --vi-accent: #827769;
+  --vi-surface: #f7f5f1;
+  --vi-card: #fffefa;
+  --vi-edge: #e5e0d7;
+}
+[data-vestra-intelligence="1"][data-theme="dark"] {
+  --vi-ink: #f0ede8;
+  --vi-muted: #b6aca1;
+  --vi-accent: #cec0ad;
+  --vi-surface: #191a19;
+  --vi-card: #242421;
+  --vi-edge: #393833;
+}
+[data-vestra-intelligence="1"] .vi-headline {font-weight:400;letter-spacing:-.045em}
+[data-vestra-intelligence="1"] .vi-card {box-shadow:0 3px 16px rgba(48,39,30,.025)}
