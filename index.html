@@ -233,6 +233,9 @@
 <button class="btn btn--outline" id="btnEmptyImportBank">🏦 Importar extracto bancário</button>
 </div>
 </div>
+<!-- Important losses stay in the decision area, not behind secondary tools. -->
+<!-- v16.1: alerta rentabilidade negativa -->
+<div id="negReturnAlert" style="display:none;padding:10px 14px;background:#fef2f2;border-left:3px solid var(--red);border-radius:var(--r-sm);margin-bottom:12px;font-size:13px;color:#dc2626"></div>
 <!-- KPIs secundários: 4 métricas rápidas — layout 2×2 compacto -->
 <div class="v2-home-section-label"><span>01 / INDICADORES</span><h2>Rendimento e desempenho</h2><p>O que está a acontecer na carteira.</p></div>
 <div class="card kpi-quick">
@@ -396,8 +399,6 @@
 </div>
 <div id="whatIfResult" style="margin-top:12px;display:none"></div>
 </div>
-<!-- v16.1: alerta rentabilidade negativa -->
-<div id="negReturnAlert" style="display:none;padding:10px 14px;background:#fef2f2;border-left:3px solid var(--red);border-radius:var(--r-sm);margin-bottom:12px;font-size:13px;color:#dc2626"></div>
 <!-- IRS estimado — teaser, detalhe em Análise → Fiscal -->
 <div class="card dash-secondary" id="irsEstCard" style="display:none;border-left:4px solid #f59e0b;background:#fffbeb">
 <div class="card__head">
