@@ -1,0 +1,17 @@
+/* Vestra 2 editorial navigation — existing route buttons and handlers unchanged. */
+.topbar{background:var(--card);border-bottom:1px solid var(--line);box-shadow:none}
+.topbar .brand__title{font-size:21px;font-weight:760;letter-spacing:-.055em;line-height:1.05}
+.topbar .brand__sub{font-size:9px;letter-spacing:.13em;font-weight:720;color:var(--muted)}
+.topbar .brand__icon{border-radius:12px}
+.sidebar__head{padding-bottom:22px}
+.sidebar__title{font-size:22px;font-weight:750;letter-spacing:-.05em}
+.sidebar__nav .sidenavbtn{min-height:45px;border-radius:13px;font-weight:650}
+.sidebar__nav .sidenavbtn--active{background:var(--pill-aqua);color:var(--vio)}
+.sidebar__nav .sidebar__eyebrow{font-size:10px;font-weight:750;letter-spacing:.16em}
+.bottomnav{background:var(--card);border-top:1px solid var(--line);box-shadow:0 -12px 40px rgba(22,43,51,.075)}
+.bottomnav .navbtn{min-width:0;border-radius:13px;transition:color .15s ease}
+.bottomnav .navlbl{font-size:10px;font-weight:700;letter-spacing:-.012em}
+.bottomnav .navbtn--active .navico{background:var(--pill-aqua);color:var(--vio);border-radius:11px;box-shadow:none}
+.bottomnav .navbtn:focus-visible,.sidebar__nav .sidenavbtn:focus-visible{outline:2px solid var(--vio);outline-offset:2px}
+@media(min-width:900px){.topbar{padding-inline:clamp(22px,3vw,40px)}}
+@media(prefers-reduced-motion:reduce){.bottomnav .navbtn{transition:none}}
