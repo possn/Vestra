@@ -279,6 +279,13 @@
     host.hidden = false;
     view.classList.add('vi-preview-active');
     host.dataset.legacyOpen = 'false';
+    const returnButton = document.getElementById('btnReturnIntelligence');
+    if (returnButton) returnButton.addEventListener('click', () => {
+      host.dataset.legacyOpen = 'false';
+      if (returnButton?.parentElement) returnButton.parentElement.style.removeProperty('display');
+      if (typeof window.setView === 'function') window.setView('dashboard');
+      host.scrollIntoView({behavior:'smooth', block:'start'});
+    });
     syncExistingBarometer(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
@@ -306,6 +313,7 @@
       if (target === 'dashboard') {
         if (typeof window.setView === 'function') window.setView('dashboard');
         host.dataset.legacyOpen = 'true';
+        if (returnButton?.parentElement) returnButton.parentElement.style.setProperty('display','block','important');
         const legacy = document.querySelector('#viewDashboard .dashboard-welcome');
         if (legacy && typeof legacy.scrollIntoView === 'function') legacy.scrollIntoView({behavior:'smooth', block:'start'});
         return;
