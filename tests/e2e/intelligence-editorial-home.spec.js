@@ -8,6 +8,10 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
   const home = page.locator('#vestraIntelligenceHome');
   await expect(home).toBeVisible();
+  // The preview must own the app chrome, not merely insert another card.
+  await expect(page.locator('body')).toHaveCSS('background-color', /.+/);
+  await expect(page.locator('.topbar')).toHaveCSS('background-color', 'rgb(17, 21, 20)');
+  await expect(page.locator('.bottomnav')).toHaveCSS('background-color', 'rgb(20, 25, 24)');
   await expect(home.getByText('O essencial, sem ruído.')).toBeVisible();
   await expect(home.getByRole('heading', {name:/Regime de mercado/})).toBeVisible();
   await expect(home.locator('.vi-action')).toHaveCount(3);
