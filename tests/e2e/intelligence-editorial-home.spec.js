@@ -33,5 +33,9 @@ test('iPhone/WebKit: legacy dashboard remains the default without preview flag',
   // Wait for initial app navigation/hydration rather than racing setView().
   await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
   await expect(page.locator('#vestraIntelligenceHome')).toBeHidden();
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
+  const entry = page.locator('.vi-entry-link a');
+  await expect(entry).toBeVisible();
+  await expect(entry).toHaveAttribute('href', '?vestra2=1');
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
 });
