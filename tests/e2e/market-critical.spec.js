@@ -20,6 +20,8 @@ async function openMarket(page) {
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
+  await page.waitForFunction(() => window.VestraMarket && typeof window.VestraMarket.ensureLoaded === 'function');
+  await page.evaluate(() => window.VestraMarket.ensureLoaded());
   await expect(page.locator('#viewMarket')).toBeVisible();
   await expect(page.locator('#marketSearch')).toBeVisible();
 }
