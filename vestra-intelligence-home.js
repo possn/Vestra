@@ -79,25 +79,40 @@
   }
 
 
+  // Session-only snapshot: never persisted across reloads or users.
+  // Derived exclusively from the canonical rendered Decision Center.
+  let lastDecision = null;
   function syncDecisionCenter(host) {
     const output = host.querySelector('[data-vestra-decision-state]');
     if (!output) return;
     const sheet = document.getElementById('marketSheet');
-    const center = sheet && !sheet.hidden && sheet.dataset.tool === 'portfolio'
+    const center = sheet?.dataset.tool === 'portfolio'
       ? sheet.querySelector('.market-decision-center[data-vpu-state]') : null;
     const state = center?.dataset.vpuState || '';
-    const coverage = Number(center?.dataset.vpuCoverage);
+    const rawCoverage = center?.dataset.vpuCoverage;
+    const coverage = rawCoverage === undefined || rawCoverage === '' ? NaN : Number(rawCoverage);
     const known = ['Rever', 'Atenção', 'Acompanhar', 'Dados parciais', 'Estável'];
-    if (!center || !known.includes(state) || !Number.isFinite(coverage) ||
-        coverage < 0 || coverage > 100) {
+    // Do not convert an absent/invalid coverage to zero or a healthy decision.
+    if (center && known.includes(state) && Number.isFinite(coverage) &&
+        coverage >= 0 && coverage <= 100) {
+      lastDecision = {state, coverage, observedAt: Date.now()};
+    }
+    const snapshot = lastDecision;
+    // Do not silently present an old diagnosis as current.
+    const age = snapshot ? Date.now() - snapshot.observedAt : Infinity;
+    if (!snapshot || age < 0 || age > 15 * 60 * 1000) {
+      lastDecision = null;
       output.dataset.status = 'missing';
       output.textContent = 'Decision Center · sem leitura verificada nesta sessão · abrir análise da Carteira';
       return;
     }
-    output.dataset.status = state === 'Rever' || state === 'Atenção' ? 'bad' :
-      state === 'Estável' && coverage >= 99.5 ? 'observed' : 'stale';
-    output.textContent = 'Decision Center · ' + state +
-      ' · cobertura ' + Math.round(coverage) + '% · Fonte: motor de decisão da carteira';
+    output.dataset.status = snapshot.state === 'Rever' || snapshot.state === 'Atenção' ? 'bad' :
+      snapshot.state === 'Estável' && snapshot.coverage >= 99.5 ? 'observed' : 'stale';
+    const elapsed = Math.max(0, Math.floor(age / 60000));
+    output.textContent = 'Decision Center · ' + snapshot.state +
+      ' · cobertura ' + Math.round(snapshot.coverage) + '% · ' +
+      (elapsed === 0 ? 'leitura nesta sessão' : 'última leitura há ' + elapsed + ' min') +
+      ' · Fonte: motor de decisão da carteira';
   }
 
   function init() {
