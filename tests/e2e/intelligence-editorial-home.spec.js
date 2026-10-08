@@ -59,3 +59,28 @@ test('iPhone/WebKit: explicit legacy rollback disables Intelligence and keeps to
   await expect(page.locator('#kpiNet')).toHaveCount(1);
   await expect(page.locator('.vi-entry-link a')).toHaveAttribute('href', '?vestra2=0');
 });
+
+
+test('iPhone/WebKit: default Intelligence actions retain Portfolio and Market navigation', async ({page}) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/index.html');
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
+  const home = page.locator('#vestraIntelligenceHome');
+  await expect(home).toBeVisible();
+  await home.locator('[data-vestra-go="portfolio"]').first().click();
+  await expect(page.locator('#viewAssets')).toBeVisible();
+  await page.evaluate(() => window.setView('dashboard'));
+  await expect(home).toBeVisible();
+  await home.locator('[data-vestra-go="market"]').first().click();
+  await expect(page.locator('#viewMarket')).toBeVisible();
+  await page.evaluate(() => window.setView('dashboard'));
+  await expect(home).toBeVisible();
+  await home.locator('[data-vestra-go="dashboard"]').click();
+  await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
+  await expect(page.locator('#kpiNet')).toHaveCount(1);
+  await expect(page.locator('#btnReturnIntelligence')).toBeVisible();
+  await page.locator('#btnReturnIntelligence').click();
+  await expect(home).toBeVisible();
+  expect(errors).toEqual([]);
+});
