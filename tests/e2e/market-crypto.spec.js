@@ -65,6 +65,8 @@ test('iPhone/WebKit: Crypto tab renders barometer, live rows, search and dedicat
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
+  await page.waitForFunction(() => window.VestraMarket && typeof window.VestraMarket.ensureLoaded === 'function');
+  await page.evaluate(() => window.VestraMarket.ensureLoaded());
   await expect(page.locator('[data-market-mode="crypto"]')).toBeVisible();
   await page.locator('[data-market-mode="crypto"]').click();
 
