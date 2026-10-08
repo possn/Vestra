@@ -647,6 +647,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       }catch(err){
         M.cryptoError=err?.message||'Falha ao carregar crypto';
         M.cryptoRows=[];
+        // A completed failed attempt is terminal until a user-initiated retry.
+        // Otherwise renderPrimary schedules an unbounded fetch/render loop.
+        M.cryptoLoaded=true;
         return [];
       }finally{M.cryptoLoading=null;}
     })();
