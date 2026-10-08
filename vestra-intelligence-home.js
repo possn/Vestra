@@ -279,6 +279,12 @@
     host.hidden = false;
     view.classList.add('vi-preview-active');
     host.dataset.legacyOpen = 'false';
+    const returnButton = document.getElementById('btnReturnIntelligence');
+    if (returnButton) returnButton.addEventListener('click', () => {
+      host.dataset.legacyOpen = 'false';
+      if (typeof window.setView === 'function') window.setView('dashboard');
+      host.scrollIntoView({behavior:'smooth', block:'start'});
+    });
     syncExistingBarometer(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
