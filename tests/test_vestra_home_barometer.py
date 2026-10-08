@@ -12,5 +12,5 @@ class HomeBarometerTests(unittest.TestCase):
         self.assertIn("data-vestra-market-status",html)
         self.assertIn("value < 0 || value > 100",js)
         self.assertNotIn('/market?ticker=',js)
-        self.assertIn("params.get('vestra2') === '1'",js)
+        self.assertIn("params.get('vestra2') !== '0'",js)\n        self.assertIn("if (!enabled) return;",js)\n        self.assertIn("data-vestra-go=\\\"dashboard\\\"",html)
 if __name__=='__main__': unittest.main()
