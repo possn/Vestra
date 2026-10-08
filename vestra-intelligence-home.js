@@ -301,7 +301,13 @@
       if (!button || !host.contains(button)) return;
       const target = button.dataset.vestraGo;
       if (!['market', 'portfolio', 'dashboard'].includes(target)) return;
-      if (typeof window.setView === 'function') window.setView(target);
+      if (target === 'dashboard') {
+        if (typeof window.setView === 'function') window.setView('dashboard');
+        const legacy = document.querySelector('#viewDashboard .dashboard-welcome');
+        if (legacy && typeof legacy.scrollIntoView === 'function') legacy.scrollIntoView({behavior:'smooth', block:'start'});
+        return;
+      }
+      if (typeof window.setView === 'function') window.setView(target === 'portfolio' ? 'assets' : target);
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
