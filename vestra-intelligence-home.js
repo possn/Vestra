@@ -139,7 +139,7 @@
       if (trend) {
         const rows = scoreValid && Array.isArray(score?.horizons?.['28']?.cohorts)
           ? score.horizons['28'].cohorts.filter(c =>
-              /^\\d{4}-\\d{2}-\\d{2}$/.test(c?.cohort_date || '') &&
+              /^\d{4}-\d{2}-\d{2}$/.test(c?.cohort_date || '') &&
               Number.isFinite(c?.rank_information_coefficient) &&
               Number.isInteger(c?.n) && c.n > 0).slice(-12) : [];
         trend.replaceChildren();
