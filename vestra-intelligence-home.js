@@ -163,9 +163,16 @@
             date.textContent = row.cohort_date;
             const rail = document.createElement('div');
             rail.style.cssText = 'background:rgba(128,128,128,.14);height:.5rem;border-radius:99px;overflow:hidden';
+            // Zero is the centre: negative correlations extend left, positive right.
+            rail.style.position = 'relative';
+            const zero = document.createElement('span');
+            zero.style.cssText = 'position:absolute;left:50%;top:0;bottom:0;border-left:1px solid currentColor;opacity:.6';
+            rail.appendChild(zero);
             const bar = document.createElement('div');
-            bar.style.cssText = 'height:100%;border-radius:99px;background:currentColor;opacity:.65';
-            bar.style.width = Math.min(100, Math.abs(row.rank_information_coefficient) * 100) + '%';
+            const magnitude = Math.min(50, Math.abs(row.rank_information_coefficient) * 50);
+            bar.style.cssText = 'position:absolute;top:0;bottom:0;background:currentColor;opacity:.65';
+            bar.style.left = row.rank_information_coefficient < 0 ? (50 - magnitude) + '%' : '50%';
+            bar.style.width = magnitude + '%';
             rail.appendChild(bar);
             const value = document.createElement('span');
             value.textContent = (row.rank_information_coefficient > 0 ? '+' : '') +
@@ -176,8 +183,8 @@
           }
           trend.appendChild(list);
           const foot = document.createElement('small');
-          foot.textContent = sorted.length + ' coortes observadas · largura = magnitude absoluta do IC; ' +
-            'sinal identificado pelo valor, não pela cor · não é uma previsão.';
+          foot.textContent = sorted.length + ' coortes observadas · zero ao centro, IC negativo à esquerda e positivo à direita; ' +
+            'zero ao centro, IC negativo à esquerda e positivo à direita · não é uma previsão.';
           trend.appendChild(foot);
         }
       }
