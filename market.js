@@ -524,7 +524,15 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       const line=[scoreLabel,...reasons.slice(0,2)].join(' · ');
       return renderRow(s,line);
     }).join(''):`<div class="market-empty"><strong>Sem candidatos robustos neste momento.</strong><br><span>O filtro prefere não mostrar nada a aceitar empresas com evidência insuficiente ou Risk Gate elevado.</span></div>`;
-    return `<div class="market-detail-head"><div><div class="market-kicker">SCANNER VESTRA</div><h2>${esc(meta[1])}</h2><p>${esc(meta[2])}. Estratégias independentes do core score, com filtros de confiança e risco.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-chipbar" role="group" aria-label="Estratégias do Scanner" style="margin-bottom:12px">${chips}</div><section class="market-section"><div class="market-section__head"><div><h3>Candidatos para investigação</h3><p>Ranking exploratório específico desta estratégia. Não é recomendação de compra; confirmar tese, qualidade dos dados, valuation e risco.</p></div><span class="market-data-age">${visible}${total>visible?` de ${total}`:""} ${total===1?"empresa":"empresas"}</span></div><div class="market-list">${body}</div></section>`;
+    return `<div class="v2-scanner-research">
+      <div class="market-detail-head v2-scanner-research__heading"><div><div class="market-kicker">VESTRA RESEARCH / SCANNER</div><h2>${esc(meta[1])}</h2><p>${esc(meta[2])}. Estratégias independentes do core score, com filtros de confiança e risco.</p></div><button class="market-close" data-market-close aria-label="Fechar Scanner">×</button></div>
+      <section class="v2-scanner-research__stage" aria-label="Leitura da estratégia">
+        <div class="v2-scanner-research__intro"><span>01 / INVESTIGAR</span><strong>${visible}${total>visible?` / ${total}`:""}</strong><small>${total===1?'empresa identificada':'empresas identificadas'}${total>visible?' · primeiras 30 apresentadas':''}</small></div>
+        <div class="v2-scanner-research__context"><span>O QUE ESTE RANKING SIGNIFICA</span><p>Candidatos a investigar, não ordens de compra. Confirmar evidência, tese, valuation e Risk Gate em cada dossier.</p></div>
+      </section>
+      <nav class="v2-scanner-research__strategies" aria-label="Escolher estratégia"><div class="market-chipbar" role="group" aria-label="Estratégias do Scanner">${chips}</div></nav>
+      <section class="market-section v2-scanner-research__results"><div class="market-section__head"><div><h3>Candidatos para investigação</h3><p>Ordenados pelo score específico da estratégia selecionada; sem misturar com o Vestra Score.</p></div><span class="market-data-age">${visible}${total>visible?` de ${total}`:""} ${total===1?"empresa":"empresas"}</span></div><div class="market-list">${body}</div></section>
+    </div>`;
   }
 
   const CRYPTO_UNIVERSE=[
