@@ -183,7 +183,7 @@
           }
           trend.appendChild(list);
           const foot = document.createElement('small');
-          foot.textContent = sorted.length + ' coortes observadas · largura = magnitude absoluta do IC; ' +
+          foot.textContent = sorted.length + ' coortes observadas · zero ao centro, IC negativo à esquerda e positivo à direita; ' +
             'zero ao centro, IC negativo à esquerda e positivo à direita · não é uma previsão.';
           trend.appendChild(foot);
         }
