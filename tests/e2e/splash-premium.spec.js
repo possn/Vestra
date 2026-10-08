@@ -57,7 +57,7 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
     }, { once: true });
   });
 
-  await page.goto('/index.html', { waitUntil: 'domcontentloaded' });
+  await page.goto('/index.html?vestra2=0', { waitUntil: 'domcontentloaded' });
   const splash = page.locator('#appLoadingOverlay');
   const mark = page.locator('.vestra-splash__mark');
   const brand = page.locator('.vestra-splash__brand');
