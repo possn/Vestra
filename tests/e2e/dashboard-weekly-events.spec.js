@@ -4,7 +4,7 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
 
   // Reproduce the real default Dashboard state: secondary cards are collapsed.
@@ -100,7 +100,7 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
     });
   });
 
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
 
   await page.evaluate(() => {
@@ -182,7 +182,7 @@ test('iPhone/WebKit: reported company earnings replace a stale pending event on 
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
 
   await page.evaluate(() => {
