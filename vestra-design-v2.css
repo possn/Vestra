@@ -50,3 +50,54 @@ body { font-family: var(--v2-font); text-rendering: optimizeLegibility; }
 
 /* Accessibility invariant for editorial controls (no layout or data changes). */
 :where(.v2-card, .v2-section) { min-width: 0; }
+
+/* Intelligence 2.0 — global editorial component tokens.
+   Apply to shared chrome without changing financial data, chart or form internals.
+   The existing light experience remains usable until full per-view migration. */
+:root {
+  --v2-editorial-radius-sm: 12px;
+  --v2-editorial-radius-md: 16px;
+  --v2-editorial-radius-lg: 22px;
+  --v2-editorial-ink-strong: #192a2b;
+  --v2-editorial-ink-soft: #667574;
+  --v2-editorial-border: #dfe5e1;
+  --v2-editorial-chrome: #f9faf7;
+  --v2-editorial-active: #e5edeb;
+  --v2-editorial-track: -.035em;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --v2-editorial-ink-strong: #f0f2ef;
+    --v2-editorial-ink-soft: #b5c0bc;
+    --v2-editorial-border: #343d3a;
+    --v2-editorial-chrome: #171c1a;
+    --v2-editorial-active: #2a3632;
+  }
+}
+/* App-wide typographic hierarchy; no width or height changes to data hosts. */
+:where(.topbar, .bottomnav, .sidebar) {
+  font-family: var(--v2-font);
+  -webkit-font-smoothing: antialiased;
+}
+:where(.topbar .brand__title, .sidebar__title) {
+  letter-spacing: -.052em;
+  font-weight: 750;
+}
+:where(.bottomnav .navlbl, .sidebar__nav .sidenavbtn) {
+  letter-spacing: -.016em;
+}
+:where(.bottomnav .navbtn, .sidebar__nav .sidenavbtn) {
+  border-radius: var(--v2-editorial-radius-sm);
+}
+:where(.bottomnav .navbtn, .sidebar__nav .sidenavbtn):focus-visible {
+  outline: 2px solid var(--v2-accent);
+  outline-offset: 3px;
+}
+/* Keep the preview's dedicated dark navigation treatment authoritative. */
+body:has(#viewDashboard.vi-preview-active) {
+  --v2-editorial-ink-strong: #f0f2ef;
+  --v2-editorial-ink-soft: #b5c0bc;
+  --v2-editorial-border: #343d3a;
+  --v2-editorial-chrome: #171c1a;
+  --v2-editorial-active: #2a3632;
+}
