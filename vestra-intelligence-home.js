@@ -57,12 +57,35 @@
       label.textContent.trim() + ' · Fonte: Vestra Market Sentiment (proxy de preço, não breadth real)';
   }
 
+
+  function syncPortfolioEvidence(host) {
+    const output = host.querySelector('[data-vestra-portfolio-evidence]');
+    if (!output) return;
+    const api = window.VestraDashboardPortfolioConcentration;
+    try {
+      if (!api || typeof api.marketHoldings !== 'function' ||
+          typeof api.concentrationSnapshot !== 'function') throw new Error('motor indisponível');
+      const snapshot = api.concentrationSnapshot(api.marketHoldings());
+      if (!snapshot || !Number.isInteger(snapshot.count) || snapshot.count <= 0 ||
+          !Number.isFinite(snapshot.top3) || snapshot.top3 < 0 || snapshot.top3 > 1)
+        throw new Error('cobertura insuficiente');
+      output.dataset.status = 'observed';
+      // Do not expose personal portfolio values in the dashboard preview.
+      output.textContent = 'Carteira · concentração mensurável em ' +
+        snapshot.count + ' posições de mercado · Rever pesos e sobreposição no módulo Carteira · Fonte: motor de concentração existente';
+    } catch (_) {
+      output.dataset.status = 'missing';
+      output.textContent = 'Carteira · concentração não confirmada · abrir Carteira para verificar';
+    }
+  }
+
   function init() {
     const view = document.getElementById('viewDashboard');
     const host = document.getElementById('vestraIntelligenceHome');
     if (!view || !host) return;
     host.hidden = false;
     syncExistingBarometer(host);
+    syncPortfolioEvidence(host);
     window.addEventListener('vestra:dashboard-signal-updated', event => {
       if (event?.detail?.source === 'market-sentiment') syncExistingBarometer(host);
     });
