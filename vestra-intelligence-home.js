@@ -128,10 +128,10 @@
       // Editorial lines remain text-only: no untrusted report HTML enters the DOM.
       panel.style.whiteSpace = 'pre-line';
       panel.setAttribute('aria-live', 'polite');
-      panel.textContent = 'VESTRA · EVIDÊNCIA DOS MODELOS\\n' +
+      panel.textContent = 'VESTRA · EVIDÊNCIA DOS MODELOS\n' +
         'Score — ' + reportSummary(score, scoreValid, 'Score') +
-        '\\nOportunidades — ' + reportSummary(opportunity, oppValid, 'Oportunidades') +
-        '\\nLeitura: observações por ativo não equivalem a coortes independentes. ' +
+        '\nOportunidades — ' + reportSummary(opportunity, oppValid, 'Oportunidades') +
+        '\nLeitura: observações por ativo não equivalem a coortes independentes. ' +
         'A consistência observada não comprova capacidade preditiva futura.';
       panel.dataset.status = scoreValid || oppValid ? 'observed' : 'missing';
     }
