@@ -79,6 +79,10 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(page.locator('#dashboardDistributionCard')).toBeHidden();
   await expect(page.locator('#viewDashboard .dashboard-shortcuts')).toHaveCount(0);
   await expect(page.locator('#btnDashQuickAdd')).toBeHidden();
+  // A loss warning belongs in the primary decision flow even when no loss is present.
+  const lossAlert = page.locator('#negReturnAlert');
+  await expect(lossAlert).toHaveCount(1);
+  expect(await lossAlert.evaluate(node => node.compareDocumentPosition(document.querySelector('#viewDashboard .kpi-quick')) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
   const quickRecords = page.locator('#dashboardQuickRecordsCard');
   await expect(quickRecords).toBeHidden();
   await page.locator('#btnToggleDashSecondary').click();
