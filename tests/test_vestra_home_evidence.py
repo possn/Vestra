@@ -6,7 +6,8 @@ class HomeEvidenceTests(unittest.TestCase):
     def test_source_and_fail_closed_rendering(self):
         js=(ROOT/'vestra-intelligence-home.js').read_text()
         html=(ROOT/'index.html').read_text()
-        self.assertIn("params.get('vestra2') === '1'",js)
+        self.assertIn("params.get('vestra2') !== '0'",js)
+        self.assertIn("if (!enabled) return;",js)
         self.assertIn("fetch('./data/coverage_guard.json'",js)
         self.assertIn("cache:'no-store'",js)
         self.assertIn("ageHours <= 36",js)
