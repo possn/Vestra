@@ -4,7 +4,7 @@ test('iPhone/WebKit: visual polish loads without hiding expanded content and sof
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.waitForFunction(() => window.VestraUiVisualPolish?.version === '1.1');
   await page.evaluate(() => {
