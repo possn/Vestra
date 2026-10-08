@@ -4,7 +4,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraDashboardUiRefresh));
   await page.waitForFunction(() => Boolean(window.VestraDashboardPortfolioConcentration));
 
@@ -223,7 +223,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
 test('iPhone/WebKit: Dashboard shows a clean empty upcoming state and integrates the negative TWR warning as a health card', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => window.VestraDashboardUiRefresh?.version === '1.8');
 
   await page.evaluate(() => {
