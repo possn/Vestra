@@ -12,5 +12,6 @@ class HomePortfolioEvidenceTest(unittest.TestCase):
         self.assertIn('data-vestra-portfolio-evidence',html)
         self.assertIn('concentração não confirmada',js)
         self.assertNotIn('snapshot.total.toLocaleString',js)
-        self.assertIn("params.get('vestra2') === '1'",js)
+        self.assertIn("params.get('vestra2') !== '0'",js)
+        self.assertIn("if (!enabled) return;",js)
 if __name__=='__main__': unittest.main()
