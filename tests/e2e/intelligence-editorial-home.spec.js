@@ -25,6 +25,15 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   expect(errors).toEqual([]);
 });
 
+test('iPhone/WebKit: decision-first Intelligence is default on dashboard', async ({page}) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
+  const home = page.locator('#vestraIntelligenceHome');
+  await expect(home).toBeVisible();
+  await expect(home.locator('.vi-action')).toHaveCount(3);
+  await expect(page.locator('#viewDashboard .v2-home-stage')).toBeHidden();
+});
+
 test('iPhone/WebKit: legacy dashboard available with explicit rollback flag', async ({page}) => {
   await page.goto('/index.html?vestra2=0');
   // Wait for initial app navigation/hydration rather than racing setView().
