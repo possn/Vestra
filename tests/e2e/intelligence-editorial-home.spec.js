@@ -7,7 +7,7 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   const home = page.locator('#vestraIntelligenceHome');
   await expect(home).toBeVisible();
   await expect(home.getByText('O essencial, sem ruído.')).toBeVisible();
-  await expect(home.getByRole('heading', {name:'Regime de mercado'})).toBeVisible();
+  await expect(home.getByRole('heading', {name:/Regime de mercado/})).toBeVisible();
   await expect(home.locator('.vi-action')).toHaveCount(3);
   await expect(home.locator('[data-vestra-market-status]')).not.toBeEmpty();
   await expect(home.locator('[data-vestra-portfolio-evidence]')).not.toBeEmpty();
