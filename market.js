@@ -515,13 +515,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     let rows=M.stocks.filter(s=>!isFund(s)&&scannerResult(s,meta[0]))
       .sort((a,b)=>(n(scannerResult(b,meta[0])?.score)||0)-(n(scannerResult(a,meta[0])?.score)||0));
     const total=rows.length; rows=rows.slice(0,30);
+    const visible=rows.length;
     const chips=SCANNER_STRATEGIES.map(([key,label])=>`<button class="market-chip ${key===meta[0]?'is-active':''}" data-scanner-strategy="${key}">${esc(label)}</button>`).join('');
     const body=rows.length?rows.map(s=>{
       const r=scannerResult(s,meta[0])||{}; const reasons=Array.isArray(r.reasons)?r.reasons:[];
       const line=[`Scanner ${Math.round(n(r.score)||0)}/100`,...reasons.slice(0,2)].join(' · ');
       return renderRow(s,line);
     }).join(''):`<div class="market-empty"><strong>Sem candidatos robustos neste momento.</strong><br><span>O filtro prefere não mostrar nada a aceitar empresas com evidência insuficiente ou Risk Gate elevado.</span></div>`;
-    return `<div class="market-detail-head"><div><div class="market-kicker">SCANNER VESTRA</div><h2>${esc(meta[1])}</h2><p>${esc(meta[2])}. Estratégias independentes do core score, com filtros de confiança e risco.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-chipbar" style="margin-bottom:12px">${chips}</div><section class="market-section"><div class="market-section__head"><div><h3>Candidatos</h3><p>Ordenados pelo score específico desta estratégia.</p></div><span class="market-data-age">${total} ${total===1?'empresa':'empresas'}</span></div><div class="market-list">${body}</div></section>`;
+    return `<div class="market-detail-head"><div><div class="market-kicker">SCANNER VESTRA</div><h2>${esc(meta[1])}</h2><p>${esc(meta[2])}. Estratégias independentes do core score, com filtros de confiança e risco.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-chipbar" style="margin-bottom:12px">${chips}</div><section class="market-section"><div class="market-section__head"><div><h3>Candidatos para investigação</h3><p>Ranking exploratório específico desta estratégia. Não é recomendação de compra; confirmar tese, qualidade dos dados, valuation e risco.</p></div><span class="market-data-age">${visible}${total>visible?` de ${total}`:""} ${total===1?"empresa":"empresas"}</span></div><div class="market-list">${body}</div></section>`;
   }
 
   const CRYPTO_UNIVERSE=[
