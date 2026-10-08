@@ -22,6 +22,8 @@ class HomeDecisionBridgeTests(unittest.TestCase):
   self.assertNotIn("localStorage",js)
   self.assertNotIn("sessionStorage",js)
   self.assertIn("data-vestra-decision-state",html)
+  self.assertIn("data-vestra-model-evidence",html)
+  self.assertIn("validação preditiva e fora da amostra não demonstrada",js)
   self.assertIn('data-vpu-state="${esc(decisionState)}"',market)
   self.assertNotIn("fetch(",js[js.index('function syncDecisionCenter('):js.index('function init()')])
 if __name__=='__main__': unittest.main()
