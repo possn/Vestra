@@ -85,3 +85,12 @@
   [data-vestra-intelligence="1"] *, [data-vestra-intelligence="1"] *::before,
   [data-vestra-intelligence="1"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Visible only when ?vestra2=1; existing financial components remain untouched. */
+#vestraIntelligenceHome[hidden]{display:none!important}
+#vestraIntelligenceHome .vi-decisions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#vestraIntelligenceHome .vi-action{width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit}
+#vestraIntelligenceHome .vi-action:hover{border-color:var(--vi-accent)}
+#vestraIntelligenceHome .vi-action strong{display:block;margin-bottom:7px;font-size:15px}
+#vestraIntelligenceHome .vi-action span{font-size:12px;line-height:1.5;color:var(--vi-muted)}
+@media(max-width:760px){#vestraIntelligenceHome .vi-decisions{grid-template-columns:1fr}}
