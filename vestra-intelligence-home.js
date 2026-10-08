@@ -2,7 +2,8 @@
 (() => {
   'use strict';
   const params = new URLSearchParams(window.location.search);
-  const enabled = params.get('vestra2') === '1';
+  // Explicit ?vestra2=0 retains legacy Home as a rollback switch.
+  const enabled = params.get('vestra2') !== '0';
   if (!enabled) return;
 
   async function showCoverage(host) {
