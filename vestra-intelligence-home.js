@@ -307,7 +307,7 @@
         if (legacy && typeof legacy.scrollIntoView === 'function') legacy.scrollIntoView({behavior:'smooth', block:'start'});
         return;
       }
-      if (typeof window.setView === 'function') window.setView(target);
+      if (typeof window.setView === 'function') window.setView(target === 'portfolio' ? 'assets' : target);
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
