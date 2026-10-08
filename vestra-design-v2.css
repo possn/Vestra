@@ -1,0 +1,49 @@
+/* Vestra 2.0 — editorial foundation. Intentionally additive and reversible. */
+:root {
+  --v2-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --v2-ink: #172b38;
+  --v2-muted: #5e707a;
+  --v2-paper: #f4f5f2;
+  --v2-surface: #ffffff;
+  --v2-line: #dce3e2;
+  --v2-accent: #287f7c;
+  --v2-radius-card: 20px;
+  --v2-focus: 0 0 0 3px rgba(40,127,124,.24);
+  --v2-ease: cubic-bezier(.22,1,.36,1);
+  --v2-space-1: 4px;
+  --v2-space-2: 8px;
+  --v2-space-3: 12px;
+  --v2-space-4: 16px;
+  --v2-space-6: 24px;
+  --v2-space-8: 32px;
+}
+/* Editorial type: no layout changes to legacy data grids or chart dimensions. */
+body { font-family: var(--v2-font); text-rendering: optimizeLegibility; }
+.brand__title { font-family: var(--v2-font); font-weight: 720; letter-spacing: -.045em; }
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--v2-accent);
+  outline-offset: 3px;
+}
+/* Reduced motion is a functional requirement, not a cosmetic preference. */
+@media (prefers-reduced-motion: reduce) {
+  :where(button, a, .card, .item, .navbtn, .analysis-tab) {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --v2-ink: #e8eeef;
+    --v2-muted: #a8b9bf;
+    --v2-paper: #0e171d;
+    --v2-surface: #152329;
+    --v2-line: #30414a;
+    --v2-focus: 0 0 0 3px rgba(97,192,179,.4);
+  }
+}
+/* Opt-in primitives for subsequent screen-by-screen migrations. */
+.v2-eyebrow { color: var(--v2-muted); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.v2-display { font-family: var(--v2-font); font-size: clamp(1.75rem, 3vw, 2.65rem); font-weight: 730; line-height: 1.1; letter-spacing: -.045em; }
+.v2-section { display: grid; gap: var(--v2-space-4); min-width: 0; }
+.v2-card { min-width: 0; border: 1px solid var(--v2-line); border-radius: var(--v2-radius-card); background: var(--v2-surface); padding: var(--v2-space-6); }
+.v2-muted { color: var(--v2-muted); }
