@@ -21,6 +21,7 @@ def evaluate(records, as_of):
     now = parse_time(as_of)
     eligible = []
     rejected = {}
+    seen_predictions = set()
     for item in records:
         try:
             if not isinstance(item, dict):
@@ -41,6 +42,10 @@ def evaluate(records, as_of):
                 raise ValueError("invalid_outcome")
             if item.get("split") != "out_of_sample":
                 raise ValueError("not_out_of_sample")
+            identity = (item["model_id"], item["model_version"], item["prediction_id"])
+            if identity in seen_predictions:
+                raise ValueError("duplicate_prediction")
+            seen_predictions.add(identity)
             eligible.append((item["model_id"], float(probability), int(outcome)))
         except (ValueError, KeyError, TypeError) as exc:
             reason = str(exc) if isinstance(exc, ValueError) and str(exc) else "malformed"
