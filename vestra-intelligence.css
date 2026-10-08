@@ -1,0 +1,87 @@
+/* Vestra Intelligence 2.0 — opt-in visual foundation.
+   No selectors outside [data-vestra-intelligence="1"].
+   This file is intentionally not linked until the shell and E2E migration land. */
+[data-vestra-intelligence="1"] {
+  --vi-ink: #18242c;
+  --vi-muted: #6c787f;
+  --vi-accent: #217f80;
+  --vi-surface: #f6f5f1;
+  --vi-card: #ffffff;
+  --vi-edge: #e6e8e4;
+  --vi-radius: 20px;
+  --vi-space: clamp(16px, 3vw, 32px);
+  color: var(--vi-ink);
+  background: var(--vi-surface);
+}
+[data-vestra-intelligence="1"][data-theme="dark"] {
+  --vi-ink: #ebf0ee;
+  --vi-muted: #a0aaa9;
+  --vi-accent: #79d2cb;
+  --vi-surface: #111819;
+  --vi-card: #1a2324;
+  --vi-edge: #2b3636;
+}
+[data-vestra-intelligence="1"] .vi-shell {
+  width: min(100%, 1320px);
+  margin-inline: auto;
+  padding: var(--vi-space);
+  display: grid;
+  gap: clamp(18px, 3vw, 34px);
+  min-width: 0;
+}
+[data-vestra-intelligence="1"] .vi-headline {
+  font: 500 clamp(30px, 5vw, 58px)/1.08 Georgia, "Times New Roman", serif;
+  letter-spacing: -.04em;
+  text-wrap: balance;
+  margin: 0;
+}
+[data-vestra-intelligence="1"] .vi-eyebrow {
+  font: 750 10px/1.4 system-ui, sans-serif;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--vi-accent);
+}
+[data-vestra-intelligence="1"] .vi-deck {
+  color: var(--vi-muted);
+  font: 400 14px/1.6 system-ui, sans-serif;
+  max-width: 60ch;
+}
+[data-vestra-intelligence="1"] .vi-card {
+  border: 1px solid var(--vi-edge);
+  background: var(--vi-card);
+  border-radius: var(--vi-radius);
+  padding: clamp(16px, 2.4vw, 28px);
+  min-width: 0;
+}
+[data-vestra-intelligence="1"] .vi-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+}
+[data-vestra-intelligence="1"] .vi-grid > * { grid-column: span 4; }
+[data-vestra-intelligence="1"] .vi-grid > .vi-feature { grid-column: span 8; }
+[data-vestra-intelligence="1"] .vi-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--vi-muted);
+  font: 500 11px/1.5 system-ui, sans-serif;
+}
+[data-vestra-intelligence="1"] .vi-evidence [data-status="missing"],
+[data-vestra-intelligence="1"] .vi-evidence [data-status="stale"] {
+  color: #bf6f42;
+}
+[data-vestra-intelligence="1"] .vi-action:focus-visible {
+  outline: 3px solid var(--vi-accent);
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  [data-vestra-intelligence="1"] .vi-shell { padding: 18px 14px max(24px, env(safe-area-inset-bottom)); }
+  [data-vestra-intelligence="1"] .vi-grid > *,
+  [data-vestra-intelligence="1"] .vi-grid > .vi-feature { grid-column: 1 / -1; }
+  [data-vestra-intelligence="1"] .vi-card { border-radius: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-vestra-intelligence="1"] *, [data-vestra-intelligence="1"] *::before,
+  [data-vestra-intelligence="1"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
