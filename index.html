@@ -29,6 +29,7 @@
 <link href="vestra-navigation-v2.css?v=1" rel="stylesheet"/>
 <link href="vestra-home-v2.css?v=1" rel="stylesheet"/>
 <link href="vestra-home-stage-v2.css?v=1" rel="stylesheet"/>
+<link href="vestra-home-architecture-v2.css?v=1" rel="stylesheet"/>
 <script>
   // iOS standalone PWAs can be discarded while Safari is showing an external
   // article. Mark a known external-return boot synchronously, before deferred
@@ -176,7 +177,7 @@
 <h1>O essencial.<br><span>Sem ruído.</span></h1>
 <p class="v2-home-intro__deck">O património, o rendimento e o que merece a tua atenção. Num só lugar.</p>
 </div>
-<button class="dashboard-welcome__market" onclick="setView('market')">Explorar mercados <span aria-hidden="true">↗</span></button>
+
 </div>
 <!-- Vestra 2 editorial decision stage: primary financial values and distinct primary navigation. -->
 <div class="card hero v2-home-stage" aria-label="Resumo patrimonial e decisões">
@@ -231,6 +232,7 @@
 </div>
 </div>
 <!-- KPIs secundários: 4 métricas rápidas — layout 2×2 compacto -->
+<div class="v2-home-section-label"><span>01 / INDICADORES</span><h2>Rendimento e desempenho</h2><p>O que está a acontecer na carteira.</p></div>
 <div class="card kpi-quick">
 <div class="kpi-quick__grid">
 <div class="kpi-quick__cell kpi-quick__cell--income">
@@ -294,14 +296,6 @@
 <span id="kpiDivCount" style="display:none"></span>
 <!-- Navegação duplicada removida do Home; mantém só o host do quick-add para compatibilidade JS. -->
 <button id="btnDashQuickAdd" type="button" hidden style="display:none!important" aria-hidden="true" tabindex="-1"></button>
-<div class="card dash-secondary" id="dashboardQuickRecordsCard">
-<div class="card__head"><div><div class="card__title">Registos rápidos</div><div class="card__muted">Ações manuais que ainda fazem sentido no contexto do património.</div></div></div>
-<div class="row row--wrap" style="gap:8px">
-<button class="btn btn--primary btn--sm" id="btnSnapshot">📸 Registar snapshot</button>
-<button class="btn btn--primary btn--sm" id="btnAddDiv">💰 + Dividendo</button>
-<button class="btn btn--ghost btn--sm" id="btnPrintDashboard" title="Imprimir / PDF">🖨️ PDF</button>
-</div>
-</div>
 <!-- Compatibilidade: limpar histórico continua a ser tratado pelo botão do próprio gráfico. -->
 <button id="btnClearHistory" type="button" hidden style="display:none!important" aria-hidden="true" tabindex="-1"></button>
 <!-- Top ativos -->
@@ -323,6 +317,7 @@
 </div>
 <div class="chartWrap"><canvas height="220" id="distChart"></canvas></div>
 </div>
+<div class="v2-home-section-label"><span>02 / EVOLUÇÃO</span><h2>Como evolui o património</h2><p>Histórico real, sem projeções.</p></div>
 <!-- Tendência melhorada -->
 <div class="card">
 <div class="card__head">
@@ -333,6 +328,15 @@
 <div class="hint" id="historyHint" style="display:none">Sem histórico. Usa "📸 Registar mês".</div>
 <!-- Mini tabela de snapshots recentes -->
 <div id="snapshotTable" style="margin-top:10px"></div>
+</div>
+<div class="v2-home-section-label v2-home-section-label--secondary"><span>03 / FERRAMENTAS</span><h2>Registar e aprofundar</h2><p>Ações pontuais, separadas dos indicadores.</p></div>
+<div class="card dash-secondary" id="dashboardQuickRecordsCard">
+<div class="card__head"><div><div class="card__title">Registos rápidos</div><div class="card__muted">Ações manuais que ainda fazem sentido no contexto do património.</div></div></div>
+<div class="row row--wrap" style="gap:8px">
+<button class="btn btn--primary btn--sm" id="btnSnapshot">📸 Registar snapshot</button>
+<button class="btn btn--primary btn--sm" id="btnAddDiv">💰 + Dividendo</button>
+<button class="btn btn--ghost btn--sm" id="btnPrintDashboard" title="Imprimir / PDF">🖨️ PDF</button>
+</div>
 </div>
 <!-- v15: Metas (milestones) — collapsible, só mostra se há dados -->
 <!-- v64o: cartões de consulta ocasional (metas, vencimentos, qualidade,
