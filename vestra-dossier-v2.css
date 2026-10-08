@@ -82,3 +82,57 @@
 @media (prefers-reduced-motion: reduce) {
   .market-sheet :is(.market-close, .market-watch--detail, .market-tab) { transition: none; }
 }
+
+
+/* Intelligence 2.0 — dossier editorial reading order.
+   Presentation-only: preserve quote/chart hosts, decision data and navigation events. */
+.market-sheet .market-sheet__panel {
+  --v2-dossier-ink: var(--text, #24343b);
+  --v2-dossier-muted: var(--muted, #73817f);
+  --v2-dossier-divider: var(--line, #dce3e2);
+  color: var(--v2-dossier-ink);
+}
+.market-sheet .market-detail-head {
+  border-bottom: 1px solid var(--v2-dossier-divider);
+  margin-bottom: clamp(12px, 2vw, 22px);
+}
+.market-sheet .market-detail-head h2 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: clamp(29px, 3.8vw, 44px);
+  font-weight: 740;
+  letter-spacing: -.055em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+.market-sheet .market-detail-head p {
+  color: var(--v2-dossier-muted);
+  line-height: 1.6;
+}
+.market-sheet .v2-dossier-decision-stage {
+  border-radius: 22px;
+  box-shadow: none;
+}
+.market-sheet .market-tabs {
+  border-bottom: 1px solid var(--v2-dossier-divider);
+  scroll-padding-inline: 12px;
+}
+.market-sheet .market-tab {
+  font-weight: 650;
+  letter-spacing: -.015em;
+}
+.market-sheet .market-detail-card {
+  box-shadow: none;
+}
+.market-sheet .market-detail-card h4 {
+  font-weight: 730;
+  letter-spacing: -.03em;
+}
+.market-sheet .market-detail-actions {
+  z-index: 6;
+}
+@media (max-width: 600px) {
+  .market-sheet .market-detail-head { gap: 12px; }
+  .market-sheet .market-detail-head h2 { font-size: clamp(29px, 7.4vw, 36px); }
+  .market-sheet .market-tabs { scroll-snap-type: x proximity; }
+  .market-sheet .market-tab { scroll-snap-align: start; }
+}
