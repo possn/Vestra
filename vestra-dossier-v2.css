@@ -1,0 +1,84 @@
+/* Vestra 2.0 dossier polish: presentation only, scoped to the market sheet. */
+.market-sheet .market-sheet__panel {
+  width: min(840px, 100%);
+  background: var(--bg);
+  border-color: var(--line);
+  box-shadow: 0 -18px 55px rgba(20, 41, 49, .16);
+}
+.market-sheet .market-detail-head {
+  gap: 16px;
+  align-items: flex-start;
+  padding: 9px 4px 16px;
+  min-width: 0;
+}
+.market-sheet .market-detail-head h2 {
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 730;
+  line-height: 1.08;
+  letter-spacing: -.045em;
+  overflow-wrap: anywhere;
+}
+.market-sheet .market-detail-head p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.market-sheet .market-detail-actions {
+  flex: 0 0 auto;
+  position: sticky;
+  top: 3px;
+  align-self: flex-start;
+  z-index: 5;
+}
+.market-sheet :is(.market-close, .market-watch--detail) {
+  min-width: 42px;
+  min-height: 42px;
+  touch-action: manipulation;
+}
+.market-sheet .market-metrics {
+  gap: 10px;
+  margin: 10px 0 16px;
+}
+.market-sheet .market-metric {
+  padding: 14px;
+  border-radius: 18px;
+  min-width: 0;
+}
+.market-sheet .market-metric strong {
+  font-size: 15px;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+}
+.market-sheet .market-detail-card {
+  border-radius: 20px;
+  padding: clamp(15px, 2vw, 22px);
+  margin-top: 10px;
+}
+.market-sheet .market-detail-card h4 {
+  font-size: 14px;
+  letter-spacing: -.02em;
+}
+.market-sheet .market-tabs {
+  gap: 6px;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.market-sheet .market-tab {
+  min-height: 40px;
+  padding-inline: 13px;
+  font-size: 12px;
+}
+.market-sheet :is(.market-tab, .market-close, .market-watch--detail):focus-visible {
+  outline: 2px solid var(--vio);
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .market-sheet .market-sheet__panel {
+    border-radius: 24px 24px 0 0;
+  }
+  .market-sheet .market-metrics { gap: 7px; }
+  .market-sheet .market-metric { padding: 11px; }
+  .market-sheet .market-detail-head h2 { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-sheet :is(.market-close, .market-watch--detail, .market-tab) { transition: none; }
+}
