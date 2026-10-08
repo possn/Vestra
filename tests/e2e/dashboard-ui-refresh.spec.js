@@ -63,7 +63,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
       ];
       if (typeof renderDashboard === 'function') renderDashboard();
     } catch (_) {}
-    document.getElementById('viewDashboard')?.classList.add('dash-secondary-open');
+    document.getElementById('viewDashboard')?.classList.remove('dash-secondary-open');
     window.VestraDashboardUiRefresh.refresh();
     window.VestraDashboardPortfolioConcentration.render();
   });
@@ -80,6 +80,8 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
   await expect(page.locator('#viewDashboard .dashboard-shortcuts')).toHaveCount(0);
   await expect(page.locator('#btnDashQuickAdd')).toBeHidden();
   const quickRecords = page.locator('#dashboardQuickRecordsCard');
+  await expect(quickRecords).toBeHidden();
+  await page.locator('#btnToggleDashSecondary').click();
   await expect(quickRecords).toBeVisible();
   await expect(quickRecords).toContainText('Ações rápidas');
   await expect(quickRecords).not.toContainText('Cotações');
