@@ -17,6 +17,7 @@
 <link href="styles.css?v=20260923v1" rel="stylesheet"/>
 <link href="portfolio-glance-polish.css?v=1.0" rel="stylesheet"/>
 <link href="market.css?v=20260926v3" rel="stylesheet"/>
+<link href="vestra-intelligence.css?v=1" rel="stylesheet"/>
 <script>
   // iOS standalone PWAs can be discarded while Safari is showing an external
   // article. Mark a known external-return boot synchronously, before deferred
@@ -72,6 +73,7 @@
 <script defer="" src="quote-canonical-repair.js?v=2.6"></script>
 <script defer="" src="market-static-universe.js?v=1.30"></script>
 <script defer="" src="market-runtime-loader.js?v=2.3"></script>
+<script defer src="vestra-intelligence-home.js?v=1"></script>
 </head>
 <body>
 <!-- Vestra launch mark — identity first, no progress chrome -->
@@ -131,6 +133,25 @@
 <main class="main">
 <!-- DASHBOARD -->
 <section class="view" data-view="dashboard" id="viewDashboard">
+<section id="vestraIntelligenceHome" data-vestra-intelligence="1" aria-label="Vestra Intelligence — pré-visualização" hidden>
+  <div class="vi-shell">
+    <header>
+      <div class="vi-eyebrow">VESTRA INTELLIGENCE · PRÉ-VISUALIZAÇÃO</div>
+      <h2 class="vi-headline">O essencial, sem ruído.</h2>
+      <p class="vi-deck">Investigar o que importa. Separar qualidade, preço, timing e risco, sem recomendações geradas a partir de dados incompletos.</p>
+    </header>
+    <div class="vi-card vi-evidence" role="status">
+      <span data-status="missing">Painel de decisão: ainda não ligado a dados validados</span>
+      <span>A carteira atual continua disponível abaixo, sem alterações.</span>
+    </div>
+    <div class="vi-decisions" aria-label="Investigar por domínio">
+      <button class="vi-card vi-action" type="button" data-vestra-go="market"><strong>01 · Explorar mercados →</strong><span>Contexto macro, tendência e amplitude. Consultar os dados reais no mercado existente.</span></button>
+      <button class="vi-card vi-action" type="button" data-vestra-go="portfolio"><strong>02 · Rever a carteira →</strong><span>Exposição e riscos com os cálculos atuais, sem criar métricas fictícias.</span></button>
+      <button class="vi-card vi-action" type="button" data-vestra-go="dashboard"><strong>03 · Património →</strong><span>Consultar os teus indicadores já existentes, respeitando a privacidade.</span></button>
+    </div>
+  </div>
+</section>
+
 <div class="dashboard-welcome">
 <div>
 <div class="dashboard-welcome__eyebrow">O teu património</div>
