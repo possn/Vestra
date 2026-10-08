@@ -147,29 +147,46 @@
 <main class="main">
 <!-- DASHBOARD -->
 <section class="view" data-view="dashboard" id="viewDashboard">
-<section id="vestraIntelligenceHome" data-vestra-intelligence="1" aria-label="Vestra Intelligence — pré-visualização" hidden>
+<section id="vestraIntelligenceHome" data-vestra-intelligence="1" aria-label="Vestra Intelligence 2.0 — pré-visualização" hidden>
   <div class="vi-shell">
-    <header>
-      <div class="vi-eyebrow">VESTRA INTELLIGENCE · PRÉ-VISUALIZAÇÃO</div>
-      <h2 class="vi-headline">O essencial, sem ruído.</h2>
-      <p class="vi-deck">Investigar o que importa. Separar qualidade, preço, timing e risco, sem recomendações geradas a partir de dados incompletos.</p>
+    <header class="vi-top">
+      <div class="vi-brand"><span class="vi-symbol" aria-hidden="true">◇</span><div><strong>vestra</strong><small>INTELLIGENCE / 2.0</small></div></div>
+      <span class="vi-preview-label">PRÉ-VISUALIZAÇÃO · DADOS REAIS OU INDISPONÍVEIS</span>
     </header>
-    <div class="vi-card vi-evidence" role="status">
-      <span data-vestra-coverage data-status="missing">Cobertura publicada ainda não verificada</span>
-      <span data-vestra-model-evidence data-status="missing">Model Evidence · validação preditiva não verificada</span>
-      <span data-vestra-prospective-evidence data-status="missing">Validação prospetiva · a verificar histórico publicado</span>
-      <div data-vestra-horizon-ledger role="group" aria-label="Horizontes de validação dos modelos">Horizontes 28 / 84 / 168 dias · a verificar</div>
-      <div data-vestra-cohort-trend role="group" aria-label="Evolução do Rank IC observado por coorte">Histórico de coortes · a verificar</div>
-      <span>A carteira atual continua disponível abaixo, sem alterações.</span>
-      <span data-vestra-market-status data-status="missing">Barómetro ainda não disponível</span>
-      <span data-vestra-portfolio-evidence data-status="missing">Carteira · concentração ainda não confirmada</span>
-      <span data-vestra-decision-state data-status="missing">Decision Center · abrir análise da Carteira</span>
+    <div class="vi-lead">
+      <div class="vi-eyebrow">O TEU CENTRO DE INTELIGÊNCIA FINANCEIRA</div>
+      <h2 class="vi-headline">O essencial, sem ruído.</h2>
+      <p class="vi-deck">O que merece a tua atenção hoje.</p>
     </div>
-    <div class="vi-decisions" aria-label="Investigar por domínio">
-      <button class="vi-card vi-action" type="button" data-vestra-go="market"><strong>01 · Explorar mercados →</strong><span>Contexto macro, tendência e amplitude. Consultar os dados reais no mercado existente.</span></button>
-      <button class="vi-card vi-action" type="button" data-vestra-go="portfolio"><strong>02 · Rever a carteira →</strong><span>Exposição e riscos com os cálculos atuais, sem criar métricas fictícias.</span></button>
-      <button class="vi-card vi-action" type="button" data-vestra-go="dashboard"><strong>03 · Património →</strong><span>Consultar os teus indicadores já existentes, respeitando a privacidade.</span></button>
-    </div>
+    <section class="vi-regime vi-card" aria-label="Leitura do regime de mercado">
+      <div class="vi-card-top"><h3>◎ Regime de mercado</h3><span class="vi-proof">APENAS DADOS VERIFICADOS</span></div>
+      <div class="vi-regime-grid">
+        <div><small>Tendência</small><strong>Por confirmar</strong></div>
+        <div><small>Amplitude</small><strong>Por confirmar</strong></div>
+        <div><small>Volatilidade</small><strong>Por confirmar</strong></div>
+      </div>
+      <p data-vestra-market-status data-status="missing">Barómetro indisponível · consultar Mercado para leitura contextual.</p>
+      <p class="vi-note">Sem confirmação independente de tendência, amplitude e volatilidade, não há sinal tático automático.</p>
+      <button type="button" class="vi-text-link" data-vestra-go="market">Explorar evidências de mercado <span aria-hidden="true">↗</span></button>
+    </section>
+    <section class="vi-priorities" aria-label="Três investigações prioritárias">
+      <div class="vi-heading"><span class="vi-eyebrow">DECISION INTELLIGENCE</span><h3>Três decisões para investigar</h3><p>Áreas de investigação, não recomendações automáticas.</p></div>
+      <div class="vi-decisions">
+        <button class="vi-card vi-action" type="button" data-vestra-go="portfolio"><span class="vi-number">01</span><span><strong>Rever a concentração da carteira</strong><small data-vestra-portfolio-evidence data-status="missing">Cobertura por confirmar. Verificar pesos e sobreposição.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
+        <button class="vi-card vi-action" type="button" data-vestra-go="market"><span class="vi-number">02</span><span><strong>Investigar oportunidades assimétricas</strong><small>Qualidade, preço, assimetria e risco — validar cada tese antes de agir.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
+        <button class="vi-card vi-action" type="button" data-vestra-go="portfolio"><span class="vi-number">03</span><span><strong>Verificar mudanças na tese</strong><small data-vestra-decision-state data-status="missing">Decision Center ainda sem leitura confirmada nesta sessão.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
+      </div>
+    </section>
+    <details class="vi-research-details"><summary>Ver evidência e qualidade dos modelos <span aria-hidden="true">⌄</span></summary>
+      <div class="vi-card vi-evidence">
+        <span data-vestra-coverage data-status="missing">Cobertura não verificada</span>
+        <span data-vestra-model-evidence data-status="missing">Evidência de modelos indisponível</span>
+        <span data-vestra-prospective-evidence data-status="missing">Validação prospetiva indisponível</span>
+        <div data-vestra-horizon-ledger role="group" aria-label="Horizontes de validação dos modelos">Horizontes 28 / 84 / 168 dias · a verificar</div>
+        <div data-vestra-cohort-trend role="group" aria-label="Evolução do Rank IC observado por coorte">Histórico de coortes · a verificar</div>
+      </div>
+    </details>
+    <div class="vi-footer-link"><button type="button" data-vestra-go="dashboard">Consultar património, histórico e ferramentas <span aria-hidden="true">↓</span></button></div>
   </div>
 </section>
 
