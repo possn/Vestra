@@ -86,7 +86,7 @@ test('iPhone/WebKit: news refreshes on resume and cold return never exposes an e
     await route.continue();
   });
 
-  await page.goto('/index.html');
+  await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => window.__vestraAppHydrated === true);
   await page.waitForFunction(() => Boolean(window.VestraDashboardDailyNews));
 
