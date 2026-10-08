@@ -49,6 +49,51 @@
     }
   }
 
+  async function showProspectiveValidation(host) {
+    const output = host.querySelector('[data-vestra-prospective-evidence]');
+    if (!output) return;
+    output.dataset.status = 'missing';
+    output.textContent = 'Validação prospetiva · a verificar histórico publicado…';
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      let results;
+      try {
+        results = await Promise.all([
+          fetch('./data/score_validation_report.json', {cache:'no-store', signal:controller.signal}),
+          fetch('./data/opportunity_validation_report.json', {cache:'no-store', signal:controller.signal})
+        ]);
+      } finally { clearTimeout(timeout); }
+      if (results.some(r => !r.ok)) throw new Error('validation report unavailable');
+      const [score, opportunity] = await Promise.all(results.map(r => r.json()));
+      const ts = Date.parse(score?.generated_at);
+      const validThrough = Date.parse(score?.freshness?.valid_through);
+      const fresh = Number.isFinite(ts) && Number.isFinite(validThrough) &&
+        ts <= Date.now() + 300000 && Date.now() <= validThrough;
+      const h = score?.horizons?.['28'];
+      const n = h?.n;
+      const cohorts = h?.cohort_count;
+      const ic = h?.rank_information_coefficient;
+      const opportunityN = opportunity?.horizons?.['28']?.n;
+      if (!fresh || score?.schema_version !== 5 || !Number.isInteger(n) || n < 0 ||
+          !Number.isInteger(cohorts) || cohorts < 0 || 
+          !(ic === null || (typeof ic === 'number' && Number.isFinite(ic))) ||
+          !Number.isInteger(opportunityN) || opportunityN < 0)
+        throw new Error('invalid or expired report');
+      const tentative = cohorts < 5;
+      output.dataset.status = tentative ? 'stale' : 'observed';
+      output.textContent = 'Validação prospetiva · Score 28d: ' + n.toLocaleString('pt-PT') +
+        ' observações em ' + cohorts + ' coortes · Rank IC ' +
+        (ic == null ? 'indisponível' : ic.toFixed(3)) +
+        ' · ' + (tentative ? 'evidência temporal insuficiente' : 'evidência observacional') +
+        ' · Oportunidades 28d: ' + opportunityN.toLocaleString('pt-PT') +
+        ' resultados · Fonte: relatórios de validação prospetiva';
+    } catch (_) {
+      output.dataset.status = 'missing';
+      output.textContent = 'Validação prospetiva · relatório indisponível ou desatualizado';
+    }
+  }
+
   function syncExistingBarometer(host) {
     const output = host.querySelector('[data-vestra-market-status]');
     if (!output) return;
@@ -150,6 +195,7 @@
       if (event?.detail?.source === 'market-sentiment') syncExistingBarometer(host);
     });
     showCoverage(host);
+    showProspectiveValidation(host);
     host.dataset.vestraIntelligence = '1';
     host.setAttribute('data-theme', document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
     host.addEventListener('click', event => {
