@@ -98,6 +98,8 @@
       lastDecision = {state, coverage, observedAt: Date.now()};
     }
     const snapshot = lastDecision;
+    const currentReading = Boolean(center && known.includes(state) && Number.isFinite(coverage) &&
+      coverage >= 0 && coverage <= 100);
     // Do not silently present an old diagnosis as current.
     const age = snapshot ? Date.now() - snapshot.observedAt : Infinity;
     if (!snapshot || age < 0 || age > 15 * 60 * 1000) {
@@ -106,12 +108,14 @@
       output.textContent = 'Decision Center · sem leitura verificada nesta sessão · abrir análise da Carteira';
       return;
     }
-    output.dataset.status = snapshot.state === 'Rever' || snapshot.state === 'Atenção' ? 'bad' :
+    // A historical observation is never a live clearance to invest.
+    output.dataset.status = !currentReading ? 'stale' :
+      snapshot.state === 'Rever' || snapshot.state === 'Atenção' ? 'bad' :
       snapshot.state === 'Estável' && snapshot.coverage >= 99.5 ? 'observed' : 'stale';
     const elapsed = Math.max(0, Math.floor(age / 60000));
     output.textContent = 'Decision Center · ' + snapshot.state +
       ' · cobertura ' + Math.round(snapshot.coverage) + '% · ' +
-      (elapsed === 0 ? 'leitura nesta sessão' : 'última leitura há ' + elapsed + ' min') +
+      (currentReading ? 'leitura atual do dossier' : 'leitura anterior da sessão · confirmar após alterações à carteira') +
       ' · Fonte: motor de decisão da carteira';
   }
 
