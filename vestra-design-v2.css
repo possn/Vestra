@@ -47,3 +47,6 @@ body { font-family: var(--v2-font); text-rendering: optimizeLegibility; }
 .v2-section { display: grid; gap: var(--v2-space-4); min-width: 0; }
 .v2-card { min-width: 0; border: 1px solid var(--v2-line); border-radius: var(--v2-radius-card); background: var(--v2-surface); padding: var(--v2-space-6); }
 .v2-muted { color: var(--v2-muted); }
+
+/* Accessibility invariant for editorial controls (no layout or data changes). */
+:where(.v2-card, .v2-section) { min-width: 0; }
