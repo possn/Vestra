@@ -7,3 +7,12 @@
 #viewDashboard .v2-home-secondary-hub #btnToggleDashSecondary{border-radius:15px;min-height:46px;font-weight:720;text-align:center}
 #viewDashboard .v2-home-secondary-hub>.dash-secondary{margin-top:12px}
 #viewDashboard .v2-home-secondary-hub>.advanced-only{margin-top:12px}
+
+/* Primary attention signals: clear, compact and readable on narrow iPhone widths. */
+#viewDashboard #riskAlertCard.v2-home-attention-card{border-radius:16px;border-top:1px solid rgba(220,38,38,.13);border-right:1px solid rgba(220,38,38,.13);border-bottom:1px solid rgba(220,38,38,.13);background:var(--surface, #fff);box-shadow:none;margin:12px 0 16px;padding:16px 18px}
+#viewDashboard #riskAlertCard .card__head{margin-bottom:10px}
+#viewDashboard #riskAlertCard .card__title{font-size:15px;font-weight:760;letter-spacing:-.02em}
+#viewDashboard #riskAlertCard .card__muted{line-height:1.5;max-width:64ch}
+#viewDashboard #riskAlertCard #riskAlertContent{overflow-wrap:anywhere}
+#viewDashboard #negReturnAlert{max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:600px){#viewDashboard #riskAlertCard.v2-home-attention-card{padding:14px;margin:10px 0 14px;border-radius:13px}#viewDashboard #riskAlertCard .card__title{font-size:14px}}
