@@ -1,0 +1,66 @@
+/* Vestra 2 — editorial Home composition (isolated to dashboard).
+   Preserve KPI IDs, visibility/hidden states, data updates and interactions. */
+#viewDashboard .dashboard-welcome {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+#viewDashboard .dashboard-welcome__eyebrow {
+  color: #637981;
+  font-size: 11px;
+  font-weight: 720;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+#viewDashboard .dashboard-welcome h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 740;
+  letter-spacing: -.055em;
+  line-height: 1.08;
+}
+#viewDashboard > .hero {
+  background: #193c42;
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 8px 32px rgba(16,43,49,.12);
+  border-radius: 24px;
+  padding: clamp(20px, 3vw, 34px);
+}
+#viewDashboard > .hero::after { content: none; }
+#viewDashboard > .hero::before {
+  background: radial-gradient(ellipse at 100% 0%, rgba(113,184,172,.16), transparent 65%);
+}
+#viewDashboard > .hero .hero__value {
+  font-size: clamp(38px, 5.5vw, 60px);
+  font-weight: 680;
+  letter-spacing: -.055em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+#viewDashboard .kpi-quick,
+#viewDashboard .dash-secondary,
+#viewDashboard .card:not(.hero) {
+  border-radius: 20px;
+}
+@media (min-width: 1100px) {
+  /* Wider canvas on desktop, without altering the other application views. */
+  body:has(#viewDashboard:not([hidden])) .main {
+    max-width: min(1180px, calc(100vw - 64px));
+    width: 100%;
+  }
+  #viewDashboard .dashboard-welcome {
+    margin-bottom: 26px;
+  }
+}
+@media (max-width: 600px) {
+  #viewDashboard .dashboard-welcome {
+    align-items: flex-start;
+    gap: 10px;
+  }
+  #viewDashboard .dashboard-welcome h1 { font-size: 31px; }
+  #viewDashboard > .hero { padding: 22px 19px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #viewDashboard .card { transition: none; }
+}
