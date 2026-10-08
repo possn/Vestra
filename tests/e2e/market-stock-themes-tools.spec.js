@@ -29,6 +29,9 @@ test('iPhone/WebKit: Ideias coexist with a separate broad stock-theme browser', 
   const tools = page.locator('.market-analysis-tools');
   await expect(tools).toBeVisible();
   await expect(tools.locator('[data-market-tool="compare"]')).toBeVisible();
-  await expect(tools.locator('[data-market-tool="scanner"]')).toBeVisible();
+  const scanner = page.locator('#viewMarket > .market-shell > .market-scanner-entry[data-market-tool="scanner"]');
+  await expect(scanner).toBeVisible();
+  await expect(scanner).toContainText("Scanner Vestra");
+  await expect(page.locator('[data-market-tool="scanner"]')).toHaveCount(1);
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
 });
