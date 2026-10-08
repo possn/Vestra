@@ -1,9 +1,9 @@
-"""Feature flag contract: preview must never hijack default dashboard."""
+"""Default Intelligence contract: legacy dashboard remains accessible and reversible."""
 from pathlib import Path
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
 class IntelligenceHomeTests(unittest.TestCase):
-    def test_opt_in_only_and_no_financial_mutations(self):
+    def test_default_with_explicit_rollback_and_no_financial_mutations(self):
         html=(ROOT/"index.html").read_text(encoding="utf-8")
         js=(ROOT/"vestra-intelligence-home.js").read_text(encoding="utf-8")
         css=(ROOT/"vestra-intelligence.css").read_text(encoding="utf-8")
@@ -12,7 +12,8 @@ class IntelligenceHomeTests(unittest.TestCase):
         self.assertIn('id="vestraIntelligenceHome"',html)
         self.assertIn('aria-label="Vestra Intelligence',html)
         self.assertIn(' hidden>',html)
-        self.assertIn("params.get('vestra2') === '1'",js)
+        self.assertIn("params.get('vestra2') !== '0'",js)
+        self.assertIn('data-vestra-go="dashboard"',html)
         self.assertIn("if (!enabled) return",js)
         self.assertIn("['market', 'portfolio', 'dashboard']",js)
         self.assertNotIn("innerHTML",js)
