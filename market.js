@@ -1337,9 +1337,14 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const watched=isWatched(s.ticker), held=inPortfolio(s.ticker);
     return `<div class="market-dossier-shell"><div class="market-detail-head market-detail-head--editorial"><div><div class="market-kicker">${esc(isFund(s)?'ETF / Fundo':s.sector||'Empresa')}</div><div class="market-title-line"><h1>${esc(s.name||s.ticker)}</h1>${held?'<span class="market-held-badge market-held-badge--detail">Na carteira</span>':''}</div><h2 class="market-dossier-symbol">${esc(s.ticker)}</h2>${txt(s.exchange)?`<p class="market-dossier-exchange">${esc(s.exchange)}</p>`:''}${compactLiveBadge(s)}</div><div class="market-detail-actions"><button class="market-watch market-watch--detail ${watched?'is-active':''}" data-market-watch="${esc(s.ticker)}" aria-label="${watched?'Remover da lista':'Guardar para acompanhar'}">${watched?'★':'☆'}</button><button class="market-close" data-market-close>×</button></div></div>
       <div class="market-dossier-price-row"><div><small>PREÇO</small><strong data-live-field="current_price">${money(s.current_price,s.currency)}</strong></div>${n(s.market_cap)!=null?`<div><small>MARKET CAP</small><strong>${compact(s.market_cap)}</strong></div>`:''}</div>
-      ${dossierScoreBoard(s)}
-      ${dossierRadarChart(s)}
-      ${dossierPillarCards(s)}
+      <section class="v2-dossier-decision-stage" aria-label="Decisão e evidência da empresa">
+        <div class="v2-dossier-decision-stage__head"><span>01 / DECISÃO</span><p>Qualidade, convicção e risco — leituras distintas, sem os confundir.</p></div>
+        <div class="v2-dossier-decision-stage__grid">
+          <div class="v2-dossier-decision-stage__score">${dossierScoreBoard(s)}</div>
+          <div class="v2-dossier-decision-stage__radar">${dossierRadarChart(s)}</div>
+        </div>
+        <div class="v2-dossier-decision-stage__pillars">${dossierPillarCards(s)}</div>
+      </section>
       ${dossierFullPicture(s)}
       ${dossierFinancialSnapshot(s)}
       ${dossierGrowthProfile(s)}
