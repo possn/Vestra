@@ -63,7 +63,7 @@ test('iPhone/WebKit: history is compact and Dashboard fills the passive-income g
       ];
       if (typeof renderDashboard === 'function') renderDashboard();
     } catch (_) {}
-    document.getElementById('viewDashboard')?.classList.add('dash-secondary-open');
+    document.getElementById('viewDashboard')?.classList.remove('dash-secondary-open');
     window.VestraDashboardUiRefresh.refresh();
     window.VestraDashboardPortfolioConcentration.render();
   });
