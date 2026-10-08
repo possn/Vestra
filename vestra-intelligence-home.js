@@ -134,6 +134,54 @@
         '\nLeitura: observações por ativo não equivalem a coortes independentes. ' +
         'A consistência observada não comprova capacidade preditiva futura.';
       panel.dataset.status = scoreValid || oppValid ? 'observed' : 'missing';
+      // Historical cohort points only: no reconstructed, projected or simulated series.
+      const trend = host.querySelector('[data-vestra-cohort-trend]');
+      if (trend) {
+        const rows = scoreValid && Array.isArray(score?.horizons?.['28']?.cohorts)
+          ? score.horizons['28'].cohorts.filter(c =>
+              /^\\d{4}-\\d{2}-\\d{2}$/.test(c?.cohort_date || '') &&
+              Number.isFinite(c?.rank_information_coefficient) &&
+              Number.isInteger(c?.n) && c.n > 0).slice(-12) : [];
+        trend.replaceChildren();
+        trend.dataset.status = rows.length ? 'observed' : 'missing';
+        const heading = document.createElement('strong');
+        heading.textContent = 'Score · evolução do Rank IC por coorte (28 dias)';
+        trend.appendChild(heading);
+        if (!rows.length) {
+          const missing = document.createElement('p');
+          missing.textContent = 'Histórico de coortes não disponível ou relatório desatualizado.';
+          trend.appendChild(missing);
+        } else {
+          const sorted = rows.slice().sort((a, b) => a.cohort_date.localeCompare(b.cohort_date));
+          const list = document.createElement('div');
+          list.setAttribute('role', 'list');
+          for (const row of sorted) {
+            const item = document.createElement('div');
+            item.setAttribute('role', 'listitem');
+            item.style.cssText = 'display:grid;grid-template-columns:6.5rem 1fr 4.5rem;align-items:center;gap:.6rem;padding:.25rem 0';
+            const date = document.createElement('span');
+            date.textContent = row.cohort_date;
+            const rail = document.createElement('div');
+            rail.style.cssText = 'background:rgba(128,128,128,.14);height:.5rem;border-radius:99px;overflow:hidden';
+            const bar = document.createElement('div');
+            bar.style.cssText = 'height:100%;border-radius:99px;background:currentColor;opacity:.65';
+            bar.style.width = Math.min(100, Math.abs(row.rank_information_coefficient) * 100) + '%';
+            rail.appendChild(bar);
+            const value = document.createElement('span');
+            value.textContent = (row.rank_information_coefficient > 0 ? '+' : '') +
+              row.rank_information_coefficient.toFixed(3);
+            value.style.textAlign = 'right';
+            item.append(date, rail, value);
+            list.appendChild(item);
+          }
+          trend.appendChild(list);
+          const foot = document.createElement('small');
+          foot.textContent = sorted.length + ' coortes observadas · largura = magnitude absoluta do IC; ' +
+            'sinal identificado pelo valor, não pela cor · não é uma previsão.';
+          trend.appendChild(foot);
+        }
+      }
+
     }
   }
 
