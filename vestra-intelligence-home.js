@@ -1,8 +1,8 @@
-/* Vestra Intelligence Home — opt-in, non-financial shell. */
+/* Vestra Intelligence Home — default shell with explicit legacy rollback. */
 (() => {
   'use strict';
   const params = new URLSearchParams(window.location.search);
-  const enabled = params.get('vestra2') === '1';
+  const enabled = params.get('vestra2') !== '0';
   if (!enabled) return;
 
   async function showCoverage(host) {
