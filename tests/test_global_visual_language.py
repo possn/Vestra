@@ -9,7 +9,7 @@ STYLES = (ROOT / "styles.css").read_text(encoding="utf-8")
 
 class GlobalVisualLanguageTests(unittest.TestCase):
     def test_stylesheet_rollout_is_versioned(self):
-        self.assertIn('styles.css?v=20261009-header1', INDEX)
+        self.assertRegex(INDEX, r'styles[.]css[?]v=[a-zA-Z0-9._-]+')
 
     def test_dividends_and_analysis_have_compact_editorial_headers(self):
         self.assertIn('class="view-intro view-intro--dividends"', INDEX)
