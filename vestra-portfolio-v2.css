@@ -126,3 +126,32 @@
 #viewAssets .portfolio-hero h2{color:#f4efe6!important;opacity:1!important}
 #viewAssets .portfolio-hero p{color:#bed1c5!important;opacity:1!important}
 #viewAssets .portfolio-hero :is(.portfolio-hero__eyebrow,.portfolio-kicker,[class*="eyebrow"]){color:#cdb47c!important;opacity:1!important}
+
+/* Portfolio contrast owners: dark hero, light financial summary.
+   Avoid inheriting page-level ivory text into light summary surfaces. */
+#viewAssets .portfolio-hero .market-kicker{
+ color:#d8bf85!important;-webkit-text-fill-color:#d8bf85!important;
+}
+#viewAssets .portfolio-glance{
+ color:#18343a!important;
+}
+#viewAssets .portfolio-glance .portfolio-glance__main{
+ color:#f4efe6!important;
+}
+#viewAssets .portfolio-glance__main strong{
+ color:#fff!important;-webkit-text-fill-color:#fff!important;
+}
+#viewAssets .portfolio-glance__main small{
+ color:#e0eee7!important;-webkit-text-fill-color:#e0eee7!important;
+}
+#viewAssets .portfolio-glance__stat small,
+#viewAssets .portfolio-income-strip small{
+ color:#4d6464!important;-webkit-text-fill-color:#4d6464!important;
+}
+#viewAssets .portfolio-glance__stat strong,
+#viewAssets .portfolio-income-strip strong{
+ color:#18343a!important;-webkit-text-fill-color:#18343a!important;
+}
+#viewAssets .portfolio-income-strip>div:first-child strong{
+ color:#246d45!important;-webkit-text-fill-color:#246d45!important;
+}
