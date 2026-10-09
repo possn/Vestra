@@ -316,8 +316,11 @@
       const source = document.querySelector(sourceSelector);
       if (!list) return;
       const candidates = Array.from(source?.querySelectorAll(itemSelector) || []).slice(0, limit);
-      const texts = candidates.map(node => (node.innerText || node.textContent || '')
-        .replace(/\s+/g,' ').trim().slice(0,190)).filter(Boolean);
+      const texts = candidates.map(node => ({
+        lines: (node.innerText || node.textContent || '').split(/\n+/)
+          .map(part => part.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0,4),
+        fallback: (node.textContent || '').replace(/\s+/g, ' ').trim().slice(0,190)
+      })).filter(item => item.fallback);
       if (!texts.length) {
         list.replaceChildren();
         const placeholder = document.createElement('p');
@@ -326,14 +329,14 @@
         return;
       }
       // Cloned text only: no new article links, financial values, images or metadata fabricated.
-      list.replaceChildren(...texts.map((t, idx) => {
+      list.replaceChildren(...texts.map((item, idx) => {
         const card = document.createElement('div');
         card.className = 'vi-editorial-tile';
         const ordinal = document.createElement('span');
         ordinal.textContent = String(idx + 1).padStart(2,'0');
         ordinal.className = 'vi-editorial-index';
         const title = document.createElement('p');
-        title.textContent = t;
+        title.textContent = item.lines.join(' · ').slice(0,190) || item.fallback;
         card.append(ordinal,title);
         return card;
       }));
