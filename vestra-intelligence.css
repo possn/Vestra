@@ -882,3 +882,11 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #vestraIntelligenceHome .vi-market-reading-body{grid-template-columns:minmax(105px,.75fr) minmax(0,1fr)!important}
  #vestraIntelligenceHome .vi-editorial-rail>.vi-editorial-tile{flex-basis:46%!important}
 }
+
+/* Source-aware event and news hierarchy, with no fabricated labels. */
+#vestraIntelligenceHome .vi-editorial-content{min-width:0;display:flex;flex-direction:column;gap:7px;flex:1}
+#vestraIntelligenceHome .vi-editorial-title{font-weight:600!important;line-height:1.25!important;overflow-wrap:anywhere}
+#vestraIntelligenceHome .vi-editorial-detail{font:400 11px/1.35 system-ui,sans-serif;color:#adcbc2;overflow-wrap:anywhere}
+#vestraIntelligenceHome .vi-editorial-rail .vi-editorial-tile{gap:8px!important}
+#vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile{align-items:flex-start!important}
+#vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile:first-child .vi-editorial-title{font:500 17px/1.3 Georgia,serif!important}
