@@ -918,3 +918,17 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #vestraIntelligenceHome .vi-sentiment-orb strong{font-size:39px!important}
  #vestraIntelligenceHome .vi-editorial-rail>.vi-editorial-tile{flex-basis:43%!important;min-height:94px!important}
 }
+
+/* Home reference: clear risk metric hierarchy without inventing risk thresholds. */
+#vestraIntelligenceHome .vi-risk-reading{position:relative;overflow:hidden!important}
+#vestraIntelligenceHome .vi-risk-reading::after{content:"";position:absolute;inset:auto -8% -55% 43%;height:150px;background:radial-gradient(ellipse,rgba(206,147,78,.10),transparent 72%);pointer-events:none}
+#vestraIntelligenceHome .vi-risk-reading-body{position:relative;z-index:1;align-items:center!important}
+#vestraIntelligenceHome .vi-risk-reading-body h4{font:500 17px/1.2 Georgia,serif!important;color:#f3e7d6!important;margin:0 0 6px!important}
+#vestraIntelligenceHome .vi-risk-reading-body p{font-size:12px!important;line-height:1.45!important;color:#cbb6a1!important}
+#vestraIntelligenceHome .vi-risk-visual{flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
+#vestraIntelligenceHome .vi-risk-visual strong{font-variant-numeric:tabular-nums;color:#f5e7d0!important;white-space:nowrap}
+@media(max-width:600px){
+ #vestraIntelligenceHome .vi-risk-reading-body{gap:10px!important}
+ #vestraIntelligenceHome .vi-risk-reading-body h4{font-size:16px!important}
+ #vestraIntelligenceHome .vi-risk-reading-body p{font-size:11px!important}
+}
