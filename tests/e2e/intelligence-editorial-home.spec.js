@@ -15,10 +15,10 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   await expect(opening).toHaveCSS('grid-template-columns', /.+/);
   // The preview must own the app chrome, not merely insert another card.
   await expect(page.locator('body')).toHaveCSS('background-color', /.+/);
-  await expect(page.locator('.topbar')).toHaveCSS('background-color', 'rgb(17, 21, 20)');
-  await expect(page.locator('.bottomnav')).toHaveCSS('background-color', 'rgb(20, 25, 24)');
+  await expect(page.locator('.topbar')).toHaveCSS('background-color', 'rgb(9, 27, 28)');
+  await expect(page.locator('.bottomnav')).toHaveCSS('background-color', 'rgb(12, 31, 32)');
   await expect(home.getByText('O que importa hoje.')).toBeVisible();
-  await expect(home.getByRole('heading', {name:/Regime de mercado/})).toBeVisible();
+  await expect(home.getByRole('heading', {name:/Regime de mercado/})).toBeHidden();
   await expect(home.locator('.vi-action')).toHaveCount(3);
   await expect(home.locator('[data-vestra-market-status]')).not.toBeEmpty();
   await expect(home.locator('[data-vestra-portfolio-evidence]')).not.toBeEmpty();
@@ -72,7 +72,7 @@ test('iPhone/WebKit: default Intelligence actions retain Portfolio and Market na
   await expect(page.locator('#viewAssets')).toBeVisible();
   await page.evaluate(() => window.setView('dashboard'));
   await expect(home).toBeVisible();
-  await home.locator('[data-vestra-go="market"]').first().click();
+  await home.locator('.vi-action[data-vestra-go="market"]').click();
   await expect(page.locator('#viewMarket')).toBeVisible();
   await page.evaluate(() => window.setView('dashboard'));
   await expect(home).toBeVisible();
@@ -92,7 +92,7 @@ test('iPhone/WebKit: new editorial chapters keep real-data hosts and legacy esca
   const home = page.locator('#vestraIntelligenceHome');
   await expect(home).toBeVisible();
   await expect(home.locator('.vi-chapter-index')).toHaveCount(3);
-  await expect(home.locator('.vi-opening .vi-regime-grid')).toBeVisible();
+  await expect(home.locator('.vi-opening .vi-regime-grid')).toBeHidden();
   await expect(home.locator('.vi-action')).toHaveCount(3);
   await expect(home.locator('[data-vestra-portfolio-evidence]')).toBeAttached();
   await expect(home.locator('[data-vestra-decision-state]')).toBeAttached();
