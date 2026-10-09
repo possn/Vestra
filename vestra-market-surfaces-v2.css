@@ -3,15 +3,16 @@
 body:has(#viewMarket:not([hidden])) #viewMarket .market-shell{
   color:#f2f0e7;gap:var(--vestra-space-section);
 }
+/* Single source of truth for the light search field on the dark Market shell. */
 body:has(#viewMarket:not([hidden])) #viewMarket .market-search input{
-  background:#112c2b;color:#f5f1e9;border:1px solid #365750;
+  background:#f0eee7;color:#173037;border:1px solid #b4c3bd;
   box-shadow:none;font-weight:550;
 }
-body:has(#viewMarket:not([hidden])) #viewMarket .market-search input::placeholder{color:#a6bdb4;opacity:1}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search input::placeholder{color:#536965;opacity:1}
 body:has(#viewMarket:not([hidden])) #viewMarket .market-search input:focus-visible{
   border-color:#b6d2b2;outline:2px solid #b6d2b2;outline-offset:2px;box-shadow:none;
 }
-body:has(#viewMarket:not([hidden])) #viewMarket .market-search__icon{color:#c7d7cb;opacity:1}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search__icon{color:#49645e;opacity:1}
 body:has(#viewMarket:not([hidden])) #viewMarket .market-mode{
   background:#153230;border:1px solid #34564f;color:#dce8df;box-shadow:none;
 }
@@ -118,15 +119,6 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools .market-t
 
 /* iPhone contrast repair: light search and Discovery opportunity cards.
    Keep dark research actions and non-Discovery market rows unchanged. */
-body:has(#viewMarket:not([hidden])) #viewMarket .market-search input{
- background:#f0eee7;color:#173037;border-color:#b4c3bd;
-}
-body:has(#viewMarket:not([hidden])) #viewMarket .market-search input::placeholder{
- color:#536965;opacity:1;
-}
-body:has(#viewMarket:not([hidden])) #viewMarket .market-search__icon{
- color:#49645e;opacity:1;
-}
 body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .market-row.ux453-opp{
  color:#173037;border-color:#b6c5bf;
 }
