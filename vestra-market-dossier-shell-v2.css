@@ -22,3 +22,30 @@
 @media(min-width:900px){
   #marketSheet .market-sheet__panel{border-radius:26px 26px 0 0}
 }
+
+/* Vestra 2.0 dossier navigation: prominent active state, legible secondary tabs. */
+#marketSheet .market-tabs{
+  gap:7px;scrollbar-width:none;padding:5px 0 9px;
+}
+#marketSheet .market-tabs::-webkit-scrollbar{display:none}
+#marketSheet .market-tab{
+  background:#1a3935;color:#d0e0d5;border:1px solid #385950;
+  border-radius:999px;font-size:12px;font-weight:650;min-height:38px;
+}
+#marketSheet .market-tab.is-active{
+  background:#e3cd9b;color:#18302b;border-color:#e3cd9b;
+}
+#marketSheet .market-tab:focus-visible{
+  outline:2px solid #e3cd9b;outline-offset:2px;
+}
+#marketSheet .market-metric{
+  background:#193632;border:1px solid #34554d;color:#f3eee4;
+}
+#marketSheet .market-metric small{color:#b4cabc}
+#marketSheet .market-metric strong{color:#f5f0e6}
+#marketSheet .market-tabs--dossier{
+  background:#0d2423;border-bottom:1px solid #36544c;
+}
+@media(prefers-reduced-motion:reduce){
+ #marketSheet .market-tab{scroll-behavior:auto}
+}
