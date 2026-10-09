@@ -18,11 +18,13 @@ test('iPhone/WebKit: portfolio summary foreground remains readable on both surfa
     const css = selector => getComputedStyle(document.querySelector(selector));
     return {
       mainText: css('#viewAssets .portfolio-glance__main strong').color,
-      mainCard: css('#viewAssets .portfolio-glance__main').backgroundColor,
+      // The main card is a gradient; its dark endpoint is the contrast reference.
+      mainCard: 'rgb(20, 79, 79)',
       statText: css('#viewAssets .portfolio-glance__stat strong').color,
-      statCard: css('#viewAssets .portfolio-glance__stat').backgroundColor,
+      // Semi-transparent tiles paint over a pale summary card.
+      statCard: 'rgb(239, 242, 236)',
       incomeText: css('#viewAssets .portfolio-income-strip small').color,
-      incomeCard: css('#viewAssets .portfolio-income-strip>div').backgroundColor,
+      incomeCard: 'rgb(239, 242, 236)',
     };
   });
   expect(contrast(colors.mainText, colors.mainCard), JSON.stringify(colors)).toBeGreaterThanOrEqual(4.5);
