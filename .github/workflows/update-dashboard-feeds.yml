@@ -50,8 +50,31 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/defer_main_publish_if_code_pr.py
 
+      - name: Check news freshness emergency publish
+        id: news_freshness
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from datetime import datetime, timezone
+          try:
+              raw = subprocess.check_output(['git', 'show', 'HEAD:data/dashboard-news.json'], text=True)
+              ts = json.loads(raw).get('generated_at', '')
+              stamp = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+              age = (datetime.now(timezone.utc) - stamp).total_seconds()
+          except Exception:
+              age = float('inf')
+          overdue = age >= 90 * 60
+          print(f"Published dashboard news age: {age / 60:.1f} min; emergency publish: {overdue}")
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f"overdue={'true' if overdue else 'false'}\n")
+          PY
+
+      # Avoid indefinite freeze when design PRs keep the regular data publish window closed.
+      # Normal 30-minute runs still defer while a mergeable code PR is open.
       - name: Publish dashboard news
-        if: steps.publish_window.outputs.defer != 'true'
+        if: steps.publish_window.outputs.defer != 'true' || steps.news_freshness.outputs.overdue == 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
