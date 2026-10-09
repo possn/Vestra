@@ -88,3 +88,37 @@ body:has(#viewDashboard.vi-preview-active) .bottomnav{background:rgba(9,28,28,.9
  body:has(#viewDashboard.vi-preview-active) .topbar{padding:8px 14px!important;min-height:61px!important}
  body:has(#viewDashboard.vi-preview-active) .topbar .brand__title{font-size:28px!important}
 }
+
+/* Market route: share canonical Vestra 2.0 dark chrome and readable hero. */
+body:has(#viewMarket:not([hidden])){background:#081a1a!important}
+body:has(#viewMarket:not([hidden])) .topbar{
+ background:#081a1a!important;color:#f4f0e7!important;border-bottom:1px solid #24413c!important;box-shadow:none!important
+}
+body:has(#viewMarket:not([hidden])) .topbar .brand__title{
+ color:#f5f0e5!important;font:500 clamp(27px,3vw,33px)/1.05 Georgia,serif!important;letter-spacing:-.045em!important
+}
+body:has(#viewMarket:not([hidden])) .topbar .brand__icon,
+body:has(#viewMarket:not([hidden])) .topbar .brand__sub{display:none!important}
+body:has(#viewMarket:not([hidden])) .topbar #btnSearchToggle{
+ background:#143230!important;border:1px solid #345851!important;color:#f0f4ed!important;border-radius:50%!important
+}
+body:has(#viewMarket:not([hidden])) .topbar #btnFab{
+ background:linear-gradient(135deg,#f1d39a,#b38b4e)!important;border:1px solid #cba467!important;
+ color:#172521!important;border-radius:50%!important
+}
+body:has(#viewMarket:not([hidden])) .topbar .sidebar-toggle{color:#e5eee8!important}
+body:has(#viewMarket:not([hidden])) .bottomnav{background:#0c1f20!important;border-top:1px solid #294541!important}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-kicker{color:#b7d6cb!important}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple h2{
+ color:#f5f1e8!important;font:500 clamp(42px,7.5vw,68px)/1.07 Georgia,serif!important;
+ letter-spacing:-.05em!important;text-shadow:none!important
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple p{
+ color:#b1c7c0!important;font-size:15px!important;line-height:1.5!important
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple{padding:14px 4px 4px!important}
+@media(max-width:600px){
+ body:has(#viewMarket:not([hidden])) .topbar{min-height:61px!important;padding:8px 14px!important}
+ body:has(#viewMarket:not([hidden])) .topbar .brand__title{font-size:28px!important}
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple h2{font-size:46px!important}
+}
