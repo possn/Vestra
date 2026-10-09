@@ -27,7 +27,7 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   await home.locator('.vi-research-details summary').click();
   await expect(home.locator('.vi-research-details')).toHaveAttribute('open', '');
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeHidden();
-  await home.locator('[data-vestra-go="dashboard"]').click();
+  await home.locator('.vi-footer-link [data-vestra-go="dashboard"]').click();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
   await page.locator('#btnReturnIntelligence').click();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeHidden();
@@ -44,7 +44,7 @@ test('iPhone/WebKit: Intelligence is default with legacy dashboard preserved', a
   await expect(home).toBeVisible();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeHidden();
   await expect(home.locator('.vi-action')).toHaveCount(3);
-  await home.locator('[data-vestra-go="dashboard"]').click();
+  await home.locator('.vi-footer-link [data-vestra-go="dashboard"]').click();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
   await expect(page.locator('#kpiNet')).toHaveCount(1);
   await page.locator('#btnReturnIntelligence').click();
@@ -76,7 +76,7 @@ test('iPhone/WebKit: default Intelligence actions retain Portfolio and Market na
   await expect(page.locator('#viewMarket')).toBeVisible();
   await page.evaluate(() => window.setView('dashboard'));
   await expect(home).toBeVisible();
-  await home.locator('[data-vestra-go="dashboard"]').click();
+  await home.locator('.vi-footer-link [data-vestra-go="dashboard"]').click();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
   await expect(page.locator('#kpiNet')).toHaveCount(1);
   await expect(page.locator('#btnReturnIntelligence')).toBeVisible();
@@ -104,7 +104,7 @@ test('iPhone/WebKit: new editorial chapters keep real-data hosts and legacy esca
   }));
   expect(layout.grid).toHaveLength(1);
   expect(layout.scroll).toBeLessThanOrEqual(layout.viewport + 1);
-  await home.locator('[data-vestra-go="dashboard"]').click();
+  await home.locator('.vi-footer-link [data-vestra-go="dashboard"]').click();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
 });
 
