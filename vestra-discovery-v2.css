@@ -44,3 +44,27 @@
   #viewMarket .market-row { padding:14px 3px; }
 }
 @media (prefers-reduced-motion:reduce) { #viewMarket .market-row { transition:none; } }
+
+
+/* V2.0 / Market discovery as an editorial research index. */
+#viewMarket .market-hero-simple{
+  border-bottom:1px solid var(--line);
+  padding-block:clamp(25px,4vw,52px) clamp(24px,3vw,40px)
+}
+#viewMarket .market-hero-simple h2{
+  font-family:Georgia,"Times New Roman",serif;font-weight:500;
+  font-size:clamp(43px,5.5vw,74px);
+  line-height:1.03;letter-spacing:-.065em;max-width:17ch
+}
+#viewMarket .market-hero-simple p{font-size:clamp(13px,1.25vw,16px);line-height:1.7}
+#viewMarket .market-section{border-radius:10px;box-shadow:none}
+#viewMarket .market-search input{
+  border-radius:9px;box-shadow:none;border:1px solid var(--line)
+}
+#viewMarket .market-row{
+  border-radius:0;border-bottom:1px solid var(--line);
+  transition:background-color .15s ease
+}
+@media(max-width:600px){
+ #viewMarket .market-hero-simple h2{font-size:clamp(40px,10vw,56px)}
+}
