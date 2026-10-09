@@ -136,3 +136,31 @@
   .market-sheet .market-tabs { scroll-snap-type: x proximity; }
   .market-sheet .market-tab { scroll-snap-align: start; }
 }
+
+
+/* V2.0 / research dossier typographic hierarchy. Interactive hosts stay put. */
+.market-sheet .market-detail-head{
+  border-bottom:1px solid var(--line);padding-block:clamp(18px,3vw,34px)
+}
+.market-sheet .market-detail-head h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;font-size:clamp(38px,4.7vw,62px);
+  line-height:1.05;letter-spacing:-.06em
+}
+.market-sheet .market-detail-actions{
+  position:sticky;top:0;z-index:8
+}
+.market-sheet .market-detail-card{
+  border-radius:10px;box-shadow:none
+}
+.market-sheet .market-detail-card h4{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:550;font-size:clamp(19px,2.3vw,27px);
+  letter-spacing:-.035em
+}
+.market-sheet .market-tabs{
+  scroll-padding-inline:14px;border-bottom:1px solid var(--line)
+}
+@media(max-width:600px){
+ .market-sheet .market-detail-head h2{font-size:clamp(34px,9vw,46px)}
+}
