@@ -33,7 +33,7 @@ const BOOTSTRAP_NETWORK_FIRST = new Set([
   "market-data-loader.js", "market-data-health.js", "market-portfolio-context.js", "market-static-universe.js",
   "market-scanner-data.js", "market-analysis-tools-runtime.js", "market-etf-intelligence.js", "dashboard-weekly-events.js",
   "dashboard-weekly-events-navigation.js", "dashboard-daily-news.js", "dashboard-market-sentiment.js", "dashboard-portfolio-concentration.js", "market-dossier-controls.js", "market-ui-polish.js", "market-opportunities.js",
-  "market-opportunity-lenses.js", "mobile-ui-refresh.js", "vestra-ai-brief.js", "politicians.js"
+  "market-opportunity-lenses.js", "mobile-ui-refresh.js", "vestra-ai-brief.js", "politicians.js", "vestra-intelligence-home.js"
 ]);
 
 const REQUIRED_APP_SHELL = new Set([
