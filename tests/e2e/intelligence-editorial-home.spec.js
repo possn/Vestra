@@ -107,3 +107,19 @@ test('iPhone/WebKit: new editorial chapters keep real-data hosts and legacy esca
   await home.locator('[data-vestra-go="dashboard"]').click();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
 });
+
+
+test('iPhone/WebKit: useful-first Home opens existing market barometer, news and calendar', async ({page}) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
+  const home = page.locator('#vestraIntelligenceHome');
+  await expect(home.locator('.vi-daily-item')).toHaveCount(3);
+  for (const id of ['vestraMarketSentimentCard','vestraDailyNewsCard','dashboardWeeklyEventsCard']) {
+    await expect(page.locator('#'+id)).toBeAttached();
+    await home.locator('[data-vestra-dashboard-section="'+id+'"]').click();
+    await expect(page.locator('#'+id)).toBeVisible();
+    await page.locator('#btnReturnIntelligence').click();
+    await expect(home).toBeVisible();
+    await expect(page.locator('#viewDashboard .v2-home-stage')).toBeHidden();
+  }
+});
