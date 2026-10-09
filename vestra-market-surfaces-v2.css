@@ -54,3 +54,39 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-tools summary:focus-visi
 @media(prefers-reduced-motion:reduce){
   body:has(#viewMarket:not([hidden])) #viewMarket .market-row{transition:none}
 }
+
+
+/* Market entry actions and autocomplete: keep secondary journeys discoverable. */
+body:has(#viewMarket:not([hidden])) #viewMarket .market-portfolio-access,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-scanner-entry{
+  width:100%;background:#14302e;color:#f1eee4;border:1px solid #35564c;
+  border-radius:18px;box-shadow:none;min-width:0;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-portfolio-access strong,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-scanner-entry strong{color:#f5efe2}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-portfolio-access small,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-scanner-entry small{
+  color:#b8cec1;line-height:1.45;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-portfolio-access__icon,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-scanner-entry__symbol{
+  background:#234741;color:#e3c98d;border-radius:12px;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-portfolio-access__arrow,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-scanner-entry__arrow{color:#d6c18f}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-portfolio-access:focus-visible,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-scanner-entry:focus-visible{
+  outline:2px solid #b6d2b2;outline-offset:2px;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestions{
+  background:#122c2b;border:1px solid #3b6157;box-shadow:0 18px 42px rgba(0,0,0,.3);
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion{color:#f2eee3}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion:hover,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion:focus-visible{
+  background:#234640;outline:2px solid #a1caba;outline-offset:-2px;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion__ticker{color:#f4ebd9}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion__name,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion__type,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion-empty{color:#b8cec1}
