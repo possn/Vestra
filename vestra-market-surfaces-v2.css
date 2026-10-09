@@ -1,0 +1,56 @@
+/* Vestra 2.0 — Market discovery surfaces. Scoped to active Market view.
+   Presentation only: no quote, score, search or navigation logic changed. */
+body:has(#viewMarket:not([hidden])) #viewMarket .market-shell{
+  color:#f2f0e7;gap:17px;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search input{
+  background:#112c2b;color:#f5f1e9;border:1px solid #365750;
+  box-shadow:none;font-weight:550;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search input::placeholder{color:#a6bdb4;opacity:1}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search input:focus-visible{
+  border-color:#b6d2b2;outline:2px solid #b6d2b2;outline-offset:2px;box-shadow:none;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search__icon{color:#c7d7cb;opacity:1}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-mode{
+  background:#153230;border:1px solid #34564f;color:#dce8df;box-shadow:none;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-mode.is-active{
+  background:#dfcd9f;border-color:#dfcd9f;color:#122a27;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-tools{
+  background:#102827;border:1px solid #294842;box-shadow:none;border-radius:20px;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section__head h3,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-tools summary{color:#f2eee3}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section__head p,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-data-age{color:#aec3b8}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-row{
+  background:#16312f;border:1px solid #2b4c44;color:#f1eee4;transition:border-color .15s ease;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-row:hover{transform:none;border-color:#72988a}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-row__ticker{color:#f3efe5}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-row__name,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-row__meta{color:#b8ccc0}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-chip,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-tool-btn{
+  background:#183733;border:1px solid #35574e;color:#e5ece3;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-chip.is-active{
+  background:#dfcd9f;border-color:#dfcd9f;color:#152b28;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-tool-btn small,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-empty,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-loader{color:#aec3b8}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-tools__body{border-color:#294842}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-mode:focus-visible,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-chip:focus-visible,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-row:focus-visible,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-tool-btn:focus-visible,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-tools summary:focus-visible{
+  outline:2px solid #b6d2b2;outline-offset:2px;
+}
+@media(prefers-reduced-motion:reduce){
+  body:has(#viewMarket:not([hidden])) #viewMarket .market-row{transition:none}
+}
