@@ -398,9 +398,9 @@
         syncWealthHero(host);
         return;
       }
-      const sectionButton = event.target.closest('button[data-vestra-dashboard-section]');
+      const sectionButton = event.target.closest('button[data-vestra-dashboard-section], button[data-vi-canonical-section]');
       if (sectionButton && host.contains(sectionButton)) {
-        const targetId = sectionButton.dataset.vestraDashboardSection;
+        const targetId = sectionButton.dataset.vestraDashboardSection || sectionButton.dataset.viCanonicalSection;
         if (!['vestraMarketSentimentCard', 'vestraDailyNewsCard', 'dashboardWeeklyEventsCard'].includes(targetId)) return;
         // Reveal the original, fully functional dashboard before navigating into it.
         if (typeof window.setView === 'function') window.setView('dashboard');
