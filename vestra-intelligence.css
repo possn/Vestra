@@ -554,3 +554,19 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #vestraIntelligenceHome .vi-daily-item strong{grid-column:1;font-size:22px}
  #vestraIntelligenceHome .vi-daily-item>span:last-child{right:14px;top:50%;bottom:auto;transform:translateY(-50%)}
 }
+
+/* Place useful actions between introductory thesis and longer market evidence on iPhone. */
+#vestraIntelligenceHome .vi-opening .vi-daily-brief{
+  grid-column:1 / -1;margin:0;padding:18px 0 8px;
+  border-bottom:0;border-top:1px solid #35413a
+}
+@media(max-width:860px){
+  #vestraIntelligenceHome .vi-opening .vi-lead{order:1}
+  #vestraIntelligenceHome .vi-opening .vi-daily-brief{order:2;padding:19px 0 10px}
+  #vestraIntelligenceHome .vi-opening .vi-regime{order:3}
+}
+@media(min-width:861px){
+  #vestraIntelligenceHome .vi-opening .vi-lead{grid-column:1;grid-row:1}
+  #vestraIntelligenceHome .vi-opening .vi-regime{grid-column:2;grid-row:1}
+  #vestraIntelligenceHome .vi-opening .vi-daily-brief{grid-row:2}
+}
