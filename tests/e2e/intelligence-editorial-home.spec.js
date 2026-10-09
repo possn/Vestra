@@ -84,3 +84,26 @@ test('iPhone/WebKit: default Intelligence actions retain Portfolio and Market na
   await expect(home).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+
+test('iPhone/WebKit: new editorial chapters keep real-data hosts and legacy escape', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
+  const home = page.locator('#vestraIntelligenceHome');
+  await expect(home).toBeVisible();
+  await expect(home.locator('.vi-chapter-index')).toHaveCount(3);
+  await expect(home.locator('.vi-opening .vi-regime-grid')).toBeVisible();
+  await expect(home.locator('.vi-action')).toHaveCount(3);
+  await expect(home.locator('[data-vestra-portfolio-evidence]')).toBeAttached();
+  await expect(home.locator('[data-vestra-decision-state]')).toBeAttached();
+  await expect(home.locator('[data-vestra-coverage]')).toBeAttached();
+  const layout = await home.locator('.vi-opening').evaluate(el => ({
+    grid: getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean),
+    viewport: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth
+  }));
+  expect(layout.grid).toHaveLength(1);
+  expect(layout.scroll).toBeLessThanOrEqual(layout.viewport + 1);
+  await home.locator('[data-vestra-go="dashboard"]').click();
+  await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
+});
