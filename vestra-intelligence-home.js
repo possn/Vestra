@@ -306,6 +306,21 @@
     host.dataset.vestraIntelligence = '1';
     host.setAttribute('data-theme', document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
     host.addEventListener('click', event => {
+      const sectionButton = event.target.closest('button[data-vestra-dashboard-section]');
+      if (sectionButton && host.contains(sectionButton)) {
+        const targetId = sectionButton.dataset.vestraDashboardSection;
+        if (!['vestraMarketSentimentCard', 'vestraDailyNewsCard', 'dashboardWeeklyEventsCard'].includes(targetId)) return;
+        // Reveal the original, fully functional dashboard before navigating into it.
+        if (typeof window.setView === 'function') window.setView('dashboard');
+        host.dataset.legacyOpen = 'true';
+        if (returnButton?.parentElement) returnButton.parentElement.style.setProperty('display','block','important');
+        const scrollToSection = () => {
+          const destination = document.getElementById(targetId);
+          if (destination) destination.scrollIntoView({behavior:'smooth',block:'start'});
+        };
+        requestAnimationFrame(() => requestAnimationFrame(scrollToSection));
+        return;
+      }
       const button = event.target.closest('button[data-vestra-go]');
       if (!button || !host.contains(button)) return;
       const target = button.dataset.vestraGo;
