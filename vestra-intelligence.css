@@ -932,3 +932,31 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #vestraIntelligenceHome .vi-risk-reading-body h4{font-size:16px!important}
  #vestraIntelligenceHome .vi-risk-reading-body p{font-size:11px!important}
 }
+
+/* Intelligence is the single Home. The legacy dashboard is a detail workspace,
+   not a second Home with a duplicated editorial introduction and shortcut menu. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-intro,
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-stage__aside,
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vi-entry-link{
+ display:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vi-back-to-intelligence{
+ display:block!important;margin:12px 0 18px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vi-back-to-intelligence button{
+ background:#173630!important;color:#f3eee3!important;border:1px solid #49695d!important;
+ border-radius:14px;min-height:44px;padding:11px 16px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage{
+ background:#17352f!important;color:#f4efe4!important;border:1px solid #426056!important;
+ grid-template-columns:minmax(0,1fr)!important;max-width:100%;overflow:hidden;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage > :not(.v2-home-stage__aside){
+ grid-column:1!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label :is(h2,p){
+ color:#f0eee5!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label p{
+ color:#bed2c6!important;
+}
