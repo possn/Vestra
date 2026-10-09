@@ -295,6 +295,44 @@
     update('events', eventLabel ? eventLabel.slice(0,100) : 'Consultar calendário e eventos da semana');
   }
 
+  function syncCanonicalCards(host) {
+    const set = (key, value) => {
+      const node = host.querySelector('[data-vi-canonical-'+key+']');
+      if (node) node.textContent = value;
+    };
+    // Strictly mirror already-rendered sources; never synthesize observations.
+    const sentiment = document.getElementById('vestraMarketSentimentCard');
+    const scoreText = sentiment?.querySelector('.dms-score')?.textContent?.trim();
+    const score = Number.parseInt(scoreText || '', 10);
+    const label = sentiment?.querySelector('.dms-label')?.textContent?.trim();
+    const hasSentiment = Number.isInteger(score) && score >= 0 && score <= 100 && Boolean(label);
+    set('score', hasSentiment ? String(score) : '—');
+    set('label', hasSentiment ? label : 'Leitura por confirmar');
+    set('market', hasSentiment
+      ? 'Barómetro de mercado baseado em sinais de preço; não equivale ao inquérito AAII. Abrir para evolução e metodologia.'
+      : 'Sem barómetro observado nesta sessão. Abrir o módulo para fontes, AAII e metodologia.');
+    const event = document.querySelector('#dashboardWeeklyEventsCard .weekly-events-list .weekly-event');
+    const eventText = event?.textContent?.replace(/\s+/g, ' ').trim();
+    set('events', eventText ? eventText.slice(0, 200) : 'Sem eventos confirmados nesta sessão · abrir calendário semanal.');
+    const article = document.querySelector('#vestraDailyNewsCard .vestra-daily-news-item');
+    const headline = article?.textContent?.replace(/\s+/g, ' ').trim();
+    set('news', headline ? headline.slice(0, 240) : 'Sem notícias confirmadas nesta sessão · abrir o módulo de notícias.');
+    try {
+      const api = window.VestraDashboardPortfolioConcentration;
+      if (!api || typeof api.marketHoldings !== 'function' || typeof api.concentrationSnapshot !== 'function') throw Error('indisponível');
+      const concentration = api.concentrationSnapshot(api.marketHoldings());
+      if (!Number.isInteger(concentration?.count) || concentration.count < 1 ||
+          !Number.isFinite(concentration?.top3) || concentration.top3 < 0 || concentration.top3 > 1) throw Error('incompleto');
+      set('risk-title', 'Concentração das três maiores posições');
+      set('risk-value', (concentration.top3 * 100).toLocaleString('pt-PT', {maximumFractionDigits:1}) + '%');
+      set('risk', 'Peso combinado das três maiores posições de mercado. Indicador de concentração, não diagnóstico de risco global.');
+    } catch (_) {
+      set('risk-title', 'Concentração por verificar');
+      set('risk-value', '—');
+      set('risk', 'Sem cobertura suficiente para calcular concentração. Consultar a análise da carteira.');
+    }
+  }
+
   function syncWealthHero(host) {
     const value = host.querySelector('[data-vi-wealth]');
     const assets = host.querySelector('[data-vi-assets]');
@@ -331,6 +369,7 @@
     syncExistingBarometer(host);
     syncWealthHero(host);
     syncDailyBrief(host);
+    syncCanonicalCards(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
     window.addEventListener('vestra:market-sheet-changed', () => syncDecisionCenter(host));
@@ -343,10 +382,10 @@
       }
     });
     window.addEventListener('vestra:dashboard-signal-updated', event => {
-      if (event?.detail?.source === 'market-sentiment') { syncExistingBarometer(host); syncDailyBrief(host); }
+      if (event?.detail?.source === 'market-sentiment') { syncExistingBarometer(host); syncDailyBrief(host); syncCanonicalCards(host); }
     });
-    window.addEventListener('vestra:weekly-data-refreshed', () => syncDailyBrief(host));
-    window.addEventListener('focus', () => { syncDailyBrief(host); syncWealthHero(host); });
+    window.addEventListener('vestra:weekly-data-refreshed', () => { syncDailyBrief(host); syncCanonicalCards(host); });
+    window.addEventListener('focus', () => { syncDailyBrief(host); syncWealthHero(host); syncCanonicalCards(host); });
     // The underlying modules hydrate asynchronously; retry a bounded number of times.
     [1200, 3500, 6500].forEach(delay => setTimeout(() => { syncDailyBrief(host); syncWealthHero(host); }, delay));
     showCoverage(host);
