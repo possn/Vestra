@@ -511,3 +511,67 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 @media(prefers-reduced-motion:reduce){
   #vestraIntelligenceHome *{scroll-behavior:auto!important}
 }
+
+/* VESTRA 2.0 — Useful-first Dashboard: foreground actual news, events, market tools. */
+#vestraIntelligenceHome .vi-opening{padding-bottom:26px!important}
+#vestraIntelligenceHome .vi-opening .vi-lead{padding-top:16px!important}
+#vestraIntelligenceHome .vi-opening .vi-headline{font-size:clamp(43px,5vw,74px)!important;margin:18px 0!important}
+#vestraIntelligenceHome .vi-lead-rule{margin-top:28px}
+#vestraIntelligenceHome .vi-daily-brief{
+  padding:25px 0 36px;border-bottom:1px solid #35413a;
+  display:grid;grid-template-columns:minmax(0,.55fr) minmax(0,1.45fr);
+  gap:clamp(18px,4vw,52px);align-items:start
+}
+#vestraIntelligenceHome .vi-daily-heading h3{
+  color:#f0f0eb;font:500 clamp(30px,3vw,44px)/1.1 Georgia,serif;
+  letter-spacing:-.045em;margin:12px 0
+}
+#vestraIntelligenceHome .vi-daily-heading p{color:#9daea1;font-size:13px;line-height:1.6;max-width:35ch}
+#vestraIntelligenceHome .vi-daily-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#vestraIntelligenceHome .vi-daily-item{
+  min-width:0;min-height:164px;text-align:left;cursor:pointer;position:relative;
+  border:1px solid #3b4a40;border-radius:9px;background:#19251e;
+  padding:18px 15px 35px;color:#f4f4ee;
+  display:flex;flex-direction:column;gap:9px
+}
+#vestraIntelligenceHome .vi-daily-item:hover{background:#213228}
+#vestraIntelligenceHome .vi-daily-item:focus-visible{outline:2px solid #d8eee7;outline-offset:2px}
+#vestraIntelligenceHome .vi-daily-kicker{font-size:9px;letter-spacing:.13em;color:#9aae9e}
+#vestraIntelligenceHome .vi-daily-item strong{font:500 clamp(19px,1.75vw,24px)/1.18 Georgia,serif;letter-spacing:-.025em}
+#vestraIntelligenceHome .vi-daily-item small{font-size:11px;line-height:1.5;color:#9eaea0}
+#vestraIntelligenceHome .vi-daily-item>span:last-child{position:absolute;right:14px;bottom:10px;font-size:18px;color:#c3d4c3}
+#vestraIntelligenceHome .vi-priorities{padding-top:18px!important}
+@media(max-width:860px){
+ #vestraIntelligenceHome .vi-daily-brief{grid-template-columns:1fr;gap:10px;padding:23px 0 27px}
+ #vestraIntelligenceHome .vi-daily-heading h3{font-size:34px}
+ #vestraIntelligenceHome .vi-daily-heading p{margin:0 0 7px}
+ #vestraIntelligenceHome .vi-daily-grid{grid-template-columns:1fr;gap:8px}
+ #vestraIntelligenceHome .vi-daily-item{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;min-height:0;padding:12px 38px 12px 15px;gap:4px
+ }
+ #vestraIntelligenceHome .vi-daily-kicker,#vestraIntelligenceHome .vi-daily-item small{grid-column:1}
+ #vestraIntelligenceHome .vi-daily-item strong{grid-column:1;font-size:22px}
+ #vestraIntelligenceHome .vi-daily-item>span:last-child{right:14px;top:50%;bottom:auto;transform:translateY(-50%)}
+}
+
+/* Place useful actions between introductory thesis and longer market evidence on iPhone. */
+#vestraIntelligenceHome .vi-opening .vi-daily-brief{
+  grid-column:1 / -1;margin:0;padding:18px 0 8px;
+  border-bottom:0;border-top:1px solid #35413a
+}
+@media(max-width:860px){
+  #vestraIntelligenceHome .vi-opening .vi-lead{order:1}
+  #vestraIntelligenceHome .vi-opening .vi-daily-brief{order:2;padding:19px 0 10px}
+  #vestraIntelligenceHome .vi-opening .vi-regime{order:3}
+}
+@media(min-width:861px){
+  #vestraIntelligenceHome .vi-opening .vi-lead{grid-column:1;grid-row:1}
+  #vestraIntelligenceHome .vi-opening .vi-regime{grid-column:2;grid-row:1}
+  #vestraIntelligenceHome .vi-opening .vi-daily-brief{grid-row:2}
+}
+
+/* One Home at a time: classic drill-down never renders underneath the Intelligence spread. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #vestraIntelligenceHome{
+  display:none!important
+}
