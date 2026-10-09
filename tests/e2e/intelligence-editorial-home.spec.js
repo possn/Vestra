@@ -17,7 +17,7 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   await expect(page.locator('body')).toHaveCSS('background-color', /.+/);
   await expect(page.locator('.topbar')).toHaveCSS('background-color', 'rgb(17, 21, 20)');
   await expect(page.locator('.bottomnav')).toHaveCSS('background-color', 'rgb(20, 25, 24)');
-  await expect(home.getByText('O essencial, sem ruído.')).toBeVisible();
+  await expect(home.getByText('O que importa hoje.')).toBeVisible();
   await expect(home.getByRole('heading', {name:/Regime de mercado/})).toBeVisible();
   await expect(home.locator('.vi-action')).toHaveCount(3);
   await expect(home.locator('[data-vestra-market-status]')).not.toBeEmpty();
@@ -139,4 +139,22 @@ test('iPhone/WebKit: Intelligence quick brief exposes real-data slots and honest
   await expect(page.locator('#vestraDailyNewsCard')).toBeVisible();
   await page.locator('#btnReturnIntelligence').click();
   await expect(home).toBeVisible();
+});
+
+
+test('iPhone/WebKit: premium Home reads existing patrimonial KPI with privacy control', async ({page}) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
+  const home = page.locator('#vestraIntelligenceHome');
+  await expect(home).toBeVisible();
+  await expect(home.locator('[data-vi-wealth]')).toHaveCount(1);
+  await expect(home.locator('[data-vi-assets]')).toHaveCount(1);
+  await expect(home.locator('.vi-daily-item')).toHaveCount(3);
+  const privacy = home.locator('[data-vi-privacy]');
+  await privacy.click();
+  await expect(home.locator('[data-vi-wealth]')).toHaveText('••• €');
+  await privacy.click();
+  await expect(page.locator('#btnDashboardPrivacy')).toHaveAttribute('aria-pressed', 'false');
+  await home.locator('.vi-wealth-open').click();
+  await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
 });
