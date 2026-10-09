@@ -97,3 +97,27 @@
     border-radius: 18px;
   }
 }
+
+
+/* V2.0 / editorial portfolio reading hierarchy, retaining every control. */
+#viewAssets .portfolio-hero{
+  border-bottom:1px solid var(--line);padding-block:clamp(24px,4vw,54px) clamp(24px,3vw,40px);
+  align-items:end;gap:clamp(20px,3vw,48px)
+}
+#viewAssets .portfolio-hero h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(43px,5.5vw,77px);
+  font-weight:500;line-height:1.02;letter-spacing:-.062em
+}
+#viewAssets .portfolio-hero p{font-size:clamp(13px,1.3vw,16px);line-height:1.65}
+#viewAssets .portfolio-glance{border-radius:10px;border:1px solid var(--line);box-shadow:none}
+#viewAssets .portfolio-list-card{border-radius:10px;box-shadow:none}
+#viewAssets .portfolio-glance__main strong{
+  font-family:Georgia,"Times New Roman",serif;font-weight:500;
+  font-size:clamp(37px,5.5vw,62px);letter-spacing:-.06em
+}
+@media(max-width:680px){
+  #viewAssets .portfolio-hero{align-items:stretch;flex-direction:column}
+  #viewAssets .portfolio-hero h2{font-size:clamp(40px,10vw,56px)}
+  #viewAssets .portfolio-hero .portfolio-add{align-self:flex-start}
+}
