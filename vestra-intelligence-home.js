@@ -295,6 +295,25 @@
     update('events', eventLabel ? eventLabel.slice(0,100) : 'Consultar calendário e eventos da semana');
   }
 
+  function syncWealthHero(host) {
+    const value = host.querySelector('[data-vi-wealth]');
+    const assets = host.querySelector('[data-vi-assets]');
+    if (!value || !assets) return;
+    const privacy = document.getElementById('btnDashboardPrivacy');
+    const concealed = privacy?.getAttribute('aria-pressed') === 'true' ||
+      /mostrar valores/i.test(document.getElementById('dashboardPrivacyLabel')?.textContent || '');
+    if (concealed) {
+      value.textContent = '••• €';
+      assets.textContent = 'Valores ocultos';
+      return;
+    }
+    const originalValue = document.getElementById('kpiNet')?.textContent?.trim();
+    const originalAssets = document.getElementById('kpiAP')?.textContent?.trim();
+    value.textContent = originalValue && originalValue !== '0 €' ? originalValue : '—';
+    assets.textContent = originalAssets && !/Ativos 0 € \\| Passivos 0 €/.test(originalAssets) ?
+      originalAssets : 'Património ainda a carregar';
+  }
+
   function init() {
     const view = document.getElementById('viewDashboard');
     const host = document.getElementById('vestraIntelligenceHome');
@@ -310,6 +329,7 @@
       host.scrollIntoView({behavior:'smooth', block:'start'});
     });
     syncExistingBarometer(host);
+    syncWealthHero(host);
     syncDailyBrief(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
@@ -326,14 +346,19 @@
       if (event?.detail?.source === 'market-sentiment') { syncExistingBarometer(host); syncDailyBrief(host); }
     });
     window.addEventListener('vestra:weekly-data-refreshed', () => syncDailyBrief(host));
-    window.addEventListener('focus', () => syncDailyBrief(host));
+    window.addEventListener('focus', () => { syncDailyBrief(host); syncWealthHero(host); });
     // The underlying modules hydrate asynchronously; retry a bounded number of times.
-    [1200, 3500, 6500].forEach(delay => setTimeout(() => syncDailyBrief(host), delay));
+    [1200, 3500, 6500].forEach(delay => setTimeout(() => { syncDailyBrief(host); syncWealthHero(host); }, delay));
     showCoverage(host);
     showProspectiveValidation(host);
     host.dataset.vestraIntelligence = '1';
     host.setAttribute('data-theme', document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
     host.addEventListener('click', event => {
+      if (event.target.closest('button[data-vi-privacy]')) {
+        document.getElementById('btnDashboardPrivacy')?.click();
+        syncWealthHero(host);
+        return;
+      }
       const sectionButton = event.target.closest('button[data-vestra-dashboard-section]');
       if (sectionButton && host.contains(sectionButton)) {
         const targetId = sectionButton.dataset.vestraDashboardSection;
