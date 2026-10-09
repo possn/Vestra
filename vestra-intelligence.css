@@ -823,7 +823,7 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 #vestraIntelligenceHome .vi-risk-reading-body{grid-template-columns:48px minmax(0,1fr) auto!important}
 #vestraIntelligenceHome .vi-risk-symbol{border:1px solid #ac7337!important;background:linear-gradient(135deg,#765023,#4c3421)!important;color:#ffcd79!important;font-size:24px!important;width:44px!important;height:44px!important}
 #vestraIntelligenceHome .vi-risk-visual{display:flex;align-items:center;gap:12px;min-width:0}
-#vestraIntelligenceHome .vi-risk-donut{width:58px;height:58px;flex:none;border-radius:50%;background:conic-gradient(#e7ac64 0 55%,#664425 55% 100%);position:relative}
+#vestraIntelligenceHome .vi-risk-donut{width:58px;height:58px;flex:none;border-radius:50%;background:conic-gradient(#e7ac64 0 var(--vi-risk-percent,0%),#664425 var(--vi-risk-percent,0%) 100%);position:relative}
 #vestraIntelligenceHome .vi-risk-donut::after{content:"";position:absolute;inset:12px;border-radius:50%;background:#262017}
 #vestraIntelligenceHome .vi-risk-visual strong{white-space:nowrap}
 #vestraIntelligenceHome .vi-editorial-rail{display:flex!important;overflow-x:auto!important;scroll-snap-type:x proximity!important;gap:8px!important;scrollbar-width:none}
