@@ -364,12 +364,18 @@
     const value = host.querySelector('[data-vi-wealth]');
     const assets = host.querySelector('[data-vi-assets]');
     if (!value || !assets) return;
+    const changes = host.querySelector('[data-vi-wealth-changes]');
+    const nativeChanges = document.getElementById('kpiChanges');
+    const nativeText = (nativeChanges?.innerText || nativeChanges?.textContent || '').replace(/\s+/g, ' ').trim();
+
     const privacy = document.getElementById('btnDashboardPrivacy');
     const concealed = privacy?.getAttribute('aria-pressed') === 'true' ||
       /mostrar valores/i.test(document.getElementById('dashboardPrivacyLabel')?.textContent || '');
     if (concealed) {
       value.textContent = '••• €';
       assets.textContent = 'Valores ocultos';
+      if (changes) changes.textContent = 'Variações ocultas';
+
       return;
     }
     const originalValue = document.getElementById('kpiNet')?.textContent?.trim();
@@ -377,6 +383,11 @@
     value.textContent = originalValue && originalValue !== '0 €' ? originalValue : '—';
     assets.textContent = originalAssets && !/Ativos 0 € \\| Passivos 0 €/.test(originalAssets) ?
       originalAssets : 'Património ainda a carregar';
+    if (changes) {
+      const valid = nativeText && !/a carregar|calculando|indisponível/i.test(nativeText);
+      changes.textContent = valid ? nativeText.slice(0, 160) : 'Variações ainda não confirmadas';
+    }
+
   }
 
   function init() {
