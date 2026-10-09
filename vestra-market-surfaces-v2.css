@@ -90,3 +90,28 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion__ticker{color
 body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion__name,
 body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion__type,
 body:has(#viewMarket:not([hidden])) #viewMarket .market-suggestion-empty{color:#b8cec1}
+
+/* Market editorial contrast ownership: light analysis/discovery panels cannot
+   inherit white titles from the dark market shell. */
+body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses){
+ background:#f0eee7!important;color:#173037!important;border-color:#c9d1ca!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools__head strong,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-section__head h3{
+ color:#173037!important;-webkit-text-fill-color:#173037!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools__head small,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-section__head p,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-data-age{
+ color:#47605f!important;-webkit-text-fill-color:#47605f!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .vestra-opportunity-lenses button:not(.is-active){
+ background:#e3e8e3;color:#243d43;border-color:#b7c3bd;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools .market-tool-btn{
+ background:#153c35;color:#f3f0e7;border:1px solid #42675d;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools .market-tool-btn small{
+ color:#d0ded5!important;
+}
