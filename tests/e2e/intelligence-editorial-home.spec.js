@@ -15,8 +15,8 @@ test('iPhone/WebKit: Intelligence 2.0 editorial preview preserves evidence and e
   await expect(opening).toHaveCSS('grid-template-columns', /.+/);
   // The preview must own the app chrome, not merely insert another card.
   await expect(page.locator('body')).toHaveCSS('background-color', /.+/);
-  await expect(page.locator('.topbar')).toHaveCSS('background-color', 'rgb(9, 27, 28)');
-  await expect(page.locator('.bottomnav')).toHaveCSS('background-color', 'rgb(12, 31, 32)');
+  await expect(page.locator('.topbar')).toHaveCSS('background-color', 'rgb(8, 26, 26)');
+  await expect(page.locator('.bottomnav')).toHaveCSS('background-color', 'rgba(9, 28, 28, 0.98)');
   await expect(home.getByText('O que importa hoje.')).toBeVisible();
   await expect(home.getByRole('heading', {name:/Regime de mercado/})).toBeHidden();
   await expect(home.locator('.vi-action')).toHaveCount(3);
