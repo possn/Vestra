@@ -335,9 +335,22 @@
         const ordinal = document.createElement('span');
         ordinal.textContent = String(idx + 1).padStart(2,'0');
         ordinal.className = 'vi-editorial-index';
+        const body = document.createElement('div');
+        body.className = 'vi-editorial-content';
         const title = document.createElement('p');
-        title.textContent = item.lines.join(' · ').slice(0,190) || item.fallback;
-        card.append(ordinal,title);
+        title.className = 'vi-editorial-title';
+        // Preserve natural line boundaries from the live source rather than
+        // concatenating dates, tickers and categories into an unreadable string.
+        title.textContent = (item.lines[0] || item.fallback).slice(0,110);
+        body.append(title);
+        const remainder = item.lines.slice(1).join(' · ').trim();
+        if (remainder) {
+          const detail = document.createElement('small');
+          detail.className = 'vi-editorial-detail';
+          detail.textContent = remainder.slice(0,140);
+          body.append(detail);
+        }
+        card.append(ordinal,body);
         return card;
       }));
     };
