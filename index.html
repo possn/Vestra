@@ -24,7 +24,7 @@
 <link href="vestra-discovery-v2.css?v=2" rel="stylesheet"/>
 <link href="vestra-scanner-entry-v2.css?v=1" rel="stylesheet"/>
 <link href="vestra-scanner-research-v2.css?v=1" rel="stylesheet"/>
-<link href="vestra-intelligence.css?v=5" rel="stylesheet"/>
+<link href="vestra-intelligence.css?v=6" rel="stylesheet"/>
 <link href="vestra-design-v2.css?v=1" rel="stylesheet"/>
 <link href="vestra-navigation-v2.css?v=1" rel="stylesheet"/>
 <link href="vestra-home-v2.css?v=1" rel="stylesheet"/>
@@ -87,7 +87,7 @@
 <script defer="" src="quote-canonical-repair.js?v=2.6"></script>
 <script defer="" src="market-static-universe.js?v=1.30"></script>
 <script defer="" src="market-runtime-loader.js?v=2.3"></script>
-<script defer src="vestra-intelligence-home.js?v=5"></script>
+<script defer src="vestra-intelligence-home.js?v=6"></script>
 </head>
 <body>
 <!-- Vestra launch mark — identity first, no progress chrome -->
@@ -181,7 +181,25 @@
       <button type="button" class="vi-text-link" data-vestra-go="market">Explorar evidências de mercado <span aria-hidden="true">↗</span></button>
     </section>
     </div>
-    <div class="vi-chapter-index"><span>02 / DECISÕES</span><span>INVESTIGAÇÃO ANTES DA AÇÃO</span></div>
+    <section class="vi-canonical-sections" aria-label="Informação essencial do dia">
+      <section class="vi-canonical-card vi-market-reading" aria-label="Sentimento de mercado">
+        <div class="vi-section-top"><h3>Sentimento de mercado</h3><button type="button" data-vi-canonical-section="vestraMarketSentimentCard" aria-label="Abrir barómetro de mercado">↗</button></div>
+        <div class="vi-market-reading-body"><div class="vi-sentiment-orb"><strong data-vi-canonical-score>—</strong><small>/ 100 · BARÓMETRO</small></div><div><h4 data-vi-canonical-label>Leitura por confirmar</h4><p data-vi-canonical-market>À espera da leitura observada do barómetro. AAII e metodologia disponíveis no detalhe.</p></div></div>
+      </section>
+      <section class="vi-canonical-card vi-events-reading" aria-label="Eventos da semana">
+        <div class="vi-section-top"><h3>Eventos da semana</h3><button type="button" data-vi-canonical-section="dashboardWeeklyEventsCard" aria-label="Abrir agenda da semana">Ver semana ↗</button></div>
+        <p data-vi-canonical-events>Agenda a carregar · abrir calendário para resultados e eventos macro.</p>
+      </section>
+      <section class="vi-canonical-card vi-risk-reading" aria-label="Saúde do património">
+        <div class="vi-section-top"><h3>Saúde do património</h3><button type="button" data-vestra-go="portfolio" aria-label="Abrir análise de risco da carteira">↗</button></div>
+        <div class="vi-risk-reading-body"><span aria-hidden="true">◈</span><div><h4 data-vi-canonical-risk-title>Concentração por verificar</h4><p data-vi-canonical-risk>Sem avaliação de risco confirmada nesta sessão. Consultar a análise da carteira.</p></div><strong data-vi-canonical-risk-value>—</strong></div>
+      </section>
+      <section class="vi-canonical-card vi-news-reading" aria-label="Notícias do dia">
+        <div class="vi-section-top"><h3>Notícias do dia</h3><button type="button" data-vi-canonical-section="vestraDailyNewsCard">Ver mais ↗</button></div>
+        <p data-vi-canonical-news>Notícias a carregar · consultar o módulo para fontes, datas e ativos associados.</p>
+      </section>
+    </section>
+    <div class="vi-chapter-index"><span>02 / INVESTIGAÇÃO</span><span>APROFUNDAR APÓS A LEITURA</span></div>
 
     <section class="vi-priorities" aria-label="Três investigações prioritárias">
       <div class="vi-heading"><span class="vi-eyebrow">DECISION INTELLIGENCE</span><h3>Três decisões para investigar</h3><p>Áreas de investigação, não recomendações automáticas.</p></div>
