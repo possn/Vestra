@@ -311,12 +311,39 @@
     set('market', hasSentiment
       ? 'Barómetro de mercado baseado em sinais de preço; não equivale ao inquérito AAII. Abrir para evolução e metodologia.'
       : 'Sem barómetro observado nesta sessão. Abrir o módulo para fontes, AAII e metodologia.');
-    const event = document.querySelector('#dashboardWeeklyEventsCard .weekly-events-list .weekly-event');
-    const eventText = event?.textContent?.replace(/\s+/g, ' ').trim();
-    set('events', eventText ? eventText.slice(0, 200) : 'Sem eventos confirmados nesta sessão · abrir calendário semanal.');
-    const article = document.querySelector('#vestraDailyNewsCard .vestra-daily-news-item');
-    const headline = article?.textContent?.replace(/\s+/g, ' ').trim();
-    set('news', headline ? headline.slice(0, 240) : 'Sem notícias confirmadas nesta sessão · abrir o módulo de notícias.');
+    const syncCards = (sourceSelector, listSelector, itemSelector, fallback, limit) => {
+      const list = host.querySelector(listSelector);
+      const source = document.querySelector(sourceSelector);
+      if (!list) return;
+      const candidates = Array.from(source?.querySelectorAll(itemSelector) || []).slice(0, limit);
+      const texts = candidates.map(node => (node.innerText || node.textContent || '')
+        .replace(/\s+/g,' ').trim().slice(0,190)).filter(Boolean);
+      if (!texts.length) {
+        list.replaceChildren();
+        const placeholder = document.createElement('p');
+        placeholder.textContent = fallback;
+        list.append(placeholder);
+        return;
+      }
+      // Cloned text only: no new article links, financial values, images or metadata fabricated.
+      list.replaceChildren(...texts.map((t, idx) => {
+        const card = document.createElement('div');
+        card.className = 'vi-editorial-tile';
+        const ordinal = document.createElement('span');
+        ordinal.textContent = String(idx + 1).padStart(2,'0');
+        ordinal.className = 'vi-editorial-index';
+        const title = document.createElement('p');
+        title.textContent = t;
+        card.append(ordinal,title);
+        return card;
+      }));
+    };
+    syncCards('#dashboardWeeklyEventsCard', '[data-vi-canonical-event-list]',
+      '.weekly-events-list .weekly-event',
+      'Sem eventos confirmados nesta sessão · abrir calendário semanal.', 3);
+    syncCards('#vestraDailyNewsCard', '[data-vi-canonical-news-list]',
+      '.vestra-daily-news-item',
+      'Sem notícias confirmadas nesta sessão · abrir o módulo de notícias.', 3);
     try {
       const api = window.VestraDashboardPortfolioConcentration;
       if (!api || typeof api.marketHoldings !== 'function' || typeof api.concentrationSnapshot !== 'function') throw Error('indisponível');
