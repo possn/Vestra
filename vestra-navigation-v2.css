@@ -59,3 +59,32 @@ body:has(#viewDashboard.vi-preview-active) .topbar button:focus-visible{
  body:has(#viewDashboard.vi-preview-active) .topbar #btnSettingsNav,
  body:has(#viewDashboard.vi-preview-active) .topbar #btnFab{min-width:36px;min-height:36px}
 }
+
+/* Unified iPhone Home: no pale gutter, duplicate logo lockup or toolbar chrome. */
+body:has(#viewDashboard.vi-preview-active):not(:has(#vestraIntelligenceHome[data-legacy-open="true"])) {
+ background:#081a1a!important;
+}
+body:has(#viewDashboard.vi-preview-active) .topbar{
+ border-bottom:0!important;background:#081a1a!important;
+}
+body:has(#viewDashboard.vi-preview-active) .topbar .brand__icon,
+body:has(#viewDashboard.vi-preview-active) .topbar .brand__sub,
+body:has(#viewDashboard.vi-preview-active) .topbar #btnSettingsNav{display:none!important}
+body:has(#viewDashboard.vi-preview-active) .topbar .brand__title{
+ font:500 32px/1.1 Georgia,serif!important;text-transform:none!important;letter-spacing:-.045em!important
+}
+body:has(#viewDashboard.vi-preview-active) .topbar #btnFab{
+ background:linear-gradient(135deg,#f1d39a,#b38b4e)!important;border-color:#cba467!important;
+ color:#172521!important;border-radius:50%!important
+}
+body:has(#viewDashboard.vi-preview-active) .topbar #btnSearchToggle{
+ background:rgba(21,49,47,.8)!important;border-color:#37534d!important
+}
+body:has(#viewDashboard.vi-preview-active) .topbar .sidebar-toggle{
+ color:#b3c5ba!important;background:transparent!important;border:0!important;
+}
+body:has(#viewDashboard.vi-preview-active) .bottomnav{background:rgba(9,28,28,.98)!important}
+@media(max-width:600px){
+ body:has(#viewDashboard.vi-preview-active) .topbar{padding:8px 14px!important;min-height:61px!important}
+ body:has(#viewDashboard.vi-preview-active) .topbar .brand__title{font-size:28px!important}
+}
