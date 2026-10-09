@@ -794,3 +794,51 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #vestraIntelligenceHome .vi-daily-item strong{font-size:12.5px!important}
  #vestraIntelligenceHome .vi-canonical-card{padding:15px!important}
 }
+
+/* Reference composition pass: icon-first shortcut row and responsive editorial data cards. */
+#vestraIntelligenceHome .vi-daily-item{
+ display:grid!important;grid-template-columns:42px minmax(0,1fr) 10px!important;
+ grid-template-rows:1fr!important;align-items:center!important;gap:7px!important;
+ text-align:left!important;position:relative!important;min-height:84px!important
+}
+#vestraIntelligenceHome .vi-daily-item strong{grid-column:2!important;font:500 15px/1.17 Georgia,serif!important;color:#f5f0e7!important}
+#vestraIntelligenceHome .vi-daily-item>span:last-child{grid-column:3!important;font-size:20px!important;color:#d2e2d7!important}
+#vestraIntelligenceHome .vi-shortcut-icon{display:grid!important;grid-column:1!important;place-items:center;width:39px;height:39px;border-radius:50%;font:600 25px/1 system-ui,sans-serif}
+#vestraIntelligenceHome .vi-shortcut-market{color:#54dcc0;background:radial-gradient(circle,#145348,#0c3b35)}
+#vestraIntelligenceHome .vi-shortcut-news{color:#73c8ee;background:radial-gradient(circle,#123f56,#102f3e)}
+#vestraIntelligenceHome .vi-shortcut-events{color:#eac882;background:radial-gradient(circle,#56442a,#2c322b)}
+#vestraIntelligenceHome .vi-sentiment-orb{
+ width:min(100%,200px)!important;aspect-ratio:1.35!important;position:relative!important;
+ background:transparent!important;border:0!important;border-radius:0!important;
+ isolation:isolate;overflow:hidden!important
+}
+#vestraIntelligenceHome .vi-sentiment-orb::before{
+ content:"";position:absolute;z-index:-1;top:2%;left:5%;width:90%;aspect-ratio:1;border-radius:50%;
+ background:conic-gradient(from 270deg,#c8564c 0deg,#e59b68 52deg,#e5d49a 87deg,#159e80 180deg,transparent 180deg);
+ -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 16px),#000 calc(100% - 15px));
+ mask:radial-gradient(farthest-side,transparent calc(100% - 16px),#000 calc(100% - 15px))
+}
+#vestraIntelligenceHome .vi-sentiment-orb strong{margin-top:22%!important;font:500 46px/1 Georgia,serif!important}
+#vestraIntelligenceHome .vi-sentiment-orb small{letter-spacing:.06em!important;font-size:9px!important}
+#vestraIntelligenceHome .vi-risk-reading-body{grid-template-columns:48px minmax(0,1fr) auto!important}
+#vestraIntelligenceHome .vi-risk-symbol{border:1px solid #ac7337!important;background:linear-gradient(135deg,#765023,#4c3421)!important;color:#ffcd79!important;font-size:24px!important;width:44px!important;height:44px!important}
+#vestraIntelligenceHome .vi-risk-visual{display:flex;align-items:center;gap:12px;min-width:0}
+#vestraIntelligenceHome .vi-risk-donut{width:58px;height:58px;flex:none;border-radius:50%;background:conic-gradient(#e7ac64 0 var(--vi-risk-percent,0%),#664425 var(--vi-risk-percent,0%) 100%);position:relative}
+#vestraIntelligenceHome .vi-risk-donut::after{content:"";position:absolute;inset:12px;border-radius:50%;background:#262017}
+#vestraIntelligenceHome .vi-risk-visual strong{white-space:nowrap}
+#vestraIntelligenceHome .vi-editorial-rail{display:flex!important;overflow-x:auto!important;scroll-snap-type:x proximity!important;gap:8px!important;scrollbar-width:none}
+#vestraIntelligenceHome .vi-editorial-rail::-webkit-scrollbar{display:none}
+#vestraIntelligenceHome .vi-editorial-rail>.vi-editorial-tile{flex:0 0 min(180px,42%)!important;min-height:110px;scroll-snap-align:start}
+@media(max-width:600px){
+ #vestraIntelligenceHome .vi-daily-item{grid-template-columns:1fr 10px!important;grid-template-rows:33px auto!important;gap:3px!important;min-height:99px!important}
+ #vestraIntelligenceHome .vi-shortcut-icon{grid-column:1!important;grid-row:1!important;width:31px;height:31px;font-size:20px}
+ #vestraIntelligenceHome .vi-daily-item strong{grid-column:1!important;grid-row:2!important;font-size:12px!important}
+ #vestraIntelligenceHome .vi-daily-item>span:last-child{grid-column:2!important;grid-row:2!important;font-size:16px!important}
+ #vestraIntelligenceHome .vi-risk-donut{width:42px;height:42px}
+ #vestraIntelligenceHome .vi-risk-donut::after{inset:9px}
+ #vestraIntelligenceHome .vi-risk-visual{gap:7px}
+ #vestraIntelligenceHome .vi-risk-reading-body{grid-template-columns:34px minmax(0,1fr) auto!important}
+ #vestraIntelligenceHome .vi-risk-symbol{width:32px!important;height:32px!important;font-size:17px!important}
+ #vestraIntelligenceHome .vi-risk-visual strong{font-size:20px!important}
+ #vestraIntelligenceHome .vi-editorial-rail>.vi-editorial-tile{flex-basis:45%!important}
+}
