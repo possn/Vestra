@@ -72,7 +72,7 @@ test('iPhone/WebKit: default Intelligence actions retain Portfolio and Market na
   await expect(page.locator('#viewAssets')).toBeVisible();
   await page.evaluate(() => window.setView('dashboard'));
   await expect(home).toBeVisible();
-  await home.locator('[data-vestra-go="market"]').first().click();
+  await home.locator('.vi-action[data-vestra-go="market"]').click();
   await expect(page.locator('#viewMarket')).toBeVisible();
   await page.evaluate(() => window.setView('dashboard'));
   await expect(home).toBeVisible();
