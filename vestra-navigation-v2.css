@@ -122,3 +122,26 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple{padding:14px
  body:has(#viewMarket:not([hidden])) .topbar .brand__title{font-size:28px!important}
  body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple h2{font-size:46px!important}
 }
+
+/* Vestra 2.0 global chrome: same readable dark header on every route. */
+body .topbar{
+ background:#081a1a!important;color:#f4efe6!important;
+ border-bottom:1px solid #29433e!important;box-shadow:none!important;
+}
+body .topbar .brand__title{
+ color:#f4efe6!important;opacity:1!important;
+ font:500 clamp(27px,3vw,33px)/1.05 Georgia,serif!important;
+ letter-spacing:-.045em!important;
+}
+body .topbar .brand__icon,body .topbar .brand__sub{display:none!important}
+body .topbar #btnSearchToggle{
+ background:#294541!important;border:1px solid #3b6157!important;
+ color:#f4efe6!important;border-radius:50%!important;
+}
+body .topbar #btnFab{
+ background:linear-gradient(135deg,#e2bf7a,#c89b52)!important;
+ border:1px solid #c89b52!important;color:#162320!important;border-radius:50%!important;
+}
+body .topbar .sidebar-toggle{color:#f4efe6!important;background:transparent!important;border:0!important}
+body .topbar :is(button,a):focus-visible{outline:2px solid #e2bf7a!important;outline-offset:2px}
+@media(max-width:600px){body .topbar{min-height:61px!important;padding:8px 14px!important}body .topbar .brand__title{font-size:28px!important}}
