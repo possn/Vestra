@@ -92,7 +92,7 @@ test('iPhone/WebKit: new editorial chapters keep real-data hosts and legacy esca
   const home = page.locator('#vestraIntelligenceHome');
   await expect(home).toBeVisible();
   await expect(home.locator('.vi-chapter-index')).toHaveCount(3);
-  await expect(home.locator('.vi-opening .vi-regime-grid')).toBeVisible();
+  await expect(home.locator('.vi-opening .vi-regime-grid')).toBeHidden();
   await expect(home.locator('.vi-action')).toHaveCount(3);
   await expect(home.locator('[data-vestra-portfolio-evidence]')).toBeAttached();
   await expect(home.locator('[data-vestra-decision-state]')).toBeAttached();
