@@ -123,3 +123,20 @@ test('iPhone/WebKit: useful-first Home opens existing market barometer, news and
     await expect(page.locator('#viewDashboard .v2-home-stage')).toBeHidden();
   }
 });
+
+
+test('iPhone/WebKit: Intelligence quick brief exposes real-data slots and honest fallbacks', async ({page}) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
+  const home = page.locator('#vestraIntelligenceHome');
+  await expect(home).toBeVisible();
+  for (const key of ['market', 'news', 'events']) {
+    const brief = home.locator('[data-vi-brief="'+key+'"]');
+    await expect(brief).toHaveCount(1);
+    await expect(brief).not.toBeEmpty();
+  }
+  await home.locator('[data-vestra-dashboard-section="vestraDailyNewsCard"]').click();
+  await expect(page.locator('#vestraDailyNewsCard')).toBeVisible();
+  await page.locator('#btnReturnIntelligence').click();
+  await expect(home).toBeVisible();
+});

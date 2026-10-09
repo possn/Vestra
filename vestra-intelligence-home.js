@@ -272,6 +272,29 @@
       ' · Fonte: motor de decisão da carteira';
   }
 
+  // Read existing published dashboard DOM only. No parallel feeds or financial estimates.
+  function syncDailyBrief(host) {
+    const update = (key, value) => {
+      const node = host.querySelector('[data-vi-brief="'+key+'"]');
+      if (node) node.textContent = value;
+    };
+    const barometer = document.getElementById('vestraMarketSentimentCard');
+    const score = barometer?.querySelector('.dms-score')?.textContent?.trim();
+    const label = barometer?.querySelector('.dms-label')?.textContent?.trim();
+    const number = Number.parseInt(score || '', 10);
+    update('market', Number.isInteger(number) && number >= 0 && number <= 100 && label
+      ? number+'/100 · '+label+' · Abrir evolução e AAII'
+      : 'Sem leitura verificada · abrir barómetro');
+    const news = document.getElementById('vestraDailyNewsCard');
+    const article = news?.querySelector('.vestra-daily-news-item');
+    const headline = article?.textContent?.replace(/\\s+/g,' ').trim();
+    update('news', headline ? headline.slice(0,100) : 'Notícias ainda não disponíveis · abrir módulo');
+    const events = document.getElementById('dashboardWeeklyEventsCard');
+    const event = events?.querySelector('.weekly-events-list .weekly-event');
+    const eventLabel = event?.textContent?.replace(/\\s+/g,' ').trim();
+    update('events', eventLabel ? eventLabel.slice(0,100) : 'Consultar calendário e eventos da semana');
+  }
+
   function init() {
     const view = document.getElementById('viewDashboard');
     const host = document.getElementById('vestraIntelligenceHome');
@@ -287,6 +310,7 @@
       host.scrollIntoView({behavior:'smooth', block:'start'});
     });
     syncExistingBarometer(host);
+    syncDailyBrief(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
     window.addEventListener('vestra:market-sheet-changed', () => syncDecisionCenter(host));
@@ -299,8 +323,12 @@
       }
     });
     window.addEventListener('vestra:dashboard-signal-updated', event => {
-      if (event?.detail?.source === 'market-sentiment') syncExistingBarometer(host);
+      if (event?.detail?.source === 'market-sentiment') { syncExistingBarometer(host); syncDailyBrief(host); }
     });
+    window.addEventListener('vestra:weekly-data-refreshed', () => syncDailyBrief(host));
+    window.addEventListener('focus', () => syncDailyBrief(host));
+    // The underlying modules hydrate asynchronously; retry a bounded number of times.
+    [1200, 3500, 6500].forEach(delay => setTimeout(() => syncDailyBrief(host), delay));
     showCoverage(host);
     showProspectiveValidation(host);
     host.dataset.vestraIntelligence = '1';
