@@ -570,3 +570,8 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
   #vestraIntelligenceHome .vi-opening .vi-regime{grid-column:2;grid-row:1}
   #vestraIntelligenceHome .vi-opening .vi-daily-brief{grid-row:2}
 }
+
+/* One Home at a time: classic drill-down never renders underneath the Intelligence spread. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #vestraIntelligenceHome{
+  display:none!important
+}
