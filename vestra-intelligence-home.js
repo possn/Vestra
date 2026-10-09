@@ -352,10 +352,13 @@
           !Number.isFinite(concentration?.top3) || concentration.top3 < 0 || concentration.top3 > 1) throw Error('incompleto');
       set('risk-title', 'Concentração das três maiores posições');
       set('risk-value', (concentration.top3 * 100).toLocaleString('pt-PT', {maximumFractionDigits:1}) + '%');
+      const donut = host.querySelector('.vi-risk-donut');
+      if (donut) donut.style.setProperty('--vi-risk-percent', String(concentration.top3 * 100) + '%');
       set('risk', 'Peso combinado das três maiores posições de mercado. Indicador de concentração, não diagnóstico de risco global.');
     } catch (_) {
       set('risk-title', 'Concentração por verificar');
       set('risk-value', '—');
+      host.querySelector('.vi-risk-donut')?.style.removeProperty('--vi-risk-percent');
       set('risk', 'Sem cobertura suficiente para calcular concentração. Consultar a análise da carteira.');
     }
   }
