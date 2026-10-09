@@ -290,7 +290,7 @@
     const headline = article?.textContent?.replace(/\\s+/g,' ').trim();
     update('news', headline ? headline.slice(0,100) : 'Notícias ainda não disponíveis · abrir módulo');
     const events = document.getElementById('dashboardWeeklyEventsCard');
-    const event = events?.querySelector('.weekly-event-card, .weekly-events-item, .weekly-event-item');
+    const event = events?.querySelector('.weekly-events-list .weekly-event');
     const eventLabel = event?.textContent?.replace(/\\s+/g,' ').trim();
     update('events', eventLabel ? eventLabel.slice(0,100) : 'Consultar calendário e eventos da semana');
   }
