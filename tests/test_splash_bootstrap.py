@@ -16,7 +16,7 @@ class SplashBootstrapTests(unittest.TestCase):
         self.assertNotIn('appTriedToHide', UI)
 
     def test_splash_background_is_fully_opaque(self):
-        self.assertIn('background:#eef0ec!important', UI)
+        self.assertIn('background:#081a1a!important', UI)
         self.assertIn('backdrop-filter:none!important', UI)
         self.assertIn('-webkit-backdrop-filter:none!important', UI)
 
@@ -29,10 +29,10 @@ class SplashBootstrapTests(unittest.TestCase):
 
     def test_base_styles_own_single_entrance_animation(self):
         self.assertIn('Vestra UI core v2.6', UI)
-        self.assertIn('animation:vestraMarkIn .72s', BASE)
-        self.assertIn('animation:vestraCopyIn .55s .14s', BASE)
-        self.assertIn('animation:vestraCopyIn .55s .22s', BASE)
-        self.assertIn('animation:vestraGlow 1.7s', BASE)
+        self.assertIn('animation:vestraMarkIn .62s', BASE)
+        self.assertIn('animation:vestraCopyIn .5s .1s', BASE)
+        self.assertIn('animation:vestraCopyIn .5s .16s', BASE)
+        self.assertNotIn('animation:vestraGlow 1.7s', BASE)
         self.assertNotIn('vestraPremiumMarkIn', UI)
         self.assertNotIn('vestraPremiumBrandIn', UI)
         self.assertNotIn('vestraPremiumTaglineIn', UI)
