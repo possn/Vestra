@@ -115,3 +115,39 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools .market-t
 body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools .market-tool-btn small{
  color:#d0ded5!important;
 }
+
+/* iPhone contrast repair: light search and Discovery opportunity cards.
+   Keep dark research actions and non-Discovery market rows unchanged. */
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search input{
+ background:#f0eee7;color:#173037;border-color:#b4c3bd;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search input::placeholder{
+ color:#536965;opacity:1;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search__icon{
+ color:#49645e;opacity:1;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .market-row.ux453-opp{
+ color:#173037;border-color:#b6c5bf;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .market-row__ticker{
+ color:#705c33;-webkit-text-fill-color:#705c33;opacity:1;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .market-row__name,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-thesis{
+ color:#173037;-webkit-text-fill-color:#173037;opacity:1;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .market-row__description,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-opportunity-type,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-cap-note,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-why__row,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-entry small,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-entry em{
+ color:#485d60;-webkit-text-fill-color:#485d60;opacity:1;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-pills span{
+ color:#304c50;-webkit-text-fill-color:#304c50;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-entry strong{
+ color:#086f6a;-webkit-text-fill-color:#086f6a;
+}
