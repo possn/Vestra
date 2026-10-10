@@ -34,3 +34,10 @@
  #viewDashboard .kpi-income__values{gap:7px}
  #viewDashboard .kpi-income__values strong{font-size:clamp(16px,4.5vw,22px);overflow-wrap:anywhere}
 }
+
+/* Existing snapshot summary already owns progressive disclosure; no second nested accordion. */
+@media(max-width:600px){
+ #viewDashboard #snapshotHistorySummary{margin-top:5px!important;padding:8px 10px!important;border-radius:12px!important}
+ #viewDashboard #snapshotHistorySummary button{min-height:40px;padding:8px 12px!important;border-radius:10px!important}
+ #viewDashboard #snapshotTable{margin-top:6px!important}
+}
