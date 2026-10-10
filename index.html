@@ -34,7 +34,7 @@
 <link href="vestra-home-stage-v2.css?v=2" rel="stylesheet"/>
 <link href="vestra-home-architecture-v2.css?v=4" rel="stylesheet"/>
 <link href="vestra-home-secondary-hub-v2.css?v=3" rel="stylesheet"/>
-<link href="vestra-home-density-v2.css?v=4" rel="stylesheet"/>
+<link href="vestra-home-density-v2.css?v=5" rel="stylesheet"/>
 <script>
   // iOS standalone PWAs can be discarded while Safari is showing an external
   // article. Mark a known external-return boot synchronously, before deferred
@@ -363,8 +363,8 @@
 </div>
 <div class="chartWrap"><canvas height="240" id="trendChart"></canvas></div>
 <div class="hint" id="historyHint" style="display:none">Sem histórico. Usa "📸 Registar mês".</div>
-<!-- Mini tabela de snapshots recentes -->
-<div id="snapshotTable" style="margin-top:10px"></div>
+<!-- Historical records remain accessible but no longer expand the Home by default. -->
+<details class="v2-history-records"><summary>Consultar registos históricos <span aria-hidden="true">↗</span></summary><div id="snapshotTable" style="margin-top:10px"></div></details>
 </div>
 <section id="v2-tools-chapter" class="v2-home-secondary-hub" aria-label="Ferramentas adicionais de património"><div class="v2-home-secondary-hub__intro"><span>03 / FERRAMENTAS</span><h3>Gerir e aprofundar</h3><p>Registos, objetivos, fontes, vencimentos e análise de risco — só quando precisares.</p></div>
 <button class="btn btn--outline btn--sm" id="btnToggleDashSecondary" style="width:100%;margin:4px 0 12px" type="button">Explorar património</button>
