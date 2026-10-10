@@ -44,7 +44,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="vi-regime-disclosure"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('vi-regime-grid', html)
-        self.assertIn('vestra-intelligence.css?v=35', html)
+        self.assertIn('vestra-intelligence.css?v=36', html)
 
     def test_context_chapter_follows_decisions_without_duplication(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -58,7 +58,7 @@ class CanonicalHomeTest(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=6', html)
-        self.assertIn('vestra-intelligence.css?v=35', html)
+        self.assertIn('vestra-intelligence.css?v=36', html)
         self.assertIn('vestra-intelligence-home.js?v=13', html)
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
@@ -119,6 +119,16 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('@media(max-width:600px)', css)
         self.assertEqual(home.count('class="vi-card vi-action"'), 3)
         self.assertIn('data-vestra-portfolio-evidence', home)
+        self.assertIn('data-vestra-decision-state', home)
+
+    def test_mobile_editorial_density_preserves_decision_evidence(self):
+        css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn('Home iPhone: compress editorial chrome', css)
+        self.assertIn('.vi-priorities .vi-action{min-height:62px!important', css)
+        self.assertIn('min-height:62px', css)
+        home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split('<div class="vi-back-to-intelligence">', 1)[0]
+        self.assertEqual(home.count('class="vi-card vi-action"'), 3)
         self.assertIn('data-vestra-decision-state', home)
 
 if __name__ == "__main__":
