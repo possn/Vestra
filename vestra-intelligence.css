@@ -954,11 +954,77 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage > :not(.v2-home-stage__aside){
  grid-column:1!important;
 }
-#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label :is(h2,p){
- color:#f0eee5!important;
+/* Legacy drilldown is a dark editorial workspace, not a second Home.
+   One scoped palette owns its headings, alert surfaces, CTA and navigation. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]){
+ --v2-detail-ink:#f3f0e7;
+ --v2-detail-muted:#c4d5cf;
+ --v2-detail-line:#46645b;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label :is(h2,h3){
+ color:var(--v2-detail-ink)!important;
+ -webkit-text-fill-color:var(--v2-detail-ink)!important;
+ text-shadow:none;
 }
 #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label p{
- color:#bed2c6!important;
+ color:var(--v2-detail-muted)!important;
+ -webkit-text-fill-color:var(--v2-detail-muted)!important;
+ opacity:1;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label>span,
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub__intro>span{
+ color:#c9ac78!important;
+ -webkit-text-fill-color:#c9ac78!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub{
+ background:#142a27;
+ border:1px solid var(--v2-detail-line);
+ border-radius:20px;
+ padding:20px;
+ margin-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+ color:var(--v2-detail-ink);
+ min-height:0;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub__intro :is(h3,p){
+ color:var(--v2-detail-ink)!important;
+ -webkit-text-fill-color:var(--v2-detail-ink)!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub__intro p{
+ color:var(--v2-detail-muted)!important;
+ -webkit-text-fill-color:var(--v2-detail-muted)!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #btnToggleDashSecondary{
+ display:block;
+ width:100%;
+ min-height:48px;
+ background:#d8c49b!important;
+ border:1px solid #d8c49b!important;
+ border-radius:13px;
+ color:#122822!important;
+ -webkit-text-fill-color:#122822!important;
+ font-weight:750;
+ text-align:center;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard{
+ background:#f5f1e7;
+ color:#1c3335;
+ border-radius:18px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard .card__muted{
+ color:#425962!important;
+ -webkit-text-fill-color:#425962!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #negReturnAlert{
+ background:#fff1ee!important;
+ color:#8b242d!important;
+ -webkit-text-fill-color:#8b242d!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-chapter-nav a{
+ min-height:44px;display:inline-flex;align-items:center;justify-content:center;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub{padding:18px 16px;margin-inline:0}
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label{margin-top:20px}
 }
 
 /* Canonical Intelligence dark-surface text tokens.
