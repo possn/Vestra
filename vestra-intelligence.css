@@ -1020,3 +1020,15 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #viewDashboard #vestraIntelligenceHome .vi-decisions{gap:7px!important}
  #viewDashboard #vestraIntelligenceHome .vi-action{padding:13px 15px!important;gap:10px!important}
 }
+
+/* Editorial context: one visually connected reading rather than four isolated cards. */
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections{gap:0!important;border:1px solid #34514a;border-radius:19px;overflow:hidden;background:#102826}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card+.vi-canonical-card{border-top:1px solid #34514a!important}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-risk-reading{background:#17342f!important}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections .vi-section-top h3{color:#dfc99b!important;-webkit-text-fill-color:#dfc99b!important}
+@media(max-width:600px){
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections{border-radius:15px}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card{padding:12px 14px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections .vi-section-top{margin-bottom:8px!important}
+}
