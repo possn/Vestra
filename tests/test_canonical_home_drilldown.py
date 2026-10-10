@@ -33,6 +33,12 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertLess(home.index('class="vi-priorities"'), home.index('class="vi-canonical-sections"'))
         self.assertEqual(home.count('class="vi-priorities"'), 1)
 
+    def test_portfolio_risk_precedes_secondary_market_and_news(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split('<div class="vi-back-to-intelligence">', 1)[0]
+        self.assertLess(home.index('class="vi-risk-reading"') if 'class="vi-risk-reading"' in home else home.index('vi-canonical-card vi-risk-reading'), home.index('vi-canonical-card vi-market-reading'))
+        self.assertEqual(home.count('vi-canonical-card vi-risk-reading'), 1)
+
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
         html = (ROOT / "index.html").read_text(encoding="utf-8")
