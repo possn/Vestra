@@ -998,3 +998,12 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #viewDashboard #vestraIntelligenceHome .vi-canonical-sections{gap:8px!important}
  #viewDashboard #vestraIntelligenceHome .vi-daily-heading{margin-bottom:8px!important}
 }
+
+/* Research details do not precede actionable decisions in the canonical Home. */
+#vestraIntelligenceHome .vi-regime-disclosure{margin-top:12px;border-top:1px solid #385148}
+#vestraIntelligenceHome .vi-regime-disclosure>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;padding:10px 0;cursor:pointer;list-style:none;font:650 12px/1.35 system-ui,sans-serif;color:#eae8da;-webkit-text-fill-color:#eae8da}
+#vestraIntelligenceHome .vi-regime-disclosure>summary::-webkit-details-marker{display:none}
+#vestraIntelligenceHome .vi-regime-disclosure>summary span{font-size:11px;color:#cbb487;-webkit-text-fill-color:#cbb487}
+#vestraIntelligenceHome .vi-regime-disclosure>summary:focus-visible{outline:2px solid #d3ba88;outline-offset:2px}
+#vestraIntelligenceHome .vi-regime-disclosure[open]>.vi-regime{margin:5px 0 12px}
+@media(max-width:600px){#vestraIntelligenceHome .vi-regime-disclosure{margin-top:8px}}
