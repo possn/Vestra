@@ -1127,3 +1127,18 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #viewDashboard #vestraIntelligenceHome .vi-context-heading p{font-size:12px;line-height:1.4}
  #viewDashboard #vestraIntelligenceHome .vi-canonical-sections .vi-section-top h3{font-size:10px;letter-spacing:.13em}
 }
+
+/* Patrimonial drilldown: denser history reading, while the chart canvas and records stay mounted. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter{
+ margin-top:20px;margin-bottom:10px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter + .card{
+ padding:16px;border-radius:18px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter + .card .chartWrap{
+ margin-block:10px;max-width:100%;min-width:0;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter + .card{padding:13px 12px}
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter + .card .card__head{gap:8px;align-items:start}
+}
