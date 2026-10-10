@@ -44,7 +44,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="vi-regime-disclosure"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('vi-regime-grid', html)
-        self.assertIn('vestra-intelligence.css?v=24', html)
+        self.assertIn('vestra-intelligence.css?v=25', html)
 
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
