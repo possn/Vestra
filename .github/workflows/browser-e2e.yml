@@ -60,11 +60,11 @@ jobs:
         run: npx playwright install --with-deps webkit
       - name: Run critical iPhone/WebKit journeys
         run: npm run test:e2e
-      - name: Upload Playwright diagnostics
-        if: failure()
+      - name: Upload WebKit visual evidence and diagnostics
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-webkit-diagnostics
+          name: playwright-webkit-evidence
           path: |
             playwright-report/
             test-results/
