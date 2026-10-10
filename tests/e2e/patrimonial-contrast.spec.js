@@ -46,3 +46,41 @@ test('iPhone/WebKit: patrimonial section titles remain legible on dark and light
     path:path.join(out,'patrimonial-page-iphone.png'),fullPage:true,animations:'disabled'
   });
 });
+
+
+test('iPhone/WebKit: patrimonial chapters 01 02 03 compute identical title typography', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/index.html');
+  await expect(page.locator('#vestraIntelligenceHome')).toBeVisible({timeout:20000});
+  await page.locator('#vestraIntelligenceHome [data-vestra-go="dashboard"]').first().click();
+  await expect(page.locator('#vestraIntelligenceHome[data-legacy-open="true"]')).toHaveCount(1);
+  const measures=await page.evaluate(()=>{
+    const selectors=[
+      '#v2-wealth-chapter h2',
+      '#v2-history-chapter>strong',
+      '#v2-tools-chapter .v2-home-secondary-hub__intro h3'
+    ];
+    return selectors.map(selector=>{
+      const element=document.querySelector(selector);
+      if(!element)return {selector,exists:false};
+      const s=getComputedStyle(element),r=element.getBoundingClientRect();
+      return {selector,exists:true,text:element.textContent.trim(),family:s.fontFamily,
+        size:s.fontSize,weight:s.fontWeight,lineHeight:s.lineHeight,
+        spacing:s.letterSpacing,color:s.webkitTextFillColor||s.color,
+        visible:r.width>0&&r.height>0&&s.display!=='none'};
+    });
+  });
+  const out=path.join('test-results','visual-evidence');
+  fs.mkdirSync(out,{recursive:true});
+  fs.writeFileSync(path.join(out,'chapter-parity-iphone.json'),JSON.stringify(measures,null,2));
+  await page.screenshot({path:path.join(out,'chapter-parity-iphone.png'),fullPage:true,animations:'disabled'});
+  for(const item of measures){
+    expect(item.exists,item.selector).toBe(true);
+    // Visibility is recorded in evidence; navigation visibility is a separate E2E concern.
+    expect(item.size,item.selector).toBe(measures[0].size);
+    expect(item.family,item.selector).toBe(measures[0].family);
+    expect(item.weight,item.selector).toBe(measures[0].weight);
+    expect(item.lineHeight,item.selector).toBe(measures[0].lineHeight);
+    expect(item.spacing,item.selector).toBe(measures[0].spacing);
+  }
+});
