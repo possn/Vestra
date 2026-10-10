@@ -723,12 +723,12 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 
 /* Canonical editorial events and news: real-source cards, never invented metadata. */
 #vestraIntelligenceHome .vi-editorial-rail{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-#vestraIntelligenceHome .vi-editorial-news{display:grid;gap:7px}
+#vestraIntelligenceHome .vi-editorial-news{display:grid;gap:5px}
 #vestraIntelligenceHome .vi-editorial-tile{min-width:0;display:flex;flex-direction:column;gap:14px;padding:14px 15px;background:#152f30;border:1px solid #315050;border-radius:12px}
 #vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile{flex-direction:row;gap:14px;align-items:flex-start;background:#102729}
 #vestraIntelligenceHome .vi-editorial-tile p{font-size:12px;line-height:1.5;color:#e2e9e1;margin:0;overflow-wrap:anywhere}
 #vestraIntelligenceHome .vi-editorial-index{font-size:10px;letter-spacing:.11em;color:#c7aa79;flex:none}
-#vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile:first-child{background:#183536;padding:18px}
+#vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile:first-child{background:#183536;padding:13px}
 #vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile:first-child p{font:500 clamp(16px,2.3vw,21px)/1.4 Georgia,serif}
 @media(max-width:600px){
  #vestraIntelligenceHome .vi-editorial-rail{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -976,4 +976,13 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 }
 #viewDashboard #vestraIntelligenceHome .vi-daily-heading .vi-eyebrow{
  color:#d4ba83!important;-webkit-text-fill-color:#d4ba83!important;
+}
+
+/* Compact news reading on phones while retaining every source item and link. */
+@media(max-width:600px){
+ #vestraIntelligenceHome .vi-editorial-news{gap:3px}
+ #vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile{padding:9px 2px!important;gap:10px!important;min-height:0!important}
+ #vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile:first-child{padding:12px!important}
+ #vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile:first-child p{font-size:16px;line-height:1.32}
+ #vestraIntelligenceHome .vi-editorial-news .vi-editorial-tile:not(:first-child) p{font-size:12px;line-height:1.35}
 }
