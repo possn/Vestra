@@ -1047,3 +1047,17 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 #viewDashboard #vestraIntelligenceHome .vi-context-heading h3{margin:0;color:#f2efe6;-webkit-text-fill-color:#f2efe6;font:600 clamp(20px,3vw,28px)/1.14 Georgia,serif;letter-spacing:-.03em}
 #viewDashboard #vestraIntelligenceHome .vi-context-heading p{margin:0;color:#c0d0c7;-webkit-text-fill-color:#c0d0c7;font:400 12px/1.5 system-ui,sans-serif}
 @media(max-width:600px){#viewDashboard #vestraIntelligenceHome .vi-context-chapter{gap:8px}#viewDashboard #vestraIntelligenceHome .vi-context-heading h3{font-size:21px}}
+
+/* Editorial grid: paired contextual readings on larger viewports, a single continuous column on iPhone. */
+@media(min-width:800px){
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card{min-width:0}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card+.vi-canonical-card{border-top:0!important}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card:nth-child(even){border-left:1px solid #34514a!important}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card:nth-child(n+3){border-top:1px solid #34514a!important}
+}
+@media(max-width:600px){
+ #viewDashboard #vestraIntelligenceHome .vi-context-heading{padding-bottom:2px}
+ #viewDashboard #vestraIntelligenceHome .vi-context-heading p{font-size:12px;line-height:1.4}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections .vi-section-top h3{font-size:10px;letter-spacing:.13em}
+}
