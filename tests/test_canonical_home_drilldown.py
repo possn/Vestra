@@ -131,5 +131,14 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertEqual(home.count('class="vi-card vi-action"'), 3)
         self.assertIn('data-vestra-decision-state', home)
 
+    def test_market_research_hero_keeps_search_primary(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        css = (ROOT / "vestra-market-surfaces-v2.css").read_text(encoding="utf-8")
+        market = html.split('id="viewMarket"', 1)[1]
+        self.assertLess(market.index('class="market-hero-simple"'), market.index('class="market-search"'))
+        self.assertIn('id="marketSearch"', market)
+        self.assertIn('.market-hero-simple h2', css)
+        self.assertIn('vestra-market-surfaces-v2.css?v=9', html)
+
 if __name__ == "__main__":
     unittest.main()
