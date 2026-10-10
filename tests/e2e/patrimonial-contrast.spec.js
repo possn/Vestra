@@ -42,7 +42,7 @@ test('iPhone/WebKit: patrimonial section titles remain legible on dark and light
     expect(item.error, item.name).toBeUndefined();
     if(item.visible && item.contrast!==null) expect(item.contrast,item.name).toBeGreaterThanOrEqual(4.5);
   }
-  await page.locator('#v2-wealth-chapter').screenshot({
-    path:path.join(out,'patrimonial-heading-iphone.png'),animations:'disabled'
+  await page.screenshot({
+    path:path.join(out,'patrimonial-page-iphone.png'),fullPage:true,animations:'disabled'
   });
 });
