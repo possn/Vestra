@@ -44,7 +44,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="vi-regime-disclosure"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('vi-regime-grid', html)
-        self.assertIn('vestra-intelligence.css?v=32', html)
+        self.assertIn('vestra-intelligence.css?v=33', html)
 
     def test_context_chapter_follows_decisions_without_duplication(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -58,7 +58,7 @@ class CanonicalHomeTest(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=6', html)
-        self.assertIn('vestra-intelligence.css?v=32', html)
+        self.assertIn('vestra-intelligence.css?v=33', html)
         self.assertIn('vestra-intelligence-home.js?v=13', html)
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
@@ -91,6 +91,15 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('historyDisclosure.open = false', intel)
         self.assertIn('trendChart.resize()', js)
         self.assertIn('.v2-detail-history > summary:focus-visible', css)
+
+    def test_detail_tools_compact_responsive_layout(self):
+        css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn('grid-template-columns:minmax(0,1fr) auto', css)
+        self.assertIn('grid-template-columns:minmax(0,1fr)}', css)
+        self.assertIn('id="btnToggleDashSecondary"', html)
+        self.assertIn('id="dashboardQuickRecordsCard"', html)
+        self.assertIn('id="v2-tools-chapter"', html)
 
 if __name__ == "__main__":
     unittest.main()
