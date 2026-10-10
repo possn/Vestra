@@ -79,24 +79,24 @@ test('iPhone/WebKit: splash runs one entrance, remains legible and exits smoothl
   ).toBe(true);
   const css = await page.evaluate(() => window.__vestraSplashInitialCss);
 
-  expect(css.backgroundColor).toBe('rgb(238, 240, 236)');
+  expect(css.backgroundColor).toBe('rgb(8, 26, 26)');
   expect(css.markAnimation).toContain('vestraMarkIn');
   expect(css.markAnimation).not.toContain('vestraPremium');
-  expect(css.markDuration).toBeGreaterThanOrEqual(700);
-  expect(css.markDuration).toBeLessThanOrEqual(760);
+  expect(css.markDuration).toBeGreaterThanOrEqual(600);
+  expect(css.markDuration).toBeLessThanOrEqual(680);
   expect(css.brandAnimation).toContain('vestraCopyIn');
   expect(css.brandAnimation).not.toContain('vestraPremium');
-  expect(css.brandDelay).toBeGreaterThanOrEqual(120);
-  expect(css.brandDelay).toBeLessThanOrEqual(180);
-  expect(css.brandDuration).toBeGreaterThanOrEqual(520);
-  expect(css.brandDuration).toBeLessThanOrEqual(580);
+  expect(css.brandDelay).toBeGreaterThanOrEqual(80);
+  expect(css.brandDelay).toBeLessThanOrEqual(140);
+  expect(css.brandDuration).toBeGreaterThanOrEqual(470);
+  expect(css.brandDuration).toBeLessThanOrEqual(530);
   expect(css.taglineAnimation).toContain('vestraCopyIn');
   expect(css.taglineAnimation).not.toContain('vestraPremium');
-  expect(css.taglineDelay).toBeGreaterThanOrEqual(200);
-  expect(css.taglineDelay).toBeLessThanOrEqual(250);
+  expect(css.taglineDelay).toBeGreaterThanOrEqual(145);
+  expect(css.taglineDelay).toBeLessThanOrEqual(190);
   expect(css.taglineDelay).toBeGreaterThan(css.brandDelay);
-  expect(css.taglineDuration).toBeGreaterThanOrEqual(520);
-  expect(css.taglineDuration).toBeLessThanOrEqual(580);
+  expect(css.taglineDuration).toBeGreaterThanOrEqual(470);
+  expect(css.taglineDuration).toBeLessThanOrEqual(530);
 
   // Let all entrance starts fire, then prove that no second premium family appeared
   // and that the mark itself started exactly once.
