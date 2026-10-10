@@ -984,7 +984,16 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  margin-bottom:calc(24px + env(safe-area-inset-bottom,0px));
  color:var(--v2-detail-ink);
  min-height:0;
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ align-items:center;
+ gap:6px 18px;
 }
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub__intro{min-width:0}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub__intro h3{margin:3px 0;font-size:clamp(19px,3vw,24px);line-height:1.2}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub__intro p{margin:4px 0 0;max-width:48ch}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub > .dash-secondary,
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub > :not(.v2-home-secondary-hub__intro):not(#btnToggleDashSecondary){grid-column:1/-1}
 #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub__intro :is(h3,p){
  color:var(--v2-detail-ink)!important;
  -webkit-text-fill-color:var(--v2-detail-ink)!important;
@@ -994,9 +1003,14 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  -webkit-text-fill-color:var(--v2-detail-muted)!important;
 }
 #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #btnToggleDashSecondary{
- display:block;
- width:100%;
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ width:auto!important;
+ min-width:180px;
  min-height:48px;
+ margin:0!important;
+ padding:10px 16px!important;
  background:#d8c49b!important;
  border:1px solid #d8c49b!important;
  border-radius:13px;
@@ -1024,6 +1038,8 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 }
 @media(max-width:600px){
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub{padding:18px 16px;margin-inline:0}
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-secondary-hub{grid-template-columns:minmax(0,1fr)}
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #btnToggleDashSecondary{grid-column:1;width:100%!important}
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label{margin-top:20px}
 }
 
