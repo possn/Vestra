@@ -1007,3 +1007,16 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 #vestraIntelligenceHome .vi-regime-disclosure>summary:focus-visible{outline:2px solid #d3ba88;outline-offset:2px}
 #vestraIntelligenceHome .vi-regime-disclosure[open]>.vi-regime{margin:5px 0 12px}
 @media(max-width:600px){#vestraIntelligenceHome .vi-regime-disclosure{margin-top:8px}}
+
+/* iPhone editorial rhythm: wealth and decisions visible without oversized opening whitespace. */
+@media(max-width:600px){
+ #viewDashboard #vestraIntelligenceHome .vi-opening{margin-top:4px!important;padding:4px 0 14px!important;gap:10px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-lead{padding:10px 0 0!important}
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-headline{font-size:clamp(39px,10.5vw,53px)!important;line-height:1.03!important;letter-spacing:-.065em!important}
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-deck{font-size:13px!important;line-height:1.45!important;margin-top:9px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-shell{gap:15px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-chapter-index{min-height:0;padding-block:8px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities{gap:9px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-decisions{gap:7px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-action{padding:13px 15px!important;gap:10px!important}
+}
