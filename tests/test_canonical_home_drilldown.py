@@ -44,14 +44,21 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="vi-regime-disclosure"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('vi-regime-grid', html)
-        self.assertIn('vestra-intelligence.css?v=27', html)
+        self.assertIn('vestra-intelligence.css?v=28', html)
+
+    def test_context_chapter_follows_decisions_without_duplication(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split('<div class="vi-back-to-intelligence">', 1)[0]
+        self.assertEqual(home.count('class="vi-context-chapter"'), 1)
+        self.assertLess(home.index('class="vi-priorities"'), home.index('class="vi-context-chapter"'))
+        self.assertEqual(home.count('class="vi-canonical-sections"'), 1)
 
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=6', html)
-        self.assertIn('vestra-intelligence.css?v=27', html)
+        self.assertIn('vestra-intelligence.css?v=28', html)
         self.assertIn('vestra-intelligence-home.js?v=12', html)
 
 if __name__ == "__main__":
