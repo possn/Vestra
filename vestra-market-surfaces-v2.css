@@ -143,3 +143,10 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-
 body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-entry strong{
  color:#086f6a;-webkit-text-fill-color:#086f6a;
 }
+
+/* Decision-first portfolio: supporting evidence stays reachable on demand. */
+#marketSheet .market-decision-secondary{border-top:1px solid #becac2;margin-top:9px;padding-top:7px}
+#marketSheet .market-decision-secondary>summary{color:#355c56;cursor:pointer;min-height:42px;display:flex;align-items:center;font-size:12px;font-weight:700;list-style:none}
+#marketSheet .market-decision-secondary>summary::-webkit-details-marker{display:none}
+#marketSheet .market-decision-secondary>summary::after{content:"+";margin-left:auto;font-size:18px}
+#marketSheet .market-decision-secondary[open]>summary::after{content:"−"}
