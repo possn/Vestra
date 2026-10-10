@@ -24,7 +24,7 @@
 <link href="vestra-discovery-v2.css?v=2" rel="stylesheet"/>
 <link href="vestra-scanner-entry-v2.css?v=1" rel="stylesheet"/>
 <link href="vestra-scanner-research-v2.css?v=1" rel="stylesheet"/>
-<link href="vestra-intelligence.css?v=31" rel="stylesheet"/>
+<link href="vestra-intelligence.css?v=32" rel="stylesheet"/>
 <link href="vestra-design-v2.css?v=6" rel="stylesheet"/>
 <link href="vestra-navigation-v2.css?v=6" rel="stylesheet"/>
 <link href="vestra-market-surfaces-v2.css?v=8" rel="stylesheet"/>
@@ -350,7 +350,8 @@
 </div>
 <div class="chartWrap"><canvas height="220" id="distChart"></canvas></div>
 </div>
-<div id="v2-history-chapter" class="v2-home-section-label"><span>02 / HISTÓRICO</span><h2>O percurso do património</h2><p>Registos e evolução histórica, sem projeções.</p></div>
+<details class="v2-detail-history" id="v2-history-disclosure">
+<summary id="v2-history-chapter" aria-label="Expandir histórico do património"><span class="v2-detail-history__label">02 / HISTÓRICO</span><strong>O percurso do património</strong><span class="v2-detail-history__hint">Gráfico e registos ao longo do tempo</span><span class="v2-detail-history__action" aria-hidden="true">Ver histórico <span class="v2-detail-history__chevron">⌄</span></span></summary>
 <!-- Tendência melhorada -->
 <div class="card">
 <div class="card__head">
@@ -362,6 +363,7 @@
 <!-- Mini tabela de snapshots recentes -->
 <div id="snapshotTable" style="margin-top:10px"></div>
 </div>
+</details>
 <section id="v2-tools-chapter" class="v2-home-secondary-hub" aria-label="Ferramentas adicionais de património"><div class="v2-home-secondary-hub__intro"><span>03 / FERRAMENTAS</span><h3>Gerir e aprofundar</h3><p>Registos, objetivos, fontes, vencimentos e análise de risco — só quando precisares.</p></div>
 <button class="btn btn--outline btn--sm" id="btnToggleDashSecondary" style="width:100%;margin:4px 0 12px" type="button">Explorar património</button>
 <div class="card dash-secondary" id="dashboardQuickRecordsCard">
