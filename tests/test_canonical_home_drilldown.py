@@ -15,6 +15,10 @@ class CanonicalHomeTest(unittest.TestCase):
         js = (ROOT / "vestra-intelligence-home.js").read_text(encoding="utf-8")
         self.assertIn("document.querySelector('#viewDashboard .vi-back-to-intelligence')", js)
         self.assertNotIn("const legacy = document.querySelector('#viewDashboard .dashboard-welcome');", js)
+        self.assertIn("document.querySelector('#viewDashboard .v2-detail-chapter-nav')", js)
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn('class="v2-detail-chapter-nav"', html)
+        self.assertIn('id="v2-history-chapter"', html)
 
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
