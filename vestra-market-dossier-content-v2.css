@@ -1,54 +1,60 @@
 /* Vestra 2.0 — research dossier content surfaces.
    Presentation only. Financial calculations and data bindings untouched. */
 #marketSheet .market-detail-card{
-  background:#15302d;border:1px solid #36564d;border-radius:19px;
-  color:#f1eee5;box-shadow:none;
+  background:#f5f3ed;border:1px solid #becac2;border-radius:19px;
+  color:#173037;box-shadow:none;
 }
 #marketSheet .market-detail-card h3,
-#marketSheet .market-detail-card h4{color:#f5f0e8}
+#marketSheet .market-detail-card h4{color:#173037}
 #marketSheet .market-detail-card p,
-#marketSheet .market-detail-card li{color:#c7d8cb}
+#marketSheet .market-detail-card li{color:#455f61}
 #marketSheet .market-detail-disclosure summary{
-  background:#193832;color:#e9e8de;border:1px solid #426156;
+  background:#e2e8e2;color:#173037;border:1px solid #bac7bf;
   border-radius:14px;
 }
 #marketSheet .market-detail-disclosure summary:focus-visible{
   outline:2px solid #e3cd9b;outline-offset:2px;
 }
 #marketSheet .market-dossier-muted,
-#marketSheet .market-detail-head small{color:#b6c9be}
+#marketSheet .market-detail-head small{color:#49635f}
 #marketSheet .market-dossier-facts span,
 #marketSheet .market-dossier-company-facts>div,
 #marketSheet .market-dossier-financial-grid>div,
 #marketSheet .market-dossier-smart-grid>div{
-  background:#193b35;border-color:#365a4f;color:#f1eee5;
+  background:#e2e8e2;border-color:#bac7bf;color:#173037;
 }
 #marketSheet .market-dossier-company-facts small,
 #marketSheet .market-dossier-financial-grid small,
-#marketSheet .market-dossier-smart-grid small{color:#b3c9bc}
+#marketSheet .market-dossier-smart-grid small{color:#49635f}
 #marketSheet .market-dossier-company-facts strong,
 #marketSheet .market-dossier-financial-grid strong,
-#marketSheet .market-dossier-smart-grid strong{color:#f3eee6}
+#marketSheet .market-dossier-smart-grid strong{color:#173037}
 #marketSheet .market-dossier-company-identity{
-  border-top-color:#35534a;
+  border-top-color:#bac7bf;
 }
-#marketSheet .market-dossier-company-identity h4{color:#cfdbcf}
+#marketSheet .market-dossier-company-identity h4{color:#173037}
 
 /* Dossier dark research surfaces: captions must not inherit light-page ink. */
 #marketSheet .market-dossier-facts span,
 #marketSheet .market-dossier-card-head>span:not(.is-positive):not(.is-negative),
 #marketSheet .market-dossier-smart-grid span{
- color:#c6d9cd!important;-webkit-text-fill-color:#c6d9cd!important;
+ color:#455f61!important;-webkit-text-fill-color:#c6d9cd!important;
 }
 #marketSheet .market-dossier-financial-grid small,
 #marketSheet .market-dossier-smart-grid small,
 #marketSheet .market-dossier-company-facts small{
- color:#bdd2c5!important;-webkit-text-fill-color:#bdd2c5!important;
+ color:#49635f!important;-webkit-text-fill-color:#bdd2c5!important;
 }
 #marketSheet .market-dossier-financial-grid strong,
 #marketSheet .market-dossier-smart-grid strong,
 #marketSheet .market-dossier-company-facts strong{
- color:#f4efe6!important;-webkit-text-fill-color:#f4efe6!important;
+ color:#173037!important;-webkit-text-fill-color:#f4efe6!important;
 }
-#marketSheet .market-detail-card a{color:#e8c989}
-#marketSheet .market-detail-card a:focus-visible{outline:2px solid #e8c989;outline-offset:3px}
+#marketSheet .market-detail-card a{color:#176c67}
+#marketSheet .market-detail-card a:focus-visible{outline:2px solid #176c67;outline-offset:3px}
+
+/* Explicit light surfaces own their text, including dynamically rendered Score axes. */
+#marketSheet .market-detail-card :is(h3,h4,strong),#marketSheet .v2-dossier-decision-stage :is(h3,h4,strong){color:#173037;-webkit-text-fill-color:#173037}
+#marketSheet .market-detail-card :is(p,li,small),#marketSheet .v2-dossier-decision-stage :is(p,small){color:#455f61;-webkit-text-fill-color:#455f61}
+#marketSheet .market-dossier-scoreboard :is(strong,span),#marketSheet .market-dim__label,#marketSheet .market-dim__label :is(strong,span){color:#173037;-webkit-text-fill-color:#173037}
+#marketSheet .market-detail-card .market-bar span{-webkit-text-fill-color:initial}
