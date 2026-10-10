@@ -34,3 +34,10 @@
  #viewDashboard .kpi-income__values{gap:7px}
  #viewDashboard .kpi-income__values strong{font-size:clamp(16px,4.5vw,22px);overflow-wrap:anywhere}
 }
+
+/* Historical snapshot list is optional evidence, chart remains primary. */
+#viewDashboard .v2-history-records{border-top:1px solid #c0ccc4;margin-top:8px;padding-top:5px}
+#viewDashboard .v2-history-records>summary{display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:44px;color:#20524c;-webkit-text-fill-color:#20524c;font:650 12px/1.3 system-ui,sans-serif;list-style:none}
+#viewDashboard .v2-history-records>summary::-webkit-details-marker{display:none}
+#viewDashboard .v2-history-records>summary:focus-visible{outline:2px solid #1d8074;outline-offset:2px}
+#viewDashboard .v2-history-records[open]>summary span{transform:rotate(90deg)}
