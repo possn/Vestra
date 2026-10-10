@@ -1250,3 +1250,24 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 @media(max-width:390px){
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell{padding:12px 10px!important}
 }
+
+/* Vestra 2.0 / Decision chapter: an editorial triptych instead of three tall desktop rows.
+   Mobile retains the readable linear decision order and all original action targets. */
+@media(min-width:980px){
+ #viewDashboard #vestraIntelligenceHome .vi-priorities{display:grid;grid-template-columns:minmax(210px,.85fr) minmax(0,2.15fr);gap:clamp(22px,3vw,42px);align-items:start}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-heading{padding:8px 0}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-heading h3{font-size:clamp(27px,3vw,42px);margin:12px 0}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-decisions{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;border-top:1px solid #435047}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action{display:grid;grid-template-columns:1fr 22px;grid-template-rows:auto 1fr;align-content:start;min-height:195px;padding:19px 16px!important;gap:12px;border-bottom:1px solid #435047!important}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action+.vi-action{border-left:1px solid #435047!important}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action .vi-number{grid-column:1}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action>span:nth-child(2){grid-column:1/-1;grid-row:2;align-self:start}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action .vi-arrow{grid-column:2;grid-row:1;justify-self:end}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action strong{font-size:clamp(17px,1.5vw,22px)!important}
+}
+@media(max-width:600px){
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action{min-height:0!important;padding:14px 4px!important;gap:10px!important;grid-template-columns:26px minmax(0,1fr) 18px}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action strong{font-size:18px!important;line-height:1.2}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action small{font-size:11px;line-height:1.38}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-heading{padding:4px 0 12px}
+}
