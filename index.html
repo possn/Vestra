@@ -227,6 +227,7 @@
 </section>
 
 <div class="vi-back-to-intelligence"><button type="button" id="btnReturnIntelligence">← Voltar à visão Intelligence</button></div>
+<nav class="v2-detail-chapter-nav" aria-label="Navegação pelo património"><a href="#v2-wealth-chapter">Carteira</a><a href="#v2-history-chapter">Histórico</a><a href="#v2-tools-chapter">Ferramentas</a></nav>
 <!-- Vestra 2 editorial decision stage: primary financial values and distinct primary navigation. -->
 <div class="card hero v2-home-stage" aria-label="Resumo patrimonial e decisões">
 <div class="vi-entry-link"><a href="?vestra2=0" aria-label="Abrir Dashboard patrimonial clássico">Abrir Dashboard clássico <span aria-hidden="true">↗</span></a><span>Alternativa de reversão · todas as ferramentas preservadas</span></div>
@@ -292,7 +293,7 @@
 <div class="list" id="riskAlertContent"></div>
 </div>
 <!-- KPIs secundários: 4 métricas rápidas — layout 2×2 compacto -->
-<div class="v2-home-section-label"><span>01 / INDICADORES</span><h2>Rendimento e desempenho</h2><p>O que está a acontecer na carteira.</p></div>
+<div id="v2-wealth-chapter" class="v2-home-section-label"><span>01 / INDICADORES</span><h2>Rendimento e desempenho</h2><p>O que está a acontecer na carteira.</p></div>
 <div class="card kpi-quick">
 <div class="kpi-quick__grid">
 <div class="kpi-quick__cell kpi-quick__cell--income">
@@ -353,7 +354,7 @@
 </div>
 <div class="chartWrap"><canvas height="220" id="distChart"></canvas></div>
 </div>
-<div class="v2-home-section-label"><span>02 / HISTÓRICO</span><h2>O percurso do património</h2><p>Registos e evolução histórica, sem projeções.</p></div>
+<div id="v2-history-chapter" class="v2-home-section-label"><span>02 / HISTÓRICO</span><h2>O percurso do património</h2><p>Registos e evolução histórica, sem projeções.</p></div>
 <!-- Tendência melhorada -->
 <div class="card">
 <div class="card__head">
@@ -365,7 +366,7 @@
 <!-- Mini tabela de snapshots recentes -->
 <div id="snapshotTable" style="margin-top:10px"></div>
 </div>
-<section class="v2-home-secondary-hub" aria-label="Ferramentas adicionais de património"><div class="v2-home-secondary-hub__intro"><span>03 / FERRAMENTAS</span><h3>Gerir e aprofundar</h3><p>Registos, objetivos, fontes, vencimentos e análise de risco — só quando precisares.</p></div>
+<section id="v2-tools-chapter" class="v2-home-secondary-hub" aria-label="Ferramentas adicionais de património"><div class="v2-home-secondary-hub__intro"><span>03 / FERRAMENTAS</span><h3>Gerir e aprofundar</h3><p>Registos, objetivos, fontes, vencimentos e análise de risco — só quando precisares.</p></div>
 <button class="btn btn--outline btn--sm" id="btnToggleDashSecondary" style="width:100%;margin:4px 0 12px" type="button">Explorar património</button>
 <div class="card dash-secondary" id="dashboardQuickRecordsCard">
 <div class="card__head"><div><div class="card__title">Ações rápidas</div><div class="card__muted">Atualizar histórico, dividendos ou exportar.</div></div></div>
