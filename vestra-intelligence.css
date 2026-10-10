@@ -1338,3 +1338,69 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 @media(max-width:600px){
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(#portfolioQualityCard,#debtRatioCard,#maturityAlertsCard,.v2-home-secondary-hub .card:has(#btnEnableNotifications)){padding:17px 15px!important}
 }
+
+/* Patrimonial chapter system: 01 / 02 / 03 share a single hierarchy.
+   Surface color belongs to the container, not to inherited legacy headings. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]){
+ --v2-chapter-title-size:clamp(26px,5.7vw,34px);
+ --v2-chapter-title-leading:1.12;
+ --v2-chapter-kicker-size:10px;
+ --v2-chapter-deck-size:13px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(
+ #v2-wealth-chapter h2,
+ #v2-history-chapter>strong,
+ #v2-tools-chapter .v2-home-secondary-hub__intro h3){
+ font-family:Georgia,"Times New Roman",serif!important;
+ font-size:var(--v2-chapter-title-size)!important;
+ font-weight:600!important;
+ line-height:var(--v2-chapter-title-leading)!important;
+ letter-spacing:-.035em!important;
+ text-transform:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(
+ #v2-wealth-chapter>span,
+ #v2-history-chapter>.v2-detail-history__label,
+ #v2-tools-chapter .v2-home-secondary-hub__intro>span){
+ font:750 var(--v2-chapter-kicker-size)/1.35 system-ui,sans-serif!important;
+ letter-spacing:.15em!important;text-transform:uppercase!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(
+ #v2-wealth-chapter>p,
+ #v2-history-chapter>.v2-detail-history__hint,
+ #v2-tools-chapter .v2-home-secondary-hub__intro>p){
+ font:400 var(--v2-chapter-deck-size)/1.5 system-ui,sans-serif!important;
+ letter-spacing:0!important;opacity:1!important;
+}
+/* Dark chapter owners */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(
+ #v2-wealth-chapter h2,
+ #v2-tools-chapter .v2-home-secondary-hub__intro h3){
+ color:#f4f0e7!important;-webkit-text-fill-color:#f4f0e7!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(
+ #v2-wealth-chapter>p,
+ #v2-tools-chapter .v2-home-secondary-hub__intro>p){
+ color:#c5d5cd!important;-webkit-text-fill-color:#c5d5cd!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(
+ #v2-wealth-chapter>span,
+ #v2-tools-chapter .v2-home-secondary-hub__intro>span){
+ color:#d7b77d!important;-webkit-text-fill-color:#d7b77d!important;
+}
+/* Ivory history owner */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter>strong{
+ color:#19363b!important;-webkit-text-fill-color:#19363b!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter>.v2-detail-history__hint{
+ color:#526c70!important;-webkit-text-fill-color:#526c70!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter>.v2-detail-history__label{
+ color:#24776b!important;-webkit-text-fill-color:#24776b!important;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]){
+ --v2-chapter-title-size:clamp(25px,6.7vw,29px);
+ --v2-chapter-deck-size:12px;
+ }
+}
