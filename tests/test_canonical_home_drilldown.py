@@ -27,6 +27,12 @@ class CanonicalHomeTest(unittest.TestCase):
         for canonical in ('vi-market-reading', 'vi-events-reading', 'vi-news-reading'):
             self.assertEqual(home.count('class="vi-canonical-card ' + canonical + '"'), 1)
 
+    def test_decisions_precede_secondary_market_readings(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split('<div class="vi-back-to-intelligence">', 1)[0]
+        self.assertLess(home.index('class="vi-priorities"'), home.index('class="vi-canonical-sections"'))
+        self.assertEqual(home.count('class="vi-priorities"'), 1)
+
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
         html = (ROOT / "index.html").read_text(encoding="utf-8")
