@@ -109,14 +109,14 @@ test('iPhone/WebKit: new editorial chapters keep real-data hosts and legacy esca
 });
 
 
-test('iPhone/WebKit: useful-first Home opens existing market barometer, news and calendar', async ({page}) => {
+test('iPhone/WebKit: canonical Home opens existing market barometer, news and calendar', async ({page}) => {
   await page.goto('/index.html');
   await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
   const home = page.locator('#vestraIntelligenceHome');
-  await expect(home.locator('.vi-daily-item')).toHaveCount(3);
+  await expect(home.locator('.vi-daily-item')).toHaveCount(0);
   for (const id of ['vestraMarketSentimentCard','vestraDailyNewsCard','dashboardWeeklyEventsCard']) {
     await expect(page.locator('#'+id)).toBeAttached();
-    await home.locator('[data-vestra-dashboard-section="'+id+'"]').click();
+    await home.locator('[data-vi-canonical-section="'+id+'"]').click();
     await expect(page.locator('#'+id)).toBeVisible();
     await page.locator('#btnReturnIntelligence').click();
     await expect(home).toBeVisible();
@@ -125,17 +125,17 @@ test('iPhone/WebKit: useful-first Home opens existing market barometer, news and
 });
 
 
-test('iPhone/WebKit: Intelligence quick brief exposes real-data slots and honest fallbacks', async ({page}) => {
+test('iPhone/WebKit: single canonical daily readings expose honest fallbacks', async ({page}) => {
   await page.goto('/index.html');
   await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
   const home = page.locator('#vestraIntelligenceHome');
   await expect(home).toBeVisible();
-  for (const key of ['market', 'news', 'events']) {
-    const brief = home.locator('[data-vi-brief="'+key+'"]');
-    await expect(brief).toHaveCount(1);
-    await expect(brief).not.toBeEmpty();
+  for (const selector of ['[data-vi-canonical-market]', '[data-vi-canonical-news-list]', '[data-vi-canonical-event-list]']) {
+    const reading = home.locator(selector);
+    await expect(reading).toHaveCount(1);
+    await expect(reading).not.toBeEmpty();
   }
-  await home.locator('[data-vestra-dashboard-section="vestraDailyNewsCard"]').click();
+  await home.locator('[data-vi-canonical-section="vestraDailyNewsCard"]').click();
   await expect(page.locator('#vestraDailyNewsCard')).toBeVisible();
   await page.locator('#btnReturnIntelligence').click();
   await expect(home).toBeVisible();
@@ -149,7 +149,7 @@ test('iPhone/WebKit: premium Home reads existing patrimonial KPI with privacy co
   await expect(home).toBeVisible();
   await expect(home.locator('[data-vi-wealth]')).toHaveCount(1);
   await expect(home.locator('[data-vi-assets]')).toHaveCount(1);
-  await expect(home.locator('.vi-daily-item')).toHaveCount(3);
+  await expect(home.locator('.vi-market-reading')).toHaveCount(1);
   const privacy = home.locator('[data-vi-privacy]');
   await privacy.click();
   await expect(home.locator('[data-vi-wealth]')).toHaveText('••• €');
