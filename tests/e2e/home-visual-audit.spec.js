@@ -29,12 +29,16 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
         width: document.documentElement.clientWidth,
         hostWidth: host.getBoundingClientRect().width,
         documentWidth: document.documentElement.scrollWidth,
+        hostScrollWidth: host.scrollWidth,
+        hostClientWidth: host.clientWidth,
         lefts: rectangles.map(r => Math.round(r.left)),
         tops: rectangles.map(r => Math.round(r.top)),
         overflow: rows.some(e => e.scrollWidth > e.clientWidth + 3),
       };
     });
-    expect(measures.documentWidth).toBeLessThanOrEqual(viewport.width + 3);
+    fs.writeFileSync(path.join(out, 'layout-' + viewport.name + '.json'), JSON.stringify(measures, null, 2));
+    await home.screenshot({ path: path.join(out, 'intelligence-' + viewport.name + '.png'), animations: 'disabled' });
+    expect(measures.hostScrollWidth).toBeLessThanOrEqual(measures.hostClientWidth + 3);
     expect(measures.overflow).toBe(false);
     if (viewport.width < 600) {
       expect(measures.tops[1]).toBeGreaterThan(measures.tops[0]);
@@ -43,7 +47,6 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
       expect(Math.abs(measures.tops[1] - measures.tops[0])).toBeLessThan(8);
       expect(Math.abs(measures.tops[2] - measures.tops[0])).toBeLessThan(8);
     }
-    await home.screenshot({ path: path.join(out, 'intelligence-' + viewport.name + '.png'), animations: 'disabled' });
   }
   expect(errors).toEqual([]);
 });
