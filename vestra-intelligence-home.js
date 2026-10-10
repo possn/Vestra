@@ -416,6 +416,8 @@
     host.hidden = false;
     view.classList.add('vi-preview-active');
     host.dataset.legacyOpen = 'false';
+    const historyDisclosure = document.getElementById('v2-history-disclosure');
+    if (historyDisclosure) historyDisclosure.open = false;
     const returnButton = document.getElementById('btnReturnIntelligence');
     if (returnButton) returnButton.addEventListener('click', () => {
       host.dataset.legacyOpen = 'false';
