@@ -923,10 +923,10 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 #vestraIntelligenceHome .vi-risk-reading{position:relative;overflow:hidden!important}
 #vestraIntelligenceHome .vi-risk-reading::after{content:"";position:absolute;inset:auto -8% -55% 43%;height:150px;background:radial-gradient(ellipse,rgba(206,147,78,.10),transparent 72%);pointer-events:none}
 #vestraIntelligenceHome .vi-risk-reading-body{position:relative;z-index:1;align-items:center!important}
-#vestraIntelligenceHome .vi-risk-reading-body h4{font:500 17px/1.2 Georgia,serif!important;color:#f3e7d6!important;margin:0 0 6px!important}
-#vestraIntelligenceHome .vi-risk-reading-body p{font-size:12px!important;line-height:1.45!important;color:#cbb6a1!important}
+#vestraIntelligenceHome .vi-risk-reading-body h4{font:500 17px/1.2 Georgia,serif!important;color:#f3e7d6!important;-webkit-text-fill-color:#f3e7d6!important;margin:0 0 6px!important}
+#vestraIntelligenceHome .vi-risk-reading-body p{font-size:12px!important;line-height:1.5!important;color:#e1d1bd!important;-webkit-text-fill-color:#e1d1bd!important}
 #vestraIntelligenceHome .vi-risk-visual{flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
-#vestraIntelligenceHome .vi-risk-visual strong{font-variant-numeric:tabular-nums;color:#f5e7d0!important;white-space:nowrap}
+#vestraIntelligenceHome .vi-risk-visual strong{font-variant-numeric:tabular-nums;color:#f5e7d0!important;-webkit-text-fill-color:#f5e7d0!important;white-space:nowrap}
 @media(max-width:600px){
  #vestraIntelligenceHome .vi-risk-reading-body{gap:10px!important}
  #vestraIntelligenceHome .vi-risk-reading-body h4{font-size:16px!important}
@@ -976,4 +976,17 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 }
 #viewDashboard #vestraIntelligenceHome .vi-daily-heading .vi-eyebrow{
  color:#d4ba83!important;-webkit-text-fill-color:#d4ba83!important;
+}
+
+/* Vestra 2.0 / iPhone: compact the canonical daily reading without hiding data. */
+@media(max-width:600px){
+ #viewDashboard #vestraIntelligenceHome .vi-market-reading{padding:13px 14px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-market-reading-body{gap:10px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-sentiment-orb{width:104px!important;min-width:104px!important;max-width:104px!important;aspect-ratio:1!important}
+ #viewDashboard #vestraIntelligenceHome .vi-sentiment-orb strong{font-size:32px!important;margin-top:0!important}
+ #viewDashboard #vestraIntelligenceHome .vi-sentiment-orb small{font-size:8px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-risk-reading{padding:12px 14px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-risk-reading-body{gap:8px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections{gap:8px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-daily-heading{margin-bottom:8px!important}
 }
