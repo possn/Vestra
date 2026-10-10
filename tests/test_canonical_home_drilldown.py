@@ -20,6 +20,13 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="v2-detail-chapter-nav"', html)
         self.assertIn('id="v2-history-chapter"', html)
 
+    def test_single_daily_market_news_and_calendar_readings(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split('<div class="vi-back-to-intelligence">', 1)[0]
+        self.assertNotIn('class="vi-daily-brief"', home)
+        for canonical in ('vi-market-reading', 'vi-events-reading', 'vi-news-reading'):
+            self.assertEqual(home.count('class="vi-canonical-card ' + canonical + '"'), 1)
+
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
         html = (ROOT / "index.html").read_text(encoding="utf-8")
