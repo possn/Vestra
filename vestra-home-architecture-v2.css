@@ -12,3 +12,11 @@
 #viewDashboard .v2-home-section-label + .card{margin-top:0}
 @media(min-width:1000px){#viewDashboard .v2-home-section-label{margin-top:38px}}
 @media(max-width:600px){#viewDashboard .v2-home-section-label{margin-top:16px;margin-bottom:8px}#viewDashboard .v2-home-section-label h2{font-size:23px}}
+
+/* Semantic chapter navigation for the legacy wealth research view. */
+#viewDashboard .v2-detail-chapter-nav{display:none;gap:7px;flex-wrap:wrap;margin:0 0 14px}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-chapter-nav{display:flex}
+#viewDashboard .v2-detail-chapter-nav a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 14px;border:1px solid #56766d;border-radius:999px;color:#f4efe6;-webkit-text-fill-color:#f4efe6;background:#183c35;font:650 12px/1.2 system-ui,sans-serif;text-decoration:none}
+#viewDashboard .v2-detail-chapter-nav a:focus-visible{outline:2px solid #dfc58f;outline-offset:3px}
+#viewDashboard :is(#v2-wealth-chapter,#v2-history-chapter,#v2-tools-chapter){scroll-margin-top:105px}
+@media(max-width:600px){#viewDashboard .v2-detail-chapter-nav{gap:6px;margin-bottom:10px}#viewDashboard .v2-detail-chapter-nav a{padding-inline:12px}}
