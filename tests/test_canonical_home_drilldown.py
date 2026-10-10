@@ -44,7 +44,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="vi-regime-disclosure"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('vi-regime-grid', html)
-        self.assertIn('vestra-intelligence.css?v=36', html)
+        self.assertIn('vestra-intelligence.css?v=37', html)
 
     def test_context_chapter_follows_decisions_without_duplication(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -58,7 +58,7 @@ class CanonicalHomeTest(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=6', html)
-        self.assertIn('vestra-intelligence.css?v=36', html)
+        self.assertIn('vestra-intelligence.css?v=37', html)
         self.assertIn('vestra-intelligence-home.js?v=13', html)
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
@@ -139,6 +139,15 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('id="marketSearch"', market)
         self.assertIn('.market-hero-simple h2', css)
         self.assertIn('vestra-market-surfaces-v2.css?v=9', html)
+
+    def test_patrimonial_light_cards_own_safari_text_contrast(self):
+        css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        for owner in ("#portfolioQualityCard", "#debtRatioCard", "#maturityAlertsCard", "#btnEnableNotifications"):
+            self.assertIn(owner, css)
+        self.assertIn("-webkit-text-fill-color:#1c3439!important", css)
+        self.assertIn("-webkit-text-fill-color:#526970!important", css)
+        self.assertIn('vestra-intelligence.css?v=37', html)
 
 if __name__ == "__main__":
     unittest.main()
