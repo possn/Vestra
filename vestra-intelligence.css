@@ -1424,3 +1424,15 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  :is(.v2-home-section-label,.vi-daily-heading,.vi-context-heading)>span:first-child{
  color:#d7b77d!important;-webkit-text-fill-color:#d7b77d!important;
 }
+
+/* Quality dashboard: generated breakdown labels inherit dark-page ivory text
+   unless the content itself owns an ink color. Preserve explicit score colors. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #portfolioQualityContent{
+ color:#213b42!important;-webkit-text-fill-color:#213b42!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #portfolioQualityContent [style*="color:"]{
+ -webkit-text-fill-color:currentColor!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #portfolioQualityContent>div{
+ opacity:1!important;
+}
