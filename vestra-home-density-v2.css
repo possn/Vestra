@@ -22,3 +22,15 @@
 /* The historical chart is an ivory card, not a dark chapter heading. */
 #viewDashboard .card:has(#trendChart) .card__title{color:#173037;-webkit-text-fill-color:#173037}
 #viewDashboard .card:has(#trendChart) .card__muted{color:#4b6262;-webkit-text-fill-color:#4b6262}
+
+/* Full-wealth detail: four existing financial metrics, one compact editorial grid. */
+@media(max-width:600px){
+ #viewDashboard .kpi-quick{padding:11px 12px;border-radius:16px}
+ #viewDashboard .kpi-quick__grid{gap:8px;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #viewDashboard .kpi-quick__cell{min-width:0;padding:11px 10px;border-radius:12px}
+ #viewDashboard .kpi-quick__k,#viewDashboard .kpi-income__head{font-size:11px;line-height:1.35}
+ #viewDashboard .kpi-quick__v{font-size:clamp(18px,5vw,24px);line-height:1.15;overflow-wrap:anywhere}
+ #viewDashboard .kpi-quick__s,#viewDashboard .kpi-income__values small{font-size:10px;line-height:1.35}
+ #viewDashboard .kpi-income__values{gap:7px}
+ #viewDashboard .kpi-income__values strong{font-size:clamp(16px,4.5vw,22px);overflow-wrap:anywhere}
+}
