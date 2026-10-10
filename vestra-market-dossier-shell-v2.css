@@ -4,16 +4,16 @@
   background:rgba(4,17,17,.78);
 }
 #marketSheet .market-sheet__panel{
-  background:var(--vestra-surface-petrol);color:var(--vestra-surface-petrol-ink);border:1px solid #35524c;
+  background:var(--vestra-surface-ivory);color:var(--vestra-surface-ivory-ink);border:1px solid #bdc8c0;
   box-shadow:0 -24px 72px rgba(0,0,0,.38);
 }
-#marketSheet .market-sheet__grab{background:#6d8e80}
+#marketSheet .market-sheet__grab{background:#71847f}
 #marketSheet .market-detail-head h1,
-#marketSheet .market-detail-head h2{color:#f6f0e6}
-#marketSheet .market-detail-head p{color:#b6cbc0}
+#marketSheet .market-detail-head h2{color:var(--vestra-surface-ivory-ink)}
+#marketSheet .market-detail-head p{color:var(--vestra-surface-ivory-muted)}
 #marketSheet .market-close,
 #marketSheet .market-close-persistent{
-  background:#193632;color:#f2eee3;border:1px solid #46665c;
+  background:#f5f3ed;color:#173037;border:1px solid #b8c5bd;
 }
 #marketSheet .market-close:focus-visible,
 #marketSheet .market-close-persistent:focus-visible{
@@ -29,7 +29,7 @@
 }
 #marketSheet .market-tabs::-webkit-scrollbar{display:none}
 #marketSheet .market-tab{
-  background:#1a3935;color:#d0e0d5;border:1px solid #385950;
+  background:#e0e7e1;color:#294b4a;border:1px solid #b8c7c0;
   border-radius:999px;font-size:12px;font-weight:650;min-height:38px;
 }
 #marketSheet .market-tab.is-active{
@@ -39,13 +39,18 @@
   outline:2px solid #e3cd9b;outline-offset:2px;
 }
 #marketSheet .market-metric{
-  background:#193632;border:1px solid #34554d;color:#f3eee4;
+  background:#e4e9e4;border:1px solid #bcc8c1;color:#173037;
 }
-#marketSheet .market-metric small{color:#b4cabc}
-#marketSheet .market-metric strong{color:#f5f0e6}
+#marketSheet .market-metric small{color:#49615e}
+#marketSheet .market-metric strong{color:#173037}
 #marketSheet .market-tabs--dossier{
-  background:var(--vestra-surface-petrol);border-bottom:1px solid #36544c;
+  background:var(--vestra-surface-ivory);border-bottom:1px solid #bdc8c0;
 }
 @media(prefers-reduced-motion:reduce){
  #marketSheet .market-tab{scroll-behavior:auto}
 }
+
+/* Single light dossier surface: the legacy market stylesheet forced a light panel. */
+#marketSheet .market-sheet__panel{background:var(--vestra-surface-ivory)!important;color:var(--vestra-surface-ivory-ink)}
+#marketSheet .market-detail-head :is(h1,h2),#marketSheet .market-dossier-scorehero strong,#marketSheet .market-dossier-price-row strong{color:#173037;-webkit-text-fill-color:#173037}
+#marketSheet .market-detail-head p,#marketSheet .market-dossier-price-row small{color:#49615e;-webkit-text-fill-color:#49615e}
