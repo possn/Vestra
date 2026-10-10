@@ -34,10 +34,25 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
         lefts: rectangles.map(r => Math.round(r.left)),
         tops: rectangles.map(r => Math.round(r.top)),
         overflow: rows.some(e => e.scrollWidth > e.clientWidth + 3),
+        offenders: Array.from(document.querySelectorAll('body *'))
+          .filter(e => {
+            const style = getComputedStyle(e);
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+            const r = e.getBoundingClientRect();
+            return r.width > 0 && r.height > 0 && (r.right > innerWidth + 4 || r.left < -4);
+          })
+          .sort((a,b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right)
+          .slice(0,20)
+          .map(e => {
+            const r=e.getBoundingClientRect();
+            return { tag:e.tagName, id:e.id, className:String(e.className).slice(0,120),
+              left:Math.round(r.left), right:Math.round(r.right), width:Math.round(r.width) };
+          }),
       };
     });
     fs.writeFileSync(path.join(out, 'layout-' + viewport.name + '.json'), JSON.stringify(measures, null, 2));
     await home.screenshot({ path: path.join(out, 'intelligence-' + viewport.name + '.png'), animations: 'disabled' });
+    await page.screenshot({ path: path.join(out, 'page-' + viewport.name + '.png'), fullPage: true, animations: 'disabled' });
     expect(measures.hostScrollWidth).toBeLessThanOrEqual(measures.hostClientWidth + 3);
     expect(measures.overflow).toBe(false);
     if (viewport.width < 600) {
