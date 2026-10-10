@@ -1,9 +1,17 @@
 /* Secondary dashboard utilities: optional details, separate from the main financial story. */
-#viewDashboard .v2-home-secondary-hub{border-top:1px solid var(--line);margin-top:17px;padding-top:15px;min-width:0}
-#viewDashboard .v2-home-secondary-hub__intro{max-width:50ch;margin-bottom:9px}
+#viewDashboard .v2-home-secondary-hub{border-top:1px solid var(--line);margin-top:12px;padding-top:12px;min-width:0}
+#viewDashboard .v2-home-secondary-hub__intro{max-width:50ch;margin-bottom:6px}
 #viewDashboard .v2-home-secondary-hub__intro span{font-size:10px;font-weight:800;letter-spacing:.15em;color:var(--vio)}
 #viewDashboard .v2-home-secondary-hub__intro h3{font-size:clamp(20px,2.5vw,27px);font-weight:740;line-height:1.15;letter-spacing:-.04em;margin:5px 0;color:#f4efe6;-webkit-text-fill-color:#f4efe6}
 #viewDashboard .v2-home-secondary-hub__intro p{font-size:12px;color:#b9cdc5;-webkit-text-fill-color:#b9cdc5;line-height:1.45;margin:0}
 #viewDashboard .v2-home-secondary-hub #btnToggleDashSecondary{border-radius:15px;min-height:46px;font-weight:720;text-align:center;color:#f4efe6;-webkit-text-fill-color:#f4efe6;background:#173630;border-color:#6c8b7d}
 #viewDashboard .v2-home-secondary-hub>.dash-secondary{margin-top:12px}
 #viewDashboard .v2-home-secondary-hub>.advanced-only{margin-top:12px}
+
+/* Lightweight utility disclosure: maintain touch targets without an oversized section. */
+@media(max-width:600px){
+ #viewDashboard .v2-home-secondary-hub__intro h3{font-size:20px;line-height:1.15;margin:3px 0}
+ #viewDashboard .v2-home-secondary-hub__intro p{font-size:11px;line-height:1.35}
+ #viewDashboard .v2-home-secondary-hub #btnToggleDashSecondary{min-height:44px;border-radius:12px;margin:5px 0 8px!important}
+ #viewDashboard .v2-home-secondary-hub>.dash-secondary{margin-top:8px}
+}
