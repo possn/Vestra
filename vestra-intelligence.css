@@ -1196,3 +1196,57 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 @media(prefers-reduced-motion:reduce){
  #viewDashboard .v2-detail-history__chevron{transition:none}
 }
+
+/* Wealth research: evidence-first alert band and a single compact KPI surface.
+   Scoped to Intelligence drilldown; all native alert/KPI hosts remain mounted. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(#negReturnAlert,#riskAlertCard){
+  margin-block:8px!important;border-radius:14px!important;
+  border:1px solid #e6bcb4!important;border-left:4px solid #b94b49!important;
+  background:#f8ede8!important;color:#632b2b!important;
+  -webkit-text-fill-color:#632b2b!important;
+  box-shadow:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard{
+  padding:13px 16px!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard .card__title{
+  color:#803630!important;-webkit-text-fill-color:#803630!important;font-size:14px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard .card__muted{
+  color:#76514d!important;-webkit-text-fill-color:#76514d!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-wealth-chapter{
+  margin:16px 0 7px;gap:3px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-wealth-chapter h2{
+  font-size:clamp(20px,3vw,25px);line-height:1.18;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-wealth-chapter p{
+  font-size:11px;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick{
+  border-radius:18px!important;padding:0!important;overflow:hidden;
+  background:#e9eeea!important;border:1px solid #bacbc3!important;
+  box-shadow:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__grid{
+  gap:0!important;grid-template-columns:repeat(2,minmax(0,1fr));
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell{
+  min-width:0;margin:0!important;border:0!important;border-radius:0!important;
+  border-right:1px solid #c9d5ce!important;border-bottom:1px solid #c9d5ce!important;
+  padding:14px!important;box-shadow:none!important;background:transparent!important;
+  color:#19363b!important;-webkit-text-fill-color:#19363b!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell :is(.kpi-quick__k,.kpi-quick__s,small,.kpi-income__head){
+  color:#49645f!important;-webkit-text-fill-color:#49645f!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell :is(.kpi-quick__v,strong){
+  color:#18383a!important;-webkit-text-fill-color:#18383a!important;
+}
+@media(min-width:1000px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:390px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell{padding:12px 10px!important}
+}
