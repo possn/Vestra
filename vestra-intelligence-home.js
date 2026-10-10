@@ -478,7 +478,7 @@
         if (typeof window.setView === 'function') window.setView('dashboard');
         host.dataset.legacyOpen = 'true';
         if (returnButton?.parentElement) returnButton.parentElement.style.setProperty('display','block','important');
-        const legacy = document.querySelector('#viewDashboard .vi-back-to-intelligence') || document.querySelector('#viewDashboard .v2-home-stage');
+        const legacy = document.querySelector('#viewDashboard .v2-detail-chapter-nav') || document.querySelector('#viewDashboard .vi-back-to-intelligence') || document.querySelector('#viewDashboard .v2-home-stage');
         if (legacy && typeof legacy.scrollIntoView === 'function') legacy.scrollIntoView({behavior:'smooth', block:'start'});
         return;
       }
