@@ -143,3 +143,36 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-
 body:has(#viewMarket:not([hidden])) #viewMarket .market-discover-section .ux453-opp .ux453-entry strong{
  color:#086f6a;-webkit-text-fill-color:#086f6a;
 }
+
+/* Market / Research opening: same editorial hierarchy as Intelligence Home,
+   without moving or hiding search, filters, or discovery. */
+body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple{
+ display:grid;grid-template-columns:minmax(0,1fr);gap:7px;
+ margin:0 0 12px!important;padding:18px 0 19px!important;
+ border-bottom:1px solid #35534a;background:transparent!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple .market-kicker{
+ font:750 10px/1.4 system-ui,sans-serif;letter-spacing:.17em;
+ text-transform:uppercase;color:#d9be8c!important;-webkit-text-fill-color:#d9be8c!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple h2{
+ margin:0!important;font:500 clamp(37px,5.5vw,62px)/1.05 Georgia,serif!important;
+ letter-spacing:-.065em;color:#f4f0e7!important;-webkit-text-fill-color:#f4f0e7!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple p{
+ max-width:58ch;margin:0!important;color:#bed2c5!important;
+ -webkit-text-fill-color:#bed2c5!important;font-size:13px;line-height:1.55;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-search{
+ margin-top:0!important;min-width:0;
+}
+@media(max-width:600px){
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-shell{gap:12px!important}
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple{
+  padding:8px 0 11px!important;margin-bottom:4px!important;gap:4px;
+ }
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple h2{font-size:39px!important}
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple p{
+  font-size:12px!important;line-height:1.45;
+ }
+}
