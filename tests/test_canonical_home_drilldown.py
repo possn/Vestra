@@ -44,7 +44,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="vi-regime-disclosure"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('vi-regime-grid', html)
-        self.assertIn('vestra-intelligence.css?v=31', html)
+        self.assertIn('vestra-intelligence.css?v=32', html)
 
     def test_context_chapter_follows_decisions_without_duplication(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -58,7 +58,7 @@ class CanonicalHomeTest(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=6', html)
-        self.assertIn('vestra-intelligence.css?v=31', html)
+        self.assertIn('vestra-intelligence.css?v=32', html)
         self.assertIn('vestra-intelligence-home.js?v=12', html)
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
@@ -77,6 +77,18 @@ class CanonicalHomeTest(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="trendChart"', html)
         self.assertIn('id="snapshotTable"', html)
+
+    def test_patimonial_history_is_progressive_and_navigable(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        js = (ROOT / "app.js").read_text(encoding="utf-8")
+        css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
+        self.assertIn('id="v2-history-disclosure"', html)
+        self.assertIn('<summary id="v2-history-chapter"', html)
+        self.assertIn('id="trendChart"', html)
+        self.assertIn('id="snapshotTable"', html)
+        self.assertIn('wireDetailHistoryDisclosure', js)
+        self.assertIn('trendChart.resize()', js)
+        self.assertIn('.v2-detail-history > summary:focus-visible', css)
 
 if __name__ == "__main__":
     unittest.main()
