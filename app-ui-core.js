@@ -203,7 +203,7 @@ function installPremiumSplashWatchdog() {
       .vestra-splash.vestra-splash--premium{
         display:flex!important;opacity:1!important;
         pointer-events:auto!important;transition:none!important;
-        background:#eef0ec!important;
+        background:#081a1a!important;
         backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
       }
       .vestra-splash.vestra-splash--premium.vestra-splash--leaving{
@@ -211,24 +211,24 @@ function installPremiumSplashWatchdog() {
         transition:opacity .52s cubic-bezier(.4,0,.2,1)!important;
       }
       .vestra-splash--premium .vestra-splash__mark{
-        width:138px!important;height:138px!important;margin-bottom:0!important;
+        width:88px!important;height:88px!important;margin-bottom:0!important;
       }
       .vestra-splash--premium .vestra-splash__mark::after{
-        inset:-18px!important;border-radius:42px!important;
-        background:radial-gradient(circle,rgba(32,129,126,.18),rgba(196,171,114,.09) 42%,transparent 72%)!important;
-        filter:blur(10px)!important;
+        inset:-20px!important;border-radius:50%!important;
+        background:transparent!important;border:1px solid rgba(214,191,144,.24)!important;
+        filter:none!important;
       }
       .vestra-splash--premium .vestra-splash__mark img{
-        width:122px!important;height:122px!important;border-radius:29px!important;
-        box-shadow:0 22px 54px rgba(18,42,56,.22),0 4px 14px rgba(18,42,56,.10)!important;
+        width:82px!important;height:82px!important;border-radius:0!important;
+        box-shadow:none!important;
       }
       .vestra-splash--premium .vestra-splash__brand{
-        margin-top:24px!important;font-size:31px!important;font-weight:650!important;
+        margin-top:24px!important;font-size:36px!important;font-weight:500!important;color:#f4f0e6!important;
         letter-spacing:-.035em!important;
       }
       .vestra-splash--premium .vestra-splash__tagline{
-        margin-top:9px!important;font-size:15px!important;font-weight:600!important;
-        letter-spacing:.02em!important;color:#55646b!important;
+        margin-top:12px!important;font-size:10px!important;font-weight:700!important;
+        letter-spacing:.22em!important;color:#d7c49e!important;
       }
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__brand,
       .vestra-splash--premium.vestra-splash--copy-ready .vestra-splash__tagline{
