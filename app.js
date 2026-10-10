@@ -1723,6 +1723,29 @@ function renderDistChart() {
   });
 }
 
+/* Native drilldown: keep Chart.js fully measurable when the history panel opens. */
+function wireDetailHistoryDisclosure() {
+  const disclosure = document.getElementById("v2-history-disclosure");
+  if (!disclosure || disclosure.dataset.wired === "1") return;
+  disclosure.dataset.wired = "1";
+  disclosure.addEventListener("toggle", () => {
+    if (!disclosure.open) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!disclosure.open) return;
+      if (trendChart) trendChart.resize();
+      renderTrendChart();
+    }));
+  });
+  document.querySelectorAll('.v2-detail-chapter-nav a[href="#v2-history-chapter"]').forEach(link => {
+    link.addEventListener("click", () => { disclosure.open = true; });
+  });
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", wireDetailHistoryDisclosure, { once: true });
+} else {
+  wireDetailHistoryDisclosure();
+}
+
 function renderTrendChart() {
   const ctx = ensureChartCtx("trendChart", 240);
   if (!ctx) { renderChartUnavailable("trendChart"); return; }
