@@ -61,12 +61,12 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('vestra-intelligence.css?v=30', html)
         self.assertIn('vestra-intelligence-home.js?v=12', html)
 
-if __name__ == "__main__":
-    unittest.main()
-
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
         self.assertIn("--v2-detail-ink:#f3f0e7", css)
         self.assertIn("-webkit-text-fill-color:var(--v2-detail-ink)!important", css)
         self.assertIn("#btnToggleDashSecondary{", css)
         self.assertIn("env(safe-area-inset-bottom,0px)", css)
+
+if __name__ == "__main__":
+    unittest.main()
