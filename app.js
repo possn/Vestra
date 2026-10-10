@@ -1753,6 +1753,7 @@ function renderTrendChart() {
     trendChart.data.datasets[0].pointRadius = h.length <= 12 ? 4 : 2;
     trendChart.data.datasets[1].data = assetData;
     trendChart.data.datasets[2].data = passData;
+    trendChart.data.datasets[2].yAxisID = "passive";
     trendChart.update("none");
   } else {
     if (trendChart) { trendChart.destroy(); trendChart = null; }
@@ -1763,7 +1764,7 @@ function renderTrendChart() {
         datasets: [
           { label: "Património líquido", data: netData, tension: .4, pointRadius: h.length <= 12 ? 4 : 2, borderColor: "#20817E", backgroundColor: "rgba(32,129,126,.08)", fill: true, borderWidth: 2 },
           { label: "Total ativos", data: assetData, tension: .4, pointRadius: 0, borderDash: [4,4], borderColor: "#39d6d8", borderWidth: 1.5 },
-          { label: "Rend. passivo/ano", data: passData, tension: .4, pointRadius: 0, borderColor: "#10b981", borderWidth: 1.5 }
+          { label: "Rend. passivo/ano", data: passData, yAxisID: "passive", tension: .4, pointRadius: 0, borderColor: "#10b981", borderWidth: 1.5 }
         ]
       },
       options: {
@@ -1772,7 +1773,7 @@ function renderTrendChart() {
           legend: { display: true, labels: { boxWidth: 10, font: { size: 11 } } },
           tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmtEUR(c.raw)}` } }
         },
-        scales: { y: { ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+"M€" : fmtEUR(v), font:{size:10} } } }
+        scales: { x: { ticks: { autoSkip: true, maxTicksLimit: 6, maxRotation: 0, font: { size: 10 } } }, y: { position: "left", ticks: { callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+"M€" : fmtEUR(v), font:{size:10} } }, passive: { type: "linear", position: "right", grid: { drawOnChartArea: false }, ticks: { maxTicksLimit: 4, callback: v => fmtEUR(v), font: { size: 10 } } } }
       }
     });
   }
