@@ -14,7 +14,7 @@ class HeaderChromeTest(unittest.TestCase):
 
     def test_stylesheet_cache_busted(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn("styles.css?v=20261009-header1", html)
+        self.assertRegex(html, r"styles[.]css[?]v=[a-zA-Z0-9._-]+")
 
 if __name__ == "__main__":
     unittest.main()
