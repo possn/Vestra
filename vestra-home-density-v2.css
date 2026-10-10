@@ -6,3 +6,15 @@
 #viewDashboard #dashboardQuickRecordsCard .btn{min-height:38px}
 #viewDashboard #goalCard .card__muted{font-size:12px}
 @media(min-width:850px){#viewDashboard #dashboardQuickRecordsCard .row{justify-content:flex-start}}
+
+/* Historical evidence gets the canvas, not oversized surrounding chrome. */
+@media(max-width:600px){
+ #viewDashboard .v2-home-section-label:has(+ .card #trendChart){margin-top:16px;margin-bottom:7px}
+ #viewDashboard .v2-home-section-label + .card:has(#trendChart){padding:13px 12px;border-radius:16px}
+ #viewDashboard .card:has(#trendChart) .card__head{gap:9px;margin-bottom:7px;align-items:center}
+ #viewDashboard .card:has(#trendChart) .card__title{font-size:16px;line-height:1.25}
+ #viewDashboard .card:has(#trendChart) .card__muted{font-size:11px}
+ #viewDashboard .card:has(#trendChart) .chartWrap{min-width:0;overflow:hidden;margin:4px 0 0}
+ #viewDashboard .card:has(#trendChart) #trendChart{display:block;max-width:100%;height:190px!important}
+ #viewDashboard .card:has(#trendChart) #snapshotTable{margin-top:6px!important}
+}
