@@ -53,6 +53,7 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
     fs.writeFileSync(path.join(out, 'layout-' + viewport.name + '.json'), JSON.stringify(measures, null, 2));
     await home.screenshot({ path: path.join(out, 'intelligence-' + viewport.name + '.png'), animations: 'disabled' });
     await page.screenshot({ path: path.join(out, 'page-' + viewport.name + '.png'), fullPage: true, animations: 'disabled' });
+    expect(measures.documentWidth).toBeLessThanOrEqual(viewport.width + 3);
     expect(measures.hostScrollWidth).toBeLessThanOrEqual(measures.hostClientWidth + 3);
     expect(measures.overflow).toBe(false);
     if (viewport.width < 600) {
