@@ -115,7 +115,7 @@
   }
 
   function collectEvents(stocks, portfolioTickers = new Set(), now = new Date(), windowDays = WINDOW_DAYS) {
-    const start = startOfWeek(now);
+    const start = Number(windowDays) === WINDOW_DAYS ? startOfWeek(now) : localDay(now);
     const end = new Date(start);
     end.setDate(end.getDate() + Math.max(1, Number(windowDays) || WINDOW_DAYS) - 1);
     const out = [];
@@ -153,7 +153,7 @@
   }
 
   function collectMacroEvents(snapshot, now = new Date(), windowDays = WINDOW_DAYS) {
-    const start = startOfWeek(now);
+    const start = Number(windowDays) === WINDOW_DAYS ? startOfWeek(now) : localDay(now);
     const end = new Date(start);
     end.setDate(end.getDate() + Math.max(1, Number(windowDays) || WINDOW_DAYS) - 1);
     const rows = Array.isArray(snapshot) ? snapshot : (snapshot?.events || []);
@@ -414,7 +414,7 @@
       }
     } else {
       const status = document.createElement('div'); status.className = `weekly-detail-status${event.reported ? '' : ' weekly-detail-status--waiting'}`;
-      status.textContent = event.reported && event.epsActual !== null ? 'EPS publicado no snapshot Vestra. Compara com a estimativa e a surpresa do trimestre.' : event.date < localDay(now) ? 'A data do evento já passou, mas o snapshot Vestra não contém um EPS actual confirmado. Não interpretar a ausência de dados como ausência de publicação.' : 'Resultados ainda não publicados no snapshot Vestra. A estimativa abaixo é a última disponível.'; sheet.appendChild(status);
+      status.textContent = event.reported && event.epsActual !== null ? 'Resultados publicados. EPS confirmado no snapshot Vestra; compara com a estimativa e a surpresa do trimestre.' : event.date < localDay(now) ? 'A data do evento já passou, mas o snapshot Vestra não contém um EPS actual confirmado. Não interpretar a ausência de dados como ausência de publicação.' : 'Resultados ainda não publicados no snapshot Vestra. A estimativa abaixo é a última disponível.'; sheet.appendChild(status);
       const grid = document.createElement('div'); grid.className = 'weekly-detail-grid';
       grid.append(metric('EPS actual', formatEPS(event.epsActual)), metric('Estimativa', formatEPS(event.epsEstimate)), metric('Surpresa', formatSurprise(event.epsSurprisePct))); sheet.appendChild(grid);
       const meta = document.createElement('div'); meta.className = 'weekly-detail-meta';
@@ -430,7 +430,7 @@
     const stocks = options.stocks || window.VestraMarketStaticUniverse?.getStocks?.() || [];
     const tickers = options.portfolioTickers || portfolioTickerSet(); const now = options.now || new Date(); const macro = options.macroEvents || macroSnapshot;
     const events = selectEvents(stocks, tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
-    const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
+    const start = Number(windowDays) === WINDOW_DAYS ? startOfWeek(now) : localDay(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
     card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
     if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos macro ou resultados relevantes nos próximos 7 dias.'; card.appendChild(empty); }
     else {
