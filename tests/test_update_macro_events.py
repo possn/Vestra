@@ -96,7 +96,7 @@ class MacroCalendarTests(unittest.TestCase):
                  'category':'macro','region':'EUA','importance':'high','source':source}
             ]) for source in mod.ADAPTERS}
             adapters['bls'] = lambda _session: [future]
-            with patch.object(mod, 'OUTPUT', output), patch.object(mod, 'ADAPTERS', adapters), \\
+            with patch.object(mod, 'OUTPUT', output), patch.object(mod, 'ADAPTERS', adapters), \
                  patch.object(mod, 'session', return_value=None), patch.object(mod, 'date') as fake_date:
                 fake_date.today.return_value = date(2026, 10, 11)
                 fake_date.fromisoformat.side_effect = date.fromisoformat
