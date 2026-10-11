@@ -55,8 +55,8 @@ test('iPhone WebKit: screenshot-reported headings meet 4.5:1 against their surfa
    let bg=null;
    while(surface&&!bg){
     const style=getComputedStyle(surface), raw=style.backgroundColor;
-    const alpha=raw.match(/rgba\\([^,]+,[^,]+,[^,]+,\\s*([\\d.]+)\\)/);
-    if(!alpha||Number(alpha[1])>=0.99)bg=rgb(raw);
+    const alpha=raw.startsWith('rgba(')?Number(raw.slice(5,-1).split(',')[3]):1;
+    if(alpha>=0.99)bg=rgb(raw);
     surface=surface.parentElement;
    }
    if(!fg||!bg)return {name,error:'non-rgb surface or ink'};
