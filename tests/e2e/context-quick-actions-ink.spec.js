@@ -40,18 +40,18 @@ test('iPhone WebKit: screenshot-reported headings meet 4.5:1 against their surfa
   const rgb=s=>{const m=s.match(/rgba?\(([^)]+)\)/);return m?m[1].split(',').slice(0,3).map(Number):null};
   const luminance=v=>v.reduce((total,n,i)=>{const c=n/255;return total+(c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4))*[.2126,.7152,.0722][i]},0);
   const checks=[
-   ['context title','.vi-context-heading h3',null],
-   ['context deck','.vi-context-heading p',null],
-   ['quick title','#dashboardQuickRecordsCard .card__title','#dashboardQuickRecordsCard'],
-   ['quick deck','#dashboardQuickRecordsCard .card__muted','#dashboardQuickRecordsCard']
+   ['context title','.vi-context-heading h3'],
+   ['context deck','.vi-context-heading p'],
+   ['quick title','#dashboardQuickRecordsCard .card__title'],
+   ['quick deck','#dashboardQuickRecordsCard .card__muted']
   ];
-  return checks.map(([name,sel,owner])=>{
+  return checks.map(([name,sel])=>{
    const el=document.querySelector(sel);
    if(!el)return {name,error:'missing heading'};
    const fg=rgb(getComputedStyle(el).webkitTextFillColor||getComputedStyle(el).color);
    // Resolve the actual rendered background from the nearest opaque ancestor.
    // No assumed theme color: a future surface change must be caught in WebKit.
-   let surface=owner?document.querySelector(owner):el.parentElement;
+   let surface=el.parentElement;
    let bg=null;
    while(surface&&!bg){
     const style=getComputedStyle(surface), raw=style.backgroundColor;
