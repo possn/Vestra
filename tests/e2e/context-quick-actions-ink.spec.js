@@ -37,7 +37,7 @@ test('iPhone WebKit: screenshot-reported headings meet 4.5:1 against their surfa
  await page.locator('#vestraIntelligenceHome [data-vestra-go="dashboard"]').first().click();
  await expect(page.locator('#vestraIntelligenceHome[data-legacy-open="true"]')).toHaveCount(1);
  const report=await page.evaluate(()=>{
-  const rgb=s=>{const m=s.match(/rgba?\\(([^)]+)\\)/);return m?m[1].split(',').slice(0,3).map(Number):null};
+  const rgb=s=>{const m=s.match(/rgba?\(([^)]+)\)/);return m?m[1].split(',').slice(0,3).map(Number):null};
   const luminance=v=>v.reduce((total,n,i)=>{const c=n/255;return total+(c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4))*[.2126,.7152,.0722][i]},0);
   const checks=[
    ['context title','.vi-context-heading h3',null],
