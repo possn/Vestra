@@ -1465,3 +1465,26 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-tools-chapter .v2-home-secondary-hub__intro{margin-bottom:6px!important}
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(#portfolioQualityCard,#debtRatioCard,#maturityAlertsCard){padding:13px 14px!important;border-radius:16px!important}
 }
+
+/* Approved 3:4 dashboard composition: wider, denser editorial layout on desktop/tablet. */
+@media(min-width:760px){
+ #vestraIntelligenceHome .vi-shell{max-width:1180px!important;margin-inline:auto!important}
+ #vestraIntelligenceHome .vi-opening{grid-template-columns:minmax(0,1fr)!important}
+ #vestraIntelligenceHome .vi-wealth{min-height:205px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:center;column-gap:26px}
+ #vestraIntelligenceHome .vi-wealth-top{grid-column:1}
+ #vestraIntelligenceHome [data-vi-wealth]{grid-column:1}
+ #vestraIntelligenceHome [data-vi-assets]{grid-column:1}
+ #vestraIntelligenceHome .vi-wealth-open{grid-column:2;grid-row:2;justify-self:end;align-self:center}
+ #vestraIntelligenceHome .vi-daily-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ #vestraIntelligenceHome .vi-opening .vi-regime{padding:20px 25px!important}
+ #vestraIntelligenceHome .vi-regime-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(min-width:760px) and (max-width:1100px){
+ #vestraIntelligenceHome .vi-shell{width:min(94%,980px)!important}
+}
+@media(max-width:759px){
+ #vestraIntelligenceHome .vi-shell{width:100%!important;max-width:none!important}
+ #vestraIntelligenceHome .vi-wealth{min-height:150px}
+ #vestraIntelligenceHome .vi-opening{row-gap:10px!important}
+ #vestraIntelligenceHome .vi-daily-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
