@@ -76,6 +76,37 @@ class MacroCalendarTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             mod.validate_events('fed', [{**event, 'source': 'bls'}], today)
 
+    def test_recent_history_survives_a_fresh_schedule_refresh(self):
+        from unittest.mock import patch
+        from tempfile import TemporaryDirectory
+        import json
+        with TemporaryDirectory() as folder:
+            output = Path(folder) / 'macro-events.json'
+            old = {'events': [
+                {'date':'2026-10-02','title':'Payrolls','short_title':'NFP EUA',
+                 'category':'labour','region':'EUA','importance':'critical','source':'bls'},
+                {'date':'2026-09-01','title':'Old','short_title':'NFP EUA',
+                 'category':'labour','region':'EUA','importance':'critical','source':'bls'},
+            ]}
+            output.write_text(json.dumps(old), encoding='utf-8')
+            future = {'date':'2026-10-14','title':'CPI EUA','short_title':'CPI EUA',
+                      'category':'inflation','region':'EUA','importance':'high','source':'bls'}
+            adapters = {source: (lambda _session, source=source: [
+                {'date':'2026-11-01','title':source,'short_title':source,
+                 'category':'macro','region':'EUA','importance':'high','source':source}
+            ]) for source in mod.ADAPTERS}
+            adapters['bls'] = lambda _session: [future]
+            with patch.object(mod, 'OUTPUT', output), patch.object(mod, 'ADAPTERS', adapters), \
+                 patch.object(mod, 'session', return_value=None), patch.object(mod, 'date') as fake_date:
+                fake_date.today.return_value = date(2026, 10, 11)
+                fake_date.fromisoformat.side_effect = date.fromisoformat
+                self.assertEqual(mod.main(), 0)
+            result = json.loads(output.read_text(encoding='utf-8'))
+            days = {(e['date'], e['short_title']) for e in result['events']}
+            self.assertIn(('2026-10-02','NFP EUA'), days)
+            self.assertIn(('2026-10-14','CPI EUA'), days)
+            self.assertNotIn(('2026-09-01','NFP EUA'), days)
+
     def test_source_catalog_is_official_and_complete(self):
         self.assertEqual(set(mod.ADAPTERS), {'fed', 'bls', 'bea', 'ecb', 'census'})
         for key, (_, url) in mod.SOURCES.items():
