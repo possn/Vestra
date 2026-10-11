@@ -1499,3 +1499,22 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
   margin-bottom:6px!important;
  }
 }
+
+/* V2.0 editorial desktop spread: a dominant lead and a quieter action column.
+   This changes composition, not canonical decision/data ownership. */
+@media(min-width:1100px){
+ #viewDashboard #vestraIntelligenceHome .vi-opening{
+  display:grid!important;grid-template-columns:minmax(0,1.6fr) minmax(270px,.75fr)!important;
+  column-gap:clamp(32px,5vw,84px)!important;align-items:end!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-lead{
+  grid-column:1!important;min-width:0;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-wealth{
+  grid-column:2!important;grid-row:1!important;align-self:end!important;min-width:0;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities{
+  grid-template-columns:minmax(245px,.75fr) minmax(0,2.25fr)!important;
+  column-gap:clamp(32px,5vw,84px)!important;
+ }
+}
