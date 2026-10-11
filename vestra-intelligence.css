@@ -1477,3 +1477,25 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #viewDashboard #vestraIntelligenceHome .vi-context-heading p{font-size:12px!important;line-height:1.5!important}
  #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action :is(strong,small){overflow-wrap:anywhere}
 }
+
+/* Vestra 2.0 / editorial Home context: remove the enclosing dashboard tile
+   on iPhone and let research read like adjacent newspaper sections. */
+@media(max-width:600px){
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections{
+  display:block!important;border:0!important;border-radius:0!important;
+  background:transparent!important;overflow:visible!important;box-shadow:none!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card{
+  padding:16px 0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card+.vi-canonical-card{
+  border-top:1px solid #34514a!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card:nth-child(even){
+  border-left:0!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections .vi-section-top{
+  margin-bottom:6px!important;
+ }
+}
