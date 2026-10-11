@@ -1558,3 +1558,23 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
   grid-template-columns:minmax(0,1fr)!important;
  }
 }
+
+/* Actual editorial owner: .vi-wealth is INSIDE .vi-lead in the HTML.
+   Compose those siblings within the lead rather than grid-positioning a nested
+   wealth node against the outer .vi-opening (which cannot move it). */
+@media(min-width:741px){
+ #viewDashboard #vestraIntelligenceHome .vi-opening>.vi-lead{
+  display:grid!important;grid-column:1 / -1!important;
+  grid-template-columns:minmax(0,1.5fr) minmax(220px,.8fr)!important;
+  column-gap:clamp(22px,4vw,68px)!important;align-items:start!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening>.vi-lead>.vi-eyebrow,
+ #viewDashboard #vestraIntelligenceHome .vi-opening>.vi-lead>.vi-headline,
+ #viewDashboard #vestraIntelligenceHome .vi-opening>.vi-lead>.vi-deck{
+  grid-column:1!important;min-width:0;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening>.vi-lead>.vi-wealth{
+  grid-column:2!important;grid-row:1 / span 3!important;
+  align-self:center!important;min-width:0;
+ }
+}
