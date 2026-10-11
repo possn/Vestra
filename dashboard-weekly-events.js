@@ -47,6 +47,7 @@
   };
   const tickerKey = value => text(value).toUpperCase();
   const localDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const startOfWeek = date => { const day = localDay(date); day.setDate(day.getDate() - ((day.getDay() + 6) % 7)); return day; };
 
   function parseCalendarDate(value) {
     const raw = text(value);
@@ -114,7 +115,7 @@
   }
 
   function collectEvents(stocks, portfolioTickers = new Set(), now = new Date(), windowDays = WINDOW_DAYS) {
-    const start = localDay(now);
+    const start = startOfWeek(now);
     const end = new Date(start);
     end.setDate(end.getDate() + Math.max(1, Number(windowDays) || WINDOW_DAYS) - 1);
     const out = [];
@@ -131,7 +132,7 @@
       if (latest && latest >= start && latest <= end) {
         out.push({
           ...common, date: latest, dateISO: dateISO(latest), source: 'analyst_latest_earnings_date',
-          reported: true,
+          reported: number(stock?.analyst_latest_eps_actual) !== null,
           epsEstimate: number(stock?.analyst_latest_eps_estimate),
           epsActual: number(stock?.analyst_latest_eps_actual),
           epsSurprisePct: number(stock?.analyst_latest_eps_surprise_pct),
@@ -152,7 +153,7 @@
   }
 
   function collectMacroEvents(snapshot, now = new Date(), windowDays = WINDOW_DAYS) {
-    const start = localDay(now);
+    const start = startOfWeek(now);
     const end = new Date(start);
     end.setDate(end.getDate() + Math.max(1, Number(windowDays) || WINDOW_DAYS) - 1);
     const rows = Array.isArray(snapshot) ? snapshot : (snapshot?.events || []);
@@ -387,7 +388,7 @@
           ? 'Publicação oficial disponível. A Vestra apresenta abaixo as métricas explicitamente identificadas na fonte oficial.'
           : hasSummary
             ? 'Publicação oficial disponível. A Vestra validou a data da release e apresenta abaixo o resumo oficial, sem inferir uma métrica “Actual” ambígua.'
-            : 'Resultado ainda não publicado no snapshot Vestra. Este painel volta a consultar o snapshot ao abrir o evento e quando a app regressa ao primeiro plano.';
+            : event.date < localDay(now) ? 'Evento já ocorrido, mas sem resultado oficial validado no snapshot Vestra. A publicação poderá existir na fonte externa; a Vestra não apresenta valores sem confirmação.' : 'Resultado ainda não publicado no snapshot Vestra. Este painel volta a consultar o snapshot ao abrir o evento e quando a app regressa ao primeiro plano.';
       sheet.appendChild(status);
       const officialGrid = officialMetricGrid(event);
       if (officialGrid) sheet.appendChild(officialGrid);
@@ -413,7 +414,7 @@
       }
     } else {
       const status = document.createElement('div'); status.className = `weekly-detail-status${event.reported ? '' : ' weekly-detail-status--waiting'}`;
-      status.textContent = event.reported ? 'Resultados publicados. Compara o EPS reportado com a estimativa e a surpresa do trimestre.' : 'Resultados ainda não publicados. A estimativa abaixo é a última disponível no snapshot Vestra.'; sheet.appendChild(status);
+      status.textContent = event.reported && event.epsActual !== null ? 'EPS publicado no snapshot Vestra. Compara com a estimativa e a surpresa do trimestre.' : event.date < localDay(now) ? 'A data do evento já passou, mas o snapshot Vestra não contém um EPS actual confirmado. Não interpretar a ausência de dados como ausência de publicação.' : 'Resultados ainda não publicados no snapshot Vestra. A estimativa abaixo é a última disponível.'; sheet.appendChild(status);
       const grid = document.createElement('div'); grid.className = 'weekly-detail-grid';
       grid.append(metric('EPS actual', formatEPS(event.epsActual)), metric('Estimativa', formatEPS(event.epsEstimate)), metric('Surpresa', formatSurprise(event.epsSurprisePct))); sheet.appendChild(grid);
       const meta = document.createElement('div'); meta.className = 'weekly-detail-meta';
@@ -429,16 +430,16 @@
     const stocks = options.stocks || window.VestraMarketStaticUniverse?.getStocks?.() || [];
     const tickers = options.portfolioTickers || portfolioTickerSet(); const now = options.now || new Date(); const macro = options.macroEvents || macroSnapshot;
     const events = selectEvents(stocks, tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
-    const start = localDay(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
+    const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
     card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
     if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos macro ou resultados relevantes nos próximos 7 dias.'; card.appendChild(empty); }
     else {
       const list=document.createElement('div'); list.className='weekly-events-list';
       const visibleEvents=eventsExpanded ? events : events.slice(0,COLLAPSED_EVENTS);
-      visibleEvents.forEach((event,index)=>{ const item=document.createElement('button'); item.type='button'; item.dataset.weeklyEventIndex=String(index); item.className=`weekly-event${event.inPortfolio?' weekly-event--portfolio':''}${event.kind==='macro'?' weekly-event--macro':''}${event.importance==='critical'?' weekly-event--critical':''}`; const day=document.createElement('div'); day.className='weekly-event__day'; day.textContent=dayLabel(event.date,now); const title=document.createElement('div'); title.className='weekly-event__ticker'; title.textContent=event.kind==='macro'?event.shortTitle:event.ticker; const name=document.createElement('div'); name.className='weekly-event__name'; name.textContent=event.kind==='macro'?`${event.region}${event.timeLocal?` · ${event.timeLocal}`:''}`:event.name; const meta=document.createElement('div'); meta.className='weekly-event__meta'; const type=document.createElement('span'); type.className='weekly-event__type'; type.textContent=categoryLabel(event); meta.appendChild(type); if(event.importance==='critical'){const high=document.createElement('span');high.className='weekly-event__critical';high.textContent='Impacto elevado';meta.appendChild(high);} if(event.inPortfolio){const owned=document.createElement('span');owned.className='weekly-event__portfolio';owned.textContent='No portefólio';meta.appendChild(owned);} item.title=event.title||event.name||event.ticker||''; item.append(day,title,name,meta); list.appendChild(item); }); card.appendChild(list);
+      visibleEvents.forEach((event,index)=>{ const item=document.createElement('button'); item.type='button'; item.dataset.weeklyEventIndex=String(index); item.className=`weekly-event${event.inPortfolio?' weekly-event--portfolio':''}${event.kind==='macro'?' weekly-event--macro':''}${event.importance==='critical'?' weekly-event--critical':''}`; const day=document.createElement('div'); day.className='weekly-event__day'; day.textContent=dayLabel(event.date,now); const title=document.createElement('div'); title.className='weekly-event__ticker'; title.textContent=event.kind==='macro'?event.shortTitle:event.ticker; const name=document.createElement('div'); name.className='weekly-event__name'; name.textContent=event.kind==='macro'?`${event.region}${event.timeLocal?` · ${event.timeLocal}`:''}`:event.name; const meta=document.createElement('div'); meta.className='weekly-event__meta'; const type=document.createElement('span'); type.className='weekly-event__type'; type.textContent=categoryLabel(event); meta.appendChild(type); const published=event.kind==='macro'?hasMacroPublication(event):event.reported && event.epsActual!==null; const status=document.createElement('span'); status.className='weekly-event__result-status'; status.textContent=published?'Resultado disponível':(event.date<localDay(now)?'Resultado não confirmado':'Por publicar'); status.dataset.available=published?'true':'false'; meta.appendChild(status); if(event.importance==='critical'){const high=document.createElement('span');high.className='weekly-event__critical';high.textContent='Impacto elevado';meta.appendChild(high);} if(event.inPortfolio){const owned=document.createElement('span');owned.className='weekly-event__portfolio';owned.textContent='No portefólio';meta.appendChild(owned);} item.title=event.title||event.name||event.ticker||''; item.append(day,title,name,meta); list.appendChild(item); }); card.appendChild(list);
       if(events.length>COLLAPSED_EVENTS){const more=document.createElement('button');more.type='button';more.className='weekly-events-more';more.dataset.weeklyEventsToggle='1';more.setAttribute('aria-expanded',eventsExpanded?'true':'false');more.textContent=eventsExpanded?'Mostrar menos':`Ver semana completa · ${events.length}`;card.appendChild(more);}
     }
-    const foot=document.createElement('div'); foot.className='weekly-events-foot'; foot.textContent='Toca num evento para ver detalhe · fontes oficiais quando disponíveis.'; card.appendChild(foot);
+    const foot=document.createElement('div'); foot.className='weekly-events-foot'; foot.textContent=`Toca num evento para ver detalhe · ${macroSnapshot?.generated_at ? `calendário atualizado ${new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Lisbon'}).format(new Date(macroSnapshot.generated_at))} · ` : ''}resultados apenas quando confirmados no snapshot.`; card.appendChild(foot);
     try { window.dispatchEvent(new CustomEvent('vestra:dashboard-signal-updated', { detail: { source: 'weekly-events' } })); } catch (_) {}
     return events;
   }
