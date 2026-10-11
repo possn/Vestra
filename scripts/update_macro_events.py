@@ -285,6 +285,25 @@ def main() -> int:
             merged.extend(fallback)
             statuses[source] = {"state": "fallback", "count": len(fallback), "error": str(exc)[:240]}
 
+    # Retain recent validated historical events even when an official schedule
+    # endpoint only returns upcoming dates. This lets downstream enrichers
+    # reconcile delayed official results without inventing missing values.
+    recent_floor = iso(today - timedelta(days=14))
+    fresh_keys = {
+        (e.get("date"), e.get("date_end"), e.get("short_title"), e.get("source"))
+        for e in merged
+    }
+    for event in previous_events:
+        if not isinstance(event, dict) or event.get("source") not in ADAPTERS:
+            continue
+        key = (event.get("date"), event.get("date_end"), event.get("short_title"), event.get("source"))
+        if key in fresh_keys:
+            continue
+        day = str(event.get("date") or "")
+        if recent_floor <= day < iso(today):
+            merged.append(event)
+            fresh_keys.add(key)
+
     dedup = {}
     for event in merged:
         key = (event.get("date"), event.get("date_end"), event.get("short_title"), event.get("source"))
