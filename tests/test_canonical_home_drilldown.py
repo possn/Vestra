@@ -44,7 +44,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="vi-regime-disclosure"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('vi-regime-grid', html)
-        self.assertIn('vestra-intelligence.css?v=45', html)
+        self.assertIn('vestra-intelligence.css?v=46', html)
 
     def test_context_chapter_follows_decisions_without_duplication(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -58,7 +58,7 @@ class CanonicalHomeTest(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=6', html)
-        self.assertIn('vestra-intelligence.css?v=45', html)
+        self.assertIn('vestra-intelligence.css?v=46', html)
         self.assertIn('vestra-intelligence-home.js?v=13', html)
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
@@ -147,7 +147,7 @@ class CanonicalHomeTest(unittest.TestCase):
             self.assertIn(owner, css)
         self.assertIn("-webkit-text-fill-color:#1c3439!important", css)
         self.assertIn("-webkit-text-fill-color:#526970!important", css)
-        self.assertIn('vestra-intelligence.css?v=45', html)
+        self.assertIn('vestra-intelligence.css?v=46', html)
 
     def test_patrimonial_chapters_share_editorial_type_scale(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
@@ -159,7 +159,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn("font-size:var(--v2-chapter-title-size)!important", css)
         self.assertIn("-webkit-text-fill-color:#19363b!important", css)
         self.assertIn("-webkit-text-fill-color:#f4f0e7!important", css)
-        self.assertIn("vestra-intelligence.css?v=45", html)
+        self.assertIn("vestra-intelligence.css?v=46", html)
 
     def test_dark_editorial_heading_owners_are_explicit(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
@@ -168,7 +168,7 @@ class CanonicalHomeTest(unittest.TestCase):
         for selector in ('.v2-home-section-label', '.vi-daily-heading', '.vi-context-heading'):
             self.assertIn(selector, css)
         self.assertIn('-webkit-text-fill-color:#f4f0e8!important', css)
-        self.assertIn('vestra-intelligence.css?v=45', html)
+        self.assertIn('vestra-intelligence.css?v=46', html)
 
     def test_quality_card_generated_labels_own_readable_ink(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
@@ -177,7 +177,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('-webkit-text-fill-color:#213b42!important', css)
         self.assertIn('#portfolioQualityContent [style*="color:"]', css)
         self.assertIn('-webkit-text-fill-color:currentColor!important', css)
-        self.assertIn('vestra-intelligence.css?v=45', html)
+        self.assertIn('vestra-intelligence.css?v=46', html)
 
     def test_health_and_maturity_dynamic_light_card_ink(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
@@ -186,7 +186,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('--card2:#f8faf7;--muted:#556e73;--line:#cbd6d1', css)
         self.assertIn('#maturityAlertsContent>div', css)
         self.assertIn('-webkit-text-fill-color:currentColor!important', css)
-        self.assertIn('vestra-intelligence.css?v=45', html)
+        self.assertIn('vestra-intelligence.css?v=46', html)
 
     def test_light_health_and_maturity_panels_have_owned_ink(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
@@ -195,7 +195,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn("--card2:#f8faf7;--muted:#556e73;--line:#cbd6d1", css)
         self.assertIn("#debtRatioContent .health-metric-card", css)
         self.assertIn("-webkit-text-fill-color:currentColor!important", css)
-        self.assertIn("vestra-intelligence.css?v=45", html)
+        self.assertIn("vestra-intelligence.css?v=46", html)
 
     def test_mobile_wealth_density_preserves_real_card_owners(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
@@ -205,7 +205,7 @@ class CanonicalHomeTest(unittest.TestCase):
                          ".kpi-quick__cell", "#debtRatioCard", "#maturityAlertsCard"):
             self.assertIn(selector, css)
         self.assertIn("min-height:44px", css)
-        self.assertIn("vestra-intelligence.css?v=45", html)
+        self.assertIn("vestra-intelligence.css?v=46", html)
 
     def test_editorial_iphone_readability_does_not_shrink_evidence(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
@@ -214,7 +214,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn(".vi-opening .vi-deck{font-size:13px!important", css)
         self.assertIn(".vi-priorities .vi-action small{font-size:12px!important", css)
         self.assertIn(".vi-priorities .vi-action{min-height:64px!important", css)
-        self.assertIn("vestra-intelligence.css?v=45", html)
+        self.assertIn("vestra-intelligence.css?v=46", html)
 
     def test_mobile_context_is_editorial_not_boxed_dashboard(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
@@ -223,7 +223,16 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn("display:block!important;border:0!important;border-radius:0!important", css)
         self.assertIn("border-top:1px solid #34514a!important", css)
         self.assertIn("border-left:0!important", css)
-        self.assertIn("vestra-intelligence.css?v=45", html)
+        self.assertIn("vestra-intelligence.css?v=46", html)
+
+    def test_desktop_home_editorial_spread_preserves_decision_owners(self):
+        css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn("V2.0 editorial desktop spread", css)
+        self.assertIn("grid-template-columns:minmax(0,1.6fr) minmax(270px,.75fr)", css)
+        self.assertIn(".vi-opening .vi-wealth", css)
+        self.assertIn(".vi-priorities", css)
+        self.assertIn("vestra-intelligence.css?v=46", html)
 
 if __name__ == "__main__":
     unittest.main()
