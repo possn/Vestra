@@ -1465,3 +1465,15 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-tools-chapter .v2-home-secondary-hub__intro{margin-bottom:6px!important}
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(#portfolioQualityCard,#debtRatioCard,#maturityAlertsCard){padding:13px 14px!important;border-radius:16px!important}
 }
+
+/* Vestra 2.0 / iPhone editorial readability. The headline remains the lead,
+   and evidence/deck text stays readable instead of shrinking with chrome. */
+@media(max-width:600px){
+ #viewDashboard #vestraIntelligenceHome .vi-chapter-index span{font-size:10px!important;line-height:1.45!important}
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-deck{font-size:13px!important;line-height:1.5!important}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-heading p{font-size:12px!important;line-height:1.5!important}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action small{font-size:12px!important;line-height:1.45!important}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action{min-height:64px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-context-heading p{font-size:12px!important;line-height:1.5!important}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action :is(strong,small){overflow-wrap:anywhere}
+}
