@@ -84,3 +84,63 @@ test('iPhone/WebKit: patrimonial chapters 01 02 03 compute identical title typog
     expect(item.spacing,item.selector).toBe(measures[0].spacing);
   }
 });
+
+
+test('iPhone/WebKit: generated health and maturity content keeps light-card contrast', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/index.html');
+  await expect(page.locator('#vestraIntelligenceHome')).toBeVisible({timeout:20000});
+  await page.locator('#vestraIntelligenceHome [data-vestra-go="dashboard"]').first().click();
+  await expect(page.locator('#vestraIntelligenceHome[data-legacy-open="true"]')).toHaveCount(1);
+
+  // The dashboard can intentionally hide secondary tools and data-gated cards.
+  // Reveal only the authentic financial card DOM owners for this contrast fixture;
+  // do not alter their computed ink, background or financial calculations.
+  await page.evaluate(() => {
+    for(const selector of ['#v2-tools-chapter','#debtRatioCard','#maturityAlertsCard']){
+      const el=document.querySelector(selector);
+      if(el)el.style.setProperty('display','block','important');
+    }
+  });
+  await expect(page.locator('#debtRatioCard')).toBeVisible();
+  await expect(page.locator('#maturityAlertsCard')).toBeVisible();
+  // Representative dynamic financial markup, inserted into the actual card owners.
+  // This tests computed WebKit styles even when the test account has no portfolio.
+  const evidence=await page.evaluate(() => {
+    const health=document.querySelector('#debtRatioContent');
+    const maturities=document.querySelector('#maturityAlertsContent');
+    if(!health||!maturities)return {error:'Missing financial card content owners'};
+    health.innerHTML='<div class="health-metric-card"><strong data-contrast-check="health-value">27%</strong><p data-contrast-check="health-label">Endividamento estimado</p><small data-contrast-check="health-note">Cobertura parcial</small><span style="color:#a34720" data-contrast-check="health-status">Atenção</span></div>';
+    maturities.innerHTML='<div><strong data-contrast-check="maturity-value">2027</strong><p data-contrast-check="maturity-label">Próximo vencimento</p><span style="color:#a34720" data-contrast-check="maturity-status">Rever prazo</span></div>';
+    const toRgb = str => {
+      const m=str.match(/^rgba?\(\s*([\d.]+)[, ]+([\d.]+)[, ]+([\d.]+)/);
+      return m ? [Number(m[1]),Number(m[2]),Number(m[3])] : null;
+    };
+    const luminance = rgb => rgb.reduce((sum,n,i)=>{
+      const s=n/255;
+      const v=s<=.04045?s/12.92:Math.pow((s+.055)/1.055,2.4);
+      return sum+v*[.2126,.7152,.0722][i];
+    },0);
+    const names=['health-value','health-label','health-note','health-status','maturity-value','maturity-label','maturity-status'];
+    return names.map(name=>{
+      const el=document.querySelector('[data-contrast-check="'+name+'"]');
+      const owner=el.closest('.health-metric-card')||el.closest('#maturityAlertsContent>div');
+      const style=getComputedStyle(el), surface=getComputedStyle(owner);
+      const fg=style.webkitTextFillColor||style.color;
+      const bg=surface.backgroundColor==='rgba(0, 0, 0, 0)'?
+        getComputedStyle(owner.closest('#maturityAlertsCard')).backgroundColor:surface.backgroundColor;
+      const a=toRgb(fg),b=toRgb(bg);
+      const contrast=a&&b?(Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05):null;
+      return {name,fg,bg,contrast,visible:el.getBoundingClientRect().width>0};
+    });
+  });
+  expect(evidence.error).toBeUndefined();
+  for(const item of evidence){
+    expect(item.visible,item.name).toBe(true);
+    expect(item.contrast,item.name).not.toBeNull();
+    expect(item.contrast,item.name).toBeGreaterThanOrEqual(4.5);
+  }
+  const out=path.join('test-results','visual-evidence');
+  fs.mkdirSync(out,{recursive:true});
+  fs.writeFileSync(path.join(out,'dynamic-health-maturity-iphone.json'),JSON.stringify(evidence,null,2));
+});
