@@ -176,3 +176,24 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-search{
   font-size:12px!important;line-height:1.45;
  }
 }
+
+/* Vestra 2.0: market mobile editorial chapters.
+   Replace nested dark dashboard frames with hairline-separated reading sections;
+   retain ivory opportunity and tool surfaces, search, filters and all action DOM. */
+@media(max-width:600px){
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-shell>.market-section:not(:has(.vestra-opportunity-lenses)){
+  border:0!important;border-top:1px solid #35534a!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important;
+  padding:18px 0!important;margin:0!important;
+ }
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-shell>.market-section:not(:has(.vestra-opportunity-lenses)) .market-section__head{
+  margin-bottom:10px!important;
+ }
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-shell>.market-section:not(:has(.vestra-opportunity-lenses)) .market-section__head h3{
+  font:600 clamp(23px,6.2vw,29px)/1.14 Georgia,serif!important;
+  letter-spacing:-.035em!important;text-transform:none!important;
+ }
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-shell>.market-section:not(:has(.vestra-opportunity-lenses)) .market-section__head p{
+  font-size:12px!important;line-height:1.5!important;
+ }
+}
