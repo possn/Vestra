@@ -1518,3 +1518,25 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
   column-gap:clamp(32px,5vw,84px)!important;
  }
 }
+
+/* V2.0 Home / medium-width editorial bridge: keep a deliberate layout
+   between the one-column iPhone edition and the wide desktop spread. */
+@media(min-width:601px) and (max-width:1099px){
+ #viewDashboard #vestraIntelligenceHome .vi-opening{
+  display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(220px,.8fr)!important;
+  column-gap:clamp(20px,3vw,36px)!important;align-items:end!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-lead{
+  grid-column:1!important;min-width:0;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-wealth{
+  grid-column:2!important;grid-row:1!important;min-width:0;align-self:end!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities{
+  display:grid!important;grid-template-columns:minmax(170px,.7fr) minmax(0,2fr)!important;
+  gap:clamp(16px,3vw,32px)!important;align-items:start!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-decisions{
+  min-width:0;grid-template-columns:1fr!important;
+ }
+}
