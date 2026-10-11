@@ -251,5 +251,15 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn("grid-row:auto!important", css)
         self.assertIn("vestra-intelligence.css?v=49", html)
 
+    def test_wealth_dark_heading_and_ivory_tool_cards_have_separate_ink(self):
+        css = (ROOT / "vestra-home-density-v2.css").read_text(encoding="utf-8")
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn("explicit heading contrast ownership", css)
+        for marker in ("#v2-wealth-chapter h2", "#portfolioSourcesCard", "#goalCard", "#milestonesCard"):
+            self.assertIn(marker, css)
+        self.assertIn("-webkit-text-fill-color:#19363b!important", css)
+        self.assertIn("-webkit-text-fill-color:#f4f0e7!important", css)
+        self.assertIn("vestra-home-density-v2.css?v=6", html)
+
 if __name__ == "__main__":
     unittest.main()
