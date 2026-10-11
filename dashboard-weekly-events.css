@@ -18,3 +18,7 @@
 #dashboardWeeklyEventsCard [data-weekly-week-action]{background:#f4f3ee;color:#173037;-webkit-text-fill-color:#173037;border-color:#a7b7b2;min-width:38px;min-height:40px}
 #dashboardWeeklyEventsCard [data-weekly-week-action]:disabled{opacity:.48;cursor:default}
 #dashboardWeeklyEventsCard :is(.weekly-event,[data-weekly-week-action]):focus-visible{outline:2px solid #14736d;outline-offset:2px}
+
+/* Explicit result provenance on each weekly event, without implied publication. */
+#dashboardWeeklyEventsCard .weekly-event__result-status{display:inline-flex;align-items:center;border-radius:6px;padding:3px 6px;background:#e5e9e5;color:#425b58;-webkit-text-fill-color:#425b58;font-size:9px;font-weight:750}
+#dashboardWeeklyEventsCard .weekly-event__result-status[data-available="true"]{background:#d6ece2;color:#185f49;-webkit-text-fill-color:#185f49}

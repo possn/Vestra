@@ -12,7 +12,7 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
 
   await page.evaluate(() => {
     window.VestraWeeklyEvents.render({
-      now: new Date(2026, 8, 6, 9, 0, 0),
+      now: new Date(2026, 8, 7, 9, 0, 0),
       portfolioTickers: new Set(['NVDA']),
       stocks: [
         { ticker:'NVDA', name:'NVIDIA Corporation', quote_type:'EQUITY', market_cap:4_000_000_000_000, analyst_next_earnings_date:'2026-09-08' },
@@ -32,7 +32,7 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   const card = page.locator('#dashboardWeeklyEventsCard');
   await expect(card).toBeVisible({ timeout: 15_000 });
   await expect(card.locator('.weekly-events-title')).toHaveText('Eventos da semana');
-  await expect(card.locator('.weekly-events-range')).toHaveText('6/09 – 12/09');
+  await expect(card.locator('.weekly-events-range')).toHaveText('7/09 – 13/09');
 
   // Weekly cards now use an index because the first tap opens the event detail;
   // ticker identity is carried by the dossier action inside an earnings detail.
