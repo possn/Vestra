@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2.4';
+  const VERSION = '2.5';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -319,7 +319,7 @@
     const link = document.createElement('link');
     link.id = STYLE_ID;
     link.rel = 'stylesheet';
-    link.href = 'dashboard-weekly-events.css?v=1.2';
+    link.href = 'dashboard-weekly-events.css?v=1.3';
     document.head.appendChild(link);
   }
 
