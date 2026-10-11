@@ -40,24 +40,34 @@ test('iPhone WebKit: screenshot-reported headings meet 4.5:1 against their surfa
   const rgb=s=>{const m=s.match(/rgba?\(([^)]+)\)/);return m?m[1].split(',').slice(0,3).map(Number):null};
   const luminance=v=>v.reduce((total,n,i)=>{const c=n/255;return total+(c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4))*[.2126,.7152,.0722][i]},0);
   const checks=[
-   ['context title','.vi-context-heading h3',null],
-   ['context deck','.vi-context-heading p',null],
-   ['quick title','#dashboardQuickRecordsCard .card__title','#dashboardQuickRecordsCard'],
-   ['quick deck','#dashboardQuickRecordsCard .card__muted','#dashboardQuickRecordsCard']
+   ['context title','.vi-context-heading h3'],
+   ['context deck','.vi-context-heading p'],
+   ['quick title','#dashboardQuickRecordsCard .card__title'],
+   ['quick deck','#dashboardQuickRecordsCard .card__muted']
   ];
-  return checks.map(([name,sel,owner])=>{
+  return checks.map(([name,sel])=>{
    const el=document.querySelector(sel);
    if(!el)return {name,error:'missing heading'};
    const fg=rgb(getComputedStyle(el).webkitTextFillColor||getComputedStyle(el).color);
-   // The context sits on the dark editorial page, not an ivory card.
-   const bg=owner?rgb(getComputedStyle(document.querySelector(owner)).backgroundColor):[16,40,39];
+   // Resolve the actual rendered background from the nearest opaque ancestor.
+   // No assumed theme color: a future surface change must be caught in WebKit.
+   let surface=el.parentElement;
+   let bg=null;
+   while(surface&&!bg){
+    const style=getComputedStyle(surface), raw=style.backgroundColor;
+    const alpha=raw.startsWith('rgba(')?Number(raw.slice(5,-1).split(',')[3]):1;
+    if(alpha>=0.99)bg=rgb(raw);
+    surface=surface.parentElement;
+   }
    if(!fg||!bg)return {name,error:'non-rgb surface or ink'};
    const l1=luminance(fg),l2=luminance(bg);
-   return {name,contrast:(Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05)};
+   return {name,contrast:(Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05),visible:el.getClientRects().length>0};
   });
  });
  for(const item of report){
   expect(item.error,item.name).toBeUndefined();
+  // A canonical context chapter may be hidden when the detail view opens;
+  // verify computed contrast without requiring an intentionally hidden chapter.
   expect(item.contrast,item.name+' contrast').toBeGreaterThanOrEqual(4.5);
  }
 });
