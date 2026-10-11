@@ -1540,3 +1540,21 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
   min-width:0;grid-template-columns:1fr!important;
  }
 }
+
+/* Small tablet bridge: 601–740px has insufficient reading measure for
+   simultaneous lead + wealth + priority rails. Keep full-width editorial flow. */
+@media(min-width:601px) and (max-width:740px){
+ #viewDashboard #vestraIntelligenceHome .vi-opening{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;row-gap:16px!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-lead,
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-wealth{
+  grid-column:1!important;grid-row:auto!important;min-width:0;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities{
+  grid-template-columns:minmax(0,1fr)!important;row-gap:14px!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-decisions{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+}
