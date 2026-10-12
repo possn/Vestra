@@ -465,7 +465,7 @@
 
   function render(options = {}) {
     ensureStyles(); const card = ensureCard(); if (!card) return [];
-    const stocks = options.stocks || window.VestraMarketStaticUniverse?.getStocks?.() || earningsStockCache;
+    const sharedStocks = window.VestraMarketStaticUniverse?.getStocks?.(); const stocks = options.stocks || (Array.isArray(sharedStocks) && sharedStocks.length ? sharedStocks : earningsStockCache);
     const tickers = options.portfolioTickers || portfolioTickerSet(); const nav = window.VestraWeeklyEventsNavigation; const now = options.now || (nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date()); const macro = options.macroEvents || macroSnapshot;
     const events = selectEvents(stocks, tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
     const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
