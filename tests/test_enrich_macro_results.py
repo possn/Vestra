@@ -69,6 +69,24 @@ foods, energy, and trade services advanced 4.7 percent.
 
 @unittest.skipUnless(DEPS_AVAILABLE, 'macro result dependencies are installed only in the dedicated workflow')
 class MacroResultTests(unittest.TestCase):
+    def test_nfp_real_october_2026_release_wording(self):
+        release = """<html><body><pre>
+        Transmission of material in this news release is embargoed until
+        8:30 a.m. (ET) Friday, October 2, 2026
+
+        THE EMPLOYMENT SITUATION - SEPTEMBER 2026
+
+        Both nonfarm payroll employment (+29,000) and the unemployment rate (4.2 percent) changed little in September.
+
+        Both the unemployment rate, at 4.2 percent, and the number of unemployed people changed little in September.
+
+        Total nonfarm payroll employment changed little in September (+29,000), following an average monthly gain.
+        </pre></body></html>"""
+        parsed = mod.parse_bls_release(release, 'NFP EUA')
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed[0], date(2026, 10, 2))
+        self.assertEqual(parsed[2], {'payroll_change_jobs':29000,'unemployment_rate_pct':4.2})
+
     def test_nfp_exact_date_structured_metrics_and_stale_rejection(self):
         page = """<html><body>
         <p>Transmission of material in this release is embargoed until 8:30 a.m. (ET) Friday, October 2, 2026</p>
