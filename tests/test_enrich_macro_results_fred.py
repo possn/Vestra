@@ -13,6 +13,10 @@ if DEPS_AVAILABLE:
     spec.loader.exec_module(mod)
 
 
+def jolts_values():
+    return {'JTSJOL':[('2026-08-01',7079.0)], 'JTSJOR':[('2026-08-01',4.3)]}
+
+
 class _Response:
     def __init__(self, text, status=200):
         self.text = text
@@ -58,6 +62,33 @@ def ppi_values():
 
 
 @unittest.skipUnless(DEPS_AVAILABLE, 'requests installed in macro workflow')
+class FredBlsJoltsTests(unittest.TestCase):
+    @unittest.skipUnless(DEPS_AVAILABLE, 'requires requests')
+    def test_exact_reference_month_publishes_named_jolts_values(self):
+        event = {'date':'2026-09-29','source':'bls','short_title':'JOLTS'}
+        payload = {'events':[event]}
+        session = _Session(jolts_values())
+        stats = mod.enrich_fred_fallback(payload, session, today=date(2026,10,12))
+        self.assertEqual(stats['matched'], 1)
+        self.assertEqual(event['result_metrics'], {
+            'job_openings_thousands':7079, 'job_openings_rate_pct':4.3})
+        self.assertEqual(event['result_metric_schema'], 'bls_jolts_v1')
+        self.assertEqual(event['result_released_at'], '2026-09-29')
+        self.assertEqual(event['source_url'], 'https://www.bls.gov/news.release/archives/jolts_09292026.htm')
+
+    @unittest.skipUnless(DEPS_AVAILABLE, 'requires requests')
+    def test_missing_reference_month_and_future_date_fail_closed(self):
+        for when, today in [('2026-09-29',date(2026,10,12)),
+                            ('2026-11-03',date(2026,10,12))]:
+            event = {'date':when,'source':'bls','short_title':'JOLTS'}
+            payload = {'events':[event]}
+            stats = mod.enrich_fred_fallback(payload, _Session(jolts_values() if when == '2026-11-03' else {
+                'JTSJOL':[('2026-07-01',7000)], 'JTSJOR':[('2026-07-01',4.2)]}), today=today)
+            self.assertEqual(stats['matched'], 0)
+            self.assertNotIn('result_status', event)
+
+
+@unittest.skipUnless(DEPS_AVAILABLE, 'requires requests; full tests run in macro workflow')
 class FredBlsFallbackTests(unittest.TestCase):
     def test_cpi_named_metrics_are_calculated_from_sa_and_nsa_series(self):
         session = _Session(cpi_values())
