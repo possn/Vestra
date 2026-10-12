@@ -269,5 +269,20 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn(":is(.vi-context-heading,.v2-home-section-label)", css)
         self.assertIn("vestra-home-density-v2.css?v=7", html)
 
+    def test_patrimony_hero_card_is_readable_and_scoped_to_light_drilldown(self):
+        css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        scope = '#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage'
+        self.assertIn('class="card hero v2-home-stage"', html)
+        self.assertIn(scope + '{', css)
+        # Only the expanded light patrimony view receives the new card skin.
+        self.assertIn('background:#ffffff!important', css[css.rfind(scope + '{'):])
+        for element in ('.hero__label', '.hero__value', '.hero__sub',
+                        '#kpiChanges', '.dashboard-privacy-toggle'):
+            self.assertIn(scope + ' ' + element, css)
+        for ink in ('#102d33', '#244349', '#3a5357', '#284c4f'):
+            self.assertIn(ink, css)
+        self.assertIn('vestra-intelligence.css?v=55', html)
+
 if __name__ == "__main__":
     unittest.main()
