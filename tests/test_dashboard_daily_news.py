@@ -65,7 +65,7 @@ class DashboardDailyNewsTests(unittest.TestCase):
         self.assertIn("ensureDashboardDailyNews()", self.loader)
         self.assertIn('"./dashboard-daily-news.js"', self.sw)
         self.assertIn('"./dashboard-daily-news.css"', self.sw)
-        self.assertIn("dashboard-daily-news.css?v=1.1", self.runtime)
+        self.assertIn("dashboard-daily-news.css?v=1.2", self.runtime)
         self.assertIn("version: '1.9'", self.runtime)
 
     def test_news_runtime_is_network_first_so_interaction_fixes_are_not_stale(self):
