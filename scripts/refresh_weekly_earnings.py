@@ -61,7 +61,7 @@ def _row_value(row, names):
     return None
 
 
-def candidate_tickers(payload: dict, today: date | None = None, past_days: int = 90, future_days: int = 90) -> list[str]:
+def candidate_tickers(payload: dict, today: date | None = None, past_days: int = 90, future_days: int = 90, rotation_slot: int = 0) -> list[str]:
     """Reserve bounded slots for companies missing dates.
 
     Old behaviour only queried symbols that ALREADY had an earnings date,
@@ -97,7 +97,10 @@ def candidate_tickers(payload: dict, today: date | None = None, past_days: int =
     # makes selection reproducible in tests and independent of scheduler time.
     if undated:
         rotation_day = (today - date(2026, 10, 12)).days
-        offset = (rotation_day * 30) % len(undated)
+        # Advance every three UTC hours; multiple refreshes on one day
+        # must not exhaust their network budget on the same 30 companies.
+        slot = max(0, min(7, int(rotation_slot)))
+        offset = ((rotation_day * 8 + slot) * 30) % len(undated)
         undated = undated[offset:] + undated[:offset]
     # Preserve the 80-call quota: 50 dated catalysts + 30 rotating companies
     # without a usable upcoming date; never invent calendar dates.
@@ -270,7 +273,8 @@ def main() -> int:
     rows = payload.get("stocks") or []
     by_ticker = {str(row.get("ticker") or "").strip().upper(): row for row in rows if isinstance(row, dict)}
     coverage_before = earnings_coverage(payload)
-    candidates = candidate_tickers(payload)
+    now_utc = datetime.now(timezone.utc)
+    candidates = candidate_tickers(payload, today=now_utc.date(), rotation_slot=now_utc.hour // 3)
     attempted = matched = updated = 0
     failures = []
     for ticker in candidates[:80]:
