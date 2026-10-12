@@ -174,6 +174,33 @@ def fetch_metrics(session: requests.Session, short_title: str, event_date: date)
     return metrics, _summary(ref_year, ref_month, metrics), diagnostics
 
 
+def fetch_jolts_metrics(session: requests.Session, event_date: date) -> tuple[dict, str, list[str]] | None:
+    """BLS JOLTS via FRED, for the exact preceding reference month, not a generic actual."""
+    year, month = _reference_month(event_date)
+    key = _month_date(year, month)
+    diagnostics = []
+    readings = {}
+    for series_id in ("JTSJOL", "JTSJOLR"):
+        values, diagnostic = _fetch_series(session, series_id, key, key)
+        diagnostics.append(diagnostic)
+        if key not in values:
+            return None
+        readings[series_id] = values[key]
+    openings_thousands = readings["JTSJOL"]
+    openings_rate = readings["JTSJOLR"]
+    if not (0 < openings_thousands < 30000 and 0 < openings_rate < 20):
+        return None
+    metrics = {
+        "job_openings_thousands": round(openings_thousands),
+        "job_openings_rate_pct": round(openings_rate, 1),
+    }
+    return metrics, (
+        f"U.S. BLS JOLTS via FRED · {year:04d}-{month:02d}: "
+        f"{metrics['job_openings_thousands']:,} thousand job openings; "
+        f"openings rate {metrics['job_openings_rate_pct']:.1f}%."
+    ), diagnostics
+
+
 def enrich_fred_fallback(payload: dict, session: requests.Session, today: date | None = None) -> dict:
     today = today or date.today()
     attempted = matched = 0
@@ -183,7 +210,7 @@ def enrich_fred_fallback(payload: dict, session: requests.Session, today: date |
             continue
         short_title = str(event.get("short_title") or "")
         config = SERIES.get(short_title)
-        if not config:
+        if not config and short_title != "JOLTS":
             continue
         if event.get("result_status") == "official_release_summary" and event.get("result_metrics"):
             continue
@@ -194,7 +221,8 @@ def enrich_fred_fallback(payload: dict, session: requests.Session, today: date |
         if event_date > today:
             continue
         attempted += 1
-        fetched = fetch_metrics(session, short_title, event_date)
+        fetched = (fetch_jolts_metrics(session, event_date) if short_title == "JOLTS"
+                   else fetch_metrics(session, short_title, event_date))
         if not fetched:
             failures.append(f"{short_title}@{event_date.isoformat()}:missing_or_unreachable")
             continue
@@ -202,9 +230,10 @@ def enrich_fred_fallback(payload: dict, session: requests.Session, today: date |
         event["result_status"] = "official_release_summary"
         event["result_summary"] = summary
         event["result_released_at"] = event_date.isoformat()
-        event["result_metric_schema"] = config["schema"]
+        event["result_metric_schema"] = "bls_jolts_v1" if short_title == "JOLTS" else config["schema"]
         event["result_metrics"] = metrics
-        event["source_url"] = _release_url(short_title, event_date, today)
+        event["source_url"] = (f"https://www.bls.gov/news.release/archives/jolts_{event_date:%m%d%Y}.htm"
+                               if short_title == "JOLTS" else _release_url(short_title, event_date, today))
         event["result_transport"] = "fred_bls_mirror"
         event["result_transport_diagnostic"] = ";".join(diagnostics)
         matched += 1
