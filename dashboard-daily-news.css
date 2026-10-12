@@ -13,3 +13,62 @@
 .vestra-daily-news-more{display:block;margin:5px 0 0 auto;appearance:none;border:0;background:transparent;color:var(--text2,#334f5b);font-size:9.5px;font-weight:850;padding:5px 1px;cursor:pointer}
 .vestra-daily-news-empty{padding:10px 1px;color:var(--muted,#6d7f86);font-size:11px}
 @media(max-width:600px){.vestra-daily-news-card{margin:9px 0 14px;padding:13px;border-radius:17px}.vestra-daily-news-item{grid-template-columns:1fr;padding:8px 0}.vestra-daily-news-badge{grid-column:1;grid-row:auto;justify-self:start;margin:0 0 1px}.vestra-daily-news-item strong,.vestra-daily-news-item small{grid-column:1}.vestra-daily-news-item strong{font-size:11.5px}}
+
+/* Patrimony-only editorial cards. Keep dark Intelligence news list unchanged. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-card{
+ padding:20px!important;margin:22px 0 26px!important;
+ background:#f6f4ed!important;border:1px solid #c9d3cb!important;
+ border-radius:19px!important;box-shadow:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-head{
+ margin-bottom:15px!important;align-items:baseline!important;gap:14px!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-head h3{
+ font:600 clamp(23px,5vw,29px)/1.16 Georgia,serif!important;
+ color:#18363a!important;-webkit-text-fill-color:#18363a!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-head>small{
+ font-size:11px!important;color:#53696b!important;-webkit-text-fill-color:#53696b!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-list{
+ display:grid!important;gap:12px!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-item{
+ display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+ gap:7px!important;padding:17px 18px!important;min-width:0!important;
+ border:1px solid #d8ded7!important;border-radius:15px!important;
+ background:#fffdfa!important;text-decoration:none!important;box-shadow:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-item:first-child{
+ padding:17px 18px!important;border-top:1px solid #d8ded7!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-item strong{
+ display:block!important;width:100%!important;grid-column:auto!important;
+ color:#18363a!important;-webkit-text-fill-color:#18363a!important;
+ font:650 clamp(15px,3.7vw,18px)/1.35 system-ui,-apple-system,sans-serif!important;
+ overflow-wrap:break-word!important;word-break:normal!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-item small{
+ grid-column:auto!important;color:#526b70!important;-webkit-text-fill-color:#526b70!important;
+ font-size:12px!important;line-height:1.4!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-badge{
+ grid-column:auto!important;grid-row:auto!important;align-self:flex-start!important;
+ margin:0!important;white-space:normal!important;
+ background:#e6eeea!important;color:#345e59!important;-webkit-text-fill-color:#345e59!important;
+ font-size:10px!important;line-height:1.25!important;font-weight:750!important;
+ padding:5px 8px!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-more{
+ font-size:12px!important;color:#216b60!important;-webkit-text-fill-color:#216b60!important;
+ padding:12px 3px 4px!important;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-card{
+  padding:15px!important;margin:23px 0 27px!important;
+ }
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-item{
+  padding:15px!important;gap:6px!important;
+ }
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .vestra-daily-news-item:first-child{padding:15px!important}
+}
