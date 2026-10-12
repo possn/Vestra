@@ -1,4 +1,4 @@
-/* Vestra weekly events navigation companion v1.1 */
+/* Vestra weekly events navigation companion v1.2 */
 (() => {
   'use strict';
 
@@ -79,6 +79,11 @@
   if (observer && document.documentElement) observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener?.('vestra:market-ready', () => setTimeout(decorate, 0));
   window.addEventListener?.('vestra:weekly-data-refreshed', () => setTimeout(decorate, 0));
+  // The weekly card replaces its header on every render. Reattach the controls
+  // after each render; the one-shot observer only covers initial mounting.
+  window.addEventListener?.('vestra:dashboard-signal-updated', event => {
+    if (event?.detail?.source === 'weekly-events') decorate();
+  });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(decorate, 0), { once: true });
   else setTimeout(decorate, 0);
 
@@ -89,6 +94,6 @@
     reset,
     getWeekOffset: () => weekOffset,
     maxWeekOffset: MAX_WEEK_OFFSET,
-    version: '1.1',
+    version: '1.2',
   });
 })();
