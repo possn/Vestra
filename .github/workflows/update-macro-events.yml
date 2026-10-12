@@ -127,7 +127,7 @@ jobs:
                   metrics = e.get('result_metrics') or {}
                   if e.get('source') == 'bls':
                       assert e.get('short_title') in {'CPI EUA','PPI EUA','NFP EUA'}
-                      assert str(e.get('source_url','')).startswith('https://www.bls.gov/news.release/')
+                      assert str(e.get('source_url','')).startswith(('https://www.bls.gov/news.release/','https://www.dol.gov/newsroom/economicdata/empsit_'))
                       assert 'actual' not in e or e.get('actual') is None
                       if e.get('result_transport') == 'fred_bls_mirror':
                           assert set(metrics) == {'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct'}
