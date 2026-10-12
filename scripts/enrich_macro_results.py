@@ -159,6 +159,24 @@ def _extract_nfp_metrics(paragraphs: list[str]) -> dict:
         r"([0-9]+(?:\.[0-9]+)?)\s+percent",
         raw, re.I,
     )
+    # BLS also writes: "changed little in September (+29,000)" and
+    # "Both the unemployment rate, at 4.2 percent, ... changed little".
+    if not payroll:
+        payroll = re.search(
+            r"\\bTotal nonfarm payroll employment\\s+changed little\\s+in\\s+[A-Za-z]+\\s+"
+            r"\\(([+-]?[0-9][0-9,]*)\\)",
+            raw, re.I,
+        )
+    if not payroll:
+        payroll = re.search(
+            r"\\bnonfarm payroll employment\\s+\\(([+-]?[0-9][0-9,]*)\\)",
+            raw, re.I,
+        )
+    if not unemployment:
+        unemployment = re.search(
+            r"\\b(?:the )?unemployment rate,?\\s+at\\s+([0-9]+(?:\\.[0-9]+)?)\\s+percent",
+            raw, re.I,
+        )
     metrics = {}
     if payroll:
         direction = re.search(r"\b(?:declined|decreased|fell)\b", payroll.group(0), re.I)
