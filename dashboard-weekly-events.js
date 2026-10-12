@@ -1,12 +1,12 @@
-/* Vestra Dashboard Weekly Events v2.8 — compact editorial catalysts with progressive disclosure. */
+/* Vestra Dashboard Weekly Events v2.9 — compact editorial catalysts with progressive disclosure. */
 (() => {
   'use strict';
 
-  const VERSION = '2.8';
+  const VERSION = '2.9';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
-  const MAX_EVENTS = 12;
+  const MAX_EVENTS = 40;
   const COLLAPSED_EVENTS = 4;
   const WINDOW_DAYS = 7;
   const MACRO_URL = 'data/macro-events.json';
@@ -193,14 +193,12 @@
   function selectEvents(stocks, portfolioTickers = new Set(), now = new Date(), limit = MAX_EVENTS, macro = macroSnapshot) {
     const macroEvents = collectMacroEvents(macro, now);
     const earnings = collectEvents(stocks, portfolioTickers, now);
+    // Do not let dense macro weeks silently erase company results.
+    // Portfolio earnings come first, then official macro, then other earnings.
     const portfolioEarnings = earnings.filter(x => x.inPortfolio).sort((a,b)=>a.date-b.date || b.marketCap-a.marketCap);
-    const marketEarnings = earnings.filter(x => !x.inPortfolio).sort((a,b)=>b.marketCap-a.marketCap || a.date-b.date);
+    const marketEarnings = earnings.filter(x => !x.inPortfolio).sort((a,b)=>a.date-b.date || b.marketCap-a.marketCap);
     const cap = Math.max(1, Number(limit) || MAX_EVENTS);
-    const selected = [];
-    const push = event => { if (selected.length < cap) selected.push(event); };
-    macroEvents.sort((a,b)=>a.date-b.date || (a.importance === 'critical' ? -1 : 1)).forEach(push);
-    portfolioEarnings.forEach(push);
-    marketEarnings.forEach(push);
+    const selected = [...portfolioEarnings, ...macroEvents.sort((a,b)=>a.date-b.date || (a.importance === 'critical' ? -1 : 1)), ...marketEarnings].slice(0, cap);
     return selected.sort((a,b) => {
       if (a.date.getTime() !== b.date.getTime()) return a.date - b.date;
       if (a.kind !== b.kind) return a.kind === 'macro' ? -1 : 1;
@@ -436,7 +434,7 @@
     const events = selectEvents(stocks, tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
     const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
     card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
-    if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos macro ou resultados relevantes nos próximos 7 dias.'; card.appendChild(empty); }
+    if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos confirmados neste intervalo. O calendário depende das datas disponíveis nas fontes oficiais e no índice de resultados das empresas.'; card.appendChild(empty); }
     else {
       const list=document.createElement('div'); list.className='weekly-events-list';
       const visibleEvents=eventsExpanded ? events : events.slice(0,COLLAPSED_EVENTS);
