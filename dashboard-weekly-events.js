@@ -436,7 +436,12 @@
     if (calendarStartupLoading) return calendarStartupLoading;
     calendarStartupLoading = (async () => {
       try {
-        const response = await fetch('data/stocks-startup.json', {cache:'no-store'});
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        let timeoutId;
+        const response = await Promise.race([
+          fetch('data/stocks-startup.json', {cache:'no-store', ...(controller ? {signal:controller.signal} : {})}),
+          new Promise(resolve => { timeoutId = setTimeout(() => { try { controller?.abort(); } catch (_) {} resolve(null); }, 7000); }),
+        ]).finally(() => clearTimeout(timeoutId));
         if (!response.ok) return [];
         const payload = await response.json();
         const data = window.VestraMarketStaticUniverse?.unpackStartupPayload?.(payload);
@@ -462,7 +467,7 @@
       visibleEvents.forEach((event,index)=>{ const item=document.createElement('button'); item.type='button'; item.dataset.weeklyEventIndex=String(index); item.className=`weekly-event${event.inPortfolio?' weekly-event--portfolio':''}${event.kind==='macro'?' weekly-event--macro':''}${event.importance==='critical'?' weekly-event--critical':''}`; const day=document.createElement('div'); day.className='weekly-event__day'; day.textContent=dayLabel(event.date,now); const title=document.createElement('div'); title.className='weekly-event__ticker'; title.textContent=event.kind==='macro'?event.shortTitle:event.ticker; const name=document.createElement('div'); name.className='weekly-event__name'; name.textContent=event.kind==='macro'?`${event.region}${event.timeLocal?` · ${event.timeLocal}`:''}`:event.name; const meta=document.createElement('div'); meta.className='weekly-event__meta'; const type=document.createElement('span'); type.className='weekly-event__type'; type.textContent=categoryLabel(event); meta.appendChild(type); const published=event.kind==='macro'?hasMacroPublication(event):event.reported && event.epsActual!==null; const status=document.createElement('span'); status.className='weekly-event__result-status'; status.textContent=published?'Resultado disponível':(event.date<localDay(now)?'Resultado não confirmado':'Por publicar'); status.dataset.available=published?'true':'false'; meta.appendChild(status); if(event.importance==='critical'){const high=document.createElement('span');high.className='weekly-event__critical';high.textContent='Impacto elevado';meta.appendChild(high);} if(event.inPortfolio){const owned=document.createElement('span');owned.className='weekly-event__portfolio';owned.textContent='No portefólio';meta.appendChild(owned);} item.title=event.title||event.name||event.ticker||''; item.append(day,title,name,meta); list.appendChild(item); }); card.appendChild(list);
       if(events.length>COLLAPSED_EVENTS){const more=document.createElement('button');more.type='button';more.className='weekly-events-more';more.dataset.weeklyEventsToggle='1';more.setAttribute('aria-expanded',eventsExpanded?'true':'false');more.textContent=eventsExpanded?'Mostrar menos':`Ver semana completa · ${events.length}`;card.appendChild(more);}
     }
-    const foot=document.createElement('div'); foot.className='weekly-events-foot'; foot.textContent=`Toca num evento para ver detalhe · ${macroSnapshot?.generated_at ? `calendário atualizado ${new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Lisbon'}).format(new Date(macroSnapshot.generated_at))} · ` : ''}resultados apenas quando confirmados no snapshot.`; card.appendChild(foot);
+    const foot=document.createElement('div'); foot.className='weekly-events-foot'; foot.textContent='Toca num evento para ver detalhes.'; card.appendChild(foot);
     try { window.dispatchEvent(new CustomEvent('vestra:dashboard-signal-updated', { detail: { source: 'weekly-events' } })); } catch (_) {}
     return events;
   }

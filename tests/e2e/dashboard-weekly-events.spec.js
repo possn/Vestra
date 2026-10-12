@@ -219,3 +219,28 @@ test('iPhone/WebKit: reported company earnings replace a stale pending event on 
   await expect(detail).not.toContainText('Resultados ainda não publicados');
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+test('iPhone/WebKit: calendar independently loads packed company dates before Market is opened', async ({ page }) => {
+  await page.route('**/data/stocks-startup.json', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({
+      layout: 'field_rows_v1',
+      fields: ['ticker', 'name', 'quote_type', 'market_cap', 'analyst_next_earnings_date'],
+      rows: [['TESTCO', 'Test Company', 'EQUITY', 1000000000, '2026-10-13']],
+    }),
+  }));
+  await page.route('**/data/macro-events.json', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ events: [] }),
+  }));
+  await page.goto('/index.html?vestra2=0');
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  await expect.poll(async () => page.evaluate(() => {
+    window.VestraWeeklyEvents.render({ now: new Date(2026, 9, 12, 12, 0, 0), macroEvents: { events: [] } });
+    return document.querySelector('#dashboardWeeklyEventsCard')?.textContent?.includes('TESTCO');
+  }), { timeout: 15000 }).toBe(true);
+  const card = page.locator('#dashboardWeeklyEventsCard');
+  await expect(card).toContainText('Test Company');
+  await expect(card).not.toContainText('Cobertura de resultados: índice de empresas ainda indisponível');
+  await expect(card).not.toContainText('O calendário depende das datas disponíveis');
+});
