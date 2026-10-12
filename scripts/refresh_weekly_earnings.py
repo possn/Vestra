@@ -230,10 +230,38 @@ def pack_index_payload(index_payload: dict) -> dict:
     return {**meta, "layout": "field_rows_v1", "fields": fields, "rows": packed_rows}
 
 
+
+def earnings_coverage(payload: dict, today: date | None = None) -> dict[str, int]:
+    """Measure confirmed calendar dates, not generic row changes."""
+    today = today or date.today()
+    window_start = today - timedelta(days=90)
+    window_end = today + timedelta(days=90)
+    listed = with_dates = past = future = 0
+    for row in payload.get("stocks") or []:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("quote_type") or "").upper() in EXCLUDED_TYPES:
+            continue
+        if not str(row.get("ticker") or "").strip():
+            continue
+        listed += 1
+        latest = _calendar_date(row.get("analyst_latest_earnings_date"))
+        nxt = _calendar_date(row.get("analyst_next_earnings_date"))
+        if latest or nxt:
+            with_dates += 1
+        if latest and window_start <= latest <= today:
+            past += 1
+        if nxt and today <= nxt <= window_end:
+            future += 1
+    return {"listed": listed, "companies_with_any_date": with_dates,
+            "past_90d_dates": past, "next_90d_dates": future}
+
+
 def main() -> int:
     payload = json.loads(INDEX.read_text(encoding="utf-8"))
     rows = payload.get("stocks") or []
     by_ticker = {str(row.get("ticker") or "").strip().upper(): row for row in rows if isinstance(row, dict)}
+    coverage_before = earnings_coverage(payload)
     candidates = candidate_tickers(payload)
     attempted = matched = updated = 0
     failures = []
@@ -264,6 +292,8 @@ def main() -> int:
         "attempted": attempted,
         "matched": matched,
         "updated": updated,
+        "coverage_before": coverage_before,
+        "coverage_after": earnings_coverage(payload),
         "failures": failures[:10],
         "contract": "near-term earnings only; preserve last verified values on fetch failure",
     }, ensure_ascii=False))
