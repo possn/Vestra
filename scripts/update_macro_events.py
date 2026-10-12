@@ -244,7 +244,7 @@ def validate_events(source: str, events: list[dict], today: date) -> list[dict]:
             d = date.fromisoformat(str(event["date"]))
         except Exception:
             continue
-        if d < today - timedelta(days=14) or d > today + timedelta(days=550):
+        if d < today - timedelta(days=90) or d > today + timedelta(days=550):
             continue
         key = (event.get("date"), event.get("date_end"), event.get("short_title"), event.get("source"))
         if key in seen:
@@ -279,7 +279,7 @@ def main() -> int:
             statuses[source] = {"state": "fresh", "count": len(fresh)}
         except Exception as exc:
             fallback = [e for e in previous_events if e.get("source") == source]
-            fallback = [e for e in fallback if str(e.get("date", "")) >= iso(today - timedelta(days=14))]
+            fallback = [e for e in fallback if str(e.get("date", "")) >= iso(today - timedelta(days=90))]
             if not fallback:
                 raise RuntimeError(f"{source} refresh failed and no validated fallback exists: {exc}") from exc
             merged.extend(fallback)
@@ -288,7 +288,7 @@ def main() -> int:
     # Retain recent validated historical events even when an official schedule
     # endpoint only returns upcoming dates. This lets downstream enrichers
     # reconcile delayed official results without inventing missing values.
-    recent_floor = iso(today - timedelta(days=14))
+    recent_floor = iso(today - timedelta(days=90))
     fresh_keys = {
         (e.get("date"), e.get("date_end"), e.get("short_title"), e.get("source"))
         for e in merged
