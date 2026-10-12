@@ -92,9 +92,17 @@ def candidate_tickers(payload: dict, today: date | None = None, past_days: int =
             undated.append((-cap, ticker))
     dated = sorted(set(dated))
     undated = [ticker for _cap, ticker in sorted(set(undated))]
-    # The existing run only supports 80 refreshes; guarantee actual
-    # discovery opportunities even during busy earnings weeks.
-    return dated[:50] + [ticker for ticker in undated if ticker not in set(dated)][:30]
+    # Move the discovery window daily. A permanently fixed top-30 caused
+    # companies ranked below it to remain unqueried forever. A fixed epoch
+    # makes selection reproducible in tests and independent of scheduler time.
+    if undated:
+        rotation_day = (today - date(2026, 10, 12)).days
+        offset = (rotation_day * 30) % len(undated)
+        undated = undated[offset:] + undated[:offset]
+    # Preserve the 80-call quota: 50 dated catalysts + 30 rotating companies
+    # without a usable upcoming date; never invent calendar dates.
+    dated_set = set(dated)
+    return dated[:50] + [ticker for ticker in undated if ticker not in dated_set][:30]
 
 def _as_utc_datetime(value):
     try:

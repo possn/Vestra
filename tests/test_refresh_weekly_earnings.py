@@ -67,6 +67,29 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         self.assertEqual(len([x for x in candidates if x.startswith('D')]), 50)
         self.assertEqual(len([x for x in candidates if x.startswith('F')]), 30)
 
+    def test_undated_discovery_rotates_across_days_without_exceeding_quota(self):
+        payload = {'stocks': [
+            *({'ticker': f'D{i:03d}', 'quote_type': 'EQUITY',
+                'analyst_next_earnings_date': '2026-10-15'} for i in range(60)),
+            *({'ticker': f'U{i:03d}', 'quote_type': 'EQUITY',
+                'market_cap': 100000000000 - i} for i in range(95)),
+        ]}
+        first = mod.candidate_tickers(payload, today=date(2026, 10, 12))
+        second = mod.candidate_tickers(payload, today=date(2026, 10, 13))
+        self.assertEqual(first, mod.candidate_tickers(payload, today=date(2026, 10, 12)))
+        self.assertEqual(len(first), 80)
+        self.assertEqual(len(second), 80)
+        first_undated = {x for x in first if x.startswith('U')}
+        second_undated = {x for x in second if x.startswith('U')}
+        self.assertEqual(len(first_undated), 30)
+        self.assertEqual(len(second_undated), 30)
+        self.assertFalse(first_undated & second_undated)
+        all_discovered = set()
+        for day in range(4):
+            selection = mod.candidate_tickers(payload, today=date(2026, 10, 12 + day))
+            all_discovered.update(x for x in selection if x.startswith('U'))
+        self.assertEqual(len(all_discovered), 95)
+
     def test_yahoo_surprise_percent_is_always_stored_as_fraction(self):
         earnings = FakeFrame([
             (datetime(2026, 9, 10, 20, 0, tzinfo=timezone.utc), FakeRow({
