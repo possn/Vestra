@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v3.0 — compact editorial catalysts with progressive disclosure. */
+/* Vestra Dashboard Weekly Events v3.1 — compact editorial catalysts with progressive disclosure. */
 (() => {
   'use strict';
 
-  const VERSION = '3.0';
+  const VERSION = '3.1';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -40,6 +40,42 @@
   const OFFICIAL_METRIC_SCHEMAS = new Set(['bls_cpi_v1', 'bls_ppi_v1', 'bls_nfp_v1', 'bls_jolts_v1', 'fed_funds_target_v1']);
   let macroSnapshot = null;
   let macroLoading = null;
+  let earningsStockCache = [];
+  let earningsStockLoading = null;
+
+  // The Dashboard can mount before the full Market runtime has loaded.
+  // Read the lightweight published startup snapshot independently rather than
+  // treating getStocks() === [] as evidence that no companies reported.
+  async function loadEarningsStocks(fetchImpl = (...args) => fetch(...args)) {
+    const shared = window.VestraMarketStaticUniverse?.getStocks?.();
+    if (Array.isArray(shared) && shared.length) return shared;
+    if (earningsStockCache.length) return earningsStockCache;
+    if (earningsStockLoading) return earningsStockLoading;
+    earningsStockLoading = (async () => {
+      try {
+        const response = await fetchImpl('data/stocks-startup.json', { cache: 'no-store' });
+        if (!response?.ok) return [];
+        const payload = await response.json();
+        if (payload?.layout !== 'field_rows_v1' || !Array.isArray(payload.fields) || !Array.isArray(payload.rows)) return [];
+        const fields = payload.fields;
+        const required = ['ticker','quote_type','name','market_cap',
+          'analyst_latest_earnings_date','analyst_next_earnings_date',
+          'analyst_latest_eps_actual','analyst_latest_eps_estimate',
+          'analyst_latest_eps_surprise_pct','analyst_eps_next_q'];
+        const indexes = required.map(key => fields.indexOf(key));
+        earningsStockCache = payload.rows.filter(Array.isArray).map(row => {
+          const stock = {};
+          required.forEach((key, index) => {
+            if (indexes[index] >= 0) stock[key] = row[indexes[index]] ?? null;
+          });
+          return stock;
+        });
+        return earningsStockCache;
+      } catch (_) { return []; }
+      finally { earningsStockLoading = null; }
+    })();
+    return earningsStockLoading;
+  }
   let lastRenderedEvents = [];
   let eventsExpanded = false;
 
@@ -429,7 +465,7 @@
 
   function render(options = {}) {
     ensureStyles(); const card = ensureCard(); if (!card) return [];
-    const stocks = options.stocks || window.VestraMarketStaticUniverse?.getStocks?.() || [];
+    const stocks = options.stocks || window.VestraMarketStaticUniverse?.getStocks?.() || earningsStockCache;
     const tickers = options.portfolioTickers || portfolioTickerSet(); const nav = window.VestraWeeklyEventsNavigation; const now = options.now || (nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date()); const macro = options.macroEvents || macroSnapshot;
     const events = selectEvents(stocks, tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
     const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
@@ -441,25 +477,22 @@
     }) : [];
     const datedStocks = candidateStocks.filter(stock => parseCalendarDate(stock?.analyst_latest_earnings_date) || parseCalendarDate(stock?.analyst_next_earnings_date));
     const weekEarnings = events.filter(event => event.kind === 'earnings').length;
-    const sourceStatus = document.createElement('div');
-    sourceStatus.className = 'weekly-events-foot';
-    sourceStatus.dataset.weeklyCoverage = '1';
-    sourceStatus.textContent = !candidateStocks.length
-      ? 'Cobertura de resultados: índice de empresas ainda indisponível; eventos macro podem estar visíveis.'
-      : !datedStocks.length
-        ? 'Cobertura de resultados: sem datas de publicação no índice de empresas. Não significa que não haja resultados.'
-        : weekEarnings
-          ? `Resultados de empresas: ${weekEarnings} com data nesta semana · ${datedStocks.length} empresas com alguma data no índice.`
-          : `Resultados de empresas: nenhuma data encontrada nesta semana · ${datedStocks.length} empresas com alguma data no índice. Calendário incompleto, não ausência confirmada de resultados.`;
-    card.appendChild(sourceStatus);
-    if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos confirmados neste intervalo. O calendário depende das datas disponíveis nas fontes oficiais e no índice de resultados das empresas.'; card.appendChild(empty); }
+    // A concise status only when company coverage has not yet loaded.
+    if (!candidateStocks.length) {
+      const status = document.createElement('div');
+      status.className = 'weekly-events-empty';
+      status.dataset.weeklyCoverage = '1';
+      status.textContent = 'A carregar resultados de empresas…';
+      card.appendChild(status);
+    }
+    if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos com data nesta semana.'; card.appendChild(empty); }
     else {
       const list=document.createElement('div'); list.className='weekly-events-list';
       const visibleEvents=eventsExpanded ? events : events.slice(0,COLLAPSED_EVENTS);
       visibleEvents.forEach((event,index)=>{ const item=document.createElement('button'); item.type='button'; item.dataset.weeklyEventIndex=String(index); item.className=`weekly-event${event.inPortfolio?' weekly-event--portfolio':''}${event.kind==='macro'?' weekly-event--macro':''}${event.importance==='critical'?' weekly-event--critical':''}`; const day=document.createElement('div'); day.className='weekly-event__day'; day.textContent=dayLabel(event.date,now); const title=document.createElement('div'); title.className='weekly-event__ticker'; title.textContent=event.kind==='macro'?event.shortTitle:event.ticker; const name=document.createElement('div'); name.className='weekly-event__name'; name.textContent=event.kind==='macro'?`${event.region}${event.timeLocal?` · ${event.timeLocal}`:''}`:event.name; const meta=document.createElement('div'); meta.className='weekly-event__meta'; const type=document.createElement('span'); type.className='weekly-event__type'; type.textContent=categoryLabel(event); meta.appendChild(type); const published=event.kind==='macro'?hasMacroPublication(event):event.reported && event.epsActual!==null; const status=document.createElement('span'); status.className='weekly-event__result-status'; status.textContent=published?'Resultado disponível':(event.date<localDay(now)?'Resultado não confirmado':'Por publicar'); status.dataset.available=published?'true':'false'; meta.appendChild(status); if(event.importance==='critical'){const high=document.createElement('span');high.className='weekly-event__critical';high.textContent='Impacto elevado';meta.appendChild(high);} if(event.inPortfolio){const owned=document.createElement('span');owned.className='weekly-event__portfolio';owned.textContent='No portefólio';meta.appendChild(owned);} item.title=event.title||event.name||event.ticker||''; item.append(day,title,name,meta); list.appendChild(item); }); card.appendChild(list);
       if(events.length>COLLAPSED_EVENTS){const more=document.createElement('button');more.type='button';more.className='weekly-events-more';more.dataset.weeklyEventsToggle='1';more.setAttribute('aria-expanded',eventsExpanded?'true':'false');more.textContent=eventsExpanded?'Mostrar menos':`Ver semana completa · ${events.length}`;card.appendChild(more);}
     }
-    const foot=document.createElement('div'); foot.className='weekly-events-foot'; foot.textContent=`Toca num evento para ver detalhe · ${macroSnapshot?.generated_at ? `calendário atualizado ${new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Lisbon'}).format(new Date(macroSnapshot.generated_at))} · ` : ''}resultados apenas quando confirmados no snapshot.`; card.appendChild(foot);
+    const foot=document.createElement('div'); foot.className='weekly-events-foot'; foot.textContent='Toca num evento para ver detalhes.'; card.appendChild(foot);
     try { window.dispatchEvent(new CustomEvent('vestra:dashboard-signal-updated', { detail: { source: 'weekly-events' } })); } catch (_) {}
     return events;
   }
@@ -501,7 +534,7 @@
 
   async function scheduleRender(){
     const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();
-    await Promise.allSettled([marketLoad,loadMacroEvents()]);
+    await Promise.allSettled([marketLoad,loadMacroEvents(),loadEarningsStocks()]);
     render();
     restoreExternalWeeklyDetail();
   }
@@ -562,6 +595,7 @@
     void loadMacroEvents().then(() => restoreExternalWeeklyDetail());
   });
   window.addEventListener?.('vestra:market-ready',()=>{ render(); restoreExternalWeeklyDetail(); });
+  window.addEventListener?.('vestra:weekly-data-refreshed',()=>{ if (!window.VestraMarketStaticUniverse?.getStocks?.()?.length && !earningsStockCache.length) void loadEarningsStocks().then(() => render()); });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
   window.VestraWeeklyEvents=Object.freeze({collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,findMacroEventById,restoreExternalWeeklyDetail,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
 })();
