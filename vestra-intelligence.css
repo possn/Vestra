@@ -1649,3 +1649,91 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
    margin-top:14px!important;padding:19px!important;
  }
 }
+
+/* V2.0 editorial composition / issue 02: hierarchy before decoration.
+   The canonical sources and all underlying financial modules remain intact. */
+#viewDashboard #vestraIntelligenceHome .vi-shell{gap:clamp(18px,3vw,28px)}
+#viewDashboard #vestraIntelligenceHome .vi-opening{
+ padding-bottom:clamp(18px,3vw,28px)!important;margin-top:0!important;
+ border-bottom:1px solid #50635b!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-opening .vi-lead{
+ padding:12px 0 8px!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-opening .vi-headline{
+ letter-spacing:-.055em!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-context-chapter{gap:15px!important}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections{
+ grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)!important;
+ gap:0!important;background:transparent!important;border:0!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card{
+ min-width:0!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;background:transparent!important;padding:20px 22px!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-events-reading{
+ grid-column:1!important;grid-row:1!important;
+ border-top:1px solid #53675f!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-market-reading{
+ grid-column:2!important;grid-row:1!important;
+ border-top:1px solid #53675f!important;
+ border-left:1px solid #53675f!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-news-reading{
+ grid-column:1!important;grid-row:2!important;
+ border-top:1px solid #53675f!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-risk-reading{
+ grid-column:2!important;grid-row:2!important;
+ border-top:1px solid #53675f!important;
+ border-left:1px solid #53675f!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-sentiment-orb{
+ aspect-ratio:auto!important;width:auto!important;min-height:0!important;
+ border:0!important;border-radius:0!important;background:none!important;
+ align-items:flex-start!important;padding:0!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-sentiment-orb strong{
+ font:550 clamp(37px,5vw,56px)/1 Georgia,serif!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-market-reading-body{
+ grid-template-columns:1fr!important;gap:8px!important;
+}
+#viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action{
+ border-radius:12px!important;box-shadow:none!important;
+}
+@media(max-width:740px){
+ #viewDashboard #vestraIntelligenceHome .vi-shell{
+  gap:19px!important;padding-inline:clamp(16px,4vw,22px)!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening{
+  padding:2px 0 18px!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-headline{
+  font-size:clamp(42px,10vw,61px)!important;line-height:1.03!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-opening .vi-deck{
+  max-width:32ch!important;font-size:15px!important;line-height:1.52!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections{
+  display:flex!important;flex-direction:column!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card{
+  padding:17px 0 19px!important;border-left:0!important;
+  border-top:1px solid #50645b!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-events-reading{order:1}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-market-reading{order:2}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-news-reading{order:3}
+ #viewDashboard #vestraIntelligenceHome .vi-canonical-sections>.vi-risk-reading{order:4}
+ #viewDashboard #vestraIntelligenceHome .vi-context-heading p{max-width:42ch}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-action{
+  min-height:61px!important;padding:14px 15px!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-sentiment-orb{
+  flex-direction:row!important;justify-content:flex-start!important;
+  align-items:baseline!important;gap:6px!important;
+ }
+}
