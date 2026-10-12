@@ -14,7 +14,7 @@ if DEPS_AVAILABLE:
 
 
 def jolts_values():
-    return {'JTSJOL':[('2026-08-01',7079.0)], 'JTSJOLR':[('2026-08-01',4.3)]}
+    return {'JTSJOL':[('2026-08-01',7079.0)], 'JTSJOR':[('2026-08-01',4.3)]}
 
 
 class _Response:
@@ -83,7 +83,7 @@ class FredBlsJoltsTests(unittest.TestCase):
             event = {'date':when,'source':'bls','short_title':'JOLTS'}
             payload = {'events':[event]}
             stats = mod.enrich_fred_fallback(payload, _Session(jolts_values() if when == '2026-11-03' else {
-                'JTSJOL':[('2026-07-01',7000)], 'JTSJOLR':[('2026-07-01',4.2)]}), today=today)
+                'JTSJOL':[('2026-07-01',7000)], 'JTSJOR':[('2026-07-01',4.2)]}), today=today)
             self.assertEqual(stats['matched'], 0)
             self.assertNotIn('result_status', event)
 
