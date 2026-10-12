@@ -88,6 +88,7 @@ class FredBlsJoltsTests(unittest.TestCase):
             self.assertNotIn('result_status', event)
 
 
+@unittest.skipUnless(DEPS_AVAILABLE, 'requires requests; full tests run in macro workflow')
 class FredBlsFallbackTests(unittest.TestCase):
     def test_cpi_named_metrics_are_calculated_from_sa_and_nsa_series(self):
         session = _Session(cpi_values())
