@@ -13,6 +13,7 @@ publishing anything.
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import re
@@ -21,6 +22,7 @@ from pathlib import Path
 
 import requests
 from lxml import html
+from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "macro-events.json"
@@ -242,6 +244,36 @@ def _fetch_release(session: requests.Session, url: str, short_title: str):
         return None
 
 
+def _fetch_nfp_dol_pdf(session: requests.Session, event_date: date):
+    """Official U.S. DOL BLS PDF mirror; require the exact release date and both named metrics."""
+    url = f"https://www.dol.gov/newsroom/economicdata/empsit_{event_date:%m%d%Y}.pdf"
+    try:
+        response = session.get(url, timeout=TIMEOUT)
+        response.raise_for_status()
+        content = response.content
+        if not content.startswith(b"%PDF"):
+            return None
+        reader = PdfReader(io.BytesIO(content))
+        text = " ".join(page.extract_text() or "" for page in reader.pages[:2])
+        normal = _normalise(text)
+        match = _RELEASE_DATE_RE.search(normal[:5000])
+        if not match:
+            return None
+        released = date(int(match.group(3)), MONTH_INDEX[match.group(1).lower()], int(match.group(2)))
+        if released != event_date:
+            return None
+        metrics = _extract_nfp_metrics([normal])
+        if set(metrics) != {"payroll_change_jobs", "unemployment_rate_pct"}:
+            return None
+        start = re.search(r"\bBoth nonfarm payroll employment\b", normal, re.I)
+        if not start:
+            return None
+        summary = normal[start.start():start.start() + 450]
+        return released, summary, metrics, url
+    except Exception:
+        return None
+
+
 def _load(path: Path) -> dict:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -305,12 +337,22 @@ def enrich_bls_results(payload: dict, session: requests.Session, today: date | N
                 source_url = archive_url
                 archive_fallbacks += 1
             else:
-                continue
+                if short_title == "NFP EUA":
+                    pdf_result = _fetch_nfp_dol_pdf(session, event_date)
+                    if pdf_result:
+                        parsed = pdf_result[:3]
+                        source_url = pdf_result[3]
+                    else:
+                        continue
+                else:
+                    continue
 
         event["result_summary"] = parsed[1]
         event["result_status"] = "official_release_summary"
         event["result_released_at"] = event_date.isoformat()
         event["source_url"] = source_url
+        if source_url.startswith("https://www.dol.gov/"):
+            event["result_transport"] = "official_dol_pdf"
         if parsed[2]:
             event["result_metric_schema"] = config["metric_schema"]
             event["result_metrics"] = parsed[2]
