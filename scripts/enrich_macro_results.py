@@ -177,6 +177,17 @@ def _extract_nfp_metrics(paragraphs: list[str]) -> dict:
             r"\b(?:the )?unemployment rate,?\s+at\s+([0-9]+(?:\.[0-9]+)?)\s+percent",
             raw, re.I,
         )
+    # Lead sentence in the October 2026 official release.
+    if not payroll:
+        payroll = re.search(
+            r"\bBoth nonfarm payroll employment\s+\(([+-]?[0-9][0-9,]*)\)",
+            raw, re.I,
+        )
+    if not unemployment:
+        unemployment = re.search(
+            r"\bthe unemployment rate\s+\(([0-9]+(?:\.[0-9]+)?)\s+percent\)",
+            raw, re.I,
+        )
     metrics = {}
     if payroll:
         direction = re.search(r"\b(?:declined|decreased|fell)\b", payroll.group(0), re.I)
@@ -205,6 +216,8 @@ def parse_bls_release(page: str, short_title: str) -> tuple[date, str, dict] | N
         return None
     paragraphs = _release_blocks(tree)
     summary = _paragraph_starting(paragraphs, config["paragraph_prefix"])
+    if short_title == "NFP EUA" and not summary:
+        summary = _paragraph_starting(paragraphs, "Both nonfarm payroll employment")
     if not summary:
         return None
     metrics = (_extract_cpi_metrics(paragraphs) if short_title == "CPI EUA" else
