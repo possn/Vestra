@@ -2,9 +2,10 @@ import importlib.util
 from datetime import date
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-DEPS_AVAILABLE = all(importlib.util.find_spec(name) is not None for name in ('requests', 'lxml'))
+DEPS_AVAILABLE = all(importlib.util.find_spec(name) is not None for name in ('requests', 'lxml', 'pypdf'))
 mod = None
 if DEPS_AVAILABLE:
     spec = importlib.util.spec_from_file_location('enrich_macro_results', ROOT / 'scripts' / 'enrich_macro_results.py')
@@ -69,6 +70,51 @@ foods, energy, and trade services advanced 4.7 percent.
 
 @unittest.skipUnless(DEPS_AVAILABLE, 'macro result dependencies are installed only in the dedicated workflow')
 class MacroResultTests(unittest.TestCase):
+    def test_nfp_official_dol_pdf_exact_date_fallback(self):
+        release = ("Transmission of material in this news release is embargoed until "
+                   "8:30 a.m. (ET) Friday, October 2, 2026. "
+                   "Both nonfarm payroll employment (+29,000) and the unemployment rate "
+                   "(4.2 percent) changed little in September.")
+        class PdfResponse:
+            content = b'%PDF-test-bytes'
+            def raise_for_status(self):
+                return None
+        class PdfSession(_Session):
+            def get(self, url, **kwargs):
+                self.calls.append(url)
+                return PdfResponse() if url.startswith('https://www.dol.gov/') else _Response('', 403)
+        class FakePage:
+            def extract_text(self):
+                return release
+        class FakeReader:
+            pages = [FakePage()]
+        session = PdfSession({})
+        payload = {'events':[{'date':'2026-10-02','short_title':'NFP EUA','source':'bls'}]}
+        with patch.object(mod, 'PdfReader', return_value=FakeReader()):
+            stats = mod.enrich_bls_results(payload, session, today=date(2026,10,12))
+        self.assertEqual(stats['matched'], 1)
+        self.assertEqual(payload['events'][0]['result_metrics'], {
+            'payroll_change_jobs':29000,'unemployment_rate_pct':4.2})
+        self.assertEqual(payload['events'][0]['result_transport'], 'official_dol_pdf')
+        self.assertEqual(payload['events'][0]['source_url'],
+                         'https://www.dol.gov/newsroom/economicdata/empsit_10022026.pdf')
+
+    def test_nfp_dol_pdf_rejects_wrong_release_date(self):
+        release = ("For release Friday, September 4, 2026. "
+                   "Both nonfarm payroll employment (+29,000) and the unemployment rate "
+                   "(4.2 percent) changed little in August.")
+        class PdfResponse:
+            content = b'%PDF-test'
+            def raise_for_status(self): pass
+        class PdfSession:
+            def get(self, url, **kwargs): return PdfResponse()
+        class Page:
+            def extract_text(self): return release
+        class Reader:
+            pages = [Page()]
+        with patch.object(mod, 'PdfReader', return_value=Reader()):
+            self.assertIsNone(mod._fetch_nfp_dol_pdf(PdfSession(), date(2026,10,2)))
+
     def test_nfp_official_lead_sentence_alone_is_sufficient(self):
         page = """<html><body><pre>
         Transmission of material in this news release is embargoed until
