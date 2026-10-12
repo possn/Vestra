@@ -9,7 +9,7 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn('const MAX_EVENTS = 40;', js)
         self.assertIn('[...portfolioEarnings, ...macroEvents.sort(', js)
         self.assertIn('...marketEarnings].slice(0, cap)', js)
-        self.assertIn('Sem eventos confirmados neste intervalo', js)
+        self.assertIn('Sem eventos confirmados nesta semana.', js)
         self.assertIn("loadCalendarStartupStocks()", js)
         self.assertIn("unpackStartupPayload", js)
         self.assertNotIn("sourceStatus.textContent", js)
