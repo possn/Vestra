@@ -100,7 +100,7 @@ def candidate_tickers(payload: dict, today: date | None = None, past_days: int =
         # Advance every three UTC hours; multiple refreshes on one day
         # must not exhaust their network budget on the same 30 companies.
         slot = max(0, min(7, int(rotation_slot)))
-        offset = ((rotation_day * 8 + slot) * 30) % len(undated)
+        offset = ((rotation_day + slot) * 30) % len(undated)
         undated = undated[offset:] + undated[:offset]
     # Preserve the 80-call quota: 50 dated catalysts + 30 rotating companies
     # without a usable upcoming date; never invent calendar dates.
