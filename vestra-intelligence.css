@@ -1676,3 +1676,57 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
 #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history__hint{
  color:#526d70!important;-webkit-text-fill-color:#526d70!important;
 }
+
+/* Vestra 2.0 / Património: primary income sheet, secondary financial ledger.
+   Strictly scoped to the light drill-down; dark Intelligence Home is untouched. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick{
+ background:#fffdfa!important;border-color:#d5dcd5!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__grid{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell--income{
+ grid-column:1 / -1!important;
+ padding:20px 22px!important;
+ background:#f2f5f0!important;
+ border-right:0!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-income__values{
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ gap:18px!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell:not(.kpi-quick__cell--income){
+ padding:17px 19px!important;border-bottom:0!important;
+ background:#fffdfa!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell:last-child{
+ border-right:0!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label{
+ border:0!important;padding:0!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label h2{
+ color:#18383a!important;-webkit-text-fill-color:#18383a!important;
+ font:550 clamp(23px,4vw,34px)/1.15 Georgia,serif!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label p{
+ color:#536d6c!important;-webkit-text-fill-color:#536d6c!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history>summary strong{
+ color:#18383a!important;-webkit-text-fill-color:#18383a!important;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell--income{
+  padding:17px 15px!important;
+ }
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell:not(.kpi-quick__cell--income){
+  padding:13px!important;
+ }
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell:nth-child(3){border-right:0!important}
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .kpi-quick__cell:last-child{
+  grid-column:1/-1!important;border-top:1px solid #d8dfd8!important;
+ }
+}
