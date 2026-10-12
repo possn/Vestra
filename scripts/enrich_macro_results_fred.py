@@ -180,14 +180,14 @@ def fetch_jolts_metrics(session: requests.Session, event_date: date) -> tuple[di
     key = _month_date(year, month)
     diagnostics = []
     readings = {}
-    for series_id in ("JTSJOL", "JTSJOLR"):
+    for series_id in ("JTSJOL", "JTSJOR"):
         values, diagnostic = _fetch_series(session, series_id, key, key)
         diagnostics.append(diagnostic)
         if key not in values:
             return None
         readings[series_id] = values[key]
     openings_thousands = readings["JTSJOL"]
-    openings_rate = readings["JTSJOLR"]
+    openings_rate = readings["JTSJOR"]
     if not (0 < openings_thousands < 30000 and 0 < openings_rate < 20):
         return None
     metrics = {
