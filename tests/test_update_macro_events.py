@@ -85,6 +85,8 @@ class MacroCalendarTests(unittest.TestCase):
             old = {'events': [
                 {'date':'2026-10-02','title':'Payrolls','short_title':'NFP EUA',
                  'category':'labour','region':'EUA','importance':'critical','source':'bls'},
+                {'date':'2026-06-01','title':'Expired','short_title':'NFP EUA',
+                 'category':'labour','region':'EUA','importance':'critical','source':'bls'},
                 {'date':'2026-09-01','title':'Old','short_title':'NFP EUA',
                  'category':'labour','region':'EUA','importance':'critical','source':'bls'},
             ]}
@@ -105,7 +107,8 @@ class MacroCalendarTests(unittest.TestCase):
             days = {(e['date'], e['short_title']) for e in result['events']}
             self.assertIn(('2026-10-02','NFP EUA'), days)
             self.assertIn(('2026-10-14','CPI EUA'), days)
-            self.assertNotIn(('2026-09-01','NFP EUA'), days)
+            self.assertIn(('2026-09-01','NFP EUA'), days)  # 90-day archive retains September
+            self.assertNotIn(('2026-06-01','NFP EUA'), days)
 
     def test_source_catalog_is_official_and_complete(self):
         self.assertEqual(set(mod.ADAPTERS), {'fed', 'bls', 'bea', 'ecb', 'census'})
