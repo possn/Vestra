@@ -53,7 +53,18 @@
     if (earningsStockLoading) return earningsStockLoading;
     earningsStockLoading = (async () => {
       try {
-        const response = await fetchImpl('data/stocks-startup.json', { cache: 'no-store' });
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        let timeoutId = null;
+        const timeout = new Promise(resolve => {
+          timeoutId = setTimeout(() => {
+            try { controller?.abort(); } catch (_) {}
+            resolve(null);
+          }, 7000);
+        });
+        const response = await Promise.race([
+          fetchImpl('data/stocks-startup.json', { cache: 'no-store', ...(controller ? { signal: controller.signal } : {}) }),
+          timeout,
+        ]).finally(() => { if (timeoutId !== null) clearTimeout(timeoutId); });
         if (!response?.ok) return [];
         const payload = await response.json();
         if (payload?.layout !== 'field_rows_v1' || !Array.isArray(payload.fields) || !Array.isArray(payload.rows)) return [];
