@@ -9,11 +9,11 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn('const MAX_EVENTS = 40;', js)
         self.assertIn('[...portfolioEarnings, ...macroEvents.sort(', js)
         self.assertIn('...marketEarnings].slice(0, cap)', js)
-        self.assertIn('Sem eventos confirmados neste intervalo', js)
-        self.assertIn('data-weekly-coverage', js.replace('dataset.weeklyCoverage', 'data-weekly-coverage'))
-        self.assertIn('sem datas de publicação no índice de empresas', js)
-        self.assertIn('Calendário incompleto, não ausência confirmada de resultados', js)
-        self.assertIn("const VERSION = '3.0';", js)
+        self.assertIn('Sem eventos confirmados nesta semana.', js)
+        self.assertIn("loadCalendarStartupStocks()", js)
+        self.assertIn("unpackStartupPayload", js)
+        self.assertNotIn("sourceStatus.textContent", js)
+        self.assertIn("const VERSION = '3.1';", js)
 
     def test_historical_official_dates_retained_for_three_months(self):
         script = (ROOT / 'scripts/update_macro_events.py').read_text(encoding='utf-8')

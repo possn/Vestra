@@ -39,7 +39,7 @@ class DashboardWeeklyEventsFetchTimeoutTests(unittest.TestCase):
         self.assertIn("nav?.shiftedDate", self.runtime)
 
     def test_schedule_render_cannot_wait_forever_on_macro_snapshot(self):
-        self.assertIn("Promise.allSettled([marketLoad,loadMacroEvents()])", self.runtime)
+        self.assertIn("Promise.allSettled([marketLoad,loadMacroEvents(),loadCalendarStartupStocks()])", self.runtime)
         self.assertIn("macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS", self.runtime)
 
     def test_saved_weekly_detail_extracts_calendar_date_with_digit_regex(self):
@@ -54,8 +54,8 @@ class DashboardWeeklyEventsFetchTimeoutTests(unittest.TestCase):
         self.assertIn("Ver semana completa", self.runtime)
 
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("const VERSION = '3.0';", self.runtime)
-        self.assertIn("dashboard-weekly-events.js?v=3.0", self.loader)
+        self.assertIn("const VERSION = '3.1';", self.runtime)
+        self.assertIn("dashboard-weekly-events.js?v=3.1", self.loader)
 
 
 if __name__ == "__main__":
