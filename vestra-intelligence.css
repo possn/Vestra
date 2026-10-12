@@ -1730,3 +1730,49 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
   grid-column:1/-1!important;border-top:1px solid #d8dfd8!important;
  }
 }
+
+/* V2 patrimony drill-down only: calm evidence-led alerts and historical entry.
+   Preserve severity and real financial data; Intelligence Home is untouched. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard{
+ background:#fbf5f1!important;
+ border:1px solid #e7d0c9!important;border-left:3px solid #bb6558!important;
+ border-radius:16px!important;box-shadow:none!important;
+ padding:16px 18px!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard .card__title{
+ color:#773b38!important;-webkit-text-fill-color:#773b38!important;
+ font-size:17px!important;line-height:1.3!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard .card__muted{
+ color:#785d58!important;-webkit-text-fill-color:#785d58!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #negReturnAlert{
+ border:1px solid #ead3cd!important;border-left:3px solid #bb6558!important;
+ border-radius:13px!important;
+ background:#fbf5f1!important;color:#773b38!important;
+ -webkit-text-fill-color:#773b38!important;
+ box-shadow:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history{
+ background:#fffdfa!important;border:1px solid #d5dcd5!important;
+ box-shadow:none!important;border-radius:17px!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history>summary{
+ background:#fffdfa!important;padding:19px 21px!important;
+ color:#19383a!important;-webkit-text-fill-color:#19383a!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history__action{
+ color:#176b61!important;-webkit-text-fill-color:#176b61!important;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #riskAlertCard{padding:14px 15px!important}
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history>summary{
+  grid-template-columns:minmax(0,1fr) auto!important;padding:17px 15px!important;
+ }
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history>summary strong{
+  font-size:clamp(21px,6vw,27px)!important;line-height:1.17!important;
+ }
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history__action{
+  font-size:11px!important;white-space:normal!important;text-align:right!important;
+ }
+}
