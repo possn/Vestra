@@ -34,6 +34,19 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         ]}
         self.assertEqual(mod.candidate_tickers(payload, today=date(2026,9,12)), ['ADBE','OLD','ORCL'])
 
+    def test_coverage_separates_dates_from_other_updates(self):
+        payload = {"stocks": [
+            {"ticker": "A", "quote_type": "EQUITY",
+             "analyst_latest_earnings_date": "2026-10-05",
+             "analyst_next_earnings_date": "2026-11-13"},
+            {"ticker": "B", "quote_type": "EQUITY", "analyst_eps_next_q": 2.1},
+            {"ticker": "F", "quote_type": "ETF", "analyst_next_earnings_date": "2026-10-19"}
+        ]}
+        self.assertEqual(mod.earnings_coverage(payload, today=date(2026, 10, 12)), {
+            "listed": 2, "companies_with_any_date": 1,
+            "past_90d_dates": 1, "next_90d_dates": 1
+        })
+
     def test_missing_dates_get_bounded_discovery_slots(self):
         payload = {'stocks': [
             {'ticker': 'DATED', 'quote_type': 'EQUITY', 'analyst_next_earnings_date': '2026-10-15', 'market_cap': 1},
