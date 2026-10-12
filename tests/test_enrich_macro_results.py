@@ -69,6 +69,27 @@ foods, energy, and trade services advanced 4.7 percent.
 
 @unittest.skipUnless(DEPS_AVAILABLE, 'macro result dependencies are installed only in the dedicated workflow')
 class MacroResultTests(unittest.TestCase):
+    def test_nfp_exact_date_structured_metrics_and_stale_rejection(self):
+        page = """<html><body>
+        <p>Transmission of material in this release is embargoed until 8:30 a.m. (ET) Friday, October 2, 2026</p>
+        <p>Total nonfarm payroll employment increased by 210,000 in September.</p>
+        <p>The unemployment rate remained at 4.2 percent in September.</p>
+        </body></html>"""
+        parsed = mod.parse_bls_release(page, 'NFP EUA')
+        self.assertEqual(parsed[0], date(2026, 10, 2))
+        self.assertEqual(parsed[2], {'payroll_change_jobs':210000,'unemployment_rate_pct':4.2})
+        nfp = mod.BLS_RELEASES['NFP EUA']
+        self.assertEqual(mod.bls_archive_url('NFP EUA', date(2026,10,2)),
+                         'https://www.bls.gov/news.release/archives/empsit_10022026.htm')
+        payload = {'events':[{'date':'2026-10-02','short_title':'NFP EUA','source':'bls'}]}
+        stats = mod.enrich_bls_results(payload, _Session({nfp['url']:page}), today=date(2026,10,2))
+        self.assertEqual(stats['matched'], 1)
+        self.assertEqual(payload['events'][0]['result_metric_schema'], 'bls_nfp_v1')
+        wrong = {'events':[{'date':'2026-10-03','short_title':'NFP EUA','source':'bls'}]}
+        result = mod.enrich_bls_results(wrong, _Session({nfp['url']:page}), today=date(2026,10,3))
+        self.assertEqual(result['matched'], 0)
+        self.assertNotIn('result_status', wrong['events'][0])
+
     def test_cpi_parser_extracts_named_headline_and_core_metrics(self):
         parsed = mod.parse_bls_release(CPI_PAGE, 'CPI EUA')
         self.assertEqual(parsed[0], date(2026, 9, 11))

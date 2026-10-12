@@ -34,6 +34,12 @@ BLS_RELEASES = {
         "paragraph_prefix": "The Consumer Price Index for All Urban Consumers",
         "metric_schema": "bls_cpi_v1",
     },
+    "NFP EUA": {
+        "url": "https://www.bls.gov/news.release/empsit.nr0.htm",
+        "archive_prefix": "empsit",
+        "paragraph_prefix": "Total nonfarm payroll employment",
+        "metric_schema": "bls_nfp_v1",
+    },
     "PPI EUA": {
         "url": "https://www.bls.gov/news.release/ppi.nr0.htm",
         "archive_prefix": "ppi",
@@ -140,6 +146,29 @@ def _extract_ppi_metrics(paragraphs: list[str]) -> dict:
     return {key: value for key, value in metrics.items() if value is not None}
 
 
+def _extract_nfp_metrics(paragraphs: list[str]) -> dict:
+    """Only parse explicitly named payroll change and unemployment rate."""
+    raw = " ".join(paragraphs)
+    payroll = re.search(
+        r"\bTotal nonfarm payroll employment\s+(?:increased|rose|declined|decreased|fell|changed little|was little changed)"
+        r"(?:\s+by)?\s+([0-9][0-9,]*)\b",
+        raw, re.I,
+    )
+    unemployment = re.search(
+        r"\bthe unemployment rate\s+(?:was|remained at|remained|held at|stood at|rose to|increased to|fell to|declined to)\s+"
+        r"([0-9]+(?:\.[0-9]+)?)\s+percent",
+        raw, re.I,
+    )
+    metrics = {}
+    if payroll:
+        direction = re.search(r"\b(?:declined|decreased|fell)\b", payroll.group(0), re.I)
+        value = int(payroll.group(1).replace(",", ""))
+        metrics["payroll_change_jobs"] = -value if direction else value
+    if unemployment:
+        metrics["unemployment_rate_pct"] = float(unemployment.group(1))
+    return metrics
+
+
 def parse_bls_release(page: str, short_title: str) -> tuple[date, str, dict] | None:
     config = BLS_RELEASES.get(short_title)
     if not config or not page:
@@ -160,7 +189,9 @@ def parse_bls_release(page: str, short_title: str) -> tuple[date, str, dict] | N
     summary = _paragraph_starting(paragraphs, config["paragraph_prefix"])
     if not summary:
         return None
-    metrics = _extract_cpi_metrics(paragraphs) if short_title == "CPI EUA" else _extract_ppi_metrics(paragraphs)
+    metrics = (_extract_cpi_metrics(paragraphs) if short_title == "CPI EUA" else
+               _extract_nfp_metrics(paragraphs) if short_title == "NFP EUA" else
+               _extract_ppi_metrics(paragraphs))
     return released, summary[:900], metrics
 
 

@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v2.5 — compact editorial catalysts with progressive disclosure. */
+/* Vestra Dashboard Weekly Events v2.6 — compact editorial catalysts with progressive disclosure. */
 (() => {
   'use strict';
 
-  const VERSION = '2.5';
+  const VERSION = '2.6';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -30,10 +30,12 @@
     headline_yoy_pct: 'Headline YoY',
     core_mom_pct: 'Core MoM',
     core_yoy_pct: 'Core YoY',
+    payroll_change_jobs: 'Empregos não agrícolas',
+    unemployment_rate_pct: 'Taxa de desemprego',
     target_lower_pct: 'Fed funds · mínimo',
     target_upper_pct: 'Fed funds · máximo',
   });
-  const OFFICIAL_METRIC_SCHEMAS = new Set(['bls_cpi_v1', 'bls_ppi_v1', 'fed_funds_target_v1']);
+  const OFFICIAL_METRIC_SCHEMAS = new Set(['bls_cpi_v1', 'bls_ppi_v1', 'bls_nfp_v1', 'fed_funds_target_v1']);
   let macroSnapshot = null;
   let macroLoading = null;
   let lastRenderedEvents = [];
@@ -358,7 +360,7 @@
     const grid = document.createElement('div'); grid.className = 'weekly-detail-grid weekly-detail-grid--official';
     for (const [key, label] of Object.entries(OFFICIAL_METRIC_LABELS)) {
       if (!Object.prototype.hasOwnProperty.call(event.resultMetrics, key)) continue;
-      grid.appendChild(metric(label, formatOfficialPercent(event.resultMetrics[key])));
+      grid.appendChild(metric(label, key === 'payroll_change_jobs' ? number(event.resultMetrics[key]).toLocaleString('pt-PT', { maximumFractionDigits: 0 }) : formatOfficialPercent(event.resultMetrics[key])));
     }
     return grid.childElementCount ? grid : null;
   }
