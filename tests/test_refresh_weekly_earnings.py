@@ -32,7 +32,27 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
             {'ticker':'OLD','quote_type':'EQUITY','analyst_next_earnings_date':'2026-08-01'},
             {'ticker':'ETF1','quote_type':'ETF','analyst_next_earnings_date':'2026-09-12'},
         ]}
-        self.assertEqual(mod.candidate_tickers(payload, today=date(2026,9,12)), ['ADBE','ORCL'])
+        self.assertEqual(mod.candidate_tickers(payload, today=date(2026,9,12)), ['ADBE','OLD','ORCL'])
+
+    def test_missing_dates_get_bounded_discovery_slots(self):
+        payload = {'stocks': [
+            {'ticker': 'DATED', 'quote_type': 'EQUITY', 'analyst_next_earnings_date': '2026-10-15', 'market_cap': 1},
+            {'ticker': 'UNDATED', 'quote_type': 'EQUITY', 'market_cap': 100000000000},
+            {'ticker': 'STALE', 'quote_type': 'EQUITY', 'analyst_latest_earnings_date': '2025-01-01', 'market_cap': 60000000000},
+            {'ticker': 'ETF1', 'quote_type': 'ETF', 'market_cap': 999999999999},
+        ]}
+        self.assertEqual(mod.candidate_tickers(payload, today=date(2026,10,12)),
+                         ['DATED', 'UNDATED', 'STALE'])
+
+    def test_discovery_retains_reserved_slots_in_busy_earnings_week(self):
+        payload = {'stocks': [
+            *({'ticker': f'D{i:03d}', 'quote_type': 'EQUITY', 'analyst_next_earnings_date': '2026-10-15'} for i in range(100)),
+            *({'ticker': f'F{i:03d}', 'quote_type': 'EQUITY', 'market_cap': 100000000000-i} for i in range(100)),
+        ]}
+        candidates = mod.candidate_tickers(payload, today=date(2026,10,12))
+        self.assertEqual(len(candidates), 80)
+        self.assertEqual(len([x for x in candidates if x.startswith('D')]), 50)
+        self.assertEqual(len([x for x in candidates if x.startswith('F')]), 30)
 
     def test_yahoo_surprise_percent_is_always_stored_as_fraction(self):
         earnings = FakeFrame([

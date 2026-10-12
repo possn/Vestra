@@ -61,11 +61,18 @@ def _row_value(row, names):
     return None
 
 
-def candidate_tickers(payload: dict, today: date | None = None, past_days: int = 10, future_days: int = 14) -> list[str]:
+def candidate_tickers(payload: dict, today: date | None = None, past_days: int = 90, future_days: int = 90) -> list[str]:
+    """Reserve bounded slots for companies missing dates.
+
+    Old behaviour only queried symbols that ALREADY had an earnings date,
+    so missing upcoming dates could never be discovered. Keep near-term dated
+    catalysts, plus large liquid undated equities within the same 80-call cap.
+    """
     today = today or date.today()
     start = today - timedelta(days=past_days)
     end = today + timedelta(days=future_days)
-    out = []
+    dated = []
+    undated = []
     for row in payload.get("stocks") or []:
         if not isinstance(row, dict):
             continue
@@ -77,10 +84,17 @@ def candidate_tickers(payload: dict, today: date | None = None, past_days: int =
             _calendar_date(row.get("analyst_next_earnings_date")),
             _calendar_date(row.get("analyst_latest_earnings_date")),
         )
-        if any(value is not None and start <= value <= end for value in dates):
-            out.append(ticker)
-    return sorted(set(out))
-
+        if any(d is not None and start <= d <= end for d in dates):
+            dated.append(ticker)
+        elif all(d is None or d < today for d in dates):
+            # Prefer larger companies; do not randomly scan all listed stocks.
+            cap = _number(row.get("market_cap")) or 0
+            undated.append((-cap, ticker))
+    dated = sorted(set(dated))
+    undated = [ticker for _cap, ticker in sorted(set(undated))]
+    # The existing run only supports 80 refreshes; guarantee actual
+    # discovery opportunities even during busy earnings weeks.
+    return dated[:50] + [ticker for ticker in undated if ticker not in set(dated)][:30]
 
 def _as_utc_datetime(value):
     try:
@@ -167,7 +181,23 @@ def fetch_snapshot(ticker: str) -> dict[str, Any]:
         earnings_estimate = company.get_earnings_estimate()
     except Exception:
         earnings_estimate = None
-    return extract_snapshot(earnings_dates, earnings_estimate)
+    snapshot = extract_snapshot(earnings_dates, earnings_estimate)
+    if not snapshot.get("analyst_next_earnings_date"):
+        # Yahoo's calendar can contain a future Earnings Date even if the
+        # earnings-dates/history endpoint has no upcoming rows.
+        try:
+            calendar = company.get_calendar()
+            raw = calendar.get("Earnings Date") if isinstance(calendar, dict) else None
+            choices = raw if isinstance(raw, (list, tuple)) else [raw]
+            upcoming = sorted(
+                d for d in (_calendar_date(v) for v in choices)
+                if d is not None and d >= date.today() - timedelta(days=1)
+            )
+            if upcoming:
+                snapshot["analyst_next_earnings_date"] = upcoming[0].isoformat()
+        except Exception:
+            pass
+    return snapshot
 
 
 def apply_snapshot(row: dict, snapshot: dict) -> bool:

@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v2.9 — compact editorial catalysts with progressive disclosure. */
+/* Vestra Dashboard Weekly Events v3.0 — compact editorial catalysts with progressive disclosure. */
 (() => {
   'use strict';
 
-  const VERSION = '2.9';
+  const VERSION = '3.0';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -434,6 +434,24 @@
     const events = selectEvents(stocks, tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
     const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
     card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
+    // Evidence transparency: missing earnings coverage is not evidence of no earnings.
+    const candidateStocks = Array.isArray(stocks) ? stocks.filter(stock => {
+      const t = tickerKey(stock?.quote_type);
+      return !['ETF','FUND','MUTUALFUND','CRYPTO'].includes(t) && tickerKey(stock?.ticker);
+    }) : [];
+    const datedStocks = candidateStocks.filter(stock => parseCalendarDate(stock?.analyst_latest_earnings_date) || parseCalendarDate(stock?.analyst_next_earnings_date));
+    const weekEarnings = events.filter(event => event.kind === 'earnings').length;
+    const sourceStatus = document.createElement('div');
+    sourceStatus.className = 'weekly-events-foot';
+    sourceStatus.dataset.weeklyCoverage = '1';
+    sourceStatus.textContent = !candidateStocks.length
+      ? 'Cobertura de resultados: índice de empresas ainda indisponível; eventos macro podem estar visíveis.'
+      : !datedStocks.length
+        ? 'Cobertura de resultados: sem datas de publicação no índice de empresas. Não significa que não haja resultados.'
+        : weekEarnings
+          ? `Resultados de empresas: ${weekEarnings} com data nesta semana · ${datedStocks.length} empresas com alguma data no índice.`
+          : `Resultados de empresas: nenhuma data encontrada nesta semana · ${datedStocks.length} empresas com alguma data no índice. Calendário incompleto, não ausência confirmada de resultados.`;
+    card.appendChild(sourceStatus);
     if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos confirmados neste intervalo. O calendário depende das datas disponíveis nas fontes oficiais e no índice de resultados das empresas.'; card.appendChild(empty); }
     else {
       const list=document.createElement('div'); list.className='weekly-events-list';
