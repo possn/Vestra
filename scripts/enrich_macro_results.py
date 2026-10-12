@@ -155,7 +155,7 @@ def _extract_nfp_metrics(paragraphs: list[str]) -> dict:
         raw, re.I,
     )
     unemployment = re.search(
-        r"\bthe unemployment rate\s+(?:was|remained|held at|stood at|rose to|increased to|fell to|declined to)\s+"
+        r"\bthe unemployment rate\s+(?:was|remained at|remained|held at|stood at|rose to|increased to|fell to|declined to)\s+"
         r"([0-9]+(?:\.[0-9]+)?)\s+percent",
         raw, re.I,
     )
