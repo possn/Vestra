@@ -90,6 +90,29 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
             all_discovered.update(x for x in selection if x.startswith('U'))
         self.assertEqual(len(all_discovered), 95)
 
+    def test_intraday_slots_cover_unknown_dates_without_extra_calls(self):
+        payload = {'stocks': [
+            *({'ticker': f'D{i:03d}', 'quote_type': 'EQUITY',
+                'analyst_next_earnings_date': '2026-10-15'} for i in range(60)),
+            *({'ticker': f'U{i:03d}', 'quote_type': 'EQUITY',
+                'market_cap': 100000000000 - i} for i in range(95)),
+        ]}
+        groups = []
+        for slot in range(4):
+            selected = mod.candidate_tickers(payload, today=date(2026, 10, 12),
+                                             rotation_slot=slot)
+            self.assertEqual(len(selected), 80)
+            group = {ticker for ticker in selected if ticker.startswith('U')}
+            self.assertEqual(len(group), 30)
+            groups.append(group)
+        self.assertEqual(len(set.union(*groups)), 95)
+        self.assertFalse(groups[0] & groups[1])
+        self.assertFalse(groups[1] & groups[2])
+        self.assertEqual(
+            mod.candidate_tickers(payload, today=date(2026, 10, 12), rotation_slot=0),
+            mod.candidate_tickers(payload, today=date(2026, 10, 12), rotation_slot=0),
+        )
+
     def test_yahoo_surprise_percent_is_always_stored_as_fraction(self):
         earnings = FakeFrame([
             (datetime(2026, 9, 10, 20, 0, tzinfo=timezone.utc), FakeRow({
