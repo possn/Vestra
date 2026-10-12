@@ -1,0 +1,32 @@
+from pathlib import Path
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class WeeklyHistoryControlsTests(unittest.TestCase):
+    def test_navigation_recovers_after_dashboard_rerenders_week(self):
+        nav = (ROOT / "dashboard-weekly-events-navigation.js").read_text(encoding="utf-8")
+        core = (ROOT / "dashboard-weekly-events.js").read_text(encoding="utf-8")
+        loader = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
+        self.assertIn("card.replaceChildren()", core)
+        self.assertIn("source: 'weekly-events'", core)
+        self.assertIn("'vestra:dashboard-signal-updated'", nav)
+        self.assertIn("event?.detail?.source === 'weekly-events'", nav)
+        self.assertIn("decorate();", nav)
+        self.assertIn("dashboard-weekly-events-navigation.js?v=1.2", loader)
+
+    def test_history_navigation_keeps_week_offset_and_result_detail(self):
+        nav = (ROOT / "dashboard-weekly-events-navigation.js").read_text(encoding="utf-8")
+        core = (ROOT / "dashboard-weekly-events.js").read_text(encoding="utf-8")
+        self.assertIn("weekOffset = Math.max(-MAX_WEEK_OFFSET", nav)
+        self.assertIn("shiftedDate(base)", nav)
+        self.assertIn("makeButton('prev'", nav)
+        self.assertIn("makeButton('next'", nav)
+        self.assertIn("makeButton('today'", nav)
+        self.assertIn("findMacroEventById", core)
+        self.assertIn("resultMetrics: normaliseOfficialMetrics", core)
+
+
+if __name__ == "__main__":
+    unittest.main()
