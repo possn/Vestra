@@ -150,18 +150,18 @@ def _extract_nfp_metrics(paragraphs: list[str]) -> dict:
     """Only parse explicitly named payroll change and unemployment rate."""
     raw = " ".join(paragraphs)
     payroll = re.search(
-        r"\\bTotal nonfarm payroll employment\\s+(?:increased|rose|declined|decreased|fell|changed little|was little changed)"
-        r"(?:\\s+by)?\\s+([0-9][0-9,]*)\\b",
+        r"\bTotal nonfarm payroll employment\s+(?:increased|rose|declined|decreased|fell|changed little|was little changed)"
+        r"(?:\s+by)?\s+([0-9][0-9,]*)\b",
         raw, re.I,
     )
     unemployment = re.search(
-        r"\\bthe unemployment rate\\s+(?:was|remained|held at|stood at|rose to|increased to|fell to|declined to)\\s+"
-        r"([0-9]+(?:\\.[0-9]+)?)\\s+percent",
+        r"\bthe unemployment rate\s+(?:was|remained|held at|stood at|rose to|increased to|fell to|declined to)\s+"
+        r"([0-9]+(?:\.[0-9]+)?)\s+percent",
         raw, re.I,
     )
     metrics = {}
     if payroll:
-        direction = re.search(r"\\b(?:declined|decreased|fell)\\b", payroll.group(0), re.I)
+        direction = re.search(r"\b(?:declined|decreased|fell)\b", payroll.group(0), re.I)
         value = int(payroll.group(1).replace(",", ""))
         metrics["payroll_change_jobs"] = -value if direction else value
     if unemployment:
