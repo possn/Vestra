@@ -107,7 +107,7 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
   await page.waitForLoadState('networkidle', { timeout: 25000 });
 
   await page.evaluate(() => {
-    window.VestraWeeklyEvents.render({
+    const events = window.VestraWeeklyEvents.render({
       now: new Date(2026, 8, 18, 14, 0, 0),
       portfolioTickers: new Set(),
       stocks: [],
@@ -131,11 +131,10 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
         }]
       }
     });
+    const cpi = events.find(item => item.kind === 'macro' && item.shortTitle === 'CPI EUA');
+    if (!cpi) throw new Error('CPI test fixture missing from selected week');
+    window.VestraWeeklyEvents.openDetail(cpi);
   });
-
-  const event = page.locator('#dashboardWeeklyEventsCard [data-weekly-event-index]').filter({ hasText: 'CPI EUA' }).first();
-  await expect(event).toBeVisible();
-  await event.click();
 
   const detail = page.locator('#dashboardWeeklyEventDetail');
   await expect(detail).toBeVisible();
