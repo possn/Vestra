@@ -24,6 +24,15 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertNotIn("Cobertura de resultados: índice de empresas ainda indisponível", runtime)
         self.assertIn("vestra-cache-v241", sw)
 
+    def test_historical_earnings_archive_is_loaded_without_overwriting_live_stock_dates(self):
+        js = (ROOT / 'dashboard-weekly-events.js').read_text(encoding='utf-8')
+        self.assertIn('function combineArchivedStocks(stocks, archive)', js)
+        self.assertIn('seen.has(ticker', js)
+        self.assertIn('loadEarningsArchive()', js)
+        self.assertIn("data/earnings-events.json", js)
+        self.assertIn('combineArchivedStocks(stocks, earningsArchive)', js)
+        self.assertIn('vestra_earnings_events_v1', js)
+
     def test_historical_official_dates_retained_for_three_months(self):
         script = (ROOT / 'scripts/update_macro_events.py').read_text(encoding='utf-8')
         self.assertIn('recent_floor = iso(today - timedelta(days=90))', script)
