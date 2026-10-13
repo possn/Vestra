@@ -313,6 +313,8 @@ def main() -> int:
     attempted = matched = updated = 0
     failures = []
     discovered_history = []
+    history_provider_tickers = set()
+    history_rows_by_ticker = {}
     for ticker in candidates[:80]:
         attempted += 1
         try:
@@ -323,7 +325,11 @@ def main() -> int:
         if not snapshot:
             continue
         matched += 1
-        discovered_history.extend(snapshot.get('_reported_history') or [])
+        reported = snapshot.get('_reported_history') or []
+        discovered_history.extend(reported)
+        if reported:
+            history_provider_tickers.add(ticker)
+            history_rows_by_ticker[ticker] = len(reported)
         row = by_ticker.get(ticker)
         if row is not None and apply_snapshot(row, snapshot):
             updated += 1
@@ -347,6 +353,9 @@ def main() -> int:
         "coverage_after": earnings_coverage(payload),
         "archived_events": len(archive["events"]),
         "reported_history_rows": len(discovered_history),
+        "reported_history_tickers": len(history_provider_tickers),
+        "multi_quarter_source_tickers": sum(count > 1 for count in history_rows_by_ticker.values()),
+        "archive_multi_quarter_tickers": sum(count > 1 for count in __import__("collections").Counter(event["ticker"] for event in archive["events"]).values()),
         "failures": failures[:10],
         "contract": "near-term earnings only; preserve last verified values on fetch failure",
     }, ensure_ascii=False))
