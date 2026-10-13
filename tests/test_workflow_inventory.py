@@ -11,6 +11,7 @@ ACTIVE_WORKFLOWS = {
     'capital-risk-regression.yml',
     'crypto-production-smoke.yml',
     'production-smoke.yml',
+    'publish-vestra-mobile-icons.yml',
     'rebuild-market-startup.yml',
     'refresh-weekly-earnings.yml',
     'refresh-prebreakout-scanner.yml',
