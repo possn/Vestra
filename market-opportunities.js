@@ -482,7 +482,7 @@
   function opportunities(lens=activeLens,sectorOverride=''){
     activeLens=LENSES.has(t(lens))?t(lens):'all';
     const universe=stocks();
-    const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
+    const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
     const list=section.querySelector('.market-list');if(!list)return[];
     if(!universe.length){
       list.innerHTML='';
@@ -507,7 +507,7 @@
   function style(){if(document.getElementById('vestra-market-opportunities-style'))return;const link=document.createElement('link');link.id='vestra-market-opportunities-style';link.rel='stylesheet';link.href='market-opportunities.css?v=1.2';document.head.appendChild(link);}
 
   function observerNeedsRefresh(root){
-    const section=[...root.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));
+    const section=[...root.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));
     const list=section?.querySelector('.market-list');
     return !!list && !list.dataset.ux453;
   }
