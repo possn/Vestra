@@ -392,7 +392,7 @@
   function cacheGet(){
     try{
       const row=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
-      return row&&Date.now()-Number(row.ts||0)<CACHE_TTL_MS&&row.data?row.data:null;
+      const freshness=row?.data?.priceFreshness;\n      const age=freshness?.date?Math.floor((Date.now()-Date.parse(freshness.date+'T23:59:59Z'))/86400000):Infinity;\n      return row&&Date.now()-Number(row.ts||0)<CACHE_TTL_MS&&freshness?.coverage>=6&&age<=5&&age>=-1&&row.data?row.data:null;
     }catch{return null;}
   }
   function cacheSet(data){
