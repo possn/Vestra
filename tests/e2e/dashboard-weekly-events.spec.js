@@ -6,6 +6,9 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
 
   await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  // Let startup sources settle before the deterministic fixture, so a late
+  // archive/startup render does not replace this test's selected week.
+  await page.waitForLoadState('networkidle', { timeout: 25000 });
 
   // Reproduce the real default Dashboard state: secondary cards are collapsed.
   await page.evaluate(() => document.getElementById('viewDashboard')?.classList.remove('dash-secondary-open'));
@@ -186,6 +189,9 @@ test('iPhone/WebKit: reported company earnings replace a stale pending event on 
 
   await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  // Let startup sources settle before the deterministic fixture, so a late
+  // archive/startup render does not replace this test's selected week.
+  await page.waitForLoadState('networkidle', { timeout: 25000 });
 
   await page.evaluate(() => {
     window.VestraWeeklyEvents.render({
