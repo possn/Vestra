@@ -13,7 +13,7 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn("loadCalendarStartupStocks()", js)
         self.assertIn("unpackStartupPayload", js)
         self.assertNotIn("sourceStatus.textContent", js)
-        self.assertIn("const VERSION = '3.1';", js)
+        self.assertIn("const VERSION = '3.2';", js)
 
     def test_historical_official_dates_retained_for_three_months(self):
         script = (ROOT / 'scripts/update_macro_events.py').read_text(encoding='utf-8')
