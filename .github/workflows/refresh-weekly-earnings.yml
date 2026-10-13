@@ -52,7 +52,9 @@ jobs:
           python tests/test_earnings_archive.py
 
       - name: Refresh near-term company earnings
-        run: python scripts/refresh_weekly_earnings.py
+        run: |
+          set -o pipefail
+          python scripts/refresh_weekly_earnings.py | tee earnings-refresh-report.jsonl
 
       - name: Check automated main publish window
         id: publish_window
