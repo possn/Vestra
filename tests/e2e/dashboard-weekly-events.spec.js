@@ -246,3 +246,44 @@ test('iPhone/WebKit: calendar independently loads packed company dates before Ma
   await expect(card).not.toContainText('Cobertura de resultados: índice de empresas ainda indisponível');
   await expect(card).not.toContainText('O calendário depende das datas disponíveis');
 });
+
+
+test('iPhone/WebKit: archived prior-quarter earnings and future earnings remain visible after late archive load', async ({ page }) => {
+  await page.route('**/data/earnings-events.json', async route => {
+    await new Promise(resolve => setTimeout(resolve, 150));
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        schema: 'vestra_earnings_events_v1',
+        events: [
+          { kind: 'earnings', ticker: 'HIST', name: 'Historical Company', date: '2026-09-02', analyst_latest_eps_actual: 2.1 },
+          { kind: 'earnings', ticker: 'HIST', name: 'Historical Company', date: '2026-09-02', analyst_latest_eps_actual: 2.1 }
+        ]
+      })
+    });
+  });
+  await page.goto('/index.html?vestra2=0');
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  await page.evaluate(() => document.getElementById('viewDashboard')?.classList.remove('dash-secondary-open'));
+  await page.evaluate(async () => {
+    await window.VestraWeeklyEvents.loadEarningsArchive();
+    window.VestraWeeklyEvents.render({
+      now: new Date(2026, 8, 2, 12),
+      stocks: [{ ticker:'FUT', name:'Future Company', quote_type:'EQUITY', analyst_next_earnings_date:'2026-10-20' }],
+      portfolioTickers: new Set(['HIST']),
+      macroEvents: { events: [] }
+    });
+  });
+  const card = page.locator('#dashboardWeeklyEventsCard');
+  await expect(card.locator('[data-weekly-event-index]')).toHaveCount(1);
+  await expect(card).toContainText('Historical Company');
+  await expect(card).toContainText('HIST');
+  await page.evaluate(() => window.VestraWeeklyEvents.render({
+    now: new Date(2026, 9, 20, 12),
+    stocks: [{ ticker:'FUT', name:'Future Company', quote_type:'EQUITY', analyst_next_earnings_date:'2026-10-20' }],
+    macroEvents: { events: [] }
+  }));
+  await expect(card).toContainText('Future Company');
+  await expect(card).not.toContainText('Historical Company');
+});
