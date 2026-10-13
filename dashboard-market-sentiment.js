@@ -18,7 +18,7 @@
   ];
   const VIX_TICKER='^VIX';
 
-  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null};
+  const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null,cnn:null};
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
   const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -200,6 +200,32 @@
     </article>`;
   }
 
+  function cnnMarkup(){
+    const item=S.cnn;
+    const score=num(item?.score);
+    const zone=score==null?'Sem dados':'CNN · '+String(item.rating||'').replace(/_/g,' ');
+    const official='<a href="https://www.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener noreferrer">CNN Business ↗</a>';
+    return `<section class="dms-cnn" aria-label="CNN Fear and Greed Index">
+      <div class="dms-cnn-top"><div><span class="dms-cnn-kicker">CNN BUSINESS · FEAR & GREED INDEX</span><h3>Medo e ganância</h3></div><div class="dms-cnn-value">${score==null?'—':Math.round(score)}<small>/100</small></div></div>
+      <p class="dms-cnn-intro">Indicador independente da CNN, baseado em sete sinais de mercado. Não é o score Vestra nem o inquérito AAII.</p>
+      <div class="dms-cnn-meter"><i style="left:${score==null?50:clamp(score)}%"></i></div>
+      <div class="dms-cnn-scale"><span>Medo extremo</span><strong>${esc(zone)}</strong><span>Ganância extrema</span></div>
+      <div class="dms-cnn-comparisons"><span>Fecho anterior <b>${metric(num(item?.previous_close))}</b></span><span>1 semana <b>${metric(num(item?.previous_1_week))}</b></span><span>1 mês <b>${metric(num(item?.previous_1_month))}</b></span><span>1 ano <b>${metric(num(item?.previous_1_year))}</b></span></div>
+      <div class="dms-cnn-source">Fonte: ${official} · ${item?.timestamp?esc(String(item.timestamp).slice(0,16).replace('T',' '))+' UTC':'Aguardando atualização verificada'}</div>
+    </section>`;
+  }
+
+  async function loadCnn(){
+    try{
+      const response=await fetch('data/cnn-fear-greed.json',{cache:'no-store'});
+      if(!response.ok) throw new Error('CNN data '+response.status);
+      const payload=await response.json();
+      if(payload?.source!=='cnn' || num(payload.score)==null || num(payload.score)<0 || num(payload.score)>100) throw new Error('CNN payload inválido');
+      S.cnn=payload;
+    }catch(error){console.warn('[Vestra] CNN Fear & Greed unavailable',error);S.cnn=null;}
+    render();
+  }
+
   function aaiiMarkup(){
     const weeks=Array.isArray(S.aaii?.weeks)?S.aaii.weeks.slice(0,5):[];
     if(!weeks.length) return '';
@@ -288,18 +314,21 @@
     if(!base) return `<section class="dms-card" id="${CARD_ID}">
       <div class="dms-head"><div><span class="dms-kicker">MARKET SENTIMENT</span><h2>Como está o mercado?</h2><p>O barómetro precisa do Worker Vestra para ler preços e histórico.</p></div></div>
       <div class="dms-empty">Configura o Worker em Mais → Preferências.</div>
+      ${cnnMarkup()}
       ${aaiiMarkup()}
     </section>`;
 
     if(S.loading&&!S.data) return `<section class="dms-card" id="${CARD_ID}">
       <div class="dms-head"><div><span class="dms-kicker">MARKET SENTIMENT</span><h2>Como está o mercado?</h2><p>A combinar tendência, momentum, participação proxy e volatilidade.</p></div></div>
       <div class="dms-loading"><span></span>A calcular leitura…</div>
+      ${cnnMarkup()}
       ${aaiiMarkup()}
     </section>`;
 
     if(!S.data) return `<section class="dms-card" id="${CARD_ID}">
       <div class="dms-head"><div><span class="dms-kicker">MARKET SENTIMENT</span><h2>Como está o mercado?</h2><p>Leitura indisponível neste momento.</p></div><button class="dms-refresh" type="button" data-dms-refresh>↻</button></div>
       <div class="dms-empty">${esc(S.error||'Ainda não existem dados suficientes para calcular o score.')}</div>
+      ${cnnMarkup()}
       ${aaiiMarkup()}
     </section>`;
 
@@ -325,6 +354,7 @@
         ${gauge(current.score,tone)}
       </div>
       <div class="dms-context" aria-label="Frescura das cotações">Cotações até ${esc(priceDateText)} · ${priceCoverage}/7 fontes${priceWarning?' · Dados antigos':''}</div>
+      ${cnnMarkup()}
       ${aaiiMarkup()}
       <button class="dms-detail-toggle" type="button" data-dms-detail-toggle aria-expanded="${S.expanded?'true':'false'}">
         ${S.expanded?'Ocultar detalhe':'Ver como é calculado'} <span aria-hidden="true">${S.expanded?'−':'+'}</span>
@@ -433,6 +463,7 @@
     render();
     scheduleLoad();
     loadAaii();
+    loadCnn();
     window.addEventListener('vestra:app-ready',()=>{render();scheduleLoad();});
     document.addEventListener('toggle',event=>{
       const details=event.target?.closest?.('.dms-aaii-history');
