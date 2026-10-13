@@ -73,6 +73,18 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('priceFreshness:priceFreshness(details)', JS)
         self.assertIn('Dados antigos', JS)
 
+    def test_market_read_does_not_invent_zero_for_missing_values(self):
+        self.assertIn("if(v===null||v===undefined||v==='') return null", JS)
+        self.assertIn("if(totalWeight<.8) return null", JS)
+
+    def test_market_read_coverage_and_freshness_guard_live_and_cache(self):
+        self.assertIn("freshness.coverage<6", JS)
+        self.assertIn("daysOld>5", JS)
+        self.assertIn("freshness?.coverage>=6", JS)
+        self.assertIn("age<=5", JS)
+        self.assertIn("S.data=null;", JS)
+        self.assertIn("Leitura indisponível: cobertura ou frescura insuficiente", JS)
+
     def test_service_worker_tracks_companion(self):
         self.assertIn("./dashboard-market-sentiment.js", SW)
         self.assertIn("./dashboard-market-sentiment.css", SW)
