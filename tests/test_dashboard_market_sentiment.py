@@ -70,7 +70,7 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('function priceFreshness(details)', JS)
         self.assertIn('latestDates.sort()[0]', JS)
         self.assertIn('Cotações até', JS)
-        self.assertIn('priceFreshness:priceFreshness(details)', JS)
+        self.assertIn('priceFreshness:freshness', JS)
         self.assertIn('Dados antigos', JS)
 
     def test_market_read_does_not_invent_zero_for_missing_values(self):
