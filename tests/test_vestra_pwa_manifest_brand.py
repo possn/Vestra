@@ -12,5 +12,5 @@ class ManifestBrandTests(unittest.TestCase):
             self.assertIn(old,[i['src'] for i in icons])
         mark=(ROOT/'vestra-icon-2026.svg').read_text()
         self.assertIn('viewBox="0 0 512 512"',mark)
-        self.assertIn('#f7f5f1',mark)
+        self.assertIn('#061916',mark)
 if __name__=='__main__': unittest.main()
