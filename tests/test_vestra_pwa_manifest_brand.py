@@ -9,7 +9,7 @@ class ManifestBrandTests(unittest.TestCase):
         icons=manifest['icons']
         self.assertEqual(icons[0]['src'],'vestra-icon-2026.svg')
         for old in ('icon192.png','icon512.png','icon192-maskable.png','icon512-maskable.png'):
-            self.assertIn(old,[i['src'] for i in icons])
+            self.assertIn(old,[i['src'].split('?')[0] for i in icons])
         mark=(ROOT/'vestra-icon-2026.svg').read_text()
         self.assertIn('viewBox="0 0 512 512"',mark)
         self.assertIn('#061916',mark)
