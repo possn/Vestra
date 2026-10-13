@@ -4,8 +4,16 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
+  // Isolate this deterministic fixture from production historical earnings.
+  await page.route('**/data/earnings-events.json', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ schema: 'vestra_earnings_events_v1', events: [] }),
+  }));
   await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  // Let startup sources settle before the deterministic fixture, so a late
+  // archive/startup render does not replace this test's selected week.
+  await page.waitForLoadState('networkidle', { timeout: 25000 });
 
   // Reproduce the real default Dashboard state: secondary cards are collapsed.
   await page.evaluate(() => document.getElementById('viewDashboard')?.classList.remove('dash-secondary-open'));
@@ -184,8 +192,16 @@ test('iPhone/WebKit: reported company earnings replace a stale pending event on 
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
 
+  // Isolate this deterministic fixture from production historical earnings.
+  await page.route('**/data/earnings-events.json', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ schema: 'vestra_earnings_events_v1', events: [] }),
+  }));
   await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  // Let startup sources settle before the deterministic fixture, so a late
+  // archive/startup render does not replace this test's selected week.
+  await page.waitForLoadState('networkidle', { timeout: 25000 });
 
   await page.evaluate(() => {
     window.VestraWeeklyEvents.render({

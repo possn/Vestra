@@ -184,6 +184,16 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         self.assertEqual(row['analyst_latest_earnings_date'], '2026-09-10')
         self.assertEqual(row['analyst_latest_eps_actual'], 6.13)
 
+    def test_refresh_exposes_multi_quarter_diagnostics_and_preserves_failure_visibility(self):
+        script = (ROOT / 'scripts/refresh_weekly_earnings.py').read_text(encoding='utf-8')
+        workflow = (ROOT / '.github/workflows/refresh-weekly-earnings.yml').read_text(encoding='utf-8')
+        self.assertIn('reported_history_tickers', script)
+        self.assertIn('multi_quarter_source_tickers', script)
+        self.assertIn('archive_multi_quarter_tickers', script)
+        self.assertIn('set -o pipefail', workflow)
+        self.assertIn('earnings-refresh-report.jsonl', workflow)
+        self.assertIn('actions/upload-artifact@v7', workflow)
+
     def test_result_contract_contains_all_dashboard_fields(self):
         expected = {
             'analyst_eps_next_q',
