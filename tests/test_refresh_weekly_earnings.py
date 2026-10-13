@@ -194,6 +194,15 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         self.assertIn('earnings-refresh-report.jsonl', workflow)
         self.assertIn('actions/upload-artifact@v7', workflow)
 
+    def test_status_is_persisted_with_refresh_and_staged_for_publish(self):
+        script = (ROOT / 'scripts/refresh_weekly_earnings.py').read_text(encoding='utf-8')
+        workflow = (ROOT / '.github/workflows/refresh-weekly-earnings.yml').read_text(encoding='utf-8')
+        self.assertIn('DIAGNOSTICS = ROOT / "data" / "earnings-refresh-status.json"', script)
+        self.assertIn('DIAGNOSTICS.write_text(json.dumps(status', script)
+        self.assertIn('"generated_at": now_utc.isoformat()', script)
+        self.assertIn('data/earnings-refresh-status.json', workflow)
+        self.assertIn('"archive_multi_quarter_tickers":', script)
+
     def test_result_contract_contains_all_dashboard_fields(self):
         expected = {
             'analyst_eps_next_q',
