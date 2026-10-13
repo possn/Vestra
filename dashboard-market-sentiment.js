@@ -19,7 +19,7 @@
   const VIX_TICKER='^VIX';
 
   const S={loading:false,data:null,error:'',scheduled:false,expanded:false,aaiiExpanded:false,aaii:null,cnn:null};
-  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+  const num=v=>{if(v===null||v===undefined||v==='') return null;const n=Number(v);return Number.isFinite(n)?n:null};
   const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -139,7 +139,7 @@
       ['Volatilidade',num(vol?.score),.15],
     ].filter(x=>x[1]!=null);
     const totalWeight=parts.reduce((s,x)=>s+x[2],0);
-    if(totalWeight<.6) return null;
+    // Incomplete components must not be silently reweighted into a strong signal.\n    if(totalWeight<.8) return null;
     const score=Math.round(parts.reduce((s,x)=>s+x[1]*x[2],0)/totalWeight);
     return {score:clamp(score),trend,momentum,participation,vol,parts};
   }
@@ -431,13 +431,13 @@
       const settled=await Promise.allSettled(tickers.map(t=>fetchDetail(base,t)));
       const details={};
       settled.forEach((row,i)=>{if(row.status==='fulfilled') details[tickers[i]]=row.value;});
-      const current=computeSnapshot(details,0);
+      const freshness=priceFreshness(details);\n      const daysOld=freshness.date?Math.floor((Date.now()-Date.parse(freshness.date+'T23:59:59Z'))/86400000):Infinity;\n      if(freshness.coverage<6 || daysOld>5 || daysOld< -1) throw new Error('Leitura indisponível: cobertura ou frescura insuficiente das cotações');\n      const current=computeSnapshot(details,0);
       if(!current) throw new Error('Dados insuficientes para calcular o score');
       const data={
         current,
         previousDay:computeSnapshot(details,1),
         previousWeek:computeSnapshot(details,5),
-        priceFreshness:priceFreshness(details),
+        priceFreshness:freshness,
         generatedAt:new Date().toISOString(),
       };
       S.data=data;cacheSet(data);
