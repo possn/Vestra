@@ -5,7 +5,7 @@
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
   const clamp=v=>Math.max(0,Math.min(100,v));
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const LENSES=new Set(['all','low52','emerging','recovery','value']);
+  const LENSES=new Set(['all','low52','emerging','recovery','value','breakout']);
   let activeLens='all';
 
   function stocks(){
@@ -20,6 +20,44 @@
     const r5=ret(5),r20=ret(20),r60=ret(60),room=hi&&cur?(1-cur/hi)*100:null;
     const accel=(r5!=null&&r20!=null)?r5-(r20/4):null;
     return {r5,r20,r60,room,accel};
+  }
+  // Technical-only setup engine; never infer a future move from a score.
+  function breakoutSetup(stock){
+    const bars=(Array.isArray(stock?.price_history_1y)?stock.price_history_1y:[])
+      .map(x=>({close:n(x?.close),high:n(x?.high),low:n(x?.low),volume:n(x?.volume),date:t(x?.date||x?.timestamp)}))
+      .filter(x=>x.close!=null&&x.close>0);
+    if(bars.length<210)return null;
+    const closes=bars.map(x=>x.close),last=closes.length-1;
+    const ma=(length,end=last)=>end-length+1<0?null:closes.slice(end-length+1,end+1).reduce((a,b)=>a+b,0)/length;
+    const sma50=ma(50),sma150=ma(150),sma200=ma(200);
+    if(sma50==null||sma150==null||sma200==null||last<210)return null;
+    const prev50=ma(50,last-10),prev150=ma(150,last-10),prev200=ma(200,last-10);
+    const slopes=[sma50-prev50,sma150-prev150,sma200-prev200];
+    const current=closes[last];
+    if(!(current>sma150&&sma50>sma200&&slopes.every(x=>x>0)))return null;
+    const prior50=ma(50,last-20),prior200=ma(200,last-20);
+    const goldenCrossRecent=prior50!=null&&prior200!=null&&prior50<=prior200;
+    const recent=bars.slice(-40),earlier=bars.slice(-100,-60);
+    const range=part=>{
+      const highs=part.map(x=>x.high??x.close),lows=part.map(x=>x.low??x.close);
+      return {hi:Math.max(...highs),lo:Math.min(...lows)};
+    };
+    if(recent.length<40||earlier.length<40)return null;
+    const nowRange=range(recent),oldRange=range(earlier);
+    const width=nowRange.hi/nowRange.lo-1,oldWidth=oldRange.hi/oldRange.lo-1;
+    const compression=oldWidth>0&&width<oldWidth*.8&&width<=.22;
+    if(!compression)return null;
+    const priorBase=range(recent.slice(0,-1)),resistance=priorBase.hi;
+    const distance=(resistance/current-1)*100;
+    if(distance>8)return null;
+    const volumes=bars.slice(-41,-1).map(x=>x.volume).filter(x=>x!=null&&x>0);
+    const averageVolume=volumes.length>=30?volumes.slice(-20).reduce((a,b)=>a+b,0)/20:null;
+    const lastVolume=bars[last].volume;
+    const volumeConfirmed=averageVolume!=null&&lastVolume!=null&&lastVolume>=averageVolume*1.5;
+    const breakout=current>resistance*1.005&&volumeConfirmed;
+    const stage=breakout?'confirmado':distance>=-1.5&&distance<=4?'pré-breakout':'compressão';
+    const score=Math.round(Math.min(100,45+Math.min(18,(1-width/oldWidth)*30)+Math.max(0,8-Math.max(0,distance))*2+(goldenCrossRecent?8:0)+(volumeConfirmed?7:0)));
+    return {stage,score,widthPct:width*100,priorWidthPct:oldWidth*100,distancePct:distance,resistance,averageVolume,volumeConfirmed,goldenCrossRecent,date:bars[last].date,sma50,sma150,sma200};
   }
   function confirmed(s){
     const p=stats(s),est=t(s?.estimate_signal),rec=t(s?.recovery_status),dir=t(s?.thesis_direction);
@@ -127,6 +165,7 @@
     return true;
   }
   function lensEligible(s,lens){
+    if(lens==='breakout')return breakoutSetup(s)!=null;
     if(lens==='all')return eligible(s);
     // Strategy lenses are views over the canonical Discovery universe, not
     // independent eligibility engines. A backend-rejected name must never
@@ -182,12 +221,12 @@
     // Lenses are canonical Discovery views: they may filter the universe and
     // apply diversification guardrails, but they must never create a second
     // alpha signal or reweight the canonical opportunity ranking.
-    return discoveryScore(s)||0;
+    return lens==='breakout'?(breakoutSetup(s)?.score||0):(discoveryScore(s)||0);
   }
   function rankedCandidates(universe,lens,sector='all'){
     let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
     if(sector!=='all')ranked=ranked.filter(s=>t(s?.sector)===sector);
-    ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
+    ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens));
     return ranked;
   }
   function diversify(rows,limit,{sectorCap=3,industryCap=2,recoveryCap=Infinity}={}){
@@ -371,6 +410,11 @@
     return reason(s);
   }
   function row(s,lens){
+    if(lens==='breakout'){
+      const setup=breakoutSetup(s);if(!setup)return '';
+      const fmt=x=>x.toFixed(1).replace('.',',');
+      return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(setup.stage)} · Base 40 sessões ${fmt(setup.widthPct)}% (anterior ${fmt(setup.priorWidthPct)}%) · ${fmt(setup.distancePct)}% da resistência</div><div class="ux453-thesis">Preço acima da MM150 · MM50 acima MM200 · três médias ascendentes${setup.goldenCrossRecent?' · cruzamento MM50/MM200 recente':''}</div><div class="ux453-opportunity-type">${setup.volumeConfirmed?'Volume ≥ 1,5× média':'Volume por confirmar'} · Dados até ${esc(setup.date||'—')} · Setup técnico, não previsão</div></div><div class="ux453-entry"><small>SETUP</small><strong>${setup.score}</strong><em>${esc(setup.stage)}</em></div></div>`;
+    }
     const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),coverage=sleeveCoverage(s),dom=credibleDominantSleeve(s),capText=capSummary(s);
     const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
       .filter(([,v])=>v!=null).map(([label,v,key])=>`<span class="${key===dom?'is-driver':''}">${label} ${Math.round(v)}${coverage[key]!=null&&coverage[key]<70?' · evidência limitada':''}</span>`).join('');
@@ -395,6 +439,7 @@
     }
   }
   function lensMeta(lens){
+    if(lens==='breakout')return ['Compressão · Pré-breakout','Bases de 40 sessões em estreitamento, preço acima da MM150, MM50 > MM200 e três médias ascendentes. Sem garantia de subida.'];
     if(lens==='low52')return ['Mínimos 52 semanas','Empresas robustas negociadas até 5% acima do mínimo de 52 semanas.'];
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
     if(lens==='recovery')return ['Recuperação','Empresas com recuperação operacional ou de estimativas já confirmada.'];
@@ -415,7 +460,7 @@
     }
     const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all';
     const rows=rankLens(universe,activeLens,{limit:12,sector:sec});
-    const sig=(rows.map(s=>`${t(s.ticker)}:${Math.round(lensScore(s,activeLens))}`).join('|')||'empty')+`:${sec}:${activeLens}`;
+    const sig=(rows.map(s=>`${t(s.ticker)}:${Math.round(lensScore(s,activeLens))}:${activeLens==='breakout'?(breakoutSetup(s)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
       list.innerHTML=rows.map(s=>row(s,activeLens)).join('');
       rows.forEach(s=>{const el=list.querySelector(`[data-market-ticker="${CSS.escape(t(s.ticker))}"]`);if(el)el.__vestraStock=s;});
@@ -451,5 +496,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,get activeLens(){return activeLens;},version:'1.14'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},version:'1.15'});
 })();
