@@ -9,6 +9,7 @@ WRITERS = {
     "bootstrap-earnings-archive.yml",
     "rebuild-market-startup.yml",
     "refresh-weekly-earnings.yml",
+    "refresh-prebreakout-scanner.yml",
     "refresh-cnn-fear-greed.yml",
     "sec-fund-identity.yml",
     "update-aaii-sentiment.yml",

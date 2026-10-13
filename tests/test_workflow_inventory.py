@@ -13,6 +13,7 @@ ACTIVE_WORKFLOWS = {
     'production-smoke.yml',
     'rebuild-market-startup.yml',
     'refresh-weekly-earnings.yml',
+    'refresh-prebreakout-scanner.yml',
     'refresh-cnn-fear-greed.yml',
     'runtime-js-syntax.yml',
     'sec-connectivity-probe.yml',

@@ -1,0 +1,54 @@
+name: Refresh prebreakout scanner
+
+on:
+  schedule:
+    - cron: '10 2,8,14,20 * * 1-5'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/refresh_prebreakout_scanner.py'
+      - '.github/workflows/refresh-prebreakout-scanner.yml'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: refresh-prebreakout-scanner
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install technical history dependencies
+        run: pip install 'yfinance>=0.2.65' pandas
+      - name: Validate scanner
+        run: |
+          python -m py_compile scripts/refresh_prebreakout_scanner.py
+          python tests/test_refresh_prebreakout_scanner.py
+      - name: Scan bounded liquid universe
+        run: python scripts/refresh_prebreakout_scanner.py
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+      - name: Publish technical signals
+        if: steps.publish_window.outputs.defer != 'true'
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/prebreakout-signals.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Actualização de setups pré-breakout verificados"
+            bash scripts/publish_with_retry.sh origin main
+          fi
