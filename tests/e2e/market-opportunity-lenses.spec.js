@@ -209,3 +209,32 @@ test('iPhone/WebKit: More sectors defers canonical rerender until the native pic
   expect(commits).toEqual(['Energy', 'Communication Services']);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+test('iPhone/WebKit: Pre-breakout finds a verified compressed base and returns to Discovery', async ({ page }) => {
+  await waitForLaunch(page);
+  await page.evaluate(() => {
+    const today=Date.now();
+    const bars=Array.from({length:260},(_,i)=>{
+      const base=50+.075*i;
+      const wiggle=i>=160&&i<200?5*Math.sin(i*1.4):.22*Math.sin(i*.4);
+      const close=base+wiggle;
+      return {date:new Date(today-(259-i)*86400000).toISOString().slice(0,10),
+        close,high:close+(i>=220?.4:1),low:close-(i>=220?.4:1),volume:i===259?180000:100000};
+    });
+    window.VestraMarketStaticUniverse={getStocks:()=>[{
+      ticker:'VCPX',name:'Compression Fixture Corp',quote_type:'EQUITY',
+      price_history_1y:bars,opportunity_eligible:false
+    }]};
+    const fixture=document.createElement('section');
+    fixture.id='prebreakoutFixture';fixture.className='market-section';
+    fixture.innerHTML='<div class="market-section__head"><h3>Oportunidades agora</h3><p></p></div><div class="market-list"></div>';
+    document.body.prepend(fixture);
+    window.VestraMarketOpportunities.selectLens('all');
+    window.VestraMarketOpportunityLenses.refresh();
+    window.VestraMarketOpportunityLenses.select('breakout');
+  });
+  await expect(page.locator('#prebreakoutFixture h3')).toContainText('Pré-breakout');
+  await expect(page.locator('#prebreakoutFixture [data-market-ticker="VCPX"]')).toHaveCount(1);
+  await expect(page.locator('#prebreakoutFixture')).toContainText('MM50 acima MM200');
+  await page.evaluate(()=>window.VestraMarketOpportunityLenses.select('all'));
+  await expect(page.locator('#prebreakoutFixture h3')).toContainText('Oportunidades agora');
+});
