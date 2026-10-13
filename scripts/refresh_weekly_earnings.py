@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -355,7 +355,7 @@ def main() -> int:
         "reported_history_rows": len(discovered_history),
         "reported_history_tickers": len(history_provider_tickers),
         "multi_quarter_source_tickers": sum(count > 1 for count in history_rows_by_ticker.values()),
-        "archive_multi_quarter_tickers": sum(count > 1 for count in __import__("collections").Counter(event["ticker"] for event in archive["events"]).values()),
+        "archive_multi_quarter_tickers": sum(count > 1 for count in Counter(event["ticker"] for event in archive["events"]).values()),
         "failures": failures[:10],
         "contract": "near-term earnings only; preserve last verified values on fetch failure",
     }, ensure_ascii=False))
