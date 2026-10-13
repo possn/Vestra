@@ -130,8 +130,8 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
     });
   });
 
-  const event = page.locator('#dashboardWeeklyEventsCard [data-weekly-event-index]').first();
-  await expect(event).toContainText('CPI EUA');
+  const event = page.locator('#dashboardWeeklyEventsCard [data-weekly-event-index]').filter({ hasText: 'CPI EUA' }).first();
+  await expect(event).toBeVisible();
   await event.click();
 
   const detail = page.locator('#dashboardWeeklyEventDetail');
