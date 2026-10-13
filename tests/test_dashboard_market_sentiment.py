@@ -66,6 +66,13 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertNotIn('15 15 * * 5', workflow)
         self.assertIn("./data/aaii-sentiment.json", SW)
 
+    def test_quote_freshness_is_visible_and_not_the_cache_timestamp(self):
+        self.assertIn('function priceFreshness(details)', JS)
+        self.assertIn('latestDates.sort()[0]', JS)
+        self.assertIn('Cotações até', JS)
+        self.assertIn('priceFreshness:priceFreshness(details)', JS)
+        self.assertIn('Dados antigos', JS)
+
     def test_service_worker_tracks_companion(self):
         self.assertIn("./dashboard-market-sentiment.js", SW)
         self.assertIn("./dashboard-market-sentiment.css", SW)
