@@ -25,6 +25,18 @@ class FakeFrame:
 
 
 class WeeklyEarningsRefreshTests(unittest.TestCase):
+    def test_backfills_confirmed_historical_quarters_without_scheduled_only_dates(self):
+        now = datetime(2026,10,13,tzinfo=timezone.utc)
+        frame = FakeFrame([
+            (datetime(2026,7,12,tzinfo=timezone.utc), FakeRow({"Reported EPS":1.5,"EPS Estimate":1.2,"Surprise(%)":25})),
+            (datetime(2026,9,2,tzinfo=timezone.utc), FakeRow({"Reported EPS":2.0,"EPS Estimate":1.9})),
+            (datetime(2026,11,2,tzinfo=timezone.utc), FakeRow({"EPS Estimate":2.4}))
+        ])
+        rows = mod.extract_reported_history("AAA", frame, now)
+        self.assertEqual([r["analyst_latest_earnings_date"] for r in rows], ["2026-07-12", "2026-09-02"])
+        self.assertEqual(rows[0]["analyst_latest_eps_surprise_pct"], .25)
+        self.assertTrue(all(r["earnings_source"] == "yahoo:earnings_dates" for r in rows))
+
     def test_candidates_include_recent_and_near_term_equities_only(self):
         payload = {'stocks':[
             {'ticker':'ADBE','quote_type':'EQUITY','analyst_next_earnings_date':'2026-09-10'},
