@@ -406,6 +406,7 @@
     activeLens=LENSES.has(t(lens))?t(lens):'all';
     const universe=stocks();
     const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
+    section.classList.toggle('vestra-low52-contrast',activeLens==='low52');
     const list=section.querySelector('.market-list');if(!list)return[];
     if(!universe.length){
       list.innerHTML='';
