@@ -2,8 +2,7 @@ name: Update AAII sentiment
 
 on:
   schedule:
-    - cron: "15 15 * * 4"
-    - cron: "15 15 * * 5"
+    - cron: "15 15 * * *"
   workflow_dispatch: {}
   push:
     paths:
@@ -42,6 +41,9 @@ jobs:
           assert len(weeks) == 5
           assert p.get('latest_published') == weeks[0].get('date')
           assert weeks == sorted(weeks, key=lambda x: x['date'], reverse=True)
+          from datetime import date
+          age = (date.today() - date.fromisoformat(weeks[0]['date'])).days
+          assert 0 <= age <= 8, f'AAII data are {age} days old; investigation required'
           for row in weeks:
               total=sum(float(row[k]) for k in ('bullish','neutral','bearish'))
               assert 99.0 <= total <= 101.0, (row, total)
