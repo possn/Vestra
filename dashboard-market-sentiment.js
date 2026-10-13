@@ -4,7 +4,7 @@
 
   const STYLE_ID='vestraDashboardMarketSentimentStyle';
   const CARD_ID='vestraMarketSentimentCard';
-  const CACHE_KEY='vestra-market-sentiment-v1';
+  const CACHE_KEY='vestra-market-sentiment-v2';
   const CACHE_TTL_MS=15*60*1000;
   const FETCH_TIMEOUT_MS=10000;
 
@@ -90,6 +90,18 @@
       participation=flags.reduce((a,b)=>a+b,0)/flags.length;
     }
     return {current,ma50,ma200,r1,r3,trend,momentum,participation};
+  }
+
+  function priceFreshness(details){
+    const latestDates=[...RISK_ASSETS.map(x=>x.ticker),VIX_TICKER].map(ticker=>{
+      const rows=historyFor(details[ticker]);
+      const raw=String(rows[rows.length-1]?.date||'');
+      const match=/^(\d{4}-\d{2}-\d{2})/.exec(raw);
+      return match?.[1]||null;
+    }).filter(Boolean);
+    if(!latestDates.length) return {date:null,coverage:0};
+    // Earliest last-quote date is conservative when instruments update at different times.
+    return {date:latestDates.sort()[0],coverage:latestDates.length};
   }
 
   function weightedMetric(details,key,offset=0){
@@ -294,6 +306,11 @@
     const current=S.data.current;
     const [label,tone]=labelFor(current.score);
     const vix=current.vol?.current;
+    const priceDate=S.data.priceFreshness?.date;
+    const priceCoverage=Number(S.data.priceFreshness?.coverage)||0;
+    const priceDateText=priceDate?priceDate.split('-').reverse().join('/'):'data indisponível';
+    const priceAge=priceDate?Math.floor((Date.now()-Date.parse(priceDate+'T23:59:59Z'))/86400000):null;
+    const priceWarning=priceAge!=null&&priceAge>4;
     return `<section class="dms-card" id="${CARD_ID}">
       <div class="dms-head">
         <div><span class="dms-kicker">MARKET SENTIMENT · VESTRA READ</span><h2>Como está o mercado?</h2><p>${esc(reason(current))}</p></div>
@@ -307,6 +324,7 @@
         </div>
         ${gauge(current.score,tone)}
       </div>
+      <div class="dms-context" aria-label="Frescura das cotações">Cotações até ${esc(priceDateText)} · ${priceCoverage}/7 fontes${priceWarning?' · Dados antigos':''}</div>
       ${aaiiMarkup()}
       <button class="dms-detail-toggle" type="button" data-dms-detail-toggle aria-expanded="${S.expanded?'true':'false'}">
         ${S.expanded?'Ocultar detalhe':'Ver como é calculado'} <span aria-hidden="true">${S.expanded?'−':'+'}</span>
@@ -389,6 +407,7 @@
         current,
         previousDay:computeSnapshot(details,1),
         previousWeek:computeSnapshot(details,5),
+        priceFreshness:priceFreshness(details),
         generatedAt:new Date().toISOString(),
       };
       S.data=data;cacheSet(data);
@@ -432,6 +451,7 @@
   window.VestraDashboardMarketSentiment=Object.freeze({
     version:'1.6',
     computeSnapshot,
+    priceFreshness,
     labelFor,
     load,
     render,
