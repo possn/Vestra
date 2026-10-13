@@ -49,6 +49,7 @@ jobs:
         run: |
           python -m py_compile scripts/refresh_weekly_earnings.py scripts/earnings_archive.py
           python tests/test_refresh_weekly_earnings.py
+          python tests/test_earnings_archive.py
 
       - name: Refresh near-term company earnings
         run: python scripts/refresh_weekly_earnings.py
