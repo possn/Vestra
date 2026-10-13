@@ -1,0 +1,55 @@
+name: Bootstrap earnings archive
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/bootstrap_earnings_archive.py'
+      - '.github/workflows/bootstrap-earnings-archive.yml'
+  schedule:
+    - cron: '45 0 * * *'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: earnings-archive-bootstrap
+  cancel-in-progress: true
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Verify archive bootstrap and provenance
+        run: |
+          python -m py_compile scripts/bootstrap_earnings_archive.py scripts/earnings_archive.py
+          python tests/test_earnings_archive.py
+          python tests/test_bootstrap_earnings_archive.py
+      - name: Build archive from verified existing results
+        run: python scripts/bootstrap_earnings_archive.py
+      - name: Protect open code PRs from automatic main commits
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+      - name: Publish verified archive
+        if: steps.publish_window.outputs.defer != 'true'
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/earnings-events.json
+          if git diff --cached --quiet; then
+            echo "Archive unchanged."
+          else
+            git commit -m "Publicação de arquivo histórico de resultados verificados"
+            bash scripts/publish_with_retry.sh origin main
+          fi
