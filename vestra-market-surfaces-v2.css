@@ -197,3 +197,26 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-search{
   font-size:12px!important;line-height:1.5!important;
  }
 }
+
+/* Light opportunity-lens sheet must own both card ink and card backgrounds.
+   Global dark Market row/ticker rules otherwise leak white text onto ivory. */
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row{
+  background:#fffefa!important;
+  border:1px solid #b9c6bf!important;
+  color:#203238!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row__ticker,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row__title,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row__name{
+  color:#203238!important;
+  -webkit-text-fill-color:#203238!important;
+  opacity:1!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row__meta,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row__description,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .ux453-thesis,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .ux453-opportunity-type{
+  color:#435b60!important;
+  -webkit-text-fill-color:#435b60!important;
+  opacity:1!important;
+}
