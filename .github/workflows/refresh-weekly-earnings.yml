@@ -56,6 +56,15 @@ jobs:
           set -o pipefail
           python scripts/refresh_weekly_earnings.py | tee earnings-refresh-report.jsonl
 
+      - name: Upload earnings diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: earnings-refresh-diagnostics
+          path: earnings-refresh-report.jsonl
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Check automated main publish window
         id: publish_window
         env:
