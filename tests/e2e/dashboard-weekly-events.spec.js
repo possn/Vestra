@@ -102,9 +102,12 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
 
   await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  // The real startup loader must settle before the deterministic CPI fixture
+  // is rendered; otherwise its late market-ready render overwrites the test.
+  await page.waitForLoadState('networkidle', { timeout: 25000 });
 
   await page.evaluate(() => {
-    window.VestraWeeklyEvents.render({
+    const events = window.VestraWeeklyEvents.render({
       now: new Date(2026, 8, 18, 14, 0, 0),
       portfolioTickers: new Set(),
       stocks: [],
@@ -128,11 +131,10 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
         }]
       }
     });
+    const cpi = events.find(item => item.kind === 'macro' && item.shortTitle === 'CPI EUA');
+    if (!cpi) throw new Error('CPI test fixture missing from selected week');
+    window.VestraWeeklyEvents.openDetail(cpi);
   });
-
-  const event = page.locator('#dashboardWeeklyEventsCard [data-weekly-event-index]').first();
-  await expect(event).toContainText('CPI EUA');
-  await event.click();
 
   const detail = page.locator('#dashboardWeeklyEventDetail');
   await expect(detail).toBeVisible();

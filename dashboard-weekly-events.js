@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v3.1 — compact editorial catalysts with progressive disclosure. */
+/* Vestra Dashboard Weekly Events v3.2 — compact editorial catalysts with progressive disclosure. */
 (() => {
   'use strict';
 
-  const VERSION = '3.1';
+  const VERSION = '3.2';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -456,11 +456,16 @@
   function render(options = {}) {
     ensureStyles(); const card = ensureCard(); if (!card) return [];
     const sharedStocks = window.VestraMarketStaticUniverse?.getStocks?.(); const stocks = options.stocks || (Array.isArray(sharedStocks) && sharedStocks.length ? sharedStocks : calendarStartupStocks) || [];
+    // Calendar navigation can occur before the 2 MB startup data finishes.
+    // Retry in the background and re-render the same selected week when ready.
+    if (!stocks.length && !calendarStartupLoading) {
+      void loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(); });
+    }
     const tickers = options.portfolioTickers || portfolioTickerSet(); const nav = window.VestraWeeklyEventsNavigation; const now = options.now || (nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date()); const macro = options.macroEvents || macroSnapshot;
     const events = selectEvents(stocks, tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
     const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
     card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
-    if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent='Sem eventos confirmados nesta semana.'; card.appendChild(empty); }
+    if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent=!stocks.length ? 'A carregar resultados das empresas…' : 'Sem eventos confirmados nesta semana.'; card.appendChild(empty); }
     else {
       const list=document.createElement('div'); list.className='weekly-events-list';
       const visibleEvents=eventsExpanded ? events : events.slice(0,COLLAPSED_EVENTS);
