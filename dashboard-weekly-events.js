@@ -557,7 +557,7 @@
 
   async function scheduleRender(){
     const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();
-    await Promise.allSettled([marketLoad,loadMacroEvents(),loadCalendarStartupStocks(),loadEarningsArchive()]);
+    await Promise.allSettled([marketLoad,loadMacroEvents(),loadCalendarStartupStocks()]);
     render();
     restoreExternalWeeklyDetail();
   }
