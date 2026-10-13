@@ -7,7 +7,7 @@
   let activeLens='all';
 
   function section(){
-    return [...document.querySelectorAll('.market-section')].find(x=>/Oportunidades agora|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)))||null;
+    return [...document.querySelectorAll('.market-section')].find(x=>/Oportunidades agora|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)))||null;
   }
   function ensureBar(s){
     let bar=s?.querySelector('.vestra-opportunity-lenses');
