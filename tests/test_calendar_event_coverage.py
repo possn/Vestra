@@ -22,7 +22,7 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn("loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(); })", runtime)
         self.assertIn("A carregar resultados das empresas…", runtime)
         self.assertNotIn("Cobertura de resultados: índice de empresas ainda indisponível", runtime)
-        self.assertIn("vestra-cache-v240", sw)
+        self.assertIn("vestra-cache-v241", sw)
 
     def test_historical_official_dates_retained_for_three_months(self):
         script = (ROOT / 'scripts/update_macro_events.py').read_text(encoding='utf-8')
