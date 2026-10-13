@@ -16,7 +16,10 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-try:\n    from scripts.earnings_archive import save_archive\nexcept ModuleNotFoundError:\n    from earnings_archive import save_archive
+try:
+    from scripts.earnings_archive import save_archive
+except ModuleNotFoundError:
+    from earnings_archive import save_archive
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "data" / "stocks-index.json"
