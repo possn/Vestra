@@ -1,5 +1,5 @@
-/* Vestra Service Worker v11.17 — force Crypto market runtime generation. */
-const CACHE_NAME = "vestra-cache-v239";
+/* Vestra Service Worker v11.18 — force Crypto market runtime generation. */
+const CACHE_NAME = "vestra-cache-v240";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [
