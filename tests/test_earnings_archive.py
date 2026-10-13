@@ -18,6 +18,16 @@ class EarningsArchiveTests(unittest.TestCase):
         again = archive_rows(result, latest, date(2026, 10, 13))
         self.assertEqual(len(again["events"]), 2)
 
+    def test_multi_quarter_backfill_keeps_provider_provenance(self):
+        rows = [
+            {'ticker':'ABC', 'name':'ABC', 'analyst_latest_earnings_date':'2026-07-10', 'analyst_latest_eps_actual':1.1, 'earnings_source':'yahoo:earnings_dates'},
+            {'ticker':'ABC', 'name':'ABC', 'analyst_latest_earnings_date':'2026-10-10', 'analyst_latest_eps_actual':1.2, 'earnings_source':'yahoo:earnings_dates'},
+        ]
+        events = archive_rows({}, rows, date(2026, 10, 13))['events']
+        self.assertEqual(len(events), 2)
+        self.assertEqual([x['date'] for x in events], ['2026-07-10','2026-10-10'])
+        self.assertTrue(all(x['source']=='yahoo:earnings_dates' for x in events))
+
     def test_no_future_predictions_or_undated_results(self):
         rows = [
             {"ticker": "AAA", "analyst_latest_earnings_date": "2026-11-01"},
