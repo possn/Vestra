@@ -139,7 +139,8 @@
       ['Volatilidade',num(vol?.score),.15],
     ].filter(x=>x[1]!=null);
     const totalWeight=parts.reduce((s,x)=>s+x[2],0);
-    // Incomplete components must not be silently reweighted into a strong signal.\n    if(totalWeight<.8) return null;
+    // Incomplete components must not be silently reweighted into a strong signal.
+    if(totalWeight<.8) return null;
     const score=Math.round(parts.reduce((s,x)=>s+x[1]*x[2],0)/totalWeight);
     return {score:clamp(score),trend,momentum,participation,vol,parts};
   }
@@ -433,7 +434,10 @@
       const settled=await Promise.allSettled(tickers.map(t=>fetchDetail(base,t)));
       const details={};
       settled.forEach((row,i)=>{if(row.status==='fulfilled') details[tickers[i]]=row.value;});
-      const freshness=priceFreshness(details);\n      const daysOld=freshness.date?Math.floor((Date.now()-Date.parse(freshness.date+'T23:59:59Z'))/86400000):Infinity;\n      if(freshness.coverage<6 || daysOld>5 || daysOld< -1) throw new Error('Leitura indisponível: cobertura ou frescura insuficiente das cotações');\n      const current=computeSnapshot(details,0);
+      const freshness=priceFreshness(details);
+      const daysOld=freshness.date?Math.floor((Date.now()-Date.parse(freshness.date+'T23:59:59Z'))/86400000):Infinity;
+      if(freshness.coverage<6 || daysOld>5 || daysOld< -1) throw new Error('Leitura indisponível: cobertura ou frescura insuficiente das cotações');
+      const current=computeSnapshot(details,0);
       if(!current) throw new Error('Dados insuficientes para calcular o score');
       const data={
         current,
@@ -444,7 +448,7 @@
       };
       S.data=data;cacheSet(data);
     }catch(error){
-      S.data=cacheGet();
+      S.data=null;
       S.error=String(error?.message||'Não foi possível calcular o sentimento.');
     }finally{
       S.loading=false;render();
