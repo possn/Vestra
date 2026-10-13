@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const t=v=>String(v??'').trim();
-  const LENSES=new Set(['all','low52','emerging','recovery','value']);
+  const LENSES=new Set(['all','low52','emerging','recovery','value','breakout']);
   const deferredSectorEvents=new WeakSet();
   let activeLens='all';
 
@@ -14,7 +14,7 @@
     if(bar)return bar;
     if(!s)return null;
     bar=document.createElement('div');bar.className='vestra-opportunity-lenses';bar.setAttribute('role','group');bar.setAttribute('aria-label','Filtrar oportunidades');
-    bar.innerHTML='<button type="button" data-vestra-lens="all" aria-pressed="true">Todos</button><button type="button" data-vestra-lens="low52" aria-pressed="false">Mínimos 52s</button><button type="button" data-vestra-lens="emerging" aria-pressed="false">A começar</button><button type="button" data-vestra-lens="recovery" aria-pressed="false">Recuperação</button><button type="button" data-vestra-lens="value" aria-pressed="false">Value + timing</button>';
+    bar.innerHTML='<button type="button" data-vestra-lens="all" aria-pressed="true">Todos</button><button type="button" data-vestra-lens="low52" aria-pressed="false">Mínimos 52s</button><button type="button" data-vestra-lens="emerging" aria-pressed="false">A começar</button><button type="button" data-vestra-lens="recovery" aria-pressed="false">Recuperação</button><button type="button" data-vestra-lens="value" aria-pressed="false">Value + timing</button><button type="button" data-vestra-lens="breakout" aria-pressed="false">Pré-breakout</button>';
     const guide=s.querySelector('.ux454-opportunity-guide');(guide||s.querySelector('.market-section__head'))?.insertAdjacentElement('afterend',bar);
     return bar;
   }
@@ -26,6 +26,7 @@
     });
   }
   function emptyCopy(lens){
+    if(lens==='breakout')return 'Sem setups verificados: são necessárias pelo menos 210 sessões diárias e compressão com médias ascendentes. A ausência de histórico suficiente não é sinal de compra.';
     if(lens==='low52')return 'Sem empresas robustas até 5% do mínimo de 52 semanas com os dados atuais.';
     if(lens==='emerging')return 'Sem setups iniciais com qualidade e timing suficientes neste momento.';
     if(lens==='recovery')return 'Sem recuperações suficientemente confirmadas neste momento.';
@@ -116,5 +117,5 @@
     window.addEventListener('vestra:market-ready',refreshUi);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'3.1'});
+  window.VestraMarketOpportunityLenses=Object.freeze({refresh:refreshUi,select:selectLens,get active(){return activeLens;},version:'3.2'});
 })();
