@@ -16,6 +16,10 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+try:
+    from scripts.earnings_archive import save_archive
+except ModuleNotFoundError:
+    from earnings_archive import save_archive
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "data" / "stocks-index.json"
@@ -296,6 +300,8 @@ def main() -> int:
     if len(encoded.encode("utf-8")) > MAX_STARTUP_BYTES:
         raise RuntimeError("weekly earnings refresh would exceed startup payload budget")
 
+    # Persist dated reports before subsequent quarterly refreshes replace latest fields.
+    archive = save_archive(rows, today=now_utc.date())
     INDEX.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     STARTUP.write_text(encoded, encoding="utf-8")
     print(json.dumps({
@@ -306,6 +312,7 @@ def main() -> int:
         "updated": updated,
         "coverage_before": coverage_before,
         "coverage_after": earnings_coverage(payload),
+        "archived_events": len(archive["events"]),
         "failures": failures[:10],
         "contract": "near-term earnings only; preserve last verified values on fetch failure",
     }, ensure_ascii=False))
