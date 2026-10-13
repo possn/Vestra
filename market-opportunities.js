@@ -7,6 +7,26 @@
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const LENSES=new Set(['all','low52','emerging','recovery','value','breakout']);
   let activeLens='all';
+  let prebreakoutFeed=new Map();
+  async function loadPrebreakoutFeed(){
+    try{
+      const response=await fetch('data/prebreakout-signals.json',{cache:'no-store'});
+      if(!response.ok)return;
+      const payload=await response.json();
+      if(payload?.schema!=='vestra_prebreakout_v1'||!Array.isArray(payload.signals))return;
+      const rows=new Map();
+      for(const item of payload.signals){
+        if(item?.source!=='yahoo:daily_ohlcv'||!item.ticker||!item.date||!['compressão','pré-breakout','confirmado'].includes(item.stage))continue;
+        const age=(Date.now()-Date.parse(item.date+'T23:59:59Z'))/86400000;
+        if(!(age>=-1&&age<=7))continue;
+        if(!Number.isFinite(Number(item.score))||!Number.isFinite(Number(item.widthPct)))continue;
+        rows.set(t(item.ticker).toUpperCase(),item);
+      }
+      prebreakoutFeed=rows;
+      if(activeLens==='breakout')opportunities();
+    }catch(error){console.warn('[Vestra] pre-breakout feed unavailable',error);}
+  }
+
 
   function stocks(){
     const rows=window.VestraMarketStaticUniverse?.getStocks?.();
@@ -23,6 +43,8 @@
   }
   // Technical-only setup engine; never infer a future move from a score.
   function breakoutSetup(stock){
+    const published=prebreakoutFeed.get(t(stock?.ticker).toUpperCase());
+    if(published)return published;
     const bars=(Array.isArray(stock?.price_history_1y)?stock.price_history_1y:[])
       .map(x=>({close:n(x?.close),high:n(x?.high),low:n(x?.low),volume:n(x?.volume),date:t(x?.date||x?.timestamp)}))
       .filter(x=>x.close!=null&&x.close>0);
@@ -488,6 +510,7 @@
   function start(){
     style();
     opportunities();
+    loadPrebreakoutFeed();
     const root=document.getElementById('marketPrimary');if(!root)return;
     let pending=false;
     const mo=new MutationObserver(()=>{
