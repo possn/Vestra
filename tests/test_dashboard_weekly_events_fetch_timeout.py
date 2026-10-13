@@ -54,8 +54,8 @@ class DashboardWeeklyEventsFetchTimeoutTests(unittest.TestCase):
         self.assertIn("Ver semana completa", self.runtime)
 
     def test_runtime_and_loader_versions_match(self):
-        self.assertIn("const VERSION = '3.1';", self.runtime)
-        self.assertIn("dashboard-weekly-events.js?v=3.1", self.loader)
+        self.assertIn("const VERSION = '3.2';", self.runtime)
+        self.assertIn("dashboard-weekly-events.js?v=3.2", self.loader)
 
 
 if __name__ == "__main__":
