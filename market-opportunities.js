@@ -27,6 +27,11 @@
       .map(x=>({close:n(x?.close),high:n(x?.high),low:n(x?.low),volume:n(x?.volume),date:t(x?.date||x?.timestamp)}))
       .filter(x=>x.close!=null&&x.close>0);
     if(bars.length<210)return null;
+    const lastDate=bars[bars.length-1].date.slice(0,10);
+    const sourceTime=Date.parse(lastDate+'T23:59:59Z');
+    const ageDays=Number.isFinite(sourceTime)?(Date.now()-sourceTime)/86400000:Infinity;
+    if(ageDays>7||ageDays< -1)return null; // Stale historical bases are not current setups.
+    if(['ETF','FUND','MUTUALFUND','CRYPTO'].includes(t(stock?.quote_type||stock?.quoteType).toUpperCase()))return null;
     const closes=bars.map(x=>x.close),last=closes.length-1;
     const ma=(length,end=last)=>end-length+1<0?null:closes.slice(end-length+1,end+1).reduce((a,b)=>a+b,0)/length;
     const sma50=ma(50),sma150=ma(150),sma200=ma(200);
