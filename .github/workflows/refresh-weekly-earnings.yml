@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/refresh_weekly_earnings.py'
+      - 'scripts/earnings_archive.py'
       - 'tests/test_refresh_weekly_earnings.py'
       - '.github/workflows/refresh-weekly-earnings.yml'
   workflow_run:
@@ -46,7 +47,7 @@ jobs:
 
       - name: Validate refresher
         run: |
-          python -m py_compile scripts/refresh_weekly_earnings.py
+          python -m py_compile scripts/refresh_weekly_earnings.py scripts/earnings_archive.py
           python tests/test_refresh_weekly_earnings.py
 
       - name: Refresh near-term company earnings
@@ -63,7 +64,7 @@ jobs:
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/stocks-index.json data/stocks-startup.json
+          git add data/stocks-index.json data/stocks-startup.json data/earnings-events.json
           if git diff --cached --quiet; then
             echo "Weekly earnings unchanged."
           else
