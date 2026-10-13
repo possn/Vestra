@@ -60,8 +60,10 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn('"weeks"', data)
         self.assertIn('"latest_published"', data)
         self.assertIn("sent_results", refresh)
-        self.assertIn("15 15 * * 4", workflow)
-        self.assertIn("15 15 * * 5", workflow)
+        self.assertIn('15 15 * * *', workflow)
+        self.assertIn("age <= 8", workflow)
+        self.assertNotIn('15 15 * * 4', workflow)
+        self.assertNotIn('15 15 * * 5', workflow)
         self.assertIn("./data/aaii-sentiment.json", SW)
 
     def test_service_worker_tracks_companion(self):
