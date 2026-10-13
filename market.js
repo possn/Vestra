@@ -356,7 +356,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       rows=rows.slice(0,20);
     }
     return `<section class="market-section market-discover-section"><div class="market-section__head"><div><h3>${qs?'Resultados':'Melhores oportunidades'}</h3><p>${qs?'Pesquisa no universo global':'Oportunidades emergentes · empresas robustas com momentum a começar, sem preço excessivamente esticado'}</p></div><span class="market-data-age">${ageText()}</span></div>
-      ${!qs&&M.sector==='all'?renderWeeklyRotation():''}
+      
       <div class="market-sector-grid" role="group" aria-label="Setores">
         <button class="market-chip ${M.sector==='all'?'is-active':''}" data-market-sector="all">Todos</button>
         ${visibleSectors.map(x=>`<button class="market-chip ${M.sector===x?'is-active':''}" data-market-sector="${esc(x)}" title="${esc(x)}">${esc(x)}</button>`).join('')}
@@ -749,7 +749,10 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       return;
     }
     root.dataset.metalsActive='0';
-    root.innerHTML = M.mode==='crypto'?renderCrypto():M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover();
+    const equityRotation = ['discover','lows','smart','watch'].includes(M.mode)
+      ? '<section class="market-section market-rotation-standalone" aria-label="Rotação semanal do mercado">' + renderWeeklyRotation() + '</section>'
+      : '';
+    root.innerHTML = equityRotation + (M.mode==='crypto'?renderCrypto():M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover());
     if(M.mode==='crypto'&&!M.cryptoLoaded&&!M.cryptoLoading) loadCryptoMarket().then(()=>{ if(M.mode==='crypto') renderPrimary(); });
     if(M.mode==='discover'&&!M.query&&window.VestraMarketOpportunities?.refresh){
       // Direct handoff avoids rendering a disposable native shortlist and then
