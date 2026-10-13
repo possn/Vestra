@@ -16,6 +16,8 @@ class PreBreakoutContractTests(unittest.TestCase):
 
     def test_requires_real_history_and_aligned_upward_moving_averages(self):
         self.assertIn('if(bars.length<210)return null',SCANNER)
+        self.assertIn('if(ageDays>7||ageDays< -1)return null',SCANNER)
+        self.assertIn("'ETF','FUND','MUTUALFUND','CRYPTO'",SCANNER)
         self.assertIn('current>sma150&&sma50>sma200&&slopes.every(x=>x>0)',SCANNER)
         self.assertIn('prior50<=prior200',SCANNER)
         self.assertIn('width<oldWidth*.8&&width<=.22',SCANNER)
