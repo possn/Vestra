@@ -39,7 +39,7 @@ def archive_rows(existing: dict, stocks: list[dict], today: date | None = None) 
         event = {
             "kind": "earnings", "ticker": ticker, "date": day,
             "name": str(stock.get("name") or previous.get("name") or ticker),
-            "source": previous.get("source") or "stocks-index:analyst_latest_earnings_date",
+            "source": str(stock.get("earnings_source") or previous.get("source") or "stocks-index:analyst_latest_earnings_date"),
         }
         for field in FIELDS:
             value = stock.get(field)

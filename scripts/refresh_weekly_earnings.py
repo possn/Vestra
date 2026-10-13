@@ -184,6 +184,36 @@ def extract_snapshot(earnings_dates, earnings_estimate=None, now: datetime | Non
     return out
 
 
+
+def extract_reported_history(ticker: str, earnings_dates, now: datetime | None = None) -> list[dict]:
+    """Record all source-confirmed reported quarters, not only the most recent."""
+    now = now or datetime.now(timezone.utc)
+    events = []
+    if earnings_dates is None or getattr(earnings_dates, "empty", True):
+        return events
+    for idx, row in earnings_dates.iterrows():
+        dt = _as_utc_datetime(idx)
+        if dt is None or dt > now + timedelta(days=1) or dt < now - timedelta(days=730):
+            continue
+        actual = _number(_row_value(row, ("Reported EPS", "reportedEPS", "epsActual")))
+        if actual is None:
+            continue  # Past scheduled dates are not proof of published results.
+        estimate = _number(_row_value(row, ("EPS Estimate", "epsEstimate", "epsEstimateCurrent")))
+        surprise = _number(_row_value(row, ("Surprise(%)", "surprisePercent", "surprisePct")))
+        if surprise is not None:
+            surprise /= 100.0
+        elif estimate not in (None, 0):
+            surprise = actual / estimate - 1.0
+        event = {"ticker": ticker, "analyst_latest_earnings_date": dt.date().isoformat(),
+                 "analyst_latest_eps_actual": actual, "earnings_source": "yahoo:earnings_dates"}
+        if estimate is not None:
+            event["analyst_latest_eps_estimate"] = estimate
+        if surprise is not None:
+            event["analyst_latest_eps_surprise_pct"] = surprise
+        events.append(event)
+    return events
+
+
 def fetch_snapshot(ticker: str) -> dict[str, Any]:
     import yfinance as yf
 
@@ -197,6 +227,7 @@ def fetch_snapshot(ticker: str) -> dict[str, Any]:
     except Exception:
         earnings_estimate = None
     snapshot = extract_snapshot(earnings_dates, earnings_estimate)
+    snapshot['_reported_history'] = extract_reported_history(ticker, earnings_dates)
     if not snapshot.get("analyst_next_earnings_date"):
         # Yahoo's calendar can contain a future Earnings Date even if the
         # earnings-dates/history endpoint has no upcoming rows.
@@ -281,6 +312,7 @@ def main() -> int:
     candidates = candidate_tickers(payload, today=now_utc.date(), rotation_slot=now_utc.hour // 3)
     attempted = matched = updated = 0
     failures = []
+    discovered_history = []
     for ticker in candidates[:80]:
         attempted += 1
         try:
@@ -291,6 +323,7 @@ def main() -> int:
         if not snapshot:
             continue
         matched += 1
+        discovered_history.extend(snapshot.get('_reported_history') or [])
         row = by_ticker.get(ticker)
         if row is not None and apply_snapshot(row, snapshot):
             updated += 1
@@ -301,7 +334,7 @@ def main() -> int:
         raise RuntimeError("weekly earnings refresh would exceed startup payload budget")
 
     # Persist dated reports before subsequent quarterly refreshes replace latest fields.
-    archive = save_archive(rows, today=now_utc.date())
+    archive = save_archive([*rows, *discovered_history], today=now_utc.date())
     INDEX.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     STARTUP.write_text(encoded, encoding="utf-8")
     print(json.dumps({
@@ -313,6 +346,7 @@ def main() -> int:
         "coverage_before": coverage_before,
         "coverage_after": earnings_coverage(payload),
         "archived_events": len(archive["events"]),
+        "reported_history_rows": len(discovered_history),
         "failures": failures[:10],
         "contract": "near-term earnings only; preserve last verified values on fetch failure",
     }, ensure_ascii=False))
