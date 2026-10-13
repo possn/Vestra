@@ -248,12 +248,13 @@
     // Lenses are canonical Discovery views: they may filter the universe and
     // apply diversification guardrails, but they must never create a second
     // alpha signal or reweight the canonical opportunity ranking.
-    return lens==='breakout'?(breakoutSetup(s)?.score||0):(discoveryScore(s)||0);
+    return discoveryScore(s)||0;
   }
   function rankedCandidates(universe,lens,sector='all'){
     let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
     if(sector!=='all')ranked=ranked.filter(s=>t(s?.sector)===sector);
-    ranked.sort((a,b)=>lensScore(b,lens)-lensScore(a,lens));
+    if(lens==='breakout')return ranked.sort((a,b)=>(breakoutSetup(b)?.score||0)-(breakoutSetup(a)?.score||0));
+    ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return ranked;
   }
   function diversify(rows,limit,{sectorCap=3,industryCap=2,recoveryCap=Infinity}={}){
@@ -461,9 +462,13 @@
     });
     if(!section.querySelector('.ux454-opportunity-guide')){
       const g=document.createElement('div');g.className='ux454-opportunity-guide';
-      g.innerHTML='<span><b>DISCOVERY</b> prioridade para investigar agora</span><span><b>≠ PORTFOLIO FIT</b> adequação à tua carteira só é avaliada na Carteira / Optimizar</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
+      g.innerHTML='';
       section.querySelector('.market-section__head')?.insertAdjacentElement('afterend',g);
     }
+    const guide=section.querySelector('.ux454-opportunity-guide');
+    if(guide)guide.innerHTML=activeLens==='breakout'
+      ? '<span><b>SETUP TÉCNICO</b> compressão não garante subida</span><span><b>MÉDIAS</b> 50/150/200 ascendentes</span><span><b>BREAKOUT</b> só confirmado com volume</span>'
+      : '<span><b>DISCOVERY</b> prioridade para investigar agora</span><span><b>≠ PORTFOLIO FIT</b> adequação à tua carteira só é avaliada na Carteira / Optimizar</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
   }
   function lensMeta(lens){
     if(lens==='breakout')return ['Compressão · Pré-breakout','Bases de 40 sessões em estreitamento, preço acima da MM150, MM50 > MM200 e três médias ascendentes. Sem garantia de subida.'];
@@ -487,7 +492,7 @@
     }
     const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all';
     const rows=rankLens(universe,activeLens,{limit:12,sector:sec});
-    const sig=(rows.map(s=>`${t(s.ticker)}:${Math.round(lensScore(s,activeLens))}:${activeLens==='breakout'?(breakoutSetup(s)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
+    const sig=(rows.map(s=>`${t(s.ticker)}:${activeLens==='breakout'?(breakoutSetup(s)?.score||0):Math.round(lensScore(s,activeLens))}:${activeLens==='breakout'?(breakoutSetup(s)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
       list.innerHTML=rows.map(s=>row(s,activeLens)).join('');
       rows.forEach(s=>{const el=list.querySelector(`[data-market-ticker="${CSS.escape(t(s.ticker))}"]`);if(el)el.__vestraStock=s;});
