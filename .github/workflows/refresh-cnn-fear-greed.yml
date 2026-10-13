@@ -1,0 +1,53 @@
+name: Refresh CNN Fear and Greed
+
+on:
+  schedule:
+    - cron: '12 14,20,23 * * 1-5'
+    - cron: '12 16 * * 0,6'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/refresh_cnn_fear_greed.py'
+      - '.github/workflows/refresh-cnn-fear-greed.yml'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: refresh-cnn-fear-greed
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Test CNN source contract
+        run: |
+          python -m py_compile scripts/refresh_cnn_fear_greed.py
+          python tests/test_cnn_fear_greed.py
+      - name: Fetch CNN official reading
+        run: python scripts/refresh_cnn_fear_greed.py
+      - name: Defer publication during open code PR
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+      - name: Publish CNN reading
+        if: steps.publish_window.outputs.defer != 'true'
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/cnn-fear-greed.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Actualização CNN Fear and Greed"
+            bash scripts/publish_with_retry.sh origin main
+          fi
