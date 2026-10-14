@@ -53,7 +53,7 @@
     const bars=(Array.isArray(stock?.price_history_1y)?stock.price_history_1y:[])
       .map(x=>({close:n(x?.close),high:n(x?.high),low:n(x?.low),volume:n(x?.volume),date:t(x?.date||x?.timestamp)}))
       .filter(x=>x.close!=null&&x.close>0);
-    if(bars.length<210)return null;
+    if(bars.length<220)return null;
     const lastDate=bars[bars.length-1].date.slice(0,10);
     const sourceTime=Date.parse(lastDate+'T23:59:59Z');
     const ageDays=Number.isFinite(sourceTime)?(Date.now()-sourceTime)/86400000:Infinity;
@@ -62,7 +62,7 @@
     const closes=bars.map(x=>x.close),last=closes.length-1;
     const ma=(length,end=last)=>end-length+1<0?null:closes.slice(end-length+1,end+1).reduce((a,b)=>a+b,0)/length;
     const sma50=ma(50),sma150=ma(150),sma200=ma(200);
-    if(sma50==null||sma150==null||sma200==null||last<210)return null;
+    if(sma50==null||sma150==null||sma200==null||last<219)return null;
     const prev50=ma(50,last-10),prev150=ma(150,last-10),prev200=ma(200,last-10);
     const slopes=[sma50-prev50,sma150-prev150,sma200-prev200];
     const current=closes[last];
