@@ -719,6 +719,14 @@ function calcTotals() {
   return calcTotals._cache;
 }
 
+// Public read-only financial snapshot used by editorial Home. Derived from the
+// same canonical totals as Carteira; do not depend on the lazy Dashboard DOM.
+window.VestraFinancialTotals = () => {
+  if (window.__vestraAppHydrated !== true) return null;
+  const t=calcTotals();
+  return { net:t.net, assetsTotal:t.assetsTotal, liabsTotal:t.liabsTotal };
+};
+
 /* ─── COMPOUND INTEREST ENGINE ────────────────────────────── */
 // Returns array of {year, value} for n years with compound interest
 
@@ -10448,6 +10456,11 @@ async function importJSON(file) {
   };
   saveState();
   renderAll();
+  // The new Home is an editorial shell; the native Dashboard may be lazy/unrendered
+  // while the imported portfolio is already available.
+  window.dispatchEvent(new CustomEvent('vestra:portfolio-totals-updated', {
+    detail: { source: 'json-import' }
+  }));
   toast("Backup importado com sucesso.");
 }
 
