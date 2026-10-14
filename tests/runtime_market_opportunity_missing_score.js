@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const source=fs.readFileSync('market-opportunities.js','utf8');
+const start=source.indexOf('  function discoveryScore(s){');
+const end=source.indexOf('  function low52Above(s){',start);
+assert(start>=0&&end>start,'canonical score selector missing');
+const context={n:v=>v==null||v===''?null:Number.isFinite(Number(v))?Number(v):null,clamp:v=>Math.max(0,Math.min(100,v)),timing:()=>50,stats:()=>({}),confirmed:()=>0,t:()=>'',fallbackUpsideSupport:()=> 'unavailable'};
+vm.createContext(context);
+vm.runInContext(source.slice(start,end),context);
+const score=context.discoveryScore;
+assert.equal(score({opportunity_eligible:true,opportunity_score:null,score:99}),null);
+assert.equal(score({opportunity_eligible:false,opportunity_score:null,score:99}),null);
+assert.equal(score({opportunity_featured:true,opportunity_score:null,score:99}),null);
+assert.equal(score({opportunity_eligible:true,opportunity_score:82,score:15}),82);
+assert.equal(score({opportunity_eligible:true,opportunity_score:150}),100);
+assert.equal(score({score:75}),64,'legacy fallback kept and capped without upside support');
+console.log('Canonical score missing-evidence contract passed');
