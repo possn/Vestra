@@ -50,7 +50,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
         self.assertIn("politicians.js?v=2.1", universe)
         self.assertNotIn('src="politicians.js', index)
         self.assertIn("market-metals.js?v=1.2", universe)
-        self.assertIn("market-opportunities.js?v=1.12", universe)
+        self.assertIn("market-opportunities.js?v=1.13", universe)
         self.assertIn("market-opportunity-lenses.js?v=3.2", universe)
         for module in (
             "vestra-swap-lab.js?v=1.2",
