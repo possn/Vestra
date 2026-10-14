@@ -138,7 +138,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertLess(market.index('class="market-hero-simple"'), market.index('class="market-search"'))
         self.assertIn('id="marketSearch"', market)
         self.assertIn('.market-hero-simple h2', css)
-        self.assertIn('vestra-market-surfaces-v2.css?v=11', html)
+        self.assertIn('vestra-market-surfaces-v2.css?v=12', html)
 
     def test_patrimonial_light_cards_own_safari_text_contrast(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
