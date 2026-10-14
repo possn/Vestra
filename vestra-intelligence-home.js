@@ -397,11 +397,19 @@
 
       return;
     }
-    const originalValue = document.getElementById('kpiNet')?.textContent?.trim();
-    const originalAssets = document.getElementById('kpiAP')?.textContent?.trim();
-    value.textContent = originalValue && originalValue !== '0 €' ? originalValue : '—';
-    assets.textContent = originalAssets && !/Ativos 0 € \\| Passivos 0 €/.test(originalAssets) ?
-      originalAssets : 'Património ainda a carregar';
+    // The native dashboard is lazy-rendered. Always prefer the canonical
+    // portfolio totals instead of reading a possibly stale DOM KPI.
+    const totals = window.VestraFinancialTotals?.();
+    const money = amount => new Intl.NumberFormat('pt-PT', {
+      style: 'currency', currency: 'EUR', maximumFractionDigits: 0
+    }).format(amount);
+    if (totals && [totals.net, totals.assetsTotal, totals.liabsTotal].every(Number.isFinite)) {
+      value.textContent = money(totals.net);
+      assets.textContent = 'Ativos ' + money(totals.assetsTotal) + ' | Passivos ' + money(totals.liabsTotal);
+    } else {
+      value.textContent = '—';
+      assets.textContent = 'Património ainda a carregar';
+    }
     if (changes) {
       const valid = nativeText && !/a carregar|calculando|indisponível/i.test(nativeText);
       changes.textContent = valid ? nativeText.slice(0, 160) : 'Variações ainda não confirmadas';
@@ -431,6 +439,11 @@
     syncCanonicalCards(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
+    window.addEventListener('vestra:portfolio-totals-updated', () => {
+      syncWealthHero(host);
+      syncPortfolioEvidence(host);
+      syncDecisionCenter(host);
+    });
     window.addEventListener('vestra:market-sheet-changed', () => syncDecisionCenter(host));
     window.addEventListener('vestra:local-state-writing', () => {
       lastDecision = null;
