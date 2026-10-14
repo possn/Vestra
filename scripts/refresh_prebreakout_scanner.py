@@ -113,7 +113,9 @@ def candidates(stocks: list[dict], when: date, slot: int = 0):
     ordered=sorted(universe,key=lambda t:(-universe[t],t))
     anchors=ordered[:40]
     rest=ordered[40:1600]
-    # Four scheduled scans per day should sample different names, not repeat\n    # the same 110 rotating stocks at 02/08/14/20 UTC.\n    if not 0<=slot<=3:raise ValueError("invalid six-hour scan slot")\n    offset=(((when-date(2026,10,13)).days*4+slot)*110)%max(1,len(rest))
+    # Four scheduled scans per day should sample different names, not repeat
+    # the same 110 rotating stocks at 02/08/14/20 UTC.
+    if not 0<=slot<=3:raise ValueError("invalid six-hour scan slot")\n    offset=(((when-date(2026,10,13)).days*4+slot)*110)%max(1,len(rest))
     rotation=(rest[offset:]+rest[:offset])[:110]
     return anchors+[t for t in rotation if t not in anchors]
 
