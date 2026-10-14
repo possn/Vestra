@@ -201,3 +201,33 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
 
   expect(pageErrors, `Production browser errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+test('GitHub Pages: expanded Intelligence dashboard delivers its dark V2 stylesheet on iPhone', async ({ page, request, baseURL }) => {
+  const indexResponse = await request.get(urlFromBase(baseURL, 'index.html'), { failOnStatusCode: false });
+  expect(indexResponse.ok()).toBeTruthy();
+  const html = await indexResponse.text();
+  const asset = 'vestra-intelligence-detail-dark-v2.css?v=1';
+  expect(html, 'Published HTML must reference the detail-specific style generation').toContain(asset);
+  const styleResponse = await request.get(urlFromBase(baseURL, asset), { failOnStatusCode: false });
+  expect(styleResponse.ok(), 'Dark detail stylesheet missing on GitHub Pages').toBeTruthy();
+  const css = await styleResponse.text();
+  expect(css).toContain('data-legacy-open="true"');
+  expect(css).toContain('background:#071d1b!important');
+  await page.goto('index.html', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#vestraIntelligenceHome')).toBeVisible({ timeout: 20_000 });
+  await page.locator('#vestraIntelligenceHome [data-vestra-go="dashboard"]').first().click();
+  const expanded = page.locator('#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])');
+  await expect(expanded).toBeVisible();
+  const visual = await expanded.evaluate(node => {
+    const rgb = value => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+    const card = node.querySelector('.v2-home-stage.card.hero');
+    if (!card) return { error: 'missing wealth card' };
+    const bg = rgb(getComputedStyle(node).backgroundColor);
+    const cardBg = getComputedStyle(card).backgroundImage;
+    return { bg, cardBg };
+  });
+  expect(visual.error).toBeUndefined();
+  expect(visual.bg[0], 'Expanded dashboard is still using a cream background').toBeLessThan(40);
+  expect(visual.bg[1]).toBeLessThan(80);
+  expect(visual.cardBg).toContain('gradient');
+});
