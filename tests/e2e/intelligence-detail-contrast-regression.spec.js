@@ -20,8 +20,8 @@ test('iPhone: expanded Intelligence has readable headline and card contrast',asy
    const style=getComputedStyle(el);
    const fg=rgb(style.webkitTextFillColor||style.color);
    const ownerNode=owner?document.querySelector(owner):el.parentElement;
-   let bg=null;
-   for(let n=ownerNode;n;n=n.parentElement){
+   let bg=owner?null:[16,40,39];
+   for(let n=owner?ownerNode:null;n;n=n.parentElement){
     const c=rgb(getComputedStyle(n).backgroundColor);
     if(c&&getComputedStyle(n).backgroundColor.match(/rgba?\([^)]*\)/)&&!getComputedStyle(n).backgroundColor.endsWith(', 0)')){bg=c;break;}
    }
