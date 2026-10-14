@@ -8,6 +8,7 @@
   const LENSES=new Set(['all','low52','emerging','recovery','value','breakout']);
   let activeLens='all';
   let prebreakoutFeed=new Map();
+  let prebreakoutFeedAuthoritative=false;
   async function loadPrebreakoutFeed(){
     try{
       const response=await fetch('data/prebreakout-signals.json',{cache:'no-store'});
@@ -23,6 +24,7 @@
         rows.set(t(item.ticker).toUpperCase(),item);
       }
       prebreakoutFeed=rows;
+      prebreakoutFeedAuthoritative=true;
       if(activeLens==='breakout')opportunities();
     }catch(error){console.warn('[Vestra] pre-breakout feed unavailable',error);}
   }
@@ -45,6 +47,9 @@
   function breakoutSetup(stock){
     const published=prebreakoutFeed.get(t(stock?.ticker).toUpperCase());
     if(published)return published;
+    // Once the verified publisher answers, local legacy scoring may not resurrect
+    // a rejected (or stale) signal, including after a zero-result scan.
+    if(prebreakoutFeedAuthoritative)return null;
     const bars=(Array.isArray(stock?.price_history_1y)?stock.price_history_1y:[])
       .map(x=>({close:n(x?.close),high:n(x?.high),low:n(x?.low),volume:n(x?.volume),date:t(x?.date||x?.timestamp)}))
       .filter(x=>x.close!=null&&x.close>0);
