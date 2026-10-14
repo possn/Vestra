@@ -43,3 +43,15 @@ body:has(#viewDashboard.vi-preview-active #vestraIntelligenceHome[data-legacy-op
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]){padding-inline:0!important}
  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.card,.vi-card){border-radius:19px!important}
 }
+
+/* The short-form action sheet intentionally stays a small ivory reading surface.
+   Its ink is dark; this also preserves accessibility of Quick Records. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #dashboardQuickRecordsCard{
+ background:#f2f0e8!important;border-color:#bec9c1!important;color:#20363b!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #dashboardQuickRecordsCard :is(.card__title,.card__head h2,.card__head h3){
+ color:#20363b!important;-webkit-text-fill-color:#20363b!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #dashboardQuickRecordsCard :is(.card__muted,p){
+ color:#43585a!important;-webkit-text-fill-color:#43585a!important;
+}
