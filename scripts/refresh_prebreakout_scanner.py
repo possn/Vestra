@@ -14,43 +14,82 @@ def sma(values: list[float], end: int, span: int):
     return sum(values[end-span+1:end+1])/span if end-span+1>=0 else None
 
 def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
+    """Identify a contracting base, not a prediction of future returns."""
     today=today or datetime.now(timezone.utc).date()
-    clean=[b for b in bars if isinstance(b.get("close"),(int,float)) and math.isfinite(b["close"]) and b["close"]>0]
-    if len(clean)<211:return None
-    end=len(clean)-1
-    try:latest=date.fromisoformat(str(clean[-1]["date"])[:10])
-    except (ValueError,TypeError):return None
+    clean=[]
+    for bar in bars:
+        try:
+            day=date.fromisoformat(str(bar["date"])[:10])
+            close=float(bar["close"]);high=float(bar["high"]);low=float(bar["low"])
+        except (KeyError,ValueError,TypeError,OverflowError):
+            return None  # Missing OHLC cannot silently become close-only evidence.
+        if not all(math.isfinite(v) for v in (close,high,low)):
+            return None
+        if not (0<low<=close<=high):
+            return None
+        if clean and day<=clean[-1]["day"]:
+            return None  # Reject duplicated or out-of-order sessions.
+        clean.append({**bar,"day":day,"close":close,"high":high,"low":low})
+    if len(clean)<220:return None
+    latest=clean[-1]["day"]
     age=(today-latest).days
-    if age< -1 or age>7:return None
+    if not 0<=age<=7:return None
+    end=len(clean)-1
     values=[b["close"] for b in clean]
     m50=sma(values,end,50);m150=sma(values,end,150);m200=sma(values,end,200)
     slopes=[m50-sma(values,end-10,50),m150-sma(values,end-10,150),m200-sma(values,end-10,200)]
     if not (values[-1]>m150 and m50>m200 and all(x>0 for x in slopes)):return None
     def bounds(part):
-        highs=[b.get("high") if isinstance(b.get("high"),(float,int)) and b.get("high")>0 else b["close"] for b in part]
-        lows=[b.get("low") if isinstance(b.get("low"),(float,int)) and b.get("low")>0 else b["close"] for b in part]
-        return max(highs),min(lows)
-    recent=clean[-40:]; earlier=clean[-100:-60]
-    if len(earlier)<40:return None
-    hi,lo=bounds(recent);old_hi,old_lo=bounds(earlier)
-    width=hi/lo-1;old_width=old_hi/old_lo-1
-    if not (old_width>0 and width<old_width*.8 and width<=.22):return None
-    resistance=bounds(recent[:-1])[0]
-    distance=(resistance/values[-1]-1)*100
-    if distance>8:return None
-    v=[b.get("volume") for b in clean[-21:-1]]
-    avg_volume=sum(v)/20 if len(v)==20 and all(isinstance(x,(int,float)) and math.isfinite(x) and x>0 for x in v) else None
-    last_volume=clean[-1].get("volume")
-    volume_ok=avg_volume is not None and isinstance(last_volume,(int,float)) and math.isfinite(last_volume) and last_volume>=avg_volume*1.5
-    golden=sma(values,end-20,50)<=sma(values,end-20,200)
-    confirmed=values[-1]>resistance*1.005 and volume_ok
-    stage="confirmado" if confirmed else "pré-breakout" if -1.5<=distance<=4 else "compressão"
-    score=round(min(100,45+min(18,(1-width/old_width)*30)+max(0,8-max(0,distance))*2+(8 if golden else 0)+(7 if volume_ok else 0)))
+        return max(b["high"] for b in part),min(b["low"] for b in part)
+    def width(part):
+        high,low=bounds(part)
+        return high/low-1
+    # Require sequential, non-overlapping contractions, not merely one quieter 40-day window.
+    prior=clean[-100:-60];first=clean[-60:-40];second=clean[-40:-20];third=clean[-20:]
+    old_width=width(prior);w1=width(first);w2=width(second);w3=width(third)
+    base_width=width(clean[-40:])
+    if not (old_width>0 and base_width<=.22 and base_width<old_width*.8):
+        return None
+    vcp=w1>0 and w2<=w1*.85 and w3<=w2*.85
+    if not vcp:return None
+    resistance=bounds(clean[-40:-1])[0]
+    current=values[-1]
+    distance=(resistance/current-1)*100
+    if distance>8 or distance< -5:return None  # Too far below pivot, or already extended.
+    prior_volumes=[]
+    recent_volumes=[]
+    for part,target in ((clean[-50:-10],prior_volumes),(clean[-10:],recent_volumes)):
+        for bar in part:
+            v=bar.get("volume")
+            if not isinstance(v,(int,float)) or not math.isfinite(v) or v<=0:
+                target.append(None)
+            else:
+                target.append(float(v))
+    # Drying volume is evidence for pre-breakout; never infer it from missing bars.
+    baseline=sum(prior_volumes)/len(prior_volumes) if all(v is not None for v in prior_volumes) else None
+    quiet=sum(recent_volumes[:-1])/9 if all(v is not None for v in recent_volumes[:-1]) else None
+    volume_dry=baseline is not None and quiet is not None and quiet<=baseline*.80
+    reference=clean[-21:-1]
+    mean_vol=sum(float(b["volume"]) for b in reference)/20 if all(isinstance(b.get("volume"),(int,float)) and math.isfinite(b["volume"]) and b["volume"]>0 for b in reference) else None
+    volume_confirmed=mean_vol is not None and recent_volumes[-1] is not None and recent_volumes[-1]>=mean_vol*1.5
+    crossed=any(sma(values,i-1,50)<=sma(values,i-1,200) and sma(values,i,50)>sma(values,i,200) for i in range(end-19,end+1))
+    near_cross=not crossed and 0<(m200-m50)/m200<=.02
+    # Only a rising closing price with a verified 1.5x volume expansion confirms the breakout.
+    breakout=current>resistance*1.005 and current>values[-2] and volume_confirmed
+    if not breakout and distance< -1.5:return None
+    stage="confirmado" if breakout else "pré-breakout" if 0<=distance<=4 and volume_dry else "compressão"
+    contraction=1-w3/max(w1,1e-9)
+    score=round(max(0,min(100,35+min(20,contraction*30)+
+        (12 if volume_dry else 0)+(12 if 0<=distance<=4 else 0)+
+        (10 if crossed else 0)+(11 if breakout else 0)-
+        (12 if baseline is None else 0))))
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
-            "widthPct":round(width*100,2),"priorWidthPct":round(old_width*100,2),
+            "widthPct":round(base_width*100,2),"priorWidthPct":round(old_width*100,2),
             "distancePct":round(distance,2),"resistance":round(resistance,5),
             "sma50":round(m50,5),"sma150":round(m150,5),"sma200":round(m200,5),
-            "volumeConfirmed":bool(volume_ok),"goldenCrossRecent":bool(golden),
+            "volumeConfirmed":bool(volume_confirmed),"volumeDry":bool(volume_dry),
+            "vcpConfirmed":True,"goldenCrossRecent":bool(crossed),
+            "goldenCrossImminent":bool(near_cross),
             "source":"yahoo:daily_ohlcv"}
 
 def candidates(stocks: list[dict], when: date):
@@ -103,14 +142,10 @@ def main():
                 signal=scan_bars(ticker,bars,now.date())
                 if signal:found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
-    try:old=json.loads(OUTPUT.read_text(encoding="utf-8")).get("signals",[])
-    except (FileNotFoundError,ValueError):old=[]
-    by={s["ticker"]:s for s in old if isinstance(s,dict) and s.get("ticker") and
-        s.get("source")=="yahoo:daily_ohlcv" and
-        isinstance(s.get("date"),str) and 0<=(now.date()-date.fromisoformat(s["date"])).days<=3}
-    for signal in found:by[signal["ticker"]]=signal
+    # Do not retain previously accepted setups after the stricter criteria reject them.
+    by={signal["ticker"]:signal for signal in found}
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"new_signals":len(found),
+             "attempted":len(tickers),"with_ohlcv":checked,"new_signals":len(found),"quality_model":"vcp_volume_v2",
              "errors":failures[:8],"signals":sorted(by.values(),key=lambda s:(-s["score"],s["ticker"]))[:75]}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
