@@ -1,15 +1,13 @@
 from pathlib import Path
 import unittest
-R=Path(__file__).resolve().parents[1]
-CSS=(R/'vestra-intelligence-detail-dark-v2.css').read_text()
-HTML=(R/'index.html').read_text()
-class ExpandedHomePalette(unittest.TestCase):
- def test_only_legacy_open_expanded_dashboard_is_styled(self):
-  self.assertIn('vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])',CSS)
-  self.assertIn('background:#071d1b!important',CSS)
-  self.assertIn('background:#12342f!important',CSS)
-  self.assertIn('color:#f4f0e7!important',CSS)
- def test_layer_is_last(self):
-  self.assertIn('vestra-intelligence-detail-dark-v2.css?v=1',HTML)
-  self.assertGreater(HTML.index('vestra-intelligence-detail-dark-v2.css?v=1'),HTML.index('vestra-home-density-v2.css?v=7'))
-if __name__=='__main__':unittest.main()
+ROOT=Path(__file__).resolve().parents[1]
+HTML=(ROOT/'index.html').read_text(encoding='utf-8')
+CSS=(ROOT/'vestra-intelligence-detail-dark-v2.css').read_text(encoding='utf-8')
+class IntelligenceDarkRollback(unittest.TestCase):
+    def test_unreadable_dark_layer_is_disabled(self):
+        self.assertNotIn('<link href="vestra-intelligence-detail-dark-v2.css',HTML)
+        self.assertIn('Temporarily disabled: expanded Dashboard dark-layer contrast regression',HTML)
+    def test_problematic_sheet_is_kept_for_diagnosis_not_loaded(self):
+        self.assertIn('background:#071d1b!important',CSS)
+        self.assertIn('vestra-intelligence.css?v=',HTML)
+if __name__=='__main__': unittest.main()
