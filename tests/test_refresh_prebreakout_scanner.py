@@ -62,6 +62,13 @@ class PrebreakoutDataTests(unittest.TestCase):
             rows[i]["low"]=rows[i]["close"]-6
         self.assertIsNone(mod.scan_bars("TEST",rows))
 
+    def test_breakout_requires_strong_close_near_session_high(self):
+        self.assertTrue(mod.strong_breakout_close(102, 100, 101, 102.5, 99, True))
+        self.assertFalse(mod.strong_breakout_close(102, 100, 101, 110, 99, True))
+        self.assertFalse(mod.strong_breakout_close(102, 100, 101, 102.5, 99, False))
+        self.assertFalse(mod.strong_breakout_close(102, 103, 101, 102.5, 99, True))
+        self.assertFalse(mod.strong_breakout_close(102, 100, 101, 102, 102, True))
+
     def test_unverified_volume_never_confirms_breakout(self):
         rows=self.bars()
         rows[-1]["volume"]=None

@@ -13,6 +13,14 @@ OUTPUT=ROOT/"data"/"prebreakout-signals.json"
 def sma(values: list[float], end: int, span: int):
     return sum(values[end-span+1:end+1])/span if end-span+1>=0 else None
 
+def strong_breakout_close(current: float, previous: float, resistance: float, high: float, low: float, volume_confirmed: bool) -> bool:
+    """Demand an upside break on confirmed volume with a close in the top 25% of the daily range."""
+    if not all(math.isfinite(x) for x in (current, previous, resistance, high, low)):
+        return False
+    return (volume_confirmed and low < high and low <= current <= high
+            and current > previous and current > resistance * 1.005
+            and (current-low)/(high-low) >= .75)
+
 def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     """Identify a contracting base, not a prediction of future returns."""
     today=today or datetime.now(timezone.utc).date()
@@ -76,7 +84,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     # Crossing proximity is only reported once the main MM50 > MM200 eligibility permits it.
     near_cross=False
     # Only a rising closing price with a verified 1.5x volume expansion confirms the breakout.
-    breakout=current>resistance*1.005 and current>values[-2] and volume_confirmed
+    breakout=strong_breakout_close(current,values[-2],resistance,clean[-1]["high"],clean[-1]["low"],volume_confirmed)
     if not breakout and distance< -1.5:return None
     stage="confirmado" if breakout else "pré-breakout" if 0<=distance<=4 and volume_dry else "compressão"
     contraction=1-w3/max(w1,1e-9)
