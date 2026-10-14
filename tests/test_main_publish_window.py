@@ -6,6 +6,7 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 GUARD = ROOT / "scripts" / "defer_main_publish_if_code_pr.py"
 
 WRITERS = {
+    "publish-vestra-mobile-icons.yml",
     "bootstrap-earnings-archive.yml",
     "rebuild-market-startup.yml",
     "refresh-weekly-earnings.yml",
