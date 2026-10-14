@@ -24,6 +24,7 @@ except ModuleNotFoundError:
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "data" / "stocks-index.json"
 STARTUP = ROOT / "data" / "stocks-startup.json"
+DIAGNOSTICS = ROOT / "data" / "earnings-refresh-status.json"
 MAX_STARTUP_BYTES = 2_350_000
 EXCLUDED_TYPES = {"ETF", "FUND", "MUTUALFUND", "CRYPTO"}
 
@@ -343,8 +344,9 @@ def main() -> int:
     archive = save_archive([*rows, *discovered_history], today=now_utc.date())
     INDEX.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     STARTUP.write_text(encoded, encoding="utf-8")
-    print(json.dumps({
+    status = {
         "state": "checked",
+        "generated_at": now_utc.isoformat(),
         "candidate_count": len(candidates),
         "attempted": attempted,
         "matched": matched,
@@ -358,7 +360,9 @@ def main() -> int:
         "archive_multi_quarter_tickers": sum(count > 1 for count in Counter(event["ticker"] for event in archive["events"]).values()),
         "failures": failures[:10],
         "contract": "near-term earnings only; preserve last verified values on fetch failure",
-    }, ensure_ascii=False))
+    }
+    DIAGNOSTICS.write_text(json.dumps(status, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    print(json.dumps(status, ensure_ascii=False))
     return 0
 
 
