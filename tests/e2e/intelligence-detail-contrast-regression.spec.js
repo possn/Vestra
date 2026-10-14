@@ -26,7 +26,10 @@ test('iPhone: expanded Intelligence has readable headline and card contrast',asy
     const c=rgb(getComputedStyle(n).backgroundColor);
     if(c&&getComputedStyle(n).backgroundColor.match(/rgba?\\([^)]*\\)/)&&!getComputedStyle(n).backgroundColor.endsWith(', 0)')){bg=c;break;}
    }
-   // Transparent descendants reveal the CSS canvas. Use the document canvas\n   // (white by CSS painting rules) if no ancestor defines a solid background.\n   if(!bg)bg=[255,255,255];\n   if(!fg)return {name,error:'unreadable foreground'};
+   // Transparent descendants reveal the CSS canvas. Use the document canvas
+   // (white by CSS painting rules) if no ancestor defines a solid background.
+   if(!bg)bg=[255,255,255];
+   if(!fg)return {name,error:'unreadable foreground'};
    const l1=L(fg),l2=L(bg);
    return {name,contrast:(Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05)};
   });
