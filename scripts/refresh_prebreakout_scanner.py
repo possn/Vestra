@@ -101,7 +101,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
             "goldenCrossImminent":bool(near_cross),
             "source":"yahoo:daily_ohlcv"}
 
-def candidates(stocks: list[dict], when: date):
+def candidates(stocks: list[dict], when: date, slot: int = 0):
     universe={}
     for s in stocks:
         ticker=str(s.get("ticker") or "").strip().upper()
@@ -113,7 +113,7 @@ def candidates(stocks: list[dict], when: date):
     ordered=sorted(universe,key=lambda t:(-universe[t],t))
     anchors=ordered[:40]
     rest=ordered[40:1600]
-    offset=((when-date(2026,10,13)).days*110)%max(1,len(rest))
+    # Four scheduled scans per day should sample different names, not repeat\n    # the same 110 rotating stocks at 02/08/14/20 UTC.\n    if not 0<=slot<=3:raise ValueError("invalid six-hour scan slot")\n    offset=(((when-date(2026,10,13)).days*4+slot)*110)%max(1,len(rest))
     rotation=(rest[offset:]+rest[:offset])[:110]
     return anchors+[t for t in rotation if t not in anchors]
 
@@ -154,8 +154,8 @@ def main():
     # Do not retain previously accepted setups after the stricter criteria reject them.
     by={signal["ticker"]:signal for signal in found}
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"new_signals":len(found),"quality_model":"vcp_volume_v2",
-             "errors":failures[:8],"signals":sorted(by.values(),key=lambda s:(-s["score"],s["ticker"]))[:75]}
+             "attempted":len(tickers),"with_ohlcv":checked,"new_signals":len(found),"quality_model":"vcp_volume_v2","scan_slot_utc":now.hour//6,
+             "errors":failures[:8],"signals":sorted(by.values(),key=lambda s:({"confirmado":0,"pré-breakout":1,"compressão":2}[s["stage"]],-s["score"],s["ticker"]))[:75]}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
 
