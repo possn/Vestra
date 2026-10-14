@@ -237,6 +237,10 @@
     const dom=dominantSleeve(s),coverage=sleeveCoverage(s);
     if(!dom)return null;
     const cov=coverage[dom];
+    // Canonical published sleeves need measured coverage before we describe a
+    // dimension as a credible leader. Legacy records have no sleeve evidence.
+    if(s?.opportunity_sleeves&&typeof s.opportunity_sleeves==='object')
+      return cov!=null&&cov>=70?dom:null;
     return cov==null||cov>=70?dom:null;
   }
   function discoveryCaps(s){
