@@ -169,6 +169,9 @@
   function discoveryScore(s){
     const published=n(s?.opportunity_score);
     if(published!=null)return clamp(published);
+    // A modern canonical decision with missing opportunity_score must remain
+    // unknown; never fabricate a competing client-side financial rank.
+    if(typeof s?.opportunity_eligible==='boolean'||typeof s?.opportunity_featured==='boolean')return null;
     const vals=[[n(s?.score),.25],[timing(s),.29],[n(s?.recovery_score),.10],[n(s?.qarp_score),.11],[n(s?.moat_score),.08],[n(s?.capital_allocation_intelligence_score),.06],[n(s?.value_pct),.06],[n(s?.growth_pct),.02],[n(s?.sector_native_score),.03]].filter(([v])=>v!=null);
     if(!vals.length)return null;let x=vals.reduce((a,[v,w])=>a+clamp(v)*w,0)/vals.reduce((a,[,w])=>a+w,0);
     const p=stats(s),fv=n(s?.fair_value_upside_pct);
