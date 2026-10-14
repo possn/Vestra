@@ -260,7 +260,7 @@
     // Lenses are canonical Discovery views: they may filter the universe and
     // apply diversification guardrails, but they must never create a second
     // alpha signal or reweight the canonical opportunity ranking.
-    return discoveryScore(s)||0;
+    return discoveryScore(s);
   }
   function rankedCandidates(universe,lens,sector='all'){
     let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
@@ -458,7 +458,7 @@
     const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),coverage=sleeveCoverage(s),dom=credibleDominantSleeve(s),capText=capSummary(s);
     const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
       .filter(([,v])=>v!=null).map(([label,v,key])=>`<span class="${key===dom?'is-driver':''}">${label} ${Math.round(v)}${coverage[key]!=null&&coverage[key]<70?' · evidência limitada':''}</span>`).join('');
-    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${Math.round(sc)}</strong><em>${confirmed(s)} sinais</em></div></div>`;
+    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
   }
 
   function decorate(section){
@@ -505,7 +505,7 @@
     }
     const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all';
     const rows=rankLens(universe,activeLens,{limit:12,sector:sec});
-    const sig=(rows.map(s=>`${t(s.ticker)}:${activeLens==='breakout'?(breakoutSetup(s)?.score||0):Math.round(lensScore(s,activeLens))}:${activeLens==='breakout'?(breakoutSetup(s)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
+    const sig=(rows.map(s=>`${t(s.ticker)}:${activeLens==='breakout'?(breakoutSetup(s)?.score||0):(lensScore(s,activeLens)==null?'unknown':Math.round(lensScore(s,activeLens)))}:${activeLens==='breakout'?(breakoutSetup(s)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
       list.innerHTML=rows.map(s=>row(s,activeLens)).join('');
       rows.forEach(s=>{const el=list.querySelector(`[data-market-ticker="${CSS.escape(t(s.ticker))}"]`);if(el)el.__vestraStock=s;});
