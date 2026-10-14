@@ -73,7 +73,8 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     mean_vol=sum(float(b["volume"]) for b in reference)/20 if all(isinstance(b.get("volume"),(int,float)) and math.isfinite(b["volume"]) and b["volume"]>0 for b in reference) else None
     volume_confirmed=mean_vol is not None and recent_volumes[-1] is not None and recent_volumes[-1]>=mean_vol*1.5
     crossed=any(sma(values,i-1,50)<=sma(values,i-1,200) and sma(values,i,50)>sma(values,i,200) for i in range(end-19,end+1))
-    near_cross=not crossed and 0<(m200-m50)/m200<=.02
+    # Crossing proximity is only reported once the main MM50 > MM200 eligibility permits it.
+    near_cross=False
     # Only a rising closing price with a verified 1.5x volume expansion confirms the breakout.
     breakout=current>resistance*1.005 and current>values[-2] and volume_confirmed
     if not breakout and distance< -1.5:return None
