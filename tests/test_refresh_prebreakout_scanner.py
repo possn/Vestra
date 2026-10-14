@@ -15,11 +15,12 @@ class PrebreakoutDataTests(unittest.TestCase):
         rows=[]
         for i in range(260):
             base=50+(0.075*i if trend else -0.04*i)
-            wiggle=(5*math.sin(i*1.4) if 160<=i<200 else .22*math.sin(i*.4))
+            amp=5 if 160<=i<200 else 1.8 if 200<=i<220 else 1.0 if 220<=i<240 else .30
+            wiggle=amp*math.sin(i*1.4)
             c=base+wiggle
+            vol=60000 if i>=250 else 100000
             rows.append({"date":(today-timedelta(days=259-i)).isoformat(),
-                         "close":c,"high":c+(.4 if i>=220 else 1.0),
-                         "low":c-(.4 if i>=220 else 1.0),"volume":100000})
+                         "close":c,"high":c+amp*.3,"low":c-amp*.3,"volume":vol})
         rows[-1]["volume"]=180000
         return rows
 
@@ -35,11 +36,30 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertGreater(result["sma50"],result["sma200"])
         self.assertGreater(result["priorWidthPct"],result["widthPct"])
         self.assertIn(result["stage"],("compressão","pré-breakout","confirmado"))
+        self.assertTrue(result["vcpConfirmed"])
+        self.assertTrue(result["volumeDry"])
 
     def test_stale_data_are_not_included(self):
         rows=self.bars()
         for row in rows:
             row["date"]=(date.fromisoformat(row["date"])-timedelta(days=60)).isoformat()
+        self.assertIsNone(mod.scan_bars("TEST",rows))
+
+    def test_out_of_order_history_rejected(self):
+        rows=self.bars()
+        rows[-1]["date"]=rows[-2]["date"]
+        self.assertIsNone(mod.scan_bars("TEST",rows))
+
+    def test_missing_high_or_low_does_not_fabricate_structure(self):
+        rows=self.bars()
+        rows[-1]["high"]=None
+        self.assertIsNone(mod.scan_bars("TEST",rows))
+
+    def test_high_volume_without_three_contractions_is_rejected(self):
+        rows=self.bars()
+        for i in range(240,260):
+            rows[i]["high"]=rows[i]["close"]+6
+            rows[i]["low"]=rows[i]["close"]-6
         self.assertIsNone(mod.scan_bars("TEST",rows))
 
     def test_unverified_volume_never_confirms_breakout(self):
