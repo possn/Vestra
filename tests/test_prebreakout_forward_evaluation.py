@@ -31,4 +31,28 @@ class EvaluationTests(unittest.TestCase):
   r=mod.evaluate({"date":"2026-01-01"},self.rows([100,100,90,110]),self.rows([100]*4),horizons=(2,))
   self.assertAlmostEqual(r["results"][2]["max_adverse_excursion"],-.1)
   self.assertEqual(mod.aggregate([r],horizons=(2,))[2]["n"],1)
+ def test_publication_day_prevents_lookahead(self):
+  snap={"schema":"vestra_prebreakout_v1","generated_at":"2026-01-03T20:00:00+00:00",
+        "signals":[{"ticker":"TEST","date":"2026-01-01","stage":"compressão"}]}
+  a=self.rows([100,110,120,130,140,150]);b=self.rows([100]*6)
+  result=mod.evaluate_archived(snap,"TEST",a,b,horizons=(1,))
+  self.assertEqual(result["entry"],"2026-01-04")
+  self.assertEqual(result["signal_date"],"2026-01-01")
+  self.assertEqual(result["results"][1]["exit"],"2026-01-05")
+ def test_archived_signal_requires_timestamp(self):
+  snap={"schema":"vestra_prebreakout_v1","generated_at":"2026-01-03","signals":[{"ticker":"TEST","date":"2026-01-01"}]}
+  with self.assertRaises(ValueError):
+   mod.evaluate_archived(snap,"TEST",self.rows([100]*6),self.rows([100]*6))
+ def test_future_dated_signal_is_rejected(self):
+  snap={"schema":"vestra_prebreakout_v1","generated_at":"2026-01-01T10:00:00Z",
+        "signals":[{"ticker":"TEST","date":"2026-01-03"}]}
+  with self.assertRaises(ValueError):
+   mod.evaluate_archived(snap,"TEST",self.rows([100]*6),self.rows([100]*6))
+ def test_missing_or_duplicate_published_signal_rejected(self):
+  snap={"schema":"vestra_prebreakout_v1","generated_at":"2026-01-03T10:00:00Z","signals":[]}
+  with self.assertRaises(ValueError):
+   mod.evaluate_archived(snap,"TEST",self.rows([100]*6),self.rows([100]*6))
+  snap["signals"]=[{"ticker":"TEST","date":"2026-01-01"}]*2
+  with self.assertRaises(ValueError):
+   mod.evaluate_archived(snap,"TEST",self.rows([100]*6),self.rows([100]*6))
 if __name__=="__main__":unittest.main()
