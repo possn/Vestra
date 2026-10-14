@@ -26,7 +26,7 @@
     });
   }
   function emptyCopy(lens){
-    if(lens==='breakout')return 'Sem setups verificados: são necessárias pelo menos 210 sessões diárias e compressão com médias ascendentes. A ausência de histórico suficiente não é sinal de compra.';
+    if(lens==='breakout')return 'Sem setups verificados: são necessárias pelo menos 220 sessões diárias com OHLC válido e compressão com médias ascendentes. A ausência de histórico suficiente não é sinal de compra.';
     if(lens==='low52')return 'Sem empresas robustas até 5% do mínimo de 52 semanas com os dados atuais.';
     if(lens==='emerging')return 'Sem setups iniciais com qualidade e timing suficientes neste momento.';
     if(lens==='recovery')return 'Sem recuperações suficientemente confirmadas neste momento.';
