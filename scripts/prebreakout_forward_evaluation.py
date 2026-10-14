@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""Evaluate archived technical signals against subsequent adjusted daily closes.
+
+This is a point-in-time evaluation helper, NOT a historical reconstruction of signals.
+A snapshot is eligible only when its original publication timestamp is available.
+"""
+from datetime import date, datetime, timezone
+from statistics import mean, median
+import math
+
+HORIZONS=(5,10,20,60)
+
+def _date(value):
+    return date.fromisoformat(str(value)[:10])
+
+def _series(rows):
+    result={}
+    for bar in rows:
+        try:
+            d=_date(bar["date"]); p=float(bar["close"])
+            if not math.isfinite(p) or p<=0 or d in result: raise ValueError("invalid close or duplicate")
+            result[d]=p
+        except (KeyError,TypeError,OverflowError) as exc:
+            raise ValueError("invalid OHLC date/close") from exc
+    return sorted(result.items())
+
+def evaluate(signal, asset_bars, benchmark_bars, horizons=HORIZONS):
+    """Start with the first common trading session strictly after signal date.
+    All entry and exit prices are adjusted closes; these are NOT executable fills.
+    Never pad missing benchmark sessions or forward fill asset prices.
+    """
+    try:
+        day=_date(signal["date"])
+        a=dict(_series(asset_bars)); b=dict(_series(benchmark_bars))
+    except (KeyError,ValueError,TypeError) as exc:
+        raise ValueError("invalid signal or price data") from exc
+    dates=sorted(set(a)&set(b))
+    future=[d for d in dates if d>day]
+    if not future:return {"ticker":signal.get("ticker"),"entry":None,"results":{}}
+    entry=future[0]; index=dates.index(entry)
+    results={}
+    for h in horizons:
+        if not isinstance(h,int) or h<1:raise ValueError("invalid horizon")
+        end=index+h
+        if end>=len(dates):results[h]=None;continue
+        exit_day=dates[end]
+        r=a[exit_day]/a[entry]-1
+        bench=b[exit_day]/b[entry]-1
+        prices=[a[d]/a[entry]-1 for d in dates[index:end+1]]
+        results[h]={"exit":exit_day.isoformat(),"return":r,"spy_return":bench,
+                    "excess_return":r-bench,"max_adverse_excursion":min(prices)}
+    return {"ticker":signal.get("ticker"),"entry":entry.isoformat(),"results":results}
+
+def aggregate(evaluations,horizons=HORIZONS):
+    output={}
+    for h in horizons:
+        items=[e["results"].get(h) for e in evaluations if e.get("results")]
+        usable=[x for x in items if x is not None]
+        output[h]={"n":len(usable),"n_missing":len(items)-len(usable)}
+        if usable:
+            output[h].update({"hit_rate":mean(x["return"]>0 for x in usable),
+                "mean_return":mean(x["return"] for x in usable),
+                "median_excess_return":median(x["excess_return"] for x in usable),
+                "mean_max_adverse_excursion":mean(x["max_adverse_excursion"] for x in usable)})
+    return output
