@@ -433,6 +433,9 @@
     syncDecisionCenter(host);
     window.addEventListener('vestra:market-sheet-changed', () => syncDecisionCenter(host));
     window.addEventListener('vestra:local-state-writing', () => {
+      // JSON imports write local state before the native dashboard has finished rendering.
+      // Refresh the editorial wealth hero after the native KPIs settle (no DOM polling/observer).
+      [0, 250, 1200].forEach(delay => setTimeout(() => syncWealthHero(host), delay));
       lastDecision = null;
       const output = host.querySelector('[data-vestra-decision-state]');
       if (output) {
@@ -445,6 +448,10 @@
     });
     window.addEventListener('vestra:weekly-data-refreshed', () => { syncDailyBrief(host); syncCanonicalCards(host); });
     window.addEventListener('focus', () => { syncDailyBrief(host); syncWealthHero(host); syncCanonicalCards(host); });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) { syncWealthHero(host); setTimeout(() => syncWealthHero(host), 250); }
+    });
+    window.addEventListener('pageshow', () => syncWealthHero(host));
     // The underlying modules hydrate asynchronously; retry a bounded number of times.
     [1200, 3500, 6500].forEach(delay => setTimeout(() => { syncDailyBrief(host); syncWealthHero(host); }, delay));
     showCoverage(host);
