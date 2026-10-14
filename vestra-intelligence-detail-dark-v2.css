@@ -1,0 +1,57 @@
+/* Vestra 2.0 — dark editorial continuity for the expanded Dashboard. */
+body:has(#viewDashboard.vi-preview-active #vestraIntelligenceHome[data-legacy-open="true"]){
+  background:#071d1b!important;
+}
+body:has(#viewDashboard.vi-preview-active #vestraIntelligenceHome[data-legacy-open="true"]) :is(.main,.content,#viewDashboard){
+  background:#071d1b!important;color:#f1eee5!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]){
+  --bg:#071d1b;--card:#12342f;--soft:#1a4039;--text:#f1eee5;
+  --text2:#b9cbc2;--muted:#b9cbc2;--line:#38574f;--line2:#38574f;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage.card.hero{
+  background:linear-gradient(145deg,#143d36,#0d2927)!important;
+  border:1px solid #47645a!important;color:#f4f0e7!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage :is(.hero__label,.hero__value,.hero__sub,#kpiChanges){
+  color:#f4f0e7!important;-webkit-text-fill-color:#f4f0e7!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.v2-detail-chapter-nav a,.vi-back-to-intelligence button){
+  background:#163b34!important;border:1px solid #506f62!important;
+  color:#f1eee5!important;-webkit-text-fill-color:#f1eee5!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.card,.vi-card,.v2-home-secondary-hub,.kpi-quick){
+  background:#12342f!important;border:1px solid #3c5b52!important;
+  color:#f1eee5!important;box-shadow:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.card__title,.card__head h2,.card__head h3,.v2-home-section-label h2,.vi-card h2,.vi-card h3,.kpi-quick__v){
+  color:#f4f0e7!important;-webkit-text-fill-color:#f4f0e7!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.card__muted,.card p,.vi-card p,.kpi-quick__s,.v2-home-section-label p){
+  color:#bfd0c7!important;-webkit-text-fill-color:#bfd0c7!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.vi-card,.card) :is(.vi-score,.score-value,.vi-reading-value){
+  color:#dfc69d!important;-webkit-text-fill-color:#dfc69d!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.kpi-quick__cell,.ux453-why,.vi-panel){
+  background:#1a423a!important;border-color:#4e6a60!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.v2-home-section-label>span,.vi-eyebrow,.card__eyebrow){
+  color:#d9bd8e!important;-webkit-text-fill-color:#d9bd8e!important;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]){padding-inline:0!important}
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.card,.vi-card){border-radius:19px!important}
+}
+
+/* The short-form action sheet intentionally stays a small ivory reading surface.
+   Its ink is dark; this also preserves accessibility of Quick Records. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #dashboardQuickRecordsCard{
+ background:#f2f0e8!important;border-color:#bec9c1!important;color:#20363b!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #dashboardQuickRecordsCard :is(.card__title,.card__head h2,.card__head h3){
+ color:#20363b!important;-webkit-text-fill-color:#20363b!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #dashboardQuickRecordsCard :is(.card__muted,p){
+ color:#43585a!important;-webkit-text-fill-color:#43585a!important;
+}
