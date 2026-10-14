@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const source=fs.readFileSync('market-opportunities.js','utf8');
+const start=source.indexOf('  function lensScore(s,lens){');
+const end=source.indexOf('  function rankedCandidates(',start);
+assert(start>=0&&end>start);
+const context={discoveryScore:s=>s.opportunity_score??null};
+vm.createContext(context);vm.runInContext(source.slice(start,end),context);
+assert.equal(context.lensScore({opportunity_score:null},'all'),null);
+assert.equal(context.lensScore({opportunity_score:0},'all'),0);
+assert.equal(context.lensScore({opportunity_score:79},'all'),79);
+assert.match(source,/sc==null\?'—':Math\.round\(sc\)/);
+assert.match(source,/sc==null\?'Score indisponível'/);
+assert.match(source,/lensScore\(s,activeLens\)==null\?'unknown'/);
+console.log('Missing canonical score never displayed as a numerical zero');

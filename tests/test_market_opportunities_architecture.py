@@ -241,7 +241,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         block = source.split('function lensScore(s,lens){', 1)[1].split('function rankedCandidates', 1)[0]
         ranked = source.split('function rankedCandidates(universe,lens,sector=\'all\'){', 1)[1].split('function diversify', 1)[0]
         buckets = source.split("const buckets=archetypes.map(type=>({", 1)[1].split("}));", 1)[0]
-        self.assertIn('return discoveryScore(s)||0', block)
+        self.assertIn('return discoveryScore(s);', block)
         self.assertNotIn('lensTilt', source)
         self.assertNotIn('discovery*.82', source)
         self.assertIn("ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0))", ranked)
