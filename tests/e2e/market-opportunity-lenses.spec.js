@@ -209,7 +209,7 @@ test('iPhone/WebKit: More sectors defers canonical rerender until the native pic
   expect(commits).toEqual(['Energy', 'Communication Services']);
   expect(pageErrors, `Browser page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
-test('iPhone/WebKit: Pre-breakout finds a verified compressed base and returns to Discovery', async ({ page }) => {
+test('iPhone/WebKit: Pre-breakout excludes unverified local fixtures when publisher is authoritative', async ({ page }) => {
   await waitForLaunch(page);
   await page.evaluate(() => {
     const today=Date.now();
@@ -233,8 +233,8 @@ test('iPhone/WebKit: Pre-breakout finds a verified compressed base and returns t
     window.VestraMarketOpportunityLenses.select('breakout');
   });
   await expect(page.locator('#prebreakoutFixture h3')).toContainText('Pré-breakout');
-  await expect(page.locator('#prebreakoutFixture [data-market-ticker="VCPX"]')).toHaveCount(1);
-  await expect(page.locator('#prebreakoutFixture')).toContainText('MM50 acima MM200');
+  await expect(page.locator('#prebreakoutFixture [data-market-ticker="VCPX"]')).toHaveCount(0);
+  // A synthetic local history must not resurrect a setup absent from the published feed.
   await page.evaluate(()=>window.VestraMarketOpportunityLenses.select('all'));
   await expect(page.locator('#prebreakoutFixture h3')).toContainText('Oportunidades agora');
 });
