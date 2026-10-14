@@ -51,6 +51,36 @@ def evaluate(signal, asset_bars, benchmark_bars, horizons=HORIZONS):
                     "excess_return":r-bench,"max_adverse_excursion":min(prices)}
     return {"ticker":signal.get("ticker"),"entry":entry.isoformat(),"results":results}
 
+def evaluate_archived(snapshot, ticker, asset_bars, benchmark_bars, horizons=HORIZONS):
+    """Evaluate only a verifiably published signal from its first subsequent session.
+
+    Never use the signal's market session as the executable entry when a later
+    publication timestamp is known. Empty or unpublished feed means no evidence.
+    """
+    if snapshot.get("schema")!="vestra_prebreakout_v1" or not isinstance(snapshot.get("signals"),list):
+        raise ValueError("invalid archived snapshot")
+    try:
+        published=datetime.fromisoformat(str(snapshot["generated_at"]).replace("Z","+00:00"))
+    except (KeyError, ValueError, TypeError) as exc:
+        raise ValueError("missing or invalid published timestamp") from exc
+    if published.tzinfo is None:raise ValueError("publication timezone missing")
+    publication_day=published.astimezone(timezone.utc).date()
+    matches=[s for s in snapshot["signals"] if s.get("ticker")==ticker]
+    if len(matches)!=1:raise ValueError("ticker missing or duplicated in archived publication")
+    original=matches[0]
+    try:
+        signal_day=_date(original["date"])
+    except (KeyError,ValueError,TypeError) as exc:
+        raise ValueError("invalid signal date") from exc
+    if signal_day>publication_day:raise ValueError("future-dated signal")
+    # Start strictly after both the original session and actual publication day.
+    delayed={**original,"date":max(signal_day,publication_day).isoformat()}
+    outcome=evaluate(delayed,asset_bars,benchmark_bars,horizons=horizons)
+    outcome["published_at"]=published.isoformat()
+    outcome["signal_date"]=signal_day.isoformat()
+    outcome["stage"]=original.get("stage")
+    return outcome
+
 def aggregate(evaluations,horizons=HORIZONS):
     output={}
     for h in horizons:
