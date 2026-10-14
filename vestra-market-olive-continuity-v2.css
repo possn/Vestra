@@ -1,0 +1,67 @@
+/* Vestra 2.0 — Market editorial continuity.
+   Scope strictly to the Market view; preserve actual data, score and filters. */
+body:has(#viewMarket:not([hidden])) #viewMarket {
+  --v2-market-panel:#102a27;
+  --v2-market-elevated:#183733;
+  --v2-market-line:#35564d;
+  --v2-market-text:#f3efe6;
+  --v2-market-muted:#b9cdc3;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses),
+body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools {
+  background:var(--v2-market-panel)!important;
+  color:var(--v2-market-text)!important;
+  border:1px solid var(--v2-market-line)!important;
+  box-shadow:none!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-section__head h3,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools__head strong {
+  color:var(--v2-market-text)!important;
+  -webkit-text-fill-color:var(--v2-market-text)!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-section__head p,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-data-age,
+body:has(#viewMarket:not([hidden])) #viewMarket .market-analysis-tools__head small {
+  color:var(--v2-market-muted)!important;
+  -webkit-text-fill-color:var(--v2-market-muted)!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .vestra-opportunity-lenses button:not(.is-active) {
+  background:var(--v2-market-elevated)!important;
+  color:var(--v2-market-text)!important;
+  border-color:var(--v2-market-line)!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row {
+  background:var(--v2-market-elevated)!important;
+  border:1px solid var(--v2-market-line)!important;
+  color:var(--v2-market-text)!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row :is(.market-row__ticker,.market-row__title,.market-row__name,.ux453-thesis) {
+  color:var(--v2-market-text)!important;
+  -webkit-text-fill-color:var(--v2-market-text)!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row :is(.market-row__meta,.market-row__description,.ux453-opportunity-type,.ux453-cap-note,.ux453-why__row,.ux453-entry small,.ux453-entry em) {
+  color:var(--v2-market-muted)!important;
+  -webkit-text-fill-color:var(--v2-market-muted)!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row .ux453-entry strong {
+  color:#99e1cd!important;-webkit-text-fill-color:#99e1cd!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) .market-row .ux453-pills span {
+  color:#d7e6db!important;-webkit-text-fill-color:#d7e6db!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) {
+  margin-block:24px!important;
+}
+body:has(#viewMarket:not([hidden])) #viewMarket .market-shell > .market-section:has(.vestra-opportunity-lenses) {
+  margin-top:28px!important;
+}
+@media(max-width:600px){
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-shell > .market-section:has(.vestra-opportunity-lenses) {
+  margin-top:26px!important;
+  padding:18px 14px!important;
+  border-radius:22px!important;
+ }
+ body:has(#viewMarket:not([hidden])) #viewMarket .market-shell > .market-section:has(.vestra-opportunity-lenses) .market-row {
+  border-radius:16px!important;
+ }
+}
