@@ -1,7 +1,9 @@
 import importlib.util
 import math
+import json
+import tempfile
 import unittest
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -35,6 +37,32 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertTrue(set(scan0[40:]).isdisjoint(scan1[40:]))
         self.assertTrue(set(scan1[40:]).isdisjoint(scan2[40:]))
         with self.assertRaises(ValueError):mod.candidates(stocks,date(2026,10,14),4)
+
+    def test_watchlist_rechecks_old_signals_without_expanding_scan_budget(self):
+        stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY","market_cap":10_000_000_000-i} for i in range(700)]
+        day=date(2026,10,15)
+        normal=mod.candidates(stocks,day,1)
+        tracked="T0670"
+        self.assertNotIn(tracked,normal)
+        chosen=mod.candidates(stocks,day,1,[tracked,"T0001",tracked,"NOT-IN-UNIVERSE"])
+        self.assertEqual(len(chosen),150)
+        self.assertEqual(chosen[:40],normal[:40])
+        self.assertEqual(chosen[40],tracked)
+        self.assertEqual(len(chosen),len(set(chosen)))
+
+    def test_published_watchlist_is_time_bounded_and_historical_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"observations.json"
+            when=datetime(2026,10,15,12,tzinfo=timezone.utc)
+            rows=[{"ticker":"AAA","stage":"compressão","current":False,"observed_at":"2026-10-15T07:00:00Z"},
+                  {"ticker":"FAKE","stage":"confirmado","current":True,"observed_at":"2026-10-15T07:00:00Z"},
+                  {"ticker":"OLD","stage":"pré-breakout","current":False,"observed_at":"2026-10-01T07:00:00Z"}]
+            path.write_text(json.dumps({"schema":"vestra_prebreakout_observations_v1",
+                "historical_only":True,"generated_at":"2026-10-15T11:00:00Z","observations":rows}))
+            self.assertEqual(mod.watched_tickers(when,path),["AAA"])
+            self.assertEqual(mod.watched_tickers(datetime(2026,10,25,tzinfo=timezone.utc),path),[])
+            path.unlink()
+            self.assertEqual(mod.watched_tickers(when,path),[])
 
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
