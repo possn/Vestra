@@ -46,7 +46,7 @@ def archive_slot(payload:dict, root:Path=ARCHIVE)->Path:
     path.parent.mkdir(parents=True,exist_ok=True)
     with path.open("x",encoding="utf-8") as file:
         json.dump(payload,file,ensure_ascii=False,separators=(",",":"))
-        file.write("\\n")
+        file.write("\n")
     return path
 
 if __name__=="__main__":
