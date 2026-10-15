@@ -82,6 +82,27 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         candidate["opportunity_market_return_20d_pct"] = float("nan")
         self.assertEqual(MOD.assess(candidate)["opportunity_relative_strength_status"], "unavailable")
 
+    def test_sector_strength_requires_verified_etf_observation(self):
+        candidate=row()
+        candidate.update({"opportunity_sector_return_20d_pct": -4,
+                          "opportunity_sector_benchmark_ticker": "XLK"})
+        unavailable=MOD.assess(candidate)
+        self.assertEqual(unavailable["opportunity_sector_relative_strength_status"], "unavailable")
+        candidate["opportunity_sector_benchmark_verified"]=True
+        outperform=MOD.assess(candidate)
+        self.assertEqual(outperform["opportunity_sector_relative_strength_status"], "outperforming")
+        self.assertEqual(outperform["opportunity_sector_relative_strength_benchmark"], "XLK")
+        candidate["opportunity_sector_return_20d_pct"]=30
+        laggard=MOD.assess(candidate)
+        self.assertEqual(laggard["opportunity_sector_relative_strength_status"], "underperforming")
+        self.assertTrue(any("Fraqueza relativa setorial" in c for c in laggard["opportunity_cautions"]))
+        self.assertEqual(outperform["opportunity_score"],laggard["opportunity_score"])
+
+    def test_missing_sector_history_stays_unavailable(self):
+        out=MOD.assess(row())
+        self.assertIsNone(out["opportunity_sector_relative_strength_20d_pp"])
+        self.assertEqual(out["opportunity_sector_relative_strength_status"],"unavailable")
+
     def test_higher_confidence_does_not_buy_ranking_points_after_gate(self):
         low = MOD.assess(row(confidence=60))
         high = MOD.assess(row(confidence=95))
