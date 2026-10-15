@@ -644,7 +644,9 @@ def main():
         ticker = str(row.get("ticker") or "").strip()
         metrics = daily_return_map.get(ticker) or {}
         if metrics:
-            row.update(metrics)
+            # Internal daily date arrays validate sector comparisons; never inflate public indexes.
+            row.update({key: value for key, value in metrics.items()
+                        if key not in ("market_return_asof_date", "market_return_20d_dates")})
 
     payload = {
         "schema_version": 521,
