@@ -562,7 +562,7 @@ def assess(row: dict) -> dict:
         + inflection_coverage * .36
     )
 
-    gate = str(row.get("risk_gate") or "clear").lower()
+    gate = str(row.get("risk_gate") or "unknown").lower()
     reasons = list(timing.get("reasons") or [])
     cautions = list(timing.get("cautions") or [])
     caps = []
@@ -666,6 +666,11 @@ def assess(row: dict) -> dict:
         elif event_status == "earnings_near":
             cautions.append("Resultados próximos: acompanhar risco de evento")
 
+        if gate not in ("clear", "watch", "high", "severe"):
+            if opp > 59:
+                caps.append({"reason": "Risk Gate sem avaliação conclusiva", "cap": 59.0})
+            opp = min(opp, 59.0)
+            cautions.append("Risk Gate não disponível: prioridade limitada")
         if gate == "severe":
             if opp > 35:
                 caps.append({"reason": "Risk Gate severe", "cap": 35.0})
