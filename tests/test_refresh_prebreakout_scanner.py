@@ -26,6 +26,14 @@ class PrebreakoutDataTests(unittest.TestCase):
         rows[-1]["volume"]=180000
         return rows
 
+    def test_unfinished_utc_daily_bar_is_excluded_from_live_scan(self):
+        today=date(2026,10,15)
+        bars=[{"date":"2026-10-13","close":1},{"date":"2026-10-14","close":2},
+              {"date":"2026-10-15","close":1000}]
+        finished=mod.completed_sessions(bars,today)
+        self.assertEqual([r["date"] for r in finished],["2026-10-13","2026-10-14"])
+        self.assertEqual(mod.completed_sessions(bars,date(2026,10,16)),bars)
+
     def test_scan_slots_rotate_across_a_broader_universe(self):
         stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY","market_cap":10_000_000_000-i}
                 for i in range(700)]
