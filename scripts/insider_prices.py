@@ -212,6 +212,8 @@ def _dated_daily_returns(series) -> dict:
         metrics=_compact_daily_returns(valid.tolist())
         if metrics:
             metrics["market_return_asof_date"] = str(valid.index[-1])[:10]
+            if "market_return_20d_pct" in metrics and len(valid) >= 21:
+                metrics["market_return_20d_dates"] = [str(d)[:10] for d in valid.index[-21:]]
         return metrics
     except (TypeError, ValueError, IndexError, AttributeError):
         return {}
