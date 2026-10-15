@@ -139,7 +139,7 @@ def dataframe_bars(frame):
 
 def main():
     import yfinance as yf
-    now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date())
+    now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6)
     found=[];checked=0;failures=[]
     for start in range(0,len(tickers),15):
         group=tickers[start:start+15]

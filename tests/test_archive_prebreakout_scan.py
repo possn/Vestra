@@ -27,4 +27,25 @@ class ArchiveTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as folder:
    p=self.payload();p["generated_at"]="2026-10-14T13:39:26"
    with self.assertRaises(ValueError):mod.archive(p,Path(folder))
+ def test_slots_are_distinct_and_immutable(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=Path(folder)
+   first=self.payload();first["generated_at"]="2026-10-14T02:10:00Z";first["scan_slot_utc"]=0
+   later=self.payload();later["generated_at"]="2026-10-14T08:10:00Z";later["scan_slot_utc"]=1
+   p0=mod.archive_slot(first,root)
+   p1=mod.archive_slot(later,root)
+   self.assertNotEqual(p0,p1)
+   self.assertEqual(json.loads(p0.read_text())["scan_slot_utc"],0)
+   self.assertEqual(json.loads(p1.read_text())["scan_slot_utc"],1)
+   rerun=dict(first);rerun["signals"]=[{"ticker":"FAKE"}]
+   self.assertEqual(mod.archive_slot(rerun,root),p0)
+   self.assertEqual(json.loads(p0.read_text())["signals"],[])
+ def test_slot_timestamp_must_match_publication_window(self):
+  with tempfile.TemporaryDirectory() as folder:
+   payload=self.payload();payload["scan_slot_utc"]=0
+   with self.assertRaises(ValueError):mod.archive_slot(payload,Path(folder))
+   payload["scan_slot_utc"]=2
+   self.assertEqual(mod.archive_slot(payload,Path(folder)).name,"2026-10-14-slot2.json")
+   payload["generated_at"]="2026-10-14T13:39:26"
+   with self.assertRaises(ValueError):mod.archive_slot(payload,Path(folder))
 if __name__=="__main__":unittest.main()
