@@ -41,6 +41,35 @@
   }
 
 
+  let prebreakoutObservations=[];
+  async function loadPrebreakoutObservations(){
+    try{
+      const response=await fetch('data/prebreakout-observations.json',{cache:'no-store'});
+      if(!response.ok)return;
+      const data=await response.json();
+      if(data?.schema!=='vestra_prebreakout_observations_v1'||data.historical_only!==true||!Array.isArray(data.observations))return;
+      const generated=Date.parse(data.generated_at);
+      if(!Number.isFinite(generated)||(Date.now()-generated)/3600000>48||generated>Date.now()+3600000)return;
+      prebreakoutObservations=data.observations.filter(o=>o?.current===false&&
+        ['compressão','pré-breakout','confirmado'].includes(o.stage)&&
+        /^[A-Z0-9.^-]{1,20}$/.test(t(o.ticker))&&
+        Number.isFinite(Date.parse(o.observed_at))&&
+        (Date.now()-Date.parse(o.observed_at))/86400000>=-1&&
+        (Date.now()-Date.parse(o.observed_at))/86400000<=7).slice(0,30);
+      if(activeLens==='breakout')opportunities();
+    }catch(error){console.warn('[Vestra] historical prebreakout observations unavailable',error);}
+  }
+  function renderPrebreakoutHistory(section){
+    let container=section.querySelector('.vestra-prebreakout-history');
+    if(activeLens!=='breakout'){container?.remove();return;}
+    if(!container){container=document.createElement('div');container.className='vestra-prebreakout-history';section.querySelector('.market-list')?.insertAdjacentElement('afterend',container);}
+    if(!container)return;
+    const current=new Set([...prebreakoutFeed.keys()]);
+    const past=prebreakoutObservations.filter(o=>!current.has(t(o.ticker).toUpperCase())).slice(0,12);
+    const rows=past.map(o=>`<div class="vestra-prebreakout-history-row"><strong>${esc(o.ticker)}</strong> · ${esc(o.stage)} · última observação ${esc(o.observed_at.slice(0,16).replace('T',' ')+' UTC')} · histórico, não validado agora</div>`).join('');
+    container.innerHTML=`<details><summary>Observações anteriores (${past.length}) · não são sinais atuais</summary><div class="vestra-prebreakout-history-items">${rows||'Sem observações anteriores verificadas.'}</div></details>`;
+  }
+
   function stocks(){
     const rows=window.VestraMarketStaticUniverse?.getStocks?.();
     return Array.isArray(rows)?rows:[];
@@ -524,6 +553,7 @@
     }
     const [title,subtitle]=lensMeta(activeLens);const h=section.querySelector('.market-section__head h3');if(h)h.textContent=title;const p=section.querySelector('.market-section__head p');if(p)p.textContent=subtitle;
     decorate(section);
+    renderPrebreakoutHistory(section);
     return rows;
   }
   function selectLens(lens,sectorOverride=''){activeLens=LENSES.has(t(lens))?t(lens):'all';return opportunities(activeLens,sectorOverride);}
@@ -540,6 +570,7 @@
     style();
     opportunities();
     loadPrebreakoutFeed();
+    loadPrebreakoutObservations();
     const root=document.getElementById('marketPrimary');if(!root)return;
     let pending=false;
     const mo=new MutationObserver(()=>{
