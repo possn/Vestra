@@ -50,6 +50,18 @@ def row(confidence=70, risk_gate="clear"):
 
 
 class DiscoveryScoreContractTests(unittest.TestCase):
+    def test_nonfinite_or_missing_close_never_invents_early_momentum(self):
+        for bad in (None, float("nan"), float("inf"), -2):
+            candidate = row()
+            candidate["price_history_1y"][45] = {"close": bad}
+            timing = MOD._timing_assessment(candidate)
+            self.assertIsNone(timing["score"])
+            self.assertEqual(timing["label"], "Dados de preço insuficientes")
+            self.assertIsNone(timing["return_20d_pct"])
+
+    def test_valid_daily_price_history_retains_timing(self):
+        self.assertIsNotNone(MOD._timing_assessment(row())["score"])
+
     def test_higher_confidence_does_not_buy_ranking_points_after_gate(self):
         low = MOD.assess(row(confidence=60))
         high = MOD.assess(row(confidence=95))
