@@ -258,6 +258,18 @@ def _relative_strength_context(timing: dict, row: dict) -> dict:
             "reason": f"Força relativa ao mercado (20 sessões): {excess:+.2f} pp"}
 
 
+def _sector_relative_strength_context(timing, row):
+    """Sector comparison only when a matched ETF observation is verified."""
+    stock = _f(timing.get("return_20d_pct"))
+    sector = _f(row.get("opportunity_sector_return_20d_pct"))
+    ticker = str(row.get("opportunity_sector_benchmark_ticker") or "").strip().upper()
+    if stock is None or sector is None or not ticker or row.get("opportunity_sector_benchmark_verified") is not True:
+        return {"status": "unavailable", "excess_20d_pp": None, "benchmark": None}
+    excess = round(stock - sector, 2)
+    return {"status": "outperforming" if excess > 0 else "underperforming" if excess < 0 else "matching",
+            "excess_20d_pp": excess, "benchmark": ticker}
+
+
 def _event_risk_context(row: dict) -> dict:
     """Summarise imminent binary-event risk without adding alpha.
 
@@ -464,6 +476,9 @@ def _insufficient(reason, components=None, gates=None, timing=None):
         "opportunity_suppressed_reason": reason,
         "opportunity_gates": gates or [],
         "opportunity_caps": [],
+        "opportunity_sector_relative_strength_20d_pp": None,
+        "opportunity_sector_relative_strength_status": "unavailable",
+        "opportunity_sector_relative_strength_benchmark": None,
         "opportunity_relative_strength_20d_pp": None,
         "opportunity_relative_strength_status": "unavailable",
     }
@@ -499,6 +514,7 @@ def assess(row: dict) -> dict:
     upside_support = _upside_support(row)
     event_risk = _event_risk_context(row)
     relative_strength = _relative_strength_context(timing, row)
+    sector_relative = _sector_relative_strength_context(timing, row)
 
     gates = [
         _gate("score_available", score is not None, value=score, detail="Score Vestra não pode estar suprimido"),
@@ -586,9 +602,13 @@ def assess(row: dict) -> dict:
 
     gate = str(row.get("risk_gate") or "unknown").lower()
     reasons = list(timing.get("reasons") or [])
+    if sector_relative["status"] == "outperforming":
+        reasons.append("Força relativa setorial (20 sessões): {:+.2f} pp vs {}".format(sector_relative["excess_20d_pp"], sector_relative["benchmark"]))
     if relative_strength["status"] == "outperforming":
         reasons.append(relative_strength["reason"])
     cautions = list(timing.get("cautions") or [])
+    if sector_relative["status"] == "underperforming":
+        cautions.append("Fraqueza relativa setorial (20 sessões): {:+.2f} pp vs {}".format(sector_relative["excess_20d_pp"], sector_relative["benchmark"]))
     if relative_strength["status"] == "underperforming":
         cautions.append(relative_strength["reason"])
     caps = []
@@ -806,6 +826,9 @@ def assess(row: dict) -> dict:
         "opportunity_event_risk_days": event_risk.get("days"),
         "opportunity_event_risk_date": event_risk.get("date"),
         "opportunity_event_risk_source": event_risk.get("source"),
+        "opportunity_sector_relative_strength_20d_pp": sector_relative["excess_20d_pp"],
+        "opportunity_sector_relative_strength_status": sector_relative["status"],
+        "opportunity_sector_relative_strength_benchmark": sector_relative["benchmark"],
         "opportunity_relative_strength_20d_pp": relative_strength["excess_20d_pp"],
         "opportunity_relative_strength_status": relative_strength["status"],
         "opportunity_return_20d_pct": timing.get("return_20d_pct"),
