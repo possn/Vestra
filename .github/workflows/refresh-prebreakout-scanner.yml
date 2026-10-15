@@ -38,6 +38,7 @@ jobs:
           python tests/test_archive_prebreakout_scan.py
           python tests/test_build_prebreakout_observations.py
           python tests/test_build_prebreakout_transitions.py
+          python tests/test_check_prebreakout_transitions.py
           python tests/test_check_prebreakout_publication.py
       - name: Scan bounded liquid universe
         run: python scripts/refresh_prebreakout_scanner.py
@@ -54,6 +55,7 @@ jobs:
           python scripts/archive_prebreakout_scan.py
           python scripts/build_prebreakout_observations.py
           python scripts/build_prebreakout_transitions.py
+          python scripts/check_prebreakout_transitions.py
           python scripts/check_prebreakout_publication.py
           git add data/prebreakout-signals.json data/prebreakout-history/ data/prebreakout-observations.json data/prebreakout-transitions.json
           if ! git diff --cached --quiet; then
