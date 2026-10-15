@@ -101,7 +101,29 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
             "goldenCrossImminent":bool(near_cross),
             "source":"yahoo:daily_ohlcv"}
 
-def candidates(stocks: list[dict], when: date, slot: int = 0):
+def watched_tickers(now:datetime, path:Path=ROOT/"data/prebreakout-observations.json", limit:int=25)->list[str]:
+    """Revisit published candidates; historical status alone is never a live signal."""
+    try:
+        data=json.loads(path.read_text(encoding="utf-8"))
+        if data.get("schema")!="vestra_prebreakout_observations_v1" or data.get("historical_only") is not True:
+            return []
+        checked=datetime.fromisoformat(str(data["generated_at"]).replace("Z","+00:00"))
+        if checked.tzinfo is None or not 0<=(now-checked).total_seconds()/86400<=7:return []
+        seen=set();result=[]
+        for row in data.get("observations",[]):
+            ticker=str(row.get("ticker") or "").strip().upper()
+            stamp=datetime.fromisoformat(str(row["observed_at"]).replace("Z","+00:00"))
+            if (not ticker or ticker in seen or stamp.tzinfo is None or
+                not 0<=(now-stamp).total_seconds()/86400<=7 or
+                row.get("current") is not False or row.get("stage") not in ("compressão","pré-breakout","confirmado")):
+                continue
+            seen.add(ticker);result.append(ticker)
+            if len(result)>=limit:break
+        return result
+    except (OSError,ValueError,TypeError,KeyError,AttributeError):
+        return []
+
+def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|None=None):
     universe={}
     for s in stocks:
         ticker=str(s.get("ticker") or "").strip().upper()
@@ -117,8 +139,13 @@ def candidates(stocks: list[dict], when: date, slot: int = 0):
     # the same 110 rotating stocks at 02/08/14/20 UTC.
     if not 0<=slot<=3:raise ValueError("invalid six-hour scan slot")
     offset=(((when-date(2026,10,13)).days*4+slot)*110)%max(1,len(rest))
-    rotation=(rest[offset:]+rest[:offset])[:110]
-    return anchors+[t for t in rotation if t not in anchors]
+    watchlist=[]
+    for ticker in watch or []:
+        if ticker in universe and ticker not in anchors and ticker not in watchlist:
+            watchlist.append(ticker)
+            if len(watchlist)>=25:break
+    rotation=[t for t in rest[offset:]+rest[:offset] if t not in anchors and t not in watchlist][:110-len(watchlist)]
+    return anchors+watchlist+rotation
 
 def dataframe_bars(frame):
     rows=[]
@@ -139,7 +166,7 @@ def dataframe_bars(frame):
 
 def main():
     import yfinance as yf
-    now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6)
+    now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
     found=[];checked=0;failures=[]
     for start in range(0,len(tickers),15):
         group=tickers[start:start+15]
