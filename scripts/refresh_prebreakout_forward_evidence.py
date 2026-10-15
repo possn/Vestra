@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""Retrieve adjusted *completed* daily closes for archived point-in-time cohorts.
+
+Data come from independent Yahoo Finance historical downloads (auto_adjust=True).
+Never backfill scanner signals; never evaluate intraday unfinished bars.
+A failed price download is an error, not zero performance.
+"""
+from __future__ import annotations
+import argparse
+import json
+import math
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from build_prebreakout_forward_cohorts import cohorts, build
+
+ROOT=Path(__file__).resolve().parents[1]
+
+def completed_bars(frame, today):
+    """Normalize a Yahoo frame to an unambiguous UTC-date daily close series."""
+    if frame is None or getattr(frame,"empty",True):
+        raise ValueError("missing price history")
+    result=[]; dates=set()
+    if "Close" not in frame.columns:raise ValueError("missing adjusted Close")
+    for stamp, row in frame.iterrows():
+        day=stamp.date()
+        if day>=today:continue   # current UTC session may still be forming
+        value=float(row["Close"])
+        if day in dates or not math.isfinite(value) or value<=0:
+            raise ValueError("duplicate or invalid adjusted closing price")
+        dates.add(day)
+        result.append({"date":day.isoformat(),"close":value})
+    if not result:raise ValueError("no completed daily prices")
+    return sorted(result,key=lambda x:x["date"])
+
+def gather(archive:Path, downloader, now=None):
+    now=now or datetime.now(timezone.utc)
+    if now.tzinfo is None:raise ValueError("UTC clock required")
+    today=now.astimezone(timezone.utc).date()
+    items=cohorts(archive)
+    if not items:raise ValueError("no immutable historical cohorts")
+    earliest=min(datetime.fromisoformat(c["published_at"]).date() for c in items)
+    start=(earliest-timedelta(days=7)).isoformat()
+    end=(today+timedelta(days=1)).isoformat()
+    tickers=sorted(set(c["ticker"] for c in items)|{"SPY"})
+    prices={}; failures={}
+    for ticker in tickers:
+        try:
+            frame=downloader(ticker,start=start,end=end,auto_adjust=True,progress=False,threads=False)
+            prices[ticker]=completed_bars(frame,today)
+        except Exception as exc:
+            failures[ticker]=type(exc).__name__
+    if "SPY" not in prices:
+        raise ValueError("benchmark SPY adjusted closes unavailable")
+    results=build(archive,prices,prices["SPY"])
+    results["price_metadata"]={"provider":"yahoo_finance","auto_adjust":True,
+        "completed_before_utc_date":today.isoformat(),"benchmark":"SPY",
+        "downloaded":len(prices),"failed":failures}
+    return results
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--archive",type=Path,default=ROOT/"data/prebreakout-history")
+    parser.add_argument("--output",type=Path,default=ROOT/"data/prebreakout-forward-evidence.json")
+    args=parser.parse_args()
+    import yfinance as yf
+    result=gather(args.archive,yf.download)
+    args.output.write_text(json.dumps(result,ensure_ascii=False,allow_nan=False,indent=2)+"\n",encoding="utf-8")
+    print(f"Evaluated {result['cohort_count']} archived cohorts")
+
+if __name__=="__main__":
+    main()
