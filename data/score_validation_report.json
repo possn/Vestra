@@ -1,11 +1,11 @@
 {
   "schema_version": 5,
   "generator_version": "score-forward-validation/cohort-aware-model-evidence-v3",
-  "generated_at": "2026-10-12T15:49:23.720140+00:00",
+  "generated_at": "2026-10-15T11:46:46.192838+00:00",
   "freshness": {
     "status": "current_at_generation",
-    "as_of_date": "2026-10-12",
-    "valid_through": "2026-10-14T03:49:23.720140+00:00",
+    "as_of_date": "2026-10-15",
+    "valid_through": "2026-10-16T23:46:46.192838+00:00",
     "validity_hours": 36,
     "latest_snapshot_date": "2026-10-11",
     "stale_if": "expired valid_through or generator/schema version differs from the current validator"
@@ -17,22 +17,22 @@
     168
   ],
   "snapshots_available": 8,
-  "realised_outcomes": 4582,
-  "new_outcomes_this_run": 15,
-  "repaired_corporate_action_outcomes_this_run": 0,
+  "realised_outcomes": 6032,
+  "new_outcomes_this_run": 1450,
+  "repaired_corporate_action_outcomes_this_run": 1,
   "horizons": {
     "28": {
-      "n": 4581,
-      "rank_information_coefficient": 0.1524,
-      "top_quintile_mean_return_pct": -2.24,
-      "bottom_quintile_mean_return_pct": -6.06,
-      "top_minus_bottom_pct": 3.82,
-      "top_quintile_median_return_pct": -3.13,
-      "bottom_quintile_median_return_pct": -7.51,
-      "median_top_minus_bottom_pct": 4.38,
-      "top_quintile_winsorized_mean_return_pct": -2.46,
-      "bottom_quintile_winsorized_mean_return_pct": -7.08,
-      "winsorized_top_minus_bottom_pct": 4.62,
+      "n": 6030,
+      "rank_information_coefficient": 0.1918,
+      "top_quintile_mean_return_pct": -1.81,
+      "bottom_quintile_mean_return_pct": -6.68,
+      "top_minus_bottom_pct": 4.87,
+      "top_quintile_median_return_pct": -2.36,
+      "bottom_quintile_median_return_pct": -8.23,
+      "median_top_minus_bottom_pct": 5.87,
+      "top_quintile_winsorized_mean_return_pct": -1.96,
+      "bottom_quintile_winsorized_mean_return_pct": -8.1,
+      "winsorized_top_minus_bottom_pct": 6.14,
       "peer_shadow_comparison": {
         "role": "production_parity_reconstruction",
         "candidate_active": false,
@@ -58,36 +58,46 @@
         "positive_peer_shadow_spread_cohorts": 0,
         "cohorts": []
       },
-      "cohort_count": 3,
-      "expected_matured_cohorts": 3,
+      "cohort_count": 4,
+      "expected_matured_cohorts": 4,
       "cohort_capture_pct": 100.0,
-      "median_cohort_rank_ic": 0.1083,
-      "positive_ic_cohorts": 3,
-      "median_cohort_top_minus_bottom_pct": 2.97,
-      "positive_spread_cohorts": 3,
-      "median_cohort_robust_spread_pct": 3.13,
-      "positive_robust_spread_cohorts": 3,
+      "median_cohort_rank_ic": 0.1742,
+      "positive_ic_cohorts": 4,
+      "median_cohort_top_minus_bottom_pct": 4.16,
+      "positive_spread_cohorts": 4,
+      "median_cohort_robust_spread_pct": 5.5,
+      "positive_robust_spread_cohorts": 4,
       "factor_rank_information_coefficient": {
-        "score": 0.1524,
-        "quality_pct": 0.1071,
-        "growth_pct": 0.0933,
-        "balance_pct": 0.0458,
-        "cashflow_pct": 0.0559,
-        "value_pct": -0.0817,
-        "execution_pct": -0.0018,
-        "earnings_quality_pct": 0.0693,
-        "capital_allocation_pct": 0.0615,
-        "stability_pct": 0.003
+        "score": 0.1918,
+        "quality_pct": 0.1596,
+        "growth_pct": 0.0762,
+        "balance_pct": 0.0259,
+        "cashflow_pct": 0.104,
+        "value_pct": -0.0973,
+        "execution_pct": -0.003,
+        "earnings_quality_pct": 0.0874,
+        "capital_allocation_pct": 0.1162,
+        "stability_pct": 0.0542
       },
       "score_model_assignment_stability": {
-        "cohort_count": 3,
-        "adjacent_pair_count": 2,
+        "cohort_count": 4,
+        "adjacent_pair_count": 3,
         "median_adjacent_model_retention_pct": 99.9,
         "min_adjacent_model_retention_pct": 99.9,
-        "migrated_model_assignments": 2,
+        "migrated_model_assignments": 4,
         "top_transitions": [
           {
             "from_model": "biotech",
+            "to_model": "general",
+            "n": 1
+          },
+          {
+            "from_model": "general",
+            "to_model": "growth_tech",
+            "n": 1
+          },
+          {
+            "from_model": "growth_tech",
             "to_model": "general",
             "n": 1
           },
@@ -121,63 +131,83 @@
           {
             "from_cohort_date": "2026-09-03",
             "to_cohort_date": "2026-09-10",
-            "overlap_n": 1436,
-            "retained_model_n": 1436,
+            "overlap_n": 1450,
+            "retained_model_n": 1450,
             "migrated_model_n": 0,
             "model_retention_pct": 100.0,
             "transitions": []
+          },
+          {
+            "from_cohort_date": "2026-09-10",
+            "to_cohort_date": "2026-09-17",
+            "overlap_n": 1375,
+            "retained_model_n": 1373,
+            "migrated_model_n": 2,
+            "model_retention_pct": 99.9,
+            "transitions": [
+              {
+                "from_model": "general",
+                "to_model": "growth_tech",
+                "n": 1
+              },
+              {
+                "from_model": "growth_tech",
+                "to_model": "general",
+                "n": 1
+              }
+            ]
           }
         ],
         "interpretation": "Descriptive only. Low retention means longitudinal model evidence may partly reflect score-model reassignment of the same tickers rather than signal drift."
       },
       "by_score_model": {
         "bank": {
-          "n": 258,
-          "rank_information_coefficient": -0.0223,
-          "top_quintile_mean_return_pct": -4.86,
-          "bottom_quintile_mean_return_pct": -3.69,
-          "top_minus_bottom_pct": -1.17,
-          "top_quintile_median_return_pct": -6.1,
-          "bottom_quintile_median_return_pct": -6.13,
-          "median_top_minus_bottom_pct": 0.03,
-          "top_quintile_winsorized_mean_return_pct": -4.8,
-          "bottom_quintile_winsorized_mean_return_pct": -4.1,
-          "winsorized_top_minus_bottom_pct": -0.7,
-          "cohort_count": 3,
-          "median_cohort_rank_ic": -0.0995,
-          "positive_ic_cohorts": 1,
-          "median_cohort_robust_spread_pct": -4.03,
-          "positive_robust_spread_cohorts": 1,
+          "n": 337,
+          "rank_information_coefficient": 0.0462,
+          "top_quintile_mean_return_pct": -3.89,
+          "bottom_quintile_mean_return_pct": -4.13,
+          "top_minus_bottom_pct": 0.24,
+          "top_quintile_median_return_pct": -5.88,
+          "bottom_quintile_median_return_pct": -6.45,
+          "median_top_minus_bottom_pct": 0.56,
+          "top_quintile_winsorized_mean_return_pct": -3.94,
+          "bottom_quintile_winsorized_mean_return_pct": -4.44,
+          "winsorized_top_minus_bottom_pct": 0.5,
+          "cohort_count": 4,
+          "median_cohort_rank_ic": 0.0788,
+          "positive_ic_cohorts": 2,
+          "median_cohort_robust_spread_pct": 0.44,
+          "positive_robust_spread_cohorts": 2,
           "stability": {
             "rank_ic": {
               "min": -0.265,
-              "max": 0.2565,
-              "range": 0.5215,
-              "median_absolute_deviation": 0.1655
+              "max": 0.2792,
+              "range": 0.5442,
+              "median_absolute_deviation": 0.1894
             },
             "robust_spread_pct": {
               "min": -7.42,
-              "max": 5.6,
-              "range": 13.02,
-              "median_absolute_deviation": 3.39
+              "max": 5.46,
+              "range": 12.88,
+              "median_absolute_deviation": 4.75
             },
-            "cohorts_with_both_metrics": 3,
-            "joint_positive_cohorts": 1,
-            "joint_positive_share_pct": 33.3,
+            "cohorts_with_both_metrics": 4,
+            "joint_positive_cohorts": 2,
+            "joint_positive_share_pct": 50.0,
             "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
           },
           "composition_stability": {
-            "cohort_count": 3,
+            "cohort_count": 4,
             "cohort_size": {
-              "min": 83,
-              "max": 88,
-              "median": 87,
-              "range": 5
+              "min": 78,
+              "max": 89,
+              "median": 85.0,
+              "range": 11
             },
-            "adjacent_pair_count": 2,
-            "median_adjacent_jaccard_pct": 91.7,
-            "min_adjacent_jaccard_pct": 90.2,
-            "median_adjacent_overlap_n": 82.5,
+            "adjacent_pair_count": 3,
+            "median_adjacent_jaccard_pct": 91.3,
+            "min_adjacent_jaccard_pct": 87.6,
+            "median_adjacent_overlap_n": 82,
             "pairs": [
               {
                 "from_cohort_date": "2026-08-27",
@@ -191,14 +221,22 @@
                 "from_cohort_date": "2026-09-03",
                 "to_cohort_date": "2026-09-10",
                 "from_n": 87,
-                "to_n": 88,
-                "overlap_n": 83,
-                "jaccard_pct": 90.2
+                "to_n": 89,
+                "overlap_n": 84,
+                "jaccard_pct": 91.3
+              },
+              {
+                "from_cohort_date": "2026-09-10",
+                "to_cohort_date": "2026-09-17",
+                "from_n": 89,
+                "to_n": 78,
+                "overlap_n": 78,
+                "jaccard_pct": 87.6
               }
             ],
             "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
           },
-          "status": "collecting_evidence",
+          "status": "early_signal",
           "cohorts": [
             {
               "cohort_date": "2026-08-27",
@@ -230,67 +268,81 @@
             },
             {
               "cohort_date": "2026-09-10",
-              "n": 88,
-              "rank_information_coefficient": 0.2565,
-              "top_quintile_mean_return_pct": -2.51,
+              "n": 89,
+              "rank_information_coefficient": 0.2572,
+              "top_quintile_mean_return_pct": -2.65,
               "bottom_quintile_mean_return_pct": -8.11,
-              "top_minus_bottom_pct": 5.6,
-              "top_quintile_median_return_pct": -5.92,
+              "top_minus_bottom_pct": 5.46,
+              "top_quintile_median_return_pct": -6.26,
               "bottom_quintile_median_return_pct": -8.61,
-              "median_top_minus_bottom_pct": 2.7,
-              "top_quintile_winsorized_mean_return_pct": -2.51,
+              "median_top_minus_bottom_pct": 2.35,
+              "top_quintile_winsorized_mean_return_pct": -2.65,
               "bottom_quintile_winsorized_mean_return_pct": -8.11,
-              "winsorized_top_minus_bottom_pct": 5.6
+              "winsorized_top_minus_bottom_pct": 5.46
+            },
+            {
+              "cohort_date": "2026-09-17",
+              "n": 78,
+              "rank_information_coefficient": 0.2792,
+              "top_quintile_mean_return_pct": -1.13,
+              "bottom_quintile_mean_return_pct": -6.05,
+              "top_minus_bottom_pct": 4.92,
+              "top_quintile_median_return_pct": -4.41,
+              "bottom_quintile_median_return_pct": -8.46,
+              "median_top_minus_bottom_pct": 4.05,
+              "top_quintile_winsorized_mean_return_pct": -1.13,
+              "bottom_quintile_winsorized_mean_return_pct": -6.05,
+              "winsorized_top_minus_bottom_pct": 4.92
             }
           ]
         },
         "biotech": {
-          "n": 420,
-          "rank_information_coefficient": 0.1946,
-          "top_quintile_mean_return_pct": -3.39,
-          "bottom_quintile_mean_return_pct": -4.2,
-          "top_minus_bottom_pct": 0.81,
-          "top_quintile_median_return_pct": -4.19,
-          "bottom_quintile_median_return_pct": -11.83,
-          "median_top_minus_bottom_pct": 7.64,
-          "top_quintile_winsorized_mean_return_pct": -5.01,
-          "bottom_quintile_winsorized_mean_return_pct": -10.62,
-          "winsorized_top_minus_bottom_pct": 5.61,
-          "cohort_count": 3,
-          "median_cohort_rank_ic": 0.2018,
-          "positive_ic_cohorts": 3,
-          "median_cohort_robust_spread_pct": 5.71,
-          "positive_robust_spread_cohorts": 3,
+          "n": 538,
+          "rank_information_coefficient": 0.2395,
+          "top_quintile_mean_return_pct": -2.75,
+          "bottom_quintile_mean_return_pct": -1.72,
+          "top_minus_bottom_pct": -1.03,
+          "top_quintile_median_return_pct": -2.93,
+          "bottom_quintile_median_return_pct": -12.78,
+          "median_top_minus_bottom_pct": 9.85,
+          "top_quintile_winsorized_mean_return_pct": -4.02,
+          "bottom_quintile_winsorized_mean_return_pct": -12.0,
+          "winsorized_top_minus_bottom_pct": 7.99,
+          "cohort_count": 4,
+          "median_cohort_rank_ic": 0.2019,
+          "positive_ic_cohorts": 4,
+          "median_cohort_robust_spread_pct": 6.98,
+          "positive_robust_spread_cohorts": 4,
           "stability": {
             "rank_ic": {
               "min": 0.1918,
-              "max": 0.202,
-              "range": 0.0102,
-              "median_absolute_deviation": 0.0002
+              "max": 0.3773,
+              "range": 0.1855,
+              "median_absolute_deviation": 0.0051
             },
             "robust_spread_pct": {
               "min": 5.48,
-              "max": 8.25,
-              "range": 2.77,
-              "median_absolute_deviation": 0.23
+              "max": 13.51,
+              "range": 8.03,
+              "median_absolute_deviation": 1.39
             },
-            "cohorts_with_both_metrics": 3,
-            "joint_positive_cohorts": 3,
+            "cohorts_with_both_metrics": 4,
+            "joint_positive_cohorts": 4,
             "joint_positive_share_pct": 100.0,
             "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
           },
           "composition_stability": {
-            "cohort_count": 3,
+            "cohort_count": 4,
             "cohort_size": {
-              "min": 139,
+              "min": 118,
               "max": 141,
-              "median": 140,
-              "range": 2
+              "median": 139.5,
+              "range": 23
             },
-            "adjacent_pair_count": 2,
-            "median_adjacent_jaccard_pct": 82.7,
-            "min_adjacent_jaccard_pct": 80.6,
-            "median_adjacent_overlap_n": 126.5,
+            "adjacent_pair_count": 3,
+            "median_adjacent_jaccard_pct": 80.6,
+            "min_adjacent_jaccard_pct": 73.2,
+            "median_adjacent_overlap_n": 125,
             "pairs": [
               {
                 "from_cohort_date": "2026-08-27",
@@ -307,11 +359,19 @@
                 "to_n": 140,
                 "overlap_n": 128,
                 "jaccard_pct": 84.8
+              },
+              {
+                "from_cohort_date": "2026-09-10",
+                "to_cohort_date": "2026-09-17",
+                "from_n": 140,
+                "to_n": 118,
+                "overlap_n": 109,
+                "jaccard_pct": 73.2
               }
             ],
             "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
           },
-          "status": "collecting_evidence",
+          "status": "early_signal",
           "cohorts": [
             {
               "cohort_date": "2026-08-27",
@@ -354,56 +414,70 @@
               "top_quintile_winsorized_mean_return_pct": -3.59,
               "bottom_quintile_winsorized_mean_return_pct": -11.84,
               "winsorized_top_minus_bottom_pct": 8.25
+            },
+            {
+              "cohort_date": "2026-09-17",
+              "n": 118,
+              "rank_information_coefficient": 0.3773,
+              "top_quintile_mean_return_pct": -0.87,
+              "bottom_quintile_mean_return_pct": 11.06,
+              "top_minus_bottom_pct": -11.93,
+              "top_quintile_median_return_pct": 0.34,
+              "bottom_quintile_median_return_pct": -21.1,
+              "median_top_minus_bottom_pct": 21.45,
+              "top_quintile_winsorized_mean_return_pct": -0.68,
+              "bottom_quintile_winsorized_mean_return_pct": -14.19,
+              "winsorized_top_minus_bottom_pct": 13.51
             }
           ]
         },
         "energy": {
-          "n": 256,
-          "rank_information_coefficient": 0.5342,
-          "top_quintile_mean_return_pct": 1.36,
-          "bottom_quintile_mean_return_pct": -15.21,
-          "top_minus_bottom_pct": 16.57,
-          "top_quintile_median_return_pct": 2.11,
-          "bottom_quintile_median_return_pct": -12.45,
-          "median_top_minus_bottom_pct": 14.56,
-          "top_quintile_winsorized_mean_return_pct": 1.43,
-          "bottom_quintile_winsorized_mean_return_pct": -14.97,
-          "winsorized_top_minus_bottom_pct": 16.4,
-          "cohort_count": 3,
-          "median_cohort_rank_ic": 0.5104,
-          "positive_ic_cohorts": 3,
-          "median_cohort_robust_spread_pct": 17.33,
-          "positive_robust_spread_cohorts": 3,
+          "n": 335,
+          "rank_information_coefficient": 0.527,
+          "top_quintile_mean_return_pct": 1.91,
+          "bottom_quintile_mean_return_pct": -14.41,
+          "top_minus_bottom_pct": 16.33,
+          "top_quintile_median_return_pct": 2.32,
+          "bottom_quintile_median_return_pct": -11.94,
+          "median_top_minus_bottom_pct": 14.26,
+          "top_quintile_winsorized_mean_return_pct": 1.85,
+          "bottom_quintile_winsorized_mean_return_pct": -13.89,
+          "winsorized_top_minus_bottom_pct": 15.75,
+          "cohort_count": 4,
+          "median_cohort_rank_ic": 0.5142,
+          "positive_ic_cohorts": 4,
+          "median_cohort_robust_spread_pct": 16.93,
+          "positive_robust_spread_cohorts": 4,
           "stability": {
             "rank_ic": {
               "min": 0.4898,
               "max": 0.6424,
               "range": 0.1526,
-              "median_absolute_deviation": 0.0206
+              "median_absolute_deviation": 0.0141
             },
             "robust_spread_pct": {
               "min": 11.8,
               "max": 19.67,
               "range": 7.87,
-              "median_absolute_deviation": 2.34
+              "median_absolute_deviation": 1.57
             },
-            "cohorts_with_both_metrics": 3,
-            "joint_positive_cohorts": 3,
+            "cohorts_with_both_metrics": 4,
+            "joint_positive_cohorts": 4,
             "joint_positive_share_pct": 100.0,
             "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
           },
           "composition_stability": {
-            "cohort_count": 3,
+            "cohort_count": 4,
             "cohort_size": {
-              "min": 84,
+              "min": 79,
               "max": 86,
-              "median": 86,
-              "range": 2
+              "median": 85.0,
+              "range": 7
             },
-            "adjacent_pair_count": 2,
-            "median_adjacent_jaccard_pct": 88.9,
+            "adjacent_pair_count": 3,
+            "median_adjacent_jaccard_pct": 89.0,
             "min_adjacent_jaccard_pct": 88.9,
-            "median_adjacent_overlap_n": 80.5,
+            "median_adjacent_overlap_n": 80,
             "pairs": [
               {
                 "from_cohort_date": "2026-08-27",
@@ -420,11 +494,19 @@
                 "to_n": 84,
                 "overlap_n": 80,
                 "jaccard_pct": 88.9
+              },
+              {
+                "from_cohort_date": "2026-09-10",
+                "to_cohort_date": "2026-09-17",
+                "from_n": 84,
+                "to_n": 79,
+                "overlap_n": 77,
+                "jaccard_pct": 89.5
               }
             ],
             "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
           },
-          "status": "collecting_evidence",
+          "status": "early_signal",
           "cohorts": [
             {
               "cohort_date": "2026-08-27",
@@ -467,56 +549,70 @@
               "top_quintile_winsorized_mean_return_pct": 2.2,
               "bottom_quintile_winsorized_mean_return_pct": -15.12,
               "winsorized_top_minus_bottom_pct": 17.33
+            },
+            {
+              "cohort_date": "2026-09-17",
+              "n": 79,
+              "rank_information_coefficient": 0.5181,
+              "top_quintile_mean_return_pct": 3.88,
+              "bottom_quintile_mean_return_pct": -12.65,
+              "top_minus_bottom_pct": 16.53,
+              "top_quintile_median_return_pct": 3.43,
+              "bottom_quintile_median_return_pct": -7.84,
+              "median_top_minus_bottom_pct": 11.27,
+              "top_quintile_winsorized_mean_return_pct": 3.88,
+              "bottom_quintile_winsorized_mean_return_pct": -12.65,
+              "winsorized_top_minus_bottom_pct": 16.53
             }
           ]
         },
         "general": {
-          "n": 2524,
-          "rank_information_coefficient": 0.1032,
-          "top_quintile_mean_return_pct": -4.64,
-          "bottom_quintile_mean_return_pct": -5.89,
-          "top_minus_bottom_pct": 1.24,
-          "top_quintile_median_return_pct": -5.3,
-          "bottom_quintile_median_return_pct": -8.16,
-          "median_top_minus_bottom_pct": 2.86,
-          "top_quintile_winsorized_mean_return_pct": -4.77,
-          "bottom_quintile_winsorized_mean_return_pct": -6.56,
-          "winsorized_top_minus_bottom_pct": 1.79,
-          "cohort_count": 3,
-          "median_cohort_rank_ic": 0.057,
-          "positive_ic_cohorts": 3,
-          "median_cohort_robust_spread_pct": 0.38,
-          "positive_robust_spread_cohorts": 2,
+          "n": 3338,
+          "rank_information_coefficient": 0.1505,
+          "top_quintile_mean_return_pct": -4.04,
+          "bottom_quintile_mean_return_pct": -6.96,
+          "top_minus_bottom_pct": 2.92,
+          "top_quintile_median_return_pct": -4.47,
+          "bottom_quintile_median_return_pct": -9.25,
+          "median_top_minus_bottom_pct": 4.77,
+          "top_quintile_winsorized_mean_return_pct": -4.11,
+          "bottom_quintile_winsorized_mean_return_pct": -7.75,
+          "winsorized_top_minus_bottom_pct": 3.64,
+          "cohort_count": 4,
+          "median_cohort_rank_ic": 0.1356,
+          "positive_ic_cohorts": 4,
+          "median_cohort_robust_spread_pct": 2.98,
+          "positive_robust_spread_cohorts": 3,
           "stability": {
             "rank_ic": {
               "min": 0.0225,
-              "max": 0.2193,
-              "range": 0.1968,
-              "median_absolute_deviation": 0.0345
+              "max": 0.2865,
+              "range": 0.264,
+              "median_absolute_deviation": 0.0958
             },
             "robust_spread_pct": {
               "min": -0.74,
-              "max": 6.15,
-              "range": 6.89,
-              "median_absolute_deviation": 1.12
+              "max": 9.72,
+              "range": 10.46,
+              "median_absolute_deviation": 3.17
             },
-            "cohorts_with_both_metrics": 3,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 66.7,
+            "cohorts_with_both_metrics": 4,
+            "joint_positive_cohorts": 3,
+            "joint_positive_share_pct": 75.0,
             "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
           },
           "composition_stability": {
-            "cohort_count": 3,
+            "cohort_count": 4,
             "cohort_size": {
-              "min": 826,
+              "min": 800,
               "max": 859,
-              "median": 839,
-              "range": 33
+              "median": 839.5,
+              "range": 59
             },
-            "adjacent_pair_count": 2,
-            "median_adjacent_jaccard_pct": 87.0,
-            "min_adjacent_jaccard_pct": 86.8,
-            "median_adjacent_overlap_n": 787.0,
+            "adjacent_pair_count": 3,
+            "median_adjacent_jaccard_pct": 87.2,
+            "min_adjacent_jaccard_pct": 86.4,
+            "median_adjacent_overlap_n": 791,
             "pairs": [
               {
                 "from_cohort_date": "2026-08-27",
@@ -530,14 +626,22 @@
                 "from_cohort_date": "2026-09-03",
                 "to_cohort_date": "2026-09-10",
                 "from_n": 859,
-                "to_n": 826,
-                "overlap_n": 783,
-                "jaccard_pct": 86.8
+                "to_n": 840,
+                "overlap_n": 793,
+                "jaccard_pct": 87.5
+              },
+              {
+                "from_cohort_date": "2026-09-10",
+                "to_cohort_date": "2026-09-17",
+                "from_n": 840,
+                "to_n": 800,
+                "overlap_n": 760,
+                "jaccard_pct": 86.4
               }
             ],
             "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
           },
-          "status": "collecting_evidence",
+          "status": "early_signal",
           "cohorts": [
             {
               "cohort_date": "2026-08-27",
@@ -569,67 +673,81 @@
             },
             {
               "cohort_date": "2026-09-10",
-              "n": 826,
-              "rank_information_coefficient": 0.2193,
-              "top_quintile_mean_return_pct": -2.63,
-              "bottom_quintile_mean_return_pct": -7.28,
-              "top_minus_bottom_pct": 4.65,
-              "top_quintile_median_return_pct": -2.32,
-              "bottom_quintile_median_return_pct": -9.52,
-              "median_top_minus_bottom_pct": 7.19,
-              "top_quintile_winsorized_mean_return_pct": -2.6,
-              "bottom_quintile_winsorized_mean_return_pct": -8.75,
-              "winsorized_top_minus_bottom_pct": 6.15
+              "n": 840,
+              "rank_information_coefficient": 0.2141,
+              "top_quintile_mean_return_pct": -2.51,
+              "bottom_quintile_mean_return_pct": -6.9,
+              "top_minus_bottom_pct": 4.39,
+              "top_quintile_median_return_pct": -2.27,
+              "bottom_quintile_median_return_pct": -9.42,
+              "median_top_minus_bottom_pct": 7.15,
+              "top_quintile_winsorized_mean_return_pct": -2.48,
+              "bottom_quintile_winsorized_mean_return_pct": -8.07,
+              "winsorized_top_minus_bottom_pct": 5.59
+            },
+            {
+              "cohort_date": "2026-09-17",
+              "n": 800,
+              "rank_information_coefficient": 0.2865,
+              "top_quintile_mean_return_pct": -2.43,
+              "bottom_quintile_mean_return_pct": -10.68,
+              "top_minus_bottom_pct": 8.25,
+              "top_quintile_median_return_pct": -2.41,
+              "bottom_quintile_median_return_pct": -13.01,
+              "median_top_minus_bottom_pct": 10.6,
+              "top_quintile_winsorized_mean_return_pct": -2.2,
+              "bottom_quintile_winsorized_mean_return_pct": -11.92,
+              "winsorized_top_minus_bottom_pct": 9.72
             }
           ]
         },
         "growth_tech": {
-          "n": 574,
-          "rank_information_coefficient": 0.0994,
-          "top_quintile_mean_return_pct": 3.26,
-          "bottom_quintile_mean_return_pct": -0.94,
-          "top_minus_bottom_pct": 4.2,
-          "top_quintile_median_return_pct": 3.17,
-          "bottom_quintile_median_return_pct": -2.27,
-          "median_top_minus_bottom_pct": 5.44,
-          "top_quintile_winsorized_mean_return_pct": 4.17,
-          "bottom_quintile_winsorized_mean_return_pct": -1.08,
-          "winsorized_top_minus_bottom_pct": 5.25,
-          "cohort_count": 3,
-          "median_cohort_rank_ic": 0.026,
-          "positive_ic_cohorts": 2,
-          "median_cohort_robust_spread_pct": 0.57,
-          "positive_robust_spread_cohorts": 2,
+          "n": 756,
+          "rank_information_coefficient": 0.1555,
+          "top_quintile_mean_return_pct": 2.21,
+          "bottom_quintile_mean_return_pct": -3.19,
+          "top_minus_bottom_pct": 5.4,
+          "top_quintile_median_return_pct": 2.43,
+          "bottom_quintile_median_return_pct": -3.03,
+          "median_top_minus_bottom_pct": 5.46,
+          "top_quintile_winsorized_mean_return_pct": 3.22,
+          "bottom_quintile_winsorized_mean_return_pct": -3.31,
+          "winsorized_top_minus_bottom_pct": 6.53,
+          "cohort_count": 4,
+          "median_cohort_rank_ic": 0.1515,
+          "positive_ic_cohorts": 3,
+          "median_cohort_robust_spread_pct": 7.09,
+          "positive_robust_spread_cohorts": 3,
           "stability": {
             "rank_ic": {
               "min": -0.0273,
-              "max": 0.2947,
-              "range": 0.322,
-              "median_absolute_deviation": 0.0533
+              "max": 0.3919,
+              "range": 0.4192,
+              "median_absolute_deviation": 0.1522
             },
             "robust_spread_pct": {
               "min": -0.47,
-              "max": 14.45,
-              "range": 14.92,
-              "median_absolute_deviation": 1.04
+              "max": 15.78,
+              "range": 16.25,
+              "median_absolute_deviation": 7.04
             },
-            "cohorts_with_both_metrics": 3,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 66.7,
+            "cohorts_with_both_metrics": 4,
+            "joint_positive_cohorts": 3,
+            "joint_positive_share_pct": 75.0,
             "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
           },
           "composition_stability": {
-            "cohort_count": 3,
+            "cohort_count": 4,
             "cohort_size": {
-              "min": 187,
+              "min": 180,
               "max": 195,
-              "median": 192,
-              "range": 8
+              "median": 190.5,
+              "range": 15
             },
-            "adjacent_pair_count": 2,
+            "adjacent_pair_count": 3,
             "median_adjacent_jaccard_pct": 93.4,
-            "min_adjacent_jaccard_pct": 92.4,
-            "median_adjacent_overlap_n": 185.0,
+            "min_adjacent_jaccard_pct": 90.2,
+            "median_adjacent_overlap_n": 184,
             "pairs": [
               {
                 "from_cohort_date": "2026-08-27",
@@ -643,14 +761,22 @@
                 "from_cohort_date": "2026-09-03",
                 "to_cohort_date": "2026-09-10",
                 "from_n": 192,
-                "to_n": 187,
-                "overlap_n": 182,
-                "jaccard_pct": 92.4
+                "to_n": 189,
+                "overlap_n": 184,
+                "jaccard_pct": 93.4
+              },
+              {
+                "from_cohort_date": "2026-09-10",
+                "to_cohort_date": "2026-09-17",
+                "from_n": 189,
+                "to_n": 180,
+                "overlap_n": 175,
+                "jaccard_pct": 90.2
               }
             ],
             "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
           },
-          "status": "collecting_evidence",
+          "status": "early_signal",
           "cohorts": [
             {
               "cohort_date": "2026-08-27",
@@ -682,67 +808,81 @@
             },
             {
               "cohort_date": "2026-09-10",
-              "n": 187,
-              "rank_information_coefficient": 0.2947,
+              "n": 189,
+              "rank_information_coefficient": 0.277,
               "top_quintile_mean_return_pct": 3.97,
-              "bottom_quintile_mean_return_pct": -9.7,
-              "top_minus_bottom_pct": 13.67,
+              "bottom_quintile_mean_return_pct": -8.74,
+              "top_minus_bottom_pct": 12.71,
               "top_quintile_median_return_pct": 4.12,
-              "bottom_quintile_median_return_pct": -12.12,
-              "median_top_minus_bottom_pct": 16.24,
+              "bottom_quintile_median_return_pct": -7.46,
+              "median_top_minus_bottom_pct": 11.59,
               "top_quintile_winsorized_mean_return_pct": 4.98,
-              "bottom_quintile_winsorized_mean_return_pct": -9.48,
-              "winsorized_top_minus_bottom_pct": 14.45
+              "bottom_quintile_winsorized_mean_return_pct": -8.64,
+              "winsorized_top_minus_bottom_pct": 13.61
+            },
+            {
+              "cohort_date": "2026-09-17",
+              "n": 180,
+              "rank_information_coefficient": 0.3919,
+              "top_quintile_mean_return_pct": 0.85,
+              "bottom_quintile_mean_return_pct": -13.63,
+              "top_minus_bottom_pct": 14.48,
+              "top_quintile_median_return_pct": 1.42,
+              "bottom_quintile_median_return_pct": -14.63,
+              "median_top_minus_bottom_pct": 16.05,
+              "top_quintile_winsorized_mean_return_pct": 1.95,
+              "bottom_quintile_winsorized_mean_return_pct": -13.84,
+              "winsorized_top_minus_bottom_pct": 15.78
             }
           ]
         },
         "insurance": {
-          "n": 147,
-          "rank_information_coefficient": 0.1034,
-          "top_quintile_mean_return_pct": -4.7,
-          "bottom_quintile_mean_return_pct": -4.71,
-          "top_minus_bottom_pct": 0.01,
-          "top_quintile_median_return_pct": -4.59,
-          "bottom_quintile_median_return_pct": -4.35,
-          "median_top_minus_bottom_pct": -0.24,
-          "top_quintile_winsorized_mean_return_pct": -4.72,
-          "bottom_quintile_winsorized_mean_return_pct": -4.77,
-          "winsorized_top_minus_bottom_pct": 0.05,
-          "cohort_count": 3,
-          "median_cohort_rank_ic": 0.1681,
-          "positive_ic_cohorts": 2,
-          "median_cohort_robust_spread_pct": 0.5,
-          "positive_robust_spread_cohorts": 2,
+          "n": 194,
+          "rank_information_coefficient": 0.1363,
+          "top_quintile_mean_return_pct": -3.95,
+          "bottom_quintile_mean_return_pct": -4.48,
+          "top_minus_bottom_pct": 0.52,
+          "top_quintile_median_return_pct": -2.91,
+          "bottom_quintile_median_return_pct": -4.33,
+          "median_top_minus_bottom_pct": 1.41,
+          "top_quintile_winsorized_mean_return_pct": -3.99,
+          "bottom_quintile_winsorized_mean_return_pct": -4.48,
+          "winsorized_top_minus_bottom_pct": 0.48,
+          "cohort_count": 4,
+          "median_cohort_rank_ic": 0.186,
+          "positive_ic_cohorts": 3,
+          "median_cohort_robust_spread_pct": 0.89,
+          "positive_robust_spread_cohorts": 3,
           "stability": {
             "rank_ic": {
               "min": -0.0135,
-              "max": 0.191,
-              "range": 0.2045,
-              "median_absolute_deviation": 0.0229
+              "max": 0.2373,
+              "range": 0.2508,
+              "median_absolute_deviation": 0.0346
             },
             "robust_spread_pct": {
               "min": -0.33,
-              "max": 1.14,
-              "range": 1.47,
-              "median_absolute_deviation": 0.64
+              "max": 2.11,
+              "range": 2.44,
+              "median_absolute_deviation": 0.8
             },
-            "cohorts_with_both_metrics": 3,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 66.7,
+            "cohorts_with_both_metrics": 4,
+            "joint_positive_cohorts": 3,
+            "joint_positive_share_pct": 75.0,
             "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
           },
           "composition_stability": {
-            "cohort_count": 3,
+            "cohort_count": 4,
             "cohort_size": {
-              "min": 48,
+              "min": 46,
               "max": 50,
-              "median": 49,
-              "range": 2
+              "median": 49.0,
+              "range": 4
             },
-            "adjacent_pair_count": 2,
-            "median_adjacent_jaccard_pct": 95.1,
-            "min_adjacent_jaccard_pct": 94.1,
-            "median_adjacent_overlap_n": 48.0,
+            "adjacent_pair_count": 3,
+            "median_adjacent_jaccard_pct": 94.1,
+            "min_adjacent_jaccard_pct": 93.9,
+            "median_adjacent_overlap_n": 48,
             "pairs": [
               {
                 "from_cohort_date": "2026-08-27",
@@ -756,14 +896,22 @@
                 "from_cohort_date": "2026-09-03",
                 "to_cohort_date": "2026-09-10",
                 "from_n": 50,
-                "to_n": 48,
-                "overlap_n": 48,
-                "jaccard_pct": 96.0
+                "to_n": 49,
+                "overlap_n": 49,
+                "jaccard_pct": 98.0
+              },
+              {
+                "from_cohort_date": "2026-09-10",
+                "to_cohort_date": "2026-09-17",
+                "from_n": 49,
+                "to_n": 46,
+                "overlap_n": 46,
+                "jaccard_pct": 93.9
               }
             ],
             "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
           },
-          "status": "collecting_evidence",
+          "status": "early_signal",
           "cohorts": [
             {
               "cohort_date": "2026-08-27",
@@ -795,67 +943,81 @@
             },
             {
               "cohort_date": "2026-09-10",
-              "n": 48,
-              "rank_information_coefficient": 0.191,
+              "n": 49,
+              "rank_information_coefficient": 0.2038,
               "top_quintile_mean_return_pct": -2.58,
-              "bottom_quintile_mean_return_pct": -3.72,
-              "top_minus_bottom_pct": 1.14,
+              "bottom_quintile_mean_return_pct": -3.85,
+              "top_minus_bottom_pct": 1.27,
               "top_quintile_median_return_pct": -1.39,
               "bottom_quintile_median_return_pct": -4.46,
               "median_top_minus_bottom_pct": 3.07,
               "top_quintile_winsorized_mean_return_pct": -2.58,
-              "bottom_quintile_winsorized_mean_return_pct": -3.72,
-              "winsorized_top_minus_bottom_pct": 1.14
+              "bottom_quintile_winsorized_mean_return_pct": -3.85,
+              "winsorized_top_minus_bottom_pct": 1.27
+            },
+            {
+              "cohort_date": "2026-09-17",
+              "n": 46,
+              "rank_information_coefficient": 0.2373,
+              "top_quintile_mean_return_pct": -1.56,
+              "bottom_quintile_mean_return_pct": -3.67,
+              "top_minus_bottom_pct": 2.11,
+              "top_quintile_median_return_pct": -2.21,
+              "bottom_quintile_median_return_pct": -4.31,
+              "median_top_minus_bottom_pct": 2.1,
+              "top_quintile_winsorized_mean_return_pct": -1.56,
+              "bottom_quintile_winsorized_mean_return_pct": -3.67,
+              "winsorized_top_minus_bottom_pct": 2.11
             }
           ]
         },
         "reit": {
-          "n": 201,
-          "rank_information_coefficient": 0.037,
-          "top_quintile_mean_return_pct": -8.25,
-          "bottom_quintile_mean_return_pct": -9.44,
-          "top_minus_bottom_pct": 1.19,
-          "top_quintile_median_return_pct": -9.2,
+          "n": 264,
+          "rank_information_coefficient": 0.0484,
+          "top_quintile_mean_return_pct": -7.54,
+          "bottom_quintile_mean_return_pct": -9.65,
+          "top_minus_bottom_pct": 2.11,
+          "top_quintile_median_return_pct": -8.31,
           "bottom_quintile_median_return_pct": -10.23,
-          "median_top_minus_bottom_pct": 1.03,
-          "top_quintile_winsorized_mean_return_pct": -8.86,
-          "bottom_quintile_winsorized_mean_return_pct": -9.08,
-          "winsorized_top_minus_bottom_pct": 0.23,
-          "cohort_count": 3,
-          "median_cohort_rank_ic": 0.0369,
-          "positive_ic_cohorts": 2,
-          "median_cohort_robust_spread_pct": 0.8,
-          "positive_robust_spread_cohorts": 3,
+          "median_top_minus_bottom_pct": 1.93,
+          "top_quintile_winsorized_mean_return_pct": -7.86,
+          "bottom_quintile_winsorized_mean_return_pct": -9.34,
+          "winsorized_top_minus_bottom_pct": 1.47,
+          "cohort_count": 4,
+          "median_cohort_rank_ic": 0.0273,
+          "positive_ic_cohorts": 3,
+          "median_cohort_robust_spread_pct": 1.19,
+          "positive_robust_spread_cohorts": 4,
           "stability": {
             "rank_ic": {
               "min": -0.0006,
               "max": 0.0579,
               "range": 0.0585,
-              "median_absolute_deviation": 0.021
+              "median_absolute_deviation": 0.0188
             },
             "robust_spread_pct": {
               "min": 0.18,
-              "max": 1.58,
-              "range": 1.4,
-              "median_absolute_deviation": 0.62
+              "max": 3.54,
+              "range": 3.36,
+              "median_absolute_deviation": 0.7
             },
-            "cohorts_with_both_metrics": 3,
-            "joint_positive_cohorts": 2,
-            "joint_positive_share_pct": 66.7,
+            "cohorts_with_both_metrics": 4,
+            "joint_positive_cohorts": 3,
+            "joint_positive_share_pct": 75.0,
             "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
           },
           "composition_stability": {
-            "cohort_count": 3,
+            "cohort_count": 4,
             "cohort_size": {
-              "min": 66,
+              "min": 63,
               "max": 68,
-              "median": 67,
-              "range": 2
+              "median": 66.5,
+              "range": 5
             },
-            "adjacent_pair_count": 2,
-            "median_adjacent_jaccard_pct": 94.9,
-            "min_adjacent_jaccard_pct": 94.2,
-            "median_adjacent_overlap_n": 65.5,
+            "adjacent_pair_count": 3,
+            "median_adjacent_jaccard_pct": 94.2,
+            "min_adjacent_jaccard_pct": 92.5,
+            "median_adjacent_overlap_n": 65,
             "pairs": [
               {
                 "from_cohort_date": "2026-08-27",
@@ -872,11 +1034,19 @@
                 "to_n": 66,
                 "overlap_n": 65,
                 "jaccard_pct": 94.2
+              },
+              {
+                "from_cohort_date": "2026-09-10",
+                "to_cohort_date": "2026-09-17",
+                "from_n": 66,
+                "to_n": 63,
+                "overlap_n": 62,
+                "jaccard_pct": 92.5
               }
             ],
             "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
           },
-          "status": "collecting_evidence",
+          "status": "early_signal",
           "cohorts": [
             {
               "cohort_date": "2026-08-27",
@@ -919,56 +1089,70 @@
               "top_quintile_winsorized_mean_return_pct": -8.08,
               "bottom_quintile_winsorized_mean_return_pct": -9.66,
               "winsorized_top_minus_bottom_pct": 1.58
+            },
+            {
+              "cohort_date": "2026-09-17",
+              "n": 63,
+              "rank_information_coefficient": 0.0177,
+              "top_quintile_mean_return_pct": -5.17,
+              "bottom_quintile_mean_return_pct": -8.71,
+              "top_minus_bottom_pct": 3.54,
+              "top_quintile_median_return_pct": -5.72,
+              "bottom_quintile_median_return_pct": -4.69,
+              "median_top_minus_bottom_pct": -1.03,
+              "top_quintile_winsorized_mean_return_pct": -5.17,
+              "bottom_quintile_winsorized_mean_return_pct": -8.71,
+              "winsorized_top_minus_bottom_pct": 3.54
             }
           ]
         },
         "utility": {
-          "n": 201,
-          "rank_information_coefficient": 0.329,
-          "top_quintile_mean_return_pct": -3.04,
-          "bottom_quintile_mean_return_pct": -8.18,
-          "top_minus_bottom_pct": 5.15,
-          "top_quintile_median_return_pct": -1.81,
-          "bottom_quintile_median_return_pct": -6.36,
-          "median_top_minus_bottom_pct": 4.55,
-          "top_quintile_winsorized_mean_return_pct": -2.46,
-          "bottom_quintile_winsorized_mean_return_pct": -8.26,
-          "winsorized_top_minus_bottom_pct": 5.8,
-          "cohort_count": 3,
-          "median_cohort_rank_ic": 0.363,
-          "positive_ic_cohorts": 3,
-          "median_cohort_robust_spread_pct": 4.78,
-          "positive_robust_spread_cohorts": 3,
+          "n": 268,
+          "rank_information_coefficient": 0.2517,
+          "top_quintile_mean_return_pct": -2.39,
+          "bottom_quintile_mean_return_pct": -7.71,
+          "top_minus_bottom_pct": 5.31,
+          "top_quintile_median_return_pct": -1.53,
+          "bottom_quintile_median_return_pct": -5.47,
+          "median_top_minus_bottom_pct": 3.95,
+          "top_quintile_winsorized_mean_return_pct": -2.01,
+          "bottom_quintile_winsorized_mean_return_pct": -7.42,
+          "winsorized_top_minus_bottom_pct": 5.41,
+          "cohort_count": 4,
+          "median_cohort_rank_ic": 0.2921,
+          "positive_ic_cohorts": 4,
+          "median_cohort_robust_spread_pct": 5.3,
+          "positive_robust_spread_cohorts": 4,
           "stability": {
             "rank_ic": {
-              "min": 0.2212,
+              "min": 0.0447,
               "max": 0.4345,
-              "range": 0.2133,
-              "median_absolute_deviation": 0.0715
+              "range": 0.3898,
+              "median_absolute_deviation": 0.1066
             },
             "robust_spread_pct": {
               "min": 4.6,
               "max": 7.04,
               "range": 2.44,
-              "median_absolute_deviation": 0.18
+              "median_absolute_deviation": 0.62
             },
-            "cohorts_with_both_metrics": 3,
-            "joint_positive_cohorts": 3,
+            "cohorts_with_both_metrics": 4,
+            "joint_positive_cohorts": 4,
             "joint_positive_share_pct": 100.0,
             "interpretation": "Descriptive only. Dispersion and sign consistency across matured cohorts must accumulate prospectively and must not be used to retune production weights from a small sample."
           },
           "composition_stability": {
-            "cohort_count": 3,
+            "cohort_count": 4,
             "cohort_size": {
               "min": 67,
               "max": 67,
-              "median": 67,
+              "median": 67.0,
               "range": 0
             },
-            "adjacent_pair_count": 2,
-            "median_adjacent_jaccard_pct": 98.5,
+            "adjacent_pair_count": 3,
+            "median_adjacent_jaccard_pct": 97.1,
             "min_adjacent_jaccard_pct": 97.1,
-            "median_adjacent_overlap_n": 66.5,
+            "median_adjacent_overlap_n": 66,
             "pairs": [
               {
                 "from_cohort_date": "2026-08-27",
@@ -985,11 +1169,19 @@
                 "to_n": 67,
                 "overlap_n": 67,
                 "jaccard_pct": 100.0
+              },
+              {
+                "from_cohort_date": "2026-09-10",
+                "to_cohort_date": "2026-09-17",
+                "from_n": 67,
+                "to_n": 67,
+                "overlap_n": 66,
+                "jaccard_pct": 97.1
               }
             ],
             "interpretation": "Descriptive only. Low adjacent overlap can make apparent model-performance changes partly reflect a changing universe rather than a changing model signal."
           },
-          "status": "collecting_evidence",
+          "status": "early_signal",
           "cohorts": [
             {
               "cohort_date": "2026-08-27",
@@ -1032,153 +1224,167 @@
               "top_quintile_winsorized_mean_return_pct": -2.82,
               "bottom_quintile_winsorized_mean_return_pct": -7.42,
               "winsorized_top_minus_bottom_pct": 4.6
+            },
+            {
+              "cohort_date": "2026-09-17",
+              "n": 67,
+              "rank_information_coefficient": 0.0447,
+              "top_quintile_mean_return_pct": -0.42,
+              "bottom_quintile_mean_return_pct": -6.25,
+              "top_minus_bottom_pct": 5.83,
+              "top_quintile_median_return_pct": 0.6,
+              "bottom_quintile_median_return_pct": 0.07,
+              "median_top_minus_bottom_pct": 0.53,
+              "top_quintile_winsorized_mean_return_pct": -0.42,
+              "bottom_quintile_winsorized_mean_return_pct": -6.25,
+              "winsorized_top_minus_bottom_pct": 5.83
             }
           ]
         }
       },
       "by_sector": {
         "Basic Materials": {
-          "n": 348,
-          "rank_information_coefficient": 0.1258,
-          "top_quintile_mean_return_pct": -8.66,
-          "bottom_quintile_mean_return_pct": -7.95,
-          "top_minus_bottom_pct": -0.71,
-          "top_quintile_median_return_pct": -7.86,
-          "bottom_quintile_median_return_pct": -8.93,
-          "median_top_minus_bottom_pct": 1.07,
-          "top_quintile_winsorized_mean_return_pct": -8.63,
-          "bottom_quintile_winsorized_mean_return_pct": -8.74,
-          "winsorized_top_minus_bottom_pct": 0.11
+          "n": 457,
+          "rank_information_coefficient": 0.1595,
+          "top_quintile_mean_return_pct": -8.3,
+          "bottom_quintile_mean_return_pct": -8.34,
+          "top_minus_bottom_pct": 0.03,
+          "top_quintile_median_return_pct": -7.92,
+          "bottom_quintile_median_return_pct": -9.29,
+          "median_top_minus_bottom_pct": 1.37,
+          "top_quintile_winsorized_mean_return_pct": -8.35,
+          "bottom_quintile_winsorized_mean_return_pct": -8.63,
+          "winsorized_top_minus_bottom_pct": 0.28
         },
         "Communication Services": {
-          "n": 189,
-          "rank_information_coefficient": -0.1145,
-          "top_quintile_mean_return_pct": -3.4,
-          "bottom_quintile_mean_return_pct": 1.92,
-          "top_minus_bottom_pct": -5.32,
-          "top_quintile_median_return_pct": -1.89,
-          "bottom_quintile_median_return_pct": 0.0,
-          "median_top_minus_bottom_pct": -1.89,
-          "top_quintile_winsorized_mean_return_pct": -3.43,
-          "bottom_quintile_winsorized_mean_return_pct": 2.28,
-          "winsorized_top_minus_bottom_pct": -5.71
+          "n": 246,
+          "rank_information_coefficient": -0.0612,
+          "top_quintile_mean_return_pct": -3.45,
+          "bottom_quintile_mean_return_pct": 0.05,
+          "top_minus_bottom_pct": -3.5,
+          "top_quintile_median_return_pct": -2.22,
+          "bottom_quintile_median_return_pct": -4.31,
+          "median_top_minus_bottom_pct": 2.08,
+          "top_quintile_winsorized_mean_return_pct": -3.35,
+          "bottom_quintile_winsorized_mean_return_pct": 0.13,
+          "winsorized_top_minus_bottom_pct": -3.48
         },
         "Consumer Cyclical": {
-          "n": 423,
-          "rank_information_coefficient": 0.172,
-          "top_quintile_mean_return_pct": -4.42,
-          "bottom_quintile_mean_return_pct": -7.11,
-          "top_minus_bottom_pct": 2.69,
-          "top_quintile_median_return_pct": -5.22,
+          "n": 561,
+          "rank_information_coefficient": 0.2012,
+          "top_quintile_mean_return_pct": -3.27,
+          "bottom_quintile_mean_return_pct": -7.35,
+          "top_minus_bottom_pct": 4.08,
+          "top_quintile_median_return_pct": -3.24,
           "bottom_quintile_median_return_pct": -8.67,
-          "median_top_minus_bottom_pct": 3.45,
-          "top_quintile_winsorized_mean_return_pct": -5.17,
-          "bottom_quintile_winsorized_mean_return_pct": -8.04,
-          "winsorized_top_minus_bottom_pct": 2.87
+          "median_top_minus_bottom_pct": 5.43,
+          "top_quintile_winsorized_mean_return_pct": -3.84,
+          "bottom_quintile_winsorized_mean_return_pct": -8.1,
+          "winsorized_top_minus_bottom_pct": 4.27
         },
         "Consumer Defensive": {
-          "n": 234,
-          "rank_information_coefficient": 0.3467,
-          "top_quintile_mean_return_pct": -3.57,
-          "bottom_quintile_mean_return_pct": -11.76,
-          "top_minus_bottom_pct": 8.18,
-          "top_quintile_median_return_pct": -2.7,
-          "bottom_quintile_median_return_pct": -11.28,
-          "median_top_minus_bottom_pct": 8.58,
-          "top_quintile_winsorized_mean_return_pct": -3.49,
-          "bottom_quintile_winsorized_mean_return_pct": -11.69,
-          "winsorized_top_minus_bottom_pct": 8.2
+          "n": 309,
+          "rank_information_coefficient": 0.3346,
+          "top_quintile_mean_return_pct": -1.86,
+          "bottom_quintile_mean_return_pct": -10.7,
+          "top_minus_bottom_pct": 8.83,
+          "top_quintile_median_return_pct": -1.29,
+          "bottom_quintile_median_return_pct": -10.79,
+          "median_top_minus_bottom_pct": 9.51,
+          "top_quintile_winsorized_mean_return_pct": -1.85,
+          "bottom_quintile_winsorized_mean_return_pct": -10.5,
+          "winsorized_top_minus_bottom_pct": 8.65
         },
         "Energy": {
-          "n": 256,
-          "rank_information_coefficient": 0.5342,
-          "top_quintile_mean_return_pct": 1.36,
-          "bottom_quintile_mean_return_pct": -15.21,
-          "top_minus_bottom_pct": 16.57,
-          "top_quintile_median_return_pct": 2.11,
-          "bottom_quintile_median_return_pct": -12.45,
-          "median_top_minus_bottom_pct": 14.56,
-          "top_quintile_winsorized_mean_return_pct": 1.43,
-          "bottom_quintile_winsorized_mean_return_pct": -14.97,
-          "winsorized_top_minus_bottom_pct": 16.4
+          "n": 335,
+          "rank_information_coefficient": 0.527,
+          "top_quintile_mean_return_pct": 1.91,
+          "bottom_quintile_mean_return_pct": -14.41,
+          "top_minus_bottom_pct": 16.33,
+          "top_quintile_median_return_pct": 2.32,
+          "bottom_quintile_median_return_pct": -11.94,
+          "median_top_minus_bottom_pct": 14.26,
+          "top_quintile_winsorized_mean_return_pct": 1.85,
+          "bottom_quintile_winsorized_mean_return_pct": -13.89,
+          "winsorized_top_minus_bottom_pct": 15.75
         },
         "Financial Services": {
-          "n": 667,
-          "rank_information_coefficient": -0.069,
-          "top_quintile_mean_return_pct": -5.95,
-          "bottom_quintile_mean_return_pct": -2.51,
-          "top_minus_bottom_pct": -3.45,
-          "top_quintile_median_return_pct": -6.86,
-          "bottom_quintile_median_return_pct": -5.46,
-          "median_top_minus_bottom_pct": -1.4,
-          "top_quintile_winsorized_mean_return_pct": -5.91,
-          "bottom_quintile_winsorized_mean_return_pct": -3.6,
-          "winsorized_top_minus_bottom_pct": -2.31
+          "n": 876,
+          "rank_information_coefficient": 0.0059,
+          "top_quintile_mean_return_pct": -5.27,
+          "bottom_quintile_mean_return_pct": -4.16,
+          "top_minus_bottom_pct": -1.12,
+          "top_quintile_median_return_pct": -5.92,
+          "bottom_quintile_median_return_pct": -6.01,
+          "median_top_minus_bottom_pct": 0.09,
+          "top_quintile_winsorized_mean_return_pct": -5.28,
+          "bottom_quintile_winsorized_mean_return_pct": -5.47,
+          "winsorized_top_minus_bottom_pct": 0.18
         },
         "Healthcare": {
-          "n": 698,
-          "rank_information_coefficient": 0.1865,
-          "top_quintile_mean_return_pct": -3.24,
-          "bottom_quintile_mean_return_pct": -6.62,
-          "top_minus_bottom_pct": 3.38,
-          "top_quintile_median_return_pct": -3.34,
-          "bottom_quintile_median_return_pct": -11.55,
-          "median_top_minus_bottom_pct": 8.21,
-          "top_quintile_winsorized_mean_return_pct": -4.26,
-          "bottom_quintile_winsorized_mean_return_pct": -11.0,
-          "winsorized_top_minus_bottom_pct": 6.74
+          "n": 902,
+          "rank_information_coefficient": 0.2214,
+          "top_quintile_mean_return_pct": -2.81,
+          "bottom_quintile_mean_return_pct": -5.45,
+          "top_minus_bottom_pct": 2.64,
+          "top_quintile_median_return_pct": -2.9,
+          "bottom_quintile_median_return_pct": -12.73,
+          "median_top_minus_bottom_pct": 9.83,
+          "top_quintile_winsorized_mean_return_pct": -3.6,
+          "bottom_quintile_winsorized_mean_return_pct": -11.87,
+          "winsorized_top_minus_bottom_pct": 8.26
         },
         "Industrials": {
-          "n": 628,
-          "rank_information_coefficient": 0.1819,
-          "top_quintile_mean_return_pct": -4.17,
-          "bottom_quintile_mean_return_pct": -8.15,
-          "top_minus_bottom_pct": 3.98,
-          "top_quintile_median_return_pct": -4.05,
-          "bottom_quintile_median_return_pct": -7.78,
-          "median_top_minus_bottom_pct": 3.73,
-          "top_quintile_winsorized_mean_return_pct": -4.07,
-          "bottom_quintile_winsorized_mean_return_pct": -8.42,
-          "winsorized_top_minus_bottom_pct": 4.35
+          "n": 842,
+          "rank_information_coefficient": 0.2237,
+          "top_quintile_mean_return_pct": -3.87,
+          "bottom_quintile_mean_return_pct": -9.21,
+          "top_minus_bottom_pct": 5.34,
+          "top_quintile_median_return_pct": -3.53,
+          "bottom_quintile_median_return_pct": -8.6,
+          "median_top_minus_bottom_pct": 5.07,
+          "top_quintile_winsorized_mean_return_pct": -3.6,
+          "bottom_quintile_winsorized_mean_return_pct": -9.51,
+          "winsorized_top_minus_bottom_pct": 5.91
         },
         "Real Estate": {
-          "n": 201,
-          "rank_information_coefficient": 0.037,
-          "top_quintile_mean_return_pct": -8.25,
-          "bottom_quintile_mean_return_pct": -9.44,
-          "top_minus_bottom_pct": 1.19,
-          "top_quintile_median_return_pct": -9.2,
+          "n": 264,
+          "rank_information_coefficient": 0.0484,
+          "top_quintile_mean_return_pct": -7.54,
+          "bottom_quintile_mean_return_pct": -9.65,
+          "top_minus_bottom_pct": 2.11,
+          "top_quintile_median_return_pct": -8.31,
           "bottom_quintile_median_return_pct": -10.23,
-          "median_top_minus_bottom_pct": 1.03,
-          "top_quintile_winsorized_mean_return_pct": -8.86,
-          "bottom_quintile_winsorized_mean_return_pct": -9.08,
-          "winsorized_top_minus_bottom_pct": 0.23
+          "median_top_minus_bottom_pct": 1.93,
+          "top_quintile_winsorized_mean_return_pct": -7.86,
+          "bottom_quintile_winsorized_mean_return_pct": -9.34,
+          "winsorized_top_minus_bottom_pct": 1.47
         },
         "Technology": {
-          "n": 731,
-          "rank_information_coefficient": 0.0938,
-          "top_quintile_mean_return_pct": 2.48,
-          "bottom_quintile_mean_return_pct": 0.75,
-          "top_minus_bottom_pct": 1.73,
-          "top_quintile_median_return_pct": 2.21,
-          "bottom_quintile_median_return_pct": 0.08,
-          "median_top_minus_bottom_pct": 2.13,
-          "top_quintile_winsorized_mean_return_pct": 3.27,
-          "bottom_quintile_winsorized_mean_return_pct": 0.13,
-          "winsorized_top_minus_bottom_pct": 3.14
+          "n": 961,
+          "rank_information_coefficient": 0.1556,
+          "top_quintile_mean_return_pct": 2.05,
+          "bottom_quintile_mean_return_pct": -1.61,
+          "top_minus_bottom_pct": 3.66,
+          "top_quintile_median_return_pct": 1.87,
+          "bottom_quintile_median_return_pct": -4.17,
+          "median_top_minus_bottom_pct": 6.04,
+          "top_quintile_winsorized_mean_return_pct": 2.92,
+          "bottom_quintile_winsorized_mean_return_pct": -2.49,
+          "winsorized_top_minus_bottom_pct": 5.41
         },
         "Utilities": {
-          "n": 201,
-          "rank_information_coefficient": 0.329,
-          "top_quintile_mean_return_pct": -3.04,
-          "bottom_quintile_mean_return_pct": -8.18,
-          "top_minus_bottom_pct": 5.15,
-          "top_quintile_median_return_pct": -1.81,
-          "bottom_quintile_median_return_pct": -6.36,
-          "median_top_minus_bottom_pct": 4.55,
-          "top_quintile_winsorized_mean_return_pct": -2.46,
-          "bottom_quintile_winsorized_mean_return_pct": -8.26,
-          "winsorized_top_minus_bottom_pct": 5.8
+          "n": 268,
+          "rank_information_coefficient": 0.2517,
+          "top_quintile_mean_return_pct": -2.39,
+          "bottom_quintile_mean_return_pct": -7.71,
+          "top_minus_bottom_pct": 5.31,
+          "top_quintile_median_return_pct": -1.53,
+          "bottom_quintile_median_return_pct": -5.47,
+          "median_top_minus_bottom_pct": 3.95,
+          "top_quintile_winsorized_mean_return_pct": -2.01,
+          "bottom_quintile_winsorized_mean_return_pct": -7.42,
+          "winsorized_top_minus_bottom_pct": 5.41
         }
       },
       "cohorts": [
@@ -1212,22 +1418,36 @@
         },
         {
           "cohort_date": "2026-09-10",
-          "n": 1506,
-          "rank_information_coefficient": 0.2463,
-          "top_quintile_mean_return_pct": -0.8,
-          "bottom_quintile_mean_return_pct": -6.49,
-          "top_minus_bottom_pct": 5.69,
-          "top_quintile_median_return_pct": -1.27,
-          "bottom_quintile_median_return_pct": -8.75,
-          "median_top_minus_bottom_pct": 7.48,
-          "top_quintile_winsorized_mean_return_pct": -0.77,
-          "bottom_quintile_winsorized_mean_return_pct": -8.98,
-          "winsorized_top_minus_bottom_pct": 8.21
+          "n": 1524,
+          "rank_information_coefficient": 0.2401,
+          "top_quintile_mean_return_pct": -0.82,
+          "bottom_quintile_mean_return_pct": -6.15,
+          "top_minus_bottom_pct": 5.34,
+          "top_quintile_median_return_pct": -1.29,
+          "bottom_quintile_median_return_pct": -8.22,
+          "median_top_minus_bottom_pct": 6.93,
+          "top_quintile_winsorized_mean_return_pct": -0.79,
+          "bottom_quintile_winsorized_mean_return_pct": -8.64,
+          "winsorized_top_minus_bottom_pct": 7.86
+        },
+        {
+          "cohort_date": "2026-09-17",
+          "n": 1431,
+          "rank_information_coefficient": 0.3139,
+          "top_quintile_mean_return_pct": -0.38,
+          "bottom_quintile_mean_return_pct": -8.68,
+          "top_minus_bottom_pct": 8.31,
+          "top_quintile_median_return_pct": 0.36,
+          "bottom_quintile_median_return_pct": -10.95,
+          "median_top_minus_bottom_pct": 11.31,
+          "top_quintile_winsorized_mean_return_pct": -0.25,
+          "bottom_quintile_winsorized_mean_return_pct": -11.54,
+          "winsorized_top_minus_bottom_pct": 11.3
         }
       ],
-      "status": "collecting_evidence",
+      "status": "early_signal",
       "first_possible_maturity_date": "2026-09-24",
-      "next_pending_maturity_date": "2026-10-15"
+      "next_pending_maturity_date": "2026-10-18"
     },
     "84": {
       "n": 0,
