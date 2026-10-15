@@ -24,6 +24,18 @@ class PrebreakoutDataTests(unittest.TestCase):
         rows[-1]["volume"]=180000
         return rows
 
+    def test_scan_slots_rotate_across_a_broader_universe(self):
+        stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY","market_cap":10_000_000_000-i}
+                for i in range(700)]
+        scan0=mod.candidates(stocks,date(2026,10,14),0)
+        scan1=mod.candidates(stocks,date(2026,10,14),1)
+        scan2=mod.candidates(stocks,date(2026,10,14),2)
+        self.assertEqual(len(scan0),150)
+        self.assertEqual(scan0[:40],scan1[:40])
+        self.assertTrue(set(scan0[40:]).isdisjoint(scan1[40:]))
+        self.assertTrue(set(scan1[40:]).isdisjoint(scan2[40:]))
+        with self.assertRaises(ValueError):mod.candidates(stocks,date(2026,10,14),4)
+
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
         self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False)))

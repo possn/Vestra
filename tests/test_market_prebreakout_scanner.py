@@ -28,7 +28,8 @@ class PreBreakoutContractTests(unittest.TestCase):
         self.assertIn('volumes.length>=30',SCANNER)
         self.assertIn('lastVolume>=averageVolume*1.5',SCANNER)
         self.assertIn('current>resistance*1.005&&volumeConfirmed',SCANNER)
-        self.assertIn('Volume por confirmar',SCANNER)
+        self.assertIn('Sem secagem de volume verificada',SCANNER)
+        self.assertIn('Volume a secar; confirmação pendente',SCANNER)
         self.assertIn('Setup técnico, não previsão',SCANNER)
 
 if __name__=='__main__':
