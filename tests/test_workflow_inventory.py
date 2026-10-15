@@ -15,6 +15,7 @@ ACTIVE_WORKFLOWS = {
     'rebuild-market-startup.yml',
     'refresh-weekly-earnings.yml',
     'refresh-prebreakout-scanner.yml',
+    'refresh-prebreakout-forward-evidence.yml',
     'refresh-cnn-fear-greed.yml',
     'runtime-js-syntax.yml',
     'sec-connectivity-probe.yml',
