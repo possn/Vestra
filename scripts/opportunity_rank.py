@@ -67,17 +67,24 @@ def _gate(name, passed, value=None, threshold=None, detail=None):
 
 
 def _closes(row):
-    out = []
-    for item in row.get("price_history_1y") or []:
-        try:
-            v = item.get("close") if isinstance(item, dict) else item
-            v = float(v)
-            if v > 0:
-                out.append(v)
-        except (TypeError, ValueError):
-            pass
-    return out
+    """Fail closed on corrupt daily close histories instead of compressing gaps.
 
+    Dropping a missing/NaN bar silently turns a 20-session return into a
+    non-20-session return and can give Discovery fictitious early momentum.
+    """
+    import math
+    history = row.get("price_history_1y") or []
+    out = []
+    for item in history:
+        try:
+            value = item.get("close") if isinstance(item, dict) else item
+            close = float(value)
+        except (TypeError, ValueError):
+            return []
+        if not math.isfinite(close) or close <= 0:
+            return []
+        out.append(close)
+    return out
 
 def _ret(closes, periods):
     if len(closes) <= periods or closes[-periods - 1] <= 0:
