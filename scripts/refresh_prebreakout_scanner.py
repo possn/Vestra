@@ -164,6 +164,10 @@ def dataframe_bars(frame):
         except (KeyError,ValueError,TypeError):continue
     return rows
 
+def completed_sessions(bars, utc_today):
+    """Only completed UTC daily sessions are eligible for a verified stage."""
+    return [bar for bar in bars if str(bar.get("date") or "")[:10] < utc_today.isoformat()]
+
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
@@ -177,7 +181,7 @@ def main():
         for ticker in group:
             try:
                 frame=data[ticker] if len(group)>1 else data
-                bars=dataframe_bars(frame);checked+=bool(bars)
+                bars=completed_sessions(dataframe_bars(frame),now.date());checked+=bool(bars)
                 signal=scan_bars(ticker,bars,now.date())
                 if signal:found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
