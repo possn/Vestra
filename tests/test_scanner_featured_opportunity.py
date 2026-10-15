@@ -13,6 +13,13 @@ import scanner  # noqa: E402
 
 # Contract: scanner_best must remain the highest scored scanner strategy.
 class ScannerFeaturedOpportunityTests(unittest.TestCase):
+    def test_missing_gate_never_authorizes_positive_revisions_strategy(self):
+        row = self.base_row()
+        row.pop("risk_gate", None)
+        row.update({"estimate_signal":"improving","estimate_momentum_score":85})
+        output = scanner.assess(row)
+        self.assertNotIn("positive_revisions", output["scanner_tags"])
+
     def base_row(self):
         return {
             "ticker": "TEST",
