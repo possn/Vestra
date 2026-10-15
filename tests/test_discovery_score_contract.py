@@ -84,7 +84,8 @@ class DiscoveryScoreContractTests(unittest.TestCase):
 
     def test_sector_strength_requires_verified_etf_observation(self):
         candidate=row()
-        candidate.update({"opportunity_sector_return_20d_pct": -4,
+        candidate.update({"opportunity_stock_return_20d_pct": 8,
+                          "opportunity_sector_return_20d_pct": -4,
                           "opportunity_sector_benchmark_ticker": "XLK"})
         unavailable=MOD.assess(candidate)
         self.assertEqual(unavailable["opportunity_sector_relative_strength_status"], "unavailable")
