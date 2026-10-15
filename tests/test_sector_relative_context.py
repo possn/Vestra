@@ -1,4 +1,5 @@
 import sys
+import datetime
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
@@ -6,7 +7,7 @@ from sector_relative_context import evidence
 
 class SectorRelativeEvidenceTests(unittest.TestCase):
     def test_same_date_observations_are_verified(self):
-        dates=[f"2026-10-{day:02d}" for day in range(1,22)]
+        dates=[(datetime.date(2026,10,15)-datetime.timedelta(days=d)).isoformat() for d in range(20,-1,-1)]
         prices={"MSFT":{"market_return_20d_pct":8,"market_return_asof_date":"2026-10-15","market_return_20d_dates":dates},
                 "XLK":{"market_return_20d_pct":3,"market_return_asof_date":"2026-10-15","market_return_20d_dates":dates[:]}}
         result=evidence("MSFT","Technology",prices)
