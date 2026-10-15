@@ -26,7 +26,9 @@ def evidence(ticker, sector, prices):
         peer_dates=peer["market_return_20d_dates"]
         if (not all(math.isfinite(x) for x in (stock_return,sector_return))
                 or len(stock_date)!=10 or stock_date!=peer_date
-                or not isinstance(dates,list) or len(dates)!=21 or dates!=peer_dates):
+                or not isinstance(dates,list) or len(dates)!=21 or dates!=peer_dates
+                or dates[-1] != stock_date or any(not isinstance(d,str) or len(d)!=10 for d in dates)
+                or dates != sorted(set(dates))):
             return blank
     except (ValueError,TypeError,KeyError):
         return blank
