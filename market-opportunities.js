@@ -15,6 +15,17 @@
       if(!response.ok)return;
       const payload=await response.json();
       if(payload?.schema!=='vestra_prebreakout_v1'||!Array.isArray(payload.signals))return;
+      // A seven-day-old bar may be valid after holidays, but an old publisher
+      // snapshot is never fresh technical evidence. Explicit empty published
+      // scans remain authoritative; stale snapshots must not revive candidates.
+      const generated=Date.parse(payload.generated_at);
+      const ageHours=(Date.now()-generated)/3600000;
+      if(!Number.isFinite(generated)||ageHours< -1||ageHours>36){
+        prebreakoutFeed=new Map();
+        prebreakoutFeedAuthoritative=true;
+        if(activeLens==='breakout')opportunities();
+        return;
+      }
       const rows=new Map();
       for(const item of payload.signals){
         if(item?.source!=='yahoo:daily_ohlcv'||!item.ticker||!item.date||!['compressão','pré-breakout','confirmado'].includes(item.stage))continue;
