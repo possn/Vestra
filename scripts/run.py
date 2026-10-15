@@ -34,6 +34,7 @@ from peer_drawdown import assess_universe as assess_peer_drawdown
 from recovery_confirmation import assess_universe as assess_recovery_confirmation
 from drawdown_diagnosis import assess as assess_drawdown_diagnosis
 from scanner import assess as assess_scanner
+from sector_relative_context import evidence as sector_relative_evidence
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
@@ -501,6 +502,8 @@ def main():
         row.update(assess_catalysts(row))
         row.update(assess_low52_intelligence(row))
         row.update(assess_drawdown_diagnosis(row))
+        # Same-dated daily close windows only; no sector guessing or history backfill.
+        row.update(sector_relative_evidence(s.ticker, row.get("sector"), daily_return_map))
         row.update(assess_scanner(row))
         rows.append(row)
 
