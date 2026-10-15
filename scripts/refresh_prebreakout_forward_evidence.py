@@ -45,7 +45,7 @@ def gather(archive:Path, downloader, now=None):
     prices={}; failures={}
     for ticker in tickers:
         try:
-            frame=downloader(ticker,start=start,end=end,auto_adjust=True,progress=False,threads=False)
+            frame=downloader(ticker,start=start,end=end,auto_adjust=True,progress=False,threads=False,multi_level_index=False)
             prices[ticker]=completed_bars(frame,today)
         except Exception as exc:
             failures[ticker]=type(exc).__name__

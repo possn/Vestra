@@ -45,6 +45,7 @@ class ForwardPriceRefreshTests(unittest.TestCase):
             self.assertEqual(result["cohort_count"],1)
             self.assertEqual(sorted(t for t,_ in requests),["AAA","SPY"])
             self.assertTrue(all(k["auto_adjust"] is True for _,k in requests))
+            self.assertTrue(all(k["multi_level_index"] is False for _,k in requests))
             self.assertEqual(result["outcomes"][0]["entry"],"2026-10-16")
             self.assertIsNone(result["outcomes"][0]["results"][5])
             self.assertEqual(result["price_metadata"]["completed_before_utc_date"],"2026-10-17")
