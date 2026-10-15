@@ -37,6 +37,12 @@ jobs:
           python tests/test_prebreakout_stage_evidence.py
           python tests/test_build_prebreakout_forward_cohorts.py
           python tests/test_refresh_prebreakout_forward_evidence.py
+          python tests/test_build_prebreakout_transitions.py
+          python tests/test_check_prebreakout_transitions.py
+      - name: Recover transitions from immutable archived slots
+        run: |
+          python scripts/build_prebreakout_transitions.py
+          python scripts/check_prebreakout_transitions.py
       - name: Read independently adjusted daily prices
         run: python scripts/refresh_prebreakout_forward_evidence.py
       - name: Check automated main publish window
@@ -49,7 +55,7 @@ jobs:
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/prebreakout-forward-evidence.json
+          git add data/prebreakout-forward-evidence.json data/prebreakout-transitions.json
           if ! git diff --cached --quiet; then
             git commit -m "Actualização de evidência forward pré-breakout"
             bash scripts/publish_with_retry.sh origin main
