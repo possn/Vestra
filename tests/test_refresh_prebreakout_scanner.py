@@ -87,6 +87,25 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertTrue(result["vcpConfirmed"])
         self.assertTrue(result["volumeDry"])
 
+    def test_breakout_quality_is_observation_not_extra_alpha(self):
+        rows=self.bars()
+        baseline=mod.scan_bars("TEST",rows)
+        self.assertIsNotNone(baseline)
+        self.assertIn("breakoutCloseLocationPct",baseline)
+        self.assertIn("breakoutVolumeRatio",baseline)
+        self.assertIn("breakoutExtensionPct",baseline)
+        self.assertIsNotNone(baseline["breakoutVolumeRatio"])
+        self.assertGreater(baseline["breakoutVolumeRatio"],0)
+        self.assertEqual(baseline["stage"],mod.scan_bars("TEST",rows)["stage"])
+
+    def test_absent_today_volume_does_not_invent_breakout_volume_ratio(self):
+        rows=self.bars()
+        rows[-1]["volume"]=None
+        observed=mod.scan_bars("TEST",rows)
+        self.assertIsNotNone(observed)
+        self.assertIsNone(observed["breakoutVolumeRatio"])
+        self.assertFalse(observed["volumeConfirmed"])
+
     def test_stale_data_are_not_included(self):
         rows=self.bars()
         for row in rows:
