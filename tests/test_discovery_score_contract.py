@@ -62,6 +62,26 @@ class DiscoveryScoreContractTests(unittest.TestCase):
     def test_valid_daily_price_history_retains_timing(self):
         self.assertIsNotNone(MOD._timing_assessment(row())["score"])
 
+    def test_relative_strength_is_evidence_not_ranking_alpha(self):
+        candidate = row()
+        candidate["opportunity_market_return_20d_pct"] = -5
+        outperform = MOD.assess(candidate)
+        candidate["opportunity_market_return_20d_pct"] = 30
+        underperform = MOD.assess(candidate)
+        self.assertEqual(outperform["opportunity_score_raw"], underperform["opportunity_score_raw"])
+        self.assertEqual(outperform["opportunity_score"], underperform["opportunity_score"])
+        self.assertEqual(outperform["opportunity_relative_strength_status"], "outperforming")
+        self.assertEqual(underperform["opportunity_relative_strength_status"], "underperforming")
+        self.assertTrue(any("Força relativa" in r for r in underperform["opportunity_cautions"]))
+
+    def test_relative_strength_missing_market_evidence_is_unavailable(self):
+        output = MOD.assess(row())
+        self.assertIsNone(output["opportunity_relative_strength_20d_pp"])
+        self.assertEqual(output["opportunity_relative_strength_status"], "unavailable")
+        candidate = row()
+        candidate["opportunity_market_return_20d_pct"] = float("nan")
+        self.assertEqual(MOD.assess(candidate)["opportunity_relative_strength_status"], "unavailable")
+
     def test_higher_confidence_does_not_buy_ranking_points_after_gate(self):
         low = MOD.assess(row(confidence=60))
         high = MOD.assess(row(confidence=95))
