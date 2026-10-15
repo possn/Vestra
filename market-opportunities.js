@@ -453,7 +453,7 @@
     if(lens==='breakout'){
       const setup=breakoutSetup(s);if(!setup)return '';
       const fmt=x=>x.toFixed(1).replace('.',',');
-      return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(setup.stage)} · Base 40 sessões ${fmt(setup.widthPct)}% (anterior ${fmt(setup.priorWidthPct)}%) · ${fmt(setup.distancePct)}% da resistência</div><div class="ux453-thesis">Preço acima da MM150 · MM50 acima MM200 · três médias ascendentes${setup.goldenCrossRecent?' · cruzamento MM50/MM200 recente':''}</div><div class="ux453-opportunity-type">${setup.volumeConfirmed?'Volume ≥ 1,5× média':'Volume por confirmar'} · Dados até ${esc(setup.date||'—')} · Setup técnico, não previsão</div></div><div class="ux453-entry"><small>SETUP</small><strong>${setup.score}</strong><em>${esc(setup.stage)}</em></div></div>`;
+      return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(setup.stage)} · Base 40 sessões ${fmt(setup.widthPct)}% (anterior ${fmt(setup.priorWidthPct)}%) · ${fmt(setup.distancePct)}% da resistência</div><div class="ux453-thesis">Preço acima da MM150 · MM50 acima MM200 · três médias ascendentes${setup.goldenCrossRecent?' · cruzamento MM50/MM200 recente':''}</div><div class="ux453-opportunity-type">${setup.volumeConfirmed?'Volume ≥ 1,5× média':setup.volumeDry?'Volume a secar; confirmação pendente':'Sem secagem de volume verificada'} · ${setup.stage==='compressão'?'Apenas em observação · ':''}Dados até ${esc(setup.date||'—')} · Setup técnico, não previsão</div></div><div class="ux453-entry"><small>SETUP</small><strong>${setup.score}</strong><em>${esc(setup.stage)}</em></div></div>`;
     }
     const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),coverage=sleeveCoverage(s),dom=credibleDominantSleeve(s),capText=capSummary(s);
     const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
@@ -483,7 +483,7 @@
       : '<span><b>DISCOVERY</b> prioridade para investigar agora</span><span><b>≠ PORTFOLIO FIT</b> adequação à tua carteira só é avaliada na Carteira / Optimizar</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
   }
   function lensMeta(lens){
-    if(lens==='breakout')return ['Compressão · Pré-breakout','Bases de 40 sessões em estreitamento, preço acima da MM150, MM50 > MM200 e três médias ascendentes. Sem garantia de subida.'];
+    if(lens==='breakout')return ['Compressão · Pré-breakout','Compressão é apenas vigilância, não sinal iminente. Pré-breakout exige proximidade da resistência e volume a secar; breakout confirmado exige fecho e volume fortes.'];
     if(lens==='low52')return ['Mínimos 52 semanas','Empresas robustas negociadas até 5% acima do mínimo de 52 semanas.'];
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
     if(lens==='recovery')return ['Recuperação','Empresas com recuperação operacional ou de estimativas já confirmada.'];
