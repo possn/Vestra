@@ -1,0 +1,166 @@
+{
+  "schema": "vestra_prebreakout_forward_cohorts_v1",
+  "evaluation_method": "adjusted_daily_close_after_publication",
+  "cohort_policy": "first_immutable_publication_per_ticker_and_stage",
+  "historical_only": true,
+  "cohort_count": 5,
+  "stage_evidence": {
+    "schema": "vestra_prebreakout_stage_evidence_v1",
+    "method": "observed_point_in_time_adjusted_close",
+    "minimum_sample": 30,
+    "stages": {
+      "compressão": {
+        "5": {
+          "n": 0,
+          "n_missing": 5,
+          "n_observations": 5,
+          "coverage": 0.0,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "10": {
+          "n": 0,
+          "n_missing": 5,
+          "n_observations": 5,
+          "coverage": 0.0,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "20": {
+          "n": 0,
+          "n_missing": 5,
+          "n_observations": 5,
+          "coverage": 0.0,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "60": {
+          "n": 0,
+          "n_missing": 5,
+          "n_observations": 5,
+          "coverage": 0.0,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        }
+      },
+      "pré-breakout": {
+        "5": {
+          "n": 0,
+          "n_missing": 0,
+          "n_observations": 0,
+          "coverage": null,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "10": {
+          "n": 0,
+          "n_missing": 0,
+          "n_observations": 0,
+          "coverage": null,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "20": {
+          "n": 0,
+          "n_missing": 0,
+          "n_observations": 0,
+          "coverage": null,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "60": {
+          "n": 0,
+          "n_missing": 0,
+          "n_observations": 0,
+          "coverage": null,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        }
+      },
+      "confirmado": {
+        "5": {
+          "n": 0,
+          "n_missing": 0,
+          "n_observations": 0,
+          "coverage": null,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "10": {
+          "n": 0,
+          "n_missing": 0,
+          "n_observations": 0,
+          "coverage": null,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "20": {
+          "n": 0,
+          "n_missing": 0,
+          "n_observations": 0,
+          "coverage": null,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        },
+        "60": {
+          "n": 0,
+          "n_missing": 0,
+          "n_observations": 0,
+          "coverage": null,
+          "sufficient_sample": false,
+          "reason": "insufficient_forward_sample"
+        }
+      }
+    }
+  },
+  "outcomes": [
+    {
+      "ticker": "AAPL",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-15T07:09:31.724375+00:00",
+      "signal_date": "2026-10-14",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "AMZN",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-15T07:09:31.724375+00:00",
+      "signal_date": "2026-10-14",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "ATKR",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-15T07:09:31.724375+00:00",
+      "signal_date": "2026-10-14",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "LTC",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-15T07:09:31.724375+00:00",
+      "signal_date": "2026-10-14",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "WPP.L",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-15T07:09:31.724375+00:00",
+      "signal_date": "2026-10-13",
+      "stage": "compressão"
+    }
+  ],
+  "price_metadata": {
+    "provider": "yahoo_finance",
+    "auto_adjust": true,
+    "completed_before_utc_date": "2026-10-15",
+    "benchmark": "SPY",
+    "downloaded": 6,
+    "failed": {}
+  }
+}
