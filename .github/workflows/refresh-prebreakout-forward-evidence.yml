@@ -1,0 +1,56 @@
+name: Refresh prebreakout forward evidence
+
+on:
+  schedule:
+    - cron: '25 23 * * 1-5'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/refresh_prebreakout_forward_evidence.py'
+      - '.github/workflows/refresh-prebreakout-forward-evidence.yml'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: refresh-prebreakout-forward-evidence
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install price dependencies
+        run: pip install 'yfinance>=0.2.65' pandas
+      - name: Test point-in-time evaluation
+        run: |
+          python tests/test_prebreakout_forward_evaluation.py
+          python tests/test_prebreakout_stage_evidence.py
+          python tests/test_build_prebreakout_forward_cohorts.py
+          python tests/test_refresh_prebreakout_forward_evidence.py
+      - name: Read independently adjusted daily prices
+        run: python scripts/refresh_prebreakout_forward_evidence.py
+      - name: Check automated main publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py
+      - name: Publish matured forward evidence
+        if: steps.publish_window.outputs.defer != 'true'
+        run: |
+          git config user.name "vestra-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/prebreakout-forward-evidence.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Actualização de evidência forward pré-breakout"
+            bash scripts/publish_with_retry.sh origin main
+          fi
