@@ -239,6 +239,25 @@ def _timing_assessment(row):
     }
 
 
+
+def _relative_strength_context(timing: dict, row: dict) -> dict:
+    """Descriptive 20-session strength relative to the same-period broad market.
+
+    Never infer a market return from a regime label, or count it as alpha.
+    Values are in percentage points and become unavailable when either side
+    is unverified.
+    """
+    stock = _f(timing.get("return_20d_pct"))
+    market = _f(row.get("opportunity_market_return_20d_pct"))
+    if stock is None or market is None:
+        return {"status": "unavailable", "excess_20d_pp": None,
+                "reason": "Comparação de 20 sessões sem evidência suficiente"}
+    excess = round(stock - market, 2)
+    return {"status": "outperforming" if excess > 0 else "underperforming" if excess < 0 else "matching",
+            "excess_20d_pp": excess,
+            "reason": f"Força relativa ao mercado (20 sessões): {excess:+.2f} pp"}
+
+
 def _event_risk_context(row: dict) -> dict:
     """Summarise imminent binary-event risk without adding alpha.
 
@@ -453,7 +472,9 @@ def _insufficient(reason, components=None, gates=None, timing=None):
             "opportunity_timing_reasons": timing.get("reasons", []),
             "opportunity_timing_cautions": timing.get("cautions", []),
             "opportunity_return_5d_pct": timing.get("return_5d_pct"),
-            "opportunity_return_20d_pct": timing.get("return_20d_pct"),
+            "opportunity_relative_strength_20d_pp": relative_strength["excess_20d_pp"],
+        "opportunity_relative_strength_status": relative_strength["status"],
+        "opportunity_return_20d_pct": timing.get("return_20d_pct"),
             "opportunity_return_60d_pct": timing.get("return_60d_pct"),
             "opportunity_drawdown_from_high_pct": timing.get("drawdown_from_high_pct"),
             "opportunity_overextended": timing.get("overextended", False),
@@ -477,6 +498,7 @@ def assess(row: dict) -> dict:
     timing_score = timing.get("score")
     upside_support = _upside_support(row)
     event_risk = _event_risk_context(row)
+    relative_strength = _relative_strength_context(timing, row)
 
     gates = [
         _gate("score_available", score is not None, value=score, detail="Score Vestra não pode estar suprimido"),
@@ -564,7 +586,11 @@ def assess(row: dict) -> dict:
 
     gate = str(row.get("risk_gate") or "unknown").lower()
     reasons = list(timing.get("reasons") or [])
+    if relative_strength["status"] == "outperforming":
+        reasons.append(relative_strength["reason"])
     cautions = list(timing.get("cautions") or [])
+    if relative_strength["status"] == "underperforming":
+        cautions.append(relative_strength["reason"])
     caps = []
     upside_status = upside_support["status"]
     reasons.extend(upside_support.get("reasons") or [])
