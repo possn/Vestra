@@ -37,12 +37,15 @@ jobs:
           python tests/test_prebreakout_stage_evidence.py
           python tests/test_build_prebreakout_forward_cohorts.py
           python tests/test_refresh_prebreakout_forward_evidence.py
+          python tests/test_audit_prebreakout_scan_cadence.py
           python tests/test_build_prebreakout_transitions.py
           python tests/test_check_prebreakout_transitions.py
       - name: Recover transitions from immutable archived slots
         run: |
           python scripts/build_prebreakout_transitions.py
           python scripts/check_prebreakout_transitions.py
+      - name: Diagnose scheduled scanner archive cadence
+        run: python scripts/audit_prebreakout_scan_cadence.py
       - name: Read independently adjusted daily prices
         run: python scripts/refresh_prebreakout_forward_evidence.py
       - name: Check automated main publish window
