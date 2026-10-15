@@ -36,6 +36,7 @@ jobs:
           python -m py_compile scripts/refresh_prebreakout_scanner.py
           python tests/test_refresh_prebreakout_scanner.py
           python tests/test_archive_prebreakout_scan.py
+          python tests/test_build_prebreakout_observations.py
       - name: Scan bounded liquid universe
         run: python scripts/refresh_prebreakout_scanner.py
       - name: Check automated main publish window
@@ -49,7 +50,8 @@ jobs:
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
           python scripts/archive_prebreakout_scan.py
-          git add data/prebreakout-signals.json data/prebreakout-history/
+          python scripts/build_prebreakout_observations.py
+          git add data/prebreakout-signals.json data/prebreakout-history/ data/prebreakout-observations.json
           if ! git diff --cached --quiet; then
             git commit -m "Actualização de setups pré-breakout verificados"
             bash scripts/publish_with_retry.sh origin main
