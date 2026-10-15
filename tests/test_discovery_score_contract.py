@@ -133,6 +133,15 @@ class DiscoveryScoreContractTests(unittest.TestCase):
         self.assertIsNone(out["opportunity_score"])
         self.assertIn("Confiança", out["opportunity_suppressed_reason"])
 
+    def test_missing_risk_gate_cannot_become_high_priority(self):
+        candidate = row()
+        candidate.pop("risk_gate")
+        out = MOD.assess(candidate)
+        self.assertTrue(out["opportunity_eligible"])
+        self.assertLessEqual(out["opportunity_score"],59)
+        self.assertTrue(any(x["reason"] == "Risk Gate sem avaliação conclusiva" for x in out["opportunity_caps"]))
+        self.assertTrue(any("Risk Gate" in x for x in out["opportunity_cautions"]))
+
     def test_risk_gate_constrains_discovery_instead_of_rewarding_it(self):
         clear = MOD.assess(row(risk_gate="clear"))
         severe = MOD.assess(row(risk_gate="severe"))
