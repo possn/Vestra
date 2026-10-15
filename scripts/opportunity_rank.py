@@ -260,7 +260,7 @@ def _relative_strength_context(timing: dict, row: dict) -> dict:
 
 def _sector_relative_strength_context(timing, row):
     """Sector comparison only when a matched ETF observation is verified."""
-    stock = _f(timing.get("return_20d_pct"))
+    stock = _f(row.get("opportunity_stock_return_20d_pct"))
     sector = _f(row.get("opportunity_sector_return_20d_pct"))
     ticker = str(row.get("opportunity_sector_benchmark_ticker") or "").strip().upper()
     if stock is None or sector is None or not ticker or row.get("opportunity_sector_benchmark_verified") is not True:

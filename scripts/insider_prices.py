@@ -203,6 +203,22 @@ def _compact_daily_returns(closes) -> dict:
     return out
 
 
+def _dated_daily_returns(series) -> dict:
+    """Attach UTC session date to the daily close window to forbid mismatched comparisons."""
+    try:
+        valid=series.dropna()
+        if valid.empty:
+            return {}
+        metrics=_compact_daily_returns(valid.tolist())
+        if metrics:
+            metrics["market_return_asof_date"] = str(valid.index[-1])[:10]
+            if "market_return_20d_pct" in metrics and len(valid) >= 21:
+                metrics["market_return_20d_dates"] = [str(d)[:10] for d in valid.index[-21:]]
+        return metrics
+    except (TypeError, ValueError, IndexError, AttributeError):
+        return {}
+
+
 def _download_daily_return_batch(batch: list[str]) -> dict[str, dict]:
     out = {t: {} for t in batch}
     if not batch:
@@ -223,7 +239,7 @@ def _download_daily_return_batch(batch: list[str]) -> dict[str, dict]:
         if len(batch) == 1:
             t = batch[0]
             if "Close" in df.columns:
-                out[t] = _compact_daily_returns(df["Close"].dropna().tolist())
+                out[t] = _dated_daily_returns(df["Close"])
             return out
 
         lvl0 = set(map(str, df.columns.get_level_values(0))) if getattr(df.columns, "nlevels", 1) > 1 else set()
@@ -240,7 +256,7 @@ def _download_daily_return_batch(batch: list[str]) -> dict[str, dict]:
             except Exception:
                 series = None
             if series is not None:
-                out[t] = _compact_daily_returns(series.dropna().tolist())
+                out[t] = _dated_daily_returns(series)
     except Exception as exc:
         log.warning("daily return batch failed (%d tickers): %s", len(batch), exc)
     return out
