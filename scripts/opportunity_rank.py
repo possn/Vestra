@@ -464,6 +464,8 @@ def _insufficient(reason, components=None, gates=None, timing=None):
         "opportunity_suppressed_reason": reason,
         "opportunity_gates": gates or [],
         "opportunity_caps": [],
+        "opportunity_relative_strength_20d_pp": None,
+        "opportunity_relative_strength_status": "unavailable",
     }
     if timing:
         out.update({
@@ -472,9 +474,7 @@ def _insufficient(reason, components=None, gates=None, timing=None):
             "opportunity_timing_reasons": timing.get("reasons", []),
             "opportunity_timing_cautions": timing.get("cautions", []),
             "opportunity_return_5d_pct": timing.get("return_5d_pct"),
-            "opportunity_relative_strength_20d_pp": relative_strength["excess_20d_pp"],
-        "opportunity_relative_strength_status": relative_strength["status"],
-        "opportunity_return_20d_pct": timing.get("return_20d_pct"),
+            "opportunity_return_20d_pct": timing.get("return_20d_pct"),
             "opportunity_return_60d_pct": timing.get("return_60d_pct"),
             "opportunity_drawdown_from_high_pct": timing.get("drawdown_from_high_pct"),
             "opportunity_overextended": timing.get("overextended", False),
@@ -806,6 +806,8 @@ def assess(row: dict) -> dict:
         "opportunity_event_risk_days": event_risk.get("days"),
         "opportunity_event_risk_date": event_risk.get("date"),
         "opportunity_event_risk_source": event_risk.get("source"),
+        "opportunity_relative_strength_20d_pp": relative_strength["excess_20d_pp"],
+        "opportunity_relative_strength_status": relative_strength["status"],
         "opportunity_return_20d_pct": timing.get("return_20d_pct"),
         "opportunity_return_60d_pct": timing.get("return_60d_pct"),
         "opportunity_drawdown_from_high_pct": timing.get("drawdown_from_high_pct"),
