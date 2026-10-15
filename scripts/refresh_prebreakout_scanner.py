@@ -92,11 +92,18 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
         (12 if volume_dry else 0)+(12 if 0<=distance<=4 else 0)+
         (10 if crossed else 0)+(11 if breakout else 0)-
         (12 if baseline is None else 0))))
+    # Diagnostic evidence only: no score, gate, or stage changes.
+    close_location=(current-clean[-1]["low"])/(clean[-1]["high"]-clean[-1]["low"]) if clean[-1]["high"]>clean[-1]["low"] else None
+    volume_ratio=(recent_volumes[-1]/mean_vol) if mean_vol is not None and recent_volumes[-1] is not None else None
+    extension_pct=(current/resistance-1)*100 if resistance>0 else None
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
             "widthPct":round(base_width*100,2),"priorWidthPct":round(old_width*100,2),
             "distancePct":round(distance,2),"resistance":round(resistance,5),
             "sma50":round(m50,5),"sma150":round(m150,5),"sma200":round(m200,5),
             "volumeConfirmed":bool(volume_confirmed),"volumeDry":bool(volume_dry),
+            "breakoutCloseLocationPct":round(close_location*100,1) if close_location is not None else None,
+            "breakoutVolumeRatio":round(volume_ratio,2) if volume_ratio is not None else None,
+            "breakoutExtensionPct":round(extension_pct,2) if extension_pct is not None else None,
             "vcpConfirmed":True,"goldenCrossRecent":bool(crossed),
             "goldenCrossImminent":bool(near_cross),
             "source":"yahoo:daily_ohlcv"}
