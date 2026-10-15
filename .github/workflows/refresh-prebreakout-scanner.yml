@@ -3,6 +3,8 @@ name: Refresh prebreakout scanner
 on:
   schedule:
     - cron: '10 2,8,14,20 * * 1-5'
+    # Best-effort catch-up: rerun fresh scans after a protected publish window closes.
+    - cron: '35 3-5,9-11,15-17,21-23 * * 1-5'
   workflow_dispatch: {}
   push:
     branches: [main]
@@ -35,20 +37,26 @@ jobs:
         run: |
           python -m py_compile scripts/refresh_prebreakout_scanner.py
           python tests/test_refresh_prebreakout_scanner.py
+          python tests/test_check_prebreakout_scan_due.py
           python tests/test_archive_prebreakout_scan.py
           python tests/test_build_prebreakout_observations.py
           python tests/test_build_prebreakout_transitions.py
           python tests/test_check_prebreakout_transitions.py
           python tests/test_check_prebreakout_publication.py
+      - name: Determine whether current UTC slot still needs a real scan
+        id: scan_due
+        run: python scripts/check_prebreakout_scan_due.py
       - name: Scan bounded liquid universe
+        if: steps.scan_due.outputs.scan == 'true'
         run: python scripts/refresh_prebreakout_scanner.py
       - name: Check automated main publish window
+        if: steps.scan_due.outputs.scan == 'true'
         id: publish_window
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/defer_main_publish_if_code_pr.py
       - name: Publish technical signals
-        if: steps.publish_window.outputs.defer != 'true'
+        if: steps.scan_due.outputs.scan == 'true' && steps.publish_window.outputs.defer != 'true'
         run: |
           git config user.name "vestra-data-bot"
           git config user.email "actions@users.noreply.github.com"
