@@ -4,7 +4,6 @@ import tempfile
 import unittest
 from datetime import datetime,timezone
 from pathlib import Path
-import pandas as pd
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from refresh_prebreakout_forward_evidence import gather, completed_bars
@@ -20,8 +19,15 @@ class ForwardPriceRefreshTests(unittest.TestCase):
         (folder/"2026-10-15-slot2.json").write_text(json.dumps(slot))
 
     def frame(self):
-        return pd.DataFrame({"Close":[100.0,101.0,102.0,105.0]},
-              index=pd.to_datetime(["2026-10-14","2026-10-15","2026-10-16","2026-10-17"]))
+        class Frame:
+            empty=False
+            columns=("Close",)
+            def __init__(self):
+                self.rows=[(datetime(2026,10,day),{"Close":float(value)})
+                           for day,value in [(14,100),(15,101),(16,102),(17,105)]]
+            def iterrows(self):
+                return iter(self.rows)
+        return Frame()
 
     def test_completed_only_and_adjusted_contract(self):
         rows=completed_bars(self.frame(),datetime(2026,10,17,tzinfo=timezone.utc).date())
@@ -54,7 +60,7 @@ class ForwardPriceRefreshTests(unittest.TestCase):
 
     def test_invalid_prices_rejected(self):
         frame=self.frame()
-        frame.loc[frame.index[1],"Close"]=float("nan")
+        frame.rows[1][1]["Close"]=float("nan")
         with self.assertRaises(ValueError):
             completed_bars(frame,datetime(2026,10,17,tzinfo=timezone.utc).date())
 
