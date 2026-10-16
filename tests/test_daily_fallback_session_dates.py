@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-with patch.dict(sys.modules, {"yfinance": Mock()}):
+with patch.dict(sys.modules, {"yfinance": Mock(), "requests": Mock(), "ticker_successors": Mock(retrieval_symbol=lambda ticker: ticker)}):
     from insider_prices import _download_direct_daily_returns
 
 class DatedDirectDailyFallbackTests(unittest.TestCase):
