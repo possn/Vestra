@@ -24,7 +24,7 @@ class LazyMarketPureHelpersTests(unittest.TestCase):
             self.assertNotIn(f'src="{path}', INDEX)
 
     def test_helpers_are_loaded_before_market_core(self):
-        core = LOADER.index("script.src = 'market.js?v=20261014crypto1';")
+        core = LOADER.index("script.src = 'market.js?v=20261016rotation-freshness';")
         for global_name, src in HELPERS:
             token = f"loadHelper('{global_name}', '{src}')"
             self.assertIn(token, LOADER)
