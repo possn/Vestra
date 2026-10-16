@@ -1,0 +1,29 @@
+name: Recover missing canonical market publication
+
+# Only dispatch a fresh full rebuild when the 06:15 UTC publication is still absent.
+# Never copy or synthesize historical data. The canonical workflow retains all guards.
+on:
+  schedule:
+    - cron: '15 10 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  check-and-recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Check canonical publication freshness
+        id: freshness
+        run: |
+          python scripts/check_market_rebuild_due.py
+      - name: Dispatch validated canonical rebuild only when due
+        if: steps.freshness.outputs.rebuild == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run update-market-data.yml --ref main
