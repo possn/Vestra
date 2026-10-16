@@ -13,7 +13,7 @@ class SectorRelativeExclusionTests(unittest.TestCase):
         days = [f"2026-09-{d:02d}" for d in range(1,22)]
         etf = {"market_return_20d_pct": 3, "market_return_asof_date": days[-1], "market_return_20d_dates": days}
         a = {"market_return_20d_pct": 5, "market_return_asof_date": days[-1], "market_return_20d_dates": days}
-        b = {**a, "market_return_20d_dates": days[:-2] + ["2026-09-20", days[-1]]}
+        b = {**a, "market_return_20d_dates": days[:-2] + ["2026-09-22", days[-1]]}
         result = exclusion_summary([row("A"), row("B"), row("C"), row("XLK", quote_type="ETF")],
                                    {"XLK": etf, "A": a, "B": b, "C": {}})
         self.assertEqual(result["total"], 3)
