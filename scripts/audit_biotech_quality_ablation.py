@@ -38,10 +38,37 @@ def report(path=ROOT / "data/stocks.json"):
             pairs.append((runway, original, candidate))
     def rho(a, b):
         return score_audit.spearman_pairs([(p[a], p[b]) for p in pairs])
+
+    # The specialist composite gives Operating Quality a 10% weight. Keep all
+    # other pillars fixed and measure the resulting ranking perturbation.
+    scored = []
+    for item in biotech:
+        dims = item.get("shadow_dimensions") or {}
+        old_quality = score_peer_shadow.n(dims.get("Operating Quality"))
+        gross = raw.get(str(item.get("ticker")), {}).get("gross_margin")
+        new_quality = _percentile(gross, reference_gross)
+        old_score = score_peer_shadow.n(item.get("shadow_score"))
+        if None in (old_quality, new_quality, old_score):
+            continue
+        new_score = old_score + 0.10 * (new_quality - old_quality)
+        scored.append((str(item.get("ticker")), old_score, new_score))
+    old_rank = {x[0]: i for i, x in enumerate(sorted(scored, key=lambda x: (-x[1], x[0])), 1)}
+    new_rank = {x[0]: i for i, x in enumerate(sorted(scored, key=lambda x: (-x[2], x[0])), 1)}
+    changes = sorted(
+        [(name, round(new-old, 3), new_rank[name]-old_rank[name])
+         for name, old, new in scored],
+        key=lambda x: abs(x[2]), reverse=True
+    )
+    shifts = [abs(x[2]-x[1]) for x in scored]
     return {
         "model": "biotech", "snapshot_rows": len(biotech), "comparable_pairs": len(pairs),
         "production_quality_rho": rho(0, 1), "gross_only_candidate_rho": rho(0, 2),
         "mean_quality_shift": (sum(abs(x[2]-x[1]) for x in pairs)/len(pairs)) if pairs else None,
+        "score_comparable_rows": len(scored),
+        "mean_abs_composite_shift": sum(shifts)/len(shifts) if shifts else None,
+        "max_abs_composite_shift": max(shifts) if shifts else None,
+        "rank_changes_ge_10": sum(abs(c[2]) >= 10 for c in changes),
+        "largest_rank_changes": changes[:10],
         "candidate_published": False,
     }
 
