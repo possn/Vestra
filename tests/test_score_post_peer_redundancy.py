@@ -86,6 +86,21 @@ class ScorePostPeerRedundancyTests(unittest.TestCase):
                 if abs(rho) >= REDUNDANCY_THRESHOLD:
                     failures.append((model, left, right, round(rho, 4)))
 
+        # Expose sample structure for failing correlations; do not change
+        # either the gate threshold or any production score dimension.
+        for model, left, right, rho in failures:
+            model_rows = self.by_model[model]
+            pairs = [((row.get("shadow_dimensions") or {}).get(left),
+                      (row.get("shadow_dimensions") or {}).get(right))
+                     for row in model_rows]
+            valid = [(a, b) for a, b in pairs if isinstance(a, (int, float))
+                     and isinstance(b, (int, float))]
+            print(f"REDUNDANCY_EVIDENCE model={model} dimensions={left}|{right}"
+                  f" rho={rho} rows={len(model_rows)} valid_pairs={len(valid)}"
+                  f" distinct_left={len({a for a, _ in valid})}"
+                  f" distinct_right={len({b for _, b in valid})}"
+                  f" zero_pairs={sum(a == 0 or b == 0 for a, b in valid)}"
+                  f" neutral_pairs={sum(a == 50 or b == 50 for a, b in valid)}")
         self.assertIn("growth_tech", checked)
         self.assertEqual(
             failures,
