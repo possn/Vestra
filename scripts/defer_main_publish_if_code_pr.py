@@ -10,6 +10,8 @@ all scheduled data publication indefinitely.
 """
 from __future__ import annotations
 
+import argparse
+import datetime
 import json
 import os
 import sys
@@ -80,7 +82,34 @@ def _write_output(name: str, value: str):
         print(f"{name}={value}")
 
 
+def scan_grace_expired(now: datetime.datetime, grace_minutes: int) -> bool:
+    """Only scanner callers opt in to a bounded code-PR pause.
+
+    Later retries use fresh observations; no historical slot is synthesized.
+    """
+    if now.tzinfo is None:
+        raise ValueError("UTC-aware time required")
+    now = now.astimezone(datetime.timezone.utc)
+    if now.weekday() >= 5:
+        return False
+    slot = now.hour // 6
+    scheduled_hour = (2, 8, 14, 20)[slot]
+    origin = now.replace(hour=scheduled_hour, minute=10, second=0, microsecond=0)
+    return (now - origin).total_seconds() >= grace_minutes * 60
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--scanner-grace-minutes", type=int, default=None,
+                        help="Scanner only: allow real publication after bounded PR grace")
+    args = parser.parse_args()
+    if args.scanner_grace_minutes is not None and args.scanner_grace_minutes < 0:
+        parser.error("--scanner-grace-minutes must be nonnegative")
+    if args.scanner_grace_minutes is not None and scan_grace_expired(
+            datetime.datetime.now(datetime.timezone.utc), args.scanner_grace_minutes):
+        print("Scanner publish grace elapsed; allowing fresh slot publication despite open PRs.")
+        _write_output("defer", "false")
+        return 0
     repo = os.getenv("GITHUB_REPOSITORY", "").strip()
     token = os.getenv("GITHUB_TOKEN", "").strip()
     if not repo or not token:
