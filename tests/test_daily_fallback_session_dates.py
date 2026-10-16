@@ -16,7 +16,7 @@ class DatedDirectDailyFallbackTests(unittest.TestCase):
             result["timestamp"] = stamps
         return Mock(status_code=200, json=lambda: {"chart": {"result": [result]}})
 
-    @patch("insider_prices.requests.get")
+    @patch.object(_download_direct_daily_returns.__globals__["requests"], "get")
     def test_preserves_verified_21_session_dates(self, get):
         get.return_value = self._response(21)
         metrics = _download_direct_daily_returns("XLK")
@@ -24,14 +24,14 @@ class DatedDirectDailyFallbackTests(unittest.TestCase):
         self.assertEqual(metrics["market_return_asof_date"], metrics["market_return_20d_dates"][-1])
         self.assertIn("market_return_20d_pct", metrics)
 
-    @patch("insider_prices.requests.get")
+    @patch.object(_download_direct_daily_returns.__globals__["requests"], "get")
     def test_no_dates_without_source_timestamps(self, get):
         get.return_value = self._response(21, omit_timestamps=True)
         metrics = _download_direct_daily_returns("XLK")
         self.assertNotIn("market_return_20d_dates", metrics)
         self.assertIn("market_return_20d_pct", metrics)
 
-    @patch("insider_prices.requests.get")
+    @patch.object(_download_direct_daily_returns.__globals__["requests"], "get")
     def test_invalid_exchange_timezone_does_not_invent_sessions(self, get):
         get.return_value = self._response(21, tz="Nonexistent/Exchange")
         self.assertNotIn("market_return_20d_dates", _download_direct_daily_returns("XLK"))
