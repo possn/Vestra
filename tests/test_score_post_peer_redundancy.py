@@ -95,6 +95,13 @@ class ScorePostPeerRedundancyTests(unittest.TestCase):
                      for row in model_rows]
             valid = [(a, b) for a, b in pairs if isinstance(a, (int, float))
                      and isinstance(b, (int, float))]
+            if model == "biotech":
+                for field in ("gross_margin", "roa"):
+                    raw_pairs = [((row.get("shadow_dimensions") or {}).get("Cash Runway"),
+                                  row.get(field)) for row in model_rows]
+                    raw_rho = score_audit.spearman_pairs(raw_pairs)
+                    print(f"BIOTECH_SOURCE_CORRELATION field={field} rho={raw_rho}"
+                          f" raw_pairs={sum(a is not None and b is not None for a,b in raw_pairs)}")
             print(f"REDUNDANCY_EVIDENCE model={model} dimensions={left}|{right}"
                   f" rho={rho} rows={len(model_rows)} valid_pairs={len(valid)}"
                   f" distinct_left={len({a for a, _ in valid})}"
