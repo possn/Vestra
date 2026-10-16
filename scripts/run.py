@@ -35,6 +35,7 @@ from recovery_confirmation import assess_universe as assess_recovery_confirmatio
 from drawdown_diagnosis import assess as assess_drawdown_diagnosis
 from scanner import assess as assess_scanner
 from sector_relative_context import evidence as sector_relative_evidence
+from audit_sector_relative_coverage import report as sector_coverage_report
 from analyst import fetch_many as fetch_analyst_many
 import history as history_mod
 import valuation_history as valuation_history_mod
@@ -705,6 +706,8 @@ def main():
         json.dump(_json_safe(payload), f, separators=(",", ":"))
 
     log.info("Wrote %d rows to %s", len(rows), OUT_PATH)
+    coverage = sector_coverage_report(payload)
+    log.info("SECTOR_RELATIVE_COVERAGE %s", json.dumps(coverage, separators=(",", ":"), sort_keys=True))
 
     _stage = _stage_timer("metals_fx_history_news")
     metals_payload = build_metals_payload()
