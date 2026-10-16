@@ -132,11 +132,11 @@
     },
     {
       "ticker": "ATKR",
-      "entry": null,
-      "results": {},
+      "stage": "compressão",
       "published_at": "2026-10-15T07:09:31.724375+00:00",
       "signal_date": "2026-10-14",
-      "stage": "compressão"
+      "entry": null,
+      "results": {}
     },
     {
       "ticker": "LTC",
@@ -148,19 +148,22 @@
     },
     {
       "ticker": "WPP.L",
-      "entry": null,
-      "results": {},
+      "stage": "compressão",
       "published_at": "2026-10-15T07:09:31.724375+00:00",
       "signal_date": "2026-10-13",
-      "stage": "compressão"
+      "entry": null,
+      "results": {}
     }
   ],
   "price_metadata": {
     "provider": "yahoo_finance",
     "auto_adjust": true,
-    "completed_before_utc_date": "2026-10-15",
+    "completed_before_utc_date": "2026-10-16",
     "benchmark": "SPY",
-    "downloaded": 6,
-    "failed": {}
+    "downloaded": 4,
+    "failed": {
+      "ATKR": "ValueError",
+      "WPP.L": "ValueError"
+    }
   }
 }
