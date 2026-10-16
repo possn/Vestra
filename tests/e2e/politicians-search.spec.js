@@ -46,7 +46,7 @@ test('iPhone/WebKit: politician picker supports live name search', async ({ page
   await waitForLaunch(page);
   await page.evaluate(() => window.setView?.('market'));
   await page.waitForFunction(() => window.VestraMarket && typeof window.VestraMarket.ensureLoaded === 'function');
-  await page.evaluate(() => window.VestraMarket.ensureLoaded());
+  await page.evaluate(async () => { await window.VestraMarket.ensureLoaded(); });
   const politiciansMode = page.locator('[data-politicians-mode]');
   await expect(politiciansMode).toBeVisible();
   await politiciansMode.tap();
