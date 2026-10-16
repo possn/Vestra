@@ -306,8 +306,20 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     if(!rows.length) return `<div class="market-rotation-group market-rotation-group--empty market-rotation-group--${tone}"><div class="market-rotation-group__head market-rotation-group__head--compact"><strong>${esc(title)}</strong><small>${esc(emptyText)}</small></div></div>`;
     return `<div class="market-rotation-group market-rotation-group--${tone}"><div class="market-rotation-group__head"><strong>${esc(title)}</strong><small>${esc(subtitle)}</small></div><div class="market-rotation-grid">${rows.map((r,i)=>renderRotationRow(r,i+1)).join('')}</div></div>`;
   }
+  function weeklyRotationFreshness() {
+    const raw = M.data?.generated_at;
+    const ms = typeof raw === 'string' ? Date.parse(raw) : NaN;
+    if (!Number.isFinite(ms)) return { label: 'Dados sem data', stale: true };
+    const ageHours = (Date.now() - ms) / 3600000;
+    const date = new Date(ms).toLocaleString('pt-PT', {
+      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+      timeZone: 'Europe/Lisbon'
+    });
+    return { label: 'Dados ' + date + ' · ' + (ageHours > 30 ? 'desatualizados' : 'rebuild'),
+      stale: ageHours > 30 || ageHours < -1 };
+  }
   function renderWeeklyRotation(){
-    const rows=weeklyRotationThemeRows(), coverage=weeklyRotationCoverage();
+    const rows=weeklyRotationThemeRows(), coverage=weeklyRotationCoverage(), freshness=weeklyRotationFreshness();
     if(!rows.length) return `<div class="market-rotation market-rotation--waiting" aria-live="polite"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-rotation-status">A preparar</span></div><div class="market-rotation-wait"><span class="market-rotation-wait-copy">A formar a primeira leitura semanal.</span></div></div>`;
     const inflows=rows.filter(r=>r.med5>0 && r.breadth>=50).slice(0,3);
     const medianRank=rotationMedian(rows.map(r=>r.rank));
@@ -323,12 +335,13 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       .filter(r=>r.med5<0 && r.breadth<=50 && !relativeLabels.has(r.label))
       .sort((a,b)=>a.rank-b.rank)
       .slice(0,3);
+    const staleNotice = freshness.stale ? '<p class="market-rotation-freshness-warning" role="status">Leitura histórica — o rebuild de mercado ainda não atualizou estes retornos. Não interpretar como movimento atual.</p>' : '';
     const pending=coverage.pending.map(x=>x.label).slice(0,4);
     const pendingText=pending.length?`Ainda a formar série: ${esc(pending.join(', '))}${coverage.pending.length>pending.length?` +${coverage.pending.length-pending.length}`:''}. Um tema só entra no ranking com ≥4 ações com retorno semanal.`:'Todos os temas têm cobertura semanal suficiente.';
     const relativeBlock=relativeDestinations.length
       ?renderRotationGroup('A ganhar força relativa','Melhor rank relativo · não implica entrada líquida',relativeDestinations,'relative','')
       :'';
-    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d</span></div>${renderRotationGroup('Entradas por preço','Retorno 5d positivo · breadth ≥50%',inflows,'in','Sem entradas por preço esta semana')}${relativeBlock}${renderRotationGroup('Saídas por preço','Retorno 5d negativo · breadth ≤50%',outflows,'out','Sem saídas por preço esta semana')}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking combina retorno 5d, breadth e retorno 20d. A direção principal continua a ser definida por preço + breadth.</p><p>Quando não existem entradas absolutas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais, sem chamar “entrada” a um retorno ainda negativo.</p><p>A confirmação ETF compara a direção do retorno semanal e do flow com o sinal de preço: só diz “ETF confirma” quando toda a evidência direcional disponível concorda; qualquer contradição aparece como “ETF diverge”. O flow resulta da variação de AUM ajustada ao retorno e não representa subscrições/resgates diretamente observados.</p><p>${pendingText}</p></div></details></div>`;
+    return `<div class="market-rotation"><div class="market-perspective-head"><div><small>WEEKLY ROTATION · 5D</small><h4>Para onde está a rodar o mercado?</h4></div><span class="market-data-age">${coverage.ready}/${coverage.total} temas · 5d · ${esc(freshness.label)}</span></div>${staleNotice}${renderRotationGroup('Entradas por preço','Retorno 5d positivo · breadth ≥50%',inflows,'in','Sem entradas por preço esta semana')}${relativeBlock}${renderRotationGroup('Saídas por preço','Retorno 5d negativo · breadth ≤50%',outflows,'out','Sem saídas por preço esta semana')}<details class="market-rotation-method"><summary>Como é calculado?</summary><div class="market-rotation-method__body"><p>O ranking combina retorno 5d, breadth e retorno 20d. A direção principal continua a ser definida por preço + breadth.</p><p>Quando não existem entradas absolutas, mostramos os temas acima da mediana do rank como destinos relativos. Isto identifica onde o mercado está a resistir/melhorar mais, sem chamar “entrada” a um retorno ainda negativo.</p><p>A confirmação ETF compara a direção do retorno semanal e do flow com o sinal de preço: só diz “ETF confirma” quando toda a evidência direcional disponível concorda; qualquer contradição aparece como “ETF diverge”. O flow resulta da variação de AUM ajustada ao retorno e não representa subscrições/resgates diretamente observados.</p><p>${pendingText}</p></div></details></div>`;
   }
 
   function renderDiscover(){
