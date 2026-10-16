@@ -346,6 +346,10 @@ def main():
     price_history_tickers = sorted(set(all_tickers) | set(ETF_UNIVERSE.keys()))
     insider_price_map = fetch_insider_prices(price_history_tickers)
     daily_return_map = fetch_daily_returns(price_history_tickers, workers=2)
+    # Diagnostic only: explain why strict point-in-time ETF comparisons are absent.
+    from sector_relative_diagnostics import exclusion_summary
+    sector_exclusions = exclusion_summary(scored, daily_return_map)
+    log.info("SECTOR_RELATIVE_EXCLUSIONS %s", json.dumps(sector_exclusions, sort_keys=True, separators=(",", ":")))
     _stage_done("price_history", _stage)
     raw_by_ticker = {r.ticker: r for r in raw}
     today = datetime.date.today().isoformat()
