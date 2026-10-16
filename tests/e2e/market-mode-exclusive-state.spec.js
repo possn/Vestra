@@ -4,6 +4,8 @@ async function openMarket(page) {
   await page.goto('/index.html');
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
+  await page.waitForFunction(() => window.VestraMarket && typeof window.VestraMarket.ensureLoaded === 'function');
+  await page.evaluate(async () => { await window.VestraMarket.ensureLoaded(); });
   await expect(page.locator('#marketSearch')).toBeVisible();
   await expect(page.locator('[data-politicians-mode]')).toBeVisible({ timeout: 10_000 });
   await page.waitForFunction(() => window.VestraMarketUiPolish?.version === '1.3');
