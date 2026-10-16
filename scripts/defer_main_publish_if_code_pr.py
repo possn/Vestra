@@ -100,9 +100,20 @@ def scan_grace_expired(now: datetime.datetime, grace_minutes: int) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--market-grace-minutes", type=int, default=None,
+                        help="Canonical market only: allow completed builds beyond scheduled PR grace")
     parser.add_argument("--scanner-grace-minutes", type=int, default=None,
                         help="Scanner only: allow real publication after bounded PR grace")
     args = parser.parse_args()
+    if args.market_grace_minutes is not None:
+        if args.market_grace_minutes < 0:
+            parser.error("--market-grace-minutes must be nonnegative")
+        now = datetime.datetime.now(datetime.timezone.utc)
+        origin = now.replace(hour=6, minute=15, second=0, microsecond=0)
+        if now >= origin and (now - origin).total_seconds() >= args.market_grace_minutes * 60:
+            print("Canonical market publish grace elapsed; validated rebuild can publish despite open code PRs.")
+            _write_output("defer", "false")
+            return 0
     if args.scanner_grace_minutes is not None and args.scanner_grace_minutes < 0:
         parser.error("--scanner-grace-minutes must be nonnegative")
     if args.scanner_grace_minutes is not None and scan_grace_expired(

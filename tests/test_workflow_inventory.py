@@ -13,6 +13,7 @@ ACTIVE_WORKFLOWS = {
     'production-smoke.yml',
     'publish-vestra-mobile-icons.yml',
     'rebuild-market-startup.yml',
+    'recover-market-data.yml',
     'refresh-weekly-earnings.yml',
     'refresh-prebreakout-scanner.yml',
     'refresh-prebreakout-forward-evidence.yml',
