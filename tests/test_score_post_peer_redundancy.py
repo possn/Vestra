@@ -23,6 +23,7 @@ class ScorePostPeerRedundancyTests(unittest.TestCase):
     def setUpClass(cls):
         payload = json.loads((ROOT / "data" / "stocks.json").read_text(encoding="utf-8"))
         rows = [r for r in (payload.get("stocks") or []) if isinstance(r, dict)]
+        cls.raw_by_ticker = {str(row.get("ticker")): row for row in rows}
         _, shadow_rows, _ = score_peer_shadow.build_shadow(rows)
         cls.by_model = defaultdict(list)
         for row in shadow_rows:
@@ -98,7 +99,7 @@ class ScorePostPeerRedundancyTests(unittest.TestCase):
             if model == "biotech":
                 for field in ("gross_margin", "roa"):
                     raw_pairs = [((row.get("shadow_dimensions") or {}).get("Cash Runway"),
-                                  row.get(field)) for row in model_rows]
+                                  self.raw_by_ticker.get(str(row.get("ticker")), {}).get(field)) for row in model_rows]
                     raw_rho = score_audit.spearman_pairs(raw_pairs)
                     print(f"BIOTECH_SOURCE_CORRELATION field={field} rho={raw_rho}"
                           f" raw_pairs={sum(a is not None and b is not None for a,b in raw_pairs)}")
