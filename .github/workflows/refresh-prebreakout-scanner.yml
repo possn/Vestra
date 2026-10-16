@@ -39,6 +39,7 @@ jobs:
           python tests/test_refresh_prebreakout_scanner.py
           python tests/test_check_prebreakout_scan_due.py
           python tests/test_audit_prebreakout_slots.py
+          python tests/test_prebreakout_publish_grace.py
           python tests/test_archive_prebreakout_scan.py
           python tests/test_build_prebreakout_observations.py
           python tests/test_build_prebreakout_transitions.py
@@ -57,7 +58,7 @@ jobs:
         id: publish_window
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/defer_main_publish_if_code_pr.py
+        run: python scripts/defer_main_publish_if_code_pr.py --scanner-grace-minutes 85
       - name: Publish technical signals
         if: steps.scan_due.outputs.scan == 'true' && steps.publish_window.outputs.defer != 'true'
         run: |
