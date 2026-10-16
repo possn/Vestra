@@ -47,7 +47,7 @@ def report(path=ROOT / "data/stocks.json"):
         old_quality = score_peer_shadow.n(dims.get("Operating Quality"))
         gross = raw.get(str(item.get("ticker")), {}).get("gross_margin")
         new_quality = _percentile(gross, reference_gross)
-        old_score = score_peer_shadow.n(item.get("shadow_score"))
+        old_score = score_peer_shadow.n(item.get("peer_shadow_score"))
         if None in (old_quality, new_quality, old_score):
             continue
         new_score = old_score + 0.10 * (new_quality - old_quality)
