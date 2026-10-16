@@ -38,11 +38,14 @@ jobs:
           python -m py_compile scripts/refresh_prebreakout_scanner.py
           python tests/test_refresh_prebreakout_scanner.py
           python tests/test_check_prebreakout_scan_due.py
+          python tests/test_audit_prebreakout_slots.py
           python tests/test_archive_prebreakout_scan.py
           python tests/test_build_prebreakout_observations.py
           python tests/test_build_prebreakout_transitions.py
           python tests/test_check_prebreakout_transitions.py
           python tests/test_check_prebreakout_publication.py
+      - name: Report missing closed scanner slots (diagnostic only)
+        run: python scripts/audit_prebreakout_slots.py
       - name: Determine whether current UTC slot still needs a real scan
         id: scan_due
         run: python scripts/check_prebreakout_scan_due.py
