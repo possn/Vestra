@@ -23,6 +23,7 @@ class ScorePostPeerRedundancyTests(unittest.TestCase):
     def setUpClass(cls):
         payload = json.loads((ROOT / "data" / "stocks.json").read_text(encoding="utf-8"))
         rows = [r for r in (payload.get("stocks") or []) if isinstance(r, dict)]
+        cls.raw_by_ticker = {str(row.get("ticker")): row for row in rows}
         _, shadow_rows, _ = score_peer_shadow.build_shadow(rows)
         cls.by_model = defaultdict(list)
         for row in shadow_rows:
@@ -86,6 +87,28 @@ class ScorePostPeerRedundancyTests(unittest.TestCase):
                 if abs(rho) >= REDUNDANCY_THRESHOLD:
                     failures.append((model, left, right, round(rho, 4)))
 
+        # Expose sample structure for failing correlations; do not change
+        # either the gate threshold or any production score dimension.
+        for model, left, right, rho in failures:
+            model_rows = self.by_model[model]
+            pairs = [((row.get("shadow_dimensions") or {}).get(left),
+                      (row.get("shadow_dimensions") or {}).get(right))
+                     for row in model_rows]
+            valid = [(a, b) for a, b in pairs if isinstance(a, (int, float))
+                     and isinstance(b, (int, float))]
+            if model == "biotech":
+                for field in ("gross_margin", "roa"):
+                    raw_pairs = [((row.get("shadow_dimensions") or {}).get("Cash Runway"),
+                                  self.raw_by_ticker.get(str(row.get("ticker")), {}).get(field)) for row in model_rows]
+                    raw_rho = score_audit.spearman_pairs(raw_pairs)
+                    print(f"BIOTECH_SOURCE_CORRELATION field={field} rho={raw_rho}"
+                          f" raw_pairs={sum(a is not None and b is not None for a,b in raw_pairs)}")
+            print(f"REDUNDANCY_EVIDENCE model={model} dimensions={left}|{right}"
+                  f" rho={rho} rows={len(model_rows)} valid_pairs={len(valid)}"
+                  f" distinct_left={len({a for a, _ in valid})}"
+                  f" distinct_right={len({b for _, b in valid})}"
+                  f" zero_pairs={sum(a == 0 or b == 0 for a, b in valid)}"
+                  f" neutral_pairs={sum(a == 50 or b == 50 for a, b in valid)}")
         self.assertIn("growth_tech", checked)
         self.assertEqual(
             failures,
