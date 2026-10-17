@@ -5,9 +5,12 @@ import datetime
 import email.utils
 from pathlib import Path
 from unittest.mock import patch
+from types import ModuleType
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import news
+requests_stub = ModuleType('requests')
+with patch.dict(sys.modules, {'requests': requests_stub}):
+    import news
 
 
 def headline(title, age_hours):
