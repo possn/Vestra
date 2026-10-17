@@ -91,3 +91,26 @@ test('iPhone/WebKit: totals cache updates after a price revaluation without chan
   expect(outcome.updatedAssets - outcome.initialAssets).toBe(75);
   expect(outcome.updatedNet - outcome.initialNet).toBe(75);
 });
+
+test('iPhone/WebKit: editorial wealth equals native Dashboard after hydration', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true && typeof window.VestraFinancialTotals === 'function');
+  await page.evaluate(() => {
+    if (typeof window.setView === 'function') window.setView('dashboard');
+    if (typeof window.renderDashboard === 'function') window.renderDashboard();
+  });
+  // Compare financial values rather than formatting details; both surfaces must
+  // display the exact canonical totals when privacy is off.
+  await page.evaluate(() => {
+    if (document.getElementById('btnDashboardPrivacy')?.getAttribute('aria-pressed') === 'true') {
+      window.toggleDashboardPrivacy();
+    }
+    window.dispatchEvent(new Event('focus'));
+  });
+  const expected = await page.evaluate(() => {
+    const t = window.VestraFinancialTotals();
+    return new Intl.NumberFormat('pt-PT', {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(t.net);
+  });
+  await expect(page.locator('[data-vi-wealth]')).toHaveText(expected);
+  await expect(page.locator('#kpiNet')).toHaveText(expected);
+});
