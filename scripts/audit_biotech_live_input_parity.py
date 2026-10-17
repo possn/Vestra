@@ -17,7 +17,6 @@ def measure(raw, scored):
         return _benchmark_values(values, universal)
     gross_ref, roa_ref = benchmark("gross_margin"), benchmark("roa")
     diffs = []
-    candidates = []
     for r in peers:
         published = (getattr(scored_by_ticker.get(r.ticker), "score_dimensions", None) or {}).get("Operating Quality")
         gross = _percentile_rank(r.gross_margin, gross_ref)
@@ -26,9 +25,6 @@ def measure(raw, scored):
         if native is None or published is None:
             continue
         diffs.append(abs(native - published))
-        candidate = _avg([gross if gross is None else 0.6*gross,
-                          roa if roa is None else 0.4*roa])
-        candidates.append((r.ticker, native, candidate))
     return {
         "biotech_input_rows": len(peers),
         "comparable_rows": len(diffs),
