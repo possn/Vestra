@@ -20,7 +20,7 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
     document.getElementById('viewMarket').appendChild(sentinel);
   });
 
-  const trigger = page.locator('[data-market-tool="portfolio"]').first();
+  const trigger = page.locator('[data-market-tool="portfolio"]:visible').first();
   await trigger.click();
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
@@ -37,7 +37,7 @@ test('iPhone/WebKit: portfolio sheet owns the viewport and always reopens at the
   await expect(page.locator('#viewMarket')).toBeVisible();
 
   await page.evaluate(() => window.setView('market'));
-  await page.locator('[data-market-tool="portfolio"]').first().click();
+  await page.locator('[data-market-tool="portfolio"]:visible').first().click();
   await expect(sheet).toBeVisible();
   await page.waitForTimeout(80);
   expect(await sheet.evaluate(el => el.scrollTop)).toBe(0);
@@ -53,7 +53,7 @@ test('iPhone/WebKit: expanded portfolio explorer hides base market and keeps clo
   await page.waitForFunction(() => window.VestraMarket?.ensureLoaded);
   await page.evaluate(() => window.VestraMarket.ensureLoaded());
 
-  await page.locator('[data-market-tool="portfolio"]').first().click();
+  await page.locator('[data-market-tool="portfolio"]:visible').first().click();
   const sheet = page.locator('#marketSheet');
   await expect(sheet).toBeVisible();
   await expect(page.locator('#viewMarket')).toHaveCSS('visibility', 'hidden');
