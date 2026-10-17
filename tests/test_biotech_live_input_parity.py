@@ -5,8 +5,11 @@ from types import SimpleNamespace, ModuleType
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from score import _score_model_for, _benchmark_values, _percentile_rank, _avg
-from audit_biotech_live_input_parity import measure
+fundamentals_stub = ModuleType("fundamentals")
+fundamentals_stub.RawMetrics = type("RawMetrics", (), {})
+with patch.dict(sys.modules, {"fundamentals": fundamentals_stub}):
+    from score import _score_model_for, _benchmark_values, _percentile_rank, _avg
+    from audit_biotech_live_input_parity import measure
 
 
 class LiveInputParityTests(unittest.TestCase):
