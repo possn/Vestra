@@ -310,8 +310,9 @@ def main():
     # Opt-in score parity observation uses this exact in-memory RawMetrics cohort.
     # It never persists financial inputs or changes production scores.
     if os.getenv("VESTRA_AUDIT_BIOTECH_INPUT_PARITY") == "1":
-        from audit_biotech_live_input_parity import measure as measure_biotech_parity
+        from audit_biotech_live_input_parity import measure as measure_biotech_parity, shadow_ablation
         log.info("BIOTECH_INPUT_PARITY %s", json.dumps(measure_biotech_parity(raw, scored), sort_keys=True))
+        log.info("BIOTECH_SAME_RUN_SHADOW %s", json.dumps(shadow_ablation(raw, scored), sort_keys=True))
     _stage_done("score", _stage)
     if os.getenv("VESTRA_AUDIT_BIOTECH_STOP_AFTER_SCORE") == "1":
         log.info("BIOTECH_INPUT_PARITY_AUDIT_STOP no market output publication requested")
