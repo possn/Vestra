@@ -1,0 +1,47 @@
+name: Biotech exact-input audit (nonpublishing)
+on:
+  push:
+    branches:
+      - audit/biotech-score-input-parity-20261017
+    paths:
+      - scripts/run.py
+      - scripts/audit_biotech_live_input_parity.py
+      - .github/workflows/biotech-input-parity-audit.yml
+permissions:
+  contents: read
+concurrency:
+  group: isolated-biotech-parity
+  cancel-in-progress: true
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - run: pip install -r scripts/requirements.txt
+      - name: Pre-score isolated cohort check
+        working-directory: scripts
+        env:
+          VESTRA_AUDIT_BIOTECH_INPUT_PARITY: "1"
+          VESTRA_AUDIT_BIOTECH_STOP_AFTER_SCORE: "1"
+          FINSCANNER_FETCH_WORKERS: "2"
+          FINSCANNER_FUNDAMENTALS_PORTFOLIO_REFRESH: "140"
+          FINSCANNER_FUNDAMENTALS_NONPRIORITY_REFRESH: "180"
+          FINSCANNER_ESEF_NONPRIORITY_REFRESH: "60"
+          FINSCANNER_GAP_REFRESH: "80"
+          FINSCANNER_QUARTERLY_GAP_REFRESH: "80"
+          FINSCANNER_ANALYST_PRIORITY_REFRESH: "100"
+          FINSCANNER_ANALYST_NONPRIORITY_REFRESH: "80"
+          FINSCANNER_ANALYST_ENDPOINT_CONCURRENCY: "2"
+          FINSCANNER_CAPITAL_RISK_PRIORITY_REFRESH: "80"
+          FINSCANNER_CAPITAL_RISK_NONPRIORITY_REFRESH: "30"
+        run: python run_market_pipeline.py
+      - name: Assert no market output was published
+        run: |
+          test -z "$(git diff --name-only -- data/ | grep -E '^data/(stocks|stocks-index|stocks-shards|pipeline_log|coverage_guard)' || true)"
+          echo "Isolated audit exited after score; no repository commits, uploads or publication"
