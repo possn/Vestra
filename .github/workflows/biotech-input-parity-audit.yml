@@ -70,6 +70,32 @@ jobs:
                   out.write(f"### {name}\n\n")
                   out.write("```json\n" + json.dumps(payload, ensure_ascii=False, indent=2) + "\n```\n")
           PY
+      - name: Require measured live Biotech evidence
+        run: |
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+          text = Path("biotech-audit.log").read_text(encoding="utf-8", errors="replace")
+          def find(name):
+              matches = re.findall(re.escape(name) + r"\s+(\{[^\n]*\})", text)
+              if not matches:
+                  raise SystemExit(f"Missing required {name} result in the isolated run")
+              return json.loads(matches[-1])
+          parity = find("BIOTECH_INPUT_PARITY")
+          shadow = find("BIOTECH_SAME_RUN_SHADOW")
+          count = parity.get("comparable_rows") or 0
+          if count < 20 or parity.get("outside_rounding_tolerance") != 0:
+              raise SystemExit(f"Biotech parity failed or undersampled: {parity}")
+          if shadow.get("same_run_biotech_rows") != parity.get("biotech_input_rows"):
+              raise SystemExit("Shadow and parity measured different Biotech cohorts")
+          if not shadow.get("native_quality_parity_passed"):
+              raise SystemExit("Native operating-quality reconstruction did not pass")
+          if any(not row.get("parity_gate_passed") for row in shadow.get("candidates", [])):
+              raise SystemExit("Biotech ablation contains an unmatched candidate")
+          if len(shadow.get("candidates", [])) != 6:
+              raise SystemExit("Missing candidate weights in same-run ablation")
+          print(f"Measured Biotech evidence verified: {count} peers")
+          PY
       - name: Assert canonical market outputs unchanged and no commits
         run: |
           # The pipeline writes pipeline_log.txt during normal operation; a local
