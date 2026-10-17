@@ -114,3 +114,21 @@ test('iPhone/WebKit: editorial wealth equals native Dashboard after hydration', 
   await expect(page.locator('[data-vi-wealth]')).toHaveText(expected);
   await expect(page.locator('#kpiNet')).toHaveText(expected);
 });
+
+test('iPhone/WebKit: portfolio assets hero and Home use identical canonical totals', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true && typeof window.VestraFinancialTotals === 'function');
+  await page.evaluate(() => {
+    if (document.getElementById('btnDashboardPrivacy')?.getAttribute('aria-pressed') === 'true') window.toggleDashboardPrivacy();
+    window.setView('assets');
+  });
+  await expect(page.locator('#portfolioTotalValue')).toBeVisible();
+  const values = await page.evaluate(() => {
+    const totals = window.VestraFinancialTotals();
+    const money = value => new Intl.NumberFormat('pt-PT', {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(value);
+    return { expected: money(totals.assetsTotal), portfolio: document.getElementById('portfolioTotalValue').textContent.trim() };
+  });
+  expect(values.portfolio).toBe(values.expected);
+  await page.evaluate(() => window.setView('dashboard'));
+  await expect(page.locator('[data-vi-assets]')).toContainText(values.expected);
+});
