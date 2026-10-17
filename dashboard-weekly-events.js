@@ -321,7 +321,7 @@
     const link = document.createElement('link');
     link.id = STYLE_ID;
     link.rel = 'stylesheet';
-    link.href = 'dashboard-weekly-events.css?v=1.3';
+    link.href = 'dashboard-weekly-events.css?v=2.0';
     document.head.appendChild(link);
   }
 
@@ -473,24 +473,42 @@
   }
 
   function combineArchivedStocks(stocks, archive) {
-    if (!Array.isArray(archive) || !archive.length) return stocks;
-    const seen = new Set(stocks.map(stock => tickerKey(stock?.ticker) + '|' + text(stock?.analyst_latest_earnings_date).slice(0, 10)));
-    const additions = [];
+    const source = Array.isArray(stocks) ? stocks : [];
+    if (!Array.isArray(archive) || !archive.length) return source;
+    // Preserve distinct reported quarters while allowing confirmed archive EPS
+    // to replace an incomplete startup row for the *same* dated event.
+    const merged = source.map(stock => ({ ...stock }));
+    const keys = new Map();
+    merged.forEach((stock, index) => {
+      const ticker = tickerKey(stock?.ticker);
+      const date = text(stock?.analyst_latest_earnings_date).slice(0, 10);
+      if (ticker && date) keys.set(ticker + '|' + date, index);
+    });
     for (const event of archive) {
       if (event?.kind !== 'earnings') continue;
       const ticker = tickerKey(event.ticker);
       const date = text(event.date);
-      if (!ticker || !/^\d{4}-\d{2}-\d{2}$/.test(date) || seen.has(ticker + '|' + date)) continue;
-      seen.add(ticker + '|' + date);
-      additions.push({
-        ticker, name: text(event.name) || ticker,
+      if (!ticker || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+      const confirmed = number(event.analyst_latest_eps_actual);
+      if (confirmed === null) continue;
+      const key = ticker + '|' + date;
+      const archiveFields = {
         analyst_latest_earnings_date: date,
-        analyst_latest_eps_actual: event.analyst_latest_eps_actual,
+        analyst_latest_eps_actual: confirmed,
         analyst_latest_eps_estimate: event.analyst_latest_eps_estimate,
         analyst_latest_eps_surprise_pct: event.analyst_latest_eps_surprise_pct,
-      });
+      };
+      if (keys.has(key)) {
+        const index = keys.get(key);
+        // Never downgrade a confirmed result to a missing placeholder.
+        if (number(merged[index]?.analyst_latest_eps_actual) === null)
+          merged[index] = { ...merged[index], ...archiveFields };
+      } else {
+        keys.set(key, merged.length);
+        merged.push({ ticker, name: text(event.name) || ticker, ...archiveFields });
+      }
     }
-    return [...stocks, ...additions];
+    return merged;
   }
 
   function render(options = {}) {

@@ -259,7 +259,7 @@ class CanonicalHomeTest(unittest.TestCase):
             self.assertIn(marker, css)
         self.assertIn("-webkit-text-fill-color:#19363b!important", css)
         self.assertIn("-webkit-text-fill-color:#f4f0e7!important", css)
-        self.assertIn("vestra-home-density-v2.css?v=7", html)
+        self.assertIn("vestra-home-density-v2.css?v=8", html)
 
     def test_context_and_quick_records_own_safari_ink(self):
         css = (ROOT / "vestra-home-density-v2.css").read_text(encoding="utf-8")
@@ -267,7 +267,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn("Surface-owned ink: context is on dark background", css)
         self.assertIn("#dashboardQuickRecordsCard .card__title", css)
         self.assertIn(":is(.vi-context-heading,.v2-home-section-label)", css)
-        self.assertIn("vestra-home-density-v2.css?v=7", html)
+        self.assertIn("vestra-home-density-v2.css?v=8", html)
 
 if __name__ == "__main__":
     unittest.main()

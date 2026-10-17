@@ -27,7 +27,9 @@ class CalendarCoverageTests(unittest.TestCase):
     def test_historical_earnings_archive_is_loaded_without_overwriting_live_stock_dates(self):
         js = (ROOT / 'dashboard-weekly-events.js').read_text(encoding='utf-8')
         self.assertIn('function combineArchivedStocks(stocks, archive)', js)
-        self.assertIn('seen.has(ticker', js)
+        self.assertIn('if (keys.has(key))', js)
+        self.assertIn('number(merged[index]?.analyst_latest_eps_actual) === null', js)
+        self.assertIn('merged[index] = { ...merged[index], ...archiveFields }', js)
         self.assertIn('loadEarningsArchive()', js)
         self.assertIn("data/earnings-events.json", js)
         self.assertIn('combineArchivedStocks(stocks, earningsArchive)', js)

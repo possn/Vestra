@@ -22,3 +22,57 @@
 /* Explicit result provenance on each weekly event, without implied publication. */
 #dashboardWeeklyEventsCard .weekly-event__result-status{display:inline-flex;align-items:center;border-radius:6px;padding:3px 6px;background:#e5e9e5;color:#425b58;-webkit-text-fill-color:#425b58;font-size:9px;font-weight:750}
 #dashboardWeeklyEventsCard .weekly-event__result-status[data-available="true"]{background:#d6ece2;color:#185f49;-webkit-text-fill-color:#185f49}
+
+
+/* Vestra 2.0 — editorial market calendar, one readable visual language. */
+#viewDashboard #dashboardWeeklyEventsCard.weekly-events-card{
+  border:1px solid #cad5d0!important;border-radius:22px!important;
+  background:#f1f2ed!important;box-shadow:none!important;
+  padding:clamp(16px,2.5vw,25px)!important;color:#1b353a!important;
+}
+#dashboardWeeklyEventsCard .weekly-events-head{align-items:center;gap:10px;margin-bottom:15px}
+#dashboardWeeklyEventsCard .weekly-events-kicker{font-size:10px;letter-spacing:.14em;color:#52756f;font-weight:800}
+#dashboardWeeklyEventsCard .weekly-events-title{font-family:inherit;font-weight:730;letter-spacing:-.035em;font-size:clamp(20px,3vw,26px);line-height:1.12}
+#dashboardWeeklyEventsCard .weekly-events-range{font-size:12px;font-weight:600;color:#607773}
+#dashboardWeeklyEventsCard .weekly-events-list{gap:10px;margin:0;padding:2px 1px 8px}
+#dashboardWeeklyEventsCard .weekly-event{
+  box-sizing:border-box;min-width:185px;max-width:235px;min-height:148px;
+  padding:14px;border:1px solid #d4dcd8;border-radius:17px;
+  background:#fffefa;color:#1b353a;box-shadow:none;
+}
+#dashboardWeeklyEventsCard .weekly-event::after{top:13px;right:13px;opacity:.65;font-size:20px}
+#dashboardWeeklyEventsCard .weekly-event__day{font-size:10px;letter-spacing:.075em;margin-bottom:9px;color:#317a70}
+#dashboardWeeklyEventsCard .weekly-event__ticker{font-size:18px;line-height:1.12;letter-spacing:-.025em}
+#dashboardWeeklyEventsCard .weekly-event__name{font-size:12px;line-height:1.35;margin:5px 0 11px;color:#516965}
+#dashboardWeeklyEventsCard .weekly-event__meta{gap:6px;font-size:10px;line-height:1.35}
+#dashboardWeeklyEventsCard .weekly-event__result-status{font-size:10px;line-height:1.35;padding:5px 8px;border-radius:9px;max-width:100%;white-space:normal}
+#dashboardWeeklyEventsCard .weekly-events-more{font-size:12px;margin-top:10px;min-height:36px}
+#dashboardWeeklyEventsCard .weekly-events-foot{font-size:11px;line-height:1.4;margin-top:8px}
+#dashboardWeeklyEventsCard [data-weekly-week-nav]{gap:6px}
+#dashboardWeeklyEventsCard [data-weekly-week-action]{border-radius:12px;min-height:42px;font-size:13px}
+.weekly-detail-backdrop{background:rgba(13,33,38,.48);backdrop-filter:blur(8px)}
+.weekly-detail-sheet{background:#f5f5f0;color:#1b353a;border:1px solid #d2dcd7;box-shadow:0 -16px 55px rgba(17,45,49,.18);padding:13px clamp(18px,4vw,28px) calc(22px + env(safe-area-inset-bottom))}
+.weekly-detail-title{font-size:clamp(27px,5vw,35px);letter-spacing:-.05em;font-weight:760}
+.weekly-detail-sub{font-size:13px;line-height:1.45;color:#58736c}
+.weekly-detail-status{font-size:13px;line-height:1.55;padding:15px 16px;border-radius:15px;background:#e3eee8;color:#1e554b}
+.weekly-detail-status--waiting{background:#e8e9e8;color:#395b58}
+.weekly-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;overflow:visible}
+.weekly-detail-metric{min-width:0;padding:13px 11px;background:#fffefa;border-color:#d3dcd8;border-radius:14px}
+.weekly-detail-metric span{font-size:10px;line-height:1.35;color:#53716c}
+.weekly-detail-metric strong{font-size:clamp(17px,3.7vw,23px);line-height:1.25;overflow-wrap:anywhere}
+.weekly-detail-meta{font-size:13px;gap:10px}
+.weekly-detail-meta-row{align-items:baseline;padding-bottom:10px;border-color:#cfdbd5}
+.weekly-detail-meta-row strong{max-width:68%;overflow-wrap:anywhere}
+.weekly-detail-action{min-height:49px;background:#187e79;font-size:14px;font-weight:730;border-radius:13px}
+@media(max-width:600px){
+  #dashboardWeeklyEventsCard .weekly-events-head{display:grid;grid-template-columns:1fr auto;align-items:start}
+  #dashboardWeeklyEventsCard .weekly-events-range{grid-column:1;grid-row:2;margin-top:2px}
+  #dashboardWeeklyEventsCard [data-weekly-week-nav]{grid-column:2;grid-row:1 / span 2;align-self:center}
+  #dashboardWeeklyEventsCard [data-weekly-week-action]{min-width:42px;padding:0 9px}
+  #dashboardWeeklyEventsCard [data-weekly-week-action="today"]{min-width:78px;max-width:105px;font-size:11px;white-space:normal;line-height:1.2}
+  #dashboardWeeklyEventsCard .weekly-event{min-width:min(72vw,230px);max-width:min(72vw,230px)}
+  .weekly-detail-sheet{max-height:87dvh;border-radius:25px 25px 0 0;padding-bottom:calc(26px + env(safe-area-inset-bottom))}
+  .weekly-detail-grid{gap:7px}
+  .weekly-detail-metric{padding:10px 8px}
+  .weekly-detail-metric span{font-size:9px;letter-spacing:0}
+}
