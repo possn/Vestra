@@ -9,7 +9,7 @@ fundamentals_stub = ModuleType("fundamentals")
 fundamentals_stub.RawMetrics = type("RawMetrics", (), {})
 with patch.dict(sys.modules, {"fundamentals": fundamentals_stub}):
     from score import _score_model_for, _benchmark_values, _percentile_rank, _avg
-    from audit_biotech_live_input_parity import measure
+    from audit_biotech_live_input_parity import measure, shadow_ablation
 
 
 class LiveInputParityTests(unittest.TestCase):
@@ -34,6 +34,26 @@ class LiveInputParityTests(unittest.TestCase):
         self.assertEqual(output["comparable_rows"], 25)
         self.assertEqual(output["outside_rounding_tolerance"], 0)
         self.assertEqual(output["max_absolute_parity_delta"], 0)
+
+    def test_same_run_shadow_is_nonmutating_and_reports_observed_pairs(self):
+        raw = [SimpleNamespace(
+            ticker=f"BT{i}", quote_type="EQUITY", error=None,
+            sector="Healthcare", industry="Biotechnology",
+            gross_margin=i / 100, roa=(24-i) / 100,
+        ) for i in range(25)]
+        scored = [SimpleNamespace(
+            ticker=x.ticker, score_dimensions={
+                "Operating Quality": 50.0,
+                "Cash Runway": float(i+1),
+            }) for i,x in enumerate(raw)]
+        before = [dict(x.score_dimensions) for x in scored]
+        result = shadow_ablation(raw, scored)
+        self.assertEqual(result["same_run_biotech_rows"], 25)
+        self.assertFalse(result["historical_cohort_comparable"])
+        self.assertEqual([x["roa_weight"] for x in result["candidates"]],
+                         [0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
+        self.assertTrue(all(x["pairs"] == 25 for x in result["candidates"]))
+        self.assertEqual([x.score_dimensions for x in scored], before)
 
     def test_detects_a_real_mismatch_without_changing_scores(self):
         raw = [SimpleNamespace(ticker=f"BT{i}", quote_type="EQUITY", error=None,
