@@ -290,9 +290,12 @@
     const headline = article?.textContent?.replace(/\\s+/g,' ').trim();
     update('news', headline ? headline.slice(0,100) : 'Notícias ainda não disponíveis · abrir módulo');
     const events = document.getElementById('dashboardWeeklyEventsCard');
-    const event = events?.querySelector('.weekly-events-list .weekly-event');
-    const eventLabel = event?.textContent?.replace(/\\s+/g,' ').trim();
-    update('events', eventLabel ? eventLabel.slice(0,100) : 'Consultar calendário e eventos da semana');
+    const cards = Array.from(events?.querySelectorAll('.weekly-events-list .weekly-event') || []);
+    const today = new Date();
+    const todayKey = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
+    const upcoming = cards.find(card => (card.dataset.weeklyEventDate || '') >= todayKey);
+    const eventLabel = upcoming?.textContent?.replace(/\\s+/g,' ').trim();
+    update('events', eventLabel ? eventLabel.slice(0,100) : 'Sem eventos futuros confirmados nesta semana · consultar calendário');
   }
 
   function syncCanonicalCards(host) {
