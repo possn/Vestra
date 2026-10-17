@@ -60,6 +60,26 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         self.assertEqual(candidates[:3], ["GS", "JNJ", "JPM"])
         self.assertEqual(len(candidates), 50)
 
+    def test_stale_large_caps_are_checked_each_rotation_without_extra_requests(self):
+        payload = {"stocks": [
+            *({"ticker": f"D{i:03d}", "quote_type": "EQUITY",
+               "analyst_next_earnings_date": "2026-10-18"} for i in range(65)),
+            *({"ticker": f"U{i:03d}", "quote_type": "EQUITY",
+               "market_cap": 10_000_000_000 - i} for i in range(90)),
+            {"ticker": "JPM", "quote_type": "EQUITY", "market_cap": 600_000_000_000,
+             "analyst_latest_earnings_date": "2026-07-14"},
+            {"ticker": "JNJ", "quote_type": "EQUITY", "market_cap": 400_000_000_000,
+             "analyst_latest_earnings_date": "2026-07-14"},
+            {"ticker": "GS", "quote_type": "EQUITY", "market_cap": 150_000_000_000,
+             "analyst_latest_earnings_date": "2026-07-14"},
+        ]}
+        for slot in (0, 1, 5, 7):
+            selected = mod.candidate_tickers(payload, today=date(2026, 10, 17), rotation_slot=slot)
+            self.assertEqual(len(selected), 80)
+            self.assertEqual(set(selected[50:53]), {"JPM", "JNJ", "GS"})
+            self.assertEqual(len(set(selected)), 80)
+            self.assertEqual(len([ticker for ticker in selected if ticker.startswith("U")]), 27)
+
     def test_coverage_separates_dates_from_other_updates(self):
         payload = {"stocks": [
             {"ticker": "A", "quote_type": "EQUITY",
