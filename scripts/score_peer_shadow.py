@@ -346,7 +346,9 @@ def biotech_shadow(ctx):
     runway_score = n(dims.get("Cash Runway"))
     net_cash = n(dims.get("Net Cash"))
     dilution = n(dims.get("Dilution Discipline"))
-    quality = n(dims.get("Operating Quality"))
+    # Reconstruct proposed independent quality from observed gross margin,
+    # not the ROA-contaminated dimension in historical snapshots.
+    quality = ctx.p("gross_margin")
     for metric, value in (
         ("Cash Runway", runway_score),
         ("Net Cash", net_cash),
