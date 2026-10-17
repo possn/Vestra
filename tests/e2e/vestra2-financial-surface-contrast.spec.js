@@ -69,3 +69,25 @@ test('iPhone/WebKit: privacy controls use one shared state across both Homes', a
   await expect(legacy).toHaveAttribute('aria-pressed', before);
   await expect(editorial).toHaveAttribute('aria-pressed', before);
 });
+
+test('iPhone/WebKit: totals cache updates after a price revaluation without changing asset count', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true && typeof window.VestraFinancialTotals === 'function');
+  const outcome = await page.evaluate(() => {
+    const original = state.assets;
+    try {
+      state.assets = [{ id: 'valuation-regression', value: 100, name: 'Test asset' }];
+      invalidateRenderCache();
+      const first = window.VestraFinancialTotals();
+      state.assets[0].value = 175;
+      const second = window.VestraFinancialTotals();
+      return { initialAssets: first.assetsTotal, updatedAssets: second.assetsTotal,
+        initialNet: first.net, updatedNet: second.net };
+    } finally {
+      state.assets = original;
+      invalidateRenderCache();
+    }
+  });
+  expect(outcome.updatedAssets - outcome.initialAssets).toBe(75);
+  expect(outcome.updatedNet - outcome.initialNet).toBe(75);
+});
