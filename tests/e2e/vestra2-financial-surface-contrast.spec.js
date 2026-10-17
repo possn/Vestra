@@ -47,3 +47,88 @@ test('iPhone/WebKit: Market analysis panel title has readable ink on light card'
   });
   expect(contrast(colors.title, colors.card), JSON.stringify(colors)).toBeGreaterThanOrEqual(4.5);
 });
+
+test('iPhone/WebKit: privacy controls use one shared state across both Homes', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.toggleDashboardPrivacy === 'function');
+  const legacy = page.locator('#btnDashboardPrivacy');
+  const editorial = page.locator('[data-vi-privacy]');
+  await expect(legacy).toHaveAttribute('aria-pressed', /^(true|false)$/);
+  await expect(editorial).toHaveAttribute('aria-pressed', /^(true|false)$/);
+  const before = await legacy.getAttribute('aria-pressed');
+  await page.evaluate(() => window.toggleDashboardPrivacy());
+  const after = before === 'true' ? 'false' : 'true';
+  await expect(legacy).toHaveAttribute('aria-pressed', after);
+  await expect(editorial).toHaveAttribute('aria-pressed', after);
+  await expect(page.locator('#viewDashboard')).toHaveAttribute('data-values-hidden', after);
+  if (after === 'true') {
+    await expect(page.locator('[data-vi-wealth]')).toContainText('•••');
+    await expect(page.locator('[data-vi-assets]')).toHaveText('Valores ocultos');
+  }
+  await page.evaluate(() => window.toggleDashboardPrivacy());
+  await expect(legacy).toHaveAttribute('aria-pressed', before);
+  await expect(editorial).toHaveAttribute('aria-pressed', before);
+});
+
+test('iPhone/WebKit: totals cache updates after a price revaluation without changing asset count', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true && typeof window.VestraFinancialTotals === 'function');
+  const outcome = await page.evaluate(() => {
+    const original = state.assets;
+    try {
+      state.assets = [{ id: 'valuation-regression', value: 100, name: 'Test asset' }];
+      invalidateRenderCache();
+      const first = window.VestraFinancialTotals();
+      state.assets[0].value = 175;
+      const second = window.VestraFinancialTotals();
+      return { initialAssets: first.assetsTotal, updatedAssets: second.assetsTotal,
+        initialNet: first.net, updatedNet: second.net };
+    } finally {
+      state.assets = original;
+      invalidateRenderCache();
+    }
+  });
+  expect(outcome.updatedAssets - outcome.initialAssets).toBe(75);
+  expect(outcome.updatedNet - outcome.initialNet).toBe(75);
+});
+
+test('iPhone/WebKit: editorial wealth equals native Dashboard after hydration', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true && typeof window.VestraFinancialTotals === 'function');
+  await page.evaluate(() => {
+    if (typeof window.setView === 'function') window.setView('dashboard');
+    if (typeof window.renderDashboard === 'function') window.renderDashboard();
+  });
+  // Compare financial values rather than formatting details; both surfaces must
+  // display the exact canonical totals when privacy is off.
+  await page.evaluate(() => {
+    if (document.getElementById('btnDashboardPrivacy')?.getAttribute('aria-pressed') === 'true') {
+      window.toggleDashboardPrivacy();
+    }
+    window.dispatchEvent(new Event('focus'));
+  });
+  const expected = await page.evaluate(() => {
+    const t = window.VestraFinancialTotals();
+    return new Intl.NumberFormat('pt-PT', {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(t.net);
+  });
+  await expect(page.locator('[data-vi-wealth]')).toHaveText(expected);
+  await expect(page.locator('#kpiNet')).toHaveText(expected);
+});
+
+test('iPhone/WebKit: portfolio assets hero and Home use identical canonical totals', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => window.__vestraAppHydrated === true && typeof window.VestraFinancialTotals === 'function');
+  await page.evaluate(() => {
+    if (document.getElementById('btnDashboardPrivacy')?.getAttribute('aria-pressed') === 'true') window.toggleDashboardPrivacy();
+    window.setView('assets');
+  });
+  await expect(page.locator('#portfolioTotalValue')).toBeVisible();
+  const values = await page.evaluate(() => {
+    const totals = window.VestraFinancialTotals();
+    const money = value => new Intl.NumberFormat('pt-PT', {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(value);
+    return { expected: money(totals.assetsTotal), portfolio: document.getElementById('portfolioTotalValue').textContent.trim() };
+  });
+  expect(values.portfolio).toBe(values.expected);
+  await page.evaluate(() => window.setView('dashboard'));
+  await expect(page.locator('[data-vi-assets]')).toContainText(values.expected);
+});

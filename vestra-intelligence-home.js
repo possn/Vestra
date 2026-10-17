@@ -388,8 +388,14 @@
     const nativeText = (nativeChanges?.innerText || nativeChanges?.textContent || '').replace(/\s+/g, ' ').trim();
 
     const privacy = document.getElementById('btnDashboardPrivacy');
-    const concealed = privacy?.getAttribute('aria-pressed') === 'true' ||
-      /mostrar valores/i.test(document.getElementById('dashboardPrivacyLabel')?.textContent || '');
+    const concealed = privacy?.getAttribute('aria-pressed') === 'true';
+    const viPrivacy = host.querySelector('[data-vi-privacy]');
+    if (viPrivacy) {
+      viPrivacy.setAttribute('aria-pressed', concealed ? 'true' : 'false');
+      viPrivacy.setAttribute('aria-label', concealed ? 'Mostrar valores patrimoniais' : 'Ocultar valores patrimoniais');
+      viPrivacy.title = concealed ? 'Mostrar valores' : 'Ocultar valores';
+      viPrivacy.textContent = concealed ? '◌' : '◉';
+    }
     if (concealed) {
       value.textContent = '••• €';
       assets.textContent = 'Valores ocultos';
@@ -439,6 +445,7 @@
     syncCanonicalCards(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
+    window.addEventListener('vestra:dashboard-privacy-changed', () => syncWealthHero(host));
     window.addEventListener('vestra:portfolio-totals-updated', () => {
       syncWealthHero(host);
       syncPortfolioEvidence(host);

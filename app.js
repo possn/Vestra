@@ -691,11 +691,12 @@ function calcTotals() {
   // Memoize dentro do ciclo de render — a cadeia calcTotals→calcPassiveAnnualSummary→calcDividendYield
   // é cara (itera todos os dividendos). Com 33 chamadas por sessão, o cache poupa ~32 iterações.
   // Invalidação: ligada ao _rc (invalidateRenderCache limpa _rc e calcTotals._cache).
-  const _sig = `${(state.assets||[]).length}|${(state.liabilities||[]).length}|${(state.dividends||[]).length}|${(state.brokerData&&state.brokerData.events||[]).length}`;
-  if (calcTotals._cache && calcTotals._sig === _sig) return calcTotals._cache;
-
+  // Price/FX revaluations can change totals without changing row counts.
+  // Calculate these lightweight sums before accepting the expensive passive-income cache.
   const assetsTotal = state.assets.reduce((a, x) => a + parseNum(x.value), 0);
   const liabsTotal = state.liabilities.reduce((a, x) => a + parseNum(x.value), 0);
+  const _sig = `${(state.assets||[]).length}|${(state.liabilities||[]).length}|${(state.dividends||[]).length}|${(state.brokerData&&state.brokerData.events||[]).length}|${assetsTotal}|${liabsTotal}`;
+  if (calcTotals._cache && calcTotals._sig === _sig) return calcTotals._cache;
   const net = assetsTotal - liabsTotal;
 
   const passive = calcPassiveAnnualSummary();
@@ -1527,6 +1528,11 @@ function toggleDashboardPrivacy() {
   // Privacy is a presentation toggle, not a financial-data render. Apply the
   // visual state synchronously so the tap is reflected in the same frame.
   applyDashboardPrivacy();
+  // Both editorial and classic Homes must react to the same persisted flag
+  // immediately; the new Home is not guaranteed to be in the native DOM render.
+  window.dispatchEvent(new CustomEvent('vestra:dashboard-privacy-changed', {
+    detail: { hidden: dashboardPrivacyEnabled() }
+  }));
 
   // Persistence is deliberately moved off the tap task. Re-rendering the whole
   // Dashboard here made this control wait for charts and portfolio calculations.
@@ -1886,7 +1892,9 @@ function cycleItemsView() {
 
 function renderPortfolioGlance() {
   const src = showingLiabs ? (state.liabilities || []) : (state.assets || []);
-  const total = src.reduce((sum, x) => sum + parseNum(x.value), 0);
+  // The portfolio hero and both Homes must share one canonical valuation.
+  const canonicalTotals = calcTotals();
+  const total = showingLiabs ? canonicalTotals.liabsTotal : canonicalTotals.assetsTotal;
   const byClass = {};
   src.forEach(x => { const k = x.class || "Outros"; byClass[k] = (byClass[k] || 0) + parseNum(x.value); });
   const topClass = Object.entries(byClass).sort((a,b) => b[1]-a[1])[0];
