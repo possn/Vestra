@@ -35,3 +35,81 @@ def measure(raw, scored):
         "published_decimal_places": 1,
         "candidate_is_production": False,
     }
+
+
+
+def _spearman(pairs):
+    """Tie-aware Spearman on pairwise-observed scores; never fabricate missing data."""
+    if len(pairs) < 3:
+        return None
+
+    def ranks(items):
+        ordered = sorted(range(len(items)), key=lambda i: items[i])
+        out = [0.0] * len(items)
+        pos = 0
+        while pos < len(ordered):
+            end = pos + 1
+            while end < len(ordered) and items[ordered[end]] == items[ordered[pos]]:
+                end += 1
+            midrank = ((pos + 1) + end) / 2
+            for k in range(pos, end):
+                out[ordered[k]] = midrank
+            pos = end
+        return out
+
+    xs, ys = zip(*pairs)
+    a, b = ranks(xs), ranks(ys)
+    ma, mb = sum(a) / len(a), sum(b) / len(b)
+    va = sum((x - ma) ** 2 for x in a)
+    vb = sum((y - mb) ** 2 for y in b)
+    if not va or not vb:
+        return None
+    return sum((x - ma) * (y - mb) for x, y in zip(a, b)) / (va * vb) ** 0.5
+
+
+def shadow_ablation(raw, scored):
+    """Same-run sensitivity only. No mutation of Score or investment decisions.
+
+    This is NOT the published 165-company historical cohort. Score-shift is
+    the unconstrained composite contribution (10% dimension weight), not
+    a new production Score after caps / risk gates.
+    """
+    equities = [r for r in raw if r.quote_type not in ("ETF", "CRYPTO") and r.error is None]
+    peers = [r for r in equities if _score_model_for(r) == "biotech"]
+    scored_by_ticker = {r.ticker: r for r in scored}
+    def reference(attr):
+        return _benchmark_values([getattr(r, attr) for r in peers],
+                                 [getattr(r, attr) for r in equities])
+    gross_ref, roa_ref = reference("gross_margin"), reference("roa")
+    observations = []
+    for r in peers:
+        score_row = scored_by_ticker.get(r.ticker)
+        dims = (getattr(score_row, "score_dimensions", None) or {})
+        original = dims.get("Operating Quality")
+        runway = dims.get("Cash Runway")
+        gross = _percentile_rank(r.gross_margin, gross_ref)
+        roa = _percentile_rank(r.roa, roa_ref)
+        observations.append((original, runway, gross, roa))
+    candidates = []
+    for weight in (0.0, 0.1, 0.2, 0.3, 0.4, 0.5):
+        pairs = []
+        composite_changes = []
+        for original, runway, gross, roa in observations:
+            # A missing input must not silently be reweighted into a full-confidence
+            # alternative: preserve production's mean-available semantics.
+            values = [(gross, 1 - weight), (roa, weight)]
+            available = [(v, w) for v, w in values if v is not None and w > 0]
+            denom = sum(w for _, w in available)
+            candidate = sum(v * w for v, w in available) / denom if denom else None
+            if runway is not None and candidate is not None:
+                pairs.append((runway, candidate))
+            if original is not None and candidate is not None:
+                composite_changes.append(abs(candidate - original) * 0.10)
+        candidates.append({
+            "roa_weight": weight,
+            "pairs": len(pairs),
+            "runway_quality_spearman": round(_spearman(pairs), 4) if _spearman(pairs) is not None else None,
+            "mean_abs_uncapped_composite_shift": round(sum(composite_changes) / len(composite_changes), 4) if composite_changes else None,
+        })
+    return {"same_run_biotech_rows": len(peers), "historical_cohort_comparable": False,
+            "candidates": candidates}
