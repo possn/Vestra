@@ -90,6 +90,17 @@ def shadow_ablation(raw, scored):
         gross = _percentile_rank(r.gross_margin, gross_ref)
         roa = _percentile_rank(r.roa, roa_ref)
         observations.append((original, runway, gross, roa, getattr(score_row, "score_raw", None)))
+    # Guard the entire analysis against mixing a published score from a
+    # different cohort or benchmark with this run's actual RawMetrics.
+    parity = []
+    for native, _runway, gross, roa, _score_raw in observations:
+        reference_quality = _avg([gross, roa])
+        if native is not None and reference_quality is not None:
+            parity.append(abs(round(reference_quality, 1) - native))
+    parity_ok = bool(parity) and len(parity) == len([
+        1 for native, _runway, gross, roa, _score_raw in observations
+        if native is not None
+    ]) and max(parity) <= 0.001
     candidates = []
     for weight in (0.0, 0.1, 0.2, 0.3, 0.4, 0.5):
         pairs = []
@@ -118,6 +129,7 @@ def shadow_ablation(raw, scored):
         candidates.append({
             "roa_weight": weight,
             "pairs": len(pairs),
+            "parity_gate_passed": parity_ok,
             "runway_quality_spearman": round(_spearman(pairs), 4) if _spearman(pairs) is not None else None,
             "mean_abs_uncapped_composite_shift": round(sum(composite_changes) / len(composite_changes), 4) if composite_changes else None,
             "uncapped_ranking_rows": len(ranking_rows),
@@ -125,4 +137,7 @@ def shadow_ablation(raw, scored):
             "uncapped_max_rank_shift": max(displacement) if displacement else None,
         })
     return {"same_run_biotech_rows": len(peers), "historical_cohort_comparable": False,
+            "native_quality_parity_rows": len(parity),
+            "native_quality_max_rounding_delta": max(parity) if parity else None,
+            "native_quality_parity_passed": parity_ok,
             "candidates": candidates}
