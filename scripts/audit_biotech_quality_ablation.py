@@ -38,7 +38,18 @@ def report(path=ROOT / "data/stocks.json"):
             pairs.append((runway, original, candidate))
     # Ablation sweep: recombine peer-percentile gross margin and ROA, leaving
     # Cash Runway and every other specialist score pillar unchanged.
+    # Production score uses peer_attr_values with a global-universe fallback
+    # when fewer than 20 observations exist. The published stocks snapshot may
+    # not reproduce the exact pre-publish RawMetrics cohort; compare both
+    # benchmarks and report their uncertainty explicitly.
+    all_equities = [row for row in stocks if row.get("quote_type") not in ("ETF", "CRYPTO") and not row.get("error")]
+    all_gross = [row.get("gross_margin") for row in all_equities]
+    all_roa = [row.get("roa") for row in all_equities]
+    peer_gross_count = sum(x is not None for x in reference_gross)
+    gross_benchmark = reference_gross if peer_gross_count >= 20 else all_gross
     reference_roa = [raw.get(str(x.get("ticker")), {}).get("roa") for x in biotech]
+    peer_roa_count = sum(x is not None for x in reference_roa)
+    roa_benchmark = reference_roa if peer_roa_count >= 20 else all_roa
     weights = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5)
     sweep = []
     for roa_weight in weights:
@@ -74,6 +85,7 @@ def report(path=ROOT / "data/stocks.json"):
     # The published dimensions are rounded to two decimals; validate the 50/50
     # candidate against native peer-percentile averaging before interpreting ranks.
     native_half = []
+    benchmark_half = []
     native_diffs = []
     for item in biotech:
         source = raw.get(str(item.get("ticker")), {})
@@ -82,6 +94,11 @@ def report(path=ROOT / "data/stocks.json"):
         gross = _percentile(source.get("gross_margin"), reference_gross)
         roa = _percentile(source.get("roa"), reference_roa)
         available = [x for x in (gross, roa) if x is not None]
+        bm_gross = _percentile(source.get("gross_margin"), gross_benchmark)
+        bm_roa = _percentile(source.get("roa"), roa_benchmark)
+        bm_available = [x for x in (bm_gross, bm_roa) if x is not None]
+        if published is not None and bm_available:
+            benchmark_half.append(abs(published - sum(bm_available)/len(bm_available)))
         if published is not None and available:
             delta = abs(published-sum(available)/len(available))
             native_half.append(delta)
@@ -113,6 +130,8 @@ def report(path=ROOT / "data/stocks.json"):
     return {
         "model": "biotech", "snapshot_rows": len(biotech), "comparable_pairs": len(pairs),
         "roa_weight_sweep": sweep,
+        "benchmark_observations": {"biotech_gross": peer_gross_count, "biotech_roa": peer_roa_count, "all_equity_gross": sum(x is not None for x in all_gross), "all_equity_roa": sum(x is not None for x in all_roa)},
+        "production_benchmark_50pct_parity": {"rows": len(benchmark_half), "mean_absolute_delta": sum(benchmark_half)/len(benchmark_half) if benchmark_half else None, "max_absolute_delta": max(benchmark_half) if benchmark_half else None},
         "native_50pct_parity": {"rows": len(native_half), "mean_absolute_delta": sum(native_half)/len(native_half) if native_half else None, "max_absolute_delta": max(native_half) if native_half else None, "outside_rounding_tolerance": sum(x>0.02 for x in native_half), "largest_discrepancies": sorted(native_diffs,key=lambda x:-x[1])[:10]},
         "production_quality_rho": rho(0, 1), "gross_only_candidate_rho": rho(0, 2),
         "mean_quality_shift": (sum(abs(x[2]-x[1]) for x in pairs)/len(pairs)) if pairs else None,
