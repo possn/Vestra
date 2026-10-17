@@ -51,9 +51,11 @@ def report(path=ROOT / "data/stocks.json"):
             source = raw.get(str(item.get("ticker")), {})
             gross = _percentile(source.get("gross_margin"), reference_gross)
             roa = _percentile(source.get("roa"), reference_roa)
-            if None in (runway, old_quality, old_score, gross, roa):
+            if None in (runway, old_quality, old_score) or (gross is None and roa is None):
                 continue
-            candidate = (1-roa_weight)*gross + roa_weight*roa
+            components = [(gross, 1-roa_weight), (roa, roa_weight)]
+            available = [(v,w) for v,w in components if v is not None and w > 0]
+            candidate = sum(v*w for v,w in available) / sum(w for _,w in available)
             rows_at_weight.append((str(item.get("ticker")), runway, old_quality, old_score,
                                    candidate, old_score + .10*(candidate-old_quality)))
         def ranks(index):
@@ -69,6 +71,18 @@ def report(path=ROOT / "data/stocks.json"):
             "rank_changes_ge_10": sum(s>=10 for s in shift),
             "max_abs_rank_shift": max(shift) if shift else None,
         })
+    # The published dimensions are rounded to two decimals; validate the 50/50
+    # candidate against native peer-percentile averaging before interpreting ranks.
+    native_half = []
+    for item in biotech:
+        source = raw.get(str(item.get("ticker")), {})
+        dims = item.get("shadow_dimensions") or {}
+        published = score_peer_shadow.n(dims.get("Operating Quality"))
+        gross = _percentile(source.get("gross_margin"), reference_gross)
+        roa = _percentile(source.get("roa"), reference_roa)
+        available = [x for x in (gross, roa) if x is not None]
+        if published is not None and available:
+            native_half.append(abs(published-sum(available)/len(available)))
     def rho(a, b):
         return score_audit.spearman_pairs([(p[a], p[b]) for p in pairs])
 
@@ -96,6 +110,7 @@ def report(path=ROOT / "data/stocks.json"):
     return {
         "model": "biotech", "snapshot_rows": len(biotech), "comparable_pairs": len(pairs),
         "roa_weight_sweep": sweep,
+        "native_50pct_parity": {"rows": len(native_half), "mean_absolute_delta": sum(native_half)/len(native_half) if native_half else None, "max_absolute_delta": max(native_half) if native_half else None},
         "production_quality_rho": rho(0, 1), "gross_only_candidate_rho": rho(0, 2),
         "mean_quality_shift": (sum(abs(x[2]-x[1]) for x in pairs)/len(pairs)) if pairs else None,
         "score_comparable_rows": len(scored),
