@@ -349,7 +349,7 @@ def fetch_one(ticker: str, current_price: float | None = None) -> AnalystSnapsho
                         if surprise is not None:
                             # Yahoo's Surprise(%) column is a human percent,
                             # whereas analyst surprise_pct is a fraction.
-                            if "Surprise(%)" in row.index:
+                            if "Surprise(%)" in row:
                                 surprise /= 100.0
                             elif abs(surprise) > 2:
                                 surprise /= 100.0
