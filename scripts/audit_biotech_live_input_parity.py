@@ -24,12 +24,14 @@ def measure(raw, scored):
         native = _avg([gross, roa])
         if native is None or published is None:
             continue
-        diffs.append(abs(native - published))
+        # ScoredTicker.score_dimensions is rounded to one decimal by score.py.
+        diffs.append(abs(round(native, 1) - published))
     return {
         "biotech_input_rows": len(peers),
         "comparable_rows": len(diffs),
         "mean_absolute_parity_delta": sum(diffs)/len(diffs) if diffs else None,
         "max_absolute_parity_delta": max(diffs) if diffs else None,
-        "outside_rounding_tolerance": sum(x>0.02 for x in diffs),
+        "outside_rounding_tolerance": sum(x>0.001 for x in diffs),
+        "published_decimal_places": 1,
         "candidate_is_production": False,
     }
