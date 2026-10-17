@@ -47,3 +47,25 @@ test('iPhone/WebKit: Market analysis panel title has readable ink on light card'
   });
   expect(contrast(colors.title, colors.card), JSON.stringify(colors)).toBeGreaterThanOrEqual(4.5);
 });
+
+test('iPhone/WebKit: privacy controls use one shared state across both Homes', async ({ page }) => {
+  await page.goto('/index.html');
+  await page.waitForFunction(() => typeof window.toggleDashboardPrivacy === 'function');
+  const legacy = page.locator('#btnDashboardPrivacy');
+  const editorial = page.locator('[data-vi-privacy]');
+  await expect(legacy).toHaveAttribute('aria-pressed', /^(true|false)$/);
+  await expect(editorial).toHaveAttribute('aria-pressed', /^(true|false)$/);
+  const before = await legacy.getAttribute('aria-pressed');
+  await page.evaluate(() => window.toggleDashboardPrivacy());
+  const after = before === 'true' ? 'false' : 'true';
+  await expect(legacy).toHaveAttribute('aria-pressed', after);
+  await expect(editorial).toHaveAttribute('aria-pressed', after);
+  await expect(page.locator('#viewDashboard')).toHaveAttribute('data-values-hidden', after);
+  if (after === 'true') {
+    await expect(page.locator('[data-vi-wealth]')).toContainText('•••');
+    await expect(page.locator('[data-vi-assets]')).toHaveText('Valores ocultos');
+  }
+  await page.evaluate(() => window.toggleDashboardPrivacy());
+  await expect(legacy).toHaveAttribute('aria-pressed', before);
+  await expect(editorial).toHaveAttribute('aria-pressed', before);
+});
