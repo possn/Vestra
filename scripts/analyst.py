@@ -330,6 +330,49 @@ def fetch_one(ticker: str, current_price: float | None = None) -> AnalystSnapsho
             except Exception:
                 pass
 
+        # Yahoo earnings dates often exposes reported EPS before the separate
+        # earnings-history endpoint refreshes. Never discard a confirmed report.
+        # Preserve missing as None; never infer an EPS from the event date.
+        if earnings_dates is not None and not getattr(earnings_dates, "empty", True):
+            try:
+                reports = []
+                for idx, row in earnings_dates.iterrows():
+                    try:
+                        reported = _float(row.get("Reported EPS", row.get("reportedEPS", row.get("epsActual"))))
+                        if reported is None:
+                            continue
+                        estimate = _float(row.get("EPS Estimate", row.get("epsEstimate")))
+                        when = idx.date().isoformat() if hasattr(idx, "date") else str(idx)[:10]
+                        if when > datetime.now(timezone.utc).date().isoformat():
+                            continue
+                        surprise = _float(row.get("Surprise(%)", row.get("surprisePercent")))
+                        if surprise is not None:
+                            # Yahoo's Surprise(%) column is a human percent,
+                            # whereas analyst surprise_pct is a fraction.
+                            if "Surprise(%)" in row.index:
+                                surprise /= 100.0
+                            elif abs(surprise) > 2:
+                                surprise /= 100.0
+                        if surprise is None and estimate not in (None, 0):
+                            surprise = reported / estimate - 1.0
+                        reports.append((when, reported, estimate, surprise))
+                    except Exception:
+                        continue
+                if reports:
+                    when, reported, estimate, surprise = max(reports, key=lambda item: item[0])
+                    if not out.latest_earnings_date or when > out.latest_earnings_date or out.latest_eps_actual is None:
+                        out.latest_earnings_date = when
+                        out.latest_eps_actual = reported
+                        out.latest_eps_estimate = estimate
+                        out.latest_eps_surprise_pct = surprise
+                    if not out.earnings_history_4q:
+                        out.earnings_history_4q = [
+                            {"date": date, "actual": actual, "estimate": est, "surprise_pct": sp}
+                            for date, actual, est, sp in sorted(reports, reverse=True)[:4]
+                        ]
+            except Exception:
+                pass
+
         if recommendations is not None and not getattr(recommendations, "empty", True):
             try:
                 rr = recommendations.iloc[0]
