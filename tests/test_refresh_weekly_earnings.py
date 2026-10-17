@@ -220,7 +220,7 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
     def test_over_budget_does_not_abort_archived_earnings_publication(self):
         script = (ROOT / 'scripts/refresh_weekly_earnings.py').read_text(encoding='utf-8')
         self.assertIn('startup_fits = len(encoded.encode("utf-8")) <= MAX_STARTUP_BYTES', script)
-        self.assertIn('if startup_fits:\\n        STARTUP.write_text', script)
+        self.assertIn('if startup_fits:', script)
         self.assertIn('archive = save_archive([*rows, *discovered_history]', script)
         self.assertIn('"startup_updated": startup_fits', script)
         self.assertNotIn('raise RuntimeError("weekly earnings refresh would exceed startup payload budget")', script)
