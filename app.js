@@ -1892,7 +1892,9 @@ function cycleItemsView() {
 
 function renderPortfolioGlance() {
   const src = showingLiabs ? (state.liabilities || []) : (state.assets || []);
-  const total = src.reduce((sum, x) => sum + parseNum(x.value), 0);
+  // The portfolio hero and both Homes must share one canonical valuation.
+  const canonicalTotals = calcTotals();
+  const total = showingLiabs ? canonicalTotals.liabsTotal : canonicalTotals.assetsTotal;
   const byClass = {};
   src.forEach(x => { const k = x.class || "Outros"; byClass[k] = (byClass[k] || 0) + parseNum(x.value); });
   const topClass = Object.entries(byClass).sort((a,b) => b[1]-a[1])[0];
