@@ -343,15 +343,23 @@ def main() -> int:
 
     packed = pack_index_payload(payload)
     encoded = json.dumps(packed, ensure_ascii=False, separators=(",", ":")) + "\n"
-    if len(encoded.encode("utf-8")) > MAX_STARTUP_BYTES:
-        raise RuntimeError("weekly earnings refresh would exceed startup payload budget")
+    startup_fits = len(encoded.encode("utf-8")) <= MAX_STARTUP_BYTES
+    # Never discard source-confirmed EPS when the dense startup file is near
+    # its hard iPhone budget. Publish the independent earnings archive and
+    # legacy market index; preserve the previous compact startup unchanged.
+    # The calendar loads the archive separately and can reconcile actuals.
+    # Do not raise the size budget or truncate individual company records.
 
     # Persist dated reports before subsequent quarterly refreshes replace latest fields.
     archive = save_archive([*rows, *discovered_history], today=now_utc.date())
     INDEX.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    STARTUP.write_text(encoded, encoding="utf-8")
+    if startup_fits:
+        STARTUP.write_text(encoded, encoding="utf-8")
     status = {
         "state": "checked",
+        "startup_updated": startup_fits,
+        "startup_candidate_bytes": len(encoded.encode("utf-8")),
+        "startup_budget_bytes": MAX_STARTUP_BYTES,
         "generated_at": now_utc.isoformat(),
         "candidate_count": len(candidates),
         "attempted": attempted,
