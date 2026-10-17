@@ -11,6 +11,11 @@ class CanonicalRebuildTriggerTests(unittest.TestCase):
         self.assertIn("2026-10-17 — rebuild canonical market after #1327", trigger)
         self.assertIn("#1328 earnings confirmed EPS recovery", trigger)
 
+    def test_retry_records_startup_budget_root_cause(self):
+        trigger = (ROOT / ".github/triggers/market-data-rebuild.txt").read_text(encoding="utf-8")
+        self.assertIn("#1330 trims columnar startup float tails", trigger)
+        self.assertIn("exceeded startup budget by 9777 bytes", trigger)
+
     def test_market_workflow_publishes_only_after_coverage_guard(self):
         text = (ROOT / ".github/workflows/update-market-data.yml").read_text(encoding="utf-8")
         self.assertIn("'.github/triggers/market-data-rebuild.txt'", text)
