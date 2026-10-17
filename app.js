@@ -691,11 +691,12 @@ function calcTotals() {
   // Memoize dentro do ciclo de render — a cadeia calcTotals→calcPassiveAnnualSummary→calcDividendYield
   // é cara (itera todos os dividendos). Com 33 chamadas por sessão, o cache poupa ~32 iterações.
   // Invalidação: ligada ao _rc (invalidateRenderCache limpa _rc e calcTotals._cache).
-  const _sig = `${(state.assets||[]).length}|${(state.liabilities||[]).length}|${(state.dividends||[]).length}|${(state.brokerData&&state.brokerData.events||[]).length}`;
-  if (calcTotals._cache && calcTotals._sig === _sig) return calcTotals._cache;
-
+  // Price/FX revaluations can change totals without changing row counts.
+  // Calculate these lightweight sums before accepting the expensive passive-income cache.
   const assetsTotal = state.assets.reduce((a, x) => a + parseNum(x.value), 0);
   const liabsTotal = state.liabilities.reduce((a, x) => a + parseNum(x.value), 0);
+  const _sig = `${(state.assets||[]).length}|${(state.liabilities||[]).length}|${(state.dividends||[]).length}|${(state.brokerData&&state.brokerData.events||[]).length}|${assetsTotal}|${liabsTotal}`;
+  if (calcTotals._cache && calcTotals._sig === _sig) return calcTotals._cache;
   const net = assetsTotal - liabsTotal;
 
   const passive = calcPassiveAnnualSummary();
