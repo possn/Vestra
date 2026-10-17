@@ -104,3 +104,28 @@
   #viewDashboard .kpi-quick__grid{gap:9px}
   #viewDashboard .kpi-quick__cell{min-width:0;padding:12px 11px}
 }
+
+
+/* Avoid ghosted section headings in the light legacy Home on iPhone.
+   The dark Intelligence-specific palette is owned only by its dark shell. */
+@media(max-width:600px){
+ #viewDashboard:not(.vi-preview-active) #v2-wealth-chapter{
+   display:block!important; min-height:0!important; margin:18px 0 12px!important;
+   padding:0 0 0 15px!important; border-left:3px solid #ba995f!important;
+   background:transparent!important;
+ }
+ #viewDashboard:not(.vi-preview-active) #v2-wealth-chapter :is(span,h2,p){
+   opacity:1!important;visibility:visible!important;
+   color:#25444a!important;-webkit-text-fill-color:#25444a!important;
+ }
+ #viewDashboard:not(.vi-preview-active) #v2-wealth-chapter span{
+   color:#9c7940!important;-webkit-text-fill-color:#9c7940!important;
+   font-size:10px!important;letter-spacing:.12em!important;
+ }
+ #viewDashboard:not(.vi-preview-active) #v2-wealth-chapter h2{
+   font-size:21px!important;line-height:1.2!important;margin:5px 0!important;
+ }
+ #viewDashboard:not(.vi-preview-active) #v2-wealth-chapter p{
+   font-size:12px!important;line-height:1.5!important;margin:5px 0!important;
+ }
+}
