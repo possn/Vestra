@@ -33,7 +33,9 @@ class BiotechHistoricalCandidate(unittest.TestCase):
             raw = score_peer_shadow.raw_score(row)
             if old_quality is None or gross is None or raw is None:
                 continue
-            parity.append(abs(score_peer_shadow.n((row.get("score_dimensions") or {}).get("Operating Quality")) - old_quality))
+            published = score_peer_shadow.n((row.get("score_dimensions") or {}).get("Operating Quality"))
+            if published is not None:
+                parity.append(abs(published - old_quality))
             rankings.append((row["ticker"], raw, raw + .10 * (gross - old_quality)))
             if runway is not None:
                 pairs.append((runway, gross))
