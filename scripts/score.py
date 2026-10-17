@@ -579,10 +579,11 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
             runway_score = 100.0 if r.free_cash_flow is not None and r.free_cash_flow>=0 else _percentile_rank(runway,runways)
             biotech_cash = _percentile_rank(net_cash_to_cap[idx], peer_derived_values(peers, net_cash_to_cap))
             biotech_dilution = _percentile_rank(r.diluted_shares_yoy,peer_attr_values(peers,"diluted_shares_yoy"),invert=True)
-            biotech_quality = _avg([
-                _percentile_rank(r.gross_margin,peer_attr_values(peers,"gross_margin")),
-                _percentile_rank(r.roa,peer_attr_values(peers,"roa")),
-            ])
+            # Gross-margin execution belongs to Operating Quality; ROA
+            # duplicates cash-burn/runway in pre-profit biotech peers.
+            biotech_quality = _percentile_rank(
+                r.gross_margin, peer_attr_values(peers, "gross_margin")
+            )
             biotech_growth = peer_growth_score(r, peers)
             biotech_stability = peer_stability_score(r, peers)
             composite = _weighted([(runway_score,.25),(biotech_cash,.15),(biotech_dilution,.20),(biotech_growth,.20),(biotech_quality,.10),(biotech_stability,.10)])

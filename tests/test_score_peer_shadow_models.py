@@ -65,7 +65,7 @@ class ScorePeerShadowModelTests(unittest.TestCase):
         self.assertAlmostEqual(dims["Cash Flow"], 100.0)
         self.assertAlmostEqual(dims["Valuation"], 0.0)
 
-    def test_biotech_native_peer_pillars_are_preserved_exactly(self):
+    def test_biotech_runway_is_native_but_quality_uses_independent_margin(self):
         row = {
             "ticker": "BIO",
             "score_model": "biotech",
@@ -75,6 +75,7 @@ class ScorePeerShadowModelTests(unittest.TestCase):
                 "Dilution Discipline": 64.0,
                 "Operating Quality": 58.0,
             },
+            "gross_margin": 0.5,
             "revenue_growth": 0.2,
             "earnings_growth": 0.1,
             "earnings_quarterly_growth": 0.15,
@@ -84,6 +85,7 @@ class ScorePeerShadowModelTests(unittest.TestCase):
         for i in range(20):
             peer = dict(row)
             peer["ticker"] = f"B{i}"
+            peer["gross_margin"] = 0.01 * i
             peer["revenue_growth"] = 0.01 * i
             peer["earnings_growth"] = 0.01 * i
             peer["earnings_quarterly_growth"] = 0.01 * i
@@ -95,9 +97,10 @@ class ScorePeerShadowModelTests(unittest.TestCase):
         self.assertEqual(dims["Cash Runway"], 83.0)
         self.assertEqual(dims["Net Cash"], 72.0)
         self.assertEqual(dims["Dilution Discipline"], 64.0)
-        self.assertEqual(dims["Operating Quality"], 58.0)
+        self.assertEqual(dims["Operating Quality"], 100.0)
         native_scopes = [x for x in ctx.scopes if x["scope"] == "production_peer_native"]
-        self.assertEqual(len(native_scopes), 4)
+        self.assertEqual(len(native_scopes), 3)
+        self.assertTrue(any(x["metric"] == "gross_margin" and x["scope"] == "peer_model" for x in ctx.scopes))
 
     def test_structural_candidate_uses_existing_risk_cap(self):
         self.assertEqual(mod.apply_cap(82, {"score_cap": 59}), 59)
