@@ -100,7 +100,7 @@ class ScorePeerShadowModelTests(unittest.TestCase):
         self.assertEqual(dims["Operating Quality"], 100.0)
         native_scopes = [x for x in ctx.scopes if x["scope"] == "production_peer_native"]
         self.assertEqual(len(native_scopes), 3)
-        self.assertTrue(any(x["metric"] == "gross_margin" and x["scope"] == "peer" for x in ctx.scopes))
+        self.assertTrue(any(x["metric"] == "gross_margin" and x["scope"] == "peer_model" for x in ctx.scopes))
 
     def test_structural_candidate_uses_existing_risk_cap(self):
         self.assertEqual(mod.apply_cap(82, {"score_cap": 59}), 59)
