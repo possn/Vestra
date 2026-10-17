@@ -16,16 +16,21 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-try:
-    from scripts.earnings_archive import save_archive
-except ModuleNotFoundError:
-    from earnings_archive import save_archive
+import sys
+
+# The earnings workflow executes regression tests as `python tests/...`.
+# In that mode neither the repository root nor scripts/ is on sys.path.
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+from build_market_shards import _compact_startup_value, MAX_COLUMNAR_BYTES
+from earnings_archive import save_archive
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "data" / "stocks-index.json"
 STARTUP = ROOT / "data" / "stocks-startup.json"
 DIAGNOSTICS = ROOT / "data" / "earnings-refresh-status.json"
-MAX_STARTUP_BYTES = 2_350_000
+MAX_STARTUP_BYTES = MAX_COLUMNAR_BYTES
 EXCLUDED_TYPES = {"ETF", "FUND", "MUTUALFUND", "CRYPTO"}
 
 RESULT_FIELDS = (
@@ -90,12 +95,13 @@ def candidate_tickers(payload: dict, today: date | None = None, past_days: int =
             _calendar_date(row.get("analyst_latest_earnings_date")),
         )
         if any(d is not None and start <= d <= end for d in dates):
-            dated.append(ticker)
+            nearest = min(abs((d - today).days) for d in dates if d is not None and start <= d <= end)
+            dated.append((nearest, ticker))
         elif all(d is None or d < today for d in dates):
             # Prefer larger companies; do not randomly scan all listed stocks.
             cap = _number(row.get("market_cap")) or 0
             undated.append((-cap, ticker))
-    dated = sorted(set(dated))
+    dated = [ticker for _distance, ticker in sorted(set(dated))]
     undated = [ticker for _cap, ticker in sorted(set(undated))]
     # Move the discovery window daily. A permanently fixed top-30 caused
     # companies ranked below it to remain unqueried forever. A fixed epoch
@@ -269,7 +275,7 @@ def pack_index_payload(index_payload: dict) -> dict:
     fields = sorted(frequency, key=lambda key: (-frequency[key], key))
     packed_rows = []
     for row in rows:
-        values = [row.get(field) if field in row else None for field in fields]
+        values = [_compact_startup_value(row.get(field)) if field in row else None for field in fields]
         while values and values[-1] is None:
             values.pop()
         packed_rows.append(values)

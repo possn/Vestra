@@ -75,3 +75,32 @@
 #viewDashboard.vi-preview-active #dashboardQuickRecordsCard .card__muted{
  color:#4a6364!important;-webkit-text-fill-color:#4a6364!important;opacity:1!important;
 }
+
+
+/* Vestra 2.0: risk and wealth chapter speak the same editorial language. */
+#viewDashboard #riskAlertCard.v2-home-attention-card{
+  border:1px solid #e5c8c5!important;border-left:3px solid #b86258!important;
+  background:#f7f1ed!important;color:#643c39!important;
+  box-shadow:none!important;border-radius:20px!important;
+  padding:clamp(15px,2vw,22px)!important;
+}
+#viewDashboard #riskAlertCard .card__head{margin-bottom:10px}
+#viewDashboard #riskAlertCard .card__title{font-size:clamp(17px,2.6vw,21px);line-height:1.25;letter-spacing:-.025em;color:#7d4540!important}
+#viewDashboard #riskAlertCard .card__muted{font-size:12px;line-height:1.45;color:#775a55}
+#viewDashboard #riskAlertCard .list{gap:9px}
+#viewDashboard #riskAlertCard .list>*{min-width:0;border-radius:13px;overflow-wrap:anywhere}
+#viewDashboard #v2-wealth-chapter{padding:0!important;margin:24px 0 13px!important}
+#viewDashboard #v2-wealth-chapter span{font-size:11px;letter-spacing:.16em;font-weight:750}
+#viewDashboard #v2-wealth-chapter h2{font-size:clamp(23px,4vw,34px);line-height:1.17;letter-spacing:-.04em;margin:7px 0 7px}
+#viewDashboard #v2-wealth-chapter p{font-size:13px;line-height:1.5;margin:0;opacity:1}
+#viewDashboard .kpi-quick{border-radius:20px!important;border:1px solid #d2dbd6!important;background:#f1f3ee!important;box-shadow:none!important}
+#viewDashboard .kpi-quick__cell{background:#fffefa;border:1px solid #d8dfda;border-radius:15px}
+#viewDashboard :is(.kpi-quick__k,.kpi-income__head){color:#496c67;font-weight:800;letter-spacing:.04em}
+@media(max-width:600px){
+  #viewDashboard #riskAlertCard.v2-home-attention-card{padding:15px!important}
+  #viewDashboard #riskAlertCard .card__title{font-size:17px}
+  #viewDashboard #v2-wealth-chapter{margin:20px 0 10px!important}
+  #viewDashboard .kpi-quick{padding:12px!important}
+  #viewDashboard .kpi-quick__grid{gap:9px}
+  #viewDashboard .kpi-quick__cell{min-width:0;padding:12px 11px}
+}

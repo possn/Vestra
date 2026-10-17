@@ -303,3 +303,40 @@ test('iPhone/WebKit: archived prior-quarter earnings and future earnings remain 
   await expect(card).toContainText('Future Company');
   await expect(card).not.toContainText('Historical Company');
 });
+
+test('iPhone/WebKit: confirmed archive result upgrades stale same-day calendar without losing its metadata', async ({ page }) => {
+  await page.route('**/data/earnings-events.json', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ schema: 'vestra_earnings_events_v1', events: [{
+      kind: 'earnings', ticker: 'JNJ', name: 'Johnson & Johnson',
+      date: '2026-10-13', analyst_latest_eps_actual: 2.25,
+      analyst_latest_eps_estimate: 2.10, analyst_latest_eps_surprise_pct: 0.0714286,
+    }] }),
+  }));
+  await page.goto('/index.html?vestra2=0');
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  await page.waitForLoadState('networkidle', { timeout: 25000 });
+  const merged = await page.evaluate(async () => {
+    const archive = await window.VestraWeeklyEvents.loadEarningsArchive();
+    return window.VestraWeeklyEvents.combineArchivedStocks([{
+      ticker: 'JNJ', name: 'Johnson & Johnson', quote_type: 'EQUITY',
+      market_cap: 500000000000, analyst_latest_earnings_date: '2026-10-13',
+      analyst_latest_eps_actual: null,
+    }], archive);
+  });
+  expect(merged).toHaveLength(1);
+  expect(merged[0].analyst_latest_eps_actual).toBe(2.25);
+  expect(merged[0].market_cap).toBe(500000000000);
+  await page.evaluate(() => {
+    window.VestraWeeklyEvents.render({
+      now: new Date(2026,9,17), portfolioTickers: new Set(),
+      stocks: [{ticker:'JNJ',name:'Johnson & Johnson',quote_type:'EQUITY',
+        market_cap:500000000000, analyst_latest_earnings_date:'2026-10-13'}],
+      macroEvents:{events:[]},
+    });
+  });
+  // The reconciliation itself is exercised above; the interface must remain readable.
+  const card = page.locator('#dashboardWeeklyEventsCard');
+  await expect(card).toBeVisible();
+  await expect(card.locator('.weekly-events-title')).toBeVisible();
+});

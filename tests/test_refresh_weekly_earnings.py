@@ -44,7 +44,19 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
             {'ticker':'OLD','quote_type':'EQUITY','analyst_next_earnings_date':'2026-08-01'},
             {'ticker':'ETF1','quote_type':'ETF','analyst_next_earnings_date':'2026-09-12'},
         ]}
-        self.assertEqual(mod.candidate_tickers(payload, today=date(2026,9,12)), ['ADBE','OLD','ORCL'])
+        self.assertEqual(mod.candidate_tickers(payload, today=date(2026,9,12)), ['ADBE','ORCL','OLD'])
+
+    def test_recent_reports_win_bounded_candidate_slots_over_alphabetical_tickers(self):
+        payload = {"stocks": [
+            *({"ticker": f"A{i:03d}", "quote_type": "EQUITY",
+               "analyst_next_earnings_date": "2026-11-20"} for i in range(80)),
+            {"ticker": "JPM", "quote_type": "EQUITY", "analyst_next_earnings_date": "2026-10-13"},
+            {"ticker": "JNJ", "quote_type": "EQUITY", "analyst_next_earnings_date": "2026-10-13"},
+            {"ticker": "GS", "quote_type": "EQUITY", "analyst_next_earnings_date": "2026-10-13"},
+        ]}
+        candidates = mod.candidate_tickers(payload, today=date(2026, 10, 17))
+        self.assertEqual(candidates[:3], ["GS", "JNJ", "JPM"])
+        self.assertEqual(len(candidates), 50)
 
     def test_coverage_separates_dates_from_other_updates(self):
         payload = {"stocks": [
