@@ -42,7 +42,7 @@ class LiveInputParityTests(unittest.TestCase):
             gross_margin=i / 100, roa=(24-i) / 100,
         ) for i in range(25)]
         scored = [SimpleNamespace(
-            ticker=x.ticker, score_dimensions={
+            ticker=x.ticker, score_raw=float(75-i), score_dimensions={
                 "Operating Quality": 50.0,
                 "Cash Runway": float(i+1),
             }) for i,x in enumerate(raw)]
@@ -53,6 +53,8 @@ class LiveInputParityTests(unittest.TestCase):
         self.assertEqual([x["roa_weight"] for x in result["candidates"]],
                          [0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
         self.assertTrue(all(x["pairs"] == 25 for x in result["candidates"]))
+        self.assertTrue(all(x["uncapped_ranking_rows"] == 25 for x in result["candidates"]))
+        self.assertTrue(all(x["uncapped_rank_shifts_ge_10"] is not None for x in result["candidates"]))
         self.assertEqual([x.score_dimensions for x in scored], before)
 
     def test_detects_a_real_mismatch_without_changing_scores(self):
