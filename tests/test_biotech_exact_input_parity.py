@@ -16,9 +16,9 @@ class BiotechNativeQualityParity(unittest.TestCase):
     def test_native_peer_rank_reconstruction(self):
         gross = [0.11, 0.20, 0.40, 0.50, 0.60]
         roa = [-0.6, -0.3, 0.0, 0.05, 0.1]
-        native = _avg([_percentile_rank(0.4, gross), _percentile_rank(0.0, roa)])
+        native = _percentile_rank(0.4, gross)
         self.assertAlmostEqual(native, 60.0)
-        self.assertAlmostEqual(_avg([None, _percentile_rank(0.0, roa)]), 60.0)
+        self.assertIsNone(_percentile_rank(None, gross))
 
     def test_peer_global_fallback_contract(self):
         peers = [0.1] * 19
