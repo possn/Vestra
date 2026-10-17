@@ -217,6 +217,14 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         self.assertIn('data/earnings-refresh-status.json', workflow)
         self.assertIn('"archive_multi_quarter_tickers":', script)
 
+    def test_over_budget_does_not_abort_archived_earnings_publication(self):
+        script = (ROOT / 'scripts/refresh_weekly_earnings.py').read_text(encoding='utf-8')
+        self.assertIn('startup_fits = len(encoded.encode("utf-8")) <= MAX_STARTUP_BYTES', script)
+        self.assertIn('if startup_fits:\\n        STARTUP.write_text', script)
+        self.assertIn('archive = save_archive([*rows, *discovered_history]', script)
+        self.assertIn('"startup_updated": startup_fits', script)
+        self.assertNotIn('raise RuntimeError("weekly earnings refresh would exceed startup payload budget")', script)
+
     def test_result_contract_contains_all_dashboard_fields(self):
         expected = {
             'analyst_eps_next_q',
