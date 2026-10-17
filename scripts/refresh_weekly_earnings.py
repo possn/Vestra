@@ -23,7 +23,7 @@ import sys
 SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
-from build_market_shards import _compact_startup_value, MAX_COLUMNAR_BYTES
+from build_market_shards import pack_index_payload, MAX_COLUMNAR_BYTES
 from earnings_archive import save_archive
 
 ROOT = Path(__file__).resolve().parents[1]
