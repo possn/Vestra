@@ -41,7 +41,15 @@ jobs:
           FINSCANNER_CAPITAL_RISK_PRIORITY_REFRESH: "80"
           FINSCANNER_CAPITAL_RISK_NONPRIORITY_REFRESH: "30"
         run: python run_market_pipeline.py
-      - name: Assert no market output was published
+      - name: Assert canonical market outputs unchanged and no commits
         run: |
-          test -z "$(git diff --name-only -- data/ | grep -E '^data/(stocks|stocks-index|stocks-shards|pipeline_log|coverage_guard)' || true)"
-          echo "Isolated audit exited after score; no repository commits, uploads or publication"
+          # The pipeline writes pipeline_log.txt during normal operation; a local
+          # log update is not publication and must not falsely fail this guard.
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          changed="$(git diff --name-only -- data/ | grep -E '^data/(stocks|stocks-index|stocks-shards|coverage_guard)' || true)"
+          if [ -n "$changed" ]; then
+            echo "Unexpected canonical market output modifications:"
+            echo "$changed"
+            exit 1
+          fi
+          echo "Canonical market outputs unchanged; no repository commit or publication step executed"
