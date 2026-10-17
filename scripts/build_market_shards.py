@@ -427,6 +427,22 @@ def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> d
     return out
 
 
+def _compact_startup_value(value):
+    """Bound float wire precision in startup only; full dossiers stay lossless.
+
+    Twelve significant decimal digits preserve substantially more than
+    market-data display precision while avoiding long binary float tails.
+    Integer identities, booleans, None and textual evidence stay untouched.
+    """
+    if isinstance(value, float) and math.isfinite(value):
+        return float(format(value, ".12g"))
+    if isinstance(value, list):
+        return [_compact_startup_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _compact_startup_value(item) for key, item in value.items()}
+    return value
+
+
 def pack_index_payload(index_payload: dict) -> dict:
     """Dictionary-code repeated row keys while preserving all startup values."""
     rows = index_payload.get("stocks") or []
@@ -442,7 +458,7 @@ def pack_index_payload(index_payload: dict) -> dict:
     fields = sorted(frequency, key=lambda key: (-frequency[key], key))
     packed_rows = []
     for row in rows:
-        values = [row.get(field) if field in row else None for field in fields]
+        values = [_compact_startup_value(row.get(field)) if field in row else None for field in fields]
         while values and values[-1] is None:
             values.pop()
         packed_rows.append(values)
