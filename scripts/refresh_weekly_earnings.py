@@ -265,25 +265,6 @@ def apply_snapshot(row: dict, snapshot: dict) -> bool:
     return changed
 
 
-def pack_index_payload(index_payload: dict) -> dict:
-    rows = index_payload.get("stocks") or []
-    frequency: dict[str, int] = defaultdict(int)
-    for row in rows:
-        if isinstance(row, dict):
-            for key in row:
-                frequency[key] += 1
-    fields = sorted(frequency, key=lambda key: (-frequency[key], key))
-    packed_rows = []
-    for row in rows:
-        values = [_compact_startup_value(row.get(field)) if field in row else None for field in fields]
-        while values and values[-1] is None:
-            values.pop()
-        packed_rows.append(values)
-    meta = {key: value for key, value in index_payload.items() if key != "stocks"}
-    return {**meta, "layout": "field_rows_v1", "fields": fields, "rows": packed_rows}
-
-
-
 def earnings_coverage(payload: dict, today: date | None = None) -> dict[str, int]:
     """Measure confirmed calendar dates, not generic row changes."""
     today = today or date.today()
