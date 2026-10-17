@@ -1528,6 +1528,11 @@ function toggleDashboardPrivacy() {
   // Privacy is a presentation toggle, not a financial-data render. Apply the
   // visual state synchronously so the tap is reflected in the same frame.
   applyDashboardPrivacy();
+  // Both editorial and classic Homes must react to the same persisted flag
+  // immediately; the new Home is not guaranteed to be in the native DOM render.
+  window.dispatchEvent(new CustomEvent('vestra:dashboard-privacy-changed', {
+    detail: { hidden: dashboardPrivacyEnabled() }
+  }));
 
   // Persistence is deliberately moved off the tap task. Re-rendering the whole
   // Dashboard here made this control wait for charts and portfolio calculations.
