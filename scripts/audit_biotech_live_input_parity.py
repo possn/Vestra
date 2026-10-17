@@ -89,12 +89,13 @@ def shadow_ablation(raw, scored):
         runway = dims.get("Cash Runway")
         gross = _percentile_rank(r.gross_margin, gross_ref)
         roa = _percentile_rank(r.roa, roa_ref)
-        observations.append((original, runway, gross, roa))
+        observations.append((original, runway, gross, roa, getattr(score_row, "score_raw", None)))
     candidates = []
     for weight in (0.0, 0.1, 0.2, 0.3, 0.4, 0.5):
         pairs = []
         composite_changes = []
-        for original, runway, gross, roa in observations:
+        ranking_rows = []
+        for original, runway, gross, roa, score_raw in observations:
             # A missing input must not silently be reweighted into a full-confidence
             # alternative: preserve production's mean-available semantics.
             values = [(gross, 1 - weight), (roa, weight)]
@@ -105,11 +106,23 @@ def shadow_ablation(raw, scored):
                 pairs.append((runway, candidate))
             if original is not None and candidate is not None:
                 composite_changes.append(abs(candidate - original) * 0.10)
+                if score_raw is not None:
+                    ranking_rows.append((float(score_raw), float(score_raw) + 0.10 * (candidate - original)))
+        # Pairwise rank displacement within the same-run Biotech cohort only.
+        def positions(values):
+            order = sorted(range(len(values)), key=lambda i: (-values[i], i))
+            return {idx: rank for rank, idx in enumerate(order, 1)}
+        base = positions([x for x, _ in ranking_rows])
+        alternate = positions([y for _, y in ranking_rows])
+        displacement = [abs(base[i] - alternate[i]) for i in base]
         candidates.append({
             "roa_weight": weight,
             "pairs": len(pairs),
             "runway_quality_spearman": round(_spearman(pairs), 4) if _spearman(pairs) is not None else None,
             "mean_abs_uncapped_composite_shift": round(sum(composite_changes) / len(composite_changes), 4) if composite_changes else None,
+            "uncapped_ranking_rows": len(ranking_rows),
+            "uncapped_rank_shifts_ge_10": sum(d >= 10 for d in displacement) if displacement else None,
+            "uncapped_max_rank_shift": max(displacement) if displacement else None,
         })
     return {"same_run_biotech_rows": len(peers), "historical_cohort_comparable": False,
             "candidates": candidates}
