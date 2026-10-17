@@ -185,6 +185,17 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         self.assertEqual(row['analyst_latest_eps_actual'], 6.13)
         self.assertIsNone(row['analyst_next_earnings_date'])
 
+    def test_refresh_shares_exact_canonical_codec_and_budget(self):
+        from scripts import build_market_shards as canonical
+        self.assertIs(mod.pack_index_payload, canonical.pack_index_payload)
+        self.assertEqual(mod.MAX_STARTUP_BYTES, canonical.MAX_COLUMNAR_BYTES)
+        payload = {"stocks": [{"ticker":"A","eps":2.123456789123456,
+                               "market_cap":123456789012345}]}
+        result = mod.pack_index_payload(payload)
+        row = dict(zip(result["fields"], result["rows"][0]))
+        self.assertEqual(row["market_cap"], 123456789012345)
+        self.assertAlmostEqual(row["eps"], 2.123456789123456, places=10)
+
     def test_pack_round_trip_keeps_reported_earnings_fields(self):
         payload = {'schema_version':1,'stocks':[
             {'ticker':'ADBE','name':'Adobe Inc.','analyst_latest_earnings_date':'2026-09-10','analyst_latest_eps_actual':6.13},
