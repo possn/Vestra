@@ -441,6 +441,16 @@ def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> di
     now = datetime.now(timezone.utc)
     previous = _load_previous_snapshots()
 
+    def report_due(snapshot):
+        """Previously scheduled earnings must refresh even inside the 14-day cache window."""
+        if not snapshot:
+            return False
+        scheduled = str(snapshot.get("next_earnings_date") or "")[:10]
+        if not scheduled or scheduled > now.date().isoformat():
+            return False
+        latest = str(snapshot.get("latest_earnings_date") or "")[:10]
+        return latest < scheduled or snapshot.get("latest_eps_actual") is None
+
     priority = [r for r in equities if r.get("ticker") in priority_tickers]
     other = [r for r in equities if r.get("ticker") not in priority_tickers]
 
@@ -448,7 +458,7 @@ def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> di
         ticker = row.get("ticker")
         prev = previous.get(ticker)
         age = _snapshot_age_days(prev, now=now)
-        missing_or_expired = not _cacheable(prev, max_cache_age, now=now)
+        missing_or_expired = not _cacheable(prev, max_cache_age, now=now) or report_due(prev)
         stale_age = age if age is not None else max_cache_age + 1000.0
         return (
             1 if missing_or_expired else 0,
@@ -458,8 +468,8 @@ def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> di
             str(ticker),
         )
 
-    priority_due = [r for r in priority if not _cacheable(previous.get(r.get("ticker")), max_cache_age, now=now)]
-    priority_cached = [r for r in priority if _cacheable(previous.get(r.get("ticker")), max_cache_age, now=now)]
+    priority_due = [r for r in priority if not _cacheable(previous.get(r.get("ticker")), max_cache_age, now=now) or report_due(previous.get(r.get("ticker")))]
+    priority_cached = [r for r in priority if _cacheable(previous.get(r.get("ticker")), max_cache_age, now=now) and not report_due(previous.get(r.get("ticker")))]
     priority_cached.sort(key=rotation_key, reverse=True)
     priority_extra_slots = max(0, priority_budget - len(priority_due))
     priority_targets = priority_due + priority_cached[:priority_extra_slots]
