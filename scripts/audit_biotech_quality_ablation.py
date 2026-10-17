@@ -74,6 +74,7 @@ def report(path=ROOT / "data/stocks.json"):
     # The published dimensions are rounded to two decimals; validate the 50/50
     # candidate against native peer-percentile averaging before interpreting ranks.
     native_half = []
+    native_diffs = []
     for item in biotech:
         source = raw.get(str(item.get("ticker")), {})
         dims = item.get("shadow_dimensions") or {}
@@ -82,7 +83,9 @@ def report(path=ROOT / "data/stocks.json"):
         roa = _percentile(source.get("roa"), reference_roa)
         available = [x for x in (gross, roa) if x is not None]
         if published is not None and available:
-            native_half.append(abs(published-sum(available)/len(available)))
+            delta = abs(published-sum(available)/len(available))
+            native_half.append(delta)
+            native_diffs.append((str(item.get("ticker")), round(delta,3), round(published,3)))
     def rho(a, b):
         return score_audit.spearman_pairs([(p[a], p[b]) for p in pairs])
 
@@ -110,7 +113,7 @@ def report(path=ROOT / "data/stocks.json"):
     return {
         "model": "biotech", "snapshot_rows": len(biotech), "comparable_pairs": len(pairs),
         "roa_weight_sweep": sweep,
-        "native_50pct_parity": {"rows": len(native_half), "mean_absolute_delta": sum(native_half)/len(native_half) if native_half else None, "max_absolute_delta": max(native_half) if native_half else None},
+        "native_50pct_parity": {"rows": len(native_half), "mean_absolute_delta": sum(native_half)/len(native_half) if native_half else None, "max_absolute_delta": max(native_half) if native_half else None, "outside_rounding_tolerance": sum(x>0.02 for x in native_half), "largest_discrepancies": sorted(native_diffs,key=lambda x:-x[1])[:10]},
         "production_quality_rho": rho(0, 1), "gross_only_candidate_rho": rho(0, 2),
         "mean_quality_shift": (sum(abs(x[2]-x[1]) for x in pairs)/len(pairs)) if pairs else None,
         "score_comparable_rows": len(scored),
