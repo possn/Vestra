@@ -21,7 +21,7 @@ def measure(raw, scored):
         published = (getattr(scored_by_ticker.get(r.ticker), "score_dimensions", None) or {}).get("Operating Quality")
         gross = _percentile_rank(r.gross_margin, gross_ref)
         roa = _percentile_rank(r.roa, roa_ref)
-        native = _avg([gross, roa])
+        native = gross
         if native is None or published is None:
             continue
         # ScoredTicker.score_dimensions is rounded to one decimal by score.py.
@@ -94,7 +94,7 @@ def shadow_ablation(raw, scored):
     # different cohort or benchmark with this run's actual RawMetrics.
     parity = []
     for native, _runway, gross, roa, _score_raw in observations:
-        reference_quality = _avg([gross, roa])
+        reference_quality = gross
         if native is not None and reference_quality is not None:
             parity.append(abs(round(reference_quality, 1) - native))
     parity_ok = bool(parity) and len(parity) == len([
