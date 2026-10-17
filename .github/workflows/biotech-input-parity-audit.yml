@@ -94,6 +94,13 @@ jobs:
               raise SystemExit("Biotech ablation contains an unmatched candidate")
           if len(shadow.get("candidates", [])) != 6:
               raise SystemExit("Missing candidate weights in same-run ablation")
+          for candidate in shadow["candidates"]:
+              if candidate.get("uncapped_ranking_rows", 0) < 20:
+                  raise SystemExit(f"Ranking diagnostics are undersampled: {candidate}")
+              if candidate.get("runway_quality_spearman") is None:
+                  raise SystemExit(f"Missing empirical candidate correlation: {candidate}")
+              if candidate.get("uncapped_max_rank_shift") is None:
+                  raise SystemExit(f"Missing same-run rank displacement: {candidate}")
           print(f"Measured Biotech evidence verified: {count} peers")
           PY
       - name: Assert canonical market outputs unchanged and no commits
