@@ -43,7 +43,33 @@ jobs:
           FINSCANNER_ANALYST_ENDPOINT_CONCURRENCY: "2"
           FINSCANNER_CAPITAL_RISK_PRIORITY_REFRESH: "80"
           FINSCANNER_CAPITAL_RISK_NONPRIORITY_REFRESH: "30"
-        run: python run_market_pipeline.py
+        run: |
+          set -o pipefail
+          python run_market_pipeline.py 2>&1 | tee ../biotech-audit.log
+      - name: Publish same-run diagnostics to workflow summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          lines = Path("biotech-audit.log").read_text(encoding="utf-8", errors="replace").splitlines() if Path("biotech-audit.log").exists() else []
+          result = {}
+          for line in lines:
+              for name in ("BIOTECH_INPUT_PARITY", "BIOTECH_SAME_RUN_SHADOW"):
+                  match = re.search(re.escape(name) + r"\s+(\{.*\})", line)
+                  if match:
+                      try:
+                          result[name] = json.loads(match.group(1))
+                      except json.JSONDecodeError:
+                          pass
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("## Biotech exact-input, nonpublishing audit\n\n")
+              if not result:
+                  out.write("No completed same-run diagnostics found; see job logs.\n")
+              for name, payload in result.items():
+                  out.write(f"### {name}\n\n")
+                  out.write("```json\n" + json.dumps(payload, ensure_ascii=False, indent=2) + "\n```\n")
+          PY
       - name: Assert canonical market outputs unchanged and no commits
         run: |
           # The pipeline writes pipeline_log.txt during normal operation; a local
