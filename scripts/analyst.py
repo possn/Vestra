@@ -511,6 +511,14 @@ def fetch_many(rows: list[dict], priority_tickers: set[str] | None = None) -> di
                 )
             fresh = asdict(snap)
             prev = previous.get(ticker)
+            # Retain an unconfirmed past earnings event across partial Yahoo
+            # responses so the next pipeline run retries instead of treating
+            # it as a completed report and caching for fourteen days.
+            if report_due(prev) and fresh.get("latest_eps_actual") is None:
+                if not fresh.get("next_earnings_date"):
+                    fresh["next_earnings_date"] = prev.get("next_earnings_date")
+                if not fresh.get("latest_earnings_date"):
+                    fresh["latest_earnings_date"] = prev.get("latest_earnings_date")
             if _float(fresh.get("coverage_pct")) in (None, 0) and _cacheable(prev, max_cache_age, now=now):
                 out[ticker] = _cached_copy(prev, "cached_after_refresh_failure", now)
             else:
