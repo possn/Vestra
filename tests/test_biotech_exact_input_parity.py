@@ -4,7 +4,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from score import _avg, _percentile_rank, _benchmark_values
+from types import ModuleType
+from unittest.mock import patch
+
+fundamentals_stub = ModuleType("fundamentals")
+fundamentals_stub.RawMetrics = type("RawMetrics", (), {})
+with patch.dict(sys.modules, {"fundamentals": fundamentals_stub}):
+    from score import _avg, _percentile_rank, _benchmark_values
 
 class BiotechNativeQualityParity(unittest.TestCase):
     def test_native_peer_rank_reconstruction(self):
