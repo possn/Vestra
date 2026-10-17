@@ -102,7 +102,23 @@ def candidate_tickers(payload: dict, today: date | None = None, past_days: int =
             cap = _number(row.get("market_cap")) or 0
             undated.append((-cap, ticker))
     dated = [ticker for _distance, ticker in sorted(set(dated))]
-    undated = [ticker for _cap, ticker in sorted(set(undated))]
+    # Preserve a small daily watch for large companies whose last published
+    # calendar date is stale. Rotating all 30 discovery slots can skip these
+    # companies during earnings week even when the source now has a result.
+    # This is not evidence of a reported EPS: only provider data can confirm it.
+    stale_large_caps = [
+        (-(_number(row.get("market_cap")) or 0), str(row.get("ticker") or "").strip().upper())
+        for row in payload.get("stocks") or []
+        if isinstance(row, dict)
+        and str(row.get("quote_type") or "").upper() not in EXCLUDED_TYPES
+        and _number(row.get("market_cap")) is not None
+        and _number(row.get("market_cap")) >= 50_000_000_000
+        and (last := _calendar_date(row.get("analyst_latest_earnings_date"))) is not None
+        and last < today - timedelta(days=90)
+        and _calendar_date(row.get("analyst_next_earnings_date")) is None
+    ]
+    pinned = [ticker for _cap, ticker in sorted(set(stale_large_caps))[:10]]
+    undated = [ticker for _cap, ticker in sorted(set(undated)) if ticker not in pinned]
     # Move the discovery window daily. A permanently fixed top-30 caused
     # companies ranked below it to remain unqueried forever. A fixed epoch
     # makes selection reproducible in tests and independent of scheduler time.
@@ -113,10 +129,14 @@ def candidate_tickers(payload: dict, today: date | None = None, past_days: int =
         slot = max(0, min(7, int(rotation_slot)))
         offset = ((rotation_day + slot) * 30) % len(undated)
         undated = undated[offset:] + undated[:offset]
-    # Preserve the 80-call quota: 50 dated catalysts + 30 rotating companies
-    # without a usable upcoming date; never invent calendar dates.
-    dated_set = set(dated)
-    return dated[:50] + [ticker for ticker in undated if ticker not in dated_set][:30]
+    # Preserve the 80-call quota: 50 dated catalysts + up to 10 stale
+    # large-cap calendar checks + remaining rotating discovery slots.
+    # Never invent a date, estimate or actual EPS.
+    dated_set = set(dated[:50])
+    pinned = [ticker for ticker in pinned if ticker not in dated_set]
+    return dated[:50] + pinned + [
+        ticker for ticker in undated if ticker not in dated_set
+    ][:30 - len(pinned)]
 
 def _as_utc_datetime(value):
     try:
