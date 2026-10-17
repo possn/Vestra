@@ -23,10 +23,7 @@ class LiveInputParityTests(unittest.TestCase):
             ))
         scored = []
         for row in raw:
-            expected = _avg([
-                _percentile_rank(row.gross_margin, [x.gross_margin for x in raw]),
-                _percentile_rank(row.roa, [x.roa for x in raw]),
-            ])
+            expected = _percentile_rank(row.gross_margin, [x.gross_margin for x in raw])
             scored.append(SimpleNamespace(ticker=row.ticker,
                 score_dimensions={"Operating Quality": round(expected, 1)}))
         output = measure(raw, scored)
@@ -70,10 +67,7 @@ class LiveInputParityTests(unittest.TestCase):
         scored = [SimpleNamespace(
             ticker=r.ticker, score_raw=50.0 + i,
             score_dimensions={
-                "Operating Quality": round(_avg([
-                    _percentile_rank(r.gross_margin, gross),
-                    _percentile_rank(r.roa, roa),
-                ]), 1),
+                "Operating Quality": round(_percentile_rank(r.gross_margin, gross), 1),
                 "Cash Runway": float(i + 1),
             }) for i, r in enumerate(raw)]
         result = shadow_ablation(raw, scored)
