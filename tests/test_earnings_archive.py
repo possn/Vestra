@@ -36,6 +36,12 @@ class EarningsArchiveTests(unittest.TestCase):
         ]
         self.assertEqual(archive_rows({}, rows, date(2026, 10, 13))["events"], [])
 
+    def test_official_value_precedence(self):
+        old = {"events": [{"kind": "earnings", "ticker": "AAA", "date": "2026-10-13", "source": "official:issuer", "analyst_latest_eps_actual": 0.09}]}
+        latest = [{"ticker": "AAA", "analyst_latest_earnings_date": "2026-10-13", "analyst_latest_eps_actual": 2.59, "earnings_source": "yahoo:earnings_dates"}]
+        event = archive_rows(old, latest, date(2026, 10, 17))["events"][0]
+        self.assertEqual(event["analyst_latest_eps_actual"], 0.09)
+
     def test_preserves_verified_eps_if_new_snapshot_missing_eps(self):
         prior = {"events": [{"kind": "earnings", "ticker": "A", "date": "2026-10-01",
                               "analyst_latest_eps_actual": 2.1, "source": "yahoo"}]}
