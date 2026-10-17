@@ -353,7 +353,6 @@ def biotech_shadow(ctx):
         ("Cash Runway", runway_score),
         ("Net Cash", net_cash),
         ("Dilution Discipline", dilution),
-        ("Operating Quality", quality),
     ):
         ctx.scopes.append({
             "metric": metric,
