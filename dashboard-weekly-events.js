@@ -488,7 +488,7 @@
       if (event?.kind !== 'earnings') continue;
       const ticker = tickerKey(event.ticker);
       const date = text(event.date);
-      if (!ticker || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) continue;
+      if (!ticker || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
       const confirmed = number(event.analyst_latest_eps_actual);
       if (confirmed === null) continue;
       const key = ticker + '|' + date;
