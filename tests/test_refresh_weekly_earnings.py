@@ -186,7 +186,7 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         self.assertIsNone(row['analyst_next_earnings_date'])
 
     def test_refresh_shares_exact_canonical_codec_and_budget(self):
-        from scripts import build_market_shards as canonical
+        import build_market_shards as canonical
         self.assertIs(mod.pack_index_payload, canonical.pack_index_payload)
         self.assertEqual(mod.MAX_STARTUP_BYTES, canonical.MAX_COLUMNAR_BYTES)
         payload = {"stocks": [{"ticker":"A","eps":2.123456789123456,
