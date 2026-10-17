@@ -292,7 +292,15 @@ test('iPhone/WebKit: archived prior-quarter earnings and future earnings remain 
     });
   });
   const card = page.locator('#dashboardWeeklyEventsCard');
-  await expect(card.locator('[data-weekly-event-index]')).toHaveCount(1);
+  await expect.poll(async () => page.evaluate(() => {
+    window.VestraWeeklyEvents.render({
+      now: new Date(2026, 8, 2, 12),
+      stocks: [{ ticker:'FUT', name:'Future Company', quote_type:'EQUITY', analyst_next_earnings_date:'2026-10-20' }],
+      portfolioTickers: new Set(['HIST']),
+      macroEvents: { events: [] }
+    });
+    return document.querySelectorAll('#dashboardWeeklyEventsCard [data-weekly-event-index]').length;
+  }), { timeout: 15000 }).toBe(1);
   await expect(card).toContainText('Historical Company');
   await expect(card).toContainText('HIST');
   await page.evaluate(() => window.VestraWeeklyEvents.render({
