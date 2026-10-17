@@ -23,7 +23,7 @@ import sys
 SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
-from build_market_shards import _compact_startup_value, MAX_COLUMNAR_BYTES
+from build_market_shards import pack_index_payload, MAX_COLUMNAR_BYTES
 from earnings_archive import save_archive
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -263,25 +263,6 @@ def apply_snapshot(row: dict, snapshot: dict) -> bool:
             row[key] = value
             changed = True
     return changed
-
-
-def pack_index_payload(index_payload: dict) -> dict:
-    rows = index_payload.get("stocks") or []
-    frequency: dict[str, int] = defaultdict(int)
-    for row in rows:
-        if isinstance(row, dict):
-            for key in row:
-                frequency[key] += 1
-    fields = sorted(frequency, key=lambda key: (-frequency[key], key))
-    packed_rows = []
-    for row in rows:
-        values = [_compact_startup_value(row.get(field)) if field in row else None for field in fields]
-        while values and values[-1] is None:
-            values.pop()
-        packed_rows.append(values)
-    meta = {key: value for key, value in index_payload.items() if key != "stocks"}
-    return {**meta, "layout": "field_rows_v1", "fields": fields, "rows": packed_rows}
-
 
 
 def earnings_coverage(payload: dict, today: date | None = None) -> dict[str, int]:
