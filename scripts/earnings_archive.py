@@ -43,7 +43,9 @@ def archive_rows(existing: dict, stocks: list[dict], today: date | None = None) 
         }
         for field in FIELDS:
             value = stock.get(field)
-            if isinstance(value, (float, int)) and not isinstance(value, bool):
+            if str(previous.get("source") or "").startswith("official:") and not str(stock.get("earnings_source") or "").startswith("official:") and field in previous:
+                event[field] = previous[field]
+            elif isinstance(value, (float, int)) and not isinstance(value, bool):
                 event[field] = value
             elif field in previous:
                 event[field] = previous[field]
