@@ -360,7 +360,7 @@ def fetch_one(ticker: str, current_price: float | None = None) -> AnalystSnapsho
                         continue
                 if reports:
                     when, reported, estimate, surprise = max(reports, key=lambda item: item[0])
-                    if not out.latest_earnings_date or when > out.latest_earnings_date or out.latest_eps_actual is None:
+                    if not out.latest_earnings_date or when >= out.latest_earnings_date:
                         out.latest_earnings_date = when
                         out.latest_eps_actual = reported
                         out.latest_eps_estimate = estimate
