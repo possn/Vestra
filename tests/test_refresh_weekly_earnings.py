@@ -101,7 +101,7 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
             {'ticker': 'ETF1', 'quote_type': 'ETF', 'market_cap': 999999999999},
         ]}
         self.assertEqual(mod.candidate_tickers(payload, today=date(2026,10,12)),
-                         ['DATED', 'UNDATED', 'STALE'])
+                         ['DATED', 'STALE', 'UNDATED'])
 
     def test_discovery_retains_reserved_slots_in_busy_earnings_week(self):
         payload = {'stocks': [
