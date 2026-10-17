@@ -19,6 +19,7 @@ MAX_ITEMS_PER_TICKER = 6
 MAX_WORKERS = 12
 REQUEST_TIMEOUT = 8
 DASHBOARD_MAX_ITEMS = 40
+DASHBOARD_MAX_HEADLINE_AGE_HOURS = 72
 DASHBOARD_NEWS_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "dashboard-news.json")
 
 _STOP = {"inc","inc.","corp","corp.","corporation","company","co","co.","plc","ltd","limited","sa","se","ag","nv","holdings","holding","group","the","class"}
@@ -112,7 +113,11 @@ def _build_dashboard_digest(ticker_news: dict[str,list[dict]]) -> dict:
     rows=[]
     for row in merged.values():
         ts=_published_ts(row.get("published", ""))
-        age_hours=max(0.0,(now-ts)/3600.0) if ts else 72.0
+        # A stale/unparseable headline is not current news, however high its
+        # relevance score. Reject future-dated items outside clock skew too.
+        if not ts or ts > now + 15 * 60 or now - ts > DASHBOARD_MAX_HEADLINE_AGE_HOURS * 3600:
+            continue
+        age_hours=max(0.0,(now-ts)/3600.0)
         topics=_topics(row.get("title", ""))
         breadth=len(row.get("tickers") or [])
         impact=(55 if row.get("kind")=="market" else 35)+min(18,breadth*6)+min(12,len(topics)*4)-min(30,age_hours*.6)
@@ -134,6 +139,8 @@ def _build_dashboard_digest(ticker_news: dict[str,list[dict]]) -> dict:
         "source":"Google News RSS",
         "note":"Compact candidate pool for the Dashboard. Client ranks portfolio intersections before display.",
         "items":selected,
+        "freshness_window_hours": DASHBOARD_MAX_HEADLINE_AGE_HOURS,
+        "fresh_items": len(selected),
     }
 
 def _write_dashboard_digest(ticker_news: dict[str,list[dict]]) -> None:
