@@ -307,6 +307,11 @@ def main():
 
     _stage = _stage_timer("score")
     scored = score_universe(raw)
+    # Opt-in score parity observation uses this exact in-memory RawMetrics cohort.
+    # It never persists financial inputs or changes production scores.
+    if os.getenv("VESTRA_AUDIT_BIOTECH_INPUT_PARITY") == "1":
+        from audit_biotech_live_input_parity import measure as measure_biotech_parity
+        log.info("BIOTECH_INPUT_PARITY %s", json.dumps(measure_biotech_parity(raw, scored), sort_keys=True))
     _stage_done("score", _stage)
     scored_now = {s.ticker for s in scored}
     missing_learned = [t for t in learned_tickers if t not in scored_now]
