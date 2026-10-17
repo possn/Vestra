@@ -5,8 +5,8 @@
   max-width:1180px!important; margin-inline:auto; padding:clamp(18px,3.4vw,40px)!important;
 }
 #vestraIntelligenceHome .vi-home-overview{
-  display:grid; grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
-  align-items:stretch; gap:clamp(24px,4vw,62px); min-width:0;
+  display:grid; grid-template-columns:minmax(0,1fr);
+  align-items:stretch; gap:clamp(20px,3vw,34px); min-width:0;
   padding:clamp(18px,3vw,42px) 0 clamp(22px,3vw,38px);
   border-bottom:1px solid rgba(199,220,207,.17);
 }
@@ -66,8 +66,9 @@
   font-size:13px!important; line-height:1.5!important; margin:0!important; color:#b5cac1!important;
 }
 #vestraIntelligenceHome .vi-home-overview .vi-decisions{
-  display:flex!important; flex-direction:column!important; gap:0!important;
-  border-top:1px solid rgba(212,230,221,.21); padding:0!important; margin:0!important;
+  display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:clamp(12px,2vw,22px)!important; border-top:1px solid rgba(212,230,221,.21);
+  padding:0!important; margin:0!important;
 }
 #vestraIntelligenceHome .vi-home-overview .vi-action{
   display:grid!important; grid-template-columns:32px minmax(0,1fr) 22px!important;
@@ -166,4 +167,18 @@
 }
 @media(prefers-reduced-motion:reduce){
  #vestraIntelligenceHome .vi-home-overview *{scroll-behavior:auto!important;transition:none!important}
+}
+
+
+#vestraIntelligenceHome .vi-home-overview .vi-opening{
+  display:grid!important; grid-template-columns:minmax(0,1fr) minmax(0,.46fr)!important;
+  align-items:start!important; column-gap:clamp(24px,4vw,58px)!important;
+}
+#vestraIntelligenceHome .vi-opening>.vi-chapter-index{grid-column:1/-1}
+#vestraIntelligenceHome .vi-opening>.vi-regime-disclosure{grid-column:2;grid-row:2;align-self:start}
+#vestraIntelligenceHome .vi-home-overview .vi-action{grid-template-columns:26px minmax(0,1fr) 17px!important}
+#vestraIntelligenceHome .vi-home-overview .vi-priorities .vi-chapter-index{margin:0 0 8px!important}
+@media(max-width:760px){
+ #vestraIntelligenceHome .vi-home-overview .vi-opening{display:flex!important;flex-direction:column!important;gap:10px!important}
+ #vestraIntelligenceHome .vi-home-overview .vi-decisions{display:flex!important;flex-direction:column!important;gap:0!important}
 }
