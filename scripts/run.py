@@ -313,6 +313,9 @@ def main():
         from audit_biotech_live_input_parity import measure as measure_biotech_parity
         log.info("BIOTECH_INPUT_PARITY %s", json.dumps(measure_biotech_parity(raw, scored), sort_keys=True))
     _stage_done("score", _stage)
+    if os.getenv("VESTRA_AUDIT_BIOTECH_STOP_AFTER_SCORE") == "1":
+        log.info("BIOTECH_INPUT_PARITY_AUDIT_STOP no market output publication requested")
+        return
     scored_now = {s.ticker for s in scored}
     missing_learned = [t for t in learned_tickers if t not in scored_now]
     if missing_learned:
