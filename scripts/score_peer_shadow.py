@@ -346,7 +346,9 @@ def biotech_shadow(ctx):
     runway_score = n(dims.get("Cash Runway"))
     net_cash = n(dims.get("Net Cash"))
     dilution = n(dims.get("Dilution Discipline"))
-    quality = n(dims.get("Operating Quality"))
+    # Candidate reconstructed from historical raw gross margin: removes the
+    # ROA/runway overlap while leaving cash runway production-native.
+    quality = ctx.p("gross_margin")
     for metric, value in (
         ("Cash Runway", runway_score),
         ("Net Cash", net_cash),
