@@ -154,6 +154,10 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
     const cpi = events.find(item => item.kind === 'macro' && item.shortTitle === 'CPI EUA');
     if (!cpi) throw new Error('CPI test fixture missing from selected week');
     window.VestraWeeklyEvents.openDetail(cpi);
+    const modal = document.getElementById('dashboardWeeklyEventDetail');
+    if (!modal) throw new Error('CPI detail not mounted immediately after openDetail');
+    const style = window.getComputedStyle(modal);
+    if (style.display === 'none' || style.visibility === 'hidden') throw new Error('CPI detail mounted but hidden: ' + style.display + '/' + style.visibility);
   });
 
   const detail = page.locator('#dashboardWeeklyEventDetail');
