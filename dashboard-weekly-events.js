@@ -568,14 +568,14 @@
     // Calendar navigation can occur before the 2 MB startup data finishes.
     // Retry in the background and re-render the same selected week when ready.
     if (!stocks.length && !calendarStartupLoading) {
-      void loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(); });
+      void loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(expandedContext || {}); });
     }
     const tickers = options.portfolioTickers || portfolioTickerSet(); const nav = window.VestraWeeklyEventsNavigation; const now = options.now || (nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date()); const macro = options.macroEvents || macroSnapshot;
     if (!latestEarningsLoading && !options.stocks && Date.now() - latestEarningsCheckedAt >= EARNINGS_REFRESH_MS) {
-      void loadLatestEarnings().then(() => render());
+      void loadLatestEarnings().then(() => render(expandedContext || {}));
     }
     if (!earningsArchiveLoading && !options.stocks && Date.now() - earningsArchiveCheckedAt >= EARNINGS_REFRESH_MS) {
-      void loadEarningsArchive().then(() => render());
+      void loadEarningsArchive().then(() => render(expandedContext || {}));
     }
     const events = selectEvents(combineArchivedStocks(mergeLatestEarnings(stocks, latestEarnings), earningsArchive), tickers, now, options.limit || MAX_EVENTS, macro);
     // Prioritise company earnings in the Home, with the complete macro agenda accessible on expansion.
@@ -636,7 +636,7 @@
   async function scheduleRender(){
     const marketLoad=(()=>{try{return window.VestraMarket?.ensureLoaded?.();}catch(_){return null;}})();
     await Promise.allSettled([marketLoad,loadMacroEvents(),loadCalendarStartupStocks(),loadLatestEarnings()]);
-    render();
+    render(expandedContext || {});
     restoreExternalWeeklyDetail();
   }
   document.addEventListener('click',event=>{
@@ -695,8 +695,8 @@
     if (restoreExternalWeeklyDetail()) return;
     void loadMacroEvents().then(() => restoreExternalWeeklyDetail());
   });
-  window.addEventListener?.('vestra:market-ready',()=>{ render(); restoreExternalWeeklyDetail(); });
-  window.addEventListener?.('vestra:weekly-data-refreshed',()=>{ if (!window.VestraMarketStaticUniverse?.getStocks?.()?.length && !calendarStartupStocks?.length) void loadCalendarStartupStocks().then(() => render()); });
+  window.addEventListener?.('vestra:market-ready',()=>{ render(expandedContext || {}); restoreExternalWeeklyDetail(); });
+  window.addEventListener?.('vestra:weekly-data-refreshed',()=>{ if (!window.VestraMarketStaticUniverse?.getStocks?.()?.length && !calendarStartupStocks?.length) void loadCalendarStartupStocks().then(() => render(expandedContext || {})); });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',scheduleRender,{once:true});else scheduleRender();
   window.VestraWeeklyEvents=Object.freeze({loadEarningsArchive,loadLatestEarnings,mergeLatestEarnings,combineArchivedStocks,collectEvents,collectMacroEvents,selectEvents,loadMacroEvents,refreshMacroEvents,parseCalendarDate,tickerMatchesPortfolio,officialSourceUrl,normaliseOfficialMetrics,hasMacroResult,hasOfficialMacroSummary,hasStructuredOfficialMetrics,hasMacroPublication,hasMacroMetrics,formatResultValue,formatOfficialPercent,formatEPS,formatSurprise,openDetail,render,openTicker,findMacroEventById,restoreExternalWeeklyDetail,macroFetchTimeoutMs:MACRO_FETCH_TIMEOUT_MS,version:VERSION});
 })();
