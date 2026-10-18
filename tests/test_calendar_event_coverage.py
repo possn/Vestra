@@ -19,7 +19,7 @@ class CalendarCoverageTests(unittest.TestCase):
         runtime = (ROOT / 'dashboard-weekly-events.js').read_text(encoding='utf-8')
         sw = (ROOT / 'sw.js').read_text(encoding='utf-8')
         self.assertIn("if (!stocks.length && !calendarStartupLoading)", runtime)
-        self.assertIn("loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(); })", runtime)
+        self.assertIn("loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(expandedContext || {}); })", runtime)
         self.assertIn("A carregar resultados das empresas…", runtime)
         self.assertNotIn("Cobertura de resultados: índice de empresas ainda indisponível", runtime)
         self.assertIn("vestra-cache-v241", sw)
