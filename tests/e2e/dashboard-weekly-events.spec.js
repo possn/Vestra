@@ -45,13 +45,16 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   // Weekly cards now use an index because the first tap opens the event detail;
   // ticker identity is carried by the dossier action inside an earnings detail.
   const events = card.locator('[data-weekly-event-index]');
-  await expect(events).toHaveCount(4);
+  await expect(events).toHaveCount(3);
   await expect(events.nth(0)).toContainText('NVDA');
   await expect(events.nth(0)).toContainText('NVIDIA Corporation');
   await expect(events.nth(0)).toContainText('No portefólio');
   await expect(events.nth(1)).toContainText('AAPL');
   await expect(events.nth(1)).toContainText('Apple Inc.');
   await expect(events.nth(2)).toContainText('PPI EUA');
+  await expect(card).not.toContainText('CPI EUA');
+  await card.locator('[data-weekly-events-toggle]').click();
+  await expect(events).toHaveCount(4);
   await expect(events.nth(3)).toContainText('CPI EUA');
   await expect(card).toContainText('Inflação');
   await expect(card).toContainText('Impacto elevado');
