@@ -460,6 +460,7 @@
   async function loadEarningsArchive(force = false) {
     if (!force && earningsArchive && Date.now() - earningsArchiveCheckedAt < EARNINGS_REFRESH_MS) return earningsArchive;
     if (earningsArchiveLoading) return earningsArchiveLoading;
+    earningsArchiveCheckedAt = Date.now();
     earningsArchiveLoading = (async () => {
       try {
         const response = await fetch('data/earnings-events.json', { cache: 'no-store' });
