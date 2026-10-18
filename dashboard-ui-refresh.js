@@ -1,4 +1,4 @@
-/* Vestra Dashboard UI Refresh v1.8 — event-driven refresh with zero dashboard MutationObservers. */
+/* Vestra Dashboard UI Refresh v1.9 — event-driven refresh with zero dashboard MutationObservers. */
 (() => {
   'use strict';
 
