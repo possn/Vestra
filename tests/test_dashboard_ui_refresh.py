@@ -107,7 +107,7 @@ class DashboardUiRefreshContractTests(unittest.TestCase):
         self.assertIn("ensureDashboardUiRefresh", self.loader)
         self.assertIn("dashboard-ui-refresh.js?v=1.9", self.loader)
         self.assertIn("version: '1.30'", self.loader)
-        self.assertIn("version: '1.8'", self.source)
+        self.assertIn("version: '1.9'", self.source)
 
 
 if __name__ == "__main__":
