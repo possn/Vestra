@@ -22,6 +22,13 @@ class WeeklyHistoryControlsTests(unittest.TestCase):
         self.assertIn("options.now || (nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date())", core)
         self.assertIn("window.addEventListener?.('vestra:market-ready',()=>{ render(expandedContext || {});", core)
 
+    def test_sunday_week_offset_not_mislabelled_today(self):
+        core = (ROOT / "dashboard-weekly-events.js").read_text(encoding="utf-8")
+        loader = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
+        self.assertIn("day.textContent=dayLabel(event.date,new Date());", core)
+        self.assertNotIn("day.textContent=dayLabel(event.date,now);", core)
+        self.assertIn("dashboard-weekly-events.js?v=3.6", loader)
+
     def test_history_navigation_keeps_week_offset_and_result_detail(self):
         nav = (ROOT / "dashboard-weekly-events-navigation.js").read_text(encoding="utf-8")
         core = (ROOT / "dashboard-weekly-events.js").read_text(encoding="utf-8")
