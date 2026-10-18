@@ -23,6 +23,12 @@ test('iPhone/WebKit: first look is wealth, barometer, news, horizontal agenda, p
  for(let i=1;i<report.order.length;i++)
   expect(report.order[i], 'reading order '+i).toBeGreaterThan(report.order[i-1]);
  expect(report.strip).toBe(false);
+ // Enforce canonical sibling hierarchy, not merely coincidental vertical coordinates.
+ const siblings=await home.evaluate(host=>{
+  const canonical=host.querySelector('.vi-canonical-sections');
+  return Array.from(canonical?.children||[]).map(el=>el.classList.contains('vi-market-reading')?'market':el.classList.contains('vi-news-reading')?'news':el.classList.contains('vi-events-reading')?'events':'unknown');
+ });
+ expect(siblings).toEqual(['market','news','events']);
  expect(report.overflowX).toBe('auto');
  expect(report.snap).toContain('x');
  await expect(home.locator('.vi-priorities .vi-action')).toHaveCount(3);
