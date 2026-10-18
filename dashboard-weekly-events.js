@@ -193,7 +193,15 @@
 
   function selectEvents(stocks, portfolioTickers = new Set(), now = new Date(), limit = MAX_EVENTS, macro = macroSnapshot) {
     const macroEvents = collectMacroEvents(macro, now);
-    const earnings = collectEvents(stocks, portfolioTickers, now);
+    // A source may retain an old scheduled row for a quarter already reported.
+    // One ticker/date is one earnings event: verified actual EPS takes precedence.
+    const uniqueEarnings = new Map();
+    for (const item of collectEvents(stocks, portfolioTickers, now)) {
+      const key = item.ticker + '|' + item.dateISO;
+      const previous = uniqueEarnings.get(key);
+      if (!previous || (item.reported && !previous.reported)) uniqueEarnings.set(key, item);
+    }
+    const earnings = [...uniqueEarnings.values()];
     // Do not let dense macro weeks silently erase company results.
     // Portfolio earnings come first, then official macro, then other earnings.
     const portfolioEarnings = earnings.filter(x => x.inPortfolio).sort((a,b)=>a.date-b.date || b.marketCap-a.marketCap);
