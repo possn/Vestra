@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.3';
+  const VERSION = '3.2';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
