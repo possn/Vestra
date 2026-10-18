@@ -90,7 +90,7 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#vestraIntelligenceHome button[data-vestra-go="dashboard"]').first().click();
   await expect(page.locator('#vestraIntelligenceHome[data-legacy-open="true"]')).toBeHidden();
-  await expect(page.locator('.v2-home-secondary-hub__intro h3')).toBeVisible();
+  await expect(page.locator('#viewDashboard > .v2-home-stage')).toBeVisible();
   const readings = await page.evaluate(() => {
     const selectors = [
       '.v2-home-section-label h2',
