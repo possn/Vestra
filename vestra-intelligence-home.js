@@ -360,11 +360,12 @@
         // concatenating dates, tickers and categories into an unreadable string.
         title.textContent = (item.lines[0] || item.fallback).slice(0,110);
         body.append(title);
-        const remainder = item.lines.slice(1).join(item.earnings ? '\n' : ' · ').trim();
-        if (remainder) {
+        const details = item.earnings ? item.lines.slice(1) : [item.lines.slice(1).join(' · ').trim()];
+        for (const [lineIndex, line] of details.entries()) {
+          if (!line) continue;
           const detail = document.createElement('small');
-          detail.className = 'vi-editorial-detail';
-          detail.textContent = remainder.slice(0,140);
+          detail.className = 'vi-editorial-detail' + (item.earnings && lineIndex === 1 ? ' vi-editorial-eps' : '');
+          detail.textContent = line.slice(0,140);
           body.append(detail);
         }
         card.append(ordinal,body);
