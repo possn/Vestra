@@ -1,0 +1,35 @@
+/* Vestra Intelligence 2.0 — lead with live catalysts, support with risk & regime.
+   CSS grid is consistent with DOM/keyboard/screen-reader ordering; data preserved. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections{
+ display:grid!important;
+ grid-template-columns:minmax(0,1.55fr) minmax(270px,.85fr)!important;
+ gap:clamp(11px,1.5vw,20px)!important;
+ align-items:start!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-events-reading{
+ grid-column:1!important;grid-row:1!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-news-reading{
+ grid-column:1!important;grid-row:2!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-risk-reading{
+ grid-column:2!important;grid-row:1!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-market-reading{
+ grid-column:2!important;grid-row:2!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome :is(.vi-events-reading,.vi-news-reading) .vi-editorial-tile{
+ grid-template-columns:30px minmax(0,1fr)!important;
+}
+@media(max-width:760px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections{
+  grid-template-columns:minmax(0,1fr)!important;gap:9px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-canonical-card{
+  grid-column:1!important;grid-row:auto!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-events-reading{order:1}
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-news-reading{order:2}
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-risk-reading{order:3}
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections .vi-market-reading{order:4}
+}
