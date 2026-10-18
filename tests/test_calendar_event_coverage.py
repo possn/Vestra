@@ -32,7 +32,7 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn('merged[index] = { ...merged[index], ...archiveFields }', js)
         self.assertIn('loadEarningsArchive()', js)
         self.assertIn("data/earnings-events.json", js)
-        self.assertIn('combineArchivedStocks(stocks, earningsArchive)', js)
+        self.assertIn('combineArchivedStocks(mergeLatestEarnings(stocks, latestEarnings), earningsArchive)', js)
         self.assertIn('vestra_earnings_events_v1', js)
 
     def test_historical_official_dates_retained_for_three_months(self):
