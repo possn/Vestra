@@ -577,7 +577,8 @@
     if (!earningsArchiveLoading && !options.stocks && Date.now() - earningsArchiveCheckedAt >= EARNINGS_REFRESH_MS) {
       void loadEarningsArchive().then(() => render(expandedContext || {}));
     }
-    const events = selectEvents(combineArchivedStocks(mergeLatestEarnings(stocks, latestEarnings), earningsArchive), tickers, now, options.limit || MAX_EVENTS, macro);
+    const eventStocks = options.stocks ? stocks : combineArchivedStocks(mergeLatestEarnings(stocks, latestEarnings), earningsArchive);
+    const events = selectEvents(eventStocks, tickers, now, options.limit || MAX_EVENTS, macro);
     // Prioritise company earnings in the Home, with the complete macro agenda accessible on expansion.
     // Unconfirmed events that already passed must not displace future or published results.
     const priority = events.filter(event => event.kind === 'earnings' && (event.reported || event.date >= localDay(now)));
