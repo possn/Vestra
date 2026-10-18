@@ -11288,9 +11288,9 @@ function wire() {
     else markViewsDirty(["assets"]);
   });
 
-  // Init
+  // Init: do not overwrite an early user navigation while async boot completes.
   setModeLiabs(false);
-  setView("dashboard");
+  if (currentView === "dashboard") setView("dashboard");
 }
 
 /* ─── LIVE QUOTE REFRESH (via Cloudflare Worker proxy) ──────────────────────

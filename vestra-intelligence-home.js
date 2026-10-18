@@ -287,7 +287,7 @@
       : 'Sem leitura verificada · abrir barómetro');
     const news = document.getElementById('vestraDailyNewsCard');
     const article = news?.querySelector('.vestra-daily-news-item');
-    const headline = article?.textContent?.replace(/\\s+/g,' ').trim();
+    const headline = article?.textContent?.replace(/\s+/g,' ').trim();
     update('news', headline ? headline.slice(0,100) : 'Notícias ainda não disponíveis · abrir módulo');
     const events = document.getElementById('dashboardWeeklyEventsCard');
     const cards = Array.from(events?.querySelectorAll('.weekly-events-list .weekly-event') || []);
@@ -296,7 +296,7 @@
     const upcoming = cards.find(card => (card.dataset.weeklyEventDate || '') >= todayKey);
     const latestPublished = cards.find(card => card.querySelector('.weekly-event__eps'));
     const selected = upcoming || latestPublished || cards[0];
-    const eventLabel = selected?.textContent?.replace(/\\s+/g,' ').trim();
+    const eventLabel = selected?.textContent?.replace(/\s+/g,' ').trim();
     update('events', eventLabel ? eventLabel.slice(0,100) : 'Consultar resultados e agenda semanal');
   }
 
@@ -321,11 +321,23 @@
       const source = document.querySelector(sourceSelector);
       if (!list) return;
       const candidates = Array.from(source?.querySelectorAll(itemSelector) || []).slice(0, limit);
-      const texts = candidates.map(node => ({
-        lines: (node.innerText || node.textContent || '').split(/\n+/)
-          .map(part => part.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0,4),
-        fallback: (node.textContent || '').replace(/\s+/g, ' ').trim().slice(0,190)
-      })).filter(item => item.fallback);
+      const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
+      const isEarnings = itemSelector.includes('weekly-event');
+      const texts = candidates.map(node => {
+        if (isEarnings) {
+          const day = clean(node.querySelector('.weekly-event__day')?.textContent);
+          const ticker = clean(node.querySelector('.weekly-event__ticker')?.textContent);
+          const company = clean(node.querySelector('.weekly-event__name')?.textContent)
+            .replace(/\s*\(The\)\s*$/i, '').replace(/,\s*Inc\.\s*\(The\)$/i, ', Inc.');
+          const eps = clean(node.querySelector('.weekly-event__eps')?.textContent);
+          const type = clean(node.querySelector('.weekly-event__type')?.textContent);
+          return {lines:[day ? day + ' · ' + ticker : ticker, company, eps || type].filter(Boolean), fallback:ticker, earnings:true};
+        }
+        const articleTitle = clean(node.querySelector('h2,h3,h4,.vestra-daily-news-title,.news-title')?.textContent);
+        const raw = clean(node.innerText || node.textContent);
+        const lines = (node.innerText || node.textContent || '').split(/\n+/).map(clean).filter(Boolean).slice(0,4);
+        return {lines: articleTitle ? [articleTitle] : lines, fallback:raw.slice(0,190)};
+      }).filter(item => item.fallback);
       if (!texts.length) {
         list.replaceChildren();
         const placeholder = document.createElement('p');
@@ -348,11 +360,12 @@
         // concatenating dates, tickers and categories into an unreadable string.
         title.textContent = (item.lines[0] || item.fallback).slice(0,110);
         body.append(title);
-        const remainder = item.lines.slice(1).join(' · ').trim();
-        if (remainder) {
+        const details = item.earnings ? item.lines.slice(1) : [item.lines.slice(1).join(' · ').trim()];
+        for (const [lineIndex, line] of details.entries()) {
+          if (!line) continue;
           const detail = document.createElement('small');
-          detail.className = 'vi-editorial-detail';
-          detail.textContent = remainder.slice(0,140);
+          detail.className = 'vi-editorial-detail' + (item.earnings && lineIndex === 1 ? ' vi-editorial-eps' : '');
+          detail.textContent = line.slice(0,140);
           body.append(detail);
         }
         card.append(ordinal,body);

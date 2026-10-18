@@ -77,6 +77,17 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
 });
 
 test('iPhone/WebKit: CPI structured BLS metrics render as published results instead of pending', async ({ page }) => {
+  // This test validates macro-event evidence, not the market-wide stock index.
+  // A minimal valid packed universe prevents the unrelated 2 MB startup data
+  // from blocking WebKit's layout/visibility checks on a slow runner.
+  await page.route('**/data/stocks-startup.json', route => route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({layout:'field_rows_v1',fields:['ticker','name','quote_type'],rows:[['TEST','Fixture Company','EQUITY']]})
+  }));
+  // The CPI fixture is self-contained: avoid large unrelated earnings downloads
+  // saturating WebKit while the sheet's official metrics are inspected.
+  await page.route('**/data/earnings-latest.json', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({schema:'vestra_earnings_latest_v1',stocks:[]}) }));
+  await page.route('**/data/earnings-events.json', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({schema:'vestra_earnings_events_v1',events:[]}) }));
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.context().route('https://www.bls.gov/news.release/cpi.nr0.htm', async route => {
@@ -113,9 +124,18 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
 
   await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
-  // The real startup loader must settle before the deterministic CPI fixture
-  // is rendered; otherwise its late market-ready render overwrites the test.
-  await page.waitForLoadState('networkidle', { timeout: 25000 });
+  // Wait for the actual calendar companions rather than global network idle:
+  // background market requests need not settle for this deterministic CPI fixture.
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEventsNavigation));
+  // The first Dashboard hydration may still be running despite its companion
+  // being registered. Await the same source promises before opening the sheet.
+  await page.evaluate(async () => {
+    await Promise.allSettled([
+      window.VestraWeeklyEvents.loadMacroEvents(),
+      window.VestraWeeklyEvents.loadLatestEarnings(),
+      window.VestraWeeklyEvents.loadEarningsArchive(),
+    ]);
+  });
 
   await page.evaluate(() => {
     const events = window.VestraWeeklyEvents.render({
@@ -145,6 +165,10 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
     const cpi = events.find(item => item.kind === 'macro' && item.shortTitle === 'CPI EUA');
     if (!cpi) throw new Error('CPI test fixture missing from selected week');
     window.VestraWeeklyEvents.openDetail(cpi);
+    const modal = document.getElementById('dashboardWeeklyEventDetail');
+    if (!modal) throw new Error('CPI detail not mounted immediately after openDetail');
+    const style = window.getComputedStyle(modal);
+    if (style.display === 'none' || style.visibility === 'hidden') throw new Error('CPI detail mounted but hidden: ' + style.display + '/' + style.visibility);
   });
 
   const detail = page.locator('#dashboardWeeklyEventDetail');

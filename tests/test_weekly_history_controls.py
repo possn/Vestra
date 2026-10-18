@@ -14,13 +14,13 @@ class WeeklyHistoryControlsTests(unittest.TestCase):
         self.assertIn("'vestra:dashboard-signal-updated'", nav)
         self.assertIn("event?.detail?.source === 'weekly-events'", nav)
         self.assertIn("decorate();", nav)
-        self.assertIn("dashboard-weekly-events-navigation.js?v=1.2", loader)
+        self.assertIn("dashboard-weekly-events-navigation.js?v=1.3", loader)
 
     def test_routine_rerenders_keep_selected_past_week(self):
         core = (ROOT / "dashboard-weekly-events.js").read_text(encoding="utf-8")
         self.assertIn("const nav = window.VestraWeeklyEventsNavigation;", core)
         self.assertIn("options.now || (nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date())", core)
-        self.assertIn("window.addEventListener?.('vestra:market-ready',()=>{ render();", core)
+        self.assertIn("window.addEventListener?.('vestra:market-ready',()=>{ render(expandedContext || {});", core)
 
     def test_history_navigation_keeps_week_offset_and_result_detail(self):
         nav = (ROOT / "dashboard-weekly-events-navigation.js").read_text(encoding="utf-8")

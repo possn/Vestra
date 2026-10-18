@@ -1,4 +1,4 @@
-/* Vestra weekly events navigation companion v1.2 */
+/* Vestra weekly events navigation companion v1.3 */
 (() => {
   'use strict';
 
@@ -8,12 +8,14 @@
   function shiftedDate(base = new Date(), offset = weekOffset) {
     const date = new Date(base);
     date.setHours(12, 0, 0, 0);
-    date.setDate(date.getDate() + (Number(offset) || 0) * 7);
+    // On Sunday the editorial agenda already leads with the coming week.
+    // Manual previous/next offsets stay relative to that same anchor.
+    date.setDate(date.getDate() + (date.getDay() === 0 ? 1 : 0) + (Number(offset) || 0) * 7);
     return date;
   }
 
   function labelForOffset() {
-    if (weekOffset === 0) return 'Esta semana';
+    if (weekOffset === 0) return new Date().getDay() === 0 ? 'Semana seguinte' : 'Esta semana';
     if (weekOffset === -1) return 'Semana anterior';
     if (weekOffset === 1) return 'Semana seguinte';
     return weekOffset < 0 ? `${Math.abs(weekOffset)} semanas atrás` : `Daqui a ${weekOffset} semanas`;
@@ -94,6 +96,6 @@
     reset,
     getWeekOffset: () => weekOffset,
     maxWeekOffset: MAX_WEEK_OFFSET,
-    version: '1.2',
+    version: '1.3',
   });
 })();
