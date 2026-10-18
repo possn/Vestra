@@ -1,4 +1,4 @@
-/* Vestra Dashboard Weekly Events v3.2 — compact editorial catalysts with progressive disclosure. */
+/* Vestra Dashboard Weekly Events v3.4 — compact editorial catalysts with progressive disclosure. */
 (() => {
   'use strict';
 
