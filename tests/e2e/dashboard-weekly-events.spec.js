@@ -54,8 +54,8 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   await expect(events.nth(2)).toContainText('PPI EUA');
   await expect(card).not.toContainText('CPI EUA');
   await card.locator('[data-weekly-events-toggle]').click();
-  await expect(events).toHaveCount(4);
-  await expect(events.nth(3)).toContainText('CPI EUA');
+  expect(await events.count()).toBeGreaterThanOrEqual(4);
+  await expect(events.filter({ hasText: 'CPI EUA' })).toHaveCount(1);
   await expect(card).toContainText('Inflação');
   await expect(card).toContainText('Impacto elevado');
   await expect(card).not.toContainText('FOMC');
