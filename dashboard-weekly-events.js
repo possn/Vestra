@@ -577,7 +577,13 @@
     if (!earningsArchiveLoading && !options.stocks && Date.now() - earningsArchiveCheckedAt >= EARNINGS_REFRESH_MS) {
       void loadEarningsArchive().then(() => render(expandedContext || {}));
     }
-    const eventStocks = options.stocks ? stocks : combineArchivedStocks(mergeLatestEarnings(stocks, latestEarnings), earningsArchive);
+    // Explicit stock snapshots remain deterministic, but still include archived
+    // results for their symbols and portfolio tickers (including older quarters).
+    const scopedArchive = options.stocks && Array.isArray(earningsArchive)
+      ? earningsArchive.filter(event => tickers.has(tickerKey(event?.ticker)) || stocks.some(stock => tickerKey(stock?.ticker) === tickerKey(event?.ticker)))
+      : earningsArchive;
+    const eventStocks = options.stocks ? combineArchivedStocks(stocks, scopedArchive)
+      : combineArchivedStocks(mergeLatestEarnings(stocks, latestEarnings), earningsArchive);
     const events = selectEvents(eventStocks, tickers, now, options.limit || MAX_EVENTS, macro);
     // Prioritise company earnings in the Home, with the complete macro agenda accessible on expansion.
     // Unconfirmed events that already passed must not displace future or published results.
