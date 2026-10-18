@@ -1,0 +1,29 @@
+/* Vestra 2.0: patrimony drilldown belongs to the same edge-to-edge editorial canvas.
+   Scoped to expanded Intelligence mode; no data or component visibility changes. */
+body:has(#viewDashboard.vi-preview-active #vestraIntelligenceHome[data-legacy-open="true"]) .main{
+  max-width:none!important;width:100%!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]){
+  width:100%!important;max-width:none!important;min-width:0!important;
+  padding-inline:clamp(12px,2.4vw,34px)!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > :is(.v2-home-stage,.v2-home-section-label,.v2-home-secondary-hub,.vi-back-to-intelligence,.v2-detail-chapter-nav){
+  max-width:none!important;width:100%!important;margin-inline:0!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.weekly-events-card,#vestraMarketSentimentCard,#dashboardDailyNewsCard,#riskAlertCard,.v2-detail-history,.kpi-quick){
+  max-width:none!important;min-width:0!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label{
+  padding-block:10px 0!important;margin-block:20px 8px!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(.v2-home-section-label,#v2-wealth-chapter,#v2-history-chapter,#v2-tools-chapter) p:empty{
+  display:none!important;
+}
+@media(max-width:600px){
+  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]){
+    padding-inline:12px!important;
+  }
+  #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-home-section-label{
+    margin-block:13px 6px!important;padding-top:3px!important;
+  }
+}
