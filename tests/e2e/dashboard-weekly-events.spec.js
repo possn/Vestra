@@ -116,6 +116,15 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
   // Wait for the actual calendar companions rather than global network idle:
   // background market requests need not settle for this deterministic CPI fixture.
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEventsNavigation));
+  // The first Dashboard hydration may still be running despite its companion
+  // being registered. Await the same source promises before opening the sheet.
+  await page.evaluate(async () => {
+    await Promise.allSettled([
+      window.VestraWeeklyEvents.loadMacroEvents(),
+      window.VestraWeeklyEvents.loadLatestEarnings(),
+      window.VestraWeeklyEvents.loadEarningsArchive(),
+    ]);
+  });
 
   await page.evaluate(() => {
     const events = window.VestraWeeklyEvents.render({
