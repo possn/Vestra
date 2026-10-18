@@ -1,0 +1,39 @@
+/* Vestra 2.0 — compose the actual first screen as one editorial spread.
+   Content, decisions, privacy and market evidence retain their original owners. */
+@media(min-width:900px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.18fr) minmax(310px,.82fr)!important;
+  gap:clamp(24px,3.5vw,64px)!important;
+  align-items:start!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview>.vi-opening{
+  grid-column:1!important;grid-row:1!important;min-width:0!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview>.vi-priorities{
+  grid-column:2!important;grid-row:1!important;
+  padding:clamp(15px,2vw,27px) 0 0 clamp(19px,2.5vw,37px)!important;
+  border-left:1px solid rgba(209,226,215,.2)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-decisions{
+  display:flex!important;flex-direction:column!important;gap:0!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action{
+  width:100%!important;min-height:0!important;
+  padding-block:clamp(17px,2vw,24px)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action:last-child{
+  border-bottom:0!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-opening{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-opening>.vi-regime-disclosure{
+  grid-column:1!important;grid-row:auto!important;margin-top:16px!important;
+ }
+}
+@media(min-width:760px) and (max-width:899px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+}
