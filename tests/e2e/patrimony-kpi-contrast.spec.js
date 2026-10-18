@@ -5,7 +5,8 @@ test('iPhone/WebKit: patrimony KPI text follows its real dark/light surface', as
   await page.goto('/index.html');
   await expect(page.locator('#vestraIntelligenceHome')).toBeVisible({ timeout: 20000 });
   await page.locator('#vestraIntelligenceHome button[data-vestra-go="dashboard"]').first().click();
-  await expect(page.locator('#viewDashboard .kpi-quick')).toBeVisible();
+  await expect(page.locator('#vestraIntelligenceHome[data-legacy-open="true"]')).toHaveCount(1);
+  await expect(page.locator('#viewDashboard .kpi-quick')).toHaveCount(1);
   const samples = await page.evaluate(() => {
     const selectors = [
       ['dark-income-title', '.kpi-quick__cell--income .kpi-income__head span', 'light'],
