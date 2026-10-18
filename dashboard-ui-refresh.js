@@ -202,6 +202,14 @@
   function ensureEditorialHierarchy() {
     const dashboard = document.getElementById('viewDashboard');
     if (!dashboard) return;
+    // Intelligence 2.0 already owns the daily reading and patrimony narrative.
+    // Remove the legacy duplicates rather than hiding them with CSS.
+    if (dashboard.classList.contains('vi-preview-active')) {
+      document.getElementById(TODAY_HEADING_ID)?.remove();
+      document.getElementById(TODAY_BRIEF_ID)?.remove();
+      document.getElementById(PORTFOLIO_HEADING_ID)?.remove();
+      return;
+    }
 
     const hero = dashboard.querySelector('.card.hero');
     const today = editorialHeading(
@@ -244,6 +252,10 @@
 
   function renderTodayBrief() {
     const dashboard = document.getElementById('viewDashboard');
+    if (dashboard?.classList.contains('vi-preview-active')) {
+      document.getElementById(TODAY_BRIEF_ID)?.remove();
+      return false;
+    }
     const heading = document.getElementById(TODAY_HEADING_ID);
     if (!dashboard || !heading) return false;
 
@@ -409,5 +421,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.8' });
+  window.VestraDashboardUiRefresh = Object.freeze({ refresh, pulseMetrics, upcomingDividendEstimate, renderPortfolioHealth, ensureEditorialHierarchy, version: '1.9' });
 })();
