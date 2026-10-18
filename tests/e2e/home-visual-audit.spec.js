@@ -26,7 +26,7 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
       const rows = Array.from(host.querySelectorAll('.vi-priorities .vi-action'));
       const rectangles = rows.map(e => e.getBoundingClientRect());
       const opening = host.querySelector('.vi-home-overview > .vi-opening')?.getBoundingClientRect();
-      const priorities = host.querySelector('.vi-home-overview > .vi-priorities')?.getBoundingClientRect();
+      const priorities = host.querySelector('.vi-shell > .vi-priorities')?.getBoundingClientRect();
       const overview = host.querySelector('.vi-home-overview')?.getBoundingClientRect();
       const wealth = host.querySelector('.vi-wealth')?.getBoundingClientRect();
       const lead = host.querySelector('.vi-opening > .vi-lead')?.getBoundingClientRect();
@@ -77,13 +77,9 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
       expect(measures.tops[1]).toBeGreaterThan(measures.tops[0]);
       expect(measures.tops[2]).toBeGreaterThan(measures.tops[1]);
     } else {
-      // The editorial composition places investigations vertically beside the opening.
-      expect(measures.tops[1]).toBeGreaterThan(measures.tops[0]);
-      expect(measures.tops[2]).toBeGreaterThan(measures.tops[1]);
-      expect(Math.abs(measures.lefts[1] - measures.lefts[0])).toBeLessThan(8);
-      expect(Math.abs(measures.lefts[2] - measures.lefts[0])).toBeLessThan(8);
-      expect(measures.prioritiesLeft).toBeGreaterThan(measures.openingLeft);
-      expect(Math.abs(measures.prioritiesTop - measures.openingTop)).toBeLessThan(8);
+      // The investigations are no longer alongside wealth; they follow the agenda.
+      expect(measures.prioritiesTop).toBeGreaterThan(measures.openingTop);
+      expect(measures.tops.length).toBe(3);
     }
   }
   // Expanded patrimony: verify the text actually rendered on dark cards is legible.
