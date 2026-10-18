@@ -77,6 +77,10 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
 });
 
 test('iPhone/WebKit: CPI structured BLS metrics render as published results instead of pending', async ({ page }) => {
+  // The CPI fixture is self-contained: avoid large unrelated earnings downloads
+  // saturating WebKit while the sheet's official metrics are inspected.
+  await page.route('**/data/earnings-latest.json', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({schema:'vestra_earnings_latest_v1',stocks:[]}) }));
+  await page.route('**/data/earnings-events.json', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({schema:'vestra_earnings_events_v1',events:[]}) }));
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.context().route('https://www.bls.gov/news.release/cpi.nr0.htm', async route => {
