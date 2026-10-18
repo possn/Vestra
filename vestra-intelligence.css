@@ -1849,3 +1849,33 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
   margin-left:auto!important;
  }
 }
+
+/* Canonical Home: readable weekly events and news, not clipped ticker chips. */
+@media(max-width:760px){
+ #viewDashboard #vestraIntelligenceHome .vi-events-reading .vi-editorial-rail,
+ #viewDashboard #vestraIntelligenceHome .vi-news-reading .vi-editorial-news{
+  display:flex!important;flex-direction:column!important;gap:0!important;
+  overflow:visible!important;scroll-snap-type:none!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-events-reading .vi-editorial-tile,
+ #viewDashboard #vestraIntelligenceHome .vi-news-reading .vi-editorial-tile{
+  display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;
+  width:100%!important;min-width:0!important;max-width:none!important;
+  flex:none!important;min-height:0!important;overflow:visible!important;
+  padding:12px 0!important;border:0!important;
+  border-bottom:1px solid #35534b!important;border-radius:0!important;
+  background:transparent!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-editorial-content{
+  min-width:0!important;display:flex!important;flex-direction:column!important;
+  gap:5px!important;overflow-wrap:anywhere!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-editorial-title{
+  display:block!important;white-space:normal!important;line-height:1.4!important;
+  overflow-wrap:anywhere!important;word-break:normal!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-editorial-detail{
+  display:block!important;white-space:normal!important;line-height:1.4!important;
+  overflow-wrap:anywhere!important;
+ }
+}
