@@ -50,3 +50,18 @@
 #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) .v2-detail-history__action{
  color:#aee2d2!important;-webkit-text-fill-color:#aee2d2!important;opacity:1!important;
 }
+
+/* Stronger than legacy broad selectors: actual Tools title is nested in the
+   dark secondary hub and must not inherit the old ivory-screen ink. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-tools-chapter.v2-home-secondary-hub .v2-home-secondary-hub__intro h3{
+ color:#f2f0e8!important;-webkit-text-fill-color:#f2f0e8!important;opacity:1!important;
+}
+
+/* The history disclosure uses a more specific legacy summary rule than generic
+   chapter headings; force readable ink on the actual nested summary nodes. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-disclosure.v2-detail-history > summary#v2-history-chapter > strong{
+ color:#f2f0e8!important;-webkit-text-fill-color:#f2f0e8!important;opacity:1!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-disclosure.v2-detail-history > summary#v2-history-chapter .v2-detail-history__hint{
+ color:#bdcfc6!important;-webkit-text-fill-color:#bdcfc6!important;opacity:1!important;
+}
