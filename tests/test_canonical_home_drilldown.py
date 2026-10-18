@@ -58,7 +58,7 @@ class CanonicalHomeTest(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=6', html)
-        self.assertIn('vestra-intelligence.css?v=55', html)
+        self.assertIn('vestra-intelligence.css?v=56', html)
         self.assertIn('vestra-intelligence-home.js?v=15', html)
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
