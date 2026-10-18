@@ -42,6 +42,7 @@
   let macroLoading = null;
   let lastRenderedEvents = [];
   let eventsExpanded = false;
+  let expandedContext = null;
 
   const text = value => String(value ?? '').trim();
   const number = value => {
@@ -516,6 +517,9 @@
   }
 
   function render(options = {}) {
+    // Preserve an explicitly selected week's data while expanding/collapsing.
+    // Without this, the button silently switches back to today's calendar.
+    expandedContext = options;
     ensureStyles(); const card = ensureCard(); if (!card) return [];
     const sharedStocks = window.VestraMarketStaticUniverse?.getStocks?.(); const stocks = options.stocks || (Array.isArray(sharedStocks) && sharedStocks.length ? sharedStocks : calendarStartupStocks) || [];
     // Calendar navigation can occur before the 2 MB startup data finishes.
@@ -591,7 +595,7 @@
   }
   document.addEventListener('click',event=>{
     const expandButton=event.target.closest?.('[data-weekly-events-toggle]');
-    if(expandButton){eventsExpanded=!eventsExpanded;render();return;}
+    if(expandButton){eventsExpanded=!eventsExpanded;render(expandedContext || {});return;}
     const officialLink=event.target.closest?.('a.weekly-detail-action[href]');
     if(officialLink){
       outboundOfficialPending=true;
