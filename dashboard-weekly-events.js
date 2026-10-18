@@ -567,7 +567,9 @@
     const sharedStocks = window.VestraMarketStaticUniverse?.getStocks?.(); const stocks = options.stocks || (Array.isArray(sharedStocks) && sharedStocks.length ? sharedStocks : calendarStartupStocks) || [];
     // Calendar navigation can occur before the 2 MB startup data finishes.
     // Retry in the background and re-render the same selected week when ready.
-    if (!stocks.length && !calendarStartupLoading) {
+    // An explicit empty stocks fixture is intentional; never retry the global
+    // bootstrap from it or spin an infinite microtask render loop.
+    if (!options.stocks && !stocks.length && !calendarStartupLoading) {
       void loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(expandedContext || {}); });
     }
     const tickers = options.portfolioTickers || portfolioTickerSet(); const nav = window.VestraWeeklyEventsNavigation; const now = options.now || (nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date()); const macro = options.macroEvents || macroSnapshot;
