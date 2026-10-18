@@ -1,0 +1,23 @@
+/* Splash is an independent dark surface; global app ink rules must not darken it. */
+#appLoadingOverlay.vestra-splash .vestra-splash__brand{
+ color:#f4f0e6!important;-webkit-text-fill-color:#f4f0e6!important;opacity:1!important;
+}
+#appLoadingOverlay.vestra-splash .vestra-splash__tagline{
+ color:#d7c49e!important;-webkit-text-fill-color:#d7c49e!important;opacity:1!important;
+}
+#appLoadingOverlay.vestra-splash .vestra-splash__mark img{
+ opacity:1!important;
+}
+/* No artificial fourth metric placeholder: realized gain spans the final KPI row
+   in the phone two-column grid; the dynamic upcoming tile remains full width. */
+@media(max-width:760px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+ .kpi-quick__grid>.kpi-quick__cell--purple{
+  grid-column:1/-1!important;
+ }
+}
+/* More typographic rhythm in the same data-owned signal rows. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip p{
+ font-size:clamp(13px,1.5vw,16px)!important;
+ overflow-wrap:break-word!important;hyphens:auto;
+}
