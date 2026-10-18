@@ -1,0 +1,30 @@
+/* Vestra 2.0 — observed-data snapshot beneath the canonical wealth figure.
+   No new feeds or synthesized forecasts; all values come from existing UI owners. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:0;margin-top:clamp(16px,2vw,26px);border-top:1px solid rgba(205,229,213,.23);
+ border-bottom:1px solid rgba(205,229,213,.17);
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip>div{
+ min-width:0;padding:14px clamp(9px,1.2vw,18px);
+ border-right:1px solid rgba(205,229,213,.15);
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip>div:first-child{padding-left:0}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip>div:last-child{border-right:0}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip span{
+ display:block;font-size:10px;letter-spacing:.12em;font-weight:750;color:#a6c6b7;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip p{
+ color:#eeeae1;font-size:clamp(12px,1vw,14px);line-height:1.45;
+ margin:8px 0 0;overflow-wrap:anywhere;
+}
+@media(max-width:900px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip>div{
+  border-right:0!important;border-bottom:1px solid rgba(205,229,213,.15);
+  padding:12px 0!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip>div:last-child{border-bottom:0}
+}
