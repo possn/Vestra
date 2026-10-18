@@ -14,7 +14,7 @@ class WeeklyHistoryControlsTests(unittest.TestCase):
         self.assertIn("'vestra:dashboard-signal-updated'", nav)
         self.assertIn("event?.detail?.source === 'weekly-events'", nav)
         self.assertIn("decorate();", nav)
-        self.assertIn("dashboard-weekly-events-navigation.js?v=1.2", loader)
+        self.assertIn("dashboard-weekly-events-navigation.js?v=1.3", loader)
 
     def test_routine_rerenders_keep_selected_past_week(self):
         core = (ROOT / "dashboard-weekly-events.js").read_text(encoding="utf-8")
