@@ -25,6 +25,8 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
       const host = document.getElementById('vestraIntelligenceHome');
       const rows = Array.from(host.querySelectorAll('.vi-priorities .vi-action'));
       const rectangles = rows.map(e => e.getBoundingClientRect());
+      const opening = host.querySelector('.vi-home-overview > .vi-opening')?.getBoundingClientRect();
+      const priorities = host.querySelector('.vi-home-overview > .vi-priorities')?.getBoundingClientRect();
       return {
         width: document.documentElement.clientWidth,
         hostWidth: host.getBoundingClientRect().width,
@@ -32,6 +34,10 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
         hostScrollWidth: host.scrollWidth,
         hostClientWidth: host.clientWidth,
         lefts: rectangles.map(r => Math.round(r.left)),
+        openingLeft: opening ? Math.round(opening.left) : null,
+        openingTop: opening ? Math.round(opening.top) : null,
+        prioritiesLeft: priorities ? Math.round(priorities.left) : null,
+        prioritiesTop: priorities ? Math.round(priorities.top) : null,
         tops: rectangles.map(r => Math.round(r.top)),
         overflow: rows.some(e => e.scrollWidth > e.clientWidth + 3),
         offenders: Array.from(document.querySelectorAll('body *'))
@@ -60,8 +66,13 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
       expect(measures.tops[1]).toBeGreaterThan(measures.tops[0]);
       expect(measures.tops[2]).toBeGreaterThan(measures.tops[1]);
     } else {
-      expect(Math.abs(measures.tops[1] - measures.tops[0])).toBeLessThan(8);
-      expect(Math.abs(measures.tops[2] - measures.tops[0])).toBeLessThan(8);
+      // The editorial composition places investigations vertically beside the opening.
+      expect(measures.tops[1]).toBeGreaterThan(measures.tops[0]);
+      expect(measures.tops[2]).toBeGreaterThan(measures.tops[1]);
+      expect(Math.abs(measures.lefts[1] - measures.lefts[0])).toBeLessThan(8);
+      expect(Math.abs(measures.lefts[2] - measures.lefts[0])).toBeLessThan(8);
+      expect(measures.prioritiesLeft).toBeGreaterThan(measures.openingLeft);
+      expect(Math.abs(measures.prioritiesTop - measures.openingTop)).toBeLessThan(8);
     }
   }
   expect(errors).toEqual([]);
