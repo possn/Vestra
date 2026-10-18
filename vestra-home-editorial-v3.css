@@ -182,3 +182,14 @@
  #vestraIntelligenceHome .vi-home-overview .vi-opening{display:flex!important;flex-direction:column!important;gap:10px!important}
  #vestraIntelligenceHome .vi-home-overview .vi-decisions{display:flex!important;flex-direction:column!important;gap:0!important}
 }
+
+/* iPhone: explicitly reset desktop grid tracks; WebKit retains track
+   computation even after switching the display type. */
+@media(max-width:760px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-opening{
+  display:flex!important;flex-direction:column!important;grid-template-columns:none!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck{
+  font-size:16px!important;line-height:1.5!important;
+ }
+}
