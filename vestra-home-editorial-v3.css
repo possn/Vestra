@@ -2,7 +2,7 @@
    Source modules remain functional below progressive disclosure. */
 #vestraIntelligenceHome .vi-shell{
   display:flex!important; flex-direction:column!important; gap:clamp(18px,2.7vw,34px)!important;
-  max-width:1180px!important; margin-inline:auto; padding:clamp(18px,3.4vw,40px)!important;
+  max-width:none!important; width:100%!important; min-width:0; margin-inline:0; padding:clamp(12px,2vw,30px)!important;
 }
 #vestraIntelligenceHome .vi-home-overview{
   display:grid; grid-template-columns:minmax(0,1fr);
@@ -146,7 +146,7 @@
 #vestraIntelligenceHome .vi-editorial-tile{border:0!important;border-bottom:1px solid rgba(210,227,219,.14)!important;padding:12px 0!important}
 #vestraIntelligenceHome .vi-editorial-tile:last-child{border-bottom:0!important}
 @media(max-width:760px){
- #vestraIntelligenceHome .vi-shell{padding:18px 18px 32px!important;gap:19px!important}
+ #vestraIntelligenceHome .vi-shell{padding:12px 12px 32px!important;gap:19px!important}
  #vestraIntelligenceHome .vi-home-overview{grid-template-columns:1fr!important;gap:27px;padding:14px 0 20px}
  #vestraIntelligenceHome .vi-home-overview .vi-headline{font-size:clamp(37px,10vw,53px)!important;margin:12px 0!important}
  #vestraIntelligenceHome .vi-home-overview .vi-deck{font-size:16px!important}
