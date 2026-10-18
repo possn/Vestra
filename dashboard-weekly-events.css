@@ -76,3 +76,41 @@
   .weekly-detail-metric{padding:10px 8px}
   .weekly-detail-metric span{font-size:9px;letter-spacing:0}
 }
+
+/* V2.0 editorial earnings strip: olive / warm cream / muted gold.
+   This overrides legacy cards rather than merely recolouring them. */
+#viewDashboard #dashboardWeeklyEventsCard.weekly-events-card{
+  background:#f7f3e9!important;border:1px solid #c6bea8!important;
+  border-radius:19px!important;padding:17px 16px!important;color:#263c30!important;
+}
+#dashboardWeeklyEventsCard .weekly-events-head{margin-bottom:12px}
+#dashboardWeeklyEventsCard .weekly-events-kicker{color:#91773d;font-size:10px}
+#dashboardWeeklyEventsCard .weekly-events-title{color:#293d30!important;font-family:Georgia,serif;font-weight:600;font-size:25px}
+#dashboardWeeklyEventsCard .weekly-events-range{color:#7c806d}
+#dashboardWeeklyEventsCard .weekly-events-list{gap:0;padding:0;margin:0;border-top:1px solid #dcd6c6;display:flex;flex-direction:column;overflow:visible;scroll-snap-type:none}
+#dashboardWeeklyEventsCard .weekly-event{
+  display:grid;grid-template-columns:72px minmax(0,1fr) auto;
+  align-items:center;column-gap:12px;min-width:0;max-width:none;min-height:72px;
+  width:100%;padding:13px 4px;border:0;border-bottom:1px solid #dcd6c6;
+  border-radius:0;background:transparent!important;box-shadow:none!important;
+  color:#293d30!important;text-align:left;
+}
+#dashboardWeeklyEventsCard .weekly-event::after{display:none}
+#dashboardWeeklyEventsCard .weekly-event__day{grid-column:1;grid-row:1 / span 2;margin:0;font-size:10px;color:#90743b!important;white-space:normal}
+#dashboardWeeklyEventsCard .weekly-event__ticker{grid-column:2;grid-row:1;margin:0;font-size:17px;color:#293d30!important}
+#dashboardWeeklyEventsCard .weekly-event__name{grid-column:2;grid-row:2;margin:2px 0 0;font-size:11px;color:#69766b!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#dashboardWeeklyEventsCard .weekly-event__meta{grid-column:3;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+#dashboardWeeklyEventsCard .weekly-event__type{color:#717c6d;font-size:10px}
+#dashboardWeeklyEventsCard .weekly-event__eps{color:#536842;font-size:11px;font-weight:750;white-space:nowrap}
+#dashboardWeeklyEventsCard .weekly-event__result-status{display:none!important}
+#dashboardWeeklyEventsCard .weekly-event__portfolio{color:#7b672d}
+#dashboardWeeklyEventsCard .weekly-events-more{display:block;width:100%;text-align:right;color:#716039;font-weight:700;background:transparent;box-shadow:none}
+#dashboardWeeklyEventsCard .weekly-events-foot{display:none}
+@media(max-width:600px){
+  #dashboardWeeklyEventsCard .weekly-event{grid-template-columns:65px minmax(0,1fr) auto;gap:8px;min-width:0;max-width:none;padding:12px 2px;min-height:67px}
+  #dashboardWeeklyEventsCard .weekly-event__name{max-width:100%}
+  #dashboardWeeklyEventsCard .weekly-event__meta{max-width:92px}
+  #dashboardWeeklyEventsCard [data-weekly-week-nav]{gap:4px}
+  #dashboardWeeklyEventsCard [data-weekly-week-action]{min-width:32px;min-height:36px;padding:0 6px}
+  #dashboardWeeklyEventsCard [data-weekly-week-action="today"]{min-width:65px}
+}

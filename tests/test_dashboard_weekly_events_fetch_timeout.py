@@ -48,10 +48,10 @@ class DashboardWeeklyEventsFetchTimeoutTests(unittest.TestCase):
         self.assertIn("collectMacroEvents(snapshot, eventDay, 1)", self.runtime)
 
     def test_weekly_card_uses_progressive_disclosure(self):
-        self.assertIn("const COLLAPSED_EVENTS = 4;", self.runtime)
-        self.assertIn("events.slice(0,COLLAPSED_EVENTS)", self.runtime)
+        self.assertIn("const COLLAPSED_EVENTS = 3;", self.runtime)
+        self.assertIn("displayEvents.slice(0,COLLAPSED_EVENTS)", self.runtime)
         self.assertIn("more.dataset.weeklyEventsToggle='1'", self.runtime)
-        self.assertIn("Ver semana completa", self.runtime)
+        self.assertIn("Ver agenda completa", self.runtime)
 
     def test_runtime_and_loader_versions_match(self):
         self.assertIn("const VERSION = '3.2';", self.runtime)
