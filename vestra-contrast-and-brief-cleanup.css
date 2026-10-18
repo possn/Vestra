@@ -1,0 +1,47 @@
+/* Correct the two contrast/signal issues observed on actual iPhone screenshots.
+   Scoped to the expanded Intelligence patrimony, never the classic dashboard. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  .kpi-quick__cell:is(.kpi-quick__cell--vio,.kpi-quick__cell--amber,.kpi-quick__cell--purple){
+  background:#f8f7f2!important;
+  color:#203a35!important;
+  -webkit-text-fill-color:#203a35!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  .kpi-quick__cell:is(.kpi-quick__cell--vio,.kpi-quick__cell--amber,.kpi-quick__cell--purple)
+  :is(.kpi-quick__v,.kpi-quick__v span,strong){
+  color:#203a35!important;
+  -webkit-text-fill-color:#203a35!important;
+  opacity:1!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  .kpi-quick__cell:is(.kpi-quick__cell--vio,.kpi-quick__cell--amber,.kpi-quick__cell--purple)
+  :is(.kpi-quick__k,.kpi-quick__s,small){
+  color:#42615a!important;
+  -webkit-text-fill-color:#42615a!important;
+  opacity:1!important;
+}
+/* Dark patrimony chapters: force painted Safari ink on headings and descriptions. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  #v2-history-disclosure.v2-detail-history > summary#v2-history-chapter > strong,
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  #v2-tools-chapter.v2-home-secondary-hub .v2-home-secondary-hub__intro h3{
+  color:#f4f0e8!important;-webkit-text-fill-color:#f4f0e8!important;opacity:1!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  #v2-history-disclosure.v2-detail-history > summary#v2-history-chapter .v2-detail-history__hint,
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  #v2-tools-chapter.v2-home-secondary-hub .v2-home-secondary-hub__intro p{
+  color:#c7d8ce!important;-webkit-text-fill-color:#c7d8ce!important;opacity:1!important;
+}
+/* First-screen signals: readable labels and a real separation between fields. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip > div{
+  display:flex!important;flex-direction:column!important;gap:7px!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip span{
+  font-size:11px!important;line-height:1.35!important;letter-spacing:.09em!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-signal-strip p{
+  display:block!important;margin:0!important;
+  line-height:1.5!important;overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
