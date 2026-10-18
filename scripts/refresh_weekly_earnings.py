@@ -397,7 +397,7 @@ def main() -> int:
         overlay_rows.append(entry)
     LATEST.write_text(json.dumps({"schema": "vestra_earnings_latest_v1",
         "generated_at": now_utc.isoformat(), "stocks": overlay_rows},
-        ensure_ascii=False, separators=(",", ":")) + "\\n", encoding="utf-8")
+        ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 
     # Persist dated reports before subsequent quarterly refreshes replace latest fields.
     archive = save_archive([*rows, *discovered_history], today=now_utc.date())
