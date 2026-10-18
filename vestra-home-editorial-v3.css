@@ -1,0 +1,195 @@
+/* Vestra Intelligence 2.0: actual Home information architecture, not a legacy card reskin.
+   Source modules remain functional below progressive disclosure. */
+#vestraIntelligenceHome .vi-shell{
+  display:flex!important; flex-direction:column!important; gap:clamp(18px,2.7vw,34px)!important;
+  max-width:1180px!important; margin-inline:auto; padding:clamp(18px,3.4vw,40px)!important;
+}
+#vestraIntelligenceHome .vi-home-overview{
+  display:grid; grid-template-columns:minmax(0,1fr);
+  align-items:stretch; gap:clamp(20px,3vw,34px); min-width:0;
+  padding:clamp(18px,3vw,42px) 0 clamp(22px,3vw,38px);
+  border-bottom:1px solid rgba(199,220,207,.17);
+}
+#vestraIntelligenceHome .vi-home-overview .vi-opening{
+  display:block!important; min-width:0!important; padding:0!important;
+  margin:0!important; border:0!important; background:transparent!important;
+  box-shadow:none!important; min-height:0!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-lead{
+  display:flex!important; flex-direction:column!important; gap:0!important;
+  padding:0!important; margin:0!important; min-height:0!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-eyebrow{
+  font-size:11px!important; font-weight:700; letter-spacing:.16em!important; color:#a9d3c6!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-headline{
+  max-width:11ch; font-size:clamp(40px,5.1vw,76px)!important;
+  line-height:1.04!important; letter-spacing:-.055em!important;
+  margin:18px 0 12px!important; color:#f9f7f0!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-deck{
+  max-width:36ch; font-size:clamp(15px,1.65vw,19px)!important;
+  line-height:1.5!important; color:#c3d3cd!important; margin:0!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-wealth{
+  display:grid!important; grid-template-columns:1fr auto; align-items:center;
+  gap:6px 16px; margin:clamp(22px,3vw,36px) 0 0!important;
+  padding:18px 0 0!important; background:transparent!important;
+  border:0!important; border-top:1px solid rgba(210,227,218,.18)!important;
+  border-radius:0!important; box-shadow:none!important; min-height:0!important;
+}
+#vestraIntelligenceHome .vi-wealth-top{grid-column:1/-1;margin:0!important}
+#vestraIntelligenceHome .vi-home-overview [data-vi-wealth]{
+  grid-column:1/-1; font:500 clamp(28px,3.6vw,47px)/1.14 Georgia,serif!important;
+  letter-spacing:-.05em!important; color:#f5f2e8!important;
+}
+#vestraIntelligenceHome .vi-home-overview [data-vi-assets]{
+  grid-column:1/-1; color:#b5cac1!important; font-size:13px!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-wealth-changes{
+  grid-column:1/-1; margin:0!important; font-size:12px!important; color:#a5c5b6!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-wealth-open{
+  grid-column:1/-1; justify-self:start; min-height:44px; font-size:13px!important; color:#9de4d0!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-priorities{
+  display:flex!important; flex-direction:column!important;
+  gap:18px!important; padding:0!important; margin:0!important;
+  border:0!important; background:transparent!important; min-width:0!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-priorities .vi-heading{padding:0!important;margin:0!important}
+#vestraIntelligenceHome .vi-home-overview .vi-priorities h3{
+  font-size:clamp(23px,2.8vw,37px)!important; letter-spacing:-.04em!important;
+  line-height:1.16!important; margin:8px 0!important; color:#f6f3eb!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-priorities .vi-heading p{
+  font-size:13px!important; line-height:1.5!important; margin:0!important; color:#b5cac1!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-decisions{
+  display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:clamp(12px,2vw,22px)!important; border-top:1px solid rgba(212,230,221,.21);
+  padding:0!important; margin:0!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-action{
+  display:grid!important; grid-template-columns:32px minmax(0,1fr) 22px!important;
+  align-items:start!important; gap:13px!important; padding:17px 2px!important;
+  min-height:74px; text-align:left!important; border:0!important;
+  border-bottom:1px solid rgba(212,230,221,.16)!important;
+  background:transparent!important; box-shadow:none!important; border-radius:0!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-action strong{
+  display:block; font-size:clamp(15px,1.4vw,18px)!important;
+  font-weight:650!important; color:#f2f4ed!important; line-height:1.35!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-action small{
+  display:block; margin-top:5px; color:#aebfb9!important; font-size:12px!important; line-height:1.45!important;
+}
+#vestraIntelligenceHome .vi-home-overview .vi-number{font-size:12px!important;color:#90bfab!important}
+#vestraIntelligenceHome .vi-home-overview .vi-arrow{color:#9bd7c5!important}
+#vestraIntelligenceHome .vi-home-overview .vi-action:focus-visible{
+  outline:2px solid #a1edce!important; outline-offset:4px;
+}
+#vestraIntelligenceHome .vi-daily-snapshot{
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0;
+  border-block:1px solid rgba(210,230,216,.22); min-width:0;
+}
+#vestraIntelligenceHome .vi-daily-snapshot>div{
+  padding:16px clamp(12px,2vw,24px); min-width:0;
+  border-right:1px solid rgba(210,230,216,.14);
+}
+#vestraIntelligenceHome .vi-daily-snapshot>div:first-child{padding-left:0}
+#vestraIntelligenceHome .vi-daily-snapshot>div:last-child{border-right:0}
+#vestraIntelligenceHome .vi-daily-snapshot span{
+  display:block; color:#90b9a8; font-size:10px; font-weight:750; letter-spacing:.15em;
+}
+#vestraIntelligenceHome .vi-daily-snapshot p{
+  font-size:clamp(13px,1.35vw,16px); line-height:1.4; font-weight:550;
+  color:#f1f3ec; margin:9px 0 0; overflow-wrap:anywhere;
+}
+#vestraIntelligenceHome .vi-regime-disclosure{
+  border:1px solid rgba(202,224,211,.2)!important; border-radius:15px!important;
+  background:rgba(255,255,255,.025)!important; margin:0!important;
+}
+#vestraIntelligenceHome .vi-regime-disclosure>summary{
+  min-height:47px; padding:12px 17px!important; color:#d6e8df!important; font-size:13px!important;
+}
+#vestraIntelligenceHome .vi-context-chapter{
+  display:flex!important; flex-direction:column!important; gap:18px!important; min-width:0;
+}
+#vestraIntelligenceHome .vi-context-heading{
+  padding:0!important; margin:0!important;
+}
+#vestraIntelligenceHome .vi-context-heading h3{
+  font-size:clamp(23px,2.8vw,34px)!important; line-height:1.16!important; color:#f5f2e9!important;
+}
+#vestraIntelligenceHome .vi-canonical-sections{
+  display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-items:start!important; gap:14px!important;
+}
+#vestraIntelligenceHome .vi-canonical-card{
+  min-height:0!important; padding:clamp(16px,2vw,23px)!important;
+  border:1px solid rgba(204,226,212,.17)!important;
+  border-radius:16px!important; background:rgba(241,246,240,.055)!important;
+  box-shadow:none!important; min-width:0;
+}
+#vestraIntelligenceHome .vi-canonical-card :is(h3,h4){color:#f4f2ea!important}
+#vestraIntelligenceHome .vi-canonical-card :is(p,small){color:#bfd0c7!important;line-height:1.5!important}
+#vestraIntelligenceHome .vi-canonical-card .vi-section-top button{
+  min-width:44px; min-height:44px; color:#afe9d8!important;
+}
+#vestraIntelligenceHome .vi-canonical-sections .vi-events-reading{grid-column:1;grid-row:1}
+#vestraIntelligenceHome .vi-canonical-sections .vi-news-reading{grid-column:2;grid-row:1}
+#vestraIntelligenceHome .vi-canonical-sections .vi-market-reading{grid-column:1;grid-row:2}
+#vestraIntelligenceHome .vi-canonical-sections .vi-risk-reading{grid-column:2;grid-row:2}
+#vestraIntelligenceHome .vi-risk-reading-body{min-height:0!important}
+#vestraIntelligenceHome .vi-risk-visual{transform:scale(.74);transform-origin:right center}
+#vestraIntelligenceHome .vi-editorial-tile{border:0!important;border-bottom:1px solid rgba(210,227,219,.14)!important;padding:12px 0!important}
+#vestraIntelligenceHome .vi-editorial-tile:last-child{border-bottom:0!important}
+@media(max-width:760px){
+ #vestraIntelligenceHome .vi-shell{padding:18px 18px 32px!important;gap:19px!important}
+ #vestraIntelligenceHome .vi-home-overview{grid-template-columns:1fr!important;gap:27px;padding:14px 0 20px}
+ #vestraIntelligenceHome .vi-home-overview .vi-headline{font-size:clamp(37px,10vw,53px)!important;margin:12px 0!important}
+ #vestraIntelligenceHome .vi-home-overview .vi-deck{font-size:16px!important}
+ #vestraIntelligenceHome .vi-home-overview .vi-wealth{margin-top:17px!important;padding-top:13px!important}
+ #vestraIntelligenceHome .vi-home-overview [data-vi-wealth]{font-size:clamp(31px,8vw,42px)!important}
+ #vestraIntelligenceHome .vi-home-overview .vi-priorities h3{font-size:27px!important}
+ #vestraIntelligenceHome .vi-home-overview .vi-action{padding:14px 0!important}
+ #vestraIntelligenceHome .vi-daily-snapshot{grid-template-columns:1fr!important}
+ #vestraIntelligenceHome .vi-daily-snapshot>div{padding:13px 0!important;border-right:0;border-bottom:1px solid rgba(210,230,216,.14)}
+ #vestraIntelligenceHome .vi-daily-snapshot>div:last-child{border-bottom:0}
+ #vestraIntelligenceHome .vi-daily-snapshot p{font-size:15px}
+ #vestraIntelligenceHome .vi-canonical-sections{grid-template-columns:1fr!important;gap:12px!important}
+ #vestraIntelligenceHome .vi-canonical-sections .vi-canonical-card{grid-column:auto!important;grid-row:auto!important}
+ #vestraIntelligenceHome .vi-canonical-sections .vi-events-reading{order:1}
+ #vestraIntelligenceHome .vi-canonical-sections .vi-news-reading{order:2}
+ #vestraIntelligenceHome .vi-canonical-sections .vi-market-reading{order:3}
+ #vestraIntelligenceHome .vi-canonical-sections .vi-risk-reading{order:4}
+}
+@media(prefers-reduced-motion:reduce){
+ #vestraIntelligenceHome .vi-home-overview *{scroll-behavior:auto!important;transition:none!important}
+}
+
+
+#vestraIntelligenceHome .vi-home-overview .vi-opening{
+  display:grid!important; grid-template-columns:minmax(0,1fr) minmax(0,.46fr)!important;
+  align-items:start!important; column-gap:clamp(24px,4vw,58px)!important;
+}
+#vestraIntelligenceHome .vi-opening>.vi-chapter-index{grid-column:1/-1}
+#vestraIntelligenceHome .vi-opening>.vi-regime-disclosure{grid-column:2;grid-row:2;align-self:start}
+#vestraIntelligenceHome .vi-home-overview .vi-action{grid-template-columns:26px minmax(0,1fr) 17px!important}
+#vestraIntelligenceHome .vi-home-overview .vi-priorities .vi-chapter-index{margin:0 0 8px!important}
+@media(max-width:760px){
+ #vestraIntelligenceHome .vi-home-overview .vi-opening{display:flex!important;flex-direction:column!important;gap:10px!important}
+ #vestraIntelligenceHome .vi-home-overview .vi-decisions{display:flex!important;flex-direction:column!important;gap:0!important}
+}
+
+/* iPhone: explicitly reset desktop grid tracks; WebKit retains track
+   computation even after switching the display type. */
+@media(max-width:760px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-opening{
+  display:flex!important;flex-direction:column!important;grid-template-columns:none!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck{
+  font-size:16px!important;line-height:1.5!important;
+ }
+}
