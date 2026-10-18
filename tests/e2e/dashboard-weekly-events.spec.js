@@ -113,9 +113,9 @@ test('iPhone/WebKit: CPI structured BLS metrics render as published results inst
 
   await page.goto('/index.html?vestra2=0');
   await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
-  // The real startup loader must settle before the deterministic CPI fixture
-  // is rendered; otherwise its late market-ready render overwrites the test.
-  await page.waitForLoadState('networkidle', { timeout: 25000 });
+  // Wait for the actual calendar companions rather than global network idle:
+  // background market requests need not settle for this deterministic CPI fixture.
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEventsNavigation));
 
   await page.evaluate(() => {
     const events = window.VestraWeeklyEvents.render({
