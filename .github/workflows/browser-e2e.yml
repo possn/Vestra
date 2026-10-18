@@ -46,6 +46,11 @@ concurrency:
 jobs:
   webkit-iphone:
     runs-on: ubuntu-latest
+    # Split the complete suite across two independent runners; all shards must pass.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -59,12 +64,12 @@ jobs:
       - name: Install WebKit browser
         run: npx playwright install --with-deps webkit
       - name: Run critical iPhone/WebKit journeys
-        run: npm run test:e2e
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/2
       - name: Upload WebKit visual evidence and diagnostics
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-webkit-evidence
+          name: playwright-webkit-evidence-shard-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/

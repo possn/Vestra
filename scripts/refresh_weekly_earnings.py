@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "data" / "stocks-index.json"
 STARTUP = ROOT / "data" / "stocks-startup.json"
 DIAGNOSTICS = ROOT / "data" / "earnings-refresh-status.json"
+LATEST = ROOT / "data" / "earnings-latest.json"
 MAX_STARTUP_BYTES = MAX_COLUMNAR_BYTES
 EXCLUDED_TYPES = {"ETF", "FUND", "MUTUALFUND", "CRYPTO"}
 
@@ -370,6 +371,34 @@ def main() -> int:
     # The calendar loads the archive separately and can reconcile actuals.
     # Do not raise the size budget or truncate individual company records.
 
+    # Publish a bounded earnings-only overlay even when the iPhone startup budget
+    # cannot accommodate another stock-index rewrite. The calendar consumes it
+    # independently; do not enlarge the general quote/bootstrap payload.
+    overlay_rows = []
+    period_start = now_utc.date() - timedelta(days=90)
+    period_end = now_utc.date() + timedelta(days=90)
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if not ticker or str(row.get("quote_type") or "").strip().upper() in EXCLUDED_TYPES:
+            continue
+        latest = _calendar_date(row.get("analyst_latest_earnings_date"))
+        upcoming = _calendar_date(row.get("analyst_next_earnings_date"))
+        if not any(day is not None and period_start <= day <= period_end for day in (latest, upcoming)):
+            continue
+        entry = {"ticker": ticker, "name": str(row.get("name") or ticker)}
+        for field in RESULT_FIELDS:
+            value = row.get(field)
+            if field.endswith("_date"):
+                entry[field] = str(value)[:10] if _calendar_date(value) else None
+            else:
+                entry[field] = _number(value)
+        overlay_rows.append(entry)
+    LATEST.write_text(json.dumps({"schema": "vestra_earnings_latest_v1",
+        "generated_at": now_utc.isoformat(), "stocks": overlay_rows},
+        ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+
     # Persist dated reports before subsequent quarterly refreshes replace latest fields.
     archive = save_archive([*rows, *discovered_history], today=now_utc.date())
     INDEX.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
@@ -378,6 +407,7 @@ def main() -> int:
     status = {
         "state": "checked",
         "startup_updated": startup_fits,
+        "latest_overlay_rows": len(overlay_rows),
         "startup_candidate_bytes": len(encoded.encode("utf-8")),
         "startup_budget_bytes": MAX_STARTUP_BYTES,
         "generated_at": now_utc.isoformat(),

@@ -13,7 +13,7 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn("loadCalendarStartupStocks()", js)
         self.assertIn("unpackStartupPayload", js)
         self.assertNotIn("sourceStatus.textContent", js)
-        self.assertIn("const VERSION = '3.2';", js)
+        self.assertIn("const VERSION = '3.4';", js)
 
     def test_calendar_recovers_late_startup_earnings_and_uses_short_status(self):
         runtime = (ROOT / 'dashboard-weekly-events.js').read_text(encoding='utf-8')
@@ -32,7 +32,7 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn('merged[index] = { ...merged[index], ...archiveFields }', js)
         self.assertIn('loadEarningsArchive()', js)
         self.assertIn("data/earnings-events.json", js)
-        self.assertIn('combineArchivedStocks(stocks, earningsArchive)', js)
+        self.assertIn('combineArchivedStocks(mergeLatestEarnings(stocks, latestEarnings), earningsArchive)', js)
         self.assertIn('vestra_earnings_events_v1', js)
 
     def test_historical_official_dates_retained_for_three_months(self):
