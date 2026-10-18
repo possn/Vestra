@@ -7,11 +7,11 @@ test('iPhone/WebKit: editorial Home leads with reading, decisions and verified c
   await expect(home).toBeVisible();
   const layout = await home.evaluate(el => {
     const shell = el.querySelector('.vi-shell');
-    const names = ['.vi-opening', '.vi-priorities', '.vi-context-chapter'];
+    const names = ['.vi-opening', '.vi-context-chapter', '.vi-priorities'];
     const items = names.map(selector => shell.querySelector(selector));
     return {
       ordered: items.every(Boolean) && items.every((node, i) => i === 0 || (items[i - 1].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0),
-      decisions: el.querySelectorAll('.vi-home-overview button.vi-action').length,
+      decisions: el.querySelectorAll('.vi-priorities button.vi-action').length,
       duplicateStrip: el.querySelectorAll('.vi-daily-snapshot').length,
       overflow: document.documentElement.scrollWidth - window.innerWidth,
       fontSize: parseFloat(getComputedStyle(el.querySelector('.vi-deck')).fontSize),
