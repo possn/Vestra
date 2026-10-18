@@ -340,10 +340,14 @@
           const type = clean(node.querySelector('.weekly-event__type')?.textContent);
           return {lines:[day ? day + ' · ' + ticker : ticker, company, eps || type].filter(Boolean), fallback:ticker, earnings:true};
         }
-        const articleTitle = clean(node.querySelector('h2,h3,h4,.vestra-daily-news-title,.news-title')?.textContent);
+        // Published news cards own distinct badge, headline and provenance fields.
+        // Reading their concatenated textContent joins "MERCADO" to the title.
+        const articleTitle = clean(node.querySelector('strong,h2,h3,h4,.vestra-daily-news-title,.news-title')?.textContent);
+        const sourceMeta = clean(node.querySelector('small')?.textContent);
         const raw = clean(node.innerText || node.textContent);
-        const lines = (node.innerText || node.textContent || '').split(/\n+/).map(clean).filter(Boolean).slice(0,4);
-        return {lines: articleTitle ? [articleTitle] : lines, fallback:raw.slice(0,190)};
+        const lines = articleTitle ? [articleTitle, sourceMeta].filter(Boolean) :
+          (node.innerText || node.textContent || '').split(/\n+/).map(clean).filter(Boolean).slice(0,4);
+        return {lines, fallback:articleTitle || raw.slice(0,190)};
       }).filter(item => item.fallback);
       if (!texts.length) {
         list.replaceChildren();

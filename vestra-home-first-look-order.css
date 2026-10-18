@@ -1,0 +1,79 @@
+/* Vestra Intelligence 2.0 — first look ordered by actual decisions:
+   wealth > barometer > news > horizontal week > explore portfolio.
+   Existing risk, evidence and regime remain accessible after the first reading. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell{
+ display:flex!important;flex-direction:column!important;gap:clamp(16px,2vw,26px)!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview{
+ display:block!important;width:100%!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview>.vi-opening{
+ display:block!important;width:100%!important;max-width:none!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-context-chapter{
+ display:block!important;width:100%!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections{
+ display:flex!important;flex-direction:column!important;gap:clamp(15px,2vw,24px)!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card{
+ grid-area:auto!important;order:initial!important;width:100%!important;
+ padding:clamp(15px,2vw,25px)!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading{
+ order:1!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-news-reading{
+ order:2!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-events-reading{
+ order:3!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-events-reading .vi-editorial-rail{
+ display:flex!important;flex-direction:row!important;gap:12px!important;
+ overflow-x:auto!important;overscroll-behavior-inline:contain;
+ scroll-snap-type:x mandatory!important;scroll-padding-inline:2px!important;
+ padding:5px 2px 14px!important;-webkit-overflow-scrolling:touch;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-events-reading .vi-editorial-rail>.vi-editorial-tile{
+ flex:0 0 clamp(235px,45vw,330px)!important;min-width:0!important;
+ scroll-snap-align:start;padding:16px!important;
+ background:#17332f!important;border:1px solid #426258!important;
+ border-radius:14px!important;display:flex!important;
+ flex-direction:column!important;gap:10px!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-events-reading .vi-editorial-index{
+ font-size:11px!important;color:#d7bc89!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-events-reading .vi-editorial-content{
+ min-width:0!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-events-reading .vi-editorial-title{
+ color:#f2f0e8!important;-webkit-text-fill-color:#f2f0e8!important;
+ overflow-wrap:break-word;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-events-reading .vi-editorial-detail{
+ color:#c3d4cb!important;-webkit-text-fill-color:#c3d4cb!important;
+ overflow-wrap:break-word;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities{
+ width:100%!important;border-top:1px solid rgba(196,221,208,.22)!important;
+ padding:clamp(18px,2vw,28px) 0 0!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-decisions{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-risk-reading{
+ width:100%!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-regime-disclosure{
+ width:100%!important;
+}
+@media(max-width:760px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-events-reading .vi-editorial-rail>.vi-editorial-tile{
+  flex-basis:min(78vw,310px)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-decisions{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+}

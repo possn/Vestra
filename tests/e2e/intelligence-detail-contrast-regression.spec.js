@@ -9,8 +9,8 @@ test('iPhone: expanded Intelligence has readable headline and card contrast',asy
   const rgb=s=>{const m=String(s).match(/rgba?\(([^)]+)\)/);return m?m[1].split(',').slice(0,3).map(Number):null;};
   const L=c=>c.reduce((a,n,i)=>{const x=n/255;return a+(x<=.04045?x/12.92:((x+.055)/1.055)**2.4)*[.2126,.7152,.0722][i]},0);
   const checks=[
-   ['30-second heading','.vi-context-heading h3',null],
-   ['30-second explanation','.vi-context-heading p',null],
+   ['30-second heading','.vi-market-reading .vi-section-top h3',null],
+   ['30-second explanation','.vi-market-reading [data-vi-canonical-market]',null],
    ['quick actions title','#dashboardQuickRecordsCard .card__title','#dashboardQuickRecordsCard'],
    ['quick actions copy','#dashboardQuickRecordsCard .card__muted','#dashboardQuickRecordsCard']
   ];

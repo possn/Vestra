@@ -27,16 +27,18 @@ class CanonicalHomeTest(unittest.TestCase):
         for canonical in ('vi-market-reading', 'vi-events-reading', 'vi-news-reading'):
             self.assertEqual(home.count('class="vi-canonical-card ' + canonical + '"'), 1)
 
-    def test_decisions_precede_secondary_market_readings(self):
+    def test_market_news_and_week_precede_portfolio_exploration(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split('<div class="vi-back-to-intelligence">', 1)[0]
-        self.assertLess(home.index('class="vi-priorities"'), home.index('class="vi-canonical-sections"'))
+        self.assertLess(home.index('vi-canonical-card vi-market-reading'), home.index('vi-canonical-card vi-news-reading'))
+        self.assertLess(home.index('vi-canonical-card vi-news-reading'), home.index('vi-canonical-card vi-events-reading'))
+        self.assertLess(home.index('vi-canonical-card vi-events-reading'), home.index('class="vi-priorities"'))
         self.assertEqual(home.count('class="vi-priorities"'), 1)
 
-    def test_portfolio_risk_precedes_secondary_market_and_news(self):
+    def test_portfolio_risk_follows_primary_reading(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split('<div class="vi-back-to-intelligence">', 1)[0]
-        self.assertLess(home.index('class="vi-risk-reading"') if 'class="vi-risk-reading"' in home else home.index('vi-canonical-card vi-risk-reading'), home.index('vi-canonical-card vi-market-reading'))
+        self.assertLess(home.index('class="vi-priorities"'), home.index('vi-canonical-card vi-risk-reading'))
         self.assertEqual(home.count('vi-canonical-card vi-risk-reading'), 1)
 
     def test_market_regime_evidence_is_optional_not_removed(self):
@@ -46,11 +48,11 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('vi-regime-grid', html)
         self.assertIn('vestra-intelligence.css?v=56', html)
 
-    def test_context_chapter_follows_decisions_without_duplication(self):
+    def test_context_chapter_contains_primary_market_news_and_agenda(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split('<div class="vi-back-to-intelligence">', 1)[0]
         self.assertEqual(home.count('class="vi-context-chapter"'), 1)
-        self.assertLess(home.index('class="vi-priorities"'), home.index('class="vi-context-chapter"'))
+        self.assertLess(home.index('class="vi-context-chapter"'), home.index('class="vi-priorities"'))
         self.assertEqual(home.count('class="vi-canonical-sections"'), 1)
 
     def test_unified_sidebar_and_cache_generation(self):

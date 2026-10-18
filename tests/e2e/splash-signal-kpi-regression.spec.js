@@ -37,6 +37,7 @@ test('iPhone/WebKit: Home daily brief separates source event and news fields', a
     article.innerHTML = '<span class="vestra-daily-news-badge">MERCADO</span><strong>Notícia de exemplo</strong><small>Fonte · há 1 h</small>';
     window.dispatchEvent(new Event('focus'));
   });
-  await expect(page.locator('[data-vi-brief="events"]')).toContainText('Amanhã · TEST · Empresa Exemplo · Resultados');
-  await expect(page.locator('[data-vi-brief="news"]')).toHaveText('Notícia de exemplo');
+  await expect(page.locator('[data-vi-canonical-event-list]')).toContainText('TEST');
+  await expect(page.locator('[data-vi-canonical-event-list]')).toContainText('Empresa Exemplo');
+  await expect(page.locator('[data-vi-canonical-news-list]')).toContainText('Notícia de exemplo');
 });
