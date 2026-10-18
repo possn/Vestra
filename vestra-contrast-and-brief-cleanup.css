@@ -45,3 +45,19 @@
   line-height:1.5!important;overflow-wrap:anywhere!important;
   word-break:normal!important;
 }
+
+/* Passive income is the dark KPI header. Its labels previously inherited the
+   low-contrast ink intended for ivory metric cards. Keep this surface dark. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  .kpi-quick .kpi-quick__cell--income{
+  background:#183a33!important;border-color:#54766b!important;
+  color:#f4f0e8!important;-webkit-text-fill-color:#f4f0e8!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  .kpi-quick .kpi-quick__cell--income :is(.kpi-income__head,.kpi-income__head span,.kpi-income__values strong){
+  color:#f4f0e8!important;-webkit-text-fill-color:#f4f0e8!important;opacity:1!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"])
+  .kpi-quick .kpi-quick__cell--income .kpi-income__values small{
+  color:#c7d8ce!important;-webkit-text-fill-color:#c7d8ce!important;opacity:1!important;
+}
