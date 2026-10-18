@@ -13,7 +13,7 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn("loadCalendarStartupStocks()", js)
         self.assertIn("unpackStartupPayload", js)
         self.assertNotIn("sourceStatus.textContent", js)
-        self.assertIn("const VERSION = '3.4';", js)
+        self.assertIn("const VERSION = '3.5';", js)
 
     def test_calendar_recovers_late_startup_earnings_and_uses_short_status(self):
         runtime = (ROOT / 'dashboard-weekly-events.js').read_text(encoding='utf-8')
