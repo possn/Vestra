@@ -77,6 +77,13 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
 });
 
 test('iPhone/WebKit: CPI structured BLS metrics render as published results instead of pending', async ({ page }) => {
+  // This test validates macro-event evidence, not the market-wide stock index.
+  // A minimal valid packed universe prevents the unrelated 2 MB startup data
+  // from blocking WebKit's layout/visibility checks on a slow runner.
+  await page.route('**/data/stocks-startup.json', route => route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({layout:'field_rows_v1',fields:['ticker','name','quote_type'],rows:[['TEST','Fixture Company','EQUITY']]})
+  }));
   // The CPI fixture is self-contained: avoid large unrelated earnings downloads
   // saturating WebKit while the sheet's official metrics are inspected.
   await page.route('**/data/earnings-latest.json', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({schema:'vestra_earnings_latest_v1',stocks:[]}) }));
