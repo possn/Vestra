@@ -111,7 +111,7 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
     expect(item.missing, item.selector).toBe(false);
     expect(item.opacity, item.selector).toBeGreaterThanOrEqual(0.99);
     // Expect explicitly bright ink instead of inherited navy on the dark stage.
-    const rgb = item.fill.match(/\\d+/g)?.slice(0, 3).map(Number) || [];
+    const rgb = (item.fill.match(/[0-9]+/g) || item.color.match(/[0-9]+/g) || []).slice(0, 3).map(Number);
     expect(rgb.length, item.selector).toBe(3);
     expect(Math.min(...rgb), item.selector).toBeGreaterThanOrEqual(155);
   }
