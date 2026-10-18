@@ -294,10 +294,9 @@
     const today = new Date();
     const todayKey = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
     const upcoming = cards.find(card => (card.dataset.weeklyEventDate || '') >= todayKey);
-    const latestPublished = cards.find(card => card.querySelector('.weekly-event__eps'));
-    const selected = upcoming || latestPublished || cards[0];
+    const selected = upcoming;
     const eventLabel = selected?.textContent?.replace(/\s+/g,' ').trim();
-    update('events', eventLabel ? eventLabel.slice(0,100) : 'Consultar resultados e agenda semanal');
+    update('events', eventLabel ? eventLabel.slice(0,100) : 'Sem próximos eventos confirmados nesta vista · abrir agenda');
   }
 
   function syncCanonicalCards(host) {
