@@ -27,6 +27,9 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
       const rectangles = rows.map(e => e.getBoundingClientRect());
       const opening = host.querySelector('.vi-home-overview > .vi-opening')?.getBoundingClientRect();
       const priorities = host.querySelector('.vi-home-overview > .vi-priorities')?.getBoundingClientRect();
+      const overview = host.querySelector('.vi-home-overview')?.getBoundingClientRect();
+      const wealth = host.querySelector('.vi-wealth')?.getBoundingClientRect();
+      const lead = host.querySelector('.vi-opening > .vi-lead')?.getBoundingClientRect();
       return {
         width: document.documentElement.clientWidth,
         hostWidth: host.getBoundingClientRect().width,
@@ -35,6 +38,10 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
         hostClientWidth: host.clientWidth,
         lefts: rectangles.map(r => Math.round(r.left)),
         openingLeft: opening ? Math.round(opening.left) : null,
+        overviewWidth: overview?.width ?? 0,
+        openingWidth: opening?.width ?? 0,
+        leadWidth: lead?.width ?? 0,
+        wealthWidth: wealth?.width ?? 0,
         openingTop: opening ? Math.round(opening.top) : null,
         prioritiesLeft: priorities ? Math.round(priorities.left) : null,
         prioritiesTop: priorities ? Math.round(priorities.top) : null,
@@ -63,6 +70,10 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
     expect(measures.hostScrollWidth).toBeLessThanOrEqual(measures.hostClientWidth + 3);
     expect(measures.overflow).toBe(false);
     if (viewport.width < 600) {
+      // The entire reading and wealth area must fill its available Home column.
+      expect(measures.openingWidth).toBeGreaterThan(measures.overviewWidth - 5);
+      expect(measures.leadWidth).toBeGreaterThan(measures.openingWidth - 5);
+      expect(measures.wealthWidth).toBeGreaterThan(measures.leadWidth - 5);
       expect(measures.tops[1]).toBeGreaterThan(measures.tops[0]);
       expect(measures.tops[2]).toBeGreaterThan(measures.tops[1]);
     } else {
@@ -74,6 +85,34 @@ test('iPhone/WebKit: Intelligence Home responsive evidence at phone and desktop 
       expect(measures.prioritiesLeft).toBeGreaterThan(measures.openingLeft);
       expect(Math.abs(measures.prioritiesTop - measures.openingTop)).toBeLessThan(8);
     }
+  }
+  // Expanded patrimony: verify the text actually rendered on dark cards is legible.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#vestraIntelligenceHome button[data-vestra-go="dashboard"]').first().click();
+  await expect(page.locator('#vestraIntelligenceHome[data-legacy-open="true"]')).toBeVisible();
+  const readings = await page.evaluate(() => {
+    const selectors = [
+      '.v2-home-section-label h2',
+      '.v2-home-secondary-hub__intro h3',
+      '.v2-detail-history > summary > strong',
+      '.v2-detail-history__hint',
+    ];
+    return selectors.map(selector => {
+      const el = document.querySelector('#viewDashboard ' + selector);
+      if (!el) return { selector, missing: true };
+      const style = getComputedStyle(el);
+      return { selector, missing: false, color: style.color,
+        fill: style.webkitTextFillColor, opacity: Number(style.opacity) };
+    });
+  });
+  fs.writeFileSync(path.join(out, 'patrimony-contrast-iphone.json'), JSON.stringify(readings, null, 2));
+  for (const item of readings) {
+    expect(item.missing, item.selector).toBe(false);
+    expect(item.opacity, item.selector).toBeGreaterThanOrEqual(0.99);
+    // Expect explicitly bright ink instead of inherited navy on the dark stage.
+    const rgb = item.fill.match(/\\d+/g)?.slice(0, 3).map(Number) || [];
+    expect(rgb.length, item.selector).toBe(3);
+    expect(Math.min(...rgb), item.selector).toBeGreaterThanOrEqual(155);
   }
   expect(errors).toEqual([]);
 });
