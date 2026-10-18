@@ -287,16 +287,24 @@
       : 'Sem leitura verificada · abrir barómetro');
     const news = document.getElementById('vestraDailyNewsCard');
     const article = news?.querySelector('.vestra-daily-news-item');
-    const headline = article?.textContent?.replace(/\s+/g,' ').trim();
-    update('news', headline ? headline.slice(0,100) : 'Notícias ainda não disponíveis · abrir módulo');
+    // Read the headline owner only: badge and metadata must never be glued to it.
+    const headline = article?.querySelector('strong')?.textContent?.replace(/\s+/g,' ').trim();
+    update('news', headline ? headline.slice(0,145) : 'Notícias ainda não disponíveis · abrir módulo');
     const events = document.getElementById('dashboardWeeklyEventsCard');
     const cards = Array.from(events?.querySelectorAll('.weekly-events-list .weekly-event') || []);
     const today = new Date();
     const todayKey = [today.getFullYear(), String(today.getMonth()+1).padStart(2,'0'), String(today.getDate()).padStart(2,'0')].join('-');
     const upcoming = cards.find(card => (card.dataset.weeklyEventDate || '') >= todayKey);
     const selected = upcoming;
-    const eventLabel = selected?.textContent?.replace(/\s+/g,' ').trim();
-    update('events', eventLabel ? eventLabel.slice(0,100) : 'Sem próximos eventos confirmados nesta vista · abrir agenda');
+    // The weekly event button has separate day/ticker/name/type nodes.
+    // Joining its full textContent loses separators and creates unreadable strings.
+    const eventParts = selected ? [
+      selected.querySelector('.weekly-event__day')?.textContent?.trim(),
+      selected.querySelector('.weekly-event__ticker')?.textContent?.trim(),
+      selected.querySelector('.weekly-event__name')?.textContent?.trim(),
+      selected.querySelector('.weekly-event__type')?.textContent?.trim()
+    ].filter(Boolean) : [];
+    update('events', eventParts.length ? eventParts.join(' · ').slice(0,160) : 'Sem próximos eventos confirmados nesta vista · abrir agenda');
   }
 
   function syncCanonicalCards(host) {
