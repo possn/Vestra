@@ -2,12 +2,12 @@
 (() => {
   'use strict';
 
-  const VERSION = '3.2';
+  const VERSION = '3.3';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
   const MAX_EVENTS = 40;
-  const COLLAPSED_EVENTS = 4;
+  const COLLAPSED_EVENTS = 3;
   const WINDOW_DAYS = 7;
   const MACRO_URL = 'data/macro-events.json';
   const MACRO_FETCH_TIMEOUT_MS = 5000;
@@ -455,8 +455,10 @@
 
   let earningsArchive = null;
   let earningsArchiveLoading = null;
-  async function loadEarningsArchive() {
-    if (earningsArchive) return earningsArchive;
+  let earningsArchiveCheckedAt = 0;
+  const EARNINGS_REFRESH_MS = 15 * 60 * 1000;
+  async function loadEarningsArchive(force = false) {
+    if (!force && earningsArchive && Date.now() - earningsArchiveCheckedAt < EARNINGS_REFRESH_MS) return earningsArchive;
     if (earningsArchiveLoading) return earningsArchiveLoading;
     earningsArchiveLoading = (async () => {
       try {
@@ -465,6 +467,7 @@
         const payload = await response.json();
         if (payload?.schema !== 'vestra_earnings_events_v1' || !Array.isArray(payload.events)) return null;
         earningsArchive = payload.events;
+        earningsArchiveCheckedAt = Date.now();
         return earningsArchive;
       } catch (_) { return null; }
       finally { earningsArchiveLoading = null; }
@@ -520,20 +523,26 @@
       void loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(); });
     }
     const tickers = options.portfolioTickers || portfolioTickerSet(); const nav = window.VestraWeeklyEventsNavigation; const now = options.now || (nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date()); const macro = options.macroEvents || macroSnapshot;
-    if (!earningsArchive && !earningsArchiveLoading && !options.stocks) {
-      void loadEarningsArchive().then(loaded => { if (loaded?.length) render(); });
+    if (!earningsArchiveLoading && !options.stocks && Date.now() - earningsArchiveCheckedAt >= EARNINGS_REFRESH_MS) {
+      void loadEarningsArchive().then(() => render());
     }
-    const events = selectEvents(combineArchivedStocks(stocks, earningsArchive), tickers, now, options.limit || MAX_EVENTS, macro); lastRenderedEvents = events.slice();
+    const events = selectEvents(combineArchivedStocks(stocks, earningsArchive), tickers, now, options.limit || MAX_EVENTS, macro);
+    // Prioritise company earnings in the Home, with the complete macro agenda accessible on expansion.
+    // Unconfirmed events that already passed must not displace future or published results.
+    const priority = events.filter(event => event.kind === 'earnings' && (event.reported || event.date >= localDay(now)));
+    const secondary = events.filter(event => !priority.includes(event));
+    const displayEvents = [...priority, ...secondary];
+    lastRenderedEvents = displayEvents.slice();
     const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
     card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
     if (!events.length) { const empty=document.createElement('div'); empty.className='weekly-events-empty'; empty.textContent=!stocks.length ? 'A carregar resultados das empresas…' : 'Sem eventos confirmados nesta semana.'; card.appendChild(empty); }
     else {
       const list=document.createElement('div'); list.className='weekly-events-list';
-      const visibleEvents=eventsExpanded ? events : events.slice(0,COLLAPSED_EVENTS);
-      visibleEvents.forEach((event,index)=>{ const item=document.createElement('button'); item.type='button'; item.dataset.weeklyEventIndex=String(index); item.dataset.weeklyEventDate=event.dateISO||dateISO(event.date); item.className=`weekly-event${event.inPortfolio?' weekly-event--portfolio':''}${event.kind==='macro'?' weekly-event--macro':''}${event.importance==='critical'?' weekly-event--critical':''}`; const day=document.createElement('div'); day.className='weekly-event__day'; day.textContent=dayLabel(event.date,now); const title=document.createElement('div'); title.className='weekly-event__ticker'; title.textContent=event.kind==='macro'?event.shortTitle:event.ticker; const name=document.createElement('div'); name.className='weekly-event__name'; name.textContent=event.kind==='macro'?`${event.region}${event.timeLocal?` · ${event.timeLocal}`:''}`:event.name; const meta=document.createElement('div'); meta.className='weekly-event__meta'; const type=document.createElement('span'); type.className='weekly-event__type'; type.textContent=categoryLabel(event); meta.appendChild(type); const published=event.kind==='macro'?hasMacroPublication(event):event.reported && event.epsActual!==null; const status=document.createElement('span'); status.className='weekly-event__result-status'; status.textContent=published?'Resultado disponível':(event.date<localDay(now)?'Resultado não confirmado':'Por publicar'); status.dataset.available=published?'true':'false'; meta.appendChild(status); if(event.importance==='critical'){const high=document.createElement('span');high.className='weekly-event__critical';high.textContent='Impacto elevado';meta.appendChild(high);} if(event.inPortfolio){const owned=document.createElement('span');owned.className='weekly-event__portfolio';owned.textContent='No portefólio';meta.appendChild(owned);} item.title=event.title||event.name||event.ticker||''; item.append(day,title,name,meta); list.appendChild(item); }); card.appendChild(list);
-      if(events.length>COLLAPSED_EVENTS){const more=document.createElement('button');more.type='button';more.className='weekly-events-more';more.dataset.weeklyEventsToggle='1';more.setAttribute('aria-expanded',eventsExpanded?'true':'false');more.textContent=eventsExpanded?'Mostrar menos':`Ver semana completa · ${events.length}`;card.appendChild(more);}
+      const visibleEvents=eventsExpanded ? displayEvents : displayEvents.slice(0,COLLAPSED_EVENTS);
+      visibleEvents.forEach((event,index)=>{ const item=document.createElement('button'); item.type='button'; item.dataset.weeklyEventIndex=String(index); item.dataset.weeklyEventDate=event.dateISO||dateISO(event.date); item.className=`weekly-event${event.inPortfolio?' weekly-event--portfolio':''}${event.kind==='macro'?' weekly-event--macro':''}${event.importance==='critical'?' weekly-event--critical':''}`; const day=document.createElement('div'); day.className='weekly-event__day'; day.textContent=dayLabel(event.date,now); const title=document.createElement('div'); title.className='weekly-event__ticker'; title.textContent=event.kind==='macro'?event.shortTitle:event.ticker; const name=document.createElement('div'); name.className='weekly-event__name'; name.textContent=event.kind==='macro'?`${event.region}${event.timeLocal?` · ${event.timeLocal}`:''}`:event.name; const meta=document.createElement('div'); meta.className='weekly-event__meta'; const type=document.createElement('span'); type.className='weekly-event__type'; type.textContent=categoryLabel(event); meta.appendChild(type); const published=event.kind==='macro'?hasMacroPublication(event):event.reported && event.epsActual!==null; if (published && event.kind==='earnings') { const eps=document.createElement('span'); eps.className='weekly-event__eps'; eps.textContent='EPS '+formatEPS(event.epsActual); meta.appendChild(eps); } if(event.importance==='critical'){const high=document.createElement('span');high.className='weekly-event__critical';high.textContent='Impacto elevado';meta.appendChild(high);} if(event.inPortfolio){const owned=document.createElement('span');owned.className='weekly-event__portfolio';owned.textContent='No portefólio';meta.appendChild(owned);} item.title=event.title||event.name||event.ticker||''; item.append(day,title,name,meta); list.appendChild(item); }); card.appendChild(list);
+      if(displayEvents.length>COLLAPSED_EVENTS){const more=document.createElement('button');more.type='button';more.className='weekly-events-more';more.dataset.weeklyEventsToggle='1';more.setAttribute('aria-expanded',eventsExpanded?'true':'false');more.textContent=eventsExpanded?'Mostrar menos':`Ver agenda completa · ${displayEvents.length}`;card.appendChild(more);}
     }
-    const foot=document.createElement('div'); foot.className='weekly-events-foot'; foot.textContent='Toca num evento para ver detalhes.'; card.appendChild(foot);
+    // Detail sheets carry provenance and missing-data explanations; keep Home cards scannable.
     try { window.dispatchEvent(new CustomEvent('vestra:dashboard-signal-updated', { detail: { source: 'weekly-events' } })); } catch (_) {}
     return events;
   }
@@ -622,7 +631,7 @@
     wasBackgrounded=false;
     outboundOfficialPending=false;
     weeklyRefreshPending=true;
-    void refreshMacroEvents().finally(()=>{weeklyRefreshPending=false;});
+    void Promise.allSettled([refreshMacroEvents(), loadEarningsArchive(true)]).then(()=>render()).finally(()=>{weeklyRefreshPending=false;});
     return true;
   };
   document.addEventListener('visibilitychange',()=>{
