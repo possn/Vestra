@@ -254,3 +254,36 @@
   margin-inline:0!important;padding:22px 19px!important;
  }
 }
+
+/* Detailed patrimony view: do not repeat the Home's market / agenda / news
+   editorial summary ahead of the actual, fully functional source modules. */
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) :is(#dashboardTodayHeading,#dashboardTodayBrief){
+ display:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage{
+ width:100%!important;max-width:1100px!important;
+ display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+ row-gap:11px!important;min-width:0!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage :is(.hero__value,.hero__sub,#kpiChanges){
+ grid-column:1!important;min-width:0!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage .hero__value{
+ font-size:clamp(44px,9vw,72px)!important;
+ line-height:1.05!important;letter-spacing:-.045em!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage .v2-home-stage__aside{
+ display:none!important;
+}
+#viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #vestraMarketSentimentCard{
+ border-radius:20px!important;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage{
+  max-width:none!important;margin-left:0!important;margin-right:0!important;
+  gap:12px!important;padding:23px 21px!important;
+ }
+ #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) > .v2-home-stage .hero__value{
+  font-size:clamp(43px,10vw,62px)!important;
+ }
+}
