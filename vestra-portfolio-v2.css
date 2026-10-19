@@ -155,3 +155,25 @@
 #viewAssets .portfolio-income-strip>div:first-child strong{
  color:#246d45!important;-webkit-text-fill-color:#246d45!important;
 }
+
+/* Portfolio reading chapters: navigate existing live modules without duplicating data. */
+#viewAssets .portfolio-chapter-nav{
+ display:flex;align-items:center;gap:clamp(14px,2vw,26px);
+ overflow-x:auto;scrollbar-width:thin;
+ border-bottom:1px solid var(--vestra-editorial-divider-dark);
+ padding:8px 2px 12px;margin-bottom:16px;
+}
+#viewAssets .portfolio-chapter-nav a{
+ flex:0 0 auto;min-height:44px;display:inline-flex;align-items:center;
+ color:var(--vestra-portfolio-hero-muted);text-decoration:none;
+ font-size:13px;font-weight:650;letter-spacing:-.01em;
+ border-bottom:2px solid transparent;
+}
+#viewAssets .portfolio-chapter-nav a:hover,
+#viewAssets .portfolio-chapter-nav a:focus-visible{
+ color:var(--vestra-portfolio-hero-ink);
+ border-bottom-color:var(--vestra-portfolio-hero-gold);
+}
+#viewAssets :is(#portfolioGlance,#portfolioPositionsChapter,#portfolioToolsStrip){
+ scroll-margin-top:calc(75px + env(safe-area-inset-top,0px));
+}
