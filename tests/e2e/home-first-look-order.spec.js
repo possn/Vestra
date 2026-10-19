@@ -23,6 +23,24 @@ test('iPhone/WebKit: first look is wealth, barometer, news, horizontal agenda, p
  for(let i=1;i<report.order.length;i++)
   expect(report.order[i], 'reading order '+i).toBeGreaterThan(report.order[i-1]);
  expect(report.strip).toBe(false);
+ const editorial=await home.evaluate(host=>{
+  const cards=Array.from(host.querySelectorAll('.vi-canonical-sections > .vi-canonical-card'));
+  const heading=host.querySelector('.vi-headline');
+  const wealth=host.querySelector('.vi-wealth');
+  return {
+   cards:cards.map(el=>({radius:getComputedStyle(el).borderTopLeftRadius,shadow:getComputedStyle(el).boxShadow})),
+   wealthWidth:wealth.getBoundingClientRect().width,
+   leadWidth:host.querySelector('.vi-lead').getBoundingClientRect().width,
+   headingFont:parseFloat(getComputedStyle(heading).fontSize)
+  };
+ });
+ expect(editorial.cards).toHaveLength(3);
+ for(const card of editorial.cards){
+  expect(card.radius).toBe('0px');
+  expect(card.shadow).toBe('none');
+ }
+ expect(editorial.wealthWidth).toBeGreaterThan(editorial.leadWidth*0.8);
+ expect(editorial.headingFont).toBeGreaterThan(20);
  const directChildren=await home.evaluate(host=>Array.from(host.querySelector('.vi-canonical-sections')?.children||[]).map(el=>
   el.classList.contains('vi-market-reading')?'market':
   el.classList.contains('vi-news-reading')?'news':
