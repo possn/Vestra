@@ -59,7 +59,7 @@ class CanonicalHomeTest(unittest.TestCase):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
-        self.assertIn('vestra-navigation-v2.css?v=6', html)
+        self.assertIn('vestra-navigation-v2.css?v=7-iphone-density', html)
         self.assertIn('vestra-intelligence.css?v=56', html)
         self.assertIn('vestra-intelligence-home.js?v=16', html)
 
@@ -140,7 +140,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertLess(market.index('class="market-hero-simple"'), market.index('class="market-search"'))
         self.assertIn('id="marketSearch"', market)
         self.assertIn('.market-hero-simple h2', css)
-        self.assertIn('vestra-market-surfaces-v2.css?v=12', html)
+        self.assertIn('vestra-market-surfaces-v2.css?v=13-iphone-density', html)
 
     def test_patrimonial_light_cards_own_safari_text_contrast(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
