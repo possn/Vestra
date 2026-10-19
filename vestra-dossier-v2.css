@@ -174,3 +174,70 @@
  .market-sheet .market-tab{min-height:40px;padding-inline:11px}
  .market-sheet .market-detail-actions{top:max(3px,env(safe-area-inset-top,0px))}
 }
+
+/* Intelligence 2.0 / dossier editorial sequence.
+   This is a surface-only migration. Decision, valuation, risk and chart hosts stay canonical. */
+.market-sheet .market-sheet__panel{
+ --v2-dossier-reading-gap:clamp(12px,2vw,22px);
+ --v2-dossier-rule:var(--v2-dossier-divider,var(--line,#dce3e2));
+}
+.market-sheet .market-detail-head{
+ display:flex;
+ flex-wrap:wrap;
+ justify-content:space-between;
+ gap:clamp(12px,2.2vw,24px);
+ border-bottom:1px solid var(--v2-dossier-rule);
+}
+.market-sheet .market-detail-head>:first-child{
+ flex:1 1 230px;
+ min-width:0;
+}
+.market-sheet .market-detail-actions{
+ flex:0 0 auto;
+ margin-left:auto;
+ align-self:flex-start;
+}
+.market-sheet .market-metrics{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:clamp(7px,1vw,12px);
+}
+.market-sheet .market-metric{
+ min-width:0;
+ box-shadow:none;
+}
+.market-sheet .market-metric :is(strong,small,span){
+ overflow-wrap:anywhere;
+}
+.market-sheet .v2-dossier-decision-stage{
+ margin-block:var(--v2-dossier-reading-gap);
+ box-shadow:none;
+}
+.market-sheet .market-detail-card{
+ margin-top:var(--v2-dossier-reading-gap);
+ box-shadow:none;
+}
+.market-sheet .market-tabs{
+ display:flex;
+ overflow-x:auto;
+ overscroll-behavior-inline:contain;
+ -webkit-overflow-scrolling:touch;
+ scroll-snap-type:x proximity;
+}
+.market-sheet .market-tab{
+ flex:0 0 auto;
+ min-height:44px;
+ scroll-snap-align:start;
+}
+@media(min-width:760px){
+ .market-sheet .market-metrics{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+ }
+}
+@media(max-width:600px){
+ .market-sheet .market-detail-head{flex-wrap:nowrap;gap:8px;}
+ .market-sheet .market-detail-head>:first-child{flex-basis:0;}
+ .market-sheet .market-detail-actions{margin-left:auto;}
+ .market-sheet .market-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}
+ .market-sheet .market-tab{min-height:44px;}
+}
