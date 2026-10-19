@@ -30,5 +30,24 @@ test('iPhone/WebKit: first look is wealth, barometer, news, horizontal agenda, p
  expect(directChildren).toEqual(['market','news','events']);
  expect(report.overflowX).toBe('auto');
  expect(report.snap).toContain('x');
+ await expect(home.locator('.vi-events-reading .vi-editorial-rail')).toHaveAttribute('tabindex','0');
+ await expect(home.locator('.vi-events-reading .vi-editorial-rail')).toHaveAttribute('role','region');
+ // Fixture isolates the horizontal interaction from asynchronous calendar feeds.
+ const scroll = await home.evaluate(host=>{
+  const rail=host.querySelector('.vi-events-reading .vi-editorial-rail');
+  rail.replaceChildren();
+  for(let i=0;i<3;i++){
+   const card=document.createElement('div');
+   card.className='vi-editorial-tile';
+   card.textContent='Evento de teste '+(i+1);
+   rail.appendChild(card);
+  }
+  const before=rail.scrollLeft;
+  const available=rail.scrollWidth-rail.clientWidth;
+  rail.scrollTo({left:available,behavior:'instant'});
+  return {before,after:rail.scrollLeft,available};
+ });
+ expect(scroll.available).toBeGreaterThan(0);
+ expect(scroll.after).toBeGreaterThan(scroll.before);
  await expect(home.locator('.vi-priorities .vi-action')).toHaveCount(3);
 });
