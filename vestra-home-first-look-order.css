@@ -167,3 +167,29 @@
   font-size:1.14rem;
  }
 }
+
+/* iPhone actual Home modules (market barometer and daily news):
+   the previous generic headline fix did not target these rendered sections. */
+@media(max-width:760px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card{
+  padding:13px 0!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-section-top{
+  gap:9px!important;margin-bottom:8px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-section-top h3{
+  font-size:17px!important;line-height:1.2!important;letter-spacing:.045em!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-news-reading .vi-editorial-tile{
+  padding:11px 0!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-news-reading .vi-editorial-title{
+  font-size:15px!important;line-height:1.34!important;font-weight:570!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-news-reading .vi-editorial-detail{
+  font-size:12px!important;line-height:1.35!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-editorial-detail{
+  font-size:13px!important;line-height:1.4!important;
+ }
+}
