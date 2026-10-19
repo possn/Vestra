@@ -337,6 +337,24 @@ body.simple-mode .advanced-only { display: none !important; }
 .kpi--in  { background: var(--kpi-in); }
 .kpi--out { background: var(--kpi-out); }
 .kpi--net { background: var(--kpi-net); }
+/* Dividend detail metrics own a light painted surface even with dark dashboard ink. */
+#viewDividends #divKPIs .kpi {
+  color: var(--vestra-surface-ivory-ink, #173037);
+  -webkit-text-fill-color: var(--vestra-surface-ivory-ink, #173037);
+  opacity: 1;
+}
+#viewDividends #divKPIs .kpi__k {
+  color: var(--vestra-surface-ivory-muted, #47605f);
+  -webkit-text-fill-color: var(--vestra-surface-ivory-muted, #47605f);
+  opacity: 1;
+}
+#viewDividends #divKPIs .kpi__v {
+  color: var(--vestra-surface-ivory-ink, #173037);
+  -webkit-text-fill-color: var(--vestra-surface-ivory-ink, #173037);
+  opacity: 1;
+  overflow-wrap: anywhere;
+}
+
 
 
 .healthKpiRow { grid-template-columns: 1fr 1fr 1fr; }
