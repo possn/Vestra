@@ -2073,3 +2073,22 @@ body{
 .market-crypto-history-grid strong{display:block;margin-top:2px;font-size:13px}
 .market-crypto-regime-change{border-style:dashed}
 @media(max-width:560px){.market-crypto-history-grid{grid-template-columns:1fr 1fr}}
+
+/* Vestra 2.0: app-wide iPhone density baseline. No viewport zoom, transforms or
+   scaling of values/charts: real CSS dimensions on canonical surfaces instead. */
+@media (max-width:600px) {
+  html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  body { font-size:14px; line-height:1.42; }
+  .main { padding:10px 12px calc(var(--bottomnav-h) + var(--passivebar-h) + env(safe-area-inset-bottom,0px) + 24px); }
+  .view:not(#viewDashboard) .card { padding:13px 12px; margin-bottom:9px; border-radius:15px; }
+  .view:not(#viewDashboard) .card__title { font-size:17px; line-height:1.25; }
+  .view:not(#viewDashboard) .card__muted { font-size:12px; line-height:1.4; }
+  .view:not(#viewDashboard) .view-intro { min-height:0; padding:12px; gap:8px; }
+  .view:not(#viewDashboard) .view-intro h2 { font-size:22px; line-height:1.12; }
+  .view:not(#viewDashboard) .kpiRow { gap:8px; }
+  .view:not(#viewDashboard) .kpi { padding:11px!important; border-radius:13px; }
+  .view:not(#viewDashboard) .kpi__k { font-size:11px; }
+  .view:not(#viewDashboard) :is(.seg,.analysis-tabs) { gap:5px; }
+  .view:not(#viewDashboard) :is(.seg__btn,.analysis-tab) { padding:8px 10px; font-size:12px; min-height:36px; }
+  .bottomnav .navbtn { min-height:48px!important; padding:3px 2px!important; }
+}
