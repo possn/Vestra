@@ -31,6 +31,30 @@ test('iPhone/WebKit: portfolio has direct chapter navigation without duplicated 
  expect(editorial.summaryLayout).toBe('grid');
  expect(editorial.positionShadow).toBe('none');
  expect(editorial.headingFamily).toContain('Georgia');
+ const contrast=await portfolio.evaluate(host=>{
+  const list=host.querySelector('#itemsList');
+  const fixture=document.createElement('div');
+  fixture.className='item';
+  fixture.innerHTML='<div class="item__l"><div class="item__t">Ativo de teste</div><div class="item__s">Depósitos</div></div><div class="item__v">100 €</div>';
+  list.append(fixture);
+  const get=selector=>getComputedStyle(host.querySelector(selector));
+  const result={
+   title:get('.portfolio-hero h2').color,
+   heading:get('.portfolio-list-head .card__title').color,
+   row:getComputedStyle(fixture).backgroundColor,
+   image:getComputedStyle(fixture).backgroundImage,
+   name:getComputedStyle(fixture.querySelector('.item__t')).color,
+   amount:getComputedStyle(fixture.querySelector('.item__v')).color
+  };
+  fixture.remove();
+  return result;
+ });
+ expect(contrast.title).toBe('rgb(244, 239, 230)');
+ expect(contrast.heading).toBe('rgb(244, 239, 230)');
+ expect(contrast.row).toBe('rgb(236, 238, 233)');
+ expect(contrast.image).toBe('none');
+ expect(contrast.name).toBe('rgb(24, 52, 58)');
+ expect(contrast.amount).toBe('rgb(24, 52, 58)');
  const minHeight=await links.evaluateAll(nodes=>nodes.map(x=>x.getBoundingClientRect().height));
  for(const height of minHeight)expect(height).toBeGreaterThanOrEqual(44);
 });
