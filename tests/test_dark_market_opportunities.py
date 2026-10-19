@@ -14,5 +14,5 @@ class MarketDarkOpportunities(unittest.TestCase):
         self.assertIn('color:#f4f0e7!important',dark)
         self.assertIn('vestra-low52-contrast',dark)
     def test_cache_bump(self):
-        self.assertIn('vestra-market-surfaces-v2.css?v=12',HTML)
+        self.assertIn('vestra-market-surfaces-v2.css?v=13-iphone-density',HTML)
 if __name__=='__main__':unittest.main()
