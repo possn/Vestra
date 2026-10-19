@@ -217,17 +217,9 @@
  margin-top:var(--v2-dossier-reading-gap);
  box-shadow:none;
 }
-.market-sheet .market-tabs{
- display:flex;
- overflow-x:auto;
- overscroll-behavior-inline:contain;
- -webkit-overflow-scrolling:touch;
- scroll-snap-type:x proximity;
-}
+/* Market CSS owns the bounded tab grid so vertical touch remains natural on iPhone. */
 .market-sheet .market-tab{
- flex:0 0 auto;
  min-height:44px;
- scroll-snap-align:start;
 }
 @media(min-width:760px){
  .market-sheet .market-metrics{
