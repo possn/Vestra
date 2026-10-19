@@ -14,7 +14,12 @@ function adapter(fetch) {
   return sandbox.call;
 }
 const groq = { format: 'openai', model: 'llama-3.3-70b-versatile', url: 'https://mock.test/groq' };
-const claude = { format: 'anthropic', model: 'claude-sonnet-4-20250514', url: 'https://mock.test/claude' };
+const claude = { format: 'anthropic', model: 'claude-sonnet-4-6', url: 'https://mock.test/claude' };
+
+test('Anthropic uses active Sonnet model, not retired Sonnet 4', () => {
+  expect(source).toContain('model: "claude-sonnet-4-6"');
+  expect(source).not.toContain('model: "claude-sonnet-4-20250514"');
+});
 
 test('AI provider HTTP failures classify credentials, credits, model and rate limits', async () => {
   for (const [status, pattern] of [
