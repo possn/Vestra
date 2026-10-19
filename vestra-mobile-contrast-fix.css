@@ -48,3 +48,47 @@
 #viewMarket .market-rotation .market-perspective-head .market-rotation-status{
  color:#53686c!important;-webkit-text-fill-color:#53686c!important;opacity:1!important;
 }
+
+/* Canonical active-light surfaces: semantic ink is independent of dark-page text.
+   Buttons, data, financial calculations and true disabled state remain intact. */
+#viewMarket .market-rotation .market-rotation-freshness-warning{
+ color:#734b24!important;-webkit-text-fill-color:#734b24!important;
+ opacity:1!important;font-weight:600;
+}
+#viewDashboard :is(#portfolioSourcesCard,#goalCard,#milestonesCard,#portfolioQualityCard,#irsEstCard,#maturityAlertsCard){
+ --v2-light-ink:#19343b;
+ --v2-light-muted:#4c6165;
+ color:var(--v2-light-ink)!important;
+ -webkit-text-fill-color:var(--v2-light-ink)!important;
+}
+#viewDashboard :is(#portfolioSourcesCard,#goalCard,#milestonesCard,#portfolioQualityCard,#irsEstCard,#maturityAlertsCard) :is(.card__title,strong,b,button:not(:disabled),a){
+ color:var(--v2-light-ink)!important;
+ -webkit-text-fill-color:var(--v2-light-ink)!important;
+ opacity:1!important;
+}
+#viewDashboard :is(#portfolioSourcesCard,#goalCard,#milestonesCard,#portfolioQualityCard,#irsEstCard,#maturityAlertsCard) :is(.card__muted,small,p,label,span:not(.progress-bar-fill),em){
+ color:var(--v2-light-muted)!important;
+ -webkit-text-fill-color:var(--v2-light-muted)!important;
+ opacity:1!important;
+}
+#viewDashboard #portfolioSourcesBody :is(.item,.card,.portfolio-source-card),
+#viewDashboard #portfolioSourcesCard :is(.item,.card){
+ color:#19343b!important;-webkit-text-fill-color:#19343b!important;
+}
+#viewDashboard #goalBreakdown,
+#viewDashboard #milestonesContent,
+#viewDashboard #irsEstTotal{
+ color:#19343b!important;-webkit-text-fill-color:#19343b!important;
+}
+#viewDashboard #irsEstCard .card__title,
+#viewDashboard #irsEstCard #irsEstTotal{
+ color:#754515!important;-webkit-text-fill-color:#754515!important;
+}
+#viewDashboard #irsEstCard button:not(:disabled),
+#viewDashboard #goalCard #btnEditGoal{
+ color:#173b39!important;-webkit-text-fill-color:#173b39!important;
+ opacity:1!important;
+}
+#viewDashboard #maturityAlertsCard button:not(:disabled){
+ color:#f8f9f3!important;-webkit-text-fill-color:#f8f9f3!important;
+}
