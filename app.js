@@ -14505,7 +14505,7 @@ const AI_PROVIDERS = {
     name: "Claude (Anthropic)",
     emoji: "🤖",
     url: "https://api.anthropic.com/v1/messages",
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     keyHint: "Obtém em console.anthropic.com (pago, mais preciso)",
     keyPrefix: "sk-",
     settingKey: "anthropicKey",
