@@ -1170,6 +1170,43 @@
 <div class="card"><div class="list" id="compareTable"></div></div>
 </div>
 <div class="analysisPanelTab" id="analysisPanelTab_fire" style="display:none">
+<!-- Vestra 2.0: answer first, then current evidence, then editable assumptions. -->
+<!-- Cenários -->
+<div class="card">
+<div class="card__title" style="margin-bottom:10px">3 Cenários</div>
+<div class="list" id="fireResults"></div>
+</div>
+<!-- Estado actual -->
+<div class="card" id="fireStatusCard">
+<div class="card__title" style="margin-bottom:12px">Estado actual</div>
+<div class="kpiRow" style="margin-bottom:8px">
+<div class="kpi"><div class="kpi__k">Capital investível</div><div class="kpi__v" id="fireCap">—</div></div>
+<div class="kpi kpi--out"><div class="kpi__k">Despesas/ano</div><div class="kpi__v" id="fireExp">—</div></div>
+</div>
+<div class="kpiRow" style="margin-bottom:12px">
+<div class="kpi kpi--in"><div class="kpi__k">Rendimento passivo/ano</div><div class="kpi__v" id="firePass">—</div></div>
+<div class="kpi"><div class="kpi__k">Poupança/mês</div><div class="kpi__v" id="fireSave">—</div></div>
+</div>
+<!-- Progress bars -->
+<div style="margin-bottom:8px">
+<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+<span style="font-weight:600">Capital vs FIRE número</span>
+<span id="fireCapPct" style="color:#6366f1;font-weight:700">—</span>
+</div>
+<div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+<div id="fireCapBar" style="height:8px;background:#6366f1;border-radius:4px;width:0%;transition:width .6s"></div>
+</div>
+</div>
+<div>
+<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+<span style="font-weight:600">Rendimento passivo vs Despesas</span>
+<span id="firePassPct" style="color:#10b981;font-weight:700">—</span>
+</div>
+<div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+<div id="firePassBar" style="height:8px;background:#10b981;border-radius:4px;width:0%;transition:width .6s"></div>
+</div>
+</div>
+</div>
 <!-- Inputs -->
 <div class="card">
 <div class="card__title" style="margin-bottom:4px">Projeção FIRE <button class="info-btn" onclick="openTip('fire')" title="O que é FIRE?">ℹ️</button></div>
@@ -1219,42 +1256,6 @@
 </div>
 </div>
 <div class="note" id="fireEngineNote" style="margin-top:12px"></div>
-</div>
-<!-- Estado actual -->
-<div class="card" id="fireStatusCard">
-<div class="card__title" style="margin-bottom:12px">Estado actual</div>
-<div class="kpiRow" style="margin-bottom:8px">
-<div class="kpi"><div class="kpi__k">Capital investível</div><div class="kpi__v" id="fireCap">—</div></div>
-<div class="kpi kpi--out"><div class="kpi__k">Despesas/ano</div><div class="kpi__v" id="fireExp">—</div></div>
-</div>
-<div class="kpiRow" style="margin-bottom:12px">
-<div class="kpi kpi--in"><div class="kpi__k">Rendimento passivo/ano</div><div class="kpi__v" id="firePass">—</div></div>
-<div class="kpi"><div class="kpi__k">Poupança/mês</div><div class="kpi__v" id="fireSave">—</div></div>
-</div>
-<!-- Progress bars -->
-<div style="margin-bottom:8px">
-<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
-<span style="font-weight:600">Capital vs FIRE número</span>
-<span id="fireCapPct" style="color:#6366f1;font-weight:700">—</span>
-</div>
-<div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
-<div id="fireCapBar" style="height:8px;background:#6366f1;border-radius:4px;width:0%;transition:width .6s"></div>
-</div>
-</div>
-<div>
-<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
-<span style="font-weight:600">Rendimento passivo vs Despesas</span>
-<span id="firePassPct" style="color:#10b981;font-weight:700">—</span>
-</div>
-<div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
-<div id="firePassBar" style="height:8px;background:#10b981;border-radius:4px;width:0%;transition:width .6s"></div>
-</div>
-</div>
-</div>
-<!-- Cenários -->
-<div class="card">
-<div class="card__title" style="margin-bottom:10px">3 Cenários</div>
-<div class="list" id="fireResults"></div>
 </div>
 <!-- Gráfico -->
 <div class="card">
