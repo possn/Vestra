@@ -43,6 +43,18 @@ test('iPhone/WebKit: first look is wealth, barometer, news, horizontal agenda, p
  expect(editorial.wealthWidth).toBeGreaterThan(editorial.leadWidth*0.8);
  expect(editorial.headingFont).toBeGreaterThan(20);
  expect(editorial.headingFamily).toContain('Georgia');
+ const tokens=await home.evaluate(host=>{
+  const cs=getComputedStyle(document.documentElement);
+  const first=host.querySelector('.vi-canonical-sections > .vi-canonical-card');
+  return {
+   divider:cs.getPropertyValue('--vestra-editorial-divider-dark').trim(),
+   border:getComputedStyle(first).borderBottomColor,
+   focus:cs.getPropertyValue('--vestra-editorial-focus-gold').trim()
+  };
+ });
+ expect(tokens.divider).toBe('rgba(200,223,208,.22)');
+ expect(tokens.border).toBe('rgba(200, 223, 208, 0.22)');
+ expect(tokens.focus).toBe('#d7bc89');
  const directChildren=await home.evaluate(host=>Array.from(host.querySelector('.vi-canonical-sections')?.children||[]).map(el=>
   el.classList.contains('vi-market-reading')?'market':
   el.classList.contains('vi-news-reading')?'news':
