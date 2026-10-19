@@ -7996,20 +7996,20 @@ function renderPortfolioSourcesCard() {
     : "Sem ficheiros activos de corretora";
   body.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
-      <div style="background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--text)">
-        <div style="font-size:11px;color:var(--muted)">Manual</div>
-        <div style="font-weight:900;font-size:18px;margin-top:4px;color:var(--text)">${fmtEUR(manualValue)}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">${manualAssets.length} ativo${manualAssets.length !== 1 ? "s" : ""}</div>
+      <div style="background:#eef1ec;border:1px solid #b9c7c2;border-radius:14px;padding:12px;color:#19343b">
+        <div style="font-size:11px;color:#4c6165">Manual</div>
+        <div style="font-weight:900;font-size:18px;margin-top:4px;color:#19343b">${fmtEUR(manualValue)}</div>
+        <div style="font-size:12px;color:#4c6165;margin-top:4px">${manualAssets.length} ativo${manualAssets.length !== 1 ? "s" : ""}</div>
       </div>
-      <div style="background:var(--card2);border:1px solid rgba(240,167,143,.45);border-radius:14px;padding:12px;color:var(--text)">
-        <div style="font-size:11px;color:var(--muted)">Corretoras</div>
-        <div style="font-weight:900;font-size:18px;margin-top:4px;color:var(--text)">${fmtEUR(brokerValue)}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">${brokerAssets.length} ativo${brokerAssets.length !== 1 ? "s" : ""} · ${fmtPct(brokerPct)}</div>
+      <div style="background:#eef1ec;border:1px solid rgba(171,117,78,.5);border-radius:14px;padding:12px;color:#19343b">
+        <div style="font-size:11px;color:#4c6165">Corretoras</div>
+        <div style="font-weight:900;font-size:18px;margin-top:4px;color:#19343b">${fmtEUR(brokerValue)}</div>
+        <div style="font-size:12px;color:#4c6165;margin-top:4px">${brokerAssets.length} ativo${brokerAssets.length !== 1 ? "s" : ""} · ${fmtPct(brokerPct)}</div>
       </div>
-      <div style="background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--text)">
-        <div style="font-size:11px;color:var(--muted)">Cobertura importada</div>
-        <div style="font-weight:900;font-size:18px;margin-top:4px;color:var(--text)">${d ? d.years.length : 0} ano${d && d.years.length !== 1 ? "s" : ""}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">${escapeHtml(sourceLine)}</div>
+      <div style="background:#eef1ec;border:1px solid #b9c7c2;border-radius:14px;padding:12px;color:#19343b">
+        <div style="font-size:11px;color:#4c6165">Cobertura importada</div>
+        <div style="font-weight:900;font-size:18px;margin-top:4px;color:#19343b">${d ? d.years.length : 0} ano${d && d.years.length !== 1 ? "s" : ""}</div>
+        <div style="font-size:12px;color:#4c6165;margin-top:4px">${escapeHtml(sourceLine)}</div>
       </div>
     </div>
     ${d && d.overlapCount > 0 ? `<div style="margin-top:10px;font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:8px 10px">Há ${d.overlapCount} sobreposição${d.overlapCount !== 1 ? "ões" : ""} temporal${d.overlapCount !== 1 ? "ais" : ""} entre ficheiros da mesma corretora. A deduplicação está activa, mas vale a pena rever os imports.</div>` : ""}`;
@@ -13494,11 +13494,11 @@ function renderMilestones() {
     return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f1f5f9;opacity:${done || active ? 1 : 0.4}">
       <div style="font-size:24px;width:32px;text-align:center">${done ? m.emoji : active ? "⏳" : "○"}</div>
       <div style="flex:1">
-        <div style="font-weight:700;font-size:14px;color:${done ? "#059669" : active ? "#6366f1" : "#94a3b8"}">${m.label}</div>
+        <div style="font-weight:700;font-size:14px;color:${done ? "#14683f" : active ? "#4338ca" : "#60747a"}">${m.label}</div>
         ${active ? `<div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-top:4px">
           <div style="height:5px;background:#6366f1;border-radius:3px;width:${pct}%;transition:width .6s"></div>
         </div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:3px">${fmtPct(pct)} · faltam ${fmtEUR(falta)}</div>` : ""}
+        <div style="font-size:11px;color:#4c6165;margin-top:3px">${fmtPct(pct)} · faltam ${fmtEUR(falta)}</div>` : ""}
       </div>
       <div style="font-size:18px">${done ? "✅" : ""}</div>
     </div>`;
