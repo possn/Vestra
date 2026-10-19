@@ -18,6 +18,19 @@ test('iPhone/WebKit: portfolio has direct chapter navigation without duplicated 
  for(const id of ['portfolioTotalValue','portfolioPositionCount','itemsList','btnPortfolioFilters']){
   await expect(portfolio.locator('#'+id)).toHaveCount(1);
  }
+ const editorial=await portfolio.evaluate(host=>{
+  const summary=host.querySelector('#portfolioGlance');
+  const positions=host.querySelector('#portfolioPositionsChapter');
+  const heading=host.querySelector('.portfolio-list-head .card__title');
+  return {
+   summaryLayout:getComputedStyle(summary).display,
+   positionShadow:getComputedStyle(positions).boxShadow,
+   headingFamily:getComputedStyle(heading).fontFamily
+  };
+ });
+ expect(editorial.summaryLayout).toBe('grid');
+ expect(editorial.positionShadow).toBe('none');
+ expect(editorial.headingFamily).toContain('Georgia');
  const minHeight=await links.evaluateAll(nodes=>nodes.map(x=>x.getBoundingClientRect().height));
  for(const height of minHeight)expect(height).toBeGreaterThanOrEqual(44);
 });

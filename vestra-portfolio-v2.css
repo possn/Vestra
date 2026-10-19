@@ -177,3 +177,51 @@
 #viewAssets :is(#portfolioGlance,#portfolioPositionsChapter,#portfolioToolsStrip){
  scroll-margin-top:calc(75px + env(safe-area-inset-top,0px));
 }
+
+/* V2 / Portfolio editorial reading: prominent capital, quiet positions, clear detail.
+   Canonical financial and controls hosts remain untouched. */
+#viewAssets .portfolio-glance{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:0;
+ overflow:hidden;
+}
+#viewAssets .portfolio-glance__main{
+ grid-column:1/-1;
+ min-width:0;
+ padding-bottom:clamp(15px,2vw,25px);
+}
+#viewAssets .portfolio-glance__stat{
+ padding-block:clamp(13px,1.6vw,20px);
+ border-top:1px solid var(--vestra-editorial-divider-dark);
+}
+#viewAssets .portfolio-income-strip{
+ grid-column:1/-1;
+ border-top:1px solid var(--vestra-editorial-divider-dark);
+}
+#viewAssets .portfolio-list-card{
+ background:transparent;
+ border:0;
+ border-top:1px solid var(--vestra-editorial-divider-dark);
+ border-radius:0;
+ padding-inline:0;
+ box-shadow:none;
+}
+#viewAssets .portfolio-list-head{
+ min-height:62px;
+ align-items:center;
+}
+#viewAssets .portfolio-list-head .card__title{
+ font-family:var(--vestra-editorial-serif);
+ font-weight:500;
+ font-size:clamp(23px,2.6vw,32px);
+ letter-spacing:-.035em;
+}
+#viewAssets .portfolio-tools{
+ box-shadow:none;
+}
+@media(max-width:600px){
+ #viewAssets .portfolio-glance{grid-template-columns:repeat(2,minmax(0,1fr));}
+ #viewAssets .portfolio-glance__main{padding-bottom:16px;}
+ #viewAssets .portfolio-list-card{border-radius:0;padding-inline:0;}
+}
