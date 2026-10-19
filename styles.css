@@ -364,6 +364,23 @@ body.simple-mode .advanced-only { display: none !important; }
 .btn--primary:hover { background: var(--vio2); box-shadow: 0 6px 20px rgba(231,121,91,.36); }
 .btn--ghost    { background: transparent; border-color: var(--line); }
 .btn--ghost:hover { background: var(--card2); border-color: var(--vio); color: var(--vio); }
+/* Semantic return control for light Dividendos and Análise chapters.
+   Keep ink independent of the dark dashboard's global --text overrides. */
+#viewDividends > .vestra-light-return,
+#viewAnalysis > .vestra-light-return {
+  background: var(--vestra-surface-ivory, #f0eee7);
+  border-color: var(--vestra-surface-ivory-muted, #47605f);
+  color: var(--vestra-surface-ivory-ink, #173037);
+  -webkit-text-fill-color: var(--vestra-surface-ivory-ink, #173037);
+  opacity: 1;
+}
+#viewDividends > .vestra-light-return:hover,
+#viewAnalysis > .vestra-light-return:hover {
+  background: #e3e9e2;
+  color: var(--vestra-surface-ivory-ink, #173037);
+  -webkit-text-fill-color: var(--vestra-surface-ivory-ink, #173037);
+}
+
 .btn--outline  { background: transparent; border-color: var(--vio); color: var(--vio); }
 .btn--danger   { border: 0; background: var(--red); color: #fff; }
 .btn--sm       { padding: 7px 14px; font-size: 13px; }
