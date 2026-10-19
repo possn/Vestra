@@ -31,7 +31,8 @@ test('iPhone/WebKit: first look is wealth, barometer, news, horizontal agenda, p
    cards:cards.map(el=>({radius:getComputedStyle(el).borderTopLeftRadius,shadow:getComputedStyle(el).boxShadow})),
    wealthWidth:wealth.getBoundingClientRect().width,
    leadWidth:host.querySelector('.vi-lead').getBoundingClientRect().width,
-   headingFont:parseFloat(getComputedStyle(heading).fontSize)
+   headingFont:parseFloat(getComputedStyle(heading).fontSize),
+   headingFamily:getComputedStyle(heading).fontFamily
   };
  });
  expect(editorial.cards).toHaveLength(3);
@@ -41,6 +42,7 @@ test('iPhone/WebKit: first look is wealth, barometer, news, horizontal agenda, p
  }
  expect(editorial.wealthWidth).toBeGreaterThan(editorial.leadWidth*0.8);
  expect(editorial.headingFont).toBeGreaterThan(20);
+ expect(editorial.headingFamily).toContain('Georgia');
  const directChildren=await home.evaluate(host=>Array.from(host.querySelector('.vi-canonical-sections')?.children||[]).map(el=>
   el.classList.contains('vi-market-reading')?'market':
   el.classList.contains('vi-news-reading')?'news':
