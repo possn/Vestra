@@ -22,7 +22,7 @@ test('iPhone light financial cards and historical rotation use readable text',as
   return {nodes,stale};
  });
  for(const c of result.nodes){
-  expect(c.title,c.id).toBe(c.id==='irsEstCard'?'rgb(117, 69, 21)':'rgb(25, 52, 59)');
+  expect(c.title,c.id).toBe('rgb(25, 52, 59)');
   expect(c.subtitle,c.id).toBe('rgb(76, 97, 101)');
  }
  expect(result.stale).toBe('rgb(115, 75, 36)');
