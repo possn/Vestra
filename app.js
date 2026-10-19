@@ -14513,37 +14513,31 @@ const AI_PROVIDERS = {
   }
 };
 
-async function callAIProvider(provider, apiKey, systemPrompt, userMsg) {
-  if (provider.format === "openai") {
-    // Groq / OpenAI-compatible
-    const resp = await fetch(provider.url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: provider.model,
-        max_tokens: 1500,
-        temperature: 0.7,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user",   content: userMsg }
-        ]
-      })
-    });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      if (resp.status === 401) throw new Error("API key Groq inválida. Verifica em console.groq.com");
-      if (resp.status === 429) throw new Error("Limite Groq atingido. Tenta em alguns segundos.");
-      throw new Error(err.error?.message || `Erro HTTP ${resp.status}`);
-    }
-    const data = await resp.json();
-    return data.choices?.[0]?.message?.content || "";
+function classifyAIProviderError(provider, status, errorBody) {
+  const name = provider.format === "anthropic" ? "Claude" : "Groq";
+  const type = String(errorBody?.error?.type || errorBody?.type || "").toLowerCase();
+  const code = String(errorBody?.error?.code || "").toLowerCase();
+  if (status === 401) return `Chave API ${name} inválida ou revogada. Confirma a chave nas definições.`;
+  if (status === 402 || type.includes("credit") || code.includes("insufficient_quota")) return `Saldo ou créditos ${name} insuficientes. Consulta a faturação do fornecedor.`;
+  if (status === 403) return `Acesso ${name} recusado. Verifica as permissões da chave e da conta.`;
+  if (status === 404 || type === "not_found_error" || code === "model_not_found") return `O modelo ${provider.model} não está disponível na tua conta ${name}. É necessário atualizar a configuração do modelo.`;
+  if (status === 429) return `Limite de pedidos ${name} atingido. Volta a tentar após o intervalo indicado pelo fornecedor.`;
+  if (status >= 500) return `Serviço ${name} temporariamente indisponível (HTTP ${status}).`;
+  return `Pedido ${name} recusado (HTTP ${status}). Consulta as permissões, o modelo e a ligação.`;
+}
 
-  } else {
-    // Anthropic nativo
-    const resp = await fetch(provider.url, {
+async function callAIProvider(provider, apiKey, systemPrompt, userMsg) {
+  const isGroq = provider.format === "openai";
+  let resp;
+  try {
+    resp = await fetch(provider.url, isGroq ? {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: provider.model, max_tokens: 1500, temperature: 0.7,
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMsg }]
+      })
+    } : {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -14552,21 +14546,22 @@ async function callAIProvider(provider, apiKey, systemPrompt, userMsg) {
         "anthropic-dangerous-direct-browser-access": "true"
       },
       body: JSON.stringify({
-        model: provider.model,
-        max_tokens: 1500,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userMsg }]
+        model: provider.model, max_tokens: 1500,
+        system: systemPrompt, messages: [{ role: "user", content: userMsg }]
       })
     });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      if (resp.status === 401) throw new Error("API key Claude inválida. Verifica em console.anthropic.com");
-      if (resp.status === 429) throw new Error("Limite Claude atingido. Tenta em alguns segundos.");
-      throw new Error(err.error?.message || `Erro HTTP ${resp.status}`);
-    }
-    const data = await resp.json();
-    return data.content?.[0]?.text || "";
+  } catch (_) {
+    throw new Error(`Não foi possível contactar ${isGroq ? "Groq" : "Claude"}. Verifica a ligação e as permissões de acesso do navegador (CORS).`);
   }
+  if (!resp.ok) {
+    const errorBody = await resp.json().catch(() => ({}));
+    throw new Error(classifyAIProviderError(provider, resp.status, errorBody));
+  }
+  const data = await resp.json();
+  const answer = isGroq ? data.choices?.[0]?.message?.content
+    : data.content?.filter(block => block.type === "text").map(block => block.text).join("\n");
+  if (!answer || !String(answer).trim()) throw new Error("O fornecedor de IA devolveu uma resposta vazia. Repete o pedido.");
+  return answer;
 }
 
 async function runAIAnalysis() {
