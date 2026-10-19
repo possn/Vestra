@@ -225,3 +225,50 @@
  #viewAssets .portfolio-glance__main{padding-bottom:16px;}
  #viewAssets .portfolio-list-card{border-radius:0;padding-inline:0;}
 }
+
+/* iPhone contrast audit 2026-10-19: dark chapter chrome and light holding rows
+   must not inherit one another's text palette. */
+#viewAssets .portfolio-hero h2,
+#viewAssets .portfolio-list-head .card__title{
+ color:var(--vestra-portfolio-hero-ink)!important;
+ -webkit-text-fill-color:var(--vestra-portfolio-hero-ink)!important;
+ opacity:1!important;
+}
+#viewAssets .portfolio-hero p,
+#viewAssets .portfolio-list-head .card__muted{
+ color:var(--vestra-portfolio-hero-muted)!important;
+ -webkit-text-fill-color:var(--vestra-portfolio-hero-muted)!important;
+ opacity:1!important;
+}
+#viewAssets .portfolio-list .item{
+ background:#eceee9!important;
+ background-image:none!important;
+ color:var(--vestra-portfolio-light-ink)!important;
+ -webkit-text-fill-color:var(--vestra-portfolio-light-ink)!important;
+ border:1px solid #c3ceca!important;
+ box-shadow:none!important;
+}
+#viewAssets .portfolio-list .item .item__l,
+#viewAssets .portfolio-list .item .item__t{
+ color:var(--vestra-portfolio-light-ink)!important;
+ -webkit-text-fill-color:var(--vestra-portfolio-light-ink)!important;
+ opacity:1!important;
+}
+#viewAssets .portfolio-list .item .item__s{
+ color:var(--vestra-portfolio-light-muted)!important;
+ -webkit-text-fill-color:var(--vestra-portfolio-light-muted)!important;
+ opacity:1!important;
+}
+#viewAssets .portfolio-list .item .item__v{
+ color:var(--vestra-portfolio-light-ink)!important;
+ -webkit-text-fill-color:var(--vestra-portfolio-light-ink)!important;
+ opacity:1!important;
+}
+#viewAssets .portfolio-list .item .badge{
+ -webkit-text-fill-color:currentColor!important;
+}
+#viewAssets #btnItemsToggle{
+ color:var(--vestra-portfolio-hero-ink)!important;
+ -webkit-text-fill-color:var(--vestra-portfolio-hero-ink)!important;
+ border-color:#819a8e!important;
+}
