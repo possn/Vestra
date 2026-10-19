@@ -18,6 +18,7 @@ test('iPhone/WebKit: dossier editorial layout preserves two-column facts and tou
    tabHeight:tabs.querySelector('.market-tab').getBoundingClientRect().height,
    headingFamily:getComputedStyle(sheet.querySelector('h2')).fontFamily,
    tabsOverflow:getComputedStyle(tabs).overflowX,
+   tabsLayout:getComputedStyle(tabs).display,
    actions:!!sheet.querySelector('.market-detail-actions')
   };
   sheet.remove();
@@ -26,6 +27,7 @@ test('iPhone/WebKit: dossier editorial layout preserves two-column facts and tou
  expect(values.columns).toBe(2);
  expect(values.tabHeight).toBeGreaterThanOrEqual(44);
  expect(values.headingFamily).toContain('Georgia');
- expect(values.tabsOverflow).toBe('auto');
+ expect(values.tabsOverflow).toBe('visible');
+ expect(values.tabsLayout).toBe('grid');
  expect(values.actions).toBe(true);
 });
