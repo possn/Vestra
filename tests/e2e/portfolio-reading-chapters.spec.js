@@ -3,7 +3,7 @@ const {test,expect}=require('@playwright/test');
 test('iPhone/WebKit: portfolio has direct chapter navigation without duplicated financial hosts',async ({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.goto('/index.html');
- await page.locator('[data-view="assets"]').first().click();
+ await page.locator('#navAssets').click();
  const portfolio=page.locator('#viewAssets');
  await expect(portfolio).toBeVisible();
  const nav=portfolio.locator('.portfolio-chapter-nav');
