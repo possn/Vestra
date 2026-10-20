@@ -3,7 +3,7 @@ const fs=require('node:fs');
 test('PWA requests new compact generation and forbids cross-version CSS fallback',async({page})=>{
  await page.goto('/index.html');
  const links=await page.locator('link[rel="stylesheet"]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('href')));
- expect(links).toContain('vestra-iphone-canonical-scale.css?v=20261020-actual-compact-v2');
+ expect(links).toContain('vestra-iphone-canonical-scale.css?v=20261021-splash-compact');
  const sw=fs.readFileSync('sw.js','utf8');
  expect(sw).toMatch(/const CACHE_NAME = "vestra-cache-v\d+";/);
  expect(sw).toContain('if (new URL(request.url).search) return undefined');
@@ -23,4 +23,18 @@ test('iPhone actual Home and Portfolio compact geometry',async({page})=>{
   expect(values[key],key).not.toBeNull();
   expect(values[key],key).toBeLessThanOrEqual(limit);
  }
+});
+
+test('iPhone splash identity remains compact without zoom',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ const css=await page.evaluate(()=>{
+  const a=document.querySelector('.vestra-splash__mark');
+  const b=document.querySelector('.vestra-splash__brand');
+  const c=document.querySelector('.vestra-splash__tagline');
+  return {mark:parseFloat(getComputedStyle(a).width),brand:parseFloat(getComputedStyle(b).fontSize),tagline:parseFloat(getComputedStyle(c).fontSize)};
+ });
+ expect(css.mark).toBeLessThanOrEqual(68);
+ expect(css.brand).toBeLessThanOrEqual(33);
+ expect(css.tagline).toBeLessThanOrEqual(10);
 });
