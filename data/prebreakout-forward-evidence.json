@@ -3,7 +3,7 @@
   "evaluation_method": "adjusted_daily_close_after_publication",
   "cohort_policy": "first_immutable_publication_per_ticker_and_stage",
   "historical_only": true,
-  "cohort_count": 5,
+  "cohort_count": 13,
   "stage_evidence": {
     "schema": "vestra_prebreakout_stage_evidence_v1",
     "method": "observed_point_in_time_adjusted_close",
@@ -12,32 +12,32 @@
       "compressão": {
         "5": {
           "n": 0,
-          "n_missing": 5,
-          "n_observations": 5,
+          "n_missing": 11,
+          "n_observations": 11,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
           "n": 0,
-          "n_missing": 5,
-          "n_observations": 5,
+          "n_missing": 11,
+          "n_observations": 11,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "20": {
           "n": 0,
-          "n_missing": 5,
-          "n_observations": 5,
+          "n_missing": 11,
+          "n_observations": 11,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "60": {
           "n": 0,
-          "n_missing": 5,
-          "n_observations": 5,
+          "n_missing": 11,
+          "n_observations": 11,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
@@ -46,33 +46,33 @@
       "pré-breakout": {
         "5": {
           "n": 0,
-          "n_missing": 0,
-          "n_observations": 0,
-          "coverage": null,
+          "n_missing": 2,
+          "n_observations": 2,
+          "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
           "n": 0,
-          "n_missing": 0,
-          "n_observations": 0,
-          "coverage": null,
+          "n_missing": 2,
+          "n_observations": 2,
+          "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "20": {
           "n": 0,
-          "n_missing": 0,
-          "n_observations": 0,
-          "coverage": null,
+          "n_missing": 2,
+          "n_observations": 2,
+          "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "60": {
           "n": 0,
-          "n_missing": 0,
-          "n_observations": 0,
-          "coverage": null,
+          "n_missing": 2,
+          "n_observations": 2,
+          "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         }
@@ -116,32 +116,52 @@
   "outcomes": [
     {
       "ticker": "AAPL",
-      "entry": null,
-      "results": {},
+      "entry": "2026-10-16",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-15T07:09:31.724375+00:00",
       "signal_date": "2026-10-14",
       "stage": "compressão"
     },
     {
       "ticker": "AMZN",
-      "entry": null,
-      "results": {},
+      "entry": "2026-10-16",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-15T07:09:31.724375+00:00",
       "signal_date": "2026-10-14",
       "stage": "compressão"
     },
     {
       "ticker": "ATKR",
-      "stage": "compressão",
+      "entry": "2026-10-16",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-15T07:09:31.724375+00:00",
       "signal_date": "2026-10-14",
-      "entry": null,
-      "results": {}
+      "stage": "compressão"
     },
     {
       "ticker": "LTC",
-      "entry": null,
-      "results": {},
+      "entry": "2026-10-16",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-15T07:09:31.724375+00:00",
       "signal_date": "2026-10-14",
       "stage": "compressão"
@@ -153,16 +173,96 @@
       "signal_date": "2026-10-13",
       "entry": null,
       "results": {}
+    },
+    {
+      "ticker": "WPP.L",
+      "stage": "pré-breakout",
+      "published_at": "2026-10-16T08:42:21.359869+00:00",
+      "signal_date": "2026-10-15",
+      "entry": null,
+      "results": {}
+    },
+    {
+      "ticker": "DXCM",
+      "entry": "2026-10-19",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
+      "published_at": "2026-10-16T17:59:16.573274+00:00",
+      "signal_date": "2026-10-15",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "ONC",
+      "entry": "2026-10-19",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
+      "published_at": "2026-10-16T17:59:16.573274+00:00",
+      "signal_date": "2026-10-15",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "CPAY",
+      "entry": "2026-10-19",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
+      "published_at": "2026-10-16T22:47:09.884123+00:00",
+      "signal_date": "2026-10-15",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "LH",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-19T15:32:27.897826+00:00",
+      "signal_date": "2026-10-16",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "OMV.DE",
+      "stage": "compressão",
+      "published_at": "2026-10-19T15:32:27.897826+00:00",
+      "signal_date": "2026-10-16",
+      "entry": null,
+      "results": {}
+    },
+    {
+      "ticker": "LOGN.SW",
+      "stage": "pré-breakout",
+      "published_at": "2026-10-19T21:41:39.535321+00:00",
+      "signal_date": "2026-10-16",
+      "entry": null,
+      "results": {}
+    },
+    {
+      "ticker": "TECH",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-19T21:41:39.535321+00:00",
+      "signal_date": "2026-10-16",
+      "stage": "compressão"
     }
   ],
   "price_metadata": {
     "provider": "yahoo_finance",
     "auto_adjust": true,
-    "completed_before_utc_date": "2026-10-16",
+    "completed_before_utc_date": "2026-10-20",
     "benchmark": "SPY",
-    "downloaded": 4,
+    "downloaded": 10,
     "failed": {
-      "ATKR": "ValueError",
+      "LOGN.SW": "ValueError",
+      "OMV.DE": "ValueError",
       "WPP.L": "ValueError"
     }
   }
