@@ -5,7 +5,7 @@ test('PWA requests new compact generation and forbids cross-version CSS fallback
  const links=await page.locator('link[rel="stylesheet"]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('href')));
  expect(links).toContain('vestra-iphone-canonical-scale.css?v=20261020-premium-rhythm');
  const sw=fs.readFileSync('sw.js','utf8');
- expect(sw).toMatch(/const CACHE_NAME = "vestra-cache-v\\d+";/);
+ expect(sw).toMatch(/const CACHE_NAME = "vestra-cache-v\d+";/);
  expect(sw).toContain('if (new URL(request.url).search) return undefined');
 });
 test('iPhone actual Home and Portfolio compact geometry',async({page})=>{
