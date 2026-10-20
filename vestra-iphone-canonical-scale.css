@@ -161,3 +161,13 @@
 @media(max-width:600px){
  html body #viewDashboard#viewDashboard.vi-preview-active #vestraIntelligenceHome#vestraIntelligenceHome .vi-home-overview .vi-headline {font-size:25px!important;line-height:1.1!important}
 }
+
+/* Compact launch identity to match the restored iPhone UI density.
+   Presentation only: no hydration, splash lifecycle, viewport zoom or data changes. */
+@media (max-width:600px) {
+  body .vestra-splash__mark {width:66px;height:66px!important;}
+  body .vestra-splash__mark img {width:62px;height:62px!important;}
+  body .vestra-splash__mark::after {inset:-14px!important;}
+  body .vestra-splash__brand {font-size:32px!important;margin-top:18px!important;line-height:1.06!important;}
+  body .vestra-splash__tagline {font-size:9px!important;margin-top:9px!important;letter-spacing:.17em!important;}
+}
