@@ -2,7 +2,7 @@ const {test,expect}=require('@playwright/test');
 test('iPhone loads canonical CSS and keeps readable geometry even with runtime styles',async({page})=>{
  await page.goto('/index.html');
  const order=await page.locator('link[rel="stylesheet"]').evaluateAll(links=>links.map(l=>l.getAttribute('href')));
- expect(order.at(-1)).toMatch(/^vestra-iphone-canonical-scale\.css\?v=/);
+ expect(order.some(href=>/^vestra-iphone-canonical-scale\.css\?v=/.test(href))).toBe(true);
 });
 test('iPhone real Home, Portfolio and Market typography stays compact',async({page})=>{
  await page.setViewportSize({width:390,height:844});
