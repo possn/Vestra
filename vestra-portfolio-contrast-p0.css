@@ -1,0 +1,42 @@
+/* P0: portfolio exposure and concentration must remain readable on the dark Vestra shell.
+   Only the native portfolio analytical modules. No financial, layout or navigation mutations.
+   Loaded after all static styles; dpc also lazy-loads its own legacy stylesheet. */
+#viewAssets .dpc-card, #viewDashboard .dpc-card {
+ --text:#17343b; --text2:#344f54; --muted:#4b6265;
+ --card:#f5f4ee; --card2:#eaf0ed; --line:#bacbc5;
+ color:#17343b!important; -webkit-text-fill-color:#17343b!important;
+ background:#f5f4ee!important; border:1px solid #b4c7bf!important;
+}
+:is(#viewAssets,#viewDashboard) .dpc-card :is(.dpc-head h3,.dpc-head p,.dpc-kicker,.dpc-answer,.dpc-answer b,.dpc-concentration-hero,.dpc-concentration-hero strong,.dpc-concentration-hero small,.dpc-theme-ranking-head,.dpc-theme-ranking-head span,.dpc-theme-rank__name,.dpc-theme-rank__body small,.dpc-theme-rank>strong,.dpc-holding-row__body>strong,.dpc-holding-row>b,.dpc-method summary,.dpc-method p,.dpc-theme-stats span,.dpc-theme-stats strong,.dpc-theme-list span,.dpc-theme-list strong,.dpc-metrics span,.dpc-metrics strong,.dpc-metrics small,.dpc-status) {
+ opacity:1!important; -webkit-text-fill-color:currentColor!important;
+}
+:is(#viewAssets,#viewDashboard) .dpc-card .dpc-head h3,
+:is(#viewAssets,#viewDashboard) .dpc-card .dpc-theme-rank__name,
+:is(#viewAssets,#viewDashboard) .dpc-card .dpc-theme-rank>strong,
+:is(#viewAssets,#viewDashboard) .dpc-card .dpc-holding-row__body>strong,
+:is(#viewAssets,#viewDashboard) .dpc-card .dpc-holding-row>b {
+ color:#17343b!important;
+}
+:is(#viewAssets,#viewDashboard) .dpc-card :is(.dpc-head p,.dpc-theme-rank__body small,.dpc-concentration-hero small,.dpc-method p,.dpc-metrics span,.dpc-metrics small,.dpc-status) {
+ color:#435e60!important;
+}
+:is(#viewAssets,#viewDashboard) .dpc-card :is(.dpc-mode button,.dpc-holdings-more,.dpc-theme-more,.dpc-theme-rank,.dpc-theme-chip) {
+ appearance:none; -webkit-appearance:none; color:#17343b!important; -webkit-text-fill-color:#17343b!important;
+ background:#e5eeea!important; border:1px solid #a9c1b8!important;
+ border-radius:12px; font:inherit; font-size:12px!important; font-weight:700;
+ min-height:44px; opacity:1!important;
+}
+:is(#viewAssets,#viewDashboard) .dpc-card .dpc-mode button.is-active,
+:is(#viewAssets,#viewDashboard) .dpc-card .dpc-theme-chip.is-active {
+ background:#164c46!important; color:#fff!important; -webkit-text-fill-color:#fff!important;
+}
+:is(#viewAssets,#viewDashboard) .dpc-card .dpc-theme-rank {
+ background:transparent!important; border:0!important; border-bottom:1px solid #b8cbc4!important;
+ border-radius:0!important; width:100%; text-align:left;
+}
+@media(max-width:600px) {
+ :is(#viewAssets,#viewDashboard) .dpc-card {padding:12px!important; margin-block:10px!important;}
+ :is(#viewAssets,#viewDashboard) .dpc-head h3 {font-size:17px!important;line-height:1.22!important;}
+ :is(#viewAssets,#viewDashboard) .dpc-head p {font-size:12px!important;line-height:1.4!important;}
+ :is(#viewAssets,#viewDashboard) .dpc-card :is(.dpc-theme-rank__name,.dpc-theme-rank__body small,.dpc-holding-row__body>strong) {font-size:12px!important;}
+}
