@@ -1,9 +1,9 @@
 /* Vestra Service Worker v11.18 — force Crypto market runtime generation. */
-const CACHE_NAME = "vestra-cache-v241";
+const CACHE_NAME = "vestra-cache-v242-iphone-density";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [
-  "./", "./index.html", "./styles.css", "./market.css", "./app.js",
+  "./", "./index.html", "./styles.css", "./market.css", "./vestra-iphone-canonical-scale.css", "./app.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-chart-loader.js", "./app-ui-core.js", "./app-xlsx-loader.js",
   "./app-broker-normalization.js", "./app-xtb-normalization.js", "./app-broker-identity-data.js",
   "./app-broker-parsing-core.js", "./app-file-parsing.js", "./app-broker-import-loader.js", "./app-broker-workbook.js", "./app-broker-parsers.js",
@@ -98,6 +98,9 @@ self.addEventListener("activate", event => {
 async function matchCached(cache, request) {
   const exact = await cache.match(request);
   if (exact) return exact;
+  // Versioned documents/CSS/scripts must NEVER silently fall back to a
+  // different generation when offline. A stale CSS response masks deploys.
+  try { if (new URL(request.url).search) return undefined; } catch (_) {}
   return cache.match(request, { ignoreSearch: true });
 }
 
