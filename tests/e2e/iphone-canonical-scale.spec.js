@@ -1,5 +1,5 @@
 const {test,expect}=require('@playwright/test');
-test('iPhone loads canonical scale after all legacy stylesheets',async({page})=>{
+test('iPhone loads canonical CSS and keeps readable geometry even with runtime styles',async({page})=>{
  await page.goto('/index.html');
  const order=await page.locator('link[rel="stylesheet"]').evaluateAll(links=>links.map(l=>l.getAttribute('href')));
  expect(order.at(-1)).toMatch(/^vestra-iphone-canonical-scale\.css\?v=/);
