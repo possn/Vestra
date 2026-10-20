@@ -110,3 +110,54 @@
   body #viewAssets .portfolio-kind-seg .seg__btn,
   body #viewAssets .portfolio-add { min-height: 44px!important; }
 }
+
+/* P0 post-iPhone screenshot: compact the ACTUAL surfaces, not a scaled viewport.
+   Keep ≥44px hit areas; limit visual card height and preserve portfolio contrast. */
+@media (max-width:600px) {
+ body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-headline {
+  font-size:clamp(23px,6vw,26px)!important;line-height:1.1!important;
+ }
+ body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-deck {
+  font-size:13px!important;line-height:1.36!important;
+ }
+ body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview {
+  padding-block:0 4px!important;gap:5px!important;
+ }
+ body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card {
+  padding:6px 0!important;
+ }
+ body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-section-top h3 {
+  font-size:13px!important;line-height:1.2!important;
+ }
+ body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell {gap:8px!important}
+ body #viewAssets #portfolioHeroTitle {font-size:25px!important}
+ body #viewAssets .portfolio-glance {padding:7px!important;gap:5px!important}
+ body #viewAssets .portfolio-glance__main {padding:9px 11px!important}
+ body #viewAssets #portfolioTotalValue {font-size:28px!important;line-height:1.08!important}
+ body #viewAssets .portfolio-glance__stat,
+ body #viewAssets .portfolio-income-strip>div {padding:7px!important}
+ body #viewAssets .portfolio-glance__stat strong {font-size:15px!important}
+ body #viewAssets .portfolio-income-strip strong {font-size:14px!important}
+ body #viewAssets .portfolio-hero {padding:4px 0 6px!important}
+ body #viewAssets .portfolio-kind-seg {margin-bottom:9px!important}
+ body #viewAssets .portfolio-chapter-nav {gap:7px!important}
+ body #viewAssets .dpc-card {padding:10px!important;margin-block:8px!important}
+ body #viewAssets .dpc-head h3 {font-size:16px!important;line-height:1.18!important}
+ body #viewAssets .dpc-concentration-hero {padding:9px 10px!important;margin-top:8px!important}
+ body #viewAssets .dpc-concentration-hero strong {font-size:24px!important}
+ body #viewAssets .dpc-card .dpc-mode {margin-top:8px!important;padding:2px!important}
+ body #viewAssets .dpc-card .dpc-mode button {min-height:44px!important;padding:7px 9px!important;font-size:11px!important}
+ body #viewAssets .dpc-holdings-rank {margin-top:6px!important}
+ body #viewAssets .dpc-holding-row {padding:6px 1px!important}
+ body .bottomnav {padding-top:0!important;padding-bottom:max(2px,env(safe-area-inset-bottom))!important}
+ body .bottomnav .navbtn {min-height:44px!important;padding:0 2px!important}
+ body .bottomnav .navico {height:26px!important;width:26px!important}
+ body .bottomnav .navlbl {font-size:9px!important;line-height:1.1!important}
+ body #viewMarket#viewMarket .market-hero-simple h2 {font-size:27px!important}
+ body #viewMarket#viewMarket .market-hero-simple {padding:4px 0 7px!important}
+}
+
+/* Verified WebKit owner: override the real Home headline cascade, not the test. */
+@media(max-width:600px){
+ html body #viewDashboard#viewDashboard.vi-preview-active #vestraIntelligenceHome#vestraIntelligenceHome .vi-home-overview .vi-headline {font-size:25px!important;line-height:1.1!important}
+}
