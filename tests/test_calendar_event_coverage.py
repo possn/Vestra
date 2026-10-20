@@ -22,7 +22,7 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn("loadCalendarStartupStocks().then(loaded => { if (loaded?.length) render(expandedContext || {}); })", runtime)
         self.assertIn("A carregar resultados das empresas…", runtime)
         self.assertNotIn("Cobertura de resultados: índice de empresas ainda indisponível", runtime)
-        self.assertIn("vestra-cache-v241", sw)
+        self.assertRegex(sw, r'const CACHE_NAME = "vestra-cache-v\\d+"')
 
     def test_historical_earnings_archive_is_loaded_without_overwriting_live_stock_dates(self):
         js = (ROOT / 'dashboard-weekly-events.js').read_text(encoding='utf-8')
