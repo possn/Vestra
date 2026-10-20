@@ -89,3 +89,24 @@
  body .bottomnav .navico {height:30px!important;width:30px!important}
  body .bottomnav .navlbl {font-size:10px!important}
 }
+
+/* Vestra premium mobile rhythm: shared density, not route-by-route zoom hacks.
+   Anchored to native phone CSS pixels and minimum accessible hit areas. */
+@media (max-width:600px) {
+  html { zoom: 1; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { font-size: 14px; line-height: 1.42; }
+  body .view .card { border-radius: 16px; }
+  body .view .card__title { font-size: 16px!important; line-height: 1.25!important; }
+  body .view .view-intro h2 { font-size: 24px!important; line-height: 1.12!important; }
+  body .view .view-intro p { font-size: 13px!important; line-height: 1.42!important; }
+  body #viewAssets .portfolio-glance__stat,
+  body #viewAssets .portfolio-income-strip>div { min-width: 0; }
+  body #viewAssets .portfolio-glance__stat strong { line-height: 1.18!important; }
+  body #viewMarket .market-tools { padding: 10px!important; }
+  body .view .card .card__sub,
+  body .view .card .muted { line-height: 1.4; }
+  /* Controls remain comfortably tappable despite reduced visual chrome. */
+  body .bottomnav .navbtn,
+  body #viewAssets .portfolio-kind-seg .seg__btn,
+  body #viewAssets .portfolio-add { min-height: 44px!important; }
+}
