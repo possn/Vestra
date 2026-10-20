@@ -1,9 +1,9 @@
 /* Vestra Service Worker v11.18 — force Crypto market runtime generation. */
-const CACHE_NAME = "vestra-cache-v243";
+const CACHE_NAME = "vestra-cache-v244";
 const NETWORK_TIMEOUT_MS = 5000;
 const PRECACHE_CONCURRENCY = 6;
 const APP_SHELL = [
-  "./", "./index.html", "./styles.css", "./market.css", "./vestra-iphone-canonical-scale.css", "./app.js",
+  "./", "./index.html", "./styles.css", "./market.css", "./vestra-iphone-canonical-scale.css", "./vestra-portfolio-contrast-p0.css", "./app.js",
   "./app-utils.js", "./app-feedback.js", "./app-storage.js", "./app-asset-identity.js", "./app-chart-loader.js", "./app-ui-core.js", "./app-xlsx-loader.js",
   "./app-broker-normalization.js", "./app-xtb-normalization.js", "./app-broker-identity-data.js",
   "./app-broker-parsing-core.js", "./app-file-parsing.js", "./app-broker-import-loader.js", "./app-broker-workbook.js", "./app-broker-parsers.js",
