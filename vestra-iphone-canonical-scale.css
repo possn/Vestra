@@ -357,3 +357,57 @@
  html body #viewAssets .portfolio-glance__main {padding:8px 10px!important}
  html body #viewAssets #portfolioHeroTitle {font-size:24px!important}
 }
+
+/* Canonical iPhone navigation geometry — one grid cell per destination.
+   Never translate an active icon separately from its touch target. */
+@media (max-width:600px) {
+  html body .bottomnav {
+    left:0!important; right:0!important; width:100%!important;
+    max-width:100%!important; transform:none!important;
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:0!important;box-sizing:border-box!important;
+    padding:3px 6px max(4px,env(safe-area-inset-bottom))!important;
+    will-change:auto!important;
+  }
+  html body .bottomnav .navbtn {
+    position:relative!important;min-width:0!important;min-height:52px!important;
+    display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;
+    gap:3px!important;padding:4px 0!important;
+    transform:none!important;box-sizing:border-box!important;
+    background:transparent!important;will-change:auto!important;
+  }
+  html body .bottomnav .navbtn:active {transform:none!important}
+  html body .bottomnav .navbtn .navico,
+  html body .bottomnav .navbtn--active .navico {
+    box-sizing:border-box!important;position:static!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:31px!important;height:31px!important;min-width:31px!important;
+    flex:0 0 31px!important;margin:0 auto!important;
+    transform:none!important;padding:0!important;box-shadow:none!important;
+    border-radius:11px!important;font-size:19px!important;line-height:1!important;
+  }
+  html body .bottomnav .navbtn--active {background:transparent!important}
+  html body .bottomnav .navbtn--active .navico {
+    background:#25534a!important;color:#e7f4ec!important;
+  }
+  html body .bottomnav .navlbl {
+    margin:0!important;text-align:center!important;line-height:1.1!important;
+    font-size:10px!important;
+  }
+  html body #viewMarket .market-tools,
+  html body #viewMarket .market-portfolio-access {
+    min-width:0!important;max-width:100%!important;padding:8px 10px!important;
+    box-sizing:border-box!important;
+  }
+}
+/* Chapter headings: normalize semantic h2/h3 and strong independently of preview state. */
+@media (max-width:600px) {
+  html body #v2-wealth-chapter h2,
+  html body #v2-history-chapter > strong,
+  html body #v2-tools-chapter .v2-home-secondary-hub__intro h3 {
+    font-family:Georgia,serif!important;font-size:26px!important;
+    font-weight:500!important;line-height:1.1!important;
+    letter-spacing:-.04em!important;
+  }
+}
