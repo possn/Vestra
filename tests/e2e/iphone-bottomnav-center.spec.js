@@ -11,12 +11,12 @@ test('iPhone: Market active indicator is centered in its own touch target',async
     const style=getComputedStyle(icon);
     return {delta:Math.abs((b.left+b.right-i.left-i.right)/2),
       navLeft:n.left,navRight:n.right,viewport:innerWidth,
-      transform:style.transform,touchHeight:b.height,shadow:style.boxShadow};
+      transform:style.transform,touchHeight:b.height,shadow:style.boxShadow,inlineStyle:icon.getAttribute('style'),\n      ruleHints:[...document.styleSheets].flatMap(sheet=>{try{return [...sheet.cssRules].filter(rule=>rule.cssText&&rule.cssText.includes('89, 181, 151')).map(rule=>({href:sheet.href,rule:rule.cssText.slice(0,300)}));}catch{return []}}).slice(0,8)};
   });
   expect(geometry.delta).toBeLessThanOrEqual(1);
   expect(geometry.navLeft).toBeGreaterThanOrEqual(-1);
   expect(geometry.navRight).toBeLessThanOrEqual(geometry.viewport+1);
   expect(geometry.transform).toBe('none');
   expect(geometry.touchHeight).toBeGreaterThanOrEqual(44);
-  expect(geometry.shadow).toBe('none');
+  expect(geometry.shadow,JSON.stringify(geometry)).toBe('none');
 });
