@@ -47,3 +47,35 @@
  .view:not(#viewDashboard):not(#viewAssets):not(#viewMarket) .card__title {font-size:18px!important}
  .view:not(#viewDashboard):not(#viewAssets):not(#viewMarket) .view-intro h2 {font-size:25px!important}
 }
+
+/* Only compatibility rules for newer iPhone components absent from #1394.
+   Keep historical typography, spacing and semantic structure unchanged. */
+@media(max-width:600px){
+  html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline{
+    font-size:26px!important;
+  }
+  html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-section-top h3{
+    font-size:14px!important;
+  }
+  html body #viewAssets #portfolioHeroTitle{font-size:26px!important}
+  html body #viewAssets #portfolioTotalValue{font-size:28px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket#viewMarket .market-hero-simple h2{
+    font-size:25px!important;line-height:1.13!important;
+  }
+  html body #viewMarket#viewMarket .market-search input{
+    font-size:13px!important;min-height:44px!important;height:44px!important;
+  }
+  html body #viewMarket#viewMarket .market-mode-grid{
+    display:flex!important;flex-wrap:nowrap!important;
+    overflow-x:auto!important;overflow-y:hidden!important;
+    width:calc(100vw - 52px)!important;max-width:calc(100vw - 52px)!important;
+    min-width:0!important;box-sizing:border-box!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  html body #viewMarket#viewMarket .market-mode-grid .market-mode{
+    flex:0 0 auto!important;min-height:44px!important;
+  }
+  html body .market-sheet .market-metrics{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
