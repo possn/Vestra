@@ -310,3 +310,12 @@
    white-space:normal!important;overflow-wrap:anywhere;
  }
 }
+
+/* Verified WebKit regression: parent market layout can be > viewport.
+   A percentage max-width is therefore insufficient. Use viewport CSS pixels. */
+@media(max-width:600px){
+ html body #viewMarket#viewMarket#viewMarket#viewMarket .market-mode-grid{
+  width:calc(100vw - 52px)!important;max-width:calc(100vw - 52px)!important;
+  flex:0 1 auto!important;
+ }
+}
