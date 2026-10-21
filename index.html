@@ -1894,7 +1894,7 @@
         refresh.type = 'button';
         refresh.textContent = 'Atualizar';
         refresh.style.cssText = 'min-height:44px;padding:8px 12px;border:0;border-radius:10px;background:#164b45;color:white;font:700 13px system-ui,sans-serif';
-        refresh.addEventListener('click', () => location.reload());
+        refresh.addEventListener('click', () => window.location.assign(window.location.href));
         notice.append(message, refresh);
         document.body.appendChild(notice);
       } catch (_) {
