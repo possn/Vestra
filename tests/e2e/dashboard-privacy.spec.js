@@ -19,6 +19,9 @@ test('iPhone/WebKit: portfolio privacy toggles immediately without a Dashboard r
       currency: 'EUR',
     }];
     state.liabilities = [];
+    // Synthetic portfolio changes bypass normal import/state invalidation.
+    // Recompute the production totals before asserting the privacy toggle.
+    if (typeof invalidateRenderCache === 'function') invalidateRenderCache();
     if (typeof renderDashboard === 'function') renderDashboard();
 
     window.__privacyRenderCalls = 0;
