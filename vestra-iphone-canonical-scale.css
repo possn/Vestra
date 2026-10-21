@@ -320,17 +320,40 @@
  }
 }
 
-/* Global iPhone density: optical zoom-out with compensated layout width.
-   CSS zoom participates in layout, unlike transform:scale, so hit testing
-   stays aligned with content. Use 0.92 rather than shrinking text below
-   comfortable reading sizes. Exclude splash/fullscreen overlays. */
-@supports (zoom: 0.92) {
- @media (max-width:600px) {
-   html body {zoom:.92;width:calc(100% / .92);min-width:0;}
-   html body .topbar,html body .bottomnav {box-sizing:border-box;}
-   html body #viewMarket#viewMarket#viewMarket#viewMarket .market-mode-grid{
-     max-width:calc(100vw / .92 - 52px)!important;
-     width:calc(100vw / .92 - 52px)!important;
-   }
+
+/* Global compact reading rhythm without CSS zoom or transforms.
+   Native hit-testing / safe area / viewport coordinates stay unchanged. */
+@media(max-width:600px){
+ html body {font-size:13px!important;line-height:1.37!important}
+ html body :is(.card,.market-section,.market-tools,.vi-editorial-tile) {
+   border-radius:14px!important;
  }
+ html body :is(.card,.market-section) {padding:10px!important;}
+ html body :is(.card__title,.market-section__head h3,.market-tools summary) {
+   font-size:14px!important;line-height:1.22!important;
+ }
+ html body :is(.card p,.market-section__head p,.market-tools p) {
+   font-size:11px!important;line-height:1.4!important;
+ }
+ html body :is(.seg__btn,.market-chip,.market-mode) {
+   font-size:11px!important;
+ }
+ html body .topbar {min-height:50px!important;padding:4px 10px!important}
+ html body .topbar .brand__title {font-size:22px!important}
+ html body .bottomnav .navlbl {font-size:9px!important}
+ html body .bottomnav .navico {width:26px!important;height:26px!important}
+ html body .bottomnav .navbtn {min-height:44px!important}
+ html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell {
+   gap:7px!important;
+ }
+ html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline {
+   font-size:24px!important;line-height:1.1!important;
+ }
+ html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck {
+   font-size:12px!important;line-height:1.4!important;
+ }
+ html body #viewAssets #portfolioTotalValue {font-size:27px!important}
+ html body #viewAssets .portfolio-glance {padding:7px!important;gap:5px!important}
+ html body #viewAssets .portfolio-glance__main {padding:8px 10px!important}
+ html body #viewAssets #portfolioHeroTitle {font-size:24px!important}
 }
