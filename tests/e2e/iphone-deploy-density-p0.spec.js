@@ -3,7 +3,7 @@ const fs=require('node:fs');
 test('PWA requests new compact generation and forbids cross-version CSS fallback',async({page})=>{
  await page.goto('/index.html');
  const links=await page.locator('link[rel="stylesheet"]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('href')));
- expect(links).toContain('vestra-iphone-canonical-scale.css?v=20261021-splash-compact');
+ expect(links).toContain('vestra-iphone-canonical-scale.css?v=20261021-market-compact');
  const sw=fs.readFileSync('sw.js','utf8');
  expect(sw).toMatch(/const CACHE_NAME = "vestra-cache-v\d+";/);
  expect(sw).toContain('if (new URL(request.url).search) return undefined');
@@ -37,4 +37,19 @@ test('iPhone splash identity remains compact without zoom',async({page})=>{
  expect(css.mark).toBeLessThanOrEqual(68);
  expect(css.brand).toBeLessThanOrEqual(33);
  expect(css.tagline).toBeLessThanOrEqual(10);
+});
+
+test('iPhone active Market route renders compact headline, search and tools',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ await page.locator('#navMarket').click();
+ await expect(page.locator('#viewMarket')).toBeVisible();
+ const sizes=await page.evaluate(()=>{
+  const get=s=>{const el=document.querySelector(s);if(!el)return null;const st=getComputedStyle(el);return {size:parseFloat(st.fontSize),height:el.getBoundingClientRect().height};};
+  return {hero:get('#viewMarket .market-hero-simple h2'),search:get('#viewMarket .market-search input')};
+ });
+ expect(sizes.hero).not.toBeNull();
+ expect(sizes.hero.size).toBeLessThanOrEqual(29);
+ expect(sizes.search).not.toBeNull();
+ expect(sizes.search.size).toBeLessThanOrEqual(15);
 });
