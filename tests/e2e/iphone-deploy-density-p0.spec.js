@@ -69,3 +69,18 @@ test('Market filter rail remains within phone viewport and is scrollable to last
  await last.scrollIntoViewIfNeeded();
  await expect(last).toBeInViewport();
 });
+
+test('global iPhone view is scaled down without viewport or navigation overflow',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ const result=await page.evaluate(()=>{
+  const z=parseFloat(getComputedStyle(document.body).zoom)||1;
+  const bar=document.querySelector('.topbar').getBoundingClientRect();
+  const bottom=document.querySelector('.bottomnav').getBoundingClientRect();
+  return {zoom:z,headerRight:bar.right,footerRight:bottom.right,viewport:innerWidth};
+ });
+ expect(result.zoom).toBeLessThanOrEqual(.93);
+ expect(result.zoom).toBeGreaterThanOrEqual(.89);
+ expect(result.headerRight).toBeLessThanOrEqual(result.viewport+3);
+ expect(result.footerRight).toBeLessThanOrEqual(result.viewport+3);
+});
