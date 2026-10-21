@@ -319,3 +319,18 @@
   flex:0 1 auto!important;
  }
 }
+
+/* Global iPhone density: optical zoom-out with compensated layout width.
+   CSS zoom participates in layout, unlike transform:scale, so hit testing
+   stays aligned with content. Use 0.92 rather than shrinking text below
+   comfortable reading sizes. Exclude splash/fullscreen overlays. */
+@supports (zoom: 0.92) {
+ @media (max-width:600px) {
+   html body {zoom:.92;width:calc(100% / .92);min-width:0;}
+   html body .topbar,html body .bottomnav {box-sizing:border-box;}
+   html body #viewMarket#viewMarket#viewMarket#viewMarket .market-mode-grid{
+     max-width:calc(100vw / .92 - 52px)!important;
+     width:calc(100vw / .92 - 52px)!important;
+   }
+ }
+}
