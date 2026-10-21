@@ -70,17 +70,20 @@ test('Market filter rail remains within phone viewport and is scrollable to last
  await expect(last).toBeInViewport();
 });
 
-test('global iPhone view is scaled down without viewport or navigation overflow',async({page})=>{
+
+test('compact iPhone global rhythm does not zoom document or clip navigation',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.goto('/index.html');
- const result=await page.evaluate(()=>{
-  const z=parseFloat(getComputedStyle(document.body).zoom)||1;
-  const bar=document.querySelector('.topbar').getBoundingClientRect();
-  const bottom=document.querySelector('.bottomnav').getBoundingClientRect();
-  return {zoom:z,headerRight:bar.right,footerRight:bottom.right,viewport:innerWidth};
+ const v=await page.evaluate(()=>{
+  const get=el=>el.getBoundingClientRect();
+  const nav=document.querySelector('.bottomnav');
+  const bar=document.querySelector('.topbar');
+  return {zoom:parseFloat(getComputedStyle(document.body).zoom)||1,
+    barRight:get(bar).right,navRight:get(nav).right,viewport:innerWidth,
+    brandSize:parseFloat(getComputedStyle(document.querySelector('.topbar .brand__title')).fontSize)};
  });
- expect(result.zoom).toBeLessThanOrEqual(.93);
- expect(result.zoom).toBeGreaterThanOrEqual(.89);
- expect(result.headerRight).toBeLessThanOrEqual(result.viewport+3);
- expect(result.footerRight).toBeLessThanOrEqual(result.viewport+3);
+ expect(v.zoom).toBe(1);
+ expect(v.barRight).toBeLessThanOrEqual(v.viewport+2);
+ expect(v.navRight).toBeLessThanOrEqual(v.viewport+2);
+ expect(v.brandSize).toBeLessThanOrEqual(25);
 });
