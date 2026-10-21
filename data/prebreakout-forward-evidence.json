@@ -3,7 +3,7 @@
   "evaluation_method": "adjusted_daily_close_after_publication",
   "cohort_policy": "first_immutable_publication_per_ticker_and_stage",
   "historical_only": true,
-  "cohort_count": 13,
+  "cohort_count": 14,
   "stage_evidence": {
     "schema": "vestra_prebreakout_stage_evidence_v1",
     "method": "observed_point_in_time_adjusted_close",
@@ -12,32 +12,32 @@
       "compressão": {
         "5": {
           "n": 0,
-          "n_missing": 11,
-          "n_observations": 11,
+          "n_missing": 12,
+          "n_observations": 12,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
           "n": 0,
-          "n_missing": 11,
-          "n_observations": 11,
+          "n_missing": 12,
+          "n_observations": 12,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "20": {
           "n": 0,
-          "n_missing": 11,
-          "n_observations": 11,
+          "n_missing": 12,
+          "n_observations": 12,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "60": {
           "n": 0,
-          "n_missing": 11,
-          "n_observations": 11,
+          "n_missing": 12,
+          "n_observations": 12,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
@@ -223,8 +223,13 @@
     },
     {
       "ticker": "LH",
-      "entry": null,
-      "results": {},
+      "entry": "2026-10-20",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-19T15:32:27.897826+00:00",
       "signal_date": "2026-10-16",
       "stage": "compressão"
@@ -247,17 +252,30 @@
     },
     {
       "ticker": "TECH",
-      "entry": null,
-      "results": {},
+      "entry": "2026-10-20",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-19T21:41:39.535321+00:00",
       "signal_date": "2026-10-16",
       "stage": "compressão"
+    },
+    {
+      "ticker": "LOGN.SW",
+      "stage": "compressão",
+      "published_at": "2026-10-20T14:26:56.947259+00:00",
+      "signal_date": "2026-10-19",
+      "entry": null,
+      "results": {}
     }
   ],
   "price_metadata": {
     "provider": "yahoo_finance",
     "auto_adjust": true,
-    "completed_before_utc_date": "2026-10-20",
+    "completed_before_utc_date": "2026-10-21",
     "benchmark": "SPY",
     "downloaded": 10,
     "failed": {
