@@ -357,3 +357,49 @@
  html body #viewAssets .portfolio-glance__main {padding:8px 10px!important}
  html body #viewAssets #portfolioHeroTitle {font-size:24px!important}
 }
+
+/* iPhone bottom navigation: center the active state on its own grid cell.
+   Prevent transformed icon/glow and tap-state transforms shifting emphasis. */
+@media(max-width:600px){
+ html body .bottomnav {
+   left:0!important;right:0!important;transform:none!important;
+   width:100%!important;max-width:100%!important;box-sizing:border-box!important;
+   display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+   gap:0!important;padding:3px 6px max(4px,env(safe-area-inset-bottom))!important;
+   will-change:auto!important;
+ }
+ html body .bottomnav .navbtn {
+   position:relative!important;min-width:0!important;box-sizing:border-box!important;
+   display:flex!important;flex-direction:column!important;align-items:center!important;
+   justify-content:center!important;gap:3px!important;min-height:52px!important;
+   padding:4px 0!important;transform:none!important;
+   background:transparent!important;border-radius:12px!important;
+   will-change:auto!important;
+ }
+ html body .bottomnav .navbtn:active {transform:none!important}
+ html body .bottomnav .navbtn .navico,
+ html body .bottomnav .navbtn--active .navico {
+   box-sizing:border-box!important;display:flex!important;align-items:center!important;
+   justify-content:center!important;margin:0 auto!important;
+   width:31px!important;height:31px!important;min-width:31px!important;
+   padding:0!important;transform:none!important;flex:0 0 31px!important;
+   border-radius:11px!important;font-size:19px!important;line-height:1!important;
+   position:static!important;
+ }
+ html body .bottomnav .navbtn--active {background:transparent!important}
+ html body .bottomnav .navbtn--active .navico {
+   background:#25534a!important;color:#e7f4ec!important;
+   box-shadow:none!important;
+ }
+ html body .bottomnav .navlbl {margin:0!important;text-align:center!important;line-height:1.1!important;font-size:10px!important;}
+ html body #viewMarket#viewMarket .market-shell>.market-section,
+ html body #viewMarket#viewMarket .market-tools,
+ html body #viewMarket#viewMarket .market-portfolio-access {
+   max-width:100%!important;min-width:0!important;
+ }
+ html body #viewMarket#viewMarket .market-tools,
+ html body #viewMarket#viewMarket .market-portfolio-access {
+   padding:8px 10px!important;
+ }
+ html body #viewMarket#viewMarket .market-tool-btn {padding:7px 8px!important}
+}
