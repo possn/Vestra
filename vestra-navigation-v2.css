@@ -156,19 +156,3 @@ body .topbar :is(button,a):focus-visible{outline:2px solid #e2bf7a!important;out
 .sidebar__nav .sidenavbtn:hover{background:#22453b!important}
 .sidebar__divider{background:#34554b!important}
 .sidebar__nav .sidenavbtn:focus-visible,.sidebar__close:focus-visible{outline:2px solid #e0c48b!important;outline-offset:2px}
-
-/* iPhone density: restore restrained header/navigation geometry. */
-@media (max-width:600px) {
-  html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-  body .topbar,body:has(#viewDashboard.vi-preview-active) .topbar,
-  body:has(#viewMarket:not([hidden])) .topbar {
-    min-height:54px!important;padding:6px 12px!important;
-  }
-  body .topbar .brand__title,
-  body:has(#viewDashboard.vi-preview-active) .topbar .brand__title,
-  body:has(#viewMarket:not([hidden])) .topbar .brand__title {font-size:25px!important;}
-  body .bottomnav {padding-top:4px!important;padding-bottom:max(4px,env(safe-area-inset-bottom))!important;}
-  body .bottomnav .navbtn {min-height:50px!important;padding-block:4px!important;}
-  body .bottomnav .navico {width:34px!important;height:34px!important;}
-  body .bottomnav .navlbl {font-size:10px!important;line-height:1.15!important;}
-}
