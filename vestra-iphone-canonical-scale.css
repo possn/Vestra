@@ -82,3 +82,9 @@
 
 /* Preserve compact brand typography despite legacy navigation chrome rules. */
 @media(max-width:600px){html body .topbar .brand__title{font-size:24px!important}}
+
+/* WebKit: explicit selector precedence for the current topbar and dossier owners. */
+@media(max-width:600px){
+ html body .topbar .brand .brand__title{font-size:24px!important}
+ html body .market-sheet .market-sheet__panel .market-metrics{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
