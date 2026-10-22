@@ -13,7 +13,7 @@
  body .bottomnav .navlbl {font-size:10px!important;line-height:1.15!important}
  /* Home: canonical editorial blocks, not dormant older Dashboard components */
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell {gap:12px!important}
- #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline {font-size:clamp(28px,7.4vw,34px)!important;line-height:1.1!important}
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline {font-size:clamp(24px,6.3vw,28px)!important;line-height:1.1!important}
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck {font-size:15px!important;line-height:1.43!important}
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-sections>.vi-canonical-card {padding:12px 0!important}
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-section-top h3 {font-size:17px!important;line-height:1.2!important}
@@ -21,25 +21,25 @@
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-news-reading .vi-editorial-tile {padding:10px 0!important}
  /* Portfolio: actual native view and light cards */
  #viewAssets .portfolio-hero {padding:10px 0!important;gap:10px!important;min-height:0!important}
- #viewAssets #portfolioHeroTitle {font-size:30px!important;line-height:1.12!important}
+ #viewAssets #portfolioHeroTitle {font-size:25px!important;line-height:1.12!important}
  #viewAssets #portfolioHeroSub {font-size:13px!important}
  #viewAssets .card {padding:12px!important;margin-bottom:10px!important}
  #viewAssets .card__title {font-size:18px!important}
  #viewAssets .kpi {padding:10px!important}
  #viewAssets .kpi__v {font-size:clamp(20px,5.5vw,26px)!important}
- #viewAssets #portfolioTotalValue {font-size:clamp(31px,8.2vw,42px)!important}
+ #viewAssets #portfolioTotalValue {font-size:clamp(26px,7vw,33px)!important}
  #viewAssets .portfolio-glance {padding:12px!important;gap:8px!important}
  #viewAssets .portfolio-glance__stat {padding:10px!important}
  #viewAssets .seg__btn {padding:8px 10px!important;font-size:13px!important}
  /* Market: explicit owner wins legacy 40/46px hero rule. */
  body #viewMarket#viewMarket .market-hero-simple h2 {
-  font-size:34px!important;line-height:1.1!important
+  font-size:25px!important;line-height:1.1!important
  }
  body #viewMarket#viewMarket .market-hero-simple {
   padding:8px 0 10px!important;margin:4px 0 8px!important;overflow:visible!important
  }
  body #viewMarket#viewMarket .market-hero-simple p {font-size:13px!important;line-height:1.4!important}
- body #viewMarket#viewMarket .market-search input {font-size:15px!important;min-height:48px!important}
+ body #viewMarket#viewMarket .market-search input {font-size:13px!important;min-height:44px!important}
  body #viewMarket#viewMarket .market-mode {min-height:38px!important;padding:7px 12px!important;font-size:13px!important}
  body #viewMarket#viewMarket .market-tools {padding:12px!important}
  /* Remaining native views */
@@ -58,9 +58,9 @@
     font-size:14px!important;
   }
   html body #viewAssets #portfolioHeroTitle{font-size:26px!important}
-  html body #viewAssets #portfolioTotalValue{font-size:28px!important}
+  html body #viewAssets #portfolioTotalValue{font-size:27px!important}
   html body #viewMarket#viewMarket#viewMarket#viewMarket .market-hero-simple h2{
-    font-size:25px!important;line-height:1.13!important;
+    font-size:24px!important;line-height:1.13!important;
   }
   html body #viewMarket#viewMarket#viewMarket#viewMarket .market-search input{
     font-size:13px!important;min-height:44px!important;height:44px!important;
@@ -99,9 +99,9 @@
 
 /* Patrimonial chapters: same actual rendered typography in WebKit, independent of view nesting. */
 @media(max-width:600px) {
- html body #v2-wealth-chapter#v2-wealth-chapter h2,
- html body #v2-history-chapter#v2-history-chapter > strong,
- html body #v2-tools-chapter#v2-tools-chapter .v2-home-secondary-hub__intro h3 {
+ html body #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-wealth-chapter#v2-wealth-chapter h2,
+ html body #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-history-chapter#v2-history-chapter > strong,
+ html body #viewDashboard.vi-preview-active:has(#vestraIntelligenceHome[data-legacy-open="true"]) #v2-tools-chapter#v2-tools-chapter .v2-home-secondary-hub__intro h3 {
    font:500 20px/1.15 Georgia,serif!important;
    letter-spacing:-.03em!important;
  }
