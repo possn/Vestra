@@ -2074,8 +2074,18 @@ body{
 .market-crypto-regime-change{border-style:dashed}
 @media(max-width:560px){.market-crypto-history-grid{grid-template-columns:1fr 1fr}}
 
-/* Splash P0: explicit independent rows prevent text overlapping logo during iOS animations. */
-.vestra-splash#appLoadingOverlay{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:78px auto auto!important;align-content:center!important;justify-items:center!important;row-gap:14px!important}
-.vestra-splash#appLoadingOverlay .vestra-splash__mark{grid-row:1!important;align-self:center!important;margin:0!important;transform:none!important}
-.vestra-splash#appLoadingOverlay .vestra-splash__brand{grid-row:2!important;margin:0!important;line-height:1.2!important;position:static!important;transform:none!important}
-.vestra-splash#appLoadingOverlay .vestra-splash__tagline{grid-row:3!important;margin:0!important;line-height:1.4!important;position:static!important;transform:none!important;text-align:center!important}
+/* Splash P0: vertical separation without overriding the runtime display:none exit.
+   The premium watchdog owns display:flex and the timed fade lifecycle. */
+.vestra-splash#appLoadingOverlay{
+  gap:14px!important;
+}
+.vestra-splash#appLoadingOverlay .vestra-splash__mark,
+.vestra-splash#appLoadingOverlay .vestra-splash__brand,
+.vestra-splash#appLoadingOverlay .vestra-splash__tagline{
+  position:relative!important;flex-shrink:0!important;
+  transform:none!important;
+}
+.vestra-splash#appLoadingOverlay .vestra-splash__brand,
+.vestra-splash#appLoadingOverlay .vestra-splash__tagline{
+  line-height:1.25!important;text-align:center!important;
+}
