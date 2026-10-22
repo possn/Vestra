@@ -7,7 +7,7 @@ test('iPhone: app-wide compact content contract across every native view',async(
   for(const id of ['viewDashboard','viewAssets','viewCashflow','viewMarket','viewDividends','viewAnalysis','viewSettings']){
    const view=document.getElementById(id);
    const style=getComputedStyle(view);
-   const cards=[...view.querySelectorAll('.card')].slice(0,3).map(el=>({padding:parseFloat(getComputedStyle(el).paddingLeft),radius:parseFloat(getComputedStyle(el).borderTopLeftRadius)}));
+   const cards=[...view.querySelectorAll('.card')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0;}).slice(0,3).map(el=>({padding:parseFloat(getComputedStyle(el).paddingLeft),radius:parseFloat(getComputedStyle(el).borderTopLeftRadius)}));
    out.push({id,exists:!!view,cssWidth:style.maxWidth,cards});
   }
   return {viewport:document.documentElement.clientWidth,layoutViewport:innerWidth,views:out};
