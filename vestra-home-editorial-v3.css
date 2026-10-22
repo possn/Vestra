@@ -193,25 +193,3 @@
   font-size:16px!important;line-height:1.5!important;
  }
 }
-
-/* iPhone: preserve editorial typography without desktop-scale cards and headlines. */
-@media (max-width:760px) {
-  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline {
-    font-size:clamp(30px,8vw,38px)!important;line-height:1.09!important;
-  }
-  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck {
-    font-size:15px!important;line-height:1.45!important;
-  }
-  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-card {
-    padding:13px!important;border-radius:16px!important;
-  }
-  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-card :is(h2,h3) {
-    font-size:clamp(23px,6vw,28px)!important;line-height:1.14!important;
-  }
-  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-editorial-tile {
-    padding-block:10px!important;
-  }
-  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-canonical-card :is(p,small) {
-    font-size:12px!important;line-height:1.4!important;
-  }
-}
