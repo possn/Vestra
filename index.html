@@ -112,11 +112,41 @@
 <body>
 <!-- Vestra launch mark — identity first, no progress chrome -->
 <div id="appLoadingOverlay" class="vestra-splash">
-  <div class="vestra-splash__mark" aria-hidden="true" style="width:66px!important;height:66px!important"><img alt="" height="62" src="vestra-minimal-mark.svg" width="62" style="width:62px!important;height:62px!important"/></div>
+  <div class="vestra-splash__mark" aria-hidden="true" style="width:66px!important;height:66px!important"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="62" height="62" focusable="false" aria-hidden="true"><path fill="#8e8579" d="M26 49c49-6 77 8 98 49 12 24 19 48 33 66 11 14 24 22 40 28-26 7-50 4-70-12-25-20-36-47-51-76C63 78 48 59 26 49Z"/><path fill="#cbc3b8" d="M221 65c-44-2-71 13-85 47-9 22-12 40-13 61 15-24 32-37 50-53 17-16 30-35 48-55Z"/></svg></div>
   <div class="vestra-splash__brand" style="font-size:32px!important;margin-top:18px!important">Vestra</div>
   <div class="vestra-splash__tagline" style="font-size:9px!important;margin-top:9px!important">Finance, made simple.</div>
   <div id="appLoadingMsg" class="vestra-splash__status" aria-live="polite">A iniciar…</div>
 </div>
+<script>
+/* Last-resort iOS startup release: independent of deferred modules and cached assets.
+   Never delete saved data and never expose unhydrated external-return portfolios. */
+(() => {
+  const splash = document.getElementById('appLoadingOverlay');
+  if (!splash) return;
+  setTimeout(() => {
+    if (splash.hidden || getComputedStyle(splash).display === 'none') return;
+    if (document.documentElement.dataset.externalReturnBootstrap === '1'
+      && window.__vestraAppHydrated !== true) {
+      const message = document.getElementById('appLoadingMsg');
+      if (message) {
+        message.style.cssText = 'position:static;width:auto;height:auto;overflow:visible;clip:auto;white-space:normal;text-align:center;margin-top:14px;color:#f4f0e6;font:13px system-ui';
+        message.textContent = 'A recuperar a sessão…';
+      }
+      return;
+    }
+    splash.classList.remove('vestra-splash--premium','vestra-splash--leaving','vestra-splash--copy-ready');
+    splash.style.setProperty('display','none','important');
+    splash.style.setProperty('pointer-events','none','important');
+    if (window.__vestraAppHydrated !== true) {
+      const alert = document.createElement('div');
+      alert.setAttribute('role','status');
+      alert.textContent = 'A interface iniciou em modo de recuperação. Os dados locais foram preservados.';
+      alert.style.cssText = 'position:fixed;z-index:10000;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;padding:12px;border-radius:12px;background:#eff3ed;color:#17343b;font:13px/1.4 system-ui';
+      document.body.appendChild(alert);
+    }
+  }, 4200);
+})();
+</script>
 <header class="topbar">
 <button aria-controls="sidebar" aria-expanded="false" aria-label="Menu" class="btn btn--ghost sidebar-toggle" id="btnSidebarToggle" style="padding:10px 12px;border-radius:14px;font-size:18px">☰</button>
 <div class="brand">
