@@ -106,3 +106,26 @@
    letter-spacing:-.03em!important;
  }
 }
+
+/* Visual P0 — target the actual Market surfaces shown on iPhone, not only
+   the hero h2. Preserve touch target >=44px, splash and bottom navigation. */
+@media(max-width:600px) {
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-shell { gap:10px!important; }
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple {padding:5px 0 7px!important;margin:0!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple .market-kicker {font-size:9px!important;letter-spacing:.12em!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple h2 {font-size:24px!important;line-height:1.12!important;margin:3px 0 4px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple p {font-size:12px!important;line-height:1.35!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-search input {min-height:44px!important;height:44px!important;padding:9px 39px 9px 13px!important;border-radius:12px!important;font-size:13px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-mode-grid {gap:6px!important;margin:0!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-mode {min-height:44px!important;padding:7px 11px!important;border-radius:12px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-mode strong {font-size:12px!important;margin:0!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-tools {padding:9px!important;border-radius:15px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-tools summary {padding:6px 8px!important;font-size:13px!important;min-height:44px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-tools__body {padding:8px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-tools-grid {gap:6px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-tool-btn {padding:9px 10px!important;min-height:54px!important;border-radius:12px!important;font-size:12px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-tool-btn small {font-size:10px!important;line-height:1.3!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-section {padding:10px!important;border-radius:16px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-section__head h3 {font-size:14px!important}
+  html body:has(#viewMarket:not([hidden])) #viewMarket .market-section__head p {font-size:11px!important}
+}
