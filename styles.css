@@ -2073,3 +2073,19 @@ body{
 .market-crypto-history-grid strong{display:block;margin-top:2px;font-size:13px}
 .market-crypto-regime-change{border-style:dashed}
 @media(max-width:560px){.market-crypto-history-grid{grid-template-columns:1fr 1fr}}
+
+/* Splash P0: vertical separation without overriding the runtime display:none exit.
+   The premium watchdog owns display:flex and the timed fade lifecycle. */
+.vestra-splash#appLoadingOverlay{
+  gap:14px!important;
+}
+.vestra-splash#appLoadingOverlay .vestra-splash__mark,
+.vestra-splash#appLoadingOverlay .vestra-splash__brand,
+.vestra-splash#appLoadingOverlay .vestra-splash__tagline{
+  position:relative!important;flex-shrink:0!important;
+  transform:none!important;
+}
+.vestra-splash#appLoadingOverlay .vestra-splash__brand,
+.vestra-splash#appLoadingOverlay .vestra-splash__tagline{
+  line-height:1.25!important;text-align:center!important;
+}
