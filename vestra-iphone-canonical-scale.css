@@ -129,3 +129,35 @@
   html body:has(#viewMarket:not([hidden])) #viewMarket .market-section__head h3 {font-size:14px!important}
   html body:has(#viewMarket:not([hidden])) #viewMarket .market-section__head p {font-size:11px!important}
 }
+
+/* P0 APP-WIDE visual density: all actual content views, not just Market.
+   This avoids transforms/zoom (which break fixed navigation and hit targets).
+   Splash, topbar and bottom navigation are deliberately excluded. */
+@media(max-width:600px){
+ html body .main{padding-left:12px!important;padding-right:12px!important;min-width:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+ html body .main > .view{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+ html body .main > .view :is(.card,.market-section,.market-tools,.portfolio-glance,.market-portfolio-access,.market-scanner-entry){max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+ html body .main > .view .card{padding:12px!important;margin-bottom:10px!important;border-radius:15px!important}
+ html body .main > .view .card__title{font-size:15px!important;line-height:1.25!important}
+ html body .main > .view .card__muted{font-size:11px!important;line-height:1.35!important}
+ html body .main > .view .view-intro{padding:7px 0 10px!important;margin-bottom:9px!important;min-width:0!important}
+ html body .main > .view .view-intro h2{font-size:23px!important;line-height:1.14!important}
+ html body .main > .view .view-intro p{font-size:12px!important;line-height:1.4!important}
+ html body .main > .view :is(.item,.market-row){padding:10px!important;border-radius:12px!important;min-width:0!important}
+ html body .main > .view :is(.kpi,.kpi-quick__cell){padding:9px!important;min-width:0!important}
+ html body .main > .view .kpi__v{font-size:20px!important;line-height:1.14!important}
+ html body .main > .view :is(.card,.market-section,.portfolio-glance,.portfolio-list-card) :is(p,small){overflow-wrap:break-word}
+ html body .main > .view :is(.card,.market-section,.portfolio-glance,.portfolio-list-card) :is(h1,h2,h3,strong){max-width:100%;overflow-wrap:break-word}
+ html body .main > .view :is(input,select,textarea){max-width:100%;box-sizing:border-box}
+ html body .main > .view :is(.seg__btn,.market-chip,.market-tab){font-size:12px!important}
+ html body .main > .view :is(.btn,.market-tool-btn,.market-mode,.market-chip,.seg__btn){min-height:44px}
+ html body .main > .view :is(.market-mode-grid,.market-chipbar,.seg){max-width:100%;min-width:0}
+ html body #viewAssets .portfolio-hero{padding:8px 0!important}
+ html body #viewAssets #portfolioHeroTitle{font-size:24px!important}
+ html body #viewAssets .portfolio-glance{padding:10px!important;gap:7px!important}
+ html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell{gap:9px!important}
+ html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline{font-size:24px!important}
+ html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck{font-size:12px!important}
+ html body #viewMarket .market-portfolio-access :is(small,strong),
+ html body #viewMarket .market-scanner-entry :is(small,strong){overflow-wrap:anywhere!important;max-width:100%}
+}
