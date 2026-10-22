@@ -290,30 +290,3 @@ body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-oppo
 body:has(#viewMarket:not([hidden])) #viewMarket .market-section:has(.vestra-opportunity-lenses) [data-market-sector].is-active{
   background:#1e7068!important;color:#fff!important;-webkit-text-fill-color:#fff!important;
 }
-
-/* iPhone Market: restore pre-expansion dimensions and keep title clear of sticky chrome. */
-@media (max-width:600px) {
-  body:has(#viewMarket:not([hidden])) #viewMarket {
-    scroll-margin-top:72px;
-  }
-  body:has(#viewMarket:not([hidden])) #viewMarket .market-shell {gap:12px!important;}
-  body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple {
-    overflow:visible!important;padding:10px 0 10px!important;margin-top:6px!important;
-    margin-bottom:6px!important;min-height:0!important;
-  }
-  body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple h2 {
-    font-size:34px!important;line-height:1.12!important;letter-spacing:-.045em!important;
-  }
-  body:has(#viewMarket:not([hidden])) #viewMarket .market-hero-simple p {
-    font-size:13px!important;line-height:1.4!important;
-  }
-  body:has(#viewMarket:not([hidden])) #viewMarket .market-search input {
-    min-height:48px!important;font-size:15px!important;padding-block:11px!important;
-  }
-  body:has(#viewMarket:not([hidden])) #viewMarket .market-mode {
-    min-height:38px!important;padding:7px 12px!important;font-size:13px!important;
-  }
-  body:has(#viewMarket:not([hidden])) #viewMarket .market-tools {
-    padding:14px!important;
-  }
-}
