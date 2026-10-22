@@ -97,15 +97,12 @@
  }
 }
 
-/* iPhone patrimonial chapter headings: one compact typographic contract. */
-@media(max-width:600px){
- html body #viewDashboard #v2-wealth-chapter h2,
- html body #viewDashboard #v2-history-chapter > strong,
- html body #viewDashboard #v2-tools-chapter .v2-home-secondary-hub__intro h3{
-   font-family:Georgia,serif!important;
-   font-size:20px!important;
-   font-weight:500!important;
-   line-height:1.15!important;
+/* Patrimonial chapters: same actual rendered typography in WebKit, independent of view nesting. */
+@media(max-width:600px) {
+ html body #v2-wealth-chapter#v2-wealth-chapter h2,
+ html body #v2-history-chapter#v2-history-chapter > strong,
+ html body #v2-tools-chapter#v2-tools-chapter .v2-home-secondary-hub__intro h3 {
+   font:500 20px/1.15 Georgia,serif!important;
    letter-spacing:-.03em!important;
  }
 }
