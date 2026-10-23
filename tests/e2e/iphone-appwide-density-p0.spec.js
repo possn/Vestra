@@ -144,7 +144,7 @@ test('iPhone: every Market mode is visible without horizontal clipping',async({p
    scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,buttons};
  });
  expect(report.count).toBeGreaterThanOrEqual(6);
- expect(report.columns.trim().split(/\\s+/).length).toBe(3);
+ expect(report.columns.trim().split(/\s+/).length).toBe(3);
  expect(report.scrollWidth).toBeLessThanOrEqual(report.clientWidth+2);
  expect(report.areaRight).toBeLessThanOrEqual(report.viewport+2);
  for(const item of report.buttons){
