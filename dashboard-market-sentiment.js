@@ -231,12 +231,19 @@
     const weeks=Array.isArray(S.aaii?.weeks)?S.aaii.weeks.slice(0,5):[];
     if(!weeks.length) return '';
     const latest=weeks[0];
+    const latestMillis=Date.parse(String(latest.date||'')+'T00:00:00Z');
+    const ageDays=Number.isFinite(latestMillis)?Math.floor((Date.now()-latestMillis)/86400000):null;
+    const stale=ageDays==null||ageDays<0||ageDays>8;
+    const staleNotice=stale
+      ? '<p class="dms-aaii-note" role="status">Dados AAII desatualizados · última semana '+esc(aaiiDate(latest.date))+' · atualização por confirmar</p>'
+      : '';
     const spread=aaiiSpread(latest);
     const prior=weeks[1]?aaiiSpread(weeks[1]):null;
     const delta=spread!=null&&prior!=null?spread-prior:null;
     const dominant=num(latest?.bearish)>num(latest?.bullish)?'Predomina cautela':num(latest?.bullish)>num(latest?.bearish)?'Predomina optimismo':'Sentimento equilibrado';
     const previousWeeks=weeks.slice(1).map(aaiiWeekCard).join('');
     return `<section class="dms-aaii" aria-label="AAII Investor Sentiment Survey">
+      ${staleNotice}
       <div class="dms-aaii-head">
         <div><span>AAII · RETAIL SENTIMENT</span><strong>${dominant}</strong></div>
         <div class="dms-aaii-spread"><small>Bull–Bear</small><b>${aaiiSpreadText(spread)}</b></div>
