@@ -8,7 +8,7 @@ test('iPhone WebKit: context on charcoal and quick actions on ivory are legible'
  const evidence=await page.evaluate(()=>{
   const specs=[
    ['context title','.vi-market-reading .vi-section-top h3','light'],
-   ['context deck','.vi-market-reading [data-vi-canonical-market]','light'],
+   ['context label','.vi-market-reading [data-vi-canonical-label]','light'],
    ['quick actions','#dashboardQuickRecordsCard .card__title','dark'],
    ['quick explanation','#dashboardQuickRecordsCard .card__muted','dark']
   ];
@@ -41,7 +41,7 @@ test('iPhone WebKit: screenshot-reported headings meet 4.5:1 against their surfa
   const luminance=v=>v.reduce((total,n,i)=>{const c=n/255;return total+(c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4))*[.2126,.7152,.0722][i]},0);
   const checks=[
    ['context title','.vi-market-reading .vi-section-top h3',null],
-   ['context deck','.vi-market-reading [data-vi-canonical-market]',null],
+   ['context label','.vi-market-reading [data-vi-canonical-label]',null],
    ['quick title','#dashboardQuickRecordsCard .card__title','#dashboardQuickRecordsCard'],
    ['quick deck','#dashboardQuickRecordsCard .card__muted','#dashboardQuickRecordsCard']
   ];
