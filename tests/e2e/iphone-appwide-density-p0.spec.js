@@ -75,3 +75,13 @@ test('iPhone: readable native headings and constrained Market rail',async({page}
  expect(bounds.left).toBeGreaterThanOrEqual(0);
  expect(bounds.right).toBeLessThanOrEqual(Math.min(bounds.parentRight,bounds.viewport)+2);
 });
+
+// Physical iPhone audit: a single action to record a movement in Cashflow.
+test('iPhone: Cashflow has one visible movement action', async ({page}) => {
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ await page.waitForFunction(() => window.__vestraAppHydrated === true);
+ await page.evaluate(() => setView('cashflow'));
+ await expect(page.locator('#viewCashflow #btnAddTx')).toBeVisible();
+ await expect(page.locator('#viewCashflow button').filter({hasText:'+ Movimento'})).toHaveCount(1);
+});
