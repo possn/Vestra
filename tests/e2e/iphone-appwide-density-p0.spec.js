@@ -126,3 +126,30 @@ test('iPhone: portfolio summary uses editorial density without clipping values',
  expect(geometry.statsHeights.every(h=>h<=80)).toBe(true);
  expect(geometry.right).toBeLessThanOrEqual(geometry.viewport+2);
 });
+
+test('iPhone: every Market mode is visible without horizontal clipping',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ await page.locator('#navMarket').click();
+ const modes=page.locator('#viewMarket .market-mode-grid .market-mode');
+ await expect(modes.first()).toBeVisible();
+ const report=await page.locator('#viewMarket .market-mode-grid').evaluate(el=>{
+  const area=el.getBoundingClientRect();
+  const buttons=[...el.querySelectorAll('.market-mode')].map(x=>{
+   const b=x.getBoundingClientRect();
+   return {left:b.left,right:b.right,width:b.width};
+  });
+  return {count:buttons.length,columns:getComputedStyle(el).gridTemplateColumns,
+   viewport:document.documentElement.clientWidth,areaRight:area.right,
+   scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,buttons};
+ });
+ expect(report.count).toBeGreaterThanOrEqual(6);
+ expect(report.columns.trim().split(/\s+/).length).toBe(3);
+ expect(report.scrollWidth).toBeLessThanOrEqual(report.clientWidth+2);
+ expect(report.areaRight).toBeLessThanOrEqual(report.viewport+2);
+ for(const item of report.buttons){
+  expect(item.left).toBeGreaterThanOrEqual(0);
+  expect(item.right).toBeLessThanOrEqual(report.viewport+2);
+  expect(item.width).toBeGreaterThan(75);
+ }
+});

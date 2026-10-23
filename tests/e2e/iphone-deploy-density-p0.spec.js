@@ -3,7 +3,7 @@ const fs=require('node:fs');
 test('PWA requests new compact generation and forbids cross-version CSS fallback',async({page})=>{
  await page.goto('/index.html');
  const links=await page.locator('link[rel="stylesheet"]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('href')));
- expect(links).toContain('vestra-iphone-canonical-scale.css?v=20261023-container-rail');
+ expect(links).toContain('vestra-iphone-canonical-scale.css?v=20261023-visible-modes-grid');
  const sw=fs.readFileSync('sw.js','utf8');
  expect(sw).toMatch(/const CACHE_NAME = "vestra-cache-v\d+";/);
  expect(sw).toContain('if (new URL(request.url).search) return undefined');
