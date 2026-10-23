@@ -5,7 +5,7 @@ test('iPhone/WebKit: portfolio privacy toggles immediately without a Dashboard r
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.goto('/index.html');
-  await page.waitForFunction(() => typeof window.toggleDashboardPrivacy === 'function');
+  await page.waitForFunction(() => typeof window.toggleDashboardPrivacy === 'function' && window.__vestraAppHydrated === true);
 
   await page.evaluate(() => {
     if (!state.settings) state.settings = {};
@@ -36,7 +36,7 @@ test('iPhone/WebKit: portfolio privacy toggles immediately without a Dashboard r
   const net = page.locator('#kpiNet');
 
   await expect(button).toContainText('Ocultar valores');
-  await expect(net).toContainText('€');
+  await expect(net).toContainText('12'); // Validate the fixture before privacy; never accept a cached zero.
 
   const hiddenNow = await page.evaluate(() => {
     window.__privacyRenderCalls = 0;
