@@ -1,7 +1,7 @@
 {
   "schema_version": 6,
-  "generated_at": "2026-10-22T15:35:49.126519+00:00",
-  "rows_analysed": 1632,
+  "generated_at": "2026-10-23T12:02:26.629491+00:00",
+  "rows_analysed": 1615,
   "methodology": {
     "purpose": "diagnostic only; production weights are unchanged and fixed-weight missing-data handling is reconstructed explicitly",
     "source": "full stocks.json score_dimensions, so each specialist model is tested with its real production weight pack",
@@ -21,7 +21,7 @@
   "model_audits": [
     {
       "score_model": "general",
-      "n": 928,
+      "n": 917,
       "weights": {
         "Quality": 0.18,
         "Growth": 0.15,
@@ -33,328 +33,326 @@
         "Capital Allocation": 0.08,
         "Stability": 0.05
       },
-      "mean_production_score": 50.21,
-      "mean_raw_score": 50.71,
-      "mean_data_coverage_pct": 81.43,
-      "raw_vs_reconstructed_rank_spearman": 0.9654,
-      "published_vs_raw_rank_spearman": 0.9661,
+      "mean_production_score": 50.28,
+      "mean_raw_score": 50.82,
+      "mean_data_coverage_pct": 81.25,
+      "raw_vs_reconstructed_rank_spearman": 0.9611,
+      "published_vs_raw_rank_spearman": 0.9616,
       "dimension_coverage": {
         "Quality": {
-          "present": 928,
+          "present": 917,
           "coverage_pct": 100.0
         },
         "Growth": {
-          "present": 887,
+          "present": 877,
           "coverage_pct": 95.6
         },
         "Balance": {
-          "present": 927,
-          "coverage_pct": 99.9
+          "present": 917,
+          "coverage_pct": 100.0
         },
         "Cash Flow": {
-          "present": 912,
-          "coverage_pct": 98.3
+          "present": 902,
+          "coverage_pct": 98.4
         },
         "Valuation": {
-          "present": 902,
-          "coverage_pct": 97.2
+          "present": 893,
+          "coverage_pct": 97.4
         },
         "Execution": {
-          "present": 672,
-          "coverage_pct": 72.4
+          "present": 651,
+          "coverage_pct": 71.0
         },
         "Earnings Quality": {
-          "present": 677,
-          "coverage_pct": 73.0
+          "present": 656,
+          "coverage_pct": 71.5
         },
         "Capital Allocation": {
-          "present": 888,
-          "coverage_pct": 95.7
+          "present": 879,
+          "coverage_pct": 95.9
         },
         "Stability": {
-          "present": 863,
-          "coverage_pct": 93.0
+          "present": 857,
+          "coverage_pct": 93.5
         }
       },
       "structurally_unavailable_dimensions": [],
       "effective_dimension_count_distribution": {
-        "1": 1,
-        "2": 1,
-        "3": 6,
-        "4": 6,
-        "5": 18,
-        "6": 35,
-        "7": 186,
-        "8": 66,
-        "9": 609
+        "3": 1,
+        "4": 9,
+        "5": 22,
+        "6": 34,
+        "7": 198,
+        "8": 67,
+        "9": 586
       },
       "weight_pack_sum": 1.0,
       "missing_weight_handling": {
         "policy": "fixed_weights_neutral_50",
-        "mean_missing_weight_pct": 7.31,
-        "max_missing_weight_pct": 82.0,
-        "rows_missing_at_least_20pct_weight": 77,
-        "rows_missing_at_least_35pct_weight": 34,
-        "published_rows_missing_at_least_20pct_weight": 54,
-        "published_rows_missing_at_least_35pct_weight": 17,
+        "mean_missing_weight_pct": 7.5,
+        "max_missing_weight_pct": 60.0,
+        "rows_missing_at_least_20pct_weight": 82,
+        "rows_missing_at_least_35pct_weight": 32,
+        "published_rows_missing_at_least_20pct_weight": 62,
+        "published_rows_missing_at_least_35pct_weight": 20,
         "robust_rows_missing_at_least_35pct_weight": 1,
         "mean_max_observed_dimension_share_pct": 18.0,
         "max_observed_dimension_share_pct": 18.0,
         "dominant_observed_dimension_counts": {
-          "Quality": 928
+          "Quality": 917
         }
       },
       "dimension_correlations": [
         {
           "left": "Quality",
           "right": "Capital Allocation",
-          "pearson": 0.631,
-          "spearman": 0.599,
+          "pearson": 0.611,
+          "spearman": 0.581,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Execution",
-          "pearson": 0.464,
-          "spearman": 0.486,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Cash Flow",
-          "right": "Earnings Quality",
-          "pearson": 0.396,
-          "spearman": 0.429,
+          "pearson": 0.433,
+          "spearman": 0.456,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
           "right": "Capital Allocation",
-          "pearson": 0.588,
-          "spearman": 0.423,
+          "pearson": 0.591,
+          "spearman": 0.427,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Cash Flow",
+          "right": "Earnings Quality",
+          "pearson": 0.358,
+          "spearman": 0.414,
           "potential_redundancy": false
         },
         {
           "left": "Quality",
           "right": "Cash Flow",
-          "pearson": 0.551,
-          "spearman": 0.346,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Quality",
-          "right": "Stability",
-          "pearson": 0.258,
-          "spearman": 0.242,
+          "pearson": 0.541,
+          "spearman": 0.328,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
           "right": "Cash Flow",
-          "pearson": -0.255,
-          "spearman": -0.239,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Cash Flow",
-          "right": "Stability",
-          "pearson": 0.283,
-          "spearman": 0.234,
+          "pearson": -0.249,
+          "spearman": -0.235,
           "potential_redundancy": false
         },
         {
           "left": "Quality",
           "right": "Valuation",
-          "pearson": -0.194,
-          "spearman": -0.218,
+          "pearson": -0.207,
+          "spearman": -0.231,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Cash Flow",
+          "right": "Stability",
+          "pearson": 0.268,
+          "spearman": 0.231,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Quality",
+          "right": "Stability",
+          "pearson": 0.238,
+          "spearman": 0.225,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
           "right": "Valuation",
-          "pearson": -0.038,
-          "spearman": 0.169,
+          "pearson": -0.04,
+          "spearman": 0.167,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Balance",
+          "right": "Earnings Quality",
+          "pearson": -0.147,
+          "spearman": -0.157,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Balance",
           "pearson": 0.152,
-          "spearman": 0.15,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Earnings Quality",
-          "pearson": -0.141,
-          "spearman": -0.144,
+          "spearman": 0.155,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
           "right": "Stability",
-          "pearson": -0.135,
-          "spearman": -0.136,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Capital Allocation",
-          "right": "Stability",
-          "pearson": 0.171,
-          "spearman": 0.134,
+          "pearson": -0.142,
+          "spearman": -0.146,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Valuation",
-          "pearson": -0.118,
+          "pearson": -0.12,
+          "spearman": -0.137,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Valuation",
+          "right": "Capital Allocation",
+          "pearson": -0.13,
           "spearman": -0.124,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Cash Flow",
-          "pearson": -0.118,
-          "spearman": -0.123,
+          "pearson": -0.121,
+          "spearman": -0.122,
           "potential_redundancy": false
         },
         {
-          "left": "Valuation",
-          "right": "Capital Allocation",
-          "pearson": -0.122,
-          "spearman": -0.119,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Earnings Quality",
-          "right": "Capital Allocation",
-          "pearson": 0.091,
-          "spearman": 0.108,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Execution",
-          "right": "Capital Allocation",
-          "pearson": -0.122,
-          "spearman": -0.106,
+          "left": "Capital Allocation",
+          "right": "Stability",
+          "pearson": 0.153,
+          "spearman": 0.12,
           "potential_redundancy": false
         },
         {
           "left": "Quality",
           "right": "Growth",
-          "pearson": 0.079,
-          "spearman": 0.105,
+          "pearson": 0.078,
+          "spearman": 0.107,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Stability",
-          "pearson": -0.103,
+          "pearson": -0.107,
           "spearman": -0.1,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Execution",
-          "right": "Earnings Quality",
-          "pearson": -0.097,
-          "spearman": -0.081,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
           "right": "Execution",
-          "pearson": 0.081,
-          "spearman": 0.075,
+          "pearson": 0.097,
+          "spearman": 0.092,
           "potential_redundancy": false
         },
         {
-          "left": "Growth",
-          "right": "Earnings Quality",
-          "pearson": -0.049,
-          "spearman": -0.059,
+          "left": "Execution",
+          "right": "Capital Allocation",
+          "pearson": -0.099,
+          "spearman": -0.08,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Earnings Quality",
+          "right": "Capital Allocation",
+          "pearson": 0.065,
+          "spearman": 0.08,
           "potential_redundancy": false
         },
         {
           "left": "Execution",
           "right": "Stability",
-          "pearson": -0.059,
-          "spearman": -0.056,
+          "pearson": -0.065,
+          "spearman": -0.061,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Execution",
+          "right": "Earnings Quality",
+          "pearson": -0.075,
+          "spearman": -0.057,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Earnings Quality",
+          "pearson": -0.035,
+          "spearman": -0.053,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Valuation",
+          "right": "Earnings Quality",
+          "pearson": -0.072,
+          "spearman": -0.049,
           "potential_redundancy": false
         },
         {
           "left": "Quality",
           "right": "Balance",
-          "pearson": 0.007,
-          "spearman": 0.051,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Quality",
-          "right": "Earnings Quality",
-          "pearson": 0.056,
-          "spearman": 0.051,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Valuation",
-          "right": "Earnings Quality",
-          "pearson": -0.056,
-          "spearman": -0.041,
+          "pearson": 0.001,
+          "spearman": 0.047,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
           "right": "Valuation",
-          "pearson": 0.007,
-          "spearman": -0.036,
+          "pearson": 0.003,
+          "spearman": -0.044,
           "potential_redundancy": false
         },
         {
           "left": "Quality",
           "right": "Execution",
-          "pearson": 0.021,
-          "spearman": 0.033,
+          "pearson": 0.033,
+          "spearman": 0.042,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
           "right": "Execution",
-          "pearson": -0.06,
-          "spearman": -0.027,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Capital Allocation",
-          "pearson": -0.055,
-          "spearman": 0.026,
+          "pearson": -0.074,
+          "spearman": -0.038,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Execution",
-          "pearson": -0.004,
-          "spearman": -0.022,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Valuation",
-          "right": "Stability",
-          "pearson": 0.008,
-          "spearman": 0.013,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Earnings Quality",
-          "right": "Stability",
-          "pearson": 0.029,
-          "spearman": 0.013,
+          "pearson": -0.019,
+          "spearman": -0.038,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Capital Allocation",
-          "pearson": -0.037,
-          "spearman": 0.007,
+          "pearson": -0.025,
+          "spearman": 0.033,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Earnings Quality",
+          "right": "Stability",
+          "pearson": 0.056,
+          "spearman": 0.032,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Balance",
+          "right": "Capital Allocation",
+          "pearson": -0.047,
+          "spearman": 0.025,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Quality",
+          "right": "Earnings Quality",
+          "pearson": 0.015,
+          "spearman": 0.012,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Valuation",
+          "right": "Stability",
+          "pearson": 0.005,
+          "spearman": 0.011,
           "potential_redundancy": false
         }
       ],
@@ -362,226 +360,226 @@
         {
           "dimension": "Quality",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9245,
-          "top_decile_jaccard": 0.6757
+          "rank_spearman": 0.9192,
+          "top_decile_jaccard": 0.6283
         },
         {
           "dimension": "Quality",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9494,
-          "top_decile_jaccard": 0.7885
+          "rank_spearman": 0.9444,
+          "top_decile_jaccard": 0.7524
         },
         {
           "dimension": "Quality",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9584,
-          "top_decile_jaccard": 0.86
+          "rank_spearman": 0.954,
+          "top_decile_jaccard": 0.84
         },
         {
           "dimension": "Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9552,
-          "top_decile_jaccard": 0.8416
+          "rank_spearman": 0.9512,
+          "top_decile_jaccard": 0.8039
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.949,
-          "top_decile_jaccard": 0.6909
+          "rank_spearman": 0.948,
+          "top_decile_jaccard": 0.7196
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9582,
-          "top_decile_jaccard": 0.8058
-        },
-        {
-          "dimension": "Growth",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9491,
-          "top_decile_jaccard": 0.8416
-        },
-        {
-          "dimension": "Growth",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9299,
-          "top_decile_jaccard": 0.7885
-        },
-        {
-          "dimension": "Balance",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9497,
-          "top_decile_jaccard": 0.7714
-        },
-        {
-          "dimension": "Balance",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9565,
-          "top_decile_jaccard": 0.8416
-        },
-        {
-          "dimension": "Balance",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9528,
-          "top_decile_jaccard": 0.8058
-        },
-        {
-          "dimension": "Balance",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9419,
-          "top_decile_jaccard": 0.7222
-        },
-        {
-          "dimension": "Cash Flow",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9401,
-          "top_decile_jaccard": 0.8058
-        },
-        {
-          "dimension": "Cash Flow",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.952,
-          "top_decile_jaccard": 0.8416
-        },
-        {
-          "dimension": "Cash Flow",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9582,
-          "top_decile_jaccard": 0.86
-        },
-        {
-          "dimension": "Cash Flow",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9569,
-          "top_decile_jaccard": 0.8058
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9509,
-          "top_decile_jaccard": 0.8058
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9566,
-          "top_decile_jaccard": 0.86
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.953,
-          "top_decile_jaccard": 0.8235
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9418,
-          "top_decile_jaccard": 0.7064
-        },
-        {
-          "dimension": "Execution",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9558,
-          "top_decile_jaccard": 0.8058
-        },
-        {
-          "dimension": "Execution",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9577,
-          "top_decile_jaccard": 0.8416
-        },
-        {
-          "dimension": "Execution",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9535,
-          "top_decile_jaccard": 0.8416
-        },
-        {
-          "dimension": "Execution",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9458,
-          "top_decile_jaccard": 0.7885
-        },
-        {
-          "dimension": "Earnings Quality",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9542,
-          "top_decile_jaccard": 0.8235
-        },
-        {
-          "dimension": "Earnings Quality",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9566,
-          "top_decile_jaccard": 0.8416
-        },
-        {
-          "dimension": "Earnings Quality",
-          "weight_multiplier": 1.2,
           "rank_spearman": 0.955,
-          "top_decile_jaccard": 0.86
+          "top_decile_jaccard": 0.8218
+        },
+        {
+          "dimension": "Growth",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.943,
+          "top_decile_jaccard": 0.7864
+        },
+        {
+          "dimension": "Growth",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.922,
+          "top_decile_jaccard": 0.7692
+        },
+        {
+          "dimension": "Balance",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9444,
+          "top_decile_jaccard": 0.7692
+        },
+        {
+          "dimension": "Balance",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9517,
+          "top_decile_jaccard": 0.8218
+        },
+        {
+          "dimension": "Balance",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9485,
+          "top_decile_jaccard": 0.7524
+        },
+        {
+          "dimension": "Balance",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9376,
+          "top_decile_jaccard": 0.6881
+        },
+        {
+          "dimension": "Cash Flow",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9329,
+          "top_decile_jaccard": 0.7358
+        },
+        {
+          "dimension": "Cash Flow",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9465,
+          "top_decile_jaccard": 0.8039
+        },
+        {
+          "dimension": "Cash Flow",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9546,
+          "top_decile_jaccard": 0.8218
+        },
+        {
+          "dimension": "Cash Flow",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9548,
+          "top_decile_jaccard": 0.8039
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9472,
+          "top_decile_jaccard": 0.7864
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9525,
+          "top_decile_jaccard": 0.8218
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.948,
+          "top_decile_jaccard": 0.8039
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9364,
+          "top_decile_jaccard": 0.7037
+        },
+        {
+          "dimension": "Execution",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9518,
+          "top_decile_jaccard": 0.8039
+        },
+        {
+          "dimension": "Execution",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9531,
+          "top_decile_jaccard": 0.8218
+        },
+        {
+          "dimension": "Execution",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9486,
+          "top_decile_jaccard": 0.8039
+        },
+        {
+          "dimension": "Execution",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9409,
+          "top_decile_jaccard": 0.7692
+        },
+        {
+          "dimension": "Earnings Quality",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9493,
+          "top_decile_jaccard": 0.7864
+        },
+        {
+          "dimension": "Earnings Quality",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9517,
+          "top_decile_jaccard": 0.8218
+        },
+        {
+          "dimension": "Earnings Quality",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9507,
+          "top_decile_jaccard": 0.8218
         },
         {
           "dimension": "Earnings Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9509,
-          "top_decile_jaccard": 0.7383
+          "rank_spearman": 0.9466,
+          "top_decile_jaccard": 0.7524
         },
         {
           "dimension": "Capital Allocation",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.942,
-          "top_decile_jaccard": 0.7714
+          "rank_spearman": 0.9371,
+          "top_decile_jaccard": 0.7358
         },
         {
           "dimension": "Capital Allocation",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9521,
-          "top_decile_jaccard": 0.8416
+          "rank_spearman": 0.9475,
+          "top_decile_jaccard": 0.8218
         },
         {
           "dimension": "Capital Allocation",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9589,
-          "top_decile_jaccard": 0.86
+          "rank_spearman": 0.9544,
+          "top_decile_jaccard": 0.8218
         },
         {
           "dimension": "Capital Allocation",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9602,
-          "top_decile_jaccard": 0.8235
+          "rank_spearman": 0.956,
+          "top_decile_jaccard": 0.8039
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9515,
-          "top_decile_jaccard": 0.8235
+          "rank_spearman": 0.9466,
+          "top_decile_jaccard": 0.7864
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9551,
-          "top_decile_jaccard": 0.86
+          "rank_spearman": 0.9504,
+          "top_decile_jaccard": 0.8218
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9568,
-          "top_decile_jaccard": 0.86
+          "rank_spearman": 0.9524,
+          "top_decile_jaccard": 0.8218
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9557,
-          "top_decile_jaccard": 0.8235
+          "rank_spearman": 0.9513,
+          "top_decile_jaccard": 0.8039
         }
       ],
       "redundant_pair_count": 0,
-      "material_sensitivity_count": 12
+      "material_sensitivity_count": 20
     },
     {
       "score_model": "growth_tech",
-      "n": 204,
+      "n": 202,
       "weights": {
         "Quality": 0.2,
         "Growth": 0.22,
@@ -593,327 +591,327 @@
         "Capital Allocation": 0.05,
         "Stability": 0.03
       },
-      "mean_production_score": 51.5,
-      "mean_raw_score": 53.3,
-      "mean_data_coverage_pct": 83.43,
-      "raw_vs_reconstructed_rank_spearman": 0.929,
-      "published_vs_raw_rank_spearman": 0.9285,
+      "mean_production_score": 51.68,
+      "mean_raw_score": 53.34,
+      "mean_data_coverage_pct": 83.63,
+      "raw_vs_reconstructed_rank_spearman": 0.9311,
+      "published_vs_raw_rank_spearman": 0.9299,
       "dimension_coverage": {
         "Quality": {
-          "present": 204,
+          "present": 202,
           "coverage_pct": 100.0
         },
         "Growth": {
           "present": 200,
-          "coverage_pct": 98.0
+          "coverage_pct": 99.0
         },
         "Balance": {
-          "present": 203,
+          "present": 201,
           "coverage_pct": 99.5
         },
         "Cash Flow": {
-          "present": 203,
+          "present": 201,
           "coverage_pct": 99.5
         },
         "Valuation": {
-          "present": 151,
-          "coverage_pct": 74.0
+          "present": 150,
+          "coverage_pct": 74.3
         },
         "Execution": {
-          "present": 176,
-          "coverage_pct": 86.3
+          "present": 174,
+          "coverage_pct": 86.1
         },
         "Earnings Quality": {
-          "present": 184,
-          "coverage_pct": 90.2
+          "present": 179,
+          "coverage_pct": 88.6
         },
         "Capital Allocation": {
-          "present": 185,
-          "coverage_pct": 90.7
+          "present": 181,
+          "coverage_pct": 89.6
         },
         "Stability": {
-          "present": 190,
+          "present": 188,
           "coverage_pct": 93.1
         }
       },
       "structurally_unavailable_dimensions": [],
       "effective_dimension_count_distribution": {
         "1": 1,
-        "4": 1,
-        "5": 11,
-        "6": 3,
-        "7": 19,
-        "8": 36,
+        "4": 3,
+        "5": 10,
+        "6": 4,
+        "7": 16,
+        "8": 35,
         "9": 133
       },
       "weight_pack_sum": 1.0,
       "missing_weight_handling": {
         "policy": "fixed_weights_neutral_50",
-        "mean_missing_weight_pct": 5.56,
+        "mean_missing_weight_pct": 5.54,
         "max_missing_weight_pct": 80.0,
         "rows_missing_at_least_20pct_weight": 25,
-        "rows_missing_at_least_35pct_weight": 2,
-        "published_rows_missing_at_least_20pct_weight": 24,
-        "published_rows_missing_at_least_35pct_weight": 1,
+        "rows_missing_at_least_35pct_weight": 4,
+        "published_rows_missing_at_least_20pct_weight": 23,
+        "published_rows_missing_at_least_35pct_weight": 2,
         "robust_rows_missing_at_least_35pct_weight": 1,
-        "mean_max_observed_dimension_share_pct": 21.96,
+        "mean_max_observed_dimension_share_pct": 21.98,
         "max_observed_dimension_share_pct": 22.0,
         "dominant_observed_dimension_counts": {
           "Growth": 200,
-          "Quality": 4
+          "Quality": 2
         }
       },
       "dimension_correlations": [
         {
           "left": "Quality",
           "right": "Capital Allocation",
-          "pearson": 0.656,
-          "spearman": 0.625,
+          "pearson": 0.634,
+          "spearman": 0.596,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
           "right": "Capital Allocation",
-          "pearson": 0.636,
-          "spearman": 0.583,
+          "pearson": 0.655,
+          "spearman": 0.585,
           "potential_redundancy": false
         },
         {
           "left": "Quality",
           "right": "Cash Flow",
-          "pearson": 0.654,
-          "spearman": 0.562,
+          "pearson": 0.625,
+          "spearman": 0.513,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Execution",
+          "pearson": 0.378,
+          "spearman": 0.366,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
-          "right": "Valuation",
-          "pearson": 0.194,
+          "right": "Earnings Quality",
+          "pearson": 0.35,
           "spearman": 0.357,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
-          "right": "Earnings Quality",
-          "pearson": 0.332,
-          "spearman": 0.344,
+          "right": "Stability",
+          "pearson": 0.252,
+          "spearman": 0.353,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Cash Flow",
+          "right": "Valuation",
+          "pearson": 0.219,
+          "spearman": 0.343,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
-          "right": "Execution",
-          "pearson": 0.327,
-          "spearman": 0.324,
+          "right": "Stability",
+          "pearson": -0.299,
+          "spearman": -0.322,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
           "right": "Cash Flow",
-          "pearson": -0.257,
-          "spearman": -0.306,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Cash Flow",
-          "right": "Stability",
-          "pearson": 0.201,
-          "spearman": 0.306,
+          "pearson": -0.246,
+          "spearman": -0.283,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
-          "right": "Earnings Quality",
-          "pearson": -0.262,
-          "spearman": -0.283,
+          "right": "Stability",
+          "pearson": -0.252,
+          "spearman": -0.274,
           "potential_redundancy": false
         },
         {
           "left": "Capital Allocation",
           "right": "Stability",
-          "pearson": 0.246,
-          "spearman": 0.278,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Stability",
-          "pearson": -0.242,
-          "spearman": -0.276,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Stability",
-          "pearson": -0.25,
-          "spearman": -0.272,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Valuation",
-          "pearson": -0.259,
-          "spearman": -0.252,
+          "pearson": 0.25,
+          "spearman": 0.269,
           "potential_redundancy": false
         },
         {
           "left": "Execution",
           "right": "Earnings Quality",
-          "pearson": -0.246,
-          "spearman": -0.249,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Quality",
-          "right": "Stability",
-          "pearson": 0.18,
-          "spearman": 0.203,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Earnings Quality",
-          "right": "Stability",
-          "pearson": 0.208,
-          "spearman": 0.199,
+          "pearson": -0.256,
+          "spearman": -0.257,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
-          "right": "Execution",
-          "pearson": 0.172,
-          "spearman": 0.189,
+          "right": "Earnings Quality",
+          "pearson": -0.247,
+          "spearman": -0.254,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Balance",
+          "right": "Valuation",
+          "pearson": -0.228,
+          "spearman": -0.226,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Capital Allocation",
-          "pearson": 0.174,
-          "spearman": 0.185,
+          "pearson": 0.222,
+          "spearman": 0.221,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Quality",
+          "right": "Stability",
+          "pearson": 0.204,
+          "spearman": 0.216,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Earnings Quality",
+          "pearson": -0.184,
+          "spearman": -0.188,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Capital Allocation",
+          "pearson": -0.15,
+          "spearman": -0.187,
           "potential_redundancy": false
         },
         {
           "left": "Earnings Quality",
           "right": "Capital Allocation",
-          "pearson": 0.162,
-          "spearman": 0.176,
+          "pearson": 0.184,
+          "spearman": 0.184,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Earnings Quality",
+          "right": "Stability",
+          "pearson": 0.179,
+          "spearman": 0.175,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Balance",
-          "pearson": 0.153,
-          "spearman": 0.169,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Capital Allocation",
-          "pearson": -0.157,
-          "spearman": -0.163,
+          "pearson": 0.16,
+          "spearman": 0.173,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Cash Flow",
-          "pearson": -0.039,
-          "spearman": -0.144,
+          "pearson": -0.083,
+          "spearman": -0.172,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Balance",
+          "right": "Execution",
+          "pearson": 0.146,
+          "spearman": 0.164,
           "potential_redundancy": false
         },
         {
           "left": "Quality",
           "right": "Valuation",
-          "pearson": 0.131,
-          "spearman": 0.132,
+          "pearson": 0.156,
+          "spearman": 0.158,
           "potential_redundancy": false
         },
         {
-          "left": "Growth",
-          "right": "Earnings Quality",
-          "pearson": -0.107,
-          "spearman": -0.122,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
+          "left": "Balance",
           "right": "Capital Allocation",
-          "pearson": -0.072,
-          "spearman": -0.121,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Valuation",
-          "pearson": -0.128,
-          "spearman": -0.101,
+          "pearson": -0.145,
+          "spearman": -0.15,
           "potential_redundancy": false
         },
         {
           "left": "Execution",
           "right": "Stability",
-          "pearson": -0.071,
-          "spearman": -0.096,
+          "pearson": -0.103,
+          "spearman": -0.121,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Execution",
+          "right": "Capital Allocation",
+          "pearson": -0.101,
+          "spearman": -0.119,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Quality",
+          "right": "Execution",
+          "pearson": 0.116,
+          "spearman": 0.108,
           "potential_redundancy": false
         },
         {
           "left": "Quality",
           "right": "Growth",
-          "pearson": 0.118,
-          "spearman": 0.09,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Quality",
-          "right": "Execution",
-          "pearson": 0.1,
-          "spearman": 0.089,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Execution",
-          "right": "Capital Allocation",
-          "pearson": -0.054,
-          "spearman": -0.081,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Quality",
-          "right": "Balance",
-          "pearson": -0.083,
-          "spearman": -0.079,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Quality",
-          "right": "Earnings Quality",
-          "pearson": 0.055,
-          "spearman": 0.044,
+          "pearson": 0.108,
+          "spearman": 0.085,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Stability",
-          "pearson": 0.041,
-          "spearman": 0.042,
+          "pearson": 0.074,
+          "spearman": 0.078,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Valuation",
+          "pearson": -0.066,
+          "spearman": -0.054,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
           "right": "Execution",
-          "pearson": -0.047,
-          "spearman": -0.019,
+          "pearson": -0.063,
+          "spearman": -0.045,
           "potential_redundancy": false
         },
         {
-          "left": "Valuation",
-          "right": "Earnings Quality",
-          "pearson": -0.015,
-          "spearman": 0.003,
+          "left": "Quality",
+          "right": "Balance",
+          "pearson": -0.049,
+          "spearman": -0.036,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Execution",
-          "pearson": 0.014,
-          "spearman": -0.0,
+          "pearson": -0.031,
+          "spearman": -0.034,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Quality",
+          "right": "Earnings Quality",
+          "pearson": 0.046,
+          "spearman": 0.025,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Valuation",
+          "right": "Earnings Quality",
+          "pearson": -0.018,
+          "spearman": -0.005,
           "potential_redundancy": false
         }
       ],
@@ -921,218 +919,218 @@
         {
           "dimension": "Quality",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.8689,
+          "rank_spearman": 0.867,
           "top_decile_jaccard": 0.7391
         },
         {
           "dimension": "Quality",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.8975,
+          "rank_spearman": 0.897,
           "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Quality",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9148,
+          "rank_spearman": 0.9167,
           "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.918,
-          "top_decile_jaccard": 0.6
+          "rank_spearman": 0.9199,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9112,
+          "rank_spearman": 0.9138,
           "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9149,
-          "top_decile_jaccard": 0.6
+          "rank_spearman": 0.9182,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.8966,
+          "rank_spearman": 0.8953,
           "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.8728,
+          "rank_spearman": 0.8681,
           "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9087,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Balance",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9097,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Balance",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9046,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Balance",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.8967,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Cash Flow",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.8874,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Cash Flow",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9027,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Cash Flow",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9129,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Cash Flow",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9134,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9067,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9084,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9076,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9053,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Execution",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9118,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Execution",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.911,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Execution",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9053,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Execution",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.8965,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Earnings Quality",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9076,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Earnings Quality",
-          "weight_multiplier": 0.8,
           "rank_spearman": 0.9088,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Earnings Quality",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9073,
           "top_decile_jaccard": 0.6
         },
         {
-          "dimension": "Earnings Quality",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9045,
-          "top_decile_jaccard": 0.6667
-        },
-        {
-          "dimension": "Capital Allocation",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.8982,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Capital Allocation",
+          "dimension": "Balance",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9056,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Capital Allocation",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9118,
+          "rank_spearman": 0.9103,
           "top_decile_jaccard": 0.6667
         },
         {
-          "dimension": "Capital Allocation",
+          "dimension": "Balance",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9049,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Balance",
           "weight_multiplier": 1.5,
+          "rank_spearman": 0.8974,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Cash Flow",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.8866,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Cash Flow",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9037,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Cash Flow",
+          "weight_multiplier": 1.2,
           "rank_spearman": 0.915,
           "top_decile_jaccard": 0.6667
         },
         {
-          "dimension": "Stability",
+          "dimension": "Cash Flow",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9164,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Valuation",
           "weight_multiplier": 0.5,
           "rank_spearman": 0.9068,
           "top_decile_jaccard": 0.6667
         },
         {
+          "dimension": "Valuation",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9095,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9097,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9063,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Execution",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9132,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Execution",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9131,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Execution",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9055,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Execution",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.896,
+          "top_decile_jaccard": 0.7391
+        },
+        {
+          "dimension": "Earnings Quality",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9075,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Earnings Quality",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9097,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Earnings Quality",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9083,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Earnings Quality",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9056,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Capital Allocation",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.8978,
+          "top_decile_jaccard": 0.6
+        },
+        {
+          "dimension": "Capital Allocation",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.906,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Capital Allocation",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9136,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Capital Allocation",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9166,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Stability",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9077,
+          "top_decile_jaccard": 0.6667
+        },
+        {
           "dimension": "Stability",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9088,
+          "rank_spearman": 0.9092,
           "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9092,
-          "top_decile_jaccard": 0.6
+          "rank_spearman": 0.9108,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9104,
-          "top_decile_jaccard": 0.6
+          "rank_spearman": 0.9111,
+          "top_decile_jaccard": 0.6667
         }
       ],
       "redundant_pair_count": 0,
@@ -1140,7 +1138,7 @@
     },
     {
       "score_model": "biotech",
-      "n": 144,
+      "n": 141,
       "weights": {
         "Cash Runway": 0.25,
         "Net Cash": 0.15,
@@ -1149,58 +1147,58 @@
         "Operating Quality": 0.1,
         "Stability": 0.1
       },
-      "mean_production_score": 52.27,
-      "mean_raw_score": 55.39,
-      "mean_data_coverage_pct": 75.04,
-      "raw_vs_reconstructed_rank_spearman": 0.8369,
-      "published_vs_raw_rank_spearman": 0.8542,
+      "mean_production_score": 52.47,
+      "mean_raw_score": 55.79,
+      "mean_data_coverage_pct": 74.42,
+      "raw_vs_reconstructed_rank_spearman": 0.8539,
+      "published_vs_raw_rank_spearman": 0.8675,
       "dimension_coverage": {
         "Cash Runway": {
-          "present": 143,
+          "present": 140,
           "coverage_pct": 99.3
         },
         "Net Cash": {
-          "present": 142,
+          "present": 139,
           "coverage_pct": 98.6
         },
         "Dilution Discipline": {
-          "present": 130,
-          "coverage_pct": 90.3
+          "present": 124,
+          "coverage_pct": 87.9
         },
         "Growth": {
-          "present": 122,
-          "coverage_pct": 84.7
+          "present": 120,
+          "coverage_pct": 85.1
         },
         "Operating Quality": {
-          "present": 144,
+          "present": 141,
           "coverage_pct": 100.0
         },
         "Stability": {
-          "present": 141,
-          "coverage_pct": 97.9
+          "present": 135,
+          "coverage_pct": 95.7
         }
       },
       "structurally_unavailable_dimensions": [],
       "effective_dimension_count_distribution": {
         "1": 1,
-        "4": 3,
-        "5": 31,
-        "6": 109
+        "4": 6,
+        "5": 30,
+        "6": 104
       },
       "weight_pack_sum": 1.0,
       "missing_weight_handling": {
         "policy": "fixed_weights_neutral_50",
-        "mean_missing_weight_pct": 5.59,
+        "mean_missing_weight_pct": 6.21,
         "max_missing_weight_pct": 90.0,
-        "rows_missing_at_least_20pct_weight": 4,
-        "rows_missing_at_least_35pct_weight": 3,
-        "published_rows_missing_at_least_20pct_weight": 2,
-        "published_rows_missing_at_least_35pct_weight": 1,
+        "rows_missing_at_least_20pct_weight": 7,
+        "rows_missing_at_least_35pct_weight": 5,
+        "published_rows_missing_at_least_20pct_weight": 5,
+        "published_rows_missing_at_least_35pct_weight": 3,
         "robust_rows_missing_at_least_35pct_weight": 0,
-        "mean_max_observed_dimension_share_pct": 24.9,
+        "mean_max_observed_dimension_share_pct": 24.89,
         "max_observed_dimension_share_pct": 25.0,
         "dominant_observed_dimension_counts": {
-          "Cash Runway": 143,
+          "Cash Runway": 140,
           "Operating Quality": 1
         }
       },
@@ -1208,106 +1206,106 @@
         {
           "left": "Cash Runway",
           "right": "Operating Quality",
-          "pearson": 0.422,
-          "spearman": 0.514,
+          "pearson": 0.482,
+          "spearman": 0.566,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Cash Runway",
+          "right": "Dilution Discipline",
+          "pearson": 0.381,
+          "spearman": 0.471,
           "potential_redundancy": false
         },
         {
           "left": "Net Cash",
           "right": "Dilution Discipline",
-          "pearson": -0.489,
-          "spearman": -0.484,
+          "pearson": -0.416,
+          "spearman": -0.418,
           "potential_redundancy": false
         },
         {
-          "left": "Net Cash",
+          "left": "Dilution Discipline",
           "right": "Operating Quality",
-          "pearson": -0.358,
-          "spearman": -0.432,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Cash Runway",
-          "right": "Dilution Discipline",
-          "pearson": 0.338,
-          "spearman": 0.415,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Cash Runway",
-          "right": "Net Cash",
-          "pearson": -0.282,
-          "spearman": -0.395,
+          "pearson": 0.355,
+          "spearman": 0.403,
           "potential_redundancy": false
         },
         {
           "left": "Operating Quality",
           "right": "Stability",
-          "pearson": 0.312,
-          "spearman": 0.351,
+          "pearson": 0.342,
+          "spearman": 0.348,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Cash Runway",
+          "right": "Net Cash",
+          "pearson": -0.222,
+          "spearman": -0.341,
           "potential_redundancy": false
         },
         {
           "left": "Cash Runway",
           "right": "Stability",
-          "pearson": 0.287,
-          "spearman": 0.343,
+          "pearson": 0.28,
+          "spearman": 0.33,
           "potential_redundancy": false
         },
         {
-          "left": "Dilution Discipline",
+          "left": "Net Cash",
+          "right": "Stability",
+          "pearson": -0.336,
+          "spearman": -0.325,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Net Cash",
           "right": "Operating Quality",
-          "pearson": 0.244,
-          "spearman": 0.318,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Net Cash",
-          "right": "Stability",
-          "pearson": -0.322,
-          "spearman": -0.305,
+          "pearson": -0.249,
+          "spearman": -0.323,
           "potential_redundancy": false
         },
         {
           "left": "Dilution Discipline",
           "right": "Stability",
-          "pearson": 0.241,
-          "spearman": 0.247,
+          "pearson": 0.274,
+          "spearman": 0.279,
           "potential_redundancy": false
         },
         {
           "left": "Dilution Discipline",
           "right": "Growth",
-          "pearson": -0.184,
-          "spearman": -0.152,
+          "pearson": -0.22,
+          "spearman": -0.211,
           "potential_redundancy": false
         },
         {
           "left": "Net Cash",
           "right": "Growth",
-          "pearson": 0.158,
-          "spearman": 0.147,
+          "pearson": 0.173,
+          "spearman": 0.17,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Stability",
+          "pearson": 0.073,
+          "spearman": 0.102,
           "potential_redundancy": false
         },
         {
           "left": "Cash Runway",
           "right": "Growth",
-          "pearson": -0.069,
-          "spearman": -0.073,
+          "pearson": -0.073,
+          "spearman": -0.082,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Operating Quality",
-          "pearson": 0.022,
-          "spearman": -0.013,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Stability",
-          "pearson": -0.023,
-          "spearman": 0.01,
+          "pearson": 0.037,
+          "spearman": 0.007,
           "potential_redundancy": false
         }
       ],
@@ -1315,146 +1313,146 @@
         {
           "dimension": "Cash Runway",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.7745,
-          "top_decile_jaccard": 0.4
+          "rank_spearman": 0.7923,
+          "top_decile_jaccard": 0.2727
         },
         {
           "dimension": "Cash Runway",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.7908,
-          "top_decile_jaccard": 0.4
+          "rank_spearman": 0.8084,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Cash Runway",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.7964,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.8127,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Cash Runway",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.7924,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.8107,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Net Cash",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.8116,
-          "top_decile_jaccard": 0.5556
-        },
-        {
-          "dimension": "Net Cash",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.8064,
+          "rank_spearman": 0.8297,
           "top_decile_jaccard": 0.4737
         },
         {
           "dimension": "Net Cash",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.8205,
+          "top_decile_jaccard": 0.3333
+        },
+        {
+          "dimension": "Net Cash",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.783,
-          "top_decile_jaccard": 0.4
+          "rank_spearman": 0.8007,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Net Cash",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.7606,
-          "top_decile_jaccard": 0.3333
+          "rank_spearman": 0.7789,
+          "top_decile_jaccard": 0.2727
         },
         {
           "dimension": "Dilution Discipline",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.745,
+          "rank_spearman": 0.7711,
           "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Dilution Discipline",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.7765,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.7994,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Dilution Discipline",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.8089,
-          "top_decile_jaccard": 0.4
+          "rank_spearman": 0.8192,
+          "top_decile_jaccard": 0.2727
         },
         {
           "dimension": "Dilution Discipline",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.8146,
+          "rank_spearman": 0.8288,
           "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.8181,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.816,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.8076,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.8174,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.78,
-          "top_decile_jaccard": 0.4
+          "rank_spearman": 0.8012,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.7624,
-          "top_decile_jaccard": 0.4
+          "rank_spearman": 0.7845,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Operating Quality",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.7894,
-          "top_decile_jaccard": 0.4
+          "rank_spearman": 0.8047,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Operating Quality",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.7947,
-          "top_decile_jaccard": 0.4
+          "rank_spearman": 0.8102,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Operating Quality",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.7975,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.8129,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Operating Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.7969,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.8135,
+          "top_decile_jaccard": 0.4
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.7805,
+          "rank_spearman": 0.7983,
+          "top_decile_jaccard": 0.2727
+        },
+        {
+          "dimension": "Stability",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.8063,
           "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Stability",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.7892,
-          "top_decile_jaccard": 0.4
-        },
-        {
-          "dimension": "Stability",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.8021,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.8161,
+          "top_decile_jaccard": 0.3333
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.8034,
-          "top_decile_jaccard": 0.4737
+          "rank_spearman": 0.8182,
+          "top_decile_jaccard": 0.4
         }
       ],
       "redundant_pair_count": 0,
@@ -1462,7 +1460,7 @@
     },
     {
       "score_model": "energy",
-      "n": 87,
+      "n": 91,
       "weights": {
         "Energy Quality": 0.2,
         "Cash Flow": 0.22,
@@ -1471,57 +1469,57 @@
         "Growth": 0.1,
         "Stability": 0.1
       },
-      "mean_production_score": 55.57,
-      "mean_raw_score": 56.5,
-      "mean_data_coverage_pct": 87.05,
-      "raw_vs_reconstructed_rank_spearman": 0.9442,
-      "published_vs_raw_rank_spearman": 0.9438,
+      "mean_production_score": 55.61,
+      "mean_raw_score": 56.95,
+      "mean_data_coverage_pct": 85.61,
+      "raw_vs_reconstructed_rank_spearman": 0.9212,
+      "published_vs_raw_rank_spearman": 0.9207,
       "dimension_coverage": {
         "Energy Quality": {
-          "present": 87,
+          "present": 91,
           "coverage_pct": 100.0
         },
         "Cash Flow": {
-          "present": 86,
+          "present": 90,
           "coverage_pct": 98.9
         },
         "Balance": {
-          "present": 87,
+          "present": 91,
           "coverage_pct": 100.0
         },
         "Valuation": {
-          "present": 77,
-          "coverage_pct": 88.5
+          "present": 78,
+          "coverage_pct": 85.7
         },
         "Growth": {
-          "present": 84,
-          "coverage_pct": 96.6
+          "present": 87,
+          "coverage_pct": 95.6
         },
         "Stability": {
-          "present": 85,
-          "coverage_pct": 97.7
+          "present": 88,
+          "coverage_pct": 96.7
         }
       },
       "structurally_unavailable_dimensions": [],
       "effective_dimension_count_distribution": {
-        "4": 4,
-        "5": 8,
+        "4": 5,
+        "5": 11,
         "6": 75
       },
       "weight_pack_sum": 1.0,
       "missing_weight_handling": {
         "policy": "fixed_weights_neutral_50",
-        "mean_missing_weight_pct": 3.13,
+        "mean_missing_weight_pct": 3.87,
         "max_missing_weight_pct": 30.0,
-        "rows_missing_at_least_20pct_weight": 5,
+        "rows_missing_at_least_20pct_weight": 6,
         "rows_missing_at_least_35pct_weight": 0,
-        "published_rows_missing_at_least_20pct_weight": 4,
+        "published_rows_missing_at_least_20pct_weight": 5,
         "published_rows_missing_at_least_35pct_weight": 0,
         "robust_rows_missing_at_least_35pct_weight": 0,
         "mean_max_observed_dimension_share_pct": 21.98,
         "max_observed_dimension_share_pct": 22.0,
         "dominant_observed_dimension_counts": {
-          "Cash Flow": 86,
+          "Cash Flow": 90,
           "Energy Quality": 1
         }
       },
@@ -1529,106 +1527,106 @@
         {
           "left": "Valuation",
           "right": "Stability",
-          "pearson": 0.507,
-          "spearman": 0.537,
+          "pearson": 0.407,
+          "spearman": 0.45,
           "potential_redundancy": false
         },
         {
           "left": "Energy Quality",
           "right": "Cash Flow",
-          "pearson": 0.581,
-          "spearman": 0.367,
+          "pearson": 0.635,
+          "spearman": 0.42,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Energy Quality",
+          "right": "Valuation",
+          "pearson": 0.248,
+          "spearman": 0.299,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Growth",
-          "pearson": 0.335,
-          "spearman": 0.324,
+          "pearson": 0.288,
+          "spearman": 0.283,
           "potential_redundancy": false
         },
         {
           "left": "Energy Quality",
-          "right": "Valuation",
-          "pearson": 0.312,
-          "spearman": 0.319,
+          "right": "Growth",
+          "pearson": 0.347,
+          "spearman": 0.28,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Stability",
-          "pearson": 0.346,
-          "spearman": 0.308,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Energy Quality",
-          "right": "Stability",
-          "pearson": 0.381,
-          "spearman": 0.298,
+          "pearson": 0.26,
+          "spearman": 0.256,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
           "right": "Valuation",
-          "pearson": 0.222,
-          "spearman": 0.263,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Energy Quality",
-          "right": "Growth",
-          "pearson": 0.323,
-          "spearman": 0.259,
+          "pearson": 0.191,
+          "spearman": 0.234,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
           "right": "Stability",
-          "pearson": 0.254,
-          "spearman": 0.205,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Energy Quality",
-          "right": "Balance",
-          "pearson": 0.161,
-          "spearman": 0.165,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Stability",
-          "pearson": 0.161,
-          "spearman": 0.129,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Cash Flow",
-          "right": "Growth",
-          "pearson": 0.098,
-          "spearman": 0.126,
+          "pearson": 0.248,
+          "spearman": 0.168,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
           "right": "Valuation",
-          "pearson": 0.098,
-          "spearman": 0.117,
+          "pearson": 0.126,
+          "spearman": 0.161,
           "potential_redundancy": false
         },
         {
-          "left": "Balance",
+          "left": "Cash Flow",
           "right": "Growth",
-          "pearson": 0.088,
-          "spearman": 0.093,
+          "pearson": 0.198,
+          "spearman": 0.152,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Energy Quality",
+          "right": "Stability",
+          "pearson": 0.247,
+          "spearman": 0.136,
           "potential_redundancy": false
         },
         {
           "left": "Cash Flow",
           "right": "Balance",
-          "pearson": -0.116,
-          "spearman": -0.054,
+          "pearson": -0.167,
+          "spearman": -0.105,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Energy Quality",
+          "right": "Balance",
+          "pearson": 0.063,
+          "spearman": 0.078,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Balance",
+          "right": "Stability",
+          "pearson": 0.067,
+          "spearman": 0.065,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Balance",
+          "right": "Growth",
+          "pearson": 0.028,
+          "spearman": 0.025,
           "potential_redundancy": false
         }
       ],
@@ -1636,145 +1634,145 @@
         {
           "dimension": "Energy Quality",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9334,
+          "rank_spearman": 0.9118,
           "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Energy Quality",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9397,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.92,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Energy Quality",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.944,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9216,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Energy Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9386,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9164,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Cash Flow",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9307,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.909,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Cash Flow",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9422,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9185,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Cash Flow",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9423,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9202,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Cash Flow",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9338,
+          "rank_spearman": 0.9138,
           "top_decile_jaccard": 0.6364
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.923,
+          "rank_spearman": 0.9021,
           "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9377,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9165,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9435,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9212,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9439,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9214,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9406,
+          "rank_spearman": 0.9251,
           "top_decile_jaccard": 0.6364
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9435,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9225,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9361,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.917,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9307,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9102,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9371,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9176,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9432,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9208,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.942,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9197,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9384,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9166,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9391,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9177,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9434,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.9203,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9423,
-          "top_decile_jaccard": 0.6364
+          "rank_spearman": 0.919,
+          "top_decile_jaccard": 0.5
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9391,
+          "rank_spearman": 0.9186,
           "top_decile_jaccard": 0.6364
         }
       ],
@@ -1783,7 +1781,7 @@
     },
     {
       "score_model": "bank",
-      "n": 81,
+      "n": 79,
       "weights": {
         "Bank Quality": 0.22,
         "Efficiency": 0.13,
@@ -1794,43 +1792,43 @@
         "Income": 0.05,
         "Stability": 0.05
       },
-      "mean_production_score": 53.6,
-      "mean_raw_score": 54.58,
-      "mean_data_coverage_pct": 74.56,
-      "raw_vs_reconstructed_rank_spearman": 0.9401,
-      "published_vs_raw_rank_spearman": 0.9336,
+      "mean_production_score": 53.79,
+      "mean_raw_score": 54.81,
+      "mean_data_coverage_pct": 75.15,
+      "raw_vs_reconstructed_rank_spearman": 0.9385,
+      "published_vs_raw_rank_spearman": 0.9297,
       "dimension_coverage": {
         "Bank Quality": {
-          "present": 81,
+          "present": 79,
           "coverage_pct": 100.0
         },
         "Efficiency": {
           "present": 32,
-          "coverage_pct": 39.5
+          "coverage_pct": 40.5
         },
         "Asset Quality": {
           "present": 0,
           "coverage_pct": 0.0
         },
         "Capital Proxy": {
-          "present": 81,
+          "present": 79,
           "coverage_pct": 100.0
         },
         "Growth": {
-          "present": 81,
+          "present": 79,
           "coverage_pct": 100.0
         },
         "Valuation": {
-          "present": 81,
+          "present": 79,
           "coverage_pct": 100.0
         },
         "Income": {
-          "present": 80,
-          "coverage_pct": 98.8
+          "present": 78,
+          "coverage_pct": 98.7
         },
         "Stability": {
-          "present": 79,
-          "coverage_pct": 97.5
+          "present": 78,
+          "coverage_pct": 98.7
         }
       },
       "structurally_unavailable_dimensions": [
@@ -1840,172 +1838,172 @@
         }
       ],
       "effective_dimension_count_distribution": {
-        "5": 2,
-        "6": 48,
+        "5": 1,
+        "6": 47,
         "7": 31
       },
       "weight_pack_sum": 1.0,
       "missing_weight_handling": {
         "policy": "fixed_weights_neutral_50",
-        "mean_missing_weight_pct": 18.05,
+        "mean_missing_weight_pct": 17.86,
         "max_missing_weight_pct": 28.0,
-        "rows_missing_at_least_20pct_weight": 49,
+        "rows_missing_at_least_20pct_weight": 47,
         "rows_missing_at_least_35pct_weight": 0,
-        "published_rows_missing_at_least_20pct_weight": 49,
+        "published_rows_missing_at_least_20pct_weight": 47,
         "published_rows_missing_at_least_35pct_weight": 0,
         "robust_rows_missing_at_least_35pct_weight": 0,
         "mean_max_observed_dimension_share_pct": 22.0,
         "max_observed_dimension_share_pct": 22.0,
         "dominant_observed_dimension_counts": {
-          "Bank Quality": 81
+          "Bank Quality": 79
         }
       },
       "dimension_correlations": [
         {
           "left": "Bank Quality",
+          "right": "Valuation",
+          "pearson": -0.45,
+          "spearman": -0.442,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Bank Quality",
           "right": "Efficiency",
-          "pearson": 0.116,
-          "spearman": 0.447,
+          "pearson": 0.069,
+          "spearman": 0.439,
           "potential_redundancy": false
         },
         {
           "left": "Efficiency",
           "right": "Capital Proxy",
-          "pearson": 0.462,
-          "spearman": 0.428,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Bank Quality",
-          "right": "Valuation",
-          "pearson": -0.377,
-          "spearman": -0.334,
+          "pearson": 0.439,
+          "spearman": 0.417,
           "potential_redundancy": false
         },
         {
           "left": "Efficiency",
           "right": "Valuation",
-          "pearson": -0.391,
-          "spearman": -0.31,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Efficiency",
-          "right": "Stability",
-          "pearson": 0.101,
-          "spearman": 0.249,
+          "pearson": -0.337,
+          "spearman": -0.302,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
           "right": "Income",
-          "pearson": -0.207,
-          "spearman": -0.229,
+          "pearson": -0.231,
+          "spearman": -0.245,
           "potential_redundancy": false
         },
         {
-          "left": "Valuation",
+          "left": "Efficiency",
           "right": "Stability",
-          "pearson": -0.155,
-          "spearman": -0.216,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Valuation",
-          "right": "Income",
-          "pearson": 0.222,
-          "spearman": 0.199,
+          "pearson": 0.079,
+          "spearman": 0.24,
           "potential_redundancy": false
         },
         {
           "left": "Income",
           "right": "Stability",
-          "pearson": 0.139,
-          "spearman": 0.167,
+          "pearson": 0.146,
+          "spearman": 0.188,
           "potential_redundancy": false
         },
         {
           "left": "Bank Quality",
           "right": "Capital Proxy",
-          "pearson": 0.09,
-          "spearman": 0.142,
+          "pearson": 0.104,
+          "spearman": 0.187,
           "potential_redundancy": false
         },
         {
-          "left": "Capital Proxy",
-          "right": "Income",
-          "pearson": -0.115,
-          "spearman": -0.135,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Capital Proxy",
+          "left": "Valuation",
           "right": "Stability",
-          "pearson": -0.144,
-          "spearman": -0.134,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Capital Proxy",
-          "right": "Valuation",
-          "pearson": -0.223,
-          "spearman": -0.111,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Stability",
-          "pearson": 0.123,
-          "spearman": 0.11,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Valuation",
-          "pearson": -0.115,
-          "spearman": -0.105,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Capital Proxy",
-          "right": "Growth",
-          "pearson": -0.085,
-          "spearman": -0.072,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Efficiency",
-          "right": "Income",
-          "pearson": -0.007,
-          "spearman": 0.065,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Efficiency",
-          "right": "Growth",
-          "pearson": 0.054,
-          "spearman": 0.06,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Bank Quality",
-          "right": "Growth",
-          "pearson": 0.1,
-          "spearman": -0.017,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Bank Quality",
-          "right": "Stability",
-          "pearson": 0.039,
-          "spearman": 0.011,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Bank Quality",
-          "right": "Income",
           "pearson": -0.122,
-          "spearman": -0.01,
+          "spearman": -0.185,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Capital Proxy",
+          "right": "Stability",
+          "pearson": -0.194,
+          "spearman": -0.168,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Valuation",
+          "right": "Income",
+          "pearson": 0.192,
+          "spearman": 0.16,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Valuation",
+          "pearson": -0.151,
+          "spearman": -0.116,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Stability",
+          "pearson": 0.133,
+          "spearman": 0.109,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Capital Proxy",
+          "right": "Income",
+          "pearson": -0.068,
+          "spearman": -0.092,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Capital Proxy",
+          "right": "Valuation",
+          "pearson": -0.187,
+          "spearman": -0.082,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Efficiency",
+          "right": "Income",
+          "pearson": 0.013,
+          "spearman": 0.076,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Capital Proxy",
+          "right": "Growth",
+          "pearson": -0.053,
+          "spearman": -0.053,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Efficiency",
+          "right": "Growth",
+          "pearson": 0.022,
+          "spearman": 0.05,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Bank Quality",
+          "right": "Growth",
+          "pearson": 0.137,
+          "spearman": -0.031,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Bank Quality",
+          "right": "Income",
+          "pearson": -0.125,
+          "spearman": -0.005,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Bank Quality",
+          "right": "Stability",
+          "pearson": 0.042,
+          "spearman": 0.005,
           "potential_redundancy": false
         }
       ],
@@ -2013,7 +2011,7 @@
         {
           "dimension": "Bank Quality",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.8951,
+          "rank_spearman": 0.8969,
           "top_decile_jaccard": 0.6
         },
         {
@@ -2025,170 +2023,170 @@
         {
           "dimension": "Bank Quality",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9051,
+          "rank_spearman": 0.9059,
           "top_decile_jaccard": 0.7778
         },
         {
           "dimension": "Bank Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.8896,
+          "rank_spearman": 0.8944,
           "top_decile_jaccard": 0.6
         },
         {
           "dimension": "Efficiency",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.89,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.8916,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Efficiency",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9067,
-          "top_decile_jaccard": 0.7778
-        },
-        {
-          "dimension": "Efficiency",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9086,
-          "top_decile_jaccard": 0.7778
-        },
-        {
-          "dimension": "Efficiency",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9046,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Asset Quality",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9109,
-          "top_decile_jaccard": 0.7778
-        },
-        {
-          "dimension": "Asset Quality",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9109,
-          "top_decile_jaccard": 0.7778
-        },
-        {
-          "dimension": "Asset Quality",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9109,
-          "top_decile_jaccard": 0.7778
-        },
-        {
-          "dimension": "Asset Quality",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9109,
-          "top_decile_jaccard": 0.7778
-        },
-        {
-          "dimension": "Capital Proxy",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.8881,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Capital Proxy",
           "weight_multiplier": 0.8,
           "rank_spearman": 0.9085,
+          "top_decile_jaccard": 1.0
+        },
+        {
+          "dimension": "Efficiency",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.909,
+          "top_decile_jaccard": 0.7778
+        },
+        {
+          "dimension": "Efficiency",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9042,
+          "top_decile_jaccard": 0.7778
+        },
+        {
+          "dimension": "Asset Quality",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9116,
+          "top_decile_jaccard": 1.0
+        },
+        {
+          "dimension": "Asset Quality",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9116,
+          "top_decile_jaccard": 1.0
+        },
+        {
+          "dimension": "Asset Quality",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9116,
+          "top_decile_jaccard": 1.0
+        },
+        {
+          "dimension": "Asset Quality",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9116,
+          "top_decile_jaccard": 1.0
+        },
+        {
+          "dimension": "Capital Proxy",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.8904,
+          "top_decile_jaccard": 0.6
+        },
+        {
+          "dimension": "Capital Proxy",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9116,
           "top_decile_jaccard": 0.7778
         },
         {
           "dimension": "Capital Proxy",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9006,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.898,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Capital Proxy",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.878,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.8741,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.8665,
+          "rank_spearman": 0.8634,
           "top_decile_jaccard": 0.7778
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.8963,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.8942,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9136,
+          "rank_spearman": 0.9147,
           "top_decile_jaccard": 0.7778
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9119,
+          "rank_spearman": 0.9125,
           "top_decile_jaccard": 0.6
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9037,
+          "rank_spearman": 0.9009,
           "top_decile_jaccard": 0.7778
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9091,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.9085,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9054,
+          "rank_spearman": 0.9065,
           "top_decile_jaccard": 0.7778
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.8901,
+          "rank_spearman": 0.8917,
           "top_decile_jaccard": 0.6
         },
         {
           "dimension": "Income",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9083,
+          "rank_spearman": 0.9094,
           "top_decile_jaccard": 0.7778
         },
         {
           "dimension": "Income",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9097,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.9105,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Income",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9104,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.9108,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Income",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9059,
+          "rank_spearman": 0.905,
           "top_decile_jaccard": 0.7778
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9068,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.9092,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9093,
-          "top_decile_jaccard": 0.7778
+          "rank_spearman": 0.9103,
+          "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Stability",
@@ -2199,7 +2197,7 @@
         {
           "dimension": "Stability",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9048,
+          "rank_spearman": 0.9029,
           "top_decile_jaccard": 0.7778
         }
       ],
@@ -2208,7 +2206,7 @@
     },
     {
       "score_model": "utility",
-      "n": 72,
+      "n": 70,
       "weights": {
         "Utility Quality": 0.18,
         "Balance": 0.22,
@@ -2218,50 +2216,50 @@
         "Stability": 0.1,
         "Cash Flow": 0.05
       },
-      "mean_production_score": 50.36,
-      "mean_raw_score": 50.95,
-      "mean_data_coverage_pct": 83.1,
-      "raw_vs_reconstructed_rank_spearman": 0.943,
-      "published_vs_raw_rank_spearman": 0.9431,
+      "mean_production_score": 50.87,
+      "mean_raw_score": 51.47,
+      "mean_data_coverage_pct": 83.76,
+      "raw_vs_reconstructed_rank_spearman": 0.9386,
+      "published_vs_raw_rank_spearman": 0.9387,
       "dimension_coverage": {
         "Utility Quality": {
-          "present": 72,
+          "present": 70,
           "coverage_pct": 100.0
         },
         "Balance": {
-          "present": 72,
+          "present": 70,
           "coverage_pct": 100.0
         },
         "Income": {
-          "present": 72,
+          "present": 70,
           "coverage_pct": 100.0
         },
         "Valuation": {
-          "present": 71,
+          "present": 69,
           "coverage_pct": 98.6
         },
         "Growth": {
-          "present": 71,
-          "coverage_pct": 98.6
+          "present": 70,
+          "coverage_pct": 100.0
         },
         "Stability": {
-          "present": 70,
-          "coverage_pct": 97.2
+          "present": 68,
+          "coverage_pct": 97.1
         },
         "Cash Flow": {
-          "present": 72,
+          "present": 70,
           "coverage_pct": 100.0
         }
       },
       "structurally_unavailable_dimensions": [],
       "effective_dimension_count_distribution": {
-        "6": 4,
-        "7": 68
+        "6": 3,
+        "7": 67
       },
       "weight_pack_sum": 1.0,
       "missing_weight_handling": {
         "policy": "fixed_weights_neutral_50",
-        "mean_missing_weight_pct": 0.65,
+        "mean_missing_weight_pct": 0.53,
         "max_missing_weight_pct": 17.0,
         "rows_missing_at_least_20pct_weight": 0,
         "rows_missing_at_least_35pct_weight": 0,
@@ -2271,155 +2269,155 @@
         "mean_max_observed_dimension_share_pct": 22.0,
         "max_observed_dimension_share_pct": 22.0,
         "dominant_observed_dimension_counts": {
-          "Balance": 72
+          "Balance": 70
         }
       },
       "dimension_correlations": [
         {
           "left": "Income",
           "right": "Valuation",
-          "pearson": 0.482,
-          "spearman": 0.556,
+          "pearson": 0.542,
+          "spearman": 0.619,
           "potential_redundancy": false
         },
         {
           "left": "Income",
           "right": "Cash Flow",
-          "pearson": -0.35,
-          "spearman": -0.318,
+          "pearson": -0.352,
+          "spearman": -0.281,
           "potential_redundancy": false
         },
         {
           "left": "Utility Quality",
           "right": "Growth",
-          "pearson": 0.142,
-          "spearman": 0.227,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Utility Quality",
-          "right": "Cash Flow",
-          "pearson": 0.476,
-          "spearman": 0.224,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Cash Flow",
-          "pearson": -0.06,
-          "spearman": 0.201,
+          "pearson": 0.27,
+          "spearman": 0.28,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Cash Flow",
-          "pearson": -0.184,
+          "pearson": -0.276,
+          "spearman": -0.2,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Balance",
+          "right": "Cash Flow",
+          "pearson": -0.133,
+          "spearman": 0.193,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Income",
+          "right": "Stability",
+          "pearson": -0.164,
           "spearman": -0.173,
           "potential_redundancy": false
         },
         {
           "left": "Stability",
           "right": "Cash Flow",
-          "pearson": 0.547,
-          "spearman": 0.172,
+          "pearson": 0.481,
+          "spearman": 0.166,
           "potential_redundancy": false
         },
         {
-          "left": "Income",
-          "right": "Stability",
-          "pearson": -0.165,
-          "spearman": -0.135,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Stability",
-          "pearson": -0.019,
-          "spearman": -0.12,
+          "left": "Utility Quality",
+          "right": "Cash Flow",
+          "pearson": 0.371,
+          "spearman": 0.148,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Growth",
-          "pearson": 0.148,
-          "spearman": 0.118,
+          "pearson": 0.227,
+          "spearman": 0.133,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Utility Quality",
+          "right": "Income",
+          "pearson": 0.105,
+          "spearman": 0.119,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
-          "right": "Valuation",
-          "pearson": 0.122,
-          "spearman": 0.111,
+          "right": "Stability",
+          "pearson": -0.158,
+          "spearman": -0.115,
           "potential_redundancy": false
         },
         {
           "left": "Utility Quality",
           "right": "Balance",
-          "pearson": -0.167,
-          "spearman": -0.088,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Valuation",
-          "right": "Stability",
-          "pearson": -0.177,
-          "spearman": -0.08,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Growth",
-          "pearson": -0.025,
-          "spearman": -0.065,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Balance",
-          "right": "Stability",
-          "pearson": -0.11,
-          "spearman": -0.065,
+          "pearson": -0.265,
+          "spearman": -0.1,
           "potential_redundancy": false
         },
         {
           "left": "Utility Quality",
           "right": "Valuation",
-          "pearson": -0.004,
-          "spearman": -0.058,
+          "pearson": -0.094,
+          "spearman": -0.1,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
-          "right": "Cash Flow",
-          "pearson": -0.105,
-          "spearman": -0.058,
+          "right": "Stability",
+          "pearson": 0.035,
+          "spearman": -0.1,
           "potential_redundancy": false
         },
         {
-          "left": "Utility Quality",
-          "right": "Income",
-          "pearson": 0.055,
-          "spearman": 0.051,
+          "left": "Balance",
+          "right": "Valuation",
+          "pearson": 0.083,
+          "spearman": 0.086,
           "potential_redundancy": false
         },
         {
           "left": "Utility Quality",
           "right": "Stability",
-          "pearson": 0.363,
-          "spearman": 0.039,
+          "pearson": 0.263,
+          "spearman": -0.081,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Valuation",
+          "right": "Stability",
+          "pearson": -0.186,
+          "spearman": -0.068,
           "potential_redundancy": false
         },
         {
           "left": "Income",
           "right": "Growth",
-          "pearson": -0.058,
-          "spearman": -0.026,
+          "pearson": -0.066,
+          "spearman": -0.032,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Cash Flow",
+          "pearson": -0.007,
+          "spearman": -0.027,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Balance",
+          "right": "Growth",
+          "pearson": 0.049,
+          "spearman": -0.013,
           "potential_redundancy": false
         },
         {
           "left": "Balance",
           "right": "Income",
-          "pearson": -0.148,
-          "spearman": 0.008,
+          "pearson": -0.145,
+          "spearman": -0.005,
           "potential_redundancy": false
         }
       ],
@@ -2427,169 +2425,169 @@
         {
           "dimension": "Utility Quality",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9033,
+          "rank_spearman": 0.8968,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Utility Quality",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9311,
+          "rank_spearman": 0.9267,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Utility Quality",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9437,
+          "rank_spearman": 0.9388,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Utility Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9334,
+          "rank_spearman": 0.927,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.8978,
+          "rank_spearman": 0.8931,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9383,
+          "rank_spearman": 0.9341,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9264,
+          "rank_spearman": 0.9213,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Balance",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.8889,
+          "rank_spearman": 0.882,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Income",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9316,
+          "rank_spearman": 0.9292,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Income",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9406,
+          "rank_spearman": 0.9364,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Income",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.94,
+          "rank_spearman": 0.9357,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Income",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9302,
+          "rank_spearman": 0.9267,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9211,
+          "rank_spearman": 0.9224,
           "top_decile_jaccard": 0.4
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9404,
+          "rank_spearman": 0.9363,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9352,
+          "rank_spearman": 0.9307,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Valuation",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9183,
+          "rank_spearman": 0.9157,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9287,
+          "rank_spearman": 0.9235,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9401,
-          "top_decile_jaccard": 0.75
-        },
-        {
-          "dimension": "Growth",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9411,
-          "top_decile_jaccard": 0.75
-        },
-        {
-          "dimension": "Growth",
-          "weight_multiplier": 1.5,
           "rank_spearman": 0.9355,
+          "top_decile_jaccard": 0.75
+        },
+        {
+          "dimension": "Growth",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9364,
+          "top_decile_jaccard": 0.75
+        },
+        {
+          "dimension": "Growth",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9315,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9196,
+          "rank_spearman": 0.9129,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9356,
+          "rank_spearman": 0.9316,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9447,
+          "rank_spearman": 0.9402,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9399,
+          "rank_spearman": 0.9368,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Cash Flow",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9326,
+          "rank_spearman": 0.9289,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Cash Flow",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9378,
+          "rank_spearman": 0.9332,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Cash Flow",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9441,
+          "rank_spearman": 0.9397,
           "top_decile_jaccard": 0.75
         },
         {
           "dimension": "Cash Flow",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9432,
+          "rank_spearman": 0.9395,
           "top_decile_jaccard": 0.75
         }
       ],
@@ -2598,7 +2596,7 @@
     },
     {
       "score_model": "reit",
-      "n": 71,
+      "n": 67,
       "weights": {
         "REIT Quality": 0.22,
         "Growth": 0.16,
@@ -2607,47 +2605,47 @@
         "Distribution": 0.17,
         "Stability": 0.05
       },
-      "mean_production_score": 52.18,
-      "mean_raw_score": 52.96,
-      "mean_data_coverage_pct": 85.31,
-      "raw_vs_reconstructed_rank_spearman": 0.974,
-      "published_vs_raw_rank_spearman": 0.9718,
+      "mean_production_score": 52.28,
+      "mean_raw_score": 53.1,
+      "mean_data_coverage_pct": 85.03,
+      "raw_vs_reconstructed_rank_spearman": 0.9856,
+      "published_vs_raw_rank_spearman": 0.9864,
       "dimension_coverage": {
         "REIT Quality": {
-          "present": 71,
+          "present": 67,
           "coverage_pct": 100.0
         },
         "Growth": {
-          "present": 71,
+          "present": 67,
           "coverage_pct": 100.0
         },
         "Leverage": {
-          "present": 64,
-          "coverage_pct": 90.1
+          "present": 59,
+          "coverage_pct": 88.1
         },
         "P/FFO Value": {
-          "present": 71,
+          "present": 67,
           "coverage_pct": 100.0
         },
         "Distribution": {
-          "present": 70,
-          "coverage_pct": 98.6
+          "present": 66,
+          "coverage_pct": 98.5
         },
         "Stability": {
-          "present": 69,
-          "coverage_pct": 97.2
+          "present": 66,
+          "coverage_pct": 98.5
         }
       },
       "structurally_unavailable_dimensions": [],
       "effective_dimension_count_distribution": {
         "4": 1,
         "5": 8,
-        "6": 62
+        "6": 58
       },
       "weight_pack_sum": 1.0,
       "missing_weight_handling": {
         "policy": "fixed_weights_neutral_50",
-        "mean_missing_weight_pct": 2.35,
+        "mean_missing_weight_pct": 2.72,
         "max_missing_weight_pct": 25.0,
         "rows_missing_at_least_20pct_weight": 1,
         "rows_missing_at_least_35pct_weight": 0,
@@ -2657,113 +2655,113 @@
         "mean_max_observed_dimension_share_pct": 22.0,
         "max_observed_dimension_share_pct": 22.0,
         "dominant_observed_dimension_counts": {
-          "REIT Quality": 71
+          "REIT Quality": 67
         }
       },
       "dimension_correlations": [
         {
           "left": "REIT Quality",
           "right": "Leverage",
-          "pearson": 0.343,
-          "spearman": 0.391,
+          "pearson": 0.355,
+          "spearman": 0.392,
           "potential_redundancy": false
         },
         {
           "left": "Leverage",
           "right": "P/FFO Value",
-          "pearson": -0.349,
-          "spearman": -0.374,
+          "pearson": -0.328,
+          "spearman": -0.367,
           "potential_redundancy": false
         },
         {
-          "left": "Leverage",
+          "left": "P/FFO Value",
           "right": "Stability",
-          "pearson": 0.307,
-          "spearman": 0.361,
+          "pearson": -0.357,
+          "spearman": -0.344,
           "potential_redundancy": false
         },
         {
           "left": "P/FFO Value",
           "right": "Distribution",
-          "pearson": 0.389,
-          "spearman": 0.355,
+          "pearson": 0.367,
+          "spearman": 0.324,
           "potential_redundancy": false
         },
         {
-          "left": "P/FFO Value",
-          "right": "Stability",
-          "pearson": -0.313,
-          "spearman": -0.318,
+          "left": "REIT Quality",
+          "right": "Distribution",
+          "pearson": 0.248,
+          "spearman": 0.288,
           "potential_redundancy": false
         },
         {
           "left": "REIT Quality",
           "right": "P/FFO Value",
-          "pearson": -0.277,
-          "spearman": -0.254,
-          "potential_redundancy": false
-        },
-        {
-          "left": "REIT Quality",
-          "right": "Stability",
-          "pearson": 0.247,
-          "spearman": 0.196,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "P/FFO Value",
-          "pearson": -0.14,
-          "spearman": -0.174,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Leverage",
-          "pearson": 0.095,
-          "spearman": 0.134,
+          "pearson": -0.294,
+          "spearman": -0.256,
           "potential_redundancy": false
         },
         {
           "left": "REIT Quality",
           "right": "Growth",
-          "pearson": 0.07,
-          "spearman": 0.124,
+          "pearson": 0.215,
+          "spearman": 0.234,
           "potential_redundancy": false
         },
         {
-          "left": "REIT Quality",
-          "right": "Distribution",
-          "pearson": 0.055,
-          "spearman": 0.121,
+          "left": "Leverage",
+          "right": "Stability",
+          "pearson": 0.177,
+          "spearman": 0.217,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
-          "right": "Stability",
-          "pearson": 0.091,
-          "spearman": 0.089,
+          "right": "P/FFO Value",
+          "pearson": -0.168,
+          "spearman": -0.209,
           "potential_redundancy": false
         },
         {
-          "left": "Distribution",
+          "left": "Growth",
+          "right": "Leverage",
+          "pearson": 0.173,
+          "spearman": 0.174,
+          "potential_redundancy": false
+        },
+        {
+          "left": "REIT Quality",
           "right": "Stability",
-          "pearson": 0.052,
+          "pearson": 0.171,
+          "spearman": 0.136,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Distribution",
+          "pearson": 0.089,
           "spearman": 0.084,
           "potential_redundancy": false
         },
         {
           "left": "Growth",
-          "right": "Distribution",
-          "pearson": 0.042,
-          "spearman": 0.067,
+          "right": "Stability",
+          "pearson": 0.052,
+          "spearman": 0.061,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Distribution",
+          "right": "Stability",
+          "pearson": -0.091,
+          "spearman": -0.045,
           "potential_redundancy": false
         },
         {
           "left": "Leverage",
           "right": "Distribution",
-          "pearson": -0.046,
-          "spearman": 0.024,
+          "pearson": -0.108,
+          "spearman": -0.026,
           "potential_redundancy": false
         }
       ],
@@ -2771,154 +2769,154 @@
         {
           "dimension": "REIT Quality",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9104,
+          "rank_spearman": 0.9308,
           "top_decile_jaccard": 0.4
         },
         {
           "dimension": "REIT Quality",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.957,
-          "top_decile_jaccard": 0.75
+          "rank_spearman": 0.972,
+          "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "REIT Quality",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9696,
+          "rank_spearman": 0.9795,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "REIT Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.951,
+          "rank_spearman": 0.9668,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9322,
+          "rank_spearman": 0.9566,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9663,
-          "top_decile_jaccard": 0.75
+          "rank_spearman": 0.9784,
+          "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9626,
-          "top_decile_jaccard": 0.2727
+          "rank_spearman": 0.9743,
+          "top_decile_jaccard": 0.4
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9519,
+          "rank_spearman": 0.9619,
           "top_decile_jaccard": 0.2727
         },
         {
           "dimension": "Leverage",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.927,
-          "top_decile_jaccard": 0.4
-        },
-        {
-          "dimension": "Leverage",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9571,
-          "top_decile_jaccard": 0.4
-        },
-        {
-          "dimension": "Leverage",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9717,
-          "top_decile_jaccard": 0.75
-        },
-        {
-          "dimension": "Leverage",
-          "weight_multiplier": 1.5,
           "rank_spearman": 0.9582,
+          "top_decile_jaccard": 0.4
+        },
+        {
+          "dimension": "Leverage",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.975,
+          "top_decile_jaccard": 0.4
+        },
+        {
+          "dimension": "Leverage",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.978,
           "top_decile_jaccard": 0.5556
+        },
+        {
+          "dimension": "Leverage",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9634,
+          "top_decile_jaccard": 0.4
         },
         {
           "dimension": "P/FFO Value",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9409,
+          "rank_spearman": 0.9477,
           "top_decile_jaccard": 0.4
         },
         {
           "dimension": "P/FFO Value",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9694,
-          "top_decile_jaccard": 0.5556
+          "rank_spearman": 0.9756,
+          "top_decile_jaccard": 0.4
         },
         {
           "dimension": "P/FFO Value",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9495,
+          "rank_spearman": 0.9707,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "P/FFO Value",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9044,
+          "rank_spearman": 0.9325,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Distribution",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9625,
+          "rank_spearman": 0.9718,
           "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Distribution",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9689,
-          "top_decile_jaccard": 0.75
+          "rank_spearman": 0.9794,
+          "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Distribution",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9651,
-          "top_decile_jaccard": 0.75
+          "rank_spearman": 0.9779,
+          "top_decile_jaccard": 0.5556
         },
         {
           "dimension": "Distribution",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9534,
-          "top_decile_jaccard": 0.5556
-        },
-        {
-          "dimension": "Stability",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9652,
-          "top_decile_jaccard": 0.5556
-        },
-        {
-          "dimension": "Stability",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9676,
-          "top_decile_jaccard": 0.5556
-        },
-        {
-          "dimension": "Stability",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9693,
-          "top_decile_jaccard": 0.75
-        },
-        {
-          "dimension": "Stability",
           "weight_multiplier": 1.5,
           "rank_spearman": 0.9706,
-          "top_decile_jaccard": 0.75
+          "top_decile_jaccard": 0.4
+        },
+        {
+          "dimension": "Stability",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9786,
+          "top_decile_jaccard": 0.5556
+        },
+        {
+          "dimension": "Stability",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9804,
+          "top_decile_jaccard": 0.5556
+        },
+        {
+          "dimension": "Stability",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9809,
+          "top_decile_jaccard": 0.5556
+        },
+        {
+          "dimension": "Stability",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.98,
+          "top_decile_jaccard": 0.5556
         }
       ],
       "redundant_pair_count": 0,
-      "material_sensitivity_count": 17
+      "material_sensitivity_count": 24
     },
     {
       "score_model": "insurance",
-      "n": 45,
+      "n": 48,
       "weights": {
         "Insurance Quality": 0.22,
         "Underwriting Proxy": 0.18,
@@ -2928,14 +2926,14 @@
         "Income": 0.08,
         "Stability": 0.05
       },
-      "mean_production_score": 56.03,
-      "mean_raw_score": 56.03,
-      "mean_data_coverage_pct": 83.4,
-      "raw_vs_reconstructed_rank_spearman": 0.997,
+      "mean_production_score": 55.62,
+      "mean_raw_score": 55.62,
+      "mean_data_coverage_pct": 83.05,
+      "raw_vs_reconstructed_rank_spearman": 0.9979,
       "published_vs_raw_rank_spearman": 1.0,
       "dimension_coverage": {
         "Insurance Quality": {
-          "present": 45,
+          "present": 48,
           "coverage_pct": 100.0
         },
         "Underwriting Proxy": {
@@ -2943,24 +2941,24 @@
           "coverage_pct": 0.0
         },
         "Capital Proxy": {
-          "present": 45,
+          "present": 48,
           "coverage_pct": 100.0
         },
         "Growth": {
-          "present": 45,
+          "present": 48,
           "coverage_pct": 100.0
         },
         "Valuation": {
-          "present": 44,
-          "coverage_pct": 97.8
+          "present": 46,
+          "coverage_pct": 95.8
         },
         "Income": {
-          "present": 43,
-          "coverage_pct": 95.6
+          "present": 46,
+          "coverage_pct": 95.8
         },
         "Stability": {
-          "present": 44,
-          "coverage_pct": 97.8
+          "present": 47,
+          "coverage_pct": 97.9
         }
       },
       "structurally_unavailable_dimensions": [
@@ -2970,129 +2968,129 @@
         }
       ],
       "effective_dimension_count_distribution": {
-        "5": 4,
-        "6": 41
+        "5": 5,
+        "6": 43
       },
       "weight_pack_sum": 1.0,
       "missing_weight_handling": {
         "policy": "fixed_weights_neutral_50",
-        "mean_missing_weight_pct": 18.84,
+        "mean_missing_weight_pct": 19.15,
         "max_missing_weight_pct": 35.0,
-        "rows_missing_at_least_20pct_weight": 4,
-        "rows_missing_at_least_35pct_weight": 1,
-        "published_rows_missing_at_least_20pct_weight": 4,
-        "published_rows_missing_at_least_35pct_weight": 1,
-        "robust_rows_missing_at_least_35pct_weight": 0,
+        "rows_missing_at_least_20pct_weight": 5,
+        "rows_missing_at_least_35pct_weight": 2,
+        "published_rows_missing_at_least_20pct_weight": 5,
+        "published_rows_missing_at_least_35pct_weight": 2,
+        "robust_rows_missing_at_least_35pct_weight": 1,
         "mean_max_observed_dimension_share_pct": 22.0,
         "max_observed_dimension_share_pct": 22.0,
         "dominant_observed_dimension_counts": {
-          "Insurance Quality": 45
+          "Insurance Quality": 48
         }
       },
       "dimension_correlations": [
         {
           "left": "Capital Proxy",
           "right": "Income",
-          "pearson": -0.43,
-          "spearman": -0.5,
+          "pearson": -0.417,
+          "spearman": -0.492,
           "potential_redundancy": false
         },
         {
           "left": "Capital Proxy",
           "right": "Stability",
-          "pearson": 0.269,
-          "spearman": 0.461,
+          "pearson": 0.211,
+          "spearman": 0.405,
           "potential_redundancy": false
         },
         {
           "left": "Insurance Quality",
           "right": "Capital Proxy",
-          "pearson": 0.394,
-          "spearman": 0.366,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Insurance Quality",
-          "right": "Income",
-          "pearson": -0.282,
-          "spearman": -0.362,
+          "pearson": 0.398,
+          "spearman": 0.404,
           "potential_redundancy": false
         },
         {
           "left": "Insurance Quality",
           "right": "Stability",
-          "pearson": 0.236,
-          "spearman": 0.338,
+          "pearson": 0.277,
+          "spearman": 0.309,
           "potential_redundancy": false
         },
         {
-          "left": "Capital Proxy",
-          "right": "Valuation",
-          "pearson": 0.252,
-          "spearman": 0.298,
+          "left": "Insurance Quality",
+          "right": "Income",
+          "pearson": -0.248,
+          "spearman": -0.277,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Income",
+          "pearson": 0.266,
+          "spearman": 0.262,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Income",
-          "pearson": 0.276,
-          "spearman": 0.287,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Income",
-          "pearson": 0.262,
-          "spearman": 0.229,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Valuation",
-          "pearson": 0.147,
-          "spearman": 0.167,
+          "pearson": 0.268,
+          "spearman": 0.237,
           "potential_redundancy": false
         },
         {
           "left": "Capital Proxy",
-          "right": "Growth",
-          "pearson": -0.193,
-          "spearman": -0.159,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Growth",
-          "right": "Stability",
-          "pearson": -0.006,
-          "spearman": -0.136,
-          "potential_redundancy": false
-        },
-        {
-          "left": "Insurance Quality",
-          "right": "Growth",
-          "pearson": -0.131,
-          "spearman": -0.107,
+          "right": "Valuation",
+          "pearson": 0.218,
+          "spearman": 0.235,
           "potential_redundancy": false
         },
         {
           "left": "Valuation",
           "right": "Stability",
-          "pearson": -0.126,
-          "spearman": 0.081,
+          "pearson": -0.083,
+          "spearman": 0.129,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Valuation",
+          "pearson": 0.117,
+          "spearman": 0.116,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Capital Proxy",
+          "right": "Growth",
+          "pearson": -0.148,
+          "spearman": -0.101,
           "potential_redundancy": false
         },
         {
           "left": "Income",
           "right": "Stability",
-          "pearson": 0.009,
-          "spearman": -0.081,
+          "pearson": 0.02,
+          "spearman": -0.088,
           "potential_redundancy": false
         },
         {
           "left": "Insurance Quality",
           "right": "Valuation",
-          "pearson": 0.037,
-          "spearman": -0.021,
+          "pearson": -0.0,
+          "spearman": -0.069,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Growth",
+          "right": "Stability",
+          "pearson": 0.07,
+          "spearman": -0.063,
+          "potential_redundancy": false
+        },
+        {
+          "left": "Insurance Quality",
+          "right": "Growth",
+          "pearson": -0.071,
+          "spearman": -0.03,
           "potential_redundancy": false
         }
       ],
@@ -3100,26 +3098,26 @@
         {
           "dimension": "Insurance Quality",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9741,
+          "rank_spearman": 0.9746,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Insurance Quality",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.996,
+          "rank_spearman": 0.9931,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Insurance Quality",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9951,
-          "top_decile_jaccard": 1.0
+          "rank_spearman": 0.994,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Insurance Quality",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9783,
-          "top_decile_jaccard": 1.0
+          "rank_spearman": 0.977,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Underwriting Proxy",
@@ -3148,245 +3146,245 @@
         {
           "dimension": "Capital Proxy",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9611,
-          "top_decile_jaccard": 1.0
+          "rank_spearman": 0.9605,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Capital Proxy",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9924,
-          "top_decile_jaccard": 1.0
+          "rank_spearman": 0.9932,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Capital Proxy",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9937,
+          "rank_spearman": 0.9902,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Capital Proxy",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9794,
+          "rank_spearman": 0.9766,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.988,
+          "rank_spearman": 0.9871,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Growth",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9974,
-          "top_decile_jaccard": 1.0
-        },
-        {
-          "dimension": "Growth",
-          "weight_multiplier": 1.2,
-          "rank_spearman": 0.9966,
-          "top_decile_jaccard": 1.0
-        },
-        {
-          "dimension": "Growth",
-          "weight_multiplier": 1.5,
-          "rank_spearman": 0.9856,
-          "top_decile_jaccard": 1.0
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 0.5,
-          "rank_spearman": 0.9661,
-          "top_decile_jaccard": 0.6
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 0.8,
-          "rank_spearman": 0.9926,
-          "top_decile_jaccard": 1.0
-        },
-        {
-          "dimension": "Valuation",
-          "weight_multiplier": 1.2,
           "rank_spearman": 0.9979,
           "top_decile_jaccard": 1.0
         },
         {
+          "dimension": "Growth",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9954,
+          "top_decile_jaccard": 1.0
+        },
+        {
+          "dimension": "Growth",
+          "weight_multiplier": 1.5,
+          "rank_spearman": 0.9834,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 0.5,
+          "rank_spearman": 0.9621,
+          "top_decile_jaccard": 0.6667
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 0.8,
+          "rank_spearman": 0.9889,
+          "top_decile_jaccard": 1.0
+        },
+        {
+          "dimension": "Valuation",
+          "weight_multiplier": 1.2,
+          "rank_spearman": 0.9974,
+          "top_decile_jaccard": 1.0
+        },
+        {
           "dimension": "Valuation",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9866,
-          "top_decile_jaccard": 1.0
+          "rank_spearman": 0.9847,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Income",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9872,
-          "top_decile_jaccard": 1.0
+          "rank_spearman": 0.9851,
+          "top_decile_jaccard": 0.6667
         },
         {
           "dimension": "Income",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9976,
+          "rank_spearman": 0.9962,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Income",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9957,
+          "rank_spearman": 0.9959,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Income",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9884,
+          "rank_spearman": 0.9887,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.5,
-          "rank_spearman": 0.9975,
+          "rank_spearman": 0.9977,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 0.8,
-          "rank_spearman": 0.9999,
+          "rank_spearman": 0.9994,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.2,
-          "rank_spearman": 0.9989,
+          "rank_spearman": 0.9986,
           "top_decile_jaccard": 1.0
         },
         {
           "dimension": "Stability",
           "weight_multiplier": 1.5,
-          "rank_spearman": 0.9964,
+          "rank_spearman": 0.9959,
           "top_decile_jaccard": 1.0
         }
       ],
       "redundant_pair_count": 0,
-      "material_sensitivity_count": 1
+      "material_sensitivity_count": 8
     }
   ],
   "sector_top_decile_bias": [
     {
       "sector": "Technology",
-      "universe_n": 257,
+      "universe_n": 255,
       "top_decile_n": 41,
-      "universe_share_pct": 15.75,
-      "top_decile_share_pct": 25.15,
+      "universe_share_pct": 15.79,
+      "top_decile_share_pct": 25.31,
       "top_decile_representation_ratio": 1.6,
-      "mean_score": 50.81
+      "mean_score": 50.84
     },
     {
       "sector": "Financial Services",
-      "universe_n": 242,
-      "top_decile_n": 20,
-      "universe_share_pct": 14.83,
-      "top_decile_share_pct": 12.27,
-      "top_decile_representation_ratio": 0.83,
-      "mean_score": 52.12
+      "universe_n": 235,
+      "top_decile_n": 21,
+      "universe_share_pct": 14.55,
+      "top_decile_share_pct": 12.96,
+      "top_decile_representation_ratio": 0.89,
+      "mean_score": 52.36
     },
     {
       "sector": "Industrials",
-      "universe_n": 237,
-      "top_decile_n": 4,
-      "universe_share_pct": 14.52,
-      "top_decile_share_pct": 2.45,
-      "top_decile_representation_ratio": 0.17,
-      "mean_score": 49.91
+      "universe_n": 233,
+      "top_decile_n": 5,
+      "universe_share_pct": 14.43,
+      "top_decile_share_pct": 3.09,
+      "top_decile_representation_ratio": 0.21,
+      "mean_score": 50.16
     },
     {
       "sector": "Healthcare",
-      "universe_n": 233,
-      "top_decile_n": 34,
-      "universe_share_pct": 14.28,
-      "top_decile_share_pct": 20.86,
-      "top_decile_representation_ratio": 1.46,
-      "mean_score": 51.81
+      "universe_n": 226,
+      "top_decile_n": 36,
+      "universe_share_pct": 13.99,
+      "top_decile_share_pct": 22.22,
+      "top_decile_representation_ratio": 1.59,
+      "mean_score": 52.01
     },
     {
       "sector": "Consumer Cyclical",
-      "universe_n": 141,
+      "universe_n": 149,
       "top_decile_n": 6,
-      "universe_share_pct": 8.64,
-      "top_decile_share_pct": 3.68,
-      "top_decile_representation_ratio": 0.43,
-      "mean_score": 50.61
+      "universe_share_pct": 9.23,
+      "top_decile_share_pct": 3.7,
+      "top_decile_representation_ratio": 0.4,
+      "mean_score": 50.77
     },
     {
       "sector": "Basic Materials",
-      "universe_n": 131,
-      "top_decile_n": 12,
-      "universe_share_pct": 8.03,
-      "top_decile_share_pct": 7.36,
-      "top_decile_representation_ratio": 0.92,
-      "mean_score": 49.29
+      "universe_n": 129,
+      "top_decile_n": 9,
+      "universe_share_pct": 7.99,
+      "top_decile_share_pct": 5.56,
+      "top_decile_representation_ratio": 0.7,
+      "mean_score": 48.69
     },
     {
       "sector": "Energy",
-      "universe_n": 87,
-      "top_decile_n": 28,
-      "universe_share_pct": 5.33,
-      "top_decile_share_pct": 17.18,
-      "top_decile_representation_ratio": 3.22,
-      "mean_score": 55.57
+      "universe_n": 91,
+      "top_decile_n": 27,
+      "universe_share_pct": 5.63,
+      "top_decile_share_pct": 16.67,
+      "top_decile_representation_ratio": 2.96,
+      "mean_score": 55.61
     },
     {
       "sector": "Consumer Defensive",
-      "universe_n": 78,
-      "top_decile_n": 4,
-      "universe_share_pct": 4.78,
-      "top_decile_share_pct": 2.45,
-      "top_decile_representation_ratio": 0.51,
-      "mean_score": 52.2
+      "universe_n": 80,
+      "top_decile_n": 3,
+      "universe_share_pct": 4.95,
+      "top_decile_share_pct": 1.85,
+      "top_decile_representation_ratio": 0.37,
+      "mean_score": 51.91
     },
     {
       "sector": "Utilities",
-      "universe_n": 72,
+      "universe_n": 70,
       "top_decile_n": 1,
-      "universe_share_pct": 4.41,
-      "top_decile_share_pct": 0.61,
+      "universe_share_pct": 4.33,
+      "top_decile_share_pct": 0.62,
       "top_decile_representation_ratio": 0.14,
-      "mean_score": 50.36
+      "mean_score": 50.87
     },
     {
       "sector": "Real Estate",
-      "universe_n": 71,
+      "universe_n": 67,
       "top_decile_n": 5,
-      "universe_share_pct": 4.35,
-      "top_decile_share_pct": 3.07,
-      "top_decile_representation_ratio": 0.71,
-      "mean_score": 52.18
+      "universe_share_pct": 4.15,
+      "top_decile_share_pct": 3.09,
+      "top_decile_representation_ratio": 0.74,
+      "mean_score": 52.28
     },
     {
       "sector": "Communication Services",
-      "universe_n": 68,
+      "universe_n": 65,
       "top_decile_n": 7,
-      "universe_share_pct": 4.17,
-      "top_decile_share_pct": 4.29,
-      "top_decile_representation_ratio": 1.03,
-      "mean_score": 51.24
+      "universe_share_pct": 4.02,
+      "top_decile_share_pct": 4.32,
+      "top_decile_representation_ratio": 1.07,
+      "mean_score": 52.14
     },
     {
       "sector": "Unknown",
-      "universe_n": 11,
+      "universe_n": 10,
       "top_decile_n": 0,
-      "universe_share_pct": 0.67,
+      "universe_share_pct": 0.62,
       "top_decile_share_pct": 0.0,
       "top_decile_representation_ratio": 0.0,
-      "mean_score": 55.77
+      "mean_score": 54.13
     },
     {
       "sector": "Materials",
-      "universe_n": 4,
+      "universe_n": 5,
       "top_decile_n": 1,
-      "universe_share_pct": 0.25,
-      "top_decile_share_pct": 0.61,
-      "top_decile_representation_ratio": 2.5,
-      "mean_score": 54.38
+      "universe_share_pct": 0.31,
+      "top_decile_share_pct": 0.62,
+      "top_decile_representation_ratio": 1.99,
+      "mean_score": 53.94
     }
   ],
   "flags": [
@@ -3394,27 +3392,27 @@
       "type": "weight_sensitivity",
       "score_model": "general",
       "severity": "review",
-      "count": 12
+      "count": 20
     },
     {
       "type": "missing_data_neutralization",
       "score_model": "general",
       "severity": "investigate",
-      "rows": 34,
-      "max_missing_weight_pct": 82.0
+      "rows": 32,
+      "max_missing_weight_pct": 60.0
     },
     {
       "type": "published_score_with_heavy_missing_weight",
       "score_model": "general",
       "severity": "investigate",
-      "published_rows": 17,
+      "published_rows": 20,
       "robust_rows": 1
     },
     {
       "type": "reconstruction_mismatch",
       "score_model": "general",
       "severity": "investigate",
-      "rank_spearman": 0.9654
+      "rank_spearman": 0.9611
     },
     {
       "type": "weight_sensitivity",
@@ -3426,21 +3424,21 @@
       "type": "missing_data_neutralization",
       "score_model": "growth_tech",
       "severity": "investigate",
-      "rows": 2,
+      "rows": 4,
       "max_missing_weight_pct": 80.0
     },
     {
       "type": "published_score_with_heavy_missing_weight",
       "score_model": "growth_tech",
       "severity": "investigate",
-      "published_rows": 1,
+      "published_rows": 2,
       "robust_rows": 1
     },
     {
       "type": "reconstruction_mismatch",
       "score_model": "growth_tech",
       "severity": "investigate",
-      "rank_spearman": 0.929
+      "rank_spearman": 0.9311
     },
     {
       "type": "weight_sensitivity",
@@ -3452,21 +3450,21 @@
       "type": "missing_data_neutralization",
       "score_model": "biotech",
       "severity": "investigate",
-      "rows": 3,
+      "rows": 5,
       "max_missing_weight_pct": 90.0
     },
     {
       "type": "published_score_with_heavy_missing_weight",
       "score_model": "biotech",
       "severity": "investigate",
-      "published_rows": 1,
+      "published_rows": 3,
       "robust_rows": 0
     },
     {
       "type": "reconstruction_mismatch",
       "score_model": "biotech",
       "severity": "investigate",
-      "rank_spearman": 0.8369
+      "rank_spearman": 0.8539
     },
     {
       "type": "weight_sensitivity",
@@ -3478,14 +3476,14 @@
       "type": "missing_data_neutralization",
       "score_model": "energy",
       "severity": "review",
-      "rows": 5,
+      "rows": 6,
       "max_missing_weight_pct": 30.0
     },
     {
       "type": "reconstruction_mismatch",
       "score_model": "energy",
       "severity": "investigate",
-      "rank_spearman": 0.9442
+      "rank_spearman": 0.9212
     },
     {
       "type": "weight_sensitivity",
@@ -3508,14 +3506,14 @@
       "type": "missing_data_neutralization",
       "score_model": "bank",
       "severity": "review",
-      "rows": 49,
+      "rows": 47,
       "max_missing_weight_pct": 28.0
     },
     {
       "type": "reconstruction_mismatch",
       "score_model": "bank",
       "severity": "investigate",
-      "rank_spearman": 0.9401
+      "rank_spearman": 0.9385
     },
     {
       "type": "weight_sensitivity",
@@ -3527,13 +3525,13 @@
       "type": "reconstruction_mismatch",
       "score_model": "utility",
       "severity": "investigate",
-      "rank_spearman": 0.943
+      "rank_spearman": 0.9386
     },
     {
       "type": "weight_sensitivity",
       "score_model": "reit",
       "severity": "review",
-      "count": 17
+      "count": 24
     },
     {
       "type": "missing_data_neutralization",
@@ -3543,16 +3541,10 @@
       "max_missing_weight_pct": 25.0
     },
     {
-      "type": "reconstruction_mismatch",
-      "score_model": "reit",
-      "severity": "investigate",
-      "rank_spearman": 0.974
-    },
-    {
       "type": "weight_sensitivity",
       "score_model": "insurance",
       "severity": "review",
-      "count": 1
+      "count": 8
     },
     {
       "type": "structurally_unavailable_dimensions",
@@ -3569,15 +3561,15 @@
       "type": "missing_data_neutralization",
       "score_model": "insurance",
       "severity": "investigate",
-      "rows": 1,
+      "rows": 2,
       "max_missing_weight_pct": 35.0
     },
     {
       "type": "published_score_with_heavy_missing_weight",
       "score_model": "insurance",
       "severity": "investigate",
-      "published_rows": 1,
-      "robust_rows": 0
+      "published_rows": 2,
+      "robust_rows": 1
     },
     {
       "type": "sector_concentration",
