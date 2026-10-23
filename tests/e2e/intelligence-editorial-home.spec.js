@@ -130,7 +130,7 @@ test('iPhone/WebKit: single canonical daily readings expose honest fallbacks', a
   await page.waitForFunction(() => document.getElementById('viewDashboard')?.hidden === false);
   const home = page.locator('#vestraIntelligenceHome');
   await expect(home).toBeVisible();
-  for (const selector of ['[data-vi-canonical-market]', '[data-vi-canonical-news-list]', '[data-vi-canonical-event-list]']) {
+  for (const selector of ['[data-vi-canonical-label]', '[data-vi-canonical-news-list]', '[data-vi-canonical-event-list]']) {
     const reading = home.locator(selector);
     await expect(reading).toHaveCount(1);
     await expect(reading).not.toBeEmpty();

@@ -320,9 +320,6 @@
     const hasSentiment = Number.isInteger(score) && score >= 0 && score <= 100 && Boolean(label);
     set('score', hasSentiment ? String(score) : '—');
     set('label', hasSentiment ? label : 'Leitura por confirmar');
-    set('market', hasSentiment
-      ? 'Barómetro de mercado baseado em sinais de preço; não equivale ao inquérito AAII. Abrir para evolução e metodologia.'
-      : 'Sem barómetro observado nesta sessão. Abrir o módulo para fontes, AAII e metodologia.');
     const syncCards = (sourceSelector, listSelector, itemSelector, fallback, limit) => {
       const list = host.querySelector(listSelector);
       const source = document.querySelector(sourceSelector);
