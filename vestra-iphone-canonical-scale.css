@@ -68,7 +68,8 @@
   html body #viewMarket#viewMarket .market-mode-grid{
     display:flex!important;flex-wrap:nowrap!important;
     overflow-x:auto!important;overflow-y:hidden!important;
-    width:100%!important;max-width:100%!important;
+    width:min(100%,calc(100vw - 24px))!important;
+    max-width:calc(100vw - 24px)!important;
     min-width:0!important;box-sizing:border-box!important;
     -webkit-overflow-scrolling:touch;
   }
