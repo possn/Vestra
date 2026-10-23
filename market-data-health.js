@@ -7,6 +7,8 @@
     learned: './data/learned_tickers.json',
   });
   const QUOTE_STALE_MS = 60 * 1000;
+  // Reference index is published on a daily rebuild cadence, not every 4 hours.
+  const REFERENCE_STALE_MINUTES = 30 * 60;
   const DATA_FETCH_TIMEOUT_MS = 5000;
   let refreshGeneration = 0;
 
@@ -77,7 +79,7 @@
   function deriveState(guard, minutes) {
     if (!guard) return { key: 'unknown', label: 'Estado dos dados indisponível' };
     if (guard.ok === false || number(guard.violation_count) > 0) return { key: 'bad', label: 'Atenção aos dados' };
-    if (minutes != null && minutes > 240) return { key: 'stale', label: 'Dados de referência antigos' };
+    if (minutes != null && minutes > REFERENCE_STALE_MINUTES) return { key: 'stale', label: 'Dados de referência antigos' };
     return { key: 'ok', label: 'Dados de referência atualizados' };
   }
 
@@ -94,7 +96,9 @@
   function deriveOverallState(referenceState, quoteState) {
     if (referenceState.key === 'bad' || quoteState.key === 'bad') return { key: 'bad', label: 'Atenção ao mercado' };
     if (quoteState.key === 'partial') return { key: 'stale', label: 'Cotações parcialmente atualizadas' };
-    if (referenceState.key === 'stale' || quoteState.key === 'stale') return { key: 'stale', label: 'Atualização pendente' };
+    if (quoteState.key === 'stale' && referenceState.key === 'stale') return { key: 'stale', label: 'Referência e cotações por atualizar' };
+    if (quoteState.key === 'stale') return { key: 'stale', label: 'Cotações por atualizar' };
+    if (referenceState.key === 'stale') return { key: 'stale', label: 'Referência por atualizar' };
     if (referenceState.key === 'ok' && quoteState.key === 'ok') return { key: 'ok', label: 'Mercado atualizado' };
     if (referenceState.key === 'ok') return { key: 'ok', label: 'Dados de referência atualizados' };
     return { key: 'unknown', label: 'Estado do mercado indisponível' };
@@ -245,6 +249,7 @@
   window.VestraMarketDataHealth = Object.freeze({
     version: '1.3',
     quoteStaleMs: QUOTE_STALE_MS,
+    referenceStaleMinutes: REFERENCE_STALE_MINUTES,
     fetchTimeoutMs: DATA_FETCH_TIMEOUT_MS,
     refresh,
     model,
