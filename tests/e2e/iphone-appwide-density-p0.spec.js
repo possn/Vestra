@@ -85,3 +85,21 @@ test('iPhone: Cashflow has one visible movement action', async ({page}) => {
  await expect(page.locator('#viewCashflow #btnAddTx')).toBeVisible();
  await expect(page.locator('#viewCashflow button').filter({hasText:'+ Movimento'})).toHaveCount(1);
 });
+
+// Editorial density: important Market action copy should remain legible on a 390px iPhone.
+test('iPhone: Market portfolio action has concise uncropped context', async ({page}) => {
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ await page.locator('#navMarket').click();
+ const action=page.locator('#viewMarket .market-portfolio-access');
+ await expect(action).toBeVisible();
+ const copy=action.locator('small');
+ await expect(copy).toHaveText('Convicção · riscos · alternativas');
+ const bounds=await copy.evaluate(el=>{
+  const r=el.getBoundingClientRect();
+  const p=el.closest('.market-portfolio-access').getBoundingClientRect();
+  return {left:r.left,right:r.right,parentRight:p.right,viewport:document.documentElement.clientWidth};
+ });
+ expect(bounds.left).toBeGreaterThanOrEqual(0);
+ expect(bounds.right).toBeLessThanOrEqual(Math.min(bounds.parentRight,bounds.viewport)+2);
+});

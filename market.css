@@ -650,3 +650,24 @@ html.modal-open,body.modal-open{
 .market-dossier-radar-legend strong{display:block;margin-top:3px;font-size:16px;letter-spacing:-.03em}
 @media(max-width:720px){.market-dossier-radar{grid-template-columns:1fr;gap:12px}.market-dossier-radar-visual{order:-1}.market-dossier-radar-visual svg{width:min(88vw,300px)}.market-dossier-radar-legend{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
+
+/* iPhone P0: portfolio entry must fit the physical viewport even when an
+   upstream Market grid still has an oversized intrinsic width. */
+@media(max-width:600px){
+  html body #viewMarket .market-portfolio-access{
+    width:min(100%,calc(100vw - 24px))!important;
+    max-width:calc(100vw - 24px)!important;
+    min-width:0!important;
+    grid-template-columns:34px minmax(0,1fr) 18px!important;
+    box-sizing:border-box!important;
+  }
+  html body #viewMarket .market-portfolio-access > span:nth-child(2){
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  html body #viewMarket .market-portfolio-access small{
+    max-width:100%!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+  }
+}
