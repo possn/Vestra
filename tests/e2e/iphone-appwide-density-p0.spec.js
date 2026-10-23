@@ -43,3 +43,30 @@ test('iPhone: compact content and navigation across all seven active views',asyn
   }
  }
 });
+
+// Regression evidenced by real installed-iPhone captures: readable dark intro
+// text, full-width Market rail and no horizontal bleed of action surfaces.
+test('iPhone: readable native headings and constrained Market rail',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ for(const [view,selector] of [['assets','#viewAssets .portfolio-hero h2'],['cashflow','#viewCashflow .flow-hero h2']]){
+  await page.evaluate(v=>setView(v),view);
+  const ink=await page.locator(selector).evaluate(el=>{
+   const c=getComputedStyle(el).color;
+   const rgb=c.match(/[\\d.]+/g).slice(0,3).map(Number);
+   return {rgb,opacity:Number(getComputedStyle(el).opacity)};
+  });
+  expect(ink.rgb.every(n=>n>=180),view+' heading must be legible on dark background').toBe(true);
+  expect(ink.opacity,view+' heading opacity').toBeGreaterThanOrEqual(.99);
+ }
+ await page.locator('#navMarket').click();
+ const rail=page.locator('#viewMarket .market-mode-grid').first();
+ await expect(rail).toBeVisible();
+ const bounds=await rail.evaluate(el=>{
+  const r=el.getBoundingClientRect();
+  const p=el.parentElement.getBoundingClientRect();
+  return {left:r.left,right:r.right,parentRight:p.right,viewport:document.documentElement.clientWidth};
+ });
+ expect(bounds.left).toBeGreaterThanOrEqual(0);
+ expect(bounds.right).toBeLessThanOrEqual(Math.min(bounds.parentRight,bounds.viewport)+2);
+});
