@@ -3,7 +3,7 @@
   "evaluation_method": "adjusted_daily_close_after_publication",
   "cohort_policy": "first_immutable_publication_per_ticker_and_stage",
   "historical_only": true,
-  "cohort_count": 16,
+  "cohort_count": 17,
   "stage_evidence": {
     "schema": "vestra_prebreakout_stage_evidence_v1",
     "method": "observed_point_in_time_adjusted_close",
@@ -12,32 +12,32 @@
       "compressão": {
         "5": {
           "n": 0,
-          "n_missing": 13,
-          "n_observations": 13,
+          "n_missing": 14,
+          "n_observations": 14,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
           "n": 0,
-          "n_missing": 13,
-          "n_observations": 13,
+          "n_missing": 14,
+          "n_observations": 14,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "20": {
           "n": 0,
-          "n_missing": 13,
-          "n_observations": 13,
+          "n_missing": 14,
+          "n_observations": 14,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "60": {
           "n": 0,
-          "n_missing": 13,
-          "n_observations": 13,
+          "n_missing": 14,
+          "n_observations": 14,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
@@ -273,8 +273,13 @@
     },
     {
       "ticker": "CVE",
-      "entry": null,
-      "results": {},
+      "entry": "2026-10-22",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-21T08:49:24.729306+00:00",
       "signal_date": "2026-10-20",
       "stage": "compressão"
@@ -286,14 +291,22 @@
       "signal_date": "2026-10-20",
       "entry": null,
       "results": {}
+    },
+    {
+      "ticker": "ZBRA",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-22T08:52:12.349255+00:00",
+      "signal_date": "2026-10-21",
+      "stage": "compressão"
     }
   ],
   "price_metadata": {
     "provider": "yahoo_finance",
     "auto_adjust": true,
-    "completed_before_utc_date": "2026-10-22",
+    "completed_before_utc_date": "2026-10-23",
     "benchmark": "SPY",
-    "downloaded": 11,
+    "downloaded": 12,
     "failed": {
       "LOGN.SW": "ValueError",
       "OMV.DE": "ValueError",
