@@ -35,6 +35,7 @@ const api = window.VestraMarketDataHealth;
 assert(api, 'VestraMarketDataHealth was not exported');
 assert.strictEqual(api.version, '1.3');
 assert.strictEqual(api.quoteStaleMs, 60 * 1000);
+assert.strictEqual(api.referenceStaleMinutes, 30 * 60);
 assert.strictEqual(api.fetchTimeoutMs, 5000);
 
 const now = new Date('2026-08-31T18:30:00Z');
@@ -73,7 +74,7 @@ const staleQuote = api.model(
 assert.strictEqual(staleQuote.quoteState.key, 'stale');
 assert.strictEqual(staleQuote.quoteState.label, 'Cotações a atualizar');
 assert.strictEqual(staleQuote.overallState.key, 'stale');
-assert.strictEqual(staleQuote.overallState.label, 'Atualização pendente');
+assert.strictEqual(staleQuote.overallState.label, 'Cotações por atualizar');
 
 const partialQuote = api.model(
   guard,
@@ -104,9 +105,13 @@ assert.strictEqual(noQuote.quoteState.label, 'Cotações ainda não atualizadas'
 assert.strictEqual(noQuote.overallState.key, 'ok');
 assert.strictEqual(noQuote.overallState.label, 'Dados de referência atualizados');
 
-const staleReference = api.model({ generated_at: '2026-08-31T12:00:00Z', ok: true, violation_count: 0, rows_checked: 1699 }, { rows: [] }, now);
+const dailyReference = api.model({ generated_at: '2026-08-31T06:00:00Z', ok: true, violation_count: 0, rows_checked: 1699 }, { rows: [] }, now);
+assert.strictEqual(dailyReference.state.key, 'ok', 'a valid 12h-old daily build is not stale');
+assert.strictEqual(dailyReference.overallState.label, 'Dados de referência atualizados');
+const staleReference = api.model({ generated_at: '2026-08-30T10:00:00Z', ok: true, violation_count: 0, rows_checked: 1699 }, { rows: [] }, now);
 assert.strictEqual(staleReference.state.key, 'stale');
 assert.strictEqual(staleReference.state.label, 'Dados de referência antigos');
+assert.strictEqual(staleReference.overallState.label, 'Referência por atualizar');
 
 const badReference = api.model({ generated_at: '2026-08-31T18:20:00Z', ok: false, violation_count: 2 }, { count: 5 }, now);
 assert.strictEqual(badReference.state.key, 'bad');
