@@ -53,7 +53,12 @@ test('iPhone: readable native headings and constrained Market rail',async({page}
   await page.evaluate(v=>setView(v),view);
   const ink=await page.locator(selector).evaluate(el=>{
    const c=getComputedStyle(el).color;
-   const rgb=c.match(/[\\d.]+/g).slice(0,3).map(Number);
+   const canvas=document.createElement('canvas');
+   canvas.width=canvas.height=1;
+   const ctx=canvas.getContext('2d');
+   ctx.fillStyle=c;
+   ctx.fillRect(0,0,1,1);
+   const rgb=Array.from(ctx.getImageData(0,0,1,1).data).slice(0,3);
    return {rgb,opacity:Number(getComputedStyle(el).opacity)};
   });
   expect(ink.rgb.every(n=>n>=180),view+' heading must be legible on dark background').toBe(true);
