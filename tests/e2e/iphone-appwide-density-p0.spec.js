@@ -103,3 +103,26 @@ test('iPhone: Market portfolio action has concise uncropped context', async ({pa
  expect(bounds.left).toBeGreaterThanOrEqual(0);
  expect(bounds.right).toBeLessThanOrEqual(Math.min(bounds.parentRight,bounds.viewport)+2);
 });
+
+test('iPhone: portfolio summary uses editorial density without clipping values',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ await page.locator('#navAssets').click();
+ const summary=page.locator('#viewAssets #portfolioGlance');
+ await expect(summary).toBeVisible();
+ const geometry=await summary.evaluate(el=>{
+  const style=getComputedStyle(el);
+  const main=el.querySelector('.portfolio-glance__main');
+  const stats=[...el.querySelectorAll('.portfolio-glance__stat')];
+  const bounds=el.getBoundingClientRect();
+  return {radius:parseFloat(style.borderTopLeftRadius),padding:parseFloat(style.paddingTop),
+   mainHeight:main.getBoundingClientRect().height,
+   statsHeights:stats.map(x=>x.getBoundingClientRect().height),
+   right:bounds.right,viewport:document.documentElement.clientWidth};
+ });
+ expect(geometry.radius).toBeLessThanOrEqual(19);
+ expect(geometry.padding).toBeLessThanOrEqual(10);
+ expect(geometry.mainHeight).toBeLessThanOrEqual(105);
+ expect(geometry.statsHeights.every(h=>h<=80)).toBe(true);
+ expect(geometry.right).toBeLessThanOrEqual(geometry.viewport+2);
+});
