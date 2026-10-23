@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 
-URL = "https://www.aaii.com/sentimentsurvey/sent_results"
+URL = "https://www.aaii.com/sentimentsurvey/sent_results?adv=yes"
 OUT = Path("data/aaii-sentiment.json")
 DATE_RE = re.compile(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})$")
 
@@ -50,12 +50,18 @@ def main():
     response = requests.get(
         URL,
         timeout=25,
-        headers={"User-Agent": "Vestra/1.0 (+https://github.com/possn/Vestra)"},
+        headers={"User-Agent": "Vestra/1.0 (+https://github.com/possn/Vestra)", "Cache-Control": "no-cache"},
     )
     response.raise_for_status()
     weeks = parse_rows(response.text)[:5]
     if len(weeks) < 5:
         raise RuntimeError(f"Expected at least 5 AAII weekly rows, found {len(weeks)}")
+
+    # Never publish a historical/cached AAII page as a current survey.
+    # AAII reports once per week; allow the full weekly publication window.
+    age = (datetime.now(timezone.utc).date() - date.fromisoformat(weeks[0]["date"])).days
+    if not 0 <= age <= 8:
+        raise RuntimeError(f"AAII historical source stale: latest week {weeks[0]['date']} ({age} days old)")
 
     for row in weeks:
         total = row["bullish"] + row["neutral"] + row["bearish"]
