@@ -40,3 +40,53 @@
  :is(#viewAssets,#viewDashboard) .dpc-head p {font-size:12px!important;line-height:1.4!important;}
  :is(#viewAssets,#viewDashboard) .dpc-card :is(.dpc-theme-rank__name,.dpc-theme-rank__body small,.dpc-holding-row__body>strong) {font-size:12px!important;}
 }
+
+/* P0 physical iPhone visual audit, 2026-10-23.
+   Real screens: unreadable dark-on-dark intro in Cashflow, oversized light
+   sheets in Portfolio/Cashflow and a visually cropped Market tool rail.
+   Native content only. No application chrome, splash or financial calculations. */
+@media (max-width:600px) {
+  /* Native dark-page introductions must not inherit ivory-card ink. */
+  html body #viewCashflow .flow-hero,
+  html body #viewAssets .portfolio-hero,
+  html body #viewSettings .more-hero {
+    color:#f3eee4!important;
+    min-width:0!important;
+  }
+  html body #viewCashflow .flow-hero h2,
+  html body #viewAssets .portfolio-hero h2,
+  html body #viewSettings .more-hero h2 {
+    color:#f3eee4!important;-webkit-text-fill-color:#f3eee4!important;
+    opacity:1!important;font-size:25px!important;line-height:1.12!important;
+  }
+  html body #viewCashflow .flow-hero p,
+  html body #viewAssets .portfolio-hero p,
+  html body #viewSettings .more-hero p {
+    color:#b6cbc0!important;-webkit-text-fill-color:#b6cbc0!important;
+    opacity:1!important;font-size:13px!important;line-height:1.4!important;
+  }
+  html body #viewCashflow .flow-hero,
+  html body #viewAssets .portfolio-hero {gap:9px!important;margin-bottom:12px!important;}
+  /* Only the light, data-bearing sheets: no shrinking touch targets. */
+  html body #viewAssets .portfolio-glance {padding:10px!important;gap:8px!important;}
+  html body #viewAssets .portfolio-glance__main {padding:13px!important;min-height:0!important;}
+  html body #viewAssets .portfolio-glance__stat {padding:10px!important;min-height:0!important;}
+  html body #viewAssets #portfolioTotalValue {font-size:clamp(27px,7vw,33px)!important;line-height:1.13!important;}
+  html body #viewCashflow #paneCashflowBalanco > .card {padding:12px!important;}
+  html body #viewCashflow #paneCashflowBalanco .card__head {gap:8px!important;flex-wrap:wrap!important;}
+  html body #viewCashflow #paneCashflowBalanco .card__title {font-size:20px!important;line-height:1.2!important;}
+  html body #viewCashflow #paneCashflowBalanco .card__muted {font-size:12px!important;}
+  html body #viewCashflow #paneCashflowBalanco .filters {gap:7px!important;min-width:0!important;}
+  html body #viewCashflow #paneCashflowBalanco .filters > * {min-width:0!important;max-width:100%!important;}
+  /* The mode rail may scroll, but its frame must not bleed to the right. */
+  html body #viewMarket .market-mode-grid {
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    overflow-x:auto!important;overflow-y:hidden!important;
+    scroll-padding-inline:10px;scroll-snap-type:x proximity;
+  }
+  html body #viewMarket .market-mode-grid .market-mode {scroll-snap-align:start;}
+  html body #viewMarket .market-tools-grid {grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  html body #viewMarket .market-tool-btn {min-width:0!important;overflow-wrap:break-word!important;}
+  html body #viewMarket .market-portfolio-access {max-width:100%!important;min-width:0!important;overflow:hidden!important;}
+  html body #viewMarket .market-portfolio-access :is(span,small,strong) {min-width:0!important;overflow-wrap:anywhere!important;}
+}
