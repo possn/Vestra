@@ -98,7 +98,7 @@ assert(worker.includes('"/crypto-intelligence"'),'Worker must expose the Crypto 
 assert(worker.includes('https://api.alternative.me/fng/'),'Fear & Greed source must remain explicit');
 assert(worker.includes('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT'),'BTC funding must use a public derivatives endpoint');
 assert(worker.includes('https://api.coingecko.com/api/v3/global'),'global dominance/market-cap source must remain explicit');
-assert(worker.includes('source: globalData?.data ? "CoinGecko" : null'),'missing global source must stay null instead of fabricated');
+assert(worker.includes('source: globalData?.data ? "CoinGecko"'),'global source attribution must remain explicit and fail closed');
 
 
 const improving = ctx.cryptoRegimeChange(
@@ -143,8 +143,11 @@ assert(router.includes('closes.length>=2 ? closes.at(-2) : null'),'chart fallbac
 assert(router.includes('fifty_two_week_high:high52'),'chart fallback must expose the 52-week high');
 assert(router.includes('fifty_two_week_low:low52'),'chart fallback must expose the 52-week low');
 
-assert(worker.includes('https://api.coinpaprika.com/v1/global'),'global Crypto intelligence must have a second public source');
-assert(worker.includes('"CoinPaprika"'),'global source attribution must expose CoinPaprika fallback');
-assert(worker.includes('https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT'),'derivatives must have a public Bybit fallback');
-assert(worker.includes('"Bybit"'),'derivatives source attribution must expose Bybit fallback');
-assert(worker.includes('crypto-intelligence-v2'),'Crypto intelligence cache key must advance so stale partial payloads are not reused');
+assert(worker.includes('https://api.coinpaprika.com/v1/global'),'global Crypto intelligence must retain CoinPaprika redundancy');
+assert(worker.includes('https://api.coinlore.net/api/global/'),'global Crypto intelligence must have a third independent public source');
+assert(worker.includes('"CoinLore"'),'global source attribution must expose CoinLore fallback');
+assert(worker.includes('https://www.okx.com/api/v5/public/funding-rate?instId=BTC-USDT-SWAP'),'derivatives must have an OKX public funding fallback');
+assert(worker.includes('https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?instId=BTC-USDT-SWAP&period=1D&limit=30'),'derivatives must have OKX 30-day open-interest history');
+assert(worker.includes('"OKX"'),'derivatives source attribution must expose OKX fallback');
+assert(!worker.includes('api.bybit.com/v5/market'),'known-unreliable Bybit fallback must not remain on the critical production path');
+assert(worker.includes('crypto-intelligence-v3'),'Crypto intelligence cache key must advance so stale partial payloads are not reused');
