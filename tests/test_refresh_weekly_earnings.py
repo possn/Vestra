@@ -237,6 +237,25 @@ class WeeklyEarningsRefreshTests(unittest.TestCase):
         self.assertIn('data/earnings-refresh-status.json', workflow)
         self.assertIn('"archive_multi_quarter_tickers":', script)
 
+    def test_overdue_iphone_calendar_events_get_bounded_market_cap_priority(self):
+        index = {"stocks": [
+            {"ticker": "JPM", "quote_type": "EQUITY", "market_cap": 600e9,
+             "analyst_next_earnings_date": "2026-10-13"},
+            {"ticker": "JNJ", "quote_type": "EQUITY", "market_cap": 500e9,
+             "analyst_next_earnings_date": "2026-10-13"},
+            {"ticker": "GS", "quote_type": "EQUITY", "market_cap": 180e9,
+             "analyst_next_earnings_date": "2026-10-13"},
+            {"ticker": "OLD", "quote_type": "EQUITY", "market_cap": 900e9,
+             "analyst_next_earnings_date": "2026-09-01"},
+            {"ticker": "ETF1", "quote_type": "ETF", "market_cap": 900e9,
+             "analyst_next_earnings_date": "2026-10-13"},
+        ]}
+        packed = mod.pack_index_payload(index)
+        self.assertEqual(mod.overdue_calendar_tickers(packed, today=date(2026,10,17)),
+                         ["JPM", "JNJ", "GS"])
+        self.assertEqual(mod.overdue_calendar_tickers(packed, today=date(2026,10,17), max_slots=2),
+                         ["JPM", "JNJ"])
+
     def test_over_budget_does_not_abort_archived_earnings_publication(self):
         script = (ROOT / 'scripts/refresh_weekly_earnings.py').read_text(encoding='utf-8')
         self.assertIn('startup_fits = len(encoded.encode("utf-8")) <= MAX_STARTUP_BYTES', script)

@@ -139,6 +139,34 @@ def candidate_tickers(payload: dict, today: date | None = None, past_days: int =
         ticker for ticker in undated if ticker not in dated_set
     ][:30 - len(pinned)]
 
+def overdue_calendar_tickers(packed: dict, today: date | None = None, max_slots: int = 12) -> list[str]:
+    """Recheck past events already visible on iPhone even if canonical dates moved.
+
+    The compact startup may retain the last published calendar date while
+    stocks-index has moved the next-quarter date forward. This bounded bridge
+    only chooses tickers to query: it never assumes that EPS were reported.
+    """
+    today = today or date.today()
+    try:
+        rows = unpack_index_payload(packed).get("stocks") or []
+    except (TypeError, ValueError, AttributeError):
+        return []
+    choices = []
+    for row in rows:
+        if not isinstance(row, dict) or str(row.get("quote_type") or "").upper() in EXCLUDED_TYPES:
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
+        dates = [_calendar_date(row.get(key)) for key in ("analyst_next_earnings_date", "analyst_latest_earnings_date")]
+        overdue = [d for d in dates if d is not None and 0 <= (today - d).days <= 14]
+        if not overdue:
+            continue
+        cap = _number(row.get("market_cap")) or 0
+        choices.append((-cap, min((today - d).days for d in overdue), ticker))
+    return list(dict.fromkeys(ticker for _cap, _age, ticker in sorted(choices)))[:max(0, int(max_slots))]
+
+
 def _as_utc_datetime(value):
     try:
         dt = value.to_pydatetime() if hasattr(value, "to_pydatetime") else value
@@ -338,6 +366,15 @@ def main() -> int:
     coverage_before = earnings_coverage(payload)
     now_utc = datetime.now(timezone.utc)
     candidates = candidate_tickers(payload, today=now_utc.date(), rotation_slot=now_utc.hour // 3)
+    # Do not silently omit the overdue events still shown by the iPhone
+    # calendar when canonical full-universe enrichment moved their dates.
+    try:
+        calendar_focus = overdue_calendar_tickers(
+            json.loads(STARTUP.read_text(encoding="utf-8")), today=now_utc.date()
+        )
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        calendar_focus = []
+    candidates = list(dict.fromkeys([*calendar_focus, *candidates]))[:80]
     attempted = matched = updated = 0
     failures = []
     discovered_history = []
@@ -412,6 +449,7 @@ def main() -> int:
         "startup_budget_bytes": MAX_STARTUP_BYTES,
         "generated_at": now_utc.isoformat(),
         "candidate_count": len(candidates),
+        "calendar_overdue_focus": calendar_focus,
         "attempted": attempted,
         "matched": matched,
         "updated": updated,
