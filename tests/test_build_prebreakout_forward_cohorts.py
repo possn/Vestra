@@ -217,6 +217,10 @@ class ImmutableCohortTests(unittest.TestCase):
             self.assertIsNone(rejected["observed_breakout_fraction"])
             self.assertFalse(rejected["minimum_evidence_met"])
             self.assertFalse(rejected["selection_effect_validated"])
+            for window in ("3","5","10"):
+                self.assertEqual(rejected["durability"][window]["observed"],0)
+                self.assertEqual(rejected["durability"][window]["held_pivot"],0)
+                self.assertEqual(rejected["durability"][window]["lost_pivot"],0)
 
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
