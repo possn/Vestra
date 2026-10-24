@@ -248,6 +248,24 @@ class ImmutableCohortTests(unittest.TestCase):
         self.assertFalse(report["trained_model"])
         self.assertFalse(report["adjusted_history_point_in_time_verified"])
 
+    def test_joint_durability_requires_matured_event_and_finite_return(self):
+        from build_prebreakout_forward_cohorts import retrospective_feature_outcome_audit
+        case={"ticker":"AAA","stage":"pré-breakout","published_at":"2026-01-25T12:00:00Z"}
+        bars=[]
+        ev={"ticker":"AAA","stage":"pré-breakout","published_at":case["published_at"],
+            "horizon_sessions":5,"horizon_matured":True,"status":"confirmed",
+            "durability":{"3":{"status":"observed","held_pivot":True,"end_return_from_breakout":0.03},
+                          "5":{"status":"observed","held_pivot":False,"end_return_from_breakout":float("nan")},
+                          "10":{"status":"pending"}}}
+        report=retrospective_feature_outcome_audit([case],[ev],{"AAA":bars},bars)
+        labels=report["records"][0]["joint_durability_outcomes"]
+        self.assertEqual(labels["3"],"held_positive")
+        self.assertEqual(labels["5"],"pending_or_unverified")
+        self.assertEqual(labels["10"],"pending_or_unverified")
+        ev["horizon_matured"]=False
+        report=retrospective_feature_outcome_audit([case],[ev],{"AAA":bars},bars)
+        self.assertEqual(report["records"][0]["joint_durability_outcomes"]["3"],"pending_or_unverified")
+
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);f=root/"2026"/"slots";f.mkdir(parents=True)
