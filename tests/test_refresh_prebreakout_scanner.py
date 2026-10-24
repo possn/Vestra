@@ -51,6 +51,18 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertEqual([r["date"] for r in finished],["2026-10-13","2026-10-14"])
         self.assertEqual(mod.completed_sessions(bars,date(2026,10,16)),bars)
 
+    def test_eligible_coverage_deduplicates_symbols_and_excludes_funds(self):
+        stocks=[
+            {"ticker":"AAA","quote_type":"EQUITY","market_cap":900_000_000},
+            {"ticker":"aaa","quote_type":"EQUITY","market_cap":900_000_000},
+            {"ticker":"BBB","quote_type":"ETF","market_cap":900_000_000},
+            {"ticker":"CCC","quote_type":"EQUITY","market_cap":499_999_999},
+            {"ticker":"DDD","quote_type":"EQUITY","market_cap":float("nan")},
+            {"ticker":"EEE","quote_type":"EQUITY","market_cap":500_000_000}
+        ]
+        self.assertEqual(mod.eligible_universe_size(stocks),2)
+        self.assertEqual(set(mod.candidates(stocks,date(2026,10,15),1)),{"AAA","EEE"})
+
     def test_scan_slots_rotate_across_a_broader_universe(self):
         stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY","market_cap":10_000_000_000-i}
                 for i in range(700)]

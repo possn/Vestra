@@ -138,13 +138,23 @@ def watched_tickers(now:datetime, path:Path=ROOT/"data/prebreakout-observations.
     except (OSError,ValueError,TypeError,KeyError,AttributeError):
         return []
 
+def eligible_universe_size(stocks: list[dict])->int:
+    tickers=set()
+    for stock in stocks:
+        ticker=str(stock.get("ticker") or "").strip().upper()
+        qt=str(stock.get("quote_type") or "").upper()
+        cap=stock.get("market_cap")
+        if ticker and qt not in ("ETF","FUND","MUTUALFUND","CRYPTO") and isinstance(cap,(int,float)) and math.isfinite(cap) and cap>=500_000_000:
+            tickers.add(ticker)
+    return len(tickers)
+
 def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|None=None):
     universe={}
     for s in stocks:
         ticker=str(s.get("ticker") or "").strip().upper()
         qt=str(s.get("quote_type") or "").upper()
         cap=s.get("market_cap")
-        if not ticker or qt in ("ETF","FUND","MUTUALFUND","CRYPTO") or not isinstance(cap,(int,float)) or cap<500_000_000:
+        if not ticker or qt in ("ETF","FUND","MUTUALFUND","CRYPTO") or not isinstance(cap,(int,float)) or not math.isfinite(cap) or cap<500_000_000:
             continue
         universe[ticker]=max(cap,universe.get(ticker,0))
     ordered=sorted(universe,key=lambda t:(-universe[t],t))
@@ -186,6 +196,8 @@ def completed_sessions(bars, utc_today):
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
+    # Coverage refers to this slot, not the entire eligible investment universe.
+    eligible=eligible_universe_size(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]))
     found=[];checked=0;failures=[]
     for start in range(0,len(tickers),15):
         group=tickers[start:start+15]
@@ -203,7 +215,7 @@ def main():
     # Do not retain previously accepted setups after the stricter criteria reject them.
     by={signal["ticker"]:signal for signal in found}
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"new_signals":len(found),"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"single_scan_slot_not_full_universe","new_signals":len(found),"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
