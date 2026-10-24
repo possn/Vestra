@@ -183,6 +183,26 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertIsNone(mod.scan_bars("TEST",rows),
                           "prior failed breakout is not an untouched VCP base")
 
+    def test_historical_confirmed_breakout_guard_and_lineage(self):
+        rows=self.bars()
+        # A volume-backed breakout within the putative recent base disqualifies
+        # reuse of that base; the same event farther back is historical context.
+        def event_at(i):
+            pivot=max(b["high"] for b in rows[i-40:i])
+            rows[i]["close"]=pivot*1.02
+            rows[i]["low"]=pivot*1.01
+            rows[i]["high"]=pivot*1.021
+            rows[i]["volume"]=600000
+        event_at(230)
+        self.assertIn(rows[230]["date"],mod.historical_breakout_dates([
+            {**b,"day":date.fromisoformat(b["date"])} for b in rows],220,240))
+        self.assertIsNone(mod.scan_bars("TEST",rows))
+        rows=self.bars()
+        result=mod.scan_bars("TEST",rows)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["baseStartDate"],rows[-40]["date"])
+        self.assertIn("previousConfirmedBreakoutDate",result)
+
     def test_unverified_volume_never_confirms_breakout(self):
         rows=self.bars()
         rows[-1]["volume"]=None
