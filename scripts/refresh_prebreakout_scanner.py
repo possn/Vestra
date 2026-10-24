@@ -154,7 +154,7 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
         ticker=str(s.get("ticker") or "").strip().upper()
         qt=str(s.get("quote_type") or "").upper()
         cap=s.get("market_cap")
-        if not ticker or qt in ("ETF","FUND","MUTUALFUND","CRYPTO") or not isinstance(cap,(int,float)) or cap<500_000_000:
+        if not ticker or qt in ("ETF","FUND","MUTUALFUND","CRYPTO") or not isinstance(cap,(int,float)) or not math.isfinite(cap) or cap<500_000_000:
             continue
         universe[ticker]=max(cap,universe.get(ticker,0))
     ordered=sorted(universe,key=lambda t:(-universe[t],t))
