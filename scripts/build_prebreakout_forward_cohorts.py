@@ -83,9 +83,24 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
                 except (ValueError,KeyError,TypeError,OverflowError):
                     event.update({"status":"invalid_ohlcv","observed_sessions":0,"event_date":None})
             events.append(event)
+    # Publish the denominator explicitly: pending/unverifiable cohorts are
+    # never silently counted as breakouts that failed.
+    event_coverage={}
+    for horizon in (5,10,20):
+        sample=[row for row in events if row["horizon_sessions"]==horizon]
+        counts={}
+        for row in sample:
+            status=row["status"]
+            counts[status]=counts.get(status,0)+1
+        evaluated=counts.get("confirmed",0)+counts.get("not_confirmed",0)
+        event_coverage[str(horizon)]={
+            "cohorts":len(sample),"evaluable":evaluated,
+            "coverage":round(evaluated/len(sample),4) if sample else None,
+            "by_status":counts,"breakout_rate":None,
+            "reason":"insufficient_or_unverified_forward_evidence"}
     return {"schema":"vestra_prebreakout_forward_cohorts_v1",
         "breakout_event_evidence":{"historical_only":True,"method":"published_pivot_future_ohlcv",
-            "unvalidated_probability":True,"events":events},
+            "unvalidated_probability":True,"coverage_by_horizon":event_coverage,"events":events},
         "evaluation_method":"adjusted_daily_close_after_publication",
         "cohort_policy":"first_immutable_publication_per_ticker_and_stage",
         "historical_only":True,"cohort_count":len(cases),

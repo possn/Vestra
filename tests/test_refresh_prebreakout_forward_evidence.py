@@ -62,6 +62,11 @@ class ForwardPriceRefreshTests(unittest.TestCase):
             self.assertEqual(len(events),3)
             self.assertTrue(all(e["status"]=="missing_ohlcv" for e in events))
             self.assertTrue(all(e["event_date"] is None for e in events))
+            h=result["breakout_event_evidence"]["coverage_by_horizon"]["5"]
+            self.assertEqual(h["cohorts"],1)
+            self.assertEqual(h["evaluable"],0)
+            self.assertIsNone(h["breakout_rate"])
+            self.assertEqual(h["by_status"]["missing_ohlcv"],1)
 
     def test_missing_spy_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
