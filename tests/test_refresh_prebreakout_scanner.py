@@ -145,9 +145,7 @@ class PrebreakoutDataTests(unittest.TestCase):
         rows=self.bars()
         rows[-1]["volume"]=None
         observed=mod.scan_bars("TEST",rows)
-        self.assertIsNotNone(observed)
-        self.assertIsNone(observed["breakoutVolumeRatio"])
-        self.assertFalse(observed["volumeConfirmed"])
+        self.assertIsNone(observed)  # Incomplete volume cannot prove $5M liquidity.
 
     def test_stale_data_are_not_included(self):
         rows=self.bars()
@@ -219,9 +217,7 @@ class PrebreakoutDataTests(unittest.TestCase):
         rows=self.bars()
         rows[-1]["volume"]=None
         result=mod.scan_bars("TEST",rows)
-        self.assertIsNotNone(result)
-        self.assertFalse(result["volumeConfirmed"])
-        self.assertNotEqual(result["stage"],"confirmado")
+        self.assertIsNone(result)  # Missing volume cannot qualify the new liquidity gate.
 
 if __name__=="__main__":
     unittest.main()
