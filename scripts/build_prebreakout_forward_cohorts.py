@@ -73,9 +73,16 @@ def maturity_event_evidence(events:list[dict],cases:list[dict])->dict:
             bucket["observed_breakout_fraction"]=round(bucket.get("matured_confirmed",0)/complete,4) if complete>=30 and coverage>=.8 else None
             bucket["wilson_95_descriptive"]=wilson_interval(bucket.get("matured_confirmed",0),complete) if complete>=30 and coverage>=.8 else None
             bucket["evidence_ready"]=complete>=30 and coverage>=.8
+            # Event observations may share both ticker and market date.
+            # A binomial Wilson interval assumes independent trials; its
+            # publication must abstain when that condition is unverified.
+            bucket["independence_verified"]=False
+            bucket["wilson_95_descriptive"]=None
+            bucket["evidence_ready"]=False
+            bucket["independence_reason"]="correlated_ticker_and_market_cohorts_not_adjusted"
     return {"age_unit":"calendar_days","historical_only":True,
             "probability_calibrated":False,"minimum_matured_n":30,"minimum_matured_coverage":0.8,
-            "interval_method":"wilson_95_descriptive_nonindependence_not_adjusted","groups":groups}
+            "interval_method":"wilson_95_withheld_until_dependence_robust_validation","groups":groups}
 
 
 def cohorts(archive:Path)->list[dict]:
