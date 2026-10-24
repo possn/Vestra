@@ -145,6 +145,10 @@ def walkforward_holdout_returns(cases:list[dict], outcomes:list[dict], plan:dict
                     continue
                 if not all(math.isfinite(v) for v in (gross,bench,excess)):
                     continue
+                # The excess return must agree with its independently supplied
+                # asset and benchmark components, otherwise abstain.
+                if abs(excess-(gross-bench))>1e-8:
+                    continue
                 available.append((gross,bench,excess))
             n=len(available)
             horizons[str(h)]={
@@ -153,7 +157,12 @@ def walkforward_holdout_returns(cases:list[dict], outcomes:list[dict], plan:dict
                 "mean_gross_return":round(sum(x[0] for x in available)/n,6) if n else None,
                 "mean_spy_return":round(sum(x[1] for x in available)/n,6) if n else None,
                 "mean_excess_after_scenario_cost":round(
-                    sum(x[2]-cost_bps/10000 for x in available)/n,6) if n else None}
+                    sum(x[2]-cost_bps/10000 for x in available)/n,6) if n else None,
+                "net_excess_positive":sum(x[2]>cost_bps/10000 for x in available),
+                "net_excess_nonpositive":sum(x[2]<=cost_bps/10000 for x in available),
+                "net_excess_hit_fraction_descriptive":round(
+                    sum(x[2]>cost_bps/10000 for x in available)/n,4) if n else None,
+                "outperformance_probability":None}
         rows.append({"test_from":fold["test_from"],"test_until_exclusive":fold["test_until_exclusive"],
                      "by_horizon":horizons})
     return {"method":"descriptive_chronological_holdout_adjusted_close",
