@@ -123,7 +123,7 @@ class MarketEnhancementSplitTests(unittest.TestCase):
     def test_market_dossier_controls_use_static_stylesheet(self):
         js = read('market-dossier-controls.js')
         css = read('market-dossier-controls.css')
-        self.assertIn("market-dossier-controls.css?v=1.4", js)
+        self.assertIn("market-dossier-controls.css?v=1.5", js)
         self.assertIn("link.rel = 'stylesheet'", js)
         self.assertNotIn("document.createElement('style')", js)
         self.assertNotIn('style.textContent', js)

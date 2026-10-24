@@ -28,11 +28,11 @@ class DossierObserverPipelineTests(unittest.TestCase):
         controls = read('market-dossier-controls.js')
         company = read('market-company-brief.js')
         self.assertIn("version:'1.2'", metric)
-        self.assertIn("version: '2.0'", controls)
+        self.assertIn("version: '2.1'", controls)
         self.assertIn("version:'2.2'", company)
         self.assertIn('refresh:repair', metric)
         self.assertIn('normalizeButtons,', controls)
-        self.assertIn("market-dossier-controls.js?v=2.0", company)
+        self.assertIn("market-dossier-controls.js?v=2.1", company)
 
     def test_ai_brief_keeps_separate_sheet_scoped_dossier_lifecycle(self):
         ai = read('vestra-ai-brief.js')

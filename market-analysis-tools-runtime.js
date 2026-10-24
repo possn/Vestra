@@ -52,6 +52,7 @@
     sheet.classList.add('market-sheet--tool-runtime');
     document.body.classList.add('modal-open');
     content.innerHTML = '';
+    window.VestraMarketDossierControls?.syncPortal?.(sheet);
     requestAnimationFrame(() => sheet.querySelector('.market-sheet__panel')?.scrollTo?.({ top: 0, behavior: 'auto' }));
     return content;
   }
@@ -65,6 +66,7 @@
     sheet.dataset.tool = '';
     sheet.classList.remove('market-sheet--tool-runtime');
     document.body.classList.remove('modal-open');
+    window.VestraMarketDossierControls?.syncPortal?.(sheet);
   }
 
   function header(kicker, title, subtitle) {

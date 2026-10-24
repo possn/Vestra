@@ -31,8 +31,8 @@ class DossierClosePortfolioOwnershipTests(unittest.TestCase):
         self.assertIn('e.stopImmediatePropagation();', self.navigation)
 
     def test_loader_and_runtime_versions_match(self):
-        self.assertIn("version: '2.0'", self.controls)
-        self.assertIn('market-dossier-controls.js?v=2.0', self.company)
+        self.assertIn("version: '2.1'", self.controls)
+        self.assertIn('market-dossier-controls.js?v=2.1', self.company)
 
 
 if __name__ == '__main__':
