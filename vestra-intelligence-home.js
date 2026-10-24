@@ -277,6 +277,93 @@
     return pulseInFlight;
   }
 
+  async function showPrebreakoutSpotlight(host) {
+    let panel = host.querySelector('[data-vi-prebreakout-spotlight]');
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.dataset.viPrebreakoutSpotlight = '1';
+      panel.setAttribute('aria-label', 'Ação em vigilância pre-breakout');
+      panel.style.cssText = 'margin:.7rem 0 1rem;padding:1rem 1.15rem;border:1px solid var(--border-color,rgba(130,130,130,.27));border-radius:16px;background:var(--card-bg,rgba(130,130,130,.055));color:inherit';
+      host.prepend(panel);
+    }
+    const render = (title, detail, evidence, active) => {
+      panel.replaceChildren();
+      const eyebrow = document.createElement('p');
+      eyebrow.textContent = 'RADAR PRÉ-BREAKOUT · PARA INVESTIGAR';
+      eyebrow.style.cssText = 'font-size:.65rem;letter-spacing:.1em;font-weight:700;opacity:.7;margin:0 0 .35rem';
+      const heading = document.createElement('strong');
+      heading.textContent = title;
+      heading.style.cssText = 'font-size:clamp(1rem,3vw,1.3rem);line-height:1.25;display:block';
+      const body = document.createElement('p');
+      body.textContent = detail;
+      body.style.cssText = 'font-size:.85rem;line-height:1.5;margin:.45rem 0';
+      const foot = document.createElement('small');
+      foot.textContent = evidence;
+      foot.style.cssText = 'display:block;opacity:.7;line-height:1.5';
+      panel.append(eyebrow,heading,body,foot);
+      if (active) {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.dataset.vestraGo = 'market';
+        action.textContent = 'Investigar no Mercado →';
+        action.style.cssText = 'margin-top:.75rem;border:1px solid currentColor;border-radius:99px;padding:.45rem .8rem;background:transparent;color:inherit;font:inherit;font-size:.8rem;cursor:pointer';
+        panel.append(action);
+      }
+    };
+    render('A verificar o radar…', 'A consultar os dados técnicos publicados.', '', false);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      let response;
+      try { response = await fetch('./data/prebreakout-signals.json', {cache:'no-store',signal:controller.signal}); }
+      finally { clearTimeout(timeout); }
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const feed = await response.json();
+      const stamp = Date.parse(feed?.generated_at);
+      const hours = (Date.now()-stamp)/3600000;
+      const fresh = feed?.schema === 'vestra_prebreakout_v1' &&
+        Number.isFinite(stamp) && hours >= 0 && hours <= 72 &&
+        Number.isInteger(feed.attempted) && feed.attempted > 0 &&
+        Number.isInteger(feed.with_ohlcv) && feed.with_ohlcv > 0 &&
+        Array.isArray(feed.signals);
+      if (!fresh) throw new Error('Feed antigo ou incompleto');
+      const rows = feed.signals.filter(row => {
+        const bar = Date.parse(String(row?.date || '')+'T23:59:59Z');
+        return row?.source === 'yahoo:daily_ohlcv' &&
+          ['pré-breakout','compressão'].includes(row.stage) &&
+          typeof row.ticker === 'string' && /^[A-Z0-9.\\-]{1,16}$/.test(row.ticker) &&
+          Number.isFinite(bar) && bar <= Date.now()+86400000 && Date.now()-bar <= 7*86400000 &&
+          Number.isFinite(row.score) && row.score>=0 && row.score<=100 &&
+          Number.isFinite(row.distancePct) && row.distancePct>=0 && row.distancePct<=8 &&
+          row.breakoutExtensionPct <= 0;
+      });
+      const qualified = rows.filter(row => row.stage === 'pré-breakout' && row.volumeDry === true)
+        .sort((a,b) => b.score-a.score || a.distancePct-b.distancePct || a.ticker.localeCompare(b.ticker));
+      const count = feed.with_ohlcv+'/'+feed.attempted;
+      const source = 'OHLCV Yahoo · '+count+' títulos com dados nesta execução · '+new Date(stamp).toLocaleString('pt-PT')+' · Score técnico, não probabilidade';
+      if (qualified.length) {
+        const pick = qualified[0];
+        render(pick.ticker+' · Próximo do pivot',
+          'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
+          '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
+          source+' · Melhor sinal da amostra analisada, não de todo o mercado.', true);
+      } else if (rows.length) {
+        const watch = rows.sort((a,b)=>b.score-a.score || a.ticker.localeCompare(b.ticker))[0];
+        render('Sem pré-breakout qualificado hoje',
+          watch.ticker+' é apenas uma base em compressão (score '+Math.round(watch.score)+
+          '/100). Falta confirmação completa; não é uma oportunidade antecipatória validada.',
+          source+' · Vigilância, não recomendação.',true);
+      } else {
+        render('Nenhum setup elegível', 'O radar publicado não encontrou candidatos válidos nesta amostra.',
+          source+' · Não inferir ausência de oportunidades no mercado inteiro.',true);
+      }
+    } catch (_) {
+      render('Radar indisponível ou desatualizado',
+        'Sem dados recentes e verificáveis, não é possível selecionar uma ação do dia.',
+        'Sem sinais fabricados · consultar o módulo Mercado.',true);
+    }
+  }
+
   function syncDecisionCenter(host) {
     const output = host.querySelector('[data-vestra-decision-state]');
     if (!output) return;
@@ -509,6 +596,7 @@
     });
     syncExistingBarometer(host);
     refreshLivePulse(host);
+    showPrebreakoutSpotlight(host);
     syncWealthHero(host);
     syncDailyBrief(host);
     syncCanonicalCards(host);
