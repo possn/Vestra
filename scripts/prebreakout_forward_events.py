@@ -7,12 +7,12 @@ This does not imply executable trades or a calibrated probability.
 from datetime import datetime, timezone, date
 import math
 
-def reconcile_pivot(signal:dict, bars:list[dict], max_ratio_change:float=0.40):
+def reconcile_pivot(signal:dict, bars:list[dict], max_ratio_change:float=0.002):
     """Verify same-session adjusted close, then rescale the archived pivot.
 
     The original observation must include its point-in-time adjusted close.
-    Later corporate-action adjustments scale the historical close and pivot
-    together. Large or implausible re-scalings abstain pending manual evidence.
+    Only rounding-scale differences are accepted. Any material corporate-action
+    re-scaling requires separate independent provenance and abstains here.
     """
     try:
         original=float(signal["signalClose"])
