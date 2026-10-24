@@ -110,6 +110,8 @@ class PrebreakoutDataTests(unittest.TestCase):
         result=mod.scan_bars("TEST",rows)
         self.assertIsNotNone(result)
         self.assertEqual(result["source"],"yahoo:daily_ohlcv")
+        self.assertAlmostEqual(result["signalClose"],round(rows[-1]["close"],5))
+        self.assertEqual(result["signalPriceBasis"],"yahoo_auto_adjusted_asof_publication")
         self.assertGreater(result["sma50"],result["sma200"])
         self.assertGreater(result["priorWidthPct"],result["widthPct"])
         self.assertIn(result["stage"],("compressão","pré-breakout"))

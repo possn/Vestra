@@ -105,6 +105,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     dollar_volume20=(sum(b["close"]*v for b,v in zip(clean[-20:],volumes20))/20 if all(isinstance(v,(int,float)) and math.isfinite(v) and v>0 for v in volumes20) else None)
     diagnostics={"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,"averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None}
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
+            "signalClose":round(current,5),"signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
             "widthPct":round(base_width*100,2),"priorWidthPct":round(old_width*100,2),
             "distancePct":round(distance,2),"resistance":round(resistance,5),
             "sma50":round(m50,5),"sma150":round(m150,5),"sma200":round(m200,5),
