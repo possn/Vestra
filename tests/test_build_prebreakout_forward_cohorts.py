@@ -157,10 +157,26 @@ class ImmutableCohortTests(unittest.TestCase):
         first=summary["folds"][0]["by_horizon"]["5"]
         self.assertEqual(first["evaluated"],first["test_cohorts"])
         self.assertAlmostEqual(first["mean_excess_after_scenario_cost"],.0675)
+        self.assertEqual(first["net_excess_positive"],first["evaluated"])
+        self.assertIsNone(first["outperformance_probability"])
         self.assertEqual(summary["folds"][0]["by_horizon"]["20"]["evaluated"],0)
         self.assertIsNone(summary["folds"][0]["by_horizon"]["20"]["mean_excess_after_scenario_cost"])
         with self.assertRaises(ValueError):
             walkforward_holdout_returns(cases,outcomes[:-1],plan)
+
+    def test_inconsistent_excess_returns_are_not_counted_as_success(self):
+        cases=[{"ticker":f"Q{i}","stage":"compressão",
+                "published_at":(date(2026,1,1)+timedelta(days=14*i)).isoformat()+"T08:00:00Z"}
+               for i in range(12)]
+        plan=purged_walkforward_folds(cases)
+        outcomes=[{"results":{5:{"return":.1,"spy_return":.03,
+                                 "excess_return":.70}}} for _ in cases]
+        report=walkforward_holdout_returns(cases,outcomes,plan)
+        first=report["folds"][0]["by_horizon"]["5"]
+        self.assertEqual(first["evaluated"],0)
+        self.assertEqual(first["missing"],first["test_cohorts"])
+        self.assertEqual(first["net_excess_positive"],0)
+        self.assertIsNone(first["net_excess_hit_fraction_descriptive"])
 
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
