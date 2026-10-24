@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from prebreakout_forward_evaluation import evaluate_archived
 from prebreakout_stage_evidence import report
+from prebreakout_forward_events import breakout_event
 
 STAGES={"compressão","pré-breakout","confirmado"}
 
@@ -53,7 +54,7 @@ def cohorts(archive:Path)->list[dict]:
                     "snapshot":data}
     return [selected[k] for k in sorted(selected,key=lambda key:(selected[key]["published_at"],key))]
 
-def build(archive:Path,prices:dict,benchmark_bars:list[dict])->dict:
+def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|None=None)->dict:
     cases=cohorts(archive)
     outcomes=[]
     for case in cases:
@@ -68,7 +69,23 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict])->dict:
                 outcome={"ticker":case["ticker"],"stage":case["stage"],"published_at":case["published_at"],
                          "signal_date":case["signal_date"],"entry":None,"results":{}}
         outcomes.append(outcome)
+    events=[]
+    for case in cases:
+        rows=(event_prices or {}).get(case["ticker"])
+        for horizon in (5,10,20):
+            event={"ticker":case["ticker"],"stage":case["stage"],
+                   "published_at":case["published_at"],"horizon_sessions":horizon}
+            if not isinstance(rows,list) or not rows:
+                event.update({"status":"missing_ohlcv","observed_sessions":0,"event_date":None})
+            else:
+                try:
+                    event.update(breakout_event(case["snapshot"],case["ticker"],rows,horizon))
+                except (ValueError,KeyError,TypeError,OverflowError):
+                    event.update({"status":"invalid_ohlcv","observed_sessions":0,"event_date":None})
+            events.append(event)
     return {"schema":"vestra_prebreakout_forward_cohorts_v1",
+        "breakout_event_evidence":{"historical_only":True,"method":"published_pivot_future_ohlcv",
+            "unvalidated_probability":True,"events":events},
         "evaluation_method":"adjusted_daily_close_after_publication",
         "cohort_policy":"first_immutable_publication_per_ticker_and_stage",
         "historical_only":True,"cohort_count":len(cases),

@@ -6,7 +6,7 @@ from datetime import datetime,timezone
 from pathlib import Path
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from refresh_prebreakout_forward_evidence import gather, completed_bars
+from refresh_prebreakout_forward_evidence import gather, completed_bars, completed_ohlcv
 
 class ForwardPriceRefreshTests(unittest.TestCase):
     def archive(self,root):
@@ -45,10 +45,23 @@ class ForwardPriceRefreshTests(unittest.TestCase):
             self.assertEqual(result["cohort_count"],1)
             self.assertEqual(sorted(t for t,_ in requests),["AAA","SPY"])
             self.assertTrue(all(k["auto_adjust"] is True for _,k in requests))
+            self.assertTrue(all(k["start"] <= "2026-07-20" for _,k in requests))  # enough prior bars for volume baseline
             self.assertTrue(all(k["multi_level_index"] is False for _,k in requests))
             self.assertEqual(result["outcomes"][0]["entry"],"2026-10-16")
             self.assertIsNone(result["outcomes"][0]["results"][5])
             self.assertEqual(result["price_metadata"]["completed_before_utc_date"],"2026-10-17")
+
+    def test_optional_event_history_fails_closed_when_ohlcv_missing(self):
+        self.assertIsNone(completed_ohlcv(self.frame(),datetime(2026,10,17,tzinfo=timezone.utc).date()))
+        with tempfile.TemporaryDirectory() as tmp:
+            archive=Path(tmp);self.archive(archive)
+            result=gather(archive,lambda ticker,**kwargs:self.frame(),
+                          datetime(2026,10,17,tzinfo=timezone.utc))
+            self.assertEqual(result["price_metadata"]["complete_ohlcv"],0)
+            events=result["breakout_event_evidence"]["events"]
+            self.assertEqual(len(events),3)
+            self.assertTrue(all(e["status"]=="missing_ohlcv" for e in events))
+            self.assertTrue(all(e["event_date"] is None for e in events))
 
     def test_missing_spy_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:

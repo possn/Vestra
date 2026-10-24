@@ -32,6 +32,27 @@ def completed_bars(frame, today):
     if not result:raise ValueError("no completed daily prices")
     return sorted(result,key=lambda x:x["date"])
 
+def completed_ohlcv(frame,today):
+    """Return complete adjusted OHLCV or None; never synthesize missing fields."""
+    if frame is None or getattr(frame,"empty",True):
+        return None
+    if not all(k in frame.columns for k in ("Close","High","Low","Volume")):
+        return None
+    result=[];days=set()
+    for stamp,row in frame.iterrows():
+        day=stamp.date()
+        if day>=today:continue
+        try:
+            close,high,low,volume=(float(row[k]) for k in ("Close","High","Low","Volume"))
+        except (KeyError,TypeError,ValueError,OverflowError):
+            return None
+        if (day in days or not all(math.isfinite(v) for v in (close,high,low,volume))
+                or not 0<low<=close<=high or volume<=0):
+            return None
+        days.add(day)
+        result.append({"date":day.isoformat(),"close":close,"high":high,"low":low,"volume":volume})
+    return sorted(result,key=lambda x:x["date"]) if result else None
+
 def gather(archive:Path, downloader, now=None):
     now=now or datetime.now(timezone.utc)
     if now.tzinfo is None:raise ValueError("UTC clock required")
@@ -39,22 +60,25 @@ def gather(archive:Path, downloader, now=None):
     items=cohorts(archive)
     if not items:raise ValueError("no immutable historical cohorts")
     earliest=min(datetime.fromisoformat(c["published_at"]).date() for c in items)
-    start=(earliest-timedelta(days=7)).isoformat()
+    # A forward breakout needs 20 *prior* completed volume sessions; preserve a full historical buffer.
+    start=(earliest-timedelta(days=90)).isoformat()
     end=(today+timedelta(days=1)).isoformat()
     tickers=sorted(set(c["ticker"] for c in items)|{"SPY"})
-    prices={}; failures={}
+    prices={}; event_prices={}; failures={}
     for ticker in tickers:
         try:
             frame=downloader(ticker,start=start,end=end,auto_adjust=True,progress=False,threads=False,multi_level_index=False)
             prices[ticker]=completed_bars(frame,today)
+            ohlcv=completed_ohlcv(frame,today)
+            if ohlcv is not None:event_prices[ticker]=ohlcv
         except Exception as exc:
             failures[ticker]=type(exc).__name__
     if "SPY" not in prices:
         raise ValueError("benchmark SPY adjusted closes unavailable")
-    results=build(archive,prices,prices["SPY"])
+    results=build(archive,prices,prices["SPY"],event_prices=event_prices)
     results["price_metadata"]={"provider":"yahoo_finance","auto_adjust":True,
         "completed_before_utc_date":today.isoformat(),"benchmark":"SPY",
-        "downloaded":len(prices),"failed":failures}
+        "downloaded":len(prices),"complete_ohlcv":len(event_prices),"failed":failures}
     return results
 
 def main():
