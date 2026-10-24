@@ -5,7 +5,7 @@ import unittest
 from datetime import date,timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from build_prebreakout_forward_cohorts import cohorts,build
+from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence
 
 class ImmutableCohortTests(unittest.TestCase):
     def fixture(self,folder):
@@ -80,6 +80,23 @@ class ImmutableCohortTests(unittest.TestCase):
             self.assertEqual(result["outcomes"][0]["entry"],"2026-10-16")
             self.assertEqual(result["stage_evidence"]["stages"]["compressão"]["5"]["n"],1)
             self.assertNotIn("hit_rate",result["stage_evidence"]["stages"]["compressão"]["5"])
+
+    def test_age_evidence_uses_calendar_days_and_explicit_denominators(self):
+        anchored={"base_start_date":"2026-09-01","signal_date":"2026-10-15"}
+        self.assertEqual(base_maturity(anchored),"developing_28_to_84d")
+        self.assertEqual(base_maturity({"base_start_date":None,"signal_date":"2026-10-15"}),"unverified")
+        cases=[anchored,{"base_start_date":None,"signal_date":"2026-10-15"}]
+        events=[
+            {"base_maturity":"developing_28_to_84d","horizon_sessions":5,"status":"confirmed"},
+            {"base_maturity":"unverified","horizon_sessions":5,"status":"gapped_ohlcv"}]
+        evidence=maturity_event_evidence(events,cases)
+        self.assertEqual(evidence["age_unit"],"calendar_days")
+        developing=evidence["groups"]["developing_28_to_84d"]["by_horizon"]["5"]
+        self.assertEqual(developing["evaluable"],1)
+        self.assertIsNone(developing["breakout_probability"])
+        missing=evidence["groups"]["unverified"]["by_horizon"]["5"]
+        self.assertEqual(missing["pending_or_unverified"],1)
+        self.assertEqual(missing["evaluable"],0)
 
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
