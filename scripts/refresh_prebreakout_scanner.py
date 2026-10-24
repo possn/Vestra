@@ -21,6 +21,21 @@ def strong_breakout_close(current: float, previous: float, resistance: float, hi
             and current > previous and current > resistance * 1.005
             and (current-low)/(high-low) >= .75)
 
+def historical_breakout_dates(clean: list[dict], start: int, stop: int) -> list[str]:
+    """Observed volume-confirmed breaks over a rolling 40-bar high, never an inferred prediction."""
+    dates=[]
+    for i in range(max(41,start), min(stop,len(clean))):
+        ref=clean[i-40:i]
+        vols=[b.get("volume") for b in clean[i-20:i+1]]
+        if not all(isinstance(v,(int,float)) and math.isfinite(v) and v>0 for v in vols):
+            continue
+        pivot=max(b["high"] for b in ref)
+        bar=clean[i]
+        confirmed=vols[-1]>=1.5*(sum(vols[:-1])/20)
+        if strong_breakout_close(bar["close"],clean[i-1]["close"],pivot,bar["high"],bar["low"],confirmed):
+            dates.append(bar["day"].isoformat())
+    return dates
+
 def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     """Identify a contracting base, not a prediction of future returns."""
     today=today or datetime.now(timezone.utc).date()
@@ -88,6 +103,11 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     # An already-confirmed or intraday-exceeded pivot belongs to a separate breakout
     # follow-up, never the predictive pre-breakout radar. Reject failed breakouts too.
     if breakout or clean[-1]["high"]>resistance*1.005:return None
+    # A new signal cannot reuse a base after a confirmed breakout inside its 40-bar window.
+    # Older confirmed events are reported as lineage context, not as fresh entry signals.
+    if historical_breakout_dates(clean, len(clean)-39, len(clean)-1):
+        return None
+    earlier_breakouts=historical_breakout_dates(clean, len(clean)-100, len(clean)-40)
     stage="pré-breakout" if 0<=distance<=4 and volume_dry else "compressão"
     contraction=1-w3/max(w1,1e-9)
     score=round(max(0,min(100,35+min(20,contraction*30)+
@@ -108,6 +128,8 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
             "signalClose":round(current,5),"signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
             "widthPct":round(base_width*100,2),"priorWidthPct":round(old_width*100,2),
             "distancePct":round(distance,2),"resistance":round(resistance,5),
+            "baseStartDate":clean[-40]["day"].isoformat(),
+            "previousConfirmedBreakoutDate":earlier_breakouts[-1] if earlier_breakouts else None,
             "sma50":round(m50,5),"sma150":round(m150,5),"sma200":round(m200,5),
             "volumeConfirmed":bool(volume_confirmed),"volumeDry":bool(volume_dry),
             "breakoutCloseLocationPct":round(close_location*100,1) if close_location is not None else None,
