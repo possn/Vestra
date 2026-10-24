@@ -26,6 +26,23 @@ class PrebreakoutDataTests(unittest.TestCase):
         rows[-1]["volume"]=180000
         return rows
 
+    def test_atr_and_liquidity_diagnostics_are_as_of_bar(self):
+        rows=self.bars()
+        candidate=mod.scan_bars("TEST",rows)
+        self.assertIsNotNone(candidate)
+        q=candidate["quantitativeDiagnostics"]
+        self.assertGreater(q["atrPct14"],0)
+        self.assertGreater(q["atrContractionRatio"],0)
+        self.assertGreater(q["averageDollarVolume20"],0)
+        older=mod.scan_bars("TEST",rows[:-1])
+        self.assertIsNotNone(older)
+        self.assertNotEqual(q["atrPct14"],older["quantitativeDiagnostics"]["atrPct14"])
+        missing=self.bars()
+        missing[-5]["volume"]=None
+        result=mod.scan_bars("TEST",missing)
+        if result is not None:
+            self.assertIsNone(result["quantitativeDiagnostics"]["averageDollarVolume20"])
+
     def test_unfinished_utc_daily_bar_is_excluded_from_live_scan(self):
         today=date(2026,10,15)
         bars=[{"date":"2026-10-13","close":1},{"date":"2026-10-14","close":2},

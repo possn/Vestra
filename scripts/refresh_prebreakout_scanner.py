@@ -98,6 +98,12 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     close_location=(current-clean[-1]["low"])/(clean[-1]["high"]-clean[-1]["low"]) if clean[-1]["high"]>clean[-1]["low"] else None
     volume_ratio=(recent_volumes[-1]/mean_vol) if mean_vol is not None and recent_volumes[-1] is not None else None
     extension_pct=(current/resistance-1)*100 if resistance>0 else None
+    tr=[max(b["high"]-b["low"],abs(b["high"]-clean[i-1]["close"]),abs(b["low"]-clean[i-1]["close"])) for i,b in enumerate(clean) if i>0]
+    atr14=sum(tr[-14:])/14
+    atr60=sum(tr[-60:])/60
+    volumes20=[b.get("volume") for b in clean[-20:]]
+    dollar_volume20=(sum(b["close"]*v for b,v in zip(clean[-20:],volumes20))/20 if all(isinstance(v,(int,float)) and math.isfinite(v) and v>0 for v in volumes20) else None)
+    diagnostics={"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,"averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None}
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
             "widthPct":round(base_width*100,2),"priorWidthPct":round(old_width*100,2),
             "distancePct":round(distance,2),"resistance":round(resistance,5),
@@ -108,7 +114,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
             "breakoutExtensionPct":round(extension_pct,2) if extension_pct is not None else None,
             "vcpConfirmed":True,"goldenCrossRecent":bool(crossed),
             "goldenCrossImminent":bool(near_cross),
-            "source":"yahoo:daily_ohlcv"}
+            "quantitativeDiagnostics":diagnostics,"source":"yahoo:daily_ohlcv"}
 
 def watched_tickers(now:datetime, path:Path=ROOT/"data/prebreakout-observations.json", limit:int=25)->list[str]:
     """Revisit published candidates; historical status alone is never a live signal."""
