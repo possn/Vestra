@@ -287,38 +287,6 @@
       host.prepend(panel);
     }
     // The Home spotlight uses published scanner measurements, never a fabricated price sparkline.
-    if (!document.getElementById('viPrebreakoutEditorialStyle')) {
-      const style = document.createElement('style');
-      style.id = 'viPrebreakoutEditorialStyle';
-      style.textContent = `
-        [data-vi-prebreakout-spotlight].vi-pb-card{position:relative;overflow:hidden;padding:1.05rem 1.1rem 1.1rem!important;border:1px solid color-mix(in srgb,var(--border-color,#8ba59b) 55%,#77c7ab 45%)!important;border-radius:22px!important;background:linear-gradient(142deg,color-mix(in srgb,var(--card-bg,#12302b) 91%,#4e9a82 9%),var(--card-bg,#102420))!important;box-shadow:0 12px 36px rgba(0,0,0,.10);isolation:isolate}
-        .vi-pb-card .vi-pb-eyebrow{font-size:.64rem;letter-spacing:.135em;text-transform:uppercase;opacity:.76;font-weight:700;margin:0 0 .8rem}
-        .vi-pb-card .vi-pb-status{display:inline-flex;align-items:center;gap:.4rem;border:1px solid rgba(134,197,168,.38);border-radius:99px;padding:.28rem .58rem;font-size:.65rem;color:inherit;background:rgba(104,178,146,.10)}
-        .vi-pb-card .vi-pb-dot{height:.38rem;width:.38rem;border-radius:100%;background:#d8b878;flex:none}
-        .vi-pb-card .vi-pb-top{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.85rem}
-        .vi-pb-card .vi-pb-grid{display:grid;grid-template-columns:minmax(0,1fr) 102px;gap:1rem;align-items:center}
-        .vi-pb-card .vi-pb-id{display:flex;gap:.65rem;align-items:center;margin-bottom:.75rem;min-width:0}
-        .vi-pb-card .vi-pb-monogram{display:grid;place-items:center;flex:none;width:42px;height:42px;border:1px solid rgba(143,208,179,.43);background:rgba(116,191,156,.1);border-radius:14px;font:700 1rem ui-sans-serif,system-ui}
-        .vi-pb-card .vi-pb-ticker{font:700 1.05rem ui-sans-serif,system-ui;letter-spacing:.03em}
-        .vi-pb-card .vi-pb-sub{font-size:.72rem;opacity:.66;line-height:1.35}
-        .vi-pb-card .vi-pb-heading{font:500 clamp(1.08rem,3.8vw,1.45rem)/1.18 Georgia,serif;letter-spacing:-.025em;margin:0 0 .55rem}
-        .vi-pb-card .vi-pb-detail{font-size:.79rem;line-height:1.45;opacity:.83;margin:0}
-        .vi-pb-card .vi-pb-ring{--val:0;position:relative;display:grid;place-items:center;margin:auto;width:92px;height:92px;border-radius:50%;background:conic-gradient(#83d8b8 calc(var(--val)*1%),rgba(132,160,150,.21) 0);box-shadow:0 0 0 5px rgba(127,189,159,.065)}
-        .vi-pb-card .vi-pb-ring:before{content:'';position:absolute;inset:9px;border-radius:50%;background:var(--card-bg,#102420)}
-        .vi-pb-card .vi-pb-number{position:relative;text-align:center;font-size:1.7rem;font-weight:650;line-height:1}
-        .vi-pb-card .vi-pb-number small{display:block;font-size:.62rem;font-weight:400;opacity:.65;margin-top:.3rem}
-        .vi-pb-card .vi-pb-score-label{font-size:.56rem;letter-spacing:.11em;text-align:center;margin:.65rem 0 0;opacity:.72}
-        .vi-pb-card .vi-pb-metrics{margin-top:1rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;border-top:1px solid rgba(137,180,162,.19);padding-top:.8rem}
-        .vi-pb-card .vi-pb-metric-title{font-size:.63rem;opacity:.68;margin:0 0 .3rem}
-        .vi-pb-card .vi-pb-metric-value{font-size:.85rem;font-weight:650;margin:0}
-        .vi-pb-card .vi-pb-track{height:5px;border-radius:99px;background:rgba(143,187,167,.16);overflow:hidden;margin-top:.42rem}
-        .vi-pb-card .vi-pb-track span{display:block;height:100%;border-radius:99px;background:#7ecfae}
-        .vi-pb-card .vi-pb-foot{font-size:.64rem;opacity:.65;line-height:1.45;margin:.85rem 0 0}
-        .vi-pb-card .vi-pb-action{display:inline-flex;justify-content:center;align-items:center;gap:.5rem;min-height:42px;margin-top:.9rem;border:1px solid color-mix(in srgb,currentColor 70%,#d8b878);border-radius:999px;padding:.5rem 1rem;background:transparent;color:inherit;font:inherit;font-size:.8rem;cursor:pointer}
-        @media(max-width:360px){.vi-pb-card .vi-pb-grid{grid-template-columns:minmax(0,1fr) 84px;gap:.65rem}.vi-pb-card .vi-pb-ring{width:78px;height:78px}.vi-pb-card .vi-pb-ring:before{inset:8px}}
-      `;
-      document.head.append(style);
-    }
     panel.classList.add('vi-pb-card');
     const element = (tag, cls, value) => {
       const node=document.createElement(tag);
