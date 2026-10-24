@@ -43,6 +43,18 @@ class PrebreakoutDataTests(unittest.TestCase):
         if result is not None:
             self.assertIsNone(result["quantitativeDiagnostics"]["averageDollarVolume20"])
 
+    def test_quality_gate_requires_liquidity_and_upper_base(self):
+        good=self.bars()
+        accepted=mod.scan_bars("TEST",good)
+        self.assertIsNotNone(accepted)
+        q=accepted["quantitativeDiagnostics"]
+        self.assertGreaterEqual(q["averageDollarVolume20"],5_000_000)
+        self.assertGreaterEqual(q["basePositionPct"],65)
+        self.assertIn("price_above_sma50",q["qualityGates"])
+        # Identical price structure but insufficient trading capacity is rejected.
+        thin=[{**bar,"volume":bar["volume"]*.01} for bar in good]
+        self.assertIsNone(mod.scan_bars("TEST",thin))
+
     def test_unfinished_utc_daily_bar_is_excluded_from_live_scan(self):
         today=date(2026,10,15)
         bars=[{"date":"2026-10-13","close":1},{"date":"2026-10-14","close":2},
