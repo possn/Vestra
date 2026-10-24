@@ -5,7 +5,7 @@ import unittest
 from datetime import date,timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval,purged_walkforward_folds
+from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval,purged_walkforward_folds,walkforward_holdout_returns
 
 class ImmutableCohortTests(unittest.TestCase):
     def fixture(self,folder):
@@ -142,6 +142,25 @@ class ImmutableCohortTests(unittest.TestCase):
         self.assertEqual(purged_walkforward_folds([])["folds"],[])
         with self.assertRaises(ValueError):
             purged_walkforward_folds(cases,embargo_days=10)
+
+    def test_holdout_returns_use_test_only_and_label_cost_as_scenario(self):
+        cases=[{"ticker":f"T{i:02d}","stage":"compressão",
+                "published_at":(date(2026,1,1)+timedelta(days=i*14)).isoformat()+"T08:00:00Z"}
+               for i in range(12)]
+        outcomes=[{"results":{5:{"return":.10,"spy_return":.03,"excess_return":.07}}}
+                  for _ in cases]
+        plan=purged_walkforward_folds(cases)
+        summary=walkforward_holdout_returns(cases,outcomes,plan,cost_bps=25)
+        self.assertFalse(summary["out_of_sample_alpha_validated"])
+        self.assertTrue(summary["cost_is_assumption"])
+        self.assertTrue(summary["folds"])
+        first=summary["folds"][0]["by_horizon"]["5"]
+        self.assertEqual(first["evaluated"],first["test_cohorts"])
+        self.assertAlmostEqual(first["mean_excess_after_scenario_cost"],.0675)
+        self.assertEqual(summary["folds"][0]["by_horizon"]["20"]["evaluated"],0)
+        self.assertIsNone(summary["folds"][0]["by_horizon"]["20"]["mean_excess_after_scenario_cost"])
+        with self.assertRaises(ValueError):
+            walkforward_holdout_returns(cases,outcomes[:-1],plan)
 
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
