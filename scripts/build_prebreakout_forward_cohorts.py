@@ -425,6 +425,50 @@ def retrospective_feature_outcome_audit(cases:list[dict], events:list[dict], pri
                 "feature_missing":features["missing"],"features_point_in_time_verified":False})
     return result
 
+def durable_feature_discrimination(records:list[dict])->dict:
+    """Descriptive 5/10/20-confirmation × 3/5/10-durability feature audit.
+
+    No independence claim, threshold tuning, statistical significance or forecasts.
+    The same breakout can appear across horizons: never sum these cells as trials.
+    """
+    from statistics import median
+    keys=("atr14_pct","recent5_vs_prior15_volume_ratio",
+          "stock_return_20_sessions","relative_return_20_vs_spy")
+    out={"method":"retrospective_joint_durability_feature_medians",
+         "predictive_validity_established":False,"out_of_sample_validated":False,
+         "point_in_time_adjustments_verified":False,
+         "observations_independent":False,"cells":{}}
+    for h in (5,10,20):
+        for w in (3,5,10):
+            sample=[r for r in records if r.get("horizon_sessions")==h]
+            eligible=[r for r in sample if r.get("outcome")=="confirmed"]
+            status=lambda r:r.get("joint_durability_outcomes",{}).get(str(w),"pending_or_unverified")
+            positive=[r for r in eligible if status(r)=="held_positive"]
+            other=[r for r in eligible if status(r) in
+                   ("held_nonpositive","lost_positive","lost_nonpositive")]
+            cell={"confirmed":len(eligible),"held_positive":len(positive),
+                  "other_matured_joint":len(other),
+                  "missing_or_pending_joint":len(eligible)-len(positive)-len(other),
+                  "not_confirmed_or_unverified":len(sample)-len(eligible),"features":{}}
+            for name in keys:
+                def values(rows):
+                    result=[]
+                    for r in rows:
+                        x=r.get("features",{}).get(name) if isinstance(r.get("features"),dict) else None
+                        if type(x) in (int,float) and math.isfinite(x):
+                            result.append(x)
+                    return result
+                yes,no=values(positive),values(other)
+                cell["features"][name]={"held_positive_n":len(yes),
+                    "other_matured_n":len(no),
+                    "held_positive_median":round(median(yes),6) if yes else None,
+                    "other_matured_median":round(median(no),6) if no else None,
+                    "median_difference":round(median(yes)-median(no),6) if yes and no else None,
+                    "sufficient_descriptive_sample":len(yes)>=30 and len(no)>=30,
+                    "incremental_predictive_value_verified":False}
+            out["cells"][f"{h}x{w}"]=cell
+    return out
+
 def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|None=None)->dict:
     cases=cohorts(archive)
     outcomes=[]
@@ -502,6 +546,8 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "walkforward_holdout_returns":walkforward_holdout_returns(cases,outcomes,purged_walkforward_folds(cases)),
         "shadow_forward_comparison":shadow_forward_comparison(archive,event_prices),
         "retrospective_feature_outcome_audit":retrospective_feature_outcome_audit(cases,events,prices,benchmark_bars),
+        "durable_feature_discrimination":durable_feature_discrimination(
+            retrospective_feature_outcome_audit(cases,events,prices,benchmark_bars)["records"]),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
 if __name__=="__main__":
