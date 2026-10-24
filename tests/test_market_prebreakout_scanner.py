@@ -27,6 +27,10 @@ class PreBreakoutContractTests(unittest.TestCase):
     def test_volume_and_breakout_remain_source_confirmed(self):
         self.assertIn('volumes.length>=30',SCANNER)
         self.assertIn('lastVolume>=averageVolume*1.5',SCANNER)
+        self.assertIn('const volumeDry=baseline!=null&&quiet!=null&&quiet<=baseline*.80',SCANNER)
+        self.assertIn("const stage=distance<=4&&volumeDry?'pré-breakout':'compressão'",SCANNER)
+        self.assertIn('(volumeDry?7:0)',SCANNER)
+        self.assertNotIn('(volumeConfirmed?7:0)',SCANNER)
         self.assertIn('if((bars[last].high??current)>resistance*1.005)return null',SCANNER)
         self.assertIn("!['compressão','pré-breakout'].includes(item.stage)",SCANNER)
         self.assertNotIn("const stage=breakout?'confirmado'",SCANNER)

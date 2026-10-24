@@ -135,11 +135,20 @@
     const averageVolume=volumes.length>=30?volumes.slice(-20).reduce((a,b)=>a+b,0)/20:null;
     const lastVolume=bars[last].volume;
     const volumeConfirmed=averageVolume!=null&&lastVolume!=null&&lastVolume>=averageVolume*1.5;
+    // Align pre-breakout evidence with the OHLCV publisher: drying volume
+    // requires complete positive volume observations in both non-overlapping windows.
+    const baseVolumes=bars.slice(-50,-10).map(x=>x.volume);
+    const quietVolumes=bars.slice(-10,-1).map(x=>x.volume);
+    const validVolumes=values=>values.every(v=>v!=null&&Number.isFinite(v)&&v>0);
+    const baseline=validVolumes(baseVolumes)?baseVolumes.reduce((a,b)=>a+b,0)/baseVolumes.length:null;
+    const quiet=validVolumes(quietVolumes)?quietVolumes.reduce((a,b)=>a+b,0)/quietVolumes.length:null;
+    const volumeDry=baseline!=null&&quiet!=null&&quiet<=baseline*.80;
     // Local fallback must enforce the same pre-pivot rule as the publisher.
     if((bars[last].high??current)>resistance*1.005)return null;
-    const stage=distance<=4?'pré-breakout':'compressão';
-    const score=Math.round(Math.min(100,45+Math.min(18,(1-width/oldWidth)*30)+Math.max(0,8-Math.max(0,distance))*2+(goldenCrossRecent?8:0)+(volumeConfirmed?7:0)));
-    return {stage,score,widthPct:width*100,priorWidthPct:oldWidth*100,distancePct:distance,resistance,averageVolume,volumeConfirmed,goldenCrossRecent,date:bars[last].date,sma50,sma150,sma200};
+    const stage=distance<=4&&volumeDry?'pré-breakout':'compressão';
+    // Anticipatory signals earn no bonus for already-expanding breakout volume.
+    const score=Math.round(Math.min(100,45+Math.min(18,(1-width/oldWidth)*30)+Math.max(0,8-Math.max(0,distance))*2+(goldenCrossRecent?8:0)+(volumeDry?7:0)));
+    return {stage,score,widthPct:width*100,priorWidthPct:oldWidth*100,distancePct:distance,resistance,averageVolume,volumeConfirmed,volumeDry,goldenCrossRecent,date:bars[last].date,sma50,sma150,sma200};
   }
   function confirmed(s){
     const p=stats(s),est=t(s?.estimate_signal),rec=t(s?.recovery_status),dir=t(s?.thesis_direction);
