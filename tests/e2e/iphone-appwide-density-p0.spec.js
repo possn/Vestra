@@ -174,3 +174,25 @@ test('iPhone: Ideas market content stays inside viewport and has readable title 
   expect(head.ink).not.toBe('rgb(255, 255, 255)');
  }
 });
+
+test('iPhone: real Ideas opportunity score is a compact badge, not a tall empty rail',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ await page.locator('#navMarket').click();
+ await page.locator('[data-market-mode="discover"]').click();
+ const card=page.locator('#viewMarket .ux453-opp').first();
+ await expect(card).toBeVisible({timeout:15000});
+ const sizes=await card.evaluate(el=>{
+  const outer=el.getBoundingClientRect();
+  const score=el.querySelector('.ux453-entry')?.getBoundingClientRect();
+  const detail=el.querySelector('.ux453-detail-grid')?.getBoundingClientRect();
+  return {right:outer.right,viewport:document.documentElement.clientWidth,
+   scoreHeight:score?.height,scoreWidth:score?.width,
+   cardHeight:outer.height,detailWidth:detail?.width};
+ });
+ expect(sizes.right).toBeLessThanOrEqual(sizes.viewport+2);
+ expect(sizes.scoreWidth).toBeLessThanOrEqual(66);
+ expect(sizes.scoreHeight).toBeLessThanOrEqual(100);
+ expect(sizes.cardHeight).toBeLessThan(460);
+ expect(sizes.detailWidth).toBeGreaterThan(100);
+});
