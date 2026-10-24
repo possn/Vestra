@@ -12,7 +12,9 @@ def should_scan(now:datetime, archive:Path)->bool:
     if now.tzinfo is None:
         raise ValueError("UTC-aware clock required")
     now=now.astimezone(timezone.utc)
-    if now.weekday()>=5:
+    # Friday US cash session closes after the 20:10 UTC scanner slot.
+    # Saturday 02:10 UTC is the first guaranteed weekly-complete snapshot.
+    if now.weekday()==6 or (now.weekday()==5 and now.hour>=12):
         return False
     slot=now.hour//6
     scheduled_hour=(2,8,14,20)[slot]

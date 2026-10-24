@@ -22,12 +22,14 @@ class PreBreakoutContractTests(unittest.TestCase):
         self.assertIn('current>sma150&&sma50>sma200&&slopes.every(x=>x>0)',SCANNER)
         self.assertIn('prior50<=prior200',SCANNER)
         self.assertIn('width<oldWidth*.8&&width<=.22',SCANNER)
-        self.assertIn('if(distance>8)return null',SCANNER)
+        self.assertIn('if(distance>8||distance<0)return null',SCANNER)
 
     def test_volume_and_breakout_remain_source_confirmed(self):
         self.assertIn('volumes.length>=30',SCANNER)
         self.assertIn('lastVolume>=averageVolume*1.5',SCANNER)
-        self.assertIn('current>resistance*1.005&&volumeConfirmed',SCANNER)
+        self.assertIn('if((bars[last].high??current)>resistance*1.005)return null',SCANNER)
+        self.assertIn("!['compressão','pré-breakout'].includes(item.stage)",SCANNER)
+        self.assertNotIn("const stage=breakout?'confirmado'",SCANNER)
         self.assertIn('Sem secagem de volume verificada',SCANNER)
         self.assertIn('Volume a secar; confirmação pendente',SCANNER)
         self.assertIn('Setup técnico, não previsão',SCANNER)

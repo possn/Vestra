@@ -3,8 +3,11 @@ name: Refresh prebreakout scanner
 on:
   schedule:
     - cron: '10 2,8,14,20 * * 1-5'
+    # Friday US daily candle is only guaranteed complete on Saturday UTC.
+    - cron: '10 2,8 * * 6'
     # Best-effort catch-up: rerun fresh scans after a protected publish window closes.
     - cron: '35 3-5,9-11,15-17,21-23 * * 1-5'
+    - cron: '35 3-5,9-11 * * 6'
   workflow_dispatch: {}
   push:
     branches: [main]

@@ -83,7 +83,7 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertEqual(result["source"],"yahoo:daily_ohlcv")
         self.assertGreater(result["sma50"],result["sma200"])
         self.assertGreater(result["priorWidthPct"],result["widthPct"])
-        self.assertIn(result["stage"],("compressão","pré-breakout","confirmado"))
+        self.assertIn(result["stage"],("compressão","pré-breakout"))
         self.assertTrue(result["vcpConfirmed"])
         self.assertTrue(result["volumeDry"])
 
@@ -135,6 +135,22 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertFalse(mod.strong_breakout_close(102, 100, 101, 102.5, 99, False))
         self.assertFalse(mod.strong_breakout_close(102, 103, 101, 102.5, 99, True))
         self.assertFalse(mod.strong_breakout_close(102, 100, 101, 102, 102, True))
+
+    def test_prebreakout_rejects_close_above_previous_resistance(self):
+        rows=self.bars()
+        pivot=max(r["high"] for r in rows[-40:-1])
+        rows[-1]["close"]=pivot*1.01
+        rows[-1]["high"]=rows[-1]["close"]*1.001
+        rows[-1]["low"]=rows[-1]["close"]*.995
+        self.assertIsNone(mod.scan_bars("TEST",rows),
+                          "already crossed pivot must not appear as pre-breakout")
+
+    def test_prebreakout_rejects_intraday_failed_breakout(self):
+        rows=self.bars()
+        pivot=max(r["high"] for r in rows[-40:-1])
+        rows[-1]["high"]=max(rows[-1]["high"],pivot*1.012)
+        self.assertIsNone(mod.scan_bars("TEST",rows),
+                          "prior failed breakout is not an untouched VCP base")
 
     def test_unverified_volume_never_confirms_breakout(self):
         rows=self.bars()

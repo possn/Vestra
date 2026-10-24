@@ -28,10 +28,14 @@
       }
       const rows=new Map();
       for(const item of payload.signals){
-        if(item?.source!=='yahoo:daily_ohlcv'||!item.ticker||!item.date||!['compressão','pré-breakout','confirmado'].includes(item.stage))continue;
+        if(item?.source!=='yahoo:daily_ohlcv'||!item.ticker||!item.date||!['compressão','pré-breakout'].includes(item.stage))continue;
         const age=(Date.now()-Date.parse(item.date+'T23:59:59Z'))/86400000;
         if(!(age>=-1&&age<=7))continue;
         if(!Number.isFinite(Number(item.score))||!Number.isFinite(Number(item.widthPct)))continue;
+        // Source contract: a pre-breakout candidate is below pivot at last close.
+        // Older feeds can contain breakout-confirmed names and must not revive them.
+        if(!Number.isFinite(Number(item.distancePct))||Number(item.distancePct)<0||Number(item.distancePct)>8)continue;
+        if(Number.isFinite(Number(item.breakoutExtensionPct))&&Number(item.breakoutExtensionPct)>0)continue;
         rows.set(t(item.ticker).toUpperCase(),item);
       }
       prebreakoutFeed=rows;
@@ -126,13 +130,14 @@
     if(!compression)return null;
     const priorBase=range(recent.slice(0,-1)),resistance=priorBase.hi;
     const distance=(resistance/current-1)*100;
-    if(distance>8)return null;
+    if(distance>8||distance<0)return null;
     const volumes=bars.slice(-41,-1).map(x=>x.volume).filter(x=>x!=null&&x>0);
     const averageVolume=volumes.length>=30?volumes.slice(-20).reduce((a,b)=>a+b,0)/20:null;
     const lastVolume=bars[last].volume;
     const volumeConfirmed=averageVolume!=null&&lastVolume!=null&&lastVolume>=averageVolume*1.5;
-    const breakout=current>resistance*1.005&&volumeConfirmed;
-    const stage=breakout?'confirmado':distance>=-1.5&&distance<=4?'pré-breakout':'compressão';
+    // Local fallback must enforce the same pre-pivot rule as the publisher.
+    if((bars[last].high??current)>resistance*1.005)return null;
+    const stage=distance<=4?'pré-breakout':'compressão';
     const score=Math.round(Math.min(100,45+Math.min(18,(1-width/oldWidth)*30)+Math.max(0,8-Math.max(0,distance))*2+(goldenCrossRecent?8:0)+(volumeConfirmed?7:0)));
     return {stage,score,widthPct:width*100,priorWidthPct:oldWidth*100,distancePct:distance,resistance,averageVolume,volumeConfirmed,goldenCrossRecent,date:bars[last].date,sma50,sma150,sma200};
   }
