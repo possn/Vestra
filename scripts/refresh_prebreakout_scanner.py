@@ -61,7 +61,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     values=[b["close"] for b in clean]
     m50=sma(values,end,50);m150=sma(values,end,150);m200=sma(values,end,200)
     slopes=[m50-sma(values,end-10,50),m150-sma(values,end-10,150),m200-sma(values,end-10,200)]
-    if not (values[-1]>m150 and m50>m200 and all(x>0 for x in slopes)):return None
+    if not (values[-1]>m50>m150>m200 and all(x>0 for x in slopes)):return None
     def bounds(part):
         return max(b["high"] for b in part),min(b["low"] for b in part)
     def width(part):
@@ -123,7 +123,15 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     atr60=sum(tr[-60:])/60
     volumes20=[b.get("volume") for b in clean[-20:]]
     dollar_volume20=(sum(b["close"]*v for b,v in zip(clean[-20:],volumes20))/20 if all(isinstance(v,(int,float)) and math.isfinite(v) and v>0 for v in volumes20) else None)
-    diagnostics={"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,"averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None}
+    # Mandatory liquidity and constructive upper-base location: otherwise
+    # a thinly traded or weak base can appear deceptively close to a pivot.
+    base_high,base_low=bounds(clean[-40:])
+    base_position=(current-base_low)/(base_high-base_low) if base_high>base_low else 0
+    if dollar_volume20 is None or dollar_volume20<5_000_000 or base_position<.65:
+        return None
+    diagnostics={"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
+                 "averageDollarVolume20":round(dollar_volume20,2),"basePositionPct":round(base_position*100,1),
+                 "qualityGates":["sma50_gt_sma150_gt_sma200","price_above_sma50","dollar_volume20_gte_5m","base_position_gte_65pct"]}
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
             "signalClose":round(current,5),"signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
             "widthPct":round(base_width*100,2),"priorWidthPct":round(old_width*100,2),
