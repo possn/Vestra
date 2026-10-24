@@ -66,6 +66,7 @@ def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
     if not indices:
         return {"status":"pending","observed_sessions":0,"event_date":None}
     observed=indices[:horizon]
+    horizon_matured=len(observed)>=horizon
     for i in observed:
         if i<20:
             return {"status":"missing_history","observed_sessions":0,"event_date":None}
@@ -85,6 +86,8 @@ def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
                         "end_return_from_breakout":round(closes[-1]/close-1,6),
                         "minimum_close_from_breakout":round(min(closes)/close-1,6)}
             return {"status":"confirmed","observed_sessions":observed.index(i)+1,
+                    "horizon_matured":horizon_matured,
                     "event_date":day.isoformat(),"durability":durability}
-    return {"status":"not_confirmed" if len(observed)>=horizon else "pending",
+    return {"status":"not_confirmed" if horizon_matured else "pending",
+            "horizon_matured":horizon_matured,
             "observed_sessions":len(observed),"event_date":None}

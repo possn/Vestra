@@ -93,8 +93,11 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
             status=row["status"]
             counts[status]=counts.get(status,0)+1
         evaluated=counts.get("confirmed",0)+counts.get("not_confirmed",0)
+        matured=sum(1 for row in sample if row.get("horizon_matured") is True)
+        confirmed_early=sum(1 for row in sample if row["status"]=="confirmed" and row.get("horizon_matured") is False)
         event_coverage[str(horizon)]={
             "cohorts":len(sample),"evaluable":evaluated,
+            "matured_horizons":matured,"confirmed_before_maturity":confirmed_early,
             "coverage":round(evaluated/len(sample),4) if sample else None,
             "by_status":counts,"breakout_rate":None,
             "reason":"insufficient_or_unverified_forward_evidence"}
