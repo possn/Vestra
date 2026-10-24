@@ -19,7 +19,7 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("action.dataset.vestraGo='market'", SRC)
         self.assertIn("action.dataset.vestraTicker=pick.ticker", SRC)
         self.assertIn("if(active && pick?.ticker)", SRC)
-        self.assertIn("market.openTicker(ticker)", SRC)
+        self.assertIn("VestraNavigation?.openCompany?.(ticker,{origin:'market',sourceNode:button})", SRC)
         self.assertIn("await market.ensureLoaded()", SRC)
         self.assertIn("document.getElementById('marketSheet')?.dataset.ticker === ticker", SRC)
         self.assertIn("element('h3','vi-pb-heading',title)", SRC)
