@@ -55,6 +55,17 @@ class PrebreakoutDataTests(unittest.TestCase):
         thin=[{**bar,"volume":bar["volume"]*.01} for bar in good]
         self.assertIsNone(mod.scan_bars("TEST",thin))
 
+    def test_shadow_legacy_gate_can_be_measured_without_promoting_invalid_setup(self):
+        valid=self.bars()
+        self.assertIsNotNone(mod.scan_bars("TEST",valid))
+        legacy=mod.scan_bars("TEST",valid,strict_quality=False)
+        self.assertIsNotNone(legacy)
+        self.assertEqual(legacy["quantitativeDiagnostics"]["qualityGates"],[])
+        thin=[{**row,"volume":row["volume"]*.01} for row in valid]
+        self.assertIsNotNone(mod.scan_bars("TEST",thin,strict_quality=False))
+        self.assertIsNone(mod.scan_bars("TEST",thin))
+        self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False),strict_quality=False))
+
     def test_unfinished_utc_daily_bar_is_excluded_from_live_scan(self):
         today=date(2026,10,15)
         bars=[{"date":"2026-10-13","close":1},{"date":"2026-10-14","close":2},
