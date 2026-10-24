@@ -63,7 +63,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     resistance=bounds(clean[-40:-1])[0]
     current=values[-1]
     distance=(resistance/current-1)*100
-    if distance>8 or distance< -5:return None  # Too far below pivot, or already extended.
+    if distance>8 or distance<0:return None  # PRE-breakout only: last close must remain at/below pivot.
     prior_volumes=[]
     recent_volumes=[]
     for part,target in ((clean[-50:-10],prior_volumes),(clean[-10:],recent_volumes)):
@@ -85,12 +85,14 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     near_cross=False
     # Only a rising closing price with a verified 1.5x volume expansion confirms the breakout.
     breakout=strong_breakout_close(current,values[-2],resistance,clean[-1]["high"],clean[-1]["low"],volume_confirmed)
-    if not breakout and distance< -1.5:return None
-    stage="confirmado" if breakout else "pré-breakout" if 0<=distance<=4 and volume_dry else "compressão"
+    # An already-confirmed or intraday-exceeded pivot belongs to a separate breakout
+    # follow-up, never the predictive pre-breakout radar. Reject failed breakouts too.
+    if breakout or clean[-1]["high"]>resistance*1.005:return None
+    stage="pré-breakout" if 0<=distance<=4 and volume_dry else "compressão"
     contraction=1-w3/max(w1,1e-9)
     score=round(max(0,min(100,35+min(20,contraction*30)+
         (12 if volume_dry else 0)+(12 if 0<=distance<=4 else 0)+
-        (10 if crossed else 0)+(11 if breakout else 0)-
+        (10 if crossed else 0)-
         (12 if baseline is None else 0))))
     # Diagnostic evidence only: no score, gate, or stage changes.
     close_location=(current-clean[-1]["low"])/(clean[-1]["high"]-clean[-1]["low"]) if clean[-1]["high"]>clean[-1]["low"] else None
@@ -195,8 +197,8 @@ def main():
     # Do not retain previously accepted setups after the stricter criteria reject them.
     by={signal["ticker"]:signal for signal in found}
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"new_signals":len(found),"quality_model":"vcp_volume_v2","scan_slot_utc":now.hour//6,
-             "errors":failures[:8],"signals":sorted(by.values(),key=lambda s:({"confirmado":0,"pré-breakout":1,"compressão":2}[s["stage"]],-s["score"],s["ticker"]))[:75]}
+             "attempted":len(tickers),"with_ohlcv":checked,"new_signals":len(found),"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "errors":failures[:8],"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
 
