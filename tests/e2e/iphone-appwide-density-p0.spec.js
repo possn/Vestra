@@ -127,29 +127,50 @@ test('iPhone: portfolio summary uses editorial density without clipping values',
  expect(geometry.right).toBeLessThanOrEqual(geometry.viewport+2);
 });
 
-test('iPhone: every Market mode is visible without horizontal clipping',async({page})=>{
+test('iPhone: Market horizontal mode rail is scrollable without expanding page',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.goto('/index.html');
  await page.locator('#navMarket').click();
- const modes=page.locator('#viewMarket .market-mode-grid .market-mode');
- await expect(modes.first()).toBeVisible();
- const report=await page.locator('#viewMarket .market-mode-grid').evaluate(el=>{
-  const area=el.getBoundingClientRect();
-  const buttons=[...el.querySelectorAll('.market-mode')].map(x=>{
-   const b=x.getBoundingClientRect();
-   return {left:b.left,right:b.right,width:b.width};
-  });
-  return {count:buttons.length,columns:getComputedStyle(el).gridTemplateColumns,
-   viewport:document.documentElement.clientWidth,areaRight:area.right,
-   scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,buttons};
+ const rail=page.locator('#viewMarket .market-mode-grid');
+ await expect(rail).toBeVisible();
+ const geometry=await rail.evaluate(el=>{
+  const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
+  return {left:r.left,right:r.right,viewport:document.documentElement.clientWidth,
+   overflow:cs.overflowX,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth};
  });
- expect(report.count).toBeGreaterThanOrEqual(6);
- expect(report.columns.trim().split(/\s+/).length).toBe(3);
- expect(report.scrollWidth).toBeLessThanOrEqual(report.clientWidth+2);
- expect(report.areaRight).toBeLessThanOrEqual(report.viewport+2);
- for(const item of report.buttons){
-  expect(item.left).toBeGreaterThanOrEqual(0);
-  expect(item.right).toBeLessThanOrEqual(report.viewport+2);
-  expect(item.width).toBeGreaterThan(75);
+ expect(geometry.left).toBeGreaterThanOrEqual(0);
+ expect(geometry.right).toBeLessThanOrEqual(geometry.viewport+2);
+ expect(geometry.overflow).toBe('auto');
+ expect(geometry.scrollWidth).toBeGreaterThan(geometry.clientWidth);
+ const last=rail.locator('.market-mode').last();
+ await last.scrollIntoViewIfNeeded();
+ await expect(last).toBeInViewport();
+});
+
+test('iPhone: Ideas market content stays inside viewport and has readable title ink',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ await page.locator('#navMarket').click();
+ await page.locator('[data-market-mode="discover"]').click();
+ const report=await page.locator('#viewMarket #marketPrimary').evaluate(root=>{
+  const styles=getComputedStyle(root);
+  const bad=[...root.querySelectorAll('section,article,.market-row,.market-sector-grid,.ux453-opp')].filter(el=>{
+   const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
+   return r.width>0&&r.height>0&&cs.display!=='none'&&
+    (r.right>document.documentElement.clientWidth+3 || r.left< -3) &&
+    cs.position!=='absolute'&&cs.position!=='fixed'&&
+    !el.closest('.market-chipbar');
+  }).slice(0,10).map(el=>({tag:el.tagName,className:String(el.className).slice(0,90)}));
+  const heads=[...root.querySelectorAll('.market-section__head h3')].map(el=>({
+   size:parseFloat(getComputedStyle(el).fontSize),ink:getComputedStyle(el).color
+  }));
+  return {width:root.getBoundingClientRect().width,viewport:document.documentElement.clientWidth,
+   bad,heads,overflow:styles.overflowX};
+ });
+ expect(report.width).toBeLessThanOrEqual(report.viewport);
+ expect(report.bad).toEqual([]);
+ for(const head of report.heads){
+  expect(head.size).toBeLessThanOrEqual(19);
+  expect(head.ink).not.toBe('rgb(255, 255, 255)');
  }
 });
