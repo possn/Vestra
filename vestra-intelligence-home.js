@@ -343,9 +343,13 @@
         if(metrics.childElementCount)panel.append(metrics);
       }
       panel.append(element('p','vi-pb-foot',evidence));
-      if(active){
+      if(active && pick?.ticker){
         const action=element('button','vi-pb-action','Investigar no Mercado →');
-        action.type='button';action.dataset.vestraGo='market';panel.append(action);
+        action.type='button';
+        action.dataset.vestraGo='market';
+        action.dataset.vestraTicker=pick.ticker;
+        action.setAttribute('aria-label','Investigar '+pick.ticker+' no Mercado');
+        panel.append(action);
       }
     };
     render('A verificar o radar…', 'A consultar os dados técnicos publicados.', '', false);
@@ -696,6 +700,35 @@
         if (returnButton?.parentElement) returnButton.parentElement.style.setProperty('display','block','important');
         const legacy = document.querySelector('#viewDashboard .v2-detail-chapter-nav') || document.querySelector('#viewDashboard .vi-back-to-intelligence') || document.querySelector('#viewDashboard .v2-home-stage');
         if (legacy && typeof legacy.scrollIntoView === 'function') legacy.scrollIntoView({behavior:'smooth', block:'start'});
+        return;
+      }
+      if (target === 'market' && button.dataset.vestraTicker) {
+        const ticker = button.dataset.vestraTicker;
+        if (!/^[A-Z0-9.\\-]{1,16}$/.test(ticker)) return;
+        if (button.disabled) return;
+        button.disabled = true;
+        // Open the exact published ticker's canonical dossier, not the generic Market tab.
+        Promise.resolve().then(async () => {
+          const market = window.VestraMarket;
+          if (typeof market?.ensureLoaded === 'function') await market.ensureLoaded();
+          await window.VestraNavigation?.openCompany?.(ticker,{origin:'market',sourceNode:button});
+          if (document.getElementById('marketSheet')?.dataset.ticker === ticker) return;
+          // If the published ticker has no dossier in the current universe,
+          // keep the user's research intent by offering the prefilled Market search.
+          const search = document.getElementById('marketSearch');
+          if (search) {
+            search.value = ticker;
+            search.dispatchEvent(new Event('input',{bubbles:true}));
+            search.focus();
+          }
+        }).catch(() => {
+          const search = document.getElementById('marketSearch');
+          if (search) {
+            search.value = ticker;
+            search.dispatchEvent(new Event('input',{bubbles:true}));
+            search.focus();
+          }
+        }).finally(() => { button.disabled = false; });
         return;
       }
       if (typeof window.setView === 'function') window.setView(target === 'portfolio' ? 'assets' : target);
