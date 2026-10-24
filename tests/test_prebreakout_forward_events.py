@@ -24,7 +24,7 @@ class ForwardBreakoutEventTests(unittest.TestCase):
         rows=self.bars()
         breakout=next(row for row in rows if row["date"]=="2026-10-24")
         breakout.update(close=102.0,high=102.5,low=99.5,volume=2000.0)
-        result=breakout_event(self.snapshot(),"TEST",rows,horizon=5)
+        result=breakout_event(self.snapshot(),"TEST",rows[:46],horizon=5)
         self.assertEqual(result["status"],"confirmed")
         self.assertTrue(result["durability"]["3"]["status"]=="observed")
         self.assertFalse(result["durability"]["3"]["held_pivot"])
