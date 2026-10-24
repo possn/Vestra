@@ -41,9 +41,28 @@ class WeeklyRotationContractParityTests(unittest.TestCase):
     def setUp(self):
         self.market = (ROOT / "market.js").read_text(encoding="utf-8")
         self.backend = (ROOT / "scripts" / "postprocess_market.py").read_text(encoding="utf-8")
+        self.run = (ROOT / "scripts" / "run.py").read_text(encoding="utf-8")
 
     def test_theme_patterns_and_etf_baskets_match_backend_exactly(self):
         self.assertEqual(_frontend_contract(self.market), _backend_contract(self.backend))
+
+    def test_rotation_etf_refresh_lane_matches_all_confirmation_baskets(self):
+        module = ast.parse(self.run)
+        assignment = next(
+            node for node in module.body
+            if isinstance(node, ast.Assign)
+            and any(
+                isinstance(target, ast.Name) and target.id == "WEEKLY_ROTATION_ETF_PRIORITY"
+                for target in node.targets
+            )
+        )
+        refresh = {elt.value for elt in assignment.value.elts}
+        confirmation = {
+            ticker
+            for _, _, tickers in _backend_contract(self.backend)
+            for ticker in tickers
+        }
+        self.assertEqual(refresh, confirmation)
 
     def test_price_signal_thresholds_match_backend(self):
         pairs = (

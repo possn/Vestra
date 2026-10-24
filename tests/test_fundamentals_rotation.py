@@ -53,6 +53,17 @@ class FundamentalsRotationTests(unittest.TestCase):
         self.assertNotIn("raw_portfolio = fetch_many(portfolio_remainder", source)
         self.assertNotIn("raw_remainder = fetch_many(remainder_tickers", source)
 
+    def test_weekly_rotation_etfs_have_dedicated_always_refresh_lane(self):
+        source = RUN_PATH.read_text(encoding="utf-8")
+        self.assertIn("WEEKLY_ROTATION_ETF_PRIORITY = (", source)
+        self.assertIn("rotation_etf_refresh = [t for t in WEEKLY_ROTATION_ETF_PRIORITY if t in all_tickers]", source)
+        self.assertIn("t not in rotation_etf_set", source)
+        self.assertIn(
+            "raw_rotation_etfs = fetch_many(rotation_etf_refresh, workers_override=2, retries=1",
+            source,
+        )
+        self.assertIn("raw_by_symbol.update({r.ticker: r for r in raw_rotation_etfs})", source)
+
     def test_slow_enrichment_lanes_have_explicit_budgets_and_stage_timers(self):
         source = RUN_PATH.read_text(encoding="utf-8")
         self.assertIn('FINSCANNER_ESEF_NONPRIORITY_REFRESH", "60"', source)
