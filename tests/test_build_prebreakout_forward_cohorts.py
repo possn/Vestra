@@ -5,7 +5,7 @@ import unittest
 from datetime import date,timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval,purged_walkforward_folds,walkforward_holdout_returns,spy_regime_at_publication,market_regime_audit
+from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval,purged_walkforward_folds,walkforward_holdout_returns,spy_regime_at_publication,market_regime_audit,shadow_forward_comparison
 
 class ImmutableCohortTests(unittest.TestCase):
     def fixture(self,folder):
@@ -192,6 +192,25 @@ class ImmutableCohortTests(unittest.TestCase):
         report=market_regime_audit(cases,outcomes)
         self.assertEqual(report["groups"]["positive_spy_20d"]["by_horizon"]["5"]["positive_net_excess"],1)
         self.assertFalse(report["probability_calibrated"])
+
+    def test_shadow_comparison_avoids_rolling_base_pseudoreplication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);folder=root/"2026"/"slots";folder.mkdir(parents=True)
+            for day,anchor in [("2026-10-15","2026-09-01"),("2026-10-16","2026-09-02")]:
+                (folder/f"{day}-slot1.json").write_text(json.dumps({
+                    "schema":"vestra_prebreakout_v1","generated_at":f"{day}T07:00:00Z",
+                    "scan_slot_utc":1,"signals":[],
+                    "quality_shadow_cases":{"records":[{
+                        "ticker":"AAA","stage":"pré-breakout","date":day,
+                        "baseStartDate":anchor,"strict_eligible":False,
+                        "legacy_eligible":True,"source":"yahoo:daily_ohlcv",
+                        "signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
+                        "resistance":100,"signalClose":99}]}}))
+            result=shadow_forward_comparison(root,None)
+            self.assertEqual(result["groups"]["rejected_strict"]["cohorts"],1)
+            self.assertEqual(result["groups"]["rejected_strict"]["by_horizon"]["5"]["unverified_or_pending"],1)
+            self.assertEqual(result["groups"]["passed_strict"]["cohorts"],0)
+            self.assertIsNone(result["success_probability"])
 
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
