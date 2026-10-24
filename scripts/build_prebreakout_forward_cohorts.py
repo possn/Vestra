@@ -15,6 +15,45 @@ from prebreakout_forward_events import breakout_event
 
 STAGES={"compressão","pré-breakout","confirmado"}
 
+def base_maturity(case:dict)->str:
+    """Published age in calendar days; never mislabel elapsed days as market sessions."""
+    anchor=case.get("base_start_date")
+    if not anchor:
+        return "unverified"
+    days=(datetime.fromisoformat(case["signal_date"]).date()-
+          datetime.fromisoformat(anchor).date()).days
+    if days<0:
+        return "unverified"
+    if days<28:
+        return "young_under_28d"
+    if days<=84:
+        return "developing_28_to_84d"
+    return "extended_over_84d"
+
+
+def maturity_event_evidence(events:list[dict],cases:list[dict])->dict:
+    """Transparent sample counts, no fitted probabilities or invented labels."""
+    groups={}
+    for case in cases:
+        group=base_maturity(case)
+        groups.setdefault(group,{"cohorts":0,"by_horizon":{str(h):{"confirmed":0,"not_confirmed":0,"pending_or_unverified":0} for h in (5,10,20)}})
+        groups[group]["cohorts"]+=1
+    for event in events:
+        group=event["base_maturity"]
+        bucket=groups[group]["by_horizon"][str(event["horizon_sessions"])]
+        status=event["status"]
+        if status in ("confirmed","not_confirmed"):
+            bucket[status]+=1
+        else:
+            bucket["pending_or_unverified"]+=1
+    for group in groups.values():
+        for bucket in group["by_horizon"].values():
+            bucket["evaluable"]=bucket["confirmed"]+bucket["not_confirmed"]
+            bucket["breakout_probability"]=None
+    return {"age_unit":"calendar_days","historical_only":True,
+            "probability_calibrated":False,"groups":groups}
+
+
 def cohorts(archive:Path)->list[dict]:
     eligible=[]
     for path in archive.glob("*/slots/*-slot*.json"):
@@ -88,7 +127,8 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         rows=(event_prices or {}).get(case["ticker"])
         for horizon in (5,10,20):
             event={"ticker":case["ticker"],"stage":case["stage"],
-                   "published_at":case["published_at"],"horizon_sessions":horizon}
+                   "published_at":case["published_at"],"horizon_sessions":horizon,
+                   "base_maturity":base_maturity(case)}
             if not isinstance(rows,list) or not rows:
                 event.update({"status":"missing_ohlcv","observed_sessions":0,"event_date":None})
             else:
@@ -137,6 +177,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "historical_only":True,"cohort_count":len(cases),
         "base_identity_coverage":{"anchored":sum(case["base_start_date"] is not None for case in cases),
                                   "legacy_unanchored":sum(case["base_start_date"] is None for case in cases)},
+        "base_maturity_evidence":maturity_event_evidence(events,cases),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
 if __name__=="__main__":
