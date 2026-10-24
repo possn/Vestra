@@ -266,6 +266,29 @@ class ImmutableCohortTests(unittest.TestCase):
         report=retrospective_feature_outcome_audit([case],[ev],{"AAA":bars},bars)
         self.assertEqual(report["records"][0]["joint_durability_outcomes"]["3"],"pending_or_unverified")
 
+    def test_durable_discrimination_withholds_pending_and_missing(self):
+        from build_prebreakout_forward_cohorts import durable_feature_discrimination
+        rows=[{"horizon_sessions":5,"outcome":"confirmed",
+               "joint_durability_outcomes":{"3":"held_positive"},
+               "features":{"atr14_pct":2.0}},
+              {"horizon_sessions":5,"outcome":"confirmed",
+               "joint_durability_outcomes":{"3":"lost_nonpositive"},
+               "features":{"atr14_pct":4.0}},
+              {"horizon_sessions":5,"outcome":"confirmed",
+               "joint_durability_outcomes":{"3":"pending_or_unverified"},
+               "features":{"atr14_pct":100.0}},
+              {"horizon_sessions":5,"outcome":"not_confirmed","features":{"atr14_pct":90.0}}]
+        report=durable_feature_discrimination(rows)
+        cell=report["cells"]["5x3"]
+        self.assertEqual(cell["held_positive"],1)
+        self.assertEqual(cell["other_matured_joint"],1)
+        self.assertEqual(cell["missing_or_pending_joint"],1)
+        self.assertEqual(cell["not_confirmed_or_unverified"],1)
+        self.assertEqual(cell["features"]["atr14_pct"]["median_difference"],-2.0)
+        self.assertFalse(report["out_of_sample_validated"])
+        self.assertFalse(report["observations_independent"])
+        self.assertIsNone(report["cells"]["10x3"]["features"]["atr14_pct"]["median_difference"])
+
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);f=root/"2026"/"slots";f.mkdir(parents=True)
