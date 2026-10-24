@@ -36,7 +36,7 @@ def historical_breakout_dates(clean: list[dict], start: int, stop: int) -> list[
             dates.append(bar["day"].isoformat())
     return dates
 
-def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
+def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_quality: bool=True):
     """Identify a contracting base, not a prediction of future returns."""
     today=today or datetime.now(timezone.utc).date()
     clean=[]
@@ -61,7 +61,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     values=[b["close"] for b in clean]
     m50=sma(values,end,50);m150=sma(values,end,150);m200=sma(values,end,200)
     slopes=[m50-sma(values,end-10,50),m150-sma(values,end-10,150),m200-sma(values,end-10,200)]
-    if not (values[-1]>m50>m150>m200 and all(x>0 for x in slopes)):return None
+    if not ((values[-1]>m50>m150>m200 if strict_quality else values[-1]>m150 and m50>m200) and all(x>0 for x in slopes)):return None
     def bounds(part):
         return max(b["high"] for b in part),min(b["low"] for b in part)
     def width(part):
@@ -127,10 +127,10 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
     # a thinly traded or weak base can appear deceptively close to a pivot.
     base_high,base_low=bounds(clean[-40:])
     base_position=(current-base_low)/(base_high-base_low) if base_high>base_low else 0
-    if dollar_volume20 is None or dollar_volume20<5_000_000 or base_position<.65:
+    if strict_quality and (dollar_volume20 is None or dollar_volume20<5_000_000 or base_position<.65):
         return None
     diagnostics={"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
-                 "averageDollarVolume20":round(dollar_volume20,2),"basePositionPct":round(base_position*100,1),
+                 "averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None,"basePositionPct":round(base_position*100,1),
                  "qualityGates":["sma50_gt_sma150_gt_sma200","price_above_sma50","dollar_volume20_gte_5m","base_position_gte_65pct"]}
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
             "signalClose":round(current,5),"signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
@@ -260,6 +260,8 @@ def main():
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]))
     found=[];checked=0;failures=[]
+    # Shadow evaluation only; never route legacy candidates to public signals.
+    shadow={"legacy_eligible":0,"strict_eligible":0,"legacy_only":0,"strict_only":0,"neither":0,"compared":0}
     for start in range(0,len(tickers),15):
         group=tickers[start:start+15]
         try:
@@ -271,13 +273,20 @@ def main():
                 frame=data[ticker] if len(group)>1 else data
                 bars=completed_sessions(dataframe_bars(frame),now.date());checked+=bool(bars)
                 signal=scan_bars(ticker,bars,now.date())
+                legacy=scan_bars(ticker,bars,now.date(),strict_quality=False)
+                shadow["compared"]+=1
+                shadow["legacy_eligible"]+=int(legacy is not None)
+                shadow["strict_eligible"]+=int(signal is not None)
+                shadow["legacy_only"]+=int(legacy is not None and signal is None)
+                shadow["strict_only"]+=int(signal is not None and legacy is None)
+                shadow["neither"]+=int(legacy is None and signal is None)
                 if signal:found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
     # Do not retain previously accepted setups after the stricter criteria reject them.
     by={signal["ticker"]:signal for signal in found}
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"single_scan_slot_not_full_universe","new_signals":len(found),"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
-             "errors":failures[:8],"daily_focus":daily_focus(list(by.values()),now.date()),"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
+             "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},"daily_focus":daily_focus(list(by.values()),now.date()),"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
 
