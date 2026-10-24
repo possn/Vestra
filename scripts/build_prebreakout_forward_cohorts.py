@@ -47,9 +47,23 @@ def cohorts(archive:Path)->list[dict]:
                 date=datetime.fromisoformat(str(row["date"])[:10]).date()
             except (ValueError,TypeError,KeyError):continue
             if date>stamp.date():continue
-            key=(ticker,stage)
+            # Point-in-time base identity: never combine two independently
+            # published bases merely because the ticker/stage is the same.
+            # Legacy publications lacking an explicit base start remain on
+            # the old ticker/stage policy; do not retroactively invent bases.
+            anchor=row.get("baseStartDate")
+            if anchor is not None:
+                try:
+                    base_date=datetime.fromisoformat(str(anchor)).date()
+                except (TypeError,ValueError):
+                    continue
+                if base_date>date or (date-base_date).days>365:
+                    continue
+                anchor=base_date.isoformat()
+            key=(ticker,stage,anchor)
             if key not in selected:
                 selected[key]={"ticker":ticker,"stage":stage,
+                    "base_start_date":anchor,
                     "published_at":stamp.isoformat(),"signal_date":date.isoformat(),
                     "snapshot":data}
     return [selected[k] for k in sorted(selected,key=lambda key:(selected[key]["published_at"],key))]
@@ -119,8 +133,10 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "breakout_event_evidence":{"historical_only":True,"method":"published_pivot_future_ohlcv",
             "unvalidated_probability":True,"coverage_by_horizon":event_coverage,"events":events},
         "evaluation_method":"adjusted_daily_close_after_publication",
-        "cohort_policy":"first_immutable_publication_per_ticker_and_stage",
+        "cohort_policy":"first_immutable_publication_per_ticker_stage_and_verified_base_start",
         "historical_only":True,"cohort_count":len(cases),
+        "base_identity_coverage":{"anchored":sum(case["base_start_date"] is not None for case in cases),
+                                  "legacy_unanchored":sum(case["base_start_date"] is None for case in cases)},
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
 if __name__=="__main__":
