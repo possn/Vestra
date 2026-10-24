@@ -7,6 +7,29 @@ This does not imply executable trades or a calibrated probability.
 from datetime import datetime, timezone, date
 import math
 
+def reconcile_pivot(signal:dict, bars:list[dict], max_ratio_change:float=0.40):
+    """Verify same-session adjusted close, then rescale the archived pivot.
+
+    The original observation must include its point-in-time adjusted close.
+    Later corporate-action adjustments scale the historical close and pivot
+    together. Large or implausible re-scalings abstain pending manual evidence.
+    """
+    try:
+        original=float(signal["signalClose"])
+        pivot=float(signal["resistance"])
+        day=date.fromisoformat(str(signal["date"])[:10])
+        match=[float(bar["close"]) for bar in bars if date.fromisoformat(str(bar["date"])[:10])==day]
+    except (KeyError,ValueError,TypeError,OverflowError):
+        return None
+    if (signal.get("signalPriceBasis")!="yahoo_auto_adjusted_asof_publication" or
+        len(match)!=1 or not all(math.isfinite(x) and x>0 for x in (original,pivot,match[0]))):
+        return None
+    ratio=match[0]/original
+    if not math.isfinite(ratio) or not 1-max_ratio_change<=ratio<=1+max_ratio_change:
+        return None
+    return pivot*ratio
+
+
 def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
     if type(horizon) is not int or horizon<1:
         raise ValueError("invalid horizon")
@@ -21,9 +44,9 @@ def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
     signal=matches[0]
     # Never compare a publisher pivot to a differently adjusted historical price basis.
     # Until a verifiable same-basis adjustment factor is archived, abstain.
-    if signal.get("price_basis")!="yahoo_auto_adjusted_asof_publication" or not signal.get("price_basis_verified") is True:
+    pivot=reconcile_pivot(signal,bars)
+    if pivot is None:
         return {"status":"price_basis_unverified","observed_sessions":0,"event_date":None}
-    pivot=float(signal["resistance"])
     if not math.isfinite(pivot) or pivot<=0:
         raise ValueError("invalid pivot")
     first_eligible=max(date.fromisoformat(str(signal["date"])[:10]),published.astimezone(timezone.utc).date())
