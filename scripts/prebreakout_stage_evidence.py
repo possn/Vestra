@@ -45,7 +45,10 @@ def report(evaluations:list[dict],horizons=HORIZONS,min_sample:int=MIN_SAMPLE)->
                 "sufficient_sample":n>=min_sample}
             if record["sufficient_sample"]:
                 hits=sum(r["return"]>0 for r in valid)
+                excess_hits=sum(r["excess_return"]>0 for r in valid)
                 record.update({"hit_rate":hits/n,"hit_rate_wilson_95":wilson(hits,n),
+                    "benchmark_outperformance_rate":excess_hits/n,
+                    "benchmark_outperformance_wilson_95":wilson(excess_hits,n),
                     "mean_return":mean(r["return"] for r in valid),
                     "median_return":median(r["return"] for r in valid),
                     "mean_excess_return":mean(r["excess_return"] for r in valid),
