@@ -29,6 +29,15 @@ class ForwardBreakoutEventTests(unittest.TestCase):
             row["low"]*=0.5
         self.assertEqual(breakout_event(self.snapshot(),"TEST",rows)["status"],"price_basis_unverified")
 
+    def test_small_dividend_like_revision_does_not_pass_rounding_guard(self):
+        rows=self.bars()
+        for row in rows:
+            row["close"]*=0.9995
+            row["high"]*=0.9995
+            row["low"]*=0.9995
+        self.assertIsNone(reconcile_pivot(self.snapshot()["signals"][0],rows))
+        self.assertEqual(breakout_event(self.snapshot(),"TEST",rows)["status"],"price_basis_unverified")
+
     def test_rounded_adjusted_close_reconciles(self):
         rows=self.bars()
         signal=self.snapshot()["signals"][0]
