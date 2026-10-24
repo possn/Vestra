@@ -183,6 +183,7 @@ def quality_shadow_record(legacy:dict, strict:dict|None)->dict:
             "baseStartDate":legacy.get("baseStartDate"),
             "previousConfirmedBreakoutDate":legacy.get("previousConfirmedBreakoutDate"),
             "resistance":legacy["resistance"],"signalClose":legacy["signalClose"],
+            "signalPriceBasis":legacy.get("signalPriceBasis"),
             "legacy_eligible":True,"strict_eligible":strict is not None,
             "source":"yahoo:daily_ohlcv"}
 
