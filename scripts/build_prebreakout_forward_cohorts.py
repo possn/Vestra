@@ -374,6 +374,11 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                 n=tally["positive"]+tally["nonpositive"]
                 tally["return_evaluable"]=n
                 tally["joint_outcome_evaluable"]=n
+                tally["joint_outcome_missing_return"]=tally["observed"]-n
+                tally["joint_outcome_coverage"]=round(n/tally["observed"],4) if tally["observed"] else None
+                tally["joint_outcome_counts_consistent"]=(n==sum(tally[k] for k in ("held_positive","held_nonpositive","lost_positive","lost_nonpositive")))
+                tally["joint_outcome_fraction_descriptive"]=(round(tally["held_positive"]/n,4) if n else None)
+                tally["joint_outcome_fraction_is_probability"]=False
                 tally["joint_outcome_definition"]="pivot_state_at_window_x_positive_end_return_from_breakout"
                 tally["mean_end_return_from_breakout"]=round(tally["sum_end_return"]/n,6) if n else None
                 tally["gain_loss_ratio_descriptive"]=(round(tally["gross_gain_sum"]/tally["gross_loss_abs_sum"],4)

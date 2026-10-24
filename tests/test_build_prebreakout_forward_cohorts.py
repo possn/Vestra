@@ -220,6 +220,11 @@ class ImmutableCohortTests(unittest.TestCase):
             for window in ("3","5","10"):
                 self.assertEqual(rejected["durability"][window]["return_evaluable"],0)
                 self.assertEqual(rejected["durability"][window]["joint_outcome_evaluable"],0)
+                self.assertEqual(rejected["durability"][window]["joint_outcome_missing_return"],0)
+                self.assertIsNone(rejected["durability"][window]["joint_outcome_coverage"])
+                self.assertIsNone(rejected["durability"][window]["joint_outcome_fraction_descriptive"])
+                self.assertTrue(rejected["durability"][window]["joint_outcome_counts_consistent"])
+                self.assertFalse(rejected["durability"][window]["joint_outcome_fraction_is_probability"])
                 for field in ("held_positive","held_nonpositive","lost_positive","lost_nonpositive"):
                     self.assertEqual(rejected["durability"][window][field],0)
                 self.assertIsNone(rejected["durability"][window]["mean_end_return_from_breakout"])
