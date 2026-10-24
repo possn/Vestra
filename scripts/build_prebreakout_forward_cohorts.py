@@ -320,7 +320,7 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                     selected[key]=(stamp,row)
         except (OSError,ValueError,TypeError,KeyError):
             continue
-    groups={g:{"cohorts":0,"by_horizon":{str(h):{"confirmed_matured":0,"not_confirmed_matured":0,"unverified_or_pending":0,"durability":{str(w):{"observed":0,"held_pivot":0,"lost_pivot":0,"pending_or_unverified":0,"sum_end_return":0.0,"positive":0,"nonpositive":0,"gross_gain_sum":0.0,"gross_loss_abs_sum":0.0} for w in (3,5,10)}}
+    groups={g:{"cohorts":0,"by_horizon":{str(h):{"confirmed_matured":0,"not_confirmed_matured":0,"unverified_or_pending":0,"durability":{str(w):{"observed":0,"held_pivot":0,"lost_pivot":0,"pending_or_unverified":0,"sum_end_return":0.0,"positive":0,"nonpositive":0,"gross_gain_sum":0.0,"gross_loss_abs_sum":0.0,"held_positive":0,"held_nonpositive":0,"lost_positive":0,"lost_nonpositive":0} for w in (3,5,10)}}
         for h in (5,10,20)}} for g in ("passed_strict","rejected_strict")}
     for stamp,row in selected.values():
         group=groups["passed_strict" if row["strict_eligible"] else "rejected_strict"]
@@ -351,6 +351,7 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                             if math.isfinite(ret):
                                 tally["sum_end_return"]+=ret
                                 tally["positive" if ret>0 else "nonpositive"]+=1
+                                tally[("held" if observation["held_pivot"] else "lost")+("_positive" if ret>0 else "_nonpositive")]+=1
                                 if ret>0:tally["gross_gain_sum"]+=ret
                                 elif ret<0:tally["gross_loss_abs_sum"]-=ret
                     else:
@@ -372,6 +373,8 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
             for tally in cell["durability"].values():
                 n=tally["positive"]+tally["nonpositive"]
                 tally["return_evaluable"]=n
+                tally["joint_outcome_evaluable"]=n
+                tally["joint_outcome_definition"]="pivot_state_at_window_x_positive_end_return_from_breakout"
                 tally["mean_end_return_from_breakout"]=round(tally["sum_end_return"]/n,6) if n else None
                 tally["gain_loss_ratio_descriptive"]=(round(tally["gross_gain_sum"]/tally["gross_loss_abs_sum"],4)
                     if tally["gross_loss_abs_sum"]>0 else None)
