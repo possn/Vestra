@@ -61,6 +61,7 @@ class PrebreakoutDataTests(unittest.TestCase):
             {"ticker":"EEE","quote_type":"EQUITY","market_cap":500_000_000}
         ]
         self.assertEqual(mod.eligible_universe_size(stocks),2)
+        self.assertEqual(set(mod.candidates(stocks,date(2026,10,15),1)),{"AAA","EEE"})
 
     def test_scan_slots_rotate_across_a_broader_universe(self):
         stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY","market_cap":10_000_000_000-i}
