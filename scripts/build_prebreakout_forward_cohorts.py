@@ -171,6 +171,43 @@ def walkforward_holdout_returns(cases:list[dict], outcomes:list[dict], plan:dict
             "out_of_sample_alpha_validated":False,"dependence_adjusted":False,
             "folds":rows}
 
+def market_regime_audit(cases:list[dict], outcomes:list[dict], cost_bps:int=20)->dict:
+    """Point-in-time regime proxy from an observed, earlier SPY return.
+    
+    Missing regime observations remain unknown. This is descriptive only:
+    no fitted filter and no claim that a regime predicts future alpha.
+    """
+    from datetime import date
+    if len(cases)!=len(outcomes):
+        raise ValueError("cases and outcomes must be aligned")
+    groups={name:{"cohorts":0,"by_horizon":{str(h):{"evaluable":0,"positive_net_excess":0,
+        "missing":0} for h in (5,10,20)}} for name in ("positive_spy_20d","nonpositive_spy_20d","unknown")}
+    for case,outcome in zip(cases,outcomes):
+        label=case.get("market_regime_at_publication","unknown")
+        if label not in groups:
+            label="unknown"
+        bucket=groups[label]
+        bucket["cohorts"]+=1
+        for h in (5,10,20):
+            cell=bucket["by_horizon"][str(h)]
+            row=outcome.get("results",{}).get(h)
+            if not isinstance(row,dict):
+                cell["missing"]+=1
+                continue
+            try:
+                gross=float(row["return"]); spy=float(row["spy_return"]); excess=float(row["excess_return"])
+            except (TypeError,ValueError,KeyError):
+                cell["missing"]+=1
+                continue
+            if not all(math.isfinite(x) for x in (gross,spy,excess)) or abs(excess-(gross-spy))>1e-8:
+                cell["missing"]+=1
+                continue
+            cell["evaluable"]+=1
+            cell["positive_net_excess"]+=int(excess>cost_bps/10000)
+    return {"method":"retrospective_stratification_no_predictive_claim",
+            "regime_definition":"SPY 20 completed prepublication sessions; unavailable=>unknown",
+            "probability_calibrated":False,"groups":groups}
+
 def cohorts(archive:Path)->list[dict]:
     eligible=[]
     for path in archive.glob("*/slots/*-slot*.json"):
@@ -295,6 +332,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "base_identity_coverage":{"anchored":sum(case["base_start_date"] is not None for case in cases),
                                   "legacy_unanchored":sum(case["base_start_date"] is None for case in cases)},
         "base_maturity_evidence":maturity_event_evidence(events,cases),
+        "market_regime_audit":market_regime_audit(cases,outcomes),
         "walkforward_split_plan":purged_walkforward_folds(cases),
         "walkforward_holdout_returns":walkforward_holdout_returns(cases,outcomes,purged_walkforward_folds(cases)),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
