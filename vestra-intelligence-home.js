@@ -709,10 +709,9 @@
         button.disabled = true;
         // Open the exact published ticker's canonical dossier, not the generic Market tab.
         Promise.resolve().then(async () => {
-          if (typeof window.setView === 'function') window.setView('market');
           const market = window.VestraMarket;
           if (typeof market?.ensureLoaded === 'function') await market.ensureLoaded();
-          if (typeof market?.openTicker === 'function') market.openTicker(ticker);
+          await window.VestraNavigation?.openCompany?.(ticker,{origin:'market',sourceNode:button});
           if (document.getElementById('marketSheet')?.dataset.ticker === ticker) return;
           // If the published ticker has no dossier in the current universe,
           // keep the user's research intent by offering the prefilled Market search.
