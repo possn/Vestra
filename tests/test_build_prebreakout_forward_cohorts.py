@@ -5,7 +5,7 @@ import unittest
 from datetime import date,timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence
+from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval
 
 class ImmutableCohortTests(unittest.TestCase):
     def fixture(self,folder):
@@ -97,6 +97,32 @@ class ImmutableCohortTests(unittest.TestCase):
         missing=evidence["groups"]["unverified"]["by_horizon"]["5"]
         self.assertEqual(missing["pending_or_unverified"],1)
         self.assertEqual(missing["evaluable"],0)
+
+    def test_wilson_boundaries_and_small_sample_abstention(self):
+        self.assertIsNone(wilson_interval(0,0))
+        self.assertEqual(wilson_interval(0,30)["lower"],0)
+        self.assertEqual(wilson_interval(30,30)["upper"],1)
+        self.assertLess(wilson_interval(15,30)["lower"],0.5)
+        self.assertGreater(wilson_interval(15,30)["upper"],0.5)
+        cases=[{"base_start_date":"2026-09-01","signal_date":"2026-10-15"} for _ in range(30)]
+        group="developing_28_to_84d"
+        sparse=[{"base_maturity":group,"horizon_sessions":5,
+                 "status":"confirmed","horizon_matured":False} for _ in range(30)]
+        result=maturity_event_evidence(sparse,cases)["groups"][group]["by_horizon"]["5"]
+        self.assertEqual(result["confirmed"],30)
+        self.assertEqual(result["matured_evaluable"],0)
+        self.assertIsNone(result["wilson_95_descriptive"])
+        events=[{"base_maturity":group,"horizon_sessions":5,
+                 "status":"confirmed" if i<15 else "not_confirmed",
+                 "horizon_matured":True} for i in range(30)]
+        mature=maturity_event_evidence(events,cases)["groups"][group]["by_horizon"]["5"]
+        self.assertEqual(mature["matured_evaluable"],30)
+        self.assertTrue(mature["evidence_ready"])
+        self.assertEqual(mature["observed_breakout_fraction"],0.5)
+        self.assertLess(mature["wilson_95_descriptive"]["lower"],0.5)
+        inadequate=maturity_event_evidence(events[:20],cases)["groups"][group]["by_horizon"]["5"]
+        self.assertFalse(inadequate["evidence_ready"])
+        self.assertIsNone(inadequate["observed_breakout_fraction"])
 
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:

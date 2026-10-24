@@ -7,6 +7,7 @@ Price histories are supplied independently; missing prices remain missing.
 """
 from __future__ import annotations
 import json
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from prebreakout_forward_evaluation import evaluate_archived
@@ -31,6 +32,17 @@ def base_maturity(case:dict)->str:
     return "extended_over_84d"
 
 
+def wilson_interval(successes:int, total:int, z:float=1.959963984540054)->dict|None:
+    """Two-sided 95% Wilson score interval; descriptive, not a forecast."""
+    if type(successes) is not int or type(total) is not int or total<=0 or not 0<=successes<=total:
+        return None
+    p=successes/total
+    denom=1+z*z/total
+    centre=(p+z*z/(2*total))/denom
+    radius=z*math.sqrt(p*(1-p)/total+z*z/(4*total*total))/denom
+    return {"lower":round(max(0,centre-radius),4),
+            "upper":round(min(1,centre+radius),4)}
+
 def maturity_event_evidence(events:list[dict],cases:list[dict])->dict:
     """Transparent sample counts, no fitted probabilities or invented labels."""
     groups={}
@@ -44,14 +56,26 @@ def maturity_event_evidence(events:list[dict],cases:list[dict])->dict:
         status=event["status"]
         if status in ("confirmed","not_confirmed"):
             bucket[status]+=1
+            if status=="confirmed" and event.get("horizon_matured") is True:
+                bucket["matured_confirmed"]=bucket.get("matured_confirmed",0)+1
         else:
             bucket["pending_or_unverified"]+=1
     for group in groups.values():
         for bucket in group["by_horizon"].values():
             bucket["evaluable"]=bucket["confirmed"]+bucket["not_confirmed"]
             bucket["breakout_probability"]=None
+            # Descriptive interval only once sufficient COMPLETE horizons and
+            # coverage exist. Early-confirmed immature cohorts are excluded.
+            complete=bucket.get("matured_confirmed",0)+bucket["not_confirmed"]
+            coverage=complete/group["cohorts"] if group["cohorts"] else 0
+            bucket["matured_evaluable"]=complete
+            bucket["matured_coverage"]=round(coverage,4)
+            bucket["observed_breakout_fraction"]=round(bucket.get("matured_confirmed",0)/complete,4) if complete>=30 and coverage>=.8 else None
+            bucket["wilson_95_descriptive"]=wilson_interval(bucket.get("matured_confirmed",0),complete) if complete>=30 and coverage>=.8 else None
+            bucket["evidence_ready"]=complete>=30 and coverage>=.8
     return {"age_unit":"calendar_days","historical_only":True,
-            "probability_calibrated":False,"groups":groups}
+            "probability_calibrated":False,"minimum_matured_n":30,"minimum_matured_coverage":0.8,
+            "interval_method":"wilson_95_descriptive_nonindependence_not_adjusted","groups":groups}
 
 
 def cohorts(archive:Path)->list[dict]:
