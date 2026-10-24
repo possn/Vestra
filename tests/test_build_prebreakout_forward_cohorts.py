@@ -5,7 +5,7 @@ import unittest
 from datetime import date,timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval
+from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval,purged_walkforward_folds
 
 class ImmutableCohortTests(unittest.TestCase):
     def fixture(self,folder):
@@ -125,6 +125,23 @@ class ImmutableCohortTests(unittest.TestCase):
         inadequate=maturity_event_evidence(events[:20],cases)["groups"][group]["by_horizon"]["5"]
         self.assertFalse(inadequate["evidence_ready"])
         self.assertIsNone(inadequate["observed_breakout_fraction"])
+
+    def test_walkforward_purge_preserves_future_test_and_abstains_from_alpha_claims(self):
+        cases=[{"ticker":f"T{i:02d}","stage":"compressão",
+                "published_at":(date(2026,1,1)+timedelta(days=10*i)).isoformat()+"T08:00:00Z"}
+               for i in range(18)]
+        plan=purged_walkforward_folds(cases)
+        self.assertFalse(plan["out_of_sample_validated"])
+        self.assertEqual(plan["embargo_calendar_days"],42)
+        self.assertTrue(plan["folds"])
+        for fold in plan["folds"]:
+            self.assertLess(fold["train_before"],fold["test_from"])
+            self.assertGreater(fold["train_cohorts"],0)
+            self.assertGreater(fold["test_cohorts"],0)
+            self.assertFalse(fold["outcomes_computed"])
+        self.assertEqual(purged_walkforward_folds([])["folds"],[])
+        with self.assertRaises(ValueError):
+            purged_walkforward_folds(cases,embargo_days=10)
 
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:

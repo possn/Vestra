@@ -85,6 +85,40 @@ def maturity_event_evidence(events:list[dict],cases:list[dict])->dict:
             "interval_method":"wilson_95_withheld_until_dependence_robust_validation","groups":groups}
 
 
+def purged_walkforward_folds(cases:list[dict], test_days:int=28, embargo_days:int=42)->dict:
+    """Chronological research folds; calendar embargo is a proxy, not a verified exchange-session purge.
+
+    No future outcomes are consulted to choose folds. A fold is a split plan,
+    not a backtest or measured out-of-sample improvement.
+    """
+    from datetime import date, timedelta
+    if type(test_days) is not int or type(embargo_days) is not int or test_days<1 or embargo_days<42:
+        raise ValueError("invalid temporal split or insufficient embargo")
+    ordered=sorted(cases,key=lambda c:(c["published_at"],c["ticker"],c["stage"]))
+    days=[date.fromisoformat(c["published_at"][:10]) for c in ordered]
+    if not days:
+        return {"method":"purged_calendar_walkforward","folds":[],"out_of_sample_validated":False}
+    first=min(days)
+    last=max(days)
+    folds=[]
+    boundary=first+timedelta(days=test_days)
+    while boundary<=last:
+        stop=boundary+timedelta(days=test_days)
+        train=[i for i,d in enumerate(days) if d < boundary-timedelta(days=embargo_days)]
+        test=[i for i,d in enumerate(days) if boundary<=d<stop]
+        if train and test:
+            train_tickers={ordered[i]["ticker"] for i in train}
+            test_tickers={ordered[i]["ticker"] for i in test}
+            folds.append({"train_before":(boundary-timedelta(days=embargo_days)).isoformat(),
+                          "test_from":boundary.isoformat(),"test_until_exclusive":stop.isoformat(),
+                          "train_cohorts":len(train),"test_cohorts":len(test),
+                          "repeated_issuers_across_sides":len(train_tickers & test_tickers),
+                          "outcomes_computed":False})
+        boundary=stop
+    return {"method":"purged_calendar_walkforward",
+            "embargo_calendar_days":embargo_days,"test_calendar_days":test_days,
+            "out_of_sample_validated":False,"folds":folds}
+
 def cohorts(archive:Path)->list[dict]:
     eligible=[]
     for path in archive.glob("*/slots/*-slot*.json"):
@@ -209,6 +243,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "base_identity_coverage":{"anchored":sum(case["base_start_date"] is not None for case in cases),
                                   "legacy_unanchored":sum(case["base_start_date"] is None for case in cases)},
         "base_maturity_evidence":maturity_event_evidence(events,cases),
+        "walkforward_split_plan":purged_walkforward_folds(cases),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
 if __name__=="__main__":
