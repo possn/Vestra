@@ -235,6 +235,48 @@
   // Session-only snapshot: never persisted across reloads or users.
   // Derived exclusively from the canonical rendered Decision Center.
   let lastDecision = null;
+  // Each pulse reading is source-backed; never claim a live reading from stale data.
+  let pulseLastFetch=0;
+  let pulseInFlight=null;
+  function refreshLivePulse(host,force=false){
+    if(pulseInFlight) return pulseInFlight;
+    if(!force && Date.now()-pulseLastFetch < 15*60*1000) return Promise.resolve();
+    pulseLastFetch=Date.now();
+    const set=(key,value,age)=>{
+      const label=host.querySelector('[data-vi-pulse-'+key+']');
+      const detail=host.querySelector('[data-vi-pulse-'+key+'-age]');
+      if(label) label.textContent=value;
+      if(detail) detail.textContent=age;
+    };
+    const get=async url=>{
+      const controller=new AbortController();
+      const deadline=setTimeout(()=>controller.abort(),5000);
+      try{const r=await fetch(url,{cache:'no-store',signal:controller.signal});if(!r.ok)throw Error('HTTP '+r.status);return await r.json();}
+      catch(_){return null;}finally{clearTimeout(deadline);}
+    };
+    pulseInFlight=Promise.all([
+      get('./data/cnn-fear-greed.json'),get('./data/aaii-sentiment.json'),get('./data/coverage_guard.json')
+    ]).then(([cnn,aaii,guard])=>{
+      const now=Date.now();
+      const cnnTime=Date.parse(cnn?.timestamp);
+      if(Number.isFinite(cnn?.score)&&Number.isFinite(cnnTime)&&cnnTime<=now+3600000&&now-cnnTime<72*3600000)
+        set('cnn',String(Math.round(cnn.score))+'/100','CNN · '+new Date(cnnTime).toLocaleDateString('pt-PT'));
+      else set('cnn','—','CNN · dados por confirmar');
+      const week=aaii?.weeks?.[0],weekTime=Date.parse(String(week?.date||'')+'T00:00:00Z');
+      const bull=Number(week?.bullish),bear=Number(week?.bearish),neutral=Number(week?.neutral);
+      if(Number.isFinite(weekTime)&&now-weekTime<=9*86400000&&now>=weekTime&&
+         [bull,bear,neutral].every(Number.isFinite)&&Math.abs(bull+bear+neutral-100)<1){
+        const spread=bull-bear;
+        set('aaii',(spread>0?'+':'')+spread.toFixed(1).replace('.',',')+' pp','AAII · '+new Date(weekTime).toLocaleDateString('pt-PT'));
+      }else set('aaii','—','AAII · semana não validada');
+      const generated=Date.parse(guard?.generated_at),count=Number(guard?.rows_checked),violations=Number(guard?.violation_count);
+      if(guard?.ok===true&&Number.isFinite(generated)&&now>=generated&&now-generated<48*3600000&&Number.isInteger(count)&&count>0&&violations===0)
+        set('coverage',count.toLocaleString('pt-PT'),'Verificados · 0 violações');
+      else set('coverage','—','Cobertura sem confirmação recente');
+    }).finally(()=>{pulseInFlight=null;});
+    return pulseInFlight;
+  }
+
   function syncDecisionCenter(host) {
     const output = host.querySelector('[data-vestra-decision-state]');
     if (!output) return;
@@ -466,6 +508,7 @@
       host.scrollIntoView({behavior:'smooth', block:'start'});
     });
     syncExistingBarometer(host);
+    refreshLivePulse(host);
     syncWealthHero(host);
     syncDailyBrief(host);
     syncCanonicalCards(host);
@@ -490,7 +533,7 @@
       if (event?.detail?.source === 'market-sentiment') { syncExistingBarometer(host); syncDailyBrief(host); syncCanonicalCards(host); }
     });
     window.addEventListener('vestra:weekly-data-refreshed', () => { syncDailyBrief(host); syncCanonicalCards(host); });
-    window.addEventListener('focus', () => { syncDailyBrief(host); syncWealthHero(host); syncCanonicalCards(host); });
+    window.addEventListener('focus', () => { refreshLivePulse(host); syncDailyBrief(host); syncWealthHero(host); syncCanonicalCards(host); });
     // The underlying modules hydrate asynchronously; retry a bounded number of times.
     [1200, 3500, 6500].forEach(delay => setTimeout(() => { syncDailyBrief(host); syncWealthHero(host); }, delay));
     showCoverage(host);
