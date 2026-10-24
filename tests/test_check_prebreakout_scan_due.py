@@ -32,9 +32,18 @@ class DueContract(unittest.TestCase):
             self.assertFalse(mod.should_scan(self.at(21),archive))
             self.assertFalse(mod.should_scan(self.at(23),archive))
 
-    def test_weekend_does_not_backfill(self):
+    def test_saturday_catchup_publishes_friday_complete_close_only(self):
         with tempfile.TemporaryDirectory() as directory:
-            self.assertFalse(mod.should_scan(self.at(21,day=17),Path(directory)))
+            archive=Path(directory)
+            self.assertFalse(mod.should_scan(self.at(2,9,day=17),archive))
+            self.assertTrue(mod.should_scan(self.at(2,10,day=17),archive))
+            self.assertTrue(mod.should_scan(self.at(5,day=17),archive))
+            self.assertFalse(mod.should_scan(self.at(8,day=17),archive))
+            self.assertFalse(mod.should_scan(self.at(2,day=18),archive))
+            done=archive/'2026'/'slots'/'2026-10-17-slot0.json'
+            done.parent.mkdir(parents=True)
+            done.write_text('{}')
+            self.assertFalse(mod.should_scan(self.at(3,day=17),archive))
 
     def test_naive_clock_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
