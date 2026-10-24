@@ -139,6 +139,36 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None):
             "goldenCrossImminent":bool(near_cross),
             "quantitativeDiagnostics":diagnostics,"source":"yahoo:daily_ohlcv"}
 
+def daily_focus(signals:list[dict], as_of:date)->dict:
+    """One evidence-led candidate, or an explicit abstention; never a success probability."""
+    eligible=[]
+    for row in signals:
+        if row.get("stage")!="pré-breakout" or row.get("source")!="yahoo:daily_ohlcv":
+            continue
+        if row.get("vcpConfirmed") is not True or row.get("volumeDry") is not True:
+            continue
+        if row.get("volumeConfirmed") is True:
+            continue  # This slot is for setups still awaiting a breakout.
+        try:
+            day=date.fromisoformat(str(row["date"])[:10])
+            distance=float(row["distancePct"])
+            score=float(row["score"])
+        except (KeyError,ValueError,TypeError):
+            continue
+        if not (0 <= (as_of-day).days <= 4 and 0<=distance<=4 and math.isfinite(score)):
+            continue
+        eligible.append(row)
+    if not eligible:
+        return {"status":"no_qualified_setup","ticker":None,
+                "success_probability":None,"probability_calibrated":False,
+                "reason":"no_current_prebreakout_with_verified_contractions_and_drying_volume"}
+    best=min(eligible,key=lambda row:(-float(row["score"]),float(row["distancePct"]),row["ticker"]))
+    return {"status":"research_candidate","ticker":best["ticker"],
+            "signal_date":best["date"],"stage":best["stage"],
+            "technical_score":best["score"],"distance_to_pivot_pct":best["distancePct"],
+            "success_probability":None,"probability_calibrated":False,
+            "reason":"ranked_verified_setup_not_a_forecast_or_buy_signal"}
+
 def watched_tickers(now:datetime, path:Path=ROOT/"data/prebreakout-observations.json", limit:int=25)->list[str]:
     """Revisit published candidates; historical status alone is never a live signal."""
     try:
@@ -239,7 +269,7 @@ def main():
     by={signal["ticker"]:signal for signal in found}
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"single_scan_slot_not_full_universe","new_signals":len(found),"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
-             "errors":failures[:8],"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
+             "errors":failures[:8],"daily_focus":daily_focus(list(by.values()),now.date()),"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
 
