@@ -320,7 +320,7 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                     selected[key]=(stamp,row)
         except (OSError,ValueError,TypeError,KeyError):
             continue
-    groups={g:{"cohorts":0,"by_horizon":{str(h):{"confirmed_matured":0,"not_confirmed_matured":0,"unverified_or_pending":0,"durability":{str(w):{"observed":0,"held_pivot":0,"lost_pivot":0,"pending_or_unverified":0} for w in (3,5,10)}}
+    groups={g:{"cohorts":0,"by_horizon":{str(h):{"confirmed_matured":0,"not_confirmed_matured":0,"unverified_or_pending":0,"durability":{str(w):{"observed":0,"held_pivot":0,"lost_pivot":0,"pending_or_unverified":0,"sum_end_return":0.0,"positive":0,"nonpositive":0,"gross_gain_sum":0.0,"gross_loss_abs_sum":0.0} for w in (3,5,10)}}
         for h in (5,10,20)}} for g in ("passed_strict","rejected_strict")}
     for stamp,row in selected.values():
         group=groups["passed_strict" if row["strict_eligible"] else "rejected_strict"]
@@ -343,6 +343,16 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                         and type(observation.get("held_pivot")) is bool):
                         tally["observed"]+=1
                         tally["held_pivot" if observation["held_pivot"] else "lost_pivot"]+=1
+                        try:
+                            ret=float(observation["end_return_from_breakout"])
+                        except (KeyError,ValueError,TypeError):
+                            pass
+                        else:
+                            if math.isfinite(ret):
+                                tally["sum_end_return"]+=ret
+                                tally["positive" if ret>0 else "nonpositive"]+=1
+                                if ret>0:tally["gross_gain_sum"]+=ret
+                                elif ret<0:tally["gross_loss_abs_sum"]-=ret
                     else:
                         tally["pending_or_unverified"]+=1
             elif result.get("horizon_matured") is True and result.get("status")=="not_confirmed":
@@ -359,6 +369,16 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
             cell["observed_fraction_is_probability"]=False
             cell["minimum_evidence_met"]=complete>=30 and total>0 and complete/total>=.8
             cell["selection_effect_validated"]=False
+            for tally in cell["durability"].values():
+                n=tally["positive"]+tally["nonpositive"]
+                tally["return_evaluable"]=n
+                tally["mean_end_return_from_breakout"]=round(tally["sum_end_return"]/n,6) if n else None
+                tally["gain_loss_ratio_descriptive"]=(round(tally["gross_gain_sum"]/tally["gross_loss_abs_sum"],4)
+                    if tally["gross_loss_abs_sum"]>0 else None)
+                tally["payoff_probability_calibrated"]=False
+                del tally["sum_end_return"]
+                del tally["gross_gain_sum"]
+                del tally["gross_loss_abs_sum"]
     return {"method":"prospective_first_publication_ticker_stage_no_rolling_base_dedup",
             "historical_only":True,"success_probability":None,
             "statistically_validated":False,"groups":groups}

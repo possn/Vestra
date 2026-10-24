@@ -218,6 +218,11 @@ class ImmutableCohortTests(unittest.TestCase):
             self.assertFalse(rejected["minimum_evidence_met"])
             self.assertFalse(rejected["selection_effect_validated"])
             for window in ("3","5","10"):
+                self.assertEqual(rejected["durability"][window]["return_evaluable"],0)
+                self.assertIsNone(rejected["durability"][window]["mean_end_return_from_breakout"])
+                self.assertIsNone(rejected["durability"][window]["gain_loss_ratio_descriptive"])
+                self.assertFalse(rejected["durability"][window]["payoff_probability_calibrated"])
+            for window in ("3","5","10"):
                 self.assertEqual(rejected["durability"][window]["observed"],0)
                 self.assertEqual(rejected["durability"][window]["held_pivot"],0)
                 self.assertEqual(rejected["durability"][window]["lost_pivot"],0)
