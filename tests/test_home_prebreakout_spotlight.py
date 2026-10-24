@@ -16,9 +16,9 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("Score técnico, não probabilidade", SRC)
 
     def test_navigation_and_safe_text(self):
-        self.assertIn("action.dataset.vestraGo = 'market'", SRC)
-        self.assertIn("heading.textContent = title", SRC)
-        self.assertIn("body.textContent = detail", SRC)
+        self.assertIn("action.dataset.vestraGo='market'", SRC)
+        self.assertIn("element('h3','vi-pb-heading',title)", SRC)
+        self.assertIn("element('p','vi-pb-detail',detail)", SRC)
         self.assertIn("showPrebreakoutSpotlight(host);", SRC)
         self.assertNotIn("panel.innerHTML =", SRC)
 
