@@ -65,29 +65,23 @@
   html body #viewMarket#viewMarket#viewMarket#viewMarket .market-search input{
     font-size:13px!important;min-height:44px!important;height:44px!important;
   }
-  /* Mobile Market: all category choices visible, no partially clipped tile.
-     Compact 3-column editorial grid keeps 44px touch targets. */
+  /* iPhone: navigation is a horizontal rail; content must never inherit its width. */
   html body #viewMarket#viewMarket .market-mode-grid{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    grid-auto-flow:row!important;
-    overflow:visible!important;
-    width:min(100%,calc(100vw - 24px))!important;
-    max-width:calc(100vw - 24px)!important;
-    min-width:0!important;box-sizing:border-box!important;
+    display:flex!important;flex-wrap:nowrap!important;gap:7px!important;
+    overflow-x:auto!important;overflow-y:hidden!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    box-sizing:border-box!important;scroll-snap-type:x proximity!important;
+    -webkit-overflow-scrolling:touch;
   }
   html body #viewMarket#viewMarket .market-mode-grid .market-mode{
-    display:flex!important;align-items:center!important;justify-content:center!important;
-    gap:5px!important;min-width:0!important;width:100%!important;
-    padding:7px 5px!important;min-height:44px!important;
-  }
-  html body #viewMarket#viewMarket .market-mode-grid .market-mode__icon{
-    flex:0 0 auto!important;font-size:15px!important;
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    flex:0 0 auto!important;width:auto!important;min-width:max-content!important;
+    gap:6px!important;padding:8px 12px!important;min-height:44px!important;
+    scroll-snap-align:start!important;
   }
   html body #viewMarket#viewMarket .market-mode-grid .market-mode strong{
-    display:inline!important;min-width:0!important;
-    white-space:normal!important;overflow-wrap:break-word!important;
-    line-height:1.15!important;
+    display:inline!important;white-space:nowrap!important;overflow-wrap:normal!important;
+    line-height:1.2!important;font-size:12px!important;
   }
   html body .market-sheet .market-metrics{
     display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
@@ -174,4 +168,62 @@
  html body #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck{font-size:15px!important}
  html body #viewMarket .market-portfolio-access :is(small,strong),
  html body #viewMarket .market-scanner-entry :is(small,strong){overflow-wrap:anywhere!important;max-width:100%}
+}
+
+/* P0 installed-iPhone audit: Ideas widgets were wider than the viewport.
+   Scope the corrective layout to the Market page; no global zoom or clipping
+   of the horizontal navigation rail. */
+@media(max-width:600px){
+ html body #viewMarket,html body #viewMarket #marketPrimary{
+   min-width:0!important;max-width:100%!important;box-sizing:border-box!important;
+ }
+ html body #viewMarket #marketPrimary > *,
+ html body #viewMarket #marketPrimary :is(.market-section,.market-discover-section,.market-list,.market-row,.market-section__head){
+   min-width:0!important;max-width:100%!important;box-sizing:border-box!important;
+ }
+ html body #viewMarket #marketPrimary .market-section{
+   padding:12px!important;border-radius:16px!important;overflow:hidden!important;
+ }
+ html body #viewMarket #marketPrimary .market-section__head{
+   display:flex!important;flex-wrap:wrap!important;gap:5px!important;
+ }
+ html body #viewMarket #marketPrimary .market-section__head > div{
+   flex:1 1 190px!important;min-width:0!important;
+ }
+ html body #viewMarket #marketPrimary .market-section__head h3{
+   font-size:17px!important;line-height:1.18!important;color:#18343b!important;
+ }
+ html body #viewMarket #marketPrimary .market-section__head p{
+   font-size:12px!important;line-height:1.35!important;color:#49636a!important;
+ }
+ html body #viewMarket #marketPrimary .market-data-age{
+   font-size:10px!important;max-width:100%!important;white-space:normal!important;
+   overflow-wrap:anywhere!important;color:#50666d!important;
+ }
+ html body #viewMarket #marketPrimary .market-sector-grid{
+   display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+   gap:7px!important;min-width:0!important;max-width:100%!important;
+ }
+ html body #viewMarket #marketPrimary .market-sector-grid > *{
+   min-width:0!important;max-width:100%!important;
+ }
+ html body #viewMarket #marketPrimary .market-row{
+   grid-template-columns:minmax(0,1fr) auto!important;
+   padding:10px!important;gap:8px!important;min-width:0!important;
+   max-width:100%!important;border-radius:12px!important;
+ }
+ html body #viewMarket #marketPrimary .market-row__title,
+ html body #viewMarket #marketPrimary .market-row__meta{
+   min-width:0!important;overflow-wrap:anywhere!important;
+ }
+ html body #viewMarket #marketPrimary .market-row__name{
+   min-width:0!important;max-width:100%!important;
+ }
+ html body #viewMarket #marketPrimary .market-score{
+   min-width:38px!important;width:38px!important;height:38px!important;
+   border-radius:11px!important;font-size:13px!important;
+ }
+ html body #viewMarket #marketPrimary .market-row__end{
+   min-width:0!important;max-width:66px!important;
+ }
 }
