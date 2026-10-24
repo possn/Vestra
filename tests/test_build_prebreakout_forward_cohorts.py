@@ -117,9 +117,11 @@ class ImmutableCohortTests(unittest.TestCase):
                  "horizon_matured":True} for i in range(30)]
         mature=maturity_event_evidence(events,cases)["groups"][group]["by_horizon"]["5"]
         self.assertEqual(mature["matured_evaluable"],30)
-        self.assertTrue(mature["evidence_ready"])
+        self.assertFalse(mature["evidence_ready"])
         self.assertEqual(mature["observed_breakout_fraction"],0.5)
-        self.assertLess(mature["wilson_95_descriptive"]["lower"],0.5)
+        self.assertIsNone(mature["wilson_95_descriptive"])
+        self.assertFalse(mature["independence_verified"])
+        self.assertEqual(mature["independence_reason"],"correlated_ticker_and_market_cohorts_not_adjusted")
         inadequate=maturity_event_evidence(events[:20],cases)["groups"][group]["by_horizon"]["5"]
         self.assertFalse(inadequate["evidence_ready"])
         self.assertIsNone(inadequate["observed_breakout_fraction"])
