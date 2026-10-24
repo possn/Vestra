@@ -171,6 +171,28 @@ def walkforward_holdout_returns(cases:list[dict], outcomes:list[dict], plan:dict
             "out_of_sample_alpha_validated":False,"dependence_adjusted":False,
             "folds":rows}
 
+def spy_regime_at_publication(published_at:str, benchmark_bars:list[dict])->str:
+    """Use 21 strictly prepublication SPY closes; no current/future close."""
+    from datetime import date
+    try:
+        cutoff=date.fromisoformat(published_at[:10])
+        valid={}
+        for bar in benchmark_bars:
+            day=date.fromisoformat(str(bar["date"])[:10])
+            close=float(bar["close"])
+            if day>=cutoff or not math.isfinite(close) or close<=0 or day in valid:
+                continue
+            valid[day]=close
+        rows=sorted(valid.items())
+        if len(rows)<21:
+            return "unknown"
+        # Do not claim a 20-session regime on stale history.
+        if (cutoff-rows[-1][0]).days>5:
+            return "unknown"
+        return "positive_spy_20d" if rows[-1][1]>rows[-21][1] else "nonpositive_spy_20d"
+    except (KeyError,TypeError,ValueError,OverflowError):
+        return "unknown"
+
 def market_regime_audit(cases:list[dict], outcomes:list[dict], cost_bps:int=20)->dict:
     """Point-in-time regime proxy from an observed, earlier SPY return.
     
@@ -332,7 +354,8 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "base_identity_coverage":{"anchored":sum(case["base_start_date"] is not None for case in cases),
                                   "legacy_unanchored":sum(case["base_start_date"] is None for case in cases)},
         "base_maturity_evidence":maturity_event_evidence(events,cases),
-        "market_regime_audit":market_regime_audit(cases,outcomes),
+        "market_regime_audit":market_regime_audit([{**case, "market_regime_at_publication":
+            spy_regime_at_publication(case["published_at"],benchmark_bars)} for case in cases],outcomes),
         "walkforward_split_plan":purged_walkforward_folds(cases),
         "walkforward_holdout_returns":walkforward_holdout_returns(cases,outcomes,purged_walkforward_folds(cases)),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
