@@ -85,14 +85,14 @@ def maturity_event_evidence(events:list[dict],cases:list[dict])->dict:
             "interval_method":"wilson_95_withheld_until_dependence_robust_validation","groups":groups}
 
 
-def purged_walkforward_folds(cases:list[dict], test_days:int=28, embargo_days:int=28)->dict:
-    """Chronological research folds; calendar embargo conservatively covers 20 sessions.
+def purged_walkforward_folds(cases:list[dict], test_days:int=28, embargo_days:int=42)->dict:
+    """Chronological research folds; calendar embargo is a proxy, not a verified exchange-session purge.
 
     No future outcomes are consulted to choose folds. A fold is a split plan,
     not a backtest or measured out-of-sample improvement.
     """
     from datetime import date, timedelta
-    if type(test_days) is not int or type(embargo_days) is not int or test_days<1 or embargo_days<28:
+    if type(test_days) is not int or type(embargo_days) is not int or test_days<1 or embargo_days<42:
         raise ValueError("invalid temporal split or insufficient embargo")
     ordered=sorted(cases,key=lambda c:(c["published_at"],c["ticker"],c["stage"]))
     days=[date.fromisoformat(c["published_at"][:10]) for c in ordered]
