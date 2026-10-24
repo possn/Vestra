@@ -5,7 +5,7 @@ import unittest
 from datetime import date,timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval,purged_walkforward_folds,walkforward_holdout_returns
+from build_prebreakout_forward_cohorts import cohorts,build,base_maturity,maturity_event_evidence,wilson_interval,purged_walkforward_folds,walkforward_holdout_returns,spy_regime_at_publication,market_regime_audit
 
 class ImmutableCohortTests(unittest.TestCase):
     def fixture(self,folder):
@@ -177,6 +177,21 @@ class ImmutableCohortTests(unittest.TestCase):
         self.assertEqual(first["missing"],first["test_cohorts"])
         self.assertEqual(first["net_excess_positive"],0)
         self.assertIsNone(first["net_excess_hit_fraction_descriptive"])
+
+    def test_regime_uses_only_prepublication_spy_and_unknown_if_stale(self):
+        start=date(2026,1,1)
+        bars=[{"date":(start+timedelta(days=i)).isoformat(),"close":100+i} for i in range(22)]
+        published="2026-01-22T08:00:00Z"
+        self.assertEqual(spy_regime_at_publication(published,bars),"positive_spy_20d")
+        future=[*bars,{"date":"2026-01-22","close":1},{"date":"2026-01-23","close":2}]
+        self.assertEqual(spy_regime_at_publication(published,future),"positive_spy_20d")
+        self.assertEqual(spy_regime_at_publication("2026-03-01T08:00:00Z",bars),"unknown")
+        self.assertEqual(spy_regime_at_publication(published,bars[:15]),"unknown")
+        cases=[{"market_regime_at_publication":"positive_spy_20d"}]
+        outcomes=[{"results":{5:{"return":.1,"spy_return":.03,"excess_return":.07}}}]
+        report=market_regime_audit(cases,outcomes)
+        self.assertEqual(report["groups"]["positive_spy_20d"]["by_horizon"]["5"]["positive_net_excess"],1)
+        self.assertFalse(report["probability_calibrated"])
 
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
