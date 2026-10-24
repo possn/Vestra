@@ -38,7 +38,8 @@ class DueContract(unittest.TestCase):
             self.assertFalse(mod.should_scan(self.at(2,9,day=17),archive))
             self.assertTrue(mod.should_scan(self.at(2,10,day=17),archive))
             self.assertTrue(mod.should_scan(self.at(5,day=17),archive))
-            self.assertFalse(mod.should_scan(self.at(8,day=17),archive))
+            self.assertTrue(mod.should_scan(self.at(8,10,day=17),archive))
+            self.assertFalse(mod.should_scan(self.at(12,day=17),archive))
             self.assertFalse(mod.should_scan(self.at(2,day=18),archive))
             done=archive/'2026'/'slots'/'2026-10-17-slot0.json'
             done.parent.mkdir(parents=True)
