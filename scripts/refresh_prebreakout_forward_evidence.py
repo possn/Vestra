@@ -60,7 +60,8 @@ def gather(archive:Path, downloader, now=None):
     items=cohorts(archive)
     if not items:raise ValueError("no immutable historical cohorts")
     earliest=min(datetime.fromisoformat(c["published_at"]).date() for c in items)
-    start=(earliest-timedelta(days=7)).isoformat()
+    # A forward breakout needs 20 *prior* completed volume sessions; preserve a full historical buffer.
+    start=(earliest-timedelta(days=90)).isoformat()
     end=(today+timedelta(days=1)).isoformat()
     tickers=sorted(set(c["ticker"] for c in items)|{"SPY"})
     prices={}; event_prices={}; failures={}
