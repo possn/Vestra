@@ -43,6 +43,18 @@ class PrebreakoutDataTests(unittest.TestCase):
         if result is not None:
             self.assertIsNone(result["quantitativeDiagnostics"]["averageDollarVolume20"])
 
+    def test_quality_gate_requires_liquidity_and_upper_base(self):
+        good=self.bars()
+        accepted=mod.scan_bars("TEST",good)
+        self.assertIsNotNone(accepted)
+        q=accepted["quantitativeDiagnostics"]
+        self.assertGreaterEqual(q["averageDollarVolume20"],5_000_000)
+        self.assertGreaterEqual(q["basePositionPct"],65)
+        self.assertIn("price_above_sma50",q["qualityGates"])
+        # Identical price structure but insufficient trading capacity is rejected.
+        thin=[{**bar,"volume":bar["volume"]*.01} for bar in good]
+        self.assertIsNone(mod.scan_bars("TEST",thin))
+
     def test_unfinished_utc_daily_bar_is_excluded_from_live_scan(self):
         today=date(2026,10,15)
         bars=[{"date":"2026-10-13","close":1},{"date":"2026-10-14","close":2},
@@ -133,9 +145,7 @@ class PrebreakoutDataTests(unittest.TestCase):
         rows=self.bars()
         rows[-1]["volume"]=None
         observed=mod.scan_bars("TEST",rows)
-        self.assertIsNotNone(observed)
-        self.assertIsNone(observed["breakoutVolumeRatio"])
-        self.assertFalse(observed["volumeConfirmed"])
+        self.assertIsNone(observed)  # Incomplete volume cannot prove $5M liquidity.
 
     def test_stale_data_are_not_included(self):
         rows=self.bars()
@@ -207,9 +217,7 @@ class PrebreakoutDataTests(unittest.TestCase):
         rows=self.bars()
         rows[-1]["volume"]=None
         result=mod.scan_bars("TEST",rows)
-        self.assertIsNotNone(result)
-        self.assertFalse(result["volumeConfirmed"])
-        self.assertNotEqual(result["stage"],"confirmado")
+        self.assertIsNone(result)  # Missing volume cannot qualify the new liquidity gate.
 
 if __name__=="__main__":
     unittest.main()
