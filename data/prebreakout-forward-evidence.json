@@ -3,7 +3,7 @@
   "evaluation_method": "adjusted_daily_close_after_publication",
   "cohort_policy": "first_immutable_publication_per_ticker_and_stage",
   "historical_only": true,
-  "cohort_count": 17,
+  "cohort_count": 20,
   "stage_evidence": {
     "schema": "vestra_prebreakout_stage_evidence_v1",
     "method": "observed_point_in_time_adjusted_close",
@@ -11,33 +11,33 @@
     "stages": {
       "compressão": {
         "5": {
-          "n": 0,
-          "n_missing": 14,
-          "n_observations": 14,
-          "coverage": 0.0,
+          "n": 3,
+          "n_missing": 12,
+          "n_observations": 15,
+          "coverage": 0.2,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
           "n": 0,
-          "n_missing": 14,
-          "n_observations": 14,
+          "n_missing": 15,
+          "n_observations": 15,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "20": {
           "n": 0,
-          "n_missing": 14,
-          "n_observations": 14,
+          "n_missing": 15,
+          "n_observations": 15,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "60": {
           "n": 0,
-          "n_missing": 14,
-          "n_observations": 14,
+          "n_missing": 15,
+          "n_observations": 15,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
@@ -46,32 +46,32 @@
       "pré-breakout": {
         "5": {
           "n": 0,
-          "n_missing": 2,
-          "n_observations": 2,
+          "n_missing": 4,
+          "n_observations": 4,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
           "n": 0,
-          "n_missing": 2,
-          "n_observations": 2,
+          "n_missing": 4,
+          "n_observations": 4,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "20": {
           "n": 0,
-          "n_missing": 2,
-          "n_observations": 2,
+          "n_missing": 4,
+          "n_observations": 4,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "60": {
           "n": 0,
-          "n_missing": 2,
-          "n_observations": 2,
+          "n_missing": 4,
+          "n_observations": 4,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
@@ -118,7 +118,13 @@
       "ticker": "AAPL",
       "entry": "2026-10-16",
       "results": {
-        "5": null,
+        "5": {
+          "exit": "2026-10-23",
+          "return": 0.012432363703149152,
+          "spy_return": -0.004297450765640365,
+          "excess_return": 0.016729814468789517,
+          "max_adverse_excursion": -0.011529702304776457
+        },
         "10": null,
         "20": null,
         "60": null
@@ -131,7 +137,13 @@
       "ticker": "AMZN",
       "entry": "2026-10-16",
       "results": {
-        "5": null,
+        "5": {
+          "exit": "2026-10-23",
+          "return": -0.008000000000000007,
+          "spy_return": -0.004297450765640365,
+          "excess_return": -0.0037025492343596422,
+          "max_adverse_excursion": -0.008000000000000007
+        },
         "10": null,
         "20": null,
         "60": null
@@ -157,7 +169,13 @@
       "ticker": "LTC",
       "entry": "2026-10-16",
       "results": {
-        "5": null,
+        "5": {
+          "exit": "2026-10-23",
+          "return": 0.006133582901624468,
+          "spy_return": -0.004297450765640365,
+          "excess_return": 0.010431033667264833,
+          "max_adverse_excursion": -0.03411176041444053
+        },
         "10": null,
         "20": null,
         "60": null
@@ -294,19 +312,48 @@
     },
     {
       "ticker": "ZBRA",
-      "entry": null,
-      "results": {},
+      "entry": "2026-10-23",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-22T08:52:12.349255+00:00",
       "signal_date": "2026-10-21",
       "stage": "compressão"
+    },
+    {
+      "ticker": "LH",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-23T23:05:06.256773+00:00",
+      "signal_date": "2026-10-22",
+      "stage": "pré-breakout"
+    },
+    {
+      "ticker": "TGT",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-23T23:05:06.256773+00:00",
+      "signal_date": "2026-10-22",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "ZBRA",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-23T23:05:06.256773+00:00",
+      "signal_date": "2026-10-22",
+      "stage": "pré-breakout"
     }
   ],
   "price_metadata": {
     "provider": "yahoo_finance",
     "auto_adjust": true,
-    "completed_before_utc_date": "2026-10-23",
+    "completed_before_utc_date": "2026-10-24",
     "benchmark": "SPY",
-    "downloaded": 12,
+    "downloaded": 13,
     "failed": {
       "LOGN.SW": "ValueError",
       "OMV.DE": "ValueError",
