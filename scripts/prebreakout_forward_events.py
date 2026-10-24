@@ -7,7 +7,7 @@ This does not imply executable trades or a calibrated probability.
 from datetime import datetime, timezone, date
 import math
 
-def reconcile_pivot(signal:dict, bars:list[dict], max_ratio_change:float=0.002):
+def reconcile_pivot(signal:dict, bars:list[dict], rounding_tolerance:float=0.00002):
     """Verify same-session adjusted close, then rescale the archived pivot.
 
     The original observation must include its point-in-time adjusted close.
@@ -25,7 +25,9 @@ def reconcile_pivot(signal:dict, bars:list[dict], max_ratio_change:float=0.002):
         len(match)!=1 or not all(math.isfinite(x) and x>0 for x in (original,pivot,match[0]))):
         return None
     ratio=match[0]/original
-    if not math.isfinite(ratio) or not 1-max_ratio_change<=ratio<=1+max_ratio_change:
+    # Scanner archives prices to five decimal places. A percentage tolerance
+    # could incorrectly bless small post-publication dividend adjustments.
+    if not math.isfinite(ratio) or abs(match[0]-original)>rounding_tolerance:
         return None
     return pivot*ratio
 
