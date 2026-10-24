@@ -283,6 +283,66 @@ def cohorts(archive:Path)->list[dict]:
                     "snapshot":data}
     return [selected[k] for k in sorted(selected,key=lambda key:(selected[key]["published_at"],key))]
 
+def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
+    """Compare first prospectively archived shadow observations, not reconstructed signals.
+
+    Rolling baseStartDate is NOT an independent episode identifier: conservative
+    one-per-ticker-and-stage policy avoids daily pseudo-replication.
+    """
+    selected={}
+    for path in sorted(archive.glob("*/slots/*-slot*.json")):
+        try:
+            data=json.loads(path.read_text(encoding="utf-8"))
+            stamp=datetime.fromisoformat(str(data["generated_at"]).replace("Z","+00:00"))
+            if stamp.tzinfo is None or data.get("schema")!="vestra_prebreakout_v1":
+                continue
+            stamp=stamp.astimezone(timezone.utc)
+            slot=data.get("scan_slot_utc")
+            if type(slot) is not int or slot!=stamp.hour//6 or path.name!=f"{stamp.date().isoformat()}-slot{slot}.json":
+                continue
+            shadow=data.get("quality_shadow_cases")
+            if not isinstance(shadow,dict) or not isinstance(shadow.get("records"),list):
+                continue
+            seen=set()
+            for row in shadow["records"]:
+                if not isinstance(row,dict):
+                    continue
+                ticker=row.get("ticker");stage=row.get("stage")
+                key=(ticker,stage)
+                if not isinstance(ticker,str) or not ticker or stage not in STAGES or key in seen:
+                    continue
+                seen.add(key)
+                if row.get("legacy_eligible") is not True or type(row.get("strict_eligible")) is not bool:
+                    continue
+                if row.get("source")!="yahoo:daily_ohlcv" or row.get("signalPriceBasis")!="yahoo_auto_adjusted_asof_publication":
+                    continue
+                if key not in selected or stamp<selected[key][0]:
+                    selected[key]=(stamp,row)
+        except (OSError,ValueError,TypeError,KeyError):
+            continue
+    groups={g:{"cohorts":0,"by_horizon":{str(h):{"confirmed_matured":0,"not_confirmed_matured":0,"unverified_or_pending":0}
+        for h in (5,10,20)}} for g in ("passed_strict","rejected_strict")}
+    for stamp,row in selected.values():
+        group=groups["passed_strict" if row["strict_eligible"] else "rejected_strict"]
+        group["cohorts"]+=1
+        snapshot={"schema":"vestra_prebreakout_v1","generated_at":stamp.isoformat(),"signals":[row]}
+        bars=(event_prices or {}).get(row["ticker"])
+        for h in (5,10,20):
+            cell=group["by_horizon"][str(h)]
+            try:
+                result=breakout_event(snapshot,row["ticker"],bars,h) if isinstance(bars,list) else {}
+            except (ValueError,KeyError,TypeError,OverflowError):
+                result={}
+            if result.get("horizon_matured") is True and result.get("status")=="confirmed":
+                cell["confirmed_matured"]+=1
+            elif result.get("horizon_matured") is True and result.get("status")=="not_confirmed":
+                cell["not_confirmed_matured"]+=1
+            else:
+                cell["unverified_or_pending"]+=1
+    return {"method":"prospective_first_publication_ticker_stage_no_rolling_base_dedup",
+            "historical_only":True,"success_probability":None,
+            "statistically_validated":False,"groups":groups}
+
 def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|None=None)->dict:
     cases=cohorts(archive)
     outcomes=[]
@@ -358,6 +418,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
             spy_regime_at_publication(case["published_at"],benchmark_bars)} for case in cases],outcomes),
         "walkforward_split_plan":purged_walkforward_folds(cases),
         "walkforward_holdout_returns":walkforward_holdout_returns(cases,outcomes,purged_walkforward_folds(cases)),
+        "shadow_forward_comparison":shadow_forward_comparison(archive,event_prices),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
 if __name__=="__main__":
@@ -370,5 +431,5 @@ if __name__=="__main__":
     prices=json.loads(args.prices.read_text(encoding="utf-8"))
     if not isinstance(prices,dict) or not isinstance(prices.get("SPY"),list):
         raise ValueError("require independent SPY adjusted daily benchmark")
-    result=build(args.archive,prices,prices["SPY"])
+    result=build(args.archive,prices,prices["SPY"],event_prices=prices)
     args.output.write_text(json.dumps(result,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
