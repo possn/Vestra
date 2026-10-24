@@ -404,9 +404,24 @@ def retrospective_feature_outcome_audit(cases:list[dict], events:list[dict], pri
             event=lookup.get((case["ticker"],case["stage"],case["published_at"],horizon),{})
             matured=event.get("horizon_matured") is True
             status=event.get("status") if matured and event.get("status") in ("confirmed","not_confirmed") else "pending_or_unverified"
+            durability=event.get("durability") if status=="confirmed" else None
+            joint={}
+            for window in (3,5,10):
+                obs=durability.get(str(window)) if isinstance(durability,dict) else None
+                label="pending_or_unverified"
+                if (isinstance(obs,dict) and obs.get("status")=="observed"
+                    and type(obs.get("held_pivot")) is bool):
+                    try:
+                        end_ret=float(obs["end_return_from_breakout"])
+                    except (KeyError,ValueError,TypeError):
+                        pass
+                    else:
+                        if math.isfinite(end_ret):
+                            label=("held" if obs["held_pivot"] else "lost")+("_positive" if end_ret>0 else "_nonpositive")
+                joint[str(window)]=label
             result["records"].append({"ticker":case["ticker"],"stage":case["stage"],
                 "published_at":case["published_at"],"horizon_sessions":horizon,
-                "outcome":status,"features":features["features"],
+                "outcome":status,"joint_durability_outcomes":joint,"features":features["features"],
                 "feature_missing":features["missing"],"features_point_in_time_verified":False})
     return result
 
