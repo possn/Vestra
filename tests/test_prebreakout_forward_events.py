@@ -51,6 +51,15 @@ class ForwardBreakoutEventTests(unittest.TestCase):
         out=breakout_event(self.snapshot(),"TEST",rows,horizon=5)
         self.assertEqual(out["status"],"confirmed")
         self.assertEqual(out["event_date"],"2026-10-24")
+        self.assertTrue(out["horizon_matured"])
+    def test_confirmed_before_window_maturity_not_full_horizon(self):
+        rows=self.bars()[:41]
+        next(row for row in rows if row["date"]=="2026-10-24").update(
+            close=102.0,high=102.5,low=99.5,volume=2000.0)
+        out=breakout_event(self.snapshot(),"TEST",rows,horizon=20)
+        self.assertEqual(out["status"],"confirmed")
+        self.assertFalse(out["horizon_matured"])
+
     def test_durability_fails_pivot_after_confirmed_breakout(self):
         rows=self.bars()
         breakout=next(row for row in rows if row["date"]=="2026-10-24")
