@@ -17,6 +17,11 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
 
     def test_navigation_and_safe_text(self):
         self.assertIn("action.dataset.vestraGo='market'", SRC)
+        self.assertIn("action.dataset.vestraTicker=pick.ticker", SRC)
+        self.assertIn("if(active && pick?.ticker)", SRC)
+        self.assertIn("market.openTicker(ticker)", SRC)
+        self.assertIn("await market.ensureLoaded()", SRC)
+        self.assertIn("document.getElementById('marketSheet')?.dataset.ticker === ticker", SRC)
         self.assertIn("element('h3','vi-pb-heading',title)", SRC)
         self.assertIn("element('p','vi-pb-detail',detail)", SRC)
         self.assertIn("showPrebreakoutSpotlight(host);", SRC)
