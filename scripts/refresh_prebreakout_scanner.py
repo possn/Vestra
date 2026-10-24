@@ -177,6 +177,15 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
             "success_probability":None,"probability_calibrated":False,
             "reason":"ranked_verified_setup_not_a_forecast_or_buy_signal"}
 
+def quality_shadow_record(legacy:dict, strict:dict|None)->dict:
+    """Research-only point-in-time evidence; never a public recommendation."""
+    return {"ticker":legacy["ticker"],"date":legacy["date"],"stage":legacy["stage"],
+            "baseStartDate":legacy.get("baseStartDate"),
+            "previousConfirmedBreakoutDate":legacy.get("previousConfirmedBreakoutDate"),
+            "resistance":legacy["resistance"],"signalClose":legacy["signalClose"],
+            "legacy_eligible":True,"strict_eligible":strict is not None,
+            "source":"yahoo:daily_ohlcv"}
+
 def watched_tickers(now:datetime, path:Path=ROOT/"data/prebreakout-observations.json", limit:int=25)->list[str]:
     """Revisit published candidates; historical status alone is never a live signal."""
     try:
@@ -281,12 +290,7 @@ def main():
                 shadow["strict_only"]+=int(signal is not None and legacy is None)
                 shadow["neither"]+=int(legacy is None and signal is None)
                 if legacy is not None:
-                    shadow_cases.append({"ticker":ticker,"date":legacy["date"],"stage":legacy["stage"],
-                                         "baseStartDate":legacy.get("baseStartDate"),
-                                         "previousConfirmedBreakoutDate":legacy.get("previousConfirmedBreakoutDate"),
-                                         "resistance":legacy["resistance"],"signalClose":legacy["signalClose"],
-                                         "legacy_eligible":True,"strict_eligible":signal is not None,
-                                         "source":"yahoo:daily_ohlcv"})
+                    shadow_cases.append(quality_shadow_record(legacy,signal))
                 if signal:found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
     # Do not retain previously accepted setups after the stricter criteria reject them.
