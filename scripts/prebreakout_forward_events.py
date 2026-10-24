@@ -4,7 +4,7 @@
 Research only: excludes signal/publication sessions and demands complete daily OHLCV.
 This does not imply executable trades or a calibrated probability.
 """
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 import math
 
 def reconcile_pivot(signal:dict, bars:list[dict], rounding_tolerance:float=0.00002):
@@ -62,6 +62,15 @@ def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
         if clean and d<=clean[-1][0]:
             raise ValueError("bars not strictly ordered")
         clean.append((d,close,high,low,volume))
+    # Do not silently count sparse data as successive trading sessions.
+    # An unexplained gap longer than a calendar week could hide an event
+    # or a pivot failure; no exchange-calendar assumptions are fabricated.
+    last=next((i for i,row in enumerate(clean) if row[0]>first_eligible),len(clean))
+    relevant=clean[max(0,last-20):]
+    if any(relevant[i][0]-relevant[i-1][0]>timedelta(days=7)
+           for i in range(1,len(relevant))):
+        return {"status":"gapped_ohlcv","observed_sessions":0,
+                "event_date":None,"horizon_matured":False}
     indices=[i for i,r in enumerate(clean) if r[0]>first_eligible]
     if not indices:
         return {"status":"pending","observed_sessions":0,"event_date":None}
