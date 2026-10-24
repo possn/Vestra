@@ -283,31 +283,69 @@
       panel = document.createElement('section');
       panel.dataset.viPrebreakoutSpotlight = '1';
       panel.setAttribute('aria-label', 'Ação em vigilância pre-breakout');
-      panel.style.cssText = 'margin:.7rem 0 1rem;padding:1rem 1.15rem;border:1px solid var(--border-color,rgba(130,130,130,.27));border-radius:16px;background:var(--card-bg,rgba(130,130,130,.055));color:inherit';
+      panel.style.cssText = 'margin:.7rem 0 1rem;color:inherit';
       host.prepend(panel);
     }
-    const render = (title, detail, evidence, active) => {
+    // The Home spotlight uses published scanner measurements, never a fabricated price sparkline.
+    panel.classList.add('vi-pb-card');
+    const element = (tag, cls, value) => {
+      const node=document.createElement(tag);
+      if(cls) node.className=cls;
+      if(value!==undefined) node.textContent=String(value);
+      return node;
+    };
+    const render = (title, detail, evidence, active, pick=null, qualified=false) => {
       panel.replaceChildren();
-      const eyebrow = document.createElement('p');
-      eyebrow.textContent = 'RADAR PRÉ-BREAKOUT · PARA INVESTIGAR';
-      eyebrow.style.cssText = 'font-size:.65rem;letter-spacing:.1em;font-weight:700;opacity:.7;margin:0 0 .35rem';
-      const heading = document.createElement('strong');
-      heading.textContent = title;
-      heading.style.cssText = 'font-size:clamp(1rem,3vw,1.3rem);line-height:1.25;display:block';
-      const body = document.createElement('p');
-      body.textContent = detail;
-      body.style.cssText = 'font-size:.85rem;line-height:1.5;margin:.45rem 0';
-      const foot = document.createElement('small');
-      foot.textContent = evidence;
-      foot.style.cssText = 'display:block;opacity:.7;line-height:1.5';
-      panel.append(eyebrow,heading,body,foot);
-      if (active) {
-        const action = document.createElement('button');
-        action.type = 'button';
-        action.dataset.vestraGo = 'market';
-        action.textContent = 'Investigar no Mercado →';
-        action.style.cssText = 'margin-top:.75rem;border:1px solid currentColor;border-radius:99px;padding:.45rem .8rem;background:transparent;color:inherit;font:inherit;font-size:.8rem;cursor:pointer';
-        panel.append(action);
+      const top=element('div','vi-pb-top');
+      top.append(element('p','vi-pb-eyebrow','RADAR PRÉ-BREAKOUT'),
+        element('span','vi-pb-status', qualified?'Sinal a investigar':'Em vigilância'));
+      top.querySelector('.vi-pb-status').prepend(element('span','vi-pb-dot'));
+      panel.append(top);
+      const grid=element('div','vi-pb-grid');
+      const main=element('div','vi-pb-main');
+      if(pick){
+        const identity=element('div','vi-pb-id');
+        identity.append(element('span','vi-pb-monogram',pick.ticker.slice(0,2)),element('div','vi-pb-name'));
+        identity.lastChild.append(element('div','vi-pb-ticker',pick.ticker),element('div','vi-pb-sub',pick.stage==='pré-breakout'?'Pré-breakout em observação':'Base em compressão'));
+        main.append(identity);
+      }
+      main.append(element('h3','vi-pb-heading',title),element('p','vi-pb-detail',detail));
+      grid.append(main);
+      if(pick && Number.isFinite(pick.score)){
+        const aside=element('div','vi-pb-aside');
+        const ring=element('div','vi-pb-ring');
+        ring.style.setProperty('--val',Math.max(0,Math.min(100,pick.score)));
+        const number=element('div','vi-pb-number',Math.round(pick.score));
+        number.append(element('small','', '/100'));
+        ring.append(number);
+        aside.append(ring,element('p','vi-pb-score-label','SCORE TÉCNICO'));
+        grid.append(aside);
+      }
+      panel.append(grid);
+      if(pick){
+        const metrics=element('div','vi-pb-metrics');
+        const addMetric=(label,value,width)=>{
+          const item=element('div','vi-pb-metric');
+          item.append(element('p','vi-pb-metric-title',label),element('p','vi-pb-metric-value',value));
+          const track=element('div','vi-pb-track');
+          const bar=element('span');
+          bar.style.width=Math.max(0,Math.min(100,width))+'%';
+          track.append(bar);item.append(track);metrics.append(item);
+        };
+        // Honest miniature chart: current base width versus prior width, not invented OHLCV.
+        if(Number.isFinite(pick.widthPct)&&Number.isFinite(pick.priorWidthPct)&&pick.priorWidthPct>0){
+          const ratio=pick.widthPct/pick.priorWidthPct;
+          addMetric('Largura da base · antes',pick.priorWidthPct.toFixed(1).replace('.',',')+'%',100);
+          addMetric('Largura da base · agora',pick.widthPct.toFixed(1).replace('.',',')+'%',ratio*100);
+        } else if(Number.isFinite(pick.distancePct)){
+          addMetric('Distância à resistência',pick.distancePct.toFixed(2).replace('.',',')+'%',Math.max(0,100-pick.distancePct*12.5));
+        }
+        if(metrics.childElementCount)panel.append(metrics);
+      }
+      panel.append(element('p','vi-pb-foot',evidence));
+      if(active){
+        const action=element('button','vi-pb-action','Investigar no Mercado →');
+        action.type='button';action.dataset.vestraGo='market';panel.append(action);
       }
     };
     render('A verificar o radar…', 'A consultar os dados técnicos publicados.', '', false);
@@ -346,13 +384,12 @@
         render(pick.ticker+' · Próximo do pivot',
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
           '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
-          source+' · Melhor sinal da amostra analisada, não de todo o mercado.', true);
+          source+' · Melhor sinal da amostra analisada, não de todo o mercado.', true, pick, true);
       } else if (rows.length) {
         const watch = rows.sort((a,b)=>b.score-a.score || a.ticker.localeCompare(b.ticker))[0];
         render('Sem pré-breakout qualificado hoje',
-          watch.ticker+' é apenas uma base em compressão (score '+Math.round(watch.score)+
-          '/100). Falta confirmação completa; não é uma oportunidade antecipatória validada.',
-          source+' · Vigilância, não recomendação.',true);
+          'Base em compressão. Ainda sem confirmação completa; não é uma oportunidade antecipatória validada.',
+          source+' · Vigilância, não recomendação.',true,watch,false);
       } else {
         render('Nenhum setup elegível', 'O radar publicado não encontrou candidatos válidos nesta amostra.',
           source+' · Não inferir ausência de oportunidades no mercado inteiro.',true);
