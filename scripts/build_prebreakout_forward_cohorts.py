@@ -339,6 +339,16 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                 cell["not_confirmed_matured"]+=1
             else:
                 cell["unverified_or_pending"]+=1
+    for group in groups.values():
+        for cell in group["by_horizon"].values():
+            complete=cell["confirmed_matured"]+cell["not_confirmed_matured"]
+            total=group["cohorts"]
+            cell["matured_evaluable"]=complete
+            cell["matured_coverage"]=round(complete/total,4) if total else None
+            cell["observed_breakout_fraction"]=round(cell["confirmed_matured"]/complete,4) if complete else None
+            cell["observed_fraction_is_probability"]=False
+            cell["minimum_evidence_met"]=complete>=30 and total>0 and complete/total>=.8
+            cell["selection_effect_validated"]=False
     return {"method":"prospective_first_publication_ticker_stage_no_rolling_base_dedup",
             "historical_only":True,"success_probability":None,
             "statistically_validated":False,"groups":groups}
