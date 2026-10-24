@@ -16,6 +16,7 @@ class StageEvidenceTests(unittest.TestCase):
         self.assertEqual(five["coverage"],1)
         self.assertFalse(five["sufficient_sample"])
         self.assertNotIn("hit_rate",five)
+        self.assertNotIn("benchmark_outperformance_rate",five)
         self.assertEqual(result["stages"]["pré-breakout"]["10"]["n_missing"],1)
 
     def test_wilson_and_stage_separation(self):
@@ -24,6 +25,9 @@ class StageEvidenceTests(unittest.TestCase):
         result=report(values,horizons=(5,))
         confirmed=result["stages"]["confirmado"]["5"]
         self.assertAlmostEqual(confirmed["hit_rate"],.8)
+        self.assertAlmostEqual(confirmed["benchmark_outperformance_rate"],.8)
+        lower,upper=confirmed["benchmark_outperformance_wilson_95"]
+        self.assertTrue(0<lower<.8<upper<1)
         self.assertEqual(confirmed["n"],30)
         self.assertEqual(confirmed["n_observations"],30)
         lo,hi=confirmed["hit_rate_wilson_95"]
