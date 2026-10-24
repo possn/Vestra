@@ -177,6 +177,15 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
             "success_probability":None,"probability_calibrated":False,
             "reason":"ranked_verified_setup_not_a_forecast_or_buy_signal"}
 
+def quality_shadow_record(legacy:dict, strict:dict|None)->dict:
+    """Research-only point-in-time evidence; never a public recommendation."""
+    return {"ticker":legacy["ticker"],"date":legacy["date"],"stage":legacy["stage"],
+            "baseStartDate":legacy.get("baseStartDate"),
+            "previousConfirmedBreakoutDate":legacy.get("previousConfirmedBreakoutDate"),
+            "resistance":legacy["resistance"],"signalClose":legacy["signalClose"],
+            "legacy_eligible":True,"strict_eligible":strict is not None,
+            "source":"yahoo:daily_ohlcv"}
+
 def watched_tickers(now:datetime, path:Path=ROOT/"data/prebreakout-observations.json", limit:int=25)->list[str]:
     """Revisit published candidates; historical status alone is never a live signal."""
     try:
@@ -259,7 +268,7 @@ def main():
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]))
-    found=[];checked=0;failures=[]
+    found=[];shadow_cases=[];checked=0;failures=[]
     # Shadow evaluation only; never route legacy candidates to public signals.
     shadow={"legacy_eligible":0,"strict_eligible":0,"legacy_only":0,"strict_only":0,"neither":0,"compared":0}
     for start in range(0,len(tickers),15):
@@ -280,13 +289,18 @@ def main():
                 shadow["legacy_only"]+=int(legacy is not None and signal is None)
                 shadow["strict_only"]+=int(signal is not None and legacy is None)
                 shadow["neither"]+=int(legacy is None and signal is None)
+                if legacy is not None:
+                    shadow_cases.append(quality_shadow_record(legacy,signal))
                 if signal:found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
     # Do not retain previously accepted setups after the stricter criteria reject them.
     by={signal["ticker"]:signal for signal in found}
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"single_scan_slot_not_full_universe","new_signals":len(found),"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
-             "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},"daily_focus":daily_focus(list(by.values()),now.date()),"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
+             "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
+             "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
+                  "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
+             "daily_focus":daily_focus(list(by.values()),now.date()),"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
 
