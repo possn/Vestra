@@ -175,24 +175,19 @@ test('iPhone: Ideas market content stays inside viewport and has readable title 
  }
 });
 
-test('iPhone: real Ideas opportunity score is a compact badge, not a tall empty rail',async({page})=>{
+test('iPhone Home: visible factual pulse of CNN, AAII and coverage has no horizontal clipping',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.goto('/index.html');
- await page.locator('#navMarket').click();
- await page.locator('[data-market-mode="discover"]').click();
- const card=page.locator('#viewMarket .ux453-opp').first();
- await expect(card).toBeVisible({timeout:15000});
- const sizes=await card.evaluate(el=>{
-  const outer=el.getBoundingClientRect();
-  const score=el.querySelector('.ux453-entry')?.getBoundingClientRect();
-  const detail=el.querySelector('.ux453-detail-grid')?.getBoundingClientRect();
-  return {right:outer.right,viewport:document.documentElement.clientWidth,
-   scoreHeight:score?.height,scoreWidth:score?.width,
-   cardHeight:outer.height,detailWidth:detail?.width};
+ const pulse=page.locator('#vestraIntelligenceHome .vi-live-pulse');
+ await expect(pulse).toBeVisible();
+ await expect(pulse.locator('[data-vi-pulse-cnn]')).toContainText('/100',{timeout:10000});
+ await expect(pulse.locator('[data-vi-pulse-aaii]')).toContainText('pp');
+ await expect(pulse.locator('[data-vi-pulse-coverage]')).not.toHaveText('—');
+ const bounds=await pulse.evaluate(el=>{
+  const r=el.getBoundingClientRect();
+  return {right:r.right,width:r.width,viewport:document.documentElement.clientWidth,
+   children:[...el.children].map(x=>x.getBoundingClientRect().right)};
  });
- expect(sizes.right).toBeLessThanOrEqual(sizes.viewport+2);
- expect(sizes.scoreWidth).toBeLessThanOrEqual(66);
- expect(sizes.scoreHeight).toBeLessThanOrEqual(100);
- expect(sizes.cardHeight).toBeLessThan(460);
- expect(sizes.detailWidth).toBeGreaterThan(100);
+ expect(bounds.right).toBeLessThanOrEqual(bounds.viewport+2);
+ expect(bounds.children.every(x=>x<=bounds.viewport+2)).toBe(true);
 });
