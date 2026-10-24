@@ -80,6 +80,13 @@ class ForwardBreakoutEventTests(unittest.TestCase):
         rows=self.bars()
         self.assertEqual(breakout_event(self.snapshot(),"TEST",rows[:40],horizon=20)["status"],"pending")
         self.assertEqual(breakout_event(self.snapshot(),"TEST",rows,horizon=5)["status"],"not_confirmed")
+    def test_sparse_forward_history_cannot_be_called_no_breakout(self):
+        rows=self.bars()
+        sparse=[r for r in rows if not ("2026-10-26"<=r["date"]<="2026-11-05")]
+        result=breakout_event(self.snapshot(),"TEST",sparse,horizon=5)
+        self.assertEqual(result["status"],"gapped_ohlcv")
+        self.assertFalse(result["horizon_matured"])
+
     def test_weak_close_or_missing_volume_rejected(self):
         rows=self.bars()
         item=next(row for row in rows if row["date"]=="2026-10-24")
