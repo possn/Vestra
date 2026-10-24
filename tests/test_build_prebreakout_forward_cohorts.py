@@ -235,6 +235,19 @@ class ImmutableCohortTests(unittest.TestCase):
                 self.assertEqual(rejected["durability"][window]["held_pivot"],0)
                 self.assertEqual(rejected["durability"][window]["lost_pivot"],0)
 
+    def test_retrospective_feature_outcomes_withhold_immature_labels(self):
+        from build_prebreakout_forward_cohorts import retrospective_feature_outcome_audit
+        case={"ticker":"AAA","stage":"pré-breakout","published_at":"2026-01-25T12:00:00Z"}
+        bars=[{"date":f"2026-01-{i:02d}","high":101+i,"low":99+i,
+               "close":100+i,"volume":1000} for i in range(1,25)]
+        events=[{"ticker":"AAA","stage":"pré-breakout","published_at":case["published_at"],
+                 "horizon_sessions":5,"horizon_matured":False,"status":"confirmed"}]
+        report=retrospective_feature_outcome_audit([case],events,{"AAA":bars},bars)
+        self.assertEqual(len(report["records"]),3)
+        self.assertEqual(report["records"][0]["outcome"],"pending_or_unverified")
+        self.assertFalse(report["trained_model"])
+        self.assertFalse(report["adjusted_history_point_in_time_verified"])
+
     def test_wrong_slot_never_creates_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);f=root/"2026"/"slots";f.mkdir(parents=True)
