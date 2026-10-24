@@ -67,6 +67,8 @@ class ForwardPriceRefreshTests(unittest.TestCase):
             self.assertEqual(h["evaluable"],0)
             self.assertIsNone(h["breakout_rate"])
             self.assertEqual(h["by_status"]["missing_ohlcv"],1)
+            self.assertEqual(h["post_confirmation_durability"]["3"],{"observed":0,"held_pivot":0,"lost_pivot":0})
+            self.assertEqual(h["post_confirmation_durability"]["10"]["observed"],0)
 
     def test_missing_spy_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
