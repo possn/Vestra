@@ -8,6 +8,8 @@ serial requests. The old module name is kept to avoid breaking imports.
 from __future__ import annotations
 
 import logging
+import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import math
 import yfinance as yf
@@ -276,7 +278,34 @@ def _download_direct_daily_returns(ticker: str) -> dict:
         data = r.json()
         result = (((data or {}).get("chart") or {}).get("result") or [None])[0] or {}
         q = (((result.get("indicators") or {}).get("quote") or [{}])[0] or {})
-        return _compact_daily_returns(q.get("close") or [])
+        closes = q.get("close") or []
+        stamps = result.get("timestamp") or []
+        zone_name = (result.get("meta") or {}).get("exchangeTimezoneName")
+        # Never manufacture comparison dates: require an explicit exchange
+        # timezone and a timestamp for every close supplied by the chart API.
+        if not zone_name or len(stamps) != len(closes):
+            return _compact_daily_returns(closes)
+        try:
+            zone = ZoneInfo(zone_name)
+            valid = []
+            for stamp, close in zip(stamps, closes):
+                if close is None:
+                    continue
+                value = float(close)
+                if math.isfinite(value) and value > 0:
+                    day = datetime.datetime.fromtimestamp(int(stamp), tz=zone).date().isoformat()
+                    valid.append((day, value))
+            if not valid or len({day for day, _ in valid}) != len(valid):
+                return _compact_daily_returns(closes)
+            valid.sort(key=lambda pair: pair[0])
+            metrics = _compact_daily_returns([value for _, value in valid])
+            if metrics:
+                metrics["market_return_asof_date"] = valid[-1][0]
+                if "market_return_20d_pct" in metrics and len(valid) >= 21:
+                    metrics["market_return_20d_dates"] = [day for day, _ in valid[-21:]]
+            return metrics
+        except (ValueError, TypeError, OverflowError, OSError, ZoneInfoNotFoundError):
+            return _compact_daily_returns(closes)
     except Exception as exc:
         log.debug("direct daily return fallback failed for %s: %s", ticker, exc)
         return {}
