@@ -119,6 +119,49 @@ def purged_walkforward_folds(cases:list[dict], test_days:int=28, embargo_days:in
             "embargo_calendar_days":embargo_days,"test_calendar_days":test_days,
             "out_of_sample_validated":False,"folds":folds}
 
+def walkforward_holdout_returns(cases:list[dict], outcomes:list[dict], plan:dict, cost_bps:int=20)->dict:
+    """Descriptive fold test outcomes only. No model fit, tuning, or alpha inference."""
+    from datetime import date
+    if len(cases)!=len(outcomes) or type(cost_bps) is not int or not 0<=cost_bps<=1000:
+        raise ValueError("misaligned cohorts or invalid scenario cost")
+    rows=[]
+    for fold in plan["folds"]:
+        lo=date.fromisoformat(fold["test_from"])
+        hi=date.fromisoformat(fold["test_until_exclusive"])
+        selected=[outcomes[i] for i,case in enumerate(cases)
+                  if lo<=date.fromisoformat(case["published_at"][:10])<hi]
+        horizons={}
+        for h in (5,10,20):
+            available=[]
+            for result in selected:
+                metric=result.get("results",{}).get(h)
+                if not isinstance(metric,dict):
+                    continue
+                try:
+                    gross=float(metric["return"])
+                    bench=float(metric["spy_return"])
+                    excess=float(metric["excess_return"])
+                except (KeyError,ValueError,TypeError):
+                    continue
+                if not all(math.isfinite(v) for v in (gross,bench,excess)):
+                    continue
+                available.append((gross,bench,excess))
+            n=len(available)
+            horizons[str(h)]={
+                "test_cohorts":len(selected),"evaluated":n,"missing":len(selected)-n,
+                "coverage":round(n/len(selected),4) if selected else None,
+                "mean_gross_return":round(sum(x[0] for x in available)/n,6) if n else None,
+                "mean_spy_return":round(sum(x[1] for x in available)/n,6) if n else None,
+                "mean_excess_after_scenario_cost":round(
+                    sum(x[2]-cost_bps/10000 for x in available)/n,6) if n else None}
+        rows.append({"test_from":fold["test_from"],"test_until_exclusive":fold["test_until_exclusive"],
+                     "by_horizon":horizons})
+    return {"method":"descriptive_chronological_holdout_adjusted_close",
+            "cost_scenario_round_trip_bps":cost_bps,
+            "cost_is_assumption":True,"executable_fills_verified":False,
+            "out_of_sample_alpha_validated":False,"dependence_adjusted":False,
+            "folds":rows}
+
 def cohorts(archive:Path)->list[dict]:
     eligible=[]
     for path in archive.glob("*/slots/*-slot*.json"):
@@ -244,6 +287,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
                                   "legacy_unanchored":sum(case["base_start_date"] is None for case in cases)},
         "base_maturity_evidence":maturity_event_evidence(events,cases),
         "walkforward_split_plan":purged_walkforward_folds(cases),
+        "walkforward_holdout_returns":walkforward_holdout_returns(cases,outcomes,purged_walkforward_folds(cases)),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
 if __name__=="__main__":
