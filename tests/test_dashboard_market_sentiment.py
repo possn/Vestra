@@ -43,7 +43,7 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn("Ver como é calculado", JS)
         self.assertIn("dms-detail", JS)
         self.assertIn(".dms-detail[hidden]", CSS)
-        self.assertIn("version:'1.6'", JS)
+        self.assertIn("version:'1.7'", JS)
 
     def test_aaii_retail_sentiment_is_integrated_without_a_second_dashboard_card(self):
         data = (ROOT / "data" / "aaii-sentiment.json").read_text(encoding="utf-8")
