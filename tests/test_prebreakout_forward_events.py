@@ -8,7 +8,14 @@ from prebreakout_forward_events import breakout_event
 class ForwardBreakoutEventTests(unittest.TestCase):
     def snapshot(self):
         return {"schema":"vestra_prebreakout_v1","generated_at":"2026-10-22T23:00:00Z",
-                "signals":[{"ticker":"TEST","date":"2026-10-22","resistance":100}]}
+                "signals":[{"ticker":"TEST","date":"2026-10-22","resistance":100,"price_basis":"yahoo_auto_adjusted_asof_publication","price_basis_verified":True}]}
+    def test_unknown_price_basis_refuses_classification(self):
+        original=self.snapshot()
+        del original["signals"][0]["price_basis_verified"]
+        row=breakout_event(original,"TEST",self.bars(),horizon=5)
+        self.assertEqual(row["status"],"price_basis_unverified")
+        self.assertIsNone(row["event_date"])
+
     def bars(self):
         start=date(2026,9,15)
         return [{"date":(start+timedelta(days=i)).isoformat(),
