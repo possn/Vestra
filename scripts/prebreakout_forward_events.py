@@ -19,6 +19,10 @@ def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
     if len(matches)!=1:
         raise ValueError("missing or duplicate ticker")
     signal=matches[0]
+    # Never compare a publisher pivot to a differently adjusted historical price basis.
+    # Until a verifiable same-basis adjustment factor is archived, abstain.
+    if signal.get("price_basis")!="yahoo_auto_adjusted_asof_publication" or not signal.get("price_basis_verified") is True:
+        return {"status":"price_basis_unverified","observed_sessions":0,"event_date":None}
     pivot=float(signal["resistance"])
     if not math.isfinite(pivot) or pivot<=0:
         raise ValueError("invalid pivot")
