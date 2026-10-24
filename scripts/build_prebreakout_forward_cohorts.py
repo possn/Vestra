@@ -13,6 +13,7 @@ from pathlib import Path
 from prebreakout_forward_evaluation import evaluate_archived
 from prebreakout_stage_evidence import report
 from prebreakout_forward_events import breakout_event
+from prebreakout_research_features import research_features
 
 STAGES={"compressão","pré-breakout","confirmado"}
 
@@ -391,6 +392,24 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
             "historical_only":True,"success_probability":None,
             "statistically_validated":False,"groups":groups}
 
+def retrospective_feature_outcome_audit(cases:list[dict], events:list[dict], prices:dict, benchmark_bars:list[dict])->dict:
+    """Pair prepublication features with matured outcomes, no model fit."""
+    lookup={(r["ticker"],r["stage"],r["published_at"],r["horizon_sessions"]):r for r in events}
+    result={"method":"retrospective_asof_features_vs_archived_events",
+            "historical_only":True,"trained_model":False,"predictive_validity_established":False,
+            "adjusted_history_point_in_time_verified":False,"records":[]}
+    for case in cases:
+        features=research_features(prices.get(case["ticker"]),benchmark_bars,case["published_at"])
+        for horizon in (5,10,20):
+            event=lookup.get((case["ticker"],case["stage"],case["published_at"],horizon),{})
+            matured=event.get("horizon_matured") is True
+            status=event.get("status") if matured and event.get("status") in ("confirmed","not_confirmed") else "pending_or_unverified"
+            result["records"].append({"ticker":case["ticker"],"stage":case["stage"],
+                "published_at":case["published_at"],"horizon_sessions":horizon,
+                "outcome":status,"features":features["features"],
+                "feature_missing":features["missing"],"features_point_in_time_verified":False})
+    return result
+
 def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|None=None)->dict:
     cases=cohorts(archive)
     outcomes=[]
@@ -467,6 +486,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "walkforward_split_plan":purged_walkforward_folds(cases),
         "walkforward_holdout_returns":walkforward_holdout_returns(cases,outcomes,purged_walkforward_folds(cases)),
         "shadow_forward_comparison":shadow_forward_comparison(archive,event_prices),
+        "retrospective_feature_outcome_audit":retrospective_feature_outcome_audit(cases,events,prices,benchmark_bars),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
 if __name__=="__main__":
