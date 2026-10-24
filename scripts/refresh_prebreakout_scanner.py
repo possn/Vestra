@@ -131,7 +131,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
         return None
     diagnostics={"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
                  "averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None,"basePositionPct":round(base_position*100,1),
-                 "qualityGates":["sma50_gt_sma150_gt_sma200","price_above_sma50","dollar_volume20_gte_5m","base_position_gte_65pct"]}
+                 "qualityGates":(["sma50_gt_sma150_gt_sma200","price_above_sma50","dollar_volume20_gte_5m","base_position_gte_65pct"] if strict_quality else [])}
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
             "signalClose":round(current,5),"signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
             "widthPct":round(base_width*100,2),"priorWidthPct":round(old_width*100,2),
