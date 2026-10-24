@@ -320,7 +320,7 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                     selected[key]=(stamp,row)
         except (OSError,ValueError,TypeError,KeyError):
             continue
-    groups={g:{"cohorts":0,"by_horizon":{str(h):{"confirmed_matured":0,"not_confirmed_matured":0,"unverified_or_pending":0}
+    groups={g:{"cohorts":0,"by_horizon":{str(h):{"confirmed_matured":0,"not_confirmed_matured":0,"unverified_or_pending":0,"durability":{str(w):{"observed":0,"held_pivot":0,"lost_pivot":0,"pending_or_unverified":0} for w in (3,5,10)}}
         for h in (5,10,20)}} for g in ("passed_strict","rejected_strict")}
     for stamp,row in selected.values():
         group=groups["passed_strict" if row["strict_eligible"] else "rejected_strict"]
@@ -335,6 +335,16 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                 result={}
             if result.get("horizon_matured") is True and result.get("status")=="confirmed":
                 cell["confirmed_matured"]+=1
+                durability=result.get("durability",{})
+                for w in (3,5,10):
+                    tally=cell["durability"][str(w)]
+                    observation=durability.get(str(w)) if isinstance(durability,dict) else None
+                    if (isinstance(observation,dict) and observation.get("status")=="observed"
+                        and type(observation.get("held_pivot")) is bool):
+                        tally["observed"]+=1
+                        tally["held_pivot" if observation["held_pivot"] else "lost_pivot"]+=1
+                    else:
+                        tally["pending_or_unverified"]+=1
             elif result.get("horizon_matured") is True and result.get("status")=="not_confirmed":
                 cell["not_confirmed_matured"]+=1
             else:
