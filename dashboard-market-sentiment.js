@@ -7,6 +7,9 @@
   const CACHE_KEY='vestra-market-sentiment-v2';
   const CACHE_TTL_MS=15*60*1000;
   const FETCH_TIMEOUT_MS=10000;
+  const AAII_REFRESH_INTERVAL_MS=15*60*1000;
+  let aaiiLastAttempt=0;
+  let aaiiRequest=null;
 
   const RISK_ASSETS=[
     {ticker:'ACWI',name:'Global',weight:.30},
@@ -266,17 +269,26 @@
     </section>`;
   }
 
-  async function loadAaii(){
-    try{
-      const response=await fetch('data/aaii-sentiment.json',{cache:'no-store'});
-      if(!response.ok) throw new Error(`AAII ${response.status}`);
-      const payload=await response.json();
-      if(!Array.isArray(payload?.weeks)||!payload.weeks.length) throw new Error('AAII payload vazio');
-      S.aaii=payload;
-      render();
-    }catch(error){
-      console.warn('[Vestra] AAII sentiment unavailable',error);
-    }
+  function loadAaii(force=false){
+    const now=Date.now();
+    if(aaiiRequest) return aaiiRequest;
+    if(!force && now-aaiiLastAttempt<AAII_REFRESH_INTERVAL_MS) return Promise.resolve();
+    aaiiLastAttempt=now;
+    aaiiRequest=(async()=>{
+      try{
+        const response=await fetch('data/aaii-sentiment.json',{cache:'no-store'});
+        if(!response.ok) throw new Error(`AAII ${response.status}`);
+        const payload=await response.json();
+        if(!Array.isArray(payload?.weeks)||!payload.weeks.length) throw new Error('AAII payload vazio');
+        S.aaii=payload;
+        render();
+      }catch(error){
+        // Failed fetch must remain retryable on the next app foreground.
+        aaiiLastAttempt=0;
+        console.warn('[Vestra] AAII sentiment unavailable',error);
+      }finally{aaiiRequest=null;}
+    })();
+    return aaiiRequest;
   }
 
   function reason(snapshot){
@@ -477,6 +489,8 @@
     scheduleLoad();
     loadAaii();
     loadCnn();
+    window.addEventListener('focus',()=>loadAaii());
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden) loadAaii();});
     window.addEventListener('vestra:app-ready',()=>{render();scheduleLoad();});
     document.addEventListener('toggle',event=>{
       const details=event.target?.closest?.('.dms-aaii-history');
@@ -484,7 +498,7 @@
     },true);
     document.addEventListener('click',event=>{
       if(event.target?.closest?.('[data-dms-detail-toggle]')){S.expanded=!S.expanded;render();return;}
-      if(event.target?.closest?.('[data-dms-refresh]')){load(true);return;}
+      if(event.target?.closest?.('[data-dms-refresh]')){load(true);loadAaii(true);loadCnn();return;}
       if(event.target?.closest?.('[data-view="dashboard"]')) setTimeout(()=>{render();scheduleLoad();},60);
     });
   }
@@ -493,7 +507,7 @@
   else boot();
 
   window.VestraDashboardMarketSentiment=Object.freeze({
-    version:'1.6',
+    version:'1.7',
     computeSnapshot,
     priceFreshness,
     labelFor,

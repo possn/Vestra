@@ -11,7 +11,7 @@ SW = (ROOT / "sw.js").read_text(encoding="utf-8")
 class DashboardMarketSentimentTests(unittest.TestCase):
     def test_runtime_is_reachable_without_blocking_market_load(self):
         self.assertIn("ensureDashboardMarketSentiment", LOADER)
-        self.assertIn("dashboard-market-sentiment.js?v=1.7-aaii-freshness", LOADER)
+        self.assertIn("dashboard-market-sentiment.js?v=1.8-foreground", LOADER)
         tail = LOADER[LOADER.index("// Dashboard/mobile companions remain eager"):]
         self.assertIn("ensureDashboardMarketSentiment();", tail)
         self.assertIn("requestIdleCallback", JS)
@@ -43,12 +43,16 @@ class DashboardMarketSentimentTests(unittest.TestCase):
         self.assertIn("Ver como é calculado", JS)
         self.assertIn("dms-detail", JS)
         self.assertIn(".dms-detail[hidden]", CSS)
-        self.assertIn("version:'1.6'", JS)
+        self.assertIn("version:'1.7'", JS)
 
     def test_aaii_retail_sentiment_is_integrated_without_a_second_dashboard_card(self):
         data = (ROOT / "data" / "aaii-sentiment.json").read_text(encoding="utf-8")
         workflow = (ROOT / ".github" / "workflows" / "update-aaii-sentiment.yml").read_text(encoding="utf-8")
         refresh = (ROOT / "scripts" / "refresh_aaii_sentiment.py").read_text(encoding="utf-8")
+        self.assertIn("AAII_REFRESH_INTERVAL_MS=15*60*1000", JS)
+        self.assertIn("window.addEventListener('focus',()=>loadAaii())", JS)
+        self.assertIn("visibilitychange", JS)
+        self.assertIn("loadAaii(true);loadCnn()", JS)
         self.assertIn("AAII · RETAIL SENTIMENT", JS)
         self.assertIn("Ver semanas anteriores", JS)
         self.assertIn("data/aaii-sentiment.json", JS)
