@@ -95,9 +95,23 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         evaluated=counts.get("confirmed",0)+counts.get("not_confirmed",0)
         matured=sum(1 for row in sample if row.get("horizon_matured") is True)
         confirmed_early=sum(1 for row in sample if row["status"]=="confirmed" and row.get("horizon_matured") is False)
+        # Durability is measured only where the post-confirmation horizon is complete.
+        # A confirmed trigger is not automatically a durable success.
+        durability={}
+        for window in ("3","5","10"):
+            observed=[row["durability"][window] for row in sample
+                      if row["status"]=="confirmed" and
+                      isinstance(row.get("durability"),dict) and
+                      isinstance(row["durability"].get(window),dict) and
+                      row["durability"][window].get("status")=="observed" and
+                      type(row["durability"][window].get("held_pivot")) is bool]
+            durability[window]={"observed":len(observed),
+                "held_pivot":sum(row["held_pivot"] for row in observed),
+                "lost_pivot":sum(not row["held_pivot"] for row in observed)}
         event_coverage[str(horizon)]={
             "cohorts":len(sample),"evaluable":evaluated,
             "matured_horizons":matured,"confirmed_before_maturity":confirmed_early,
+            "post_confirmation_durability":durability,
             "coverage":round(evaluated/len(sample),4) if sample else None,
             "by_status":counts,"breakout_rate":None,
             "reason":"insufficient_or_unverified_forward_evidence"}
