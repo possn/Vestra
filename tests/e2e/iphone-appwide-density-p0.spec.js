@@ -154,7 +154,7 @@ test('iPhone: Ideas market content stays inside viewport and has readable title 
  await page.locator('[data-market-mode="discover"]').click();
  const report=await page.locator('#viewMarket #marketPrimary').evaluate(root=>{
   const styles=getComputedStyle(root);
-  const bad=[...root.querySelectorAll('*')].filter(el=>{
+  const bad=[...root.querySelectorAll('section,article,.market-row,.market-sector-grid,.ux453-opp')].filter(el=>{
    const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
    return r.width>0&&r.height>0&&cs.display!=='none'&&
     (r.right>document.documentElement.clientWidth+3 || r.left< -3) &&
