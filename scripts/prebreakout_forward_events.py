@@ -44,7 +44,18 @@ def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
         prior_volume=sum(r[4] for r in clean[i-20:i])/20
         close_location=(close-low)/(high-low) if high>low else 0
         if close>pivot*1.005 and close_location>=.75 and volume>=1.5*prior_volume:
+            future=clean[i+1:i+11]
+            durability={}
+            for window in (3,5,10):
+                if len(future)<window:
+                    durability[str(window)]={"status":"pending","remaining_sessions":window-len(future)}
+                else:
+                    closes=[r[1] for r in future[:window]]
+                    durability[str(window)]={"status":"observed",
+                        "held_pivot":all(p>=pivot for p in closes),
+                        "end_return_from_breakout":round(closes[-1]/close-1,6),
+                        "minimum_close_from_breakout":round(min(closes)/close-1,6)}
             return {"status":"confirmed","observed_sessions":observed.index(i)+1,
-                    "event_date":day.isoformat()}
+                    "event_date":day.isoformat(),"durability":durability}
     return {"status":"not_confirmed" if len(observed)>=horizon else "pending",
             "observed_sessions":len(observed),"event_date":None}

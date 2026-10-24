@@ -20,6 +20,17 @@ class ForwardBreakoutEventTests(unittest.TestCase):
         out=breakout_event(self.snapshot(),"TEST",rows,horizon=5)
         self.assertEqual(out["status"],"confirmed")
         self.assertEqual(out["event_date"],"2026-10-24")
+    def test_durability_fails_pivot_after_confirmed_breakout(self):
+        rows=self.bars()
+        breakout=next(row for row in rows if row["date"]=="2026-10-24")
+        breakout.update(close=102.0,high=102.5,low=99.5,volume=2000.0)
+        result=breakout_event(self.snapshot(),"TEST",rows[:46],horizon=5)
+        self.assertEqual(result["status"],"confirmed")
+        self.assertTrue(result["durability"]["3"]["status"]=="observed")
+        self.assertFalse(result["durability"]["3"]["held_pivot"])
+        self.assertFalse(result["durability"]["5"]["held_pivot"])
+        self.assertTrue(result["durability"]["10"]["status"]=="pending")
+
     def test_prepublication_move_does_not_count(self):
         rows=self.bars()
         item=next(row for row in rows if row["date"]=="2026-10-21")
