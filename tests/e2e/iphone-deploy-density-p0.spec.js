@@ -64,8 +64,8 @@ test('Market modes grid remains within phone viewport with all choices accessibl
  await expect(rail).toBeVisible();
  const widths=await rail.evaluate(el=>{const a=el.getBoundingClientRect();return {right:a.right,viewport:innerWidth,scroll:el.scrollWidth,client:el.clientWidth,overflow:getComputedStyle(el).overflowX};});
  expect(widths.right).toBeLessThanOrEqual(widths.viewport+2);
- expect(widths.overflow).toBe('visible');
- expect(widths.scroll).toBeLessThanOrEqual(widths.client+2);
+ expect(widths.overflow).toBe('auto');
+ expect(widths.scroll).toBeGreaterThan(widths.client);
  const last=rail.locator('.market-mode').last();
  await last.scrollIntoViewIfNeeded();
  await expect(last).toBeInViewport();
