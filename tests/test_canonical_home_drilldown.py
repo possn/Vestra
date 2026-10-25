@@ -70,13 +70,20 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn("String(index + 1).padStart(2, '0')", js)
         self.assertIn("Verifica a cobertura e o diagnóstico antes de agir.", js)
 
+    def test_news_can_hydrate_directly_without_legacy_dashboard(self):
+        js = (ROOT / "vestra-intelligence-home.js").read_text(encoding="utf-8")
+        self.assertIn("fetch('./data/dashboard-news.json'", js)
+        self.assertIn("Date.parse(feed?.generated_at)", js)
+        self.assertIn("list.dataset.publishedFeed='true'", js)
+        self.assertIn("void loadPublishedNews(host);", js)
+
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=7-iphone-density', html)
         self.assertIn('vestra-intelligence.css?v=57-live-pulse', html)
-        self.assertRegex(html, r'vestra-intelligence-home\.js\?v=(?:21|[2-9][0-9])')
+        self.assertRegex(html, r'vestra-intelligence-home\.js\?v=(?:23|[2-9][0-9])')
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
