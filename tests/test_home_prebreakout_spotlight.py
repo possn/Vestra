@@ -21,7 +21,7 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
 
     def test_compact_visuals_use_only_canonical_market_data(self):
         market=(Path(__file__).resolve().parents[1]/'market.js').read_text(encoding='utf-8')
-        self.assertIn("spotlightSnapshot(ticker)", market)
+        self.assertIn("window.VestraMarket.spotlightSnapshot=function(ticker)", market)
         self.assertIn("dossierRadarAxes(stock)", market)
         self.assertIn("stock.price_history_1y", market)
         self.assertIn("addVerifiedMiniCharts(pick.ticker)", SRC)
