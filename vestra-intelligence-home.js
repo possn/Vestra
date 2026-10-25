@@ -277,6 +277,130 @@
     return pulseInFlight;
   }
 
+  async function showPrebreakoutVisuals(panel, pick) {
+    if (!pick?.ticker || !panel.isConnected) return;
+    const container = document.createElement('div');
+    container.className = 'vi-pb-visuals';
+    const price = document.createElement('section');
+    const profile = document.createElement('section');
+    price.className = 'vi-pb-visual';
+    profile.className = 'vi-pb-visual';
+    const caption = (parent, value) => {
+      const node = document.createElement('p');
+      node.className = 'vi-pb-visual-label';
+      node.textContent = value;
+      parent.append(node);
+    };
+    caption(price, 'PREÇO · HISTÓRICO REAL');
+    caption(profile, 'PERFIL VESTRA · 5 EIXOS');
+    const placeholder = (parent, value) => {
+      const node = document.createElement('p');
+      node.className = 'vi-pb-visual-empty';
+      node.textContent = value;
+      parent.append(node);
+    };
+    placeholder(price, 'Histórico por confirmar');
+    placeholder(profile, 'Fundamentais por confirmar');
+    container.append(price, profile);
+    const foot = panel.querySelector('.vi-pb-foot');
+    if (foot) foot.before(container); else panel.append(container);
+    // Existing lazy dossier loader: no new price endpoint and no quote refresh.
+    const loader = window.VestraMarketData?.hydrateTicker;
+    if (typeof loader !== 'function') return;
+    let stock;
+    try { stock = await loader(pick.ticker); } catch (_) { return; }
+    if (!panel.isConnected || panel.querySelector('.vi-pb-ticker')?.textContent !== pick.ticker || !stock) return;
+    const makeSvg = (width, height, label) => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 '+width+' '+height);
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', label);
+      return svg;
+    };
+    const shape = (svg, type, attrs) => {
+      const node = document.createElementNS('http://www.w3.org/2000/svg', type);
+      Object.entries(attrs).forEach(([key,value]) => node.setAttribute(key, String(value)));
+      svg.append(node);
+      return node;
+    };
+    const history = Array.isArray(stock.price_history_1y) ? stock.price_history_1y : [];
+    const close = history.map(row => Number(typeof row === 'number' ? row : row?.close ?? row?.price))
+      .filter(value => Number.isFinite(value) && value > 0).slice(-120);
+    if (close.length >= 2) {
+      const low = Math.min(...close), high = Math.max(...close), spread = high-low || 1;
+      const points = close.map((value, i) =>
+        (6+i*208/(close.length-1)).toFixed(1)+','+(65-(value-low)*51/spread).toFixed(1)).join(' ');
+      const svg = makeSvg(220, 76, 'Cotação histórica real de '+pick.ticker+' · '+close.length+' observações');
+      shape(svg, 'polyline', {points, fill:'none', stroke:'currentColor', 'stroke-width':2.5,
+        'stroke-linecap':'round', 'stroke-linejoin':'round', 'vector-effect':'non-scaling-stroke'});
+      price.replaceChildren();
+      caption(price, 'PREÇO · ÚLTIMAS '+close.length+' OBSERVAÇÕES');
+      price.append(svg);
+    }
+    const numeric = v => v === null || v === undefined || v === '' ? null :
+      (Number.isFinite(Number(v)) ? Math.max(0,Math.min(100,Number(v))) : null);
+    const blend = groups => {
+      let sum=0, total=0, observed=false;
+      for (const [raw,weight] of groups) {
+        const v=numeric(raw);
+        sum+=(v===null?50:v)*weight;
+        total+=weight;
+        if(v!==null) observed=true;
+      }
+      return observed && total>0 ? sum/total : null;
+    };
+    // Same component fields and weights as market.js dossierRadarAxes.
+    const axes = [
+      numeric(stock.value_pct),
+      blend([[stock.growth_pct,.65],[stock.estimate_momentum_score,.35]]),
+      blend([[stock.quality_pct,.45],[stock.stability_pct,.30],[stock.execution_pct,.25]]),
+      blend([[stock.balance_pct,.40],[stock.cashflow_pct,.35],[stock.earnings_quality_pct,.25]]),
+      null
+    ];
+    // Mirror the existing dossier's dividend axis; non-payers remain N/A.
+    const actual = value => value === null || value === undefined || value === '' ||
+      !Number.isFinite(Number(value)) ? null : Number(value);
+    const asPct = value => value === null ? null : (Math.abs(value)<=1 ? value*100 : value);
+    const yieldPct=asPct(actual(stock.dividend_yield));
+    if (yieldPct !== null && yieldPct>0) {
+      const median=asPct(actual(stock.sector_dividend_yield_median));
+      const yieldScore=median !== null && median>0 ? Math.max(0,Math.min(100,50*yieldPct/median)) :
+        Math.max(0,Math.min(100,yieldPct/4*100));
+      const payout=asPct(actual(stock.payout_ratio));
+      const payoutScore=payout===null?null:payout<=0?50:payout<25?60+payout/25*20:
+        payout<=70?90:payout<=100?90-(payout-70)/30*60:Math.max(0,30-(payout-100));
+      const coverage=actual(stock.dividend_fcf_coverage);
+      const coverageScore=coverage===null?null:coverage>=2?100:coverage>=1?60+(coverage-1)*40:
+        coverage>=0?20+coverage*40:0;
+      axes[4]=blend([[yieldScore,.35],[payoutScore,.30],[coverageScore,.35]]);
+    }
+    if (axes.slice(0,4).some(x=>x!==null)) {
+      const svg=makeSvg(180,180,'Perfil fundamental compacto de '+pick.ticker+
+        ' · Valor, Futuro, Histórico, Saúde e Dividendo (N/A quando não aplicável)');
+      const point=(idx,score,rad=66) => {
+        const angle=(-90+idx*72)*Math.PI/180;
+        return [90+Math.cos(angle)*rad*score/100,90+Math.sin(angle)*rad*score/100];
+      };
+      for(const level of [25,50,75,100]){
+        shape(svg,'polygon',{points:axes.map((_,i)=>point(i,level).map(v=>v.toFixed(1)).join(',')).join(' '),
+          fill:'none',stroke:'currentColor','stroke-opacity':'.19','stroke-width':'1'});
+      }
+      const polygon=axes.map((v,i)=>point(i,v===null?50:v).map(x=>x.toFixed(1)).join(',')).join(' ');
+      shape(svg,'polygon',{points:polygon,fill:'currentColor','fill-opacity':'.12',
+        stroke:'currentColor','stroke-width':'2.5'});
+      axes.forEach((v,i)=>{if(v!==null){const [cx,cy]=point(i,v);
+        shape(svg,'circle',{cx,cy,r:2.5,fill:'currentColor'});}});
+      profile.replaceChildren();
+      caption(profile,'PERFIL FUNDAMENTAL · 5 EIXOS');
+      profile.append(svg);
+      const labels=document.createElement('p');
+      labels.className='vi-pb-visual-axes';
+      labels.textContent=['Valor','Futuro','Histórico','Saúde','Dividendo'].map((label,i)=>
+        label+' '+(axes[i]===null?'N/A':Math.round(axes[i]))).join(' · ');
+      profile.append(labels);
+    }
+  }
+
   async function showPrebreakoutSpotlight(host) {
     let panel = host.querySelector('[data-vi-prebreakout-spotlight]');
     if (!panel) {
@@ -399,6 +523,7 @@
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
           '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
           source+' · Sinal '+pick.date+' · VCP '+(pick.vcpConfirmed === true ? 'confirmada' : 'não confirmada')+' · Volume a secar '+(pick.volumeDry === true ? 'confirmado' : 'não confirmado')+' · Melhor sinal da amostra, não do mercado inteiro · Risco: breakout ainda não confirmado.', true, pick, true);
+        void showPrebreakoutVisuals(panel, pick);
       } else if (hasCanonicalFocus) {
         render('Sem candidato canónico validado',
           'O radar não publicou um sinal principal verificável. Não é correto promover outra ação no Dashboard.',

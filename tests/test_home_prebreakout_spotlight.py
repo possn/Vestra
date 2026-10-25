@@ -19,6 +19,17 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("Risco: breakout ainda não confirmado", SRC)
         self.assertIn("Score técnico, não probabilidade", SRC)
 
+    def test_compact_visuals_use_actual_dossier_evidence(self):
+        self.assertIn("window.VestraMarketData?.hydrateTicker", SRC)
+        self.assertIn("stock.price_history_1y", SRC)
+        self.assertIn("close.length >= 2", SRC)
+        self.assertIn("stock.value_pct", SRC)
+        self.assertIn("stock.dividend_fcf_coverage", SRC)
+        self.assertIn("PERFIL FUNDAMENTAL · 5 EIXOS", SRC)
+        self.assertIn("Histórico por confirmar", SRC)
+        self.assertIn("Fundamentais por confirmar", SRC)
+        self.assertIn("void showPrebreakoutVisuals(panel, pick)", SRC)
+
     def test_navigation_and_safe_text(self):
         self.assertIn("action.dataset.vestraGo='market'", SRC)
         self.assertIn("action.dataset.vestraTicker=pick.ticker", SRC)
