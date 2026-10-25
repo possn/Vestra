@@ -108,7 +108,7 @@
 <script defer="" src="quote-canonical-repair.js?v=2.6"></script>
 <script defer="" src="market-static-universe.js?v=1.30"></script>
 <script defer="" src="market-runtime-loader.js?v=2.3"></script>
-<script defer src="vestra-intelligence-home.js?v=18&amp;rev=20261025-watch-visuals"></script>
+<script defer src="vestra-intelligence-home.js?v=19&amp;rev=20261025-verified-priorities"></script>
 </head>
 <body>
 <!-- Vestra launch mark — identity first, no progress chrome -->
@@ -211,7 +211,26 @@
           <div class="vi-eyebrow">VESTRA / EDIÇÃO DO DIA</div>
           <h2 class="vi-headline">O que importa hoje.</h2>
           <p class="vi-deck">Primeiro a leitura. Depois, as decisões e a evidência.</p>
-          <div class="vi-wealth" aria-label="Resumo do património">
+          <style>
+/* Intelligence 2.0: mobile-first reading density, without changing financial engines. */
+#vestraIntelligenceHome .vi-wealth, .vi-home-overview .vi-wealth {
+  padding: 16px 18px !important; margin-block: 14px 12px !important;
+  border-radius: 18px !important; min-height: 0 !important;
+}
+.vi-home-overview .vi-wealth [data-vi-wealth] { font-size: clamp(30px, 7vw, 42px) !important; line-height: 1.1 !important; }
+.vi-home-overview .vi-wealth [data-vi-assets] { font-size: 12px !important; }
+.vi-home-overview .vi-wealth .vi-wealth-changes { margin-top: 8px !important; font-size: 12px !important; }
+.vi-home-overview .vi-wealth .vi-wealth-open { margin-top: 8px !important; font-size: 13px !important; }
+.vi-priorities .vi-investigation-disclosure { border-top: 1px solid rgba(180,211,202,.2); }
+.vi-priorities .vi-investigation-disclosure > summary { cursor: pointer; list-style: none; padding: 18px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 650; }
+.vi-priorities .vi-investigation-disclosure > summary::-webkit-details-marker { display: none; }
+.vi-priorities .vi-investigation-disclosure > summary::after { content: "＋"; opacity: .8; }
+.vi-priorities .vi-investigation-disclosure[open] > summary::after { content: "−"; }
+.vi-priorities .vi-investigation-disclosure .vi-decisions { margin-top: 8px; }
+.vi-priorities .vi-investigation-disclosure .vi-card { min-height: 0 !important; }
+.vi-priorities .vi-investigation-disclosure .vi-card[hidden] { display: none !important; }
+</style>
+<div class="vi-wealth" aria-label="Resumo do património">
             <div class="vi-wealth-top"><span>PATRIMÓNIO LÍQUIDO</span><button type="button" data-vi-privacy aria-label="Alternar visibilidade dos valores">◉</button></div>
             <strong data-vi-wealth>—</strong>
             <small data-vi-assets>Valores a carregar da carteira</small>
@@ -247,12 +266,15 @@
     </section>
       <section class="vi-priorities" aria-label="Três investigações prioritárias">
         <div class="vi-chapter-index"><span>02 / INVESTIGAÇÃO</span><span>TRÊS PISTAS DE PESQUISA</span></div>
-        <div class="vi-heading"><span class="vi-eyebrow">02 / INVESTIGAÇÃO</span><h3>Onde olhar agora</h3><p>Três pistas de investigação, não recomendações.</p></div>
+        <div class="vi-heading"><span class="vi-eyebrow">02 / INVESTIGAÇÃO</span><h3>Onde olhar agora</h3><p>Sem alertas confirmados, não fabricamos prioridades. Explora as análises disponíveis; cada decisão exige evidência.</p></div>
+        <details class="vi-investigation-disclosure">
+          <summary>Explorar três áreas de investigação</summary>
         <div class="vi-decisions">
-          <button class="vi-card vi-action" type="button" data-vestra-go="portfolio"><span class="vi-number">01</span><span><strong>Rever a concentração da carteira</strong><small data-vestra-portfolio-evidence data-status="missing">Cobertura por confirmar. Verificar pesos e sobreposição.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
-          <button class="vi-card vi-action" type="button" data-vestra-go="market"><span class="vi-number">02</span><span><strong>Investigar oportunidades assimétricas</strong><small>Qualidade, preço, assimetria e risco — validar cada tese antes de agir.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
-          <button class="vi-card vi-action" type="button" data-vestra-go="portfolio"><span class="vi-number">03</span><span><strong>Verificar mudanças na tese</strong><small data-vestra-decision-state data-status="missing">Decision Center ainda sem leitura confirmada nesta sessão.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
+          <button class="vi-card vi-action" type="button" data-vestra-go="portfolio"><span class="vi-number">01</span><span><strong>Verificar concentração e sobreposição</strong><small data-vestra-portfolio-evidence data-status="missing">Cobertura por confirmar. Verificar pesos e sobreposição.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
+          <button class="vi-card vi-action" type="button" data-vestra-go="market"><span class="vi-number">02</span><span><strong>Pesquisar oportunidades com evidência</strong><small>Qualidade, preço, assimetria e risco — validar cada tese antes de agir.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
+          <button class="vi-card vi-action" type="button" data-vestra-go="portfolio"><span class="vi-number">03</span><span><strong>Consultar alterações nas teses</strong><small data-vestra-decision-state data-status="missing">Decision Center ainda sem leitura confirmada nesta sessão.</small></span><span class="vi-arrow" aria-hidden="true">↗</span></button>
         </div>
+        </details>
       </section>
       <section class="vi-canonical-card vi-risk-reading" aria-label="Saúde do património">
         <div class="vi-section-top"><h3>Saúde do património</h3><button type="button" data-vestra-go="portfolio" aria-label="Abrir análise de risco da carteira">↗</button></div>
