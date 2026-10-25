@@ -108,7 +108,7 @@
 <script defer="" src="quote-canonical-repair.js?v=2.6"></script>
 <script defer="" src="market-static-universe.js?v=1.30"></script>
 <script defer="" src="market-runtime-loader.js?v=2.3"></script>
-<script defer src="vestra-intelligence-home.js?v=24&amp;rev=20261025-news-direct"></script>
+<script defer src="vestra-intelligence-home.js?v=25&amp;rev=20261025-weekly-source"></script>
 </head>
 <body>
 <!-- Vestra launch mark — identity first, no progress chrome -->
@@ -236,6 +236,26 @@
 .vi-priorities .vi-investigation-disclosure .vi-decisions { margin-top: 8px; }
 .vi-priorities .vi-investigation-disclosure .vi-card { min-height: 0 !important; }
 .vi-priorities .vi-investigation-disclosure .vi-card[hidden] { display: none !important; }
+/* Mobile editorial density: investigation links are navigation, not hero cards. */
+@media (max-width: 720px) {
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-decisions {
+   display:grid!important; grid-template-columns:1fr!important; gap:6px!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-decisions .vi-action {
+   min-height:0!important; padding:10px 12px!important; border-radius:12px!important;
+   display:grid!important; grid-template-columns:20px minmax(0,1fr) 18px!important; gap:10px!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-decisions .vi-action strong {
+   font:600 15px/1.3 system-ui,sans-serif!important; letter-spacing:-.01em!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-decisions .vi-action small {
+   display:block!important; font:400 11px/1.4 system-ui,sans-serif!important; margin-top:3px!important;
+ }
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-heading {margin-bottom:8px!important}
+ #viewDashboard #vestraIntelligenceHome .vi-priorities .vi-heading p {font-size:12px!important;line-height:1.4!important}
+ #viewDashboard #vestraIntelligenceHome .vi-news-reading,
+ #viewDashboard #vestraIntelligenceHome .vi-events-reading {padding-block:10px!important}
+}
 </style>
 <div class="vi-wealth" aria-label="Resumo do património">
             <div class="vi-wealth-top"><span>PATRIMÓNIO LÍQUIDO</span><button type="button" data-vi-privacy aria-label="Alternar visibilidade dos valores">◉</button></div>
