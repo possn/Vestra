@@ -320,6 +320,25 @@ def completed_sessions(bars, utc_today):
     """Only completed UTC daily sessions are eligible for a verified stage."""
     return [bar for bar in bars if str(bar.get("date") or "")[:10] < utc_today.isoformat()]
 
+def evaluable_recheck(bars, today):
+    """Only a complete, fresh, ordered OHLCV series can invalidate a prior setup."""
+    if len(bars)<220:
+        return False
+    previous=None
+    for bar in bars:
+        try:
+            day=date.fromisoformat(str(bar["date"])[:10])
+            close=float(bar["close"]); high=float(bar["high"]); low=float(bar["low"])
+            volume=float(bar["volume"])
+        except (KeyError,ValueError,TypeError,OverflowError):
+            return False
+        if (previous is not None and day<=previous) or not all(map(math.isfinite,(close,high,low,volume))):
+            return False
+        if not (0<low<=close<=high and volume>=0):
+            return False
+        previous=day
+    return 0 <= (today-previous).days <= 7
+
 def verified_usd_liquidity(local_turnover, currency, fx, today):
     """Normalize quoted cash turnover to USD; unresolved units/rates fail closed."""
     if not isinstance(local_turnover,(int,float)) or not math.isfinite(local_turnover) or local_turnover<=0:
@@ -451,7 +470,7 @@ def main():
             try:
                 frame=data[ticker] if len(group)>1 else data
                 bars=completed_sessions(dataframe_bars(frame),now.date());checked+=bool(bars)
-                if bars:successful.append(ticker)
+                if evaluable_recheck(bars,now.date()):successful.append(ticker)
                 signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0)
                 legacy=scan_bars(ticker,bars,now.date(),strict_quality=False)
                 shadow["compared"]+=1
