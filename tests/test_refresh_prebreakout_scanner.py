@@ -242,6 +242,15 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertIn(focus["ticker"],[row["ticker"] for row in published])
         self.assertNotIn("T074",[row["ticker"] for row in published])
 
+    def test_home_uses_canonical_focus_instead_of_reselecting_by_score(self):
+        script=(ROOT/"vestra-intelligence-home.js").read_text(encoding="utf-8")
+        self.assertIn("const focus = feed.daily_focus;",script)
+        self.assertIn("focus.status === 'research_candidate'",script)
+        self.assertIn("row.ticker === focus.ticker",script)
+        self.assertIn("row.date === focus.signal_date",script)
+        self.assertIn("const pick = hasCanonicalFocus ? canonicalPick : qualified[0];",script)
+        self.assertNotIn("const pick = qualified[0];",script)
+
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
         self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False)))
