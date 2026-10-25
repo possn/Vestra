@@ -19,6 +19,17 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("Risco: breakout ainda não confirmado", SRC)
         self.assertIn("Score técnico, não probabilidade", SRC)
 
+    def test_preview_uses_real_dossier_data_and_canonical_radar(self):
+        self.assertIn("fetchJson", SRC) if "fetchJson" in SRC else self.assertIn("const read=async path", SRC)
+        self.assertIn("data/dossiers-manifest.json", SRC)
+        self.assertIn("data/dossiers/", SRC)
+        self.assertIn("price_history_1y", SRC)
+        self.assertIn("VestraDossierRadarAxes?.(stock)", SRC)
+        self.assertIn("await appendMiniDossier(pick)", SRC)
+        self.assertIn("Histórico de preço insuficiente", SRC)
+        self.assertIn("não prevê breakout", SRC)
+        self.assertNotIn("preview.innerHTML", SRC)
+
     def test_navigation_and_safe_text(self):
         self.assertIn("action.dataset.vestraGo='market'", SRC)
         self.assertIn("action.dataset.vestraTicker=pick.ticker", SRC)
