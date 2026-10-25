@@ -53,6 +53,22 @@ class CrossSlotPersistenceTests(unittest.TestCase):
         earlier={**row,"date":"2026-10-19"}
         self.assertEqual(mod.recent_verified_signals({**previous,"signals":[earlier]},[],now),[])
 
+class CoverageAuditTests(unittest.TestCase):
+    def test_rolling_coverage_counts_only_successful_ohlcv_and_expires(self):
+        now=datetime(2026,10,25,12,tzinfo=timezone.utc)
+        previous={"schema":"vestra_prebreakout_v1","signals":[{"ticker":"OLD"},{"ticker":"FAIL"}],
+                  "coverage_observations_24h":[
+                     {"ticker":"OLD","verified_at":"2026-10-25T02:00:00+00:00"},
+                     {"ticker":"STALE","verified_at":"2026-10-24T10:00:00+00:00"}]}
+        result=mod.scanner_coverage_audit(previous,["FAIL","NEW"],["NEW"],now,10,[],[])
+        self.assertEqual(result["distinct_ohlcv_tickers"],2)
+        self.assertEqual(result["coverage_pct"],20)
+        self.assertEqual(result["rechecked_removed"],1)
+        self.assertEqual(result["not_rechecked_removed"],1)
+        self.assertEqual({r["ticker"] for r in result["observations"]},{"OLD","NEW"})
+        kept=mod.scanner_coverage_audit(previous,["FAIL"],[],now,10,[{"ticker":"OLD"}],[])
+        self.assertEqual(kept["not_rechecked_removed"],0)
+
 class PrebreakoutDataTests(unittest.TestCase):
     def bars(self,trend=True):
         today=date.today()
