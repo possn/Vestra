@@ -60,14 +60,23 @@ class CoverageAuditTests(unittest.TestCase):
                   "coverage_observations_24h":[
                      {"ticker":"OLD","verified_at":"2026-10-25T02:00:00+00:00"},
                      {"ticker":"STALE","verified_at":"2026-10-24T10:00:00+00:00"}]}
-        result=mod.scanner_coverage_audit(previous,["FAIL","NEW"],["NEW"],now,10,[],[])
+        result=mod.scanner_coverage_audit(previous,["NEW"],["NEW"],now,10,[],[])
         self.assertEqual(result["distinct_ohlcv_tickers"],2)
         self.assertEqual(result["coverage_pct"],20)
-        self.assertEqual(result["rechecked_removed"],1)
-        self.assertEqual(result["not_rechecked_removed"],1)
+        self.assertEqual(result["rechecked_removed"],0)
+        self.assertEqual(result["not_rechecked_removed"],2)
         self.assertEqual({r["ticker"] for r in result["observations"]},{"OLD","NEW"})
         kept=mod.scanner_coverage_audit(previous,["FAIL"],[],now,10,[{"ticker":"OLD"}],[])
         self.assertEqual(kept["not_rechecked_removed"],0)
+        # A failed download is not a recheck rejection: only successful names
+        # may enter the invalidation set in the main publication path.
+        scanner=(Path(__file__).resolve().parents[1]/"scripts/refresh_prebreakout_scanner.py").read_text()
+        self.assertIn("recent_verified_signals(previous,successful,now)",scanner)
+        self.assertIn("scanner_coverage_audit(previous,successful,successful,now",scanner)
+        old=mod.scanner_coverage_audit(previous,[],[],now,10,[],[])
+        self.assertEqual(old["rechecked_removed"],0)
+        self.assertEqual(old["not_rechecked_removed"],2)
+
 
 class PrebreakoutDataTests(unittest.TestCase):
     def bars(self,trend=True):
