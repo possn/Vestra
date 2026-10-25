@@ -725,7 +725,8 @@ function calcTotals() {
 window.VestraFinancialTotals = () => {
   if (window.__vestraAppHydrated !== true) return null;
   const t=calcTotals();
-  return { net:t.net, assetsTotal:t.assetsTotal, liabsTotal:t.liabsTotal };
+  return { net:t.net, assetsTotal:t.assetsTotal, liabsTotal:t.liabsTotal,
+    passiveMonthlyEstimate: getDisplayedPassiveAnnual(t) / 12 };
 };
 
 /* ─── COMPOUND INTEREST ENGINE ────────────────────────────── */
