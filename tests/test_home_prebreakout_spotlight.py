@@ -41,7 +41,7 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
 
     def test_watch_visual_assets_have_current_cache_generation(self):
         html=(Path(__file__).resolve().parents[1]/"index.html").read_text(encoding="utf-8")
-        self.assertIn("vestra-intelligence-home.js?v=24&amp;rev=20261025-news-direct",html)
+        self.assertIn("vestra-intelligence-home.js?v=25&amp;rev=20261025-weekly-source",html)
         self.assertIn("vestra-prebreakout-home.css?v=2-watch-visuals",html)
         self.assertIn("void showPrebreakoutVisuals(panel, watch);",SRC)
 
