@@ -224,9 +224,10 @@
     // A count of measured positions is not itself a concentration warning.
     // Keep neutral portfolio navigation reachable without requiring evidence.
     cards[0].hidden = false;
-    if (concentrationObserved) {
-      cards[0].querySelector('strong').textContent = 'Analisar concentração medida';
-    }
+    const concentrationTitle = cards[0].querySelector('strong');
+    if (concentrationTitle) concentrationTitle.textContent = concentrationObserved
+      ? 'Distribuição da carteira · dado observado'
+      : 'Consultar distribuição da carteira';
     // No canonical identified asymmetric opportunity is supplied here.
     // Market exploration is navigation, not an inferred investment signal.
     cards[1].hidden = false;
@@ -234,9 +235,11 @@
     cards[2].hidden = !decisionAlert;
     const count = Number(concentrationObserved) + Number(decisionAlert);
     const summary = area.querySelector('summary');
-    if (summary) summary.textContent = count
-      ? count + (count === 1 ? ' análise com evidência disponível' : ' análises com evidência disponível')
-      : 'Sem decisões confirmadas · explorar áreas de investigação na Carteira e Mercado';
+    if (summary) summary.textContent = decisionAlert
+      ? 'Atenção na carteira · decisão verificada'
+      : concentrationObserved
+        ? 'Carteira medida · explorar informação disponível'
+        : 'Sem alertas confirmados · explorar Carteira e Mercado';
     // Do not conceal primary navigation when evidence is unavailable.
   }
 
@@ -253,8 +256,13 @@
         throw new Error('cobertura insuficiente');
       output.dataset.status = 'observed';
       // Do not expose personal portfolio values in the dashboard preview.
-      output.textContent = 'Carteira · concentração mensurável em ' +
-        snapshot.count + ' posições de mercado · Rever pesos e sobreposição no módulo Carteira · Fonte: motor de concentração existente';
+      // A measured top-three share is information, not evidence of a risk breach.
+      // Never infer a concentration alert from the mere existence of positions.
+      const share = (snapshot.top3 * 100).toLocaleString('pt-PT', {
+        minimumFractionDigits: 1, maximumFractionDigits: 1
+      });
+      output.textContent = '3 maiores posições: ' + share + '% de ' +
+        snapshot.count + ' posições de mercado observadas · Fonte: motor de concentração da carteira · análise, não alerta';
     } catch (_) {
       output.dataset.status = 'missing';
       output.textContent = 'Carteira · concentração não confirmada · abrir Carteira para verificar';

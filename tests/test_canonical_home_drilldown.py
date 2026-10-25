@@ -55,13 +55,21 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertLess(home.index('class="vi-context-chapter"'), home.index('class="vi-priorities"'))
         self.assertEqual(home.count('class="vi-canonical-sections"'), 1)
 
+    def test_observed_concentration_is_not_a_risk_alert(self):
+        js = (ROOT / "vestra-intelligence-home.js").read_text(encoding="utf-8")
+        self.assertIn("snapshot.top3 * 100", js)
+        self.assertIn("análise, não alerta", js)
+        self.assertIn("'Sem alertas confirmados · explorar Carteira e Mercado'", js)
+        self.assertIn("cards[1].hidden = false", js)
+        self.assertIn("cards[2].hidden = !decisionAlert", js)
+
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=7-iphone-density', html)
         self.assertIn('vestra-intelligence.css?v=57-live-pulse', html)
-        self.assertRegex(html, r'vestra-intelligence-home\.js\?v=(?:19|[2-9][0-9])')
+        self.assertRegex(html, r'vestra-intelligence-home\.js\?v=(?:20|[2-9][0-9])')
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
