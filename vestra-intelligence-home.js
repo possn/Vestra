@@ -240,6 +240,21 @@
       : concentrationObserved
         ? 'Carteira medida · explorar informação disponível'
         : 'Sem alertas confirmados · explorar Carteira e Mercado';
+    // Order the only verified warning first; exploration never outranks it.
+    // Restore the stable default order when the warning is absent or stale.
+    const container = cards[0].parentElement;
+    if (container) {
+      container.append(cards[0], cards[1], cards[2]);
+      if (decisionAlert) container.prepend(cards[2]);
+      [...container.querySelectorAll('.vi-action')].forEach((card, index) => {
+        const number = card.querySelector('.vi-number');
+        if (number) number.textContent = String(index + 1).padStart(2, '0');
+      });
+    }
+    const heading = host.querySelector('.vi-priorities .vi-heading p');
+    if (heading) heading.textContent = decisionAlert
+      ? 'Uma situação da carteira merece revisão. Verifica a cobertura e o diagnóstico antes de agir.'
+      : 'Sem alertas confirmados. Explora a carteira e o mercado sem assumir recomendações.';
     // Do not conceal primary navigation when evidence is unavailable.
   }
 
