@@ -78,6 +78,27 @@ class CoverageAuditTests(unittest.TestCase):
         self.assertEqual(old["not_rechecked_removed"],2)
 
 
+class EarningsCoverageTests(unittest.TestCase):
+    def test_stale_calendar_is_unknown_not_clear(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"earnings.json"
+            path.write_text(json.dumps({"schema":"vestra_earnings_events_v1","events":[
+                {"kind":"earnings","ticker":"AAA","date":"2026-10-01"}]}))
+            result=mod.earnings_event_diagnostic(path,date(2026,10,25),["AAA"])
+            self.assertEqual(result["status"],"no_future_event_coverage")
+            self.assertEqual(result["interpretation"],"unknown_not_clear")
+            self.assertIsNone(result["candidates_with_no_known_event"])
+            path.write_text(json.dumps({"schema":"vestra_earnings_events_v1","events":[
+                {"kind":"earnings","ticker":"AAA","date":"2026-10-29"},
+                {"kind":"earnings","ticker":"BBB","date":"2026-11-15"}]}))
+            result=mod.earnings_event_diagnostic(path,date(2026,10,25),["AAA","CCC"])
+            self.assertEqual(result["status"],"partial_calendar_evidence")
+            self.assertEqual(result["upcoming_dates"],{"AAA":"2026-10-29"})
+            self.assertIsNone(result["candidates_with_no_known_event"])
+            path.unlink()
+            self.assertEqual(mod.earnings_event_diagnostic(path,date(2026,10,25),["AAA"])["status"],"unavailable")
+
 class PrebreakoutDataTests(unittest.TestCase):
     def bars(self,trend=True):
         today=date.today()
