@@ -34,6 +34,13 @@ def build(root:Path=ARCHIVE, now:datetime|None=None, days:int=7)->dict:
             checked+=1
             for row in payload["signals"]:
                 if not isinstance(row,dict):continue
+                # A carried signal was not observed again at this scan slot.
+                verified=row.get("scanner_verified_at")
+                if verified is not None:
+                    try:
+                        actual=datetime.fromisoformat(str(verified).replace("Z","+00:00"))
+                        if actual.tzinfo is None or actual.astimezone(timezone.utc)!=ts:continue
+                    except (ValueError,TypeError,AttributeError):continue
                 ticker=str(row.get("ticker") or "").strip().upper()
                 if not ticker or row.get("stage") not in STAGES or row.get("source")!="yahoo:daily_ohlcv":continue
                 try:
