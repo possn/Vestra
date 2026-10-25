@@ -451,16 +451,16 @@ def main():
                     signal["scanner_verified_at"]=now.isoformat()
                     found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
-    # Persist only recent, currency-verified signals not revisited by this slot.
+    # A failed OHLCV download is not an observed rejection. Invalidate only a\n    # ticker whose bars were actually read; per-row 18h expiry still applies.
     # A rechecked ticker which now fails must disappear; never promote stale cache.
     try:
         previous=json.loads(OUTPUT.read_text(encoding="utf-8"))
     except (OSError,ValueError):
         previous={}
-    retained=recent_verified_signals(previous,tickers,now)
+    retained=recent_verified_signals(previous,successful,now)
     by={signal["ticker"]:signal for signal in retained}
     by.update({signal["ticker"]:signal for signal in found})
-    audit=scanner_coverage_audit(previous,tickers,successful,now,eligible,retained,found)
+    audit=scanner_coverage_audit(previous,successful,successful,now,eligible,retained,found)
     published,focus=published_signals_with_focus(list(by.values()),now.date())
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
