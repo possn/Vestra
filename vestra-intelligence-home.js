@@ -383,8 +383,18 @@
         .sort((a,b) => b.score-a.score || a.distancePct-b.distancePct || a.ticker.localeCompare(b.ticker));
       const count = feed.with_ohlcv+'/'+feed.attempted;
       const source = 'OHLCV Yahoo · '+count+' títulos com dados nesta execução · '+new Date(stamp).toLocaleString('pt-PT')+' · Score técnico, não probabilidade';
-      if (qualified.length) {
-        const pick = qualified[0];
+      // New feeds publish a canonical, quality-ranked focus from the backend.
+      // Never silently replace a deliberate abstention with the legacy score leader.
+      // Older feeds without daily_focus keep the original fallback.
+      const focus = feed.daily_focus;
+      const hasCanonicalFocus = focus && typeof focus === 'object';
+      const canonicalPick = hasCanonicalFocus && focus.status === 'research_candidate'
+        ? qualified.find(row => row.ticker === focus.ticker &&
+            row.date === focus.signal_date &&
+            row.distancePct <= 4 && row.vcpConfirmed === true &&
+            row.source === 'yahoo:daily_ohlcv') : null;
+      const pick = hasCanonicalFocus ? canonicalPick : qualified[0];
+      if (pick) {
         render(pick.ticker+' · Próximo do pivot',
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
           '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
