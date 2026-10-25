@@ -304,11 +304,24 @@
     container.append(price, profile);
     const foot = panel.querySelector('.vi-pb-foot');
     if (foot) foot.before(container); else panel.append(container);
-    // Existing lazy dossier loader: no new price endpoint and no quote refresh.
+    // The Market core is lazy: the Home must resolve published dossier shards
+    // without forcing market.js (or the quote refresh engine) to start.
     const loader = window.VestraMarketData?.hydrateTicker;
-    if (typeof loader !== 'function') return;
-    let stock;
-    try { stock = await loader(pick.ticker); } catch (_) { return; }
+    let stock=null;
+    try {
+      if (typeof loader === 'function') stock=await loader(pick.ticker);
+      if (!stock) {
+        const manifestResponse=await fetch('./data/dossiers-manifest.json',{cache:'no-store'});
+        if (!manifestResponse.ok) return;
+        const manifest=await manifestResponse.json();
+        const bucket=manifest?.tickers?.[pick.ticker];
+        if (typeof bucket!=='string' || !/^[A-Z0-9]{2}$/.test(bucket)) return;
+        const dossierResponse=await fetch('./data/dossiers/'+bucket+'.json',{cache:'no-store'});
+        if (!dossierResponse.ok) return;
+        stock=(await dossierResponse.json())?.stocks?.[pick.ticker];
+        if (stock?.ticker!==pick.ticker) return;
+      }
+    } catch (_) { return; }
     if (!panel.isConnected || panel.querySelector('.vi-pb-ticker')?.textContent !== pick.ticker || !stock) return;
     const makeSvg = (width, height, label) => {
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
