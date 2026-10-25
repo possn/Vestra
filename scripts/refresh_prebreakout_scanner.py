@@ -195,9 +195,16 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
         support=verified("baseSupportRetention10",0,1)
         # Resilience is a tie-breaker within the established three-point
         # quality bucket; avoid overpowering stronger evidence or score.
-        quality=int(pos is not None and pos>=80)+int(contraction is not None and contraction<=.75)+int(liquidity is not None and liquidity>=20_000_000)
+        # Technical readiness precedes excess liquidity. Liquidity above the
+        # scanner's mandatory $5m floor is a tie-break, not another signal
+        # of likely breakout direction. Avoid double-counting money volume
+        # against genuine contraction and constructive base position.
+        structural=int(pos is not None and pos>=80)+int(contraction is not None and contraction<=.75)
         resilience=int(support is not None and support>=.8)
-        return (-quality,-resilience,(as_of-date.fromisoformat(str(row["date"])[:10])).days,-float(row["score"]),float(row["distancePct"]),row["ticker"])
+        deep_liquidity=int(liquidity is not None and liquidity>=20_000_000)
+        return (-structural,-resilience,-deep_liquidity,
+                (as_of-date.fromisoformat(str(row["date"])[:10])).days,
+                -float(row["score"]),float(row["distancePct"]),row["ticker"])
     best=min(eligible,key=focus_rank)
     return {"status":"research_candidate","ticker":best["ticker"],
             "signal_date":best["date"],"stage":best["stage"],

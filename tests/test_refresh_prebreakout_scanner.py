@@ -205,6 +205,24 @@ class PrebreakoutDataTests(unittest.TestCase):
         weak_today=signal("WEAK_TODAY",0,99,65)
         self.assertEqual(mod.daily_focus([weak_today,old],today)["ticker"],"OLD")
 
+    def test_focus_prioritizes_structure_over_excess_liquidity(self):
+        today=date.today()
+        def candidate(ticker,position,atr,liquidity,score):
+            return {"ticker":ticker,"date":today.isoformat(),"stage":"pré-breakout",
+                    "source":"yahoo:daily_ohlcv","vcpConfirmed":True,
+                    "volumeDry":True,"volumeConfirmed":False,
+                    "distancePct":2,"score":score,
+                    "quantitativeDiagnostics":{"basePositionPct":position,
+                        "atrContractionRatio":atr,
+                        "averageDollarVolume20":liquidity,
+                        "baseSupportRetention10":.9}}
+        structural=candidate("STRUCTURE",90,.60,10_000_000,75)
+        liquid=candidate("LIQUID",70,1.0,250_000_000,95)
+        self.assertEqual(mod.daily_focus([liquid,structural],today)["ticker"],"STRUCTURE")
+        # If structure is equivalent, prefer verified market capacity.
+        tie=candidate("TIE",90,.60,50_000_000,70)
+        self.assertEqual(mod.daily_focus([structural,tie],today)["ticker"],"TIE")
+
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
         self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False)))
