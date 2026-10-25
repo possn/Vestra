@@ -39,6 +39,17 @@ class HistoricalObservationTests(unittest.TestCase):
    (folder/"2026-10-15-slot1.json").write_text(json.dumps(payload))
    result=mod.build(Path(temp),datetime(2026,10,15,14,tzinfo=timezone.utc))
    self.assertEqual(result["observations"],[])
+ def test_carried_rows_do_not_renew_historical_observation(self):
+  with tempfile.TemporaryDirectory() as temp:
+   folder=Path(temp)/"2026"/"slots";folder.mkdir(parents=True)
+   row={"ticker":"AAA","score":70,"date":"2026-10-15","stage":"pré-breakout",
+        "source":"yahoo:daily_ohlcv","scanner_verified_at":"2026-10-15T08:10:00+00:00"}
+   for slot,ts in [(1,"2026-10-15T08:10:00+00:00"),(2,"2026-10-15T14:10:00+00:00")]:
+    (folder/f"2026-10-15-slot{slot}.json").write_text(json.dumps({"schema":"vestra_prebreakout_v1",
+      "generated_at":ts,"scan_slot_utc":slot,"signals":[row]}))
+   result=mod.build(Path(temp),datetime(2026,10,15,15,tzinfo=timezone.utc))
+   self.assertEqual(result["observations"][0]["observed_at"],"2026-10-15T08:10:00+00:00")
+   self.assertEqual(result["observations"][0]["scan_slot_utc"],1)
  def test_missing_archive_never_fabricates_signals(self):
   with tempfile.TemporaryDirectory() as temp:
    result=mod.build(Path(temp),datetime(2026,10,15,tzinfo=timezone.utc))
