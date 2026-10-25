@@ -1456,7 +1456,14 @@ function dashboardMoneyTextNodes(root) {
   if (!root) return [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes = [];
-  while (walker.nextNode()) nodes.push(walker.currentNode);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    // Editorial Home has its own canonical privacy renderer. Mutating these
+    // same text nodes via the legacy WeakMap mask can leave values concealed
+    // after the second tap or restore stale snapshots.
+    if (node.parentElement?.closest('#vestraIntelligenceHome')) continue;
+    nodes.push(node);
+  }
   return nodes;
 }
 
