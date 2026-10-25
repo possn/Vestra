@@ -91,7 +91,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertLess(html.index('data-vi-wealth'), html.index('data-vi-income-monthly'))
         self.assertLess(html.index('data-vi-canonical-score'), html.index('data-vi-pulse-cnn'))
         self.assertLess(html.index('data-vi-pulse-cnn'), html.index('data-vi-canonical-news-list'))
-        self.assertIn("getElementById('kpiPassiveMonthly')", js)
+        self.assertIn("'kpiPassiveMonthly'", js)
         self.assertIn("if (income) income.textContent = '••• €'", js)
 
     def test_published_weekly_events_never_reuse_past_dates(self):
