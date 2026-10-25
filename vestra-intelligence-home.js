@@ -387,8 +387,8 @@
       // Never silently replace a deliberate abstention with the legacy score leader.
       // Older feeds without daily_focus keep the original fallback.
       const focus = feed.daily_focus;
-      const hasCanonicalFocus = focus && typeof focus === 'object';
-      const canonicalPick = hasCanonicalFocus && focus.status === 'research_candidate'
+      const hasCanonicalFocus = Object.prototype.hasOwnProperty.call(feed, 'daily_focus');
+      const canonicalPick = hasCanonicalFocus && focus && typeof focus === 'object' && focus.status === 'research_candidate'
         ? qualified.find(row => row.ticker === focus.ticker &&
             row.date === focus.signal_date &&
             row.distancePct <= 4 && row.vcpConfirmed === true &&
@@ -398,7 +398,11 @@
         render(pick.ticker+' · Próximo do pivot',
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
           '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
-          source+' · Melhor sinal da amostra analisada, não de todo o mercado.', true, pick, true);
+          source+' · Sinal '+pick.date+' · VCP '+(pick.vcpConfirmed === true ? 'confirmada' : 'não confirmada')+' · Volume a secar '+(pick.volumeDry === true ? 'confirmado' : 'não confirmado')+' · Melhor sinal da amostra, não do mercado inteiro · Risco: breakout ainda não confirmado.', true, pick, true);
+      } else if (hasCanonicalFocus) {
+        render('Sem candidato canónico validado',
+          'O radar não publicou um sinal principal verificável. Não é correto promover outra ação no Dashboard.',
+          source+' · Sem substituição independente do sinal canónico.', true);
       } else if (rows.length) {
         const watch = rows.sort((a,b)=>b.score-a.score || a.ticker.localeCompare(b.ticker))[0];
         render('Sem pré-breakout qualificado hoje',
