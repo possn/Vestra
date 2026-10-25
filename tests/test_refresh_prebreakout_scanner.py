@@ -188,6 +188,23 @@ class PrebreakoutDataTests(unittest.TestCase):
         self.assertEqual(mod.daily_focus([*invalid,candidate],today)["ticker"],"VALID")
         self.assertEqual(mod.daily_focus(invalid,today)["status"],"no_qualified_setup")
 
+    def test_focus_prefers_current_setup_when_quality_is_equal(self):
+        today=date.today()
+        def signal(ticker,age,score,position=90):
+            return {"ticker":ticker,"date":(today-timedelta(days=age)).isoformat(),
+                "stage":"pré-breakout","source":"yahoo:daily_ohlcv",
+                "vcpConfirmed":True,"volumeDry":True,"volumeConfirmed":False,
+                "distancePct":2.0,"score":score,
+                "quantitativeDiagnostics":{"basePositionPct":position,
+                    "atrContractionRatio":.7,"averageDollarVolume20":25_000_000,
+                    "baseSupportRetention10":.9}}
+        old=signal("OLD",4,95)
+        fresh=signal("FRESH",0,70)
+        self.assertEqual(mod.daily_focus([old,fresh],today)["ticker"],"FRESH")
+        # Verified technical quality retains precedence over recency.
+        weak_today=signal("WEAK_TODAY",0,99,65)
+        self.assertEqual(mod.daily_focus([weak_today,old],today)["ticker"],"OLD")
+
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
         self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False)))
