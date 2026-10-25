@@ -357,15 +357,26 @@
       blend([[stock.balance_pct,.40],[stock.cashflow_pct,.35],[stock.earnings_quality_pct,.25]]),
       null
     ];
-    // Dividend axis is only known when the company pays a dividend.
-    const yieldRaw=Number(stock.dividend_yield);
-    if (Number.isFinite(yieldRaw) && yieldRaw>0) {
-      // Do not approximate the dossier's dividend computation from an incomplete subset.
-      axes[4]=null;
+    // Mirror the existing dossier's dividend axis; non-payers remain N/A.
+    const actual = value => value === null || value === undefined || value === '' ||
+      !Number.isFinite(Number(value)) ? null : Number(value);
+    const asPct = value => value === null ? null : (Math.abs(value)<=1 ? value*100 : value);
+    const yieldPct=asPct(actual(stock.dividend_yield));
+    if (yieldPct !== null && yieldPct>0) {
+      const median=asPct(actual(stock.sector_dividend_yield_median));
+      const yieldScore=median !== null && median>0 ? Math.max(0,Math.min(100,50*yieldPct/median)) :
+        Math.max(0,Math.min(100,yieldPct/4*100));
+      const payout=asPct(actual(stock.payout_ratio));
+      const payoutScore=payout===null?null:payout<=0?50:payout<25?60+payout/25*20:
+        payout<=70?90:payout<=100?90-(payout-70)/30*60:Math.max(0,30-(payout-100));
+      const coverage=actual(stock.dividend_fcf_coverage);
+      const coverageScore=coverage===null?null:coverage>=2?100:coverage>=1?60+(coverage-1)*40:
+        coverage>=0?20+coverage*40:0;
+      axes[4]=blend([[yieldScore,.35],[payoutScore,.30],[coverageScore,.35]]);
     }
     if (axes.slice(0,4).some(x=>x!==null)) {
       const svg=makeSvg(180,180,'Perfil fundamental compacto de '+pick.ticker+
-        ' · Valor, Futuro, Histórico, Saúde; Dividendo não apresentado sem cálculo canónico');
+        ' · Valor, Futuro, Histórico, Saúde e Dividendo (N/A quando não aplicável)');
       const point=(idx,score,rad=66) => {
         const angle=(-90+idx*72)*Math.PI/180;
         return [90+Math.cos(angle)*rad*score/100,90+Math.sin(angle)*rad*score/100];
@@ -380,11 +391,11 @@
       axes.forEach((v,i)=>{if(v!==null){const [cx,cy]=point(i,v);
         shape(svg,'circle',{cx,cy,r:2.5,fill:'currentColor'});}});
       profile.replaceChildren();
-      caption(profile,'PERFIL FUNDAMENTAL · 4 EIXOS');
+      caption(profile,'PERFIL FUNDAMENTAL · 5 EIXOS');
       profile.append(svg);
       const labels=document.createElement('p');
       labels.className='vi-pb-visual-axes';
-      labels.textContent=['Valor','Futuro','Histórico','Saúde'].map((label,i)=>
+      labels.textContent=['Valor','Futuro','Histórico','Saúde','Dividendo'].map((label,i)=>
         label+' '+(axes[i]===null?'N/A':Math.round(axes[i]))).join(' · ');
       profile.append(labels);
     }
