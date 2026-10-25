@@ -2890,8 +2890,8 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   });
 
   loadWatchlist();
-  window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,upsertRemoteStock,toggleWatch,
-    spotlightSnapshot(ticker){
+  window.VestraMarket={ensureLoaded,openTicker,openPortfolioAsset,resolvePortfolioStock,upsertRemoteStock,toggleWatch};
+  window.VestraMarket.spotlightSnapshot=function(ticker){
       const stock=M.byTicker.get(String(ticker||'').toUpperCase());
       if(!stock)return null;
       const prices=(Array.isArray(stock.price_history_1y)?stock.price_history_1y:[])
@@ -2900,7 +2900,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         .slice(-90);
       const axes=dossierRadarAxes(stock).map(axis=>({label:axis.label,value:axis.value}));
       return {ticker:stock.ticker,prices,axes};
-    }
   };
 
   function applyActionMapFilter(map,requested=''){
