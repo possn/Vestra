@@ -333,7 +333,7 @@ def verified_usd_liquidity(local_turnover, currency, fx, today):
     return local_turnover*factor*local/usd
 
 def recent_verified_signals(previous:dict, scanned_tickers:list[str], now:datetime)->list[dict]:
-    """Carry forward same-session validated candidates, never stale or rechecked rows."""
+    """Carry forward only per-ticker recently verified candidates, never stale/rechecked rows."""
     if previous.get("schema")!="vestra_prebreakout_v1" or previous.get("quality_model")!="vcp_before_pivot_v3":
         return []
     try:
@@ -349,6 +349,9 @@ def recent_verified_signals(previous:dict, scanned_tickers:list[str], now:dateti
             continue
         try:
             signal_day=date.fromisoformat(row["date"])
+            verified=datetime.fromisoformat(row["scanner_verified_at"].replace("Z","+00:00"))
+            if verified.tzinfo is None or not 0 <= (now-verified).total_seconds() <= 18*3600:
+                continue
             q=row["quantitativeDiagnostics"]
             amount=q["averageDollarVolume20"]
             if (row.get("source")!="yahoo:daily_ohlcv" or
@@ -415,6 +418,7 @@ def main():
                     diagnostics["averageDollarVolume20"]=round(usd_turnover,2)
                     diagnostics["liquidityFxReferenceDate"]=fx["ecb_reference_date"]
                     diagnostics["liquidityCurrencySource"]="yahoo_fast_info"
+                    signal["scanner_verified_at"]=now.isoformat()
                     found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
     # Persist only recent, currency-verified signals not revisited by this slot.
