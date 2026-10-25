@@ -690,24 +690,28 @@
     const list = host.querySelector('[data-vi-canonical-event-list]');
     if (!list || list.dataset.publishedEvents === 'true') return;
     try {
-      const response = await fetch('./data/earnings-events.json', {cache:'no-store'});
+      // The archive (earnings-events.json) contains PAST quarters only.
+      // Upcoming company dates live in the canonical refreshed overlay.
+      const response = await fetch('./data/earnings-latest.json', {cache:'no-store'});
       if (!response.ok) return;
       const feed = await response.json();
-      if (feed?.schema !== 'vestra_earnings_events_v1' || !Array.isArray(feed.events)) return;
+      const generated = Date.parse(feed?.generated_at);
+      if (feed?.schema !== 'vestra_earnings_latest_v1' || !Array.isArray(feed.stocks) ||
+          !Number.isFinite(generated) || generated > Date.now() + 3600000 ||
+          Date.now() - generated > 72 * 3600000) return;
       const today = new Date();
-      const start = [today.getUTCFullYear(), String(today.getUTCMonth()+1).padStart(2,'0'), String(today.getUTCDate()).padStart(2,'0')].join('-');
-      const weekEnd = new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate()+7)).toISOString().slice(0,10);
-      const events = feed.events.filter(item =>
-        item?.kind === 'earnings' && typeof item.date === 'string' &&
-        /^\\d{4}-\\d{2}-\\d{2}$/.test(item.date) &&
-        item.date >= start && item.date < weekEnd &&
-        typeof item.ticker === 'string' && /^[A-Z0-9.\\-]{1,16}$/.test(item.ticker) &&
-        typeof item.source === 'string' && item.source.trim()
-      ).sort((a,b)=>a.date.localeCompare(b.date) || a.ticker.localeCompare(b.ticker)).slice(0,3);
+      const start = today.toISOString().slice(0,10);
+      const end = new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate()+7)).toISOString().slice(0,10);
+      const events = feed.stocks.filter(item => {
+        const day = item?.analyst_next_earnings_date;
+        return typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) &&
+          day >= start && day < end && typeof item?.ticker === 'string' &&
+          /^[A-Z0-9.\-]{1,16}$/.test(item.ticker);
+      }).sort((a,b) => a.analyst_next_earnings_date.localeCompare(b.analyst_next_earnings_date) ||
+        a.ticker.localeCompare(b.ticker)).slice(0,3);
       if (!events.length) {
-        // Don't claim there are no earnings; the source currently has no future coverage.
         if (!list.querySelector('.vi-editorial-tile')) list.textContent =
-          'Agenda futura sem cobertura publicada · consultar o calendário completo ↗';
+          'Sem datas futuras verificáveis neste feed · abrir calendário completo ↗';
         return;
       }
       if (document.querySelector('#dashboardWeeklyEventsCard .weekly-events-list .weekly-event')) return;
@@ -721,15 +725,15 @@
         body.className = 'vi-editorial-content';
         const title = document.createElement('p');
         title.className = 'vi-editorial-title';
-        title.textContent = event.ticker + ' · resultados · ' + event.date;
+        title.textContent = event.ticker + ' · resultados previstos · ' + event.analyst_next_earnings_date;
         const detail = document.createElement('small');
         detail.className = 'vi-editorial-detail';
-        detail.textContent = 'Fonte: ' + event.source;
+        detail.textContent = 'Fonte: atualização Yahoo Finance · datas sujeitas a alteração';
         body.append(title,detail); tile.append(number,body); return tile;
       });
       list.replaceChildren(...nodes);
       list.dataset.publishedEvents = 'true';
-    } catch (_) { /* Offline/invalid feed is not evidence of no events. */ }
+    } catch (_) { /* Network or invalid feed is not evidence of no future events. */ }
   }
 
   function syncDecisionCenter(host) {

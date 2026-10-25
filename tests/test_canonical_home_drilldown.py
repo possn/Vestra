@@ -96,8 +96,8 @@ class CanonicalHomeTest(unittest.TestCase):
 
     def test_published_weekly_events_never_reuse_past_dates(self):
         js = (ROOT / "vestra-intelligence-home.js").read_text(encoding="utf-8")
-        self.assertIn("fetch('./data/earnings-events.json'", js)
-        self.assertIn("item.date >= start && item.date < weekEnd", js)
+        self.assertIn("fetch('./data/earnings-latest.json'", js)
+        self.assertIn("day >= start && day < end", js)
         self.assertIn("void loadPublishedWeeklyEvents(host);", js)
 
     def test_editorial_privacy_uses_canonical_controller(self):
@@ -113,7 +113,7 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=7-iphone-density', html)
         self.assertIn('vestra-intelligence.css?v=57-live-pulse', html)
-        self.assertRegex(html, r'vestra-intelligence-home\.js\?v=(?:29|[2-9][0-9])')
+        self.assertRegex(html, r'vestra-intelligence-home\.js\?v=(?:30|[3-9][0-9])')
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
