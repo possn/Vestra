@@ -32,6 +32,18 @@ class ObservedTransitionsTests(unittest.TestCase):
             self.assertEqual(ledger["last_observed"]["AAA"]["last_observed_at"],"2026-10-15T20:10:00+00:00")
             self.assertFalse(any(event["to_stage"]=="invalidado" for event in ledger["events"]))
 
+    def test_carried_signal_does_not_create_observed_transition(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
+            for slot,stage in [(1,"compressão"),(2,"pré-breakout")]:
+                row={"ticker":"AAA","stage":stage,"source":"yahoo:daily_ohlcv",
+                     "score":72,"date":"2026-10-15","scanner_verified_at":"2026-10-15T08:10:00+00:00"}
+                ts=f"2026-10-15T{slot*6+2:02d}:10:00+00:00"
+                (folder/f"2026-10-15-slot{slot}.json").write_text(json.dumps({
+                    "schema":"vestra_prebreakout_v1","generated_at":ts,"scan_slot_utc":slot,"signals":[row]}))
+            ledger=mod.build(Path(tmp))
+            self.assertEqual(ledger["events"],[])
+
     def test_invalid_archive_is_ignored(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);folder=root/"2026"/"slots";folder.mkdir(parents=True)
