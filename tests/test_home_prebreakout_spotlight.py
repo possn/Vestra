@@ -21,6 +21,9 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
 
     def test_compact_visuals_use_actual_dossier_evidence(self):
         self.assertIn("window.VestraMarketData?.hydrateTicker", SRC)
+        self.assertIn("fetch('./data/dossiers-manifest.json'", SRC)
+        self.assertIn("fetch('./data/dossiers/'+bucket+'.json'", SRC)
+        self.assertIn("stock?.ticker!==pick.ticker", SRC)
         self.assertIn("stock.price_history_1y", SRC)
         self.assertIn("close.length >= 2", SRC)
         self.assertIn("stock.value_pct", SRC)
