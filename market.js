@@ -1264,7 +1264,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     ];
   }
 
-  function dossierRadarPoint(index,value,radius=82){
+  // Reuse the dossier's exact five-axis model in compact Home previews.\n  window.VestraDossierRadarAxes = dossierRadarAxes;\n\n  function dossierRadarPoint(index,value,radius=82){
     const angle=(-90+index*72)*Math.PI/180;
     const r=radius*(Math.max(0,Math.min(100,value))/100);
     return {x:120+Math.cos(angle)*r,y:120+Math.sin(angle)*r};
