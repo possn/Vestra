@@ -332,6 +332,36 @@ def verified_usd_liquidity(local_turnover, currency, fx, today):
         return None
     return local_turnover*factor*local/usd
 
+def recent_verified_signals(previous:dict, scanned_tickers:list[str], now:datetime)->list[dict]:
+    """Carry forward same-session validated candidates, never stale or rechecked rows."""
+    if previous.get("schema")!="vestra_prebreakout_v1" or previous.get("quality_model")!="vcp_before_pivot_v3":
+        return []
+    try:
+        generated=datetime.fromisoformat(previous["generated_at"].replace("Z","+00:00"))
+        if generated.tzinfo is None or not 0 <= (now-generated).total_seconds() <= 18*3600:
+            return []
+    except (KeyError,AttributeError,TypeError,ValueError):
+        return []
+    observed=set(scanned_tickers)
+    retained=[]
+    for row in previous.get("signals",[]):
+        if not isinstance(row,dict) or row.get("ticker") in observed:
+            continue
+        try:
+            signal_day=date.fromisoformat(row["date"])
+            q=row["quantitativeDiagnostics"]
+            amount=q["averageDollarVolume20"]
+            if (row.get("source")!="yahoo:daily_ohlcv" or
+                signal_day!=now.date() and (now.date()-signal_day).days not in (1,2,3) or
+                not isinstance(amount,(int,float)) or not math.isfinite(amount) or amount<5_000_000 or
+                not q.get("liquidityCurrencySource") or not q.get("liquidityFxReferenceDate") or
+                row.get("vcpConfirmed") is not True):
+                continue
+        except (KeyError,TypeError,ValueError,AttributeError):
+            continue
+        retained.append(row)
+    return retained
+
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
@@ -387,11 +417,18 @@ def main():
                     diagnostics["liquidityCurrencySource"]="yahoo_fast_info"
                     found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
-    # Do not retain previously accepted setups after the stricter criteria reject them.
-    by={signal["ticker"]:signal for signal in found}
+    # Persist only recent, currency-verified signals not revisited by this slot.
+    # A rechecked ticker which now fails must disappear; never promote stale cache.
+    try:
+        previous=json.loads(OUTPUT.read_text(encoding="utf-8"))
+    except (OSError,ValueError):
+        previous={}
+    retained=recent_verified_signals(previous,tickers,now)
+    by={signal["ticker"]:signal for signal in retained}
+    by.update({signal["ticker"]:signal for signal in found})
     published,focus=published_signals_with_focus(list(by.values()),now.date())
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
