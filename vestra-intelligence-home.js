@@ -780,7 +780,7 @@
       const candidates = Array.from(source?.querySelectorAll(itemSelector) || []).filter(node => {
         if (!isWeekly) return true;
         const date = node.dataset.weeklyEventDate;
-        if (typeof date !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return false;
+        if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
         const day = new Date(date + 'T12:00:00');
         return Number.isFinite(day.getTime()) && day >= weekStart && day < weekEnd;
       }).slice(0, limit);
