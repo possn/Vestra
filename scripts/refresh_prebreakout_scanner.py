@@ -212,6 +212,19 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
             "success_probability":None,"probability_calibrated":False,
             "reason":"ranked_verified_setup_not_a_forecast_or_buy_signal"}
 
+def published_signals_with_focus(signals:list[dict],as_of:date,limit:int=75)->tuple[list[dict],dict]:
+    """Keep the featured candidate in the public list even when capped."""
+    if limit<1:
+        raise ValueError("published signal limit must be positive")
+    ordered=sorted(signals,key=lambda row:({"pré-breakout":0,"compressão":1}[row["stage"]],-row["score"],row["ticker"]))
+    focus=daily_focus(ordered,as_of)
+    visible=ordered[:limit]
+    if focus["status"]=="research_candidate" and all(row["ticker"]!=focus["ticker"] for row in visible):
+        featured=next(row for row in ordered if row["ticker"]==focus["ticker"])
+        visible=sorted(visible[:-1]+[featured],
+                       key=lambda row:({"pré-breakout":0,"compressão":1}[row["stage"]],-row["score"],row["ticker"]))
+    return visible,focus
+
 def quality_shadow_record(legacy:dict, strict:dict|None)->dict:
     """Research-only point-in-time evidence; never a public recommendation."""
     return {"ticker":legacy["ticker"],"date":legacy["date"],"stage":legacy["stage"],
@@ -331,12 +344,13 @@ def main():
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
     # Do not retain previously accepted setups after the stricter criteria reject them.
     by={signal["ticker"]:signal for signal in found}
+    published,focus=published_signals_with_focus(list(by.values()),now.date())
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"single_scan_slot_not_full_universe","new_signals":len(found),"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
-             "daily_focus":daily_focus(list(by.values()),now.date()),"signals":sorted(by.values(),key=lambda s:({"pré-breakout":0,"compressão":1}[s["stage"]],-s["score"],s["ticker"]))[:75]}
+             "daily_focus":focus,"signals":published}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
 
