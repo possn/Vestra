@@ -28,7 +28,15 @@ def verify(root:Path=ROOT):
     for row in feed["signals"]:
         candidate=observations.get(row["ticker"])
         if candidate is None:raise ValueError("latest observed ticker missing from historical index")
-        if candidate.get("observed_at")!=utc.isoformat():raise ValueError("latest observation timestamp mismatch")
+        verified=row.get("scanner_verified_at")
+        if verified is not None:
+            observed=datetime.fromisoformat(str(verified).replace("Z","+00:00"))
+            if observed.tzinfo is None or observed.astimezone(timezone.utc)>utc:
+                raise ValueError("invalid signal verification time")
+            expected=observed.astimezone(timezone.utc).isoformat()
+        else:
+            expected=utc.isoformat()  # Legacy archives lacked per-row provenance.
+        if candidate.get("observed_at")!=expected:raise ValueError("observation timestamp mismatch")
         if candidate.get("stage")!=row["stage"] or candidate.get("signal_date")!=row["date"]:
             raise ValueError("latest observation stage/date mismatch")
         if candidate.get("current") is not False:raise ValueError("history promoted to current")

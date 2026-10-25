@@ -34,6 +34,12 @@ def build(archive:Path=ARCHIVE)->dict:
         seen=set()
         for item in feed["signals"]:
             if not isinstance(item,dict):continue
+            verified=item.get("scanner_verified_at")
+            if verified is not None:
+                try:
+                    actual=datetime.fromisoformat(str(verified).replace("Z","+00:00"))
+                    if actual.tzinfo is None or actual.astimezone(timezone.utc)!=stamp:continue
+                except (ValueError,TypeError,AttributeError):continue
             ticker=str(item.get("ticker") or "").strip().upper()
             stage=item.get("stage")
             if not ticker or stage not in STAGES or item.get("source")!="yahoo:daily_ohlcv" or ticker in seen:continue
