@@ -915,7 +915,8 @@
     const nativeText = (nativeChanges?.innerText || nativeChanges?.textContent || '').replace(/\s+/g, ' ').trim();
 
     const privacy = document.getElementById('btnDashboardPrivacy');
-    const concealed = privacy?.getAttribute('aria-pressed') === 'true';
+    const concealed = document.getElementById('viewDashboard')?.dataset.valuesHidden === 'true' ||
+      privacy?.getAttribute('aria-pressed') === 'true';
     const viPrivacy = host.querySelector('[data-vi-privacy]');
     if (viPrivacy) {
       viPrivacy.setAttribute('aria-pressed', concealed ? 'true' : 'false');
@@ -1016,7 +1017,19 @@
     host.setAttribute('data-theme', document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
     host.addEventListener('click', event => {
       if (event.target.closest('button[data-vi-privacy]')) {
-        document.getElementById('btnDashboardPrivacy')?.click();
+        // Use the canonical controller directly: the classic Dashboard button
+        // may be hidden, detached or not hydrated in the editorial Home.
+        if (typeof window.toggleDashboardPrivacy === 'function') {
+          window.toggleDashboardPrivacy();
+        } else {
+          const nativeButton = document.getElementById('btnDashboardPrivacy');
+          if (nativeButton && typeof nativeButton.onclick === 'function') {
+            nativeButton.onclick();
+          } else {
+            // Never indicate that a privacy change occurred if no controller exists.
+            return;
+          }
+        }
         syncWealthHero(host);
         return;
       }
