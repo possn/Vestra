@@ -365,12 +365,41 @@ def recent_verified_signals(previous:dict, scanned_tickers:list[str], now:dateti
         retained.append(row)
     return retained
 
+def scanner_coverage_audit(previous:dict, scanned:list[str], successful:list[str], now:datetime, eligible:int, retained:list[dict], fresh:list[dict])->dict:
+    """24h observed OHLCV coverage; attempted names never count as successful."""
+    horizon=24*3600
+    old={}
+    if previous.get("schema")=="vestra_prebreakout_v1":
+        for item in previous.get("coverage_observations_24h",[]):
+            if not isinstance(item,dict) or not isinstance(item.get("ticker"),str):
+                continue
+            try:
+                verified=datetime.fromisoformat(item["verified_at"].replace("Z","+00:00"))
+                if verified.tzinfo is not None and 0 <= (now-verified).total_seconds() <= horizon:
+                    old[item["ticker"]]=verified
+            except (KeyError,AttributeError,TypeError,ValueError):
+                continue
+    for ticker in successful:
+        old[ticker]=now
+    seen=set(scanned)
+    previous_rows=previous.get("signals",[]) if isinstance(previous.get("signals"),list) else []
+    prior={r["ticker"]:r for r in previous_rows if isinstance(r,dict) and isinstance(r.get("ticker"),str)}
+    present={r["ticker"] for r in retained+fresh if isinstance(r,dict) and isinstance(r.get("ticker"),str)}
+    invalidated=sum(t in seen and t not in present for t in prior)
+    expired=sum(t not in seen and t not in present for t in prior)
+    return {"window_hours":24,"distinct_ohlcv_tickers":len(old),
+            "eligible_universe":eligible,
+            "coverage_pct":round(100*len(old)/eligible,2) if eligible else None,
+            "rechecked_removed":invalidated,"not_rechecked_removed":expired,
+            "definitions":"OHLCV coverage is observed, not eligible signal coverage; removed counts are previous published rows absent in this scan",
+            "observations":[{"ticker":t,"verified_at":v.isoformat()} for t,v in sorted(old.items())]}
+
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]))
-    found=[];shadow_cases=[];checked=0;failures=[]
+    found=[];shadow_cases=[];checked=0;successful=[];failures=[]
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
     except (OSError,ValueError):
@@ -388,6 +417,7 @@ def main():
             try:
                 frame=data[ticker] if len(group)>1 else data
                 bars=completed_sessions(dataframe_bars(frame),now.date());checked+=bool(bars)
+                if bars:successful.append(ticker)
                 signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0)
                 legacy=scan_bars(ticker,bars,now.date(),strict_quality=False)
                 shadow["compared"]+=1
@@ -430,9 +460,10 @@ def main():
     retained=recent_verified_signals(previous,tickers,now)
     by={signal["ticker"]:signal for signal in retained}
     by.update({signal["ticker"]:signal for signal in found})
+    audit=scanner_coverage_audit(previous,tickers,successful,now,eligible,retained,found)
     published,focus=published_signals_with_focus(list(by.values()),now.date())
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
