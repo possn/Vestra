@@ -113,6 +113,9 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('class="vi-regime-grid" hidden aria-hidden="true"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('Explorar a seguir', html)
+        js = (ROOT / 'vestra-intelligence-home.js').read_text(encoding='utf-8')
+        self.assertIn("'kpiPassiveMonthly2'", js)
+        self.assertIn("'portfolioMonthlyValue'", js)
 
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
