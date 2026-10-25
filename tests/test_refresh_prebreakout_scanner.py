@@ -11,6 +11,20 @@ spec=importlib.util.spec_from_file_location("prebreakout",ROOT/"scripts/refresh_
 mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
+class CurrencyLiquidityTests(unittest.TestCase):
+    def test_units_and_fx_are_verified(self):
+        fx={"ecb_reference_date":"2026-10-23","rates_to_eur":{"USD":0.9,"GBP":1.2,"EUR":1.0}}
+        d=date(2026,10,25)
+        self.assertAlmostEqual(mod.verified_usd_liquidity(6_000_000,"USD",fx,d),6_000_000)
+        self.assertAlmostEqual(mod.verified_usd_liquidity(6_000_000,"GBP",fx,d),8_000_000)
+        self.assertAlmostEqual(mod.verified_usd_liquidity(600_000_000,"GBp",fx,d),8_000_000)
+        self.assertAlmostEqual(mod.verified_usd_liquidity(600_000_000,"GBX",fx,d),8_000_000)
+        self.assertAlmostEqual(mod.verified_usd_liquidity(9_000_000,"EUR",fx,d),10_000_000)
+        self.assertIsNone(mod.verified_usd_liquidity(9_000_000,None,fx,d))
+        self.assertIsNone(mod.verified_usd_liquidity(9_000_000,"CAD",fx,d))
+        self.assertIsNone(mod.verified_usd_liquidity(9_000_000,"EUR",fx,date(2026,11,10)))
+        self.assertIsNone(mod.verified_usd_liquidity(float("nan"),"USD",fx,d))
+
 class PrebreakoutDataTests(unittest.TestCase):
     def bars(self,trend=True):
         today=date.today()

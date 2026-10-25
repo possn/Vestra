@@ -36,7 +36,7 @@ def historical_breakout_dates(clean: list[dict], start: int, stop: int) -> list[
             dates.append(bar["day"].isoformat())
     return dates
 
-def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_quality: bool=True):
+def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_quality: bool=True, liquidity_floor: float=5_000_000):
     """Identify a contracting base, not a prediction of future returns."""
     today=today or datetime.now(timezone.utc).date()
     clean=[]
@@ -127,7 +127,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     # a thinly traded or weak base can appear deceptively close to a pivot.
     base_high,base_low=bounds(clean[-40:])
     base_position=(current-base_low)/(base_high-base_low) if base_high>base_low else 0
-    if strict_quality and (dollar_volume20 is None or dollar_volume20<5_000_000 or base_position<.65):
+    if strict_quality and (dollar_volume20 is None or dollar_volume20<liquidity_floor or base_position<.65):
         return None
     # The last 10 sessions should not repeatedly close in the weak lower
     # half of the base. Use closed bars only, no forward/market data.
@@ -312,12 +312,36 @@ def completed_sessions(bars, utc_today):
     """Only completed UTC daily sessions are eligible for a verified stage."""
     return [bar for bar in bars if str(bar.get("date") or "")[:10] < utc_today.isoformat()]
 
+def verified_usd_liquidity(local_turnover, currency, fx, today):
+    """Normalize quoted cash turnover to USD; unresolved units/rates fail closed."""
+    if not isinstance(local_turnover,(int,float)) or not math.isfinite(local_turnover) or local_turnover<=0:
+        return None
+    if not isinstance(currency,str) or not currency.strip():
+        return None
+    unit=currency.strip()
+    currency_code="GBP" if unit in ("GBP","GBp","GBX") else unit.upper()
+    factor=.01 if unit in ("GBp","GBX") else 1.0
+    try:
+        reference=date.fromisoformat(str(fx["ecb_reference_date"])[:10])
+        rates=fx["rates_to_eur"]
+        local=float(rates[currency_code]);usd=float(rates["USD"])
+    except (KeyError,ValueError,TypeError,OverflowError):
+        return None
+    if not 0 <= (today-reference).days <= 7 or not all(math.isfinite(x) and x>0 for x in (local,usd)):
+        return None
+    return local_turnover*factor*local/usd
+
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]))
     found=[];shadow_cases=[];checked=0;failures=[]
+    try:
+        fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
+    except (OSError,ValueError):
+        fx={}  # A missing exchange-rate file may never authorize liquidity.
+    currency_checked=0;currency_rejected=0
     # Shadow evaluation only; never route legacy candidates to public signals.
     shadow={"legacy_eligible":0,"strict_eligible":0,"legacy_only":0,"strict_only":0,"neither":0,"compared":0}
     for start in range(0,len(tickers),15):
@@ -330,7 +354,7 @@ def main():
             try:
                 frame=data[ticker] if len(group)>1 else data
                 bars=completed_sessions(dataframe_bars(frame),now.date());checked+=bool(bars)
-                signal=scan_bars(ticker,bars,now.date())
+                signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0)
                 legacy=scan_bars(ticker,bars,now.date(),strict_quality=False)
                 shadow["compared"]+=1
                 shadow["legacy_eligible"]+=int(legacy is not None)
@@ -340,13 +364,33 @@ def main():
                 shadow["neither"]+=int(legacy is None and signal is None)
                 if legacy is not None:
                     shadow_cases.append(quality_shadow_record(legacy,signal))
-                if signal:found.append(signal)
+                if signal:
+                    # Only after structural screening: avoid per-ticker metadata calls
+                    # for the entire rotating universe. Quote currency must come from
+                    # the provider, not ticker suffix or a guessed exchange.
+                    currency_checked+=1
+                    try:
+                        currency=yf.Ticker(ticker).fast_info.get("currency")
+                    except (AttributeError,KeyError,TypeError,ValueError):
+                        currency=None
+                    diagnostics=signal["quantitativeDiagnostics"]
+                    local_turnover=diagnostics.get("averageDollarVolume20")
+                    usd_turnover=verified_usd_liquidity(local_turnover,currency,fx,now.date())
+                    if usd_turnover is None or usd_turnover<5_000_000:
+                        currency_rejected+=1
+                        continue
+                    diagnostics["averageLocalTurnover20"]=local_turnover
+                    diagnostics["quoteCurrency"]=currency
+                    diagnostics["averageDollarVolume20"]=round(usd_turnover,2)
+                    diagnostics["liquidityFxReferenceDate"]=fx["ecb_reference_date"]
+                    diagnostics["liquidityCurrencySource"]="yahoo_fast_info"
+                    found.append(signal)
             except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
     # Do not retain previously accepted setups after the stricter criteria reject them.
     by={signal["ticker"]:signal for signal in found}
     published,focus=published_signals_with_focus(list(by.values()),now.date())
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"single_scan_slot_not_full_universe","new_signals":len(found),"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"single_scan_slot_not_full_universe","new_signals":len(found),"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
