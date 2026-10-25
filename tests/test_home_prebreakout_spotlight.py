@@ -22,7 +22,11 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
     def test_real_mini_charts_use_dossier_history_and_canonical_axes(self):
         market=(Path(__file__).resolve().parents[1]/'market.js').read_text(encoding='utf-8')
         css=(Path(__file__).resolve().parents[1]/'vestra-prebreakout-home.css').read_text(encoding='utf-8')
-        self.assertIn('window.VestraDossierRadarAxes = dossierRadarAxes', market)
+        core=(Path(__file__).resolve().parents[1]/'vestra-dossier-radar-core.js').read_text(encoding='utf-8')
+        html=(Path(__file__).resolve().parents[1]/'index.html').read_text(encoding='utf-8')
+        self.assertIn('window.VestraDossierRadarAxes = dossierRadarAxes', core)
+        self.assertIn('return window.VestraDossierRadarAxes(s)', market)
+        self.assertIn('vestra-dossier-radar-core.js?v=1', html)
         self.assertIn("fetch('./data/dossiers-manifest.json'", SRC)
         self.assertIn('dossier.price_history_1y', SRC)
         self.assertIn('window.VestraDossierRadarAxes(dossier)', SRC)
