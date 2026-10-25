@@ -98,6 +98,15 @@ class PrebreakoutDataTests(unittest.TestCase):
         candidate=mod.scan_bars("TEST",rows)
         self.assertIsNotNone(candidate)
         q=candidate["quantitativeDiagnostics"]
+        self.assertEqual(q["high52WeekWindowSessions"],252)
+        self.assertEqual(q["high52WeekBasis"],"last_252_closed_ohlcv_bars_asof_signal")
+        expected_high=max(x["high"] for x in rows[-252:])
+        self.assertAlmostEqual(q["high52Week"],expected_high,places=4)
+        self.assertAlmostEqual(q["closeToHigh52WeekPct"],round(rows[-1]["close"]/expected_high*100,2),places=2)
+        # The ongoing bar must never be a future observation.
+        extended=rows+[{"date":(date.today()+timedelta(days=1)).isoformat(),
+                        "close":99999,"high":100000,"low":99998,"volume":200000}]
+        assert mod.scan_bars("TEST",extended,today=date.today()) is None
         self.assertGreater(q["atrPct14"],0)
         self.assertGreater(q["atrContractionRatio"],0)
         self.assertGreater(q["averageDollarVolume20"],0)

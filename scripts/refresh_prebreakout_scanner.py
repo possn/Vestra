@@ -134,7 +134,14 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     midpoint=(base_high+base_low)/2
     upper_half_closes=sum(b["close"]>=midpoint for b in clean[-10:])
     support_retention=round(upper_half_closes/10,2)
-    diagnostics={"baseUpperHalfCloses10":upper_half_closes,"baseSupportRetention10":support_retention,"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
+    # Closed-session high across 252 bars: research diagnostic, not a gate or score.
+    high52=max(bar["high"] for bar in clean[-252:]) if len(clean)>=252 else None
+    high52_proximity=round(current/high52*100,2) if high52 is not None and high52>0 else None
+    diagnostics={"high52Week":round(high52,5) if high52 is not None else None,
+                 "closeToHigh52WeekPct":high52_proximity,
+                 "high52WeekWindowSessions":252 if high52 is not None else None,
+                 "high52WeekBasis":"last_252_closed_ohlcv_bars_asof_signal",
+                 "baseUpperHalfCloses10":upper_half_closes,"baseSupportRetention10":support_retention,"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
                  "averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None,"basePositionPct":round(base_position*100,1),
                  "qualityGates":(["sma50_gt_sma150_gt_sma200","price_above_sma50","dollar_volume20_gte_5m","base_position_gte_65pct"] if strict_quality else [])}
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
