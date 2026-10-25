@@ -33,6 +33,12 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("Fundamentais por confirmar", SRC)
         self.assertIn("void showPrebreakoutVisuals(panel, pick)", SRC)
 
+    def test_compression_watch_keeps_real_visuals_without_qualification(self):
+        self.assertIn("source+' · Vigilância, não recomendação.',true,watch,false);", SRC)
+        self.assertIn("void showPrebreakoutVisuals(panel, watch);", SRC)
+        self.assertIn("void showPrebreakoutVisuals(panel, pick);", SRC)
+        self.assertIn("if(active && pick?.ticker)", SRC)
+
     def test_navigation_and_safe_text(self):
         self.assertIn("action.dataset.vestraGo='market'", SRC)
         self.assertIn("action.dataset.vestraTicker=pick.ticker", SRC)
