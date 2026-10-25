@@ -639,6 +639,51 @@
     }
   }
 
+  // Independent, bounded news hydration. The old Dashboard DOM is optional.
+  async function loadPublishedNews(host) {
+    const list = host.querySelector('[data-vi-canonical-news-list]');
+    if (!list || list.dataset.publishedFeed === 'true') return;
+    try {
+      const response = await fetch('./data/dashboard-news.json', {cache:'no-store'});
+      if (!response.ok) return;
+      const feed = await response.json();
+      const generated = Date.parse(feed?.generated_at);
+      if (!Number.isFinite(generated) || generated > Date.now() + 3600000 ||
+          Date.now() - generated > 72 * 3600000 || !Array.isArray(feed.items)) return;
+      const articles = feed.items.filter(item => {
+        const published = Date.parse(item?.published);
+        return typeof item?.title === 'string' && item.title.trim().length >= 15 &&
+          typeof item?.source === 'string' && item.source.trim().length > 0 &&
+          typeof item?.link === 'string' && /^https:\/\//.test(item.link) &&
+          Number.isFinite(published) && published <= Date.now() + 3600000 &&
+          Date.now() - published <= 72 * 3600000;
+      }).sort((a,b) => (Number(b.impact_score) || 0) - (Number(a.impact_score) || 0) ||
+        Date.parse(b.published) - Date.parse(a.published)).slice(0,3);
+      if (!articles.length) return;
+      const fragment = document.createDocumentFragment();
+      articles.forEach((item,index) => {
+        const tile = document.createElement('div');
+        tile.className = 'vi-editorial-tile';
+        const ordinal = document.createElement('span');
+        ordinal.className = 'vi-editorial-index';
+        ordinal.textContent = String(index+1).padStart(2,'0');
+        const content = document.createElement('div');
+        content.className = 'vi-editorial-content';
+        const headline = document.createElement('p');
+        headline.className = 'vi-editorial-title';
+        headline.textContent = item.title.slice(0,130);
+        const meta = document.createElement('small');
+        meta.className = 'vi-editorial-detail';
+        meta.textContent = item.source + ' · ' + new Date(item.published).toLocaleDateString('pt-PT');
+        content.append(headline,meta); tile.append(ordinal,content); fragment.append(tile);
+      });
+      // Prefer the canonical rendered news cards once they exist; otherwise
+      // display the real published feed, never an empty-session assertion.
+      const native = document.querySelector('#vestraDailyNewsCard .vestra-daily-news-item');
+      if (!native) { list.replaceChildren(fragment); list.dataset.publishedFeed='true'; }
+    } catch (_) { /* No false no-news claim when offline. */ }
+  }
+
   function syncDecisionCenter(host) {
     const output = host.querySelector('[data-vestra-decision-state]');
     if (!output) return;
@@ -810,51 +855,6 @@
       host.querySelector('.vi-risk-donut')?.style.removeProperty('--vi-risk-percent');
       set('risk', 'Sem cobertura suficiente para calcular concentração. Consultar a análise da carteira.');
     }
-  }
-
-  // Independent, bounded news hydration. The old Dashboard DOM is optional.
-  async function loadPublishedNews(host) {
-    const list = host.querySelector('[data-vi-canonical-news-list]');
-    if (!list || list.dataset.publishedFeed === 'true') return;
-    try {
-      const response = await fetch('./data/dashboard-news.json', {cache:'no-store'});
-      if (!response.ok) return;
-      const feed = await response.json();
-      const generated = Date.parse(feed?.generated_at);
-      if (!Number.isFinite(generated) || generated > Date.now() + 3600000 ||
-          Date.now() - generated > 72 * 3600000 || !Array.isArray(feed.items)) return;
-      const articles = feed.items.filter(item => {
-        const published = Date.parse(item?.published);
-        return typeof item?.title === 'string' && item.title.trim().length >= 15 &&
-          typeof item?.source === 'string' && item.source.trim().length > 0 &&
-          typeof item?.link === 'string' && /^https:\/\//.test(item.link) &&
-          Number.isFinite(published) && published <= Date.now() + 3600000 &&
-          Date.now() - published <= 72 * 3600000;
-      }).sort((a,b) => (Number(b.impact_score) || 0) - (Number(a.impact_score) || 0) ||
-        Date.parse(b.published) - Date.parse(a.published)).slice(0,3);
-      if (!articles.length) return;
-      const fragment = document.createDocumentFragment();
-      articles.forEach((item,index) => {
-        const tile = document.createElement('div');
-        tile.className = 'vi-editorial-tile';
-        const ordinal = document.createElement('span');
-        ordinal.className = 'vi-editorial-index';
-        ordinal.textContent = String(index+1).padStart(2,'0');
-        const content = document.createElement('div');
-        content.className = 'vi-editorial-content';
-        const headline = document.createElement('p');
-        headline.className = 'vi-editorial-title';
-        headline.textContent = item.title.slice(0,130);
-        const meta = document.createElement('small');
-        meta.className = 'vi-editorial-detail';
-        meta.textContent = item.source + ' · ' + new Date(item.published).toLocaleDateString('pt-PT');
-        content.append(headline,meta); tile.append(ordinal,content); fragment.append(tile);
-      });
-      // Prefer the canonical rendered news cards once they exist; otherwise
-      // display the real published feed, never an empty-session assertion.
-      const native = document.querySelector('#vestraDailyNewsCard .vestra-daily-news-item');
-      if (!native) { list.replaceChildren(fragment); list.dataset.publishedFeed='true'; }
-    } catch (_) { /* No false no-news claim when offline. */ }
   }
 
   function syncWealthHero(host) {
