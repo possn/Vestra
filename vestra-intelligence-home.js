@@ -948,10 +948,12 @@
     if (income) {
       // Mirror the already calculated dashboard KPI, never infer income from
       // capital, yield or dividend forecasts when no verified KPI is available.
-      const nativeIncome = document.getElementById('kpiPassiveMonthly');
-      const monthly = (nativeIncome?.textContent || '').replace(/\\s+/g, ' ').trim();
-      income.textContent = monthly && /\\d/.test(monthly) &&
-        !/a carregar|calculando|indisponível/i.test(monthly) ? monthly.slice(0,48) : 'Por confirmar';
+      // Read only confirmed, already-rendered monthly income KPIs.
+      const ids = ['kpiPassiveMonthly', 'kpiPassiveMonthly2', 'portfolioMonthlyValue'];
+      const monthly = ids.map(id => (document.getElementById(id)?.textContent || '').trim())
+        .find(v => v.includes('€') && Array.from(v).some(c => c >= '0' && c <= '9')
+          && !/indisponível|calculando|ocult|a carregar/i.test(v));
+      income.textContent = monthly ? monthly.slice(0,48) : 'Por confirmar';
     }
     if (changes) {
       const valid = nativeText && !/a carregar|calculando|indisponível/i.test(nativeText);
