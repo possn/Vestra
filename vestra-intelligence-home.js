@@ -484,6 +484,31 @@
       if(value!==undefined) node.textContent=String(value);
       return node;
     };
+    // The research link mirrors the scanner's canonical focus; it never
+    // independently promotes a high-scoring watchlist entry to a candidate.
+    const updateResearchFocus = (pick, stamp) => {
+      const card = host.querySelector('.vi-priorities .vi-action[data-vestra-go="market"]');
+      if (!card) return;
+      const title = card.querySelector('strong');
+      const detail = card.querySelector('small');
+      if (!title || !detail) return;
+      if (!pick) {
+        title.textContent = 'Explorar investigação no Mercado';
+        detail.textContent = 'Sem candidato canónico válido nesta leitura. Consultar o scanner sem inferir recomendação.';
+        card.removeAttribute('data-vestra-ticker');
+        return;
+      }
+      title.textContent = pick.ticker + ' · investigar pré-breakout';
+      detail.textContent = 'Distância à resistência ' + pick.distancePct.toFixed(2).replace('.', ',') +
+        '% · Score técnico ' + Math.round(pick.score) +
+        '/100 · OHLCV ' + pick.date + ' · leitura publicada ' +
+        new Date(stamp).toLocaleDateString('pt-PT') +
+        ' · não é breakout confirmado nem recomendação.';
+      // Keep the established Market navigation; detailed ticker navigation
+      // remains the responsibility of the scanner spotlight button.
+      card.removeAttribute('data-vestra-ticker');
+    };
+    updateResearchFocus(null, null);
     const render = (title, detail, evidence, active, pick=null, qualified=false) => {
       panel.replaceChildren();
       const top=element('div','vi-pb-top');
@@ -584,6 +609,7 @@
             row.distancePct <= 4 && row.vcpConfirmed === true &&
             row.source === 'yahoo:daily_ohlcv') : null;
       const pick = hasCanonicalFocus ? canonicalPick : qualified[0];
+      updateResearchFocus(hasCanonicalFocus ? canonicalPick : null, stamp);
       if (pick) {
         render(pick.ticker+' · Próximo do pivot',
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
