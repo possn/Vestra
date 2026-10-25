@@ -529,6 +529,8 @@
       if (!texts.length) {
         list.replaceChildren();
         const placeholder = document.createElement('p');
+        // Keep the honest no-data state in the same compact editorial type scale.
+        placeholder.className = 'vi-editorial-title';
         placeholder.textContent = fallback;
         list.append(placeholder);
         return;
