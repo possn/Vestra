@@ -109,7 +109,7 @@ class CanonicalHomeTest(unittest.TestCase):
 
     def test_market_regime_deduplicated_for_mobile(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn('class="vi-regime-source-detail"', html)
+        self.assertIn('class="vi-regime vi-regime-source-detail"', html)
         self.assertIn('class="vi-regime-grid" hidden aria-hidden="true"', html)
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('Explorar a seguir', html)
