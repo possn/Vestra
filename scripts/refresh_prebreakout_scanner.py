@@ -277,19 +277,20 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
             continue
         universe[ticker]=max(cap,universe.get(ticker,0))
     ordered=sorted(universe,key=lambda t:(-universe[t],t))
-    anchors=ordered[:40]
-    rest=ordered[40:1600]
-    # Four scheduled scans per day should sample different names, not repeat
-    # the same 110 rotating stocks at 02/08/14/20 UTC.
+    # A daily-bar scanner gains no fresh evidence by rereading fixed anchors
+    # on all four slots. Rotate the complete eligible universe instead.
     if not 0<=slot<=3:raise ValueError("invalid six-hour scan slot")
-    offset=(((when-date(2026,10,13)).days*4+slot)*110)%max(1,len(rest))
+    if not ordered:return []
+    offset=(((when-date(2026,10,13)).days*4+slot)*150)%len(ordered)
+    rotated=ordered[offset:]+ordered[:offset]
     watchlist=[]
     for ticker in watch or []:
-        if ticker in universe and ticker not in anchors and ticker not in watchlist:
+        if ticker in universe and ticker not in watchlist:
             watchlist.append(ticker)
             if len(watchlist)>=25:break
-    rotation=[t for t in rest[offset:]+rest[:offset] if t not in anchors and t not in watchlist][:110-len(watchlist)]
-    return anchors+watchlist+rotation
+    # Historical watch candidates are rechecked, never promoted from cache.
+    rotation=[t for t in rotated if t not in watchlist][:150-len(watchlist)]
+    return watchlist+rotation
 
 def dataframe_bars(frame):
     rows=[]
@@ -390,7 +391,7 @@ def main():
     by={signal["ticker"]:signal for signal in found}
     published,focus=published_signals_with_focus(list(by.values()),now.date())
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"single_scan_slot_not_full_universe","new_signals":len(found),"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
