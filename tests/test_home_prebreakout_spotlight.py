@@ -39,6 +39,12 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("void showPrebreakoutVisuals(panel, pick);", SRC)
         self.assertIn("if(active && pick?.ticker)", SRC)
 
+    def test_watch_visual_assets_have_current_cache_generation(self):
+        html=(Path(__file__).resolve().parents[1]/"index.html").read_text(encoding="utf-8")
+        self.assertIn("vestra-intelligence-home.js?v=18&amp;rev=20261025-watch-visuals",html)
+        self.assertIn("vestra-prebreakout-home.css?v=2-watch-visuals",html)
+        self.assertIn("void showPrebreakoutVisuals(panel, watch);",SRC)
+
     def test_navigation_and_safe_text(self):
         self.assertIn("action.dataset.vestraGo='market'", SRC)
         self.assertIn("action.dataset.vestraTicker=pick.ticker", SRC)
