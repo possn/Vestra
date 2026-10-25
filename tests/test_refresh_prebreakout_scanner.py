@@ -103,26 +103,24 @@ class PrebreakoutDataTests(unittest.TestCase):
     def test_scan_slots_rotate_across_a_broader_universe(self):
         stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY","market_cap":10_000_000_000-i}
                 for i in range(700)]
-        scan0=mod.candidates(stocks,date(2026,10,14),0)
-        scan1=mod.candidates(stocks,date(2026,10,14),1)
-        scan2=mod.candidates(stocks,date(2026,10,14),2)
-        self.assertEqual(len(scan0),150)
-        self.assertEqual(scan0[:40],scan1[:40])
-        self.assertTrue(set(scan0[40:]).isdisjoint(scan1[40:]))
-        self.assertTrue(set(scan1[40:]).isdisjoint(scan2[40:]))
-        with self.assertRaises(ValueError):mod.candidates(stocks,date(2026,10,14),4)
+        day=date(2026,10,14)
+        scans=[mod.candidates(stocks,day,slot) for slot in range(4)]
+        self.assertTrue(all(len(scan)==150 for scan in scans))
+        self.assertEqual(len(set().union(*(set(scan) for scan in scans))),600)
+        for i in range(3):
+            self.assertTrue(set(scans[i]).isdisjoint(scans[i+1]))
+        with self.assertRaises(ValueError):mod.candidates(stocks,day,4)
 
     def test_watchlist_rechecks_old_signals_without_expanding_scan_budget(self):
         stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY","market_cap":10_000_000_000-i} for i in range(700)]
         day=date(2026,10,15)
         normal=mod.candidates(stocks,day,1)
-        tracked="T0670"
-        self.assertNotIn(tracked,normal)
+        tracked=next(f"T{i:04d}" for i in range(700) if f"T{i:04d}" not in normal)
         chosen=mod.candidates(stocks,day,1,[tracked,"T0001",tracked,"NOT-IN-UNIVERSE"])
         self.assertEqual(len(chosen),150)
-        self.assertEqual(chosen[:40],normal[:40])
-        self.assertEqual(chosen[40],tracked)
+        self.assertEqual(chosen[0],tracked)
         self.assertEqual(len(chosen),len(set(chosen)))
+        self.assertTrue(set(chosen[2:]).issubset(set(normal)))
 
     def test_published_watchlist_is_time_bounded_and_historical_only(self):
         with tempfile.TemporaryDirectory() as tmp:
