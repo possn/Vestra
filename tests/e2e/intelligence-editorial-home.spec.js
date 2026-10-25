@@ -155,6 +155,13 @@ test('iPhone/WebKit: premium Home reads existing patrimonial KPI with privacy co
   await expect(home.locator('[data-vi-wealth]')).toHaveText('••• €');
   await privacy.click();
   await expect(page.locator('#btnDashboardPrivacy')).toHaveAttribute('aria-pressed', 'false');
+  await expect(home.locator('[data-vi-wealth]')).not.toHaveText('••• €');
+  await expect(home.locator('[data-vi-assets]')).not.toHaveText('Valores ocultos');
+  await privacy.click();
+  await expect(home.locator('[data-vi-wealth]')).toHaveText('••• €');
+  await privacy.click();
+  await expect(home.locator('[data-vi-wealth]')).not.toHaveText('••• €');
+  await expect(privacy).toHaveAttribute('aria-pressed', 'false');
   await home.locator('.vi-wealth-open').click();
   await expect(page.locator('#viewDashboard .v2-home-stage')).toBeVisible();
 });
