@@ -170,7 +170,26 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
         return {"status":"no_qualified_setup","ticker":None,
                 "success_probability":None,"probability_calibrated":False,
                 "reason":"no_current_prebreakout_with_verified_contractions_and_drying_volume"}
-    best=min(eligible,key=lambda row:(-float(row["score"]),float(row["distancePct"]),row["ticker"]))
+    # Rank by verified structural quality, not just the legacy heuristic score.
+    # Existing eligibility remains unchanged; unavailable diagnostics never earn a bonus.
+    def focus_rank(row):
+        q=row.get("quantitativeDiagnostics")
+        q=q if isinstance(q,dict) else {}
+        def verified(name,lower=None,upper=None):
+            v=q.get(name)
+            if type(v) not in (int,float) or not math.isfinite(v):
+                return None
+            if lower is not None and v<lower:return None
+            if upper is not None and v>upper:return None
+            return float(v)
+        pos=verified("basePositionPct",0,100)
+        contraction=verified("atrContractionRatio",0.01,5)
+        liquidity=verified("averageDollarVolume20",0)
+        # Prefer candidates tightly positioned near the base high, with
+        # contracting ATR and demonstrable liquidity. Heuristic, not calibrated.
+        quality=int(pos is not None and pos>=80)+int(contraction is not None and contraction<=.75)+int(liquidity is not None and liquidity>=20_000_000)
+        return (-quality,-float(row["score"]),float(row["distancePct"]),row["ticker"])
+    best=min(eligible,key=focus_rank)
     return {"status":"research_candidate","ticker":best["ticker"],
             "signal_date":best["date"],"stage":best["stage"],
             "technical_score":best["score"],"distance_to_pivot_pct":best["distancePct"],
