@@ -176,6 +176,18 @@ class PrebreakoutDataTests(unittest.TestCase):
         del missing["quantitativeDiagnostics"]["baseSupportRetention10"]
         self.assertEqual(mod.daily_focus([missing,stable],today)["ticker"],"STABLE")
 
+    def test_focus_rejects_nonfinite_and_out_of_range_input(self):
+        today=date.today()
+        candidate={"ticker":"VALID","date":today.isoformat(),"stage":"pré-breakout",
+            "source":"yahoo:daily_ohlcv","vcpConfirmed":True,"volumeDry":True,
+            "volumeConfirmed":False,"distancePct":2.0,"score":70}
+        invalid=[{**candidate,"ticker":"NAN_DISTANCE","distancePct":float("nan"),"score":99},
+                 {**candidate,"ticker":"NEG_SCORE","score":-10},
+                 {**candidate,"ticker":"OVER_SCORE","score":1000},
+                 {**candidate,"ticker":"INFINITE_DISTANCE","distancePct":float("inf") }]
+        self.assertEqual(mod.daily_focus([*invalid,candidate],today)["ticker"],"VALID")
+        self.assertEqual(mod.daily_focus(invalid,today)["status"],"no_qualified_setup")
+
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
         self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False)))
