@@ -301,7 +301,7 @@
       const article=(label)=>{const section=document.createElement('section');section.className='vi-pb-mini-block';
         const heading=document.createElement('p');heading.className='vi-pb-mini-label';heading.textContent=label;section.append(heading);return section;};
       const history=(Array.isArray(dossier.price_history_1y)?dossier.price_history_1y:[])
-        .filter(x=>/^\\d{4}-\\d{2}-\\d{2}$/.test(String(x?.date||'')) && Number.isFinite(x?.close) && x.close>0)
+        .filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x?.date||'')) && Number.isFinite(x?.close) && x.close>0)
         .sort((a,b)=>a.date.localeCompare(b.date)).slice(-52);
       if(history.length>=3){
         const chart=article('COTAÇÃO · HISTÓRICO PUBLICADO');
