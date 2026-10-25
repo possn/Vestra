@@ -134,7 +134,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     midpoint=(base_high+base_low)/2
     upper_half_closes=sum(b["close"]>=midpoint for b in clean[-10:])
     support_retention=round(upper_half_closes/10,2)
-    diagnostics={"baseUpperHalfCloses10":upper_half_closes,"baseSupportRetention10":support_retention,round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
+    diagnostics={"baseUpperHalfCloses10":upper_half_closes,"baseSupportRetention10":support_retention,"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
                  "averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None,"basePositionPct":round(base_position*100,1),
                  "qualityGates":(["sma50_gt_sma150_gt_sma200","price_above_sma50","dollar_volume20_gte_5m","base_position_gte_65pct"] if strict_quality else [])}
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
