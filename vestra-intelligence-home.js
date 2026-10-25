@@ -546,6 +546,9 @@
         render('Sem pré-breakout qualificado hoje',
           'Base em compressão. Ainda sem confirmação completa; não é uma oportunidade antecipatória validada.',
           source+' · Vigilância, não recomendação.',true,watch,false);
+        // A compression watch still has a real company dossier: present its
+        // observed price and fundamental context without promoting its stage.
+        void showPrebreakoutVisuals(panel, watch);
       } else {
         render('Nenhum setup elegível', 'O radar publicado não encontrou candidatos válidos nesta amostra.',
           source+' · Não inferir ausência de oportunidades no mercado inteiro.',true);
