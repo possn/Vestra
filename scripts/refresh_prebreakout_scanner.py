@@ -401,6 +401,33 @@ def scanner_coverage_audit(previous:dict, scanned:list[str], successful:list[str
             "definitions":"OHLCV coverage is observed, not eligible signal coverage; removed counts are previous published rows absent in this scan",
             "observations":[{"ticker":t,"verified_at":v.isoformat()} for t,v in sorted(old.items())]}
 
+def earnings_event_diagnostic(path:Path, as_of:date, tickers:list[str])->dict:
+    """Unknown future coverage is not a clean earnings risk gate."""
+    result={"status":"unavailable","future_events_in_feed":0,"candidates_with_upcoming_10d":0,
+            "candidates_with_no_known_event":None,"interpretation":"unknown_not_clear"}
+    try:
+        feed=json.loads(path.read_text(encoding="utf-8"))
+        if feed.get("schema")!="vestra_earnings_events_v1" or not isinstance(feed.get("events"),list):
+            return result
+    except (OSError,ValueError,TypeError):
+        return result
+    future={};future_total=0
+    for item in feed["events"]:
+        if not isinstance(item,dict) or item.get("kind")!="earnings" or not isinstance(item.get("ticker"),str):
+            continue
+        try: day=date.fromisoformat(item["date"])
+        except (KeyError,ValueError,TypeError): continue
+        if day<as_of: continue
+        future_total+=1
+        if (day-as_of).days<=10:
+            ticker=item["ticker"];future[ticker]=min(day,future.get(ticker,day))
+    if not future_total:
+        return {**result,"status":"no_future_event_coverage"}
+    known={t:future[t].isoformat() for t in tickers if t in future}
+    return {**result,"status":"partial_calendar_evidence","future_events_in_feed":future_total,
+            "candidates_with_upcoming_10d":len(known),"upcoming_dates":known,
+            "interpretation":"not_listed_does_not_mean_clear"}
+
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
@@ -469,12 +496,13 @@ def main():
     by.update({signal["ticker"]:signal for signal in found})
     audit=scanner_coverage_audit(previous,successful,successful,now,eligible,retained,found)
     published,focus=published_signals_with_focus(list(by.values()),now.date())
+    earnings_audit=earnings_event_diagnostic(ROOT/"data/earnings-events.json",now.date(),[r["ticker"] for r in published])
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
-             "daily_focus":focus,"signals":published}
+             "daily_focus":focus,"earnings_event_diagnostic":earnings_audit,"signals":published}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
 
