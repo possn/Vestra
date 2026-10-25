@@ -294,8 +294,61 @@
       if(value!==undefined) node.textContent=String(value);
       return node;
     };
+    const addVerifiedMiniCharts = async ticker => {
+      const current = panel.dataset.spotlightTicker;
+      if (current !== ticker) return;
+      const api = window.VestraMarket;
+      if (!api?.spotlightSnapshot) return;
+      try {
+        await api.ensureLoaded();
+        if (panel.dataset.spotlightTicker !== ticker) return;
+        const snapshot = api.spotlightSnapshot(ticker);
+        if (!snapshot || snapshot.ticker !== ticker) return;
+        const svgNS='http://www.w3.org/2000/svg';
+        const shape=(tag,attrs={})=>{
+          const node=document.createElementNS(svgNS,tag);
+          Object.entries(attrs).forEach(([k,v])=>node.setAttribute(k,String(v)));
+          return node;
+        };
+        const wrap=element('div','vi-pb-visuals');
+        wrap.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px;margin:14px 0;';
+        const prices=snapshot.prices;
+        if (prices.length>=2) {
+          const card=element('div','vi-pb-mini-price');
+          card.style.cssText='min-width:0;border:1px solid var(--border,rgba(80,110,110,.22));border-radius:16px;padding:12px;';
+          card.append(element('p','vi-pb-metric-title','PREÇO · HISTÓRICO REAL'));
+          const svg=shape('svg',{viewBox:'0 0 220 100',role:'img','aria-label':'Evolução do preço nos últimos '+prices.length+' pontos observados'});
+          svg.style.cssText='width:100%;height:100px;display:block;color:var(--accent,#16827b)';
+          const values=prices.map(p=>p.close),low=Math.min(...values),high=Math.max(...values),span=high-low||1;
+          svg.append(shape('polyline',{points:values.map((v,i)=>(6+i*208/(values.length-1)).toFixed(1)+','+(91-(v-low)*80/span).toFixed(1)).join(' '),fill:'none',stroke:'currentColor','stroke-width':2.5,'stroke-linecap':'round','stroke-linejoin':'round'}));
+          card.append(svg,element('small','','Fonte: histórico do dossier · '+prices[0].date+' — '+prices[prices.length-1].date));
+          wrap.append(card);
+        }
+        const axes=snapshot.axes;
+        if (axes?.length===5 && axes.some(x=>Number.isFinite(x.value))) {
+          const card=element('div','vi-pb-mini-radar');
+          card.style.cssText='min-width:0;border:1px solid var(--border,rgba(80,110,110,.22));border-radius:16px;padding:12px;';
+          card.append(element('p','vi-pb-metric-title','ASSINATURA FUNDAMENTAL · 5 EIXOS'));
+          const svg=shape('svg',{viewBox:'0 0 220 164',role:'img','aria-label':axes.map(x=>x.label+' '+(Number.isFinite(x.value)?Math.round(x.value)+'/100':'N/A')).join(', ')});
+          svg.style.cssText='width:100%;height:164px;display:block;color:var(--accent,#16827b)';
+          const point=(i,v)=>{const a=(-90+i*72)*Math.PI/180,r=v*.62;return [110+Math.cos(a)*r,78+Math.sin(a)*r];};
+          const polygon=values=>values.map((v,i)=>point(i,v).map(n=>n.toFixed(1)).join(',')).join(' ');
+          for(const level of [25,50,75,100]) svg.append(shape('polygon',{points:polygon(axes.map(()=>level)),fill:'none',stroke:'currentColor','stroke-opacity':'.18','stroke-width':1}));
+          axes.forEach((axis,i)=>{const p=point(i,100);svg.append(shape('line',{x1:110,y1:78,x2:p[0],y2:p[1],stroke:'currentColor','stroke-opacity':'.2'}));});
+          svg.append(shape('polygon',{points:polygon(axes.map(x=>Number.isFinite(x.value)?Math.max(0,Math.min(100,x.value)):50)),fill:'currentColor','fill-opacity':'.17',stroke:'currentColor','stroke-width':2.2,'stroke-linejoin':'round'}));
+          axes.forEach((axis,i)=>{const p=point(i,Number.isFinite(axis.value)?Math.max(0,Math.min(100,axis.value)):50),label=point(i,122);if(Number.isFinite(axis.value))svg.append(shape('circle',{cx:p[0],cy:p[1],r:2.5,fill:'currentColor'}));const t=shape('text',{x:label[0],y:label[1],'text-anchor':'middle','font-size':9,fill:'currentColor'});t.textContent=axis.label+' '+(Number.isFinite(axis.value)?Math.round(axis.value):'N/A');svg.append(t);});
+          card.append(svg,element('small','','N/A não é zero · Radar fundamental, não probabilidade de breakout'));
+          wrap.append(card);
+        }
+        if (wrap.childElementCount && panel.dataset.spotlightTicker===ticker) {
+          panel.querySelector('.vi-pb-visuals')?.remove();
+          panel.querySelector('.vi-pb-foot')?.before(wrap);
+        }
+      } catch (_) { /* Missing dossier data never creates a synthetic chart. */ }
+    };
     const render = (title, detail, evidence, active, pick=null, qualified=false) => {
       panel.replaceChildren();
+      panel.dataset.spotlightTicker=qualified && pick?.ticker ? pick.ticker : '';
       const top=element('div','vi-pb-top');
       top.append(element('p','vi-pb-eyebrow','RADAR PRÉ-BREAKOUT'),
         element('span','vi-pb-status', qualified?'Sinal a investigar':'Em vigilância'));
@@ -399,6 +452,7 @@
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
           '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
           source+' · Sinal '+pick.date+' · VCP '+(pick.vcpConfirmed === true ? 'confirmada' : 'não confirmada')+' · Volume a secar '+(pick.volumeDry === true ? 'confirmado' : 'não confirmado')+' · Melhor sinal da amostra, não do mercado inteiro · Risco: breakout ainda não confirmado.', true, pick, true);
+        void addVerifiedMiniCharts(pick.ticker);
       } else if (hasCanonicalFocus) {
         render('Sem candidato canónico validado',
           'O radar não publicou um sinal principal verificável. Não é correto promover outra ação no Dashboard.',
