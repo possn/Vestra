@@ -42,7 +42,9 @@ class ObservedTransitionsTests(unittest.TestCase):
                 (folder/f"2026-10-15-slot{slot}.json").write_text(json.dumps({
                     "schema":"vestra_prebreakout_v1","generated_at":ts,"scan_slot_utc":slot,"signals":[row]}))
             ledger=mod.build(Path(tmp))
-            self.assertEqual(ledger["events"],[])
+            self.assertEqual(len(ledger["events"]),1)
+            self.assertEqual(ledger["events"][0]["to_stage"],"compressão")
+            self.assertEqual(ledger["events"][0]["scan_slot_utc"],1)
 
     def test_invalid_archive_is_ignored(self):
         with tempfile.TemporaryDirectory() as tmp:
