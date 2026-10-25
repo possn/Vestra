@@ -149,6 +149,33 @@ class PrebreakoutDataTests(unittest.TestCase):
                     "atrContractionRatio":.70,"averageDollarVolume20":25_000_000}}
         self.assertEqual(mod.daily_focus([row,verified],today)["ticker"],"VERIFIED")
 
+    def test_base_support_retention_uses_only_current_history(self):
+        rows=self.bars()
+        candidate=mod.scan_bars("TEST",rows)
+        self.assertIsNotNone(candidate)
+        q=candidate["quantitativeDiagnostics"]
+        midpoint=(max(x["high"] for x in rows[-40:])+min(x["low"] for x in rows[-40:]))/2
+        expected=sum(x["close"]>=midpoint for x in rows[-10:])
+        self.assertEqual(q["baseUpperHalfCloses10"],expected)
+        self.assertEqual(q["baseSupportRetention10"],round(expected/10,2))
+
+    def test_focus_prefers_resilient_base_only_with_same_primary_quality(self):
+        today=date.today()
+        def candidate(ticker,retention,score=75):
+            return {"ticker":ticker,"date":today.isoformat(),"stage":"pré-breakout",
+                "source":"yahoo:daily_ohlcv","vcpConfirmed":True,"volumeDry":True,
+                "volumeConfirmed":False,"distancePct":2,"score":score,
+                "quantitativeDiagnostics":{"basePositionPct":90,
+                    "atrContractionRatio":.70,"averageDollarVolume20":25_000_000,
+                    "baseSupportRetention10":retention}}
+        weak=candidate("WEAK",.2,90)
+        stable=candidate("STABLE",.9,70)
+        self.assertEqual(mod.daily_focus([weak,stable],today)["ticker"],"STABLE")
+        # Missing durability evidence cannot outrank verified support merely via score.
+        missing=candidate("MISSING",.9,95)
+        del missing["quantitativeDiagnostics"]["baseSupportRetention10"]
+        self.assertEqual(mod.daily_focus([missing,stable],today)["ticker"],"STABLE")
+
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
         self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False)))
