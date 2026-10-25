@@ -19,6 +19,17 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("Risco: breakout ainda não confirmado", SRC)
         self.assertIn("Score técnico, não probabilidade", SRC)
 
+    def test_real_mini_charts_use_dossier_history_and_canonical_axes(self):
+        market=(Path(__file__).resolve().parents[1]/'market.js').read_text(encoding='utf-8')
+        css=(Path(__file__).resolve().parents[1]/'vestra-prebreakout-home.css').read_text(encoding='utf-8')
+        self.assertIn('window.VestraDossierRadarAxes = dossierRadarAxes', market)
+        self.assertIn("fetch('./data/dossiers-manifest.json'", SRC)
+        self.assertIn('dossier.price_history_1y', SRC)
+        self.assertIn('window.VestraDossierRadarAxes(dossier)', SRC)
+        self.assertIn('history.length>=3', SRC)
+        self.assertIn('showPrebreakoutMiniVisuals(panel,pick)', SRC)
+        self.assertIn('.vi-pb-mini-visuals', css)
+
     def test_navigation_and_safe_text(self):
         self.assertIn("action.dataset.vestraGo='market'", SRC)
         self.assertIn("action.dataset.vestraTicker=pick.ticker", SRC)
