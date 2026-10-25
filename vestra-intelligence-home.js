@@ -684,6 +684,54 @@
     } catch (_) { /* No false no-news claim when offline. */ }
   }
 
+  // Published weekly calendar is read independently of legacy Dashboard hydration.
+  // Historical records are never presented as upcoming events.
+  async function loadPublishedWeeklyEvents(host) {
+    const list = host.querySelector('[data-vi-canonical-event-list]');
+    if (!list || list.dataset.publishedEvents === 'true') return;
+    try {
+      const response = await fetch('./data/earnings-events.json', {cache:'no-store'});
+      if (!response.ok) return;
+      const feed = await response.json();
+      if (feed?.schema !== 'vestra_earnings_events_v1' || !Array.isArray(feed.events)) return;
+      const today = new Date();
+      const start = [today.getUTCFullYear(), String(today.getUTCMonth()+1).padStart(2,'0'), String(today.getUTCDate()).padStart(2,'0')].join('-');
+      const weekEnd = new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate()+7)).toISOString().slice(0,10);
+      const events = feed.events.filter(item =>
+        item?.kind === 'earnings' && typeof item.date === 'string' &&
+        /^\\d{4}-\\d{2}-\\d{2}$/.test(item.date) &&
+        item.date >= start && item.date < weekEnd &&
+        typeof item.ticker === 'string' && /^[A-Z0-9.\\-]{1,16}$/.test(item.ticker) &&
+        typeof item.source === 'string' && item.source.trim()
+      ).sort((a,b)=>a.date.localeCompare(b.date) || a.ticker.localeCompare(b.ticker)).slice(0,3);
+      if (!events.length) {
+        // Don't claim there are no earnings; the source currently has no future coverage.
+        if (!list.querySelector('.vi-editorial-tile')) list.textContent =
+          'Agenda futura sem cobertura publicada · consultar o calendário completo ↗';
+        return;
+      }
+      if (document.querySelector('#dashboardWeeklyEventsCard .weekly-events-list .weekly-event')) return;
+      const nodes = events.map((event,index) => {
+        const tile = document.createElement('div');
+        tile.className = 'vi-editorial-tile';
+        const number = document.createElement('span');
+        number.className = 'vi-editorial-index';
+        number.textContent = String(index+1).padStart(2,'0');
+        const body = document.createElement('div');
+        body.className = 'vi-editorial-content';
+        const title = document.createElement('p');
+        title.className = 'vi-editorial-title';
+        title.textContent = event.ticker + ' · resultados · ' + event.date;
+        const detail = document.createElement('small');
+        detail.className = 'vi-editorial-detail';
+        detail.textContent = 'Fonte: ' + event.source;
+        body.append(title,detail); tile.append(number,body); return tile;
+      });
+      list.replaceChildren(...nodes);
+      list.dataset.publishedEvents = 'true';
+    } catch (_) { /* Offline/invalid feed is not evidence of no events. */ }
+  }
+
   function syncDecisionCenter(host) {
     const output = host.querySelector('[data-vestra-decision-state]');
     if (!output) return;
@@ -855,54 +903,6 @@
       host.querySelector('.vi-risk-donut')?.style.removeProperty('--vi-risk-percent');
       set('risk', 'Sem cobertura suficiente para calcular concentração. Consultar a análise da carteira.');
     }
-  }
-
-  // Published weekly calendar is read independently of legacy Dashboard hydration.
-  // Historical records are never presented as upcoming events.
-  async function loadPublishedWeeklyEvents(host) {
-    const list = host.querySelector('[data-vi-canonical-event-list]');
-    if (!list || list.dataset.publishedEvents === 'true') return;
-    try {
-      const response = await fetch('./data/earnings-events.json', {cache:'no-store'});
-      if (!response.ok) return;
-      const feed = await response.json();
-      if (feed?.schema !== 'vestra_earnings_events_v1' || !Array.isArray(feed.events)) return;
-      const today = new Date();
-      const start = [today.getUTCFullYear(), String(today.getUTCMonth()+1).padStart(2,'0'), String(today.getUTCDate()).padStart(2,'0')].join('-');
-      const weekEnd = new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate()+7)).toISOString().slice(0,10);
-      const events = feed.events.filter(item =>
-        item?.kind === 'earnings' && typeof item.date === 'string' &&
-        /^\\d{4}-\\d{2}-\\d{2}$/.test(item.date) &&
-        item.date >= start && item.date < weekEnd &&
-        typeof item.ticker === 'string' && /^[A-Z0-9.\\-]{1,16}$/.test(item.ticker) &&
-        typeof item.source === 'string' && item.source.trim()
-      ).sort((a,b)=>a.date.localeCompare(b.date) || a.ticker.localeCompare(b.ticker)).slice(0,3);
-      if (!events.length) {
-        // Don't claim there are no earnings; the source currently has no future coverage.
-        if (!list.querySelector('.vi-editorial-tile')) list.textContent =
-          'Agenda futura sem cobertura publicada · consultar o calendário completo ↗';
-        return;
-      }
-      if (document.querySelector('#dashboardWeeklyEventsCard .weekly-events-list .weekly-event')) return;
-      const nodes = events.map((event,index) => {
-        const tile = document.createElement('div');
-        tile.className = 'vi-editorial-tile';
-        const number = document.createElement('span');
-        number.className = 'vi-editorial-index';
-        number.textContent = String(index+1).padStart(2,'0');
-        const body = document.createElement('div');
-        body.className = 'vi-editorial-content';
-        const title = document.createElement('p');
-        title.className = 'vi-editorial-title';
-        title.textContent = event.ticker + ' · resultados · ' + event.date;
-        const detail = document.createElement('small');
-        detail.className = 'vi-editorial-detail';
-        detail.textContent = 'Fonte: ' + event.source;
-        body.append(title,detail); tile.append(number,body); return tile;
-      });
-      list.replaceChildren(...nodes);
-      list.dataset.publishedEvents = 'true';
-    } catch (_) { /* Offline/invalid feed is not evidence of no events. */ }
   }
 
   function syncWealthHero(host) {
