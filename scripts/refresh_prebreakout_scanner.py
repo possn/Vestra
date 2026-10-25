@@ -129,7 +129,12 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     base_position=(current-base_low)/(base_high-base_low) if base_high>base_low else 0
     if strict_quality and (dollar_volume20 is None or dollar_volume20<5_000_000 or base_position<.65):
         return None
-    diagnostics={"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
+    # The last 10 sessions should not repeatedly close in the weak lower
+    # half of the base. Use closed bars only, no forward/market data.
+    midpoint=(base_high+base_low)/2
+    upper_half_closes=sum(b["close"]>=midpoint for b in clean[-10:])
+    support_retention=round(upper_half_closes/10,2)
+    diagnostics={"baseUpperHalfCloses10":upper_half_closes,"baseSupportRetention10":support_retention,round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
                  "averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None,"basePositionPct":round(base_position*100,1),
                  "qualityGates":(["sma50_gt_sma150_gt_sma200","price_above_sma50","dollar_volume20_gte_5m","base_position_gte_65pct"] if strict_quality else [])}
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
@@ -187,8 +192,12 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
         liquidity=verified("averageDollarVolume20",0)
         # Prefer candidates tightly positioned near the base high, with
         # contracting ATR and demonstrable liquidity. Heuristic, not calibrated.
+        support=verified("baseSupportRetention10",0,1)
+        # Resilience is a tie-breaker within the established three-point
+        # quality bucket; avoid overpowering stronger evidence or score.
         quality=int(pos is not None and pos>=80)+int(contraction is not None and contraction<=.75)+int(liquidity is not None and liquidity>=20_000_000)
-        return (-quality,-float(row["score"]),float(row["distancePct"]),row["ticker"])
+        resilience=int(support is not None and support>=.8)
+        return (-quality,-resilience,-float(row["score"]),float(row["distancePct"]),row["ticker"])
     best=min(eligible,key=focus_rank)
     return {"status":"research_candidate","ticker":best["ticker"],
             "signal_date":best["date"],"stage":best["stage"],
