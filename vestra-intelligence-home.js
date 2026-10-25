@@ -765,10 +765,10 @@
     };
     syncCards('#dashboardWeeklyEventsCard', '[data-vi-canonical-event-list]',
       '.weekly-events-list .weekly-event',
-      'Sem eventos confirmados nesta sessão · abrir calendário semanal.', 3);
+      'Sem calendário futuro verificado · consultar a agenda semanal.', 3);
     syncCards('#vestraDailyNewsCard', '[data-vi-canonical-news-list]',
       '.vestra-daily-news-item',
-      'Sem notícias confirmadas nesta sessão · abrir o módulo de notícias.', 3);
+      'A consultar notícias publicadas e fontes verificáveis…', 3);
     try {
       const api = window.VestraDashboardPortfolioConcentration;
       if (!api || typeof api.marketHoldings !== 'function' || typeof api.concentrationSnapshot !== 'function') throw Error('indisponível');
@@ -806,7 +806,8 @@
           typeof item?.link === 'string' && /^https:\/\//.test(item.link) &&
           Number.isFinite(published) && published <= Date.now() + 3600000 &&
           Date.now() - published <= 72 * 3600000;
-      }).sort((a,b) => Date.parse(b.published) - Date.parse(a.published)).slice(0,3);
+      }).sort((a,b) => (Number(b.impact_score) || 0) - (Number(a.impact_score) || 0) ||
+        Date.parse(b.published) - Date.parse(a.published)).slice(0,3);
       if (!articles.length) return;
       const fragment = document.createDocumentFragment();
       articles.forEach((item,index) => {
