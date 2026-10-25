@@ -222,12 +222,14 @@
     const concentrationObserved = concentration?.dataset.status === 'observed';
     const decisionAlert = decision?.dataset.status === 'bad';
     // A count of measured positions is not itself a concentration warning.
-    cards[0].hidden = !concentrationObserved;
+    // Keep neutral portfolio navigation reachable without requiring evidence.
+    cards[0].hidden = false;
     if (concentrationObserved) {
       cards[0].querySelector('strong').textContent = 'Analisar concentração medida';
     }
     // No canonical identified asymmetric opportunity is supplied here.
-    cards[1].hidden = true;
+    // Market exploration is navigation, not an inferred investment signal.
+    cards[1].hidden = false;
     // The Decision Center's current alert is the only defensible thesis action.
     cards[2].hidden = !decisionAlert;
     const count = Number(concentrationObserved) + Number(decisionAlert);
@@ -235,7 +237,7 @@
     if (summary) summary.textContent = count
       ? count + (count === 1 ? ' análise com evidência disponível' : ' análises com evidência disponível')
       : 'Sem decisões confirmadas · explorar áreas de investigação na Carteira e Mercado';
-    if (!count) area.open = false;
+    // Do not conceal primary navigation when evidence is unavailable.
   }
 
   function syncPortfolioEvidence(host) {
