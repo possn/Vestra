@@ -24,3 +24,13 @@
 .vi-pb-card .vi-pb-foot{font-size:.64rem;opacity:.65;line-height:1.45;margin:.85rem 0 0}
 .vi-pb-card .vi-pb-action{display:inline-flex;justify-content:center;align-items:center;gap:.5rem;min-height:42px;margin-top:.9rem;border:1px solid color-mix(in srgb,currentColor 70%,#d8b878);border-radius:999px;padding:.5rem 1rem;background:transparent;color:inherit;font:inherit;font-size:.8rem;cursor:pointer}
 @media(max-width:360px){.vi-pb-card .vi-pb-grid{grid-template-columns:minmax(0,1fr) 84px;gap:.65rem}.vi-pb-card .vi-pb-ring{width:78px;height:78px}.vi-pb-card .vi-pb-ring:before{inset:8px}}
+
+/* Compact, evidence-only dossier visuals inside the featured research candidate. */
+.vi-pb-card .vi-pb-visuals{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:.7rem;margin:.9rem 0 .5rem;min-width:0}
+.vi-pb-card .vi-pb-visual{min-width:0;border:1px solid rgba(132,160,150,.24);background:rgba(116,191,156,.045);border-radius:15px;padding:.65rem .72rem;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
+.vi-pb-card .vi-pb-visual-label{font-size:.59rem;letter-spacing:.12em;font-weight:750;opacity:.7;margin:0 0 .38rem}
+.vi-pb-card .vi-pb-visual svg{display:block;width:100%;height:82px;color:var(--vio,#25978f);overflow:visible}
+.vi-pb-card .vi-pb-visual:nth-child(2) svg{height:104px;max-width:148px;align-self:center}
+.vi-pb-card .vi-pb-visual-empty{font-size:.69rem;opacity:.6;line-height:1.4;margin:0}
+.vi-pb-card .vi-pb-visual-axes{font-size:.58rem;line-height:1.35;opacity:.72;margin:.15rem 0 0;text-align:center}
+@media(max-width:420px){.vi-pb-card .vi-pb-visuals{gap:.45rem}.vi-pb-card .vi-pb-visual{padding:.52rem}.vi-pb-card .vi-pb-visual:nth-child(2) svg{height:88px}.vi-pb-card .vi-pb-visual svg{height:74px}}
