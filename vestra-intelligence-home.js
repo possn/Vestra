@@ -957,7 +957,10 @@
       const monthly = ids.map(id => (document.getElementById(id)?.textContent || '').trim())
         .find(v => v.includes('€') && Array.from(v).some(c => c >= '0' && c <= '9')
           && !/indisponível|calculando|ocult|a carregar/i.test(v));
-      income.textContent = monthly ? monthly.slice(0,48) : 'Por confirmar';
+      const canonical = totals?.passiveMonthlyEstimate;
+      income.textContent = Number.isFinite(canonical) && canonical >= 0
+        ? money(canonical) + ' / mês · estimado'
+        : monthly ? monthly.slice(0,48) : 'Por confirmar';
     }
     if (changes) {
       const valid = nativeText && !/a carregar|calculando|indisponível/i.test(nativeText);
