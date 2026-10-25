@@ -12,7 +12,11 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("row.breakoutExtensionPct <= 0", SRC)
         self.assertIn("Sem pré-breakout qualificado hoje", SRC)
         self.assertIn("Radar indisponível ou desatualizado", SRC)
-        self.assertIn("Melhor sinal da amostra analisada, não de todo o mercado.", SRC)
+        self.assertIn("Melhor sinal da amostra, não do mercado inteiro", SRC)
+        self.assertIn("Object.prototype.hasOwnProperty.call(feed, 'daily_focus')", SRC)
+        self.assertIn("Sem candidato canónico validado", SRC)
+        self.assertIn("Sinal '+pick.date", SRC)
+        self.assertIn("Risco: breakout ainda não confirmado", SRC)
         self.assertIn("Score técnico, não probabilidade", SRC)
 
     def test_navigation_and_safe_text(self):
