@@ -210,6 +210,34 @@
       label.textContent.trim() + ' · Fonte: Vestra Market Sentiment (proxy de preço, não breadth real)';
   }
 
+  // Present only observed, attributable priorities. Unverified research remains
+  // available as navigation, never masquerading as a decision.
+  function syncVerifiedPriorities(host) {
+    const area = host.querySelector('.vi-investigation-disclosure');
+    if (!area) return;
+    const cards = [...area.querySelectorAll('.vi-decisions > .vi-action')];
+    if (cards.length !== 3) return;
+    const concentration = host.querySelector('[data-vestra-portfolio-evidence]');
+    const decision = host.querySelector('[data-vestra-decision-state]');
+    const concentrationObserved = concentration?.dataset.status === 'observed';
+    const decisionAlert = decision?.dataset.status === 'bad';
+    // A count of measured positions is not itself a concentration warning.
+    cards[0].hidden = !concentrationObserved;
+    if (concentrationObserved) {
+      cards[0].querySelector('strong').textContent = 'Analisar concentração medida';
+    }
+    // No canonical identified asymmetric opportunity is supplied here.
+    cards[1].hidden = true;
+    // The Decision Center's current alert is the only defensible thesis action.
+    cards[2].hidden = !decisionAlert;
+    const count = Number(concentrationObserved) + Number(decisionAlert);
+    const summary = area.querySelector('summary');
+    if (summary) summary.textContent = count
+      ? count + (count === 1 ? ' análise com evidência disponível' : ' análises com evidência disponível')
+      : 'Sem decisões confirmadas · explorar áreas de investigação na Carteira e Mercado';
+    if (!count) area.open = false;
+  }
+
   function syncPortfolioEvidence(host) {
     const output = host.querySelector('[data-vestra-portfolio-evidence]');
     if (!output) return;
@@ -800,13 +828,15 @@
     syncCanonicalCards(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
+    syncVerifiedPriorities(host);
     window.addEventListener('vestra:dashboard-privacy-changed', () => syncWealthHero(host));
     window.addEventListener('vestra:portfolio-totals-updated', () => {
       syncWealthHero(host);
       syncPortfolioEvidence(host);
       syncDecisionCenter(host);
+      syncVerifiedPriorities(host);
     });
-    window.addEventListener('vestra:market-sheet-changed', () => syncDecisionCenter(host));
+    window.addEventListener('vestra:market-sheet-changed', () => { syncDecisionCenter(host); syncVerifiedPriorities(host); });
     window.addEventListener('vestra:local-state-writing', () => {
       lastDecision = null;
       const output = host.querySelector('[data-vestra-decision-state]');
@@ -814,6 +844,7 @@
         output.dataset.status = 'missing';
         output.textContent = 'Decision Center · carteira ou estado local alterado · reabrir análise para atualizar';
       }
+      syncVerifiedPriorities(host);
     });
     window.addEventListener('vestra:dashboard-signal-updated', event => {
       if (event?.detail?.source === 'market-sentiment') { syncExistingBarometer(host); syncDailyBrief(host); syncCanonicalCards(host); }
