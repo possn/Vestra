@@ -1255,6 +1255,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
   }
 
   function dossierRadarAxes(s){
+    if(typeof window.VestraDossierRadarAxes==='function') return window.VestraDossierRadarAxes(s);
     return [
       {key:'value',label:'Valor',value:dossierRadarClamp(s?.value_pct),detail:'Valuation relativo do modelo Vestra.'},
       {key:'future',label:'Futuro',value:dossierRadarBlend([[s?.growth_pct,.65],[s?.estimate_momentum_score,.35]]),detail:'Growth e direção das estimativas.'},
@@ -1263,9 +1264,6 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       {key:'dividend',label:'Dividendo',value:dossierDividendRadar(s),detail:'Yield contextualizado e sustentabilidade por payout/FCF.'},
     ];
   }
-
-  // Reuse the dossier's exact five-axis model in compact Home previews.
-  window.VestraDossierRadarAxes = dossierRadarAxes;
 
   function dossierRadarPoint(index,value,radius=82){
     const angle=(-90+index*72)*Math.PI/180;
