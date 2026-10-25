@@ -2896,7 +2896,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
       if(!stock)return null;
       const prices=(Array.isArray(stock.price_history_1y)?stock.price_history_1y:[])
         .map(row=>({date:String(row?.date||''),close:n(row?.close??row?.price)}))
-        .filter(row=>/^\\d{4}-\\d{2}-\\d{2}$/.test(row.date)&&row.close!=null&&row.close>0)
+        .filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.date)&&row.close!=null&&row.close>0)
         .slice(-90);
       const axes=dossierRadarAxes(stock).map(axis=>({label:axis.label,value:axis.value}));
       return {ticker:stock.ticker,prices,axes};
