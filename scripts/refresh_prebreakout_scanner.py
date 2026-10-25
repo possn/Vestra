@@ -168,7 +168,7 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
             score=float(row["score"])
         except (KeyError,ValueError,TypeError):
             continue
-        if not (0 <= (as_of-day).days <= 4 and 0<=distance<=4 and math.isfinite(score)):
+        if not (0 <= (as_of-day).days <= 4 and math.isfinite(distance) and 0<=distance<=4 and math.isfinite(score) and 0<=score<=100):
             continue
         eligible.append(row)
     if not eligible:
