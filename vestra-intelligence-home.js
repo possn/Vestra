@@ -773,7 +773,17 @@
       const list = host.querySelector(listSelector);
       const source = document.querySelector(sourceSelector);
       if (!list) return;
-      const candidates = Array.from(source?.querySelectorAll(itemSelector) || []).slice(0, limit);
+      const isWeekly = itemSelector.includes('weekly-event');
+      const localNow = new Date();
+      const weekStart = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate());
+      const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
+      const candidates = Array.from(source?.querySelectorAll(itemSelector) || []).filter(node => {
+        if (!isWeekly) return true;
+        const date = node.dataset.weeklyEventDate;
+        if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+        const day = new Date(date + 'T12:00:00');
+        return Number.isFinite(day.getTime()) && day >= weekStart && day < weekEnd;
+      }).slice(0, limit);
       const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
       const isEarnings = itemSelector.includes('weekly-event');
       const texts = candidates.map(node => {
