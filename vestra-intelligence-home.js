@@ -698,6 +698,8 @@
     const hasSentiment = Number.isInteger(score) && score >= 0 && score <= 100 && Boolean(label);
     set('score', hasSentiment ? String(score) : '—');
     set('label', hasSentiment ? label : 'Leitura por confirmar');
+    // A directly loaded published feed remains visible when the legacy news
+    // module has not hydrated yet; its absence is not evidence of no news.
     const syncCards = (sourceSelector, listSelector, itemSelector, fallback, limit) => {
       const list = host.querySelector(listSelector);
       const source = document.querySelector(sourceSelector);
@@ -725,6 +727,7 @@
         return {lines, fallback:articleTitle || raw.slice(0,190)};
       }).filter(item => item.fallback);
       if (!texts.length) {
+        if (list.dataset.publishedFeed === 'true') return;
         list.replaceChildren();
         const placeholder = document.createElement('p');
         // Keep the honest no-data state in the same compact editorial type scale.
@@ -783,6 +786,50 @@
       host.querySelector('.vi-risk-donut')?.style.removeProperty('--vi-risk-percent');
       set('risk', 'Sem cobertura suficiente para calcular concentração. Consultar a análise da carteira.');
     }
+  }
+
+  // Independent, bounded news hydration. The old Dashboard DOM is optional.
+  async function loadPublishedNews(host) {
+    const list = host.querySelector('[data-vi-canonical-news-list]');
+    if (!list || list.dataset.publishedFeed === 'true') return;
+    try {
+      const response = await fetch('./data/dashboard-news.json', {cache:'no-store'});
+      if (!response.ok) return;
+      const feed = await response.json();
+      const generated = Date.parse(feed?.generated_at);
+      if (!Number.isFinite(generated) || generated > Date.now() + 3600000 ||
+          Date.now() - generated > 72 * 3600000 || !Array.isArray(feed.items)) return;
+      const articles = feed.items.filter(item => {
+        const published = Date.parse(item?.published);
+        return typeof item?.title === 'string' && item.title.trim().length >= 15 &&
+          typeof item?.source === 'string' && item.source.trim().length > 0 &&
+          typeof item?.link === 'string' && /^https:\/\//.test(item.link) &&
+          Number.isFinite(published) && published <= Date.now() + 3600000 &&
+          Date.now() - published <= 72 * 3600000;
+      }).sort((a,b) => Date.parse(b.published) - Date.parse(a.published)).slice(0,3);
+      if (!articles.length) return;
+      const fragment = document.createDocumentFragment();
+      articles.forEach((item,index) => {
+        const tile = document.createElement('div');
+        tile.className = 'vi-editorial-tile';
+        const ordinal = document.createElement('span');
+        ordinal.className = 'vi-editorial-index';
+        ordinal.textContent = String(index+1).padStart(2,'0');
+        const content = document.createElement('div');
+        content.className = 'vi-editorial-content';
+        const headline = document.createElement('p');
+        headline.className = 'vi-editorial-title';
+        headline.textContent = item.title.slice(0,130);
+        const meta = document.createElement('small');
+        meta.className = 'vi-editorial-detail';
+        meta.textContent = item.source + ' · ' + new Date(item.published).toLocaleDateString('pt-PT');
+        content.append(headline,meta); tile.append(ordinal,content); fragment.append(tile);
+      });
+      // Prefer the canonical rendered news cards once they exist; otherwise
+      // display the real published feed, never an empty-session assertion.
+      const native = document.querySelector('#vestraDailyNewsCard .vestra-daily-news-item');
+      if (!native) { list.replaceChildren(fragment); list.dataset.publishedFeed='true'; }
+    } catch (_) { /* No false no-news claim when offline. */ }
   }
 
   function syncWealthHero(host) {
@@ -851,6 +898,7 @@
     syncWealthHero(host);
     syncDailyBrief(host);
     syncCanonicalCards(host);
+    void loadPublishedNews(host);
     syncPortfolioEvidence(host);
     syncDecisionCenter(host);
     syncVerifiedPriorities(host);
@@ -875,7 +923,7 @@
       if (event?.detail?.source === 'market-sentiment') { syncExistingBarometer(host); syncDailyBrief(host); syncCanonicalCards(host); }
     });
     window.addEventListener('vestra:weekly-data-refreshed', () => { syncDailyBrief(host); syncCanonicalCards(host); });
-    window.addEventListener('focus', () => { refreshLivePulse(host); syncDailyBrief(host); syncWealthHero(host); syncCanonicalCards(host); });
+    window.addEventListener('focus', () => { refreshLivePulse(host); syncDailyBrief(host); syncWealthHero(host); syncCanonicalCards(host); void loadPublishedNews(host); });
     // The underlying modules hydrate asynchronously; retry a bounded number of times.
     [1200, 3500, 6500].forEach(delay => setTimeout(() => { syncDailyBrief(host); syncWealthHero(host); }, delay));
     showCoverage(host);
