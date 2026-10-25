@@ -25,6 +25,26 @@ class CurrencyLiquidityTests(unittest.TestCase):
         self.assertIsNone(mod.verified_usd_liquidity(9_000_000,"EUR",fx,date(2026,11,10)))
         self.assertIsNone(mod.verified_usd_liquidity(float("nan"),"USD",fx,d))
 
+class CrossSlotPersistenceTests(unittest.TestCase):
+    def test_retains_only_verified_recent_nonrechecked_rows(self):
+        now=datetime(2026,10,25,12,tzinfo=timezone.utc)
+        row={"ticker":"AAA","date":"2026-10-24","source":"yahoo:daily_ohlcv",
+             "vcpConfirmed":True,"stage":"pré-breakout","score":75,"distancePct":2,
+             "quantitativeDiagnostics":{"averageDollarVolume20":6_000_000,
+                "liquidityCurrencySource":"yahoo_fast_info","liquidityFxReferenceDate":"2026-10-23"}}
+        previous={"schema":"vestra_prebreakout_v1","quality_model":"vcp_before_pivot_v3",
+                  "generated_at":"2026-10-25T08:00:00+00:00","signals":[row]}
+        self.assertEqual(mod.recent_verified_signals(previous,["BBB"],now),[row])
+        self.assertEqual(mod.recent_verified_signals(previous,["AAA"],now),[])
+        stale={**previous,"generated_at":"2026-10-24T08:00:00+00:00"}
+        self.assertEqual(mod.recent_verified_signals(stale,["BBB"],now),[])
+        old_model={**previous,"quality_model":"vcp_volume_v2"}
+        self.assertEqual(mod.recent_verified_signals(old_model,[],now),[])
+        unverified={**row,"quantitativeDiagnostics":{"averageDollarVolume20":6_000_000}}
+        self.assertEqual(mod.recent_verified_signals({**previous,"signals":[unverified]},[],now),[])
+        earlier={**row,"date":"2026-10-19"}
+        self.assertEqual(mod.recent_verified_signals({**previous,"signals":[earlier]},[],now),[])
+
 class PrebreakoutDataTests(unittest.TestCase):
     def bars(self,trend=True):
         today=date.today()
