@@ -197,7 +197,7 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
         # quality bucket; avoid overpowering stronger evidence or score.
         quality=int(pos is not None and pos>=80)+int(contraction is not None and contraction<=.75)+int(liquidity is not None and liquidity>=20_000_000)
         resilience=int(support is not None and support>=.8)
-        return (-quality,-resilience,-float(row["score"]),float(row["distancePct"]),row["ticker"])
+        return (-quality,-resilience,(as_of-date.fromisoformat(str(row["date"])[:10])).days,-float(row["score"]),float(row["distancePct"]),row["ticker"])
     best=min(eligible,key=focus_rank)
     return {"status":"research_candidate","ticker":best["ticker"],
             "signal_date":best["date"],"stage":best["stage"],
