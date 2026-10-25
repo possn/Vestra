@@ -277,6 +277,64 @@
     return pulseInFlight;
   }
 
+  async function showPrebreakoutMiniVisuals(panel, pick) {
+    // Never fabricate price observations or recreate the dossier's score model.
+    const ticker=pick?.ticker;
+    if(!ticker || !/^[A-Z0-9.\\-]{1,16}$/.test(ticker)) return;
+    try {
+      const [manifestRes]=await Promise.all([fetch('./data/dossiers-manifest.json',{cache:'no-store'})]);
+      if(!manifestRes.ok) return;
+      const manifest=await manifestRes.json();
+      const bucket=manifest?.tickers?.[ticker];
+      if(typeof bucket!=='string' || !/^[A-Z0-9]{2}$/.test(bucket)) return;
+      const response=await fetch('./data/dossiers/'+bucket+'.json',{cache:'no-store'});
+      if(!response.ok) return;
+      const dossier=(await response.json())?.stocks?.[ticker];
+      if(!dossier || dossier.ticker!==ticker) return;
+      if(panel.querySelector('[data-vi-mini-visuals]') || !panel.isConnected ||
+          panel.querySelector('.vi-pb-ticker')?.textContent!==ticker) return;
+      const region=document.createElement('div');
+      region.dataset.viMiniVisuals='1';
+      region.className='vi-pb-mini-visuals';
+      const ns='http://www.w3.org/2000/svg';
+      const svg=(tag,attrs={})=>{const el=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));return el;};
+      const article=(label)=>{const section=document.createElement('section');section.className='vi-pb-mini-block';
+        const heading=document.createElement('p');heading.className='vi-pb-mini-label';heading.textContent=label;section.append(heading);return section;};
+      const history=(Array.isArray(dossier.price_history_1y)?dossier.price_history_1y:[])
+        .filter(x=>/^\\d{4}-\\d{2}-\\d{2}$/.test(String(x?.date||'')) && Number.isFinite(x?.close) && x.close>0)
+        .sort((a,b)=>a.date.localeCompare(b.date)).slice(-52);
+      if(history.length>=3){
+        const chart=article('COTAÇÃO · HISTÓRICO PUBLICADO');
+        const min=Math.min(...history.map(x=>x.close)),max=Math.max(...history.map(x=>x.close));
+        const span=max-min||1;
+        const plot=svg('svg',{viewBox:'0 0 320 95',role:'img','aria-label':'Histórico real de '+ticker+' de '+history[0].date+' a '+history[history.length-1].date});
+        const points=history.map((x,i)=>[8+i*304/(history.length-1),84-(x.close-min)/span*72]);
+        plot.append(svg('polyline',{points:points.map(p=>p.map(v=>v.toFixed(2)).join(',')).join(' '),fill:'none',stroke:'currentColor','stroke-width':'2.4','stroke-linejoin':'round','stroke-linecap':'round'}));
+        const last=points[points.length-1];plot.append(svg('circle',{cx:last[0],cy:last[1],r:3,fill:'currentColor'}));
+        chart.append(plot);
+        const info=document.createElement('p');info.className='vi-pb-mini-meta';info.textContent=history[0].date+' — '+history[history.length-1].date+' · '+history.length+' fechos publicados';chart.append(info);region.append(chart);
+      }
+      const axes=typeof window.VestraDossierRadarAxes==='function'?window.VestraDossierRadarAxes(dossier):null;
+      if(Array.isArray(axes)&&axes.length===5&&axes.some(a=>Number.isFinite(a.value))){
+        const radar=article('PERFIL VESTRA · 5 EIXOS');
+        const plot=svg('svg',{viewBox:'0 0 260 220',role:'img','aria-label':'Radar fundamental de '+ticker+'. Eixos não aplicáveis são N/A.'});
+        const p=(i,v,r=72)=>{const ang=(-90+i*72)*Math.PI/180;return [130+Math.cos(ang)*r*(v/100),105+Math.sin(ang)*r*(v/100)]};
+        const coords=arr=>arr.map((v,i)=>p(i,v).map(z=>z.toFixed(1)).join(',')).join(' ');
+        for(const level of [25,50,75,100])plot.append(svg('polygon',{points:coords(axes.map(()=>level)),fill:'none',stroke:'currentColor','stroke-opacity':'.17'}));
+        axes.forEach((a,i)=>{const end=p(i,100);plot.append(svg('line',{x1:130,y1:105,x2:end[0],y2:end[1],stroke:'currentColor','stroke-opacity':'.18'}));});
+        plot.append(svg('polygon',{points:coords(axes.map(a=>Number.isFinite(a.value)?a.value:50)),fill:'currentColor','fill-opacity':'.13',stroke:'currentColor','stroke-width':'2'}));
+        axes.forEach((a,i)=>{if(Number.isFinite(a.value)){const pt=p(i,a.value);plot.append(svg('circle',{cx:pt[0],cy:pt[1],r:3,fill:'currentColor'}));}
+          const at=p(i,100,99),label=svg('text',{x:at[0],y:at[1],fill:'currentColor','font-size':'10','font-weight':'650','text-anchor':'middle'});
+          label.textContent=a.label+' '+(a.value==null?'N/A':Math.round(a.value));plot.append(label);});
+        radar.append(plot);
+        const info=document.createElement('p');info.className='vi-pb-mini-meta';info.textContent='Eixos do dossier · N/A não penaliza · Não é outro Score';radar.append(info);region.append(radar);
+      }
+      if(region.childElementCount && panel.isConnected && panel.querySelector('.vi-pb-ticker')?.textContent===ticker){
+        const foot=panel.querySelector('.vi-pb-foot');panel.insertBefore(region,foot||null);
+      }
+    }catch(_){/* Missing dossier data must not create a synthetic chart or block the radar. */}
+  }
+
   async function showPrebreakoutSpotlight(host) {
     let panel = host.querySelector('[data-vi-prebreakout-spotlight]');
     if (!panel) {
@@ -399,6 +457,7 @@
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
           '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
           source+' · Sinal '+pick.date+' · VCP '+(pick.vcpConfirmed === true ? 'confirmada' : 'não confirmada')+' · Volume a secar '+(pick.volumeDry === true ? 'confirmado' : 'não confirmado')+' · Melhor sinal da amostra, não do mercado inteiro · Risco: breakout ainda não confirmado.', true, pick, true);
+        showPrebreakoutMiniVisuals(panel,pick);
       } else if (hasCanonicalFocus) {
         render('Sem candidato canónico validado',
           'O radar não publicou um sinal principal verificável. Não é correto promover outra ação no Dashboard.',
