@@ -862,6 +862,7 @@
     const assets = host.querySelector('[data-vi-assets]');
     if (!value || !assets) return;
     const changes = host.querySelector('[data-vi-wealth-changes]');
+    const income = host.querySelector('[data-vi-income-monthly]');
     const nativeChanges = document.getElementById('kpiChanges');
     const nativeText = (nativeChanges?.innerText || nativeChanges?.textContent || '').replace(/\s+/g, ' ').trim();
 
@@ -878,6 +879,7 @@
       value.textContent = '••• €';
       assets.textContent = 'Valores ocultos';
       if (changes) changes.textContent = 'Variações ocultas';
+      if (income) income.textContent = '••• €';
 
       return;
     }
@@ -893,6 +895,14 @@
     } else {
       value.textContent = '—';
       assets.textContent = 'Património ainda a carregar';
+    }
+    if (income) {
+      // Mirror the already calculated dashboard KPI, never infer income from
+      // capital, yield or dividend forecasts when no verified KPI is available.
+      const nativeIncome = document.getElementById('kpiPassiveMonthly');
+      const monthly = (nativeIncome?.textContent || '').replace(/\\s+/g, ' ').trim();
+      income.textContent = monthly && /\\d/.test(monthly) &&
+        !/a carregar|calculando|indisponível/i.test(monthly) ? monthly.slice(0,48) : 'Por confirmar';
     }
     if (changes) {
       const valid = nativeText && !/a carregar|calculando|indisponível/i.test(nativeText);
