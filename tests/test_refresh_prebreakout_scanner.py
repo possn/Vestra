@@ -25,6 +25,25 @@ class CurrencyLiquidityTests(unittest.TestCase):
         self.assertIsNone(mod.verified_usd_liquidity(9_000_000,"EUR",fx,date(2026,11,10)))
         self.assertIsNone(mod.verified_usd_liquidity(float("nan"),"USD",fx,d))
 
+class EvaluableRecheckTests(unittest.TestCase):
+    def test_only_complete_recent_ohlcv_can_invalidate(self):
+        today=date(2026,10,25)
+        start=today-timedelta(days=320)
+        bars=[{"date":(start+timedelta(days=i)).isoformat(),"close":100.0,
+               "high":101.0,"low":99.0,"volume":100_000} for i in range(220)]
+        # Shift the final trading-day date into the freshness window.
+        bars=[{**row,"date":(today-timedelta(days=219-i)).isoformat()}
+              for i,row in enumerate(bars)]
+        self.assertTrue(mod.evaluable_recheck(bars,today))
+        self.assertFalse(mod.evaluable_recheck(bars[:10],today))
+        self.assertFalse(mod.evaluable_recheck([{**bars[0],"volume":None}]+bars[1:],today))
+        self.assertFalse(mod.evaluable_recheck(bars[:-1]+[{**bars[-1],"high":90}],today))
+        self.assertFalse(mod.evaluable_recheck(bars[:-1]+[{**bars[-1],"date":bars[-2]["date"]}],today))
+        stale=[{**row,"date":(date.fromisoformat(row["date"])-timedelta(days=8)).isoformat()} for row in bars]
+        self.assertFalse(mod.evaluable_recheck(stale,today))
+        src=(ROOT/"scripts/refresh_prebreakout_scanner.py").read_text()
+        self.assertIn("if evaluable_recheck(bars,now.date()):successful.append(ticker)",src)
+
 class CrossSlotPersistenceTests(unittest.TestCase):
     def test_retains_only_verified_recent_nonrechecked_rows(self):
         now=datetime(2026,10,25,12,tzinfo=timezone.utc)
