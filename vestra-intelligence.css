@@ -1909,3 +1909,17 @@ body:has(#viewDashboard.vi-preview-active) #vestraIntelligenceHome{
  #vestraIntelligenceHome .vi-live-pulse strong{font-size:16px}
  #vestraIntelligenceHome .vi-live-pulse span{font-size:8px}
 }
+
+/* Compact dossier evidence inside the canonical Pre-Breakout Home spotlight. */
+#vestraIntelligenceHome .vi-pb-preview{margin-top:12px;border-top:1px solid rgba(85,113,114,.20);padding-top:12px;min-width:0}
+#vestraIntelligenceHome .vi-pb-preview-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:center}
+#vestraIntelligenceHome .vi-pb-preview-price,#vestraIntelligenceHome .vi-pb-preview-radar{min-width:0;color:inherit}
+#vestraIntelligenceHome .vi-pb-preview-price svg{display:block;width:100%;height:auto;max-height:104px;color:#147e79}
+#vestraIntelligenceHome .vi-pb-preview-radar svg{display:block;width:100%;max-width:182px;height:auto;margin:auto;color:#147e79}
+#vestraIntelligenceHome .vi-pb-preview-label{font-size:10px;letter-spacing:.11em;font-weight:750;margin:0 0 8px;text-transform:uppercase}
+#vestraIntelligenceHome .vi-pb-preview-note{font-size:10px;line-height:1.45;opacity:.75;margin:6px 0 0}
+@media(max-width:560px){
+ #vestraIntelligenceHome .vi-pb-preview-layout{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+ #vestraIntelligenceHome .vi-pb-preview-radar svg{max-width:150px}
+ #vestraIntelligenceHome .vi-pb-preview-label{font-size:9px}
+}
