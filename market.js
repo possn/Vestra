@@ -1297,6 +1297,9 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     return `<section class="market-dossier-radar"><div class="market-dossier-radar-copy"><div class="market-dossier-section-label">PERFIL VESTRA · 5 EIXOS</div><h3>Assinatura fundamental</h3><p>Resumo visual de cinco dimensões independentes. Não cria um novo Score nem altera Conviction ou Risk Gate.</p><div class="market-dossier-radar-legend">${axes.map(x=>`<div title="${esc(x.detail)}"><span>${esc(x.label)}</span><strong>${x.value==null?'—':Math.round(x.value)}</strong></div>`).join('')}</div><p class="market-dossier-interpretation">Métricas em falta entram como neutro 50 apenas dentro de um eixo com evidência parcial. Se o eixo inteiro não for aplicável, aparece N/A. Empresas sem dividendo não são penalizadas.</p></div><div class="market-dossier-radar-visual"><svg viewBox="0 0 240 240" role="img" aria-label="${esc(aria)}">${grid}${spokes}<polygon points="${polygon}" class="market-dossier-radar-area"/>${dots}${labels}</svg></div></section>`;
   }
 
+  // Read-only reuse of the dossier's canonical five-axis interpretation.
+  window.VestraDossierRadarAxes = dossierRadarAxes;
+
   function smartMoneyEventType(raw){
     const value=txt(raw).toLowerCase();
     if(/buy|purchase|acquir/.test(value)) return 'buy';
