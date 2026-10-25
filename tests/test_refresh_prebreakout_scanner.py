@@ -124,6 +124,31 @@ class PrebreakoutDataTests(unittest.TestCase):
             path.unlink()
             self.assertEqual(mod.watched_tickers(when,path),[])
 
+    def test_daily_focus_prefers_confirmed_structural_quality_to_raw_score(self):
+        today=date.today()
+        def row(ticker,score,position,contraction,liquidity):
+            return {"ticker":ticker,"date":today.isoformat(),"stage":"pré-breakout",
+                "source":"yahoo:daily_ohlcv","vcpConfirmed":True,"volumeDry":True,
+                "volumeConfirmed":False,"distancePct":2,"score":score,
+                "quantitativeDiagnostics":{"basePositionPct":position,
+                    "atrContractionRatio":contraction,"averageDollarVolume20":liquidity}}
+        weak=row("HIGH_SCORE",95,65,1.05,5_000_000)
+        stronger=row("QUALITY",70,92,.65,25_000_000)
+        focus=mod.daily_focus([weak,stronger],today)
+        self.assertEqual(focus["ticker"],"QUALITY")
+        self.assertIsNone(focus["success_probability"])
+        self.assertFalse(focus["probability_calibrated"])
+
+    def test_daily_focus_missing_diagnostics_do_not_get_quality_credit(self):
+        today=date.today()
+        row={"ticker":"UNKNOWN","date":today.isoformat(),"stage":"pré-breakout",
+             "source":"yahoo:daily_ohlcv","vcpConfirmed":True,"volumeDry":True,
+             "volumeConfirmed":False,"distancePct":2,"score":90}
+        verified={**row,"ticker":"VERIFIED","score":75,
+                  "quantitativeDiagnostics":{"basePositionPct":90,
+                    "atrContractionRatio":.70,"averageDollarVolume20":25_000_000}}
+        self.assertEqual(mod.daily_focus([row,verified],today)["ticker"],"VERIFIED")
+
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
         self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False)))
