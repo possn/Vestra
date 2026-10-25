@@ -223,6 +223,25 @@ class PrebreakoutDataTests(unittest.TestCase):
         tie=candidate("TIE",90,.60,50_000_000,70)
         self.assertEqual(mod.daily_focus([structural,tie],today)["ticker"],"TIE")
 
+    def test_published_signals_always_include_featured_candidate(self):
+        today=date.today()
+        signals=[]
+        for i in range(76):
+            signals.append({"ticker":f"T{i:03d}","date":today.isoformat(),
+                            "stage":"pré-breakout","source":"yahoo:daily_ohlcv",
+                            "vcpConfirmed":True,"volumeDry":True,"volumeConfirmed":False,
+                            "distancePct":2,"score":100-i,
+                            "quantitativeDiagnostics":{
+                                "basePositionPct":90 if i==75 else 70,
+                                "atrContractionRatio":.5 if i==75 else 1.0,
+                                "averageDollarVolume20":25_000_000,
+                                "baseSupportRetention10":.9}})
+        published,focus=mod.published_signals_with_focus(signals,today)
+        self.assertEqual(len(published),75)
+        self.assertEqual(focus["ticker"],"T075")
+        self.assertIn(focus["ticker"],[row["ticker"] for row in published])
+        self.assertNotIn("T074",[row["ticker"] for row in published])
+
     def test_requires_200_day_ma_and_rising_alignment(self):
         self.assertIsNone(mod.scan_bars("TEST",self.bars()[:190]))
         self.assertIsNone(mod.scan_bars("TEST",self.bars(trend=False)))
