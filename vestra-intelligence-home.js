@@ -294,6 +294,61 @@
       if(value!==undefined) node.textContent=String(value);
       return node;
     };
+    async function appendMiniDossier(pick) {
+      const box=element('div','vi-pb-preview');
+      box.append(element('p','vi-pb-preview-note','A consultar gráficos do dossier…'));
+      panel.append(box);
+      const read=async path=>{const res=await fetch(path,{cache:'no-store'});if(!res.ok)throw Error('dossier');return res.json();};
+      try {
+        const manifest=await read('./data/dossiers-manifest.json');
+        const bucket=manifest?.tickers?.[pick.ticker];
+        if(typeof bucket!=='string'||!/^[A-Z0-9]{2}$/.test(bucket))throw Error('shard');
+        const shard=await read('./data/dossiers/'+bucket+'.json');
+        const stock=shard?.stocks?.[pick.ticker];
+        if(!stock||!box.isConnected||panel.querySelector('.vi-pb-ticker')?.textContent!==pick.ticker)return;
+        box.replaceChildren();
+        const layout=element('div','vi-pb-preview-layout');
+        const ns='http://www.w3.org/2000/svg';
+        const svg=tag=>document.createElementNS(ns,tag);
+        const price=element('div','vi-pb-preview-price');
+        price.append(element('p','vi-pb-preview-label','PREÇO · HISTÓRICO DO DOSSIER'));
+        const points=(Array.isArray(stock.price_history_1y)?stock.price_history_1y:[])
+          .map(p=>({date:Date.parse(p?.date),close:Number(p?.close??p?.price)}))
+          .filter(p=>Number.isFinite(p.date)&&Number.isFinite(p.close)&&p.close>0)
+          .sort((a,b)=>a.date-b.date);
+        if(points.length>=2&&points.at(-1).date>points[0].date){
+          const low=Math.min(...points.map(p=>p.close)),high=Math.max(...points.map(p=>p.close));
+          const graph=svg('svg');graph.setAttribute('viewBox','0 0 320 90');graph.setAttribute('role','img');
+          graph.setAttribute('aria-label','Fechos históricos de '+pick.ticker);
+          const line=svg('polyline');
+          line.setAttribute('points',points.map(p=>[
+            6+308*(p.date-points[0].date)/(points.at(-1).date-points[0].date),
+            80-70*(p.close-low)/(high-low||1)
+          ].map(n=>n.toFixed(1)).join(',')).join(' '));
+          line.setAttribute('fill','none');line.setAttribute('stroke','currentColor');line.setAttribute('stroke-width','2.5');
+          graph.append(line);price.append(graph);
+          price.append(element('p','vi-pb-preview-note',new Date(points[0].date).toLocaleDateString('pt-PT')+' – '+new Date(points.at(-1).date).toLocaleDateString('pt-PT')));
+        } else price.append(element('p','vi-pb-preview-note','Histórico de preço insuficiente'));
+        layout.append(price);
+        const radar=element('div','vi-pb-preview-radar');
+        radar.append(element('p','vi-pb-preview-label','PERFIL VESTRA · 5 EIXOS'));
+        const axes=window.VestraDossierRadarAxes?.(stock);
+        if(Array.isArray(axes)&&axes.length===5&&axes.some(a=>a.value!=null)){
+          const graph=svg('svg');graph.setAttribute('viewBox','0 0 240 240');graph.setAttribute('role','img');
+          graph.setAttribute('aria-label',axes.map(a=>a.label+' '+(a.value==null?'N/A':Math.round(a.value))).join(', '));
+          const point=(i,v,r=78)=>{const a=(-90+i*72)*Math.PI/180,k=r*Math.max(0,Math.min(100,v))/100;return [120+Math.cos(a)*k,120+Math.sin(a)*k];};
+          const polygon=(values,fill,stroke)=>{const p=svg('polygon');p.setAttribute('points',values.map((v,i)=>point(i,v).map(n=>n.toFixed(1)).join(',')).join(' '));p.setAttribute('fill',fill);p.setAttribute('stroke',stroke);p.setAttribute('stroke-width','1.4');return p;};
+          for(const v of [25,50,75,100])graph.append(polygon(axes.map(()=>v),'none','rgba(55,95,96,.25)'));
+          graph.append(polygon(axes.map(a=>a.value==null?50:a.value),'rgba(20,130,125,.20)','currentColor'));
+          axes.forEach((axis,i)=>{const p=point(i,100,101),label=svg('text');label.setAttribute('x',p[0]);label.setAttribute('y',p[1]);label.setAttribute('text-anchor',i===0?'middle':i<3?'start':'end');label.setAttribute('font-size','11');label.setAttribute('fill','currentColor');const name=svg('tspan');name.textContent=axis.label;name.setAttribute('x',p[0]);const val=svg('tspan');val.textContent=axis.value==null?'N/A':String(Math.round(axis.value));val.setAttribute('x',p[0]);val.setAttribute('dy','12');label.append(name,val);graph.append(label);});
+          radar.append(graph);
+          radar.append(element('p','vi-pb-preview-note','Fundamental · não prevê breakout'));
+        } else radar.append(element('p','vi-pb-preview-note','Perfil indisponível'));
+        layout.append(radar);box.append(layout);
+      } catch (_) {
+        if(box.isConnected)box.replaceChildren(element('p','vi-pb-preview-note','Gráficos indisponíveis · abrir dossier no Mercado'));
+      }
+    }
     const render = (title, detail, evidence, active, pick=null, qualified=false) => {
       panel.replaceChildren();
       const top=element('div','vi-pb-top');
@@ -399,6 +454,7 @@
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
           '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
           source+' · Sinal '+pick.date+' · VCP '+(pick.vcpConfirmed === true ? 'confirmada' : 'não confirmada')+' · Volume a secar '+(pick.volumeDry === true ? 'confirmado' : 'não confirmado')+' · Melhor sinal da amostra, não do mercado inteiro · Risco: breakout ainda não confirmado.', true, pick, true);
+        await appendMiniDossier(pick);
       } else if (hasCanonicalFocus) {
         render('Sem candidato canónico validado',
           'O radar não publicou um sinal principal verificável. Não é correto promover outra ação no Dashboard.',
