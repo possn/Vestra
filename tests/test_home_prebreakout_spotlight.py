@@ -19,6 +19,17 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("Risco: breakout ainda não confirmado", SRC)
         self.assertIn("Score técnico, não probabilidade", SRC)
 
+    def test_compact_visuals_use_only_canonical_market_data(self):
+        market=(Path(__file__).resolve().parents[1]/'market.js').read_text(encoding='utf-8')
+        self.assertIn("spotlightSnapshot(ticker)", market)
+        self.assertIn("dossierRadarAxes(stock)", market)
+        self.assertIn("stock.price_history_1y", market)
+        self.assertIn("addVerifiedMiniCharts(pick.ticker)", SRC)
+        self.assertIn("if (prices.length>=2)", SRC)
+        self.assertIn("if (axes?.length===5 && axes.some(x=>Number.isFinite(x.value)))", SRC)
+        self.assertIn("N/A não é zero", SRC)
+        self.assertNotIn("Math.random", SRC[SRC.index("const addVerifiedMiniCharts"):SRC.index("const render = (title")])
+
     def test_navigation_and_safe_text(self):
         self.assertIn("action.dataset.vestraGo='market'", SRC)
         self.assertIn("action.dataset.vestraTicker=pick.ticker", SRC)
