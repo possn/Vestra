@@ -2,12 +2,14 @@ name: Refresh prebreakout scanner
 
 on:
   schedule:
-    - cron: '10 2,8,14,20 * * 1-5'
-    # Friday US daily candle is only guaranteed complete on Saturday UTC.
-    - cron: '10 2,8 * * 6'
-    # Best-effort catch-up: rerun fresh scans after a protected publish window closes.
-    - cron: '35 3-5,9-11,15-17,21-23 * * 1-5'
-    - cron: '35 3-5,9-11 * * 6'
+    # Best-effort independent triggers at off-peak minutes: GitHub can delay/drop cron.
+    # Multiple triggers within each UTC slot give missed morning slots extra chances.
+    # check_prebreakout_scan_due.py still permits only one immutable archive per slot.
+    - cron: '17,47 2-4,8-10,14-16,20-22 * * 1-5'
+    - cron: '17 5,11,17,23 * * 1-5'
+    # Friday US daily candle is guaranteed complete only on Saturday UTC.
+    - cron: '17,47 2-4,8-10 * * 6'
+    - cron: '17 5,11 * * 6'
   workflow_dispatch: {}
   push:
     branches: [main]

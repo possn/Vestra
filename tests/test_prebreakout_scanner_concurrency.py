@@ -14,6 +14,14 @@ class PrebreakoutScannerConcurrencyContract(unittest.TestCase):
         self.assertIn("cancel-in-progress: false", block)
         self.assertNotIn("cancel-in-progress: true", block)
 
+    def test_recovery_triggers_cover_early_and_late_slots(self):
+        source = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("17,47 2-4,8-10,14-16,20-22 * * 1-5", source)
+        self.assertIn("17 5,11,17,23 * * 1-5", source)
+        self.assertIn("17,47 2-4,8-10 * * 6", source)
+        self.assertIn("17 5,11 * * 6", source)
+        self.assertNotIn("10 2,8,14,20 * * 1-5", source)
+
     def test_slot_deduplication_is_checked_before_scan(self):
         source = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("python scripts/check_prebreakout_scan_due.py", source)
