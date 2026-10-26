@@ -117,13 +117,20 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn("'kpiPassiveMonthly2'", js)
         self.assertIn("'portfolioMonthlyValue'", js)
 
+    def test_monthly_income_is_canonical_and_labeled_estimate(self):
+        app = (ROOT / "app.js").read_text(encoding="utf-8")
+        home = (ROOT / "vestra-intelligence-home.js").read_text(encoding="utf-8")
+        self.assertIn("passiveMonthlyEstimate: getDisplayedPassiveAnnual(t) / 12", app)
+        self.assertIn("totals?.passiveMonthlyEstimate", home)
+        self.assertIn(" / mês · estimado", home)
+
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('.sidebar{background:#0d2523!important', nav)
         self.assertIn('vestra-navigation-v2.css?v=7-iphone-density', html)
         self.assertIn('vestra-intelligence.css?v=57-live-pulse', html)
-        self.assertRegex(html, r'vestra-intelligence-home\.js\?v=(?:32|[3-9][0-9])')
+        self.assertRegex(html, r'vestra-intelligence-home\.js\?v=(?:34|[3-9][0-9])')
 
     def test_legacy_drilldown_safari_ink_and_tools_cta(self):
         css = (ROOT / "vestra-intelligence.css").read_text(encoding="utf-8")
