@@ -18,9 +18,13 @@ def missing_closed_slots(now, archive, lookback_days=3):
     misses = []
     for offset in range(max(0, lookback_days) + 1):
         day = (now - timedelta(days=offset)).date()
-        if day.weekday() >= 5:
+        # Sunday is closed. Saturday has two scheduled catch-up scans
+        # (02:10 and 08:10 UTC) to capture the completed Friday US session.
+        if day.weekday() == 6:
             continue
         for slot, hour in enumerate(SLOT_HOURS):
+            if day.weekday() == 5 and slot >= 2:
+                continue
             start = datetime(day.year, day.month, day.day, hour, 10, tzinfo=timezone.utc)
             # Allow the existing catch-up window through hour+3:35.
             recovery_end = start + timedelta(hours=3, minutes=25)
