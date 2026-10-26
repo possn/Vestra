@@ -24,6 +24,8 @@ def validate_bars(bars: list[dict]) -> None:
             raise ValueError("incomplete OHLCV") from exc
         if previous is not None and day <= previous:
             raise ValueError("unordered or duplicate sessions")
+        if previous is not None and (day - previous).days > 7:
+            raise ValueError("unverified calendar gap")
         if not all(math.isfinite(x) for x in (op, high, low, close, volume)):
             raise ValueError("nonfinite OHLCV")
         if not (low > 0 and low <= min(op, close) <= max(op, close) <= high and volume >= 0):
@@ -48,6 +50,8 @@ def breakout_outcome(bars: list[dict], signal_index: int, pivot: float,
         raise ValueError("invalid signal index or horizon")
     if not isinstance(pivot, (float, int)) or not math.isfinite(pivot) or pivot <= 0:
         raise ValueError("invalid pivot")
+    if not math.isfinite(volume_multiple) or volume_multiple <= 0:
+        raise ValueError("invalid volume multiple")
     if len(bars) - signal_index - 1 < horizon:
         return {"status": "pending", "horizon_matured": False, "event_date": None}
     for i in range(signal_index + 1, signal_index + horizon + 1):
@@ -80,6 +84,10 @@ def purged_chronological_indices(events: list[dict], test_start: str,
     begin, stop = date.fromisoformat(test_start), date.fromisoformat(test_end)
     if begin >= stop:
         raise ValueError("invalid split range")
+    for row in events:
+        signal, end = row["signal_session"], row["label_end_session"]
+        if type(signal) is not int or type(end) is not int or end < signal:
+            raise ValueError("invalid event lifetime")
     test = [i for i, row in enumerate(events)
             if begin <= date.fromisoformat(row["signal_date"]) < stop]
     if not test:
