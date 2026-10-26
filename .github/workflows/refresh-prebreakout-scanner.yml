@@ -21,7 +21,9 @@ permissions:
 
 concurrency:
   group: refresh-prebreakout-scanner
-  cancel-in-progress: true
+  # Catch-up schedules must not cancel an in-flight scan/publish.
+  # Serialized runs re-check the immutable slot archive before downloading.
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -40,6 +42,7 @@ jobs:
         run: |
           python -m py_compile scripts/refresh_prebreakout_scanner.py
           python tests/test_refresh_prebreakout_scanner.py
+          python tests/test_prebreakout_scanner_concurrency.py
           python tests/test_check_prebreakout_scan_due.py
           python tests/test_audit_prebreakout_slots.py
           python tests/test_prebreakout_publish_grace.py
