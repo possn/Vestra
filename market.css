@@ -679,3 +679,43 @@ html.modal-open,body.modal-open{
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
   }
 }
+
+
+/* Vestra iPhone light-card legibility — scoped to Market result rows.
+   These rows can inherit white text from dark-theme/global styling. */
+#viewMarket .market-row {
+  grid-template-columns:minmax(0,1fr) auto;
+  color:#233c44;
+}
+#viewMarket .market-row > :first-child {min-width:0;}
+#viewMarket .market-row__title {min-width:0;flex-wrap:wrap;gap:4px 8px;}
+#viewMarket .market-row__ticker {
+  color:#38545c!important;
+  opacity:1!important;
+  font-weight:850;
+  letter-spacing:.01em;
+}
+#viewMarket .market-row__name {
+  color:#233c44!important;
+  opacity:1!important;
+  font-size:13px;
+  font-weight:650;
+  min-width:0;
+  max-width:100%;
+}
+#viewMarket .market-row__meta {
+  color:#536870!important;
+  opacity:1!important;
+  font-size:12px;
+  line-height:1.4;
+  overflow-wrap:break-word;
+}
+#viewMarket .market-row__end {display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+#viewMarket .market-row .market-watch {flex:0 0 auto;color:#405d64!important;}
+#viewMarket .market-row .market-score {flex:0 0 auto;}
+@media(max-width:600px){
+  #viewMarket .market-row {gap:9px;padding:12px 10px;}
+  #viewMarket .market-row__title {gap:5px 7px;}
+  #viewMarket .market-row__end {gap:6px;}
+  #viewMarket .market-row .market-score {min-width:43px;height:43px;}
+}
