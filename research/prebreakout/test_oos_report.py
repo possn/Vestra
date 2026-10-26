@@ -40,6 +40,15 @@ class ReportTests(unittest.TestCase):
         self.assertIsNone(r["folds"][0]["paired_delta"])
         self.assertIsNone(r["folds"][0]["challenger"])
 
+    def test_monthly_interval_abstains_with_only_one_period(self):
+        events,a,b=self.sample()
+        report=evaluate_folds(events,a,b,[BOUNDARY],dataset_sha256=CHECKSUM,
+                              min_train_issuers=1,min_test_issuers=1,
+                              bootstrap_issuers=2,bootstrap_periods=2,repetitions=250)
+        interval=report["folds"][0]["market_period_interval"]
+        self.assertEqual(interval["status"],"insufficient_periods_or_issuers")
+        self.assertIsNone(interval["ci95_lower_pct"])
+
     def test_missing_pair_fails(self):
         events,a,b=self.sample()
         with self.assertRaises(ValueError):
