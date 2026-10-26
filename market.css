@@ -671,3 +671,11 @@ html.modal-open,body.modal-open{
     overflow-wrap:anywhere!important;
   }
 }
+
+/* iPhone dossier facts: explicit mobile owner. Keep fixture and real sheet at two columns. */
+@media (max-width:600px){
+  html body .market-sheet .market-metrics,
+  html body #marketSheet.market-sheet #marketSheetContent .market-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
