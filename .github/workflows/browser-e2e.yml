@@ -53,7 +53,7 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2]
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -64,7 +64,7 @@ jobs:
       - name: Install Playwright test runner
         run: npm install --no-audit --no-fund
       - name: Install WebKit system dependencies
-        run: timeout --signal=TERM --kill-after=15s 300s npx playwright install-deps webkit
+        run: timeout --signal=TERM --kill-after=15s 900s npx playwright install-deps webkit
       - name: Install WebKit browser
         run: timeout --signal=TERM --kill-after=15s 300s npx playwright install webkit
       - name: Run critical iPhone/WebKit journeys
