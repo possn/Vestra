@@ -48,7 +48,7 @@ class ReportTests(unittest.TestCase):
         events,a,b=self.sample()
         report=evaluate_folds(events,a,b,[BOUNDARY],dataset_sha256=CHECKSUM,
                               min_train_issuers=1,min_test_issuers=1,
-                              bootstrap_issuers=2,bootstrap_periods=2,repetitions=250)
+                              bootstrap_issuers=2,bootstrap_periods=2,repetitions=250,\n                              reference_sessions=SESSIONS)
         interval=report["folds"][0]["market_period_interval"]
         self.assertEqual(interval["status"],"insufficient_periods_or_issuers")
         self.assertIsNone(interval["ci95_lower_pct"])
