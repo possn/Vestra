@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from audit_prebreakout_slots import missing_closed_slots
+from audit_prebreakout_slots import missing_closed_slots, slot_publication_summary
 
 class MissedSlotAuditTests(unittest.TestCase):
     def test_never_marks_open_or_future_slots_missing(self):
@@ -41,6 +41,32 @@ class MissedSlotAuditTests(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("{}")
             self.assertEqual(missing_closed_slots(at_12, root, 0), [])
+
+    def test_publication_ledger_counts_closed_slots_without_claiming_execution(self):
+        with tempfile.TemporaryDirectory() as td:
+            archive = Path(td)
+            now = datetime(2026, 10, 24, 12, 0, tzinfo=timezone.utc)
+            before = slot_publication_summary(now, archive, 0)
+            self.assertEqual(before["closed_expected_slots"], 2)
+            self.assertEqual(before["missing_archive_slots"], 2)
+            self.assertEqual(before["published_archive_slots"], 0)
+            self.assertEqual(before["execution_status"], "not_observed")
+            slot = archive / "2026" / "slots" / "2026-10-24-slot0.json"
+            slot.parent.mkdir(parents=True)
+            slot.write_text("{}")
+            after = slot_publication_summary(now, archive, 0)
+            self.assertEqual(after["published_archive_slots"], 1)
+            self.assertEqual(after["missing_archive_slots"], 1)
+            self.assertEqual(after["archive_publication_pct"], 50.0)
+
+    def test_publication_ledger_excludes_open_windows_and_sundays(self):
+        with tempfile.TemporaryDirectory() as td:
+            archive = Path(td)
+            friday = slot_publication_summary(datetime(2026, 10, 23, 3, 0, tzinfo=timezone.utc), archive, 0)
+            sunday = slot_publication_summary(datetime(2026, 10, 25, 23, 0, tzinfo=timezone.utc), archive, 0)
+            self.assertEqual(friday["closed_expected_slots"], 0)
+            self.assertIsNone(friday["archive_publication_pct"])
+            self.assertEqual(sunday["closed_expected_slots"], 0)
 
     def test_weekend_skipped_and_timezone_required(self):
         with tempfile.TemporaryDirectory() as td:
