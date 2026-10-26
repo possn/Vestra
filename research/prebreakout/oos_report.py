@@ -10,18 +10,22 @@ from evaluation import summarize_net_trades, paired_baseline_delta
 from cluster_uncertainty import issuer_cluster_bootstrap
 from market_period_uncertainty import market_period_bootstrap
 from walk_forward import walk_forward_folds
+from calendar_audit import audit_event_calendar
 
 
 def evaluate_folds(events, challenger, baseline, boundaries, *,
                    dataset_sha256, embargo_sessions=20,
                    min_train_issuers=30, min_test_issuers=15,
                    bootstrap_issuers=30, repetitions=2000, seed=1729,
-                   bootstrap_periods=12):
+                   bootstrap_periods=12, reference_sessions=None):
     """Require one matched, realized challenger/baseline payoff per event.
 
     Every fold is evaluated strictly from its test indices. Empty or
     insufficient folds expose null outcomes; synthetic tests are not alpha.
     """
+    if reference_sessions is None:
+        raise ValueError("reference historical calendar required")
+    calendar_result = audit_event_calendar(events, reference_sessions)
     if not isinstance(dataset_sha256, str) or len(dataset_sha256)!=64:
         raise ValueError("missing immutable dataset checksum")
     try:
@@ -68,7 +72,7 @@ def evaluate_folds(events, challenger, baseline, boundaries, *,
                               minimum_issuers=bootstrap_issuers,
                               minimum_periods=bootstrap_periods))
         reports.append(report)
-    return {"schema_version":1,"research_only":True,"dataset_sha256":dataset_sha256,
+    return {"schema_version":2,"research_only":True,"calendar_alignment":calendar_result,"dataset_sha256":dataset_sha256,
             "status":"descriptive_folds_not_predictive_validation",
             "folds":reports,
             "limitations":["requires_independently_verified_point_in_time_dataset",
