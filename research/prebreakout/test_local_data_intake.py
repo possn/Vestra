@@ -71,6 +71,28 @@ class LocalIntakeTests(unittest.TestCase):
         self.write_fixture(raw=raw,meta=manifest(raw))
         self.assertIn("inconsistent_ohlc",self.run_intake()["observations"]["failures"])
 
+    def test_observation_before_declared_span_is_rejected(self):
+        raw=CSV
+        meta=manifest(raw)
+        meta["historical_span_start"]="2025-01-03"
+        self.write_fixture(raw=raw,meta=meta)
+        result=self.run_intake()
+        self.assertEqual(result["status"],"REJECTED_INPUT")
+        self.assertIn("observations_outside_declared_span",result["observations"]["failures"])
+
+    def test_observation_after_declared_span_is_rejected(self):
+        raw=CSV
+        meta=manifest(raw)
+        meta["historical_span_end"]="2025-01-01"
+        self.write_fixture(raw=raw,meta=meta)
+        result=self.run_intake()
+        self.assertIn("observations_outside_declared_span",result["observations"]["failures"])
+
+    def test_observations_within_declared_span_remain_structural_only(self):
+        result=self.run_intake()
+        self.assertEqual(result["status"],"STRUCTURAL_CHECKS_PASSED_NOT_PIT_CERTIFIED")
+        self.assertFalse(result["empirical_validated"])
+
     def test_bad_manifest_rejected(self):
         self.meta.write_text("{unparseable")
         self.assertEqual(self.run_intake()["status"],"REJECTED_INPUT")

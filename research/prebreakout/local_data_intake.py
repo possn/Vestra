@@ -23,6 +23,19 @@ def intake(raw_path, manifest_path, calendar_path, *, evaluation_utc):
         rows = list(csv.DictReader(raw.decode("utf-8-sig").splitlines()))
         cutoff = datetime.fromisoformat(evaluation_utc.replace("Z","+00:00")).date().isoformat()
         observations = audit_ohlcv_rows(rows,reference_sessions=calendar,evaluation_date=cutoff)
+        # A checksum only binds the supplied bytes; also compare actual observation
+        # dates with the claimed coverage interval rather than trusting the manifest.
+        from datetime import date
+        try:
+            start = date.fromisoformat(manifest["historical_span_start"])
+            end = date.fromisoformat(manifest["historical_span_end"])
+            observed_dates = [date.fromisoformat(row["session"]) for row in rows]
+            if not observed_dates or min(observed_dates) < start or max(observed_dates) > end:
+                observations["admitted"] = False
+                observations["failures"] = sorted(set(observations["failures"] + ["observations_outside_declared_span"]))
+        except (KeyError, TypeError, ValueError):
+            observations["admitted"] = False
+            observations["failures"] = sorted(set(observations["failures"] + ["invalid_observed_span"]))
     except (OSError, UnicodeError, ValueError, TypeError, csv.Error, json.JSONDecodeError) as exc:
         return {"status":"REJECTED_INPUT","reason":type(exc).__name__,"empirical_validated":False}
     return {"status":"STRUCTURAL_CHECKS_PASSED_NOT_PIT_CERTIFIED"
