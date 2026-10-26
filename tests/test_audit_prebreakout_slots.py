@@ -25,6 +25,23 @@ class MissedSlotAuditTests(unittest.TestCase):
             slot.write_text("{}")
             self.assertEqual(missing_closed_slots(now, root, 0), [])
 
+    def test_saturday_morning_slots_are_audited_but_afternoon_is_not(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            # Saturday has two scheduled windows; 02:10 closes at 05:35,
+            # 08:10 closes at 11:35. Never require afternoon Saturday slots.
+            at_7 = datetime(2026, 10, 24, 7, 0, tzinfo=timezone.utc)
+            self.assertEqual([(x["date"], x["slot"]) for x in missing_closed_slots(at_7, root, 0)],
+                             [("2026-10-24", 0)])
+            at_12 = datetime(2026, 10, 24, 12, 0, tzinfo=timezone.utc)
+            self.assertEqual([(x["date"], x["slot"]) for x in missing_closed_slots(at_12, root, 0)],
+                             [("2026-10-24", 0), ("2026-10-24", 1)])
+            for slot in (0, 1):
+                path = root / "2026" / "slots" / f"2026-10-24-slot{slot}.json"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}")
+            self.assertEqual(missing_closed_slots(at_12, root, 0), [])
+
     def test_weekend_skipped_and_timezone_required(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
