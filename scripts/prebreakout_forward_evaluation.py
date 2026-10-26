@@ -89,9 +89,13 @@ def evaluate_archived(snapshot, ticker, asset_bars, benchmark_bars, horizons=HOR
     return outcome
 
 def aggregate(evaluations,horizons=HORIZONS):
+    # Keep every evaluated signal in the denominator, even without a future session.
+    evaluations=list(evaluations)
+    if any(not isinstance(e,dict) or not isinstance(e.get("results"),dict) for e in evaluations):
+        raise ValueError("invalid evaluation results")
     output={}
     for h in horizons:
-        items=[e["results"].get(h) for e in evaluations if e.get("results")]
+        items=[e["results"].get(h) for e in evaluations]
         usable=[x for x in items if x is not None]
         output[h]={"n":len(usable),"n_missing":len(items)-len(usable)}
         if usable:
