@@ -21,7 +21,9 @@ permissions:
 
 concurrency:
   group: refresh-prebreakout-scanner
-  cancel-in-progress: true
+  # Catch-up schedules must not cancel an in-flight scan/publish.
+  # Serialized runs re-check the immutable slot archive before downloading.
+  cancel-in-progress: false
 
 jobs:
   refresh:
