@@ -8,13 +8,15 @@ import hashlib
 import json
 from evaluation import summarize_net_trades, paired_baseline_delta
 from cluster_uncertainty import issuer_cluster_bootstrap
+from market_period_uncertainty import market_period_bootstrap
 from walk_forward import walk_forward_folds
 
 
 def evaluate_folds(events, challenger, baseline, boundaries, *,
                    dataset_sha256, embargo_sessions=20,
                    min_train_issuers=30, min_test_issuers=15,
-                   bootstrap_issuers=30, repetitions=2000, seed=1729):
+                   bootstrap_issuers=30, repetitions=2000, seed=1729,
+                   bootstrap_periods=12):
     """Require one matched, realized challenger/baseline payoff per event.
 
     Every fold is evaluated strictly from its test indices. Empty or
@@ -46,7 +48,7 @@ def evaluate_folds(events, challenger, baseline, boundaries, *,
                 "train_issuers":fold["train_issuers"],"test_issuers":fold["test_issuers"],
                 "test_episodes":len(fold["test_indices"]),"status":fold["status"],
                 "challenger":None,"baseline":None,"paired_delta":None,
-                "issuer_interval":None}
+                "issuer_interval":None,"market_period_interval":None}
         if fold["status"]=="eligible_for_offline_evaluation":
             subset_a=[challenger[i] for i in fold["test_indices"]]
             subset_b=[baseline[i] for i in fold["test_indices"]]
@@ -59,13 +61,19 @@ def evaluate_folds(events, challenger, baseline, boundaries, *,
                           paired_delta=result,
                           issuer_interval=issuer_cluster_bootstrap(
                               differences,repetitions=repetitions,seed=seed,
-                              minimum_issuers=bootstrap_issuers))
+                              minimum_issuers=bootstrap_issuers),
+                          market_period_interval=market_period_bootstrap(
+                              [dict(row,period_id=row["signal_date"][:7]) for row in differences],
+                              repetitions=repetitions,seed=seed,
+                              minimum_issuers=bootstrap_issuers,
+                              minimum_periods=bootstrap_periods))
         reports.append(report)
     return {"schema_version":1,"research_only":True,"dataset_sha256":dataset_sha256,
             "status":"descriptive_folds_not_predictive_validation",
             "folds":reports,
             "limitations":["requires_independently_verified_point_in_time_dataset",
                            "issuer_bootstrap_does_not_handle_common_market_date_shocks",
+                           "market_month_bootstrap_does_not_resolve_cross_month_dependence",
                            "fold_eligibility_does_not_prove_data_provenance",
                            "no_automatic_live_signal_or_probability_promotion"]}
 
