@@ -41,6 +41,17 @@ class PointInTimeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             breakout_outcome(bars,30,100,5)
 
+    def test_reject_unexplained_calendar_gap(self):
+        bars=sample()
+        for i in range(25,len(bars)):
+            bars[i]["date"]=(date.fromisoformat(bars[i]["date"])+timedelta(days=10)).isoformat()
+        with self.assertRaisesRegex(ValueError,"calendar gap"):
+            breakout_outcome(bars,30,102,5)
+
+    def test_reject_invalid_volume_multiple(self):
+        with self.assertRaisesRegex(ValueError,"volume multiple"):
+            breakout_outcome(sample(),30,102,5,float("nan"))
+
     def test_purge_overlapping_labels_and_embargo(self):
         events=[
           {"signal_date":"2025-01-01","signal_session":0,"label_end_session":8},
