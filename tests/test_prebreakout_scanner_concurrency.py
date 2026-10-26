@@ -22,6 +22,13 @@ class PrebreakoutScannerConcurrencyContract(unittest.TestCase):
         self.assertIn("17 5,11 * * 6", source)
         self.assertNotIn("10 2,8,14,20 * * 1-5", source)
 
+    def test_post_run_archive_diagnostics_are_visible_even_after_failure(self):
+        source = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("Audit archive publication after scanner run", source)
+        self.assertIn("if: always()", source)
+        self.assertIn("python scripts/audit_prebreakout_slots.py --lookback-days 1", source)
+        self.assertLess(source.index("Publish technical signals"), source.index("Audit archive publication after scanner run"))
+
     def test_slot_deduplication_is_checked_before_scan(self):
         source = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("python scripts/check_prebreakout_scan_due.py", source)
