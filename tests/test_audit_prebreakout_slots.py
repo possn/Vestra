@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from audit_prebreakout_slots import missing_closed_slots, slot_publication_summary
+from audit_prebreakout_slots import missing_closed_slots, slot_publication_summary, actions_step_summary
 
 class MissedSlotAuditTests(unittest.TestCase):
     def test_never_marks_open_or_future_slots_missing(self):
@@ -67,6 +67,21 @@ class MissedSlotAuditTests(unittest.TestCase):
             self.assertEqual(friday["closed_expected_slots"], 0)
             self.assertIsNone(friday["archive_publication_pct"])
             self.assertEqual(sunday["closed_expected_slots"], 0)
+
+    def test_actions_step_summary_is_explicit_about_unknown_execution(self):
+        data = {
+            "closed_expected_slots": 2,
+            "published_archive_slots": 1,
+            "missing_archive_slots": 1,
+            "archive_publication_pct": 50.0,
+            "missing_closed_slots": [{"date": "2026-10-24", "slot": 1,
+                                     "scheduled_utc": "2026-10-24T08:10:00+00:00"}],
+        }
+        report = actions_step_summary(data)
+        self.assertIn("50.00%", report)
+        self.assertIn("slot 1", report)
+        self.assertIn("não demonstra", report)
+        self.assertIn("publicação adiada", report)
 
     def test_weekend_skipped_and_timezone_required(self):
         with tempfile.TemporaryDirectory() as td:
