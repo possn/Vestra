@@ -98,7 +98,7 @@ def actions_step_summary(summary):
         rows.extend(["", "**Ciclos sem arquivo:**"])
         rows.extend(f"- {item['date']} · slot {item['slot']} ({item['scheduled_utc']})"
                     for item in summary["missing_closed_slots"])
-    return "\\n".join(rows) + "\\n"
+    return "\n".join(rows) + "\n"
 
 
 def main():
