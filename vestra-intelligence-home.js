@@ -597,7 +597,22 @@
       const qualified = rows.filter(row => row.stage === 'pré-breakout' && row.volumeDry === true)
         .sort((a,b) => b.score-a.score || a.distancePct-b.distancePct || a.ticker.localeCompare(b.ticker));
       const count = feed.with_ohlcv+'/'+feed.attempted;
-      const source = 'OHLCV Yahoo · '+count+' títulos com dados nesta execução · '+new Date(stamp).toLocaleString('pt-PT')+' · Score técnico, não probabilidade';
+      const audit = feed.coverage_audit_24h;
+      const universe = feed.eligible_universe;
+      const observed = audit?.distinct_ohlcv_tickers;
+      // A rotating slot is not a market-wide scan; abstain from a coverage claim
+      // when 24h observation counts cannot be independently checked against the universe.
+      const coverageValid = Number.isInteger(universe) && universe > 0 &&
+        Number.isInteger(observed) && observed >= 0 && observed <= universe &&
+        audit?.eligible_universe === universe && audit?.window_hours === 24 &&
+        feed.coverage_scope === 'rotating_single_scan_slot_not_full_universe';
+      const coverageText = coverageValid
+        ? 'Cobertura OHLCV 24h: '+observed+'/'+universe+' ('+
+          (100*observed/universe).toFixed(1).replace('.',',')+'%) · ranking parcial'
+        : 'Cobertura global não verificada · ranking parcial';
+      const source = 'OHLCV Yahoo · '+count+' títulos com dados nesta execução · '+
+        coverageText+' · '+new Date(stamp).toLocaleString('pt-PT')+
+        ' · Score técnico, não probabilidade';
       // New feeds publish a canonical, quality-ranked focus from the backend.
       // Never silently replace a deliberate abstention with the legacy score leader.
       // Older feeds without daily_focus keep the original fallback.
