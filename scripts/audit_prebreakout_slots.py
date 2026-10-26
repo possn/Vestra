@@ -36,14 +36,55 @@ def missing_closed_slots(now, archive, lookback_days=3):
                                "scheduled_utc": start.isoformat()})
     return sorted(misses, key=lambda item: (item["date"], item["slot"]))
 
+def slot_publication_summary(now, archive, lookback_days=3):
+    """Archive-backed publication observability, not an execution-history claim.
+
+    Only closed scheduled windows enter the denominator. Without GitHub Actions
+    run data an absent archive cannot distinguish skipped, failed or deferred runs.
+    """
+    if now.tzinfo is None:
+        raise ValueError("timezone-aware clock required")
+    now = now.astimezone(timezone.utc)
+    missing = missing_closed_slots(now, archive, lookback_days)
+    missing_keys = {(item["date"], item["slot"]) for item in missing}
+    published = []
+    for offset in range(max(0, lookback_days) + 1):
+        day = (now - timedelta(days=offset)).date()
+        if day.weekday() == 6:
+            continue
+        for slot, hour in enumerate(SLOT_HOURS):
+            if day.weekday() == 5 and slot >= 2:
+                continue
+            scheduled = datetime(day.year, day.month, day.day, hour, 10, tzinfo=timezone.utc)
+            if now <= scheduled + timedelta(hours=3, minutes=25):
+                continue
+            key = (day.isoformat(), slot)
+            if key in missing_keys:
+                continue
+            path = archive / str(day.year) / "slots" / f"{day.isoformat()}-slot{slot}.json"
+            # This audit tests archive presence, not content validity or successful execution.
+            if path.is_file():
+                published.append({"date": key[0], "slot": slot})
+    closed = len(published) + len(missing)
+    return {
+        "closed_expected_slots": closed,
+        "published_archive_slots": len(published),
+        "missing_archive_slots": len(missing),
+        "archive_publication_pct": round(100 * len(published) / closed, 2) if closed else None,
+        "execution_status": "not_observed",
+        "missing_cause": "unknown_without_actions_run_evidence",
+        "missing_closed_slots": missing,
+    }
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", type=Path, default=ROOT / "data/prebreakout-history")
     parser.add_argument("--lookback-days", type=int, default=3)
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
-    missing = missing_closed_slots(now, args.archive, args.lookback_days)
-    print(json.dumps({"checked_at": now.isoformat(), "missing_closed_slots": missing}))
+    summary = slot_publication_summary(now, args.archive, args.lookback_days)
+    missing = summary["missing_closed_slots"]
+    print(json.dumps({"checked_at": now.isoformat(), **summary}))
     for item in missing:
         print(f"::warning::Prebreakout slot not published: {item['date']} slot{item['slot']}")
     # Diagnostic only: do not fail the scanning workflow or fabricate older slots.
