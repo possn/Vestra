@@ -48,6 +48,10 @@ concurrency:
 jobs:
   webkit-iphone:
     runs-on: ubuntu-latest
+    # Playwright browsers and Ubuntu system libraries are preinstalled.
+    # Pin to the exact @playwright/test version in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.0-noble
     # Split the complete suite across two independent runners; all shards must pass.
     strategy:
       fail-fast: false
@@ -61,12 +65,13 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: package.json
-      - name: Install Playwright test runner
+      - name: Install version-pinned Playwright test runner
         run: npm install --no-audit --no-fund
-      - name: Install WebKit system dependencies
-        run: timeout --signal=TERM --kill-after=15s 900s npx playwright install-deps webkit
-      - name: Install WebKit browser
-        run: timeout --signal=TERM --kill-after=15s 300s npx playwright install webkit
+      - name: Verify pinned Playwright version and bundled WebKit
+        run: |
+          node -e "const version=require('@playwright/test/package.json').version; if(version!=='1.55.0') process.exit(1); console.log('Playwright',version)"
+          test -d /ms-playwright
+          ls /ms-playwright | grep '^webkit-'
       - name: Run critical iPhone/WebKit journeys
         run: npm run test:e2e -- --shard=${{ matrix.shard }}/2
       - name: Upload WebKit visual evidence and diagnostics
