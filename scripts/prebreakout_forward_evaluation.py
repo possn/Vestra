@@ -34,19 +34,26 @@ def evaluate(signal, asset_bars, benchmark_bars, horizons=HORIZONS):
         a=dict(_series(asset_bars)); b=dict(_series(benchmark_bars))
     except (KeyError,ValueError,TypeError) as exc:
         raise ValueError("invalid signal or price data") from exc
-    dates=sorted(set(a)&set(b))
-    future=[d for d in dates if d>day]
+    # The benchmark defines the session calendar. Intersecting calendars before
+    # counting sessions silently stretches a 5-day horizon when an asset bar is
+    # missing. Never shift the entry or exit to compensate for missing prices.
+    sessions=sorted(b)
+    future=[d for d in sessions if d>day]
     if not future:return {"ticker":signal.get("ticker"),"entry":None,"results":{}}
-    entry=future[0]; index=dates.index(entry)
+    entry=future[0]; index=sessions.index(entry)
     results={}
     for h in horizons:
         if not isinstance(h,int) or h<1:raise ValueError("invalid horizon")
         end=index+h
-        if end>=len(dates):results[h]=None;continue
-        exit_day=dates[end]
+        if end>=len(sessions):results[h]=None;continue
+        window=sessions[index:end+1]
+        if any(d not in a for d in window):
+            results[h]=None
+            continue
+        exit_day=sessions[end]
         r=a[exit_day]/a[entry]-1
         bench=b[exit_day]/b[entry]-1
-        prices=[a[d]/a[entry]-1 for d in dates[index:end+1]]
+        prices=[a[d]/a[entry]-1 for d in window]
         results[h]={"exit":exit_day.isoformat(),"return":r,"spy_return":bench,
                     "excess_return":r-bench,"max_adverse_excursion":min(prices)}
     return {"ticker":signal.get("ticker"),"entry":entry.isoformat(),"results":results}
