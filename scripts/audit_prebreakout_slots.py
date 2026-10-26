@@ -5,6 +5,7 @@ Diagnostic only: never generates or fills past observations.
 """
 import argparse
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -76,6 +77,30 @@ def slot_publication_summary(now, archive, lookback_days=3):
         "missing_closed_slots": missing,
     }
 
+def actions_step_summary(summary):
+    """Human-readable archive publication evidence for GitHub Actions."""
+    expected = summary["closed_expected_slots"]
+    published = summary["published_archive_slots"]
+    missing = summary["missing_archive_slots"]
+    pct = summary["archive_publication_pct"]
+    coverage = "n/a" if pct is None else f"{pct:.2f}%"
+    rows = [
+        "### Pré-Breakout · publicação dos ciclos",
+        "",
+        "| Janela fechada prevista | Arquivo presente | Arquivo ausente | Taxa de publicação |",
+        "|---:|---:|---:|---:|",
+        f"| {expected} | {published} | {missing} | {coverage} |",
+        "",
+        "A presença de arquivo **não demonstra** que o scan executou com êxito. "
+        "Um arquivo ausente não distingue execução omitida, falhada ou publicação adiada.",
+    ]
+    if missing:
+        rows.extend(["", "**Ciclos sem arquivo:**"])
+        rows.extend(f"- {item['date']} · slot {item['slot']} ({item['scheduled_utc']})"
+                    for item in summary["missing_closed_slots"])
+    return "\\n".join(rows) + "\\n"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", type=Path, default=ROOT / "data/prebreakout-history")
@@ -85,6 +110,10 @@ def main():
     summary = slot_publication_summary(now, args.archive, args.lookback_days)
     missing = summary["missing_closed_slots"]
     print(json.dumps({"checked_at": now.isoformat(), **summary}))
+    step_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if step_summary:
+        with open(step_summary, "a", encoding="utf-8") as output:
+            output.write(actions_step_summary(summary))
     for item in missing:
         print(f"::warning::Prebreakout slot not published: {item['date']} slot{item['slot']}")
     # Diagnostic only: do not fail the scanning workflow or fabricate older slots.
