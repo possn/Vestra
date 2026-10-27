@@ -46,22 +46,25 @@ test('iPhone/WebKit: Dashboard renders weekly macro catalysts plus portfolio ear
   // ticker identity is carried by the dossier action inside an earnings detail.
   const events = card.locator('[data-weekly-event-index]');
   await expect(events).toHaveCount(3);
-  await expect(events.nth(0)).toContainText('NVDA');
-  await expect(events.nth(0)).toContainText('NVIDIA Corporation');
-  await expect(events.nth(0)).toContainText('No portefólio');
-  await expect(events.nth(1)).toContainText('AAPL');
-  await expect(events.nth(1)).toContainText('Apple Inc.');
-  await expect(events.nth(2)).toContainText('PPI EUA');
-  await expect(card).not.toContainText('CPI EUA');
+  // The imminent critical CPI must be visible without expanding the rail;
+  // earnings remain available in the same preview and full agenda.
+  await expect(events.nth(0)).toContainText('CPI EUA');
+  await expect(events.nth(0)).toContainText('Impacto elevado');
+  await expect(events.nth(1)).toContainText('NVDA');
+  await expect(events.nth(1)).toContainText('NVIDIA Corporation');
+  await expect(events.nth(1)).toContainText('No portefólio');
+  await expect(events.nth(2)).toContainText('AAPL');
+  await expect(events.nth(2)).toContainText('Apple Inc.');
   await card.locator('[data-weekly-events-toggle]').click();
   expect(await events.count()).toBeGreaterThanOrEqual(4);
   await expect(events.filter({ hasText: 'CPI EUA' })).toHaveCount(1);
+  await expect(events.filter({ hasText: 'PPI EUA' })).toHaveCount(1);
   await expect(card).toContainText('Inflação');
   await expect(card).toContainText('Impacto elevado');
   await expect(card).not.toContainText('FOMC');
   await expect(card).not.toContainText('ETF1');
 
-  await events.nth(0).click();
+  await events.nth(1).click();
   const detail = page.locator('#dashboardWeeklyEventDetail');
   await expect(detail).toBeVisible();
   await expect(detail).toContainText('NVIDIA Corporation');

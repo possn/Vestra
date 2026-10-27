@@ -27,7 +27,7 @@ class WeeklyHistoryControlsTests(unittest.TestCase):
         loader = (ROOT / "market-static-universe.js").read_text(encoding="utf-8")
         self.assertIn("day.textContent=dayLabel(event.date,new Date());", core)
         self.assertNotIn("day.textContent=dayLabel(event.date,now);", core)
-        self.assertIn("dashboard-weekly-events.js?v=3.6", loader)
+        self.assertIn("dashboard-weekly-events.js?v=3.7", loader)
 
     def test_history_navigation_keeps_week_offset_and_result_detail(self):
         nav = (ROOT / "dashboard-weekly-events-navigation.js").read_text(encoding="utf-8")

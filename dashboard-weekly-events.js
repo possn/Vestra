@@ -1,8 +1,8 @@
-/* Vestra Dashboard Weekly Events v3.6 — compact editorial catalysts with progressive disclosure. */
+/* Vestra Dashboard Weekly Events v3.7 — compact editorial catalysts with progressive disclosure. */
 (() => {
   'use strict';
 
-  const VERSION = '3.6';
+  const VERSION = '3.7';
   const CARD_ID = 'dashboardWeeklyEventsCard';
   const STYLE_ID = 'dashboardWeeklyEventsStyle';
   const DETAIL_ID = 'dashboardWeeklyEventDetail';
@@ -589,9 +589,14 @@
     const events = selectEvents(eventStocks, tickers, now, options.limit || MAX_EVENTS, macro);
     // Prioritise company earnings in the Home, with the complete macro agenda accessible on expansion.
     // Unconfirmed events that already passed must not displace future or published results.
+    // An imminent official high-impact release must not be hidden by the
+    // three-row collapsed earnings preview (e.g. tomorrow's FOMC decision).
+    // Keep all company earnings in the full calendar; only order the preview.
+    const criticalMacro = events.filter(event => event.kind === 'macro' &&
+      event.importance === 'critical' && event.date >= localDay(now));
     const priority = events.filter(event => event.kind === 'earnings' && (event.reported || event.date >= localDay(now)));
-    const secondary = events.filter(event => !priority.includes(event));
-    const displayEvents = [...priority, ...secondary];
+    const secondary = events.filter(event => !criticalMacro.includes(event) && !priority.includes(event));
+    const displayEvents = [...criticalMacro, ...priority, ...secondary];
     lastRenderedEvents = displayEvents.slice();
     const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
     card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
