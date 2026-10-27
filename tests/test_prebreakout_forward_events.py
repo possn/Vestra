@@ -88,6 +88,18 @@ class ForwardBreakoutEventTests(unittest.TestCase):
         self.assertFalse(result["durability"]["5"]["held_pivot"])
         self.assertTrue(result["durability"]["10"]["status"]=="pending")
 
+    def test_twenty_session_followthrough_only_when_complete(self):
+        rows=self.bars()
+        next(row for row in rows if row["date"]=="2026-10-24").update(
+            close=102.0,high=102.5,low=99.5,volume=2000.0)
+        pending=breakout_event(self.snapshot(),"TEST",rows[:54],horizon=5)
+        self.assertEqual(pending["durability"]["20"]["status"],"pending")
+        self.assertGreater(pending["durability"]["20"]["remaining_sessions"],0)
+        complete=breakout_event(self.snapshot(),"TEST",rows,horizon=5)
+        self.assertEqual(complete["durability"]["20"]["status"],"observed")
+        self.assertIsInstance(complete["durability"]["20"]["held_pivot"],bool)
+        self.assertIsInstance(complete["durability"]["20"]["end_return_from_breakout"],float)
+
     def test_prepublication_move_does_not_count(self):
         rows=self.bars()
         item=next(row for row in rows if row["date"]=="2026-10-21")
