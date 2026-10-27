@@ -474,7 +474,7 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
     One earliest valid selection per UTC day. No invented selection for a
     day without an immutable archive, and no reuse of a carried old signal.
     """
-    selected={}; archive_days=set()
+    selected={}; archive_days=set(); explicit_abstention_days=set(); invalid_focus_days=set(); candidate_publication_days=set()
     for path in sorted(archive.glob("*/slots/*-slot*.json")):
         try:
             feed=json.loads(path.read_text(encoding="utf-8"))
@@ -488,8 +488,13 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
             day=stamp.date().isoformat()
             archive_days.add(day)
             focus=feed.get("daily_focus")
-            if not isinstance(focus,dict) or focus.get("status")!="research_candidate":
+            if isinstance(focus,dict) and focus.get("status")=="no_qualified_setup":
+                explicit_abstention_days.add(day)
                 continue
+            if not isinstance(focus,dict) or focus.get("status")!="research_candidate":
+                invalid_focus_days.add(day)
+                continue
+            candidate_publication_days.add(day)
             ticker=focus.get("ticker")
             if not isinstance(ticker,str) or not ticker.strip():continue
             matches=[s for s in feed.get("signals",[]) if isinstance(s,dict) and
@@ -555,6 +560,10 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
     return {"method":"first_archived_qualified_daily_focus_asof","archive_days":len(archive_days),
         "days_with_verifiable_daily_pick":len(selected),
         "days_without_verifiable_daily_pick":len(archive_days)-len(selected),
+        "days_with_archived_candidate_publication":len(candidate_publication_days),
+        "days_with_explicit_abstention_only":len((explicit_abstention_days-candidate_publication_days)),
+        "days_with_invalid_or_missing_focus_publication":len(invalid_focus_days-candidate_publication_days-explicit_abstention_days),
+        "days_with_candidate_but_no_verifiable_pick":len(candidate_publication_days-set(selected)),
         "historical_only":True,"out_of_sample_validated":False,"by_horizon":results,
         "by_selection_tier":by_tier}
 
