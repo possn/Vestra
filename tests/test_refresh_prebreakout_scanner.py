@@ -24,6 +24,35 @@ class DailyCoverageCapacityTests(unittest.TestCase):
         self.assertEqual(mod.SCANNER_SLOTS_PER_DAY,4)
 
 
+class StructuralReadinessShadowTests(unittest.TestCase):
+    def test_contraction_support_and_position_are_only_research_evidence(self):
+        good={"quantitativeDiagnostics":{"atrContractionRatio":.67,
+              "baseSupportRetention10":.9,"basePositionPct":93}}
+        weak={"quantitativeDiagnostics":{"atrContractionRatio":1.15,
+              "baseSupportRetention10":.3,"basePositionPct":66}}
+        self.assertTrue(mod.structural_readiness_shadow(good)["eligible"])
+        self.assertEqual(mod.structural_readiness_shadow(weak)["status"],"research_rejected")
+        self.assertIsNone(mod.structural_readiness_shadow(None)["eligible"])
+        self.assertIsNone(mod.structural_readiness_shadow({"quantitativeDiagnostics":{
+            "atrContractionRatio":float("nan"),"baseSupportRetention10":.9,
+            "basePositionPct":90}})["eligible"])
+        self.assertIsNone(mod.structural_readiness_shadow({"quantitativeDiagnostics":{
+            "atrContractionRatio":.6,"baseSupportRetention10":True,
+            "basePositionPct":90}})["eligible"])
+
+    def test_shadow_record_does_not_change_live_eligibility(self):
+        legacy={"ticker":"AAA","date":"2026-10-24","stage":"pré-breakout",
+            "resistance":101,"signalClose":99}
+        good={"quantitativeDiagnostics":{"atrContractionRatio":.7,
+              "baseSupportRetention10":.9,"basePositionPct":95}}
+        record=mod.quality_shadow_record(legacy,good)
+        self.assertTrue(record["strict_eligible"])
+        self.assertTrue(record["structural_readiness_shadow"]["eligible"])
+        missing=mod.quality_shadow_record(legacy,None)
+        self.assertFalse(missing["strict_eligible"])
+        self.assertIsNone(missing["structural_readiness_shadow"]["eligible"])
+
+
 class CurrencyLiquidityTests(unittest.TestCase):
     def test_units_and_fx_are_verified(self):
         fx={"ecb_reference_date":"2026-10-23","rates_to_eur":{"USD":0.9,"GBP":1.2,"EUR":1.0}}
