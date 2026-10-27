@@ -175,10 +175,11 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
 def daily_focus(signals:list[dict], as_of:date)->dict:
     """One evidence-led candidate, or an explicit abstention; never a success probability."""
     eligible=[]
+    developing=[]
     for row in signals:
-        if row.get("stage")!="pré-breakout" or row.get("source")!="yahoo:daily_ohlcv":
+        if row.get("stage") not in ("pré-breakout","compressão") or row.get("source")!="yahoo:daily_ohlcv":
             continue
-        if row.get("vcpConfirmed") is not True or row.get("volumeDry") is not True:
+        if row.get("vcpConfirmed") is not True:
             continue
         if row.get("volumeConfirmed") is True:
             continue  # This slot is for setups still awaiting a breakout.
@@ -188,10 +189,13 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
             score=float(row["score"])
         except (KeyError,ValueError,TypeError):
             continue
-        if not (0 <= (as_of-day).days <= 4 and math.isfinite(distance) and 0<=distance<=4 and math.isfinite(score) and 0<=score<=100):
+        if not (0 <= (as_of-day).days <= 4 and math.isfinite(distance) and 0<=distance<=8 and math.isfinite(score) and 0<=score<=100):
             continue
-        eligible.append(row)
-    if not eligible:
+        if row.get("stage")=="pré-breakout" and row.get("volumeDry") is True and distance<=4:
+            eligible.append(row)
+        else:
+            developing.append(row)
+    if not eligible and not developing:
         return {"status":"no_qualified_setup","ticker":None,
                 "success_probability":None,"probability_calibrated":False,
                 "reason":"no_current_prebreakout_with_verified_contractions_and_drying_volume"}
@@ -225,12 +229,14 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
         return (-structural,-resilience,-deep_liquidity,
                 (as_of-date.fromisoformat(str(row["date"])[:10])).days,
                 -float(row["score"]),float(row["distancePct"]),row["ticker"])
-    best=min(eligible,key=focus_rank)
+    fallback=not eligible
+    best=min(eligible if eligible else developing,key=focus_rank)
     return {"status":"research_candidate","ticker":best["ticker"],
             "signal_date":best["date"],"stage":best["stage"],
             "technical_score":best["score"],"distance_to_pivot_pct":best["distancePct"],
             "success_probability":None,"probability_calibrated":False,
-            "reason":"ranked_verified_setup_not_a_forecast_or_buy_signal"}
+            "selection_tier":"developing_setup" if fallback else "verified_prebreakout",
+            "reason":"best_available_developing_base_not_confirmed" if fallback else "ranked_verified_setup_not_a_forecast_or_buy_signal"}
 
 def published_signals_with_focus(signals:list[dict],as_of:date,limit:int=75)->tuple[list[dict],dict]:
     """Keep the featured candidate in the public list even when capped."""
