@@ -274,5 +274,36 @@ class ImmutableCohortTests(unittest.TestCase):
                 "signals":[{"ticker":"FAKE","date":"2026-10-15","stage":"confirmado","source":"yahoo:daily_ohlcv"}]}))
             self.assertEqual(cohorts(root),[])
 
+class StructuralShadowOutcomeTests(unittest.TestCase):
+    def test_groups_are_prospective_and_unknown_not_false_negative(self):
+        from build_prebreakout_forward_cohorts import structural_shadow_evidence
+        from datetime import datetime, timezone
+        stamp=datetime(2026,10,20,8,15,tzinfo=timezone.utc)
+        def row(ticker,status,eligible):
+            return {"ticker":ticker,"date":"2026-10-19","stage":"pré-breakout",
+                "signalClose":100,"resistance":101,
+                "signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
+                "structural_readiness_shadow":{"model":"atr_support_v1_shadow",
+                    "status":status,"eligible":eligible}}
+        records={("A","pré-breakout"):(stamp,row("A","research_eligible",True)),
+            ("B","pré-breakout"):(stamp,row("B","research_rejected",False)),
+            ("C","pré-breakout"):(stamp,row("C","research_eligible",False)),
+            ("D","pré-breakout"):(stamp,row("D","unverifiable",None))}
+        outcome=structural_shadow_evidence(records,None)
+        groups=outcome["groups"]
+        self.assertEqual(groups["research_eligible"]["cohorts"],1)
+        self.assertEqual(groups["research_rejected"]["cohorts"],1)
+        self.assertEqual(groups["unverifiable"]["cohorts"],2)
+        for group in groups.values():
+            for cell in group["by_horizon"].values():
+                self.assertEqual(cell["matured_evaluable"],0)
+                self.assertEqual(cell["unverified_or_pending"],group["cohorts"])
+                self.assertIsNone(cell["observed_breakout_fraction_descriptive"])
+                self.assertFalse(cell["minimum_evidence_met"])
+                self.assertFalse(cell["probability_calibrated"])
+        self.assertFalse(outcome["selection_effect_validated"])
+        self.assertFalse(outcome["out_of_sample_validated"])
+
+
 if __name__=="__main__":
     unittest.main()
