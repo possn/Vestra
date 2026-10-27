@@ -436,5 +436,30 @@ class AnchorProvenanceAuditTests(unittest.TestCase):
             self.assertTrue(audit["potentially_verifiable_by_horizon"]["5"]["not_a_probability"])
 
 
+class DailyFocusCoverageAuditTests(unittest.TestCase):
+    def test_abstention_and_invalid_candidate_are_not_merged(self):
+        from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
+            examples=[
+                ("2026-10-15",{"status":"no_qualified_setup","ticker":None},[]),
+                ("2026-10-16",{"status":"research_candidate","ticker":"AAA"},
+                 [{"ticker":"AAA","stage":"compressão","source":"yahoo:daily_ohlcv",
+                   "scanner_verified_at":"2026-10-14T08:10:00Z"}]),
+                ("2026-10-17",None,[])]
+            for day,focus,signals in examples:
+                feed={"schema":"vestra_prebreakout_v1",
+                    "generated_at":day+"T08:10:00Z","scan_slot_utc":1,"signals":signals}
+                if focus is not None:feed["daily_focus"]=focus
+                (folder/(day+"-slot1.json")).write_text(json.dumps(feed))
+            out=daily_focus_forward_evidence(Path(tmp),None)
+            self.assertEqual(out["archive_days"],3)
+            self.assertEqual(out["days_with_verifiable_daily_pick"],0)
+            self.assertEqual(out["days_with_explicit_abstention_only"],1)
+            self.assertEqual(out["days_with_candidate_but_no_verifiable_pick"],1)
+            self.assertEqual(out["days_with_invalid_or_missing_focus_publication"],1)
+            self.assertIsNone(out["by_horizon"]["5"]["calibrated_probability"])
+
+
 if __name__=="__main__":
     unittest.main()
