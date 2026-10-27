@@ -480,7 +480,7 @@ class PostConfirmationPayoffTests(unittest.TestCase):
             for i,d in enumerate(days):
                 close=100.0 if d.isoformat()<"2026-10-16" else 104.0
                 bars.append({"date":d.isoformat(),"close":close,
-                    "high":close+0.5,"low":close-0.5,
+                    "high":close+0.1,"low":close-1.5,
                     "volume":1000.0 if d.isoformat()<"2026-10-16" else 3000.0})
             out=build(Path(tmp),{},[],event_prices={"AAA":bars})
             dur=out["breakout_event_evidence"]["coverage_by_horizon"]["5"]["post_confirmation_durability"]["3"]
