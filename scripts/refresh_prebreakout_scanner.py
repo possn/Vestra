@@ -9,6 +9,19 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 INDEX=ROOT/"data"/"stocks-index.json"
 OUTPUT=ROOT/"data"/"prebreakout-signals.json"
+SCAN_BUDGET_PER_SLOT=150
+SCANNER_SLOTS_PER_DAY=4
+
+def daily_coverage_capacity(eligible: int)->dict:
+    """Honest upper bound, not observed coverage or a performance promise."""
+    if type(eligible) is not int or eligible<0:
+        raise ValueError("eligible universe must be a nonnegative integer")
+    capacity=SCAN_BUDGET_PER_SLOT*SCANNER_SLOTS_PER_DAY
+    return {"max_distinct_daily":min(capacity,eligible),
+            "max_daily_coverage_pct":round(100*min(capacity,eligible)/eligible,2) if eligible else None,
+            "assumes":"four_slots_all_complete_disjoint_no_watchlist_overrides",
+            "not_actual_coverage":True}
+
 
 def sma(values: list[float], end: int, span: int):
     return sum(values[end-span+1:end+1])/span if end-span+1>=0 else None
@@ -288,7 +301,7 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
     # on all four slots. Rotate the complete eligible universe instead.
     if not 0<=slot<=3:raise ValueError("invalid six-hour scan slot")
     if not ordered:return []
-    offset=(((when-date(2026,10,13)).days*4+slot)*150)%len(ordered)
+    offset=(((when-date(2026,10,13)).days*4+slot)*SCAN_BUDGET_PER_SLOT)%len(ordered)
     rotated=ordered[offset:]+ordered[:offset]
     watchlist=[]
     for ticker in watch or []:
@@ -296,7 +309,7 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
             watchlist.append(ticker)
             if len(watchlist)>=25:break
     # Historical watch candidates are rechecked, never promoted from cache.
-    rotation=[t for t in rotated if t not in watchlist][:150-len(watchlist)]
+    rotation=[t for t in rotated if t not in watchlist][:SCAN_BUDGET_PER_SLOT-len(watchlist)]
     return watchlist+rotation
 
 def dataframe_bars(frame):
@@ -517,7 +530,7 @@ def main():
     published,focus=published_signals_with_focus(list(by.values()),now.date())
     earnings_audit=earnings_event_diagnostic(ROOT/"data/earnings-events.json",now.date(),[r["ticker"] for r in published])
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
