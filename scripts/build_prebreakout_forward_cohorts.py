@@ -526,6 +526,9 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
     by_tier={tier:{"selected":0,"by_horizon":{str(h):{"matured_confirmed":0,
         "matured_not_confirmed":0,"pending_or_unverifiable":0} for h in (5,10,20)}}
         for tier in ("verified_prebreakout","developing_setup")}
+    for group in by_tier.values():
+        for cell in group["by_horizon"].values():
+            cell["post_confirmation_payoff"]={str(w):{"confirmed":0,"completed":0,"pending_or_unverifiable":0,"positive_gross":0,"positive_net_after_20bp":0,"gross_sum":0.0,"net_sum":0.0} for w in (3,5,10,20)}
     for stamp,row,tier in selected.values():
         by_tier[tier]["selected"]+=1
         snapshot={"schema":"vestra_prebreakout_v1","generated_at":stamp.isoformat(),"signals":[row]}
@@ -540,6 +543,20 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
             if event.get("horizon_matured") is True and event.get("status") in ("confirmed","not_confirmed"):
                 cell["matured_"+event["status"]]+=1
                 tier_cell["matured_"+event["status"]]+=1
+                if event["status"]=="confirmed":
+                    for window,payoff in tier_cell["post_confirmation_payoff"].items():
+                        payoff["confirmed"]+=1
+                        obs=event.get("durability",{}).get(window)
+                        value=obs.get("end_return_from_breakout") if isinstance(obs,dict) and obs.get("status")=="observed" else None
+                        if (isinstance(value,(float,int)) and not isinstance(value,bool)
+                            and math.isfinite(value) and type(obs.get("held_pivot")) is bool):
+                            payoff["completed"]+=1
+                            payoff["positive_gross"]+=int(value>0)
+                            payoff["positive_net_after_20bp"]+=int(value>0.002)
+                            payoff["gross_sum"]+=value
+                            payoff["net_sum"]+=value-0.002
+                        else:
+                            payoff["pending_or_unverifiable"]+=1
             else:
                 cell["pending_or_unverifiable"]+=1
                 tier_cell["pending_or_unverifiable"]+=1
@@ -557,6 +574,14 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
             cell["matured_coverage"]=round(total/group["selected"],4) if group["selected"] else None
             cell["observed_confirmation_fraction"]=round(cell["matured_confirmed"]/total,4) if total else None
             cell["calibrated_probability"]=None
+            for payoff in cell["post_confirmation_payoff"].values():
+                n=payoff["completed"]
+                payoff["mean_gross_return"]=round(payoff.pop("gross_sum")/n,6) if n else None
+                payoff["mean_net_after_20bp"]=round(payoff.pop("net_sum")/n,6) if n else None
+                payoff["coverage_of_confirmed"]=round(n/payoff["confirmed"],4) if payoff["confirmed"] else None
+                payoff["calibrated_probability"]=None
+                payoff["execution_verified"]=False
+                payoff["cost_scenario_round_trip_fraction"]=0.002
     return {"method":"first_archived_qualified_daily_focus_asof","archive_days":len(archive_days),
         "days_with_verifiable_daily_pick":len(selected),
         "days_without_verifiable_daily_pick":len(archive_days)-len(selected),
