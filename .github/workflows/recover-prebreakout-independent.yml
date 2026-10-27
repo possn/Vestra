@@ -1,0 +1,38 @@
+name: Recover prebreakout from independent dashboard workflow
+
+# Independent event source: a completed dashboard-news workflow can recover
+# a missed prebreakout cron. Does not depend on a scanner run existing.
+on:
+  workflow_run:
+    workflows: ["Update dashboard news"]
+    types: [completed]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: recover-prebreakout-independent
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Verify scanner is due against immutable published archives
+        id: scan_due
+        run: python scripts/check_prebreakout_scan_due.py
+      - name: Dispatch canonical scanner when due
+        if: steps.scan_due.outputs.scan == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run refresh-prebreakout-scanner.yml --ref main
