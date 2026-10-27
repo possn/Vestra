@@ -8,7 +8,7 @@ Price histories are supplied independently; missing prices remain missing.
 from __future__ import annotations
 import json
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta
 from pathlib import Path
 from prebreakout_forward_evaluation import evaluate_archived
 from prebreakout_stage_evidence import report
