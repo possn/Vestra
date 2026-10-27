@@ -67,7 +67,9 @@ class ForwardPriceRefreshTests(unittest.TestCase):
             self.assertEqual(h["evaluable"],0)
             self.assertIsNone(h["breakout_rate"])
             self.assertEqual(h["by_status"]["missing_ohlcv"],1)
-            self.assertEqual(h["post_confirmation_durability"]["3"],{"observed":0,"held_pivot":0,"lost_pivot":0})
+            self.assertEqual({key:h["post_confirmation_durability"]["3"][key] for key in ("observed","held_pivot","lost_pivot")},{"observed":0,"held_pivot":0,"lost_pivot":0})
+            self.assertEqual(h["post_confirmation_durability"]["3"]["return_observations"],0)
+            self.assertIsNone(h["post_confirmation_durability"]["3"]["mean_net_return_scenario"])
             self.assertEqual(h["post_confirmation_durability"]["10"]["observed"],0)
 
     def test_transient_download_failure_retries_once_without_backfill(self):

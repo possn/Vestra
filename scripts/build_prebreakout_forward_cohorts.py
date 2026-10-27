@@ -620,9 +620,25 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
                       isinstance(row["durability"].get(window),dict) and
                       row["durability"][window].get("status")=="observed" and
                       type(row["durability"][window].get("held_pivot")) is bool]
+            # Returns are observations from the confirmation close, not executable
+            # orders. Apply an explicit round-trip cost scenario only to complete
+            # durability windows. Do not count pending outcomes as losers.
+            returns=[float(row["end_return_from_breakout"]) for row in observed
+                     if isinstance(row.get("end_return_from_breakout"),(float,int))
+                     and math.isfinite(float(row["end_return_from_breakout"]))]
+            cost_fraction=0.002
+            net=[ret-cost_fraction for ret in returns]
             durability[window]={"observed":len(observed),
                 "held_pivot":sum(row["held_pivot"] for row in observed),
-                "lost_pivot":sum(not row["held_pivot"] for row in observed)}
+                "lost_pivot":sum(not row["held_pivot"] for row in observed),
+                "return_observations":len(returns),
+                "positive_gross":sum(value>0 for value in returns),
+                "positive_net_after_cost_scenario":sum(value>0 for value in net),
+                "mean_gross_return":round(sum(returns)/len(returns),6) if returns else None,
+                "mean_net_return_scenario":round(sum(net)/len(net),6) if net else None,
+                "cost_scenario_round_trip_fraction":cost_fraction,
+                "execution_adjusted":False,
+                "calibrated_probability":None}
         event_coverage[str(horizon)]={
             "cohorts":len(sample),"evaluable":evaluated,
             "matured_horizons":matured,"confirmed_before_maturity":confirmed_early,
