@@ -623,7 +623,8 @@
             row.date === focus.signal_date &&
             row.vcpConfirmed === true &&
             row.source === 'yahoo:daily_ohlcv' &&
-            ((focus.selection_tier === 'developing_setup' && row.stage === 'compressão' &&
+            ((focus.selection_tier === 'developing_setup' &&
+              (row.stage === 'compressão' || row.stage === 'pré-breakout') &&
               row.distancePct >= 0 && row.distancePct <= 8) ||
              (row.stage === 'pré-breakout' && row.volumeDry === true &&
               row.distancePct >= 0 && row.distancePct <= 4))) : null;
