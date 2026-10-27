@@ -502,7 +502,7 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
             verified=row.get("scanner_verified_at")
             if not isinstance(verified,str):continue
             scan=datetime.fromisoformat(verified.replace("Z","+00:00"))
-            if scan.tzinfo is None or scan.astimezone(timezone.utc)!=stamp:continue
+            if scan.tzinfo is None or not 0 <= (stamp-scan.astimezone(timezone.utc)).total_seconds() <= 18*3600:continue
             if day not in selected or stamp<selected[day][0]:
                 selected[day]=(stamp,row)
         except (OSError,ValueError,KeyError,TypeError,AttributeError):
