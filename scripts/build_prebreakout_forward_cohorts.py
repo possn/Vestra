@@ -449,7 +449,7 @@ def retrospective_feature_outcome_audit(cases:list[dict], events:list[dict], pri
             status=event.get("status") if matured and event.get("status") in ("confirmed","not_confirmed") else "pending_or_unverified"
             durability=event.get("durability") if status=="confirmed" else None
             joint={}
-            for window in (3,5,10):
+            for window in (3,5,10,20):
                 obs=durability.get(str(window)) if isinstance(durability,dict) else None
                 label="pending_or_unverified"
                 if (isinstance(obs,dict) and obs.get("status")=="observed"
@@ -613,7 +613,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         # Durability is measured only where the post-confirmation horizon is complete.
         # A confirmed trigger is not automatically a durable success.
         durability={}
-        for window in ("3","5","10"):
+        for window in ("3","5","10","20"):
             observed=[row["durability"][window] for row in sample
                       if row["status"]=="confirmed" and
                       isinstance(row.get("durability"),dict) and
