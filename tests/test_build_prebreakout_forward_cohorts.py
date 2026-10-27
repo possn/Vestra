@@ -305,5 +305,52 @@ class StructuralShadowOutcomeTests(unittest.TestCase):
         self.assertFalse(outcome["out_of_sample_validated"])
 
 
+class DailyFocusProspectiveTests(unittest.TestCase):
+    def test_one_asof_selection_per_day_and_unknown_outcomes(self):
+        from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);folder=root/"2026"/"slots";folder.mkdir(parents=True)
+            for slot,hour in ((1,8),(2,14)):
+                stamp=f"2026-10-15T{hour:02d}:10:00Z"
+                (folder/f"2026-10-15-slot{slot}.json").write_text(json.dumps({
+                    "schema":"vestra_prebreakout_v1","generated_at":stamp,
+                    "scan_slot_utc":slot,
+                    "daily_focus":{"status":"research_candidate","ticker":"AAA"},
+                    "signals":[{"ticker":"AAA","date":"2026-10-14",
+                        "stage":"pré-breakout","source":"yahoo:daily_ohlcv",
+                        "signalClose":98,"resistance":100,
+                        "signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
+                        "scanner_verified_at":stamp}]}))
+            (folder/"2026-10-16-slot1.json").write_text(json.dumps({
+                "schema":"vestra_prebreakout_v1",
+                "generated_at":"2026-10-16T08:10:00Z","scan_slot_utc":1,
+                "daily_focus":{"status":"no_qualified_setup","ticker":None},
+                "signals":[]}))
+            result=daily_focus_forward_evidence(root,None)
+            self.assertEqual(result["archive_days"],2)
+            self.assertEqual(result["days_with_verifiable_daily_pick"],1)
+            self.assertEqual(result["days_without_verifiable_daily_pick"],1)
+            for cell in result["by_horizon"].values():
+                self.assertEqual(cell["selected"],1)
+                self.assertEqual(cell["pending_or_unverifiable"],1)
+                self.assertEqual(cell["evaluable"],0)
+                self.assertIsNone(cell["calibrated_probability"])
+                self.assertFalse(cell["minimum_sample_met"])
+
+    def test_stale_carried_signal_cannot_be_attributed_to_current_daily_pick(self):
+        from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
+            (folder/"2026-10-15-slot1.json").write_text(json.dumps({
+                "schema":"vestra_prebreakout_v1","generated_at":"2026-10-15T08:10:00Z",
+                "scan_slot_utc":1,
+                "daily_focus":{"status":"research_candidate","ticker":"AAA"},
+                "signals":[{"ticker":"AAA","date":"2026-10-14",
+                    "stage":"pré-breakout","source":"yahoo:daily_ohlcv",
+                    "scanner_verified_at":"2026-10-13T20:10:00Z"}]}))
+            result=daily_focus_forward_evidence(Path(tmp),None)
+            self.assertEqual(result["days_with_verifiable_daily_pick"],0)
+
+
 if __name__=="__main__":
     unittest.main()

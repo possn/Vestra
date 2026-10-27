@@ -468,6 +468,73 @@ def retrospective_feature_outcome_audit(cases:list[dict], events:list[dict], pri
                 "feature_missing":features["missing"],"features_point_in_time_verified":False})
     return result
 
+def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dict:
+    """Measure the actual archived daily featured pick, not a hindsight winner.
+
+    One earliest valid selection per UTC day. No invented selection for a
+    day without an immutable archive, and no reuse of a carried old signal.
+    """
+    selected={}; archive_days=set()
+    for path in sorted(archive.glob("*/slots/*-slot*.json")):
+        try:
+            feed=json.loads(path.read_text(encoding="utf-8"))
+            stamp=datetime.fromisoformat(str(feed["generated_at"]).replace("Z","+00:00"))
+            if stamp.tzinfo is None or feed.get("schema")!="vestra_prebreakout_v1":
+                continue
+            stamp=stamp.astimezone(timezone.utc)
+            slot=feed.get("scan_slot_utc")
+            if type(slot) is not int or slot!=stamp.hour//6 or path.name!=f"{stamp.date().isoformat()}-slot{slot}.json":
+                continue
+            day=stamp.date().isoformat()
+            archive_days.add(day)
+            focus=feed.get("daily_focus")
+            if not isinstance(focus,dict) or focus.get("status")!="research_candidate":
+                continue
+            ticker=focus.get("ticker")
+            if not isinstance(ticker,str) or not ticker.strip():continue
+            matches=[s for s in feed.get("signals",[]) if isinstance(s,dict) and
+                     s.get("ticker")==ticker and s.get("stage")=="pré-breakout" and
+                     s.get("source")=="yahoo:daily_ohlcv"]
+            if len(matches)!=1:continue
+            row=matches[0]
+            # The daily recommendation is only an independently measured
+            # as-of selection if its original scan timestamp is available.
+            verified=row.get("scanner_verified_at")
+            if not isinstance(verified,str):continue
+            scan=datetime.fromisoformat(verified.replace("Z","+00:00"))
+            if scan.tzinfo is None or not 0 <= (stamp-scan.astimezone(timezone.utc)).total_seconds() <= 18*3600:continue
+            if day not in selected or stamp<selected[day][0]:
+                selected[day]=(stamp,row)
+        except (OSError,ValueError,KeyError,TypeError,AttributeError):
+            continue
+    results={str(h):{"selected":len(selected),"matured_confirmed":0,
+        "matured_not_confirmed":0,"pending_or_unverifiable":0} for h in (5,10,20)}
+    for stamp,row in selected.values():
+        snapshot={"schema":"vestra_prebreakout_v1","generated_at":stamp.isoformat(),"signals":[row]}
+        prices=(event_prices or {}).get(row["ticker"])
+        for horizon in (5,10,20):
+            cell=results[str(horizon)]
+            try:
+                event=breakout_event(snapshot,row["ticker"],prices,horizon) if isinstance(prices,list) else {}
+            except (KeyError,ValueError,TypeError,OverflowError):
+                event={}
+            if event.get("horizon_matured") is True and event.get("status") in ("confirmed","not_confirmed"):
+                cell["matured_"+event["status"]]+=1
+            else:
+                cell["pending_or_unverifiable"]+=1
+    for cell in results.values():
+        total=cell["matured_confirmed"]+cell["matured_not_confirmed"]
+        cell["evaluable"]=total
+        cell["matured_coverage"]=round(total/cell["selected"],4) if cell["selected"] else None
+        cell["observed_confirmation_fraction"]=round(cell["matured_confirmed"]/total,4) if total else None
+        cell["minimum_sample_met"]=total>=30 and cell["selected"]>0 and total/cell["selected"]>=.8
+        cell["calibrated_probability"]=None
+    return {"method":"first_archived_qualified_daily_focus_asof","archive_days":len(archive_days),
+        "days_with_verifiable_daily_pick":len(selected),
+        "days_without_verifiable_daily_pick":len(archive_days)-len(selected),
+        "historical_only":True,"out_of_sample_validated":False,"by_horizon":results}
+
+
 def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|None=None)->dict:
     cases=cohorts(archive)
     outcomes=[]
@@ -544,6 +611,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "walkforward_split_plan":purged_walkforward_folds(cases),
         "walkforward_holdout_returns":walkforward_holdout_returns(cases,outcomes,purged_walkforward_folds(cases)),
         "shadow_forward_comparison":shadow_forward_comparison(archive,event_prices),
+        "daily_focus_forward_evidence":daily_focus_forward_evidence(archive,event_prices),
         "retrospective_feature_outcome_audit":retrospective_feature_outcome_audit(cases,events,prices,benchmark_bars),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
