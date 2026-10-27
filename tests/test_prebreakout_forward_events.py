@@ -3,7 +3,7 @@ import unittest
 from datetime import date,timedelta
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from prebreakout_forward_events import breakout_event,reconcile_pivot
+from prebreakout_forward_events import breakout_event,reconcile_pivot,price_basis_diagnostic
 
 class ForwardBreakoutEventTests(unittest.TestCase):
     def snapshot(self):
@@ -28,6 +28,23 @@ class ForwardBreakoutEventTests(unittest.TestCase):
             row["high"]*=0.5
             row["low"]*=0.5
         self.assertEqual(breakout_event(self.snapshot(),"TEST",rows)["status"],"price_basis_unverified")
+
+    def test_price_basis_failure_reasons_are_explicit_and_fail_closed(self):
+        sample=self.snapshot()
+        rows=self.bars()
+        self.assertEqual(price_basis_diagnostic(sample["signals"][0],rows),"reconciled")
+        sample["signals"][0].pop("signalClose")
+        self.assertEqual(breakout_event(sample,"TEST",rows)["price_basis_diagnostic"],
+                         "invalid_or_missing_archived_anchor")
+        sample=self.snapshot()
+        rows=[r for r in rows if r["date"]!="2026-10-22"]
+        self.assertEqual(breakout_event(sample,"TEST",rows)["price_basis_diagnostic"],
+                         "missing_or_duplicated_anchor_session")
+        rows=self.bars()
+        for row in rows:
+            row["close"]*=0.9995
+        self.assertEqual(breakout_event(sample,"TEST",rows)["price_basis_diagnostic"],
+                         "adjusted_price_revision_without_verified_factor")
 
     def test_small_dividend_like_revision_does_not_pass_rounding_guard(self):
         rows=self.bars()
