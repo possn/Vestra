@@ -245,6 +245,26 @@ def published_signals_with_focus(signals:list[dict],as_of:date,limit:int=75)->tu
                        key=lambda row:({"pré-breakout":0,"compressão":1}[row["stage"]],-row["score"],row["ticker"]))
     return visible,focus
 
+def structural_readiness_shadow(signal:dict|None)->dict:
+    """As-of research-only classification. Never change live signals or forecast odds."""
+    q=signal.get("quantitativeDiagnostics") if isinstance(signal,dict) else None
+    if not isinstance(q,dict):
+        return {"model":"atr_support_v1_shadow","status":"unverifiable","eligible":None}
+    observed=[]
+    for key in ("atrContractionRatio","baseSupportRetention10","basePositionPct"):
+        value=q.get(key)
+        if type(value) not in (float,int) or not math.isfinite(value):
+            return {"model":"atr_support_v1_shadow","status":"unverifiable","eligible":None}
+        observed.append(float(value))
+    atr,support,position=observed
+    if not (0<atr<=5 and 0<=support<=1 and 0<=position<=100):
+        return {"model":"atr_support_v1_shadow","status":"unverifiable","eligible":None}
+    eligible=atr<=.8 and support>=.8 and position>=80
+    return {"model":"atr_support_v1_shadow",
+            "status":"research_eligible" if eligible else "research_rejected",
+            "eligible":eligible}
+
+
 def quality_shadow_record(legacy:dict, strict:dict|None)->dict:
     """Research-only point-in-time evidence; never a public recommendation."""
     return {"ticker":legacy["ticker"],"date":legacy["date"],"stage":legacy["stage"],
@@ -253,6 +273,7 @@ def quality_shadow_record(legacy:dict, strict:dict|None)->dict:
             "resistance":legacy["resistance"],"signalClose":legacy["signalClose"],
             "signalPriceBasis":legacy.get("signalPriceBasis"),
             "legacy_eligible":True,"strict_eligible":strict is not None,
+            "structural_readiness_shadow":structural_readiness_shadow(strict),
             "source":"yahoo:daily_ohlcv"}
 
 def watched_tickers(now:datetime, path:Path=ROOT/"data/prebreakout-observations.json", limit:int=25)->list[str]:
