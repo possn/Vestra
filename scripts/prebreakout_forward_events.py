@@ -32,6 +32,30 @@ def reconcile_pivot(signal:dict, bars:list[dict], rounding_tolerance:float=0.000
     return pivot*ratio
 
 
+def price_basis_diagnostic(signal:dict,bars:list[dict])->str:
+    """Explain non-reconciliation without inventing a price adjustment factor."""
+    if signal.get("signalPriceBasis")!="yahoo_auto_adjusted_asof_publication":
+        return "unverified_signal_price_basis"
+    try:
+        original=float(signal["signalClose"])
+        pivot=float(signal["resistance"])
+        day=date.fromisoformat(str(signal["date"])[:10])
+    except (KeyError,TypeError,ValueError,OverflowError):
+        return "invalid_or_missing_archived_anchor"
+    if not all(math.isfinite(x) and x>0 for x in (original,pivot)):
+        return "invalid_or_missing_archived_anchor"
+    try:
+        matches=[float(row["close"]) for row in bars
+                 if date.fromisoformat(str(row["date"])[:10])==day]
+    except (KeyError,TypeError,ValueError,OverflowError):
+        return "unverifiable_independent_history"
+    if len(matches)!=1 or not math.isfinite(matches[0]) or matches[0]<=0:
+        return "missing_or_duplicated_anchor_session"
+    if abs(matches[0]-original)>0.00002:
+        return "adjusted_price_revision_without_verified_factor"
+    return "reconciled"
+
+
 def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
     if type(horizon) is not int or horizon<1:
         raise ValueError("invalid horizon")
@@ -48,7 +72,8 @@ def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
     # Until a verifiable same-basis adjustment factor is archived, abstain.
     pivot=reconcile_pivot(signal,bars)
     if pivot is None:
-        return {"status":"price_basis_unverified","observed_sessions":0,"event_date":None}
+        return {"status":"price_basis_unverified","price_basis_diagnostic":price_basis_diagnostic(signal,bars),
+                "observed_sessions":0,"event_date":None}
     if not math.isfinite(pivot) or pivot<=0:
         raise ValueError("invalid pivot")
     first_eligible=max(date.fromisoformat(str(signal["date"])[:10]),published.astimezone(timezone.utc).date())
