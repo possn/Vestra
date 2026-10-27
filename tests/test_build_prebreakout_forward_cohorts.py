@@ -372,6 +372,15 @@ class DailyFocusTierEvidenceTests(unittest.TestCase):
             self.assertEqual(out["by_selection_tier"]["verified_prebreakout"]["selected"],0)
             self.assertEqual(out["by_horizon"]["5"]["pending_or_unverifiable"],1)
             self.assertIsNone(out["by_selection_tier"]["developing_setup"]["by_horizon"]["5"]["calibrated_probability"])
+            for window in ("3","5","10","20"):
+                payoff=out["by_selection_tier"]["developing_setup"]["by_horizon"]["5"]["post_confirmation_payoff"][window]
+                self.assertEqual(payoff["confirmed"],0)
+                self.assertEqual(payoff["completed"],0)
+                self.assertEqual(payoff["pending_or_unverifiable"],0)
+                self.assertIsNone(payoff["mean_gross_return"])
+                self.assertIsNone(payoff["mean_net_after_20bp"])
+                self.assertIsNone(payoff["calibrated_probability"])
+                self.assertFalse(payoff["execution_verified"])
 
     def test_invalid_developing_tier_never_promotes_non_vcp(self):
         from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
