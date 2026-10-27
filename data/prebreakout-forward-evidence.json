@@ -3,10 +3,36 @@
   "breakout_event_evidence": {
     "historical_only": true,
     "method": "published_pivot_future_ohlcv",
+    "price_basis_audit": {
+      "5": {
+        "unverifiable": 20,
+        "by_reason": {
+          "unverified_signal_price_basis": 20
+        },
+        "price_factor_inferred": false,
+        "counts_excluded_from_negative_outcomes": true
+      },
+      "10": {
+        "unverifiable": 20,
+        "by_reason": {
+          "unverified_signal_price_basis": 20
+        },
+        "price_factor_inferred": false,
+        "counts_excluded_from_negative_outcomes": true
+      },
+      "20": {
+        "unverifiable": 20,
+        "by_reason": {
+          "unverified_signal_price_basis": 20
+        },
+        "price_factor_inferred": false,
+        "counts_excluded_from_negative_outcomes": true
+      }
+    },
     "unvalidated_probability": true,
     "coverage_by_horizon": {
       "5": {
-        "cohorts": 23,
+        "cohorts": 25,
         "evaluable": 0,
         "matured_horizons": 0,
         "confirmed_before_maturity": 0,
@@ -29,15 +55,14 @@
         },
         "coverage": 0.0,
         "by_status": {
-          "price_basis_unverified": 14,
-          "missing_ohlcv": 6,
-          "pending": 3
+          "price_basis_unverified": 20,
+          "pending": 5
         },
         "breakout_rate": null,
         "reason": "insufficient_or_unverified_forward_evidence"
       },
       "10": {
-        "cohorts": 23,
+        "cohorts": 25,
         "evaluable": 0,
         "matured_horizons": 0,
         "confirmed_before_maturity": 0,
@@ -60,15 +85,14 @@
         },
         "coverage": 0.0,
         "by_status": {
-          "price_basis_unverified": 14,
-          "missing_ohlcv": 6,
-          "pending": 3
+          "price_basis_unverified": 20,
+          "pending": 5
         },
         "breakout_rate": null,
         "reason": "insufficient_or_unverified_forward_evidence"
       },
       "20": {
-        "cohorts": 23,
+        "cohorts": 25,
         "evaluable": 0,
         "matured_horizons": 0,
         "confirmed_before_maturity": 0,
@@ -91,9 +115,8 @@
         },
         "coverage": 0.0,
         "by_status": {
-          "price_basis_unverified": 14,
-          "missing_ohlcv": 6,
-          "pending": 3
+          "price_basis_unverified": 20,
+          "pending": 5
         },
         "breakout_rate": null,
         "reason": "insufficient_or_unverified_forward_evidence"
@@ -107,6 +130,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -117,6 +141,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -127,6 +152,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -137,6 +163,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -147,6 +174,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -157,6 +185,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -167,6 +196,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -177,6 +207,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -187,6 +218,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -197,6 +229,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -207,6 +240,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -217,6 +251,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -226,7 +261,8 @@
         "published_at": "2026-10-15T07:09:31.724375+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -236,7 +272,8 @@
         "published_at": "2026-10-15T07:09:31.724375+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -246,7 +283,8 @@
         "published_at": "2026-10-15T07:09:31.724375+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -256,7 +294,8 @@
         "published_at": "2026-10-16T08:42:21.359869+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -266,7 +305,8 @@
         "published_at": "2026-10-16T08:42:21.359869+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -276,7 +316,8 @@
         "published_at": "2026-10-16T08:42:21.359869+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -287,6 +328,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -297,6 +339,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -307,6 +350,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -317,6 +361,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -327,6 +372,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -337,6 +383,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -347,6 +394,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -357,6 +405,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -367,6 +416,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -377,6 +427,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -387,6 +438,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -397,6 +449,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -406,7 +459,8 @@
         "published_at": "2026-10-19T15:32:27.897826+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -416,7 +470,8 @@
         "published_at": "2026-10-19T15:32:27.897826+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -426,7 +481,8 @@
         "published_at": "2026-10-19T15:32:27.897826+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -436,7 +492,8 @@
         "published_at": "2026-10-19T21:41:39.535321+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -446,7 +503,8 @@
         "published_at": "2026-10-19T21:41:39.535321+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -456,7 +514,8 @@
         "published_at": "2026-10-19T21:41:39.535321+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -467,6 +526,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -477,6 +537,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -487,6 +548,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -496,7 +558,8 @@
         "published_at": "2026-10-20T14:26:56.947259+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -506,7 +569,8 @@
         "published_at": "2026-10-20T14:26:56.947259+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -516,7 +580,8 @@
         "published_at": "2026-10-20T14:26:56.947259+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -527,6 +592,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -537,6 +603,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -547,6 +614,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -556,7 +624,8 @@
         "published_at": "2026-10-21T08:49:24.729306+00:00",
         "horizon_sessions": 5,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -566,7 +635,8 @@
         "published_at": "2026-10-21T08:49:24.729306+00:00",
         "horizon_sessions": 10,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -576,7 +646,8 @@
         "published_at": "2026-10-21T08:49:24.729306+00:00",
         "horizon_sessions": 20,
         "base_maturity": "unverified",
-        "status": "missing_ohlcv",
+        "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -587,6 +658,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -597,6 +669,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -607,6 +680,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -617,6 +691,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -627,6 +702,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -637,6 +713,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -647,6 +724,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -657,6 +735,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -667,6 +746,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -677,6 +757,7 @@
         "horizon_sessions": 5,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -687,6 +768,7 @@
         "horizon_sessions": 10,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -697,6 +779,7 @@
         "horizon_sessions": 20,
         "base_maturity": "unverified",
         "status": "price_basis_unverified",
+        "price_basis_diagnostic": "unverified_signal_price_basis",
         "observed_sessions": 0,
         "event_date": null
       },
@@ -784,6 +867,66 @@
         "ticker": "ZBRA",
         "stage": "compressão",
         "published_at": "2026-10-26T15:08:23.908867+00:00",
+        "horizon_sessions": 20,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 5,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 10,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 20,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 5,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 10,
+        "base_maturity": "developing_28_to_84d",
+        "status": "pending",
+        "observed_sessions": 0,
+        "event_date": null
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
         "horizon_sessions": 20,
         "base_maturity": "developing_28_to_84d",
         "status": "pending",
@@ -795,9 +938,9 @@
   "evaluation_method": "adjusted_daily_close_after_publication",
   "cohort_policy": "first_immutable_publication_per_ticker_stage_and_verified_base_start",
   "historical_only": true,
-  "cohort_count": 23,
+  "cohort_count": 25,
   "base_identity_coverage": {
-    "anchored": 3,
+    "anchored": 5,
     "legacy_unanchored": 20
   },
   "base_maturity_evidence": {
@@ -856,12 +999,12 @@
         }
       },
       "developing_28_to_84d": {
-        "cohorts": 3,
+        "cohorts": 5,
         "by_horizon": {
           "5": {
             "confirmed": 0,
             "not_confirmed": 0,
-            "pending_or_unverified": 3,
+            "pending_or_unverified": 5,
             "evaluable": 0,
             "breakout_probability": null,
             "matured_evaluable": 0,
@@ -875,7 +1018,7 @@
           "10": {
             "confirmed": 0,
             "not_confirmed": 0,
-            "pending_or_unverified": 3,
+            "pending_or_unverified": 5,
             "evaluable": 0,
             "breakout_probability": null,
             "matured_evaluable": 0,
@@ -889,7 +1032,7 @@
           "20": {
             "confirmed": 0,
             "not_confirmed": 0,
-            "pending_or_unverified": 3,
+            "pending_or_unverified": 5,
             "evaluable": 0,
             "breakout_probability": null,
             "matured_evaluable": 0,
@@ -913,9 +1056,9 @@
         "cohorts": 14,
         "by_horizon": {
           "5": {
-            "evaluable": 6,
+            "evaluable": 8,
             "positive_net_excess": 3,
-            "missing": 8
+            "missing": 6
           },
           "10": {
             "evaluable": 0,
@@ -930,22 +1073,22 @@
         }
       },
       "nonpositive_spy_20d": {
-        "cohorts": 9,
+        "cohorts": 11,
         "by_horizon": {
           "5": {
             "evaluable": 0,
             "positive_net_excess": 0,
-            "missing": 9
+            "missing": 11
           },
           "10": {
             "evaluable": 0,
             "positive_net_excess": 0,
-            "missing": 9
+            "missing": 11
           },
           "20": {
             "evaluable": 0,
             "positive_net_excess": 0,
-            "missing": 9
+            "missing": 11
           }
         }
       },
@@ -1492,6 +1635,229 @@
             "observed_fraction_is_probability": false,
             "minimum_evidence_met": false,
             "selection_effect_validated": false
+          }
+        }
+      }
+    },
+    "structural_readiness_evidence": {
+      "method": "prospective_structural_readiness_v1_asof_archived_shadow",
+      "historical_only": true,
+      "selection_effect_validated": false,
+      "out_of_sample_validated": false,
+      "success_probability": null,
+      "groups": {
+        "research_eligible": {
+          "cohorts": 0,
+          "by_horizon": {
+            "5": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 0,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": null,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            },
+            "10": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 0,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": null,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            },
+            "20": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 0,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": null,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            }
+          }
+        },
+        "research_rejected": {
+          "cohorts": 0,
+          "by_horizon": {
+            "5": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 0,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": null,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            },
+            "10": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 0,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": null,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            },
+            "20": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 0,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": null,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            }
+          }
+        },
+        "unverifiable": {
+          "cohorts": 4,
+          "by_horizon": {
+            "5": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 4,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": 0.0,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            },
+            "10": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 4,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": 0.0,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            },
+            "20": {
+              "confirmed_matured": 0,
+              "not_confirmed_matured": 0,
+              "unverified_or_pending": 4,
+              "matured_evaluable": 0,
+              "observed_breakout_fraction_descriptive": null,
+              "matured_coverage": 0.0,
+              "minimum_evidence_met": false,
+              "probability_calibrated": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "daily_focus_forward_evidence": {
+    "method": "first_archived_qualified_daily_focus_asof",
+    "archive_days": 10,
+    "days_with_verifiable_daily_pick": 1,
+    "days_without_verifiable_daily_pick": 9,
+    "historical_only": true,
+    "out_of_sample_validated": false,
+    "by_horizon": {
+      "5": {
+        "selected": 1,
+        "matured_confirmed": 0,
+        "matured_not_confirmed": 0,
+        "pending_or_unverifiable": 1,
+        "evaluable": 0,
+        "matured_coverage": 0.0,
+        "observed_confirmation_fraction": null,
+        "minimum_sample_met": false,
+        "calibrated_probability": null
+      },
+      "10": {
+        "selected": 1,
+        "matured_confirmed": 0,
+        "matured_not_confirmed": 0,
+        "pending_or_unverifiable": 1,
+        "evaluable": 0,
+        "matured_coverage": 0.0,
+        "observed_confirmation_fraction": null,
+        "minimum_sample_met": false,
+        "calibrated_probability": null
+      },
+      "20": {
+        "selected": 1,
+        "matured_confirmed": 0,
+        "matured_not_confirmed": 0,
+        "pending_or_unverifiable": 1,
+        "evaluable": 0,
+        "matured_coverage": 0.0,
+        "observed_confirmation_fraction": null,
+        "minimum_sample_met": false,
+        "calibrated_probability": null
+      }
+    },
+    "by_selection_tier": {
+      "verified_prebreakout": {
+        "selected": 0,
+        "by_horizon": {
+          "5": {
+            "matured_confirmed": 0,
+            "matured_not_confirmed": 0,
+            "pending_or_unverifiable": 0,
+            "evaluable": 0,
+            "matured_coverage": null,
+            "observed_confirmation_fraction": null,
+            "calibrated_probability": null
+          },
+          "10": {
+            "matured_confirmed": 0,
+            "matured_not_confirmed": 0,
+            "pending_or_unverifiable": 0,
+            "evaluable": 0,
+            "matured_coverage": null,
+            "observed_confirmation_fraction": null,
+            "calibrated_probability": null
+          },
+          "20": {
+            "matured_confirmed": 0,
+            "matured_not_confirmed": 0,
+            "pending_or_unverifiable": 0,
+            "evaluable": 0,
+            "matured_coverage": null,
+            "observed_confirmation_fraction": null,
+            "calibrated_probability": null
+          }
+        }
+      },
+      "developing_setup": {
+        "selected": 1,
+        "by_horizon": {
+          "5": {
+            "matured_confirmed": 0,
+            "matured_not_confirmed": 0,
+            "pending_or_unverifiable": 1,
+            "evaluable": 0,
+            "matured_coverage": 0.0,
+            "observed_confirmation_fraction": null,
+            "calibrated_probability": null
+          },
+          "10": {
+            "matured_confirmed": 0,
+            "matured_not_confirmed": 0,
+            "pending_or_unverifiable": 1,
+            "evaluable": 0,
+            "matured_coverage": 0.0,
+            "observed_confirmation_fraction": null,
+            "calibrated_probability": null
+          },
+          "20": {
+            "matured_confirmed": 0,
+            "matured_not_confirmed": 0,
+            "pending_or_unverifiable": 1,
+            "evaluable": 0,
+            "matured_coverage": 0.0,
+            "observed_confirmation_fraction": null,
+            "calibrated_probability": null
           }
         }
       }
@@ -2676,6 +3042,108 @@
           "stock_minimum_21_prior_bars"
         ],
         "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 5,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 10,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "TECH",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 20,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 5,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 10,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
+      },
+      {
+        "ticker": "ZBRA",
+        "stage": "compressão",
+        "published_at": "2026-10-27T08:11:53.284392+00:00",
+        "horizon_sessions": 20,
+        "outcome": "pending_or_unverified",
+        "joint_durability_outcomes": {
+          "3": "pending_or_unverified",
+          "5": "pending_or_unverified",
+          "10": "pending_or_unverified"
+        },
+        "features": {},
+        "feature_missing": [
+          "stock_minimum_21_prior_bars"
+        ],
+        "features_point_in_time_verified": false
       }
     ]
   },
@@ -2686,33 +3154,33 @@
     "stages": {
       "compressão": {
         "5": {
-          "n": 6,
-          "n_missing": 12,
-          "n_observations": 18,
-          "coverage": 0.3333333333333333,
+          "n": 7,
+          "n_missing": 13,
+          "n_observations": 20,
+          "coverage": 0.35,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "10": {
           "n": 0,
-          "n_missing": 18,
-          "n_observations": 18,
+          "n_missing": 20,
+          "n_observations": 20,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "20": {
           "n": 0,
-          "n_missing": 18,
-          "n_observations": 18,
+          "n_missing": 20,
+          "n_observations": 20,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
         "60": {
           "n": 0,
-          "n_missing": 18,
-          "n_observations": 18,
+          "n_missing": 20,
+          "n_observations": 20,
           "coverage": 0.0,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
@@ -2720,10 +3188,10 @@
       },
       "pré-breakout": {
         "5": {
-          "n": 0,
-          "n_missing": 4,
+          "n": 1,
+          "n_missing": 3,
           "n_observations": 4,
-          "coverage": 0.0,
+          "coverage": 0.25,
           "sufficient_sample": false,
           "reason": "insufficient_forward_sample"
         },
@@ -2861,19 +3329,41 @@
     },
     {
       "ticker": "WPP.L",
-      "stage": "compressão",
+      "entry": "2026-10-16",
+      "results": {
+        "5": {
+          "exit": "2026-10-23",
+          "return": -0.03464991007408369,
+          "spy_return": -0.004297450765640365,
+          "excess_return": -0.030352459308443325,
+          "max_adverse_excursion": -0.04240368180852172
+        },
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-15T07:09:31.724375+00:00",
       "signal_date": "2026-10-13",
-      "entry": null,
-      "results": {}
+      "stage": "compressão"
     },
     {
       "ticker": "WPP.L",
-      "stage": "pré-breakout",
+      "entry": "2026-10-19",
+      "results": {
+        "5": {
+          "exit": "2026-10-26",
+          "return": -0.022834405134830704,
+          "spy_return": -0.0014481596125754947,
+          "excess_return": -0.02138624552225521,
+          "max_adverse_excursion": -0.022834405134830704
+        },
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-16T08:42:21.359869+00:00",
       "signal_date": "2026-10-15",
-      "entry": null,
-      "results": {}
+      "stage": "pré-breakout"
     },
     {
       "ticker": "DXCM",
@@ -2947,19 +3437,29 @@
     },
     {
       "ticker": "OMV.DE",
-      "stage": "compressão",
+      "entry": "2026-10-20",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-19T15:32:27.897826+00:00",
       "signal_date": "2026-10-16",
-      "entry": null,
-      "results": {}
+      "stage": "compressão"
     },
     {
       "ticker": "LOGN.SW",
-      "stage": "pré-breakout",
+      "entry": "2026-10-20",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-19T21:41:39.535321+00:00",
       "signal_date": "2026-10-16",
-      "entry": null,
-      "results": {}
+      "stage": "pré-breakout"
     },
     {
       "ticker": "TECH",
@@ -2976,11 +3476,16 @@
     },
     {
       "ticker": "LOGN.SW",
-      "stage": "compressão",
+      "entry": "2026-10-21",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-20T14:26:56.947259+00:00",
       "signal_date": "2026-10-19",
-      "entry": null,
-      "results": {}
+      "stage": "compressão"
     },
     {
       "ticker": "CVE",
@@ -2997,11 +3502,16 @@
     },
     {
       "ticker": "LOGN.SW",
-      "stage": "confirmado",
+      "entry": "2026-10-22",
+      "results": {
+        "5": null,
+        "10": null,
+        "20": null,
+        "60": null
+      },
       "published_at": "2026-10-21T08:49:24.729306+00:00",
       "signal_date": "2026-10-20",
-      "entry": null,
-      "results": {}
+      "stage": "confirmado"
     },
     {
       "ticker": "ZBRA",
@@ -3078,6 +3588,22 @@
       "published_at": "2026-10-26T15:08:23.908867+00:00",
       "signal_date": "2026-10-23",
       "stage": "compressão"
+    },
+    {
+      "ticker": "TECH",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-27T08:11:53.284392+00:00",
+      "signal_date": "2026-10-26",
+      "stage": "compressão"
+    },
+    {
+      "ticker": "ZBRA",
+      "entry": null,
+      "results": {},
+      "published_at": "2026-10-27T08:11:53.284392+00:00",
+      "signal_date": "2026-10-26",
+      "stage": "compressão"
     }
   ],
   "price_metadata": {
@@ -3085,12 +3611,10 @@
     "auto_adjust": true,
     "completed_before_utc_date": "2026-10-27",
     "benchmark": "SPY",
-    "downloaded": 13,
-    "complete_ohlcv": 13,
-    "failed": {
-      "LOGN.SW": "ValueError",
-      "OMV.DE": "ValueError",
-      "WPP.L": "ValueError"
-    }
+    "downloaded": 16,
+    "complete_ohlcv": 16,
+    "failed": {},
+    "recovered_after_single_retry": [],
+    "retry_policy": "at_most_two_same_source_requests_only_on_download_or_close_failure"
   }
 }
