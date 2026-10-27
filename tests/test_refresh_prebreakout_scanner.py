@@ -53,6 +53,33 @@ class StructuralReadinessShadowTests(unittest.TestCase):
         self.assertIsNone(missing["structural_readiness_shadow"]["eligible"])
 
 
+class BestAvailableFocusTests(unittest.TestCase):
+    def test_developing_base_is_selected_when_no_strict_candidate(self):
+        today=date.today()
+        base={"date":today.isoformat(),"stage":"compressão",
+              "source":"yahoo:daily_ohlcv","vcpConfirmed":True,
+              "volumeConfirmed":False,"volumeDry":False,"distancePct":5.2,"score":74,
+              "quantitativeDiagnostics":{"basePositionPct":92,
+                  "atrContractionRatio":.66,"baseSupportRetention10":.9,
+                  "averageDollarVolume20":9_000_000}}
+        pick=mod.daily_focus([{**base,"ticker":"FORMATION"}],today)
+        self.assertEqual(pick["ticker"],"FORMATION")
+        self.assertEqual(pick["selection_tier"],"developing_setup")
+        self.assertIsNone(pick["success_probability"])
+        strict={**base,"ticker":"READY","stage":"pré-breakout",
+                "volumeDry":True,"distancePct":2.2}
+        self.assertEqual(mod.daily_focus([base|{"ticker":"FORMATION"},strict],today)["ticker"],"READY")
+
+    def test_invalid_or_broken_bases_still_abstain(self):
+        today=date.today()
+        base={"ticker":"BAD","date":today.isoformat(),"stage":"compressão",
+              "source":"yahoo:daily_ohlcv","vcpConfirmed":False,
+              "volumeConfirmed":False,"distancePct":2,"score":99}
+        self.assertEqual(mod.daily_focus([base],today)["status"],"no_qualified_setup")
+        self.assertEqual(mod.daily_focus([{**base,"vcpConfirmed":True,
+            "distancePct":9}],today)["status"],"no_qualified_setup")
+
+
 class CurrencyLiquidityTests(unittest.TestCase):
     def test_units_and_fx_are_verified(self):
         fx={"ecb_reference_date":"2026-10-23","rates_to_eur":{"USD":0.9,"GBP":1.2,"EUR":1.0}}
