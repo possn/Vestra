@@ -284,6 +284,48 @@ def cohorts(archive:Path)->list[dict]:
                     "snapshot":data}
     return [selected[k] for k in sorted(selected,key=lambda key:(selected[key]["published_at"],key))]
 
+def structural_shadow_evidence(selected:dict, event_prices:dict|None)->dict:
+    """Prospective shadow-vs-outcome counts, never a fitted probability.
+
+    Include unknown diagnostics in the denominator. Event evaluability is
+    independent of eligibility: missing/adjusted price bases remain unknown.
+    """
+    labels=("research_eligible","research_rejected","unverifiable")
+    groups={label:{"cohorts":0,"by_horizon":{str(h):{"confirmed_matured":0,
+        "not_confirmed_matured":0,"unverified_or_pending":0} for h in (5,10,20)}}
+        for label in labels}
+    for stamp,row in selected.values():
+        shadow=row.get("structural_readiness_shadow")
+        status=shadow.get("status") if isinstance(shadow,dict) and shadow.get("model")=="atr_support_v1_shadow" else None
+        label=status if status in ("research_eligible","research_rejected") and type(shadow.get("eligible")) is bool and shadow["eligible"]==(status=="research_eligible") else "unverifiable"
+        group=groups[label]
+        group["cohorts"]+=1
+        snapshot={"schema":"vestra_prebreakout_v1","generated_at":stamp.isoformat(),"signals":[row]}
+        bars=(event_prices or {}).get(row["ticker"])
+        for horizon in (5,10,20):
+            cell=group["by_horizon"][str(horizon)]
+            try:
+                result=breakout_event(snapshot,row["ticker"],bars,horizon) if isinstance(bars,list) else {}
+            except (KeyError,ValueError,TypeError,OverflowError):
+                result={}
+            if result.get("horizon_matured") is True and result.get("status") in ("confirmed","not_confirmed"):
+                cell[result["status"]+"_matured"]+=1
+            else:
+                cell["unverified_or_pending"]+=1
+    for group in groups.values():
+        for cell in group["by_horizon"].values():
+            valid=cell["confirmed_matured"]+cell["not_confirmed_matured"]
+            cell["matured_evaluable"]=valid
+            cell["observed_breakout_fraction_descriptive"]=round(cell["confirmed_matured"]/valid,4) if valid else None
+            cell["matured_coverage"]=round(valid/group["cohorts"],4) if group["cohorts"] else None
+            cell["minimum_evidence_met"]=valid>=30 and group["cohorts"]>0 and valid/group["cohorts"]>=.8
+            cell["probability_calibrated"]=False
+    return {"method":"prospective_structural_readiness_v1_asof_archived_shadow",
+            "historical_only":True,"selection_effect_validated":False,
+            "out_of_sample_validated":False,"success_probability":None,
+            "groups":groups}
+
+
 def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
     """Compare first prospectively archived shadow observations, not reconstructed signals.
 
@@ -390,7 +432,8 @@ def shadow_forward_comparison(archive:Path, event_prices:dict|None)->dict:
                 del tally["gross_loss_abs_sum"]
     return {"method":"prospective_first_publication_ticker_stage_no_rolling_base_dedup",
             "historical_only":True,"success_probability":None,
-            "statistically_validated":False,"groups":groups}
+            "statistically_validated":False,"groups":groups,
+            "structural_readiness_evidence":structural_shadow_evidence(selected,event_prices)}
 
 def retrospective_feature_outcome_audit(cases:list[dict], events:list[dict], prices:dict, benchmark_bars:list[dict])->dict:
     """Pair prepublication features with matured outcomes, no model fit."""
