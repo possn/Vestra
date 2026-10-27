@@ -29,9 +29,13 @@ class DailyFocusTests(unittest.TestCase):
         self.assertEqual(result["ticker"],"B")
         self.assertEqual(result["status"],"research_candidate")
         self.assertIsNone(result["success_probability"])
-    def test_rejects_stale_and_unconfirmed_evidence(self):
+    def test_stale_rejected_but_developing_prebreakout_labeled(self):
         old=self.sample();old["date"]="2026-10-10"
+        self.assertIsNone(daily_focus([old],date(2026,10,24))["ticker"])
         loose=self.sample();loose["volumeDry"]=False
-        self.assertIsNone(daily_focus([old,loose],date(2026,10,24))["ticker"])
+        result=daily_focus([old,loose],date(2026,10,24))
+        self.assertEqual(result["ticker"],"AAA")
+        self.assertEqual(result["selection_tier"],"developing_setup")
+        self.assertIsNone(result["success_probability"])
 if __name__=="__main__":
     unittest.main()
