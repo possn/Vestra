@@ -65,20 +65,30 @@ def gather(archive:Path, downloader, now=None):
     end=(today+timedelta(days=1)).isoformat()
     tickers=sorted(set(c["ticker"] for c in items)|{"SPY"})
     prices={}; event_prices={}; failures={}
+    recovered_after_retry=[]
     for ticker in tickers:
-        try:
-            frame=downloader(ticker,start=start,end=end,auto_adjust=True,progress=False,threads=False,multi_level_index=False)
-            prices[ticker]=completed_bars(frame,today)
-            ohlcv=completed_ohlcv(frame,today)
-            if ohlcv is not None:event_prices[ticker]=ohlcv
-        except Exception as exc:
-            failures[ticker]=type(exc).__name__
+        # One bounded retry for intermittent Yahoo empty/error frames.
+        # Identical source, date range, adjustment rules; no substitute data.
+        for attempt in (1,2):
+            try:
+                frame=downloader(ticker,start=start,end=end,auto_adjust=True,
+                                 progress=False,threads=False,multi_level_index=False)
+                close_rows=completed_bars(frame,today)
+                ohlcv=completed_ohlcv(frame,today)
+                prices[ticker]=close_rows
+                if ohlcv is not None:event_prices[ticker]=ohlcv
+                if attempt==2:recovered_after_retry.append(ticker)
+                break
+            except Exception as exc:
+                if attempt==2:failures[ticker]=type(exc).__name__
     if "SPY" not in prices:
         raise ValueError("benchmark SPY adjusted closes unavailable")
     results=build(archive,prices,prices["SPY"],event_prices=event_prices)
     results["price_metadata"]={"provider":"yahoo_finance","auto_adjust":True,
         "completed_before_utc_date":today.isoformat(),"benchmark":"SPY",
-        "downloaded":len(prices),"complete_ohlcv":len(event_prices),"failed":failures}
+        "downloaded":len(prices),"complete_ohlcv":len(event_prices),"failed":failures,
+        "recovered_after_single_retry":sorted(recovered_after_retry),
+        "retry_policy":"at_most_two_same_source_requests_only_on_download_or_close_failure"}
     return results
 
 def main():

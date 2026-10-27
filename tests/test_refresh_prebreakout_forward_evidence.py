@@ -70,6 +70,36 @@ class ForwardPriceRefreshTests(unittest.TestCase):
             self.assertEqual(h["post_confirmation_durability"]["3"],{"observed":0,"held_pivot":0,"lost_pivot":0})
             self.assertEqual(h["post_confirmation_durability"]["10"]["observed"],0)
 
+    def test_transient_download_failure_retries_once_without_backfill(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive=Path(tmp);self.archive(archive)
+            calls={}
+            def downloader(ticker,**kwargs):
+                calls[ticker]=calls.get(ticker,0)+1
+                self.assertTrue(kwargs["auto_adjust"])
+                if ticker=="AAA" and calls[ticker]==1:
+                    raise ConnectionError("transient")
+                return self.frame()
+            result=gather(archive,downloader,datetime(2026,10,17,tzinfo=timezone.utc))
+            self.assertEqual(calls["AAA"],2)
+            self.assertEqual(calls["SPY"],1)
+            self.assertEqual(result["price_metadata"]["recovered_after_single_retry"],["AAA"])
+            self.assertNotIn("AAA",result["price_metadata"]["failed"])
+
+    def test_permanent_download_failure_never_synthesizes_history(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive=Path(tmp);self.archive(archive)
+            calls={}
+            def downloader(ticker,**kwargs):
+                calls[ticker]=calls.get(ticker,0)+1
+                if ticker=="AAA":raise ConnectionError("unavailable")
+                return self.frame()
+            result=gather(archive,downloader,datetime(2026,10,17,tzinfo=timezone.utc))
+            self.assertEqual(calls["AAA"],2)
+            self.assertEqual(result["price_metadata"]["failed"]["AAA"],"ConnectionError")
+            self.assertEqual(result["price_metadata"]["recovered_after_single_retry"],[])
+            self.assertEqual(result["breakout_event_evidence"]["coverage_by_horizon"]["5"]["evaluable"],0)
+
     def test_missing_spy_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive=Path(tmp);self.archive(archive)
