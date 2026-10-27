@@ -8,7 +8,7 @@ Price histories are supplied independently; missing prices remain missing.
 from __future__ import annotations
 import json
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta
 from pathlib import Path
 from prebreakout_forward_evaluation import evaluate_archived
 from prebreakout_stage_evidence import report
@@ -468,7 +468,22 @@ def retrospective_feature_outcome_audit(cases:list[dict], events:list[dict], pri
                 "feature_missing":features["missing"],"features_point_in_time_verified":False})
     return result
 
-def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dict:
+def benchmark_followthrough(bars:list[dict]|None, event_date:str|None, window:int)->float|None:
+    """Exact anchor, ordered positive SPY closes, complete forward sessions."""
+    if not isinstance(bars,list) or not event_date or type(window) is not int or window<1: return None
+    try:
+        dates=[date.fromisoformat(str(row["date"])[:10]) for row in bars]
+        closes=[float(row["close"]) for row in bars]
+        anchor=date.fromisoformat(event_date)
+    except (KeyError,ValueError,TypeError,OverflowError): return None
+    if any(not math.isfinite(p) or p<=0 for p in closes): return None
+    if any(dates[i]>=dates[i+1] for i in range(len(dates)-1)) or dates.count(anchor)!=1: return None
+    i=dates.index(anchor)
+    if i+window>=len(closes): return None
+    if any(dates[k]-dates[k-1]>timedelta(days=7) for k in range(i+1,i+window+1)): return None
+    return closes[i+window]/closes[i]-1
+
+def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None, benchmark_bars:list[dict]|None=None)->dict:
     """Measure the actual archived daily featured pick, not a hindsight winner.
 
     One earliest valid selection per UTC day. No invented selection for a
@@ -528,7 +543,7 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
         for tier in ("verified_prebreakout","developing_setup")}
     for group in by_tier.values():
         for cell in group["by_horizon"].values():
-            cell["post_confirmation_payoff"]={str(w):{"confirmed":0,"completed":0,"pending_or_unverifiable":0,"positive_gross":0,"positive_net_after_20bp":0,"gross_sum":0.0,"net_sum":0.0} for w in (3,5,10,20)}
+            cell["post_confirmation_payoff"]={str(w):{"confirmed":0,"completed":0,"pending_or_unverifiable":0,"positive_gross":0,"positive_net_after_20bp":0,"gross_sum":0.0,"net_sum":0.0,"benchmark_paired":0,"benchmark_missing":0,"excess_sum":0.0} for w in (3,5,10,20)}
     for stamp,row,tier in selected.values():
         by_tier[tier]["selected"]+=1
         snapshot={"schema":"vestra_prebreakout_v1","generated_at":stamp.isoformat(),"signals":[row]}
@@ -555,6 +570,11 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
                             payoff["positive_net_after_20bp"]+=int(value>0.002)
                             payoff["gross_sum"]+=value
                             payoff["net_sum"]+=value-0.002
+                            benchmark=benchmark_followthrough(benchmark_bars,event.get("event_date"),int(window))
+                            if benchmark is None: payoff["benchmark_missing"]+=1
+                            else:
+                                payoff["benchmark_paired"]+=1
+                                payoff["excess_sum"]+=value-benchmark
                         else:
                             payoff["pending_or_unverifiable"]+=1
             else:
@@ -578,6 +598,9 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
                 n=payoff["completed"]
                 payoff["mean_gross_return"]=round(payoff.pop("gross_sum")/n,6) if n else None
                 payoff["mean_net_after_20bp"]=round(payoff.pop("net_sum")/n,6) if n else None
+                paired=payoff["benchmark_paired"]
+                payoff["mean_excess_vs_spy"]=round(payoff.pop("excess_sum")/paired,6) if paired else None
+                payoff["benchmark_pair_coverage"]=round(paired/n,4) if n else None
                 payoff["coverage_of_confirmed"]=round(n/payoff["confirmed"],4) if payoff["confirmed"] else None
                 payoff["calibrated_probability"]=None
                 payoff["execution_verified"]=False
@@ -723,7 +746,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "walkforward_split_plan":purged_walkforward_folds(cases),
         "walkforward_holdout_returns":walkforward_holdout_returns(cases,outcomes,purged_walkforward_folds(cases)),
         "shadow_forward_comparison":shadow_forward_comparison(archive,event_prices),
-        "daily_focus_forward_evidence":daily_focus_forward_evidence(archive,event_prices),
+        "daily_focus_forward_evidence":daily_focus_forward_evidence(archive,event_prices,benchmark_bars),
         "retrospective_feature_outcome_audit":retrospective_feature_outcome_audit(cases,events,prices,benchmark_bars),
         "stage_evidence":report(outcomes),"outcomes":outcomes}
 
