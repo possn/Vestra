@@ -337,7 +337,7 @@ class DailyFocusProspectiveTests(unittest.TestCase):
                 self.assertIsNone(cell["calibrated_probability"])
                 self.assertFalse(cell["minimum_sample_met"])
 
-    def test_carried_signal_cannot_be_attributed_to_current_daily_pick(self):
+    def test_stale_carried_signal_cannot_be_attributed_to_current_daily_pick(self):
         from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
         with tempfile.TemporaryDirectory() as tmp:
             folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
@@ -347,7 +347,7 @@ class DailyFocusProspectiveTests(unittest.TestCase):
                 "daily_focus":{"status":"research_candidate","ticker":"AAA"},
                 "signals":[{"ticker":"AAA","date":"2026-10-14",
                     "stage":"pré-breakout","source":"yahoo:daily_ohlcv",
-                    "scanner_verified_at":"2026-10-14T20:10:00Z"}]}))
+                    "scanner_verified_at":"2026-10-13T20:10:00Z"}]}))
             result=daily_focus_forward_evidence(Path(tmp),None)
             self.assertEqual(result["days_with_verifiable_daily_pick"],0)
 
