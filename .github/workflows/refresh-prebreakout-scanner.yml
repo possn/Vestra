@@ -82,3 +82,6 @@ jobs:
             git commit -m "Actualização de setups pré-breakout verificados"
             bash scripts/publish_with_retry.sh origin main
           fi
+      - name: Audit archive publication after scanner run
+        if: always()
+        run: python scripts/audit_prebreakout_slots.py --lookback-days 1
