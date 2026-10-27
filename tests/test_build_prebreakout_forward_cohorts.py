@@ -502,15 +502,26 @@ class PostConfirmationPayoffTests(unittest.TestCase):
 
 
 class BenchmarkFollowthroughTests(unittest.TestCase):
-    def test_exact_anchor_and_complete_window_only(self):
+    def test_exact_matching_session_dates_required(self):
         from build_prebreakout_forward_cohorts import benchmark_followthrough
-        rows=[{"date":"2026-10-19","close":100},{"date":"2026-10-20","close":101},
-              {"date":"2026-10-21","close":102},{"date":"2026-10-22","close":103}]
-        self.assertAlmostEqual(benchmark_followthrough(rows,"2026-10-19",3),0.03)
-        self.assertIsNone(benchmark_followthrough(rows,"2026-10-18",3))
-        self.assertIsNone(benchmark_followthrough(rows,"2026-10-19",4))
-        self.assertIsNone(benchmark_followthrough(rows[::-1],"2026-10-19",3))
-        self.assertIsNone(benchmark_followthrough(rows+[rows[-1]],"2026-10-19",3))
+        asset=[{"date":d,"close":100} for d in
+               ("2026-10-19","2026-10-20","2026-10-21","2026-10-22")]
+        spy=[{"date":d,"close":v} for d,v in zip(
+             ("2026-10-19","2026-10-20","2026-10-21","2026-10-22"),
+             (100,101,102,103))]
+        self.assertAlmostEqual(benchmark_followthrough(spy,"2026-10-19",3,asset),0.03)
+        self.assertIsNone(benchmark_followthrough(spy,"2026-10-19",3))
+        self.assertIsNone(benchmark_followthrough(spy,"2026-10-18",3,asset))
+        self.assertIsNone(benchmark_followthrough(spy,"2026-10-19",4,asset))
+        self.assertIsNone(benchmark_followthrough(spy[::-1],"2026-10-19",3,asset))
+        self.assertIsNone(benchmark_followthrough(spy+[spy[-1]],"2026-10-19",3,asset))
+        # A missing exchange session in SPY must not slide the comparison
+        # forward by one day to produce a misleading excess return.
+        missing_spy=[row for row in spy if row["date"]!="2026-10-20"]
+        self.assertIsNone(benchmark_followthrough(missing_spy,"2026-10-19",3,asset))
+        missing_asset=[row for row in asset if row["date"]!="2026-10-20"]
+        self.assertIsNone(benchmark_followthrough(spy,"2026-10-19",3,missing_asset))
+        self.assertIsNone(benchmark_followthrough(spy,"2026-10-19",3,asset[::-1]))
 
     def test_missing_benchmark_never_creates_excess_return(self):
         from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
