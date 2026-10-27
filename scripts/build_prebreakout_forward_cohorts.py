@@ -621,8 +621,22 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
             "coverage":round(evaluated/len(sample),4) if sample else None,
             "by_status":counts,"breakout_rate":None,
             "reason":"insufficient_or_unverified_forward_evidence"}
+    # Operational diagnosis uses exactly one event per archived cohort at each
+    # horizon. Never conflate a price reconciliation failure with no breakout.
+    price_basis_audit={}
+    for horizon in (5,10,20):
+        sample=[row for row in events if row["horizon_sessions"]==horizon]
+        causes={}
+        for row in sample:
+            if row.get("status")=="price_basis_unverified":
+                reason=row.get("price_basis_diagnostic") or "legacy_unspecified"
+                causes[reason]=causes.get(reason,0)+1
+        price_basis_audit[str(horizon)]={"unverifiable":sum(causes.values()),
+            "by_reason":causes,"price_factor_inferred":False,
+            "counts_excluded_from_negative_outcomes":True}
     return {"schema":"vestra_prebreakout_forward_cohorts_v1",
         "breakout_event_evidence":{"historical_only":True,"method":"published_pivot_future_ohlcv",
+            "price_basis_audit":price_basis_audit,
             "unvalidated_probability":True,"coverage_by_horizon":event_coverage,"events":events},
         "evaluation_method":"adjusted_daily_close_after_publication",
         "cohort_policy":"first_immutable_publication_per_ticker_stage_and_verified_base_start",
