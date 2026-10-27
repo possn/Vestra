@@ -493,10 +493,19 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
             ticker=focus.get("ticker")
             if not isinstance(ticker,str) or not ticker.strip():continue
             matches=[s for s in feed.get("signals",[]) if isinstance(s,dict) and
-                     s.get("ticker")==ticker and s.get("stage")=="pré-breakout" and
+                     s.get("ticker")==ticker and s.get("stage") in ("pré-breakout","compressão") and
                      s.get("source")=="yahoo:daily_ohlcv"]
             if len(matches)!=1:continue
             row=matches[0]
+            tier=focus.get("selection_tier")
+            if tier not in ("verified_prebreakout","developing_setup",None):
+                continue
+            if tier=="verified_prebreakout" and row["stage"]!="pré-breakout":
+                continue
+            if tier=="developing_setup" and row.get("vcpConfirmed") is not True:
+                continue
+            # Historical publications without an explicit tier use the actual observed stage.
+            tier=tier or ("verified_prebreakout" if row["stage"]=="pré-breakout" else "developing_setup")
             # The daily recommendation is only an independently measured
             # as-of selection if its original scan timestamp is available.
             verified=row.get("scanner_verified_at")
@@ -504,24 +513,31 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
             scan=datetime.fromisoformat(verified.replace("Z","+00:00"))
             if scan.tzinfo is None or not 0 <= (stamp-scan.astimezone(timezone.utc)).total_seconds() <= 18*3600:continue
             if day not in selected or stamp<selected[day][0]:
-                selected[day]=(stamp,row)
+                selected[day]=(stamp,row,tier)
         except (OSError,ValueError,KeyError,TypeError,AttributeError):
             continue
     results={str(h):{"selected":len(selected),"matured_confirmed":0,
         "matured_not_confirmed":0,"pending_or_unverifiable":0} for h in (5,10,20)}
-    for stamp,row in selected.values():
+    by_tier={tier:{"selected":0,"by_horizon":{str(h):{"matured_confirmed":0,
+        "matured_not_confirmed":0,"pending_or_unverifiable":0} for h in (5,10,20)}}
+        for tier in ("verified_prebreakout","developing_setup")}
+    for stamp,row,tier in selected.values():
+        by_tier[tier]["selected"]+=1
         snapshot={"schema":"vestra_prebreakout_v1","generated_at":stamp.isoformat(),"signals":[row]}
         prices=(event_prices or {}).get(row["ticker"])
         for horizon in (5,10,20):
             cell=results[str(horizon)]
+            tier_cell=by_tier[tier]["by_horizon"][str(horizon)]
             try:
                 event=breakout_event(snapshot,row["ticker"],prices,horizon) if isinstance(prices,list) else {}
             except (KeyError,ValueError,TypeError,OverflowError):
                 event={}
             if event.get("horizon_matured") is True and event.get("status") in ("confirmed","not_confirmed"):
                 cell["matured_"+event["status"]]+=1
+                tier_cell["matured_"+event["status"]]+=1
             else:
                 cell["pending_or_unverifiable"]+=1
+                tier_cell["pending_or_unverifiable"]+=1
     for cell in results.values():
         total=cell["matured_confirmed"]+cell["matured_not_confirmed"]
         cell["evaluable"]=total
@@ -529,10 +545,18 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None)->dic
         cell["observed_confirmation_fraction"]=round(cell["matured_confirmed"]/total,4) if total else None
         cell["minimum_sample_met"]=total>=30 and cell["selected"]>0 and total/cell["selected"]>=.8
         cell["calibrated_probability"]=None
+    for group in by_tier.values():
+        for cell in group["by_horizon"].values():
+            total=cell["matured_confirmed"]+cell["matured_not_confirmed"]
+            cell["evaluable"]=total
+            cell["matured_coverage"]=round(total/group["selected"],4) if group["selected"] else None
+            cell["observed_confirmation_fraction"]=round(cell["matured_confirmed"]/total,4) if total else None
+            cell["calibrated_probability"]=None
     return {"method":"first_archived_qualified_daily_focus_asof","archive_days":len(archive_days),
         "days_with_verifiable_daily_pick":len(selected),
         "days_without_verifiable_daily_pick":len(archive_days)-len(selected),
-        "historical_only":True,"out_of_sample_validated":False,"by_horizon":results}
+        "historical_only":True,"out_of_sample_validated":False,"by_horizon":results,
+        "by_selection_tier":by_tier}
 
 
 def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|None=None)->dict:
