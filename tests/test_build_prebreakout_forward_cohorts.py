@@ -501,5 +501,27 @@ class PostConfirmationPayoffTests(unittest.TestCase):
             self.assertIsNone(dur["calibrated_probability"])
 
 
+class BenchmarkFollowthroughTests(unittest.TestCase):
+    def test_exact_anchor_and_complete_window_only(self):
+        from build_prebreakout_forward_cohorts import benchmark_followthrough
+        rows=[{"date":"2026-10-19","close":100},{"date":"2026-10-20","close":101},
+              {"date":"2026-10-21","close":102},{"date":"2026-10-22","close":103}]
+        self.assertAlmostEqual(benchmark_followthrough(rows,"2026-10-19",3),0.03)
+        self.assertIsNone(benchmark_followthrough(rows,"2026-10-18",3))
+        self.assertIsNone(benchmark_followthrough(rows,"2026-10-19",4))
+        self.assertIsNone(benchmark_followthrough(rows[::-1],"2026-10-19",3))
+        self.assertIsNone(benchmark_followthrough(rows+[rows[-1]],"2026-10-19",3))
+
+    def test_missing_benchmark_never_creates_excess_return(self):
+        from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
+        with tempfile.TemporaryDirectory() as tmp:
+            out=daily_focus_forward_evidence(Path(tmp))
+            for tier in out["by_selection_tier"].values():
+                for horizon in tier["by_horizon"].values():
+                    for payoff in horizon["post_confirmation_payoff"].values():
+                        self.assertEqual(payoff["benchmark_paired"],0)
+                        self.assertIsNone(payoff["mean_excess_vs_spy"])
+                        self.assertIsNone(payoff["benchmark_pair_coverage"])
+
 if __name__=="__main__":
     unittest.main()
