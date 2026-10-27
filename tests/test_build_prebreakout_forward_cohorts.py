@@ -413,5 +413,28 @@ class PriceBasisAuditTests(unittest.TestCase):
             self.assertEqual(coverage["coverage_by_horizon"]["5"]["by_status"]["price_basis_unverified"],1)
 
 
+class AnchorProvenanceAuditTests(unittest.TestCase):
+    def test_legacy_missing_basis_is_not_treated_as_failed_breakout(self):
+        from build_prebreakout_forward_cohorts import build
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
+            for slot,ticker,with_basis in [(1,"LEGACY",False),(2,"FUTURE",True)]:
+                row={"ticker":ticker,"date":"2026-10-15","stage":"compressão",
+                    "source":"yahoo:daily_ohlcv"}
+                if with_basis:
+                    row.update(signalClose=98,resistance=100,
+                        signalPriceBasis="yahoo_auto_adjusted_asof_publication")
+                (folder/f"2026-10-15-slot{slot}.json").write_text(json.dumps({
+                    "schema":"vestra_prebreakout_v1","scan_slot_utc":slot,
+                    "generated_at":f"2026-10-15T{slot*6+2:02d}:00:00Z",
+                    "signals":[row]}))
+            out=build(Path(tmp),{},[],event_prices={})
+            audit=out["anchor_provenance_audit"]
+            self.assertEqual(audit["verifiable_archived_price_basis"],1)
+            self.assertEqual(audit["legacy_missing_or_unverified_price_basis"],1)
+            self.assertEqual(audit["potentially_verifiable_by_horizon"]["5"]["evaluated"],0)
+            self.assertTrue(audit["potentially_verifiable_by_horizon"]["5"]["not_a_probability"])
+
+
 if __name__=="__main__":
     unittest.main()

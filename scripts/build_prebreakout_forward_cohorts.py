@@ -634,6 +634,29 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         price_basis_audit[str(horizon)]={"unverifiable":sum(causes.values()),
             "by_reason":causes,"price_factor_inferred":False,
             "counts_excluded_from_negative_outcomes":True}
+    anchor_provenance={"verifiable_archived_price_basis":0,
+        "legacy_missing_or_unverified_price_basis":0,
+        "potentially_verifiable_by_horizon":{}}
+    for case in cases:
+        signal=next((row for row in case["snapshot"].get("signals",[])
+                     if row.get("ticker")==case["ticker"]),{})
+        try:
+            price=float(signal.get("signalClose"))
+            pivot=float(signal.get("resistance"))
+            verified=(signal.get("signalPriceBasis")=="yahoo_auto_adjusted_asof_publication"
+                      and math.isfinite(price) and price>0
+                      and math.isfinite(pivot) and pivot>0)
+        except (ValueError,TypeError,OverflowError):
+            verified=False
+        key="verifiable_archived_price_basis" if verified else "legacy_missing_or_unverified_price_basis"
+        anchor_provenance[key]+=1
+    for horizon in (5,10,20):
+        sample=[event for event in events if event["horizon_sessions"]==horizon]
+        anchor_provenance["potentially_verifiable_by_horizon"][str(horizon)]={
+            "eligible_anchor_cohorts":anchor_provenance["verifiable_archived_price_basis"],
+            "pending":sum(row["status"]=="pending" for row in sample),
+            "evaluated":sum(row["status"] in ("confirmed","not_confirmed") for row in sample),
+            "not_a_probability":True}
     return {"schema":"vestra_prebreakout_forward_cohorts_v1",
         "breakout_event_evidence":{"historical_only":True,"method":"published_pivot_future_ohlcv",
             "price_basis_audit":price_basis_audit,
@@ -641,6 +664,7 @@ def build(archive:Path,prices:dict,benchmark_bars:list[dict],event_prices:dict|N
         "evaluation_method":"adjusted_daily_close_after_publication",
         "cohort_policy":"first_immutable_publication_per_ticker_stage_and_verified_base_start",
         "historical_only":True,"cohort_count":len(cases),
+        "anchor_provenance_audit":anchor_provenance,
         "base_identity_coverage":{"anchored":sum(case["base_start_date"] is not None for case in cases),
                                   "legacy_unanchored":sum(case["base_start_date"] is None for case in cases)},
         "base_maturity_evidence":maturity_event_evidence(events,cases),
