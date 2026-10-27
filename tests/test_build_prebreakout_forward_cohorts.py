@@ -352,5 +352,42 @@ class DailyFocusProspectiveTests(unittest.TestCase):
             self.assertEqual(result["days_with_verifiable_daily_pick"],0)
 
 
+class DailyFocusTierEvidenceTests(unittest.TestCase):
+    def test_developing_daily_pick_is_counted_separately_and_unknown_stays_unknown(self):
+        from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
+            stamp="2026-10-15T08:10:00Z"
+            (folder/"2026-10-15-slot1.json").write_text(json.dumps({
+                "schema":"vestra_prebreakout_v1","generated_at":stamp,"scan_slot_utc":1,
+                "daily_focus":{"status":"research_candidate","ticker":"FORM",
+                    "selection_tier":"developing_setup"},
+                "signals":[{"ticker":"FORM","date":"2026-10-14","stage":"compressão",
+                    "vcpConfirmed":True,"source":"yahoo:daily_ohlcv",
+                    "scanner_verified_at":stamp,"resistance":100,
+                    "signalClose":98,"signalPriceBasis":"yahoo_auto_adjusted_asof_publication"}]}))
+            out=daily_focus_forward_evidence(Path(tmp),None)
+            self.assertEqual(out["days_with_verifiable_daily_pick"],1)
+            self.assertEqual(out["by_selection_tier"]["developing_setup"]["selected"],1)
+            self.assertEqual(out["by_selection_tier"]["verified_prebreakout"]["selected"],0)
+            self.assertEqual(out["by_horizon"]["5"]["pending_or_unverifiable"],1)
+            self.assertIsNone(out["by_selection_tier"]["developing_setup"]["by_horizon"]["5"]["calibrated_probability"])
+
+    def test_invalid_developing_tier_never_promotes_non_vcp(self):
+        from build_prebreakout_forward_cohorts import daily_focus_forward_evidence
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
+            stamp="2026-10-15T08:10:00Z"
+            (folder/"2026-10-15-slot1.json").write_text(json.dumps({
+                "schema":"vestra_prebreakout_v1","generated_at":stamp,"scan_slot_utc":1,
+                "daily_focus":{"status":"research_candidate","ticker":"BAD",
+                    "selection_tier":"developing_setup"},
+                "signals":[{"ticker":"BAD","date":"2026-10-14","stage":"compressão",
+                    "vcpConfirmed":False,"source":"yahoo:daily_ohlcv",
+                    "scanner_verified_at":stamp}]}))
+            out=daily_focus_forward_evidence(Path(tmp),None)
+            self.assertEqual(out["days_with_verifiable_daily_pick"],0)
+
+
 if __name__=="__main__":
     unittest.main()
