@@ -90,6 +90,11 @@ class ForwardBreakoutEventTests(unittest.TestCase):
 
     def test_twenty_session_followthrough_only_when_complete(self):
         rows=self.bars()
+        from datetime import timedelta
+        start=date(2026,9,15)
+        rows.extend({"date":(start+timedelta(days=i)).isoformat(),
+            "close":98.0,"high":99.0,"low":97.0,"volume":1000.0}
+            for i in range(55,70))
         next(row for row in rows if row["date"]=="2026-10-24").update(
             close=102.0,high=102.5,low=99.5,volume=2000.0)
         pending=breakout_event(self.snapshot(),"TEST",rows[:54],horizon=5)
