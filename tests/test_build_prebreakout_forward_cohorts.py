@@ -461,5 +461,36 @@ class DailyFocusCoverageAuditTests(unittest.TestCase):
             self.assertIsNone(out["by_horizon"]["5"]["calibrated_probability"])
 
 
+class PostConfirmationPayoffTests(unittest.TestCase):
+    def test_only_completed_durability_windows_get_gross_and_cost_scenario(self):
+        from build_prebreakout_forward_cohorts import build
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
+            (folder/"2026-10-15-slot1.json").write_text(json.dumps({
+                "schema":"vestra_prebreakout_v1","scan_slot_utc":1,
+                "generated_at":"2026-10-15T08:10:00Z",
+                "signals":[{"ticker":"AAA","date":"2026-10-14","stage":"compressão",
+                    "source":"yahoo:daily_ohlcv","signalClose":100.0,
+                    "resistance":101.0,
+                    "signalPriceBasis":"yahoo_auto_adjusted_asof_publication"}]}))
+            from datetime import date,timedelta
+            start=date(2026,9,15)
+            days=[start+timedelta(days=i) for i in range(41)]
+            bars=[]
+            for i,d in enumerate(days):
+                close=100.0 if d.isoformat()<"2026-10-16" else 104.0
+                bars.append({"date":d.isoformat(),"close":close,
+                    "high":close+0.5,"low":close-0.5,
+                    "volume":1000.0 if d.isoformat()<"2026-10-16" else 3000.0})
+            out=build(Path(tmp),{},[],event_prices={"AAA":bars})
+            dur=out["breakout_event_evidence"]["coverage_by_horizon"]["5"]["post_confirmation_durability"]["3"]
+            self.assertEqual(dur["return_observations"],1)
+            self.assertEqual(dur["positive_gross"],0)
+            self.assertEqual(dur["positive_net_after_cost_scenario"],0)
+            self.assertEqual(dur["cost_scenario_round_trip_fraction"],0.002)
+            self.assertFalse(dur["execution_adjusted"])
+            self.assertIsNone(dur["calibrated_probability"])
+
+
 if __name__=="__main__":
     unittest.main()
