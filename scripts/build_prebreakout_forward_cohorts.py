@@ -468,20 +468,45 @@ def retrospective_feature_outcome_audit(cases:list[dict], events:list[dict], pri
                 "feature_missing":features["missing"],"features_point_in_time_verified":False})
     return result
 
-def benchmark_followthrough(bars:list[dict]|None, event_date:str|None, window:int)->float|None:
-    """Exact anchor, ordered positive SPY closes, complete forward sessions."""
-    if not isinstance(bars,list) or not event_date or type(window) is not int or window<1: return None
+def benchmark_followthrough(bars:list[dict]|None, event_date:str|None, window:int,
+                            asset_bars:list[dict]|None=None)->float|None:
+    """SPY comparison only on the asset's exact post-breakout session dates.
+
+    Absence of the asset date path prevents comparison rather than silently
+    treating the next N SPY rows as the asset's next N sessions.
+    """
+    if (not isinstance(bars,list) or not isinstance(asset_bars,list)
+        or not event_date or type(window) is not int or window<1):
+        return None
     try:
-        dates=[date.fromisoformat(str(row["date"])[:10]) for row in bars]
-        closes=[float(row["close"]) for row in bars]
         anchor=date.fromisoformat(event_date)
-    except (KeyError,ValueError,TypeError,OverflowError): return None
-    if any(not math.isfinite(p) or p<=0 for p in closes): return None
-    if any(dates[i]>=dates[i+1] for i in range(len(dates)-1)) or dates.count(anchor)!=1: return None
-    i=dates.index(anchor)
-    if i+window>=len(closes): return None
-    if any(dates[k]-dates[k-1]>timedelta(days=7) for k in range(i+1,i+window+1)): return None
-    return closes[i+window]/closes[i]-1
+        def observed(rows):
+            dates=[date.fromisoformat(str(row["date"])[:10]) for row in rows]
+            closes=[float(row["close"]) for row in rows]
+            if (any(not math.isfinite(p) or p<=0 for p in closes)
+                or any(dates[i]>=dates[i+1] for i in range(len(dates)-1))):
+                return None
+            return dates,closes
+        asset=observed(asset_bars)
+        spy=observed(bars)
+    except (KeyError,ValueError,TypeError,OverflowError):
+        return None
+    if asset is None or spy is None:
+        return None
+    asset_dates,_=asset
+    spy_dates,spy_closes=spy
+    if asset_dates.count(anchor)!=1 or spy_dates.count(anchor)!=1:
+        return None
+    idx=asset_dates.index(anchor)
+    if idx+window>=len(asset_dates):
+        return None
+    selected=asset_dates[idx:idx+window+1]
+    if any(selected[i]-selected[i-1]>timedelta(days=7) for i in range(1,len(selected))):
+        return None
+    spy_map=dict(zip(spy_dates,spy_closes))
+    if any(day not in spy_map for day in selected):
+        return None
+    return spy_map[selected[-1]]/spy_map[anchor]-1
 
 def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None, benchmark_bars:list[dict]|None=None)->dict:
     """Measure the actual archived daily featured pick, not a hindsight winner.
@@ -570,7 +595,7 @@ def daily_focus_forward_evidence(archive:Path, event_prices:dict|None=None, benc
                             payoff["positive_net_after_20bp"]+=int(value>0.002)
                             payoff["gross_sum"]+=value
                             payoff["net_sum"]+=value-0.002
-                            benchmark=benchmark_followthrough(benchmark_bars,event.get("event_date"),int(window))
+                            benchmark=benchmark_followthrough(benchmark_bars,event.get("event_date"),int(window),prices)
                             if benchmark is None: payoff["benchmark_missing"]+=1
                             else:
                                 payoff["benchmark_paired"]+=1
