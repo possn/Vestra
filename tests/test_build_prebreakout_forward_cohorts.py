@@ -389,5 +389,29 @@ class DailyFocusTierEvidenceTests(unittest.TestCase):
             self.assertEqual(out["days_with_verifiable_daily_pick"],0)
 
 
+class PriceBasisAuditTests(unittest.TestCase):
+    def test_unverified_anchor_reasons_are_counted_not_failures(self):
+        from build_prebreakout_forward_cohorts import build
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)/"2026"/"slots";folder.mkdir(parents=True)
+            (folder/"2026-10-15-slot1.json").write_text(json.dumps({
+                "schema":"vestra_prebreakout_v1","generated_at":"2026-10-15T08:10:00Z",
+                "scan_slot_utc":1,"signals":[{"ticker":"AAA","stage":"pré-breakout",
+                    "date":"2026-10-14","source":"yahoo:daily_ohlcv",
+                    "signalClose":98,"resistance":100,
+                    "signalPriceBasis":"yahoo_auto_adjusted_asof_publication"}]}))
+            bars=[{"date":"2026-10-14","close":97.5,"low":96,"high":99,
+                   "volume":1000}]
+            out=build(Path(tmp),{},[],event_prices={"AAA":bars})
+            coverage=out["breakout_event_evidence"]
+            audit=coverage["price_basis_audit"]["5"]
+            self.assertEqual(audit["unverifiable"],1)
+            self.assertEqual(audit["by_reason"],
+                {"adjusted_price_revision_without_verified_factor":1})
+            self.assertFalse(audit["price_factor_inferred"])
+            self.assertEqual(coverage["coverage_by_horizon"]["5"]["evaluable"],0)
+            self.assertEqual(coverage["coverage_by_horizon"]["5"]["by_status"]["price_basis_unverified"],1)
+
+
 if __name__=="__main__":
     unittest.main()
