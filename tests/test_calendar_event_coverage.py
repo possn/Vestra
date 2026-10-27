@@ -13,7 +13,16 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn("loadCalendarStartupStocks()", js)
         self.assertIn("unpackStartupPayload", js)
         self.assertNotIn("sourceStatus.textContent", js)
-        self.assertIn("const VERSION = '3.6';", js)
+        self.assertIn("const VERSION = '3.7';", js)
+
+    def test_critical_macro_precedes_earnings_in_collapsed_week_and_fomc_exists(self):
+        js = (ROOT / 'dashboard-weekly-events.js').read_text(encoding='utf-8')
+        loader = (ROOT / 'market-static-universe.js').read_text(encoding='utf-8')
+        self.assertIn("const criticalMacro = events.filter(event => event.kind === 'macro' &&", js)
+        self.assertIn("event.importance === 'critical' && event.date >= localDay(now)", js)
+        self.assertIn("const displayEvents = [...criticalMacro, ...priority, ...secondary]", js)
+        self.assertIn("displayEvents.slice(0,COLLAPSED_EVENTS)", js)
+        self.assertIn("dashboard-weekly-events.js?v=3.7", loader)
 
     def test_calendar_recovers_late_startup_earnings_and_uses_short_status(self):
         runtime = (ROOT / 'dashboard-weekly-events.js').read_text(encoding='utf-8')
