@@ -108,9 +108,9 @@ def breakout_event(snapshot:dict, ticker:str, bars:list[dict], horizon:int=20):
         prior_volume=sum(r[4] for r in clean[i-20:i])/20
         close_location=(close-low)/(high-low) if high>low else 0
         if close>pivot*1.005 and close_location>=.75 and volume>=1.5*prior_volume:
-            future=clean[i+1:i+11]
+            future=clean[i+1:i+21]
             durability={}
-            for window in (3,5,10):
+            for window in (3,5,10,20):
                 if len(future)<window:
                     durability[str(window)]={"status":"pending","remaining_sessions":window-len(future)}
                 else:
