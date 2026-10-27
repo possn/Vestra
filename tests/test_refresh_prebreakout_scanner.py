@@ -11,6 +11,19 @@ spec=importlib.util.spec_from_file_location("prebreakout",ROOT/"scripts/refresh_
 mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
+class DailyCoverageCapacityTests(unittest.TestCase):
+    def test_capacity_is_an_upper_bound_not_observed_coverage(self):
+        c=mod.daily_coverage_capacity(1173)
+        self.assertEqual(c["max_distinct_daily"],600)
+        self.assertEqual(c["max_daily_coverage_pct"],51.15)
+        self.assertTrue(c["not_actual_coverage"])
+        self.assertEqual(mod.daily_coverage_capacity(200)["max_daily_coverage_pct"],100.0)
+        self.assertIsNone(mod.daily_coverage_capacity(0)["max_daily_coverage_pct"])
+        with self.assertRaises(ValueError):mod.daily_coverage_capacity(-1)
+        self.assertEqual(mod.SCAN_BUDGET_PER_SLOT,150)
+        self.assertEqual(mod.SCANNER_SLOTS_PER_DAY,4)
+
+
 class CurrencyLiquidityTests(unittest.TestCase):
     def test_units_and_fx_are_verified(self):
         fx={"ecb_reference_date":"2026-10-23","rates_to_eur":{"USD":0.9,"GBP":1.2,"EUR":1.0}}
