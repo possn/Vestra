@@ -619,16 +619,20 @@
       const focus = feed.daily_focus;
       const hasCanonicalFocus = Object.prototype.hasOwnProperty.call(feed, 'daily_focus');
       const canonicalPick = hasCanonicalFocus && focus && typeof focus === 'object' && focus.status === 'research_candidate'
-        ? qualified.find(row => row.ticker === focus.ticker &&
+        ? rows.find(row => row.ticker === focus.ticker &&
             row.date === focus.signal_date &&
-            row.distancePct <= 4 && row.vcpConfirmed === true &&
-            row.source === 'yahoo:daily_ohlcv') : null;
+            row.vcpConfirmed === true &&
+            row.source === 'yahoo:daily_ohlcv' &&
+            ((focus.selection_tier === 'developing_setup' && row.stage === 'compressão' &&
+              row.distancePct >= 0 && row.distancePct <= 8) ||
+             (row.stage === 'pré-breakout' && row.volumeDry === true &&
+              row.distancePct >= 0 && row.distancePct <= 4))) : null;
       const pick = hasCanonicalFocus ? canonicalPick : qualified[0];
       updateResearchFocus(hasCanonicalFocus ? canonicalPick : null, stamp);
       if (pick) {
-        render(pick.ticker+' · Próximo do pivot',
+        render(pick.ticker+(pick.stage === 'compressão' ? ' · Base em formação' : ' · Próximo do pivot'),
           'Score técnico '+Math.round(pick.score)+'/100 · '+pick.distancePct.toFixed(2).replace('.',',')+
-          '% abaixo da resistência · volume a secar comprovado. Investigar tese, risco e liquidez antes de qualquer decisão.',
+          '% abaixo da resistência · '+(pick.volumeDry === true ? 'volume a secar comprovado' : 'secagem de volume ainda não confirmada')+'. Investigar tese, risco e liquidez antes de qualquer decisão.',
           source+' · Sinal '+pick.date+' · VCP '+(pick.vcpConfirmed === true ? 'confirmada' : 'não confirmada')+' · Volume a secar '+(pick.volumeDry === true ? 'confirmado' : 'não confirmado')+' · Melhor sinal da amostra, não do mercado inteiro · Risco: breakout ainda não confirmado.', true, pick, true);
         void showPrebreakoutVisuals(panel, pick);
       } else if (hasCanonicalFocus) {
