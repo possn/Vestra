@@ -43,6 +43,26 @@ class ProviderBatchRetryTests(unittest.TestCase):
         self.assertEqual(p.calls,1)
 
 
+class SlotQualityAuditTests(unittest.TestCase):
+    def test_quality_is_observed_and_missing_not_implicitly_complete(self):
+        t={"rows_attempted":300,"rows_evaluable":220,"rows_without_ohlcv":35,
+           "rows_with_processing_error":3,"batches_failed":2,"batches_attempted":20}
+        c={"distinct_ohlcv_tickers":480,"eligible_universe":1183,"coverage_pct":40.57}
+        result=mod.slot_quality_audit(t,c)
+        self.assertEqual(result["status"],"partial_observed_24h")
+        self.assertFalse(result["full_universe_verified"])
+        self.assertAlmostEqual(result["slot_evaluable_pct"],73.33)
+        self.assertEqual(result["slot_failed_batches"],2)
+        self.assertIsNone(mod.slot_quality_audit({**t,"rows_attempted":0,"rows_evaluable":0,"rows_without_ohlcv":0},c)["slot_evaluable_pct"])
+        full=mod.slot_quality_audit(t,{"distinct_ohlcv_tickers":1183,"eligible_universe":1183,"coverage_pct":100})
+        self.assertTrue(full["full_universe_verified"])
+    def test_rejects_inconsistent_telemetry(self):
+        t={"rows_attempted":4,"rows_evaluable":5,"rows_without_ohlcv":0,
+           "rows_with_processing_error":0,"batches_failed":0,"batches_attempted":1}
+        with self.assertRaises(ValueError):
+            mod.slot_quality_audit(t,{"distinct_ohlcv_tickers":0,"eligible_universe":10})
+
+
 class SlotTelemetryContractTests(unittest.TestCase):
     def test_publication_keeps_observed_and_theoretical_metrics_distinct(self):
         src=(ROOT/"scripts/refresh_prebreakout_scanner.py").read_text()

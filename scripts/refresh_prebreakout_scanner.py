@@ -530,6 +530,31 @@ def fetch_ohlcv_batch(provider, group):
             failures.append(type(exc).__name__)
     raise RuntimeError('ohlcv_batch_failed_after_retry:'+','.join(failures))
 
+def slot_quality_audit(telemetry:dict, coverage:dict)->dict:
+    """Assess observed scan quality, never claim complete coverage from capacity."""
+    attempted=telemetry["rows_attempted"]
+    evaluable=telemetry["rows_evaluable"]
+    missing=telemetry["rows_without_ohlcv"]
+    processing=telemetry["rows_with_processing_error"]
+    failed=telemetry["batches_failed"]
+    count=telemetry["batches_attempted"]
+    unique=coverage.get("distinct_ohlcv_tickers",0)
+    universe=coverage.get("eligible_universe",0)
+    if not all(type(x) is int and x>=0 for x in
+               (attempted,evaluable,missing,processing,failed,count,unique,universe)):
+        raise ValueError("invalid scanner telemetry")
+    if evaluable>attempted or missing>attempted or failed>count:
+        raise ValueError("inconsistent scanner telemetry")
+    full=bool(universe and unique>=universe)
+    return {"status":"full_observed_24h" if full else "partial_observed_24h",
+            "observed_24h_coverage_pct":coverage.get("coverage_pct"),
+            "full_universe_verified":full,
+            "slot_evaluable_pct":round(100*evaluable/attempted,2) if attempted else None,
+            "slot_missing_ohlcv":missing,"slot_processing_errors":processing,
+            "slot_failed_batches":failed,
+            "interpretation":"observed_data_only_not_a_quality_or_edge_forecast"}
+
+
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
@@ -613,8 +638,9 @@ def main():
         "rows_with_processing_error":row_failed,"rows_evaluable":len(set(successful)),
         "duration_seconds":round(time.monotonic()-scan_started,3),
         "measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"}
+    scan_quality=slot_quality_audit(slot_telemetry,audit)
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
