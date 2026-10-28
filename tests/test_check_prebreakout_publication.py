@@ -8,10 +8,13 @@ class FreshnessContract(unittest.TestCase):
  def test_fresh_with_consistent_observation(self):
   now=datetime(2026,10,28,12,tzinfo=timezone.utc)
   feed={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-        "attempted":300,"scan_slot_telemetry":{"rows_attempted":300},
+        "attempted":300,"eligible_universe":1183,
+        "daily_capacity_ceiling":{"max_distinct_daily":1183},
+        "scan_slot_telemetry":{"rows_attempted":300},
         "scan_quality_audit":{"observed_24h_coverage_pct":36.86},
         "coverage_audit_24h":{"coverage_pct":36.86}}
   self.assertEqual(mod.assess_freshness(feed,now)["status"],"healthy")
+  self.assertEqual(mod.assess_freshness({**feed,"daily_capacity_ceiling":{"max_distinct_daily":600}},now)["status"],"invalid")
   self.assertEqual(mod.assess_freshness(feed,now.replace(hour=23))["status"],"stale")
   self.assertEqual(mod.assess_freshness({**feed,"scan_slot_telemetry":{}},now)["status"],"invalid")
   self.assertEqual(mod.assess_freshness({**feed,"scan_quality_audit":{}},now)["status"],"invalid")
