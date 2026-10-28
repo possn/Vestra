@@ -91,6 +91,22 @@ class OverlapCoverageTests(unittest.TestCase):
         self.assertIsNone(audit["slot_repeat_verified_pct"])
 
 
+class RotationPlanAuditTests(unittest.TestCase):
+    def test_planned_not_reported_as_observed(self):
+        stocks=[{"ticker":f"T{i:04d}","quote_type":"EQUITY",
+                 "market_cap":2_000_000_000-i} for i in range(1183)]
+        plan=mod.rotation_plan_audit(stocks,date(2026,10,28),["T0001","T0002"])
+        self.assertEqual(plan["status"],"planned_not_observed")
+        self.assertTrue(plan["not_actual_ohlcv_coverage"])
+        self.assertEqual(plan["planned_requests"],1200)
+        self.assertEqual(plan["planned_distinct"]+plan["planned_repeats"],1200)
+        self.assertLessEqual(plan["planned_distinct"],1183)
+    def test_empty_universe_does_not_invent_coverage(self):
+        plan=mod.rotation_plan_audit([],date(2026,10,28))
+        self.assertIsNone(plan["planned_distinct_pct"])
+        self.assertEqual(plan["planned_requests"],0)
+
+
 class DailyCoverageCapacityTests(unittest.TestCase):
     def test_capacity_is_an_upper_bound_not_observed_coverage(self):
         c=mod.daily_coverage_capacity(1173)
