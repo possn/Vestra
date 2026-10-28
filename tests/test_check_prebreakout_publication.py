@@ -4,6 +4,20 @@ from pathlib import Path
 p=Path(__file__).resolve().parents[1]/"scripts/check_prebreakout_publication.py"
 spec=importlib.util.spec_from_file_location("publication",p)
 mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+class FreshnessContract(unittest.TestCase):
+ def test_fresh_with_consistent_observation(self):
+  now=datetime(2026,10,28,12,tzinfo=timezone.utc)
+  feed={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
+        "attempted":300,"scan_slot_telemetry":{"rows_attempted":300},
+        "scan_quality_audit":{"observed_24h_coverage_pct":36.86},
+        "coverage_audit_24h":{"coverage_pct":36.86}}
+  self.assertEqual(mod.assess_freshness(feed,now)["status"],"healthy")
+  self.assertEqual(mod.assess_freshness(feed,now.replace(hour=23))["status"],"stale")
+  self.assertEqual(mod.assess_freshness({**feed,"scan_slot_telemetry":{}},now)["status"],"invalid")
+  self.assertEqual(mod.assess_freshness({**feed,"scan_quality_audit":{}},now)["status"],"invalid")
+  self.assertEqual(mod.assess_freshness({**feed,"generated_at":"2026-10-28T12:00:00"},now)["status"],"invalid")
+
+
 class Contract(unittest.TestCase):
  def setup_files(self,root):
   d=root/"data";d.mkdir()
