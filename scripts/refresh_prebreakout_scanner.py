@@ -518,13 +518,25 @@ def safe_quote_currency(provider, ticker):
         return None
 
 
+def fetch_ohlcv_batch(provider, group):
+    """One bounded retry on exceptions; no silent fallback to unverified bars."""
+    failures=[]
+    for attempt in range(2):
+        try:
+            data=provider.download(group,period="18mo",interval="1d",group_by="ticker",
+                                   auto_adjust=True,threads=False,progress=False,timeout=25)
+            return data,len(failures)
+        except Exception as exc:
+            failures.append(type(exc).__name__)
+    raise RuntimeError('ohlcv_batch_failed_after_retry:'+','.join(failures))
+
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]))
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
-    scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;row_failed=0;row_missing_ohlcv=0
+    scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
     except (OSError,ValueError):
@@ -536,10 +548,12 @@ def main():
         group=tickers[start:start+15]
         batch_attempted+=1
         try:
-            data=yf.download(group,period="18mo",interval="1d",group_by="ticker",auto_adjust=True,threads=False,progress=False,timeout=25)
-        except Exception as exc:
+            data,retries=fetch_ohlcv_batch(yf,group)
+            batch_retries+=retries
+        except RuntimeError as exc:
             batch_failed+=1
-            failures.append(type(exc).__name__);continue
+            batch_retries+=1
+            failures.append(str(exc));continue
         batch_completed+=1
         for ticker in group:
             try:
@@ -594,7 +608,7 @@ def main():
     published,focus=published_signals_with_focus(list(by.values()),now.date(),earnings_risks=earnings_risks)
     earnings_audit=earnings_event_diagnostic(ROOT/"data/earnings-events.json",now.date(),[r["ticker"] for r in published])
     slot_telemetry={"batches_attempted":batch_attempted,"batches_completed":batch_completed,
-        "batches_failed":batch_failed,"rows_attempted":len(tickers),
+        "batches_failed":batch_failed,"batches_retried":batch_retries,"rows_attempted":len(tickers),
         "rows_with_any_ohlcv":checked,"rows_without_ohlcv":row_missing_ohlcv,
         "rows_with_processing_error":row_failed,"rows_evaluable":len(set(successful)),
         "duration_seconds":round(time.monotonic()-scan_started,3),
