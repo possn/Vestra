@@ -3,6 +3,7 @@
 from __future__ import annotations
 import json
 import math
+import time
 from datetime import datetime, timezone, date
 from pathlib import Path
 
@@ -523,6 +524,7 @@ def main():
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]))
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
+    scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
     except (OSError,ValueError):
@@ -532,14 +534,18 @@ def main():
     shadow={"legacy_eligible":0,"strict_eligible":0,"legacy_only":0,"strict_only":0,"neither":0,"compared":0}
     for start in range(0,len(tickers),15):
         group=tickers[start:start+15]
+        batch_attempted+=1
         try:
             data=yf.download(group,period="18mo",interval="1d",group_by="ticker",auto_adjust=True,threads=False,progress=False,timeout=25)
         except Exception as exc:
+            batch_failed+=1
             failures.append(type(exc).__name__);continue
+        batch_completed+=1
         for ticker in group:
             try:
                 frame=data[ticker] if len(group)>1 else data
                 bars=completed_sessions(dataframe_bars(frame),now.date());checked+=bool(bars)
+                row_missing_ohlcv+=int(not bool(bars))
                 if evaluable_recheck(bars,now.date()):successful.append(ticker)
                 signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0)
                 legacy=scan_bars(ticker,bars,now.date(),strict_quality=False)
@@ -570,7 +576,9 @@ def main():
                     diagnostics["liquidityCurrencySource"]="yahoo_fast_info"
                     signal["scanner_verified_at"]=now.isoformat()
                     found.append(signal)
-            except (KeyError,ValueError,TypeError) as exc:failures.append(f"{ticker}:{type(exc).__name__}")
+            except (KeyError,ValueError,TypeError) as exc:
+                row_failed+=1
+                failures.append(f"{ticker}:{type(exc).__name__}")
     # A failed OHLCV download is not an observed rejection. Invalidate only a\n    # ticker whose bars were actually read; per-row 18h expiry still applies.
     # A rechecked ticker which now fails must disappear; never promote stale cache.
     try:
@@ -585,8 +593,14 @@ def main():
     for signal in by.values(): signal['earningsRiskGate']=earnings_risks.get(signal['ticker'],{'status':'unknown'})
     published,focus=published_signals_with_focus(list(by.values()),now.date(),earnings_risks=earnings_risks)
     earnings_audit=earnings_event_diagnostic(ROOT/"data/earnings-events.json",now.date(),[r["ticker"] for r in published])
+    slot_telemetry={"batches_attempted":batch_attempted,"batches_completed":batch_completed,
+        "batches_failed":batch_failed,"rows_attempted":len(tickers),
+        "rows_with_any_ohlcv":checked,"rows_without_ohlcv":row_missing_ohlcv,
+        "rows_with_processing_error":row_failed,"rows_evaluable":len(set(successful)),
+        "duration_seconds":round(time.monotonic()-scan_started,3),
+        "measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"}
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},

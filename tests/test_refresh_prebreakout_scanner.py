@@ -11,6 +11,18 @@ spec=importlib.util.spec_from_file_location("prebreakout",ROOT/"scripts/refresh_
 mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
+class SlotTelemetryContractTests(unittest.TestCase):
+    def test_publication_keeps_observed_and_theoretical_metrics_distinct(self):
+        src=(ROOT/"scripts/refresh_prebreakout_scanner.py").read_text()
+        for name in ('batches_attempted','batches_completed','batches_failed',
+                     'rows_without_ohlcv','rows_with_processing_error',
+                     'rows_evaluable','duration_seconds'):
+            self.assertIn('"'+name+'"',src)
+        self.assertIn('"scan_slot_telemetry":slot_telemetry',src)
+        self.assertIn('"coverage_audit_24h":',src)
+        self.assertIn('"measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"',src)
+
+
 class DailyCoverageCapacityTests(unittest.TestCase):
     def test_capacity_is_an_upper_bound_not_observed_coverage(self):
         c=mod.daily_coverage_capacity(1173)
