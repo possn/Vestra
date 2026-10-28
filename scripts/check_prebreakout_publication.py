@@ -6,6 +6,30 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 
+def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
+    """Read-only operational check; never infer full coverage from slot capacity."""
+    if not isinstance(feed,dict) or feed.get("schema")!="vestra_prebreakout_v1":
+        return {"status":"invalid","reason":"invalid_schema"}
+    try:
+        generated=datetime.fromisoformat(str(feed["generated_at"]).replace("Z","+00:00"))
+        if generated.tzinfo is None or now.tzinfo is None:
+            return {"status":"invalid","reason":"naive_timestamp"}
+        age=(now-generated).total_seconds()/3600
+        if not 0<=age<=max_age_hours:
+            return {"status":"stale","age_hours":round(age,2)}
+        slot=feed["scan_slot_telemetry"]
+        audit=feed["scan_quality_audit"]
+        coverage=feed["coverage_audit_24h"]
+        if (not isinstance(slot,dict) or not isinstance(audit,dict) or
+            slot.get("rows_attempted")!=feed["attempted"] or
+            audit.get("observed_24h_coverage_pct")!=coverage["coverage_pct"]):
+            return {"status":"invalid","reason":"inconsistent_new_telemetry"}
+    except (KeyError,TypeError,ValueError,AttributeError):
+        return {"status":"invalid","reason":"missing_new_telemetry"}
+    return {"status":"healthy","age_hours":round(age,2),
+            "observed_24h_coverage_pct":coverage["coverage_pct"]}
+
+
 def verify(root:Path=ROOT):
     data=root/"data"
     feed=json.loads((data/"prebreakout-signals.json").read_text(encoding="utf-8"))
