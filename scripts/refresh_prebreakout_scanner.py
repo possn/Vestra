@@ -509,6 +509,14 @@ def earnings_event_diagnostic(path:Path, as_of:date, tickers:list[str])->dict:
             "candidates_with_upcoming_10d":len(known),"upcoming_dates":known,
             "interpretation":"not_listed_does_not_mean_clear"}
 
+def safe_quote_currency(provider, ticker):
+    """Provider timeouts/rate limits cannot abort the entire scan slot."""
+    try:
+        return provider.Ticker(ticker).fast_info.get("currency")
+    except Exception:
+        return None
+
+
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
@@ -548,10 +556,7 @@ def main():
                     # for the entire rotating universe. Quote currency must come from
                     # the provider, not ticker suffix or a guessed exchange.
                     currency_checked+=1
-                    try:
-                        currency=yf.Ticker(ticker).fast_info.get("currency")
-                    except (AttributeError,KeyError,TypeError,ValueError):
-                        currency=None
+                    currency=safe_quote_currency(yf,ticker)
                     diagnostics=signal["quantitativeDiagnostics"]
                     local_turnover=diagnostics.get("averageDollarVolume20")
                     usd_turnover=verified_usd_liquidity(local_turnover,currency,fx,now.date())
