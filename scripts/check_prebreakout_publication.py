@@ -20,7 +20,11 @@ def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
         slot=feed["scan_slot_telemetry"]
         audit=feed["scan_quality_audit"]
         coverage=feed["coverage_audit_24h"]
+        capacity=feed["daily_capacity_ceiling"]
+        expected=min(1200,feed["eligible_universe"])
         if (not isinstance(slot,dict) or not isinstance(audit,dict) or
+            not isinstance(capacity,dict) or
+            capacity.get("max_distinct_daily")!=expected or
             slot.get("rows_attempted")!=feed["attempted"] or
             audit.get("observed_24h_coverage_pct")!=coverage["coverage_pct"]):
             return {"status":"invalid","reason":"inconsistent_new_telemetry"}
