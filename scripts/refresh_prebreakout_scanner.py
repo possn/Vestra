@@ -151,7 +151,15 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     # Closed-session high across 252 bars: research diagnostic, not a gate or score.
     high52=max(bar["high"] for bar in clean[-252:]) if len(clean)>=252 else None
     high52_proximity=round(current/high52*100,2) if high52 is not None and high52>0 else None
-    diagnostics={"high52Week":round(high52,5) if high52 is not None else None,
+    # Research-only impulse context: distinguish base geometry from a sharp prior rally.
+    # Fixed closed-bar windows, no new provider calls or live eligibility changes.
+    prebase_return_pct=(clean[-40]["close"]/clean[-80]["close"]-1)*100
+    prebase_range_pct=width(clean[-80:-40])*100
+    diagnostics={"preBaseReturn40Pct":round(prebase_return_pct,2),
+                 "preBaseRange40Pct":round(prebase_range_pct,2),
+                 "contractionWidths20Pct":[round(w*100,2) for w in (w1,w2,w3)],
+                 "preBaseContext":"research_only_fixed_closed_bars_no_ranking_gate",
+                 "high52Week":round(high52,5) if high52 is not None else None,
                  "closeToHigh52WeekPct":high52_proximity,
                  "high52WeekWindowSessions":252 if high52 is not None else None,
                  "high52WeekBasis":"last_252_closed_ohlcv_bars_asof_signal",
