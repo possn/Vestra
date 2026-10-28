@@ -14,13 +14,13 @@ spec.loader.exec_module(mod)
 class DailyCoverageCapacityTests(unittest.TestCase):
     def test_capacity_is_an_upper_bound_not_observed_coverage(self):
         c=mod.daily_coverage_capacity(1173)
-        self.assertEqual(c["max_distinct_daily"],600)
-        self.assertEqual(c["max_daily_coverage_pct"],51.15)
+        self.assertEqual(c["max_distinct_daily"],1173)
+        self.assertEqual(c["max_daily_coverage_pct"],100.0)
         self.assertTrue(c["not_actual_coverage"])
         self.assertEqual(mod.daily_coverage_capacity(200)["max_daily_coverage_pct"],100.0)
         self.assertIsNone(mod.daily_coverage_capacity(0)["max_daily_coverage_pct"])
         with self.assertRaises(ValueError):mod.daily_coverage_capacity(-1)
-        self.assertEqual(mod.SCAN_BUDGET_PER_SLOT,150)
+        self.assertEqual(mod.SCAN_BUDGET_PER_SLOT,300)
         self.assertEqual(mod.SCANNER_SLOTS_PER_DAY,4)
 
 
@@ -321,8 +321,8 @@ class PrebreakoutDataTests(unittest.TestCase):
                 for i in range(700)]
         day=date(2026,10,14)
         scans=[mod.candidates(stocks,day,slot) for slot in range(4)]
-        self.assertTrue(all(len(scan)==150 for scan in scans))
-        self.assertEqual(len(set().union(*(set(scan) for scan in scans))),600)
+        self.assertTrue(all(len(scan)==300 for scan in scans))
+        self.assertEqual(len(set().union(*(set(scan) for scan in scans))),700)
         for i in range(3):
             self.assertTrue(set(scans[i]).isdisjoint(scans[i+1]))
         with self.assertRaises(ValueError):mod.candidates(stocks,day,4)
