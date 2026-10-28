@@ -333,7 +333,7 @@ class PrebreakoutDataTests(unittest.TestCase):
         normal=mod.candidates(stocks,day,1)
         tracked=next(f"T{i:04d}" for i in range(700) if f"T{i:04d}" not in normal)
         chosen=mod.candidates(stocks,day,1,[tracked,"T0001",tracked,"NOT-IN-UNIVERSE"])
-        self.assertEqual(len(chosen),150)
+        self.assertEqual(len(chosen),mod.SCAN_BUDGET_PER_SLOT)
         self.assertEqual(chosen[0],tracked)
         self.assertEqual(len(chosen),len(set(chosen)))
         self.assertTrue(set(chosen[2:]).issubset(set(normal)))
