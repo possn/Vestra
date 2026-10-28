@@ -11,6 +11,38 @@ spec=importlib.util.spec_from_file_location("prebreakout",ROOT/"scripts/refresh_
 mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
+class ProviderBatchRetryTests(unittest.TestCase):
+    def test_retry_once_recovers_transient_failure(self):
+        class Provider:
+            calls=0
+            def download(self,group,**kwargs):
+                self.calls+=1
+                if self.calls==1: raise ConnectionError("transient")
+                return {"ok":True}
+        p=Provider()
+        self.assertEqual(mod.fetch_ohlcv_batch(p,["AAA"]),({"ok":True},1))
+        self.assertEqual(p.calls,2)
+    def test_persistent_failure_is_bounded_and_visible(self):
+        class Broken:
+            calls=0
+            def download(self,group,**kwargs):
+                self.calls+=1
+                raise TimeoutError("timeout")
+        p=Broken()
+        with self.assertRaisesRegex(RuntimeError,'ohlcv_batch_failed_after_retry'):
+            mod.fetch_ohlcv_batch(p,["AAA"])
+        self.assertEqual(p.calls,2)
+    def test_success_never_issues_extra_request(self):
+        class Working:
+            calls=0
+            def download(self,group,**kwargs):
+                self.calls+=1
+                return []
+        p=Working()
+        self.assertEqual(mod.fetch_ohlcv_batch(p,["AAA"]),( [],0))
+        self.assertEqual(p.calls,1)
+
+
 class SlotTelemetryContractTests(unittest.TestCase):
     def test_publication_keeps_observed_and_theoretical_metrics_distinct(self):
         src=(ROOT/"scripts/refresh_prebreakout_scanner.py").read_text()
