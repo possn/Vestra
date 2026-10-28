@@ -362,6 +362,20 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
     rotation=[t for t in rotated if t not in watchlist][:SCAN_BUDGET_PER_SLOT-len(watchlist)]
     return watchlist+rotation
 
+def rotation_plan_audit(stocks:list[dict], when:date, watch:list[str]|None=None)->dict:
+    """Deterministic four-slot selection plan, not proof any prices were downloaded."""
+    slots=[candidates(stocks,when,slot,watch) for slot in range(SCANNER_SLOTS_PER_DAY)]
+    flattened=[name for slot in slots for name in slot]
+    distinct=len(set(flattened))
+    eligible=eligible_universe_size(stocks)
+    return {"status":"planned_not_observed","date":when.isoformat(),
+            "planned_requests":len(flattened),"planned_distinct":distinct,
+            "planned_repeats":len(flattened)-distinct,
+            "planned_distinct_pct":round(100*distinct/eligible,2) if eligible else None,
+            "eligible_universe":eligible,
+            "not_actual_ohlcv_coverage":True}
+
+
 def dataframe_bars(frame):
     rows=[]
     if frame is None or getattr(frame,"empty",True):return rows
@@ -565,9 +579,13 @@ def slot_quality_audit(telemetry:dict, coverage:dict)->dict:
 
 def main():
     import yfinance as yf
-    now=datetime.now(timezone.utc);tickers=candidates(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]),now.date(),now.hour//6,watched_tickers(now))
+    now=datetime.now(timezone.utc)
+    stocks=json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[])
+    watch=watched_tickers(now)
+    tickers=candidates(stocks,now.date(),now.hour//6,watch)
+    rotation_plan=rotation_plan_audit(stocks,now.date(),watch)
     # Coverage refers to this slot, not the entire eligible investment universe.
-    eligible=eligible_universe_size(json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[]))
+    eligible=eligible_universe_size(stocks)
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
     scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
@@ -648,7 +666,7 @@ def main():
         "measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"}
     scan_quality=slot_quality_audit(slot_telemetry,audit)
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
