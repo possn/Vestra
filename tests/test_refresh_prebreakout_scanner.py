@@ -75,6 +75,22 @@ class SlotTelemetryContractTests(unittest.TestCase):
         self.assertIn('"measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"',src)
 
 
+class OverlapCoverageTests(unittest.TestCase):
+    def test_repeat_and_new_24h_observations(self):
+        now=datetime(2026,10,28,12,tzinfo=timezone.utc)
+        previous={"schema":"vestra_prebreakout_v1","signals":[],
+                  "coverage_observations_24h":[
+                      {"ticker":"AAA","verified_at":(now-timedelta(hours=2)).isoformat()},
+                      {"ticker":"OLD","verified_at":(now-timedelta(hours=25)).isoformat()}]}
+        audit=mod.scanner_coverage_audit(previous,["AAA","BBB"],["AAA","BBB","BBB"],now,10,[],[])
+        self.assertEqual((audit["slot_new_verified_24h"],audit["slot_repeat_verified_24h"]),(1,1))
+        self.assertEqual(audit["slot_repeat_verified_pct"],50.0)
+        self.assertEqual(audit["distinct_ohlcv_tickers"],2)
+    def test_empty_verified_rate_unknown(self):
+        audit=mod.scanner_coverage_audit({},[],[],datetime(2026,10,28,12,tzinfo=timezone.utc),10,[],[])
+        self.assertIsNone(audit["slot_repeat_verified_pct"])
+
+
 class DailyCoverageCapacityTests(unittest.TestCase):
     def test_capacity_is_an_upper_bound_not_observed_coverage(self):
         c=mod.daily_coverage_capacity(1173)
