@@ -166,6 +166,29 @@ class CoverageAuditTests(unittest.TestCase):
         self.assertEqual(old["not_rechecked_removed"],2)
 
 
+class EarningsPickGateTests(unittest.TestCase):
+    def test_future_dates_unknown_and_staleness(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"latest.json"
+            feed={"schema":"vestra_earnings_latest_v1","generated_at":"2026-10-27T12:00:00+00:00","stocks":[
+                {"ticker":"NEAR","analyst_next_earnings_date":"2026-11-06"},
+                {"ticker":"FAR","analyst_next_earnings_date":"2027-01-10"},
+                {"ticker":"MISSING","analyst_next_earnings_date":None}]}
+            path.write_text(json.dumps(feed))
+            result=mod.earnings_risk_from_latest(path,date(2026,10,27),["NEAR","FAR","MISSING","ABSENT"])
+            self.assertEqual(result["NEAR"]["status"],"near_term")
+            self.assertEqual(result["FAR"]["status"],"dated_beyond_buffer")
+            self.assertEqual(result["MISSING"]["status"],"unknown")
+            self.assertEqual(result["ABSENT"]["status"],"unknown")
+            self.assertEqual(mod.earnings_risk_from_latest(path,date(2026,11,1),["FAR"])["FAR"]["status"],"unknown")
+    def test_daily_pick_never_treats_unknown_as_clear(self):
+        d=date(2026,10,27)
+        row={"ticker":"NEAR","date":d.isoformat(),"stage":"compressão","source":"yahoo:daily_ohlcv",
+             "vcpConfirmed":True,"volumeConfirmed":False,"distancePct":2,"score":80}
+        self.assertEqual(mod.daily_focus([row],d,{"NEAR":{"status":"unknown"}})["status"],"no_qualified_setup")
+        self.assertEqual(mod.daily_focus([row],d,{"NEAR":{"status":"near_term"}})["status"],"no_qualified_setup")
+        self.assertEqual(mod.daily_focus([row],d,{"NEAR":{"status":"dated_beyond_buffer"}})["ticker"],"NEAR")
+
 class EarningsCoverageTests(unittest.TestCase):
     def test_stale_calendar_is_unknown_not_clear(self):
         import tempfile

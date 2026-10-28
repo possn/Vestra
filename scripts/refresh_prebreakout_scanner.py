@@ -172,11 +172,33 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
             "goldenCrossImminent":bool(near_cross),
             "quantitativeDiagnostics":diagnostics,"source":"yahoo:daily_ohlcv"}
 
-def daily_focus(signals:list[dict], as_of:date)->dict:
+def earnings_risk_from_latest(path:Path, as_of:date, tickers:list[str])->dict:
+    """Conservative research pick embargo: missing future dates are unknown.
+    The 17-day calendar buffer intentionally overcovers 10 US market sessions;
+    it is not an exact exchange-session count.
+    """
+    out={t:{'status':'unknown','next_date':None} for t in tickers}
+    try:
+        feed=json.loads(path.read_text(encoding="utf-8"))
+        stamp=datetime.fromisoformat(str(feed["generated_at"]).replace("Z","+00:00"))
+        if stamp.tzinfo is None or feed.get("schema")!="vestra_earnings_latest_v1" or not isinstance(feed.get("stocks"),list): return out
+        if not 0<=(as_of-stamp.date()).days<=2: return out
+    except (OSError,ValueError,TypeError,KeyError,AttributeError): return out
+    for row in feed['stocks']:
+        if not isinstance(row,dict) or row.get('ticker') not in out: continue
+        try: day=date.fromisoformat(str(row['analyst_next_earnings_date'])[:10])
+        except (KeyError,ValueError,TypeError): continue
+        if day<as_of: continue
+        out[row['ticker']]={'status':'near_term' if (day-as_of).days<=17 else 'dated_beyond_buffer',
+            'next_date':day.isoformat(),'method':'conservative_17_calendar_day_proxy'}
+    return out
+
+def daily_focus(signals:list[dict], as_of:date, earnings_risks:dict|None=None)->dict:
     """One evidence-led candidate, or an explicit abstention; never a success probability."""
     eligible=[]
     developing=[]
     for row in signals:
+        if earnings_risks is not None and earnings_risks.get(row.get("ticker"),{}).get("status")!="dated_beyond_buffer": continue
         if row.get("stage") not in ("pré-breakout","compressão") or row.get("source")!="yahoo:daily_ohlcv":
             continue
         if row.get("vcpConfirmed") is not True:
@@ -238,12 +260,12 @@ def daily_focus(signals:list[dict], as_of:date)->dict:
             "selection_tier":"developing_setup" if fallback else "verified_prebreakout",
             "reason":"best_available_developing_base_not_confirmed" if fallback else "ranked_verified_setup_not_a_forecast_or_buy_signal"}
 
-def published_signals_with_focus(signals:list[dict],as_of:date,limit:int=75)->tuple[list[dict],dict]:
+def published_signals_with_focus(signals:list[dict],as_of:date,limit:int=75,earnings_risks:dict|None=None)->tuple[list[dict],dict]:
     """Keep the featured candidate in the public list even when capped."""
     if limit<1:
         raise ValueError("published signal limit must be positive")
     ordered=sorted(signals,key=lambda row:({"pré-breakout":0,"compressão":1}[row["stage"]],-row["score"],row["ticker"]))
-    focus=daily_focus(ordered,as_of)
+    focus=daily_focus(ordered,as_of,earnings_risks)
     visible=ordered[:limit]
     if focus["status"]=="research_candidate" and all(row["ticker"]!=focus["ticker"] for row in visible):
         featured=next(row for row in ordered if row["ticker"]==focus["ticker"])
@@ -476,7 +498,7 @@ def earnings_event_diagnostic(path:Path, as_of:date, tickers:list[str])->dict:
             continue
         try: day=date.fromisoformat(item["date"])
         except (KeyError,ValueError,TypeError): continue
-        if day<as_of: continue
+        if day<=as_of: continue
         future_total+=1
         if (day-as_of).days<=10:
             ticker=item["ticker"];future[ticker]=min(day,future.get(ticker,day))
@@ -554,14 +576,21 @@ def main():
     by={signal["ticker"]:signal for signal in retained}
     by.update({signal["ticker"]:signal for signal in found})
     audit=scanner_coverage_audit(previous,successful,successful,now,eligible,retained,found)
-    published,focus=published_signals_with_focus(list(by.values()),now.date())
+    earnings_risks=earnings_risk_from_latest(ROOT/'data/earnings-latest.json',now.date(),list(by))
+    for signal in by.values(): signal['earningsRiskGate']=earnings_risks.get(signal['ticker'],{'status':'unknown'})
+    published,focus=published_signals_with_focus(list(by.values()),now.date(),earnings_risks=earnings_risks)
     earnings_audit=earnings_event_diagnostic(ROOT/"data/earnings-events.json",now.date(),[r["ticker"] for r in published])
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"scan_unique_tickers":len(set(tickers)),"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
-             "daily_focus":focus,"earnings_event_diagnostic":earnings_audit,"signals":published}
+             "daily_focus":focus,"earnings_event_diagnostic":earnings_audit,
+             "earnings_pick_gate":{"method":"conservative_17_calendar_day_proxy_not_exact_exchange_sessions",
+                 "unknown":sum(v["status"]=="unknown" for v in earnings_risks.values()),
+                 "near_term":sum(v["status"]=="near_term" for v in earnings_risks.values()),
+                 "dated_beyond_buffer":sum(v["status"]=="dated_beyond_buffer" for v in earnings_risks.values())},
+             "signals":published}
     OUTPUT.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":"))+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in payload.items() if k!="signals"}))
 
