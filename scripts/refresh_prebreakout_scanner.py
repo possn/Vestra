@@ -468,7 +468,11 @@ def scanner_coverage_audit(previous:dict, scanned:list[str], successful:list[str
                     old[item["ticker"]]=verified
             except (KeyError,AttributeError,TypeError,ValueError):
                 continue
-    for ticker in successful:
+    prior_verified=set(old)
+    successful_distinct=set(successful)
+    fresh_verified=successful_distinct-prior_verified
+    repeat_verified=successful_distinct&prior_verified
+    for ticker in successful_distinct:
         old[ticker]=now
     seen=set(scanned)
     previous_rows=previous.get("signals",[]) if isinstance(previous.get("signals"),list) else []
@@ -477,6 +481,10 @@ def scanner_coverage_audit(previous:dict, scanned:list[str], successful:list[str
     invalidated=sum(t in seen and t not in present for t in prior)
     expired=sum(t not in seen and t not in present for t in prior)
     return {"window_hours":24,"distinct_ohlcv_tickers":len(old),
+            "slot_verified_distinct":len(successful_distinct),
+            "slot_new_verified_24h":len(fresh_verified),
+            "slot_repeat_verified_24h":len(repeat_verified),
+            "slot_repeat_verified_pct":round(100*len(repeat_verified)/len(successful_distinct),2) if successful_distinct else None,
             "eligible_universe":eligible,
             "coverage_pct":round(100*len(old)/eligible,2) if eligible else None,
             "rechecked_removed":invalidated,"not_rechecked_removed":expired,
