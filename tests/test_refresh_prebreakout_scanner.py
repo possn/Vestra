@@ -80,6 +80,28 @@ class BestAvailableFocusTests(unittest.TestCase):
             "distancePct":9}],today)["status"],"no_qualified_setup")
 
 
+class ProviderCurrencyFailureTests(unittest.TestCase):
+    def test_network_and_timeout_fail_closed(self):
+        class BrokenProvider:
+            def Ticker(self,ticker):
+                raise ConnectionError("rate limit")
+        self.assertIsNone(mod.safe_quote_currency(BrokenProvider(),"AAA"))
+        class TimeoutProvider:
+            def Ticker(self,ticker):
+                class Ticker:
+                    @property
+                    def fast_info(self):
+                        raise TimeoutError("timeout")
+                return Ticker()
+        self.assertIsNone(mod.safe_quote_currency(TimeoutProvider(),"AAA"))
+        class Working:
+            def Ticker(self,ticker):
+                class Ticker:
+                    fast_info={"currency":"USD"}
+                return Ticker()
+        self.assertEqual(mod.safe_quote_currency(Working(),"AAA"),"USD")
+
+
 class CurrencyLiquidityTests(unittest.TestCase):
     def test_units_and_fx_are_verified(self):
         fx={"ecb_reference_date":"2026-10-23","rates_to_eur":{"USD":0.9,"GBP":1.2,"EUR":1.0}}
