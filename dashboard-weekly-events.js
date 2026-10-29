@@ -316,9 +316,9 @@
   async function refreshMacroEvents() {
     const latest = await loadMacroEvents((...args) => fetch(...args), MACRO_FETCH_TIMEOUT_MS, true);
     if (latest) {
-      const nav = window.VestraWeeklyEventsNavigation;
-      const now = nav?.shiftedDate ? nav.shiftedDate(new Date()) : new Date();
-      render({ now });
+      // Preserve the selected week while an opened event refreshes. Never
+      // reset the calendar to today and silently make its catalyst disappear.
+      render(expandedContext || {});
       restoreExternalWeeklyDetail();
       window.dispatchEvent?.(new CustomEvent('vestra:weekly-data-refreshed'));
     }
@@ -675,7 +675,9 @@
         if(selected.kind==='macro'){
           const id=selected.id;
           void refreshMacroEvents().then(()=>{
-            const fresh=lastRenderedEvents.find(item=>item.kind==='macro'&&item.id===id);
+            // The event may no longer be in the capped preview after an update.
+            // Resolve it from the published source by immutable event identity.
+            const fresh=findMacroEventById(macroSnapshot,id);
             if(fresh&&document.getElementById(DETAIL_ID))openDetail(fresh);
           });
         }
