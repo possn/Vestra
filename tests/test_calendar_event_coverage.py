@@ -22,7 +22,8 @@ class CalendarCoverageTests(unittest.TestCase):
         self.assertIn("event.importance === 'critical');", js)
         self.assertNotIn("event.importance === 'critical' && event.date >= localDay(now)", js)
         self.assertIn("Keep critical official macro events visible for the whole calendar week", js)
-        self.assertIn("const displayEvents = [...criticalMacro, ...priority, ...secondary]", js)
+        self.assertIn("const displayEvents = [...retained, ...criticalMacro, ...priority, ...secondary]", js)
+        self.assertIn("const stillThisWeek = pinned", js)
         self.assertIn("displayEvents.slice(0,COLLAPSED_EVENTS)", js)
         self.assertIn("dashboard-weekly-events.js?v=3.7", loader)
 

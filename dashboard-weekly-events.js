@@ -43,6 +43,7 @@
   let lastRenderedEvents = [];
   let eventsExpanded = false;
   let expandedContext = null;
+  let openedCriticalMacro = null;
 
   const text = value => String(value ?? '').trim();
   const number = value => {
@@ -596,7 +597,16 @@
       event.importance === 'critical');
     const priority = events.filter(event => event.kind === 'earnings' && (event.reported || event.date >= localDay(now)));
     const secondary = events.filter(event => !criticalMacro.includes(event) && !priority.includes(event));
-    const displayEvents = [...criticalMacro, ...priority, ...secondary];
+    // A freshly opened critical decision must not vanish when a source refresh
+    // temporarily omits it or when the compact preview is rebuilt.
+    // Pin only within its original calendar week, never across week navigation.
+    const pinned = openedCriticalMacro;
+    const stillThisWeek = pinned && pinned.importance === 'critical' &&
+      pinned.kind === 'macro' && pinned.date >= startOfWeek(now) &&
+      pinned.date < new Date(startOfWeek(now).getTime() + WINDOW_DAYS * 86400000);
+    const pinnedFromFeed = stillThisWeek && events.find(item => item.id === pinned.id);
+    const retained = stillThisWeek && !pinnedFromFeed ? [pinned] : [];
+    const displayEvents = [...retained, ...criticalMacro, ...priority, ...secondary];
     lastRenderedEvents = displayEvents.slice();
     const start = startOfWeek(now); const end = new Date(start); end.setDate(end.getDate() + WINDOW_DAYS - 1); const fmt = new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short'}); const range = `${fmt.format(start).replace('.','')} – ${fmt.format(end).replace('.','')}`;
     card.replaceChildren(); const head = document.createElement('div'); head.className = 'weekly-events-head'; const heading = document.createElement('div'); heading.innerHTML = '<div class="weekly-events-kicker">Calendário de mercado</div><div class="weekly-events-title">Eventos da semana</div>'; const rangeEl = document.createElement('div'); rangeEl.className='weekly-events-range'; rangeEl.textContent=range; head.append(heading,rangeEl); card.appendChild(head);
@@ -671,6 +681,7 @@
       const index=Number(eventButton.dataset.weeklyEventIndex);
       const selected=Number.isInteger(index)?lastRenderedEvents[index]:null;
       if(selected){
+        if(selected.kind==='macro' && selected.importance==='critical') openedCriticalMacro=selected;
         openDetail(selected);
         if(selected.kind==='macro'){
           const id=selected.id;
@@ -678,6 +689,7 @@
             // The event may no longer be in the capped preview after an update.
             // Resolve it from the published source by immutable event identity.
             const fresh=findMacroEventById(macroSnapshot,id);
+            if(fresh && fresh.importance === 'critical') openedCriticalMacro=fresh;
             if(fresh&&document.getElementById(DETAIL_ID))openDetail(fresh);
           });
         }

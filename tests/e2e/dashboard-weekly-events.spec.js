@@ -414,3 +414,34 @@ test('iPhone/WebKit: published FOMC stays in weekly rail and readable after open
   await expect(detail).toContainText('Fed funds');
   await expect(card.locator('.weekly-events-range')).toHaveText('26/10 – 1/11');
 });
+
+test('iPhone/WebKit: opening FOMC keeps its card during a temporarily incomplete refresh',async({page})=>{
+ const fomc={date:'2026-10-28',title:'FOMC · decisão',short_title:'FOMC',source:'fed',
+   region:'EUA',category:'central_bank',importance:'critical',
+   result_status:'official_release_summary',result_summary:'Fed funds 3,75%–4,00%.',
+   result_metric_schema:'fed_funds_target_v1',result_metrics:{target_lower_pct:3.75,target_upper_pct:4}};
+ await page.goto('/index.html?vestra2=0');
+ await page.waitForFunction(()=>Boolean(window.VestraWeeklyEvents));
+ await page.waitForLoadState('networkidle',{timeout:25000});
+ const now='2026-10-29T10:00:00';
+ await page.evaluate(({fomc,now})=>window.VestraWeeklyEvents.render({
+    now:new Date(now),stocks:[],portfolioTickers:new Set(),macroEvents:{events:[fomc]}
+ }),{fomc,now});
+ const card=page.locator('#dashboardWeeklyEventsCard');
+ const event=card.locator('[data-weekly-event-index]').filter({hasText:'FOMC'});
+ await expect(event).toHaveCount(1);
+ await event.click();
+ await expect(page.locator('#dashboardWeeklyEventDetail')).toContainText('3,75%');
+ await page.evaluate(now=>window.VestraWeeklyEvents.render({
+    now:new Date(now),stocks:[],portfolioTickers:new Set(),macroEvents:{events:[]}
+ }),now);
+ await expect(event).toHaveCount(1);
+ await page.evaluate(({fomc,now})=>window.VestraWeeklyEvents.render({
+    now:new Date(now),stocks:[],portfolioTickers:new Set(),macroEvents:{events:[fomc]}
+ }),{fomc,now});
+ await expect(event).toHaveCount(1);
+ await page.evaluate(()=>window.VestraWeeklyEvents.render({
+    now:new Date('2026-11-05T10:00:00'),stocks:[],portfolioTickers:new Set(),macroEvents:{events:[]}
+ }));
+ await expect(event).toHaveCount(0);
+});
