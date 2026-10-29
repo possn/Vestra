@@ -9,17 +9,19 @@ guard=importlib.util.module_from_spec(spec);spec.loader.exec_module(guard)
 
 class MacroPublishGraceTests(unittest.TestCase):
  def at(self,h,m):return datetime(2026,10,29,h,m,tzinfo=timezone.utc)
- def test_short_window_after_hourly_cron(self):
-  self.assertFalse(guard.macro_grace_expired(self.at(8,20),15))
-  self.assertFalse(guard.macro_grace_expired(self.at(8,34),15))
-  self.assertTrue(guard.macro_grace_expired(self.at(8,35),15))
-  self.assertTrue(guard.macro_grace_expired(self.at(9,5),15))
- def test_invalid_inputs_fail_closed(self):
-  with self.assertRaises(ValueError):guard.macro_grace_expired(self.at(8,35),60)
-  with self.assertRaises(ValueError):guard.macro_grace_expired(datetime(2026,10,29,8,35),15)
- def test_macro_workflow_uses_bounded_grace(self):
+ def prior(self,stamp):return {"generated_at":stamp}
+ def test_recent_published_feed_can_defer(self):
+  self.assertFalse(guard.macro_publication_overdue(self.prior("2026-10-29T07:00:00Z"),self.at(8,30),4))
+ def test_older_than_four_hours_cannot_defer_indefinitely(self):
+  self.assertTrue(guard.macro_publication_overdue(self.prior("2026-10-29T03:00:00Z"),self.at(8,30),4))
+ def test_missing_provenance_fails_open_to_fresh_data_publication(self):
+  self.assertTrue(guard.macro_publication_overdue({},self.at(8,30),4))
+ def test_invalid_arguments(self):
+  with self.assertRaises(ValueError):guard.macro_publication_overdue({},self.at(8,30),0)
+  with self.assertRaises(ValueError):guard.macro_publication_overdue({},datetime(2026,10,29,8,30),4)
+ def test_macro_workflow_uses_previous_publication(self):
   s=(ROOT/".github/workflows/update-macro-events.yml").read_text()
-  self.assertIn("python scripts/defer_main_publish_if_code_pr.py --macro-grace-minutes 15",s)
-  self.assertIn('cron: "20 * * * *"',s)
+  self.assertIn("python scripts/defer_main_publish_if_code_pr.py --macro-max-staleness-hours 4",s)
+  self.assertIn("VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json",s)
 
 if __name__=="__main__":unittest.main()
