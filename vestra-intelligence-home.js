@@ -474,8 +474,12 @@
       panel.dataset.viPrebreakoutSpotlight = '1';
       panel.setAttribute('aria-label', 'Ação em vigilância pre-breakout');
       panel.style.cssText = 'margin:.7rem 0 1rem;color:inherit';
-      host.prepend(panel);
+      host.append(panel);
     }
+    // Radar follows the weekly events in the editorial reading flow, never the Home hero.
+    // Reposition even on subsequent renders; do not duplicate or create another card.
+    const weeklyEvents = host.querySelector('.vi-events-reading');
+    if (weeklyEvents) weeklyEvents.after(panel);
     // The Home spotlight uses published scanner measurements, never a fabricated price sparkline.
     panel.classList.add('vi-pb-card');
     const element = (tag, cls, value) => {
@@ -1004,10 +1008,10 @@
     });
     syncExistingBarometer(host);
     refreshLivePulse(host);
-    showPrebreakoutSpotlight(host);
     syncWealthHero(host);
     syncDailyBrief(host);
     syncCanonicalCards(host);
+    showPrebreakoutSpotlight(host);
     void loadPublishedNews(host);
     void loadPublishedWeeklyEvents(host);
     syncPortfolioEvidence(host);
