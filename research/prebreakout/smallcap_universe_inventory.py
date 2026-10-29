@@ -82,6 +82,24 @@ def coverage_diagnostic(inventory_result:dict, observed_rows:list[dict]) -> dict
             "not_breakout_candidates":True}
 
 
+def research_rotation(inventory_result:dict, slot:int, daily_budget:int=100) -> dict:
+    """Deterministic bounded research-only queue; never represents downloaded OHLCV.
+
+    The caller must supply only the 100m–500m USD cohort; this function is
+    independent of the live 300-name production scan and its budget.
+    """
+    if type(slot) is not int or slot<0 or type(daily_budget) is not int or daily_budget<1:
+        raise ValueError("invalid research rotation")
+    names=sorted(set(inventory_result["tickers"]))
+    n=len(names)
+    start=(slot*daily_budget)%n if n else 0
+    planned=(names[start:]+names[:start])[:min(daily_budget,n)] if n else []
+    return {"schema":"vestra_breakout_lab_research_rotation_v1",
+            "status":"planned_not_downloaded",
+            "planned":planned,"planned_count":len(planned),
+            "source_universe_count":n,"no_ohlcv_claim":True}
+
+
 def main() -> None:
     stocks=json.loads((ROOT/"data/stocks-index.json").read_text(encoding="utf-8")).get("stocks",[])
     result=inventory(stocks)
