@@ -144,7 +144,7 @@ jobs:
                           assert set(metrics) == ({'job_openings_thousands','job_openings_rate_pct'} if e.get('short_title') == 'JOLTS' else {'headline_mom_pct','headline_yoy_pct','core_mom_pct','core_yoy_pct'})
                   elif e.get('source') == 'ecb':
                       assert e.get('short_title') == 'BCE'
-                      assert str(e.get('source_url','')).startswith('https://www.ecb.europa.eu/')
+                      assert str(e.get('source_url','')).startswith(('https://www.ecb.europa.eu/','https://ecb.europa.eu/')), f"Non-official ECB URL: {e.get('source_url')}"
                       assert e.get('result_metric_schema') == 'ecb_rates_v1'
                       assert set(metrics) == {'deposit_facility_pct','main_refinancing_pct','marginal_lending_pct'}
                   else:
