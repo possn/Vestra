@@ -31,6 +31,7 @@ test('iPhone/WebKit: Ideias coexist with a separate broad stock-theme browser', 
   await expect(tools.locator('[data-market-tool="compare"]')).toBeVisible();
   const scanner = page.locator('#viewMarket .market-mode-grid > .market-breakout-lab-tab[data-market-tool="scanner"]');
   await expect(scanner).toBeVisible();
+  await expect(scanner).toBeInViewport();
   await expect(scanner).toContainText("Breakout Lab");
   await expect(page.locator('[data-market-tool="scanner"]')).toHaveCount(1);
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
