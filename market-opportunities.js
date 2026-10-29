@@ -555,7 +555,7 @@
     if(guide)guide.innerHTML=activeLens==='breakout'
       ? '<span><b>SETUP TÉCNICO</b> compressão não garante subida</span><span><b>MÉDIAS</b> 50/150/200 ascendentes</span><span><b>BREAKOUT</b> só confirmado com volume</span>'
       : '<span><b>DISCOVERY</b> prioridade para investigar agora</span><span><b>≠ PORTFOLIO FIT</b> adequação à tua carteira só é avaliada na Carteira / Optimizar</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
-    if(guide){const entry=section.querySelector('.vestra-smallcaps-entry')||document.createElement('button');entry.type='button';entry.className='vestra-smallcaps-entry';entry.dataset.marketMode='smallcaps';entry.textContent='Small Caps · 100 M–2 000 M USD';guide.insertAdjacentElement('afterend',entry);}
+    section.querySelector('.vestra-smallcaps-entry')?.remove();
   }
   function lensMeta(lens){
     if(lens==='breakout')return ['Compressão · Pré-breakout','Compressão é apenas vigilância, não sinal iminente. Pré-breakout exige proximidade da resistência e volume a secar; breakout confirmado exige fecho e volume fortes.'];
