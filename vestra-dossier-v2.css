@@ -237,7 +237,7 @@
 /* Mobile dossier facts must remain two columns even when later market grids
    introduce their own desktop defaults. Scoped to the dossier panel. */
 @media (max-width:600px){
- .market-sheet .market-sheet__panel .market-metrics{
-  grid-template-columns:repeat(2,minmax(0,1fr));
+ html body .market-sheet .market-sheet__panel .market-metrics{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
  }
 }
