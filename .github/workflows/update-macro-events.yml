@@ -166,8 +166,9 @@ jobs:
       - name: Check automated main publish window
         id: publish_window
         env:
+          VESTRA_MACRO_PREVIOUS: /tmp/vestra-macro-events-previous.json
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/defer_main_publish_if_code_pr.py --macro-grace-minutes 15
+        run: python scripts/defer_main_publish_if_code_pr.py --macro-max-staleness-hours 4
 
       - name: Publish refreshed calendar
         if: github.event_name != 'pull_request' && steps.publish_window.outputs.defer != 'true'
