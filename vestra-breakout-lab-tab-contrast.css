@@ -1,0 +1,23 @@
+/* Breakout Lab is a visible Mercado tab, not an extra card below the nav. */
+#viewMarket .market-mode-grid .market-breakout-lab-tab{
+ flex:0 0 auto;min-height:44px!important;
+ border:1px solid rgba(32,129,126,.4);
+ color:#0b524e;background:#e4f3f1;
+}
+#viewMarket .market-mode-grid .market-breakout-lab-tab strong{
+ color:inherit;font-size:13px;letter-spacing:-.01em;
+}
+#viewMarket .market-mode-grid .market-breakout-lab-tab:focus-visible{
+ outline:2px solid #20817e;outline-offset:3px;
+}
+/* Keep headings readable on dark pre-breakout chapter surfaces.
+   Do not recolor the ivory data cards or negative/positive value metrics. */
+#viewMarket :is([class*="prebreakout"],[class*="pre-breakout"],[class*="compression"]) :is(h1,h2,h3,.chapter-title){
+ color:#f4f3ec!important;-webkit-text-fill-color:#f4f3ec!important;
+ opacity:1!important;
+}
+@media(max-width:760px){
+ #viewMarket .market-mode-grid .market-breakout-lab-tab{
+  padding-inline:14px!important;white-space:nowrap;
+ }
+}
