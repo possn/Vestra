@@ -36,5 +36,21 @@ class MorphologyResearchTests(unittest.TestCase):
         self.assertEqual(f["confirmed_n"],0)
         self.assertIsNone(f["median_difference"])
 
+    def test_only_strictly_decreasing_widths_are_descriptive_contractions(self):
+        good=self.row("A","confirmed",30)
+        bad=self.row("B","not_confirmed",3)
+        bad["features"]["contractionWidths20Pct"]=[10.0,12.0,2.0]
+        flat=self.row("C","not_confirmed",5)
+        flat["features"]["contractionWidths20Pct"]=[10.0,10.0,2.0]
+        result=study.audit([good,bad,flat],min_per_group=1)["by_horizon"]["10"]
+        feature=result["features"]["contractionWidths20Pct"]
+        self.assertEqual(feature["confirmed_n"],1)
+        self.assertEqual(feature["not_confirmed_n"],0)
+        self.assertIsNone(feature["median_difference"])
+        self.assertFalse(feature["minimum_descriptive_evidence_met"])
+        # Valid impulse features remain available without declaring edge.
+        self.assertEqual(result["features"]["preBaseReturn40Pct"]["not_confirmed_n"],2)
+
+
 if __name__=="__main__":
     unittest.main()
