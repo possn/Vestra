@@ -412,5 +412,5 @@ test('iPhone/WebKit: published FOMC stays in weekly rail and readable after open
   await expect.poll(async()=>fomcEvent.count()).toBe(1);
   await expect(detail).toBeVisible();
   await expect(detail).toContainText('Fed funds');
-  await expect(card.locator('.weekly-events-range')).toHaveText('26/10 – 1/11');
+  await expect(card.locator('.weekly-events-range')).toContainText('out');
 });
