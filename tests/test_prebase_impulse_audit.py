@@ -19,10 +19,24 @@ class MorphologyResearchTests(unittest.TestCase):
                  {**self.row("D","not_confirmed",10),"outcome_matured":False}]
         result=study.audit(records,min_per_group=1)["by_horizon"]["10"]
         self.assertEqual(result["distinct_verified_episodes"],2)
-        self.assertEqual(result["excluded"],{"unknown_outcome":1,"unverified_asof":1,"duplicate_episode":1})
+        self.assertEqual(result["excluded"],{"unknown_outcome":1,"unverified_asof":1,"missing_features":0,"duplicate_episode":1})
         f=result["features"]["preBaseReturn40Pct"]
         self.assertEqual((f["confirmed_median"],f["not_confirmed_median"]),(30,2))
         self.assertTrue(f["minimum_descriptive_evidence_met"])
+    def test_missing_feature_record_does_not_reserve_episode_id(self):
+        incomplete=self.row("A","confirmed",30)
+        incomplete["features"]=None
+        complete=self.row("A","confirmed",12)
+        opposite=self.row("B","not_confirmed",2)
+        result=study.audit([incomplete,complete,opposite],min_per_group=1)["by_horizon"]["10"]
+        self.assertEqual(result["distinct_verified_episodes"],2)
+        self.assertEqual(result["excluded"]["missing_features"],1)
+        self.assertEqual(result["excluded"]["duplicate_episode"],0)
+        feature=result["features"]["preBaseReturn40Pct"]
+        self.assertEqual(feature["confirmed_median"],12)
+        self.assertEqual(feature["not_confirmed_median"],2)
+        self.assertFalse(study.audit([incomplete,complete,opposite],min_per_group=1)["predictive_validity_established"])
+
     def test_without_grounded_episodes_no_claim(self):
         result=study.audit([self.row("A","confirmed",40,False)])
         self.assertFalse(result["predictive_validity_established"])
