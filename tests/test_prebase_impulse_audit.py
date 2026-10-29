@@ -35,7 +35,7 @@ class MorphologyResearchTests(unittest.TestCase):
         feature=result["features"]["preBaseReturn40Pct"]
         self.assertEqual(feature["confirmed_median"],12)
         self.assertEqual(feature["not_confirmed_median"],2)
-        self.assertFalse(result["predictive_validity_established"])
+        self.assertFalse(study.audit([incomplete,complete,opposite],min_per_group=1)["predictive_validity_established"])
 
     def test_without_grounded_episodes_no_claim(self):
         result=study.audit([self.row("A","confirmed",40,False)])
