@@ -633,6 +633,44 @@
              (row.stage === 'pré-breakout' && row.volumeDry === true &&
               row.distancePct >= 0 && row.distancePct <= 4))) : null;
       const pick = hasCanonicalFocus ? canonicalPick : qualified[0];
+      // Research watchlist is independent of the canonical daily pick. A risk
+      // embargo still prohibits a featured candidate; it must not erase real
+      // observed setups from a clearly labelled investigation-only list.
+      const watchOptions = rows.filter(row => row.vcpConfirmed === true &&
+        row.breakoutExtensionPct <= 0)
+        .sort((a,b) => (a.earningsRiskGate?.status === 'dated_beyond_buffer' ? 0 : 1) -
+                        (b.earningsRiskGate?.status === 'dated_beyond_buffer' ? 0 : 1) ||
+                        (b.volumeDry === true ? 1 : 0) - (a.volumeDry === true ? 1 : 0) ||
+                        b.score-a.score || a.distancePct-b.distancePct ||
+                        a.ticker.localeCompare(b.ticker)).slice(0,4);
+      const showWatchOptions = () => {
+        if (!watchOptions.length) return;
+        const section=element('div','vi-pb-watch-options');
+        section.append(element('h4','vi-pb-watch-heading','Setups observados · investigar'));
+        section.append(element('p','vi-pb-watch-disclaimer',
+          'Candidatos técnicos, não escolhas validadas nem probabilidades de breakout. O risco de resultados não é ignorado.'));
+        const list=element('div','vi-pb-watch-list');
+        for (const row of watchOptions) {
+          const button=element('button','vi-pb-watch-option');
+          button.type='button';
+          button.dataset.vestraGo='market';
+          button.dataset.vestraTicker=row.ticker;
+          const gate=row.earningsRiskGate?.status;
+          const risk=gate==='dated_beyond_buffer' ? 'Resultados além da janela de cautela' :
+            gate==='near_term' ? 'Resultados próximos · não elegível para destaque' :
+            'Resultados desconhecidos · não elegível para destaque';
+          const stage=row.stage==='pré-breakout' ? 'Pré-breakout' : 'Base em formação';
+          button.append(element('strong','',row.ticker+' · '+stage),
+            element('small','',Math.round(row.score)+'/100 técnico · '+
+              row.distancePct.toFixed(2).replace('.',',')+
+              '% da resistência · '+(row.volumeDry===true ? 'volume em contração' : 'volume não confirmado')+
+              ' · '+risk));
+          button.setAttribute('aria-label','Investigar '+row.ticker+' no Mercado');
+          list.append(button);
+        }
+        section.append(list);
+        panel.append(section);
+      };
       updateResearchFocus(hasCanonicalFocus ? canonicalPick : null, stamp);
       if (pick) {
         render(pick.ticker+(pick.stage === 'compressão' ? ' · Base em formação' : ' · Próximo do pivot'),
@@ -656,6 +694,7 @@
         render('Nenhum setup elegível', 'O radar publicado não encontrou candidatos válidos nesta amostra.',
           source+' · Não inferir ausência de oportunidades no mercado inteiro.',true);
       }
+      showWatchOptions();
     } catch (_) {
       render('Radar indisponível ou desatualizado',
         'Sem dados recentes e verificáveis, não é possível selecionar uma ação do dia.',
