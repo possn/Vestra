@@ -8,6 +8,6 @@ test('iPhone/WebKit: explicit Small Caps tab displays real index cohort',async({
   await expect(tab).toBeInViewport();
   await tab.click();
   await expect(page.locator('#marketPrimary .market-smallcaps')).toBeVisible({timeout:20000});
-  await expect(page.locator('#marketPrimary .market-smallcaps__disclaimer')).toContainText('não por probabilidade de subida');
+  await expect(page.locator('#marketPrimary .market-smallcaps__disclaimer').first()).toContainText('não por probabilidade de subida');
   await expect(page.locator('#marketPrimary .market-smallcaps')).toContainText('100 M a 2 000 M USD');
 });
