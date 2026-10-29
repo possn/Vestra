@@ -102,6 +102,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--market-grace-minutes", type=int, default=None,
                         help="Canonical market only: allow completed builds beyond scheduled PR grace")
+    parser.add_argument("--macro-grace-minutes", type=int, default=None,
+                        help="Macro publisher: bounded PR pause after each hourly refresh")
     parser.add_argument("--scanner-grace-minutes", type=int, default=None,
                         help="Scanner only: allow real publication after bounded PR grace")
     args = parser.parse_args()
@@ -112,6 +114,18 @@ def main() -> int:
         origin = now.replace(hour=6, minute=15, second=0, microsecond=0)
         if now >= origin and (now - origin).total_seconds() >= args.market_grace_minutes * 60:
             print("Canonical market publish grace elapsed; validated rebuild can publish despite open code PRs.")
+            _write_output("defer", "false")
+            return 0
+    if args.macro_grace_minutes is not None:
+        if args.macro_grace_minutes < 0 or args.macro_grace_minutes >= 60:
+            parser.error("--macro-grace-minutes must be between 0 and 59")
+        now = datetime.datetime.now(datetime.timezone.utc)
+        # Macro workflow schedules at minute 20 every hour; once grace
+        # expires, the validated official feed may publish despite code PRs.
+        # This is not used by scanner/market release protection.
+        elapsed = (now.minute - 20) % 60
+        if elapsed >= args.macro_grace_minutes:
+            print("Macro publisher grace elapsed; releasing validated official feed.")
             _write_output("defer", "false")
             return 0
     if args.scanner_grace_minutes is not None and args.scanner_grace_minutes < 0:
