@@ -20,7 +20,8 @@ class Ticker:
     fast_info={"currency":"USD"}
 
 class Provider:
-    calls=[]
+    def __init__(self):
+        self.calls=[]
     def Ticker(self,ticker):
         self.calls.append(("currency",ticker))
         return Ticker()
