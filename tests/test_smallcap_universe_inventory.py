@@ -26,6 +26,23 @@ class SmallCapInventoryTests(unittest.TestCase):
         self.assertEqual(out["status"],"universe_inventory_only_not_ohlcv_verified")
         self.assertTrue(out["no_predictive_edge_claim"])
 
+    def test_ohlcv_coverage_is_distinct_from_universe_membership(self):
+        group=mod.inventory([
+            {"ticker":"A","market_cap":120_000_000,"quote_type":"EQUITY"},
+            {"ticker":"B","market_cap":250_000_000,"quote_type":"EQUITY"},
+            {"ticker":"C","market_cap":800_000_000,"quote_type":"EQUITY"}])
+        report=mod.coverage_diagnostic(group,[
+            {"ticker":"A","evaluable":False},
+            {"ticker":"A","evaluable":True},
+            {"ticker":"B","evaluable":False},
+            {"ticker":"EXTERNAL","evaluable":True}])
+        self.assertEqual(report["universe_count"],3)
+        self.assertEqual(report["evaluable_ohlcv"],1)
+        self.assertEqual(report["observed_incomplete"],1)
+        self.assertEqual(report["not_observed"],1)
+        self.assertEqual(report["coverage_pct"],33.33)
+        self.assertTrue(report["not_breakout_candidates"])
+
     def test_existing_market_scanner_keeps_its_cap_and_liquidity_gates(self):
         script=(ROOT/"scripts/refresh_prebreakout_scanner.py").read_text()
         self.assertIn("cap<500_000_000",script)
