@@ -301,6 +301,36 @@ def enrich_fed_results(payload: dict, session: requests.Session, today: date | N
     return {"matched": matched, "fetched_releases": fetched_releases, "attempted": len(candidates)}
 
 
+def discard_incomplete_legacy_policy_results(payload: dict) -> int:
+    """Fail closed on old narrative-only releases with no typed official rates.
+
+    Historical events remain in the calendar, but cannot claim a verified
+    monetary-policy result without the complete, schema-checked metrics.
+    """
+    dropped = 0
+    requirements = {
+        "ecb": (ECB_SCHEMA, set(ECB_METRIC_KEYS)),
+        "fed": (FED_SCHEMA, set(FED_METRIC_KEYS)),
+    }
+    for event in payload.get("events") or []:
+        if not isinstance(event, dict) or event.get("result_status") != "official_release_summary":
+            continue
+        expected = requirements.get(event.get("source"))
+        if expected is None:
+            continue
+        schema, keys = expected
+        metrics = event.get("result_metrics")
+        valid = (event.get("result_metric_schema") == schema
+                 and isinstance(metrics, dict) and set(metrics) == keys
+                 and all(type(v) in (int, float) for v in metrics.values()))
+        if valid:
+            continue
+        for field in RESULT_FIELDS:
+            event.pop(field, None)
+        dropped += 1
+    return dropped
+
+
 def main() -> int:
     payload = _load(OUTPUT)
     if not isinstance(payload.get("events"), list):
@@ -318,6 +348,7 @@ def main() -> int:
     session.headers.update({"User-Agent": UA, "Accept-Language": "en-US,en;q=0.8"})
     ecb_stats = enrich_ecb_results(payload, session)
     fed_stats = enrich_fed_results(payload, session)
+    legacy_unverified = discard_incomplete_legacy_policy_results(payload)
     result_enrichment = payload.setdefault("result_enrichment", {})
     result_enrichment["ecb"] = {
         "state": "checked",
@@ -325,6 +356,7 @@ def main() -> int:
         "fetched_index": ecb_stats["fetched_index"],
         "fetched_releases": ecb_stats["fetched_releases"],
         "carried_forward": carried_ecb,
+        "legacy_incomplete_results_withheld": legacy_unverified,
         "decision_day_normalized": normalized,
         "contract": "decision-day only; exact official ECB release; three named policy rates",
     }
