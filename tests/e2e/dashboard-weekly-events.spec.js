@@ -378,3 +378,39 @@ test('iPhone/WebKit: confirmed archive result upgrades stale same-day calendar w
   await expect(card).toBeVisible();
   await expect(card.locator('.weekly-events-title')).toBeVisible();
 });
+
+test('iPhone/WebKit: published FOMC stays in weekly rail and readable after opening results', async ({page}) => {
+  const fomc = {
+    date:'2026-10-28',title:'FOMC · decisão de política monetária',short_title:'FOMC',
+    category:'central_bank',region:'EUA',importance:'critical',source:'fed',
+    result_status:'official_release_summary',result_released_at:'2026-10-28',
+    result_summary:'Intervalo-alvo dos Fed funds: 3,75% a 4,00%.',
+    result_metric_schema:'fed_funds_target_v1',
+    result_metrics:{target_lower_pct:3.75,target_upper_pct:4.0},
+    source_url:'https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm'
+  };
+  await page.route('**/data/macro-events.json', route => route.fulfill({
+    status:200,contentType:'application/json',
+    body:JSON.stringify({schema_version:2,generated_at:'2026-10-29T10:16:13Z',events:[fomc]})
+  }));
+  await page.goto('/index.html?vestra2=0');
+  await page.waitForFunction(() => Boolean(window.VestraWeeklyEvents));
+  await page.waitForLoadState('networkidle',{timeout:25000});
+  await page.evaluate((row) => window.VestraWeeklyEvents.render({
+    now:new Date(2026,9,29,10),stocks:[],portfolioTickers:new Set(),
+    macroEvents:{events:[row]}
+  }),fomc);
+  const card=page.locator('#dashboardWeeklyEventsCard');
+  const fomcEvent=card.locator('[data-weekly-event-index]').filter({hasText:'FOMC'});
+  await expect(fomcEvent).toBeVisible();
+  await fomcEvent.click();
+  const detail=page.locator('#dashboardWeeklyEventDetail');
+  await expect(detail).toBeVisible();
+  await expect(detail).toContainText('3,75%');
+  await expect(detail).toContainText('4,00%');
+  // Clicking refreshes the feed asynchronously; the selected catalyst must survive.
+  await expect.poll(async()=>fomcEvent.count()).toBe(1);
+  await expect(detail).toBeVisible();
+  await expect(detail).toContainText('Fed funds');
+  await expect(card.locator('.weekly-events-range')).toHaveText('26/10 – 1/11');
+});
