@@ -3,6 +3,7 @@ const {test,expect}=require('@playwright/test');
 test('iPhone/WebKit: dossier editorial layout preserves two-column facts and touch tabs',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.goto('/index.html');
+ await page.locator('link[href*="vestra-dossier-v2.css"]').evaluate(link => link.sheet ? true : new Promise(resolve => link.addEventListener('load',()=>resolve(true),{once:true})));
  const values=await page.evaluate(()=>{
   // Isolated visual fixture uses the production market-sheet classes and CSS.
   // No market data, decision state or quote engine is mocked.

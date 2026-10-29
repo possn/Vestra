@@ -98,10 +98,26 @@ def scan_grace_expired(now: datetime.datetime, grace_minutes: int) -> bool:
     return (now - origin).total_seconds() >= grace_minutes * 60
 
 
+def macro_publication_overdue(previous: dict, now: datetime.datetime, hours: int) -> bool:
+    """Only a previous published timestamp (not this run's fresh output) limits PR deferral."""
+    if now.tzinfo is None or type(hours) is not int or hours<1:
+        raise ValueError("invalid macro publication deadline")
+    try:
+        stamp=datetime.datetime.fromisoformat(str(previous["generated_at"]).replace("Z","+00:00"))
+        if stamp.tzinfo is None:
+            return True
+    except (KeyError,ValueError,TypeError):
+        return True
+    age=now.astimezone(datetime.timezone.utc)-stamp.astimezone(datetime.timezone.utc)
+    return age>datetime.timedelta(hours=hours) or age<datetime.timedelta(minutes=-5)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--market-grace-minutes", type=int, default=None,
                         help="Canonical market only: allow completed builds beyond scheduled PR grace")
+    parser.add_argument("--macro-max-staleness-hours", type=int, default=None,
+                        help="Macro publisher: bypass PR deferral when previous published feed is too old")
     parser.add_argument("--scanner-grace-minutes", type=int, default=None,
                         help="Scanner only: allow real publication after bounded PR grace")
     args = parser.parse_args()
@@ -113,6 +129,18 @@ def main() -> int:
         if now >= origin and (now - origin).total_seconds() >= args.market_grace_minutes * 60:
             print("Canonical market publish grace elapsed; validated rebuild can publish despite open code PRs.")
             _write_output("defer", "false")
+            return 0
+    if args.macro_max_staleness_hours is not None:
+        if args.macro_max_staleness_hours < 1:
+            parser.error("--macro-max-staleness-hours must be positive")
+        try:
+            with open(os.getenv("VESTRA_MACRO_PREVIOUS", "/tmp/vestra-macro-events-previous.json"), encoding="utf-8") as fh:
+                prior=json.load(fh)
+        except (OSError,ValueError,TypeError):
+            prior={}
+        if macro_publication_overdue(prior,datetime.datetime.now(datetime.timezone.utc),args.macro_max_staleness_hours):
+            print("Previous macro publication overdue or unverifiable; releasing validated feed.")
+            _write_output("defer","false")
             return 0
     if args.scanner_grace_minutes is not None and args.scanner_grace_minutes < 0:
         parser.error("--scanner-grace-minutes must be nonnegative")
