@@ -479,7 +479,7 @@
     // Radar follows the weekly events in the editorial reading flow, never the Home hero.
     // Reposition even on subsequent renders; do not duplicate or create another card.
     const weeklyEvents = host.querySelector('.vi-events-reading');
-    if (weeklyEvents) weeklyEvents.after(panel);
+    if (weeklyEvents) weeklyEvents.closest('.vi-canonical-sections')?.after(panel);
     // The Home spotlight uses published scanner measurements, never a fabricated price sparkline.
     panel.classList.add('vi-pb-card');
     const element = (tag, cls, value) => {
