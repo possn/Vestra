@@ -21,15 +21,33 @@ def compare_features(records:list[dict], min_per_group:int=30)->dict:
             "by_horizon":{}}
     for h in (5,10,20):
         horizon=[r for r in records if isinstance(r,dict) and r.get("horizon_sessions")==h]
-        usable=[r for r in horizon if r.get("outcome") in LABELS]
+        seen=set()
+        usable=[]
+        exclusions={"unmatured_or_unlabeled":0,"unverified_point_in_time":0,
+                    "missing_episode_identity":0,"duplicate_episode":0}
+        for row in horizon:
+            if row.get("outcome") not in LABELS or row.get("outcome_matured") is not True:
+                exclusions["unmatured_or_unlabeled"]+=1
+                continue
+            if row.get("features_point_in_time_verified") is not True:
+                exclusions["unverified_point_in_time"]+=1
+                continue
+            episode=row.get("episode_id")
+            if not isinstance(episode,str) or not episode.strip():
+                exclusions["missing_episode_identity"]+=1
+                continue
+            if episode in seen:
+                exclusions["duplicate_episode"]+=1
+                continue
+            seen.add(episode)
+            usable.append(row)
         cell={"cohorts":len(horizon),"matured_labeled":len(usable),
-              "excluded_pending_or_unverified":len(horizon)-len(usable),"features":{}}
+              "excluded_pending_or_unverified":len(horizon)-len(usable),
+              "excluded_reasons":exclusions,"distinct_verified_episodes":len(seen),
+              "features":{}}
         for key in FEATURES:
             groups={label:[] for label in LABELS}
             for r in usable:
-                if r.get("features_point_in_time_verified") is True:
-                    # This audit is deliberately conservative even if an input claims verified.
-                    pass
                 val=r.get("features",{}).get(key) if isinstance(r.get("features"),dict) else None
                 if type(val) not in (int,float) or not math.isfinite(val):continue
                 groups[r["outcome"]].append(val)
