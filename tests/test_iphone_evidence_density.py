@@ -22,7 +22,7 @@ class IPhoneEvidenceDensityTests(unittest.TestCase):
         self.assertIn("grid-column:1/-1",css)
         self.assertIn("overflow-wrap:anywhere",css)
         self.assertIn("@media (max-width: 320px)",css)
-        self.assertNotRegex(css,re.compile(r"\\bdisplay\\s*:\\s*none\\b"))
+        self.assertNotRegex(css,re.compile(r"\bdisplay\s*:\s*none\b"))
         self.assertNotIn("visibility:hidden",css)
 
 if __name__=="__main__":
