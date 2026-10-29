@@ -43,6 +43,19 @@ class SmallCapInventoryTests(unittest.TestCase):
         self.assertEqual(report["coverage_pct"],33.33)
         self.assertTrue(report["not_breakout_candidates"])
 
+    def test_research_queue_rotates_without_claiming_provider_coverage(self):
+        sample={"tickers":["D","A","B","C"]}
+        first=mod.research_rotation(sample,0,2)
+        second=mod.research_rotation(sample,1,2)
+        third=mod.research_rotation(sample,2,2)
+        self.assertEqual(first["planned"],["A","B"])
+        self.assertEqual(second["planned"],["C","D"])
+        self.assertEqual(third["planned"],["A","B"])
+        self.assertEqual(first["status"],"planned_not_downloaded")
+        self.assertTrue(first["no_ohlcv_claim"])
+        with self.assertRaises(ValueError):
+            mod.research_rotation(sample,-1,2)
+
     def test_existing_market_scanner_keeps_its_cap_and_liquidity_gates(self):
         script=(ROOT/"scripts/refresh_prebreakout_scanner.py").read_text()
         self.assertIn("cap<500_000_000",script)
