@@ -262,7 +262,9 @@ def daily_focus(signals:list[dict], as_of:date, earnings_risks:dict|None=None)->
                 -float(row["score"]),float(row["distancePct"]),row["ticker"])
     fallback=not eligible
     best=min(eligible if eligible else developing,key=focus_rank)
-    return {"status":"research_candidate","ticker":best["ticker"],
+    shadow=structural_readiness_shadow(best)
+    return {"structural_readiness_shadow":shadow,
+            "status":"research_candidate","ticker":best["ticker"],
             "signal_date":best["date"],"stage":best["stage"],
             "technical_score":best["score"],"distance_to_pivot_pct":best["distancePct"],
             "success_probability":None,"probability_calibrated":False,
