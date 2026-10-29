@@ -50,7 +50,8 @@ class SmallCapInventoryTests(unittest.TestCase):
         html=(ROOT/"index.html").read_text()
         self.assertIn("<strong>Breakout Lab</strong>",html)
         self.assertIn("data-market-tool=\"scanner\"",html)
-        self.assertIn("small caps em avaliação experimental",html)
+        self.assertIn("market-breakout-lab-tab",html)
+        self.assertIn("aria-label=\"Abrir Breakout Lab\"",html)
 
 if __name__=="__main__":
     unittest.main()
