@@ -93,7 +93,7 @@ test('iPhone: radar follows weekly events instead of opening the Home',async({pa
  const order=await home.evaluate(host=>{
   const events=host.querySelector('.vi-events-reading');
   const radar=host.querySelector('[data-vi-prebreakout-spotlight]');
-  return {after:!!events&&events.nextElementSibling===radar,
+  return {after:!!events&&events.closest('.vi-canonical-sections')?.nextElementSibling===radar,
           eventsTop:events?.getBoundingClientRect().top,
           radarTop:radar?.getBoundingClientRect().top};
  });
