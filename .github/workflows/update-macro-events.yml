@@ -162,7 +162,7 @@ jobs:
         id: publish_window
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/defer_main_publish_if_code_pr.py
+        run: python scripts/defer_main_publish_if_code_pr.py --macro-grace-minutes 15
 
       - name: Publish refreshed calendar
         if: github.event_name != 'pull_request' && steps.publish_window.outputs.defer != 'true'
