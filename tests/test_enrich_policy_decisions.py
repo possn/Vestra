@@ -183,5 +183,27 @@ class PolicyDecisionTests(unittest.TestCase):
         official = '<a href="https://ecb.europa.eu/press/pr/date/2026/html/'+stamp+'">Release</a>'
         self.assertTrue(mod.find_ecb_release_url(official,date(2026,10,29)).startswith("https://ecb.europa.eu/"))
 
+    def test_narrative_only_legacy_ecb_result_not_published_as_verified(self):
+        payload = {'events': [
+            {'date':'2026-09-10','short_title':'BCE','source':'ecb',
+             'result_status':'official_release_summary','result_summary':'Historic narrative',
+             'source_url':'https://www.ecb.europa.eu/press/pr/date/2026/html/ecb.mp260910~abc123.en.html'},
+            {'date':'2026-10-28','short_title':'FOMC','source':'fed'},
+        ]}
+        self.assertEqual(mod.discard_incomplete_legacy_policy_results(payload),1)
+        self.assertEqual(len(payload['events']),2)
+        self.assertEqual(payload['events'][0]['date'],'2026-09-10')
+        self.assertNotIn('result_status',payload['events'][0])
+        self.assertNotIn('result_summary',payload['events'][0])
+        self.assertNotIn('source_url',payload['events'][0])
+    def test_typed_official_ecb_result_preserved(self):
+        event={'date':'2026-09-10','short_title':'BCE','source':'ecb',
+               'result_status':'official_release_summary','result_summary':'Taxas oficiais',
+               'result_metric_schema':mod.ECB_SCHEMA,
+               'result_metrics':{k:1.0 for k in mod.ECB_METRIC_KEYS}}
+        payload={'events':[event]}
+        self.assertEqual(mod.discard_incomplete_legacy_policy_results(payload),0)
+        self.assertEqual(event['result_status'],'official_release_summary')
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
