@@ -51,6 +51,37 @@ def inventory(stocks: list[dict]) -> dict:
             "tickers":sorted(universe),
             "no_predictive_edge_claim":True}
 
+def coverage_diagnostic(inventory_result:dict, observed_rows:list[dict]) -> dict:
+    """Coverage of inventory against independently observed closed OHLCV records.
+
+    Presence in an index is never evidence of price history, VCP or signal readiness.
+    The input must contain ticker, verified_at and a boolean evaluable flag.
+    """
+    universe=set(inventory_result["tickers"])
+    evaluated=set()
+    incomplete=set()
+    for row in observed_rows:
+        if not isinstance(row,dict):
+            continue
+        ticker=str(row.get("ticker") or "").strip().upper()
+        if ticker not in universe:
+            continue
+        if row.get("evaluable") is True:
+            evaluated.add(ticker)
+            incomplete.discard(ticker)
+        elif ticker not in evaluated:
+            incomplete.add(ticker)
+    unobserved=universe-evaluated-incomplete
+    return {"schema":"vestra_breakout_lab_ohlcv_coverage_v1",
+            "status":"observed_input_only_not_live_scan",
+            "universe_count":len(universe),
+            "evaluable_ohlcv":len(evaluated),
+            "observed_incomplete":len(incomplete),
+            "not_observed":len(unobserved),
+            "coverage_pct":round(100*len(evaluated)/len(universe),2) if universe else None,
+            "not_breakout_candidates":True}
+
+
 def main() -> None:
     stocks=json.loads((ROOT/"data/stocks-index.json").read_text(encoding="utf-8")).get("stocks",[])
     result=inventory(stocks)
