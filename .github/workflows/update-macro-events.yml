@@ -149,6 +149,10 @@ jobs:
           print(f"Validated {len(events)} events; {len(future)} future")
           PY
 
+      - name: Verify refreshed macro publication freshness
+        if: github.event_name != 'pull_request'
+        run: python scripts/audit_macro_publication.py --check
+
       - name: Check automated main publish window
         id: publish_window
         env:
