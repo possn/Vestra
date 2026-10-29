@@ -175,5 +175,13 @@ class PolicyDecisionTests(unittest.TestCase):
         self.assertEqual(payload['events'][0]['result_metrics']['target_upper_pct'], 4.0)
 
 
+    def test_ecb_rejects_external_host_even_with_matching_release_id(self):
+        from datetime import date
+        stamp = "ecb.mp261029~abc123.en.html"
+        index = '<a href="https://attacker.example/press/pr/date/2026/html/'+stamp+'">Release</a>'
+        self.assertEqual(mod.find_ecb_release_url(index,date(2026,10,29)), "")
+        official = '<a href="https://ecb.europa.eu/press/pr/date/2026/html/'+stamp+'">Release</a>'
+        self.assertTrue(mod.find_ecb_release_url(official,date(2026,10,29)).startswith("https://ecb.europa.eu/"))
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
