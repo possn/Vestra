@@ -37,6 +37,20 @@ class MorphologyResearchTests(unittest.TestCase):
         self.assertEqual(feature["not_confirmed_median"],2)
         self.assertFalse(study.audit([incomplete,complete,opposite],min_per_group=1)["predictive_validity_established"])
 
+    def test_invalid_nonempty_features_do_not_consume_verified_episode(self):
+        invalid=self.row("A","confirmed",10)
+        invalid["features"]={"preBaseReturn40Pct":float("nan"),
+                             "preBaseRange40Pct":None,
+                             "contractionWidths20Pct":[10.0,12.0,2.0]}
+        valid=self.row("A","confirmed",14)
+        result=study.audit([invalid,valid,self.row("B","not_confirmed",2)],1)
+        horizon=result["by_horizon"]["10"]
+        self.assertEqual(horizon["distinct_verified_episodes"],2)
+        self.assertEqual(horizon["excluded"]["missing_features"],1)
+        self.assertEqual(horizon["excluded"]["duplicate_episode"],0)
+        self.assertEqual(horizon["features"]["preBaseReturn40Pct"]["confirmed_median"],14)
+        self.assertFalse(result["predictive_validity_established"])
+
     def test_without_grounded_episodes_no_claim(self):
         result=study.audit([self.row("A","confirmed",40,False)])
         self.assertFalse(result["predictive_validity_established"])
