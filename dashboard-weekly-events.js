@@ -589,11 +589,11 @@
     const events = selectEvents(eventStocks, tickers, now, options.limit || MAX_EVENTS, macro);
     // Prioritise company earnings in the Home, with the complete macro agenda accessible on expansion.
     // Unconfirmed events that already passed must not displace future or published results.
-    // An imminent official high-impact release must not be hidden by the
-    // three-row collapsed earnings preview (e.g. tomorrow's FOMC decision).
+    // Keep critical official macro events visible for the whole calendar week,
+    // including after release (e.g. Wednesday FOMC viewed on Thursday).
     // Keep all company earnings in the full calendar; only order the preview.
     const criticalMacro = events.filter(event => event.kind === 'macro' &&
-      event.importance === 'critical' && event.date >= localDay(now));
+      event.importance === 'critical');
     const priority = events.filter(event => event.kind === 'earnings' && (event.reported || event.date >= localDay(now)));
     const secondary = events.filter(event => !criticalMacro.includes(event) && !priority.includes(event));
     const displayEvents = [...criticalMacro, ...priority, ...secondary];
