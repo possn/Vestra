@@ -12,12 +12,14 @@ on:
     branches: [main]
     paths:
       - 'scripts/update_macro_events.py'
+      - 'scripts/audit_macro_publication.py'
       - 'scripts/macro_calendar_transport.py'
       - 'scripts/enrich_macro_results.py'
       - 'scripts/enrich_macro_results_fred.py'
       - 'scripts/enrich_policy_decisions.py'
       - 'scripts/requirements-macro.txt'
       - 'tests/test_update_macro_events.py'
+      - 'tests/test_audit_macro_publication.py'
       - 'tests/test_enrich_macro_results.py'
       - 'tests/test_enrich_macro_results_fred.py'
       - 'tests/test_enrich_policy_decisions.py'
@@ -25,12 +27,14 @@ on:
   pull_request:
     paths:
       - 'scripts/update_macro_events.py'
+      - 'scripts/audit_macro_publication.py'
       - 'scripts/macro_calendar_transport.py'
       - 'scripts/enrich_macro_results.py'
       - 'scripts/enrich_macro_results_fred.py'
       - 'scripts/enrich_policy_decisions.py'
       - 'scripts/requirements-macro.txt'
       - 'tests/test_update_macro_events.py'
+      - 'tests/test_audit_macro_publication.py'
       - 'tests/test_enrich_macro_results.py'
       - 'tests/test_enrich_macro_results_fred.py'
       - 'tests/test_enrich_policy_decisions.py'
@@ -66,6 +70,7 @@ jobs:
         run: |
           python -m py_compile scripts/update_macro_events.py scripts/macro_calendar_transport.py scripts/enrich_macro_results.py scripts/enrich_macro_results_fred.py scripts/enrich_policy_decisions.py
           python tests/test_update_macro_events.py
+          python tests/test_audit_macro_publication.py
           python tests/test_enrich_macro_results.py
           python tests/test_enrich_macro_results_fred.py
           python tests/test_enrich_policy_decisions.py
