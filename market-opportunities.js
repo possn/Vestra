@@ -536,6 +536,21 @@
       g.innerHTML='';
       section.querySelector('.market-section__head')?.insertAdjacentElement('afterend',g);
     }
+    // The opportunity chapter is dark in iPhone mode. Apply ink to the real
+    // rendered nodes after each lens update; late dynamic stylesheets can
+    // otherwise override static declarations and leave dark-on-dark text.
+    const heading=section.querySelector('.market-section__head h3');
+    const description=section.querySelector('.market-section__head p');
+    if(heading){
+      heading.style.setProperty('color','#f5f3ec','important');
+      heading.style.setProperty('-webkit-text-fill-color','#f5f3ec','important');
+      heading.style.setProperty('opacity','1','important');
+    }
+    if(description){
+      description.style.setProperty('color','#c4d9d1','important');
+      description.style.setProperty('-webkit-text-fill-color','#c4d9d1','important');
+      description.style.setProperty('opacity','1','important');
+    }
     const guide=section.querySelector('.ux454-opportunity-guide');
     if(guide)guide.innerHTML=activeLens==='breakout'
       ? '<span><b>SETUP TÉCNICO</b> compressão não garante subida</span><span><b>MÉDIAS</b> 50/150/200 ascendentes</span><span><b>BREAKOUT</b> só confirmado com volume</span>'
