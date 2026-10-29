@@ -98,6 +98,13 @@ def scan_grace_expired(now: datetime.datetime, grace_minutes: int) -> bool:
     return (now - origin).total_seconds() >= grace_minutes * 60
 
 
+def macro_grace_expired(now: datetime.datetime, grace_minutes: int) -> bool:
+    """Minute-20 hourly publication: only the short code-PR pause may defer."""
+    if now.tzinfo is None or not 0 <= grace_minutes < 60:
+        raise ValueError("invalid macro grace")
+    return (now.astimezone(datetime.timezone.utc).minute - 20) % 60 >= grace_minutes
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--market-grace-minutes", type=int, default=None,
@@ -119,12 +126,7 @@ def main() -> int:
     if args.macro_grace_minutes is not None:
         if args.macro_grace_minutes < 0 or args.macro_grace_minutes >= 60:
             parser.error("--macro-grace-minutes must be between 0 and 59")
-        now = datetime.datetime.now(datetime.timezone.utc)
-        # Macro workflow schedules at minute 20 every hour; once grace
-        # expires, the validated official feed may publish despite code PRs.
-        # This is not used by scanner/market release protection.
-        elapsed = (now.minute - 20) % 60
-        if elapsed >= args.macro_grace_minutes:
+        if macro_grace_expired(datetime.datetime.now(datetime.timezone.utc), args.macro_grace_minutes):
             print("Macro publisher grace elapsed; releasing validated official feed.")
             _write_output("defer", "false")
             return 0
