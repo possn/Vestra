@@ -28,7 +28,7 @@ class DescriptiveComparisonTests(unittest.TestCase):
         def row(episode,label,value,**extras):
             return {"episode_id":episode,"horizon_sessions":10,"outcome":label,
                     "outcome_matured":True,"features_point_in_time_verified":True,
-                    "features":{"atr14_pct":value},**extras}
+                    "features":{"atr14_pct":value}} | extras
         rows=[
             row("A","confirmed",2),
             row("A","confirmed",90),
