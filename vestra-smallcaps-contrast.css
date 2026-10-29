@@ -1,0 +1,23 @@
+/* Visible Small Caps navigation + hard contrast in the dark research chapter. */
+#viewMarket .market-mode-grid .market-smallcaps-tab{
+  flex:0 0 auto;min-height:44px!important;padding-inline:13px!important;
+  white-space:nowrap;background:#dbece7!important;color:#103d38!important;
+  border:1px solid #7dafa1!important;
+}
+#viewMarket .market-mode-grid .market-smallcaps-tab strong{color:inherit!important;-webkit-text-fill-color:currentColor!important;opacity:1!important}
+#viewMarket .market-mode-grid .market-smallcaps-tab.is-active{background:#167a75!important;color:#fff!important}
+#viewMarket .market-smallcaps__disclaimer{font-size:12px;line-height:1.5;color:var(--muted);margin:10px 0 16px}
+/* Actual dark chapter text: stronger than inherited dark ink and text-fill.
+   Scope to research and breakout content, not light opportunity cards. */
+#viewMarket :is(.market-prebreakout,.market-pre-breakout,.market-compression,.prebreakout-panel,.prebreakout-section,.scanner-prebreakout,.scanner-compression) :is(h1,h2,h3,h4){
+ color:#f3f5f0!important;-webkit-text-fill-color:#f3f5f0!important;opacity:1!important;
+}
+
+/* Exact runtime section for the user's unreadable “Compressão · Pré-breakout” heading. */
+#viewMarket .market-section.vestra-breakout-contrast .market-section__head :is(h2,h3),
+#viewMarket .market-section.vestra-breakout-contrast .market-section__head :is(h2,h3) *{
+ color:#f7f5ed!important;-webkit-text-fill-color:#f7f5ed!important;opacity:1!important;
+}
+#viewMarket .market-section.vestra-breakout-contrast .market-section__head p{
+ color:#c4d9d1!important;-webkit-text-fill-color:#c4d9d1!important;opacity:1!important;
+}

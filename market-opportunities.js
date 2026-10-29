@@ -555,6 +555,7 @@
     const universe=stocks();
     const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
     section.classList.toggle('vestra-low52-contrast',activeLens==='low52');
+    section.classList.toggle('vestra-breakout-contrast',activeLens==='breakout');
     const list=section.querySelector('.market-list');if(!list)return[];
     if(!universe.length){
       list.innerHTML='';
