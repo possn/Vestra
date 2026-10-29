@@ -24,7 +24,7 @@ def audit(records:list[dict], min_per_group:int=30)->dict:
         subset=[r for r in records if isinstance(r,dict) and r.get("horizon_sessions")==horizon]
         used=set()
         groups={label:{key:[] for key in FEATURES} for label in LABELS}
-        excluded={"unknown_outcome":0,"unverified_asof":0,"duplicate_episode":0}
+        excluded={"unknown_outcome":0,"unverified_asof":0,"missing_features":0,"duplicate_episode":0}
         for row in subset:
             if row.get("outcome") not in LABELS or row.get("outcome_matured") is not True:
                 excluded["unknown_outcome"]+=1
@@ -39,10 +39,11 @@ def audit(records:list[dict], min_per_group:int=30)->dict:
             if episode in used:
                 excluded["duplicate_episode"]+=1
                 continue
-            used.add(episode)
             feats=row.get("features")
-            if not isinstance(feats,dict):
+            if not isinstance(feats,dict) or not feats:
+                excluded["missing_features"]+=1
                 continue
+            used.add(episode)
             label=row["outcome"]
             for key in FEATURES:
                 v=feats.get(key)
