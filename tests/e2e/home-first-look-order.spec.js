@@ -83,3 +83,20 @@ test('iPhone/WebKit: first look is wealth, barometer, news, horizontal agenda, p
  expect(scroll.after).toBeGreaterThan(scroll.before);
  await expect(home.locator('.vi-priorities .vi-action')).toHaveCount(3);
 });
+
+test('iPhone: radar follows weekly events instead of opening the Home',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/index.html');
+ const home=page.locator('#vestraIntelligenceHome');
+ await expect(home).toBeVisible({timeout:20000});
+ await expect(home.locator('[data-vi-prebreakout-spotlight]')).toHaveCount(1,{timeout:20000});
+ const order=await home.evaluate(host=>{
+  const events=host.querySelector('.vi-events-reading');
+  const radar=host.querySelector('[data-vi-prebreakout-spotlight]');
+  return {after:!!events&&events.nextElementSibling===radar,
+          eventsTop:events?.getBoundingClientRect().top,
+          radarTop:radar?.getBoundingClientRect().top};
+ });
+ expect(order.after).toBe(true);
+ expect(order.radarTop).toBeGreaterThan(order.eventsTop);
+});
