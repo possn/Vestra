@@ -7,6 +7,7 @@ mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 def fixture():
     return {"schema":"vestra_prebreakout_forward_cohorts_v1",
+        "anchor_provenance_audit":{"verifiable_archived_price_basis":7,"legacy_missing_or_unverified_price_basis":20},
         "breakout_event_evidence":{"coverage_by_horizon":{
             h:{"cohorts":27,"evaluable":0,"breakout_rate":None,
                "by_status":{"price_basis_unverified":17,"missing_ohlcv":3,"pending":7}}
@@ -17,6 +18,15 @@ class ReadinessTests(unittest.TestCase):
         self.assertFalse(result["filter_promotion_approved"])
         self.assertTrue(all(v["evaluable"]==0 for v in result["horizons"].values()))
         self.assertIn("NOT failed",mod.markdown(result))
+    def test_legacy_anchor_provenance_not_backfilled(self):
+        result=mod.audit(fixture())
+        self.assertEqual(result["anchor_provenance"]["legacy_basis_missing_or_unverified"],20)
+        self.assertFalse(result["anchor_provenance"]["legacy_price_factor_backfill_permitted"])
+        self.assertIn("legacy missing/unverified: 20",mod.markdown(result))
+    def test_anchor_denominator_mismatch_rejected(self):
+        data=fixture()
+        data["anchor_provenance_audit"]["verifiable_archived_price_basis"]=8
+        with self.assertRaisesRegex(ValueError,"anchor provenance"):mod.audit(data)
     def test_counts_must_reconcile(self):
         data=fixture();data["breakout_event_evidence"]["coverage_by_horizon"]["5"]["by_status"]["pending"]=6
         with self.assertRaisesRegex(ValueError,"denominators"):mod.audit(data)
