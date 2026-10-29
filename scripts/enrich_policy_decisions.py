@@ -123,7 +123,7 @@ def find_ecb_release_url(index_page: str, event_date: date) -> str:
         return ""
     for href in tree.xpath("//a/@href"):
         raw = str(href or "")
-        if re.search(rf"ecb\\.mp{stamp}~[A-Za-z0-9]+\\.en\\.html(?:$|[?#])", raw):
+        if re.search(rf"ecb\.mp{stamp}~[A-Za-z0-9]+\.en\.html(?:$|[?#])", raw):
             candidate = urljoin(ECB_INDEX, raw)
             from urllib.parse import urlsplit
             host = urlsplit(candidate)
