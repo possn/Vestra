@@ -536,10 +536,26 @@
       g.innerHTML='';
       section.querySelector('.market-section__head')?.insertAdjacentElement('afterend',g);
     }
+    // The opportunity chapter is dark in iPhone mode. Apply ink to the real
+    // rendered nodes after each lens update; late dynamic stylesheets can
+    // otherwise override static declarations and leave dark-on-dark text.
+    const heading=section.querySelector('.market-section__head h3');
+    const description=section.querySelector('.market-section__head p');
+    if(heading){
+      heading.style.setProperty('color','#f5f3ec','important');
+      heading.style.setProperty('-webkit-text-fill-color','#f5f3ec','important');
+      heading.style.setProperty('opacity','1','important');
+    }
+    if(description){
+      description.style.setProperty('color','#c4d9d1','important');
+      description.style.setProperty('-webkit-text-fill-color','#c4d9d1','important');
+      description.style.setProperty('opacity','1','important');
+    }
     const guide=section.querySelector('.ux454-opportunity-guide');
     if(guide)guide.innerHTML=activeLens==='breakout'
       ? '<span><b>SETUP TÉCNICO</b> compressão não garante subida</span><span><b>MÉDIAS</b> 50/150/200 ascendentes</span><span><b>BREAKOUT</b> só confirmado com volume</span>'
       : '<span><b>DISCOVERY</b> prioridade para investigar agora</span><span><b>≠ PORTFOLIO FIT</b> adequação à tua carteira só é avaliada na Carteira / Optimizar</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
+    if(guide){const entry=section.querySelector('.vestra-smallcaps-entry')||document.createElement('button');entry.type='button';entry.className='vestra-smallcaps-entry';entry.dataset.marketMode='smallcaps';entry.textContent='Small Caps · 100 M–2 000 M USD';guide.insertAdjacentElement('afterend',entry);}
   }
   function lensMeta(lens){
     if(lens==='breakout')return ['Compressão · Pré-breakout','Compressão é apenas vigilância, não sinal iminente. Pré-breakout exige proximidade da resistência e volume a secar; breakout confirmado exige fecho e volume fortes.'];
