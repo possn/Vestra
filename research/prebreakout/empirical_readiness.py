@@ -39,7 +39,21 @@ def audit(data:dict)->dict:
                     "blockers":blockers,"other_unverified":other,
                     "ready_for_discrimination":False,
                     "reason":"no_verified_outcomes" if evaluable==0 else "requires_episode_level_pit_feature_join_and_oos_validation"}
-    return {"schema":"vestra_prebreakout_empirical_readiness_v1",
+    provenance=data.get("anchor_provenance_audit")
+    if not isinstance(provenance,dict):
+        raise ValueError("missing archived anchor provenance")
+    anchored=provenance.get("verifiable_archived_price_basis")
+    legacy=provenance.get("legacy_missing_or_unverified_price_basis")
+    counts=[row["cohorts"] for row in results.values()]
+    if (type(anchored) is not int or type(legacy) is not int or anchored<0 or legacy<0
+            or any(anchored+legacy!=n for n in counts)):
+        raise ValueError("unreconciled anchor provenance")
+    anchor_summary={"archived_basis_present":anchored,
+                    "legacy_basis_missing_or_unverified":legacy,
+                    "legacy_price_factor_backfill_permitted":False,
+                    "basis_present_not_same_as_matured_outcome":True}
+    return {"anchor_provenance":anchor_summary,
+            "schema":"vestra_prebreakout_empirical_readiness_v1",
             "source":"data/prebreakout-forward-evidence.json",
             "predictive_edge_established":False,"filter_promotion_approved":False,
             "horizons":results}
@@ -51,6 +65,8 @@ def markdown(report:dict)->str:
     for h,r in report["horizons"].items():
         b=r["blockers"]
         lines.append(f'| {h} | {r["cohorts"]} | {r["evaluable"]} | {b["price_basis_unverified"]} | {b["missing_ohlcv"]} | {b["pending"]} |')
+    anchor=report["anchor_provenance"]
+    lines += ["",f'Archived price basis present: {anchor["archived_basis_present"]}; legacy missing/unverified: {anchor["legacy_basis_missing_or_unverified"]}.', "These categories describe publication metadata, not independently validated forward outcomes. No retroactive price-factor reconstruction.", ""]
     lines += ["","**Conclusion:** No claim of breakout success rate, calibrated probability or discrimination edge is supported by zero verified outcomes.",
               "Missing, unverifiable and pending are NOT failed breakouts.",
               "The pre-base impulse features introduced in #1608 and the cohort comparison in #1609 require independently verified point-in-time inputs and matured outcomes before any deployment decision.",
