@@ -43,22 +43,26 @@ def audit(records:list[dict], min_per_group:int=30)->dict:
             if not isinstance(feats,dict) or not feats:
                 excluded["missing_features"]+=1
                 continue
-            used.add(episode)
-            label=row["outcome"]
+            accepted={}
             for key in FEATURES:
                 v=feats.get(key)
                 if key=="contractionWidths20Pct":
                     if not isinstance(v,(tuple,list)) or len(v)!=3 or any(type(x) not in (int,float) or not math.isfinite(x) or x<=0 for x in v):
                         continue
                     # A geometric contraction requires strictly narrowing widths.
-                    # A widening/noisy sequence must stay missing, not be
-                    # misreported as an observed VCP contraction magnitude.
                     if not (v[0] > v[1] > v[2]):
                         continue
                     # Descriptive contraction magnitude; never a standalone VCP gate.
                     v=100*(1-v[2]/v[0])
                 if type(v) in (int,float) and math.isfinite(v):
-                    groups[label][key].append(float(v))
+                    accepted[key]=float(v)
+            if not accepted:
+                excluded["missing_features"]+=1
+                continue
+            used.add(episode)
+            label=row["outcome"]
+            for key,value in accepted.items():
+                groups[label][key].append(value)
         features={}
         for key in FEATURES:
             a,b=groups["confirmed"][key],groups["not_confirmed"][key]
