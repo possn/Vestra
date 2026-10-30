@@ -181,7 +181,18 @@ test('iPhone Home: visible factual pulse of CNN, AAII and coverage has no horizo
  const pulse=page.locator('#vestraIntelligenceHome .vi-live-pulse');
  await expect(pulse).toBeVisible();
  await expect(pulse.locator('[data-vi-pulse-cnn]')).toContainText('/100',{timeout:10000});
- await expect(pulse.locator('[data-vi-pulse-aaii]')).toContainText('pp');
+ // AAII must never invent a fresh spread when the weekly source is absent or stale.
+ const aaii=await page.evaluate(async()=>{try{const r=await fetch('./data/aaii-sentiment.json');return r.ok?await r.json():null}catch(_){return null}});
+ const week=aaii?.weeks?.[0];
+ const stamp=Date.parse(String(week?.date||'')+'T00:00:00Z');
+ const values=[Number(week?.bullish),Number(week?.bearish),Number(week?.neutral)];
+ const valid=Number.isFinite(stamp)&&Date.now()>=stamp&&Date.now()-stamp<=9*86400000&&
+   values.every(Number.isFinite)&&Math.abs(values.reduce((a,b)=>a+b,0)-100)<1;
+ if(valid) await expect(pulse.locator('[data-vi-pulse-aaii]')).toContainText('pp');
+ else {
+   await expect(pulse.locator('[data-vi-pulse-aaii]')).toHaveText('—');
+   await expect(pulse.locator('[data-vi-pulse-aaii-age]')).toContainText('não validada');
+ }
  await expect(pulse.locator('[data-vi-pulse-coverage]')).not.toHaveText('—');
  const bounds=await pulse.evaluate(el=>{
   const r=el.getBoundingClientRect();
