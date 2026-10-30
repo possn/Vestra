@@ -755,26 +755,24 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     sh.hidden=false; sh.setAttribute('aria-hidden','false'); notifyMarketSheetChanged('crypto-open'); resetDossierViewport();
   }
 
-  function renderSmallCaps(){
-    // Capitalization is observed index metadata, not evidence of impending breakout.
-    const rows=M.stocks.filter(s=>{
-      const cap=n(s.market_cap);
-      return !isFund(s) && cap!==null && cap>=100_000_000 && cap<=2_000_000_000 &&
-        !['ETF','FUND','MUTUALFUND','CRYPTO'].includes(txt(s.quote_type).toUpperCase());
-    }).sort((a,b)=>(n(b.market_cap)||0)-(n(a.market_cap)||0) || txt(a.ticker).localeCompare(txt(b.ticker)));
-    const count=rows.length;
-    const rendered=rows.slice(0,50).map(s=>{
-      const cap=n(s.market_cap);
-      const label=cap<500_000_000?'100–500 M USD · fora do radar principal':'500 M–2 000 M USD · sobreposição possível';
-      return renderRow(s,label+' · capitalização observada, não sinal de breakout');
-    }).join('');
-    return '<section class="market-section market-smallcaps" aria-label="Small Caps">'+
-      '<div class="market-section__head"><div><h3>Small Caps</h3>'+
-      '<p>Empresas de 100 M a 2 000 M USD por capitalização publicada. Universo em investigação; não são breakouts confirmados.</p>'+
-      '</div><span class="market-data-age">'+count+' empresas no índice</span></div>'+
-      '<p class="market-smallcaps__disclaimer">Lista por capitalização, não por probabilidade de subida. A verificação independente de OHLCV, liquidez e padrões técnicos ainda está em desenvolvimento no Breakout Lab.</p>'+
-      (count?'<div class="market-list">'+rendered+'</div>':'<div class="market-empty">Sem empresas com capitalização verificável nesta fonte.</div>')+
-      (count>50?'<p class="market-smallcaps__disclaimer">Primeiras 50 de '+count+' empresas.</p>':'')+'</section>';
+  function renderSmallCapBreakout(){
+    // Independent research engine: never promote capitalization inventory to a signal.
+    return `<div class="v2-scanner-research market-smallcap-breakout">
+      <div class="market-detail-head v2-scanner-research__heading"><div>
+        <div class="market-kicker">VESTRA RESEARCH / BREAKOUT LAB</div>
+        <h2>Breakout · Small Caps</h2>
+        <p>Motor técnico independente · 100–500 M USD · OHLCV verificado</p></div>
+        </div>
+      <section class="v2-scanner-research__stage" aria-label="Estado do motor Small Caps">
+        <div class="v2-scanner-research__intro"><span>01 / OBSERVAÇÃO</span>
+          <strong>Sem sinais validados</strong><small>A investigação OHLCV ainda não publica setups técnicos.</small></div>
+        <div class="v2-scanner-research__context"><span>GATE DE EVIDÊNCIA</span>
+          <p>Sem séries OHLCV, liquidez USD e controlos de risco verificados, não há sinais validados. Inventário não é breakout.</p></div>
+      </section>
+      <section class="market-section v2-scanner-research__results"><div class="market-section__head">
+        <div><h3>Setups técnicos</h3><p>Base em formação · Próximo do breakout · Breakout confirmado</p></div></div>
+        <div class="market-empty">Sem candidatos tecnicamente validados nesta fonte. O motor de investigação está em desenvolvimento.</div>
+      </section></div>`;
   }
 
   function renderPrimary(){
@@ -787,7 +785,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     const equityRotation = ['discover','lows','smart','watch'].includes(M.mode)
       ? '<section class="market-section market-rotation-standalone" aria-label="Rotação semanal do mercado">' + renderWeeklyRotation() + '</section>'
       : '';
-    root.innerHTML = equityRotation + (M.mode==='crypto'?renderCrypto():M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():M.mode==='smallcaps'?renderSmallCaps():renderDiscover());
+    root.innerHTML = equityRotation + (M.mode==='crypto'?renderCrypto():M.mode==='funds'?renderFunds():M.mode==='smart'?renderSmart():M.mode==='watch'?renderWatch():M.mode==='lows'?renderLows():renderDiscover());
     if(M.mode==='crypto'&&!M.cryptoLoaded&&!M.cryptoLoading) loadCryptoMarket().then(()=>{ if(M.mode==='crypto') renderPrimary(); });
     if(M.mode==='discover'&&!M.query&&window.VestraMarketOpportunities?.refresh){
       // Direct handoff avoids rendering a disposable native shortlist and then
@@ -2724,6 +2722,7 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
         c.innerHTML=`<div class="market-detail-head"><div><div class="market-kicker">NOTÍCIAS</div><h2>Notícias das tuas posições</h2><p>Abre uma posição para ver o feed específico.</p></div><button class="market-close" data-market-close>×</button></div><div class="market-list">${picks.length?picks.map(s=>renderRow(s,'Abrir notícias e dossier')).join(''):'<div class="market-empty">Sem posições reconhecidas.</div>'}</div>`;
       }
       if(tool==='scanner') c.innerHTML=renderScanner('best_opportunities');
+      if(tool==='smallcap-breakout') c.innerHTML=renderSmallCapBreakout();
       // Replace the previous tool first, then notify navigation companions once.
       notifyMarketSheetChanged('tool-open');
       // WebKit can retain the old document anchor when scrollTop is reset before
