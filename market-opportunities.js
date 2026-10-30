@@ -5,7 +5,7 @@
   const n=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
   const clamp=v=>Math.max(0,Math.min(100,v));
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const LENSES=new Set(['all','low52','emerging','recovery','value','breakout']);
+  const LENSES=new Set(['all','low52','emerging','recovery','value','breakout','smallcap_breakout']);
   let activeLens='all';
   let prebreakoutFeed=new Map();
   let prebreakoutFeedAuthoritative=false;
@@ -259,6 +259,7 @@
     return true;
   }
   function lensEligible(s,lens){
+    if(lens==='smallcap_breakout')return false;
     if(lens==='breakout')return breakoutSetup(s)!=null;
     if(lens==='all')return eligible(s);
     // Strategy lenses are views over the canonical Discovery universe, not
@@ -551,13 +552,35 @@
       description.style.setProperty('-webkit-text-fill-color','#c4d9d1','important');
       description.style.setProperty('opacity','1','important');
     }
+    let smallcapChip=section.querySelector('[data-smallcap-prebreakout-lens]');
+    if(!smallcapChip){
+      const pre=[...document.querySelectorAll('button')].find(b=>b.textContent?.trim()==='Pré-breakout');
+      smallcapChip=document.createElement('button');
+      smallcapChip.type='button';smallcapChip.className=pre?.className||'market-chip';
+      smallcapChip.textContent='Small Caps';smallcapChip.dataset.smallcapPrebreakoutLens='1';
+      smallcapChip.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();selectLens('smallcap_breakout');});
+      if(pre)pre.insertAdjacentElement('afterend',smallcapChip);
+      else {
+        // Always keep the two technical lenses in one compact strategy row.
+        // Never append Small Caps to the main Market navigation.
+        const row=document.createElement('div');row.className='vestra-technical-lenses';
+        const normal=document.createElement('button');normal.type='button';
+        normal.className='market-chip';normal.textContent='Pré-breakout';
+        normal.dataset.vestraPrebreakoutLens='1';
+        normal.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();selectLens('breakout');});
+        row.append(normal,smallcapChip);
+        section.querySelector('.market-sector-grid')?.insertAdjacentElement('beforebegin',row);
+      }
+    }
+    if(smallcapChip){smallcapChip.classList.toggle('is-active',activeLens==='smallcap_breakout');smallcapChip.setAttribute('aria-pressed',String(activeLens==='smallcap_breakout'));}
     const guide=section.querySelector('.ux454-opportunity-guide');
     if(guide)guide.innerHTML=activeLens==='breakout'
       ? '<span><b>SETUP TÉCNICO</b> compressão não garante subida</span><span><b>MÉDIAS</b> 50/150/200 ascendentes</span><span><b>BREAKOUT</b> só confirmado com volume</span>'
       : '<span><b>DISCOVERY</b> prioridade para investigar agora</span><span><b>≠ PORTFOLIO FIT</b> adequação à tua carteira só é avaliada na Carteira / Optimizar</span><span><b>Timing</b> evita perseguir preço esticado</span><span><b>Sinais</b> confirmações independentes</span>';
-    if(guide){const entry=section.querySelector('.vestra-smallcaps-entry')||document.createElement('button');entry.type='button';entry.className='vestra-smallcaps-entry';entry.dataset.marketMode='smallcaps';entry.textContent='Small Caps · 100 M–2 000 M USD';guide.insertAdjacentElement('afterend',entry);}
+    section.querySelector('.vestra-smallcaps-entry')?.remove();
   }
   function lensMeta(lens){
+    if(lens==='smallcap_breakout')return ['Small Caps · Pré-breakout','Sem candidatos com OHLCV técnico validado.'];
     if(lens==='breakout')return ['Compressão · Pré-breakout','Compressão é apenas vigilância, não sinal iminente. Pré-breakout exige proximidade da resistência e volume a secar; breakout confirmado exige fecho e volume fortes.'];
     if(lens==='low52')return ['Mínimos 52 semanas','Empresas robustas negociadas até 5% acima do mínimo de 52 semanas.'];
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
@@ -589,7 +612,8 @@
     }
     const [title,subtitle]=lensMeta(activeLens);const h=section.querySelector('.market-section__head h3');if(h)h.textContent=title;const p=section.querySelector('.market-section__head p');if(p)p.textContent=subtitle;
     decorate(section);
-    renderPrebreakoutHistory(section);
+    if(activeLens==='smallcap_breakout')list.innerHTML='<div class="market-empty">Sem small caps em pré-breakout elegíveis: ainda não existem sinais técnicos validados.</div>';
+    else renderPrebreakoutHistory(section);
     return rows;
   }
   function selectLens(lens,sectorOverride=''){activeLens=LENSES.has(t(lens))?t(lens):'all';return opportunities(activeLens,sectorOverride);}
