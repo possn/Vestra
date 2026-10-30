@@ -560,7 +560,17 @@
       smallcapChip.textContent='Small Caps';smallcapChip.dataset.smallcapPrebreakoutLens='1';
       smallcapChip.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();selectLens('smallcap_breakout');});
       if(pre)pre.insertAdjacentElement('afterend',smallcapChip);
-      else section.querySelector('.market-sector-grid')?.insertAdjacentElement('beforebegin',smallcapChip);
+      else {
+        // Always keep the two technical lenses in one compact strategy row.
+        // Never append Small Caps to the main Market navigation.
+        const row=document.createElement('div');row.className='vestra-technical-lenses';
+        const normal=document.createElement('button');normal.type='button';
+        normal.className='market-chip';normal.textContent='Pré-breakout';
+        normal.dataset.vestraPrebreakoutLens='1';
+        normal.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();selectLens('breakout');});
+        row.append(normal,smallcapChip);
+        section.querySelector('.market-sector-grid')?.insertAdjacentElement('beforebegin',row);
+      }
     }
     if(smallcapChip){smallcapChip.classList.toggle('is-active',activeLens==='smallcap_breakout');smallcapChip.setAttribute('aria-pressed',String(activeLens==='smallcap_breakout'));}
     const guide=section.querySelector('.ux454-opportunity-guide');
