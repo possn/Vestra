@@ -1,13 +1,15 @@
 const {test,expect}=require('@playwright/test');
-test('iPhone/WebKit: explicit Small Caps tab displays real index cohort',async({page})=>{
+test('iPhone: Small Caps opens a closable research engine, not an inventory',async({page})=>{
   await page.goto('/index.html');
   await page.waitForFunction(()=>typeof window.setView==='function');
   await page.evaluate(()=>window.setView('market'));
-  const tab=page.locator('#viewMarket .market-mode-grid [data-market-mode="smallcaps"]');
-  await expect(tab).toBeVisible();
-  await expect(tab).toBeInViewport();
-  await tab.click();
-  await expect(page.locator('#marketPrimary .market-smallcaps')).toBeVisible({timeout:20000});
-  await expect(page.locator('#marketPrimary .market-smallcaps__disclaimer').first()).toContainText('não por probabilidade de subida');
-  await expect(page.locator('#marketPrimary .market-smallcaps')).toContainText('100 M a 2 000 M USD');
+  const tab=page.locator('#viewMarket [data-market-tool="smallcap-breakout"]');
+  await expect(tab).toBeVisible();await tab.scrollIntoViewIfNeeded();await tab.click();
+  const sheet=page.locator('#marketSheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator('.market-smallcap-breakout')).toBeVisible();
+  await expect(sheet).toContainText('Sem sinais validados');
+  await expect(sheet.locator('.market-smallcap-breakout .market-row')).toHaveCount(0);
+  await sheet.locator('.market-close-persistent[data-market-close]').click();
+  await expect(sheet).toBeHidden();
 });
