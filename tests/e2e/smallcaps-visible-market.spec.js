@@ -1,13 +1,15 @@
 const {test,expect}=require('@playwright/test');
-test('iPhone/WebKit: explicit Small Caps tab displays real index cohort',async({page})=>{
-  await page.goto('/index.html');
-  await page.waitForFunction(()=>typeof window.setView==='function');
-  await page.evaluate(()=>window.setView('market'));
-  const tab=page.locator('#viewMarket .market-mode-grid [data-market-mode="smallcaps"]');
-  await expect(tab).toBeVisible();
-  await expect(tab).toBeInViewport();
-  await tab.click();
-  await expect(page.locator('#marketPrimary .market-smallcaps')).toBeVisible({timeout:20000});
-  await expect(page.locator('#marketPrimary .market-smallcaps__disclaimer').first()).toContainText('não por probabilidade de subida');
-  await expect(page.locator('#marketPrimary .market-smallcaps')).toContainText('100 M a 2 000 M USD');
+test('iPhone: Small Caps lens adjacent to Pré-breakout, without inventory',async({page})=>{
+ await page.goto('/index.html'); await page.waitForFunction(()=>typeof window.setView==='function');
+ await page.evaluate(()=>window.setView('market'));
+ const section=page.locator('#viewMarket .market-section:has(.ux454-opportunity-guide)').first();
+ await expect(section).toBeVisible({timeout:20000});
+ const chip=section.locator('[data-smallcap-prebreakout-lens]');
+ await expect(chip).toBeVisible({timeout:20000});
+ await expect(chip).toHaveText('Small Caps');
+ await chip.click();
+ await expect(chip).toHaveAttribute('aria-pressed','true');
+ await expect(section.locator('.market-section__head h3')).toContainText('Small Caps');
+ await expect(section).toContainText('Sem small caps em pré-breakout');
+ await expect(page.locator('#marketPrimary .market-smallcaps')).toHaveCount(0);
 });
