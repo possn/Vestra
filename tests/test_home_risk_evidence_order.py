@@ -64,9 +64,9 @@ class HomeRiskEvidenceOrderTests(unittest.TestCase):
 
     def test_risk_is_fourth_in_visual_flex_order(self):
         css = (ROOT / "vestra-home-first-look-order.css").read_text(encoding="utf-8")
-        self.assertIn(".vi-risk-reading{\\n order:4!important;", css)
+        self.assertIn(".vi-risk-reading{\n order:4!important;", css)
         for section, order in (("market", 1), ("news", 2), ("events", 3)):
-            self.assertIn(f".vi-{section}-reading{{\\n order:{order}!important;", css)
+            self.assertIn(f".vi-{section}-reading{{\n order:{order}!important;", css)
 
 
 if __name__ == "__main__":
