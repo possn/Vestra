@@ -9,5 +9,7 @@ class SmallCapLens(unittest.TestCase):
   self.assertNotIn('renderSmallCaps()',m)
   self.assertNotIn('data-market-mode="smallcaps"',h)
   self.assertIn("selectLens('smallcap_breakout')",o)
-  self.assertIn("if(lens==='smallcap_breakout')return false",o)
+  self.assertIn("if(lens==='smallcap_breakout')return breakoutSetup(s,'smallcap_breakout')!=null",o)
+  self.assertIn('smallcapFeed=new Map()',o)
+  self.assertIn('loadSmallcapFeed()',o)
 if __name__=='__main__':unittest.main()
