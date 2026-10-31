@@ -41,6 +41,10 @@ def inspect(ticker,frame,currency,checked_at):
     try:
         for timestamp,row in frame.iterrows():
             day=timestamp.date().isoformat()
+            # A bar stamped today may reflect an unfinished trading session.
+            # Exclude it conservatively instead of treating partial volume as final.
+            if day == checked_at.date().isoformat():
+                continue
             values=[float(row[k]) for k in ("Open","High","Low","Close","Volume")]
             o,h,l,c,v=values
             if not all(map(math.isfinite,values)) or not (0<l<=min(o,c)<=max(o,c)<=h and v>0):
