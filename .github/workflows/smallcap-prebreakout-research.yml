@@ -39,7 +39,7 @@ jobs:
         id: publish_window
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/defer_main_publish_if_code_pr.py
+        run: python scripts/defer_main_publish_if_code_pr.py --scanner-grace-minutes 90
       - name: Publish observed research, never synthetic signals
         if: steps.publish_window.outputs.defer != 'true'
         run: |
