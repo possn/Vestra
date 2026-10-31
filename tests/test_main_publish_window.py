@@ -11,6 +11,7 @@ WRITERS = {
     "rebuild-market-startup.yml",
     "refresh-weekly-earnings.yml",
     "refresh-prebreakout-scanner.yml",
+    "smallcap-prebreakout-research.yml",
     "refresh-prebreakout-forward-evidence.yml",
     "refresh-cnn-fear-greed.yml",
     "sec-fund-identity.yml",
