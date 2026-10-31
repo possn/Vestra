@@ -57,6 +57,26 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(report["evaluable_ohlcv"],0)
         self.assertEqual(report["observations"][0]["status"],"currency_not_verified_usd")
         self.assertFalse(any(x[0]=="download" for x in p.calls))
+    def test_verified_setup_is_only_published_after_real_ohlcv_and_usd_gate(self):
+        from unittest.mock import patch
+        rows=[{"ticker":"A","market_cap":180e6,"quote_type":"EQUITY"}]
+        fake={"ticker":"A","stage":"pré-breakout","score":72,
+              "date":"2026-07-08","distancePct":2.5,"vcpConfirmed":True}
+        with patch("scripts.refresh_prebreakout_scanner.scan_bars",return_value=fake) as scanner:
+            report=mod.collect(rows,Provider(),checked_at=datetime(2026,7,10,tzinfo=timezone.utc))
+        self.assertEqual(len(report["signals"]),1)
+        self.assertEqual(report["signals"][0]["marketCapUSD"],180e6)
+        self.assertEqual(report["signals"][0]["source"],"yahoo:smallcap_daily_ohlcv")
+        self.assertFalse(report["signals"][0]["spreadVerified"])
+        self.assertEqual(report["signals"][0]["earningsRiskGate"],"unknown")
+        self.assertEqual(scanner.call_args.kwargs["liquidity_floor"],1_000_000)
+
+    def test_no_price_pattern_never_becomes_a_signal(self):
+        rows=[{"ticker":"A","market_cap":200e6,"quote_type":"EQUITY"}]
+        report=mod.collect(rows,Provider(),checked_at=datetime(2026,7,10,tzinfo=timezone.utc))
+        self.assertEqual(report["signals"],[])
+        self.assertEqual(report["validated_prebreakout_setups"],0)
+
     def test_rejects_invalid_limits(self):
         for slot,budget in ((-1,1),(0,0),(0,31)):
             with self.assertRaises(ValueError):mod.collect([],Provider(),slot,budget)
