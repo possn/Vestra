@@ -21,6 +21,7 @@ ACTIVE_WORKFLOWS = {
     'refresh-prebreakout-forward-evidence.yml',
     'refresh-cnn-fear-greed.yml',
     'runtime-js-syntax.yml',
+    'vestra-guarded-pr-integration.yml',
     'sec-connectivity-probe.yml',
     'sec-fund-identity.yml',
     'sec-runtime-regression.yml',
