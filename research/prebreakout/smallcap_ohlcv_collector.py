@@ -85,6 +85,8 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None):
     start=(slot*budget)%len(names) if names else 0
     selected=(names[start:]+names[:start])[:min(budget,len(names))] if names else []
     observed=[]
+    cap_by_ticker={str(row.get("ticker") or "").strip().upper():row.get("market_cap")
+                   for row in rows if isinstance(row,dict)}
     for ticker in selected:
         try:
             item=provider.Ticker(ticker)
@@ -93,7 +95,10 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None):
                 observed.append(inspect(ticker,None,currency,checked_at));continue
             frame=provider.download(ticker,period="18mo",interval="1d",auto_adjust=True,
                                     threads=False,progress=False,timeout=20)
-            observed.append(inspect(ticker,frame,currency,checked_at))
+            result=inspect(ticker,frame,currency,checked_at)
+            if result.get("verified_prebreakout_setup"):
+                result["verified_prebreakout_setup"]["marketCapUSD"]=cap_by_ticker[ticker]
+            observed.append(result)
         except Exception as exc:
             observed.append({"ticker":ticker,"status":"provider_error",
                              "error_type":type(exc).__name__})
