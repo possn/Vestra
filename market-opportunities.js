@@ -117,7 +117,8 @@
     return {r5,r20,r60,room,accel};
   }
   // Technical-only setup engine; never infer a future move from a score.
-  function breakoutSetup(stock,lens='breakout'){
+  function breakoutSetup(stock){
+    const lens=arguments[1]||'breakout';
     if(lens==='smallcap_breakout')return smallcapFeed.get(t(stock?.ticker).toUpperCase())||null;
     const published=prebreakoutFeed.get(t(stock?.ticker).toUpperCase());
     if(published)return published;
