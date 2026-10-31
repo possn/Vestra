@@ -7,7 +7,7 @@ SOURCE = (ROOT / 'market-opportunities.js').read_text(encoding='utf-8')
 
 class MarketOpportunitiesEmptyUniverseTests(unittest.TestCase):
     def test_empty_universe_clears_stale_rows_before_returning(self):
-        section_lookup = SOURCE.index("const section=[...document.querySelectorAll('.market-section')]")
+        section_lookup = SOURCE.index("const section=", SOURCE.index("function opportunities("))
         list_lookup = SOURCE.index("const list=section.querySelector('.market-list')", section_lookup)
         empty_guard = SOURCE.index("if(!universe.length){", list_lookup)
         clear_rows = SOURCE.index("list.innerHTML='';", empty_guard)
