@@ -14,11 +14,11 @@ class HomeRiskEditorialDetailTests(unittest.TestCase):
         for section in sections:
             self.assertEqual(home.count(f'vi-canonical-card {section}"'), 1)
         self.assertEqual(home.count('vi-canonical-card vi-risk-reading"'), 1)
-        self.assertLess(home.index("vi-market-reading"), home.index("vi-news-reading"))
-        self.assertLess(home.index("vi-news-reading"), home.index("vi-events-reading"))
-        self.assertLess(home.index("vi-events-reading"), home.index('class="vi-priorities"'))
-        self.assertLess(home.index('class="vi-priorities"'), home.index("vi-risk-reading"))
-        self.assertLess(home.index("vi-risk-reading"), home.index('class="vi-regime-disclosure"'))
+        self.assertLess(home.index("vi-canonical-card vi-market-reading"), home.index("vi-canonical-card vi-news-reading"))
+        self.assertLess(home.index("vi-canonical-card vi-news-reading"), home.index("vi-canonical-card vi-events-reading"))
+        self.assertLess(home.index("vi-canonical-card vi-events-reading"), home.index('class="vi-priorities"'))
+        self.assertLess(home.index('class="vi-priorities"'), home.index("vi-canonical-card vi-risk-reading"))
+        self.assertLess(home.index("vi-canonical-card vi-risk-reading"), home.index('class="vi-regime-disclosure"'))
 
     def test_live_risk_metrics_and_navigation_are_untouched(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
