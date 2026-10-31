@@ -7,6 +7,30 @@
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const LENSES=new Set(['all','low52','emerging','recovery','value','breakout','smallcap_breakout']);
   let activeLens='all';
+  let smallcapFeed=new Map();
+  async function loadSmallcapFeed(){
+    try{
+      const response=await fetch('data/breakout-lab-smallcap-ohlcv-research.json',{cache:'no-store'});
+      if(!response.ok)return;
+      const payload=await response.json();
+      if(payload?.schema!=='vestra_breakout_lab_smallcap_ohlcv_research_v1'||!Array.isArray(payload.signals))return;
+      const age=(Date.now()-Date.parse(payload.generated_at))/3600000;
+      if(!Number.isFinite(age)||age< -1||age>36){smallcapFeed=new Map();if(activeLens==='smallcap_breakout')opportunities();return;}
+      const found=new Map();
+      for(const row of payload.signals){
+        const cap=n(row?.marketCapUSD),distance=n(row?.distancePct);
+        const ageDays=(Date.now()-Date.parse(String(row?.date||'')+'T23:59:59Z'))/86400000;
+        if(row?.source!=='yahoo:smallcap_daily_ohlcv'||row?.currencyVerified!=='USD'||
+           !['pré-breakout','compressão'].includes(row?.stage)||
+           !(cap>=100000000&&cap<500000000)||
+           !(distance>=0&&distance<=8)||!(ageDays>=-1&&ageDays<=7)||
+           row?.vcpConfirmed!==true||!(n(row?.score)>=0))continue;
+        found.set(t(row.ticker).toUpperCase(),row);
+      }
+      smallcapFeed=found;
+      if(activeLens==='smallcap_breakout')opportunities();
+    }catch(error){console.warn('[Vestra] Small Caps OHLCV unavailable',error);}
+  }
   let prebreakoutFeed=new Map();
   let prebreakoutFeedAuthoritative=false;
   async function loadPrebreakoutFeed(){
@@ -93,7 +117,8 @@
     return {r5,r20,r60,room,accel};
   }
   // Technical-only setup engine; never infer a future move from a score.
-  function breakoutSetup(stock){
+  function breakoutSetup(stock,lens='breakout'){
+    if(lens==='smallcap_breakout')return smallcapFeed.get(t(stock?.ticker).toUpperCase())||null;
     const published=prebreakoutFeed.get(t(stock?.ticker).toUpperCase());
     if(published)return published;
     // Once the verified publisher answers, local legacy scoring may not resurrect
@@ -259,7 +284,7 @@
     return true;
   }
   function lensEligible(s,lens){
-    if(lens==='smallcap_breakout')return false;
+    if(lens==='smallcap_breakout')return breakoutSetup(s,'smallcap_breakout')!=null;
     if(lens==='breakout')return breakoutSetup(s)!=null;
     if(lens==='all')return eligible(s);
     // Strategy lenses are views over the canonical Discovery universe, not
@@ -325,7 +350,7 @@
   function rankedCandidates(universe,lens,sector='all'){
     let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
     if(sector!=='all')ranked=ranked.filter(s=>t(s?.sector)===sector);
-    if(lens==='breakout')return ranked.sort((a,b)=>(breakoutSetup(b)?.score||0)-(breakoutSetup(a)?.score||0));
+    if(lens==='breakout'||lens==='smallcap_breakout')return ranked.sort((a,b)=>(breakoutSetup(b,lens)?.score||0)-(breakoutSetup(a,lens)?.score||0));
     ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
     return ranked;
   }
@@ -510,8 +535,8 @@
     return reason(s);
   }
   function row(s,lens){
-    if(lens==='breakout'){
-      const setup=breakoutSetup(s);if(!setup)return '';
+    if(lens==='breakout'||lens==='smallcap_breakout'){
+      const setup=breakoutSetup(s,lens);if(!setup)return '';
       const fmt=x=>x.toFixed(1).replace('.',',');
       return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(setup.stage)} · Base 40 sessões ${fmt(setup.widthPct)}% (anterior ${fmt(setup.priorWidthPct)}%) · ${fmt(setup.distancePct)}% da resistência</div><div class="ux453-thesis">Preço acima da MM150 · MM50 acima MM200 · três médias ascendentes${setup.goldenCrossRecent?' · cruzamento MM50/MM200 recente':''}</div><div class="ux453-opportunity-type">${setup.volumeConfirmed?'Volume ≥ 1,5× média':setup.volumeDry?'Volume a secar; confirmação pendente':'Sem secagem de volume verificada'} · ${setup.stage==='compressão'?'Apenas em observação · ':''}Dados até ${esc(setup.date||'—')} · Setup técnico, não previsão</div></div><div class="ux453-entry"><small>SETUP</small><strong>${setup.score}</strong><em>${esc(setup.stage)}</em></div></div>`;
     }
@@ -594,7 +619,7 @@
     const universe=stocks();
     const section=[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
     section.classList.toggle('vestra-low52-contrast',activeLens==='low52');
-    section.classList.toggle('vestra-breakout-contrast',activeLens==='breakout');
+    section.classList.toggle('vestra-breakout-contrast',activeLens==='breakout'||activeLens==='smallcap_breakout');
     const list=section.querySelector('.market-list');if(!list)return[];
     if(!universe.length){
       list.innerHTML='';
@@ -612,7 +637,7 @@
     }
     const [title,subtitle]=lensMeta(activeLens);const h=section.querySelector('.market-section__head h3');if(h)h.textContent=title;const p=section.querySelector('.market-section__head p');if(p)p.textContent=subtitle;
     decorate(section);
-    if(activeLens==='smallcap_breakout')list.innerHTML='<div class="market-empty">Sem small caps em pré-breakout elegíveis: ainda não existem sinais técnicos validados.</div>';
+    if(activeLens==='smallcap_breakout'&&!rows.length)list.innerHTML='<div class="market-empty">Sem small caps em pré-breakout elegíveis neste momento. Cobertura OHLCV parcial, não ausência comprovada de setups em todo o universo.</div>';
     else renderPrebreakoutHistory(section);
     return rows;
   }
@@ -630,6 +655,7 @@
     style();
     opportunities();
     loadPrebreakoutFeed();
+    loadSmallcapFeed();
     loadPrebreakoutObservations();
     const root=document.getElementById('marketPrimary');if(!root)return;
     let pending=false;
