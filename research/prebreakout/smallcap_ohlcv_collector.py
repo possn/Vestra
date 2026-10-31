@@ -134,7 +134,7 @@ def merge_slots(current, previous, now, ttl_hours=96):
     for entry in previous.get("observations",[]):
         if not isinstance(entry,dict):continue
         ticker=str(entry.get("ticker") or "").strip().upper()
-        timestamp=entry.get("ohlcv_observed_at") or previous.get("generated_at")
+        timestamp=entry.get("observation_checked_at") or entry.get("ohlcv_observed_at") or previous.get("generated_at")
         try:
             seen=datetime.fromisoformat(str(timestamp).replace("Z","+00:00"))
         except (TypeError,ValueError):
@@ -144,7 +144,7 @@ def merge_slots(current, previous, now, ttl_hours=96):
         observations[ticker]=entry
     for entry in current.get("observations",[]):
         if isinstance(entry,dict) and entry.get("ticker"):
-            observations[str(entry["ticker"]).strip().upper()]=entry
+            observations[str(entry["ticker"]).strip().upper()]={**entry,"observation_checked_at":now.isoformat()}
     all_rows=list(observations.values())
     signals=[row["verified_prebreakout_setup"] for row in all_rows
              if row.get("status")=="evaluable_ohlcv"
