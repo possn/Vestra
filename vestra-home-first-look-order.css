@@ -193,3 +193,53 @@
   font-size:13px!important;line-height:1.4!important;
  }
 }
+
+/* V2.0: decision-first editorial Dashboard. Preserve all live modules in place. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-top{order:0}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-home-overview{order:1}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-priorities{order:2}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-context-chapter{order:3}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading{order:4}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-regime-disclosure{order:5}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-chapter-index{order:6}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-research-details{order:7}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities{
+  margin:0!important;padding:clamp(22px,3vw,38px)!important;
+  border:1px solid rgba(163,202,183,.26)!important;border-radius:22px!important;
+  background:linear-gradient(145deg,#183b35 0%,#102922 100%)!important;
+  box-shadow:0 16px 46px rgba(0,0,0,.11)!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-heading h3{
+  font:500 clamp(27px,3.4vw,43px)/1.13 Georgia,serif!important;
+  letter-spacing:-.035em!important;color:#f7f2e8!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-heading p{
+  font-size:14px!important;line-height:1.5!important;color:#c5d8ce!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action{
+  min-height:74px!important;padding:15px 13px!important;
+  border:1px solid rgba(196,220,206,.16)!important;
+  border-radius:14px!important;background:rgba(251,248,237,.04)!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action:is(:hover,:focus-visible){
+  background:rgba(251,248,237,.10)!important;border-color:#c5b284!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action strong{
+  font-size:16px!important;line-height:1.32!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action small{
+  font-size:13px!important;line-height:1.45!important;color:#c7d7ce!important;
+}
+@media(max-width:760px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities{
+  padding:20px 16px!important;border-radius:18px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-decisions{
+  display:grid!important;grid-template-columns:1fr!important;gap:8px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action{
+  min-height:58px!important;padding:13px 12px!important;
+  grid-template-columns:22px minmax(0,1fr) 20px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action strong{font-size:15px!important}
+}
