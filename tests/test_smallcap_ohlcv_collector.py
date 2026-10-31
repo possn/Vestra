@@ -89,6 +89,39 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(result["last_session"],"2026-07-09")
         self.assertEqual(result["bars"],249)
 
+    def test_merge_slots_retains_recent_distinct_observations(self):
+        from datetime import timedelta
+        now=datetime(2026,10,30,18,tzinfo=timezone.utc)
+        old={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+             "generated_at":(now-timedelta(hours=6)).isoformat(),
+             "observations":[{"ticker":"A","status":"evaluable_ohlcv",
+                              "verified_prebreakout_setup":{"ticker":"A","score":70}},
+                             {"ticker":"B","status":"no_ohlcv"}]}
+        current={"schema":old["schema"],"generated_at":now.isoformat(),
+                 "universe_100m_500m_count":5,
+                 "observations":[{"ticker":"C","status":"evaluable_ohlcv",
+                                  "verified_prebreakout_setup":None}],
+                 "signals":[]}
+        merged=mod.merge_slots(current,old,now)
+        self.assertEqual({x["ticker"] for x in merged["observations"]},{"A","B","C"})
+        self.assertEqual([x["ticker"] for x in merged["signals"]],["A"])
+        self.assertEqual(merged["distinct_tickers_observed"],3)
+        self.assertEqual(merged["not_observed"],2)
+
+    def test_merge_slots_does_not_revive_expired_observations(self):
+        from datetime import timedelta
+        now=datetime(2026,10,30,18,tzinfo=timezone.utc)
+        previous={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+                  "generated_at":(now-timedelta(hours=97)).isoformat(),
+                  "observations":[{"ticker":"EXPIRED","status":"evaluable_ohlcv",
+                                   "verified_prebreakout_setup":{"ticker":"EXPIRED"}}]}
+        current={"schema":previous["schema"],"generated_at":now.isoformat(),
+                 "universe_100m_500m_count":4,
+                 "observations":[{"ticker":"NEW","status":"no_ohlcv"}]}
+        merged=mod.merge_slots(current,previous,now)
+        self.assertEqual(merged["signals"],[])
+        self.assertEqual([x["ticker"] for x in merged["observations"]],["NEW"])
+
     def test_rejects_invalid_limits(self):
         for slot,budget in ((-1,1),(0,0),(0,31)):
             with self.assertRaises(ValueError):mod.collect([],Provider(),slot,budget)
