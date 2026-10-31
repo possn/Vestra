@@ -107,6 +107,7 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual([x["ticker"] for x in merged["signals"]],["A"])
         self.assertEqual(merged["distinct_tickers_observed"],3)
         self.assertEqual(merged["not_observed"],2)
+        self.assertEqual(next(x for x in merged["observations"] if x["ticker"]=="C")["observation_checked_at"],now.isoformat())
 
     def test_merge_slots_does_not_revive_expired_observations(self):
         from datetime import timedelta
