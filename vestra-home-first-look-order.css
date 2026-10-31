@@ -66,6 +66,27 @@
 #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-risk-reading{
  width:100%!important;
 }
+/* The portfolio-risk detail follows the investigations: one continuous editorial
+   surface rather than another large competing card. Keep live risk and its link. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading{
+ min-width:0!important;
+ padding:clamp(18px,2.2vw,28px) 0!important;
+ margin:0!important;
+ border:0!important;
+ border-top:1px solid rgba(196,221,208,.22)!important;
+ border-radius:0!important;
+ background:transparent!important;
+ box-shadow:none!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading::after{
+ content:none!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading .vi-risk-reading-body>div:first-of-type{
+ min-width:0!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading .vi-risk-reading-body p{
+ overflow-wrap:anywhere!important;
+}
 #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-regime-disclosure{
  width:100%!important;
 }
