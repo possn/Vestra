@@ -592,7 +592,7 @@
   function opportunities(lens=activeLens,sectorOverride=''){
     activeLens=LENSES.has(t(lens))?t(lens):'all';
     const universe=stocks();
-    const section=document.querySelector('#marketPrimary .market-section:has(.ux454-opportunity-guide)')||[...document.querySelectorAll('#marketPrimary .market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Small Caps|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
+    const section=document.querySelector('#marketPrimary .market-section:has(.ux454-opportunity-guide)')||[...document.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Small Caps|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));if(!section)return [];
     section.classList.toggle('vestra-low52-contrast',activeLens==='low52');
     section.classList.toggle('vestra-breakout-contrast',activeLens==='breakout');
     const list=section.querySelector('.market-list');if(!list)return[];
