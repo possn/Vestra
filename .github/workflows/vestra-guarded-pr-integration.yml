@@ -38,9 +38,10 @@ jobs:
               const completed=[];
               for(const workflow_id of workflows){
                 const runs=(await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id,head_sha:head,event:'pull_request',per_page:100})).data.workflow_runs;
-                const matching=runs.filter(r=>r.head_sha===head&&r.status==='completed');
+                const matching=runs.filter(r=>r.head_sha===head).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
                 if(!matching.length){completed.length=0;break;}
-                const latest=matching.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+                const latest=matching[0];
+                if(latest.status!=='completed'){completed.length=0;break;}
                 if(latest.conclusion!=='success'){completed.length=0;break;}
                 completed.push(latest);
               }
