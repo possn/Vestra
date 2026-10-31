@@ -6,9 +6,7 @@ WORKFLOW=(ROOT/'.github/workflows/vestra-guarded-pr-integration.yml').read_text(
 
 class GuardedIntegrationTests(unittest.TestCase):
     def test_explicit_opt_in_and_same_sha_four_gates(self):
-        for term in ("vestra-auto-merge", "head_sha:head", "Runtime JavaScript syntax", "webkit-iphone (1)", "webkit-iphone (2)", "architecture-invariants.yml", "runtime-js-syntax.yml", "browser-e2e.yml"):
-            if term=="Runtime JavaScript syntax":
-                continue
+        for term in ("vestra-auto-merge", "head_sha:head", "webkit-iphone (1)", "webkit-iphone (2)", "architecture-invariants.yml", "runtime-js-syntax.yml", "browser-e2e.yml"):
             self.assertIn(term,WORKFLOW)
     def test_merge_protection(self):
         for term in ("fresh.head.sha!==head","fresh.base.sha!==currentMain",
@@ -19,5 +17,7 @@ class GuardedIntegrationTests(unittest.TestCase):
         self.assertIn("workflow_run:",WORKFLOW)
         self.assertNotIn("actions/checkout",WORKFLOW)
         self.assertIn("requestedLabel",WORKFLOW)
+        self.assertIn("secrets.VESTRA_INTEGRATION_TOKEN",WORKFLOW)
+        self.assertNotIn("secrets.GITHUB_TOKEN",WORKFLOW)
 
 if __name__=="__main__": unittest.main()
