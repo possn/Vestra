@@ -27,7 +27,9 @@ class LazyXlsxLoaderTests(unittest.TestCase):
         self.assertIn("loadPromise = null;", self.loader)
         self.assertIn("script.remove();", self.loader)
         self.assertIn("script.dataset.vestraXlsx = '1';", self.loader)
-        self.assertIn("version: '1.0'", self.loader)
+        self.assertIn("version: '1.1'", self.loader)
+        self.assertIn("https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js", self.loader)
+        self.assertNotIn("xlsx@0.18.5", self.loader)
 
     def test_excel_paths_request_loader_only_when_needed(self):
         self.assertIn("VestraXlsxLoader", self.workbook)
