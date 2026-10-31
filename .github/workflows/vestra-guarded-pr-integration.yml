@@ -17,11 +17,14 @@ jobs:
   integrate:
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.head_repository.full_name == github.repository }}
     steps:
       - name: Verify four exact-head gates and guarded merge
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # A dedicated integration token is required: default GITHUB_TOKEN merges
+          # do not trigger downstream push workflows or production deployment.
+          github-token: ${{ secrets.VESTRA_INTEGRATION_TOKEN }}
           script: |
             const {owner,repo}=context.repo;
             const requestedLabel='vestra-auto-merge';
