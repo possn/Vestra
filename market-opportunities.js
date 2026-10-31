@@ -651,7 +651,7 @@
   }
   function selectLens(lens,sectorOverride=''){activeLens=LENSES.has(t(lens))?t(lens):'all';return opportunities(activeLens,sectorOverride);}
 
-  function style(){if(document.getElementById('vestra-market-opportunities-style'))return;const link=document.createElement('link');link.id='vestra-market-opportunities-style';link.rel='stylesheet';link.href='market-opportunities.css?v=1.4-editorial';document.head.appendChild(link);}
+  function style(){if(document.getElementById('vestra-market-opportunities-style'))return;const link=document.createElement('link');link.id='vestra-market-opportunities-style';link.rel='stylesheet';link.href='market-opportunities.css?v=20261031-editorial';document.head.appendChild(link);}
 
   function observerNeedsRefresh(root){
     const section=root.querySelector('.market-section:has(.ux454-opportunity-guide)')||[...root.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Small Caps|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));
