@@ -349,7 +349,14 @@
     return discoveryScore(s);
   }
   function rankedCandidates(universe,lens,sector='all'){
-    let ranked=(Array.isArray(universe)?universe:[]).filter(s=>lensEligible(s,lens));
+    const source=Array.isArray(universe)?universe:[];
+    // Independently verified Small Caps must not disappear merely because
+    // the general stocks index does not contain that ticker.
+    const byTicker=new Map(source.map(s=>[t(s?.ticker).toUpperCase(),s]));
+    const candidates=lens==='smallcap_breakout'
+      ? [...smallcapFeed.keys()].map(ticker=>byTicker.get(ticker)||{ticker,name:ticker,sector:'Unknown'})
+      : source;
+    let ranked=candidates.filter(s=>lensEligible(s,lens));
     if(sector!=='all')ranked=ranked.filter(s=>t(s?.sector)===sector);
     if(lens==='breakout'||lens==='smallcap_breakout')return ranked.sort((a,b)=>(breakoutSetup(b,lens)?.score||0)-(breakoutSetup(a,lens)?.score||0));
     ranked.sort((a,b)=>(discoveryScore(b)||0)-(discoveryScore(a)||0));
@@ -622,7 +629,7 @@
     section.classList.toggle('vestra-low52-contrast',activeLens==='low52');
     section.classList.toggle('vestra-breakout-contrast',activeLens==='breakout'||activeLens==='smallcap_breakout');
     const list=section.querySelector('.market-list');if(!list)return[];
-    if(!universe.length){
+    if(!universe.length&&activeLens!=='smallcap_breakout'){
       list.innerHTML='';
       list.dataset.ux453=`empty-universe:${activeLens}`;
       decorate(section);

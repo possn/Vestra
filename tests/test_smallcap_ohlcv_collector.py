@@ -77,6 +77,18 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(report["signals"],[])
         self.assertEqual(report["validated_prebreakout_setups"],0)
 
+    def test_current_day_daily_bar_is_not_treated_as_closed(self):
+        from datetime import timedelta
+        class SessionFrame:
+            empty=False
+            def iterrows(self):
+                last=datetime(2026,7,10,tzinfo=timezone.utc)
+                for i in range(250):
+                    yield last-timedelta(days=249-i),{"Open":10,"High":11,"Low":9,"Close":10,"Volume":600_000}
+        result=mod.inspect("A",SessionFrame(),"USD",datetime(2026,7,10,12,tzinfo=timezone.utc))
+        self.assertEqual(result["last_session"],"2026-07-09")
+        self.assertEqual(result["bars"],249)
+
     def test_rejects_invalid_limits(self):
         for slot,budget in ((-1,1),(0,0),(0,31)):
             with self.assertRaises(ValueError):mod.collect([],Provider(),slot,budget)
