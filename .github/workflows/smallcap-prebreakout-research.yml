@@ -39,7 +39,13 @@ jobs:
         id: publish_window
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/defer_main_publish_if_code_pr.py --scanner-grace-minutes 90
+        run: |
+          if [ ! -f data/breakout-lab-smallcap-ohlcv-research.json ]; then
+            echo 'Initial real Small Caps feed missing: allow first observed publication.'
+            echo 'defer=false' >> "$GITHUB_OUTPUT"
+          else
+            python scripts/defer_main_publish_if_code_pr.py
+          fi
       - name: Publish observed research, never synthetic signals
         if: steps.publish_window.outputs.defer != 'true'
         run: |
