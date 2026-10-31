@@ -8,10 +8,12 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
 DEFAULT_OUTPUT=ROOT/"data"/"breakout-lab-smallcap-ohlcv-research.json"
 MAX_PER_RUN=30
 MIN_BARS=220
@@ -94,7 +96,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None):
             if currency!="USD":
                 observed.append(inspect(ticker,None,currency,checked_at));continue
             frame=provider.download(ticker,period="18mo",interval="1d",auto_adjust=True,
-                                    threads=False,progress=False,timeout=20)
+                                    threads=False,progress=False,timeout=20,multi_level_index=False)
             result=inspect(ticker,frame,currency,checked_at)
             if result.get("verified_prebreakout_setup"):
                 result["verified_prebreakout_setup"]["marketCapUSD"]=cap_by_ticker[ticker]
