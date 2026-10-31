@@ -37,3 +37,32 @@
   grid-template-columns:minmax(0,1fr)!important;
  }
 }
+
+/* Dashboard 2.0: measured editorial density on narrow iPhones.
+   Preserve every decision, market datum and disclosure in the DOM. */
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell{
+  gap:clamp(14px,4vw,20px)!important;
+  padding-inline:clamp(12px,4vw,18px)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview{
+  gap:clamp(16px,4vw,22px)!important;
+  padding-block:16px 22px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline{
+  font-size:clamp(36px,10vw,48px)!important;
+  line-height:1.05!important;
+  margin-block:12px 10px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck{
+  max-width:40ch!important;
+  font-size:clamp(14px,3.9vw,16px)!important;
+  line-height:1.45!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-wealth{
+  margin-top:18px!important;padding-top:13px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action{
+  padding-block:13px!important;
+ }
+}
