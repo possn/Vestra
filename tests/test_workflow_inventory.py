@@ -17,6 +17,7 @@ ACTIVE_WORKFLOWS = {
     'recover-prebreakout-independent.yml',
     'refresh-weekly-earnings.yml',
     'refresh-prebreakout-scanner.yml',
+    'smallcap-prebreakout-research.yml',
     'refresh-prebreakout-forward-evidence.yml',
     'refresh-cnn-fear-greed.yml',
     'runtime-js-syntax.yml',

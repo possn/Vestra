@@ -8,10 +8,12 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:sys.path.insert(0,str(ROOT))
 DEFAULT_OUTPUT=ROOT/"data"/"breakout-lab-smallcap-ohlcv-research.json"
 MAX_PER_RUN=30
 MIN_BARS=220
@@ -35,6 +37,7 @@ def inspect(ticker,frame,currency,checked_at):
     if frame is None or getattr(frame,"empty",True):
         return {"ticker":ticker,"status":"no_ohlcv"}
     clean=[]
+    full_bars=[]
     try:
         for timestamp,row in frame.iterrows():
             day=timestamp.date().isoformat()
@@ -45,6 +48,7 @@ def inspect(ticker,frame,currency,checked_at):
             if clean and day<=clean[-1][0]:
                 return {"ticker":ticker,"status":"unordered_or_duplicate_sessions"}
             clean.append((day,c,v))
+            full_bars.append({'date':day,'open':o,'high':h,'low':l,'close':c,'volume':v})
     except (KeyError,TypeError,ValueError,OverflowError,AttributeError):
         return {"ticker":ticker,"status":"invalid_ohlcv"}
     if len(clean)<MIN_BARS:return {"ticker":ticker,"status":"insufficient_ohlcv","bars":len(clean)}
@@ -53,7 +57,20 @@ def inspect(ticker,frame,currency,checked_at):
     last=clean[-1][0]
     age=(checked_at.date()-datetime.fromisoformat(last).date()).days
     if not 0<=age<=7:return {"ticker":ticker,"status":"stale_ohlcv","last_session":last}
+    # Reuse the already-audited VCP/pre-breakout technical engine, not the
+    # ordinary Discovery score or the inventory's market capitalization.
+    from scripts.refresh_prebreakout_scanner import scan_bars
+    setup=None
+    if turnover>=1_000_000:
+        setup=scan_bars(ticker,full_bars,checked_at.date(),
+                        strict_quality=True,liquidity_floor=1_000_000)
+    if setup:
+        setup={**setup,"source":"yahoo:smallcap_daily_ohlcv",
+               "currencyVerified":"USD","spreadVerified":False,
+               "gapRisk":"not_verified","earningsRiskGate":"unknown",
+               "observedAt":checked_at.isoformat()}
     return {"ticker":ticker,"status":"evaluable_ohlcv","bars":len(clean),
+            "verified_prebreakout_setup":setup,
             "first_session":clean[0][0],"last_session":last,
             "average_dollar_volume_20_usd":round(turnover,2),
             "liquidity_5m_usd_verified":turnover>=5_000_000,
@@ -70,6 +87,8 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None):
     start=(slot*budget)%len(names) if names else 0
     selected=(names[start:]+names[:start])[:min(budget,len(names))] if names else []
     observed=[]
+    cap_by_ticker={str(row.get("ticker") or "").strip().upper():row.get("market_cap")
+                   for row in rows if isinstance(row,dict)}
     for ticker in selected:
         try:
             item=provider.Ticker(ticker)
@@ -77,12 +96,16 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None):
             if currency!="USD":
                 observed.append(inspect(ticker,None,currency,checked_at));continue
             frame=provider.download(ticker,period="18mo",interval="1d",auto_adjust=True,
-                                    threads=False,progress=False,timeout=20)
-            observed.append(inspect(ticker,frame,currency,checked_at))
+                                    threads=False,progress=False,timeout=20,multi_level_index=False)
+            result=inspect(ticker,frame,currency,checked_at)
+            if result.get("verified_prebreakout_setup"):
+                result["verified_prebreakout_setup"]["marketCapUSD"]=cap_by_ticker[ticker]
+            observed.append(result)
         except Exception as exc:
             observed.append({"ticker":ticker,"status":"provider_error",
                              "error_type":type(exc).__name__})
     evaluable=sum(x["status"]=="evaluable_ohlcv" for x in observed)
+    signals=[x["verified_prebreakout_setup"] for x in observed if x.get("verified_prebreakout_setup")]
     return {"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
             "status":"observed_research_only_not_breakout_signals",
             "generated_at":checked_at.isoformat(),"source":"yfinance",
@@ -93,6 +116,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None):
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
             "point_in_time_caveat":"market_caps_from_current_index_not_historical_asof_snapshots",
             "not_breakout_candidates":True,"no_success_probability":True,
+            "validated_prebreakout_setups":len(signals),"signals":signals,
             "observations":observed}
 
 def main():
