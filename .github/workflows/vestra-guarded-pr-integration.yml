@@ -1,0 +1,63 @@
+name: Vestra guarded PR integration
+on:
+  workflow_run:
+    workflows: ["Runtime JavaScript syntax", "Architecture invariants", "Browser E2E"]
+    types: [completed]
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+concurrency:
+  group: vestra-guarded-pr-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify four exact-head gates and guarded merge
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const {owner,repo}=context.repo;
+            const requestedLabel='vestra-auto-merge';
+            const pulls=await github.paginate(github.rest.pulls.list,{owner,repo,state:'open',per_page:100});
+            for(const pr of pulls){
+              if(pr.base.ref!=='main'||pr.draft||!pr.labels.some(x=>x.name===requestedLabel))continue;
+              const head=pr.head.sha;
+              const main=(await github.rest.git.getRef({owner,repo,ref:'heads/main'})).data.object.sha;
+              // Strict main stability and no out-of-date branches; automatic data commits can move main.
+              if(pr.base.sha!==main)continue;
+              const compare=(await github.rest.repos.compareCommits({owner,repo,base:main,head})).data;
+              if(compare.behind_by!==0||compare.status==='diverged')continue;
+              const workflows=['runtime-js-syntax.yml','architecture-invariants.yml','browser-e2e.yml'];
+              const completed=[];
+              for(const workflow_id of workflows){
+                const runs=(await github.rest.actions.listWorkflowRuns({owner,repo,workflow_id,head_sha:head,event:'pull_request',per_page:100})).data.workflow_runs;
+                const matching=runs.filter(r=>r.head_sha===head&&r.status==='completed');
+                if(!matching.length){completed.length=0;break;}
+                const latest=matching.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+                if(latest.conclusion!=='success'){completed.length=0;break;}
+                completed.push(latest);
+              }
+              if(completed.length!==3)continue;
+              const browser=completed[2];
+              const jobs=await github.paginate(github.rest.actions.listJobsForWorkflowRun,{owner,repo,run_id:browser.id,per_page:100});
+              if(!['webkit-iphone (1)','webkit-iphone (2)'].every(name=>jobs.some(j=>j.name===name&&j.status==='completed'&&j.conclusion==='success')))continue;
+              // Re-read PR, exact head and current main immediately before attempting merge.
+              const fresh=(await github.rest.pulls.get({owner,repo,pull_number:pr.number})).data;
+              const currentMain=(await github.rest.git.getRef({owner,repo,ref:'heads/main'})).data.object.sha;
+              if(fresh.state!=='open'||fresh.draft||fresh.head.sha!==head||fresh.base.sha!==currentMain||currentMain!==main||fresh.mergeable!==true)continue;
+              const latestCompare=(await github.rest.repos.compareCommits({owner,repo,base:currentMain,head})).data;
+              if(latestCompare.behind_by!==0)continue;
+              try{
+                const result=await github.rest.pulls.merge({owner,repo,pull_number:pr.number,sha:head,merge_method:'squash',commit_title:`chore: merge validated PR #${pr.number}`});
+                if(result.data.merged)core.notice(`Merged #${pr.number} at head ${head}`);
+              }catch(error){core.warning(`#${pr.number} not merged: ${error.message}`);}
+              // One merge per run: remaining PRs require a fresh base and new gates.
+              break;
+            }
