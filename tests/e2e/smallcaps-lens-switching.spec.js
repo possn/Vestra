@@ -1,0 +1,20 @@
+const {test,expect}=require('@playwright/test');
+test('iPhone opportunity lenses remain usable after selecting Small Caps',async({page})=>{
+  await page.goto('/index.html');
+  await page.waitForFunction(()=>typeof window.setView==='function');
+  await page.evaluate(()=>window.setView('market'));
+  const section=page.locator('#marketPrimary .market-section:has(.ux454-opportunity-guide)').first();
+  const small=section.locator('[data-smallcap-prebreakout-lens]');
+  const normal=section.locator('[data-vestra-prebreakout-lens]');
+  await expect(small).toBeVisible({timeout:20000});
+  await small.click();
+  await expect(section.locator('.market-section__head h3')).toHaveText('Small Caps · Pré-breakout');
+  await expect(small).toHaveAttribute('aria-pressed','true');
+  await expect(normal).toBeVisible();
+  await normal.click();
+  await expect(section.locator('.market-section__head h3')).toHaveText('Compressão · Pré-breakout');
+  await small.click();
+  await expect(section.locator('.market-section__head h3')).toHaveText('Small Caps · Pré-breakout');
+  await page.locator('#navHome').click();
+  await expect(page.locator('#viewHome')).toBeVisible();
+});
