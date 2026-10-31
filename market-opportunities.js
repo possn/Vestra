@@ -629,7 +629,7 @@
     section.classList.toggle('vestra-low52-contrast',activeLens==='low52');
     section.classList.toggle('vestra-breakout-contrast',activeLens==='breakout'||activeLens==='smallcap_breakout');
     const list=section.querySelector('.market-list');if(!list)return[];
-    if(!universe.length){
+    if(!universe.length&&activeLens!=='smallcap_breakout'){
       list.innerHTML='';
       list.dataset.ux453=`empty-universe:${activeLens}`;
       decorate(section);
