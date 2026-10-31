@@ -144,3 +144,25 @@
    white-space:normal!important;
  }
 }
+
+/* Vestra 2.0: align both technical breakout lenses with shared editorial surfaces.
+   Visual-only: no scoring, quote or filtering logic changes. */
+#viewMarket #marketPrimary .market-section:has(.ux454-opportunity-guide){
+  border-radius:var(--vestra-card-radius,20px);
+}
+#viewMarket #marketPrimary .market-section:has(.ux454-opportunity-guide) .ux453-opp{
+  border-radius:var(--vestra-card-radius-research,19px)!important;
+  box-shadow:none!important;
+}
+#viewMarket #marketPrimary .market-section:has(.ux454-opportunity-guide) .ux453-entry strong{
+  font-variant-numeric:tabular-nums;
+}
+#viewMarket #marketPrimary .market-section:has(.ux454-opportunity-guide) .market-row__description,
+#viewMarket #marketPrimary .market-section:has(.ux454-opportunity-guide) .ux453-opportunity-type{
+  line-height:1.45;
+}
+@media(max-width:600px){
+  #viewMarket #marketPrimary .market-section:has(.ux454-opportunity-guide) .ux453-opp{
+    border-radius:14px!important;
+  }
+}
