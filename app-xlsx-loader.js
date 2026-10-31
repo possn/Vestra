@@ -1,8 +1,8 @@
-/* Vestra lazy SheetJS loader v1.0 */
+/* Vestra lazy SheetJS loader v1.1 — patched upstream 0.20.3. */
 (() => {
   'use strict';
 
-  const SRC = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  const SRC = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
   const TIMEOUT_MS = 12000;
   let loadPromise = null;
 
@@ -61,6 +61,6 @@
     ensure,
     src: SRC,
     timeoutMs: TIMEOUT_MS,
-    version: '1.0',
+    version: '1.1',
   });
 })();
