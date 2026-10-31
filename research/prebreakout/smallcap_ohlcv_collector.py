@@ -123,6 +123,33 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None):
             "validated_prebreakout_setups":len(signals),"signals":signals,
             "observations":observed}
 
+def accumulate_coverage(current, previous, max_age_days=7):
+    """Retain latest observed status per ticker, never promote older setups to signals."""
+    from datetime import timedelta
+    now=datetime.fromisoformat(current["generated_at"])
+    cutoff=now-timedelta(days=max_age_days)
+    retained={}
+    old=previous.get("coverage_observations",previous.get("observations",[])) if isinstance(previous,dict) else []
+    for row in old:
+        if not isinstance(row,dict) or not row.get("ticker"):continue
+        stamp=row.get("coverage_observed_at")
+        if not stamp:continue  # Old v1 files lack per-ticker provenance.
+        try:when=datetime.fromisoformat(stamp)
+        except (TypeError,ValueError):continue
+        if when.tzinfo is None or not cutoff<=when<=now:continue
+        retained[row["ticker"]]=row
+    for row in current["observations"]:
+        if isinstance(row,dict) and row.get("ticker"):
+            retained[row["ticker"]]={**row,"coverage_observed_at":current["generated_at"]}
+    universe=current["universe_100m_500m_count"]
+    current["coverage_observations"]=sorted(retained.values(),key=lambda r:r["ticker"])
+    current["rolling_unique_tickers_observed"]=len(retained)
+    current["rolling_unique_evaluable"]=sum(r.get("status")=="evaluable_ohlcv" for r in retained.values())
+    current["rolling_window_days"]=max_age_days
+    current["rolling_coverage_pct"]=round(100*len(retained)/universe,2) if universe else None
+    current["rolling_evaluable_coverage_pct"]=round(100*current["rolling_unique_evaluable"]/universe,2) if universe else None
+    return current
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--slot",type=int,default=0)
@@ -132,6 +159,13 @@ def main():
     import yfinance as yf
     rows=json.loads((ROOT/"data/stocks-index.json").read_text()).get("stocks",[])
     result=collect(rows,yf,args.slot,args.budget)
+    previous={}
+    if args.output.exists():
+        try:
+            previous=json.loads(args.output.read_text(encoding="utf-8"))
+        except (OSError,ValueError):
+            previous={}  # Malformed history is never treated as observed.
+    result=accumulate_coverage(result,previous)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k!="observations"}))

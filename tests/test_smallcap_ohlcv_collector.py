@@ -89,6 +89,19 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(result["last_session"],"2026-07-09")
         self.assertEqual(result["bars"],249)
 
+    def test_rolling_coverage_retains_status_but_not_old_signals(self):
+        current={"generated_at":"2026-10-31T18:00:00+00:00",
+                 "observations":[{"ticker":"B","status":"no_ohlcv"}],
+                 "signals":[],"universe_100m_500m_count":3}
+        previous={"coverage_observations":[
+            {"ticker":"A","status":"evaluable_ohlcv","coverage_observed_at":"2026-10-30T18:00:00+00:00","verified_prebreakout_setup":{"ticker":"A"}},
+            {"ticker":"Z","status":"evaluable_ohlcv","coverage_observed_at":"2026-10-20T18:00:00+00:00"}]}
+        result=mod.accumulate_coverage(current,previous)
+        self.assertEqual([x["ticker"] for x in result["coverage_observations"]],["A","B"])
+        self.assertEqual(result["rolling_unique_tickers_observed"],2)
+        self.assertEqual(result["rolling_unique_evaluable"],1)
+        self.assertEqual(result["signals"],[])
+
     def test_rejects_invalid_limits(self):
         for slot,budget in ((-1,1),(0,0),(0,31)):
             with self.assertRaises(ValueError):mod.collect([],Provider(),slot,budget)
