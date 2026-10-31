@@ -606,7 +606,7 @@
     section.querySelector('.vestra-smallcaps-entry')?.remove();
   }
   function lensMeta(lens){
-    if(lens==='smallcap_breakout')return ['Small Caps · Pré-breakout','Sem candidatos com OHLCV técnico validado.'];
+    if(lens==='smallcap_breakout')return ['Small Caps · Pré-breakout','Setups técnicos observados em empresas de 100–500 M USD. Cobertura parcial e riscos a confirmar.'];
     if(lens==='breakout')return ['Compressão · Pré-breakout','Compressão é apenas vigilância, não sinal iminente. Pré-breakout exige proximidade da resistência e volume a secar; breakout confirmado exige fecho e volume fortes.'];
     if(lens==='low52')return ['Mínimos 52 semanas','Empresas robustas negociadas até 5% acima do mínimo de 52 semanas.'];
     if(lens==='emerging')return ['A começar','Setups ainda numa fase inicial: timing a melhorar, sem recuperação já madura.'];
@@ -630,7 +630,7 @@
     }
     const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all';
     const rows=rankLens(universe,activeLens,{limit:12,sector:sec});
-    const sig=(rows.map(s=>`${t(s.ticker)}:${activeLens==='breakout'?(breakoutSetup(s)?.score||0):(lensScore(s,activeLens)==null?'unknown':Math.round(lensScore(s,activeLens)))}:${activeLens==='breakout'?(breakoutSetup(s)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
+    const sig=(rows.map(s=>`${t(s.ticker)}:${['breakout','smallcap_breakout'].includes(activeLens)?(breakoutSetup(s,activeLens)?.score||0):(lensScore(s,activeLens)==null?'unknown':Math.round(lensScore(s,activeLens)))}:${['breakout','smallcap_breakout'].includes(activeLens)?(breakoutSetup(s,activeLens)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
       list.innerHTML=rows.map(s=>row(s,activeLens)).join('');
       rows.forEach(s=>{const el=list.querySelector(`[data-market-ticker="${CSS.escape(t(s.ticker))}"]`);if(el)el.__vestraStock=s;});
