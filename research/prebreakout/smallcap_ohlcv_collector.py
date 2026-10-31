@@ -123,6 +123,42 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None):
             "validated_prebreakout_setups":len(signals),"signals":signals,
             "observations":observed}
 
+
+def merge_slots(current, previous, now, ttl_hours=96):
+    """Merge only recent, independently collected OHLCV. Never revive stale setups."""
+    from datetime import timedelta
+    if not isinstance(previous,dict) or previous.get("schema")!=current.get("schema"):
+        return current
+    cutoff=now-timedelta(hours=ttl_hours)
+    observations={}
+    for entry in previous.get("observations",[]):
+        if not isinstance(entry,dict):continue
+        ticker=str(entry.get("ticker") or "").strip().upper()
+        timestamp=entry.get("observation_checked_at") or entry.get("ohlcv_observed_at") or previous.get("generated_at")
+        try:
+            seen=datetime.fromisoformat(str(timestamp).replace("Z","+00:00"))
+        except (TypeError,ValueError):
+            continue
+        if not ticker or seen.tzinfo is None or not cutoff<=seen<=now+timedelta(hours=1):
+            continue
+        observations[ticker]=entry
+    for entry in current.get("observations",[]):
+        if isinstance(entry,dict) and entry.get("ticker"):
+            observations[str(entry["ticker"]).strip().upper()]={**entry,"observation_checked_at":now.isoformat()}
+    all_rows=list(observations.values())
+    signals=[row["verified_prebreakout_setup"] for row in all_rows
+             if row.get("status")=="evaluable_ohlcv"
+             and isinstance(row.get("verified_prebreakout_setup"),dict)]
+    evaluable=sum(row.get("status")=="evaluable_ohlcv" for row in all_rows)
+    count=current.get("universe_100m_500m_count") or 0
+    return {**current,"observations":all_rows,"signals":signals,
+            "evaluable_ohlcv":evaluable,"observed_incomplete":len(all_rows)-evaluable,
+            "not_observed":max(0,count-len(all_rows)),
+            "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
+            "validated_prebreakout_setups":len(signals),
+            "coverage_window_hours":ttl_hours,
+            "distinct_tickers_observed":len(all_rows)}
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--slot",type=int,default=0)
@@ -133,6 +169,11 @@ def main():
     rows=json.loads((ROOT/"data/stocks-index.json").read_text()).get("stocks",[])
     result=collect(rows,yf,args.slot,args.budget)
     args.output.parent.mkdir(parents=True,exist_ok=True)
+    try:
+        previous=json.loads(args.output.read_text(encoding="utf-8"))
+    except (FileNotFoundError,ValueError,OSError):
+        previous={}
+    result=merge_slots(result,previous,datetime.fromisoformat(result["generated_at"]))
     args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in result.items() if k!="observations"}))
 
