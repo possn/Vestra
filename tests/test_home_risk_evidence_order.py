@@ -1,72 +1,47 @@
-"""Home 2.0: portfolio risk is evidence, not an action after the investigations."""
-from html.parser import HTMLParser
+"""Home 2.0: risk detail follows decisions without duplicating a card surface."""
 from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-class HomeSections(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.stack = []
-        self.seen = []
-
-    def handle_starttag(self, tag, attrs):
-        if tag != "section":
-            return
-        values = dict(attrs)
-        classes = set(values.get("class", "").split())
-        parents = tuple(self.stack)
-        for key in ("vi-home-overview", "vi-canonical-sections",
-                    "vi-market-reading", "vi-news-reading", "vi-events-reading",
-                    "vi-risk-reading", "vi-priorities"):
-            if key in classes:
-                self.seen.append((key, parents))
-        self.stack.append(classes)
-
-    def handle_endtag(self, tag):
-        if tag == "section":
-            self.stack.pop()
-
-
-class HomeRiskEvidenceOrderTests(unittest.TestCase):
-    def test_risk_is_last_canonical_evidence_before_investigations(self):
+class HomeRiskEditorialDetailTests(unittest.TestCase):
+    def test_existing_canonical_reading_order_is_preserved(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split(
             '<div class="vi-back-to-intelligence">', 1)[0]
-        parsed = HomeSections()
-        parsed.feed('<section ' + home)
-        keys = [key for key, _ in parsed.seen]
-        for key in ("vi-home-overview", "vi-canonical-sections",
-                    "vi-market-reading", "vi-news-reading", "vi-events-reading",
-                    "vi-risk-reading", "vi-priorities"):
-            self.assertEqual(keys.count(key), 1, key)
-        self.assertLess(keys.index("vi-home-overview"), keys.index("vi-market-reading"))
-        self.assertLess(keys.index("vi-market-reading"), keys.index("vi-news-reading"))
-        self.assertLess(keys.index("vi-news-reading"), keys.index("vi-events-reading"))
-        self.assertLess(keys.index("vi-events-reading"), keys.index("vi-risk-reading"))
-        self.assertLess(keys.index("vi-risk-reading"), keys.index("vi-priorities"))
-        parents = dict(parsed.seen)["vi-risk-reading"]
-        self.assertTrue(any("vi-canonical-sections" in classes for classes in parents))
+        sections = ("vi-market-reading", "vi-news-reading", "vi-events-reading")
+        for section in sections:
+            self.assertEqual(home.count(f'vi-canonical-card {section}"'), 1)
+        self.assertEqual(home.count('vi-canonical-card vi-risk-reading"'), 1)
+        self.assertLess(home.index("vi-market-reading"), home.index("vi-news-reading"))
+        self.assertLess(home.index("vi-news-reading"), home.index("vi-events-reading"))
+        self.assertLess(home.index("vi-events-reading"), home.index('class="vi-priorities"'))
+        self.assertLess(home.index('class="vi-priorities"'), home.index("vi-risk-reading"))
+        self.assertLess(home.index("vi-risk-reading"), home.index('class="vi-regime-disclosure"'))
 
-    def test_risk_values_and_navigation_remain_live(self):
+    def test_live_risk_metrics_and_navigation_are_untouched(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         home = html.split('<section id="vestraIntelligenceHome"', 1)[1].split(
             '<div class="vi-back-to-intelligence">', 1)[0]
         for marker in ("data-vi-canonical-risk-title", "data-vi-canonical-risk",
                        "data-vi-canonical-risk-value",
                        'aria-label="Abrir análise de risco da carteira"',
-                       'data-vestra-go="portfolio"',
-                       'class="vi-decisions"'):
+                       'data-vestra-go="portfolio"'):
             with self.subTest(marker=marker):
                 self.assertIn(marker, home)
 
-    def test_risk_is_fourth_in_visual_flex_order(self):
+    def test_risk_is_a_subordinate_editorial_detail_not_a_competing_card(self):
         css = (ROOT / "vestra-home-first-look-order.css").read_text(encoding="utf-8")
-        self.assertIn(".vi-risk-reading{\n order:4!important;", css)
-        for section, order in (("market", 1), ("news", 2), ("events", 3)):
-            self.assertIn(f".vi-{section}-reading{{\n order:{order}!important;", css)
+        self.assertIn(".vi-shell>.vi-risk-reading{", css)
+        self.assertIn("border-top:1px solid rgba(196,221,208,.22)!important;", css)
+        self.assertIn("border-radius:0!important;", css)
+        self.assertIn("background:transparent!important;", css)
+        self.assertIn("box-shadow:none!important;", css)
+        self.assertIn(".vi-shell>.vi-risk-reading::after{", css)
+        self.assertIn("content:none!important;", css)
+        self.assertIn(".vi-risk-reading-body p{", css)
+        self.assertIn("overflow-wrap:anywhere!important;", css)
 
 
 if __name__ == "__main__":
