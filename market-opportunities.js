@@ -15,7 +15,7 @@
       const payload=await response.json();
       if(payload?.schema!=='vestra_breakout_lab_smallcap_ohlcv_research_v1'||!Array.isArray(payload.signals))return;
       const age=(Date.now()-Date.parse(payload.generated_at))/3600000;
-      if(!Number.isFinite(age)||age< -1||age>36){smallcapFeed=new Map();if(activeLens==='smallcap_breakout')opportunities();return;}
+      if(!Number.isFinite(age)||age< -1||age>96){smallcapFeed=new Map();if(activeLens==='smallcap_breakout')opportunities();return;}
       const found=new Map();
       for(const row of payload.signals){
         const cap=n(row?.marketCapUSD),distance=n(row?.distancePct);
