@@ -15,6 +15,6 @@ test('iPhone opportunity lenses remain usable after selecting Small Caps',async(
   await expect(section.locator('.market-section__head h3')).toHaveText('Compressão · Pré-breakout');
   await small.click();
   await expect(section.locator('.market-section__head h3')).toHaveText('Small Caps · Pré-breakout');
-  await page.locator('#navHome').click();
-  await expect(page.locator('#viewHome')).toBeVisible();
+  await page.locator('#navDashboard').click();
+  await expect(page.locator('#viewDashboard')).toBeVisible();
 });
