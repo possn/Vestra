@@ -38,31 +38,46 @@
  }
 }
 
-/* Dashboard 2.0: measured editorial density on narrow iPhones.
-   Preserve every decision, market datum and disclosure in the DOM. */
+/* Vestra 2.0: one continuous editorial first screen on iPhone.
+   Opening thesis leads, decisions follow as numbered reading lines,
+   no duplicated panel chrome or extra DOM/observers. */
 @media(max-width:600px){
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell{
-  gap:clamp(14px,4vw,20px)!important;
-  padding-inline:clamp(12px,4vw,18px)!important;
+  gap:24px!important;
+  padding-inline:clamp(16px,4.8vw,22px)!important;
  }
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview{
-  gap:clamp(16px,4vw,22px)!important;
-  padding-block:16px 22px!important;
+  display:flex!important;flex-direction:column!important;
+  gap:30px!important;padding-block:28px 30px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview>.vi-opening{
+  order:0!important;min-width:0!important;
+  padding:0!important;margin:0!important;
+  border:0!important;box-shadow:none!important;
  }
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline{
-  font-size:clamp(36px,10vw,48px)!important;
-  line-height:1.05!important;
-  margin-block:12px 10px!important;
+  max-width:11ch!important;font-size:clamp(42px,11.3vw,58px)!important;
+  line-height:1.02!important;letter-spacing:-.045em!important;
+  margin-block:18px 16px!important;
  }
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck{
-  max-width:40ch!important;
-  font-size:clamp(14px,3.9vw,16px)!important;
-  line-height:1.45!important;
+  max-width:34ch!important;font-size:15px!important;line-height:1.55!important;
  }
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-wealth{
-  margin-top:18px!important;padding-top:13px!important;
+  margin-top:26px!important;padding-top:18px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview>.vi-priorities{
+  order:1!important;width:100%!important;
+  padding:24px 0 0!important;margin:0!important;
+  border-top:1px solid rgba(209,226,215,.23)!important;
+  border-left:0!important;box-shadow:none!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-decisions{
+  display:flex!important;flex-direction:column!important;gap:0!important;
  }
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-priorities .vi-action{
-  padding-block:13px!important;
+  min-height:56px!important;width:100%!important;
+  padding:16px 0!important;border-radius:0!important;
+  box-shadow:none!important;
  }
 }
