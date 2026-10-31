@@ -355,7 +355,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         self.assertIn("if(observerNeedsRefresh(root))opportunities()", source)
         self.assertIn("mo.observe(root,{childList:true,subtree:true})", source)
         self.assertNotIn("observe(document.body", source)
-        self.assertIn("market-opportunities.css?v=1.4-editorial", source)
+        self.assertIn("market-opportunities.css?v=20261031-editorial", source)
         self.assertIn("link.rel='stylesheet'", source)
         self.assertNotIn("document.createElement('style')", source)
         self.assertNotIn('s.textContent=', source)
