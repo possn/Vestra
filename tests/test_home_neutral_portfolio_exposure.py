@@ -19,7 +19,7 @@ class NeutralPortfolioExposureTests(unittest.TestCase):
     def test_neutral_style_overrides_legacy_amber_and_is_cache_busted(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         css = (ROOT / "vestra-home-first-look-order.css").read_text(encoding="utf-8")
-        self.assertIn('vestra-home-first-look-order.css?v=20261101-neutral-risk', html)
+        self.assertIn('vestra-home-first-look-order.css?v=20261101-compact-sentiment', html)
         self.assertGreater(html.index('vestra-home-first-look-order.css'), html.index('vestra-intelligence.css'))
         self.assertIn('.vi-shell>.vi-risk-reading .vi-risk-symbol', css)
         self.assertIn('background:rgba(207,228,215,.10)!important', css)
