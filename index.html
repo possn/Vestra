@@ -1960,10 +1960,10 @@
   // Installed-PWA recovery: signal when a newer canonical stylesheet exists.
   // Never clear IndexedDB/localStorage, and never force a reload mid-session.
   (() => {
-    const canonical = 'vestra-iphone-canonical-scale.css';
-    const currentVersion = () => [...document.querySelectorAll('link[rel="stylesheet"]')]
+    const trackedStyles = ['vestra-iphone-canonical-scale.css', 'vestra-home-first-look-order.css'];
+    const currentVersions = () => [...document.querySelectorAll('link[rel="stylesheet"]')]
       .map(link => link.getAttribute('href') || '')
-      .find(href => href.startsWith(canonical + '?')) || '';
+      .filter(href => trackedStyles.some(name => href.startsWith(name + '?')));
     let checking = false;
     async function checkPublishedInterface() {
       if (checking || !navigator.onLine || document.hidden) return;
@@ -1974,8 +1974,14 @@
         });
         if (!response.ok) return;
         const source = await response.text();
-        const match = source.match(/href=["'](vestra-iphone-canonical-scale\.css\?v=[^"']+)["']/);
-        if (!match || !currentVersion() || match[1] === currentVersion()) return;
+        const publishedVersions = trackedStyles.map(name => {
+          const escaped = name.replace(/\./g, '\\.');
+          const match = source.match(new RegExp('href=["\\\'](' + escaped + '\\?v=[^"\\\']+)["\\\']'));
+          return match ? match[1] : '';
+        });
+        const installedVersions = currentVersions();
+        if (!installedVersions.length ||
+            !publishedVersions.some(version => version && !installedVersions.includes(version))) return;
         if (document.getElementById('vestraUiUpdateNotice')) return;
         const notice = document.createElement('div');
         notice.id = 'vestraUiUpdateNotice';
