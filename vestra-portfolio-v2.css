@@ -320,3 +320,37 @@
  #viewAssets .portfolio-glance__stat{padding-inline:clamp(8px,2.8vw,14px)}
  #viewAssets .portfolio-list-head{min-height:56px}
 }
+
+/* Capital-first portfolio composition: a true editorial wide-screen hierarchy.
+   Reuses all live balance, position, asset-class and yield hosts. */
+@media(min-width:900px){
+ #viewAssets .portfolio-glance{
+  grid-template-columns:minmax(0,2fr) repeat(2,minmax(0,1fr));
+  align-items:stretch;
+ }
+ #viewAssets .portfolio-glance__main{
+  grid-column:1 / 2;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:clamp(20px,2.5vw,32px);
+  border-right:1px solid var(--vestra-editorial-divider-dark);
+  border-bottom:1px solid var(--vestra-editorial-divider-dark);
+ }
+ #viewAssets .portfolio-glance__stat{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:7px;
+  padding:clamp(16px,1.8vw,26px);
+  border-bottom:1px solid var(--vestra-editorial-divider-dark);
+ }
+ #viewAssets .portfolio-glance__stat + .portfolio-glance__stat{
+  border-left:1px solid var(--vestra-editorial-divider-dark);
+ }
+ #viewAssets .portfolio-income-strip{grid-column:1 / -1}
+}
+@media(max-width:899px){
+ #viewAssets .portfolio-glance__main{grid-column:1 / -1}
+}
