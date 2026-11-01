@@ -354,3 +354,49 @@
 @media(max-width:899px){
  #viewAssets .portfolio-glance__main{grid-column:1 / -1}
 }
+
+/* Portfolio 2.0: analysis tools read as a distinct editorial chapter.
+   Existing native disclosure and every action remain unchanged. */
+#viewAssets #portfolioToolsStrip{
+ margin-top:clamp(18px,2.5vw,32px);
+ border-top:1px solid var(--vestra-editorial-divider-dark);
+ min-width:0;
+}
+#viewAssets #portfolioToolsStrip>summary{
+ min-height:64px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:16px;
+ padding:clamp(12px,1.8vw,20px) 0;
+ cursor:pointer;
+}
+#viewAssets #portfolioToolsStrip>summary strong{
+ font-family:var(--vestra-editorial-serif,Georgia,serif);
+ font-size:clamp(22px,2.6vw,31px);
+ font-weight:500;
+ line-height:1.15;
+ letter-spacing:-.035em;
+}
+#viewAssets #portfolioToolsStrip>summary:focus-visible{
+ outline:2px solid var(--vestra-portfolio-hero-gold,#d7bc89);
+ outline-offset:3px;
+}
+#viewAssets #portfolioToolsStrip .portfolio-tools__body{
+ min-width:0;
+ gap:clamp(10px,1.5vw,18px);
+}
+#viewAssets #portfolioToolsStrip .portfolio-tools__body>button{
+ min-width:0;
+ min-height:64px;
+ text-align:left;
+ touch-action:manipulation;
+}
+#viewAssets #portfolioToolsStrip .portfolio-tools__body>button div{
+ min-width:0;
+ overflow-wrap:anywhere;
+}
+@media(max-width:600px){
+ #viewAssets #portfolioToolsStrip>summary{min-height:56px}
+ #viewAssets #portfolioToolsStrip .portfolio-tools__body>button{min-height:56px}
+}
