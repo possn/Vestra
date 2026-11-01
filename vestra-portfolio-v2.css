@@ -272,3 +272,51 @@
  -webkit-text-fill-color:var(--vestra-portfolio-hero-ink)!important;
  border-color:#819a8e!important;
 }
+
+/* V2.0 portfolio: chapter rhythm and usable navigation in the real assets DOM.
+   Keeps all totals, import, filters, holdings and exploration hosts intact. */
+#viewAssets .portfolio-chapter-nav{
+ scroll-padding-inline:12px;
+ overscroll-behavior-inline:contain;
+ -webkit-overflow-scrolling:touch;
+}
+#viewAssets .portfolio-chapter-nav a{
+ white-space:nowrap;
+ touch-action:manipulation;
+}
+#viewAssets .portfolio-chapter-nav a:focus-visible{
+ outline:2px solid var(--vestra-portfolio-hero-gold,#d7bc89);
+ outline-offset:2px;
+ border-radius:3px;
+}
+#viewAssets .portfolio-glance__stat{
+ min-width:0;
+ overflow-wrap:anywhere;
+}
+#viewAssets .portfolio-glance__stat strong{
+ display:block;
+ max-width:100%;
+ overflow-wrap:anywhere;
+ font-variant-numeric:tabular-nums;
+}
+#viewAssets .portfolio-list-head{
+ display:flex;
+ flex-wrap:wrap;
+ gap:12px;
+}
+#viewAssets .portfolio-list-head>div:first-child{
+ min-width:0;
+ flex:1 1 180px;
+}
+#viewAssets #btnPortfolioFilters{
+ min-height:44px;
+ touch-action:manipulation;
+}
+@media(max-width:600px){
+ #viewAssets .portfolio-chapter-nav{
+  gap:16px;
+  padding-bottom:10px;
+ }
+ #viewAssets .portfolio-glance__stat{padding-inline:clamp(8px,2.8vw,14px)}
+ #viewAssets .portfolio-list-head{min-height:56px}
+}
