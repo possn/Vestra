@@ -299,3 +299,14 @@
   border-bottom:0!important;
  }
 }
+/* A measured top-three weight is exposure, not a verified risk alert.
+   Keep the neutral portfolio reading visually distinct from true warnings. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading .vi-risk-symbol{
+ background:rgba(207,228,215,.10)!important;
+ border:1px solid rgba(207,228,215,.32)!important;
+ color:#d3e5dc!important;
+ box-shadow:none!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading::after{
+ display:none!important;
+}
