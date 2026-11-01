@@ -348,3 +348,65 @@
   line-height:1.5!important;
  }
 }
+
+/* Screen-verified Home correction: compact market sentiment, evidence not competing cards. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-market-reading-body{
+ display:grid!important;grid-template-columns:112px minmax(0,1fr)!important;
+ align-items:center!important;gap:clamp(16px,3vw,28px)!important;
+ margin-block:10px 14px!important;min-height:0!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-sentiment-orb{
+ width:112px!important;max-width:100%!important;height:88px!important;
+ min-height:0!important;aspect-ratio:auto!important;
+ margin:0!important;padding:14px 5px 3px!important;
+ border-radius:70px 70px 10px 10px!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-sentiment-orb strong{
+ font-size:clamp(30px,5vw,40px)!important;line-height:1!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-sentiment-orb small{
+ font-size:9px!important;line-height:1.2!important;text-align:center!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading h4{
+ font-size:clamp(21px,3vw,31px)!important;line-height:1.15!important;
+ margin:0!important;overflow-wrap:anywhere;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:0!important;margin-top:4px!important;
+ border-top:1px solid rgba(196,221,208,.22)!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse>div{
+ border:0!important;border-right:1px solid rgba(196,221,208,.18)!important;
+ border-radius:0!important;background:transparent!important;
+ padding:14px 12px 10px!important;box-shadow:none!important;
+ min-width:0!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse>div:first-child{
+ padding-left:0!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse>div:last-child{
+ border-right:0!important;padding-right:0!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse small{
+ font-size:clamp(9px,1vw,11px)!important;letter-spacing:.035em!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse strong{
+ font-size:clamp(15px,2vw,20px)!important;white-space:normal!important;
+ overflow-wrap:anywhere;
+}
+@media(max-width:600px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse>div{
+  padding:10px 8px 8px!important;gap:6px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse strong{
+  font-size:15px!important;
+ }
+ /* Keep scrolling news readable above the persistent bottom navigation. */
+ body .main:has(#viewDashboard.vi-preview-active){
+  padding-bottom:max(120px,calc(92px + env(safe-area-inset-bottom,0px)))!important;
+ }
+}
