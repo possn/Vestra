@@ -310,3 +310,41 @@
 #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading::after{
  content:none!important;
 }
+
+/* Home 2.0 — editorial opening, tuned for the real .vi-home-overview DOM.
+   Make the daily conclusion the visual anchor without hiding wealth or live evidence. */
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview>.vi-opening .vi-lead{
+ min-width:0!important;
+ padding:clamp(12px,2.6vw,32px) 0 clamp(18px,3vw,36px)!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-chapter-index{
+ margin-bottom:clamp(12px,2.2vw,24px)!important;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline{
+ max-width:16ch!important;
+ font-size:clamp(2.4rem,5.7vw,5.4rem)!important;
+ line-height:1.02!important;
+ letter-spacing:-.055em!important;
+ overflow-wrap:normal!important;
+ text-wrap:balance;
+}
+#viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck{
+ max-width:48ch!important;
+ margin-top:clamp(12px,2vw,22px)!important;
+ font-size:clamp(.95rem,1.4vw,1.1rem)!important;
+ line-height:1.6!important;
+}
+@media(max-width:760px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview>.vi-opening .vi-lead{
+  padding:8px 0 22px!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-headline{
+  max-width:100%!important;
+  font-size:clamp(2.15rem,9.4vw,3.65rem)!important;
+  letter-spacing:-.05em!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-home-overview .vi-deck{
+  font-size:15px!important;
+  line-height:1.5!important;
+ }
+}
