@@ -156,3 +156,17 @@ body .topbar :is(button,a):focus-visible{outline:2px solid #e2bf7a!important;out
 .sidebar__nav .sidenavbtn:hover{background:#22453b!important}
 .sidebar__divider{background:#34554b!important}
 .sidebar__nav .sidenavbtn:focus-visible,.sidebar__close:focus-visible{outline:2px solid #e0c48b!important;outline-offset:2px}
+
+/* Canonical iPhone navigation: predictable touch targets and focus across routes.
+   Only existing buttons; no navigation changes or new overlays. */
+@media(max-width:600px){
+ body .bottomnav .navbtn{min-height:48px!important;min-width:0!important;touch-action:manipulation}
+ body .topbar #btnSearchToggle,
+ body .topbar #btnFab,
+ body .topbar #btnSettingsNav,
+ body .topbar .sidebar-toggle{min-width:44px!important;min-height:44px!important;touch-action:manipulation}
+ body .sidebar__close{min-width:44px!important;min-height:44px!important}
+}
+body .bottomnav .navbtn:focus-visible,
+body .sidebar__nav .sidenavbtn:focus-visible,
+body .sidebar__close:focus-visible{outline:2px solid #e0c48b!important;outline-offset:2px!important}
