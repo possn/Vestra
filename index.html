@@ -1980,8 +1980,8 @@
           return match ? match[1] : '';
         });
         const installedVersions = currentVersions();
-        if (!publishedVersions.every(Boolean) || !installedVersions.length ||
-            !publishedVersions.some(version => !installedVersions.includes(version))) return;
+        if (!installedVersions.length ||
+            !publishedVersions.some(version => version && !installedVersions.includes(version))) return;
         if (document.getElementById('vestraUiUpdateNotice')) return;
         const notice = document.createElement('div');
         notice.id = 'vestraUiUpdateNotice';
