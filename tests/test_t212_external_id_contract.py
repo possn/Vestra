@@ -20,6 +20,23 @@ class Trading212IdentityContract(unittest.TestCase):
         self.assertRegex(body, r"extId:\s*String\(r\.id\s*\|\|\s*['\"]['\"]\)\.trim\(\)")
         self.assertLess(body.index("extId:"), body.index("evt.key = brokerEventKey(evt)"))
 
+    def test_legacy_migration_is_scoped_to_matching_t212_fingerprints(self):
+        app = (ROOT / "app.js").read_text(encoding="utf-8")
+        start = app.index("function migrateLegacyTrading212Events(")
+        end = app.index("async function importBrokerFiles(", start)
+        migration = app[start:end]
+        self.assertIn("brokerEventKey({ ...e, extId: \"\" })", migration)
+        self.assertIn("if (String(e.extId || \"\").trim()) return true", migration)
+        self.assertIn("fingerprints.has(", migration)
+        self.assertIn("trading", migration.lower())
+        self.assertEqual(app.count("if (migrateLegacyTrading212Events(bd, evts)) refreshKeySets();"), 2)
+
+    def test_changed_runtimes_are_cache_busted(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+        loader = (ROOT / "app-broker-import-loader.js").read_text(encoding="utf-8")
+        self.assertIn("rev=20261103-t212-id-migration", html)
+        self.assertIn("app-broker-parsers.js?v=20261103-external-id", loader)
+
     def test_event_key_prioritizes_scoped_external_id(self):
         core = (ROOT / "app-broker-parsing-core.js").read_text(encoding="utf-8")
         start = core.index("function brokerEventKey(")
