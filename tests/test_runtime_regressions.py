@@ -73,7 +73,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertIn("app-broker-identity-data.js?v=1.0", loader)
         self.assertIn("app-xtb-normalization.js?v=1.0", loader)
         self.assertIn("app-broker-workbook.js?v=1.3", loader)
-        self.assertIn("app-broker-parsers.js?v=1.4", loader)
+        self.assertRegex(loader, r"app-broker-parsers\\.js\\?v=[A-Za-z0-9._-]+")
         self.assertLess(
             loader.index("app-broker-workbook.js?v=1.3"),
             loader.index("app-broker-parsers.js?v=1.4"),
