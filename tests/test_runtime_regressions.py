@@ -76,7 +76,7 @@ class RuntimeRegressionTests(unittest.TestCase):
         self.assertRegex(loader, r"app-broker-parsers\.js\?v=[A-Za-z0-9._-]+")
         self.assertLess(
             loader.index("app-broker-workbook.js?v=1.3"),
-            loader.index("app-broker-parsers.js?v=1.4"),
+            loader.index("app-broker-parsers.js?v="),
         )
 
     def test_all_app_modules_are_syntax_checked_by_ci(self):
