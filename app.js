@@ -8280,12 +8280,12 @@ function canonicalizeStoredBrokerKeys(bd) {
 // ID-bearing rows are retained after the single legacy representative is removed.
 function migrateLegacyTrading212Events(bd, incoming) {
   const fingerprints = new Set((incoming || [])
-    .filter(e => /trading\\s*212/i.test(String(e?.broker || "")) && String(e?.extId || "").trim())
+    .filter(e => /trading\s*212/i.test(String(e?.broker || "")) && String(e?.extId || "").trim())
     .map(e => brokerEventKey({ ...e, extId: "" })));
   if (!fingerprints.size) return 0;
   const before = (bd.events || []).length;
   bd.events = (bd.events || []).filter(e => {
-    if (!e || !/trading\\s*212/i.test(String(e.broker || ""))) return true;
+    if (!e || !/trading\s*212/i.test(String(e.broker || ""))) return true;
     if (String(e.extId || "").trim()) return true;
     return !fingerprints.has(brokerEventKey({ ...e, extId: "" }));
   });
