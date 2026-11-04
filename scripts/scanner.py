@@ -61,20 +61,26 @@ def _evidence_ok(row):
 
 
 def _low52(row):
+    """Never compress corrupt 1Y bars into a fictitious 52-week range."""
+    import math
+
     hist = row.get("price_history_1y") or []
+    if not isinstance(hist, list) or not hist:
+        return None
     closes = []
-    for x in hist:
+    for item in hist:
         try:
-            v = x.get("close") if isinstance(x, dict) else x
-            v = float(v)
-            if v > 0:
-                closes.append(v)
-        except Exception:
-            pass
+            value = item.get("close") if isinstance(item, dict) else item
+            close = float(value)
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(close) or close <= 0:
+            return None
+        closes.append(close)
     cur = _n(row.get("current_price"))
-    if cur is None and closes:
+    if cur is None:
         cur = closes[-1]
-    if not closes or cur is None or cur <= 0:
+    if not math.isfinite(cur) or cur <= 0:
         return None
     low = min(closes)
     return {"low": low, "above_pct": (cur / low - 1) * 100.0}
