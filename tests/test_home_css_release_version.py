@@ -6,7 +6,7 @@ class HomeStylesheetVersionTests(unittest.TestCase):
  def test_home_uses_current_versioned_stylesheet(self):
   html=(ROOT/"index.html").read_text(encoding="utf-8")
   css=(ROOT/"vestra-home-first-look-order.css").read_text(encoding="utf-8")
-  self.assertIn("vestra-home-first-look-order.css?v=20261104-iphone-evidence-grid",html)
+  self.assertIn("vestra-home-first-look-order.css?v=20261104-iphone-evidence-full-range",html)
   self.assertNotIn("vestra-home-first-look-order.css?v=20261101-neutral-risk",html)
   self.assertIn("Screen-verified Home correction: compact market sentiment",css)
 if __name__=="__main__": unittest.main()

@@ -11,6 +11,9 @@ class HomeSentimentDensityTests(unittest.TestCase):
    self.assertIn(marker,html)
   for rule in ('.vi-sentiment-orb','.vi-live-pulse>div','grid-template-columns:repeat(3,minmax(0,1fr))','padding-bottom:max(120px','env(safe-area-inset-bottom'):
    self.assertIn(rule,rules)
+  tablet=rules.split("@media (min-width:601px) and (max-width:760px){",1)[1].split("/* The wider-screen",1)[0]
+  self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))!important",tablet)
+  self.assertIn(".vi-live-pulse>div:last-child",tablet)
   # The more specific market rule must not override the later iPhone 2-column sheet.
   mobile=rules.split("@media(max-width:600px){",1)[1].split("/* At 320px",1)[0]
   self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))!important",mobile)
