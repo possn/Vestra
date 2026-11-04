@@ -16,6 +16,15 @@ class GlobalMarketSearchTests(unittest.TestCase):
         subprocess.run(["node", "--check", str(GLOBAL)], check=True, cwd=ROOT)
         subprocess.run(["node", "--check", str(MARKET)], check=True, cwd=ROOT)
 
+    def test_search_cache_is_bounded_and_scoped_to_worker(self):
+        text = GLOBAL.read_text(encoding="utf-8")
+        self.assertIn("const EXACT_CACHE_TTL_MS = 60 * 1000", text)
+        self.assertIn("const NAME_CACHE_TTL_MS = 5 * 60 * 1000", text)
+        self.assertIn("cacheKey(base, 'exact', ticker)", text)
+        self.assertIn("cacheKey(base, 'name', foldSearch(text))", text)
+        self.assertIn("Date.now()>=entry.expires", text)
+        self.assertIn("cache.size>SEARCH_CACHE_MAX", text)
+
     def test_exact_unknown_ticker_requires_provider_identity(self):
         text = GLOBAL.read_text(encoding="utf-8")
         self.assertIn("/quote?ticker=", text)
@@ -122,7 +131,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
     def test_bootstrap_loads_current_module(self):
         text = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("market-learned-universe.js?v=3.0", text)
-        self.assertIn("market-global-search.js?v=2.1", text)
+        self.assertIn("market-global-search.js?v=2.2", text)
         self.assertIn("market-data-health.js?v=1.3", text)
 
     def test_presentation_has_static_css_owner_and_offline_reachability(self):
@@ -134,7 +143,7 @@ class GlobalMarketSearchTests(unittest.TestCase):
         self.assertIn('.vestra-global-search{', css)
         self.assertIn('.vestra-global-search__row{', css)
         self.assertIn('"./market-global-search.css"', sw)
-        self.assertIn("version:'2.1'", text)
+        self.assertIn("version:'2.2'", text)
 
 
 if __name__ == "__main__":
