@@ -12,7 +12,7 @@ HELPERS = (
     ("VestraMarketPortfolioContext", "market-portfolio-context.js?v=1.0"),
     ("VestraMarketWatchSnapshots", "market-watch-snapshots.js?v=1.0"),
     ("VestraMarketDossierSignals", "market-dossier-signals.js?v=1.0"),
-    ("VestraMarketSearchSuggestions", "market-search-suggestions.js?v=1.2"),
+    ("VestraMarketSearchSuggestions", "market-search-suggestions.js?v=1.3"),
     ("VestraMarketRowUI", "market-row-ui.js?v=1.0"),
 )
 
