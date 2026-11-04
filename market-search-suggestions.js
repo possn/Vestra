@@ -1,4 +1,4 @@
-/* Vestra Market Search Suggestions v1.2 — local rerenders preserve global results; explicit hide clears all. */
+/* Vestra Market Search Suggestions v1.3 — local rerenders preserve global results; explicit hide clears all. */
 (() => {
   'use strict';
 
@@ -15,21 +15,29 @@
     const escapeHtml = typeof options.escapeHtml === 'function' ? options.escapeHtml : text;
     const isFund = typeof options.isFund === 'function' ? options.isFund : () => false;
 
+    // Search relevance is identification, not an investment-quality ranking.
+    // Normalise diacritics and whitespace without altering displayed names.
+    const fold = value => text(value).toLowerCase().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
     function matches(query, limit=7){
-      const q=text(query).toLowerCase();
-      if(!q) return [];
-      const scoreMatch=(x)=>{
-        const t=text(x.ticker).toLowerCase(), name=text(x.name).toLowerCase();
-        if(t===q) return 1000;
-        if(t.startsWith(q)) return 800 - t.length;
-        if(name.startsWith(q)) return 650 - name.length/100;
-        if(t.includes(q)) return 500;
+      const q=fold(query);
+      if(!q || !Number.isFinite(limit) || limit<=0) return [];
+      const rank=x=>{
+        const ticker=fold(x.ticker), name=fold(x.name);
+        if(ticker===q) return 1000;
+        if(ticker.startsWith(q)) return 900;
+        if(name===q) return 850;
+        if(name.startsWith(q)) return 750;
+        if(name.split(/[^a-z0-9]+/).some(word=>word.startsWith(q))) return 650;
+        if(ticker.includes(q)) return 500;
         if(name.includes(q)) return 350;
         return 0;
       };
-      return getStocks().map(x=>({x,rank:scoreMatch(x)})).filter(r=>r.rank>0)
-        .sort((a,b)=>b.rank-a.rank || (number(b.x.score)||0)-(number(a.x.score)||0))
-        .slice(0,limit).map(r=>r.x);
+      return getStocks().map(x=>({x,rank:rank(x)})).filter(item=>item.rank>0)
+        .sort((a,b)=>b.rank-a.rank ||
+          fold(a.x.name).localeCompare(fold(b.x.name),'en') ||
+          fold(a.x.ticker).localeCompare(fold(b.x.ticker),'en'))
+        .slice(0,Math.floor(limit)).map(item=>item.x);
     }
 
     function globalHost(box){
@@ -74,5 +82,5 @@
     return Object.freeze({ matches, hide, render });
   }
 
-  window.VestraMarketSearchSuggestions = Object.freeze({ create, version:'1.2' });
+  window.VestraMarketSearchSuggestions = Object.freeze({ create, version:'1.3' });
 })();

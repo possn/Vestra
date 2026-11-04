@@ -5,14 +5,18 @@ const assert=require('assert');
 const context={window:{}};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('market-search-suggestions.js','utf8'),context,{filename:'market-search-suggestions.js'});
-assert.equal(context.window.VestraMarketSearchSuggestions?.version,'1.2');
+assert.equal(context.window.VestraMarketSearchSuggestions?.version,'1.3');
 
 const stocks=[
   {ticker:'MSFT',name:'Microsoft Corporation',sector:'Technology',score:91},
   {ticker:'META',name:'Meta Platforms',sector:'Technology',score:85},
   {ticker:'MSTR',name:'Strategy',sector:'Technology',score:60},
   {ticker:'VWCE.DE',name:'Vanguard FTSE All-World UCITS ETF',quote_type:'ETF',score:80},
-  {ticker:'ABC',name:'Microsoft Supplier',sector:'Industrials',score:70},
+  {ticker:'ABC',name:'Microsoft Supplier',sector:'Industrials',score:99},
+  {ticker:'EDP',name:'Energias de Portugal',score:15},
+  {ticker:'AGUA',name:'Águas de Portugal',score:0},
+  {ticker:'RENEW',name:'Global Renewable Energy',score:99},
+  {ticker:'RENX',name:'Global Renewable Holding',score:1},
 ];
 const box={hidden:true,innerHTML:''};
 let query='';
@@ -33,10 +37,15 @@ const api=context.window.VestraMarketSearchSuggestions.create({
 assert.deepEqual(Array.from(api.matches('',7)),[]);
 assert.equal(api.matches('msft',7)[0].ticker,'MSFT');
 assert.equal(api.matches('ms',7)[0].ticker,'MSFT');
-assert.deepEqual(api.matches('microsoft',7).map(x=>x.ticker),['ABC','MSFT']);
+assert.deepEqual(api.matches('microsoft',7).map(x=>x.ticker),['MSFT','ABC']);
 assert.equal(api.matches('meta',7)[0].ticker,'META');
 assert.equal(api.matches('world',7)[0].ticker,'VWCE.DE');
 assert.equal(api.matches('m',2).length,2);
+assert.equal(api.matches('aguas')[0].ticker,'AGUA','accent folding must work');
+assert.equal(api.matches('energy')[0].ticker,'RENEW','word-prefix matching before substring');
+assert.deepEqual(api.matches('global renewable').map(x=>x.ticker),['RENEW','RENX'], 'ticker/name relevance ignores financial score');
+assert.equal(api.matches('edp')[0].ticker,'EDP','exact ticker outranks names');
+assert.deepEqual(Array.from(api.matches('meta',0)),[]);
 
 query='vwce';
 api.render();

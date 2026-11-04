@@ -107,7 +107,7 @@
         loadHelper('VestraMarketPortfolioContext', 'market-portfolio-context.js?v=1.0'),
         loadHelper('VestraMarketWatchSnapshots', 'market-watch-snapshots.js?v=1.0'),
         loadHelper('VestraMarketDossierSignals', 'market-dossier-signals.js?v=1.0'),
-        loadHelper('VestraMarketSearchSuggestions', 'market-search-suggestions.js?v=1.2'),
+        loadHelper('VestraMarketSearchSuggestions', 'market-search-suggestions.js?v=1.3'),
         loadHelper('VestraMarketRowUI', 'market-row-ui.js?v=1.0'),
         // Dossier data has no load-time dependency on navigation. Fetch it in
         // parallel so it does not add another round trip before the core.
