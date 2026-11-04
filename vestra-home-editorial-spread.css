@@ -1,0 +1,74 @@
+/* Vestra Intelligence 2.0: actual editorial spread across sibling sections.
+   The market context and introduction are siblings in .vi-shell, not children
+   of .vi-home-overview. No duplicated financial DOM or dynamic data. */
+@media (min-width:1100px) {
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell {
+  display:grid!important;
+  grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)!important;
+  column-gap:clamp(32px,4vw,72px)!important;
+  row-gap:clamp(22px,2.6vw,38px)!important;
+  align-items:start!important;
+  max-width:1460px!important;
+  margin-inline:auto!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-top {
+  grid-column:1/-1!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-home-overview {
+  grid-column:1!important;
+  grid-row:2!important;
+  min-width:0!important;
+  padding:clamp(12px,2vw,24px) 0!important;
+  margin:0!important;
+  border-bottom:0!important;
+  align-self:start!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-context-chapter {
+  grid-column:2!important;
+  grid-row:2!important;
+  min-width:0!important;
+  padding:clamp(12px,2vw,24px) 0 0 clamp(24px,3vw,46px)!important;
+  border-left:1px solid rgba(196,221,208,.2)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-priorities {
+  grid-column:1/-1!important;
+  grid-row:3!important;
+  border-top:1px solid rgba(196,221,208,.25)!important;
+  padding:clamp(22px,2.7vw,40px) 0 0!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-priorities .vi-decisions {
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:clamp(16px,2.2vw,32px)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-priorities .vi-action {
+  min-width:0!important;
+  padding:18px 0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-risk-reading,
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-regime-disclosure,
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-chapter-last,
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-research-details,
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-footer-link {
+  grid-column:1/-1!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-context-chapter .vi-canonical-sections {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell>.vi-context-chapter .vi-canonical-card {
+  width:100%!important;
+ }
+}
+/* Mid-width desktop/tablet and iPhone deliberately preserve the DOM reading
+   order: panorama -> live market/news/week -> decisions -> risk -> evidence. */
+@media (max-width:1099px) {
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-shell {
+  display:flex!important;
+  flex-direction:column!important;
+ }
+}
