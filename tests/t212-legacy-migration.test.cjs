@@ -24,4 +24,18 @@ assert.equal(migrate(bd, [incoming]), 0, 'second import is idempotent');
 assert.equal(migrate(bd, [{...base}]), 0, 'no-ID incoming row does not trigger legacy migration');
 const bd2 = {events:[old]};
 assert.equal(migrate(bd2, [{...incoming, broker:'XTB'}]), 0, 'XTB cannot migrate T212');
+// Two broker-issued IDs can share the same economic fingerprint. The old
+// fingerprint-only row must be removed without collapsing either official ID.
+const twinA = {...incoming, extId:'official-twin-A'};
+const twinB = {...incoming, extId:'official-twin-B'};
+const twins = {events:[{...old}]};
+assert.equal(migrate(twins, [twinA, twinB]), 1);
+const keys = new Set(twins.events.map(brokerEventKey));
+for (const e of [twinA, twinB]) {
+  const key = brokerEventKey(e);
+  if (!keys.has(key)) { twins.events.push(e); keys.add(key); }
+}
+assert.equal(twins.events.length, 2, 'both official transactions survive');
+assert.equal(migrate(twins, [twinA, twinB]), 0, 'reimport keeps ID-bearing events');
+assert.equal(new Set(twins.events.map(brokerEventKey)).size, 2);
 console.log('Trading 212 legacy migration functional checks passed');
