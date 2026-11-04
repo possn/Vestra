@@ -8274,6 +8274,24 @@ function canonicalizeStoredBrokerKeys(bd) {
   });
 }
 
+// Upgrade pre-external-ID Trading 212 imports only when the same economic
+// movement is present in the incoming CSV. Never purge unrelated years/files.
+// The old fingerprint can represent multiple distinct broker IDs; all incoming
+// ID-bearing rows are retained after the single legacy representative is removed.
+function migrateLegacyTrading212Events(bd, incoming) {
+  const fingerprints = new Set((incoming || [])
+    .filter(e => /trading\s*212/i.test(String(e?.broker || "")) && String(e?.extId || "").trim())
+    .map(e => brokerEventKey({ ...e, extId: "" })));
+  if (!fingerprints.size) return 0;
+  const before = (bd.events || []).length;
+  bd.events = (bd.events || []).filter(e => {
+    if (!e || !/trading\s*212/i.test(String(e.broker || ""))) return true;
+    if (String(e.extId || "").trim()) return true;
+    return !fingerprints.has(brokerEventKey({ ...e, extId: "" }));
+  });
+  return before - bd.events.length;
+}
+
 async function importBrokerFiles(files) {
   const fileArr = Array.from(files || []);
   if (!fileArr.length) throw new Error("Sem ficheiros.");
@@ -8367,6 +8385,7 @@ async function importBrokerFiles(files) {
         fileRows += blockRows.length || 0;
         if (block.format === "broker_ledger") {
           const evts = parseBrokerLedgerRows(blockRows, blockMeta);
+          if (migrateLegacyTrading212Events(bd, evts)) refreshKeySets();
           for (const evt of evts) {
             if (existingEventKeys.has(evt.key)) continue;
             existingEventKeys.add(evt.key);
@@ -8428,6 +8447,7 @@ async function importBrokerFiles(files) {
     }
     if (format === "broker_ledger") {
       const evts = parseBrokerLedgerRows(rows, meta);
+      if (migrateLegacyTrading212Events(bd, evts)) refreshKeySets();
       for (const evt of evts) {
         if (existingEventKeys.has(evt.key)) continue;
         existingEventKeys.add(evt.key);

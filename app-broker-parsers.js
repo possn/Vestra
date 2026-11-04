@@ -52,6 +52,8 @@ function parseBrokerLedgerRows(rows, meta) {
     const date = normalizeDate(when.slice(0, 10)) || normalizeDate(when) || isoToday();
     const evt = {
       id: uid(),
+      // Official transaction identity; local uid() is not stable across imports.
+      extId: String(r.id || '').trim(),
       sourceHash: meta.hash,
       sourceName: meta.name,
       broker: meta.broker,

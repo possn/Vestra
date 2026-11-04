@@ -23,11 +23,11 @@ class LazyBrokerImportRuntimeTests(unittest.TestCase):
         self.assertIn("app-xtb-normalization.js?v=1.0", LOADER)
         self.assertIn("Promise.all([ensureWorkbook(), ensureXtbNormalization()])", LOADER)
         self.assertIn("app-broker-workbook.js?v=1.3", LOADER)
-        self.assertIn("app-broker-parsers.js?v=1.4", LOADER)
+        self.assertIn("app-broker-parsers.js?v=", LOADER)
         self.assertIn("app-broker-identity-data.js?v=1.0", LOADER)
         self.assertLess(
             LOADER.index("ensureWorkbook()"),
-            LOADER.index("app-broker-parsers.js?v=1.4"),
+            LOADER.index("app-broker-parsers.js?v="),
         )
         self.assertIn("workbookPromise = null;", LOADER)
         self.assertIn("parsersPromise = null;", LOADER)

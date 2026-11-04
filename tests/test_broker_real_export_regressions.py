@@ -21,7 +21,7 @@ class BrokerRealExportRegressionTests(unittest.TestCase):
         self.assertIn("const rowType = String(r.type || r.tipo ||", PARSERS)
         self.assertIn("!/^(BUY|SELL)$/.test(rowType)", PARSERS)
         self.assertIn("Vestra broker parsers v1.4", PARSERS)
-        self.assertIn("app-broker-parsers.js?v=1.4", LOADER)
+        self.assertRegex(LOADER, r"app-broker-parsers\.js\?v=[A-Za-z0-9._-]+")
 
     def test_xtb_snapshot_accepts_iso_datetime_from_sheetjs(self):
         self.assertIn("const iso = s.match", WORKBOOK)
