@@ -6,12 +6,22 @@ separate coverage before this draft PR can be merged.
 """
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class Trading212IdentityContract(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("node"), "Node.js unavailable")
+    def test_real_migration_function_behaviour(self):
+        completed = subprocess.run(
+            ["node", "tests/t212-legacy-migration.test.cjs"],
+            cwd=ROOT, capture_output=True, text=True, timeout=20,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+
     def test_parser_preserves_broker_id_before_generating_event_key(self):
         parser = (ROOT / "app-broker-parsers.js").read_text(encoding="utf-8")
         start = parser.index("function parseBrokerLedgerRows(")
