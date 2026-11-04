@@ -395,9 +395,14 @@
  font-size:clamp(15px,2vw,20px)!important;white-space:normal!important;
  overflow-wrap:anywhere;
 }
+/* The wider-screen three-column rule has higher specificity than the separately
+   loaded iPhone evidence stylesheet. Match the intended 2-column mobile layout. */
 @media(max-width:600px){
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse{
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse>div:last-child{
+  grid-column:1/-1!important;
  }
  #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse>div{
   padding:10px 8px 8px!important;gap:6px!important;
@@ -408,5 +413,15 @@
  /* Keep scrolling news readable above the persistent bottom navigation. */
  body .main:has(#viewDashboard.vi-preview-active){
   padding-bottom:max(120px,calc(92px + env(safe-area-inset-bottom,0px)))!important;
+ }
+}
+
+/* At 320px even two evidence columns crush the live values. Keep every source. */
+@media(max-width:320px){
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse{
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #viewDashboard.vi-preview-active #vestraIntelligenceHome .vi-market-reading .vi-live-pulse>div{
+  grid-column:1!important;border-right:0!important;
  }
 }
