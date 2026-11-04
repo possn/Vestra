@@ -193,7 +193,9 @@ class ShadowContext:
 
 
 def bank_shadow(ctx):
-    quality = avg([ctx.p("roe"), ctx.p("roa"), ctx.p("profit_margin")])
+    # Independent production parity: bank margin overlaps the expense ratio
+    # already exclusively measured in the Efficiency sleeve.
+    quality = avg([ctx.p("roe"), ctx.p("roa")])
     efficiency = ctx.p("efficiency_ratio_proxy", invert=True)
     asset_quality = ctx.p("provision_to_revenue", invert=True)
     capital = ctx.p("equity_to_assets")
