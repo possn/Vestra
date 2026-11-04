@@ -107,6 +107,37 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertGreater(pack["by_upside_support"]["strong"]["median_return_pct"], pack["by_upside_support"]["weak"]["median_return_pct"])
         self.assertGreater(pack["rank_information_coefficient"], 0)
 
+    def test_asset_capture_does_not_confuse_partial_cohort_with_full_coverage(self):
+        today = dt.date(2026, 8, 30)
+        snapshots = [{"date": "2026-08-02", "observations": {
+            "AAA": observation(), "BBB": observation(), "CCC": observation(),
+        }}]
+        outcomes = [{
+            "cohort_date": "2026-08-02", "horizon_days": 28,
+            "ticker": "AAA", "opportunity_score": 80, "return_pct": 2,
+        }]
+        self.assertEqual(MOD.expected_matured_count(today, snapshots, 28), 1)
+        summary = MOD.summarize_horizon(outcomes, expected_matured_cohorts=1)
+        self.assertEqual(summary["cohort_capture_pct"], 100.0)
+        capture = MOD.observation_capture(today, snapshots, outcomes, 28)
+        self.assertEqual(capture["expected_matured_observations"], 3)
+        self.assertEqual(capture["realised_matured_observations"], 1)
+        self.assertEqual(capture["missing_matured_observations"], 2)
+        self.assertEqual(capture["observation_capture_pct"], 33.3)
+
+    def test_asset_capture_deduplicates_outcomes_and_ignores_future_cohorts(self):
+        today = dt.date(2026, 8, 30)
+        snapshots = [
+            {"date": "2026-08-02", "observations": {"AAA": observation(), "BBB": observation()}},
+            {"date": "2026-08-20", "observations": {"CCC": observation()}},
+        ]
+        duplicate = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "AAA"}
+        capture = MOD.observation_capture(today, snapshots, [duplicate, duplicate], 28)
+        self.assertEqual(capture["expected_matured_observations"], 2)
+        self.assertEqual(capture["realised_matured_observations"], 1)
+        self.assertEqual(capture["observation_capture_pct"], 50.0)
+        self.assertIsNone(MOD.observation_capture(today, snapshots, [], 168)["observation_capture_pct"])
+
     def test_evidence_policy_never_auto_tunes_production(self):
         mature = {"cohort_count": 8}
         result = MOD.evidence_policy({"28": mature, "84": mature, "168": {}})

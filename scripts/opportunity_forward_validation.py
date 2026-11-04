@@ -312,6 +312,46 @@ def expected_matured_count(today, snapshots, horizon):
     return count
 
 
+def observation_capture(today, snapshots, outcomes, horizon):
+    """Measure asset-level prospective coverage, not merely cohort presence.
+
+    One successfully priced ticker must not make an entire 1,000-name cohort
+    look 100% captured. Historical snapshots remain frozen and missing prices
+    are not imputed as zero returns.
+    """
+    expected = set()
+    for snap in snapshots:
+        if not isinstance(snap, dict):
+            continue
+        try:
+            cohort = str(snap.get("date"))
+            age = (today - dt.date.fromisoformat(cohort)).days
+        except (TypeError, ValueError):
+            continue
+        if age < horizon:
+            continue
+        observations = snap.get("observations") or {}
+        if not isinstance(observations, dict):
+            continue
+        for ticker, observation in observations.items():
+            if isinstance(observation, dict):
+                expected.add(outcome_key(cohort, horizon, ticker))
+
+    realised = {
+        outcome_key(item.get("cohort_date"), horizon, item.get("ticker"))
+        for item in outcomes
+        if isinstance(item, dict) and int(item.get("horizon_days") or 0) == horizon
+        and outcome_key(item.get("cohort_date"), horizon, item.get("ticker")) in expected
+    }
+    count = len(expected)
+    return {
+        "expected_matured_observations": count,
+        "realised_matured_observations": len(realised),
+        "missing_matured_observations": count - len(realised),
+        "observation_capture_pct": round(100.0 * len(realised) / count, 1) if count else None,
+    }
+
+
 def maturity_dates(today, snapshots, horizon):
     dates = []
     for snap in snapshots:
@@ -399,6 +439,7 @@ def main():
         vals = [x for x in outcomes if int(x.get("horizon_days") or 0) == horizon]
         expected = expected_matured_count(today, snapshots, horizon)
         pack = summarize_horizon(vals, expected)
+        pack.update(observation_capture(today, snapshots, outcomes, horizon))
         first, pending = maturity_dates(today, snapshots, horizon)
         pack["first_possible_maturity_date"] = first.isoformat() if first else None
         pack["next_pending_maturity_date"] = pending.isoformat() if pending else None
@@ -425,6 +466,7 @@ def main():
         "interpretation": {
             "rank_ic": "Spearman correlation between Opportunity score known at cohort date and realised forward return.",
             "top_minus_bottom": "Median return spread between highest and lowest Opportunity-score quintiles.",
+            "observation_capture": "Fraction of originally selected stocks with a realised outcome in matured cohorts; distinct from cohort coverage and excludes imputed returns.",
             "upside_support": "Compares realised returns for strong/moderate/weak/negative/unavailable support known at cohort date.",
             "no_auto_tuning": "This report is diagnostic only and never changes production Opportunity rules.",
         },
