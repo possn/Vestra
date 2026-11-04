@@ -34,7 +34,7 @@ class StaticMarketRuntimeTests(unittest.TestCase):
             'market-portfolio-context.js?v=1.0',
             'market-watch-snapshots.js?v=1.0',
             'market-dossier-signals.js?v=1.0',
-            'market-search-suggestions.js?v=1.2',
+            'market-search-suggestions.js?v=1.3',
             'market-row-ui.js?v=1.0',
             'market-metric-cleanup.js?v=1.2',
             'market-company-brief.js?v=2.2',
