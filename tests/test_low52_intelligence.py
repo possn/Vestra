@@ -97,6 +97,17 @@ class Low52IntelligenceTests(unittest.TestCase):
         self.assertEqual(result["low52_price_high"], 150)
         self.assertAlmostEqual(result["low52_above_low_pct"], 5.0, places=2)
 
+    def test_corrupt_history_fails_closed_even_with_valid_fallback_extrema(self):
+        for corrupt in (None, "broken", 0, -10, float("nan"), float("inf")):
+            with self.subTest(corrupt=corrupt):
+                row = quality_row()
+                row["price_history_1y"] = [100.0, corrupt, 150.0]
+                row["fifty_two_week_low"] = 100.0
+                row["fifty_two_week_high"] = 150.0
+                result = assess(row)
+                self.assertEqual(result["low52_status"], "insufficient")
+                self.assertIsNone(result["low52_score"])
+
     def test_invalid_explicit_extrema_do_not_create_false_signal(self):
         row = quality_row()
         row["price_history_1y"] = []
