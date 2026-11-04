@@ -440,10 +440,12 @@ def score_universe(raw: list[RawMetrics]) -> list[ScoredTicker]:
         # marked as proxy models until regulatory / FFO-AFFO datasets are added.
         if model == "bank":
             peers = peers_by_model["bank"]
+            # Cost efficiency has its own bank-native dimension. Profit margin
+            # re-encodes the same expense/revenue structure and double-counts
+            # operating efficiency when placed in Bank Quality.
             bank_quality = _avg([
                 _percentile_rank(r.roe, peer_attr_values(peers, "roe")),
                 _percentile_rank(r.roa, peer_attr_values(peers, "roa")),
-                _percentile_rank(r.profit_margin, peer_attr_values(peers, "profit_margin")),
             ])
             bank_efficiency = _percentile_rank(r.efficiency_ratio_proxy, peer_attr_values(peers, "efficiency_ratio_proxy"), invert=True)
             bank_asset_quality = _percentile_rank(r.provision_to_revenue, peer_attr_values(peers, "provision_to_revenue"), invert=True)
