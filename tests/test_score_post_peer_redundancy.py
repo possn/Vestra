@@ -68,6 +68,36 @@ class ScorePostPeerRedundancyTests(unittest.TestCase):
             "growth-tech FCF yield must be owned only by Cash Flow: " + repr(duplicate_owners[:10]),
         )
 
+    def test_bank_factor_diagnostics_before_model_revision(self):
+        # Diagnostic-only test: print raw factor dependencies and coverage.
+        # A high dimension correlation does not alone identify duplicated inputs.
+        payload = json.loads((ROOT / "data" / "stocks.json").read_text(encoding="utf-8"))
+        raw = [r for r in (payload.get("stocks") or [])
+               if isinstance(r, dict) and r.get("score_model") == "bank"]
+        fields = ("roe", "roa", "profit_margin", "efficiency_ratio_proxy",
+                  "equity_to_assets", "net_interest_income_yoy")
+        print(f"BANK FACTOR DIAGNOSTIC: raw rows={len(raw)}, shadow rows={len(self.by_model['bank'])}")
+        for field in fields:
+            vals = [score_audit.num(r.get(field)) for r in raw]
+            vals = [v for v in vals if v is not None]
+            print(f"BANK factor={field}, observed={len(vals)}, unique={len(set(vals))}, min={min(vals) if vals else None}, max={max(vals) if vals else None}")
+        for left, right in (("roe", "efficiency_ratio_proxy"),
+                            ("roa", "efficiency_ratio_proxy"),
+                            ("profit_margin", "efficiency_ratio_proxy"),
+                            ("roe", "roa"), ("roe", "profit_margin"),
+                            ("roa", "profit_margin")):
+            pairs = [(score_audit.num(r.get(left)), score_audit.num(r.get(right))) for r in raw]
+            present = [(a,b) for a,b in pairs if a is not None and b is not None]
+            rho = score_audit.spearman_pairs(present)
+            print(f"BANK raw {left} <> {right}: N={len(present)}, spearman={rho}")
+        shadow = self.by_model["bank"]
+        for left, right in (("Bank Quality", "Efficiency"), ("Bank Quality", "Capital Proxy")):
+            pairs = [((r.get("shadow_dimensions") or {}).get(left),
+                      (r.get("shadow_dimensions") or {}).get(right)) for r in shadow]
+            present = [(a,b) for a,b in pairs if score_audit.num(a) is not None and score_audit.num(b) is not None]
+            rho = score_audit.spearman_pairs(present)
+            print(f"BANK shadow {left} <> {right}: N={len(present)}, Spearman={rho}")
+
     def test_all_well_sampled_specialist_models_stay_below_redundancy_threshold(self):
         failures = []
         checked = []
