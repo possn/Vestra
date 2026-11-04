@@ -66,6 +66,20 @@ class ScannerFeaturedOpportunityTests(unittest.TestCase):
         self.assertEqual(out["scanner_best"], "best_opportunities")
         self.assertEqual(out["scanner_best_score"], 72.0)
 
+    def test_scanner_corrupt_price_bar_does_not_create_52_week_strategy(self):
+        row = self.base_row()
+        row.update({
+            "price_history_1y": [100.0, None, 150.0],
+            "current_price": 102.0,
+            "low52_status": "opportunity",
+            "low52_score": 90,
+        })
+        self.assertIsNone(scanner._low52(row))
+        with mock.patch.object(scanner, "_structural_overlays", return_value={}):
+            out = scanner.assess(row)
+        self.assertNotIn("lows_intact", out["scanner_results"])
+        self.assertNotIn("fallen_angels", out["scanner_results"])
+
     def test_scanner_best_remains_highest_strategy_score(self):
         row = self.base_row()
         row.update({

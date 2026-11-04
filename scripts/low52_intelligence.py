@@ -22,33 +22,39 @@ def _clamp(v, lo=0.0, hi=100.0):
 
 
 def _price_position(row: dict):
+    import math
+
     hist = row.get("price_history_1y") or []
+    if not isinstance(hist, list):
+        return None
     closes = []
     for item in hist:
         try:
             v = item.get("close") if isinstance(item, dict) else item
             v = float(v)
-            if v > 0:
-                closes.append(v)
-        except Exception:
-            pass
+        except (TypeError, ValueError):
+            return None
+        # Dropping invalid daily bars would silently change the 52-week window.
+        if not math.isfinite(v) or v <= 0:
+            return None
+        closes.append(v)
 
     current = _n(row.get("current_price"))
     if current is None and closes:
         current = closes[-1]
-    if current is None or current <= 0:
+    if current is None or not math.isfinite(current) or current <= 0:
         return None
 
     if closes:
         low, high = min(closes), max(closes)
     else:
-        # Some valid dossiers have the provider's explicit 52-week extrema before
-        # their full 1Y history shard is available. Preserve useful Low52 analysis
-        # rather than classifying those equities as price-history insufficient.
+        # Explicit provider 52-week extrema remain a valid fallback when the
+        # history is absent, but never when a present history is corrupt.
         low = _n(row.get("fifty_two_week_low"))
         high = _n(row.get("fifty_two_week_high"))
 
-    if low is None or high is None or low <= 0 or high <= 0 or high < low:
+    if (low is None or high is None or not math.isfinite(low) or
+            not math.isfinite(high) or low <= 0 or high <= 0 or high < low):
         return None
 
     return {
