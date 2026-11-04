@@ -38,6 +38,52 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertAlmostEqual(outcomes[0]["return_pct"], 12.0)
         self.assertEqual(outcomes[0]["opportunity_upside_support"], "strong")
 
+    def test_outcome_price_lookup_retains_now_ineligible_equities(self):
+        from unittest import mock
+
+        payload = {"stocks": [
+            {"ticker": "OLD", "quote_type": "EQUITY", "current_price": 80,
+             "opportunity_score": 0, "opportunity_eligible": False,
+             "risk_gate": "severe"},
+            {"ticker": "NEW", "quote_type": "EQUITY", "current_price": 120,
+             "opportunity_score": 75, "opportunity_eligible": True},
+            {"ticker": "STALE", "quote_type": "EQUITY", "current_price": 92,
+             "pipeline_status": "equity_carried_forward"},
+            {"ticker": "FUND", "quote_type": "ETF", "current_price": 100},
+        ]}
+        with mock.patch.object(MOD, "load_json", return_value=payload):
+            selected = MOD.current_rows()
+            current_prices = MOD.outcome_price_rows()
+        self.assertEqual(set(selected), {"NEW"})
+        self.assertEqual(set(current_prices), {"OLD", "NEW"})
+        snapshots = [{"date": "2026-08-02",
+                      "observations": {"OLD": observation(price=100)}}]
+        outcomes = []
+        self.assertEqual(MOD.materialise_outcomes(
+            dt.date(2026, 8, 30), snapshots, current_prices, outcomes
+        ), 1)
+        self.assertEqual(outcomes[0]["return_pct"], -20.0)
+        self.assertEqual(outcomes[0]["risk_gate"], "clear",
+                         "Outcome must use frozen cohort evidence, not today's risk gate")
+
+    def test_missing_or_stale_price_is_not_imputed(self):
+        from unittest import mock
+        payload = {"stocks": [
+            {"ticker": "OLD", "quote_type": "EQUITY",
+             "pipeline_status": "equity_carried_forward", "current_price": 140},
+            {"ticker": "INVALID", "quote_type": "EQUITY", "current_price": float("nan")},
+        ]}
+        with mock.patch.object(MOD, "load_json", return_value=payload):
+            current_prices = MOD.outcome_price_rows()
+        self.assertEqual(current_prices, {})
+        snapshots = [{"date": "2026-08-02",
+                      "observations": {"OLD": observation(price=100)}}]
+        outcomes = []
+        self.assertEqual(MOD.materialise_outcomes(
+            dt.date(2026, 8, 30), snapshots, current_prices, outcomes
+        ), 0)
+        self.assertEqual(outcomes, [])
+
     def test_late_horizon_is_not_backfilled(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{"date": "2026-07-01", "observations": {"AAA": observation()}}]
