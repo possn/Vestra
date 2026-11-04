@@ -89,6 +89,34 @@ def current_rows():
     return out
 
 
+def outcome_price_rows():
+    """All current valid equity prices, independent of today's Discovery eligibility.
+
+    Eligibility is frozen at the *selection* date. Filtering this lookup by
+    current eligibility would selectively drop past winners/losers when their
+    investment thesis or risk gate changes (survivorship bias).
+    """
+    payload = load_json(INDEX, {})
+    out = {}
+    for row in payload.get("stocks") or []:
+        if not isinstance(row, dict):
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        price = num(row.get("current_price"))
+        if not ticker or price is None or price <= 0:
+            continue
+        if str(row.get("quote_type") or "").upper() in {
+            "ETF", "CRYPTO", "CRYPTOCURRENCY", "FUND", "MUTUALFUND"
+        }:
+            continue
+        if str(row.get("pipeline_status") or "") in {
+            "equity_catalog_only", "equity_carried_forward"
+        }:
+            continue
+        out[ticker] = row
+    return out
+
+
 def make_observation(row):
     sleeves = row.get("opportunity_sleeves") or {}
     return {
@@ -346,6 +374,7 @@ def evidence_policy(report_horizons):
 def main():
     today = dt.date.today()
     rows = current_rows()
+    outcome_prices = outcome_price_rows()
     history = load_json(HISTORY, {"schema_version": 1, "snapshots": [], "outcomes": []})
     snapshots = history.setdefault("snapshots", [])
     outcomes = history.setdefault("outcomes", [])
@@ -363,7 +392,7 @@ def main():
     snapshots[:] = [s for s in snapshots if isinstance(s, dict) and dt.date.fromisoformat(str(s.get("date"))) >= cutoff]
     outcomes[:] = [x for x in outcomes if isinstance(x, dict) and dt.date.fromisoformat(str(x.get("cohort_date"))) >= cutoff]
 
-    added = materialise_outcomes(today, snapshots, rows, outcomes)
+    added = materialise_outcomes(today, snapshots, outcome_prices, outcomes)
 
     horizon_report = {}
     for horizon in HORIZONS:
