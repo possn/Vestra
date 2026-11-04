@@ -22,6 +22,14 @@ class Trading212IdentityContract(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js unavailable")
+    def test_idless_dividends_and_official_id_collision_behaviour(self):
+        completed = subprocess.run(
+            ["node", "tests/t212-no-id-dividend.test.cjs"],
+            cwd=ROOT, capture_output=True, text=True, timeout=20,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+
     def test_parser_preserves_broker_id_before_generating_event_key(self):
         parser = (ROOT / "app-broker-parsers.js").read_text(encoding="utf-8")
         start = parser.index("function parseBrokerLedgerRows(")
