@@ -1,0 +1,116 @@
+/* Vestra Intelligence 2.0 — Market editorial entry.
+   Scope: stable Market shell only. Search, discovery, modes and data owners stay intact. */
+@media(min-width:900px){
+ #viewMarket .market-shell{
+  max-width:1420px!important;
+  margin-inline:auto!important;
+ }
+ #viewMarket .market-hero-simple{
+  padding-block:clamp(22px,3vw,40px)!important;
+  margin-bottom:clamp(14px,2vw,28px)!important;
+ }
+ #viewMarket .market-hero-simple h2{
+  font:500 clamp(36px,4.7vw,60px)/1.08 var(--vestra-editorial-serif,Georgia,serif)!important;
+  letter-spacing:-.045em!important;
+ }
+}
+/* Search and modes are one research navigation chapter, not independent cards. */
+#viewMarket .market-search{
+ width:100%!important;
+ min-width:0!important;
+ margin-block:0 clamp(12px,1.8vw,22px)!important;
+}
+#viewMarket .market-mode-grid{
+ min-width:0!important;
+ max-width:100%!important;
+ scroll-padding-inline:10px!important;
+ overscroll-behavior-inline:contain;
+}
+#viewMarket .market-mode-grid .market-mode{
+ min-height:44px!important;
+ border-radius:11px!important;
+ box-shadow:none!important;
+}
+#viewMarket .market-portfolio-access{
+ min-height:58px!important;
+ border-radius:12px!important;
+ box-shadow:none!important;
+}
+/* Existing hydrated opportunity/ETF/crypto sections remain visible;
+   only separate them editorially, leaving specialized inner contrast intact. */
+#viewMarket #marketPrimary{
+ min-width:0!important;
+}
+#viewMarket #marketPrimary>.market-section{
+ margin-block:clamp(16px,2.4vw,30px)!important;
+ padding:clamp(16px,2vw,27px)!important;
+ box-shadow:none!important;
+}
+#viewMarket #marketPrimary .market-section__head h3{
+ font-family:var(--vestra-editorial-serif,Georgia,serif);
+ font-weight:500;
+ letter-spacing:-.025em;
+ line-height:1.2;
+}
+#viewMarket .market-tools{
+ margin-top:clamp(16px,2.2vw,28px)!important;
+ border-radius:14px!important;
+ box-shadow:none!important;
+}
+#viewMarket .market-tools>summary{
+ min-height:48px!important;
+}
+#viewMarket :is(.market-mode,.market-portfolio-access,.market-tools>summary,.market-tool-btn):focus-visible{
+ outline:2px solid #d7bc89!important;
+ outline-offset:3px!important;
+}
+@media(max-width:600px){
+ #viewMarket .market-shell{gap:clamp(9px,2.7vw,14px)!important;}
+ #viewMarket .market-hero-simple{
+  padding-block:10px 13px!important;
+  margin-bottom:0!important;
+  border-bottom:1px solid rgba(200,223,208,.22)!important;
+ }
+ #viewMarket .market-hero-simple h2{
+  font:500 clamp(23px,6.3vw,26px)/1.16 var(--vestra-editorial-serif,Georgia,serif)!important;
+  letter-spacing:-.035em!important;
+ }
+ #viewMarket .market-hero-simple p{
+  font-size:12px!important;
+  line-height:1.5!important;
+ }
+ #viewMarket .market-search input{
+  font-size:14px!important;
+  min-height:44px!important;
+ }
+ #viewMarket .market-mode-grid{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:8px!important;
+  overflow-x:auto!important;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+ }
+ #viewMarket .market-mode-grid .market-mode{
+  flex:0 0 auto!important;
+  min-width:0!important;
+  padding-inline:12px!important;
+  scroll-snap-align:start;
+ }
+ #viewMarket .market-portfolio-access{
+  padding:10px 13px!important;
+  border-radius:12px!important;
+ }
+ #viewMarket #marketPrimary>.market-section{
+  padding:14px 12px!important;
+  margin-block:12px!important;
+  border-radius:13px!important;
+ }
+ #viewMarket #marketPrimary .market-section__head h3{
+  font-size:18px!important;
+ }
+ #viewMarket .market-tools>summary{min-height:48px!important;}
+}
+@media(prefers-reduced-motion:reduce){
+ #viewMarket .market-mode-grid{scroll-behavior:auto!important;}
+}
