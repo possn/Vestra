@@ -1,0 +1,138 @@
+/* Vestra 2.0 / Carteira — editorial position ledger and quieter tools.
+   Existing hydrated position rows, filters, source colors and handlers remain intact. */
+#viewAssets #portfolioPositionsChapter {
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-top:1px solid rgba(200,223,208,.22)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+#viewAssets #portfolioPositionsChapter .portfolio-list-head {
+  padding:clamp(16px,2.2vw,28px) 0 14px!important;
+  margin:0!important;
+  border-bottom:1px solid rgba(200,223,208,.22)!important;
+  min-width:0;
+}
+#viewAssets #portfolioPositionsChapter .portfolio-list-head .card__title {
+  font:500 clamp(22px,2.5vw,31px)/1.2 var(--vestra-editorial-serif,Georgia,serif)!important;
+  letter-spacing:-.035em!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  min-width:0!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item {
+  display:flex!important;
+  align-items:center!important;
+  gap:clamp(12px,2vw,20px)!important;
+  min-width:0!important;
+  min-height:62px;
+  padding:clamp(12px,1.5vw,17px) 2px!important;
+  margin:0!important;
+  background:#eceee9!important;
+  background-image:none!important;
+  border:0!important;
+  border-bottom:1px solid #c3ceca!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  color:#18343a!important;
+  -webkit-text-fill-color:#18343a!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item .item__l {
+  flex:1 1 auto!important;
+  min-width:0!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item :is(.item__l,.item__t,.item__v) {
+  color:#18343a!important;
+  -webkit-text-fill-color:#18343a!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item .item__t {
+  font-size:clamp(13px,1.3vw,16px)!important;
+  font-weight:650!important;
+  line-height:1.35!important;
+  overflow-wrap:anywhere!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item .item__s {
+  color:#465f61!important;
+  -webkit-text-fill-color:#465f61!important;
+  font-size:12px!important;
+  line-height:1.45!important;
+  overflow-wrap:anywhere!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item .item__v {
+  flex:0 1 auto!important;
+  min-width:0!important;
+  font-variant-numeric:tabular-nums!important;
+  font-size:clamp(13px,1.4vw,17px)!important;
+  font-weight:650!important;
+  text-align:right!important;
+  overflow-wrap:anywhere!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item :is(.badge,[class*="badge"]) {
+  -webkit-text-fill-color:currentColor!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item:is(:hover,:focus-within) {
+  background:#e0e9e5!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item:focus-visible {
+  outline:2px solid var(--vestra-portfolio-hero-gold,#d7bc89)!important;
+  outline-offset:-2px!important;
+}
+#viewAssets #portfolioPositionsChapter #portfolioFilterPanel {
+  padding-block:clamp(13px,1.7vw,20px)!important;
+  border-bottom:1px solid rgba(200,223,208,.22)!important;
+}
+#viewAssets #portfolioPositionsChapter #btnPortfolioFilters {
+  min-width:68px!important;
+  min-height:44px!important;
+}
+#viewAssets #portfolioPositionsChapter #itemsList>.item :is(button,a) {
+  min-height:36px;
+}
+#viewAssets #portfolioToolsStrip {
+  background:transparent!important;
+  border:0!important;
+  border-top:1px solid rgba(200,223,208,.22)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+#viewAssets #portfolioToolsStrip>summary {
+  min-height:56px!important;
+  border-radius:0!important;
+}
+#viewAssets #portfolioToolsStrip .portfolio-tools__body {
+  min-width:0!important;
+}
+@media (max-width:600px) {
+  #viewAssets #portfolioPositionsChapter .portfolio-list-head .card__title {
+    font-size:22px!important;
+  }
+  #viewAssets #portfolioPositionsChapter #itemsList>.item {
+    gap:9px!important;
+    min-height:56px!important;
+    padding:12px 1px!important;
+  }
+  #viewAssets #portfolioPositionsChapter #itemsList>.item .item__v {
+    max-width:47%!important;
+    font-size:13px!important;
+  }
+  #viewAssets #portfolioPositionsChapter #itemsList>.item .item__t {
+    font-size:13px!important;
+  }
+  #viewAssets #portfolioPositionsChapter #itemsList>.item .item__s {
+    font-size:11px!important;
+  }
+  #viewAssets #portfolioPositionsChapter #portfolioFilterPanel .filters>* {
+    max-width:100%;
+    min-width:0;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  #viewAssets #portfolioPositionsChapter #itemsList>.item {
+    transition:none!important;
+  }
+}
