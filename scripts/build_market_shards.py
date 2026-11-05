@@ -67,6 +67,7 @@ INDEX_KEYS = {
     "score", "score_raw", "data_confidence", "data_coverage_pct", "confidence_score",
     "confidence_label", "metric_confidence", "score_reliability", "risk_gate",
     "score_model",
+    "critical_metric_coverage_pct",
     # dimensions used by list/portfolio ranking
     "quality_pct", "growth_pct", "balance_pct", "cashflow_pct", "value_pct",
     "execution_pct", "earnings_quality_pct", "capital_allocation_pct",
@@ -90,6 +91,11 @@ INDEX_KEYS = {
     # opportunity summaries used outside the Scanner tool
     "scanner_best", "scanner_best_score", "qarp_score", "qarp_label",
     "opportunity_score", "opportunity_score_raw", "opportunity_label",
+    # Preserve canonical selection and economic sleeves before dossier hydration.
+    # Detailed gate traces/reasons stay lazy; caps are rendered on shortlist cards.
+    "opportunity_featured", "opportunity_featured_min_score",
+    "opportunity_sleeves", "opportunity_sleeve_coverage_pct",
+    "opportunity_ranking_weight_coverage_pct", "opportunity_caps",
     "opportunity_upside_support", 
     "opportunity_revision_evidence", 
      

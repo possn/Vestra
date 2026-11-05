@@ -11,6 +11,39 @@ import build_market_shards as shards
 
 
 class MarketIndexPayloadTests(unittest.TestCase):
+    def test_discovery_decisions_survive_publication_and_runtime_hydration(self):
+        # Deliberately disagree with legacy thresholds/proxies to detect fallback.
+        sources = [{
+            "ticker": "TEST", "quote_type": "EQUITY", "score": 99,
+            "opportunity_eligible": True, "opportunity_featured": featured,
+            "opportunity_featured_min_score": 67, "opportunity_score": 60,
+            "critical_metric_coverage_pct": 40,
+            "opportunity_ranking_weight_coverage_pct": 72,
+            "opportunity_sleeves": {"strength": 55, "asymmetry": 82, "inflection": 61},
+            "opportunity_sleeve_coverage_pct": {"strength": 95, "asymmetry": coverage, "inflection": 70},
+            "opportunity_caps": [{"reason": "Evidência limitada", "cap": 64}],
+            "opportunity_gates": [{"name": "coverage", "passed": True}],
+            "price_history_1y": [{"close": 100}],
+        } for featured, coverage in ((False, 60), (True, 85))]
+        compact = [shards.index_row(row) for row in sources]
+        decoded = shards.unpack_index_payload(shards.pack_index_payload({"stocks": compact}))["stocks"]
+        for source, startup in zip(sources, decoded):
+            for key in ("opportunity_featured", "opportunity_featured_min_score",
+                        "opportunity_sleeves", "opportunity_sleeve_coverage_pct",
+                        "opportunity_caps", "critical_metric_coverage_pct",
+                        "opportunity_ranking_weight_coverage_pct"):
+                self.assertEqual(startup[key], source[key], key)
+            self.assertNotIn("opportunity_gates", startup)
+            self.assertNotIn("price_history_1y", startup)
+        import json
+        import subprocess
+        result = subprocess.run(
+            ["node", "tests/runtime_discovery_publication_contract.js"], cwd=ROOT,
+            input=json.dumps([sources, compact, decoded]), text=True,
+            capture_output=True, check=True,
+        )
+        self.assertIn("publication parity passed", result.stdout)
+
     def test_detail_only_text_lists_stay_out_of_startup_index(self):
         source = {
             "ticker": "AAPL",
