@@ -194,6 +194,34 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertEqual(capture["validated_capture_pct"], 0.0)
         self.assertIsNone(MOD.observation_capture(today, snapshots, [], 168)["observation_capture_pct"])
 
+    def test_missing_outcome_audit_does_not_infer_delisting(self):
+        today = dt.date(2026, 8, 30)
+        snapshots = [{"date": "2026-08-02", "observations": {
+            "AAA": observation(), "BBB": observation(), "CCC": observation(),
+        }}]
+        outcomes = [{"cohort_date": "2026-08-02", "horizon_days": 28,
+                     "ticker": "AAA", "return_pct": 5}]
+        diag = MOD.missing_outcome_diagnostics(
+            today, snapshots, outcomes, 28, {"AAA": {"current_price": 110},
+                                             "BBB": {"current_price": 90}}
+        )
+        self.assertEqual(diag["missing_outcome_count"], 2)
+        self.assertEqual(diag["missing_price_now_count"], 1)
+        self.assertEqual(diag["price_available_within_window_count"], 1)
+        self.assertEqual(diag["capture_window_expired_count"], 0)
+        self.assertEqual(diag["delisting_status"], "unverified")
+        self.assertEqual({x["ticker"] for x in diag["missing_outcome_samples"]}, {"BBB", "CCC"})
+
+    def test_missing_outcome_audit_marks_expired_window_not_fake_return(self):
+        today = dt.date(2026, 9, 15)
+        snapshots = [{"date": "2026-08-02", "observations": {"LOST": observation()}}]
+        diag = MOD.missing_outcome_diagnostics(today, snapshots, [], 28, {})
+        self.assertEqual(diag["missing_outcome_count"], 1)
+        self.assertEqual(diag["missing_price_now_count"], 1)
+        self.assertEqual(diag["capture_window_expired_count"], 1)
+        self.assertEqual(diag["price_available_within_window_count"], 0)
+        self.assertNotIn("return_pct", diag["missing_outcome_samples"][0])
+
     def test_evidence_policy_never_auto_tunes_production(self):
         mature = {"cohort_count": 8, "n": 100, "validated_capture_pct": 85.0}
         result = MOD.evidence_policy({"28": mature, "84": mature, "168": {}})
