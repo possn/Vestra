@@ -177,6 +177,8 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertEqual(capture["realised_matured_observations"], 1)
         self.assertEqual(capture["missing_matured_observations"], 2)
         self.assertEqual(capture["observation_capture_pct"], 33.3)
+        self.assertEqual(capture["validated_matured_observations"], 0)
+        self.assertEqual(capture["validated_capture_pct"], 0.0)
 
     def test_asset_capture_deduplicates_outcomes_and_ignores_future_cohorts(self):
         today = dt.date(2026, 8, 30)
@@ -189,14 +191,43 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertEqual(capture["expected_matured_observations"], 2)
         self.assertEqual(capture["realised_matured_observations"], 1)
         self.assertEqual(capture["observation_capture_pct"], 50.0)
+        self.assertEqual(capture["validated_capture_pct"], 0.0)
         self.assertIsNone(MOD.observation_capture(today, snapshots, [], 168)["observation_capture_pct"])
 
     def test_evidence_policy_never_auto_tunes_production(self):
-        mature = {"cohort_count": 8}
+        mature = {"cohort_count": 8, "n": 100, "validated_capture_pct": 85.0}
         result = MOD.evidence_policy({"28": mature, "84": mature, "168": {}})
         self.assertEqual(result["status"], "review_allowed")
         self.assertTrue(result["production_rules_frozen"])
         self.assertIn("never auto-tuned", result["rule"])
+
+    def test_legacy_outcomes_do_not_inflate_validated_capture(self):
+        today = dt.date(2026, 8, 30)
+        snapshots = [{"date": "2026-08-02", "observations": {
+            "AAA": observation(), "BBB": observation(), "CCC": observation(),
+        }}]
+        outcomes = [
+            {"cohort_date": "2026-08-02", "horizon_days": 28,
+             "ticker": "AAA", "return_pct": 4},
+            {"cohort_date": "2026-08-02", "horizon_days": 28,
+             "ticker": "BBB", "return_pct": 6, "validation_eligible": True},
+            {"cohort_date": "2026-08-02", "horizon_days": 28,
+             "ticker": "CCC", "return_pct": 0, "validation_eligible": False},
+        ]
+        capture = MOD.observation_capture(today, snapshots, outcomes, 28)
+        self.assertEqual(capture["realised_matured_observations"], 3)
+        self.assertEqual(capture["validated_matured_observations"], 1)
+        self.assertEqual(capture["unvalidated_matured_observations"], 2)
+        self.assertEqual(capture["validated_capture_pct"], 33.3)
+
+    def test_evidence_review_requires_validated_coverage(self):
+        mature = {"cohort_count": 8, "n": 150, "validated_capture_pct": 79.9}
+        self.assertEqual(MOD.evidence_policy({"28": mature, "84": mature})["status"], "observe_only")
+        mature["validated_capture_pct"] = 80
+        mature["n"] = 99
+        self.assertEqual(MOD.evidence_policy({"28": mature, "84": mature})["status"], "observe_only")
+        mature["n"] = 100
+        self.assertEqual(MOD.evidence_policy({"28": mature, "84": mature})["status"], "review_allowed")
 
     def test_single_horizon_keeps_observe_only(self):
         result = MOD.evidence_policy({"28": {"cohort_count": 8}, "84": {}, "168": {}})

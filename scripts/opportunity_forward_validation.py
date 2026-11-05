@@ -360,12 +360,23 @@ def observation_capture(today, snapshots, outcomes, horizon):
         if isinstance(item, dict) and int(item.get("horizon_days") or 0) == horizon
         and outcome_key(item.get("cohort_date"), horizon, item.get("ticker")) in expected
     }
+    validated = {
+        outcome_key(item.get("cohort_date"), horizon, item.get("ticker"))
+        for item in outcomes
+        if isinstance(item, dict) and int(item.get("horizon_days") or 0) == horizon
+        and item.get("validation_eligible") is True
+        and num(item.get("return_pct")) is not None
+        and outcome_key(item.get("cohort_date"), horizon, item.get("ticker")) in expected
+    }
     count = len(expected)
     return {
         "expected_matured_observations": count,
         "realised_matured_observations": len(realised),
         "missing_matured_observations": count - len(realised),
         "observation_capture_pct": round(100.0 * len(realised) / count, 1) if count else None,
+        "validated_matured_observations": len(validated),
+        "unvalidated_matured_observations": len(realised - validated),
+        "validated_capture_pct": round(100.0 * len(validated) / count, 1) if count else None,
     }
 
 
@@ -419,12 +430,14 @@ def evidence_policy(report_horizons):
     mature = [
         int(h) for h, pack in report_horizons.items()
         if (pack.get("cohort_count") or 0) >= 8
+        and (pack.get("validated_capture_pct") or 0) >= 80
+        and (pack.get("n") or 0) >= 100
     ]
     return {
         "status": "observe_only" if len(mature) < 2 else "review_allowed",
         "production_rules_frozen": True,
         "mature_horizons": mature,
-        "rule": "Opportunity weights/gates are never auto-tuned. Review requires >=8 mature cohorts on at least two horizons.",
+        "rule": "Opportunity weights/gates are never auto-tuned. Review requires >=8 mature cohorts, >=100 validated outcomes and >=80% validated observation capture on at least two horizons.",
     }
 
 
@@ -488,7 +501,7 @@ def main():
         "interpretation": {
             "rank_ic": "Spearman correlation between Opportunity score known at cohort date and realised forward return.",
             "top_minus_bottom": "Median return spread between highest and lowest Opportunity-score quintiles.",
-            "observation_capture": "Fraction of originally selected stocks with a realised outcome in matured cohorts; distinct from cohort coverage and excludes imputed returns.",
+            "observation_capture": "Recorded observation coverage counts legacy outcomes; validated_capture_pct counts only corporate-action-validated results and is used in evidence policy. Neither imputes missing/delisted returns.",
             "upside_support": "Compares realised returns for strong/moderate/weak/negative/unavailable support known at cohort date.",
             "no_auto_tuning": "This report is diagnostic only and never changes production Opportunity rules.",
             "return_basis": "Price returns adjusted for explicitly registered splits/spin-offs using shared Score validation rules. Dividends and unregistered corporate actions remain unaccounted for; NOT total shareholder returns.",
