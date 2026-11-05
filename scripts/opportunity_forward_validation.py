@@ -205,6 +205,11 @@ def materialise_outcomes(today, snapshots, rows, outcomes, dividend_events=None)
                     ticker, snap["date"], today.isoformat(),
                     old.get("currency"), dividend_events or [],
                 )
+                if cash["event_count"] and (
+                    str(now.get("currency") or "").strip().upper()
+                    != str(old.get("currency") or "").strip().upper()
+                ):
+                    raise ValueError(f"{ticker}: snapshot/end quote currencies differ")
                 item = {
                     "cohort_date": snap["date"],
                     "evaluated_date": today.isoformat(),
