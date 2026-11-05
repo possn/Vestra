@@ -17,6 +17,11 @@ from collections import defaultdict
 from pathlib import Path
 
 try:
+    from scripts.discovery_dividend_evidence import validated_events, documented_dividend_cash
+except ModuleNotFoundError:
+    from discovery_dividend_evidence import validated_events, documented_dividend_cash
+
+try:
     from scripts.score_forward_validation import corporate_action_adjusted_return
 except ModuleNotFoundError:
     from score_forward_validation import corporate_action_adjusted_return
@@ -25,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "data" / "stocks-index.json"
 HISTORY = ROOT / "data" / "opportunity_validation_history.json"
 REPORT = ROOT / "data" / "opportunity_validation_report.json"
+DIVIDEND_EVIDENCE = ROOT / "data" / "verified_dividend_events.json"
 HORIZONS = (28, 84, 168)
 MAX_HORIZON_LATENESS_DAYS = 10
 RETENTION_DAYS = 800
@@ -126,6 +132,7 @@ def make_observation(row):
     sleeves = row.get("opportunity_sleeves") or {}
     return {
         "price": num(row.get("current_price")),
+        "currency": str(row.get("currency") or "").strip().upper(),
         "sector": str(row.get("sector") or "Unknown"),
         "score_model": str(row.get("score_model") or "general"),
         "opportunity_label": str(row.get("opportunity_label") or ""),
@@ -160,7 +167,7 @@ def outcome_key(cohort_date, horizon, ticker):
     return f"{cohort_date}|{int(horizon)}|{ticker}"
 
 
-def materialise_outcomes(today, snapshots, rows, outcomes):
+def materialise_outcomes(today, snapshots, rows, outcomes, dividend_events=None):
     existing = {
         outcome_key(x.get("cohort_date"), x.get("horizon_days"), x.get("ticker"))
         for x in outcomes if isinstance(x, dict)
@@ -193,6 +200,16 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                 )
                 if adjustment is None:
                     continue
+                # Documented cash is diagnostic, not proof of complete dividend coverage.
+                cash = documented_dividend_cash(
+                    ticker, snap["date"], today.isoformat(),
+                    old.get("currency"), dividend_events or [],
+                )
+                if cash["event_count"] and (
+                    str(now.get("currency") or "").strip().upper()
+                    != str(old.get("currency") or "").strip().upper()
+                ):
+                    raise ValueError(f"{ticker}: snapshot/end quote currencies differ")
                 item = {
                     "cohort_date": snap["date"],
                     "evaluated_date": today.isoformat(),
@@ -209,6 +226,15 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                     "corporate_action_unresolved": adjustment["corporate_action_unresolved"],
                     "unresolved_distributions": adjustment["unresolved_distributions"],
                     "validation_eligible": adjustment["validation_eligible"],
+                    "documented_dividend_event_count": cash["event_count"],
+                    "documented_dividend_cash_per_share": cash["cash_per_terminal_share"],
+                    "documented_dividend_sources": cash["source_urls"],
+                    "documented_cash_inclusive_return_pct": (
+                        round((adjustment["return_pct"] / 100.0
+                               + cash["cash_per_terminal_share"]
+                               / (p0 * adjustment["split_adjustment_factor"])) * 100.0, 6)
+                        if cash["event_count"] and adjustment["validation_eligible"] else None
+                    ),
                     **{k: v for k, v in old.items() if k != "price"},
                 }
                 outcomes.append(item)
@@ -512,7 +538,9 @@ def main():
     snapshots[:] = [s for s in snapshots if isinstance(s, dict) and dt.date.fromisoformat(str(s.get("date"))) >= cutoff]
     outcomes[:] = [x for x in outcomes if isinstance(x, dict) and dt.date.fromisoformat(str(x.get("cohort_date"))) >= cutoff]
 
-    added = materialise_outcomes(today, snapshots, outcome_prices, outcomes)
+    # Missing ledger means no documented payments. Invalid evidence stops publication.
+    dividend_events = validated_events(load_json(DIVIDEND_EVIDENCE, None))
+    added = materialise_outcomes(today, snapshots, outcome_prices, outcomes, dividend_events)
 
     horizon_report = {}
     for horizon in HORIZONS:
@@ -522,6 +550,10 @@ def main():
         pack = summarize_horizon(vals, expected)
         pack.update(observation_capture(today, snapshots, outcomes, horizon))
         pack.update(missing_outcome_diagnostics(today, snapshots, outcomes, horizon, outcome_prices))
+        pack["documented_dividend_outcomes"] = sum(
+            1 for x in vals if (x.get("documented_dividend_event_count") or 0) > 0
+        )
+        pack["documented_dividend_cash_is_complete"] = False
         pack["legacy_or_unresolved_outcomes"] = sum(
             1 for x in outcomes if int(x.get("horizon_days") or 0) == horizon
             and x.get("validation_eligible") is not True
@@ -555,7 +587,8 @@ def main():
             "observation_capture": "Recorded observation coverage counts legacy outcomes; validated_capture_pct counts only corporate-action-validated results and is used in evidence policy. Neither imputes missing/delisted returns.",
             "upside_support": "Compares realised returns for strong/moderate/weak/negative/unavailable support known at cohort date.",
             "no_auto_tuning": "This report is diagnostic only and never changes production Opportunity rules.",
-            "return_basis": "Price returns adjusted for explicitly registered splits/spin-offs using shared Score validation rules. Dividends and unregistered corporate actions remain unaccounted for; NOT total shareholder returns.",
+            "return_basis": "Ranking uses price returns with known splits/spin-offs. Separately, issuer-documented cash dividends may be shown for windows with verified payments; neither series proves full total shareholder return.",
+            "dividend_evidence": "Only source-linked confirmed payments after the snapshot ex-date and paid by evaluation date are counted. Missing events are unknown, not zero; incomplete coverage never changes ranking IC or evidence readiness.",
             "legacy": "Existing historical outcomes without validation_eligible are preserved but excluded from adjusted ranking statistics; do not mislabel them as action-adjusted.",
             "survivorship": "Missing or delisted tickers are not given synthetic returns; observation capture must be checked before interpreting IC or spread.",
             "missing_outcomes": "Missing price is not evidence of delisting. Missing outcomes are itemised separately by cohort and capture-window status, without invented zero or -100% returns.",
