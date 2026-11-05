@@ -33,7 +33,7 @@ class DiscoveryEvidenceContractTests(unittest.TestCase):
         result = self.assess(self.row(critical_metric_coverage_pct=None))
         self.assertFalse(result["opportunity_eligible"])
         self.assertIsNone(result["opportunity_score"])
-        self.assertIn("Cobertura de métricas críticas", result["opportunity_reason"])
+        self.assertIn("Cobertura de métricas críticas", result["opportunity_suppressed_reason"])
 
     def test_insufficient_data_reliability_is_not_eligible(self):
         result = self.assess(self.row(score_reliability="insufficient_data"))
