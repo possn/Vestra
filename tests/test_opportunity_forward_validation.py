@@ -103,6 +103,40 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         ), 0)
         self.assertEqual(outcomes, [])
 
+    def test_reverse_split_is_adjusted_using_shared_score_registry(self):
+        today = dt.date(2026, 10, 9)
+        snapshots = [{"date": "2026-09-11", "observations": {
+            "NFE": observation(price=1),
+        }}]
+        outcomes = []
+        self.assertEqual(MOD.materialise_outcomes(today, snapshots, {
+            "NFE": {"current_price": 50}
+        }, outcomes), 1)
+        self.assertAlmostEqual(outcomes[0]["raw_return_pct"], 4900)
+        self.assertAlmostEqual(outcomes[0]["return_pct"], 0)
+        self.assertEqual(outcomes[0]["split_adjustment_factor"], 50)
+        self.assertTrue(outcomes[0]["corporate_action_adjusted"])
+        self.assertTrue(outcomes[0]["validation_eligible"])
+
+    def test_unresolved_spinoff_kept_but_not_validation_eligible(self):
+        today = dt.date(2026, 10, 28)
+        snapshots = [{"date": "2026-09-30", "observations": {
+            "CTVA": observation(price=100),
+        }}]
+        outcomes = []
+        self.assertEqual(MOD.materialise_outcomes(today, snapshots, {
+            "CTVA": {"current_price": 90},
+        }, outcomes), 1)
+        self.assertFalse(outcomes[0]["validation_eligible"])
+        self.assertTrue(outcomes[0]["corporate_action_unresolved"])
+        self.assertIn("VYLR", outcomes[0]["unresolved_distributions"])
+
+    def test_legacy_cohort_outcome_does_not_claim_adjustment(self):
+        legacy = {"cohort_date": "2026-08-02", "horizon_days": 28,
+                  "ticker": "AAA", "opportunity_score": 80, "return_pct": 2}
+        self.assertIsNot(legacy.get("validation_eligible"), True)
+        self.assertFalse(legacy.get("corporate_action_adjusted", False))
+
     def test_late_horizon_is_not_backfilled(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{"date": "2026-07-01", "observations": {"AAA": observation()}}]
