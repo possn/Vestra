@@ -79,7 +79,7 @@ def current_rows():
         opp = num(row.get("opportunity_score"))
         if not ticker or price is None or price <= 0 or opp is None:
             continue
-        if not bool(row.get("opportunity_eligible")):
+        if row.get("opportunity_eligible") is not True:
             continue
         if str(row.get("quote_type") or "").upper() in {"ETF", "CRYPTO", "CRYPTOCURRENCY", "FUND", "MUTUALFUND"}:
             continue
@@ -125,7 +125,7 @@ def make_observation(row):
         "score_model": str(row.get("score_model") or "general"),
         "opportunity_label": str(row.get("opportunity_label") or ""),
         "opportunity_upside_support": str(row.get("opportunity_upside_support") or "unavailable"),
-        "risk_gate": str(row.get("risk_gate") or "clear"),
+        "risk_gate": str(row.get("risk_gate") or "unknown"),
         "opportunity_rotation_theme": str(row.get("opportunity_rotation_theme") or ""),
         "opportunity_rotation_signal": str(row.get("opportunity_rotation_signal") or ""),
         "opportunity_rotation_etf_confirmed": row.get("opportunity_rotation_etf_confirmed"),
@@ -456,7 +456,7 @@ def main():
     report = {
         "schema_version": 1,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "methodology": "prospective weekly Opportunity cohorts; persistent realised outcomes; no historical reconstruction",
+        "methodology": "prospective weekly Opportunity cohorts; persistent realised price returns; no historical reconstruction",
         "horizons_days": list(HORIZONS),
         "snapshots_available": len(snapshots),
         "realised_outcomes": len(outcomes),
@@ -469,6 +469,8 @@ def main():
             "observation_capture": "Fraction of originally selected stocks with a realised outcome in matured cohorts; distinct from cohort coverage and excludes imputed returns.",
             "upside_support": "Compares realised returns for strong/moderate/weak/negative/unavailable support known at cohort date.",
             "no_auto_tuning": "This report is diagnostic only and never changes production Opportunity rules.",
+            "return_basis": "Price-only return from unadjusted current_price snapshots; dividends and corporate actions are not comprehensively adjusted, so these are NOT total shareholder returns.",
+            "survivorship": "Missing or delisted tickers are not given synthetic returns; observation capture must be checked before interpreting IC or spread.",
         },
     }
     REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")

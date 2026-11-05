@@ -66,6 +66,25 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertEqual(outcomes[0]["risk_gate"], "clear",
                          "Outcome must use frozen cohort evidence, not today's risk gate")
 
+    def test_missing_risk_gate_remains_unknown_in_archived_snapshot(self):
+        row = {"current_price": 100, "opportunity_score": 72}
+        frozen = MOD.make_observation(row)
+        self.assertEqual(frozen["risk_gate"], "unknown")
+        self.assertEqual(MOD.make_observation({**row, "risk_gate": "watch"})["risk_gate"], "watch")
+
+    def test_only_boolean_true_is_eligible_for_prospective_cohort(self):
+        from unittest import mock
+        payload = {"stocks": [
+            {"ticker": "VALID", "quote_type": "EQUITY", "current_price": 100,
+             "opportunity_score": 72, "opportunity_eligible": True},
+            {"ticker": "STRING_FALSE", "quote_type": "EQUITY", "current_price": 100,
+             "opportunity_score": 70, "opportunity_eligible": "false"},
+            {"ticker": "UNKNOWN", "quote_type": "EQUITY", "current_price": 100,
+             "opportunity_score": 70},
+        ]}
+        with mock.patch.object(MOD, "load_json", return_value=payload):
+            self.assertEqual(set(MOD.current_rows()), {"VALID"})
+
     def test_missing_or_stale_price_is_not_imputed(self):
         from unittest import mock
         payload = {"stocks": [
