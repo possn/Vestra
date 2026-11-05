@@ -519,9 +519,9 @@ def assess(row: dict) -> dict:
     gates = [
         _gate("score_available", score is not None, value=score, detail="Score Vestra não pode estar suprimido"),
         _gate("coverage", coverage is not None and coverage >= 55, value=coverage, threshold=55),
-        _gate("critical_coverage", critical is None or critical >= 45, value=critical, threshold=45),
+        _gate("critical_coverage", critical is not None and critical >= 45, value=critical, threshold=45),
         _gate("confidence", conf is not None and conf >= 50, value=conf, threshold=50),
-        _gate("reliability", reliability not in ("insufficient", "suppressed"), detail=reliability or "unspecified"),
+        _gate("reliability", reliability in ("robust", "moderate_evidence", "limited_evidence"), detail=reliability or "unspecified"),
         _gate("timing_available", timing_score is not None, value=timing_score, detail="Best Opportunities Now exige histórico de preço suficiente"),
     ]
 
@@ -529,11 +529,11 @@ def assess(row: dict) -> dict:
         return _insufficient("Score Vestra suprimido por evidência insuficiente", gates=gates, timing=timing)
     if coverage is None or coverage < 55:
         return _insufficient("Cobertura fundamental inferior a 55%", gates=gates, timing=timing)
-    if critical is not None and critical < 45:
+    if critical is None or critical < 45:
         return _insufficient("Cobertura de métricas críticas insuficiente", gates=gates, timing=timing)
     if conf is None or conf < 50:
         return _insufficient("Confiança dos dados inferior a 50%", gates=gates, timing=timing)
-    if reliability in ("insufficient", "suppressed"):
+    if reliability not in ("robust", "moderate_evidence", "limited_evidence"):
         return _insufficient("Fiabilidade insuficiente para ranking", gates=gates, timing=timing)
     if timing_score is None:
         return _insufficient("Histórico de preço insuficiente para avaliar o momento", gates=gates, timing=timing)
@@ -790,7 +790,7 @@ def assess(row: dict) -> dict:
         "opportunity_valuation_method_count": upside_support.get("valuation_method_count"),
         "opportunity_valuation_dispersion_pct": upside_support.get("valuation_dispersion_pct"),
         "opportunity_eligible": True,
-        "opportunity_featured": bool(opp is not None and opp >= FEATURED_OPPORTUNITY_MIN_SCORE),
+        "opportunity_featured": bool(opp is not None and opp >= FEATURED_OPPORTUNITY_MIN_SCORE and gate in ("clear", "watch")),
         "opportunity_featured_min_score": FEATURED_OPPORTUNITY_MIN_SCORE,
         "opportunity_signal_count": len(observed),
         "opportunity_structural_signal_count": len(structural_observed),

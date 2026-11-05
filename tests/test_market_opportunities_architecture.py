@@ -93,7 +93,7 @@ class CanonicalMarketOpportunityTests(unittest.TestCase):
         source = read('market-opportunities.js')
         ranker = read('scripts/opportunity_rank.py')
         self.assertIn('"opportunity_featured": False', ranker)
-        self.assertIn('"opportunity_featured": bool(opp is not None and opp >= FEATURED_OPPORTUNITY_MIN_SCORE)', ranker)
+        self.assertIn('"opportunity_featured": bool(opp is not None and opp >= FEATURED_OPPORTUNITY_MIN_SCORE and gate in ("clear", "watch"))', ranker)
         self.assertIn('"opportunity_featured_min_score": FEATURED_OPPORTUNITY_MIN_SCORE', ranker)
         self.assertIn("const publishedFeatured=typeof s?.opportunity_featured==='boolean'?s.opportunity_featured:null", source)
         self.assertIn("if(publishedFeatured!==null)return publishedFeatured", source)
