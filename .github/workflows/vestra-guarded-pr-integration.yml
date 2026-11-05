@@ -37,9 +37,21 @@ jobs:
               const head=pr.head.sha;
               const main=(await github.rest.git.getRef({owner,repo,ref:'heads/main'})).data.object.sha;
               // Strict main stability and no out-of-date branches; automatic data commits can move main.
-              if(pr.base.sha!==main)continue;
               const compare=(await github.rest.repos.compareCommits({owner,repo,base:main,head})).data;
-              if(compare.behind_by!==0||compare.status==='diverged')continue;
+              // Only opt-in branches in this repository may be refreshed. GitHub's
+              // update-branch endpoint rejects conflicts; never force-push or bypass CI.
+              if(compare.behind_by>0){
+                if(pr.head.repo?.full_name!==context.repo.owner+'/'+context.repo.repo)continue;
+                const fresh=(await github.rest.pulls.get({owner,repo,pull_number:pr.number})).data;
+                const stableMain=(await github.rest.git.getRef({owner,repo,ref:'heads/main'})).data.object.sha;
+                if(fresh.state!=='open'||fresh.draft||fresh.head.sha!==head||stableMain!==main)continue;
+                try{
+                  await github.rest.pulls.updateBranch({owner,repo,pull_number:pr.number,expected_head_sha:head});
+                  core.notice(`Updated #${pr.number} to main; awaiting four fresh exact-head gates`);
+                }catch(error){core.warning(`#${pr.number} branch update skipped: ${error.message}`);}
+                break; // Never merge on the old head; CI must run on the refreshed head.
+              }
+              if(pr.base.sha!==main||compare.behind_by!==0||compare.status==='diverged')continue;
               const workflows=['runtime-js-syntax.yml','architecture-invariants.yml','browser-e2e.yml'];
               const completed=[];
               for(const workflow_id of workflows){
