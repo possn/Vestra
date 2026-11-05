@@ -16,6 +16,11 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
+try:
+    from scripts.score_forward_validation import corporate_action_adjusted_return
+except ModuleNotFoundError:
+    from score_forward_validation import corporate_action_adjusted_return
+
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "data" / "stocks-index.json"
 HISTORY = ROOT / "data" / "opportunity_validation_history.json"
@@ -183,6 +188,11 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                 opp = num(old.get("opportunity_score"))
                 if p0 is None or p1 is None or p0 <= 0 or opp is None:
                     continue
+                adjustment = corporate_action_adjusted_return(
+                    ticker, snap["date"], today.isoformat(), p0, p1, rows
+                )
+                if adjustment is None:
+                    continue
                 item = {
                     "cohort_date": snap["date"],
                     "evaluated_date": today.isoformat(),
@@ -191,7 +201,14 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                     "ticker": ticker,
                     "start_price": round(p0, 8),
                     "end_price": round(p1, 8),
-                    "return_pct": round((p1 / p0 - 1.0) * 100.0, 6),
+                    "return_pct": round(adjustment["return_pct"], 6),
+                    "raw_return_pct": round(adjustment["raw_return_pct"], 6),
+                    "split_adjustment_factor": adjustment["split_adjustment_factor"],
+                    "distribution_value_per_parent": adjustment["distribution_value_per_parent"],
+                    "corporate_action_adjusted": adjustment["corporate_action_adjusted"],
+                    "corporate_action_unresolved": adjustment["corporate_action_unresolved"],
+                    "unresolved_distributions": adjustment["unresolved_distributions"],
+                    "validation_eligible": adjustment["validation_eligible"],
                     **{k: v for k, v in old.items() if k != "price"},
                 }
                 outcomes.append(item)
@@ -436,10 +453,15 @@ def main():
 
     horizon_report = {}
     for horizon in HORIZONS:
-        vals = [x for x in outcomes if int(x.get("horizon_days") or 0) == horizon]
+        vals = [x for x in outcomes if int(x.get("horizon_days") or 0) == horizon
+                and x.get("validation_eligible") is True]
         expected = expected_matured_count(today, snapshots, horizon)
         pack = summarize_horizon(vals, expected)
         pack.update(observation_capture(today, snapshots, outcomes, horizon))
+        pack["legacy_or_unresolved_outcomes"] = sum(
+            1 for x in outcomes if int(x.get("horizon_days") or 0) == horizon
+            and x.get("validation_eligible") is not True
+        )
         first, pending = maturity_dates(today, snapshots, horizon)
         pack["first_possible_maturity_date"] = first.isoformat() if first else None
         pack["next_pending_maturity_date"] = pending.isoformat() if pending else None
@@ -469,7 +491,8 @@ def main():
             "observation_capture": "Fraction of originally selected stocks with a realised outcome in matured cohorts; distinct from cohort coverage and excludes imputed returns.",
             "upside_support": "Compares realised returns for strong/moderate/weak/negative/unavailable support known at cohort date.",
             "no_auto_tuning": "This report is diagnostic only and never changes production Opportunity rules.",
-            "return_basis": "Price-only return from unadjusted current_price snapshots; dividends and corporate actions are not comprehensively adjusted, so these are NOT total shareholder returns.",
+            "return_basis": "Price returns adjusted for explicitly registered splits/spin-offs using shared Score validation rules. Dividends and unregistered corporate actions remain unaccounted for; NOT total shareholder returns.",
+            "legacy": "Existing historical outcomes without validation_eligible are preserved but excluded from adjusted ranking statistics; do not mislabel them as action-adjusted.",
             "survivorship": "Missing or delisted tickers are not given synthetic returns; observation capture must be checked before interpreting IC or spread.",
         },
     }
