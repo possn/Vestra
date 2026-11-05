@@ -132,6 +132,7 @@ def make_observation(row):
     sleeves = row.get("opportunity_sleeves") or {}
     return {
         "price": num(row.get("current_price")),
+        "currency": str(row.get("currency") or "").strip().upper(),
         "sector": str(row.get("sector") or "Unknown"),
         "score_model": str(row.get("score_model") or "general"),
         "opportunity_label": str(row.get("opportunity_label") or ""),
@@ -202,7 +203,7 @@ def materialise_outcomes(today, snapshots, rows, outcomes, dividend_events=None)
                 # Documented cash is diagnostic, not proof of complete dividend coverage.
                 cash = documented_dividend_cash(
                     ticker, snap["date"], today.isoformat(),
-                    old.get("currency") or now.get("currency"), dividend_events or [],
+                    old.get("currency"), dividend_events or [],
                 )
                 item = {
                     "cohort_date": snap["date"],
