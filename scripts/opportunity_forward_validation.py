@@ -380,6 +380,56 @@ def observation_capture(today, snapshots, outcomes, horizon):
     }
 
 
+def missing_outcome_diagnostics(today, snapshots, outcomes, horizon, current_prices, sample_limit=12):
+    """Audit missing future returns without assuming a delisting or a loss.
+
+    Current ticker absence only means the canonical current index cannot supply
+    a usable price. It is not evidence of bankruptcy, a delisting or -100% return.
+    """
+    recorded = {
+        outcome_key(x.get("cohort_date"), horizon, x.get("ticker"))
+        for x in outcomes if isinstance(x, dict)
+        and int(x.get("horizon_days") or 0) == horizon
+    }
+    missing = []
+    recoverable = 0
+    unavailable = 0
+    window_expired = 0
+    for snap in snapshots:
+        if not isinstance(snap, dict):
+            continue
+        try:
+            age = (today - dt.date.fromisoformat(str(snap.get("date")))).days
+        except (TypeError, ValueError):
+            continue
+        if age < horizon:
+            continue
+        for ticker, observation in (snap.get("observations") or {}).items():
+            if not isinstance(observation, dict):
+                continue
+            key = outcome_key(snap["date"], horizon, ticker)
+            if key in recorded:
+                continue
+            is_priced = ticker in current_prices
+            is_late = age > horizon + MAX_HORIZON_LATENESS_DAYS
+            recoverable += int(is_priced and not is_late)
+            unavailable += int(not is_priced)
+            window_expired += int(is_late)
+            missing.append({
+                "cohort_date": snap["date"], "ticker": ticker,
+                "price_available_now": is_priced,
+                "capture_window_expired": is_late,
+            })
+    return {
+        "missing_outcome_count": len(missing),
+        "missing_price_now_count": unavailable,
+        "price_available_within_window_count": recoverable,
+        "capture_window_expired_count": window_expired,
+        "missing_outcome_samples": missing[:max(0, sample_limit)],
+        "delisting_status": "unverified",
+    }
+
+
 def maturity_dates(today, snapshots, horizon):
     dates = []
     for snap in snapshots:
@@ -471,6 +521,7 @@ def main():
         expected = expected_matured_count(today, snapshots, horizon)
         pack = summarize_horizon(vals, expected)
         pack.update(observation_capture(today, snapshots, outcomes, horizon))
+        pack.update(missing_outcome_diagnostics(today, snapshots, outcomes, horizon, outcome_prices))
         pack["legacy_or_unresolved_outcomes"] = sum(
             1 for x in outcomes if int(x.get("horizon_days") or 0) == horizon
             and x.get("validation_eligible") is not True
@@ -507,6 +558,7 @@ def main():
             "return_basis": "Price returns adjusted for explicitly registered splits/spin-offs using shared Score validation rules. Dividends and unregistered corporate actions remain unaccounted for; NOT total shareholder returns.",
             "legacy": "Existing historical outcomes without validation_eligible are preserved but excluded from adjusted ranking statistics; do not mislabel them as action-adjusted.",
             "survivorship": "Missing or delisted tickers are not given synthetic returns; observation capture must be checked before interpreting IC or spread.",
+            "missing_outcomes": "Missing price is not evidence of delisting. Missing outcomes are itemised separately by cohort and capture-window status, without invented zero or -100% returns.",
         },
     }
     REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
