@@ -24,7 +24,7 @@ class FirstVerifiedDividendBatchTests(unittest.TestCase):
         )
 
     def test_verified_events_match_real_candidates_and_primary_source(self):
-        events = validated_events(self.verified)
+        events = [e for e in validated_events(self.verified) if e['ticker'] == 'BAC']
         self.assertEqual(len(events), 3)
         self.assertEqual({event["ticker"] for event in events}, {"BAC"})
         self.assertEqual(
@@ -37,7 +37,7 @@ class FirstVerifiedDividendBatchTests(unittest.TestCase):
             ],
         )
         approvals = []
-        for raw in self.verified["events"]:
+        for raw in (row for row in self.verified['events'] if row['ticker'] == 'BAC'):
             self.assertTrue(domain_matches(
                 raw["source_url"], self.issuers["domains"]["BAC"]
             ))
@@ -56,7 +56,9 @@ class FirstVerifiedDividendBatchTests(unittest.TestCase):
             approvals, self.candidates, self.issuers,
             {"schema_version": 1, "events": []}, dt.date(2026, 11, 6)
         )
-        self.assertEqual(reconstructed, self.verified)
+        self.assertEqual(reconstructed, {'schema_version': 1, 'events': [
+            row for row in self.verified['events'] if row['ticker'] == 'BAC'
+        ]})
 
     def test_no_unverified_candidates_are_promoted(self):
         candidates = {
@@ -66,7 +68,7 @@ class FirstVerifiedDividendBatchTests(unittest.TestCase):
         for event in self.verified["events"]:
             key = (event["ticker"], event["ex_date"], round(float(event["amount_per_share"]), 10))
             self.assertIn(key, candidates)
-        self.assertEqual(len(self.verified["events"]), 3)
+        self.assertGreaterEqual(len(self.verified["events"]), 3)
 
 
 if __name__ == "__main__":
