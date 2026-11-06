@@ -1,0 +1,71 @@
+name: Discover dividend candidates
+
+# Candidate ex-date/amount data is not evidence of paid dividends. This workflow
+# deliberately never writes to verified_dividend_events.json or ranking output.
+on:
+  schedule:
+    - cron: "25 8 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: discovery-dividend-candidates
+  cancel-in-progress: true
+
+jobs:
+  candidate-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Candidate scan (unverified only)
+        run: python scripts/discovery_dividend_candidates.py --batch-size 12
+
+      - name: Guard candidate-only contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('data/dividend_event_candidates.json')
+          report = json.loads(p.read_text(encoding='utf-8'))
+          assert report['status'] == 'candidates_only_unverified'
+          assert all(c.get('status') == 'pending_issuer_verification'
+                     and c.get('payment_date') is None
+                     and c.get('issuer_source_url') is None
+                     for c in report.get('candidates', []))
+          assert len(report.get('scanned_tickers', [])) <= 12
+          PY
+
+      - name: Check code PR publish window
+        id: publish_window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/defer_main_publish_if_code_pr.py --market-grace-minutes 45
+
+      - name: Publish candidates only
+        if: steps.publish_window.outputs.defer != 'true'
+        run: |
+          git config user.name "vestra-dividend-candidate-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/dividend_event_candidates.json
+          if ! git diff --cached --quiet; then
+            git commit -m "diagnostics: unverified dividend candidates ($(date -u +'%Y-%m-%d'))"
+            bash scripts/publish_with_retry.sh origin main
+          fi

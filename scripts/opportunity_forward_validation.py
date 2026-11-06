@@ -17,9 +17,9 @@ from collections import defaultdict
 from pathlib import Path
 
 try:
-    from scripts.discovery_dividend_evidence import validated_events, documented_dividend_cash
+    from scripts.discovery_dividend_evidence import validated_events, documented_dividend_cash, load_verified_ledger
 except ModuleNotFoundError:
-    from discovery_dividend_evidence import validated_events, documented_dividend_cash
+    from discovery_dividend_evidence import validated_events, documented_dividend_cash, load_verified_ledger
 
 try:
     from scripts.score_forward_validation import corporate_action_adjusted_return
@@ -539,7 +539,7 @@ def main():
     outcomes[:] = [x for x in outcomes if isinstance(x, dict) and dt.date.fromisoformat(str(x.get("cohort_date"))) >= cutoff]
 
     # Missing ledger means no documented payments. Invalid evidence stops publication.
-    dividend_events = validated_events(load_json(DIVIDEND_EVIDENCE, None))
+    dividend_events = validated_events(load_verified_ledger(DIVIDEND_EVIDENCE))
     added = materialise_outcomes(today, snapshots, outcome_prices, outcomes, dividend_events)
 
     horizon_report = {}
