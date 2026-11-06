@@ -31,10 +31,10 @@ def quote_currency_provenance(raw_currency):
     """
     raw = str(raw_currency or "").strip()
     token = raw.upper()
-    if token in {"GBP", "GBX", "GBPENCE", "GB P", "GBPENNY", "GBPENNIES"}:
-        if token == "GBP":
-            return {"quote_currency": "GBP", "quote_unit": "major", "quote_unit_factor": 1}
+    if raw in {"GBp", "GBx"} or token == "GBX":
         return {"quote_currency": "GBP", "quote_unit": "minor", "quote_unit_factor": 100}
+    if raw == "GBP" or token == "GBP" and raw != "GBp":
+        return {"quote_currency": "GBP", "quote_unit": "major", "quote_unit_factor": 1}
     if len(token) == 3 and token.isalpha():
         return {"quote_currency": token, "quote_unit": "major", "quote_unit_factor": 1}
     return {"quote_currency": None, "quote_unit": "unknown", "quote_unit_factor": None}
@@ -70,7 +70,7 @@ def select_for_scan(snapshots, day, *, batch_size=12, pool_size=120):
 def normalise_candidates(ticker, currency, series, *, checked_at, vendor_quote_currency=None):
     """Convert vendor ex-date observations to pending candidates."""
     result = []
-    quote = quote_currency_provenance(vendor_quote_currency)
+    denomination = quote_currency_provenance(vendor_quote_currency)
     if series is None:
         return result
     for timestamp, raw_amount in series.items():
@@ -90,9 +90,9 @@ def normalise_candidates(ticker, currency, series, *, checked_at, vendor_quote_c
             "currency_hint": None,
             "snapshot_quote_currency": currency or None,
             "vendor_quote_currency_raw": str(vendor_quote_currency or "") or None,
-            "vendor_quote_currency": quote["quote_currency"],
-            "vendor_quote_unit": quote["quote_unit"],
-            "vendor_quote_unit_factor": quote["quote_unit_factor"],
+            "vendor_quote_currency": denomination["quote_currency"],
+            "vendor_quote_unit": denomination["quote_unit"],
+            "vendor_quote_unit_factor": denomination["quote_unit_factor"],
             "dividend_amount_unit": "unverified",
             "payment_date": None,
             "status": "pending_issuer_verification",
