@@ -22,6 +22,24 @@ CANDIDATES = ROOT / "data" / "dividend_event_candidates.json"
 MAX_CANDIDATES = 3000
 
 
+def quote_currency_provenance(raw_currency):
+    """Quote denomination is not evidence of the currency/unit of a dividend.
+
+    On London listings, quote currency GBp/GBX denotes pence while GBP denotes
+    pounds; cash dividends may be reported on another basis by Yahoo.
+    Never apply a silent 100x conversion to vendor dividend amounts.
+    """
+    raw = str(raw_currency or "").strip()
+    token = raw.upper()
+    if raw in {"GBp", "GBx"} or token == "GBX":
+        return {"quote_currency": "GBP", "quote_unit": "minor", "quote_unit_factor": 100}
+    if raw == "GBP" or token == "GBP" and raw != "GBp":
+        return {"quote_currency": "GBP", "quote_unit": "major", "quote_unit_factor": 1}
+    if len(token) == 3 and token.isalpha():
+        return {"quote_currency": token, "quote_unit": "major", "quote_unit_factor": 1}
+    return {"quote_currency": None, "quote_unit": "unknown", "quote_unit_factor": None}
+
+
 def select_for_scan(snapshots, day, *, batch_size=12, pool_size=120):
     """Deterministic rotation; newest real cohort, highest rank first."""
     usable = [s for s in snapshots if isinstance(s, dict)
@@ -49,9 +67,10 @@ def select_for_scan(snapshots, day, *, batch_size=12, pool_size=120):
     return [pool[(offset + i) % len(pool)] for i in range(min(batch_size, len(pool)))]
 
 
-def normalise_candidates(ticker, currency, series, *, checked_at):
+def normalise_candidates(ticker, currency, series, *, checked_at, vendor_quote_currency=None):
     """Convert vendor ex-date observations to pending candidates."""
     result = []
+    denomination = quote_currency_provenance(vendor_quote_currency)
     if series is None:
         return result
     for timestamp, raw_amount in series.items():
@@ -67,7 +86,14 @@ def normalise_candidates(ticker, currency, series, *, checked_at):
         result.append({
             "ticker": ticker, "ex_date": ex_date,
             "amount_per_share": round(amount, 10),
-            "currency_hint": currency or None,
+            # Quote metadata is contextual, NEVER dividend-cash denomination.
+            "currency_hint": None,
+            "snapshot_quote_currency": currency or None,
+            "vendor_quote_currency_raw": str(vendor_quote_currency or "") or None,
+            "vendor_quote_currency": denomination["quote_currency"],
+            "vendor_quote_unit": denomination["quote_unit"],
+            "vendor_quote_unit_factor": denomination["quote_unit_factor"],
+            "dividend_amount_unit": "unverified",
             "payment_date": None,
             "status": "pending_issuer_verification",
             "source_vendor": "Yahoo Finance",
@@ -92,7 +118,19 @@ def merge_candidates(previous, additions):
             raise ValueError("Incomplete candidate identity")
         if item.get("status") != "pending_issuer_verification":
             raise ValueError("Candidate cache cannot contain confirmed payments")
-        keyed[key] = item if key not in keyed else keyed[key]
+        if key not in keyed:
+            keyed[key] = item
+        else:
+            prior = keyed[key]
+            # Preserve original first-seen date but enrich missing quote metadata.
+            if not prior.get("vendor_quote_currency_raw") and item.get("vendor_quote_currency_raw"):
+                keyed[key] = {**prior,
+                    **{field: item.get(field) for field in (
+                        "vendor_quote_currency_raw", "vendor_quote_currency",
+                        "vendor_quote_unit", "vendor_quote_unit_factor",
+                        "dividend_amount_unit",
+                    )},
+                }
     ordered = sorted(keyed.values(), key=lambda x:
                      (x["ex_date"], x["ticker"], x["amount_per_share"]), reverse=True)
     return ordered[:MAX_CANDIDATES]
@@ -105,9 +143,14 @@ def scan(history, previous, day, fetch_dividends, *, batch_size=12):
     succeeded = []
     for ticker, currency in [(t[0], t[2]) for t in targets]:
         try:
-            series = fetch_dividends(ticker)
+            fetched = fetch_dividends(ticker)
+            if isinstance(fetched, tuple) and len(fetched) == 2:
+                series, quote_currency = fetched
+            else:
+                series, quote_currency = fetched, None
             gathered.extend(normalise_candidates(
-                ticker, currency, series, checked_at=day
+                ticker, currency, series, checked_at=day,
+                vendor_quote_currency=quote_currency,
             ))
             succeeded.append(ticker)
         except Exception as exc:
@@ -128,7 +171,7 @@ def scan(history, previous, day, fetch_dividends, *, batch_size=12):
         "scanned_tickers": [t[0] for t in targets],
         "failed_tickers": failures,
         "candidates": candidates,
-        "verification_note": "Vendor ex-date/amount only; issuer notice and actual payment date are missing. NEVER promote automatically to verified_dividend_events.json.",
+        "verification_note": "Vendor ex-date/amount only; dividend cash unit/currency, issuer notice and actual payment date are unverified. Quote currency (including GBp/GBX) is diagnostic only, never auto-converted or treated as dividend denomination. NEVER promote automatically to verified_dividend_events.json.",
     }
 
 
@@ -146,8 +189,15 @@ def main():
     import yfinance as yf
 
     def fetch(ticker):
-        # Public vendor data only. Never use vendor alone as paid-cash proof.
-        return yf.Ticker(ticker).dividends
+        # Quote metadata must not be silently mistaken for dividend cash units.
+        asset = yf.Ticker(ticker)
+        dividends = asset.dividends
+        quote_currency = None
+        try:
+            quote_currency = asset.fast_info.currency
+        except Exception:
+            pass  # Missing quote metadata does not invalidate ex-date observations.
+        return dividends, quote_currency
 
     report = scan(history, previous, dt.date.today(), fetch, batch_size=args.batch_size)
     if report["collection_status"] in {"source_unavailable", "no_targets"}:
