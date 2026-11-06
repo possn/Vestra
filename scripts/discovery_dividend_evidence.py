@@ -25,6 +25,22 @@ except ModuleNotFoundError:
     from score_forward_validation import split_price_basis_factor
 
 
+def load_verified_ledger(path):
+    """Absent is an empty ledger; malformed existing evidence must stop publication."""
+    import json
+    from pathlib import Path
+    target = Path(path)
+    if not target.exists():
+        return None
+    try:
+        loaded = json.loads(target.read_text(encoding="utf-8"))
+        if loaded is None:
+            raise ValueError("Existing verified dividend ledger cannot be null")
+        return loaded
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Corrupt verified dividend ledger: {target}") from exc
+
+
 def validated_events(payload):
     """Reject the entire ledger on malformed/provisional/ambiguous entries."""
     if payload is None:
