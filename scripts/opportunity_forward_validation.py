@@ -406,6 +406,79 @@ def observation_capture(today, snapshots, outcomes, horizon):
     }
 
 
+def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
+    """Explain why recorded prospective outcomes are NOT validation-eligible.
+
+    This is a disjoint accounting of all unique recorded keys belonging to
+    matured frozen cohorts. Legacy results are NOT retroactively revalidated.
+    Invalid numeric returns are excluded even if a stale flag says eligible.
+    """
+    expected = set()
+    for snap in snapshots:
+        if not isinstance(snap, dict):
+            continue
+        try:
+            cohort = str(snap["date"])
+            if (today - dt.date.fromisoformat(cohort)).days < horizon:
+                continue
+        except (KeyError, TypeError, ValueError):
+            continue
+        rows = snap.get("observations") or {}
+        if not isinstance(rows, dict):
+            continue
+        for ticker, old in rows.items():
+            if isinstance(old, dict):
+                expected.add(outcome_key(cohort, horizon, ticker))
+
+    categories = {
+        "eligible": 0,
+        "legacy_missing_eligibility": 0,
+        "invalid_return": 0,
+        "unresolved_corporate_action": 0,
+        "explicitly_ineligible_other": 0,
+    }
+    recorded = set()
+    ignored_duplicates = 0
+    for item in outcomes:
+        if not isinstance(item, dict):
+            continue
+        try:
+            if int(item.get("horizon_days") or 0) != horizon:
+                continue
+        except (TypeError, ValueError):
+            continue
+        key = outcome_key(item.get("cohort_date"), horizon, item.get("ticker"))
+        if key not in expected:
+            continue
+        if key in recorded:
+            ignored_duplicates += 1
+            continue
+        recorded.add(key)
+        if num(item.get("return_pct")) is None:
+            category = "invalid_return"
+        elif item.get("validation_eligible") is True:
+            category = "eligible"
+        elif item.get("validation_eligible") is None:
+            category = "legacy_missing_eligibility"
+        elif item.get("corporate_action_unresolved") is True or item.get("unresolved_distributions"):
+            category = "unresolved_corporate_action"
+        else:
+            category = "explicitly_ineligible_other"
+        categories[category] += 1
+
+    return {
+        "scope": "unique recorded outcomes from matured frozen cohorts only",
+        "expected_observations": len(expected),
+        "recorded_observations": len(recorded),
+        "missing_observations": len(expected) - len(recorded),
+        "duplicate_records_ignored": ignored_duplicates,
+        "exclusion_reasons": categories,
+        "unvalidated_recorded_observations": len(recorded) - categories["eligible"],
+        "classification": "diagnostic_only_no_backfill",
+        "interpretation": "Historical records without explicit corporate-action eligibility remain unvalidated. Missing outcomes are never inferred to be delisted or zero returns.",
+    }
+
+
 def score_quintile_capture(today, snapshots, outcomes, horizon):
     """Attrition by ORIGINAL cohort score rank, never by surviving returns.
 
@@ -634,6 +707,7 @@ def main():
         pack = summarize_horizon(vals, expected)
         pack.update(observation_capture(today, snapshots, outcomes, horizon))
         pack["score_quintile_capture"] = score_quintile_capture(today, snapshots, outcomes, horizon)
+        pack["outcome_exclusion_reasons"] = outcome_exclusion_reasons(today, snapshots, outcomes, horizon)
         pack.update(missing_outcome_diagnostics(today, snapshots, outcomes, horizon, outcome_prices))
         pack["documented_dividend_outcomes"] = sum(
             1 for x in vals if (x.get("documented_dividend_event_count") or 0) > 0
