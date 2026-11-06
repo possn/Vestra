@@ -136,6 +136,44 @@ def merge_candidates(previous, additions):
     return ordered[:MAX_CANDIDATES]
 
 
+def provenance_coverage(candidates, scanned_tickers):
+    """Coverage metrics are quote-context only, not verified cash currency."""
+    scanned = set(scanned_tickers)
+    current = [c for c in candidates if c.get("ticker") in scanned]
+    all_count = len(candidates)
+    current_count = len(current)
+
+    def metrics(rows):
+        count = len(rows)
+        known = sum(bool(c.get("vendor_quote_currency")) and
+                    c.get("vendor_quote_unit") in {"major", "minor"}
+                    for c in rows)
+        minor = sum(c.get("vendor_quote_unit") == "minor" for c in rows)
+        cash_verified = sum(
+            c.get("dividend_amount_unit") != "unverified"
+            for c in rows if "dividend_amount_unit" in c
+        )
+        return {
+            "candidate_count": count,
+            "quote_denomination_known": known,
+            "quote_denomination_unknown": count - known,
+            "quote_denomination_coverage_pct": round(known * 100 / count, 2) if count else None,
+            "minor_quote_unit_count": minor,
+            "cash_dividend_unit_unverified": count,
+            "cash_dividend_currency_verified": 0,
+            "unexpected_cash_unit_claims": cash_verified,
+        }
+
+    # Report the full retained cache AND this cycle's selected issuers,
+    # so historical candidates without metadata do not obscure progress.
+    return {
+        "all_candidates": metrics(candidates),
+        "selected_ticker_candidates": metrics(current),
+        "selected_ticker_count": len(scanned),
+        "interpretation": "Quote denomination and dividend cash denomination are different. No candidate becomes verified by this report.",
+    }
+
+
 def scan(history, previous, day, fetch_dividends, *, batch_size=12):
     targets = select_for_scan(history.get("snapshots", []), day,
                               batch_size=batch_size)
@@ -162,9 +200,11 @@ def scan(history, previous, day, fetch_dividends, *, batch_size=12):
         "source_unavailable" if not succeeded else
         "partial_failure" if failures else "complete"
     )
+    coverage = provenance_coverage(candidates, succeeded)
     return {
         "schema_version": 1,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "quote_provenance_coverage": coverage,
         "status": "candidates_only_unverified",
         "collection_status": collection_status,
         "successful_tickers": succeeded,
@@ -215,7 +255,9 @@ def main():
                       "succeeded": len(report["successful_tickers"]),
                       "scanned": len(report["scanned_tickers"]),
                       "failed": len(report["failed_tickers"]),
-                      "pending_candidates": len(report["candidates"])}))
+                      "pending_candidates": len(report["candidates"]),
+                      "quote_provenance_coverage_pct":
+                          report["quote_provenance_coverage"]["all_candidates"]["quote_denomination_coverage_pct"]}))
 
 
 if __name__ == "__main__":

@@ -54,6 +54,16 @@ jobs:
                      and c.get('issuer_source_url') is None
                      for c in report.get('candidates', []))
           assert len(report.get('scanned_tickers', [])) <= 12
+          coverage = report['quote_provenance_coverage']
+          all_stats = coverage['all_candidates']
+          selected_stats = coverage['selected_ticker_candidates']
+          assert all_stats['candidate_count'] == len(report['candidates'])
+          assert selected_stats['candidate_count'] <= all_stats['candidate_count']
+          assert all_stats['quote_denomination_known'] + all_stats['quote_denomination_unknown'] == all_stats['candidate_count']
+          assert all_stats['cash_dividend_currency_verified'] == 0
+          assert selected_stats['cash_dividend_currency_verified'] == 0
+          assert all_stats['cash_dividend_unit_unverified'] == all_stats['candidate_count']
+          assert all_stats['unexpected_cash_unit_claims'] == 0
           PY
 
       - name: Check code PR publish window
