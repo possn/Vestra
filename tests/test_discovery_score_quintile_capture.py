@@ -13,7 +13,7 @@ class QuintileCaptureTests(unittest.TestCase):
              "ticker": "T%02d" % i, "validation_eligible": True,
              "return_pct": i / 10} for i in range(6)
         ]
-        result = score_quintile_capture(dt.date(2026, 09, 01),
+        result = score_quintile_capture(dt.date(2026, 9, 1),
                                         snapshots, outcomes, 28)
         self.assertEqual([q["expected"] for q in result["quintiles"]], [2]*5)
         self.assertEqual([q["validated"] for q in result["quintiles"]], [2,2,2,0,0])
