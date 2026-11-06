@@ -60,6 +60,44 @@ class CandidateTests(unittest.TestCase):
         self.assertEqual(report["candidates"], [])
         self.assertEqual(report["status"], "candidates_only_unverified")
 
+    def test_complete_outage_is_explicit_and_preserves_existing_candidates(self):
+        history = {"snapshots": [{"date": "2026-11-01", "observations": {
+            "AAA": {"opportunity_score": 70, "currency": "USD"},
+            "BBB": {"opportunity_score": 65, "currency": "USD"},
+        }}]}
+        old = normalise_candidates("OLD", "USD", {
+            dt.datetime(2026, 10, 12): 0.2
+        }, checked_at=dt.date(2026, 11, 5))[0]
+        def offline(_):
+            raise TimeoutError("provider offline")
+        result = scan(history, {"schema_version": 1, "candidates": [old]},
+                      dt.date(2026, 11, 6), offline)
+        self.assertEqual(result["collection_status"], "source_unavailable")
+        self.assertEqual(result["successful_tickers"], [])
+        self.assertEqual(len(result["failed_tickers"]), 2)
+        self.assertEqual(result["candidates"], [old])
+
+    def test_empty_verified_history_is_not_a_successful_scan(self):
+        result = scan({"snapshots": []}, {"schema_version": 1, "candidates": []},
+                      dt.date(2026, 11, 6), lambda ticker: {})
+        self.assertEqual(result["collection_status"], "no_targets")
+        self.assertEqual(result["successful_tickers"], [])
+
+    def test_partial_failure_is_visible_and_eligible_for_publication(self):
+        history = {"snapshots": [{"date": "2026-11-01", "observations": {
+            "AAA": {"opportunity_score": 70, "currency": "USD"},
+            "BBB": {"opportunity_score": 65, "currency": "USD"},
+        }}]}
+        def fetch(ticker):
+            if ticker == "BBB":
+                raise TimeoutError()
+            return {dt.datetime(2026, 10, 12): 0.2}
+        result = scan(history, {"schema_version": 1, "candidates": []},
+                      dt.date(2026, 11, 6), fetch)
+        self.assertEqual(result["collection_status"], "partial_failure")
+        self.assertEqual(result["successful_tickers"], ["AAA"])
+        self.assertEqual(len(result["failed_tickers"]), 1)
+
     def test_ledger_missing_is_optional_but_corruption_is_fatal(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "verified_dividend_events.json"

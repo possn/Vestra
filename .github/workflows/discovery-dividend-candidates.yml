@@ -46,6 +46,9 @@ jobs:
           p = Path('data/dividend_event_candidates.json')
           report = json.loads(p.read_text(encoding='utf-8'))
           assert report['status'] == 'candidates_only_unverified'
+          assert report.get('collection_status') in ('complete', 'partial_failure')
+          assert report.get('successful_tickers')
+          assert len(report['successful_tickers']) + len(report.get('failed_tickers', [])) == len(report['scanned_tickers'])
           assert all(c.get('status') == 'pending_issuer_verification'
                      and c.get('payment_date') is None
                      and c.get('issuer_source_url') is None

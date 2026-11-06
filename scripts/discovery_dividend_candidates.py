@@ -102,20 +102,29 @@ def scan(history, previous, day, fetch_dividends, *, batch_size=12):
     targets = select_for_scan(history.get("snapshots", []), day,
                               batch_size=batch_size)
     gathered, failures = [], []
+    succeeded = []
     for ticker, currency in [(t[0], t[2]) for t in targets]:
         try:
             series = fetch_dividends(ticker)
             gathered.extend(normalise_candidates(
                 ticker, currency, series, checked_at=day
             ))
+            succeeded.append(ticker)
         except Exception as exc:
             failures.append({"ticker": ticker,
                              "error_type": type(exc).__name__})
     candidates = merge_candidates(previous, gathered)
+    collection_status = (
+        "no_targets" if not targets else
+        "source_unavailable" if not succeeded else
+        "partial_failure" if failures else "complete"
+    )
     return {
         "schema_version": 1,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "candidates_only_unverified",
+        "collection_status": collection_status,
+        "successful_tickers": succeeded,
         "scanned_tickers": [t[0] for t in targets],
         "failed_tickers": failures,
         "candidates": candidates,
@@ -141,9 +150,20 @@ def main():
         return yf.Ticker(ticker).dividends
 
     report = scan(history, previous, dt.date.today(), fetch, batch_size=args.batch_size)
+    if report["collection_status"] in {"source_unavailable", "no_targets"}:
+        raise SystemExit(
+            "Dividend candidate scan did not collect usable source evidence: "
+            + json.dumps({
+                "status": report["collection_status"],
+                "scanned": report["scanned_tickers"],
+                "failed": report["failed_tickers"],
+            })
+        )
     CANDIDATES.write_text(json.dumps(report, ensure_ascii=False, indent=2,
                                      allow_nan=False) + "\n", encoding="utf-8")
-    print(json.dumps({"scanned": len(report["scanned_tickers"]),
+    print(json.dumps({"collection_status": report["collection_status"],
+                      "succeeded": len(report["successful_tickers"]),
+                      "scanned": len(report["scanned_tickers"]),
                       "failed": len(report["failed_tickers"]),
                       "pending_candidates": len(report["candidates"])}))
 
