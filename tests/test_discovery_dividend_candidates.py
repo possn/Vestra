@@ -7,7 +7,7 @@ from pathlib import Path
 
 from scripts.discovery_dividend_candidates import (
     merge_candidates, normalise_candidates, scan, select_for_scan,
-    quote_currency_provenance,
+    quote_currency_provenance, provenance_coverage,
 )
 from scripts.discovery_dividend_evidence import load_verified_ledger
 
@@ -145,6 +145,49 @@ class CandidateTests(unittest.TestCase):
         self.assertEqual(combined[0]["first_seen_at"], "2026-11-06")
         self.assertEqual(combined[0]["vendor_quote_unit"], "minor")
         self.assertIsNone(combined[0]["currency_hint"])
+
+    def test_quote_coverage_discloses_retained_and_selected_cohorts(self):
+        old = normalise_candidates(
+            "OLD", "", {dt.datetime(2025, 10, 12): 0.2},
+            checked_at=dt.date(2026, 11, 6)
+        )[0]
+        gbp = normalise_candidates(
+            "BBY.L", "", {dt.datetime(2026, 10, 29): 4.7},
+            checked_at=dt.date(2026, 11, 6), vendor_quote_currency="GBp"
+        )[0]
+        usd = normalise_candidates(
+            "BAC", "", {dt.datetime(2026, 9, 4): 0.32},
+            checked_at=dt.date(2026, 11, 6), vendor_quote_currency="USD"
+        )[0]
+        result = provenance_coverage([old, gbp, usd], ["BAC", "BBY.L"])
+        all_stats = result["all_candidates"]
+        selected = result["selected_ticker_candidates"]
+        self.assertEqual(all_stats["candidate_count"], 3)
+        self.assertEqual(all_stats["quote_denomination_coverage_pct"], 66.67)
+        self.assertEqual(all_stats["quote_denomination_unknown"], 1)
+        self.assertEqual(selected["quote_denomination_coverage_pct"], 100)
+        self.assertEqual(selected["minor_quote_unit_count"], 1)
+        self.assertEqual(selected["cash_dividend_currency_verified"], 0)
+        self.assertEqual(selected["cash_dividend_unit_unverified"], 2)
+        self.assertEqual(result["selected_ticker_count"], 2)
+
+    def test_empty_coverage_is_unknown_not_fabricated_zero(self):
+        stats = provenance_coverage([], [])["all_candidates"]
+        self.assertIsNone(stats["quote_denomination_coverage_pct"])
+        self.assertEqual(stats["candidate_count"], 0)
+
+    def test_scan_report_has_quote_coverage_but_no_cash_confirmation(self):
+        history = {"snapshots": [{"date": "2026-11-01", "observations": {
+            "BAC": {"opportunity_score": 75, "currency": ""}
+        }}]}
+        report = scan(history, {"schema_version": 1, "candidates": []},
+                      dt.date(2026, 11, 6),
+                      lambda _: ({dt.datetime(2026, 9, 4): 0.32}, "USD"))
+        stats = report["quote_provenance_coverage"]["all_candidates"]
+        self.assertEqual(stats["quote_denomination_coverage_pct"], 100)
+        self.assertEqual(stats["cash_dividend_currency_verified"], 0)
+        self.assertEqual(report["candidates"][0]["status"],
+                         "pending_issuer_verification")
 
     def test_ledger_missing_is_optional_but_corruption_is_fatal(self):
         with tempfile.TemporaryDirectory() as directory:
