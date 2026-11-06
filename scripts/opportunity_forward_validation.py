@@ -406,6 +406,90 @@ def observation_capture(today, snapshots, outcomes, horizon):
     }
 
 
+def score_quintile_capture(today, snapshots, outcomes, horizon):
+    """Attrition by ORIGINAL cohort score rank, never by surviving returns.
+
+    For each matured cohort, assign every frozen scored observation to one of
+    five near-equal bins (rank ascending, deterministic ticker tie-break).
+    Outcomes must match frozen cohort+ticker; duplicate records count once.
+    Missing/invalid scores are reported separately, never silently discarded.
+    No missing terminal return is imputed, and no alpha is inferred.
+    """
+    recorded = set()
+    validated = set()
+    for result in outcomes:
+        if not isinstance(result, dict):
+            continue
+        try:
+            if int(result.get("horizon_days") or 0) != horizon:
+                continue
+        except (TypeError, ValueError):
+            continue
+        key = outcome_key(result.get("cohort_date"), horizon, result.get("ticker"))
+        recorded.add(key)
+        if result.get("validation_eligible") is True and num(result.get("return_pct")) is not None:
+            validated.add(key)
+
+    bins = [{"quintile": q, "expected": 0, "recorded": 0, "validated": 0}
+            for q in range(1, 6)]
+    omitted_score = 0
+    matured_cohorts = 0
+    for snap in snapshots:
+        if not isinstance(snap, dict):
+            continue
+        try:
+            cohort = str(snap["date"])
+            age = (today - dt.date.fromisoformat(cohort)).days
+        except (ValueError, TypeError, KeyError):
+            continue
+        if age < horizon:
+            continue
+        observations = snap.get("observations") or {}
+        if not isinstance(observations, dict):
+            continue
+        matured_cohorts += 1
+        scored = []
+        for ticker, observation in observations.items():
+            if not isinstance(observation, dict):
+                continue
+            score = num(observation.get("opportunity_score"))
+            if score is None:
+                omitted_score += 1
+                continue
+            scored.append((score, str(ticker)))
+        scored.sort(key=lambda item: (item[0], item[1]))
+        n = len(scored)
+        for i, (score, ticker) in enumerate(scored):
+            # Rank grouping has deterministic ties and never depends on outcome.
+            q = min(4, (5 * i) // n)
+            item = bins[q]
+            item["expected"] += 1
+            key = outcome_key(cohort, horizon, ticker)
+            item["recorded"] += int(key in recorded)
+            item["validated"] += int(key in validated)
+
+    for item in bins:
+        expected = item["expected"]
+        item["missing"] = expected - item["recorded"]
+        item["unvalidated"] = item["recorded"] - item["validated"]
+        item["validated_capture_pct"] = (
+            round(100 * item["validated"] / expected, 1) if expected else None
+        )
+    nonempty = [item for item in bins if item["expected"]]
+    coverage = [item["validated_capture_pct"] for item in nonempty]
+    return {
+        "method": "quintiles of all frozen scored observations, ascending original opportunity_score, within each matured cohort",
+        "matured_cohorts": matured_cohorts,
+        "missing_or_invalid_score_count": omitted_score,
+        "quintiles": bins,
+        "validated_capture_spread_pp": (
+            round(max(coverage) - min(coverage), 1) if len(coverage) > 1 else None
+        ),
+        "selection_bias_status": "unresolved" if matured_cohorts else "not_yet_mature",
+        "interpretation": "Diagnostic only: a correlation on surviving priced outcomes cannot establish prospective alpha. No missing outcome is imputed or delisting assumed.",
+    }
+
+
 def missing_outcome_diagnostics(today, snapshots, outcomes, horizon, current_prices, sample_limit=12):
     """Audit missing future returns without assuming a delisting or a loss.
 
@@ -549,6 +633,7 @@ def main():
         expected = expected_matured_count(today, snapshots, horizon)
         pack = summarize_horizon(vals, expected)
         pack.update(observation_capture(today, snapshots, outcomes, horizon))
+        pack["score_quintile_capture"] = score_quintile_capture(today, snapshots, outcomes, horizon)
         pack.update(missing_outcome_diagnostics(today, snapshots, outcomes, horizon, outcome_prices))
         pack["documented_dividend_outcomes"] = sum(
             1 for x in vals if (x.get("documented_dividend_event_count") or 0) > 0
