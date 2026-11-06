@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / '.github' / 'workflows'
 
 ACTIVE_WORKFLOWS = {
+    'discovery-dividend-candidates.yml',
     'bootstrap-earnings-archive.yml',
     'architecture-invariants.yml',
     'browser-e2e.yml',
