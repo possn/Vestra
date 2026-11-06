@@ -7,6 +7,7 @@ from pathlib import Path
 
 from scripts.discovery_dividend_candidates import (
     merge_candidates, normalise_candidates, scan, select_for_scan,
+    quote_currency_provenance,
 )
 from scripts.discovery_dividend_evidence import load_verified_ledger
 
@@ -97,6 +98,53 @@ class CandidateTests(unittest.TestCase):
         self.assertEqual(result["collection_status"], "partial_failure")
         self.assertEqual(result["successful_tickers"], ["AAA"])
         self.assertEqual(len(result["failed_tickers"]), 1)
+
+    def test_uk_pence_quote_is_not_silently_treated_as_cash_dividend_unit(self):
+        self.assertEqual(quote_currency_provenance("GBp")["quote_unit"], "minor")
+        self.assertEqual(quote_currency_provenance("GBX")["quote_unit_factor"], 100)
+        self.assertEqual(quote_currency_provenance("GBP")["quote_unit"], "major")
+        candidate = normalise_candidates(
+            "BBY.L", "", {dt.datetime(2026, 10, 29): 4.7},
+            checked_at=dt.date(2026, 11, 6), vendor_quote_currency="GBp"
+        )[0]
+        self.assertIsNone(candidate["currency_hint"])
+        self.assertEqual(candidate["vendor_quote_currency_raw"], "GBp")
+        self.assertEqual(candidate["vendor_quote_currency"], "GBP")
+        self.assertEqual(candidate["vendor_quote_unit"], "minor")
+        self.assertEqual(candidate["vendor_quote_unit_factor"], 100)
+        self.assertEqual(candidate["amount_per_share"], 4.7)
+        self.assertEqual(candidate["dividend_amount_unit"], "unverified")
+
+    def test_quote_currency_is_recorded_but_dividend_currency_stays_unknown(self):
+        history = {"snapshots": [{"date": "2026-11-01", "observations": {
+            "BAC": {"opportunity_score": 80, "currency": ""}
+        }}]}
+        report = scan(history, {"schema_version": 1, "candidates": []},
+                      dt.date(2026, 11, 6),
+                      lambda _: ({dt.datetime(2026, 9, 4): 0.32}, "USD"))
+        dividend = report["candidates"][0]
+        self.assertIsNone(dividend["currency_hint"])
+        self.assertEqual(dividend["vendor_quote_currency"], "USD")
+        self.assertEqual(dividend["vendor_quote_unit"], "major")
+        self.assertEqual(dividend["dividend_amount_unit"], "unverified")
+        self.assertEqual(report["collection_status"], "complete")
+
+    def test_repeat_scan_enriches_missing_quote_provenance_without_duplicate(self):
+        original = normalise_candidates(
+            "BBY.L", "", {dt.datetime(2026, 10, 29): 4.7},
+            checked_at=dt.date(2026, 11, 6)
+        )[0]
+        newer = normalise_candidates(
+            "BBY.L", "", {dt.datetime(2026, 10, 29): 4.7},
+            checked_at=dt.date(2026, 11, 7), vendor_quote_currency="GBp"
+        )[0]
+        combined = merge_candidates(
+            {"schema_version": 1, "candidates": [original]}, [newer]
+        )
+        self.assertEqual(len(combined), 1)
+        self.assertEqual(combined[0]["first_seen_at"], "2026-11-06")
+        self.assertEqual(combined[0]["vendor_quote_unit"], "minor")
+        self.assertIsNone(combined[0]["currency_hint"])
 
     def test_ledger_missing_is_optional_but_corruption_is_fatal(self):
         with tempfile.TemporaryDirectory() as directory:
