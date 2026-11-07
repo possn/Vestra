@@ -73,7 +73,11 @@ assert(eagerTail.includes('ensureDashboardDailyNews();'));
 assert(eagerTail.includes('ensureDashboardMarketSentiment();'));
 assert(eagerTail.includes('ensureDashboardPortfolioConcentration();'));
 assert(source.includes('const etfReady = ensureMarketCompanions();'));
-assert(source.includes('await etfReady;'));
+assert(!source.includes('await etfReady;'));
+assert(source.includes('Promise.resolve(etfReady).then(() =>'));
+assert(source.indexOf('beforeReady(); state.loaded = true; onReady(); announceReady(stocks);') <
+       source.indexOf('Promise.resolve(etfReady).then(() =>'),
+       'Optional ETF enrichment must not delay first market paint');
 assert.deepStrictEqual(Array.from(api.getStocks()), []);
 assert(!source.includes("['data/stocks.json'"));
 
