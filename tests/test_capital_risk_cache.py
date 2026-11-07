@@ -158,6 +158,65 @@ def test_cached_result_can_be_carried_without_discovery():
     assert metrics.capital_risk_reused is True
 
 
+def test_sec_unreadable_or_absent_does_not_mean_risk_clear():
+    from unittest import mock
+
+    class Response:
+        def __init__(self, content, ok=True):
+            self.text = content
+            self.ok = ok
+
+    class Client:
+        def __init__(self, response=None):
+            self.response = response
+
+        def get(self, url, timeout=18):
+            if self.response is None:
+                raise ConnectionError("SEC archive unavailable")
+            return self.response
+
+    rows = [{"form": "8-K", "date": "2026-11-01",
+             "accession": "0001", "doc": "report.htm"}]
+    with mock.patch.object(capital_risk.time, "sleep", return_value=None):
+        no_discovery = capital_risk._scan_docs(Client(), 123, [])
+        unavailable = capital_risk._scan_docs(Client(), 123, rows)
+        inspected_clean = capital_risk._scan_docs(Client(Response("No financing or corporate actions.")), 123, rows)
+        partially_readable = capital_risk._scan_docs(
+            Client(Response("No corporate actions.")), 123,
+            rows + [{"form": "10-K", "date": "2026-10-01",
+                     "accession": "0002", "doc": "annual.htm"}])
+    assert no_discovery["capital_structure_risk"] == "unknown"
+    assert unavailable["capital_structure_risk"] == "unknown"
+    assert inspected_clean["capital_structure_risk"] == "clear"
+    assert inspected_clean["capital_risk_filings_checked"] == 1
+    assert partially_readable["capital_structure_risk"] == "clear"
+
+
+def test_sec_partial_failure_cannot_report_clean_risk():
+    from unittest import mock
+
+    class Response:
+        ok = True
+        text = "Nothing relevant"
+
+    class Client:
+        def __init__(self):
+            self.calls = 0
+
+        def get(self, url, timeout=18):
+            self.calls += 1
+            if self.calls == 2:
+                raise TimeoutError("SEC timeout")
+            return Response()
+
+    rows = [{"form": "8-K", "date": "2026-11-01", "accession": "0001", "doc": "a.htm"},
+            {"form": "8-K", "date": "2026-10-20", "accession": "0002", "doc": "b.htm"}]
+    with mock.patch.object(capital_risk.time, "sleep", return_value=None):
+        result = capital_risk._scan_docs(Client(), 123, rows)
+    assert result["capital_risk_filings_checked"] == 1
+    assert result["capital_structure_risk"] == "unknown"
+
+
 if __name__ == "__main__":
     if not REQUESTS_AVAILABLE:
         print("capital-risk contract skipped in dependency-free historical suite")
@@ -169,3 +228,5 @@ if __name__ == "__main__":
         test_cache_round_trip_is_version_gated()
         test_incremental_selector_prioritizes_missing_cache_and_bounds_cached_rotation()
         test_cached_result_can_be_carried_without_discovery()
+        test_sec_unreadable_or_absent_does_not_mean_risk_clear()
+        test_sec_partial_failure_cannot_report_clean_risk()
