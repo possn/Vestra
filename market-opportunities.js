@@ -58,6 +58,16 @@
       if(!response.ok)throw new Error(`prebreakout feed HTTP ${response.status}`);
       const payload=await response.json();
       if(payload?.schema!=='vestra_prebreakout_v1'||!Array.isArray(payload.signals))throw new Error('prebreakout feed invalid schema');
+      // Fail closed on impossible producer coverage, including already-published
+      // snapshots from the old cross-universe denominator bug.
+      const observedCoverage=payload?.coverage_audit_24h?.coverage_pct;
+      if(observedCoverage!=null&&(!Number.isFinite(observedCoverage)||observedCoverage<0||observedCoverage>100))
+        throw new Error('prebreakout feed impossible OHLCV coverage');
+      const auditCoverage=payload?.scan_quality_audit?.observed_24h_coverage_pct;
+      if(auditCoverage!=null&&(!Number.isFinite(auditCoverage)||auditCoverage<0||auditCoverage>100))
+        throw new Error('prebreakout feed invalid quality coverage');
+      if(observedCoverage!=null&&auditCoverage!=null&&Math.abs(observedCoverage-auditCoverage)>0.01)
+        throw new Error('prebreakout feed conflicting coverage audits');
       // A seven-day-old bar may be valid after holidays, but an old publisher
       // snapshot is never fresh technical evidence. Explicit empty published
       // scans remain authoritative; stale snapshots must not revive candidates.
@@ -716,5 +726,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.17'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.18'});
 })();
