@@ -471,6 +471,7 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         "legacy_missing_eligibility": 0,
         "invalid_return": 0,
         "unresolved_corporate_action": 0,
+        "incomparable_quote_currency": 0,
         "explicitly_ineligible_other": 0,
     }
     # Group unique cohort/horizon/ticker keys before determining eligibility.
@@ -522,6 +523,8 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         elif any(item.get("corporate_action_unresolved") is True or
                  item.get("unresolved_distributions") for item in items):
             category = "unresolved_corporate_action"
+        elif any(item.get("quote_currency_comparable") is False for item in items):
+            category = "incomparable_quote_currency"
         else:
             category = "explicitly_ineligible_other"
         categories[category] += 1
