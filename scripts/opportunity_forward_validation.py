@@ -708,12 +708,13 @@ def evidence_policy(report_horizons):
         if (pack.get("cohort_count") or 0) >= 8
         and (pack.get("validated_capture_pct") or 0) >= 80
         and (pack.get("n") or 0) >= 100
+        and ((pack.get("outcome_exclusion_reasons") or {}).get("duplicate_conflict_keys") or 0) == 0
     ]
     return {
         "status": "observe_only" if len(mature) < 2 else "review_allowed",
         "production_rules_frozen": True,
         "mature_horizons": mature,
-        "rule": "Opportunity weights/gates are never auto-tuned. Review requires >=8 mature cohorts, >=100 validated outcomes and >=80% validated observation capture on at least two horizons.",
+        "rule": "Opportunity weights/gates are never auto-tuned. Review requires >=8 mature cohorts, >=100 validated outcomes, >=80% validated observation capture and no conflicting duplicate records on at least two horizons.",
     }
 
 
