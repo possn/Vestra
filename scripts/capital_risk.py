@@ -68,7 +68,7 @@ def _reverse_split_effective_dates(text: str) -> set[str]:
               "july", "august", "september", "october", "november", "december")
     month_pattern = "|".join(months)
     date_pattern = re.compile(
-        rf"\\b(20\\d{{2}}-\\d{{2}}-\\d{{2}}|(?:{month_pattern})\\s+\\d{{1,2}},?\\s+20\\d{{2}})\\b"
+        rf"\b(20\d{{2}}-\d{{2}}-\d{{2}}|(?:{month_pattern})\s+\d{{1,2}},?\s+20\d{{2}})\b"
     )
     phrases = (
         "reverse stock split became effective",
