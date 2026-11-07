@@ -1041,6 +1041,38 @@ def validate_report_contract(report, now=None):
         "schema_version": report.get("schema_version"),
     }
 
+def verified_outcomes_for_statistics(outcomes, horizon):
+    """Never treat legacy (unset) validation flags as confirmed evidence.
+
+    Statistics and published sample sizes must contain only explicitly
+    corporate-action- and FX-eligible results. Retain all history for
+    diagnostics and eventual evidence-backed review.
+    """
+    verified = []
+    ineligible = 0
+    unverified_legacy = 0
+    for item in outcomes:
+        if not isinstance(item, dict):
+            continue
+        try:
+            if int(item.get("horizon_days") or 0) != horizon:
+                continue
+        except (TypeError, ValueError):
+            continue
+        if item.get("validation_eligible") is True:
+            verified.append(item)
+        elif item.get("validation_eligible") is False:
+            ineligible += 1
+        else:
+            unverified_legacy += 1
+    return verified, {
+        "explicitly_validated": len(verified),
+        "explicitly_ineligible": ineligible,
+        "legacy_or_unknown_eligibility": unverified_legacy,
+        "interpretation": "Only outcomes with validation_eligible=true enter Score performance statistics; unknown is not validated.",
+    }
+
+
 def main():
     today = dt.date.today()
     rows = current_rows()
@@ -1100,11 +1132,7 @@ def main():
 
     report_horizons = {}
     for horizon in HORIZONS:
-        vals = [
-            x for x in outcomes
-            if int(x.get("horizon_days") or 0) == horizon
-            and x.get("validation_eligible") is not False
-        ]
+        vals, eligibility_audit = verified_outcomes_for_statistics(outcomes, horizon)
         expected = expected_matured_count(today, snapshots, horizon)
         summary = summarize_horizon(
             vals,
@@ -1113,6 +1141,7 @@ def main():
             shadow_candidate_active=shadow_state["candidate_active"],
             shadow_candidate_id=shadow_state["candidate_id"],
         )
+        summary["outcome_eligibility_audit"] = eligibility_audit
         first_maturity, next_maturity = maturity_dates(today, snapshots, horizon)
         summary["first_possible_maturity_date"] = first_maturity.isoformat() if first_maturity else None
         summary["next_pending_maturity_date"] = next_maturity.isoformat() if next_maturity else None
