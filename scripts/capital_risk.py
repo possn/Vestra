@@ -42,7 +42,7 @@ log = logging.getLogger("capital_risk")
 SEC_DATA = "https://data.sec.gov"
 SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
 FORMS = {"8-K", "6-K", "20-F", "10-K", "S-1", "S-3", "F-1", "F-3", "424B3", "424B5", "DEF 14A"}
-CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v2-archives-fallback-2026-09-06"
+CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v3-evidence-gate-2026-11-07"
 CACHE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "capital_risk_cache.json")
 CACHE_FIELDS = (
     "capital_structure_flags",
@@ -218,8 +218,9 @@ def _scan_docs(client, cik: int, rows: list[dict], max_docs: int = 8):
 
     order = {"8-K": 0, "6-K": 0, "424B5": 1, "424B3": 1, "S-3": 2, "F-3": 2, "S-1": 2, "F-1": 2, "10-K": 3, "20-F": 3, "DEF 14A": 4}
     rows = sorted(rows, key=lambda r: (order.get(r["form"], 9), r["date"]), reverse=False)
+    selected = rows[:max_docs]
 
-    for row in rows[:max_docs]:
+    for row in selected:
         acc = str(row["accession"]).replace("-", "")
         url = row.get("archive_url") or f"{SEC_ARCHIVES}/{cik}/{acc}/{row['doc']}"
         try:
@@ -261,7 +262,9 @@ def _scan_docs(client, cik: int, rows: list[dict], max_docs: int = 8):
     if len(reverse_dates) >= 2:
         flags.add("repeated_reverse_splits")
 
-    severity = "clear"
+    # No readable SEC document means risk is unverified, not clear.
+    # A partially readable sample cannot justify a clean risk assessment.
+    severity = "clear" if selected and inspected == len(selected) else "unknown"
     severe_combo = "variable_price_convertible" in flags or (
         "repeated_reverse_splits" in flags and "listing_compliance_risk" in flags
     )
