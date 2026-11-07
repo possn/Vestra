@@ -127,9 +127,15 @@ def assess(row: dict) -> dict:
     est = _n(row.get("estimate_momentum_score"))
     est_signal = str(row.get("estimate_signal") or "").lower()
     thesis = str(row.get("thesis_direction") or "").lower()
-    gate = str(row.get("risk_gate") or "clear").lower()
+    gate = str(row.get("risk_gate") or "unknown").lower()
     valuation = str(row.get("valuation_signal") or "").lower()
-    capital_risk = str(row.get("capital_structure_risk") or "clear").lower()
+    capital_risk = str(row.get("capital_structure_risk") or "unknown").lower()
+    # Unknown is not clear. A positive low52 classification must never
+    # implicitly waive an unobserved risk or financing assessment.
+    if gate not in ("clear", "watch", "high", "severe"):
+        return _insufficient(pos, "Risk Gate sem avaliação conclusiva")
+    if capital_risk not in ("clear", "watch", "high", "severe", "moderate", "low"):
+        return _insufficient(pos, "Risco da estrutura de capital não avaliado")
     flags = set(row.get("risk_flags") or []) | set(row.get("capital_structure_flags") or [])
 
     resilience_parts = [x for x in (quality, balance, cashflow, execution, confidence) if x is not None]

@@ -54,6 +54,23 @@ class Low52IntelligenceTests(unittest.TestCase):
         self.assertIsNone(result["low52_score"])
         self.assertIn("Cobertura fundamental inferior a 55%", result["low52_reasons"])
 
+    def test_missing_risk_gate_cannot_be_inferred_clear(self):
+        for missing in (None, "", "unknown"):
+            with self.subTest(missing=missing):
+                row = quality_row()
+                row["risk_gate"] = missing
+                result = assess(row)
+                self.assertEqual(result["low52_status"], "insufficient")
+                self.assertIsNone(result["low52_score"])
+                self.assertIn("Risk Gate sem avaliação conclusiva", result["low52_reasons"])
+
+    def test_missing_capital_structure_risk_cannot_create_opportunity(self):
+        row = quality_row()
+        row.pop("capital_structure_risk")
+        result = assess(row)
+        self.assertEqual(result["low52_status"], "insufficient")
+        self.assertIsNone(result["low52_score"])
+
     def test_severe_risk_gate_is_structural_risk_even_near_low(self):
         row = quality_row()
         row["risk_gate"] = "severe"
