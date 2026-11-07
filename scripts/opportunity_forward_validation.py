@@ -79,6 +79,30 @@ def load_json(path, fallback):
         return fallback
 
 
+
+def load_validation_history(path):
+    """Fail closed on missing/corrupt prospective history; never reset it silently.
+
+    The frozen weekly cohorts and realised outcomes are cumulative evidence.
+    Replacing either with an empty fallback on read failure irreversibly
+    corrupts the forward validation dataset when the workflow publishes.
+    Initial bootstrapping must create an explicit valid schema-1 ledger.
+    """
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"Prospective history unavailable: {path}") from exc
+    try:
+        data = json.loads(raw)
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"Prospective history is invalid JSON: {path}") from exc
+    if (not isinstance(data, dict) or data.get("schema_version") != 1
+            or not isinstance(data.get("snapshots"), list)
+            or not isinstance(data.get("outcomes"), list)):
+        raise ValueError(f"Unexpected prospective history schema: {path}")
+    return data
+
+
 def current_rows():
     payload = load_json(INDEX, {})
     out = {}
@@ -722,7 +746,9 @@ def main():
     today = dt.date.today()
     rows = current_rows()
     outcome_prices = outcome_price_rows()
-    history = load_json(HISTORY, {"schema_version": 1, "snapshots": [], "outcomes": []})
+    history = load_validation_history(HISTORY)
+    if not rows or not outcome_prices:
+        raise ValueError("No usable current Discovery equities/prices; refusing to publish or alter frozen validation history")
     snapshots = history.setdefault("snapshots", [])
     outcomes = history.setdefault("outcomes", [])
 
