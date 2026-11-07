@@ -86,6 +86,28 @@ class OverlapCoverageTests(unittest.TestCase):
         self.assertEqual((audit["slot_new_verified_24h"],audit["slot_repeat_verified_24h"]),(1,1))
         self.assertEqual(audit["slot_repeat_verified_pct"],50.0)
         self.assertEqual(audit["distinct_ohlcv_tickers"],2)
+    def test_coverage_uses_current_eligible_intersection_not_stale_universe(self):
+        now=datetime(2026,11,7,12,tzinfo=timezone.utc)
+        previous={"schema":"vestra_prebreakout_v1","signals":[],
+                  "coverage_observations_24h":[
+                      {"ticker":"CURRENT","verified_at":(now-timedelta(hours=2)).isoformat()},
+                      {"ticker":"DELISTED","verified_at":(now-timedelta(hours=2)).isoformat()},
+                      {"ticker":"OLD_CAP","verified_at":(now-timedelta(hours=2)).isoformat()}]}
+        audit=mod.scanner_coverage_audit(previous,[],[],now,2,[],[],
+                                         eligible_tickers={"CURRENT","OTHER"})
+        self.assertEqual(audit["distinct_ohlcv_tickers"],3)
+        self.assertEqual(audit["current_eligible_verified_distinct"],1)
+        self.assertEqual(audit["outside_current_universe_distinct"],2)
+        self.assertEqual(audit["coverage_pct"],50)
+        self.assertFalse(mod.slot_quality_audit(
+            {"rows_attempted":0,"rows_evaluable":0,"rows_without_ohlcv":0,
+             "rows_with_processing_error":0,"batches_failed":0,"batches_attempted":0},
+            audit)["full_universe_verified"])
+        self.assertEqual(len(audit["observations"]),3)
+        with self.assertRaises(ValueError):
+            mod.scanner_coverage_audit(previous,[],[],now,3,[],[],
+                                       eligible_tickers={"CURRENT","OTHER"})
+
     def test_empty_verified_rate_unknown(self):
         audit=mod.scanner_coverage_audit({},[],[],datetime(2026,10,28,12,tzinfo=timezone.utc),10,[],[])
         self.assertIsNone(audit["slot_repeat_verified_pct"])

@@ -337,7 +337,7 @@ def watched_tickers(now:datetime, path:Path=ROOT/"data/prebreakout-observations.
     except (OSError,ValueError,TypeError,KeyError,AttributeError):
         return []
 
-def eligible_universe_size(stocks: list[dict])->int:
+def eligible_universe_tickers(stocks: list[dict])->set[str]:
     tickers=set()
     for stock in stocks:
         ticker=str(stock.get("ticker") or "").strip().upper()
@@ -345,7 +345,10 @@ def eligible_universe_size(stocks: list[dict])->int:
         cap=stock.get("market_cap")
         if ticker and qt not in ("ETF","FUND","MUTUALFUND","CRYPTO") and isinstance(cap,(int,float)) and math.isfinite(cap) and cap>=500_000_000:
             tickers.add(ticker)
-    return len(tickers)
+    return tickers
+
+def eligible_universe_size(stocks: list[dict])->int:
+    return len(eligible_universe_tickers(stocks))
 
 def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|None=None):
     universe={}
@@ -478,7 +481,7 @@ def recent_verified_signals(previous:dict, scanned_tickers:list[str], now:dateti
         retained.append(row)
     return retained
 
-def scanner_coverage_audit(previous:dict, scanned:list[str], successful:list[str], now:datetime, eligible:int, retained:list[dict], fresh:list[dict])->dict:
+def scanner_coverage_audit(previous:dict, scanned:list[str], successful:list[str], now:datetime, eligible:int, retained:list[dict], fresh:list[dict], *, eligible_tickers:set[str]|None=None)->dict:
     """24h observed OHLCV coverage; attempted names never count as successful."""
     horizon=24*3600
     old={}
@@ -504,13 +507,21 @@ def scanner_coverage_audit(previous:dict, scanned:list[str], successful:list[str
     present={r["ticker"] for r in retained+fresh if isinstance(r,dict) and isinstance(r.get("ticker"),str)}
     invalidated=sum(t in seen and t not in present for t in prior)
     expired=sum(t not in seen and t not in present for t in prior)
+    # Count only observed tickers in the current eligible universe for a
+    # percentage. Keep the rolling observations unfiltered for audit/history.
+    current_verified = len(set(old) & eligible_tickers) if eligible_tickers is not None else len(old)
+    outside_current = len(old) - current_verified
+    if eligible_tickers is not None and len(eligible_tickers) != eligible:
+        raise ValueError("eligible universe and ticker identities disagree")
     return {"window_hours":24,"distinct_ohlcv_tickers":len(old),
+            "current_eligible_verified_distinct":current_verified,
+            "outside_current_universe_distinct":outside_current,
             "slot_verified_distinct":len(successful_distinct),
             "slot_new_verified_24h":len(fresh_verified),
             "slot_repeat_verified_24h":len(repeat_verified),
             "slot_repeat_verified_pct":round(100*len(repeat_verified)/len(successful_distinct),2) if successful_distinct else None,
             "eligible_universe":eligible,
-            "coverage_pct":round(100*len(old)/eligible,2) if eligible else None,
+            "coverage_pct":round(100*current_verified/eligible,2) if eligible else None,
             "rechecked_removed":invalidated,"not_rechecked_removed":expired,
             "definitions":"OHLCV coverage is observed, not eligible signal coverage; removed counts are previous published rows absent in this scan",
             "observations":[{"ticker":t,"verified_at":v.isoformat()} for t,v in sorted(old.items())]}
@@ -577,7 +588,10 @@ def slot_quality_audit(telemetry:dict, coverage:dict)->dict:
         raise ValueError("invalid scanner telemetry")
     if evaluable>attempted or missing>attempted or failed>count:
         raise ValueError("inconsistent scanner telemetry")
-    full=bool(universe and unique>=universe)
+    current=coverage.get("current_eligible_verified_distinct",unique)
+    if type(current) is not int or current<0 or (universe and current>universe):
+        raise ValueError("invalid current universe coverage")
+    full=bool(universe and current==universe)
     return {"status":"full_observed_24h" if full else "partial_observed_24h",
             "observed_24h_coverage_pct":coverage.get("coverage_pct"),
             "full_universe_verified":full,
@@ -663,7 +677,8 @@ def main():
     retained=recent_verified_signals(previous,successful,now)
     by={signal["ticker"]:signal for signal in retained}
     by.update({signal["ticker"]:signal for signal in found})
-    audit=scanner_coverage_audit(previous,successful,successful,now,eligible,retained,found)
+    audit=scanner_coverage_audit(previous,successful,successful,now,eligible,retained,found,
+                                 eligible_tickers=eligible_universe_tickers(stocks))
     earnings_risks=earnings_risk_from_latest(ROOT/'data/earnings-latest.json',now.date(),list(by))
     for signal in by.values(): signal['earningsRiskGate']=earnings_risks.get(signal['ticker'],{'status':'unknown'})
     published,focus=published_signals_with_focus(list(by.values()),now.date(),earnings_risks=earnings_risks)
