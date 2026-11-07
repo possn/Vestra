@@ -79,6 +79,35 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
             invalid["reasons"],
         )
 
+    def test_unverified_legacy_outcomes_do_not_enter_score_statistics(self):
+        outcomes = [
+            {"horizon_days": 28, "ticker": "VERIFIED",
+             "return_pct": 8, "validation_eligible": True},
+            {"horizon_days": 28, "ticker": "LEGACY",
+             "return_pct": 200},
+            {"horizon_days": 28, "ticker": "UNKNOWN",
+             "return_pct": 100, "validation_eligible": None},
+            {"horizon_days": 28, "ticker": "INELIGIBLE",
+             "return_pct": -20, "validation_eligible": False},
+            {"horizon_days": 84, "ticker": "OTHER_HORIZON",
+             "return_pct": 90, "validation_eligible": True},
+        ]
+        selected, audit = MOD.verified_outcomes_for_statistics(outcomes, 28)
+        self.assertEqual([row["ticker"] for row in selected], ["VERIFIED"])
+        self.assertEqual(audit["explicitly_validated"], 1)
+        self.assertEqual(audit["legacy_or_unknown_eligibility"], 2)
+        self.assertEqual(audit["explicitly_ineligible"], 1)
+
+    def test_only_true_not_truthy_values_count_as_validated(self):
+        outcomes = [
+            {"horizon_days": 28, "ticker": "STR", "validation_eligible": "true"},
+            {"horizon_days": 28, "ticker": "INT", "validation_eligible": 1},
+            {"horizon_days": 28, "ticker": "BOOL", "validation_eligible": True},
+        ]
+        rows, audit = MOD.verified_outcomes_for_statistics(outcomes, 28)
+        self.assertEqual([row["ticker"] for row in rows], ["BOOL"])
+        self.assertEqual(audit["legacy_or_unknown_eligibility"], 2)
+
     def test_materialised_outcome_is_not_duplicated(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{
