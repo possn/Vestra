@@ -28,6 +28,21 @@ def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
             slot.get("rows_attempted")!=feed["attempted"] or
             audit.get("observed_24h_coverage_pct")!=coverage["coverage_pct"]):
             return {"status":"invalid","reason":"inconsistent_new_telemetry"}
+        pct=coverage.get("coverage_pct")
+        if (pct is not None and (type(pct) not in (int,float) or not 0<=pct<=100)):
+            return {"status":"invalid","reason":"impossible_coverage_pct"}
+        # In modern publications, the numerator is the intersection with the
+        # current eligible universe; older observations remain audit evidence.
+        current=coverage.get("current_eligible_verified_distinct")
+        if current is not None:
+            observed=coverage.get("distinct_ohlcv_tickers")
+            outside=coverage.get("outside_current_universe_distinct")
+            eligible=feed["eligible_universe"]
+            if (any(type(v) is not int for v in (current,observed,outside,eligible)) or
+                not 0<=current<=eligible or outside<0 or observed!=current+outside or
+                (eligible and abs(pct-round(100*current/eligible,2))>0.01) or
+                audit.get("full_universe_verified")!=(eligible>0 and current==eligible)):
+                return {"status":"invalid","reason":"inconsistent_current_universe_coverage"}
     except (KeyError,TypeError,ValueError,AttributeError):
         return {"status":"invalid","reason":"missing_new_telemetry"}
     return {"status":"healthy","age_hours":round(age,2),

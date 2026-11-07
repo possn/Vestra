@@ -19,6 +19,22 @@ class FreshnessContract(unittest.TestCase):
   self.assertEqual(mod.assess_freshness({**feed,"scan_slot_telemetry":{}},now)["status"],"invalid")
   self.assertEqual(mod.assess_freshness({**feed,"scan_quality_audit":{}},now)["status"],"invalid")
   self.assertEqual(mod.assess_freshness({**feed,"generated_at":"2026-10-28T12:00:00"},now)["status"],"invalid")
+  bad={**feed,"coverage_audit_24h":{"coverage_pct":105.18},
+       "scan_quality_audit":{"observed_24h_coverage_pct":105.18}}
+  self.assertEqual(mod.assess_freshness(bad,now)["reason"],"impossible_coverage_pct")
+  coherent={**feed,"eligible_universe":3,
+            "daily_capacity_ceiling":{"max_distinct_daily":3},
+            "coverage_audit_24h":{"coverage_pct":66.67,"distinct_ohlcv_tickers":4,
+              "current_eligible_verified_distinct":2,"outside_current_universe_distinct":2},
+            "scan_quality_audit":{"observed_24h_coverage_pct":66.67,
+              "full_universe_verified":False}}
+  self.assertEqual(mod.assess_freshness(coherent,now)["status"],"healthy")
+  impossible={**coherent,"coverage_audit_24h":{**coherent["coverage_audit_24h"],
+                "current_eligible_verified_distinct":4,"coverage_pct":133.33},
+              "scan_quality_audit":{**coherent["scan_quality_audit"],
+                "observed_24h_coverage_pct":133.33,"full_universe_verified":True}}
+  self.assertEqual(mod.assess_freshness(impossible,now)["status"],"invalid")
+
 
 
 class Contract(unittest.TestCase):
