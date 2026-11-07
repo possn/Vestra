@@ -11,6 +11,21 @@ class MarketOpportunityLensesTests(unittest.TestCase):
         cls.css = (ROOT / 'market-opportunity-lenses.css').read_text(encoding='utf-8')
         cls.sw = (ROOT / 'sw.js').read_text(encoding='utf-8')
 
+    def test_single_technical_lens_row_and_factual_scanner_entry(self):
+        index = (ROOT / 'index.html').read_text(encoding='utf-8')
+        opportunities = (ROOT / 'market-opportunities.js').read_text(encoding='utf-8')
+        self.assertIn('data-market-tool="scanner"', index)
+        self.assertIn('<strong>Scanner</strong>', index)
+        self.assertNotIn('<strong>Breakout Lab</strong>', index)
+        self.assertIn("const pre=section.querySelector('[data-vestra-lens=", opportunities)
+        self.assertNotIn("const pre=[...document.querySelectorAll('button')]", opportunities)
+        self.assertIn("const smallcap=s.querySelector('[data-smallcap-prebreakout-lens]')", self.source)
+        self.assertIn("s.querySelector('.vestra-technical-lenses')?.remove()", self.source)
+        self.assertIn("section.classList.toggle('vestra-technical-empty'", opportunities)
+        self.assertIn("if(prebreakoutHistoryStatus==='ready'&&!past.length){container.remove();return;}", opportunities)
+        self.assertIn(".market-section.vestra-technical-empty .market-sector-grid", self.css)
+        self.assertIn("color:#f1f4ee!important", self.css)
+
     def test_static_styles_have_single_css_owner(self):
         self.assertIn("market-opportunity-lenses.css?v=1.0", self.source)
         self.assertNotIn("document.createElement('style')", self.source)
