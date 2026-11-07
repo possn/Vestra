@@ -41,6 +41,19 @@
     // Preserve share classes and exchange suffixes; BRK.A must never absorb BRK.B.
     const tickerIdentity = value => text(value).toUpperCase().replace(/-/g, '.');
 
+    function deduplicateTrades(rows) {
+      const seen = new Set();
+      const result = [];
+      for (const trade of rows.map(normalize).filter(item => item.ticker)) {
+        const id = [tickerIdentity(trade.ticker), trade.transaction_date,
+          trade.representative, trade.type, trade.amount, trade.asset].join('|');
+        if (seen.has(id)) continue;
+        seen.add(id);
+        result.push(trade);
+      }
+      return result;
+    }
+
     function attachToStocks(trades) {
       const grouped = new Map();
       for (const trade of trades) {
@@ -57,7 +70,14 @@
         const current = Array.isArray(stock.congress_trades) ? stock.congress_trades : [];
         const key = item => `${text(item.transaction_date || item.date)}|${text(item.representative || item.member || item.name)}|${text(item.type)}|${text(item.amount || item.amount_range)}|${text(item.asset)}`;
         const seen = new Set(current.map(key));
-        stock.congress_trades = [...current, ...rows.filter(item => !seen.has(key(item)))];
+        const additions = [];
+        for (const item of rows) {
+          const identity = key(item);
+          if (seen.has(identity)) continue;
+          seen.add(identity);
+          additions.push(item);
+        }
+        stock.congress_trades = [...current, ...additions];
       }
     }
 
@@ -76,7 +96,7 @@
           try {
             const cached = JSON.parse(storage.getItem(cacheKey) || 'null');
             if (cached && Array.isArray(cached.trades) && now() - Number(cached.ts || 0) < cacheMaxAge) {
-              state.trades = cached.trades.map(normalize).filter(item => item.ticker);
+              state.trades = deduplicateTrades(cached.trades);
               state.loaded = true;
               state.error = '';
               attachToStocks(state.trades);
@@ -88,7 +108,7 @@
           if (!response.ok) throw new Error(`Congress snapshot HTTP ${response.status}`);
           const data = await response.json();
           if (!snapshotFresh(data)) throw new Error('Congress snapshot desactualizado');
-          const trades = data.trades.map(normalize).filter(item => item.ticker);
+          const trades = deduplicateTrades(data.trades);
           state.trades = trades;
           state.loaded = true;
           state.error = '';
@@ -97,7 +117,9 @@
           return trades;
         } catch (error) {
           state.trades = [];
-          state.loaded = true;
+          // A failed fetch must remain retryable in this session; otherwise
+          // the next invocation returns an empty array without checking again.
+          state.loaded = false;
           state.error = error?.message || 'Congress snapshot indisponível';
           return [];
         } finally {
@@ -112,5 +134,5 @@
     return Object.freeze({ normalize, snapshotFresh, attachToStocks, load });
   }
 
-  window.VestraMarketCongressLive = Object.freeze({ create, version: '1.1' });
+  window.VestraMarketCongressLive = Object.freeze({ create, version: '1.2' });
 })();
