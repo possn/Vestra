@@ -229,11 +229,17 @@ def materialise_outcomes(today, snapshots, rows, outcomes, dividend_events=None)
                     ticker, snap["date"], today.isoformat(),
                     old.get("currency"), dividend_events or [],
                 )
-                if cash["event_count"] and (
-                    str(now.get("currency") or "").strip().upper()
-                    != str(old.get("currency") or "").strip().upper()
-                ):
-                    raise ValueError(f"{ticker}: snapshot/end quote currencies differ")
+                # Price-only forward returns require comparable quote units.
+                # The dividend check alone was insufficient: a currency change
+                # with no documented dividends could masquerade as alpha.
+                initial_currency = str(old.get("currency") or "").strip().upper()
+                terminal_currency = str(now.get("currency") or "").strip().upper()
+                currency_comparable = bool(initial_currency and terminal_currency
+                                           and initial_currency == terminal_currency)
+                if not currency_comparable:
+                    # Keep a diagnostic outcome, but never rank it as validated.
+                    # No FX conversion can be inferred without point-in-time rates.
+                    adjustment = {**adjustment, "validation_eligible": False}
                 item = {
                     "cohort_date": snap["date"],
                     "evaluated_date": today.isoformat(),
@@ -250,6 +256,8 @@ def materialise_outcomes(today, snapshots, rows, outcomes, dividend_events=None)
                     "corporate_action_unresolved": adjustment["corporate_action_unresolved"],
                     "unresolved_distributions": adjustment["unresolved_distributions"],
                     "validation_eligible": adjustment["validation_eligible"],
+                    "quote_currency_comparable": currency_comparable,
+                    "terminal_quote_currency": terminal_currency or None,
                     "documented_dividend_event_count": cash["event_count"],
                     "documented_dividend_cash_per_share": cash["cash_per_terminal_share"],
                     "documented_dividend_sources": cash["source_urls"],
@@ -463,6 +471,7 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         "legacy_missing_eligibility": 0,
         "invalid_return": 0,
         "unresolved_corporate_action": 0,
+        "incomparable_quote_currency": 0,
         "explicitly_ineligible_other": 0,
     }
     # Group unique cohort/horizon/ticker keys before determining eligibility.
@@ -514,6 +523,8 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         elif any(item.get("corporate_action_unresolved") is True or
                  item.get("unresolved_distributions") for item in items):
             category = "unresolved_corporate_action"
+        elif any(item.get("quote_currency_comparable") is False for item in items):
+            category = "incomparable_quote_currency"
         else:
             category = "explicitly_ineligible_other"
         categories[category] += 1

@@ -2,6 +2,7 @@ import datetime as dt
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -103,14 +104,50 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         ), 0)
         self.assertEqual(outcomes, [])
 
+    def test_currency_mismatch_never_enters_validated_opportunity_returns(self):
+        today = dt.date(2026, 10, 9)
+        frozen = {**observation(price=100), "currency": "USD"}
+        snapshots = [{"date": "2026-09-11", "observations": {"FX": frozen}}]
+        outcomes = []
+        with mock.patch.object(
+            MOD, "corporate_action_adjusted_return",
+            return_value={"return_pct": 20.0, "raw_return_pct": 20.0,
+                          "split_adjustment_factor": 1.0,
+                          "distribution_value_per_parent": 0.0,
+                          "corporate_action_adjusted": False,
+                          "corporate_action_unresolved": False,
+                          "unresolved_distributions": [],
+                          "validation_eligible": True}
+        ):
+            added = MOD.materialise_outcomes(
+                today, snapshots, {"FX": {"current_price": 120, "currency": "EUR"}},
+                outcomes)
+        self.assertEqual(added, 1)
+        self.assertFalse(outcomes[0]["validation_eligible"])
+        self.assertFalse(outcomes[0]["quote_currency_comparable"])
+        self.assertEqual(outcomes[0]["terminal_quote_currency"], "EUR")
+        self.assertEqual(MOD.observation_capture(today, snapshots, outcomes, 28)
+                         ["validated_matured_observations"], 0)
+
+    def test_missing_quote_currency_cannot_prove_comparable_returns(self):
+        today = dt.date(2026, 10, 9)
+        snapshots = [{"date": "2026-09-11", "observations": {
+            "UNKNOWN": observation(price=100)}}]
+        outcomes = []
+        MOD.materialise_outcomes(today, snapshots,
+                                 {"UNKNOWN": {"current_price": 120}}, outcomes)
+        self.assertEqual(len(outcomes), 1)
+        self.assertFalse(outcomes[0]["validation_eligible"])
+        self.assertFalse(outcomes[0]["quote_currency_comparable"])
+
     def test_reverse_split_is_adjusted_using_shared_score_registry(self):
         today = dt.date(2026, 10, 9)
         snapshots = [{"date": "2026-09-11", "observations": {
-            "NFE": observation(price=1),
+            "NFE": {**observation(price=1), "currency": "USD"},
         }}]
         outcomes = []
         self.assertEqual(MOD.materialise_outcomes(today, snapshots, {
-            "NFE": {"current_price": 50}
+            "NFE": {"current_price": 50, "currency": "USD"}
         }, outcomes), 1)
         self.assertAlmostEqual(outcomes[0]["raw_return_pct"], 4900)
         self.assertAlmostEqual(outcomes[0]["return_pct"], 0)
