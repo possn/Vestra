@@ -57,7 +57,14 @@
         const current = Array.isArray(stock.congress_trades) ? stock.congress_trades : [];
         const key = item => `${text(item.transaction_date || item.date)}|${text(item.representative || item.member || item.name)}|${text(item.type)}|${text(item.amount || item.amount_range)}|${text(item.asset)}`;
         const seen = new Set(current.map(key));
-        stock.congress_trades = [...current, ...rows.filter(item => !seen.has(key(item)))];
+        const additions = [];
+        for (const item of rows) {
+          const identity = key(item);
+          if (seen.has(identity)) continue;
+          seen.add(identity);
+          additions.push(item);
+        }
+        stock.congress_trades = [...current, ...additions];
       }
     }
 
@@ -97,7 +104,9 @@
           return trades;
         } catch (error) {
           state.trades = [];
-          state.loaded = true;
+          // A failed fetch must remain retryable in this session; otherwise
+          // the next invocation returns an empty array without checking again.
+          state.loaded = false;
           state.error = error?.message || 'Congress snapshot indisponível';
           return [];
         } finally {
@@ -112,5 +121,5 @@
     return Object.freeze({ normalize, snapshotFresh, attachToStocks, load });
   }
 
-  window.VestraMarketCongressLive = Object.freeze({ create, version: '1.1' });
+  window.VestraMarketCongressLive = Object.freeze({ create, version: '1.2' });
 })();
