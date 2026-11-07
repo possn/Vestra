@@ -257,6 +257,16 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         mature["n"] = 100
         self.assertEqual(MOD.evidence_policy({"28": mature, "84": mature})["status"], "review_allowed")
 
+    def test_conflicting_duplicate_outcomes_block_readiness_even_with_good_sample(self):
+        mature = {"cohort_count": 8, "n": 140,
+                  "validated_capture_pct": 90,
+                  "outcome_exclusion_reasons": {"duplicate_conflict_keys": 1}}
+        safe = {**mature, "outcome_exclusion_reasons": {"duplicate_conflict_keys": 0}}
+        self.assertEqual(MOD.evidence_policy({"28": mature, "84": safe})["status"],
+                         "observe_only")
+        self.assertEqual(MOD.evidence_policy({"28": safe, "84": safe})["status"],
+                         "review_allowed")
+
     def test_single_horizon_keeps_observe_only(self):
         result = MOD.evidence_policy({"28": {"cohort_count": 8}, "84": {}, "168": {}})
         self.assertEqual(result["status"], "observe_only")
