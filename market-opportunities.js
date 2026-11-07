@@ -587,7 +587,7 @@
     }
     let smallcapChip=section.querySelector('[data-smallcap-prebreakout-lens]');
     if(!smallcapChip){
-      const pre=[...document.querySelectorAll('button')].find(b=>b.textContent?.trim()==='Pré-breakout');
+      const pre=section.querySelector('[data-vestra-lens="breakout"]');
       smallcapChip=document.createElement('button');
       smallcapChip.type='button';smallcapChip.className=pre?.className||'market-chip';
       smallcapChip.textContent='Small Caps';smallcapChip.dataset.smallcapPrebreakoutLens='1';
@@ -637,6 +637,8 @@
     }
     const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all';
     const rows=rankLens(universe,activeLens,{limit:12,sector:sec});
+    section.classList.toggle('vestra-technical-empty',
+      (activeLens==='breakout'||activeLens==='smallcap_breakout')&&!rows.length);
     const sig=(rows.map(s=>`${t(s.ticker)}:${['breakout','smallcap_breakout'].includes(activeLens)?(breakoutSetup(s,activeLens)?.score||0):(lensScore(s,activeLens)==null?'unknown':Math.round(lensScore(s,activeLens)))}:${['breakout','smallcap_breakout'].includes(activeLens)?(breakoutSetup(s,activeLens)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
       list.innerHTML=rows.map(s=>row(s,activeLens)).join('');
@@ -645,7 +647,7 @@
     }
     const [title,subtitle]=lensMeta(activeLens);const h=section.querySelector('.market-section__head h3');if(h)h.textContent=title;const p=section.querySelector('.market-section__head p');if(p)p.textContent=subtitle;
     decorate(section);
-    if(activeLens==='smallcap_breakout'&&!rows.length)list.innerHTML='<div class="market-empty">Sem small caps em pré-breakout elegíveis neste momento. Cobertura OHLCV parcial, não ausência comprovada de setups em todo o universo.</div>';
+    if(activeLens==='smallcap_breakout'&&!rows.length)list.innerHTML='<div class="market-empty vestra-lens-empty">Sem Small Caps com um setup técnico verificado neste momento. A cobertura OHLCV é parcial; isto não significa que não existam oportunidades.</div>';
     else renderPrebreakoutHistory(section);
     return rows;
   }
