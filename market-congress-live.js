@@ -41,6 +41,19 @@
     // Preserve share classes and exchange suffixes; BRK.A must never absorb BRK.B.
     const tickerIdentity = value => text(value).toUpperCase().replace(/-/g, '.');
 
+    function deduplicateTrades(rows) {
+      const seen = new Set();
+      const result = [];
+      for (const trade of rows.map(normalize).filter(item => item.ticker)) {
+        const id = [tickerIdentity(trade.ticker), trade.transaction_date,
+          trade.representative, trade.type, trade.amount, trade.asset].join('|');
+        if (seen.has(id)) continue;
+        seen.add(id);
+        result.push(trade);
+      }
+      return result;
+    }
+
     function attachToStocks(trades) {
       const grouped = new Map();
       for (const trade of trades) {
@@ -83,7 +96,7 @@
           try {
             const cached = JSON.parse(storage.getItem(cacheKey) || 'null');
             if (cached && Array.isArray(cached.trades) && now() - Number(cached.ts || 0) < cacheMaxAge) {
-              state.trades = cached.trades.map(normalize).filter(item => item.ticker);
+              state.trades = deduplicateTrades(cached.trades);
               state.loaded = true;
               state.error = '';
               attachToStocks(state.trades);
@@ -95,7 +108,7 @@
           if (!response.ok) throw new Error(`Congress snapshot HTTP ${response.status}`);
           const data = await response.json();
           if (!snapshotFresh(data)) throw new Error('Congress snapshot desactualizado');
-          const trades = data.trades.map(normalize).filter(item => item.ticker);
+          const trades = deduplicateTrades(data.trades);
           state.trades = trades;
           state.loaded = true;
           state.error = '';
