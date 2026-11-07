@@ -11,10 +11,19 @@
   }
   function ensureBar(s){
     let bar=s?.querySelector('.vestra-opportunity-lenses');
-    if(bar)return bar;
+    if(bar){
+      const orphan=s.querySelector('.vestra-technical-lenses [data-smallcap-prebreakout-lens]');
+      if(orphan){bar.append(orphan);s.querySelector('.vestra-technical-lenses')?.remove();}
+      return bar;
+    }
     if(!s)return null;
     bar=document.createElement('div');bar.className='vestra-opportunity-lenses';bar.setAttribute('role','group');bar.setAttribute('aria-label','Filtrar oportunidades');
     bar.innerHTML='<button type="button" data-vestra-lens="all" aria-pressed="true">Todos</button><button type="button" data-vestra-lens="low52" aria-pressed="false">Mínimos 52s</button><button type="button" data-vestra-lens="emerging" aria-pressed="false">A começar</button><button type="button" data-vestra-lens="recovery" aria-pressed="false">Recuperação</button><button type="button" data-vestra-lens="value" aria-pressed="false">Value + timing</button><button type="button" data-vestra-lens="breakout" aria-pressed="false">Pré-breakout</button>';
+    // The technical companions may initialise before this bar. Re-home the
+    // already wired Small Caps control instead of leaving a second tab row.
+    const smallcap=s.querySelector('[data-smallcap-prebreakout-lens]');
+    if(smallcap)bar.append(smallcap);
+    s.querySelector('.vestra-technical-lenses')?.remove();
     const guide=s.querySelector('.ux454-opportunity-guide');(guide||s.querySelector('.market-section__head'))?.insertAdjacentElement('afterend',bar);
     return bar;
   }
@@ -61,6 +70,12 @@
   function refreshUi(){
     const s=section();if(!s)return;
     syncButtons(ensureBar(s));
+    const smallcap=s.querySelector('[data-smallcap-prebreakout-lens]');
+    if(smallcap){
+      const selected=window.VestraMarketOpportunities?.activeLens==='smallcap_breakout';
+      smallcap.classList.toggle('is-active',selected);
+      smallcap.setAttribute('aria-pressed',String(selected));
+    }
     syncMoreSectorVisual();
     syncEmpty(s);
   }
