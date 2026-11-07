@@ -96,6 +96,8 @@
     if(!container)return;
     const current=new Set([...prebreakoutFeed.keys()]);
     const past=prebreakoutObservations.filter(o=>!current.has(t(o.ticker).toUpperCase())).slice(0,12);
+    // Do not show a redundant "Observações anteriores (0)" disclosure.
+    if(prebreakoutHistoryStatus==='ready'&&!past.length){container.remove();return;}
     const rows=past.map(o=>`<div class="vestra-prebreakout-history-row"><strong>${esc(o.ticker)}</strong> · ${esc(o.stage)} · última observação ${esc(o.observed_at.slice(0,16).replace('T',' ')+' UTC')} · histórico, não validado agora</div>`).join('');
     const unavailable=prebreakoutHistoryStatus==='outdated'?'Histórico não atualizado.':'Histórico ainda não publicado.';
     container.innerHTML=prebreakoutHistoryStatus==='ready'?
