@@ -152,6 +152,45 @@ def outcome_price_rows():
     return out
 
 
+def terminal_quote_catalog():
+    """Describe why frozen tickers lack a currently usable outcome price.
+
+    This catalog is diagnostic only; missing from the current index is NOT
+    evidence of delisting, bankruptcy, or a zero/negative return.
+    """
+    payload = load_json(INDEX, {})
+    catalog = defaultdict(list)
+    for row in payload.get("stocks") or []:
+        if not isinstance(row, dict):
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if ticker:
+            catalog[ticker].append(row)
+    return dict(catalog)
+
+
+def missing_terminal_quote_reason(ticker, current_prices, catalog):
+    if ticker in current_prices:
+        return "usable_quote_not_captured"
+    if catalog is None:
+        return "unclassified_no_catalog"
+    matches = catalog.get(ticker) or []
+    if not matches:
+        return "absent_from_current_index"
+    if len(matches) != 1:
+        return "ambiguous_multiple_index_rows"
+    row = matches[0]
+    quote_type = str(row.get("quote_type") or "").upper()
+    if quote_type in {"ETF", "CRYPTO", "CRYPTOCURRENCY", "FUND", "MUTUALFUND"}:
+        return "currently_non_equity_type"
+    if str(row.get("pipeline_status") or "") in {"equity_catalog_only", "equity_carried_forward"}:
+        return "quote_excluded_stale_or_catalog"
+    price = num(row.get("current_price"))
+    if price is None or price <= 0:
+        return "invalid_or_missing_current_price"
+    return "other_current_index_exclusion"
+
+
 def make_observation(row):
     sleeves = row.get("opportunity_sleeves") or {}
     return {
@@ -641,7 +680,7 @@ def score_quintile_capture(today, snapshots, outcomes, horizon):
     }
 
 
-def missing_outcome_diagnostics(today, snapshots, outcomes, horizon, current_prices, sample_limit=12):
+def missing_outcome_diagnostics(today, snapshots, outcomes, horizon, current_prices, sample_limit=12, terminal_catalog=None):
     """Audit missing future returns without assuming a delisting or a loss.
 
     Current ticker absence only means the canonical current index cannot supply
@@ -656,6 +695,7 @@ def missing_outcome_diagnostics(today, snapshots, outcomes, horizon, current_pri
     recoverable = 0
     unavailable = 0
     window_expired = 0
+    source_reasons = defaultdict(int)
     for snap in snapshots:
         if not isinstance(snap, dict):
             continue
@@ -673,6 +713,8 @@ def missing_outcome_diagnostics(today, snapshots, outcomes, horizon, current_pri
                 continue
             is_priced = ticker in current_prices
             is_late = age > horizon + MAX_HORIZON_LATENESS_DAYS
+            reason = missing_terminal_quote_reason(ticker, current_prices, terminal_catalog)
+            source_reasons[reason] += 1
             recoverable += int(is_priced and not is_late)
             unavailable += int(not is_priced)
             window_expired += int(is_late)
@@ -680,6 +722,7 @@ def missing_outcome_diagnostics(today, snapshots, outcomes, horizon, current_pri
                 "cohort_date": snap["date"], "ticker": ticker,
                 "price_available_now": is_priced,
                 "capture_window_expired": is_late,
+                "terminal_quote_status": reason,
             })
     return {
         "missing_outcome_count": len(missing),
@@ -687,6 +730,9 @@ def missing_outcome_diagnostics(today, snapshots, outcomes, horizon, current_pri
         "price_available_within_window_count": recoverable,
         "capture_window_expired_count": window_expired,
         "missing_outcome_samples": missing[:max(0, sample_limit)],
+        "missing_terminal_quote_reasons": dict(sorted(source_reasons.items())),
+        "missing_terminal_quote_reason_total": sum(source_reasons.values()),
+        "missing_terminal_quote_interpretation": "Describes current index evidence only. Absence or stale quotes cannot establish delisting, bankruptcy or realised loss; expired windows are never backfilled with today's price.",
         "delisting_status": "unverified",
     }
 
@@ -791,6 +837,7 @@ def main():
     today = dt.date.today()
     rows = current_rows()
     outcome_prices = outcome_price_rows()
+    quote_catalog = terminal_quote_catalog()
     history = load_validation_history(HISTORY)
     if not rows or not outcome_prices:
         raise ValueError("No usable current Discovery equities/prices; refusing to publish or alter frozen validation history")
@@ -823,7 +870,8 @@ def main():
         pack.update(observation_capture(today, snapshots, outcomes, horizon))
         pack["score_quintile_capture"] = score_quintile_capture(today, snapshots, outcomes, horizon)
         pack["outcome_exclusion_reasons"] = outcome_exclusion_reasons(today, snapshots, outcomes, horizon)
-        pack.update(missing_outcome_diagnostics(today, snapshots, outcomes, horizon, outcome_prices))
+        pack.update(missing_outcome_diagnostics(today, snapshots, outcomes, horizon, outcome_prices,
+                                                terminal_catalog=quote_catalog))
         pack["documented_dividend_outcomes"] = sum(
             1 for x in vals if (x.get("documented_dividend_event_count") or 0) > 0
         )

@@ -256,6 +256,59 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertEqual(diag["delisting_status"], "unverified")
         self.assertEqual({x["ticker"] for x in diag["missing_outcome_samples"]}, {"BBB", "CCC"})
 
+    def test_missing_terminal_quotes_have_disjoint_actionable_source_reasons(self):
+        today = dt.date(2026, 8, 30)
+        tickers = ["ABSENT", "STALE", "BAD", "FUND", "AMBIG", "VALID"]
+        snapshots = [{"date": "2026-08-02", "observations": {
+            ticker: observation() for ticker in tickers
+        }}]
+        prices = {"VALID": {"current_price": 100}}
+        catalog = {
+            "STALE": [{"current_price": 10, "pipeline_status": "equity_carried_forward"}],
+            "BAD": [{"current_price": None, "quote_type": "EQUITY"}],
+            "FUND": [{"current_price": 10, "quote_type": "ETF"}],
+            "AMBIG": [{"current_price": 10}, {"current_price": 11}],
+            "VALID": [{"current_price": 100}],
+        }
+        report = MOD.missing_outcome_diagnostics(
+            today, snapshots, [], 28, prices, terminal_catalog=catalog)
+        self.assertEqual(report["missing_outcome_count"], len(tickers))
+        reasons = report["missing_terminal_quote_reasons"]
+        self.assertEqual(reasons, {
+            "absent_from_current_index": 1,
+            "ambiguous_multiple_index_rows": 1,
+            "currently_non_equity_type": 1,
+            "invalid_or_missing_current_price": 1,
+            "quote_excluded_stale_or_catalog": 1,
+            "usable_quote_not_captured": 1,
+        })
+        self.assertEqual(report["missing_terminal_quote_reason_total"], len(tickers))
+        self.assertEqual(report["price_available_within_window_count"], 1)
+        self.assertEqual(report["missing_price_now_count"], 5)
+        self.assertEqual(report["delisting_status"], "unverified")
+        self.assertTrue(all("return_pct" not in row for row in report["missing_outcome_samples"]))
+
+    def test_expired_quote_remains_expired_even_if_current_index_has_price(self):
+        snapshots = [{"date": "2026-08-02", "observations": {
+            "RETURNED": observation(),
+        }}]
+        prices = {"RETURNED": {"current_price": 150}}
+        report = MOD.missing_outcome_diagnostics(
+            dt.date(2026, 10, 12), snapshots, [], 28, prices,
+            terminal_catalog={"RETURNED": [{"current_price": 150}]})
+        self.assertEqual(report["capture_window_expired_count"], 1)
+        self.assertEqual(report["price_available_within_window_count"], 0)
+        self.assertEqual(report["missing_terminal_quote_reasons"], {
+            "usable_quote_not_captured": 1,
+        })
+
+    def test_missing_catalog_is_explicitly_unknown_not_delisting(self):
+        snapshots = [{"date": "2026-08-02", "observations": {"OLD": observation()}}]
+        report = MOD.missing_outcome_diagnostics(
+            dt.date(2026, 8, 30), snapshots, [], 28, {})
+        self.assertEqual(report["missing_terminal_quote_reasons"],
+                         {"unclassified_no_catalog": 1})
+
     def test_missing_outcome_audit_marks_expired_window_not_fake_return(self):
         today = dt.date(2026, 9, 15)
         snapshots = [{"date": "2026-08-02", "observations": {"LOST": observation()}}]
