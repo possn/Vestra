@@ -195,6 +195,25 @@ def repair_persisted_split_outcomes(outcomes, snapshots=None):
             continue
         new_return = round(result["return_pct"], 6)
         new_raw = round(result["raw_return_pct"], 6)
+        # A corporate-action repair may fix share units, but it cannot
+        # establish quote-currency comparability or undo an explicit risk
+        # exclusion attached when the outcome was first observed.
+        currency_verified = item.get("quote_currency_comparable")
+        initial_currency = str(item.get("initial_quote_currency") or "").strip().upper()
+        terminal_currency = str(item.get("terminal_quote_currency") or "").strip().upper()
+        currency_mismatch = (
+            currency_verified is False
+            or (bool(initial_currency and terminal_currency)
+                and initial_currency != terminal_currency)
+        )
+        repaired_eligible = bool(result["validation_eligible"] and not currency_mismatch)
+        # Preserve explicit exclusions whose provenance cannot be recovered
+        # by correcting a split. Legacy outcomes lacking this metadata keep
+        # their existing corporate-action repair behaviour.
+        if item.get("validation_eligible") is False and (
+            currency_verified is False or currency_mismatch
+        ):
+            repaired_eligible = False
         changed = any([
             num(item.get("return_pct")) != new_return,
             num(item.get("raw_return_pct")) != new_raw,
@@ -203,7 +222,7 @@ def repair_persisted_split_outcomes(outcomes, snapshots=None):
             bool(item.get("corporate_action_adjusted")) != bool(result["corporate_action_adjusted"]),
             bool(item.get("corporate_action_unresolved")) != bool(result["corporate_action_unresolved"]),
             list(item.get("unresolved_distributions") or []) != list(result["unresolved_distributions"]),
-            item.get("validation_eligible") is not result["validation_eligible"],
+            item.get("validation_eligible") is not repaired_eligible,
         ])
         if changed:
             repaired += 1
@@ -214,7 +233,7 @@ def repair_persisted_split_outcomes(outcomes, snapshots=None):
         item["corporate_action_adjusted"] = result["corporate_action_adjusted"]
         item["corporate_action_unresolved"] = result["corporate_action_unresolved"]
         item["unresolved_distributions"] = result["unresolved_distributions"]
-        item["validation_eligible"] = result["validation_eligible"]
+        item["validation_eligible"] = repaired_eligible
     return repaired
 
 

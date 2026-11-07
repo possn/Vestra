@@ -198,6 +198,61 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(MOD.repair_persisted_split_outcomes(outcomes), 0)
         self.assertEqual(outcomes[0], first)
 
+    def test_split_repair_cannot_revalidate_explicit_currency_mismatch(self):
+        # The repair previously replaced a false FX gate with the split
+        # registry's true corporate-action eligibility on every daily run.
+        outcomes = [{
+            "cohort_date": "2026-09-03",
+            "evaluated_date": "2026-10-01",
+            "horizon_days": 28,
+            "ticker": "NFE",
+            "start_price": 0.2761,
+            "end_price": 6.57,
+            "return_pct": 2279.572619,
+            "validation_eligible": False,
+            "quote_currency_comparable": False,
+            "initial_quote_currency": "USD",
+            "terminal_quote_currency": "EUR",
+        }]
+        self.assertEqual(MOD.repair_persisted_split_outcomes(outcomes), 1)
+        self.assertTrue(outcomes[0]["corporate_action_adjusted"])
+        self.assertFalse(outcomes[0]["validation_eligible"])
+        self.assertEqual(MOD.repair_persisted_split_outcomes(outcomes), 0)
+        self.assertFalse(outcomes[0]["validation_eligible"])
+
+    def test_split_repair_preserves_explicit_matching_currency_eligibility(self):
+        outcomes = [{
+            "cohort_date": "2026-09-03",
+            "evaluated_date": "2026-10-01",
+            "horizon_days": 28,
+            "ticker": "NFE",
+            "start_price": 0.2761,
+            "end_price": 6.57,
+            "return_pct": 2279.572619,
+            "validation_eligible": True,
+            "quote_currency_comparable": True,
+            "initial_quote_currency": "USD",
+            "terminal_quote_currency": "USD",
+        }]
+        self.assertEqual(MOD.repair_persisted_split_outcomes(outcomes), 1)
+        self.assertTrue(outcomes[0]["validation_eligible"])
+
+    def test_split_repair_detects_currency_mismatch_even_without_comparability_flag(self):
+        outcomes = [{
+            "cohort_date": "2026-09-03",
+            "evaluated_date": "2026-10-01",
+            "horizon_days": 28,
+            "ticker": "NFE",
+            "start_price": 0.2761,
+            "end_price": 6.57,
+            "return_pct": 2279.572619,
+            "validation_eligible": False,
+            "initial_quote_currency": "USD",
+            "terminal_quote_currency": "EUR",
+        }]
+        self.assertEqual(MOD.repair_persisted_split_outcomes(outcomes), 1)
+        self.assertFalse(outcomes[0]["validation_eligible"])
+
     def test_spinoff_total_return_includes_distributed_child_value(self):
         adjusted = MOD.corporate_action_adjusted_return(
             "CTVA",
