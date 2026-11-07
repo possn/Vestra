@@ -104,6 +104,36 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(MOD.materialise_outcomes(today, snapshots, rows, outcomes), 0)
         self.assertEqual(len(outcomes), 1)
 
+    def test_score_snapshot_freezes_currency_for_future_comparability(self):
+        snap = MOD.make_snapshot(
+            dt.date(2026, 10, 1),
+            {"ABC": {"current_price": 100, "score": 70, "currency": "usd"}},
+        )
+        self.assertEqual(snap["observations"]["ABC"]["currency"], "USD")
+
+    def test_score_forward_currency_change_cannot_enter_validated_alpha(self):
+        today = dt.date(2026, 8, 30)
+        snapshots = [{"date": "2026-08-02", "observations": {
+            "USD": {"price": 100, "score": 80, "currency": "USD"},
+            "MATCH": {"price": 100, "score": 80, "currency": "USD"},
+            "UNKNOWN": {"price": 100, "score": 80},
+        }}]
+        rows = {
+            "USD": {"current_price": 120, "currency": "EUR"},
+            "MATCH": {"current_price": 110, "currency": "USD"},
+            "UNKNOWN": {"current_price": 100, "currency": "USD"},
+        }
+        outcomes = []
+        self.assertEqual(MOD.materialise_outcomes(today, snapshots, rows, outcomes), 3)
+        by = {item["ticker"]: item for item in outcomes}
+        self.assertFalse(by["USD"]["validation_eligible"])
+        self.assertFalse(by["USD"]["quote_currency_comparable"])
+        self.assertFalse(by["UNKNOWN"]["validation_eligible"])
+        self.assertTrue(by["MATCH"]["validation_eligible"])
+        self.assertTrue(by["MATCH"]["quote_currency_comparable"])
+        self.assertEqual(by["MATCH"]["initial_quote_currency"], "USD")
+        self.assertEqual(by["MATCH"]["terminal_quote_currency"], "USD")
+
     def test_reverse_split_normalizes_forward_return_and_preserves_raw_return(self):
         adjusted = MOD.split_adjusted_return(
             "NFE",
