@@ -103,6 +103,46 @@ class OutcomeExclusionReasonTests(unittest.TestCase):
         )
         self.assertEqual(audit["cohort_exclusion_breakdown"], [])
 
+    def test_conflicting_duplicates_are_order_independent_and_reconciled(self):
+        from scripts.opportunity_forward_validation import observation_capture
+        legacy = self.result("OK")
+        eligible = self.result("OK", validation_eligible=True)
+        # Regardless of insertion order, both diagnostics agree that one
+        # frozen ticker has one explicit eligible outcome and a conflict.
+        for outcomes in ([legacy, eligible], [eligible, legacy]):
+            snapshots = [self.snapshot()]
+            audit = outcome_exclusion_reasons(
+                dt.date(2026, 9, 1), snapshots, outcomes, 28
+            )
+            capture = observation_capture(dt.date(2026, 9, 1),
+                                          snapshots, outcomes, 28)
+            self.assertEqual(audit["recorded_observations"], 1)
+            self.assertEqual(audit["exclusion_reasons"]["eligible"], 1)
+            self.assertEqual(audit["duplicate_records_ignored"], 1)
+            self.assertEqual(audit["duplicate_conflict_keys"], 1)
+            self.assertEqual(capture["validated_matured_observations"], 1)
+            self.assertEqual(
+                audit["cohort_exclusion_breakdown"][0]["duplicate_conflicts"], 1
+            )
+
+    def test_identical_duplicates_have_no_conflict(self):
+        eligible = self.result("OK", validation_eligible=True)
+        audit = outcome_exclusion_reasons(
+            dt.date(2026, 9, 1), [self.snapshot()],
+            [eligible, dict(eligible)], 28
+        )
+        self.assertEqual(audit["duplicate_records_ignored"], 1)
+        self.assertEqual(audit["duplicate_conflict_keys"], 0)
+        self.assertEqual(audit["exclusion_reasons"]["eligible"], 1)
+
+    def test_disagreeing_valid_return_values_flagged(self):
+        a = self.result("OK", validation_eligible=True)
+        b = self.result("OK", validation_eligible=True, return_pct=5.0)
+        audit = outcome_exclusion_reasons(
+            dt.date(2026, 9, 1), [self.snapshot()], [a, b], 28
+        )
+        self.assertEqual(audit["duplicate_conflict_keys"], 1)
+
     def test_invalid_numeric_return_does_not_count_as_eligible(self):
         rows = [self.result("OK", validation_eligible=True, return_pct=float("nan"))]
         audit = outcome_exclusion_reasons(
