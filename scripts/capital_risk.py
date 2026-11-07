@@ -42,7 +42,7 @@ log = logging.getLogger("capital_risk")
 SEC_DATA = "https://data.sec.gov"
 SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
 FORMS = {"8-K", "6-K", "20-F", "10-K", "S-1", "S-3", "F-1", "F-3", "424B3", "424B5", "DEF 14A"}
-CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v4-split-event-identity-2026-11-07"
+CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v5-bounded-coverage-2026-11-07"
 CACHE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "capital_risk_cache.json")
 CACHE_FIELDS = (
     "capital_structure_flags",
@@ -307,7 +307,9 @@ def _scan_docs(client, cik: int, rows: list[dict], max_docs: int = 8):
 
     # No readable SEC document means risk is unverified, not clear.
     # A partially readable sample cannot justify a clean risk assessment.
-    severity = "clear" if selected and inspected == len(selected) else "unknown"
+    # A full *selected batch* is not full issuer coverage when more filings
+    # were discovered than the bounded download budget permits.
+    severity = "clear" if selected and len(rows) <= len(selected) and inspected == len(selected) else "unknown"
     severe_combo = "variable_price_convertible" in flags or (
         "repeated_reverse_splits" in flags and "listing_compliance_risk" in flags
     )
