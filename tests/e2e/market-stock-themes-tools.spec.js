@@ -8,7 +8,7 @@ test('iPhone/WebKit: Ideias coexist with a separate broad stock-theme browser', 
   await page.waitForFunction(() => typeof window.setView === 'function');
   await page.evaluate(() => window.setView('market'));
   await page.waitForFunction(() => window.VestraMarketStockThemesTools?.version === '1.5');
-  // First render: Lab is in the viewport, without requiring horizontal scrolling.
+  // First render: Scanner is in the viewport, without requiring horizontal scrolling.
   await expect(page.locator('#viewMarket .market-mode-grid > .market-breakout-lab-tab')).toBeInViewport();
 
   const ideas = page.locator('[data-market-mode="discover"]');
@@ -33,7 +33,7 @@ test('iPhone/WebKit: Ideias coexist with a separate broad stock-theme browser', 
   await expect(tools.locator('[data-market-tool="compare"]')).toBeVisible();
   const scanner = page.locator('#viewMarket .market-mode-grid > .market-breakout-lab-tab[data-market-tool="scanner"]');
   await expect(scanner).toBeVisible();
-  await expect(scanner).toContainText("Breakout Lab");
+  await expect(scanner).toContainText("Scanner");
   await expect(page.locator('[data-market-tool="scanner"]')).toHaveCount(1);
   expect(errors, `Browser page errors: ${errors.join(' | ')}`).toEqual([]);
 });
