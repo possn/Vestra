@@ -674,7 +674,7 @@
       const message=smallcapFeedStatus==='loading'?'A verificar dados das Small Caps…'
         :smallcapFeedStatus==='outdated'?'Small Caps indisponíveis: relatório técnico desatualizado.'
         :smallcapFeedStatus==='unavailable'?'Small Caps indisponíveis: relatório técnico não verificável.'
-        :'Sem setups de Small Caps elegíveis na amostra observada.'+coverage+' Não representa todo o universo.';
+        :'Sem small caps em pré-breakout elegíveis na amostra observada.'+coverage+' Não representa todo o universo.';
       list.innerHTML='<div class="market-empty">'+esc(message)+'</div>';
     }
     else if(activeLens==='breakout'&&!rows.length){
