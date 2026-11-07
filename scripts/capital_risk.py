@@ -42,7 +42,7 @@ log = logging.getLogger("capital_risk")
 SEC_DATA = "https://data.sec.gov"
 SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
 FORMS = {"8-K", "6-K", "20-F", "10-K", "S-1", "S-3", "F-1", "F-3", "424B3", "424B5", "DEF 14A"}
-CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v3-evidence-gate-2026-11-07"
+CAPITAL_RISK_SCANNER_VERSION = "capital-risk-v4-split-event-identity-2026-11-07"
 CACHE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "capital_risk_cache.json")
 CACHE_FIELDS = (
     "capital_structure_flags",
@@ -57,6 +57,44 @@ def _text(html: str) -> str:
     html = re.sub(r"(?is)<script.*?</script>|<style.*?</style>", " ", html or "")
     html = re.sub(r"(?s)<[^>]+>", " ", html)
     return re.sub(r"\s+", " ", unescape(html)).strip().lower()
+
+
+def _reverse_split_effective_dates(text: str) -> set[str]:
+    """Extract explicitly dated effected split events, never filing dates.
+
+    Undated references can support a watch flag, but not distinct-event counts.
+    """
+    months = ("january", "february", "march", "april", "may", "june",
+              "july", "august", "september", "october", "november", "december")
+    month_pattern = "|".join(months)
+    date_pattern = re.compile(
+        rf"\b(20\d{{2}}-\d{{2}}-\d{{2}}|(?:{month_pattern})\s+\d{{1,2}},?\s+20\d{{2}})\b"
+    )
+    phrases = (
+        "reverse stock split became effective",
+        "reverse share split became effective",
+        "effected a reverse stock split",
+        "effected a reverse share split",
+    )
+    dates = set()
+    for phrase in phrases:
+        for mention in re.finditer(re.escape(phrase), text):
+            # Only a date directly following an effective-event phrase can
+            # identify the event. Avoid unrelated filing and reporting dates.
+            tail = text[mention.end():mention.end()+85]
+            match = date_pattern.search(tail)
+            if not match or match.start() > 34:
+                continue
+            raw = match.group(1)
+            try:
+                if raw[4:5] == "-":
+                    parsed = _dt.date.fromisoformat(raw)
+                else:
+                    parsed = _dt.datetime.strptime(raw.replace(",", ""), "%B %d %Y").date()
+            except ValueError:
+                continue
+            dates.add(parsed.isoformat())
+    return dates
 
 
 def _recent_rows(submissions: dict, days: int = 730):
@@ -235,8 +273,15 @@ def _scan_docs(client, cik: int, rows: list[dict], max_docs: int = 8):
         reverse = "reverse stock split" in txt or "reverse share split" in txt
         effected = any(p in txt for p in ("effected a reverse", "reverse stock split became effective", "reverse share split became effective", "trading on a split-adjusted basis"))
         if reverse and effected:
-            reverse_dates.add(row["date"])
-            latest_reverse = max(latest_reverse or row["date"], row["date"])
+            # Multiple SEC filings often describe the same corporate action.
+            # An accession's filing date is not the split's effective date.
+            flags.add("reverse_split_recent")
+            cutoff = _dt.date.today() - _dt.timedelta(days=730)
+            for effective in _reverse_split_effective_dates(txt):
+                event_date = _dt.date.fromisoformat(effective)
+                if cutoff <= event_date <= _dt.date.today():
+                    reverse_dates.add(effective)
+                    latest_reverse = max(latest_reverse or effective, effective)
 
         if "at-the-market offering" in txt or "atm sales agreement" in txt or "at the market offering" in txt:
             flags.add("atm_offering")
@@ -257,8 +302,6 @@ def _scan_docs(client, cik: int, rows: list[dict], max_docs: int = 8):
             flags.add("equity_financing")
         time.sleep(0.11)
 
-    if reverse_dates:
-        flags.add("reverse_split_recent")
     if len(reverse_dates) >= 2:
         flags.add("repeated_reverse_splits")
 

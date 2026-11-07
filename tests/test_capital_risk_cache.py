@@ -217,6 +217,77 @@ def test_sec_partial_failure_cannot_report_clean_risk():
     assert result["capital_structure_risk"] == "unknown"
 
 
+def test_reverse_split_same_effective_event_in_multiple_filings_not_repeated():
+    from unittest import mock
+
+    class Response:
+        ok = True
+        text = "Company effected a reverse stock split on September 14, 2026."
+
+    class Client:
+        def get(self, url, timeout=18):
+            return Response()
+
+    rows = [
+        {"form": "8-K", "date": "2026-09-15", "accession": "a", "doc": "a.htm"},
+        {"form": "10-K", "date": "2026-10-31", "accession": "b", "doc": "b.htm"},
+    ]
+    with mock.patch.object(capital_risk.time, "sleep", return_value=None):
+        result = capital_risk._scan_docs(Client(), 123, rows)
+    assert result["reverse_split_count_24m"] == 1
+    assert result["reverse_split_latest_date"] == "2026-09-14"
+    assert "reverse_split_recent" in result["capital_structure_flags"]
+    assert "repeated_reverse_splits" not in result["capital_structure_flags"]
+
+
+def test_reverse_split_two_distinct_effective_dates_are_repeated():
+    from unittest import mock
+
+    class Response:
+        ok = True
+        def __init__(self, text):
+            self.text = text
+
+    class Client:
+        def get(self, url, timeout=18):
+            if url.endswith("a.htm"):
+                return Response("Reverse stock split became effective on 2025-11-02.")
+            return Response("Effected a reverse share split on October 1, 2026.")
+
+    rows = [
+        {"form": "8-K", "date": "2025-11-03", "accession": "a", "doc": "a.htm"},
+        {"form": "8-K", "date": "2026-10-02", "accession": "b", "doc": "b.htm"},
+    ]
+    with mock.patch.object(capital_risk.time, "sleep", return_value=None):
+        result = capital_risk._scan_docs(Client(), 123, rows)
+    assert result["reverse_split_count_24m"] == 2
+    assert result["reverse_split_latest_date"] == "2026-10-01"
+    assert "repeated_reverse_splits" in result["capital_structure_flags"]
+
+
+def test_undated_reverse_split_reference_does_not_infer_count_from_filings():
+    from unittest import mock
+
+    class Response:
+        ok = True
+        text = "Issuer effected a reverse stock split. See annual report."
+
+    class Client:
+        def get(self, url, timeout=18):
+            return Response()
+
+    rows = [
+        {"form": "8-K", "date": "2026-09-15", "accession": "a", "doc": "a.htm"},
+        {"form": "10-K", "date": "2026-10-31", "accession": "b", "doc": "b.htm"},
+    ]
+    with mock.patch.object(capital_risk.time, "sleep", return_value=None):
+        result = capital_risk._scan_docs(Client(), 123, rows)
+    assert "reverse_split_recent" in result["capital_structure_flags"]
+    assert "repeated_reverse_splits" not in result["capital_structure_flags"]
+    assert result["reverse_split_count_24m"] == 0
+    assert result["reverse_split_latest_date"] is None
+
+
 if __name__ == "__main__":
     if not REQUESTS_AVAILABLE:
         print("capital-risk contract skipped in dependency-free historical suite")
@@ -230,3 +301,6 @@ if __name__ == "__main__":
         test_cached_result_can_be_carried_without_discovery()
         test_sec_unreadable_or_absent_does_not_mean_risk_clear()
         test_sec_partial_failure_cannot_report_clean_risk()
+        test_reverse_split_same_effective_event_in_multiple_filings_not_repeated()
+        test_reverse_split_two_distinct_effective_dates_are_repeated()
+        test_undated_reverse_split_reference_does_not_infer_count_from_filings()
