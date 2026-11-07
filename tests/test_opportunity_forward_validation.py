@@ -12,6 +12,13 @@ MOD = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MOD)
 
 
+def complete_frozen_quintile_capture(coverage=90.0):
+    return {"quintiles": [
+        {"quintile": q, "expected": 20, "validated_capture_pct": coverage}
+        for q in range(1, 6)
+    ]}
+
+
 def observation(score=80, support="strong", label="Prioridade alta", price=100):
     return {
         "price": price,
@@ -260,7 +267,8 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertNotIn("return_pct", diag["missing_outcome_samples"][0])
 
     def test_evidence_policy_never_auto_tunes_production(self):
-        mature = {"cohort_count": 8, "n": 100, "validated_capture_pct": 85.0}
+        mature = {"cohort_count": 8, "n": 100, "validated_capture_pct": 85.0,
+                  "score_quintile_capture": complete_frozen_quintile_capture()}
         result = MOD.evidence_policy({"28": mature, "84": mature, "168": {}})
         self.assertEqual(result["status"], "review_allowed")
         self.assertTrue(result["production_rules_frozen"])
@@ -286,7 +294,8 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertEqual(capture["validated_capture_pct"], 33.3)
 
     def test_evidence_review_requires_validated_coverage(self):
-        mature = {"cohort_count": 8, "n": 150, "validated_capture_pct": 79.9}
+        mature = {"cohort_count": 8, "n": 150, "validated_capture_pct": 79.9,
+                  "score_quintile_capture": complete_frozen_quintile_capture()}
         self.assertEqual(MOD.evidence_policy({"28": mature, "84": mature})["status"], "observe_only")
         mature["validated_capture_pct"] = 80
         mature["n"] = 99
@@ -297,12 +306,37 @@ class OpportunityForwardValidationTests(unittest.TestCase):
     def test_conflicting_duplicate_outcomes_block_readiness_even_with_good_sample(self):
         mature = {"cohort_count": 8, "n": 140,
                   "validated_capture_pct": 90,
-                  "outcome_exclusion_reasons": {"duplicate_conflict_keys": 1}}
+                  "outcome_exclusion_reasons": {"duplicate_conflict_keys": 1},
+                  "score_quintile_capture": complete_frozen_quintile_capture()}
         safe = {**mature, "outcome_exclusion_reasons": {"duplicate_conflict_keys": 0}}
         self.assertEqual(MOD.evidence_policy({"28": mature, "84": safe})["status"],
                          "observe_only")
         self.assertEqual(MOD.evidence_policy({"28": safe, "84": safe})["status"],
                          "review_allowed")
+
+    def test_frozen_score_quintile_bias_blocks_review_even_if_total_capture_high(self):
+        high_coverage = complete_frozen_quintile_capture(100)
+        skew = complete_frozen_quintile_capture(100)
+        skew["quintiles"][4]["validated_capture_pct"] = 75
+        good = {"cohort_count": 8, "n": 400, "validated_capture_pct": 95,
+                "score_quintile_capture": high_coverage}
+        biased = {**good, "score_quintile_capture": skew}
+        result = MOD.evidence_policy({"28": good, "84": biased})
+        self.assertEqual(result["status"], "observe_only")
+        self.assertIn("frozen_score_quintile_capture_below_80pct_or_unavailable",
+                      result["horizon_review_diagnostics"]["84"]["reasons"])
+        self.assertEqual(MOD.evidence_policy({"28": good, "84": good})["status"],
+                         "review_allowed")
+
+    def test_missing_or_empty_frozen_score_quintiles_cannot_authorize_review(self):
+        complete = {"cohort_count": 9, "n": 500, "validated_capture_pct": 98}
+        result = MOD.evidence_policy({"28": complete, "84": complete})
+        self.assertEqual(result["status"], "observe_only")
+        missing_bin = complete_frozen_quintile_capture()
+        missing_bin["quintiles"][4]["expected"] = 0
+        result = MOD.evidence_policy({"28": {**complete, "score_quintile_capture": missing_bin},
+                                      "84": {**complete, "score_quintile_capture": missing_bin}})
+        self.assertEqual(result["status"], "observe_only")
 
     def test_single_horizon_keeps_observe_only(self):
         result = MOD.evidence_policy({"28": {"cohort_count": 8}, "84": {}, "168": {}})
