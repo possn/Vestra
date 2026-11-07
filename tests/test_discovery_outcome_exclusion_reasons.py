@@ -44,10 +44,24 @@ class OutcomeExclusionReasonTests(unittest.TestCase):
             "legacy_missing_eligibility": 1,
             "invalid_return": 1,
             "unresolved_corporate_action": 1,
+            "incomparable_quote_currency": 0,
             "explicitly_ineligible_other": 1,
         })
         self.assertEqual(sum(audit["exclusion_reasons"].values()), 5)
         self.assertEqual(audit["classification"], "diagnostic_only_no_backfill")
+
+    def test_incomparable_quote_currency_has_disjoint_exclusion_reason(self):
+        outcomes = [
+            self.result("OK", validation_eligible=False,
+                        quote_currency_comparable=False),
+            self.result("LEGACY"),
+        ]
+        audit = outcome_exclusion_reasons(
+            dt.date(2026, 9, 1), [self.snapshot()], outcomes, 28
+        )
+        self.assertEqual(audit["exclusion_reasons"]["incomparable_quote_currency"], 1)
+        self.assertEqual(audit["exclusion_reasons"]["legacy_missing_eligibility"], 1)
+        self.assertEqual(sum(audit["exclusion_reasons"].values()), 2)
 
     def test_future_cohorts_and_mismatched_horizons_do_not_count(self):
         audit = outcome_exclusion_reasons(
