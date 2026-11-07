@@ -819,7 +819,8 @@ function setView(view) {
   if (view === "assets" && prevView !== "assets") {
     itemsView = 'top5';
     window._pnlExpanded = false;
-    ensurePortfolioSectorMap();
+    // Building the portfolio sector map can be expensive on iPhone.
+    // Defer it until after the view has visibly switched.
   }
   _initViewCache();
   // Phase 1 (sync): switch visible section immediately — user sees tab change at once
@@ -853,7 +854,10 @@ function setView(view) {
     pendingViewRenderFrame = null;
     setTimeout(() => {
       if (currentView !== view) return; // user navigated away before render
-      if (view === "assets") updateQuoteErrorIndicator();
+      if (view === "assets") {
+        ensurePortfolioSectorMap();
+        updateQuoteErrorIndicator();
+      }
       renderView(view, { force: false, sync: true });
       try { window.dispatchEvent(new CustomEvent("vestra:view-rendered", { detail: { view } })); } catch (_) {}
     }, 0);
@@ -2606,8 +2610,10 @@ function editItem(id) {
   syncItemModalCollapsibles();
 }
 
-function saveItemFromModal() {
-  const kind = $("btnSaveItem").dataset.kind;
+async function saveItemFromModal() {
+  const saveButton = $("btnSaveItem");
+  if (saveButton.disabled) return;
+  const kind = saveButton.dataset.kind;
   const isLiab = kind === "liab";
   const curSelS = document.getElementById("mCurrency");
   const savedCcy = curSelS ? (curSelS.value || "EUR") : "EUR";
@@ -2650,6 +2656,10 @@ function saveItemFromModal() {
     const cb = parseNum((document.getElementById("mCostBasis") || {}).value || "");
     if (cb > 0) obj.costBasis = cb; else delete obj.costBasis;
   }
+  const previousItems = (isLiab ? state.liabilities : state.assets).slice();
+  const label = saveButton.textContent;
+  saveButton.disabled = true;
+  saveButton.textContent = "A guardar…";
   if (isLiab) {
     const ix = state.liabilities.findIndex(x => x.id === obj.id);
     if (ix >= 0) state.liabilities[ix] = obj; else state.liabilities.push(obj);
@@ -2657,10 +2667,30 @@ function saveItemFromModal() {
     const ix = state.assets.findIndex(x => x.id === obj.id);
     if (ix >= 0) state.assets[ix] = obj; else state.assets.push(obj);
   }
-  saveState();
-  closeModal("modalItem");
-  renderDashboard();
-  renderItems();
+  try {
+    // Do not say "saved" before durable storage confirms the write.
+    await saveStateAsync();
+    closeModal("modalItem");
+    // Before: synchronous Dashboard + Portfolio rebuild on the click, while
+    // other cached views stayed "clean" and could display stale figures.
+    markViewsDirty(RENDERABLE_VIEWS);
+    scheduleRenderView(currentView, { force: false });
+    requestAnimationFrame(() => {
+      try { window.dispatchEvent(new CustomEvent('vestra:portfolio-totals-updated', {
+        detail: { source: 'manual-edit', assetId: obj.id }
+      })); } catch (_) {}
+    });
+    toast(isLiab ? "Passivo guardado." : "Posição guardada.");
+  } catch (error) {
+    if (isLiab) state.liabilities = previousItems;
+    else state.assets = previousItems;
+    invalidateRenderCache();
+    console.error("[Vestra] Não foi possível guardar a alteração manual", error);
+    toast("Não foi possível guardar. A alteração não foi aplicada.", 4200);
+  } finally {
+    saveButton.disabled = false;
+    saveButton.textContent = label;
+  }
 }
 
 function deleteCurrentItem() {
