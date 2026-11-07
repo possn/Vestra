@@ -8,14 +8,23 @@
   const LENSES=new Set(['all','low52','emerging','recovery','value','breakout','smallcap_breakout']);
   let activeLens='all';
   let smallcapFeed=new Map();
+  let smallcapFeedStatus='loading';
+  let smallcapCoveragePct=null;
   async function loadSmallcapFeed(){
     try{
       const response=await fetch('data/breakout-lab-smallcap-ohlcv-research.json',{cache:'no-store'});
-      if(!response.ok)return;
+      if(!response.ok)throw new Error(`smallcap feed HTTP ${response.status}`);
       const payload=await response.json();
-      if(payload?.schema!=='vestra_breakout_lab_smallcap_ohlcv_research_v1'||!Array.isArray(payload.signals))return;
+      if(payload?.schema!=='vestra_breakout_lab_smallcap_ohlcv_research_v1'||!Array.isArray(payload.signals))throw new Error('smallcap feed invalid schema');
+      const coverage=n(payload.universe_coverage_pct);
+      smallcapCoveragePct=coverage!=null&&coverage>=0&&coverage<=100?coverage:null;
       const age=(Date.now()-Date.parse(payload.generated_at))/3600000;
-      if(!Number.isFinite(age)||age< -1||age>96){smallcapFeed=new Map();if(activeLens==='smallcap_breakout')opportunities();return;}
+      if(!Number.isFinite(age)||age< -1||age>96){
+        smallcapFeed=new Map();
+        smallcapFeedStatus='outdated';
+        if(activeLens==='smallcap_breakout')opportunities();
+        return;
+      }
       const found=new Map();
       for(const row of payload.signals){
         const cap=n(row?.marketCapUSD),distance=n(row?.distancePct);
@@ -28,8 +37,14 @@
         found.set(t(row.ticker).toUpperCase(),row);
       }
       smallcapFeed=found;
+      smallcapFeedStatus='ready';
       if(activeLens==='smallcap_breakout')opportunities();
-    }catch(error){console.warn('[Vestra] Small Caps OHLCV unavailable',error);}
+    }catch(error){
+      smallcapFeed=new Map();
+      smallcapFeedStatus='unavailable';
+      if(activeLens==='smallcap_breakout')opportunities();
+      console.warn('[Vestra] Small Caps OHLCV unavailable',error);
+    }
   }
   let prebreakoutFeed=new Map();
   let prebreakoutFeedAuthoritative=false;
@@ -654,7 +669,14 @@
     }
     const [title,subtitle]=lensMeta(activeLens);const h=section.querySelector('.market-section__head h3');if(h)h.textContent=title;const p=section.querySelector('.market-section__head p');if(p)p.textContent=subtitle;
     decorate(section);
-    if(activeLens==='smallcap_breakout'&&!rows.length)list.innerHTML='<div class="market-empty">Sem small caps em pré-breakout elegíveis neste momento. Cobertura OHLCV parcial, não ausência comprovada de setups em todo o universo.</div>';
+    if(activeLens==='smallcap_breakout'&&!rows.length){
+      const coverage=smallcapCoveragePct!=null?' Cobertura OHLCV observada: '+smallcapCoveragePct.toFixed(1)+'%.':'';
+      const message=smallcapFeedStatus==='loading'?'A verificar dados das Small Caps…'
+        :smallcapFeedStatus==='outdated'?'Small Caps indisponíveis: relatório técnico desatualizado.'
+        :smallcapFeedStatus==='unavailable'?'Small Caps indisponíveis: relatório técnico não verificável.'
+        :'Sem small caps em pré-breakout elegíveis na amostra observada.'+coverage+' Não representa todo o universo.';
+      list.innerHTML='<div class="market-empty">'+esc(message)+'</div>';
+    }
     else if(activeLens==='breakout'&&!rows.length){
       const message=prebreakoutFeedStatus==='loading'?'A verificar os sinais publicados de pré-breakout…'
         :prebreakoutFeedStatus==='outdated'?'Pré-breakout indisponível: o último relatório publicado está desatualizado.'
@@ -694,5 +716,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},version:'1.16'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},get smallcapFeedStatus(){return smallcapFeedStatus;},get smallcapCoveragePct(){return smallcapCoveragePct;},version:'1.17'});
 })();
