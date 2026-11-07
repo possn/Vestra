@@ -774,6 +774,12 @@ function ageText(){ return marketRowUI?.ageText() || ''; }
     }
   }
 
+  // An optional ETF enrichment finishes asynchronously. Only the active ETF
+  // research view needs refreshing; no heavy re-render on unrelated tabs.
+  window.addEventListener('vestra:market-etf-ready', () => {
+    if(M.loaded && M.mode==='funds') renderPrimary();
+  });
+
   const marketSearchSuggestions = window.VestraMarketSearchSuggestions?.create({
     getStocks: () => M.stocks,
     getQuery: () => M.query,
