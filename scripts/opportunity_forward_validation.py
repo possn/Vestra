@@ -738,20 +738,54 @@ def summarize_horizon(vals, expected_matured_cohorts=0):
 
 
 def evidence_policy(report_horizons):
-    mature = [
-        int(h) for h, pack in report_horizons.items()
-        if (pack.get("cohort_count") or 0) >= 8
-        and (pack.get("validated_capture_pct") or 0) >= 80
-        and (pack.get("n") or 0) >= 100
-        and ((pack.get("outcome_exclusion_reasons") or {}).get("duplicate_conflict_keys") or 0) == 0
-    ]
+    """Only allow review when attrition is low across *every* frozen score rank.
+
+    Overall capture can hide missing winners/losers concentrated in the highest
+    or lowest scored quintile, manufacturing a persuasive but biased IC.
+    """
+    mature = []
+    diagnostics = {}
+    for h, pack in report_horizons.items():
+        quintile_audit = pack.get("score_quintile_capture") or {}
+        bins = quintile_audit.get("quintiles") or []
+        valid_bins = (
+            len(bins) == 5
+            and all(
+                isinstance(q, dict)
+                and (q.get("expected") or 0) > 0
+                and num(q.get("validated_capture_pct")) is not None
+                and num(q.get("validated_capture_pct")) >= 80
+                for q in bins
+            )
+        )
+        reasons = []
+        if (pack.get("cohort_count") or 0) < 8:
+            reasons.append("fewer_than_8_matured_cohorts")
+        if (pack.get("validated_capture_pct") or 0) < 80:
+            reasons.append("overall_validated_capture_below_80pct")
+        if (pack.get("n") or 0) < 100:
+            reasons.append("fewer_than_100_validated_outcomes")
+        if ((pack.get("outcome_exclusion_reasons") or {}).get("duplicate_conflict_keys") or 0) != 0:
+            reasons.append("conflicting_duplicate_outcomes")
+        if not valid_bins:
+            reasons.append("frozen_score_quintile_capture_below_80pct_or_unavailable")
+        diagnostics[str(h)] = {
+            "review_eligible": not reasons,
+            "reasons": reasons,
+            "quintile_validated_capture_pct": [
+                num(q.get("validated_capture_pct")) for q in bins
+                if isinstance(q, dict)
+            ],
+        }
+        if not reasons:
+            mature.append(int(h))
     return {
         "status": "observe_only" if len(mature) < 2 else "review_allowed",
         "production_rules_frozen": True,
         "mature_horizons": mature,
-        "rule": "Opportunity weights/gates are never auto-tuned. Review requires >=8 mature cohorts, >=100 validated outcomes, >=80% validated observation capture and no conflicting duplicate records on at least two horizons.",
+        "horizon_review_diagnostics": diagnostics,
+        "rule": "Opportunity weights/gates are never auto-tuned. Review requires >=8 mature cohorts, >=100 validated outcomes, >=80% validated observation capture overall AND in each frozen score quintile, and no conflicting duplicate records on at least two horizons.",
     }
-
 
 def main():
     today = dt.date.today()
