@@ -104,6 +104,38 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual(MOD.materialise_outcomes(today, snapshots, rows, outcomes), 0)
         self.assertEqual(len(outcomes), 1)
 
+    def test_score_snapshot_does_not_infer_clear_risk_gate(self):
+        snap = MOD.make_snapshot(
+            dt.date(2026, 11, 7),
+            {
+                "ABSENT": {"current_price": 100, "score": 70, "currency": "USD"},
+                "EMPTY": {"current_price": 100, "score": 70, "currency": "USD", "risk_gate": ""},
+                "WATCH": {"current_price": 100, "score": 70, "currency": "USD", "risk_gate": "watch"},
+                "CLEAR": {"current_price": 100, "score": 70, "currency": "USD", "risk_gate": "clear"},
+            },
+        )
+        obs = snap["observations"]
+        self.assertEqual(obs["ABSENT"]["risk_gate"], "unknown")
+        self.assertEqual(obs["EMPTY"]["risk_gate"], "unknown")
+        self.assertEqual(obs["WATCH"]["risk_gate"], "watch")
+        self.assertEqual(obs["CLEAR"]["risk_gate"], "clear")
+
+    def test_outcome_keeps_unknown_risk_from_frozen_legacy_cohort(self):
+        today = dt.date(2026, 8, 30)
+        snapshots = [{"date": "2026-08-02", "observations": {
+            "MISSING": {"price": 100, "score": 80, "currency": "USD"},
+            "WATCH": {"price": 100, "score": 70, "currency": "USD", "risk_gate": "watch"},
+        }}]
+        rows = {
+            "MISSING": {"current_price": 110, "currency": "USD", "risk_gate": "clear"},
+            "WATCH": {"current_price": 110, "currency": "USD", "risk_gate": "clear"},
+        }
+        outcomes = []
+        self.assertEqual(MOD.materialise_outcomes(today, snapshots, rows, outcomes), 2)
+        by = {outcome["ticker"]: outcome for outcome in outcomes}
+        self.assertEqual(by["MISSING"]["risk_gate"], "unknown")
+        self.assertEqual(by["WATCH"]["risk_gate"], "watch")
+
     def test_score_snapshot_freezes_currency_for_future_comparability(self):
         snap = MOD.make_snapshot(
             dt.date(2026, 10, 1),
