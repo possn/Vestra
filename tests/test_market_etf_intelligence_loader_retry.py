@@ -27,10 +27,15 @@ class MarketEtfIntelligenceLoaderRetryTests(unittest.TestCase):
         self.assertIn("const existing = document.querySelector('script[data-vestra-etf-intelligence]');", SOURCE)
         self.assertIn("if (etfIntelligencePromise) return etfIntelligencePromise;", SOURCE)
 
-    def test_market_loading_still_awaits_optional_intelligence_only_within_deadline(self):
+    def test_optional_etf_intelligence_has_deadline_but_never_blocks_market(self):
         self.assertIn("const etfReady = ensureMarketCompanions();", SOURCE)
         self.assertIn("return ensureEtfIntelligence();", SOURCE)
-        self.assertIn("await etfReady;", SOURCE)
+        self.assertNotIn("await etfReady;", SOURCE)
+        self.assertIn("Promise.resolve(etfReady).then(() =>", SOURCE)
+        self.assertLess(
+            SOURCE.index("beforeReady(); state.loaded = true; onReady(); announceReady(stocks);"),
+            SOURCE.index("Promise.resolve(etfReady).then(() =>")
+        )
         self.assertIn("version: '1.30'", SOURCE)
 
 
