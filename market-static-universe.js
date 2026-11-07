@@ -289,9 +289,17 @@
         state.data = data; state.stocks = stocks;
         state.byTicker = new Map(stocks.map(stock => [txt(stock?.ticker).toUpperCase(), stock]));
         sharedStocks = stocks;
-        await etfReady;
-        try { window.VestraEtfIntelligence?.enrichStocks(stocks); } catch (_) {}
+        // The canonical stock universe is immediately usable. ETF enrichment
+        // runs after first paint; an unavailable optional ETF companion must
+        // not hold the whole Market screen behind a network timeout.
         beforeReady(); state.loaded = true; onReady(); announceReady(stocks);
+        Promise.resolve(etfReady).then(() => {
+          try { window.VestraEtfIntelligence?.enrichStocks(stocks); }
+          catch (error) { console.warn('[Vestra] ETF enrichment unavailable', error); }
+          try { window.dispatchEvent(new CustomEvent('vestra:market-etf-ready')); } catch (_) {}
+        }).catch(error => {
+          console.warn('[Vestra] Optional ETF companion unavailable', error);
+        });
       })().catch(error => { onError(error); }).finally(() => { state.loading = null; });
       return state.loading;
     }
