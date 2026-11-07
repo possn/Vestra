@@ -51,6 +51,7 @@ const api = context.window.VestraMarketCongressLive.create({
         trades: [
           { ticker: 'MSFT', representative: 'A', type: 'Purchase', amount: '$1', transaction_date: '2026-08-20', asset: 'Microsoft' },
           { ticker: 'MSFT', member: 'B', transaction: 'Sale', amount_range: '$2-$3', date: '2026-08-29', asset: 'Microsoft' },
+          { ticker: 'MSFT', member: 'B', transaction: 'Sale', amount_range: '$2-$3', date: '2026-08-29', asset: 'Microsoft' }, // repeated within same batch
           { ticker: 'AAPL', representative: 'C', type: 'Purchase', amount: '$4', transaction_date: '2026-08-29', asset: 'Apple' },
         ],
       }),
@@ -100,8 +101,37 @@ const api = context.window.VestraMarketCongressLive.create({
   });
   const stale = await staleApi.load();
   assert.deepStrictEqual(Array.from(stale), []);
-  assert.strictEqual(staleState.loaded, true);
+  assert.strictEqual(staleState.loaded, false, 'stale feed must remain retryable');
   assert.strictEqual(staleState.error, 'Congress snapshot desactualizado');
+
+
+  const retryState = { trades: [], loaded: false, loading: null, error: '' };
+  let attempts = 0;
+  const retryApi = context.window.VestraMarketCongressLive.create({
+    state: retryState,
+    getStocksByTicker: () => new Map(),
+    getStocks: () => [],
+    text: v => String(v ?? '').trim(),
+    storage: { getItem: () => null, setItem: () => {} },
+    now: () => now,
+    fetchImpl: async () => {
+      attempts += 1;
+      if (attempts === 1) throw new Error('temporary network error');
+      return { ok: true, json: async () => ({
+        schema_version: 2, newest_disclosure: '2026-08-30',
+        trades: [{ ticker: 'AAPL', representative: 'C', type: 'Purchase', transaction_date: '2026-08-29' }],
+      }) };
+    },
+  });
+  const failed = await retryApi.load('AAPL');
+  assert.strictEqual(failed.length, 0);
+  assert.strictEqual(retryState.loaded, false, 'failed fetch may not lock the session');
+  assert.strictEqual(retryState.error, 'temporary network error');
+  const recovered = await retryApi.load('AAPL');
+  assert.strictEqual(attempts, 2, 'second call retries the network');
+  assert.strictEqual(recovered.length, 1);
+  assert.strictEqual(retryState.loaded, true);
+  assert.strictEqual(retryState.error, '');
 
   console.log('market congress live contract: ok');
 })().catch(error => {
