@@ -69,7 +69,8 @@ class MarketLoaderInvariantTests(unittest.TestCase):
         self.assertIn("market-opportunities.js?v=1.13", universe)
         self.assertIn("market-opportunity-lenses.js?v=3.2", universe)
         self.assertIn("const etfReady = ensureMarketCompanions();", universe)
-        self.assertIn("await etfReady;", universe)
+        self.assertNotIn("await etfReady;", universe)
+        self.assertIn("Promise.resolve(etfReady).then(() =>", universe)
         self.assertIn("market-static-universe.js?v=1.30", index)
 
     def test_dossier_hydration_requires_exact_ticker_identity(self):
