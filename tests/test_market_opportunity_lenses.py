@@ -22,6 +22,7 @@ class MarketOpportunityLensesTests(unittest.TestCase):
         self.assertIn("const smallcap=s.querySelector('[data-smallcap-prebreakout-lens]')", self.source)
         self.assertIn("s.querySelector('.vestra-technical-lenses')?.remove()", self.source)
         self.assertIn("section.classList.toggle('vestra-technical-empty'", opportunities)
+        self.assertIn("if(prebreakoutHistoryStatus==='ready'&&!past.length){container.remove();return;}", opportunities)
         self.assertIn(".market-section.vestra-technical-empty .market-sector-grid", self.css)
         self.assertIn("color:#f1f4ee!important", self.css)
 
