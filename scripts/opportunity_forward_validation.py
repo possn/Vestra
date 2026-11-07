@@ -414,6 +414,7 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
     Invalid numeric returns are excluded even if a stale flag says eligible.
     """
     expected = set()
+    cohort_expected = {}
     for snap in snapshots:
         if not isinstance(snap, dict):
             continue
@@ -426,9 +427,12 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         rows = snap.get("observations") or {}
         if not isinstance(rows, dict):
             continue
+        cohort_keys = cohort_expected.setdefault(cohort, set())
         for ticker, old in rows.items():
             if isinstance(old, dict):
-                expected.add(outcome_key(cohort, horizon, ticker))
+                key = outcome_key(cohort, horizon, ticker)
+                expected.add(key)
+                cohort_keys.add(key)
 
     categories = {
         "eligible": 0,
@@ -439,6 +443,12 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
     }
     recorded = set()
     ignored_duplicates = 0
+    by_cohort = {
+        date: {"cohort_date": date, "expected": len(keys), "recorded": 0,
+               "duplicate_records_ignored": 0,
+               "exclusion_reasons": {name: 0 for name in categories}}
+        for date, keys in cohort_expected.items()
+    }
     for item in outcomes:
         if not isinstance(item, dict):
             continue
@@ -450,10 +460,13 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         key = outcome_key(item.get("cohort_date"), horizon, item.get("ticker"))
         if key not in expected:
             continue
+        cohort_row = by_cohort[str(item.get("cohort_date"))]
         if key in recorded:
             ignored_duplicates += 1
+            cohort_row["duplicate_records_ignored"] += 1
             continue
         recorded.add(key)
+        cohort_row["recorded"] += 1
         if num(item.get("return_pct")) is None:
             category = "invalid_return"
         elif item.get("validation_eligible") is True:
@@ -465,8 +478,22 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         else:
             category = "explicitly_ineligible_other"
         categories[category] += 1
+        cohort_row["exclusion_reasons"][category] += 1
+
+    for row in by_cohort.values():
+        row["missing"] = row["expected"] - row["recorded"]
+        row["validated_capture_pct"] = (
+            round(100.0 * row["exclusion_reasons"]["eligible"] / row["expected"], 1)
+            if row["expected"] else None
+        )
+        row["unvalidated_recorded"] = (
+            row["recorded"] - row["exclusion_reasons"]["eligible"]
+        )
 
     return {
+        "cohort_exclusion_breakdown": [
+            by_cohort[date] for date in sorted(by_cohort)
+        ],
         "scope": "unique recorded outcomes from matured frozen cohorts only",
         "expected_observations": len(expected),
         "recorded_observations": len(recorded),
