@@ -336,7 +336,7 @@ def make_snapshot(today, rows, shadow_scores=None, reference_prices=None):
             "sector": str(r.get("sector") or "Unknown"),
             "score_model": str(r.get("score_model") or "general"),
             "confidence_score": num(r.get("confidence_score")),
-            "risk_gate": str(r.get("risk_gate") or "clear"),
+            "risk_gate": str(r.get("risk_gate") or "unknown"),
             "peer_shadow_score": num(shadow_scores.get(ticker)),
             **{field: num(r.get(field)) for field in FIELDS},
         }
@@ -422,7 +422,7 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                     "sector": old.get("sector") or "Unknown",
                     "score_model": old.get("score_model") or "general",
                     "confidence_score": num(old.get("confidence_score")),
-                    "risk_gate": old.get("risk_gate") or "clear",
+                    "risk_gate": old.get("risk_gate") or "unknown",
                     "peer_shadow_score": num(old.get("peer_shadow_score")),
                     **{field: num(old.get(field)) for field in FIELDS},
                 }
