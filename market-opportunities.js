@@ -33,12 +33,16 @@
   }
   let prebreakoutFeed=new Map();
   let prebreakoutFeedAuthoritative=false;
+  let prebreakoutFeedStatus='loading';
   async function loadPrebreakoutFeed(){
+    // During publication checks, never present locally inferred setups as current signals.
+    prebreakoutFeedAuthoritative=true;
+    prebreakoutFeedStatus='loading';
     try{
       const response=await fetch('data/prebreakout-signals.json',{cache:'no-store'});
-      if(!response.ok)return;
+      if(!response.ok)throw new Error(`prebreakout feed HTTP ${response.status}`);
       const payload=await response.json();
-      if(payload?.schema!=='vestra_prebreakout_v1'||!Array.isArray(payload.signals))return;
+      if(payload?.schema!=='vestra_prebreakout_v1'||!Array.isArray(payload.signals))throw new Error('prebreakout feed invalid schema');
       // A seven-day-old bar may be valid after holidays, but an old publisher
       // snapshot is never fresh technical evidence. Explicit empty published
       // scans remain authoritative; stale snapshots must not revive candidates.
@@ -46,7 +50,7 @@
       const ageHours=(Date.now()-generated)/3600000;
       if(!Number.isFinite(generated)||ageHours< -1||ageHours>36){
         prebreakoutFeed=new Map();
-        prebreakoutFeedAuthoritative=true;
+        prebreakoutFeedStatus='outdated';
         if(activeLens==='breakout')opportunities();
         return;
       }
@@ -63,9 +67,14 @@
         rows.set(t(item.ticker).toUpperCase(),item);
       }
       prebreakoutFeed=rows;
-      prebreakoutFeedAuthoritative=true;
+      prebreakoutFeedStatus='ready';
       if(activeLens==='breakout')opportunities();
-    }catch(error){console.warn('[Vestra] pre-breakout feed unavailable',error);}
+    }catch(error){
+      prebreakoutFeed=new Map();
+      prebreakoutFeedStatus='unavailable';
+      if(activeLens==='breakout')opportunities();
+      console.warn('[Vestra] pre-breakout feed unavailable',error);
+    }
   }
 
 
@@ -646,7 +655,14 @@
     const [title,subtitle]=lensMeta(activeLens);const h=section.querySelector('.market-section__head h3');if(h)h.textContent=title;const p=section.querySelector('.market-section__head p');if(p)p.textContent=subtitle;
     decorate(section);
     if(activeLens==='smallcap_breakout'&&!rows.length)list.innerHTML='<div class="market-empty">Sem small caps em pré-breakout elegíveis neste momento. Cobertura OHLCV parcial, não ausência comprovada de setups em todo o universo.</div>';
-    else renderPrebreakoutHistory(section);
+    else if(activeLens==='breakout'&&!rows.length){
+      const message=prebreakoutFeedStatus==='loading'?'A verificar os sinais publicados de pré-breakout…'
+        :prebreakoutFeedStatus==='outdated'?'Pré-breakout indisponível: o último relatório publicado está desatualizado.'
+        :prebreakoutFeedStatus==='unavailable'?'Pré-breakout indisponível: não foi possível validar o relatório publicado.'
+        :'Sem sinais de pré-breakout elegíveis no último relatório verificado. Não significa ausência de setups em todo o mercado.';
+      list.innerHTML='<div class="market-empty">'+message+'</div>';
+      renderPrebreakoutHistory(section);
+    }else renderPrebreakoutHistory(section);
     return rows;
   }
   function selectLens(lens,sectorOverride=''){activeLens=LENSES.has(t(lens))?t(lens):'all';return opportunities(activeLens,sectorOverride);}
@@ -678,5 +694,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 
-  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},version:'1.15'});
+  window.VestraMarketOpportunities=Object.freeze({stats,confirmed,timing,discoveryEligible,eligible,discoveryScore,score:discoveryScore,low52Above,lensEligible,lensScore,sleeveScores,sleeveCoverage,dominantSleeve,credibleDominantSleeve,discoveryCaps,capSummary,diversify,rankLens,selectLens,refresh:opportunities,decorate,breakoutSetup,get activeLens(){return activeLens;},get prebreakoutFeedStatus(){return prebreakoutFeedStatus;},version:'1.16'});
 })();
