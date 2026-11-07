@@ -441,14 +441,9 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         "unresolved_corporate_action": 0,
         "explicitly_ineligible_other": 0,
     }
-    recorded = set()
-    ignored_duplicates = 0
-    by_cohort = {
-        date: {"cohort_date": date, "expected": len(keys), "recorded": 0,
-               "duplicate_records_ignored": 0,
-               "exclusion_reasons": {name: 0 for name in categories}}
-        for date, keys in cohort_expected.items()
-    }
+    # Group unique cohort/horizon/ticker keys before determining eligibility.
+    # The original order of historical outcomes must never change diagnostics.
+    grouped = {}
     for item in outcomes:
         if not isinstance(item, dict):
             continue
@@ -458,22 +453,42 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         except (TypeError, ValueError):
             continue
         key = outcome_key(item.get("cohort_date"), horizon, item.get("ticker"))
-        if key not in expected:
-            continue
-        cohort_row = by_cohort[str(item.get("cohort_date"))]
-        if key in recorded:
-            ignored_duplicates += 1
-            cohort_row["duplicate_records_ignored"] += 1
-            continue
-        recorded.add(key)
+        if key in expected:
+            grouped.setdefault(key, []).append(item)
+    ignored_duplicates = sum(len(items) - 1 for items in grouped.values())
+    duplicate_conflicts = 0
+    by_cohort = {
+        date: {"cohort_date": date, "expected": len(keys), "recorded": 0,
+               "duplicate_records_ignored": 0, "duplicate_conflicts": 0,
+               "exclusion_reasons": {name: 0 for name in categories}}
+        for date, keys in cohort_expected.items()
+    }
+    for key, items in grouped.items():
+        cohort_row = by_cohort[str(items[0].get("cohort_date"))]
         cohort_row["recorded"] += 1
-        if num(item.get("return_pct")) is None:
-            category = "invalid_return"
-        elif item.get("validation_eligible") is True:
+        cohort_row["duplicate_records_ignored"] += len(items) - 1
+        # Match observation_capture's any-explicit-valid rule, but expose
+        # disagreements rather than treating multiple records as independent.
+        eligible = [
+            item for item in items
+            if item.get("validation_eligible") is True
+            and num(item.get("return_pct")) is not None
+        ]
+        signatures = {
+            (item.get("validation_eligible"), num(item.get("return_pct")))
+            for item in items
+        }
+        if len(signatures) > 1:
+            duplicate_conflicts += 1
+            cohort_row["duplicate_conflicts"] += 1
+        if eligible:
             category = "eligible"
-        elif item.get("validation_eligible") is None:
+        elif all(num(item.get("return_pct")) is None for item in items):
+            category = "invalid_return"
+        elif all(item.get("validation_eligible") is None for item in items):
             category = "legacy_missing_eligibility"
-        elif item.get("corporate_action_unresolved") is True or item.get("unresolved_distributions"):
+        elif any(item.get("corporate_action_unresolved") is True or
+                 item.get("unresolved_distributions") for item in items):
             category = "unresolved_corporate_action"
         else:
             category = "explicitly_ineligible_other"
@@ -496,13 +511,14 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         ],
         "scope": "unique recorded outcomes from matured frozen cohorts only",
         "expected_observations": len(expected),
-        "recorded_observations": len(recorded),
-        "missing_observations": len(expected) - len(recorded),
+        "recorded_observations": len(grouped),
+        "missing_observations": len(expected) - len(grouped),
         "duplicate_records_ignored": ignored_duplicates,
+        "duplicate_conflict_keys": duplicate_conflicts,
         "exclusion_reasons": categories,
-        "unvalidated_recorded_observations": len(recorded) - categories["eligible"],
+        "unvalidated_recorded_observations": len(grouped) - categories["eligible"],
         "classification": "diagnostic_only_no_backfill",
-        "interpretation": "Historical records without explicit corporate-action eligibility remain unvalidated. Missing outcomes are never inferred to be delisted or zero returns.",
+        "interpretation": "Historical records without explicit corporate-action eligibility remain unvalidated. Duplicate conflicts are counted and must be investigated; neither duplicate outcomes nor missing prices prove alpha or delisting.",
     }
 
 
