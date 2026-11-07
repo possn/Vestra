@@ -4,3 +4,35 @@
 .vestra-opportunity-lenses button.is-active{background:var(--accent,#168e89);color:#fff;border-color:transparent}
 .ux454-opportunity-guide{pointer-events:none}
 .vestra-lens-empty{padding:18px;text-align:center;color:var(--text2);font-size:11px}
+
+/* Research with zero verified setups: avoid a full-screen grid of filters
+   above an empty result and use legible, honest evidence messaging. */
+#viewMarket .market-section.vestra-technical-empty .market-sector-grid,
+#viewMarket .market-section.vestra-technical-empty .vestra-technical-lenses,
+#viewMarket .market-section.vestra-technical-empty .ux454-opportunity-guide{
+  display:none!important;
+}
+#viewMarket .market-section.vestra-technical-empty .market-list{
+  min-height:0!important;
+}
+#viewMarket .market-section.vestra-technical-empty :is(.vestra-lens-empty,.market-empty){
+  display:block;
+  padding:20px 16px;
+  margin:10px 0 14px;
+  background:rgba(220,238,231,.095);
+  border:1px solid rgba(204,228,216,.22);
+  border-radius:14px;
+  color:#f1f4ee!important;
+  -webkit-text-fill-color:#f1f4ee!important;
+  opacity:1!important;
+  font-size:14px!important;
+  line-height:1.55!important;
+  font-weight:550;
+  text-align:left;
+}
+#viewMarket .market-section.vestra-technical-empty .vestra-prebreakout-history{
+  color:#d2dfd8;
+}
+#viewMarket .market-section.vestra-technical-empty .vestra-prebreakout-history summary{
+  font-size:13px;
+}
