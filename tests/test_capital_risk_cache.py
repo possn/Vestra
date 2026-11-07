@@ -288,6 +288,31 @@ def test_undated_reverse_split_reference_does_not_infer_count_from_filings():
     assert result["reverse_split_latest_date"] is None
 
 
+def test_bounded_sec_budget_never_certifies_uninspected_filings_as_clear():
+    from unittest import mock
+
+    class Response:
+        ok = True
+        text = "No financing or corporate actions."
+
+    class Client:
+        def get(self, url, timeout=18):
+            return Response()
+
+    rows = [
+        {"form": "8-K", "date": f"2026-10-{day:02d}",
+         "accession": f"a{day}", "doc": f"{day}.htm"}
+        for day in range(1, 4)
+    ]
+    with mock.patch.object(capital_risk.time, "sleep", return_value=None):
+        partial = capital_risk._scan_docs(Client(), 123, rows, max_docs=2)
+        complete = capital_risk._scan_docs(Client(), 123, rows, max_docs=3)
+    assert partial["capital_risk_filings_checked"] == 2
+    assert partial["capital_structure_risk"] == "unknown"
+    assert complete["capital_risk_filings_checked"] == 3
+    assert complete["capital_structure_risk"] == "clear"
+
+
 if __name__ == "__main__":
     if not REQUESTS_AVAILABLE:
         print("capital-risk contract skipped in dependency-free historical suite")
@@ -304,3 +329,4 @@ if __name__ == "__main__":
         test_reverse_split_same_effective_event_in_multiple_filings_not_repeated()
         test_reverse_split_two_distinct_effective_dates_are_repeated()
         test_undated_reverse_split_reference_does_not_infer_count_from_filings()
+        test_bounded_sec_budget_never_certifies_uninspected_filings_as_clear()
