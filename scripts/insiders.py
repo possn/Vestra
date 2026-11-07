@@ -377,6 +377,7 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
     transactions.sort(key=lambda x: x.get("date") or "", reverse=True)
     today = dt.date.today()
     cutoff30 = today - dt.timedelta(days=30)
+    cutoff365 = today - dt.timedelta(days=365)
 
     def tx_date(x):
         try:
@@ -387,8 +388,9 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
     tx30 = [x for x in transactions if (tx_date(x) is not None and tx_date(x) >= cutoff30)]
     buys30 = [x for x in tx30 if x["type"] == "buy"]
     sells30 = [x for x in tx30 if x["type"] == "sell"]
-    buys365 = [x for x in transactions if x["type"] == "buy"]
-    sells365 = [x for x in transactions if x["type"] == "sell"]
+    tx365 = [x for x in transactions if (tx_date(x) is not None and tx_date(x) >= cutoff365)]
+    buys365 = [x for x in tx365 if x["type"] == "buy"]
+    sells365 = [x for x in tx365 if x["type"] == "sell"]
 
     def sum_known(items):
         vals = [x["value"] for x in items if x.get("value") is not None]
@@ -404,10 +406,18 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
         except Exception:
             pass
 
-    status = "ok" if not filings or xml_documents > 0 else "degraded"
+    # A single parsed Form 4 does not establish completeness when other
+    # filings failed or when the detail budget truncates the discovered set.
+    # Unknown must not be reported as zero net buying/selling.
+    truncated = len(filings) > max_detail_filings
+    status = "ok" if not fetch_errors and not truncated else "degraded"
+    reason = ("form4_detail_limit" if truncated else "form4_xml_unavailable") if status != "ok" else None
     return {
         "status": status,
-        "reason": None if status == "ok" else "form4_xml_unavailable",
+        "reason": reason,
+        "detail_filings_discovered": len(filings),
+        "detail_filings_attempted": min(len(filings), max_detail_filings),
+        "detail_filings_truncated": max(0, len(filings)-max_detail_filings),
         "form4_count_30d": form4_30d,
         "buy_count_30d": len(buys30) if status == "ok" else None,
         "sell_count_30d": len(sells30) if status == "ok" else None,
@@ -421,7 +431,7 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
         "buy_value_365d": buy365 if status == "ok" else None,
         "sell_value_365d": sell365 if status == "ok" else None,
         "net_value_365d": (buy365 - sell365) if status == "ok" else None,
-        "transactions_365d": transactions[:40],
+        "transactions_365d": tx365[:40],
         "detail_filings_parsed": xml_documents,
         "raw_nonderivative_transactions": raw_tx_seen,
         "fetch_errors": fetch_errors,
