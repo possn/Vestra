@@ -391,6 +391,54 @@ class OpportunityForwardValidationTests(unittest.TestCase):
                                       "84": {**complete, "score_quintile_capture": missing_bin}})
         self.assertEqual(result["status"], "observe_only")
 
+    def test_ranking_statistics_deduplicates_identical_matured_outcomes(self):
+        today = dt.date(2026, 9, 1)
+        snaps = [{"date": "2026-08-01", "observations": {
+            "A": observation(score=75), "B": observation(score=80)
+        }}]
+        a = {"cohort_date": "2026-08-01", "horizon_days": 28,
+             "ticker": "A", "opportunity_score": 75,
+             "return_pct": 1, "validation_eligible": True}
+        b = {"cohort_date": "2026-08-01", "horizon_days": 28,
+             "ticker": "B", "opportunity_score": 80,
+             "return_pct": 2, "validation_eligible": True}
+        vals, audit = MOD.unique_validated_outcomes_for_statistics(
+            today, snaps, [a, a.copy(), b], 28)
+        self.assertEqual(len(vals), 2)
+        self.assertEqual(audit["duplicate_records_ignored_for_statistics"], 1)
+        self.assertEqual(audit["conflicting_outcome_keys_excluded_from_statistics"], 0)
+        self.assertEqual(MOD.summarize_horizon(vals, 1)["n"], 2)
+
+    def test_conflicting_outcomes_never_enter_ranking_even_if_one_is_valid(self):
+        today = dt.date(2026, 9, 1)
+        snaps = [{"date": "2026-08-01", "observations": {
+            "A": observation(score=75), "B": observation(score=80)
+        }}]
+        a = {"cohort_date": "2026-08-01", "horizon_days": 28,
+             "ticker": "A", "opportunity_score": 75,
+             "return_pct": 1, "validation_eligible": True}
+        conflicting = {**a, "return_pct": 75}
+        b = {"cohort_date": "2026-08-01", "horizon_days": 28,
+             "ticker": "B", "opportunity_score": 80,
+             "return_pct": 2, "validation_eligible": True}
+        outside = {**b, "ticker": "NOT_FROZEN", "return_pct": 200}
+        future = {**b, "cohort_date": "2026-08-20", "return_pct": 200}
+        vals, audit = MOD.unique_validated_outcomes_for_statistics(
+            today, snaps, [a, conflicting, b, outside, future], 28)
+        self.assertEqual([x["ticker"] for x in vals], ["B"])
+        self.assertEqual(audit["conflicting_outcome_keys_excluded_from_statistics"], 1)
+        self.assertEqual(audit["validated_unique_outcomes_in_statistics"], 1)
+
+    def test_eligibility_disagreement_is_conflict_not_implicit_upgrade(self):
+        today = dt.date(2026, 9, 1)
+        snap = [{"date": "2026-08-01", "observations": {"A": observation()}}]
+        a = {"cohort_date": "2026-08-01", "horizon_days": 28,
+             "ticker": "A", "return_pct": 7, "validation_eligible": True}
+        vals, audit = MOD.unique_validated_outcomes_for_statistics(
+            today, snap, [a, {**a, "validation_eligible": False}], 28)
+        self.assertEqual(vals, [])
+        self.assertEqual(audit["conflicting_outcome_keys_excluded_from_statistics"], 1)
+
     def test_single_horizon_keeps_observe_only(self):
         result = MOD.evidence_policy({"28": {"cohort_count": 8}, "84": {}, "168": {}})
         self.assertEqual(result["status"], "observe_only")

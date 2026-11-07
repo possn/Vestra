@@ -783,6 +783,66 @@ def summarize_horizon(vals, expected_matured_cohorts=0):
     }
 
 
+def unique_validated_outcomes_for_statistics(today, snapshots, outcomes, horizon):
+    """Use exactly one validated result per frozen matured cohort and ticker.
+
+    Raw historical records are immutable. Conflicting duplicates are excluded
+    from ranking statistics even if one record claims validation eligibility.
+    Identical duplicates have weight one. Entries outside a frozen matured
+    cohort cannot enter genuine out-of-sample evidence.
+    """
+    expected = set()
+    for snap in snapshots:
+        if not isinstance(snap, dict):
+            continue
+        try:
+            cohort = str(snap["date"])
+            age = (today - dt.date.fromisoformat(cohort)).days
+        except (KeyError, TypeError, ValueError):
+            continue
+        if age < horizon:
+            continue
+        for ticker, obs in (snap.get("observations") or {}).items():
+            if isinstance(obs, dict):
+                expected.add(outcome_key(cohort, horizon, ticker))
+
+    by_key = defaultdict(list)
+    for item in outcomes:
+        if not isinstance(item, dict):
+            continue
+        try:
+            if int(item.get("horizon_days") or 0) != horizon:
+                continue
+        except (ValueError, TypeError):
+            continue
+        key = outcome_key(item.get("cohort_date"), horizon, item.get("ticker"))
+        if key in expected:
+            by_key[key].append(item)
+
+    result = []
+    conflicting_keys = 0
+    deduplicated_records = 0
+    for key in sorted(by_key):
+        items = by_key[key]
+        deduplicated_records += len(items) - 1
+        # Treat disagreement about eligibility, returns, provenance or any
+        # other recorded field as a conflict rather than selecting the winner.
+        signatures = {json.dumps(item, sort_keys=True, ensure_ascii=False)
+                      for item in items}
+        if len(signatures) != 1:
+            conflicting_keys += 1
+            continue
+        item = items[0]
+        if item.get("validation_eligible") is True and num(item.get("return_pct")) is not None:
+            result.append(item)
+    return result, {
+        "method": "one validated identical record per frozen matured cohort/horizon/ticker",
+        "duplicate_records_ignored_for_statistics": deduplicated_records,
+        "conflicting_outcome_keys_excluded_from_statistics": conflicting_keys,
+        "validated_unique_outcomes_in_statistics": len(result),
+    }
+
+
 def evidence_policy(report_horizons):
     """Only allow review when attrition is low across *every* frozen score rank.
 
@@ -863,10 +923,12 @@ def main():
 
     horizon_report = {}
     for horizon in HORIZONS:
-        vals = [x for x in outcomes if int(x.get("horizon_days") or 0) == horizon
-                and x.get("validation_eligible") is True]
+        vals, unique_audit = unique_validated_outcomes_for_statistics(
+            today, snapshots, outcomes, horizon
+        )
         expected = expected_matured_count(today, snapshots, horizon)
         pack = summarize_horizon(vals, expected)
+        pack["unique_outcome_statistics_audit"] = unique_audit
         pack.update(observation_capture(today, snapshots, outcomes, horizon))
         pack["score_quintile_capture"] = score_quintile_capture(today, snapshots, outcomes, horizon)
         pack["outcome_exclusion_reasons"] = outcome_exclusion_reasons(today, snapshots, outcomes, horizon)
@@ -904,7 +966,7 @@ def main():
         "horizons": horizon_report,
         "evidence_policy": evidence_policy(horizon_report),
         "interpretation": {
-            "rank_ic": "Spearman correlation between Opportunity score known at cohort date and realised forward return.",
+            "rank_ic": "Spearman correlation between Opportunity score known at cohort date and realised forward return. Statistics use unique matching frozen-cohort outcomes; conflicting duplicates are excluded.",
             "top_minus_bottom": "Median return spread between highest and lowest Opportunity-score quintiles.",
             "observation_capture": "Recorded observation coverage counts legacy outcomes; validated_capture_pct counts only corporate-action-validated results and is used in evidence policy. Neither imputes missing/delisted returns.",
             "upside_support": "Compares realised returns for strong/moderate/weak/negative/unavailable support known at cohort date.",
