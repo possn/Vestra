@@ -108,6 +108,56 @@ class InsiderFilingCacheTests(unittest.TestCase):
         self.assertNotIn(key, insiders._filing_cache)
         self.assertFalse(insiders._cache_dirty)
 
+
+    def test_partial_form4_failure_cannot_publish_zero_as_verified(self):
+        import datetime as dt
+        today = dt.date.today().isoformat()
+        filings = [
+            {"accession": "acc1", "filing_date": today},
+            {"accession": "acc2", "filing_date": today},
+        ]
+        good = [{"ticker": "AAPL", "type": "buy", "date": today, "value": 200.0}]
+        with mock.patch.object(insiders, "_load_ticker_cik_map", return_value={"AAPL": "320193"}), \
+             mock.patch.object(insiders, "_recent_form4_rows", return_value=filings), \
+             mock.patch.object(insiders, "_fetch_structured_filing",
+                               side_effect=[(good, 1, "file.xml"), ([], 0, "network error")]):
+            result = insiders.insider_activity("AAPL")
+        self.assertEqual(result["status"], "degraded")
+        self.assertEqual(result["reason"], "form4_xml_unavailable")
+        self.assertEqual(result["detail_filings_parsed"], 1)
+        self.assertIsNone(result["net_value_30d"])
+        self.assertIsNone(result["net_value_365d"])
+
+    def test_detail_budget_truncation_is_not_complete_annual_coverage(self):
+        import datetime as dt
+        today = dt.date.today().isoformat()
+        filings = [{"accession": f"acc{i}", "filing_date": today} for i in range(3)]
+        with mock.patch.object(insiders, "_load_ticker_cik_map", return_value={"AAPL": "320193"}), \
+             mock.patch.object(insiders, "_recent_form4_rows", return_value=filings), \
+             mock.patch.object(insiders, "_fetch_structured_filing",
+                               return_value=([{"ticker": "AAPL", "type": "buy", "date": today,
+                                              "value": 100.0}], 1, "file.xml")):
+            result = insiders.insider_activity("AAPL", max_detail_filings=2)
+        self.assertEqual(result["status"], "degraded")
+        self.assertEqual(result["reason"], "form4_detail_limit")
+        self.assertEqual(result["detail_filings_truncated"], 1)
+        self.assertIsNone(result["net_value_365d"])
+
+    def test_old_transaction_in_recent_amended_filing_not_counted_as_365d(self):
+        import datetime as dt
+        today = dt.date.today().isoformat()
+        old = (dt.date.today() - dt.timedelta(days=450)).isoformat()
+        filings = [{"accession": "amendment", "filing_date": today}]
+        transactions = [{"ticker": "AAPL", "type": "buy", "date": old, "value": 90000.0}]
+        with mock.patch.object(insiders, "_load_ticker_cik_map", return_value={"AAPL": "320193"}), \
+             mock.patch.object(insiders, "_recent_form4_rows", return_value=filings), \
+             mock.patch.object(insiders, "_fetch_structured_filing",
+                               return_value=(transactions, 1, "amended.xml")):
+            result = insiders.insider_activity("AAPL")
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["buy_value_365d"], 0.0)
+        self.assertEqual(result["transactions_365d"], [])
+
     def test_cache_key_is_exact_cik_plus_accession(self):
         self.assertNotEqual(
             insiders._cache_key("320193", "0001-26-000001"),
