@@ -20,6 +20,8 @@
     let loaded = false;
     let loading = null;
     let lastError = '';
+    let lastMergeCount = null;
+    let lastFeedCount = null;
 
     function bestResult(results, keys) {
       let best = null;
@@ -68,7 +70,15 @@
         if (!tickers || typeof tickers !== 'object' || Array.isArray(tickers)) {
           throw new Error('scanner data inválido');
         }
-        mergeTickers(tickers);
+        const feedCount = Object.keys(tickers).length;
+        const mergeCount = mergeTickers(tickers);
+        lastFeedCount = feedCount;
+        lastMergeCount = mergeCount;
+        // A populated feed with no resolved companies is not a successful scan.
+        // Otherwise the UI silently freezes a blank scanner until reload.
+        if (feedCount > 0 && mergeCount === 0) {
+          throw new Error('scanner data: nenhum ticker associado ao universo carregado');
+        }
         loaded = true;
         lastError = '';
         return true;
@@ -81,7 +91,7 @@
       return loading;
     }
 
-    return Object.freeze({ load, mergeTickers, isReady: () => loaded, error: () => lastError });
+    return Object.freeze({ load, mergeTickers, isReady: () => loaded, error: () => lastError, diagnostics: () => ({ loaded, feedCount: lastFeedCount, mergedCount: lastMergeCount, lastError }) });
   }
 
   let controller = null;
