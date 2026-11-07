@@ -332,6 +332,7 @@ def make_snapshot(today, rows, shadow_scores=None, reference_prices=None):
     for ticker, r in rows.items():
         observations[ticker] = {
             "price": num(r.get("current_price")),
+            "currency": str(r.get("currency") or "").strip().upper(),
             "sector": str(r.get("sector") or "Unknown"),
             "score_model": str(r.get("score_model") or "general"),
             "confidence_score": num(r.get("confidence_score")),
@@ -391,6 +392,14 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                 if not adjusted:
                     continue
                 realised = adjusted["return_pct"]
+                initial_currency = str(old.get("currency") or "").strip().upper()
+                terminal_currency = str(now.get("currency") or "").strip().upper()
+                currency_comparable = bool(initial_currency and terminal_currency
+                                           and initial_currency == terminal_currency)
+                # Never call cross-currency nominal price changes validated alpha.
+                # Retain the diagnostic outcome without retroactively rewriting
+                # any previously frozen or realised observations.
+                eligible = bool(adjusted["validation_eligible"] and currency_comparable)
                 item = {
                     "cohort_date": snap["date"],
                     "evaluated_date": today.isoformat(),
@@ -406,7 +415,10 @@ def materialise_outcomes(today, snapshots, rows, outcomes):
                     "distribution_value_per_parent": adjusted["distribution_value_per_parent"],
                     "corporate_action_unresolved": adjusted["corporate_action_unresolved"],
                     "unresolved_distributions": adjusted["unresolved_distributions"],
-                    "validation_eligible": adjusted["validation_eligible"],
+                    "validation_eligible": eligible,
+                    "quote_currency_comparable": currency_comparable,
+                    "initial_quote_currency": initial_currency or None,
+                    "terminal_quote_currency": terminal_currency or None,
                     "sector": old.get("sector") or "Unknown",
                     "score_model": old.get("score_model") or "general",
                     "confidence_score": num(old.get("confidence_score")),
