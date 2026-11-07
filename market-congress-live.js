@@ -38,10 +38,13 @@
       return now() - ms <= maxSnapshotAge;
     }
 
+    // Preserve share classes and exchange suffixes; BRK.A must never absorb BRK.B.
+    const tickerIdentity = value => text(value).toUpperCase().replace(/-/g, '.');
+
     function attachToStocks(trades) {
       const grouped = new Map();
       for (const trade of trades) {
-        const ticker = text(trade.ticker).toUpperCase().split('.')[0];
+        const ticker = tickerIdentity(trade.ticker);
         if (!ticker) continue;
         if (!grouped.has(ticker)) grouped.set(ticker, []);
         grouped.get(ticker).push(trade);
@@ -49,7 +52,7 @@
       const byTicker = getStocksByTicker();
       const stocks = getStocks();
       for (const [ticker, rows] of grouped) {
-        const stock = byTicker.get(ticker) || stocks.find(item => text(item.ticker).toUpperCase().split('.')[0] === ticker);
+        const stock = byTicker.get(ticker) || stocks.find(item => tickerIdentity(item.ticker) === ticker);
         if (!stock) continue;
         const current = Array.isArray(stock.congress_trades) ? stock.congress_trades : [];
         const key = item => `${text(item.transaction_date || item.date)}|${text(item.representative || item.member || item.name)}|${text(item.type)}|${text(item.amount || item.amount_range)}|${text(item.asset)}`;
@@ -59,13 +62,13 @@
     }
 
     async function load(ticker = '') {
-      const normalizedTicker = text(ticker).toUpperCase().split('.')[0];
+      const normalizedTicker = tickerIdentity(ticker);
       if (state.loaded) {
-        return normalizedTicker ? state.trades.filter(item => item.ticker.split('.')[0] === normalizedTicker) : state.trades;
+        return normalizedTicker ? state.trades.filter(item => tickerIdentity(item.ticker) === normalizedTicker) : state.trades;
       }
       if (state.loading) {
         const all = await state.loading;
-        return normalizedTicker ? all.filter(item => item.ticker.split('.')[0] === normalizedTicker) : all;
+        return normalizedTicker ? all.filter(item => tickerIdentity(item.ticker) === normalizedTicker) : all;
       }
 
       state.loading = (async () => {
@@ -103,11 +106,11 @@
       })();
 
       const all = await state.loading;
-      return normalizedTicker ? all.filter(item => item.ticker.split('.')[0] === normalizedTicker) : all;
+      return normalizedTicker ? all.filter(item => tickerIdentity(item.ticker) === normalizedTicker) : all;
     }
 
     return Object.freeze({ normalize, snapshotFresh, attachToStocks, load });
   }
 
-  window.VestraMarketCongressLive = Object.freeze({ create, version: '1.0' });
+  window.VestraMarketCongressLive = Object.freeze({ create, version: '1.1' });
 })();
