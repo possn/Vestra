@@ -1,6 +1,10 @@
 /* Vestra Politicians v2.1 — Congress + Executive disclosures, leaders, favourites and name search. */
 (()=>{
   'use strict';
+  // Dynamic market loaders may inject this script more than once on iPhone.
+  // A second closure would register competing input/click listeners with stale data.
+  if(globalThis.__vestraPoliticiansSingletonV1)return;
+  globalThis.__vestraPoliticiansSingletonV1=true;
   const VERSION='2.1';
   const FAV_KEY='vestra-politician-favourites-v2';
   const t=v=>String(v??'').trim();
