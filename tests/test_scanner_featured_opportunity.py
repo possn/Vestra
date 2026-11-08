@@ -150,6 +150,41 @@ class ScannerFeaturedOpportunityTests(unittest.TestCase):
             out = scanner.assess(row)
         self.assertFalse(out.get("scanner_suppressed_reason"))
 
+    def test_insider_accumulation_needs_observed_sales_not_implicit_zero(self):
+        row = self.base_row()
+        row.update({"insider_buy_count_30d": 2, "insider_buy_value_30d": 250000})
+        for missing in (None, "", float("nan"), float("inf"), True):
+            with self.subTest(missing=missing):
+                row["insider_sell_value_30d"] = missing
+                with mock.patch.object(scanner, "_structural_overlays", return_value={}):
+                    result = scanner.assess(row)
+                self.assertNotIn("insider_accumulation", result["scanner_results"])
+
+    def test_insider_accumulation_unknown_risk_gate_does_not_pass(self):
+        row = self.base_row()
+        row.update({"risk_gate": "unknown", "insider_buy_count_30d": 2,
+                    "insider_buy_value_30d": 250000, "insider_sell_value_30d": 0})
+        with mock.patch.object(scanner, "_structural_overlays", return_value={}):
+            result = scanner.assess(row)
+        self.assertNotIn("insider_accumulation", result["scanner_results"])
+
+    def test_insider_accumulation_valid_zero_sales_still_passes(self):
+        row = self.base_row()
+        row.update({"insider_buy_count_30d": 2, "insider_buy_value_30d": 250000,
+                    "insider_sell_value_30d": 0})
+        with mock.patch.object(scanner, "_structural_overlays", return_value={}):
+            result = scanner.assess(row)
+        self.assertIn("insider_accumulation", result["scanner_results"])
+        self.assertIn("250,000", result["scanner_results"]["insider_accumulation"]["reasons"][1])
+
+    def test_insider_accumulation_rejects_invalid_negative_notional(self):
+        row = self.base_row()
+        row.update({"insider_buy_count_30d": 2, "insider_buy_value_30d": 250000,
+                    "insider_sell_value_30d": -10})
+        with mock.patch.object(scanner, "_structural_overlays", return_value={}):
+            result = scanner.assess(row)
+        self.assertNotIn("insider_accumulation", result["scanner_results"])
+
     def test_scanner_best_remains_highest_strategy_score(self):
         row = self.base_row()
         row.update({
