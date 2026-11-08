@@ -105,9 +105,11 @@ function candidate(ticker, score, sector, industry) {
 {
   const stronger = candidate('DISCOVERY80', 80, 'Technology', 'Software');
   stronger.low52_above_low_pct = 5;
+  stronger.low52_status = 'opportunity';
   stronger.opportunity_timing_score = 60;
   const weaker = candidate('DISCOVERY79', 79, 'Healthcare', 'Biotechnology');
   weaker.low52_above_low_pct = 0;
+  weaker.low52_status = 'watch';
   weaker.opportunity_timing_score = 60;
 
   const rows = api.rankLens([weaker, stronger], 'low52', {limit: 12, sector: 'all'});
@@ -117,6 +119,18 @@ function candidate(ticker, score, sector, industry) {
     'lens score must be the canonical Discovery score');
   assert.strictEqual(api.lensScore(weaker, 'low52'), 79,
     'lens metadata must not reweight canonical Discovery');
+}
+
+{
+  const statuses = ['structural_risk', 'value_trap_risk', 'insufficient', 'uncertain', 'not_near_low', '', 'unknown'];
+  for (const status of statuses) {
+    const stock = candidate('UNSAFE', 95, 'Technology', 'Software');
+    stock.low52_above_low_pct = 1;
+    stock.opportunity_timing_score = 85;
+    if (status) stock.low52_status = status;
+    assert.strictEqual(api.lensEligible(stock, 'low52'), false,
+      `backend Low52 status ${status || 'missing'} must not be promoted`);
+  }
 }
 
 console.log('opportunity shortlist runtime contract: ok');

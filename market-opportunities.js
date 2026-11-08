@@ -329,6 +329,11 @@
     const p=stats(s),rec=t(s?.recovery_status),est=t(s?.estimate_signal),dir=t(s?.thesis_direction),val=t(s?.valuation_signal);
     if(lens==='low52'){
       const above=low52Above(s);
+      // Backend Low52 intelligence is authoritative. No local lens may promote
+      // structural risk, value traps, insufficient or unknown classifications.
+      // The 5% UI lens is a narrower view inside the backend's 10% research zone.
+      const canonical=t(s?.low52_status).toLowerCase();
+      if(!['opportunity','watch'].includes(canonical))return false;
       return coreCandidate(s,{scoreMin:50,coverageMin:45,confidenceMin:45,criticalMin:25})&&above!=null&&above>=-0.5&&above<=5&&timing(s)>=35;
     }
     if(lens==='emerging')return coreCandidate(s)&&!overextended(s)&&timing(s)>=55&&timing(s)<=82&&confirmed(s)>=1&&!['confirmed','recovering'].includes(rec)&&(est==='improving'||dir==='up'||(p.accel!=null&&p.accel>0));
