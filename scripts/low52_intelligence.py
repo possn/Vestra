@@ -185,7 +185,7 @@ def assess(row: dict) -> dict:
     # (e.g. 110 / 100 can be represented infinitesimally above 10.0%).
     near_low = pos["above_low_pct"] <= 10.0 + 1e-9
     if not near_low: status = "not_near_low"
-    elif gate in ("high", "severe") or deterioration >= 35: status = "structural_risk"
+    elif gate in ("high", "severe") or capital_risk in ("high", "severe") or "severe_dilution" in flags or deterioration >= 35: status = "structural_risk"
     elif deterioration >= 20 or resilience < 48: status = "value_trap_risk"
     elif opportunity >= 70 and resilience >= 62 and confidence >= 60 and coverage >= 65: status = "opportunity"
     elif opportunity >= 58 and deterioration < 18 and confidence >= 55 and coverage >= 60: status = "watch"

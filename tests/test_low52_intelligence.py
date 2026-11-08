@@ -78,6 +78,23 @@ class Low52IntelligenceTests(unittest.TestCase):
         self.assertEqual(result["low52_status"], "structural_risk")
         self.assertGreaterEqual(result["low52_deterioration_penalty"], 35)
 
+    def test_high_capital_structure_risk_cannot_become_opportunity(self):
+        for capital_risk, flags in (("high", []), ("severe", []),
+                                    ("clear", ["severe_dilution"])):
+            with self.subTest(capital_risk=capital_risk, flags=flags):
+                row = quality_row(current_price=100.0)
+                row.update({
+                    "score": 100, "quality_pct": 100, "balance_pct": 100,
+                    "cashflow_pct": 100, "execution_pct": 100,
+                    "confidence_score": 100, "estimate_momentum_score": 100,
+                    "value_pct": 100, "margin_of_safety_pct": 100,
+                    "capital_structure_risk": capital_risk,
+                    "capital_structure_flags": flags,
+                })
+                result = assess(row)
+                self.assertEqual(result["low52_status"], "structural_risk")
+                self.assertGreater(result["low52_score"], 70)
+
     def test_weak_resilience_is_value_trap_risk(self):
         row = quality_row()
         row.update({
