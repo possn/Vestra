@@ -607,14 +607,26 @@
         disclosure.dataset.ux453ClickGuard='1';
       }
       if(toggle&&content&&!toggle.dataset.ux453ToggleBound){
-        toggle.addEventListener('click',event=>{
-          event.preventDefault();
-          event.stopPropagation();
+        const flip=()=>{
           content.hidden=!content.hidden;
           const ticker=t(r.dataset.marketTicker).toUpperCase();
           if(content.hidden)expandedOpportunityTickers.delete(ticker);
           else expandedOpportunityTickers.add(ticker);
           toggle.setAttribute('aria-expanded',String(!content.hidden));
+        };
+        // Some installed iPhone/WebKit journeys deliver pointerdown but suppress
+        // synthetic click inside a delegated ticker row. Act once on pointerdown;
+        // click with detail=0 remains the keyboard/assistive activation path.
+        toggle.addEventListener('pointerdown',event=>{
+          if(event.button!==0||event.isPrimary===false)return;
+          event.preventDefault();
+          event.stopPropagation();
+          flip();
+        });
+        toggle.addEventListener('click',event=>{
+          event.preventDefault();
+          event.stopPropagation();
+          if(event.detail===0)flip();
         });
         toggle.dataset.ux453ToggleBound='1';
       }
