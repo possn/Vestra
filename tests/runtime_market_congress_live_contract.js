@@ -60,6 +60,10 @@ const api = context.window.VestraMarketCongressLive.create({
 });
 
 (async () => {
+  assert.strictEqual(api.snapshotFresh({schema_version:2,trades:[],newest_disclosure:'2026-09-01'}),
+    false, 'future-dated disclosure must not count as current');
+  assert.strictEqual(api.snapshotFresh({schema_version:2,trades:[],newest_disclosure:'2026-08-30'}),
+    true);
   const first = api.load('MSFT');
   const second = api.load('MSFT');
   assert.strictEqual(calls.length, 1, 'concurrent loads should share one request');
@@ -88,6 +92,28 @@ const api = context.window.VestraMarketCongressLive.create({
   assert.strictEqual(cachedFetches, 0, 'fresh local cache should avoid network');
   assert.strictEqual(cached.length, 1);
   assert.strictEqual(cached[0].ticker, 'AAPL');
+
+  const futureCacheState = { trades: [], loaded: false, loading: null, error: '' };
+  let futureCacheFetches = 0;
+  const futureCacheApi = context.window.VestraMarketCongressLive.create({
+    state: futureCacheState,
+    getStocksByTicker: () => new Map(),
+    getStocks: () => [],
+    text: v => String(v ?? '').trim(),
+    storage: { getItem: () => JSON.stringify({
+      ts: now + 3600000, trades: [{ticker:'FAKE',transaction_date:'2026-08-28'}],
+    }), setItem: () => {} },
+    now: () => now,
+    fetchImpl: async () => {
+      futureCacheFetches += 1;
+      return {ok:true,json:async () => ({
+        schema_version:2,newest_disclosure:'2026-08-30',trades:[],
+      })};
+    },
+  });
+  const fromFutureCache = await futureCacheApi.load();
+  assert.strictEqual(futureCacheFetches, 1, 'future cache timestamp must not short-circuit network');
+  assert.deepStrictEqual(Array.from(fromFutureCache), []);
 
   const staleState = { trades: [], loaded: false, loading: null, error: '' };
   const staleApi = context.window.VestraMarketCongressLive.create({
