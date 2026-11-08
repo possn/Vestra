@@ -48,12 +48,18 @@ def _price_position(row: dict):
         return None
 
     if closes:
+        # Three observed closes cannot establish a 52-week extreme.
+        # Do not silently substitute a partial close-only sample for a year.
+        if len(closes) < 200:
+            return None
         low, high = min(closes), max(closes)
+        basis = "observed_daily_closes_minimum_200_sessions"
     else:
-        # Explicit provider 52-week extrema remain a valid fallback when the
-        # history is absent, but never when a present history is corrupt.
+        # Provider 52-week extrema are a distinct basis from daily *close*
+        # extrema. Never use provider data to mask corrupt/partial history.
         low = _n(row.get("fifty_two_week_low"))
         high = _n(row.get("fifty_two_week_high"))
+        basis = "provider_reported_52week_extrema"
 
     if (low is None or high is None or not math.isfinite(low) or
             not math.isfinite(high) or low <= 0 or high <= 0 or high < low):
@@ -62,6 +68,8 @@ def _price_position(row: dict):
     return {
         "low": low,
         "high": high,
+        "price_basis": basis,
+        "observed_close_sessions": len(closes),
         "current": current,
         "above_low_pct": (current / low - 1.0) * 100.0,
         "drawdown_from_high_pct": (current / high - 1.0) * 100.0,
@@ -85,6 +93,8 @@ def _insufficient(pos, reason):
             "low52_range_position_pct": round(pos["range_position_pct"], 1),
             "low52_price_low": round(pos["low"], 6),
             "low52_price_high": round(pos["high"], 6),
+            "low52_price_basis": pos["price_basis"],
+            "low52_observed_close_sessions": pos["observed_close_sessions"],
         })
     return out
 
@@ -202,7 +212,10 @@ def assess(row: dict) -> dict:
         "not_near_low": "Fora da zona de mínimo",
     }.get(status, "Dados insuficientes")
 
-    why = [f"{max(0.0, pos['above_low_pct']):.1f}% acima do mínimo 52s"] + positives[:3] + reasons[:3]
+    basis_label = ("mínimo dos fechos diários observados"
+                   if pos["price_basis"] == "observed_daily_closes_minimum_200_sessions"
+                   else "mínimo 52 semanas reportado pelo fornecedor")
+    why = [f"{max(0.0, pos['above_low_pct']):.1f}% acima do {basis_label}"] + positives[:3] + reasons[:3]
     return {
         "low52_status": status,
         "low52_label": label,
@@ -214,5 +227,7 @@ def assess(row: dict) -> dict:
         "low52_range_position_pct": round(pos["range_position_pct"], 1),
         "low52_price_low": round(pos["low"], 6),
         "low52_price_high": round(pos["high"], 6),
+        "low52_price_basis": pos["price_basis"],
+        "low52_observed_close_sessions": pos["observed_close_sessions"],
         "low52_reasons": why[:6],
     }
