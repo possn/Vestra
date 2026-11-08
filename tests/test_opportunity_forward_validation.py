@@ -396,10 +396,10 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         snaps = [{"date": "2026-08-01", "observations": {
             "A": observation(score=75), "B": observation(score=80)
         }}]
-        a = {"cohort_date": "2026-08-01", "horizon_days": 28,
+        a = {"cohort_date": "2026-08-01", "evaluated_date": "2026-08-29", "horizon_days": 28,
              "ticker": "A", "opportunity_score": 75,
              "return_pct": 1, "validation_eligible": True}
-        b = {"cohort_date": "2026-08-01", "horizon_days": 28,
+        b = {"cohort_date": "2026-08-01", "evaluated_date": "2026-08-29", "horizon_days": 28,
              "ticker": "B", "opportunity_score": 80,
              "return_pct": 2, "validation_eligible": True}
         vals, audit = MOD.unique_validated_outcomes_for_statistics(
@@ -414,11 +414,11 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         snaps = [{"date": "2026-08-01", "observations": {
             "A": observation(score=75), "B": observation(score=80)
         }}]
-        a = {"cohort_date": "2026-08-01", "horizon_days": 28,
+        a = {"cohort_date": "2026-08-01", "evaluated_date": "2026-08-29", "horizon_days": 28,
              "ticker": "A", "opportunity_score": 75,
              "return_pct": 1, "validation_eligible": True}
         conflicting = {**a, "return_pct": 75}
-        b = {"cohort_date": "2026-08-01", "horizon_days": 28,
+        b = {"cohort_date": "2026-08-01", "evaluated_date": "2026-08-29", "horizon_days": 28,
              "ticker": "B", "opportunity_score": 80,
              "return_pct": 2, "validation_eligible": True}
         outside = {**b, "ticker": "NOT_FROZEN", "return_pct": 200}
@@ -432,12 +432,46 @@ class OpportunityForwardValidationTests(unittest.TestCase):
     def test_eligibility_disagreement_is_conflict_not_implicit_upgrade(self):
         today = dt.date(2026, 9, 1)
         snap = [{"date": "2026-08-01", "observations": {"A": observation()}}]
-        a = {"cohort_date": "2026-08-01", "horizon_days": 28,
+        a = {"cohort_date": "2026-08-01", "evaluated_date": "2026-08-29", "horizon_days": 28,
              "ticker": "A", "return_pct": 7, "validation_eligible": True}
         vals, audit = MOD.unique_validated_outcomes_for_statistics(
             today, snap, [a, {**a, "validation_eligible": False}], 28)
         self.assertEqual(vals, [])
         self.assertEqual(audit["conflicting_outcome_keys_excluded_from_statistics"], 1)
+
+    def test_outcome_evaluation_must_be_within_horizon_window(self):
+        today = dt.date(2026, 9, 20)
+        base = {"cohort_date": "2026-08-01", "evaluated_date": "2026-08-29",
+                "actual_days": 28}
+        check = MOD.outcome_has_verified_evaluation_window
+        self.assertTrue(check(base, 28, today))
+        self.assertTrue(check({**base, "evaluated_date": "2026-09-08", "actual_days": 38}, 28, today))
+        self.assertFalse(check({**base, "evaluated_date": "2026-08-28", "actual_days": 27}, 28, today))
+        self.assertFalse(check({**base, "evaluated_date": "2026-09-09", "actual_days": 39}, 28, today))
+        self.assertFalse(check({**base, "actual_days": 30}, 28, today))
+        self.assertFalse(check({**base, "evaluated_date": "2026-09-21"}, 28, today))
+        self.assertFalse(check({**base, "evaluated_date": "invalid"}, 28, today))
+        self.assertFalse(check({"cohort_date": "2026-08-01"}, 28, today))
+
+    def test_invalid_evaluation_window_is_excluded_from_rank_statistics(self):
+        today = dt.date(2026, 9, 30)
+        snapshots = [{"date": "2026-08-01", "observations": {
+            "TOO_EARLY": {"score": 80, "opportunity_score": 80},
+            "TOO_LATE": {"score": 80, "opportunity_score": 80},
+            "VALID": {"score": 80, "opportunity_score": 80},
+        }}]
+        rows = []
+        for ticker, date in (("TOO_EARLY", "2026-08-10"),
+                             ("TOO_LATE", "2026-09-12"),
+                             ("VALID", "2026-08-30")):
+            rows.append({"cohort_date": "2026-08-01", "horizon_days": 28,
+                         "ticker": ticker, "evaluated_date": date,
+                         "validation_eligible": True, "return_pct": 7,
+                         "score": 80, "opportunity_score": 80})
+        selected, audit = MOD.unique_validated_outcomes_for_statistics(
+            today, snapshots, rows, 28)
+        self.assertEqual([x["ticker"] for x in selected], ["VALID"])
+        self.assertEqual(audit["invalid_or_unverified_evaluation_windows"], 2)
 
     def test_single_horizon_keeps_observe_only(self):
         result = MOD.evidence_policy({"28": {"cohort_count": 8}, "84": {}, "168": {}})
