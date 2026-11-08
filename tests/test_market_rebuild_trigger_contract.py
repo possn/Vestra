@@ -12,6 +12,7 @@ class CanonicalMarketRebuildTriggerTests(unittest.TestCase):
         content = marker.read_text(encoding="utf-8")
         self.assertIn("PR #1802 issuer-CIK Form 4 provenance guard", content)
         self.assertIn("publish issuer-identity audit report following PR #1808", content)
+        self.assertIn("rebuild canonical market after PR #1812", content)
         self.assertIn("python insider_identity_audit.py", workflow)
         self.assertIn("'.github/triggers/market-data-rebuild.txt'", workflow)
         self.assertIn("python run_market_pipeline.py", workflow)
