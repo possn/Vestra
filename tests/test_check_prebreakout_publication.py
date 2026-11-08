@@ -37,6 +37,65 @@ class FreshnessContract(unittest.TestCase):
 
 
 
+class GateFunnelContract(unittest.TestCase):
+ def feed(self):
+  return {
+   "schema":"vestra_prebreakout_v1",
+   "generated_at":"2026-11-09T14:17:00+00:00",
+   "attempted":300,"new_signals":1,"eligible_universe":1139,
+   "daily_capacity_ceiling":{"max_distinct_daily":1139},
+   "scan_slot_telemetry":{"rows_attempted":300},
+   "coverage_audit_24h":{"coverage_pct":26.34,
+                          "current_eligible_verified_distinct":300,
+                          "outside_current_universe_distinct":0,
+                          "distinct_ohlcv_tickers":300},
+   "scan_quality_audit":{"observed_24h_coverage_pct":26.34,
+                         "full_universe_verified":False},
+   "gate_funnel":{
+     "scope":"current_observed_slot_only",
+     "method":"first_failing_gate_in_order_not_independent_gate_intersections",
+     "observed_rows":298,
+     "first_rejection_counts":{"moving_average_structure":296,
+                                "passed_structural_gates":2},
+     "structurally_passed":2,
+     "currency_or_usd_liquidity_rejections_after_structural_pass":1,
+     "missing_downloads_not_negative_evidence":True,
+     "probability_or_forward_performance":None},
+   "quality_filter_shadow":{"compared":298,"strict_eligible":2}
+  }
+ def test_coherent_funnel_separates_observed_from_unobserved(self):
+  feed=self.feed()
+  report=mod.assess_gate_funnel(feed,require=True)
+  self.assertEqual(report["status"],"valid")
+  self.assertEqual(report["not_observed_rows"],2)
+  now=datetime(2026,11,9,15,tzinfo=timezone.utc)
+  self.assertEqual(mod.assess_freshness(feed,now)["status"],"healthy")
+ def test_missing_funnel_in_modern_publication_is_unverifiable_not_valid(self):
+  feed=self.feed();del feed["gate_funnel"]
+  self.assertEqual(mod.assess_gate_funnel(feed,require=True)["reason"],"missing_modern_gate_funnel")
+  self.assertEqual(mod.assess_freshness(feed,datetime(2026,11,9,15,tzinfo=timezone.utc))["status"],"invalid")
+ def test_rejects_fabricated_coverage_and_inconsistent_gate_counts(self):
+  for key,value in [("observed_rows",299),("structurally_passed",3),
+                    ("currency_or_usd_liquidity_rejections_after_structural_pass",3)]:
+   feed=self.feed();feed["gate_funnel"][key]=value
+   self.assertEqual(mod.assess_gate_funnel(feed,require=True)["status"],"invalid")
+  feed=self.feed();feed["quality_filter_shadow"]["compared"]=300
+  self.assertEqual(mod.assess_gate_funnel(feed,require=True)["reason"],"inconsistent_gate_funnel_accounting")
+  feed=self.feed();feed["gate_funnel"]["first_rejection_counts"]["missing_provider_bars"]=2
+  self.assertEqual(mod.assess_gate_funnel(feed,require=True)["status"],"invalid")
+ def test_unknown_is_not_a_probability_or_negative_signal(self):
+  feed=self.feed();feed["gate_funnel"]["probability_or_forward_performance"]=0.87
+  self.assertEqual(mod.assess_gate_funnel(feed,require=True)["reason"],"gate_funnel_provenance_or_probability")
+  feed=self.feed();feed["gate_funnel"]["missing_downloads_not_negative_evidence"]=False
+  self.assertEqual(mod.assess_gate_funnel(feed,require=True)["status"],"invalid")
+  feed=self.feed();feed["new_signals"]=2
+  self.assertEqual(mod.assess_gate_funnel(feed,require=True)["status"],"invalid")
+ def test_old_archives_remain_readable_but_not_current_evidence(self):
+  self.assertEqual(mod.assess_gate_funnel({},require=False)["status"],"legacy_without_gate_funnel")
+  feed=self.feed();feed["generated_at"]="2026-11-07T14:17:00+00:00";del feed["gate_funnel"]
+  self.assertEqual(mod.assess_freshness(feed,datetime(2026,11,9,15,tzinfo=timezone.utc))["status"],"stale")
+
+
 class Contract(unittest.TestCase):
  def setup_files(self,root):
   d=root/"data";d.mkdir()
