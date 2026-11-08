@@ -46,13 +46,17 @@ jobs:
           python scripts/check_prebreakout_transitions.py
       - name: Diagnose scheduled scanner archive cadence
         run: python scripts/audit_prebreakout_scan_cadence.py
+      - name: Snapshot previously published forward evidence before recomputing
+        run: |
+          git show HEAD:data/prebreakout-forward-evidence.json > /tmp/vestra-prebreakout-forward-previous.json || printf '{}' > /tmp/vestra-prebreakout-forward-previous.json
       - name: Read independently adjusted daily prices
         run: python scripts/refresh_prebreakout_forward_evidence.py
       - name: Check automated main publish window
         id: publish_window
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/defer_main_publish_if_code_pr.py
+          VESTRA_FORWARD_PREVIOUS: /tmp/vestra-prebreakout-forward-previous.json
+        run: python scripts/defer_main_publish_if_code_pr.py --forward-max-staleness-hours 48
       - name: Publish matured forward evidence
         if: steps.publish_window.outputs.defer != 'true'
         run: |
