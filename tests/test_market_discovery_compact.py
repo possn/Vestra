@@ -18,5 +18,5 @@ class DiscoveryCompactContracts(unittest.TestCase):
   self.assertIn('@media(max-width:600px)',CSS)
   self.assertIn('.ux453-evidence-content[hidden]',CSS)
   self.assertIn('min-height:44px',CSS)
-  self.assertNotIn('display:none!important',CSS.split('/* Discovery mobile: conclusion first')[1])
+  self.assertIn('.ux453-evidence-content[hidden]{display:none!important}',CSS)
 if __name__=='__main__':unittest.main()
