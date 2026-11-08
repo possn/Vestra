@@ -6,6 +6,50 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 
+def assess_gate_funnel(feed:dict, *, require:bool=False)->dict:
+    """First-failing structural gate accounting, never a forward probability.
+
+    Provider failures and rows without usable OHLCV are separate from
+    observed per-row gate rejections; a count alone cannot imply a setup rate.
+    """
+    funnel=feed.get("gate_funnel")
+    if funnel is None:
+        return ({"status":"invalid","reason":"missing_modern_gate_funnel"}
+                if require else {"status":"legacy_without_gate_funnel"})
+    shadow=feed.get("quality_filter_shadow")
+    if not isinstance(funnel,dict) or not isinstance(shadow,dict):
+        return {"status":"invalid","reason":"missing_gate_funnel_context"}
+    counts=funnel.get("first_rejection_counts")
+    observed=funnel.get("observed_rows")
+    passed=funnel.get("structurally_passed")
+    currency_rejected=funnel.get("currency_or_usd_liquidity_rejections_after_structural_pass")
+    compared=shadow.get("compared")
+    strict=shadow.get("strict_eligible")
+    attempted=feed.get("attempted")
+    actual=feed.get("new_signals")
+    numbers=[observed,passed,currency_rejected,compared,strict,attempted,actual]
+    if (not isinstance(counts,dict) or
+        any(type(x) is not int or x<0 for x in numbers) or
+        any(not isinstance(k,str) or not k or type(v) is not int or v<0
+            for k,v in counts.items())):
+        return {"status":"invalid","reason":"invalid_gate_funnel_counts"}
+    if (funnel.get("scope")!="current_observed_slot_only" or
+        funnel.get("method")!="first_failing_gate_in_order_not_independent_gate_intersections" or
+        funnel.get("missing_downloads_not_negative_evidence") is not True or
+        funnel.get("probability_or_forward_performance","not_specified") is not None):
+        return {"status":"invalid","reason":"gate_funnel_provenance_or_probability"}
+    if (sum(counts.values())!=observed or observed!=compared or
+        passed!=counts.get("passed_structural_gates",0) or
+        passed!=strict or observed>attempted or currency_rejected>passed or
+        actual>passed-currency_rejected):
+        return {"status":"invalid","reason":"inconsistent_gate_funnel_accounting"}
+    return {"status":"valid","observed_rows":observed,
+            "not_observed_rows":attempted-observed,
+            "structurally_passed":passed,
+            "currency_or_usd_liquidity_rejections":currency_rejected,
+            "model_evidence":"first_failed_gate_only_not_independent_probabilities"}
+
+
 def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
     """Read-only operational check; never infer full coverage from slot capacity."""
     if not isinstance(feed,dict) or feed.get("schema")!="vestra_prebreakout_v1":
@@ -14,6 +58,10 @@ def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
         generated=datetime.fromisoformat(str(feed["generated_at"]).replace("Z","+00:00"))
         if generated.tzinfo is None or now.tzinfo is None:
             return {"status":"invalid","reason":"naive_timestamp"}
+        if generated.astimezone(timezone.utc).date().isoformat()>="2026-11-08":
+            gate=assess_gate_funnel(feed,require=True)
+            if gate["status"]!="valid":
+                return gate
         age=(now-generated).total_seconds()/3600
         if not 0<=age<=max_age_hours:
             return {"status":"stale","age_hours":round(age,2)}
@@ -63,6 +111,10 @@ def verify(root:Path=ROOT):
     file=data/"prebreakout-history"/str(utc.year)/"slots"/f"{utc.date().isoformat()}-slot{slot}.json"
     archived=json.loads(file.read_text(encoding="utf-8"))
     if archived!=feed:raise ValueError("published slot differs from feed")
+    if utc.date().isoformat()>="2026-11-08":
+        checked=assess_gate_funnel(feed,require=True)
+        if checked["status"]!="valid":
+            raise ValueError("invalid published gate funnel: "+checked["reason"])
     if index.get("schema")!="vestra_prebreakout_observations_v1" or index.get("historical_only") is not True:
         raise ValueError("observations must remain historical only")
     if not isinstance(index.get("observations"),list) or index.get("slots_considered",0)<1:
