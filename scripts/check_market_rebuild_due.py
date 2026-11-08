@@ -15,7 +15,11 @@ def due(payload, today):
         return True
     try:
         observed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
-        return observed.tzinfo is None or observed.astimezone(timezone.utc).date() < today
+        if observed.tzinfo is None:
+            return True
+        # Future-dated snapshots cannot prove a genuine rebuild completed today.
+        published=observed.astimezone(timezone.utc).date()
+        return published != today
     except ValueError:
         return True
 
