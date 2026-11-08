@@ -150,7 +150,7 @@ class InsiderFilingCacheTests(unittest.TestCase):
             tx, raw_count, detail = insiders._fetch_structured_filing("0000320193", filing, "AAPL")
         self.assertEqual(tx, [])
         self.assertEqual(raw_count, 0)
-        self.assertIn("found 0 transactions", detail)
+        self.assertIn("issuer_cik_missing_or_mismatched", detail)
         key = insiders._cache_key("0000320193", filing["accession"])
         self.assertNotIn(key, insiders._filing_cache)
         self.assertFalse(insiders._cache_dirty)
