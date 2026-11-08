@@ -21,6 +21,7 @@ SAMPLE_SUBMISSION = """
 <XML>
 <?xml version="1.0"?>
 <ownershipDocument>
+  <issuer><issuerCik>0000000001</issuerCik></issuer>
   <nonDerivativeTable>
     <nonDerivativeTransaction>
       <transactionCoding><transactionCode>P</transactionCode></transactionCoding>
@@ -49,6 +50,7 @@ EMPTY_SUBMISSION = """
 <XML>
 <?xml version="1.0"?>
 <ownershipDocument>
+  <issuer><issuerCik>0000000001</issuerCik></issuer>
   <derivativeTable></derivativeTable>
 </ownershipDocument>
 </XML>
@@ -94,6 +96,19 @@ class FakeModule:
     def _get(self, url):
         self.archive_calls += 1
         return Response(self.submission)
+
+    def _xml_issuer_cik(self, content):
+        import xml.etree.ElementTree as ET
+        try:
+            return ET.fromstring(content).findtext("./issuer/issuerCik")
+        except ET.ParseError:
+            return None
+
+    def _same_cik(self, a, b):
+        try:
+            return int(a) > 0 and int(a) == int(b)
+        except (TypeError, ValueError):
+            return False
 
     def _parse_ownership_xml(self, content, ticker, accession):
         text = content.decode("utf-8")
@@ -164,6 +179,17 @@ class InsiderArchivesRuntimeTests(unittest.TestCase):
         self.assertEqual(module.archive_calls, 1)
         self.assertEqual(result[0][0][0]["accession"], "0000000001-26-000001")
         self.assertEqual(FakeModule.assertions[-1], ("AAA", "0000000001-26-000001", True))
+
+    def test_archive_mismatched_issuer_never_enters_cache(self):
+        module = FakeModule(submission=SAMPLE_SUBMISSION.replace("0000000001", "0000000042"))
+        insider_archives_runtime.install(
+            module=module, environ={"SEC_USER_AGENT": ""},
+            row_loader=lambda: (self.rows(), 5),
+        )
+        result = module.annotate(["AAA"])
+        self.assertEqual(result[0][0:2], ([], 0))
+        self.assertEqual(result[0][2], "form4_issuer_cik_missing_or_mismatched")
+        self.assertFalse(module.cache)
 
     def test_cached_accession_avoids_archive_download(self):
         module = FakeModule()
