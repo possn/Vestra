@@ -243,9 +243,11 @@ class InsiderArchivesRuntimeTests(unittest.TestCase):
             payload={
                 "schema_version":insider_archives_runtime.EMPTY_CACHE_SCHEMA_VERSION,
                 "filings":{
-                    "1:proper":{"cik":"1","accession":"proper","validated_empty":True},
-                    "2:wrong":{"cik":"1","accession":"wrong","validated_empty":True},
-                    "1:other":{"cik":"1","accession":"wrong","validated_empty":True}
+                    "1:proper":{"cik":"1","issuer_cik":"0000000001","accession":"proper","validated_empty":True},
+                    "2:wrong":{"cik":"1","issuer_cik":"0000000001","accession":"wrong","validated_empty":True},
+                    "1:other":{"cik":"1","issuer_cik":"0000000001","accession":"wrong","validated_empty":True},
+                    "1:legacy":{"cik":"1","accession":"legacy","validated_empty":True},
+                    "1:foreign":{"cik":"1","issuer_cik":"0000000002","accession":"foreign","validated_empty":True}
                 }}
             path.write_text(json.dumps(payload),encoding="utf-8")
             rows=insider_archives_runtime._load_empty_cache(path)
