@@ -598,6 +598,10 @@
     const rows=[...list.querySelectorAll('.market-row')];
     rows.forEach((r,i)=>{
       const disclosure=r.querySelector('.ux453-evidence');
+      if(disclosure&&!disclosure.dataset.ux453ClickGuard){
+        disclosure.addEventListener('click',event=>event.stopPropagation());
+        disclosure.dataset.ux453ClickGuard='1';
+      }
       const summary=disclosure?.querySelector('summary');
       if(summary&&!summary.dataset.ux453ToggleBound){
         summary.addEventListener('click',event=>{
