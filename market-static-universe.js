@@ -218,20 +218,33 @@
   }
 
   function unpackStartupPayload(payload) {
-    if (!payload || payload.layout !== 'field_rows_v1') return null;
+    if (!payload || !['field_rows_v1', 'field_rows_v2'].includes(payload.layout)) return null;
     const fields = Array.isArray(payload.fields) ? payload.fields : [];
     const rows = Array.isArray(payload.rows) ? payload.rows : [];
     if (!fields.length || !rows.length) return null;
-    const stocks = rows.map(values => {
+    const dictionaries = payload.layout === 'field_rows_v2' ? payload.string_dictionaries : {};
+    if (payload.layout === 'field_rows_v2' &&
+        (!dictionaries || typeof dictionaries !== 'object' || Array.isArray(dictionaries))) return null;
+    const stocks = [];
+    for (const values of rows) {
       if (!Array.isArray(values)) return null;
       const stock = {};
       const limit = Math.min(values.length, fields.length);
-      for (let i = 0; i < limit; i += 1) stock[fields[i]] = values[i];
-      return stock;
-    }).filter(Boolean);
+      for (let i = 0; i < limit; i += 1) {
+        let value = values[i];
+        const dictionary = Object.hasOwn(dictionaries, String(i)) ? dictionaries[String(i)] : null;
+        if (dictionary !== null && value !== null) {
+          if (!Array.isArray(dictionary) || !Number.isInteger(value) ||
+              value < 0 || value >= dictionary.length || typeof dictionary[value] !== 'string') return null;
+          value = dictionary[value];
+        }
+        stock[fields[i]] = value;
+      }
+      stocks.push(stock);
+    }
     if (!stocks.length) return null;
     const data = { ...payload, stocks };
-    delete data.layout; delete data.fields; delete data.rows;
+    delete data.layout; delete data.fields; delete data.rows; delete data.string_dictionaries;
     return data;
   }
 
