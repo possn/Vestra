@@ -6,6 +6,7 @@
   const clamp=v=>Math.max(0,Math.min(100,v));
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const LENSES=new Set(['all','low52','emerging','recovery','value','breakout','smallcap_breakout']);
+  const expandedOpportunityTickers=new Set();
   let activeLens='all';
   let smallcapFeed=new Map();
   let smallcapFeedStatus='loading';
@@ -588,9 +589,10 @@
       return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(setup.stage)} · Base 40 sessões ${fmt(setup.widthPct)}% (anterior ${fmt(setup.priorWidthPct)}%) · ${fmt(setup.distancePct)}% da resistência</div><div class="ux453-thesis">Preço acima da MM150 · MM50 acima MM200 · três médias ascendentes${setup.goldenCrossRecent?' · cruzamento MM50/MM200 recente':''}</div><div class="ux453-opportunity-type">${setup.volumeConfirmed?'Volume ≥ 1,5× média':setup.volumeDry?'Volume a secar; confirmação pendente':'Sem secagem de volume verificada'} · ${setup.stage==='compressão'?'Apenas em observação · ':''}Dados até ${esc(setup.date||'—')} · Setup técnico, não previsão${lens==='smallcap_breakout'?' · Spread/gap por validar · Resultados: risco desconhecido':''}</div></div><div class="ux453-entry"><small>SETUP</small><strong>${setup.score}</strong><em>${esc(setup.stage)}</em></div></div>`;
     }
     const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),coverage=sleeveCoverage(s),dom=credibleDominantSleeve(s),capText=capSummary(s);
+    const isExpanded=expandedOpportunityTickers.has(t(s.ticker).toUpperCase());
     const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
       .filter(([,v])=>v!=null).map(([label,v,key])=>`<span class="${key===dom?'is-driver':''}">${label} ${Math.round(v)}${coverage[key]!=null&&coverage[key]<70?' · evidência limitada':''}</span>`).join('');
-    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-evidence"><button class="ux453-evidence-toggle" type="button" aria-expanded="false">Ver análise e indicadores</button><div class="ux453-evidence-content" hidden><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></div></div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
+    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-evidence"><button class="ux453-evidence-toggle" type="button" aria-expanded="${isExpanded}">Ver análise e indicadores</button><div class="ux453-evidence-content" ${isExpanded?'':'hidden'}><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></div></div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
   }
 
   function decorate(section){
@@ -609,6 +611,9 @@
           event.preventDefault();
           event.stopPropagation();
           content.hidden=!content.hidden;
+          const ticker=t(r.dataset.marketTicker).toUpperCase();
+          if(content.hidden)expandedOpportunityTickers.delete(ticker);
+          else expandedOpportunityTickers.add(ticker);
           toggle.setAttribute('aria-expanded',String(!content.hidden));
         });
         toggle.dataset.ux453ToggleBound='1';
