@@ -24,3 +24,5 @@ rotation-coverage-market-returns 2026-09-28
 2026-11-08 — explicit canonical rebuild after PR #1802 issuer-CIK Form 4 provenance guard: recompute verified insider aggregates from SEC data; reject unverified old accession cache; preserve Risk Gates, prices and publication coverage checks. This marker requests a pipeline run, not evidence of a successful rebuild.
 
 2026-11-08 — publish issuer-identity audit report following PR #1808; regenerate data/insider_identity_audit.json in canonical market pipeline and assess verified vs legacy SEC Form 4 cache, no inferred buys from missing data; publication requires existing market coverage guard and freshness window.
+
+2026-11-08 — rebuild canonical market after PR #1812 fixes the measured 10,541-byte overrun in columnar startup wire; preserve hard 2.25 MB iPhone budget, coverage/risk guards and publish data/insider_identity_audit.json only after successful canonical rebuild.

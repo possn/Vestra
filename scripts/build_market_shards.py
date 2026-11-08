@@ -430,12 +430,15 @@ def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> d
 def _compact_startup_value(value):
     """Bound float wire precision in startup only; full dossiers stay lossless.
 
-    Twelve significant decimal digits preserve substantially more than
-    market-data display precision while avoiding long binary float tails.
+    Eleven significant decimal digits preserve relative numeric precision
+    better than 1e-10 for finite floats while saving recurring wire tails in
+    the full startup universe. This is transport-only: the full validated
+    market source and dossiers retain the original unrounded values.
     Integer identities, booleans, None and textual evidence stay untouched.
+    The 2.25 MB iPhone startup budget remains a hard publication gate.
     """
     if isinstance(value, float) and math.isfinite(value):
-        return float(format(value, ".12g"))
+        return float(format(value, ".11g"))
     if isinstance(value, list):
         return [_compact_startup_value(item) for item in value]
     if isinstance(value, dict):
