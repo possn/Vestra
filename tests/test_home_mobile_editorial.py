@@ -8,7 +8,7 @@ CSS = ROOT / "vestra-home-mobile-editorial.css"
 class MobileEditorialTests(unittest.TestCase):
     def test_stylesheet_is_last_home_layer_and_versioned(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
-        link = 'vestra-home-mobile-editorial.css?v=20261104-mobile-reading'
+        link = 'vestra-home-mobile-editorial.css?v=20261108-compact-cards'
         self.assertIn(link, html)
         self.assertLess(html.index('vestra-home-editorial-spread.css'),
                         html.index(link))
