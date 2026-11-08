@@ -372,6 +372,27 @@ def make_snapshot(today, rows, shadow_scores=None, reference_prices=None):
     }
 
 
+def outcome_has_verified_evaluation_window(item, horizon, today):
+    """A claimed prospective return must be observed within its frozen window.
+
+    Retrospective prices, premature evaluations, absent evaluation dates and
+    inconsistent reported actual_days do not establish horizon-specific alpha.
+    """
+    try:
+        cohort = dt.date.fromisoformat(str(item["cohort_date"]))
+        evaluated = dt.date.fromisoformat(str(item["evaluated_date"]))
+        actual = (evaluated - cohort).days
+        if evaluated > today or not (horizon <= actual <= horizon + MAX_HORIZON_LATENESS_DAYS):
+            return False
+        recorded = item.get("actual_days")
+        if recorded is not None and (isinstance(recorded, bool) or
+                                      int(recorded) != actual):
+            return False
+        return True
+    except (KeyError, ValueError, TypeError, OverflowError):
+        return False
+
+
 def outcome_key(cohort_date, horizon, ticker):
     return f"{cohort_date}|{int(horizon)}|{ticker}"
 
@@ -1117,6 +1138,7 @@ def unique_verified_score_outcomes(today, snapshots, outcomes, horizon):
     conflict_keys = 0
     excluded_unverified = 0
     excluded_ineligible = 0
+    invalid_evaluation_windows = 0
     for key in sorted(grouped):
         items = grouped[key]
         duplicates_ignored += len(items) - 1
@@ -1126,6 +1148,9 @@ def unique_verified_score_outcomes(today, snapshots, outcomes, horizon):
             conflict_keys += 1
             continue
         item = items[0]
+        if not outcome_has_verified_evaluation_window(item, horizon, today):
+            invalid_evaluation_windows += 1
+            continue
         if item.get("validation_eligible") is True and (
             num(item.get("return_pct")) is not None
             and num(item.get("score")) is not None
@@ -1142,6 +1167,7 @@ def unique_verified_score_outcomes(today, snapshots, outcomes, horizon):
         "outcomes_outside_frozen_cohorts": not_in_frozen_cohort,
         "ineligible_unique_keys": excluded_ineligible,
         "unverified_or_incomplete_unique_keys": excluded_unverified,
+        "invalid_or_unverified_evaluation_windows": invalid_evaluation_windows,
         "interpretation": "Only unique, explicitly validated and scored outcomes in matured frozen cohorts enter Score statistics; conflicts are excluded, raw history preserved.",
     }
 
