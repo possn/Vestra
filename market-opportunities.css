@@ -264,3 +264,41 @@
     padding:6px 9px!important;
   }
 }
+
+/* Discovery mobile: conclusion first, research remains accessible by disclosure. */
+#viewMarket #marketPrimary .ux453-evidence{min-width:0;margin-top:4px}
+#viewMarket #marketPrimary .ux453-evidence>summary{
+ display:inline-flex;align-items:center;gap:7px;min-height:44px;
+ font-size:12px;line-height:1.35;font-weight:750;cursor:pointer;
+ padding:6px 0;color:#c7dfd3;-webkit-text-fill-color:#c7dfd3;list-style:none
+}
+#viewMarket #marketPrimary .ux453-evidence>summary::-webkit-details-marker{display:none}
+#viewMarket #marketPrimary .ux453-evidence>summary::after{content:"⌄";font-size:16px}
+#viewMarket #marketPrimary .ux453-evidence[open]>summary::after{content:"⌃"}
+#viewMarket #marketPrimary .ux453-evidence>summary:focus-visible{outline:2px solid #c7dfd3;outline-offset:2px}
+#viewMarket #marketPrimary .ux453-evidence .ux453-detail-grid{margin-top:6px}
+@media(max-width:600px){
+ html body #viewMarket #marketPrimary .ux453-opp{
+  padding:11px 12px!important;gap:8px!important;margin-block:7px!important;
+  line-height:1.35!important;align-items:start!important
+ }
+ html body #viewMarket #marketPrimary .ux453-opp .market-row__title{gap:4px!important}
+ html body #viewMarket #marketPrimary .ux453-opp .market-row__ticker{font-size:16px!important;line-height:1.2!important}
+ html body #viewMarket #marketPrimary .ux453-opp .market-row__name{font-size:12px!important;line-height:1.3!important}
+ html body #viewMarket #marketPrimary .ux453-opp :is(.market-row__description,.ux453-thesis){
+  font-size:12px!important;line-height:1.35!important;margin:5px 0!important
+ }
+ html body #viewMarket #marketPrimary .ux453-opp .ux453-evidence{margin:1px 0 0!important}
+ html body #viewMarket #marketPrimary .ux453-opp .ux453-entry{
+  width:74px!important;max-width:74px!important;padding:7px 3px!important;
+  border-radius:11px!important;gap:2px!important
+ }
+ html body #viewMarket #marketPrimary .ux453-opp .ux453-entry small{
+  font-size:9px!important;letter-spacing:0!important;overflow-wrap:anywhere!important
+ }
+ html body #viewMarket #marketPrimary .ux453-opp .ux453-entry strong{font-size:26px!important}
+ html body #viewMarket #marketPrimary .ux453-opp .ux453-entry em{font-size:10px!important}
+ html body #viewMarket #marketPrimary .ux453-opp .ux453-evidence[open] .ux453-why{
+  padding:9px!important;gap:5px!important;margin:6px 0!important
+ }
+}
