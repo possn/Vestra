@@ -114,9 +114,9 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
             "AAA": {"score": 80, "price": 100},
             "BBB": {"score": 60, "price": 100},
         }}]
-        a = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "AAA",
+        a = {"cohort_date": "2026-08-02", "evaluated_date": "2026-08-30", "horizon_days": 28, "ticker": "AAA",
              "score": 80, "return_pct": 10, "validation_eligible": True}
-        b = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "BBB",
+        b = {"cohort_date": "2026-08-02", "evaluated_date": "2026-08-30", "horizon_days": 28, "ticker": "BBB",
              "score": 60, "return_pct": 3, "validation_eligible": True}
         selected, audit = MOD.unique_verified_score_outcomes(
             today, snaps, [a, dict(a), b], 28)
@@ -132,9 +132,9 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         }}, {"date": "2026-08-20", "observations": {
             "FUTURE": {"score": 90},
         }}]
-        a = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "AAA",
+        a = {"cohort_date": "2026-08-02", "evaluated_date": "2026-08-30", "horizon_days": 28, "ticker": "AAA",
              "score": 80, "return_pct": 10, "validation_eligible": True}
-        b = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "BBB",
+        b = {"cohort_date": "2026-08-02", "evaluated_date": "2026-08-30", "horizon_days": 28, "ticker": "BBB",
              "score": 60, "return_pct": 3, "validation_eligible": True}
         outside = {**b, "ticker": "NO_FROZEN", "return_pct": 200}
         future = {**a, "ticker": "FUTURE", "cohort_date": "2026-08-20"}
@@ -146,7 +146,7 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
 
     def test_score_eligibility_conflicts_are_not_resolved_as_valid(self):
         snap = [{"date": "2026-08-02", "observations": {"AAA": {"score": 80}}}]
-        item = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "AAA",
+        item = {"cohort_date": "2026-08-02", "evaluated_date": "2026-08-30", "horizon_days": 28, "ticker": "AAA",
                 "score": 80, "return_pct": 10, "validation_eligible": True}
         selected, audit = MOD.unique_verified_score_outcomes(
             dt.date(2026, 8, 30), snap, [item, {**item, "validation_eligible": False}], 28)
@@ -158,15 +158,49 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
             "LEGACY": {"score": 80}, "MISSING_SCORE": {"score": 70},
         }}]
         vals = [
-            {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "LEGACY",
+            {"cohort_date": "2026-08-02", "evaluated_date": "2026-08-30", "horizon_days": 28, "ticker": "LEGACY",
              "score": 80, "return_pct": 4},
-            {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "MISSING_SCORE",
+            {"cohort_date": "2026-08-02", "evaluated_date": "2026-08-30", "horizon_days": 28, "ticker": "MISSING_SCORE",
              "return_pct": 4, "validation_eligible": True},
         ]
         selected, audit = MOD.unique_verified_score_outcomes(
             dt.date(2026, 8, 30), snap, vals, 28)
         self.assertEqual(selected, [])
         self.assertEqual(audit["unverified_or_incomplete_unique_keys"], 2)
+
+    def test_outcome_evaluation_must_be_within_horizon_window(self):
+        today = dt.date(2026, 9, 20)
+        base = {"cohort_date": "2026-08-01", "evaluated_date": "2026-08-29",
+                "actual_days": 28}
+        check = MOD.outcome_has_verified_evaluation_window
+        self.assertTrue(check(base, 28, today))
+        self.assertTrue(check({**base, "evaluated_date": "2026-09-08", "actual_days": 38}, 28, today))
+        self.assertFalse(check({**base, "evaluated_date": "2026-08-28", "actual_days": 27}, 28, today))
+        self.assertFalse(check({**base, "evaluated_date": "2026-09-09", "actual_days": 39}, 28, today))
+        self.assertFalse(check({**base, "actual_days": 30}, 28, today))
+        self.assertFalse(check({**base, "evaluated_date": "2026-09-21"}, 28, today))
+        self.assertFalse(check({**base, "evaluated_date": "invalid"}, 28, today))
+        self.assertFalse(check({"cohort_date": "2026-08-01"}, 28, today))
+
+    def test_invalid_evaluation_window_is_excluded_from_rank_statistics(self):
+        today = dt.date(2026, 9, 30)
+        snapshots = [{"date": "2026-08-01", "observations": {
+            "TOO_EARLY": {"score": 80, "opportunity_score": 80},
+            "TOO_LATE": {"score": 80, "opportunity_score": 80},
+            "VALID": {"score": 80, "opportunity_score": 80},
+        }}]
+        rows = []
+        for ticker, date in (("TOO_EARLY", "2026-08-10"),
+                             ("TOO_LATE", "2026-09-12"),
+                             ("VALID", "2026-08-30")):
+            rows.append({"cohort_date": "2026-08-01", "horizon_days": 28,
+                         "ticker": ticker, "evaluated_date": date,
+                         "validation_eligible": True, "return_pct": 7,
+                         "score": 80, "opportunity_score": 80})
+        selected, audit = MOD.unique_verified_score_outcomes(
+            today, snapshots, rows, 28)
+        self.assertEqual([x["ticker"] for x in selected], ["VALID"])
+        self.assertEqual(audit["invalid_or_unverified_evaluation_windows"], 2)
 
     def test_materialised_outcome_is_not_duplicated(self):
         today = dt.date(2026, 8, 30)

@@ -226,6 +226,27 @@ def make_snapshot(today, rows):
     }
 
 
+def outcome_has_verified_evaluation_window(item, horizon, today):
+    """A claimed prospective return must be observed within its frozen window.
+
+    Retrospective prices, premature evaluations, absent evaluation dates and
+    inconsistent reported actual_days do not establish horizon-specific alpha.
+    """
+    try:
+        cohort = dt.date.fromisoformat(str(item["cohort_date"]))
+        evaluated = dt.date.fromisoformat(str(item["evaluated_date"]))
+        actual = (evaluated - cohort).days
+        if evaluated > today or not (horizon <= actual <= horizon + MAX_HORIZON_LATENESS_DAYS):
+            return False
+        recorded = item.get("actual_days")
+        if recorded is not None and (isinstance(recorded, bool) or
+                                      int(recorded) != actual):
+            return False
+        return True
+    except (KeyError, ValueError, TypeError, OverflowError):
+        return False
+
+
 def outcome_key(cohort_date, horizon, ticker):
     return f"{cohort_date}|{int(horizon)}|{ticker}"
 
@@ -822,6 +843,7 @@ def unique_validated_outcomes_for_statistics(today, snapshots, outcomes, horizon
     result = []
     conflicting_keys = 0
     deduplicated_records = 0
+    invalid_evaluation_windows = 0
     for key in sorted(by_key):
         items = by_key[key]
         deduplicated_records += len(items) - 1
@@ -833,6 +855,9 @@ def unique_validated_outcomes_for_statistics(today, snapshots, outcomes, horizon
             conflicting_keys += 1
             continue
         item = items[0]
+        if not outcome_has_verified_evaluation_window(item, horizon, today):
+            invalid_evaluation_windows += 1
+            continue
         if item.get("validation_eligible") is True and num(item.get("return_pct")) is not None:
             result.append(item)
     return result, {
@@ -840,6 +865,7 @@ def unique_validated_outcomes_for_statistics(today, snapshots, outcomes, horizon
         "duplicate_records_ignored_for_statistics": deduplicated_records,
         "conflicting_outcome_keys_excluded_from_statistics": conflicting_keys,
         "validated_unique_outcomes_in_statistics": len(result),
+        "invalid_or_unverified_evaluation_windows": invalid_evaluation_windows,
     }
 
 
