@@ -46,6 +46,35 @@ class PoliticiansStaticStyleTests(unittest.TestCase):
         self.assertIn('data-politician-select', source)
         self.assertIn("const VERSION='2.1'", source)
 
+    def test_filing_links_allow_only_https_and_future_feed_is_not_fresh(self):
+        import subprocess
+        source = read('politicians.js')
+        safe_fn = 'function safeFilingUrl(v){' + source.split(
+            'function safeFilingUrl(v){', 1)[1].split('  const searchText=', 1)[0]
+        freshness_fn = 'function politiciansSnapshotFresh(d){' + source.split(
+            'function politiciansSnapshotFresh(d){', 1)[1].split('  function enrichMemberCounts(', 1)[0]
+        script = """
+const assert = require('node:assert/strict');
+const t = value => String(value ?? '').trim();
+""" + safe_fn + freshness_fn + """
+assert.equal(safeFilingUrl('https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/123.pdf'),
+  'https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/123.pdf');
+for(const url of ['javascript:alert(1)', 'data:text/html,a', 'http://example.org/a',
+                  '//example.org/a', 'file:///etc/passwd', '']) {
+  assert.equal(safeFilingUrl(url), '', url);
+}
+const dayOffset = n => new Date(Date.now() + n*86400000).toISOString().slice(0,10);
+const feed = day => ({schema_version:2,trades:[],members:[],newest_disclosure:day});
+assert.equal(politiciansSnapshotFresh(feed(dayOffset(-2))),true);
+assert.equal(politiciansSnapshotFresh(feed(dayOffset(2))),false);
+assert.equal(politiciansSnapshotFresh(feed(dayOffset(-62))),false);
+"""
+        result = subprocess.run(['node', '-e', script], cwd=ROOT,
+                                capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('safeFilingUrl(x.filing_url)', source)
+        self.assertNotIn('href="${esc(x.filing_url)}"', source)
+
     def test_service_worker_precaches_and_refreshes_politicians_runtime(self):
         sw = read('sw.js')
         self.assertIn('./politicians.js', sw)

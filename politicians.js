@@ -5,6 +5,12 @@
   const FAV_KEY='vestra-politician-favourites-v2';
   const t=v=>String(v??'').trim();
   const esc=v=>t(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function safeFilingUrl(v){
+    try{
+      const url=new URL(t(v));
+      return url.protocol==='https:'?url.href:'';
+    }catch{return '';}
+  }
   const searchText=v=>t(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   let recentTrades=[];
   let memberDirectory=[];
@@ -35,7 +41,8 @@
   function politiciansSnapshotFresh(d){
     if(!d||Number(d.schema_version||0)<2||!Array.isArray(d.trades)||!Array.isArray(d.members))return false;
     const newest=t(d.newest_disclosure||d.source_last_updated).slice(0,10);const ms=newest?new Date(`${newest}T00:00:00Z`).valueOf():NaN;
-    return Number.isFinite(ms)&&(Date.now()-ms)<=60*86400000;
+    const age=Date.now()-ms;
+    return Number.isFinite(ms)&&age>=0&&age<=60*86400000;
   }
   function enrichMemberCounts(){
     const byName=new Map(memberDirectory.map(m=>[m.name,m]));
@@ -72,7 +79,7 @@
 
   function rowsForMember(m){return recentTrades.filter(x=>x.representative===m.name);}
   function sortTrades(rows,side){return rows.filter(side==='buy'?isBuy:isSell).slice().sort((a,b)=>amountValue(b.amount)-amountValue(a.amount)||String(b.disclosure_date||b.transaction_date).localeCompare(String(a.disclosure_date||a.transaction_date)));}
-  function tickerButton(x){const link=x.filing_url?`<a class="politician-filing" href="${esc(x.filing_url)}" target="_blank" rel="noopener" title="Abrir filing oficial">↗</a>`:'';return `<div class="politician-trade-wrap"><button type="button" class="politician-trade" data-market-ticker="${esc(x.ticker)}"><span><strong>${esc(x.ticker)}</strong><small>${esc(x.asset||'')} ${x.transaction_date?'· '+esc(shortDate(x.transaction_date)):''}</small></span><em class="${isBuy(x)?'is-buy':isSell(x)?'is-sell':''}">${isBuy(x)?'Compra':isSell(x)?'Venda':esc(x.type||'Trade')} · ${esc(x.amount||'—')}</em></button>${link}</div>`;}
+  function tickerButton(x){const verifiedUrl=safeFilingUrl(x.filing_url);const link=verifiedUrl?`<a class="politician-filing" href="${esc(verifiedUrl)}" target="_blank" rel="noopener noreferrer" title="Abrir documento associado">↗</a>`:'';return `<div class="politician-trade-wrap"><button type="button" class="politician-trade" data-market-ticker="${esc(x.ticker)}"><span><strong>${esc(x.ticker)}</strong><small>${esc(x.asset||'')} ${x.transaction_date?'· '+esc(shortDate(x.transaction_date)):''}</small></span><em class="${isBuy(x)?'is-buy':isSell(x)?'is-sell':''}">${isBuy(x)?'Compra':isSell(x)?'Venda':esc(x.type||'Trade')} · ${esc(x.amount||'—')}</em></button>${link}</div>`;}
   function bars(rows,side){const arr=sortTrades(rows,side).slice(0,10);const max=Math.max(1,...arr.map(x=>amountValue(x.amount)));if(!arr.length)return '<p class="politician-empty">Sem operações deste tipo na janela disponível.</p>';return arr.map((x,i)=>`<button type="button" class="politician-bar" data-market-ticker="${esc(x.ticker)}"><span class="politician-rank">${i+1}</span><span><strong>${esc(x.ticker)}</strong><small>${esc(x.representative)} · ${esc(shortDate(x.transaction_date))}</small></span><i><b style="width:${Math.max(7,amountValue(x.amount)/max*100)}%"></b></i><em>${esc(shortMoney(x.amount))}</em></button>`).join('');}
   function topSides(rows,title='Maiores movimentos'){return `<div class="politician-sides"><section><div class="politician-side-head is-buy">↗ TOP 10 COMPRAS <small>${esc(title)}</small></div>${bars(rows,'buy')}</section><section><div class="politician-side-head is-sell">↘ TOP 10 VENDAS <small>${esc(title)}</small></div>${bars(rows,'sell')}</section></div>`;}
   function selectorHTML(){
