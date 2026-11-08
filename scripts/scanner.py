@@ -7,6 +7,8 @@ which guarantees those overlays are emitted without a second run.py integration.
 """
 from __future__ import annotations
 
+import math
+
 from capital_allocation_intelligence import assess as assess_capital_allocation
 from moat import assess as assess_moat
 from sector_native import assess as assess_sector_native
@@ -16,10 +18,10 @@ from opportunity_rank import assess as assess_opportunity_rank
 
 def _n(v):
     try:
-        if v is None or v == "":
+        if v is None or isinstance(v, bool) or v == "":
             return None
         x = float(v)
-        return x if x == x else None
+        return x if math.isfinite(x) else None
     except Exception:
         return None
 
@@ -71,6 +73,8 @@ def _low52(row):
     for item in hist:
         try:
             value = item.get("close") if isinstance(item, dict) else item
+            if isinstance(value, bool):
+                return None
             close = float(value)
         except (TypeError, ValueError):
             return None
