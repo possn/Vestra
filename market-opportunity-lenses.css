@@ -4,3 +4,39 @@
 .vestra-opportunity-lenses button.is-active{background:var(--accent,#168e89);color:#fff;border-color:transparent}
 .ux454-opportunity-guide{pointer-events:none}
 .vestra-lens-empty{padding:18px;text-align:center;color:var(--text2);font-size:11px}
+
+/* Vestra 2.0 — legible, touch-friendly opportunity navigation. */
+.vestra-opportunity-lenses{
+  gap:10px;
+  margin:0 0 22px;
+  padding:4px 0 9px;
+  scroll-padding-inline:16px;
+}
+.vestra-opportunity-lenses button{
+  min-height:44px;
+  padding:10px 16px;
+  border-radius:14px;
+  font-size:13px;
+  font-weight:650;
+  line-height:1.25;
+  letter-spacing:0;
+}
+.vestra-opportunity-lenses button:focus-visible{
+  outline:2px solid var(--accent,#168e89);
+  outline-offset:2px;
+}
+.vestra-lens-empty{
+  padding:28px 20px;
+  text-align:left;
+  font-size:14px;
+  line-height:1.55;
+}
+@media(max-width:620px){
+  .vestra-opportunity-lenses{
+    gap:9px;
+    margin-bottom:20px;
+    margin-inline:-4px;
+    padding-inline:4px;
+  }
+  .vestra-opportunity-lenses button{min-height:44px;font-size:13px;padding:11px 15px;}
+}
