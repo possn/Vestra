@@ -149,6 +149,48 @@ class MarketIndexPayloadTests(unittest.TestCase):
         self.assertLess(shards.MAX_COLUMNAR_BYTES, shards.MAX_INDEX_BYTES)
         self.assertLess(shards.MAX_COLUMNAR_INDEX_RATIO, 0.5)
 
+    def test_lossless_dictionary_codec_saves_more_than_recent_budget_overage(self):
+        import json
+        rows = [
+            {"ticker": f"TEST{i:04d}",
+             "risk_gate": "unknown" if i % 3 == 0 else "restricted",
+             "sector": "Information Technology" if i % 2 else "Consumer Defensive",
+             "market_cap": 100_000_000_000 + i,
+             "insider_buy_value_30d": None if i % 2 else 123,
+             "score": 72.3456789,
+             "confidence_label": "low confidence" if i % 2 else "moderate confidence"}
+            for i in range(1200)
+        ]
+        payload = {"schema_version": 3, "generated_at": "2026-11-08", "stocks": rows}
+        packed = shards.pack_index_payload(payload)
+        self.assertEqual(packed["layout"], "field_rows_v2")
+        self.assertTrue(packed["string_dictionaries"])
+        unpacked = shards.unpack_index_payload(packed)
+        self.assertEqual(unpacked["stocks"], rows)
+        self.assertEqual(unpacked["generated_at"], "2026-11-08")
+        # Compare the real JSON wire bytes with the same v1 fields/rows without
+        # categorical coding; do not infer savings from gzip or semantic drops.
+        old_rows = [[row.get(field) for field in packed["fields"]] for row in rows]
+        for row in old_rows:
+            while row and row[-1] is None:
+                row.pop()
+        old_wire = {**payload, "layout": "field_rows_v1",
+                    "fields": packed["fields"], "rows": old_rows}
+        del old_wire["stocks"]
+        old_bytes = len(json.dumps(old_wire, ensure_ascii=False, separators=(",", ":")).encode())
+        new_bytes = len(json.dumps(packed, ensure_ascii=False, separators=(",", ":")).encode())
+        self.assertGreater(old_bytes - new_bytes, 9250)
+        self.assertLess(new_bytes, old_bytes)
+
+    def test_v2_rejects_broken_string_dictionary_codes(self):
+        sample = [{"ticker": f"T{i}", "risk_gate": "unknown"} for i in range(300)]
+        packed = shards.pack_index_payload({"stocks": sample})
+        self.assertEqual(packed["layout"], "field_rows_v2")
+        field_index = str(packed["fields"].index("risk_gate"))
+        packed["rows"][0][int(field_index)] = -1
+        with self.assertRaisesRegex(ValueError, "invalid categorical code"):
+            shards.unpack_index_payload(packed)
+
     def test_columnar_pack_round_trips_sparse_rows(self):
         payload = {
             "schema_version": 521,
