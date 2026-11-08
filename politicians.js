@@ -44,10 +44,30 @@
     const age=Date.now()-ms;
     return Number.isFinite(ms)&&age>=0&&age<=60*86400000;
   }
+  // A name is not a person identifier. The feed's member_key is authoritative;
+  // unkeyed legacy trades are attributed only when name+chamber identifies one member.
+  function rowsForMember(m){
+    return recentTrades.filter(tr=>{
+      if(tr.member_key)return tr.member_key===m.key;
+      if(tr.representative!==m.name)return false;
+      const matches=memberDirectory.filter(x=>x.name===tr.representative&&(!tr.chamber||x.chamber===tr.chamber));
+      return matches.length===1&&matches[0].key===m.key;
+    });
+  }
   function enrichMemberCounts(){
-    const byName=new Map(memberDirectory.map(m=>[m.name,m]));
-    for(const m of memberDirectory){const rows=recentTrades.filter(x=>x.representative===m.name);m.count=rows.length;m.buys=rows.filter(isBuy).length;m.sells=rows.filter(isSell).length;m.last=rows.map(x=>x.disclosure_date||x.transaction_date).filter(Boolean).sort().reverse()[0]||m.last;}
-    for(const tr of recentTrades){if(byName.has(tr.representative))continue;const m=buildMember({name:tr.representative,chamber:tr.chamber},tr.source);memberDirectory.push(m);byName.set(m.name,m);}
+    const byKey=new Map(memberDirectory.map(m=>[m.key,m]));
+    for(const tr of recentTrades){
+      if(tr.member_key&&byKey.has(tr.member_key))continue;
+      if(!tr.member_key&&memberDirectory.some(m=>m.name===tr.representative))continue;
+      const m=buildMember({name:tr.representative,chamber:tr.chamber,key:tr.member_key},tr.source);
+      if(byKey.has(m.key))continue;
+      memberDirectory.push(m);byKey.set(m.key,m);
+    }
+    for(const m of memberDirectory){
+      const rows=rowsForMember(m);m.count=rows.length;
+      m.buys=rows.filter(isBuy).length;m.sells=rows.filter(isSell).length;
+      m.last=rows.map(x=>x.disclosure_date||x.transaction_date).filter(Boolean).sort().reverse()[0]||m.last;
+    }
     memberDirectory.sort((a,b)=>a.chamber==='Executive'?-1:b.chamber==='Executive'?1:(b.count-a.count)||a.name.localeCompare(b.name));
   }
 
@@ -81,7 +101,6 @@
     return loading;
   }
 
-  function rowsForMember(m){return recentTrades.filter(x=>x.representative===m.name);}
   function sortTrades(rows,side){return rows.filter(side==='buy'?isBuy:isSell).slice().sort((a,b)=>amountValue(b.amount)-amountValue(a.amount)||String(b.disclosure_date||b.transaction_date).localeCompare(String(a.disclosure_date||a.transaction_date)));}
   function tickerButton(x){const verifiedUrl=safeFilingUrl(x.filing_url);const link=verifiedUrl?`<a class="politician-filing" href="${esc(verifiedUrl)}" target="_blank" rel="noopener noreferrer" title="Abrir documento associado">↗</a>`:'';return `<div class="politician-trade-wrap"><button type="button" class="politician-trade" data-market-ticker="${esc(x.ticker)}"><span><strong>${esc(x.ticker)}</strong><small>${esc(x.asset||'')} ${x.transaction_date?'· '+esc(shortDate(x.transaction_date)):''}</small></span><em class="${isBuy(x)?'is-buy':isSell(x)?'is-sell':''}">${isBuy(x)?'Compra':isSell(x)?'Venda':esc(x.type||'Trade')} · ${esc(x.amount||'—')}</em></button>${link}</div>`;}
   function bars(rows,side){const arr=sortTrades(rows,side).slice(0,10);const max=Math.max(1,...arr.map(x=>amountValue(x.amount)));if(!arr.length)return '<p class="politician-empty">Sem operações deste tipo na janela disponível.</p>';return arr.map((x,i)=>`<button type="button" class="politician-bar" data-market-ticker="${esc(x.ticker)}"><span class="politician-rank">${i+1}</span><span><strong>${esc(x.ticker)}</strong><small>${esc(x.representative)} · ${esc(shortDate(x.transaction_date))}</small></span><i><b style="width:${Math.max(7,amountValue(x.amount)/max*100)}%"></b></i><em>${esc(shortMoney(x.amount))}</em></button>`).join('');}
