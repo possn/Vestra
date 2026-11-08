@@ -35,7 +35,7 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
     fixture.innerHTML = `
       <div class="market-section__head"><div><h3>Oportunidades agora</h3><p></p></div></div>
       <div class="market-list"></div>`;
-    document.body.prepend(fixture);
+    document.querySelector('#viewMarket').prepend(fixture);
     window.VestraMarketOpportunityLenses.select('all');
   }, [
     candidate('EARLY', { estimate_signal: 'improving', recovery_status: '', thesis_direction: 'up', opportunity_timing_score: 68 }),
