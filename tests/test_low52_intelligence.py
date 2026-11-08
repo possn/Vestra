@@ -8,7 +8,7 @@ def quality_row(current_price=105.0):
         "ticker": "TEST",
         "quote_type": "EQUITY",
         "current_price": current_price,
-        "price_history_1y": [100.0, 120.0, 150.0],
+        "price_history_1y": [100.0] * 218 + [120.0, 150.0],
         "score": 80,
         "data_coverage_pct": 80,
         "critical_metric_coverage_pct": 70,
@@ -31,6 +31,34 @@ def quality_row(current_price=105.0):
 
 
 class Low52IntelligenceTests(unittest.TestCase):
+    def test_short_close_history_cannot_claim_a_52week_opportunity(self):
+        for length in (1, 3, 30, 199):
+            with self.subTest(length=length):
+                row = quality_row()
+                row["price_history_1y"] = [100.0] * length
+                row["fifty_two_week_low"] = 90.0
+                row["fifty_two_week_high"] = 150.0
+                result = assess(row)
+                self.assertEqual(result["low52_status"], "insufficient")
+                self.assertIsNone(result["low52_score"])
+
+    def test_observed_close_minimum_is_not_mislabeled_intraday_low(self):
+        result = assess(quality_row())
+        self.assertEqual(result["low52_price_basis"],
+                         "observed_daily_closes_minimum_200_sessions")
+        self.assertEqual(result["low52_observed_close_sessions"], 220)
+        self.assertIn("fechos diários observados", result["low52_reasons"][0])
+
+    def test_provider_extrema_keep_explicit_distinct_provenance(self):
+        row = quality_row()
+        row["price_history_1y"] = []
+        row["fifty_two_week_low"] = 100.0
+        row["fifty_two_week_high"] = 150.0
+        result = assess(row)
+        self.assertEqual(result["low52_price_basis"], "provider_reported_52week_extrema")
+        self.assertEqual(result["low52_observed_close_sessions"], 0)
+        self.assertIn("fornecedor", result["low52_reasons"][0])
+
     def test_etfs_are_excluded_from_low52_equity_intelligence(self):
         row = quality_row()
         row["quote_type"] = "ETF"
