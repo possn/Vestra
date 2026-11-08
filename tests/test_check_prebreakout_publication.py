@@ -110,6 +110,42 @@ class Contract(unittest.TestCase):
   (d/"prebreakout-signals.json").write_text(json.dumps(feed))
   (d/"prebreakout-observations.json").write_text(json.dumps(index))
   return d
+ def setup_modern_publication(self,root):
+  d=self.setup_files(root)
+  stamp="2026-11-09T14:17:00+00:00"
+  feed=GateFunnelContract().feed()
+  feed["generated_at"]=stamp;feed["scan_slot_utc"]=2
+  signal={"ticker":"TEST","date":"2026-11-06","stage":"compressão"}
+  feed["signals"]=[signal]
+  slot=d/"prebreakout-history"/"2026"/"slots"/"2026-11-09-slot2.json"
+  slot.write_text(json.dumps(feed))
+  (d/"prebreakout-signals.json").write_text(json.dumps(feed))
+  index={"schema":"vestra_prebreakout_observations_v1","historical_only":True,
+         "slots_considered":1,"observations":[{"ticker":"TEST","observed_at":stamp,
+         "signal_date":signal["date"],"stage":signal["stage"],"current":False}]}
+  (d/"prebreakout-observations.json").write_text(json.dumps(index))
+  return d,feed,slot
+ def test_modern_publication_rejects_impossible_coverage_despite_valid_funnel(self):
+  with tempfile.TemporaryDirectory() as folder:
+   d,feed,slot=self.setup_modern_publication(Path(folder))
+   self.assertEqual(mod.verify(Path(folder))["verified_slot"],2)
+   feed["coverage_audit_24h"].update({"coverage_pct":105.18,
+      "current_eligible_verified_distinct":1198,"outside_current_universe_distinct":0,
+      "distinct_ohlcv_tickers":1198})
+   feed["scan_quality_audit"].update({"observed_24h_coverage_pct":105.18,
+      "full_universe_verified":True})
+   (d/"prebreakout-signals.json").write_text(json.dumps(feed))
+   slot.write_text(json.dumps(feed))
+   with self.assertRaisesRegex(ValueError,"invalid published scanner evidence"):
+    mod.verify(Path(folder))
+ def test_modern_publication_rejects_unreconciled_rolling_observations(self):
+  with tempfile.TemporaryDirectory() as folder:
+   d,feed,slot=self.setup_modern_publication(Path(folder))
+   feed["coverage_audit_24h"]["outside_current_universe_distinct"]=2
+   (d/"prebreakout-signals.json").write_text(json.dumps(feed))
+   slot.write_text(json.dumps(feed))
+   with self.assertRaisesRegex(ValueError,"inconsistent_current_universe_coverage"):
+    mod.verify(Path(folder))
  def test_valid_publication(self):
   with tempfile.TemporaryDirectory() as folder:
    root=Path(folder);self.setup_files(root)
