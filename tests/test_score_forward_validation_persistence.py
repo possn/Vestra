@@ -108,6 +108,66 @@ class ScoreForwardValidationPersistenceTests(unittest.TestCase):
         self.assertEqual([row["ticker"] for row in rows], ["BOOL"])
         self.assertEqual(audit["legacy_or_unknown_eligibility"], 2)
 
+    def test_score_statistics_use_one_identical_frozen_outcome_per_key(self):
+        today = dt.date(2026, 8, 30)
+        snaps = [{"date": "2026-08-02", "observations": {
+            "AAA": {"score": 80, "price": 100},
+            "BBB": {"score": 60, "price": 100},
+        }}]
+        a = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "AAA",
+             "score": 80, "return_pct": 10, "validation_eligible": True}
+        b = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "BBB",
+             "score": 60, "return_pct": 3, "validation_eligible": True}
+        selected, audit = MOD.unique_verified_score_outcomes(
+            today, snaps, [a, dict(a), b], 28)
+        self.assertEqual([x["ticker"] for x in selected], ["AAA", "BBB"])
+        self.assertEqual(audit["duplicate_records_ignored"], 1)
+        self.assertEqual(audit["conflicting_keys_excluded"], 0)
+        self.assertEqual(MOD.summarize_horizon(selected, 1)["n"], 2)
+
+    def test_score_conflicts_and_non_frozen_results_never_enter_statistics(self):
+        today = dt.date(2026, 8, 30)
+        snaps = [{"date": "2026-08-02", "observations": {
+            "AAA": {"score": 80}, "BBB": {"score": 60},
+        }}, {"date": "2026-08-20", "observations": {
+            "FUTURE": {"score": 90},
+        }}]
+        a = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "AAA",
+             "score": 80, "return_pct": 10, "validation_eligible": True}
+        b = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "BBB",
+             "score": 60, "return_pct": 3, "validation_eligible": True}
+        outside = {**b, "ticker": "NO_FROZEN", "return_pct": 200}
+        future = {**a, "ticker": "FUTURE", "cohort_date": "2026-08-20"}
+        selected, audit = MOD.unique_verified_score_outcomes(
+            today, snaps, [a, {**a, "return_pct": 99}, b, outside, future], 28)
+        self.assertEqual([x["ticker"] for x in selected], ["BBB"])
+        self.assertEqual(audit["conflicting_keys_excluded"], 1)
+        self.assertEqual(audit["outcomes_outside_frozen_cohorts"], 2)
+
+    def test_score_eligibility_conflicts_are_not_resolved_as_valid(self):
+        snap = [{"date": "2026-08-02", "observations": {"AAA": {"score": 80}}}]
+        item = {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "AAA",
+                "score": 80, "return_pct": 10, "validation_eligible": True}
+        selected, audit = MOD.unique_verified_score_outcomes(
+            dt.date(2026, 8, 30), snap, [item, {**item, "validation_eligible": False}], 28)
+        self.assertEqual(selected, [])
+        self.assertEqual(audit["conflicting_keys_excluded"], 1)
+
+    def test_score_missing_validation_or_score_is_not_statistical_evidence(self):
+        snap = [{"date": "2026-08-02", "observations": {
+            "LEGACY": {"score": 80}, "MISSING_SCORE": {"score": 70},
+        }}]
+        vals = [
+            {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "LEGACY",
+             "score": 80, "return_pct": 4},
+            {"cohort_date": "2026-08-02", "horizon_days": 28, "ticker": "MISSING_SCORE",
+             "return_pct": 4, "validation_eligible": True},
+        ]
+        selected, audit = MOD.unique_verified_score_outcomes(
+            dt.date(2026, 8, 30), snap, vals, 28)
+        self.assertEqual(selected, [])
+        self.assertEqual(audit["unverified_or_incomplete_unique_keys"], 2)
+
     def test_materialised_outcome_is_not_duplicated(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{
