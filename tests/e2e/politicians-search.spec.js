@@ -1,5 +1,8 @@
 const { test, expect } = require('@playwright/test');
 
+// This test owns a mocked data source. The separate PWA tests cover service workers.
+test.use({ serviceWorkers: 'block' });
+
 async function waitForLaunch(page) {
   await page.goto('/index.html');
   await expect(page.locator('#appLoadingOverlay')).toBeHidden({ timeout: 10_000 });
@@ -7,16 +10,20 @@ async function waitForLaunch(page) {
 
 test('iPhone/WebKit: politician picker supports live name search', async ({ page }) => {
   const pageErrors = [];
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  let fixtureRequests = 0;
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await page.route(/\/data\/politicians\.json(?:\?.*)?$/, async route => {
+    fixtureRequests += 1;
     await route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify({
         schema_version: 2,
-        generated_at: '2026-09-16T10:00:00Z',
-        source_last_updated: '2026-09-16',
-        newest_disclosure: '2026-09-10',
+        generated_at: now.toISOString(),
+        source_last_updated: today,
+        newest_disclosure: today,
         coverage_chambers: ['House', 'Senate'],
         source: 'Test disclosure feed',
         members: [
@@ -31,8 +38,8 @@ test('iPhone/WebKit: politician picker supports live name search', async ({ page
             chamber: 'Senate',
             type: 'purchase',
             amount: '$1,001 - $15,000',
-            transaction_date: '2026-09-01',
-            disclosure_date: '2026-09-10',
+            transaction_date: today,
+            disclosure_date: today,
             asset: 'Test asset',
           },
         ],
@@ -51,6 +58,7 @@ test('iPhone/WebKit: politician picker supports live name search', async ({ page
   await expect(politiciansMode).toBeVisible();
   await politiciansMode.tap();
   await expect(page.locator('.politicians-section')).toBeVisible();
+  expect(fixtureRequests, 'Politicians search must use the intercepted test feed').toBeGreaterThan(0);
 
   const search = page.locator('[data-politician-search]');
   await expect(search).toBeVisible();
