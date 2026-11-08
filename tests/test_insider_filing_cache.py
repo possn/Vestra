@@ -156,6 +156,55 @@ class InsiderFilingCacheTests(unittest.TestCase):
         self.assertFalse(insiders._cache_dirty)
 
 
+    def test_validated_empty_sec_forms_are_complete_zero_evidence(self):
+        import datetime as dt
+        today = dt.date.today().isoformat()
+        filings = [{"accession": "empty1", "filing_date": today},
+                   {"accession": "empty2", "filing_date": today}]
+        with mock.patch.object(insiders, "_load_ticker_cik_map", return_value={"AAPL":"320193"}), \
+             mock.patch.object(insiders, "_recent_form4_rows", return_value=filings), \
+             mock.patch.object(insiders, "_fetch_structured_filing", side_effect=[
+                 ([],0,"validated_empty_cache"),([],0,"validated_empty_ownership_xml")]):
+            result = insiders.insider_activity("AAPL")
+        self.assertEqual(result["status"],"ok")
+        self.assertIsNone(result["reason"])
+        self.assertEqual(result["buy_value_30d"],0)
+        self.assertEqual(result["net_value_365d"],0)
+        self.assertEqual(result["detail_filings_parsed"],2)
+        self.assertEqual(result["detail_filings_validated_empty"],2)
+        self.assertEqual(result["detail_filings_unavailable"],0)
+
+    def test_verified_empty_and_purchase_can_be_combined_without_double_counting(self):
+        import datetime as dt
+        today=dt.date.today().isoformat()
+        filings=[{"accession":"empty","filing_date":today},
+                 {"accession":"buy","filing_date":today}]
+        tx=[{"ticker":"AAPL","type":"buy","date":today,"value":100.0}]
+        with mock.patch.object(insiders, "_load_ticker_cik_map", return_value={"AAPL":"320193"}), \
+             mock.patch.object(insiders, "_recent_form4_rows", return_value=filings), \
+             mock.patch.object(insiders, "_fetch_structured_filing",
+                               side_effect=[([],0,"validated_empty_cache"),(tx,1,"cache")]):
+            result=insiders.insider_activity("AAPL")
+        self.assertEqual(result["status"],"ok")
+        self.assertEqual(result["buy_value_30d"],100.0)
+        self.assertEqual(result["detail_filings_validated_empty"],1)
+        self.assertEqual(result["detail_filings_parsed"],2)
+
+    def test_invalid_or_unavailable_xml_is_not_a_verified_empty_form(self):
+        import datetime as dt
+        today=dt.date.today().isoformat()
+        filings=[{"accession":"empty","filing_date":today},
+                 {"accession":"bad","filing_date":today}]
+        with mock.patch.object(insiders, "_load_ticker_cik_map", return_value={"AAPL":"320193"}), \
+             mock.patch.object(insiders, "_recent_form4_rows", return_value=filings), \
+             mock.patch.object(insiders, "_fetch_structured_filing",
+                               side_effect=[([],0,"validated_empty_cache"),([],0,"HTTP 403")]):
+            result=insiders.insider_activity("AAPL")
+        self.assertEqual(result["status"],"degraded")
+        self.assertEqual(result["detail_filings_validated_empty"],1)
+        self.assertEqual(result["detail_filings_unavailable"],1)
+        self.assertIsNone(result["buy_value_30d"])
+
     def test_partial_form4_failure_cannot_publish_zero_as_verified(self):
         import datetime as dt
         today = dt.date.today().isoformat()
