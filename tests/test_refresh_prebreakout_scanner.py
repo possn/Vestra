@@ -11,6 +11,36 @@ spec=importlib.util.spec_from_file_location("prebreakout",ROOT/"scripts/refresh_
 mod=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
+class FirstFailingGateAuditTests(unittest.TestCase):
+    def test_short_history_is_data_unavailable_not_bad_setup(self):
+        trace = {}
+        self.assertIsNone(mod.scan_bars("SHORT", [], date(2026, 11, 8), audit=trace))
+        self.assertEqual(trace["first_rejection"], "insufficient_daily_sessions")
+
+    def test_invalid_ohlc_is_explicit_and_not_a_market_signal(self):
+        trace = {}
+        bars = [{"date": "2026-11-07", "close": 100, "high": 99,
+                 "low": 98, "volume": 1000}]
+        self.assertIsNone(mod.scan_bars("INVALID", bars, date(2026, 11, 8), audit=trace))
+        self.assertEqual(trace["first_rejection"], "inconsistent_ohlc")
+
+    def test_flat_220_session_history_fails_moving_average_gate_without_relaxation(self):
+        today = date(2026, 11, 8)
+        bars = [{"date": (today - timedelta(days=219-i)).isoformat(),
+                 "close": 100, "high": 101, "low": 99,
+                 "volume": 1000} for i in range(220)]
+        trace = {}
+        self.assertIsNone(mod.scan_bars("FLAT", bars, today, audit=trace))
+        self.assertEqual(trace["first_rejection"], "moving_average_structure")
+        self.assertIsNone(mod.scan_bars("FLAT", bars, today))
+
+    def test_trace_is_opt_in_and_publication_declares_first_gate_not_intersections(self):
+        src = (ROOT / "scripts/refresh_prebreakout_scanner.py").read_text()
+        self.assertIn('"gate_funnel":', src)
+        self.assertIn("first_failing_gate_in_order_not_independent_gate_intersections", src)
+        self.assertIn("missing_downloads_not_negative_evidence", src)
+
+
 class ProviderBatchRetryTests(unittest.TestCase):
     def test_retry_once_recovers_transient_failure(self):
         class Provider:
