@@ -590,7 +590,7 @@
     const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),coverage=sleeveCoverage(s),dom=credibleDominantSleeve(s),capText=capSummary(s);
     const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
       .filter(([,v])=>v!=null).map(([label,v,key])=>`<span class="${key===dom?'is-driver':''}">${label} ${Math.round(v)}${coverage[key]!=null&&coverage[key]<70?' · evidência limitada':''}</span>`).join('');
-    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><details class="ux453-evidence"><summary>Ver análise e indicadores</summary><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></details></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
+    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-evidence"><button class="ux453-evidence-toggle" type="button" aria-expanded="false">Ver análise e indicadores</button><div class="ux453-evidence-content" hidden><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
   }
 
   function decorate(section){
@@ -598,20 +598,20 @@
     const rows=[...list.querySelectorAll('.market-row')];
     rows.forEach((r,i)=>{
       const disclosure=r.querySelector('.ux453-evidence');
+      const toggle=disclosure?.querySelector('.ux453-evidence-toggle');
+      const content=disclosure?.querySelector('.ux453-evidence-content');
       if(disclosure&&!disclosure.dataset.ux453ClickGuard){
         disclosure.addEventListener('click',event=>event.stopPropagation());
         disclosure.dataset.ux453ClickGuard='1';
       }
-      const summary=disclosure?.querySelector('summary');
-      if(summary&&!summary.dataset.ux453ToggleBound){
-        summary.addEventListener('click',event=>{
+      if(toggle&&content&&!toggle.dataset.ux453ToggleBound){
+        toggle.addEventListener('click',event=>{
           event.preventDefault();
           event.stopPropagation();
-          // WebKit can suppress the native toggle inside a delegated ticker
-          // surface. Own the toggle explicitly, retaining summary keyboard access.
-          disclosure.open=!disclosure.open;
+          content.hidden=!content.hidden;
+          toggle.setAttribute('aria-expanded',String(!content.hidden));
         });
-        summary.dataset.ux453ToggleBound='1';
+        toggle.dataset.ux453ToggleBound='1';
       }
       r.classList.toggle('ux454-podium',i<3);
       r.classList.toggle('ux454-podium-1',i===0);
