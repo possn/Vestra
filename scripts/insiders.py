@@ -112,6 +112,13 @@ def _load_ticker_cik_map() -> dict[str, str]:
     return _ticker_to_cik
 
 
+def _same_cik(left, right):
+    try:
+        return int(str(left)) > 0 and int(str(left)) == int(str(right))
+    except (ValueError, TypeError, OverflowError):
+        return False
+
+
 def _cache_key(cik: str, accession: str) -> str:
     try:
         cik_key = str(int(str(cik)))
@@ -136,7 +143,10 @@ def _load_filing_cache(path: Path = CACHE_PATH) -> dict[str, dict]:
                 raw_count = row.get("raw_nonderivative_transactions")
                 accession = str(row.get("accession") or "").strip()
                 transactions = row.get("transactions")
-                if accession and isinstance(raw_count, int) and raw_count > 0 and isinstance(transactions, list):
+                if (accession and isinstance(raw_count, int) and raw_count > 0
+                        and isinstance(transactions, list)
+                        and _same_cik(row.get("issuer_cik"), row.get("cik"))
+                        and all(isinstance(tx, dict) and _same_cik(tx.get("issuer_cik"), row.get("cik")) for tx in transactions)):
                     rows[str(key)] = row
         except FileNotFoundError:
             pass
@@ -152,7 +162,9 @@ def _cached_filing(cik: str, filing: dict, ticker: str):
     key = _cache_key(cik, filing.get("accession"))
     with _cache_lock:
         row = cache.get(key)
-        if not row:
+        if (not row or not _same_cik(row.get("issuer_cik"), cik)
+                or not all(isinstance(tx, dict) and _same_cik(tx.get("issuer_cik"), cik)
+                           for tx in row.get("transactions") or [])):
             return None
         transactions = []
         for tx in row.get("transactions") or []:
@@ -165,7 +177,10 @@ def _cached_filing(cik: str, filing: dict, ticker: str):
 
 def _store_cached_filing(cik: str, filing: dict, transactions: list[dict], raw_count: int):
     global _cache_dirty
-    if not isinstance(raw_count, int) or raw_count <= 0:
+    if (not isinstance(raw_count, int) or raw_count <= 0
+            or not transactions
+            or not all(isinstance(tx, dict) and _same_cik(tx.get("issuer_cik"), cik)
+                           for tx in transactions)):
         return
     accession = str(filing.get("accession") or "").strip()
     if not accession:
@@ -173,6 +188,7 @@ def _store_cached_filing(cik: str, filing: dict, transactions: list[dict], raw_c
     cache = _load_filing_cache()
     row = {
         "cik": str(cik),
+        "issuer_cik": str(int(cik)).zfill(10),
         "accession": accession,
         "filing_date": filing.get("filing_date"),
         "raw_nonderivative_transactions": raw_count,
@@ -240,6 +256,17 @@ def _bool_text(root, path: str) -> bool:
     return v in {"1", "true", "yes", "x"}
 
 
+def _xml_issuer_cik(content: bytes):
+    try:
+        root = ET.fromstring(content)
+        for elem in root.iter():
+            if "}" in elem.tag:
+                elem.tag = elem.tag.split("}", 1)[1]
+        return _text(root, "./issuer/issuerCik")
+    except (ET.ParseError, ValueError, TypeError):
+        return None
+
+
 def _parse_ownership_xml(content: bytes, ticker: str, accession: str) -> tuple[list[dict], int]:
     try:
         root = ET.fromstring(content)
@@ -249,6 +276,7 @@ def _parse_ownership_xml(content: bytes, ticker: str, accession: str) -> tuple[l
         if "}" in elem.tag:
             elem.tag = elem.tag.split("}", 1)[1]
     raw = root.findall("./nonDerivativeTable/nonDerivativeTransaction")
+    issuer_cik = _text(root, "./issuer/issuerCik")
     owner = _text(root, "./reportingOwner/reportingOwnerId/rptOwnerName")
     rel = root.find("./reportingOwner/reportingOwnerRelationship")
     roles = []
@@ -269,6 +297,7 @@ def _parse_ownership_xml(content: bytes, ticker: str, accession: str) -> tuple[l
         value = shares * price if shares is not None and price is not None else None
         out.append({
             "ticker": ticker,
+            "issuer_cik": issuer_cik,
             "accession": accession,
             "date": date,
             "owner": owner,
@@ -330,6 +359,9 @@ def _fetch_structured_filing(cik: str, filing: dict, ticker: str) -> tuple[list[
         url = ARCHIVE_URL.format(cik_int=cik_int, accession=accession_no_dash, document=document)
         try:
             resp = _get(url)
+            if not _same_cik(_xml_issuer_cik(resp.content), cik):
+                last_error = "form4_issuer_cik_missing_or_mismatched"
+                continue
             parsed, raw_count = _parse_ownership_xml(resp.content, ticker, filing["accession"])
             if raw_count > 0 or parsed:
                 _store_cached_filing(cik, filing, parsed, raw_count)
