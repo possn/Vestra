@@ -1073,6 +1073,79 @@ def verified_outcomes_for_statistics(outcomes, horizon):
     }
 
 
+
+def unique_verified_score_outcomes(today, snapshots, outcomes, horizon):
+    """One validated outcome per actual frozen matured Score cohort/ticker.
+
+    Historical records are never rewritten. Identical duplicates count once;
+    conflicting evidence under a single key is excluded rather than resolved
+    by selecting whichever record claims eligibility.
+    """
+    frozen = set()
+    for snap in snapshots:
+        if not isinstance(snap, dict):
+            continue
+        try:
+            cohort_date = str(snap["date"])
+            age = (today - dt.date.fromisoformat(cohort_date)).days
+        except (KeyError, TypeError, ValueError):
+            continue
+        if age < horizon:
+            continue
+        for ticker, obs in (snap.get("observations") or {}).items():
+            if isinstance(obs, dict):
+                frozen.add(outcome_key(cohort_date, horizon, ticker))
+
+    grouped = defaultdict(list)
+    not_in_frozen_cohort = 0
+    for item in outcomes:
+        if not isinstance(item, dict):
+            continue
+        try:
+            if int(item.get("horizon_days") or 0) != horizon:
+                continue
+        except (TypeError, ValueError):
+            continue
+        key = outcome_key(item.get("cohort_date"), horizon, item.get("ticker"))
+        if key not in frozen:
+            not_in_frozen_cohort += 1
+            continue
+        grouped[key].append(item)
+
+    unique = []
+    duplicates_ignored = 0
+    conflict_keys = 0
+    excluded_unverified = 0
+    excluded_ineligible = 0
+    for key in sorted(grouped):
+        items = grouped[key]
+        duplicates_ignored += len(items) - 1
+        signatures = {json.dumps(item, sort_keys=True, ensure_ascii=False)
+                      for item in items}
+        if len(signatures) > 1:
+            conflict_keys += 1
+            continue
+        item = items[0]
+        if item.get("validation_eligible") is True and (
+            num(item.get("return_pct")) is not None
+            and num(item.get("score")) is not None
+        ):
+            unique.append(item)
+        elif item.get("validation_eligible") is False:
+            excluded_ineligible += 1
+        else:
+            excluded_unverified += 1
+    return unique, {
+        "unique_validated_statistical_outcomes": len(unique),
+        "duplicate_records_ignored": duplicates_ignored,
+        "conflicting_keys_excluded": conflict_keys,
+        "outcomes_outside_frozen_cohorts": not_in_frozen_cohort,
+        "ineligible_unique_keys": excluded_ineligible,
+        "unverified_or_incomplete_unique_keys": excluded_unverified,
+        "interpretation": "Only unique, explicitly validated and scored outcomes in matured frozen cohorts enter Score statistics; conflicts are excluded, raw history preserved.",
+    }
+
+
 def main():
     today = dt.date.today()
     rows = current_rows()
@@ -1132,7 +1205,10 @@ def main():
 
     report_horizons = {}
     for horizon in HORIZONS:
-        vals, eligibility_audit = verified_outcomes_for_statistics(outcomes, horizon)
+        vals, uniqueness_audit = unique_verified_score_outcomes(
+            today, snapshots, outcomes, horizon
+        )
+        _, eligibility_audit = verified_outcomes_for_statistics(outcomes, horizon)
         expected = expected_matured_count(today, snapshots, horizon)
         summary = summarize_horizon(
             vals,
@@ -1142,6 +1218,7 @@ def main():
             shadow_candidate_id=shadow_state["candidate_id"],
         )
         summary["outcome_eligibility_audit"] = eligibility_audit
+        summary["unique_outcome_statistics_audit"] = uniqueness_audit
         first_maturity, next_maturity = maturity_dates(today, snapshots, horizon)
         summary["first_possible_maturity_date"] = first_maturity.isoformat() if first_maturity else None
         summary["next_pending_maturity_date"] = next_maturity.isoformat() if next_maturity else None
