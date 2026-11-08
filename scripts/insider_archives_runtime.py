@@ -102,7 +102,8 @@ def _load_empty_cache(path: Path = EMPTY_CACHE_PATH) -> dict[str, dict]:
         # Never trust persisted empty evidence from a different issuer or
         # accession; empty-cache provenance must be as strict as buy-cache.
         if (accession and cik and row.get("validated_empty") is True
-                and str(key) == _empty_cache_key(cik, accession)):
+                and str(key) == _empty_cache_key(cik, accession)
+                and _empty_cache_key(row.get("issuer_cik"), accession) == str(key)):
             rows[str(key)] = row
     return rows
 
@@ -232,6 +233,7 @@ def install(module=None, *, row_loader=None, environ=None, empty_cache_path=None
             if _is_valid_ownership_xml(xml):
                 row = {
                     "cik": str(cik),
+                    "issuer_cik": str(int(str(cik))).zfill(10),
                     "accession": str(filing.get("accession") or "").strip(),
                     "filing_date": str(filing.get("filing_date") or "").strip(),
                     "validated_empty": True,
