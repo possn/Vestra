@@ -112,6 +112,28 @@ def macro_publication_overdue(previous: dict, now: datetime.datetime, hours: int
     return age>datetime.timedelta(hours=hours) or age<datetime.timedelta(minutes=-5)
 
 
+def forward_publication_overdue(previous: dict, now: datetime.datetime, hours: int) -> bool:
+    """Bound the delay using the actual prior forward evaluation's price cutoff.
+
+    Forward evidence has no generated_at; the UTC date before which daily
+    candles were considered complete is the only canonical freshness marker.
+    Missing or corrupt provenance never makes stale evidence look current.
+    """
+    if now.tzinfo is None or type(hours) is not int or hours < 1:
+        raise ValueError("invalid forward publication deadline")
+    try:
+        if previous.get("schema") != "vestra_prebreakout_forward_cohorts_v1":
+            return True
+        price = previous["price_metadata"]
+        cutoff = datetime.datetime.strptime(
+            price["completed_before_utc_date"], "%Y-%m-%d"
+        ).replace(tzinfo=datetime.timezone.utc)
+    except (KeyError, AttributeError, TypeError, ValueError):
+        return True
+    age = now.astimezone(datetime.timezone.utc) - cutoff
+    return age > datetime.timedelta(hours=hours) or age < datetime.timedelta(minutes=-5)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--market-grace-minutes", type=int, default=None,
@@ -152,7 +174,7 @@ def main() -> int:
                 prior=json.load(fh)
         except (OSError,ValueError,TypeError):
             prior={}
-        if macro_publication_overdue(prior,datetime.datetime.now(datetime.timezone.utc),args.forward_max_staleness_hours):
+        if forward_publication_overdue(prior,datetime.datetime.now(datetime.timezone.utc),args.forward_max_staleness_hours):
             print("Previous forward-evidence publication overdue or unverifiable; releasing independently evaluated evidence.")
             _write_output("defer","false")
             return 0
