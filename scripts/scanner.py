@@ -51,11 +51,11 @@ def _evidence_ok(row):
         return False, "Score Vestra suprimido por dados insuficientes"
     if coverage is None or coverage < 55:
         return False, "Cobertura fundamental inferior a 55%"
-    if critical is not None and critical < 45:
+    if critical is None or critical < 45:
         return False, "Cobertura de métricas críticas insuficiente"
     if confidence is None or confidence < 50:
         return False, "Confiança dos dados insuficiente"
-    if reliability in ("insufficient", "suppressed"):
+    if reliability not in ("robust", "moderate_evidence", "limited_evidence"):
         return False, "Fiabilidade insuficiente para ranking"
     return True, None
 
@@ -65,7 +65,7 @@ def _low52(row):
     import math
 
     hist = row.get("price_history_1y") or []
-    if not isinstance(hist, list) or not hist:
+    if not isinstance(hist, list) or len(hist) < 200:
         return None
     closes = []
     for item in hist:

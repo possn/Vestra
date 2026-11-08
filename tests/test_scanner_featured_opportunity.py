@@ -80,6 +80,50 @@ class ScannerFeaturedOpportunityTests(unittest.TestCase):
         self.assertNotIn("lows_intact", out["scanner_results"])
         self.assertNotIn("fallen_angels", out["scanner_results"])
 
+    def test_missing_critical_coverage_never_creates_scanner_signal(self):
+        row = self.base_row()
+        row.pop("critical_metric_coverage_pct")
+        row.update({"estimate_signal": "improving", "estimate_momentum_score": 85})
+        with mock.patch.object(scanner, "_structural_overlays") as overlays:
+            out = scanner.assess(row)
+        overlays.assert_not_called()
+        self.assertFalse(out["opportunity_eligible"])
+        self.assertEqual(out["scanner_tags"], [])
+
+    def test_unknown_or_insufficient_reliability_fails_closed(self):
+        for reliability in (None, "", "unknown", "insufficient_data", "suppressed"):
+            with self.subTest(reliability=reliability):
+                row = self.base_row()
+                row["score_reliability"] = reliability
+                with mock.patch.object(scanner, "_structural_overlays") as overlays:
+                    out = scanner.assess(row)
+                overlays.assert_not_called()
+                self.assertFalse(out["opportunity_eligible"])
+                self.assertEqual(out["scanner_results"], {})
+
+    def test_short_close_history_cannot_create_52_week_scanner_strategy(self):
+        for length in (1, 3, 30, 199):
+            with self.subTest(length=length):
+                row = self.base_row()
+                row.update({"price_history_1y": [100.0] * length,
+                            "current_price": 102.0, "low52_status": "opportunity",
+                            "low52_score": 90, "quality_pct": 80})
+                self.assertIsNone(scanner._low52(row))
+                with mock.patch.object(scanner, "_structural_overlays", return_value={}):
+                    out = scanner.assess(row)
+                self.assertNotIn("fallen_angels", out["scanner_results"])
+                self.assertNotIn("lows_intact", out["scanner_results"])
+
+    def test_valid_220_close_history_remains_eligible_for_52_week_overlay(self):
+        row = self.base_row()
+        row.update({"price_history_1y": [100.0] * 220,
+                    "current_price": 102.0, "low52_status": "opportunity",
+                    "low52_score": 90, "quality_pct": 80})
+        self.assertIsNotNone(scanner._low52(row))
+        with mock.patch.object(scanner, "_structural_overlays", return_value={}):
+            out = scanner.assess(row)
+        self.assertIn("fallen_angels", out["scanner_results"])
+
     def test_scanner_best_remains_highest_strategy_score(self):
         row = self.base_row()
         row.update({
