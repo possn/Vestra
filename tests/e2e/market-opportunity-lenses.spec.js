@@ -40,7 +40,7 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
   }, [
     candidate('EARLY', { estimate_signal: 'improving', recovery_status: '', thesis_direction: 'up', opportunity_timing_score: 68 }),
     candidate('RECOV', { estimate_signal: 'improving', recovery_status: 'confirmed', opportunity_timing_score: 66 }),
-    candidate('LOW52', { low52_above_low_pct: 2.1, opportunity_timing_score: 55 }),
+    candidate('LOW52', { low52_above_low_pct: 2.1, low52_status: 'watch', opportunity_timing_score: 55 }),
     candidate('VALUE', {
       fair_value_upside_pct: 34,
       margin_of_safety_pct: 12,
