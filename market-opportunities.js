@@ -599,7 +599,7 @@
     // Register once: lens updates replace the cards, not their section.
     if(!section.dataset.ux453EvidenceGuard){
       section.addEventListener('click',event=>{
-        if(event.target.closest('.ux453-evidence > summary'))event.stopPropagation();
+        if(event.target.closest('.ux453-evidence'))event.stopPropagation();
       });
       section.dataset.ux453EvidenceGuard='1';
     }
