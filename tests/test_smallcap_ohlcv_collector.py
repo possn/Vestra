@@ -123,6 +123,29 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(merged["signals"],[])
         self.assertEqual([x["ticker"] for x in merged["observations"]],["NEW"])
 
+    def test_merge_slots_excludes_previous_tickers_outside_current_universe(self):
+        now=datetime(2026,10,30,18,tzinfo=timezone.utc)
+        schema="vestra_breakout_lab_smallcap_ohlcv_research_v1"
+        previous={"schema":schema,"generated_at":now.isoformat(),
+                  "observations":[{"ticker":"OLD","status":"evaluable_ohlcv",
+                                   "verified_prebreakout_setup":{"ticker":"OLD"}},
+                                  {"ticker":"A","status":"evaluable_ohlcv",
+                                   "verified_prebreakout_setup":{"ticker":"A"}}]}
+        current={"schema":schema,"generated_at":now.isoformat(),
+                 "universe_100m_500m_count":2,
+                 "observations":[{"ticker":"B","status":"evaluable_ohlcv",
+                                  "verified_prebreakout_setup":None}]}
+        merged=mod.merge_slots(current,previous,now,eligible_tickers={"A","B"})
+        self.assertEqual({x["ticker"] for x in merged["observations"]},{"A","B"})
+        self.assertEqual([x["ticker"] for x in merged["signals"]],["A"])
+        self.assertEqual(merged["excluded_outside_current_universe"],1)
+        self.assertEqual(merged["universe_coverage_pct"],100.0)
+        with self.assertRaises(ValueError):
+            mod.merge_slots(current,previous,now,eligible_tickers={"A"})
+        bad={**current,"observations":[{"ticker":"OLD","status":"evaluable_ohlcv"}]}
+        with self.assertRaises(ValueError):
+            mod.merge_slots(bad,previous,now,eligible_tickers={"A","B"})
+
     def test_rejects_invalid_limits(self):
         for slot,budget in ((-1,1),(0,0),(0,31)):
             with self.assertRaises(ValueError):mod.collect([],Provider(),slot,budget)
