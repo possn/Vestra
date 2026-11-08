@@ -47,6 +47,47 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertTrue(result["not_breakout_candidates"])
         self.assertTrue(all(x["liquidity_5m_usd_verified"] for x in result["observations"]))
         self.assertEqual(len([c for c in p.calls if c[0]=="download"]),2)
+    def test_recent_zero_volume_is_incomplete_research_not_an_invalid_price(self):
+        from datetime import timedelta
+        class NoTradeFrame:
+            empty=False
+            def iterrows(self):
+                start=datetime(2025,11,1,tzinfo=timezone.utc)
+                for i in range(250):
+                    yield start+timedelta(days=i), {
+                        "Open":10,"High":11,"Low":9,"Close":10,
+                        "Volume":0 if i==230 else 600_000}
+        from unittest.mock import patch
+        with patch("scripts.refresh_prebreakout_scanner.scan_bars") as scanner:
+            row=mod.inspect("ZERO",NoTradeFrame(),"USD",
+                            datetime(2026,7,10,tzinfo=timezone.utc))
+        self.assertEqual(row["status"],"zero_volume_interrupted_history")
+        self.assertEqual(row["zero_volume_sessions"],1)
+        self.assertTrue(row["setup_blocked"])
+        self.assertEqual(row["bars"],19)
+        scanner.assert_not_called()
+
+    def test_ancient_zero_volume_outside_220_consecutive_sessions_does_not_invalidate_fresh_data(self):
+        from datetime import timedelta
+        class OldNoTradeFrame:
+            empty=False
+            def iterrows(self):
+                start=datetime(2025,11,1,tzinfo=timezone.utc)
+                for i in range(250):
+                    yield start+timedelta(days=i), {
+                        "Open":10,"High":11,"Low":9,"Close":10,
+                        "Volume":0 if i==10 else 600_000}
+        from unittest.mock import patch
+        with patch("scripts.refresh_prebreakout_scanner.scan_bars",return_value=None) as scanner:
+            row=mod.inspect("ZERO",OldNoTradeFrame(),"USD",
+                            datetime(2026,7,10,tzinfo=timezone.utc))
+        self.assertEqual(row["status"],"evaluable_ohlcv")
+        self.assertEqual(row["zero_volume_sessions_before_contiguous_window"],1)
+        self.assertEqual(row["bars"],239)
+        bars=scanner.call_args.args[1]
+        self.assertEqual(len(bars),239)
+        self.assertTrue(all(b["volume"]>0 for b in bars))
+
     def test_currency_unknown_prevents_provider_download(self):
         class UnknownProvider(Provider):
             def Ticker(self,ticker):

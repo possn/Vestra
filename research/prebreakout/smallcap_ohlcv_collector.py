@@ -38,6 +38,9 @@ def inspect(ticker,frame,currency,checked_at):
         return {"ticker":ticker,"status":"no_ohlcv"}
     clean=[]
     full_bars=[]
+    zero_volume_sessions=0
+    # A no-trade day is a gap in evidence, not a valid liquidity bar.
+    # Only a new uninterrupted >=220-session segment may be screened.
     try:
         for timestamp,row in frame.iterrows():
             day=timestamp.date().isoformat()
@@ -47,15 +50,27 @@ def inspect(ticker,frame,currency,checked_at):
                 continue
             values=[float(row[k]) for k in ("Open","High","Low","Close","Volume")]
             o,h,l,c,v=values
-            if not all(map(math.isfinite,values)) or not (0<l<=min(o,c)<=max(o,c)<=h and v>0):
+            if not all(map(math.isfinite,values)) or not (0<l<=min(o,c)<=max(o,c)<=h and v>=0):
                 return {"ticker":ticker,"status":"invalid_ohlcv"}
-            if clean and day<=clean[-1][0]:
+            if full_bars and day<=full_bars[-1]['date']:
                 return {"ticker":ticker,"status":"unordered_or_duplicate_sessions"}
-            clean.append((day,c,v))
             full_bars.append({'date':day,'open':o,'high':h,'low':l,'close':c,'volume':v})
+            if v==0:
+                zero_volume_sessions+=1
+                clean=[]  # Do not bridge a zero-volume bar in the VCP window.
+            else:
+                clean.append((day,c,v))
     except (KeyError,TypeError,ValueError,OverflowError,AttributeError):
         return {"ticker":ticker,"status":"invalid_ohlcv"}
-    if len(clean)<MIN_BARS:return {"ticker":ticker,"status":"insufficient_ohlcv","bars":len(clean)}
+    if len(clean)<MIN_BARS:
+        return {"ticker":ticker,
+                "status":"zero_volume_interrupted_history" if zero_volume_sessions else "insufficient_ohlcv",
+                "bars":len(clean),"zero_volume_sessions":zero_volume_sessions,
+                "research_only":True,"setup_blocked":True}
+    if zero_volume_sessions:
+        # The previous segment is not allowed to create an artificial
+        # continuity bridge, even though it may be retained for provenance.
+        full_bars=full_bars[-len(clean):]
     # Actual USD turnover, not volume in shares or a forecast.
     turnover=sum(c*v for _,c,v in clean[-20:])/20
     last=clean[-1][0]
@@ -74,6 +89,7 @@ def inspect(ticker,frame,currency,checked_at):
                "gapRisk":"not_verified","earningsRiskGate":"unknown",
                "observedAt":checked_at.isoformat()}
     return {"ticker":ticker,"status":"evaluable_ohlcv","bars":len(clean),
+            "zero_volume_sessions_before_contiguous_window":zero_volume_sessions,
             "verified_prebreakout_setup":setup,
             "first_session":clean[0][0],"last_session":last,
             "average_dollar_volume_20_usd":round(turnover,2),
