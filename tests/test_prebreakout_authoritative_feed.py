@@ -10,5 +10,5 @@ class AuthoritativePrebreakoutTests(unittest.TestCase):
         fn=JS.split('function breakoutSetup(stock)',1)[1].split('function confirmed(s)',1)[0]
         self.assertLess(fn.index('if(prebreakoutFeedAuthoritative)return null;'),fn.index('const bars='))
     def test_cache_reloads_updated_script(self):
-        self.assertIn('market-opportunities.js?v=1.13',LOADER)
+        self.assertIn('market-opportunities.js?v=1.14',LOADER)
 if __name__=='__main__':unittest.main()
