@@ -30,6 +30,7 @@ import insiders
 
 VALID_XML = b"""<?xml version='1.0'?>
 <ownershipDocument>
+  <issuer><issuerCik>0000320193</issuerCik><issuerName>Example Corporation</issuerName></issuer>
   <reportingOwner>
     <reportingOwnerId><rptOwnerName>Jane Doe</rptOwnerName></reportingOwnerId>
     <reportingOwnerRelationship><isDirector>1</isDirector></reportingOwnerRelationship>
@@ -72,10 +73,11 @@ class InsiderFilingCacheTests(unittest.TestCase):
         key = insiders._cache_key("0000320193", filing["accession"])
         insiders._filing_cache[key] = {
             "cik": "0000320193",
+            "issuer_cik": "0000320193",
             "accession": filing["accession"],
             "filing_date": filing["filing_date"],
             "raw_nonderivative_transactions": 1,
-            "transactions": [{"ticker": "OLD", "accession": filing["accession"], "type": "buy", "value": 200.0}],
+            "transactions": [{"ticker": "OLD", "issuer_cik": "0000320193", "accession": filing["accession"], "type": "buy", "value": 200.0}],
             "source": "SEC EDGAR Form 4",
         }
         with mock.patch.object(insiders, "_get", side_effect=AssertionError("network must not be called")):
@@ -97,13 +99,58 @@ class InsiderFilingCacheTests(unittest.TestCase):
         self.assertEqual(cached["transactions"][0]["value"], 200.0)
         self.assertTrue(insiders._cache_dirty)
 
+    def test_issuer_cik_mismatch_is_not_attributed_to_requested_ticker(self):
+        filing = self.filing("0001-26-000010")
+        wrong = VALID_XML.replace(b"0000320193", b"0000000042")
+        with mock.patch.object(insiders, "_get", return_value=FakeResponse(wrong)):
+            tx, raw_count, detail = insiders._fetch_structured_filing(
+                "0000320193", filing, "AAPL")
+        self.assertEqual((tx, raw_count), ([], 0))
+        self.assertIn("issuer_cik_missing_or_mismatched", detail)
+        self.assertNotIn(insiders._cache_key("0000320193", filing["accession"]), insiders._filing_cache)
+
+    def test_missing_issuer_cik_is_not_a_confirmed_insider_buy(self):
+        filing = self.filing("0001-26-000011")
+        missing = VALID_XML.replace(
+            b"<issuer><issuerCik>0000320193</issuerCik><issuerName>Example Corporation</issuerName></issuer>",
+            b"")
+        with mock.patch.object(insiders, "_get", return_value=FakeResponse(missing)):
+            tx, raw_count, detail = insiders._fetch_structured_filing(
+                "0000320193", filing, "AAPL")
+        self.assertEqual((tx, raw_count), ([], 0))
+        self.assertIn("issuer_cik_missing_or_mismatched", detail)
+
+    def test_unverified_legacy_cache_does_not_bypass_xml_identity(self):
+        filing = self.filing("0001-26-000012")
+        insiders._filing_cache[insiders._cache_key("320193", filing["accession"])] = {
+            "cik": "320193", "accession": filing["accession"],
+            "raw_nonderivative_transactions": 1,
+            "transactions": [{"ticker": "AAPL", "type": "buy", "value": 402660529}],
+        }
+        self.assertIsNone(insiders._cached_filing("320193", filing, "AAPL"))
+        with mock.patch.object(insiders, "_get", return_value=FakeResponse(VALID_XML)):
+            tx, raw_count, detail = insiders._fetch_structured_filing("320193", filing, "AAPL")
+        self.assertEqual(raw_count, 1)
+        self.assertNotEqual(tx[0]["value"], 402660529)
+        self.assertEqual(insiders._filing_cache[insiders._cache_key("320193", filing["accession"])]["issuer_cik"], "0000320193")
+
+    def test_multiple_transactions_in_one_filing_are_not_deduplicated_by_accession(self):
+        filing = self.filing("0001-26-000013")
+        transaction = VALID_XML.split(b"<nonDerivativeTransaction>")[1].split(b"</nonDerivativeTransaction>")[0]
+        doubled = VALID_XML.replace(b"</nonDerivativeTable>",
+            b"<nonDerivativeTransaction>" + transaction + b"</nonDerivativeTransaction></nonDerivativeTable>")
+        with mock.patch.object(insiders, "_get", return_value=FakeResponse(doubled)):
+            tx, raw_count, _ = insiders._fetch_structured_filing("320193", filing, "AAPL")
+        self.assertEqual((len(tx), raw_count), (2, 2))
+        self.assertTrue(all(insiders._same_cik(x["issuer_cik"], "320193") for x in tx))
+
     def test_invalid_html_response_is_never_cached(self):
         filing = self.filing("0001-26-000003")
         with mock.patch.object(insiders, "_get", return_value=FakeResponse(b"<html>SEC FORM 4</html>")):
             tx, raw_count, detail = insiders._fetch_structured_filing("0000320193", filing, "AAPL")
         self.assertEqual(tx, [])
         self.assertEqual(raw_count, 0)
-        self.assertIn("found 0 transactions", detail)
+        self.assertIn("issuer_cik_missing_or_mismatched", detail)
         key = insiders._cache_key("0000320193", filing["accession"])
         self.assertNotIn(key, insiders._filing_cache)
         self.assertFalse(insiders._cache_dirty)
