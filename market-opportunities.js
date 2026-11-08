@@ -47,7 +47,9 @@
     }
   }
   let prebreakoutFeed=new Map();
-  let prebreakoutFeedAuthoritative=false;
+  // Fail closed from the first render, before the canonical feed request starts.
+  // Never promote locally inferred setups during a cold iPhone/PWA load.
+  let prebreakoutFeedAuthoritative=true;
   let prebreakoutFeedStatus='loading';
   async function loadPrebreakoutFeed(){
     // During publication checks, never present locally inferred setups as current signals.
@@ -714,8 +716,9 @@
 
   function start(){
     style();
-    opportunities();
+    // Establish canonical publisher authority before first opportunity render.
     loadPrebreakoutFeed();
+    opportunities();
     loadSmallcapFeed();
     loadPrebreakoutObservations();
     const root=document.getElementById('marketPrimary');if(!root)return;

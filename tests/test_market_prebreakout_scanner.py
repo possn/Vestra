@@ -7,6 +7,18 @@ LENSES=(ROOT/"market-opportunity-lenses.js").read_text(encoding="utf-8")
 LOADER=(ROOT/"market-static-universe.js").read_text(encoding="utf-8")
 
 class PreBreakoutContractTests(unittest.TestCase):
+    def test_first_render_cannot_present_locally_inferred_breakouts(self):
+        # No initial render may run before the canonical feed owns the lens.
+        self.assertIn("let prebreakoutFeedAuthoritative=true;", SCANNER)
+        startup=SCANNER.split("  function start(){",1)[1].split(
+            "  if(document.readyState",1)[0]
+        assert "loadPrebreakoutFeed();" in startup
+        assert "opportunities();" in startup
+        self.assertLess(startup.index("loadPrebreakoutFeed();"),
+                        startup.index("opportunities();"))
+        self.assertIn("if(prebreakoutFeedAuthoritative)return null;", SCANNER)
+        self.assertIn("prebreakoutFeedStatus='loading'", SCANNER)
+
     def test_discoverable_as_separate_market_tab(self):
         self.assertIn('data-vestra-lens="breakout"',LENSES)
         self.assertIn('Pré-breakout',LENSES)
