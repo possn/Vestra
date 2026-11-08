@@ -91,7 +91,7 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
   const whyNow = fixture.locator('[data-market-ticker="VALUE"] .ux453-why');
   await expect(evidence).not.toHaveAttribute('open');
   await expect(whyNow).toBeHidden();
-  await evidence.locator('summary').tap();
+  await evidence.locator('summary').click();
   await expect(evidence).toHaveAttribute('open');
   await expect(page.locator('#viewMarket')).toBeVisible();
   await expect(whyNow).toBeVisible();
