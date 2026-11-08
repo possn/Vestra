@@ -588,6 +588,28 @@
         Number.isInteger(feed.with_ohlcv) && feed.with_ohlcv > 0 &&
         Array.isArray(feed.signals);
       if (!fresh) throw new Error('Feed antigo ou incompleto');
+      // Same fail-closed coverage contract as the Market lens: an old
+      // cross-universe numerator (>100%) is not trustworthy research evidence.
+      const coverageAudit=feed.coverage_audit_24h;
+      const qualityAudit=feed.scan_quality_audit;
+      const observed24h=coverageAudit?.coverage_pct;
+      const quality24h=qualityAudit?.observed_24h_coverage_pct;
+      const validRate=value=>value==null||(typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100);
+      if(!validRate(observed24h)||!validRate(quality24h)||
+         (observed24h!=null&&quality24h!=null&&Math.abs(observed24h-quality24h)>0.01))
+        throw new Error('Cobertura OHLCV inválida: radar indisponível');
+      const scopedCount=coverageAudit?.current_eligible_verified_distinct;
+      if(scopedCount!=null){
+        const allCount=coverageAudit?.distinct_ohlcv_tickers;
+        const outsideCount=coverageAudit?.outside_current_universe_distinct;
+        const eligible=feed.eligible_universe;
+        if(!Number.isInteger(eligible)||eligible<=0||
+           ![scopedCount,allCount,outsideCount].every(Number.isInteger)||
+           scopedCount<0||scopedCount>eligible||outsideCount<0||
+           allCount!==scopedCount+outsideCount||
+           observed24h==null||Math.abs(observed24h-Math.round(10000*scopedCount/eligible)/100)>0.01)
+          throw new Error('Contagem de cobertura OHLCV inconsistente');
+      }
       const rows = feed.signals.filter(row => {
         const bar = Date.parse(String(row?.date || '')+'T23:59:59Z');
         return row?.source === 'yahoo:daily_ohlcv' &&
