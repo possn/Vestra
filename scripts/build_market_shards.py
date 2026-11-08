@@ -447,7 +447,13 @@ def _compact_startup_value(value):
 
 
 def pack_index_payload(index_payload: dict) -> dict:
-    """Dictionary-code repeated row keys while preserving all startup values."""
+    """Compact columnar wire format; dictionary-code repeated categorical strings.
+
+    Preserve every row value (including explicit nulls) and all original source
+    precision already determined by _compact_startup_value. Dictionaries are
+    scoped to a column so numeric financial values are never confused with codes.
+    The full dossier and source remain untouched.
+    """
     rows = index_payload.get("stocks") or []
     frequency: dict[str, int] = defaultdict(int)
     for row in rows:
@@ -456,8 +462,6 @@ def pack_index_payload(index_payload: dict) -> dict:
         for key in row:
             frequency[key] += 1
 
-    # Common fields first means sparse fields tend to the tail; trailing nulls can
-    # then be removed from each row without a bitmap or per-row key list.
     fields = sorted(frequency, key=lambda key: (-frequency[key], key))
     packed_rows = []
     for row in rows:
@@ -466,27 +470,66 @@ def pack_index_payload(index_payload: dict) -> dict:
             values.pop()
         packed_rows.append(values)
 
+    # Only use a categorical dictionary if its real serialized savings more
+    # than pay for the dictionary itself. Most identifier/name fields remain
+    # plain strings; common risk/sector/status labels typically save far more.
+    dictionaries = {}
+    for idx, field in enumerate(fields):
+        present = [r[idx] for r in packed_rows if idx < len(r) and r[idx] is not None]
+        if len(present) < 12 or any(not isinstance(value, str) for value in present):
+            continue
+        counts = defaultdict(int)
+        for value in present:
+            counts[value] += 1
+        options = sorted(counts, key=lambda x: (-counts[x], x))
+        positions = {value: i for i, value in enumerate(options)}
+        original_bytes = sum(len(json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+                             for value in present)
+        coded_bytes = sum(len(str(positions[value])) for value in present)
+        dictionary_bytes = len(json.dumps({str(idx): options}, ensure_ascii=False,
+                                          separators=(",", ":")).encode("utf-8"))
+        if original_bytes - coded_bytes - dictionary_bytes <= 256:
+            continue
+        dictionaries[str(idx)] = options
+        for row in packed_rows:
+            if idx < len(row) and isinstance(row[idx], str):
+                row[idx] = positions[row[idx]]
+
     meta = {k: v for k, v in index_payload.items() if k != "stocks"}
-    return {
-        **meta,
-        "layout": "field_rows_v1",
-        "fields": fields,
-        "rows": packed_rows,
-    }
+    if dictionaries:
+        return {**meta, "layout": "field_rows_v2", "fields": fields,
+                "string_dictionaries": dictionaries, "rows": packed_rows}
+    return {**meta, "layout": "field_rows_v1", "fields": fields, "rows": packed_rows}
 
 
 def unpack_index_payload(packed: dict) -> dict:
-    """Reference decoder used by tests and mirrored by the browser loader."""
-    if packed.get("layout") != "field_rows_v1":
+    """Reference decoder for both v1 and v2; browser mirrors this contract."""
+    layout = packed.get("layout")
+    if layout not in {"field_rows_v1", "field_rows_v2"}:
         return packed
     fields = packed.get("fields") or []
     rows = packed.get("rows") or []
+    dictionaries = packed.get("string_dictionaries", {}) if layout == "field_rows_v2" else {}
+    if not isinstance(dictionaries, dict):
+        raise ValueError("invalid categorical string dictionaries")
     stocks = []
     for values in rows:
         if not isinstance(values, list):
             continue
-        stocks.append({field: values[i] for i, field in enumerate(fields[:len(values)])})
-    meta = {k: v for k, v in packed.items() if k not in {"layout", "fields", "rows"}}
+        out = {}
+        for idx, field in enumerate(fields[:len(values)]):
+            value = values[idx]
+            options = dictionaries.get(str(idx))
+            if options is not None and value is not None:
+                if (not isinstance(options, list) or isinstance(value, bool)
+                        or not isinstance(value, int) or value < 0 or value >= len(options)
+                        or not isinstance(options[value], str)):
+                    raise ValueError("invalid categorical code in market startup")
+                value = options[value]
+            out[field] = value
+        stocks.append(out)
+    meta = {k: v for k, v in packed.items()
+            if k not in {"layout", "fields", "rows", "string_dictionaries"}}
     return {**meta, "stocks": stocks}
 
 
