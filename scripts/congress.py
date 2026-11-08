@@ -81,8 +81,14 @@ def _load_snapshot() -> dict | None:
     return payload
 
 
+def _us_ticker_identity(value: str) -> str:
+    """Preserve share classes; remove only an explicit US market suffix."""
+    ticker = str(value or "").strip().upper().replace("-", ".")
+    return ticker[:-3] if ticker.endswith(".US") else ticker
+
+
 def _normalize_one(x: dict) -> tuple[str, dict] | None:
-    ticker = str(x.get("ticker") or "").strip().upper()
+    ticker = _us_ticker_identity(x.get("ticker"))
     transaction_date = str(x.get("transaction_date") or "").strip()
     member = str(x.get("member") or "Membro do Congresso").strip()
     if not ticker or not transaction_date:
@@ -126,7 +132,7 @@ def _trade_key(ticker: str, trade: dict) -> tuple:
 
 def fetch_congress_for_universe(us_tickers: list[str]) -> dict[str, list[dict]]:
     """Map the already-validated canonical snapshot onto Vestra's US universe."""
-    universe = {str(t).split(".")[0].upper() for t in us_tickers if t}
+    universe = {_us_ticker_identity(t) for t in us_tickers if _us_ticker_identity(t)}
     if not universe:
         return {}
     payload = _load_snapshot()
