@@ -124,6 +124,32 @@ class ScannerFeaturedOpportunityTests(unittest.TestCase):
             out = scanner.assess(row)
         self.assertIn("fallen_angels", out["scanner_results"])
 
+    def test_nonfinite_and_boolean_fundamental_evidence_never_promotes(self):
+        for field in ("score", "data_coverage_pct", "critical_metric_coverage_pct", "confidence_score"):
+            for bad in (float("inf"), float("-inf"), float("nan"), True, False):
+                with self.subTest(field=field, bad=bad):
+                    row = self.base_row()
+                    row[field] = bad
+                    with mock.patch.object(scanner, "_structural_overlays") as overlays:
+                        out = scanner.assess(row)
+                    overlays.assert_not_called()
+                    self.assertFalse(out["opportunity_eligible"])
+                    self.assertEqual(out["scanner_tags"], [])
+
+    def test_nonfinite_and_boolean_close_history_is_not_a_low52_minimum(self):
+        for bad in (True, False, float("inf"), float("-inf"), float("nan")):
+            with self.subTest(bad=bad):
+                row = self.base_row()
+                row["price_history_1y"] = [100.0] * 219 + [bad]
+                row["current_price"] = 101.0
+                self.assertIsNone(scanner._low52(row))
+
+    def test_valid_finite_numeric_evidence_still_accepted(self):
+        row = self.base_row()
+        with mock.patch.object(scanner, "_structural_overlays", return_value={}):
+            out = scanner.assess(row)
+        self.assertFalse(out.get("scanner_suppressed_reason"))
+
     def test_scanner_best_remains_highest_strategy_score(self):
         row = self.base_row()
         row.update({
