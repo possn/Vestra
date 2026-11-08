@@ -58,19 +58,23 @@
       if(!r.ok)throw new Error(`Feed político HTTP ${r.status}`);
       const d=await r.json();
       if(!politiciansSnapshotFresh(d))throw new Error('Feed político inválido ou desactualizado');
-      recentTrades=d.trades.map(x=>normalizeTrade(x,'Congress')).filter(x=>x.ticker&&x.representative);
-      memberDirectory=d.members.map(x=>buildMember(x,'Congress')).filter(x=>x.name);
-      feedMeta=d;
-
+      // Assemble both feeds off-screen: an in-flight Executive download must
+      // never expose half-updated search/selection state on iPhone.
+      const nextTrades=d.trades.map(x=>normalizeTrade(x,'Congress')).filter(x=>x.ticker&&x.representative);
+      const nextMembers=d.members.map(x=>buildMember(x,'Congress')).filter(x=>x.name);
+      let nextExecutiveMeta={};
       try{
         const er=await fetch(`./data/executives.json?ts=${Date.now()}`,{cache:'no-store'});
         if(er.ok){
-          const ed=await er.json();executiveMeta=ed||{};
-          const execTrades=(ed?.trades||[]).map(x=>normalizeTrade(x,'Executive')).filter(x=>x.ticker&&x.representative);
-          const execPeople=(ed?.people||[]).map(x=>buildMember(x,'Executive')).filter(x=>x.name);
-          recentTrades.push(...execTrades);memberDirectory.push(...execPeople);
+          const ed=await er.json();nextExecutiveMeta=ed||{};
+          nextTrades.push(...(ed?.trades||[]).map(x=>normalizeTrade(x,'Executive')).filter(x=>x.ticker&&x.representative));
+          nextMembers.push(...(ed?.people||[]).map(x=>buildMember(x,'Executive')).filter(x=>x.name));
         }
       }catch(_){}
+      recentTrades=nextTrades;
+      memberDirectory=nextMembers;
+      feedMeta=d;
+      executiveMeta=nextExecutiveMeta;
       enrichMemberCounts();
       return true;
     })().finally(()=>{loading=null;});
@@ -141,7 +145,7 @@
     root.innerHTML=`<section class="market-section politicians-section"><div class="market-section__head"><div><h3>Políticos</h3><p>Top 10 compras e vendas · Congresso + Executivo · ${esc(coverage)}.</p></div><span class="market-data-age">${generated?esc(ageLabel(generated)):''}</span></div><div class="politician-view-tabs"><button type="button" data-politician-view="all" class="${view==='all'?'is-active':''}">Todos</button><button type="button" data-politician-view="favourites" class="${view==='favourites'?'is-active':''}">★ Favoritos <span>${favs().size}</span></button></div><div class="politician-picker">${pickerHTML()}</div><div id="politicianProfile">${body}</div><p class="market-source-credit">Congresso: House Clerk + Senate eFD · Executivo: OGE/White House. Rankings usam o ponto médio do intervalo divulgado; não são recomendações de investimento.</p></section>`;
   }
 
-  async function openPoliticians(){const root=document.getElementById('marketPrimary');if(!root)return;document.querySelectorAll('.market-mode').forEach(x=>x.classList.remove('is-active'));document.querySelector('[data-politicians-mode]')?.classList.add('is-active');root.innerHTML='<div class="market-loader"><span></span><div>A carregar divulgações políticas…</div></div>';try{await loadBase();await render();}catch(e){root.innerHTML=`<div class="market-empty market-empty--error"><strong>Dados políticos indisponíveis</strong><br><span>${esc(e?.message||'Não foi possível carregar o snapshot Vestra.')}</span></div>`;}}
+  async function openPoliticians(){const root=document.getElementById('marketPrimary');if(!root)return;document.querySelectorAll('.market-mode').forEach(x=>x.classList.remove('is-active'));document.querySelector('[data-politicians-mode]')?.classList.add('is-active');root.innerHTML='<div class="market-loader"><span></span><div>A carregar divulgações políticas…</div></div>';try{await loadBase();if(!document.querySelector('[data-politicians-mode]')?.classList.contains('is-active'))return;await render();}catch(e){if(!document.querySelector('[data-politicians-mode]')?.classList.contains('is-active'))return;root.innerHTML=`<div class="market-empty market-empty--error"><strong>Dados políticos indisponíveis</strong><br><span>${esc(e?.message||'Não foi possível carregar o snapshot Vestra.')}</span></div>`;}}
   function installButton(){const grid=document.querySelector('.market-mode-grid');if(!grid||grid.querySelector('[data-politicians-mode]'))return;const btn=document.createElement('button');btn.className='market-mode';btn.type='button';btn.dataset.politiciansMode='1';btn.innerHTML='<span class="market-mode__icon">♜</span><strong>Políticos</strong>';const smart=grid.querySelector('[data-market-mode="smart"]');smart?.insertAdjacentElement('afterend',btn)||grid.appendChild(btn);}
   function addStyle(){if(document.getElementById('vestra-politicians-style-v22'))return;const link=document.createElement('link');link.id='vestra-politicians-style-v22';link.rel='stylesheet';link.href='politicians.css?v=1.1';document.head.appendChild(link);}
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-politicians-mode]');if(b){e.preventDefault();e.stopPropagation();openPoliticians();return;}const searchResult=e.target.closest?.('[data-politician-search-result]');if(searchResult){e.preventDefault();openSearchResult(searchResult.dataset.politicianSearchResult);return;}const fav=e.target.closest?.('[data-politician-favourite]');if(fav){e.preventDefault();toggleFavourite(fav.dataset.politicianFavourite);return;}const v=e.target.closest?.('[data-politician-view]');if(v){e.preventDefault();view=v.dataset.politicianView||'all';render();return;}const open=e.target.closest?.('[data-politician-open]');if(open){e.preventDefault();selected=open.dataset.politicianOpen||'all';searchQuery='';view='all';render();return;}});
