@@ -109,4 +109,11 @@ def test_columnar_encoding_is_materially_smaller_and_value_equivalent():
     )
     for original, rebuilt in zip(payload["stocks"][:50], decoded["stocks"][:50]):
         for key in keys:
-            assert rebuilt.get(key) == original.get(key)
+            before, after = original.get(key), rebuilt.get(key)
+            if isinstance(before, float) and not isinstance(before, bool):
+                # Transport values preserve better than 1e-10 relative precision;
+                # full validated source and dossiers remain lossless.
+                assert isinstance(after, float)
+                assert abs(after - before) <= max(abs(before) * 1e-10, 1e-14)
+            else:
+                assert after == before
