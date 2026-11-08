@@ -35,7 +35,8 @@
       const newest = text(data.newest_disclosure || data.source_last_updated).slice(0, 10);
       const ms = newest ? new Date(`${newest}T00:00:00Z`).valueOf() : NaN;
       if (!Number.isFinite(ms)) return false;
-      return now() - ms <= maxSnapshotAge;
+      const age = now() - ms;
+      return age >= 0 && age <= maxSnapshotAge;
     }
 
     // Preserve share classes and exchange suffixes; BRK.A must never absorb BRK.B.
@@ -95,7 +96,9 @@
         try {
           try {
             const cached = JSON.parse(storage.getItem(cacheKey) || 'null');
-            if (cached && Array.isArray(cached.trades) && now() - Number(cached.ts || 0) < cacheMaxAge) {
+            const cachedAge = now() - Number(cached?.ts);
+            if (cached && Array.isArray(cached.trades) && Number.isFinite(cachedAge)
+                && cachedAge >= 0 && cachedAge < cacheMaxAge) {
               state.trades = deduplicateTrades(cached.trades);
               state.loaded = true;
               state.error = '';

@@ -58,7 +58,8 @@ def _is_fresh(payload: dict) -> bool:
         age = (dt.date.today() - dt.date.fromisoformat(newest)).days
     except (TypeError, ValueError):
         return False
-    return age <= MAX_STALE_DAYS
+    # Future-dated disclosures must never be treated as fresh evidence.
+    return 0 <= age <= MAX_STALE_DAYS
 
 
 def _load_snapshot() -> dict | None:
