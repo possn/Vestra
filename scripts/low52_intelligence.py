@@ -6,13 +6,15 @@ score until coverage and confidence cross minimum thresholds.
 """
 from __future__ import annotations
 
+import math
+
 
 def _n(v):
     try:
-        if v is None or v == "":
+        if v is None or isinstance(v, bool) or v == "":
             return None
         x = float(v)
-        return x if x == x else None
+        return x if math.isfinite(x) else None
     except Exception:
         return None
 

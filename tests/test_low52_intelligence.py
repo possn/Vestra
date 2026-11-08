@@ -54,6 +54,24 @@ class Low52IntelligenceTests(unittest.TestCase):
         self.assertIsNone(result["low52_score"])
         self.assertIn("Cobertura fundamental inferior a 55%", result["low52_reasons"])
 
+    def test_nonfinite_and_boolean_evidence_does_not_create_low52_opportunity(self):
+        for bad in (float("inf"), float("-inf"), float("nan"), True, False):
+            with self.subTest(value=bad):
+                for field in ("score", "data_coverage_pct", "confidence_score"):
+                    row = quality_row()
+                    row[field] = bad
+                    result = assess(row)
+                    self.assertEqual(result["low52_status"], "insufficient")
+                    self.assertIsNone(result["low52_score"])
+
+    def test_infinite_resilience_metric_is_not_counted_as_quality(self):
+        row = quality_row()
+        row.update({"quality_pct": float("inf"), "balance_pct": float("inf"),
+                    "cashflow_pct": float("inf"), "execution_pct": float("inf")})
+        result = assess(row)
+        self.assertEqual(result["low52_status"], "insufficient")
+        self.assertIsNone(result["low52_score"])
+
     def test_missing_risk_gate_cannot_be_inferred_clear(self):
         for missing in (None, "", "unknown"):
             with self.subTest(missing=missing):
