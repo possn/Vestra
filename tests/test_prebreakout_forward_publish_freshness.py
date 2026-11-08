@@ -1,11 +1,12 @@
 """Forward publisher checks previous genuine evaluation, not newly generated output."""
 import datetime
+import sys
 import unittest
 from pathlib import Path
 
-from scripts.defer_main_publish_if_code_pr import forward_publication_overdue
-
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from scripts.defer_main_publish_if_code_pr import forward_publication_overdue
 UTC = datetime.timezone.utc
 
 
