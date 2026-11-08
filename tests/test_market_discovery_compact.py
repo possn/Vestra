@@ -6,7 +6,8 @@ JS=(ROOT/'market-opportunities.js').read_text(encoding='utf-8')
 CSS=(ROOT/'market-opportunities.css').read_text(encoding='utf-8')
 class DiscoveryCompactContracts(unittest.TestCase):
  def test_mobile_card_has_native_disclosure_with_all_evidence(self):
-  self.assertIn('class="ux453-evidence-toggle" type="button" aria-expanded="false"',JS)
+  self.assertIn('class="ux453-evidence-toggle" type="button" aria-expanded="${isExpanded}"',JS)
+  self.assertIn("expandedOpportunityTickers",JS)
   self.assertIn('class="ux453-evidence-content" hidden',JS)
   self.assertIn('${whyNowHtml(s)}',JS)
   self.assertIn('${sleevePills}',JS)
