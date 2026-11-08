@@ -20,6 +20,9 @@ def build(root:Path=ARCHIVE, now:datetime|None=None, days:int=7)->dict:
     now=now.astimezone(timezone.utc)
     observations={}
     checked=0
+    slots_with_published_signals=0
+    published_signal_rows=0
+    freshly_verified_rows=0
     for path in sorted(root.glob("*/slots/*-slot*.json")):
         try:
             payload=json.loads(path.read_text(encoding="utf-8"))
@@ -32,6 +35,9 @@ def build(root:Path=ARCHIVE, now:datetime|None=None, days:int=7)->dict:
             if type(slot) is not int or slot!=ts.hour//6 or not isinstance(payload.get("signals"),list):continue
             if path.name!=f"{ts.date().isoformat()}-slot{slot}.json":continue
             checked+=1
+            published_signal_rows+=len(payload["signals"])
+            if payload["signals"]:
+                slots_with_published_signals+=1
             for row in payload["signals"]:
                 if not isinstance(row,dict):continue
                 # A carried signal was not observed again at this scan slot.
@@ -47,6 +53,7 @@ def build(root:Path=ARCHIVE, now:datetime|None=None, days:int=7)->dict:
                     score=float(row["score"])
                 except (ValueError,TypeError,KeyError):continue
                 if not 0<=score<=100:continue
+                freshly_verified_rows+=1
                 record={"ticker":ticker,"stage":row["stage"],"score":score,
                         "signal_date":row.get("date"),"observed_at":ts.isoformat(),
                         "scan_slot_utc":slot,"current":False}
@@ -54,8 +61,16 @@ def build(root:Path=ARCHIVE, now:datetime|None=None, days:int=7)->dict:
                     observations[ticker]=record
         except (OSError,ValueError,TypeError,KeyError,json.JSONDecodeError):
             continue
+    status=("no_valid_archived_slots" if not checked
+            else "no_published_signals" if not published_signal_rows
+            else "no_eligible_fresh_signals" if not observations
+            else "historical_observations_available")
     return {"schema":"vestra_prebreakout_observations_v1","generated_at":now.isoformat(),
             "historical_only":True,"slots_considered":checked,
+            "slots_with_published_signals":slots_with_published_signals,
+            "published_signal_rows":published_signal_rows,
+            "freshly_verified_rows":freshly_verified_rows,
+            "observation_status":status,
             "observations":sorted(observations.values(),key=lambda r:(-r["score"],r["ticker"]))[:100]}
 
 if __name__=="__main__":
