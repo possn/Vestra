@@ -112,9 +112,13 @@ def verify(root:Path=ROOT):
     archived=json.loads(file.read_text(encoding="utf-8"))
     if archived!=feed:raise ValueError("published slot differs from feed")
     if utc.date().isoformat()>="2026-11-08":
-        checked=assess_gate_funnel(feed,require=True)
-        if checked["status"]!="valid":
-            raise ValueError("invalid published gate funnel: "+checked["reason"])
+        # Publication must enforce the complete telemetry and current-universe
+        # coverage contract, not only the structural funnel. Validate as of the
+        # producer timestamp so GitHub scheduling delays do not reclassify
+        # otherwise valid archived evidence as invalid due to wall-clock age.
+        checked=assess_freshness(feed,utc)
+        if checked["status"]!="healthy":
+            raise ValueError("invalid published scanner evidence: "+str(checked.get("reason") or checked["status"]))
     if index.get("schema")!="vestra_prebreakout_observations_v1" or index.get("historical_only") is not True:
         raise ValueError("observations must remain historical only")
     if not isinstance(index.get("observations"),list) or index.get("slots_considered",0)<1:
