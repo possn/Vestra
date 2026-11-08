@@ -104,7 +104,25 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
   expect(hit.width).toBeGreaterThan(25);
   expect(hit.height).toBeGreaterThan(20);
   expect(hit.targetIsButton, JSON.stringify(hit)).toBe(true);
+  await toggle.evaluate(el=>{
+    window.__evidenceClickDiagnostic={sameOriginal:el,events:[]};
+    const log=(where,event)=>{
+      window.__evidenceClickDiagnostic.events.push({where,target:event.target?.className||event.target?.tagName,
+        phase:event.eventPhase,defaultPrevented:event.defaultPrevented});
+    };
+    document.addEventListener('click',event=>log('documentCapture',event),true);
+    el.closest('.market-section')?.addEventListener('click',event=>log('sectionCapture',event),true);
+    el.addEventListener('click',event=>log('buttonCapture',event),true);
+    el.addEventListener('pointerdown',event=>log('pointerdown',event),true);
+  });
   await toggle.click();
+  const evidenceDiagnostic=await page.evaluate(()=>{
+    const log=window.__evidenceClickDiagnostic||{};
+    const el=document.querySelector('#lensFixture [data-market-ticker="VALUE"] .ux453-evidence-toggle');
+    return {events:log.events,originalConnected:!!log.sameOriginal?.isConnected,sameNode:el===log.sameOriginal,
+      aria:el?.getAttribute('aria-expanded'),marketVisible:!document.querySelector('#viewMarket')?.hidden};
+  });
+  console.log('EVIDENCE_INTERACTION '+JSON.stringify(evidenceDiagnostic));
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('#viewMarket')).toBeVisible();
   await expect(whyNow).toBeVisible();
