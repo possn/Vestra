@@ -19,6 +19,18 @@ class PrebreakoutDailyHomeContract(unittest.TestCase):
         self.assertIn("Risco: breakout ainda não confirmado", SRC)
         self.assertIn("Score técnico, não probabilidade", SRC)
 
+    def test_home_rejects_impossible_and_cross_universe_coverage(self):
+        # The 07/11 publication reported 105.18% and must never be allowed
+        # to appear as verified research on Home, even within its 72h horizon.
+        self.assertIn("if(!validRate(observed24h)||!validRate(quality24h)", SRC)
+        self.assertIn("Math.abs(observed24h-quality24h)>0.01", SRC)
+        self.assertIn("scopedCount>eligible", SRC)
+        self.assertIn("allCount!==scopedCount+outsideCount", SRC)
+        self.assertIn("Cobertura OHLCV inválida: radar indisponível", SRC)
+        # Keep the historical snapshot; do not manufacture today's scan.
+        self.assertIn("throw new Error('Feed antigo ou incompleto')", SRC)
+        self.assertIn("Cobertura global não verificada · ranking parcial", SRC)
+
     def test_compact_visuals_use_actual_dossier_evidence(self):
         self.assertIn("window.VestraMarketData?.hydrateTicker", SRC)
         self.assertIn("fetch('./data/dossiers-manifest.json'", SRC)
