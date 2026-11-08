@@ -590,11 +590,19 @@
     const p=stats(s),sc=lensScore(s,lens),tm=timing(s),sl=sleeveScores(s),coverage=sleeveCoverage(s),dom=credibleDominantSleeve(s),capText=capSummary(s);
     const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
       .filter(([,v])=>v!=null).map(([label,v,key])=>`<span class="${key===dom?'is-driver':''}">${label} ${Math.round(v)}${coverage[key]!=null&&coverage[key]<70?' · evidência limitada':''}</span>`).join('');
-    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
+    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><details class="ux453-evidence"><summary>Ver análise e indicadores</summary><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></details></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
   }
 
   function decorate(section){
     const list=section?.querySelector('.market-list');if(!list)return;
+    // Disclosure is a native keyboard-accessible control, not a ticker action.
+    // Register once: lens updates replace the cards, not their section.
+    if(!section.dataset.ux453EvidenceGuard){
+      section.addEventListener('click',event=>{
+        if(event.target.closest('.ux453-evidence > summary'))event.stopPropagation();
+      });
+      section.dataset.ux453EvidenceGuard='1';
+    }
     const rows=[...list.querySelectorAll('.market-row')];
     rows.forEach((r,i)=>{
       r.classList.toggle('ux454-podium',i<3);
@@ -704,7 +712,7 @@
   }
   function selectLens(lens,sectorOverride=''){activeLens=LENSES.has(t(lens))?t(lens):'all';return opportunities(activeLens,sectorOverride);}
 
-  function style(){if(document.getElementById('vestra-market-opportunities-style'))return;const link=document.createElement('link');link.id='vestra-market-opportunities-style';link.rel='stylesheet';link.href='market-opportunities.css?v=20261031-editorial';document.head.appendChild(link);}
+  function style(){if(document.getElementById('vestra-market-opportunities-style'))return;const link=document.createElement('link');link.id='vestra-market-opportunities-style';link.rel='stylesheet';link.href='market-opportunities.css?v=20261108-compact-evidence';document.head.appendChild(link);}
 
   function observerNeedsRefresh(root){
     const section=root.querySelector('.market-section:has(.ux454-opportunity-guide)')||[...root.querySelectorAll('.market-section')].find(x=>/Oportunidades (agora|emergentes)|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Small Caps|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)));
