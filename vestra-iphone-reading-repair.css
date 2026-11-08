@@ -1,0 +1,198 @@
+/* Vestra 2.0 — screenshot-led iPhone reading/scroll repair, 2026-11-08.
+   Scope: named, existing views. Preserve all actions and data. */
+#viewDividends .view-intro,
+#viewAnalysis .view-intro {
+  background:linear-gradient(135deg,#f2f0e8 0%,#e3e8e1 100%)!important;
+  color:#17343b!important;
+  -webkit-text-fill-color:#17343b!important;
+  border-color:#bdc9c2!important;
+  box-shadow:none!important;
+}
+#viewDividends .view-intro :is(h2,p),
+#viewAnalysis .view-intro :is(h2,p) {
+  color:#17343b!important;
+  -webkit-text-fill-color:#17343b!important;
+  opacity:1!important;
+}
+#viewDividends .view-intro p,
+#viewAnalysis .view-intro p {
+  color:#3d575a!important;
+  -webkit-text-fill-color:#3d575a!important;
+  font-size:clamp(13px,3.5vw,16px)!important;
+  line-height:1.52!important;
+  font-weight:550!important;
+}
+#viewDividends .view-intro__eyebrow,
+#viewAnalysis .view-intro__eyebrow {
+  color:#785a25!important;
+  -webkit-text-fill-color:#785a25!important;
+  opacity:1!important;
+  font-size:11px!important;
+}
+#viewAssets #portfolioToolsStrip>summary :is(small,strong),
+#viewAssets #portfolioToolsStrip>summary div {
+  color:#f2eee5!important;
+  -webkit-text-fill-color:#f2eee5!important;
+  opacity:1!important;
+}
+#viewAssets #portfolioToolsStrip>summary small {
+  color:#d8bd87!important;
+  -webkit-text-fill-color:#d8bd87!important;
+  font-size:11px!important;
+  letter-spacing:.12em;
+}
+#viewAssets #portfolioToolsStrip>summary strong {
+  font-size:clamp(24px,5.5vw,33px)!important;
+  font-weight:500!important;
+  line-height:1.2!important;
+}
+/* Context tabs are part of the document, never a floating pane across charts.
+   Horizontal scroll is retained for top-level analysis modes. */
+#viewAnalysis .analysis-tabs-wrap {
+  position:relative!important;
+  top:auto!important;
+  z-index:1!important;
+  margin:14px 0 12px!important;
+  padding:4px!important;
+  overflow:visible!important;
+  transform:none!important;
+  contain:none!important;
+  border:1px solid #c0cec7!important;
+  border-radius:18px!important;
+  background:#ebece5!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+#viewAnalysis .analysis-tabs {
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:8px!important;
+  overflow-x:auto!important;
+  -webkit-overflow-scrolling:touch;
+  padding:5px!important;
+}
+#viewAnalysis .analysis-tab {
+  min-height:46px!important;
+  padding:10px 14px!important;
+  font-size:13px!important;
+  border-radius:13px!important;
+}
+#viewAnalysis #portfolioSubTabs {
+  position:relative!important;
+  top:auto!important;
+  z-index:1!important;
+  margin:0 0 20px!important;
+  padding:8px!important;
+  border-radius:17px!important;
+  background:#e9ebe5!important;
+  box-shadow:none!important;
+  overflow-x:auto!important;
+  -webkit-overflow-scrolling:touch;
+  max-width:100%!important;
+}
+#viewAnalysis #portfolioSubTabs .seg__btn {
+  min-height:44px!important;
+  min-width:90px;
+  font-size:13px!important;
+  line-height:1.3!important;
+  padding:9px 12px!important;
+  white-space:normal!important;
+}
+#viewAnalysis .analysisPanelTab {scroll-margin-top:28px!important}
+@media(max-width:700px){
+  /* Bottom navigation must never cover the end of a financial table. */
+  body .main {
+    padding-bottom:calc(118px + env(safe-area-inset-bottom,0px))!important;
+  }
+  body .main > .view {
+    scroll-padding-bottom:calc(118px + env(safe-area-inset-bottom,0px));
+  }
+  #viewDividends .view-intro,
+  #viewAnalysis .view-intro {
+    min-height:116px!important;
+    padding:20px 18px!important;
+    gap:14px!important;
+    border-radius:20px!important;
+  }
+  #viewDividends .view-intro__mark,
+  #viewAnalysis .view-intro__mark {
+    flex:0 0 48px!important;
+    width:48px!important;
+    height:48px!important;
+  }
+  #viewAnalysis #portfolioSubTabs {
+    display:flex;
+    gap:6px;
+    scrollbar-width:none;
+  }
+  #viewAnalysis #portfolioSubTabs .seg__btn {flex:0 0 auto!important;}
+}
+
+/* Sector ledger: readable two-row composition on narrow iPhone screens.
+   All 113+ positions, values and dossier buttons remain accessible. */
+@media(max-width:700px){
+  #viewAssets .portfolio-sector-group > summary{
+    min-height:76px!important;
+    padding:16px!important;
+    column-gap:10px!important;
+  }
+  #viewAssets .portfolio-sector-title strong{
+    font-size:15px!important;
+    line-height:1.35!important;
+  }
+  #viewAssets .portfolio-sector-title small,
+  #viewAssets .portfolio-sector-total small{
+    font-size:12px!important;
+    line-height:1.4!important;
+  }
+  #viewAssets .portfolio-sector-asset{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:10px 12px!important;
+    align-items:center!important;
+    min-width:0!important;
+    padding:16px!important;
+  }
+  #viewAssets .portfolio-sector-asset__main{
+    grid-column:1/-1!important;
+    min-width:0!important;
+  }
+  #viewAssets .portfolio-sector-asset__main strong{
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    overflow-wrap:anywhere!important;
+    font-size:15px!important;
+    line-height:1.35!important;
+  }
+  #viewAssets .portfolio-sector-asset__main span,
+  #viewAssets .portfolio-sector-asset__metrics span{
+    font-size:12px!important;
+    line-height:1.45!important;
+  }
+  #viewAssets .portfolio-sector-asset__metrics{
+    grid-column:1!important;
+    text-align:left!important;
+    min-width:0!important;
+  }
+  #viewAssets .portfolio-sector-asset__metrics strong{
+    font-size:15px!important;
+    line-height:1.4!important;
+  }
+  #viewAssets .portfolio-sector-research{
+    grid-column:2!important;
+    justify-self:end!important;
+    min-height:44px!important;
+    min-width:96px!important;
+    padding:10px 12px!important;
+    font-size:13px!important;
+    line-height:1.3!important;
+    white-space:nowrap;
+  }
+  #viewAssets .portfolio-sector-more>summary{
+    padding:15px 16px!important;
+    font-size:13px!important;
+    min-height:44px!important;
+  }
+}
