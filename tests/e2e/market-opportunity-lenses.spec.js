@@ -92,7 +92,21 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
   const toggle = evidence.locator('.ux453-evidence-toggle');
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await expect(whyNow).toBeHidden();
+  const beforeDebug = await toggle.evaluate(el=>{
+    const row=el.closest('[data-market-ticker]');
+    window.__disclosureDebug={events:0,before:el.getAttribute('aria-expanded'),rowConnected:row?.isConnected};
+    el.addEventListener('click',()=>{window.__disclosureDebug.events++;window.__disclosureDebug.inside=el.getAttribute('aria-expanded');},{capture:false});
+    return window.__disclosureDebug;
+  });
   await toggle.click();
+  const afterDebug = await page.evaluate(()=>{
+    const el=document.querySelector('#lensFixture [data-market-ticker="VALUE"] .ux453-evidence-toggle');
+    return {...window.__disclosureDebug,current:el?.getAttribute('aria-expanded'),
+      same:!!el?.isConnected,
+      nodeCount:document.querySelectorAll('#lensFixture [data-market-ticker="VALUE"]').length,
+      section:document.querySelector('#lensFixture')?.parentElement?.id};
+  });
+  console.log('DISCLOSURE_WEBKIT_DEBUG '+JSON.stringify({beforeDebug,afterDebug}));
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('#viewMarket')).toBeVisible();
   await expect(whyNow).toBeVisible();
