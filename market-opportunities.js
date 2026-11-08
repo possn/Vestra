@@ -595,16 +595,20 @@
 
   function decorate(section){
     const list=section?.querySelector('.market-list');if(!list)return;
-    // Disclosure is a native keyboard-accessible control, not a ticker action.
-    // Register once: lens updates replace the cards, not their section.
-    if(!section.dataset.ux453EvidenceGuard){
-      section.addEventListener('click',event=>{
-        if(event.target.closest('.ux453-evidence'))event.stopPropagation();
-      });
-      section.dataset.ux453EvidenceGuard='1';
-    }
     const rows=[...list.querySelectorAll('.market-row')];
     rows.forEach((r,i)=>{
+      const disclosure=r.querySelector('.ux453-evidence');
+      const summary=disclosure?.querySelector('summary');
+      if(summary&&!summary.dataset.ux453ToggleBound){
+        summary.addEventListener('click',event=>{
+          event.preventDefault();
+          event.stopPropagation();
+          // WebKit can suppress the native toggle inside a delegated ticker
+          // surface. Own the toggle explicitly, retaining summary keyboard access.
+          disclosure.open=!disclosure.open;
+        });
+        summary.dataset.ux453ToggleBound='1';
+      }
       r.classList.toggle('ux454-podium',i<3);
       r.classList.toggle('ux454-podium-1',i===0);
       r.classList.toggle('ux454-podium-2',i===1);
