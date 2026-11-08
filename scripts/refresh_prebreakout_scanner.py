@@ -50,8 +50,12 @@ def historical_breakout_dates(clean: list[dict], start: int, stop: int) -> list[
             dates.append(bar["day"].isoformat())
     return dates
 
-def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_quality: bool=True, liquidity_floor: float=5_000_000):
+def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_quality: bool=True, liquidity_floor: float=5_000_000, audit: dict|None=None):
     """Identify a contracting base, not a prediction of future returns."""
+    def reject(reason: str):
+        if audit is not None:
+            audit['first_rejection'] = reason
+        return None
     today=today or datetime.now(timezone.utc).date()
     clean=[]
     for bar in bars:
@@ -59,23 +63,23 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
             day=date.fromisoformat(str(bar["date"])[:10])
             close=float(bar["close"]);high=float(bar["high"]);low=float(bar["low"])
         except (KeyError,ValueError,TypeError,OverflowError):
-            return None  # Missing OHLC cannot silently become close-only evidence.
+            return reject('invalid_ohlcv_or_date')  # Never infer missing OHLC.
         if not all(math.isfinite(v) for v in (close,high,low)):
-            return None
+            return reject('nonfinite_ohlc')
         if not (0<low<=close<=high):
-            return None
+            return reject('inconsistent_ohlc')
         if clean and day<=clean[-1]["day"]:
-            return None  # Reject duplicated or out-of-order sessions.
+            return reject('duplicate_or_out_of_order_sessions')
         clean.append({**bar,"day":day,"close":close,"high":high,"low":low})
-    if len(clean)<220:return None
+    if len(clean)<220:return reject('insufficient_daily_sessions')
     latest=clean[-1]["day"]
     age=(today-latest).days
-    if not 0<=age<=7:return None
+    if not 0<=age<=7:return reject('stale_or_future_daily_session')
     end=len(clean)-1
     values=[b["close"] for b in clean]
     m50=sma(values,end,50);m150=sma(values,end,150);m200=sma(values,end,200)
     slopes=[m50-sma(values,end-10,50),m150-sma(values,end-10,150),m200-sma(values,end-10,200)]
-    if not ((values[-1]>m50>m150>m200 if strict_quality else values[-1]>m150 and m50>m200) and all(x>0 for x in slopes)):return None
+    if not ((values[-1]>m50>m150>m200 if strict_quality else values[-1]>m150 and m50>m200) and all(x>0 for x in slopes)):return reject('moving_average_structure')
     def bounds(part):
         return max(b["high"] for b in part),min(b["low"] for b in part)
     def width(part):
@@ -86,13 +90,13 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     old_width=width(prior);w1=width(first);w2=width(second);w3=width(third)
     base_width=width(clean[-40:])
     if not (old_width>0 and base_width<=.22 and base_width<old_width*.8):
-        return None
+        return reject('base_width')
     vcp=w1>0 and w2<=w1*.85 and w3<=w2*.85
-    if not vcp:return None
+    if not vcp:return reject('sequential_vcp_contractions')
     resistance=bounds(clean[-40:-1])[0]
     current=values[-1]
     distance=(resistance/current-1)*100
-    if distance>8 or distance<0:return None  # PRE-breakout only: last close must remain at/below pivot.
+    if distance>8 or distance<0:return reject('distance_to_pivot')  # PRE-breakout only: last close must remain at/below pivot.
     prior_volumes=[]
     recent_volumes=[]
     for part,target in ((clean[-50:-10],prior_volumes),(clean[-10:],recent_volumes)):
@@ -116,11 +120,11 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     breakout=strong_breakout_close(current,values[-2],resistance,clean[-1]["high"],clean[-1]["low"],volume_confirmed)
     # An already-confirmed or intraday-exceeded pivot belongs to a separate breakout
     # follow-up, never the predictive pre-breakout radar. Reject failed breakouts too.
-    if breakout or clean[-1]["high"]>resistance*1.005:return None
+    if breakout or clean[-1]["high"]>resistance*1.005:return reject('already_broken_pivot')
     # A new signal cannot reuse a base after a confirmed breakout inside its 40-bar window.
     # Older confirmed events are reported as lineage context, not as fresh entry signals.
     if historical_breakout_dates(clean, len(clean)-39, len(clean)-1):
-        return None
+        return reject('prior_confirmed_breakout_in_base')
     earlier_breakouts=historical_breakout_dates(clean, len(clean)-100, len(clean)-40)
     stage="pré-breakout" if 0<=distance<=4 and volume_dry else "compressão"
     contraction=1-w3/max(w1,1e-9)
@@ -142,7 +146,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     base_high,base_low=bounds(clean[-40:])
     base_position=(current-base_low)/(base_high-base_low) if base_high>base_low else 0
     if strict_quality and (dollar_volume20 is None or dollar_volume20<liquidity_floor or base_position<.65):
-        return None
+        return reject('local_liquidity_or_base_position')
     # The last 10 sessions should not repeatedly close in the weak lower
     # half of the base. Use closed bars only, no forward/market data.
     midpoint=(base_high+base_low)/2
@@ -166,6 +170,8 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
                  "baseUpperHalfCloses10":upper_half_closes,"baseSupportRetention10":support_retention,"atrPct14":round(atr14/current*100,3),"atrContractionRatio":round(atr14/atr60,3) if atr60>0 else None,
                  "averageDollarVolume20":round(dollar_volume20,2) if dollar_volume20 is not None else None,"basePositionPct":round(base_position*100,1),
                  "qualityGates":(["sma50_gt_sma150_gt_sma200","price_above_sma50","dollar_volume20_gte_5m","base_position_gte_65pct"] if strict_quality else [])}
+    if audit is not None:
+        audit['first_rejection'] = 'passed_structural_gates'
     return {"ticker":ticker,"date":latest.isoformat(),"stage":stage,"score":score,
             "signalClose":round(current,5),"signalPriceBasis":"yahoo_auto_adjusted_asof_publication",
             "widthPct":round(base_width*100,2),"priorWidthPct":round(old_width*100,2),
@@ -611,6 +617,7 @@ def main():
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(stocks)
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
+    gate_exclusions={}
     scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
@@ -636,7 +643,10 @@ def main():
                 bars=completed_sessions(dataframe_bars(frame),now.date());checked+=bool(bars)
                 row_missing_ohlcv+=int(not bool(bars))
                 if evaluable_recheck(bars,now.date()):successful.append(ticker)
-                signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0)
+                trace={}
+                signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0,audit=trace)
+                first=trace.get('first_rejection','unresolved')
+                gate_exclusions[first]=gate_exclusions.get(first,0)+1
                 legacy=scan_bars(ticker,bars,now.date(),strict_quality=False)
                 shadow["compared"]+=1
                 shadow["legacy_eligible"]+=int(legacy is not None)
@@ -692,7 +702,12 @@ def main():
     scan_quality=slot_quality_audit(slot_telemetry,audit)
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
              "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
-             "errors":failures[:8],"quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
+             "errors":failures[:8],"gate_funnel":{"scope":"current_observed_slot_only","method":"first_failing_gate_in_order_not_independent_gate_intersections",
+                 "observed_rows":sum(gate_exclusions.values()),"first_rejection_counts":dict(sorted(gate_exclusions.items())),
+                 "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
+                 "currency_or_usd_liquidity_rejections_after_structural_pass":currency_rejected,
+                 "missing_downloads_not_negative_evidence":True,"probability_or_forward_performance":None},
+             "quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
              "daily_focus":focus,"earnings_event_diagnostic":earnings_audit,
