@@ -265,18 +265,20 @@
   }
 }
 
-/* Discovery mobile: conclusion first, research remains accessible by disclosure. */
+
+/* Discovery mobile: compact default, evidence remains accessible on demand. */
 #viewMarket #marketPrimary .ux453-evidence{min-width:0;margin-top:4px}
-#viewMarket #marketPrimary .ux453-evidence>summary{
+#viewMarket #marketPrimary .ux453-evidence-toggle{
  display:inline-flex;align-items:center;gap:7px;min-height:44px;
- font-size:12px;line-height:1.35;font-weight:750;cursor:pointer;
- padding:6px 0;color:#c7dfd3;-webkit-text-fill-color:#c7dfd3;list-style:none
+ font:750 12px/1.35 inherit;cursor:pointer;background:transparent;
+ border:0;padding:6px 0;color:#c7dfd3;-webkit-text-fill-color:#c7dfd3;
+ text-align:left
 }
-#viewMarket #marketPrimary .ux453-evidence>summary::-webkit-details-marker{display:none}
-#viewMarket #marketPrimary .ux453-evidence>summary::after{content:"⌄";font-size:16px}
-#viewMarket #marketPrimary .ux453-evidence[open]>summary::after{content:"⌃"}
-#viewMarket #marketPrimary .ux453-evidence>summary:focus-visible{outline:2px solid #c7dfd3;outline-offset:2px}
-#viewMarket #marketPrimary .ux453-evidence .ux453-detail-grid{margin-top:6px}
+#viewMarket #marketPrimary .ux453-evidence-toggle::after{content:"⌄";font-size:16px}
+#viewMarket #marketPrimary .ux453-evidence-toggle[aria-expanded="true"]::after{content:"⌃"}
+#viewMarket #marketPrimary .ux453-evidence-toggle:focus-visible{outline:2px solid #c7dfd3;outline-offset:2px}
+#viewMarket #marketPrimary .ux453-evidence-content[hidden]{display:none!important}
+#viewMarket #marketPrimary .ux453-evidence-content .ux453-detail-grid{margin-top:6px}
 @media(max-width:600px){
  html body #viewMarket #marketPrimary .ux453-opp{
   padding:11px 12px!important;gap:8px!important;margin-block:7px!important;
@@ -298,7 +300,7 @@
  }
  html body #viewMarket #marketPrimary .ux453-opp .ux453-entry strong{font-size:26px!important}
  html body #viewMarket #marketPrimary .ux453-opp .ux453-entry em{font-size:10px!important}
- html body #viewMarket #marketPrimary .ux453-opp .ux453-evidence[open] .ux453-why{
+ html body #viewMarket #marketPrimary .ux453-opp .ux453-evidence-toggle[aria-expanded="true"] + .ux453-evidence-content .ux453-why{
   padding:9px!important;gap:5px!important;margin:6px 0!important
  }
 }
