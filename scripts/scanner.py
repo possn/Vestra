@@ -145,7 +145,7 @@ def assess(row: dict) -> dict:
     margin_delta = _n(row.get("net_margin_yoy_change_pp")); rev_accel = _n(row.get("revenue_yoy_acceleration_pp")); thesis = str(row.get("thesis_direction") or "")
     delta30 = _n(row.get("thesis_score_delta_30d")); valuation = str(row.get("valuation_signal") or ""); mos = _n(row.get("margin_of_safety_pct"))
     est = _n(row.get("estimate_momentum_score")); est_signal = str(row.get("estimate_signal") or ""); buy_count = _n(row.get("insider_buy_count_30d")) or 0
-    buy_val = _n(row.get("insider_buy_value_30d")) or 0; sell_val = _n(row.get("insider_sell_value_30d")) or 0
+    buy_val = _n(row.get("insider_buy_value_30d")); sell_val = _n(row.get("insider_sell_value_30d"))
     div_yield = _n(row.get("dividend_yield")); div_cover = _n(row.get("dividend_fcf_coverage")); low52 = _low52(row); div_growth = _dividend_growth(row)
     low52_status = str(row.get("low52_status") or ""); low52_score = _n(row.get("low52_score")); low52_reasons = list(row.get("low52_reasons") or [])
     safe_gate = gate in ("clear", "watch"); results = {}
@@ -164,7 +164,10 @@ def assess(row: dict) -> dict:
     if est_signal == "improving" and (est or 0) >= 65 and conf >= 55 and safe_gate:
         breadth = _n(row.get("estimate_revision_breadth_pct"))
         add("positive_revisions", "Revisões positivas", [est, breadth, conf], [f"Momentum de expectativas {est:.0f}/100", f"Breadth {breadth:.0f}%" if breadth is not None else "Revisões de EPS a subir", f"Confiança {conf:.0f}/100"])
-    if conf >= 55 and gate not in ("high", "severe") and buy_count >= 1 and buy_val > sell_val and (buy_count >= 2 or buy_val >= 100000):
+    if (conf >= 55 and safe_gate and buy_count >= 1
+            and buy_val is not None and sell_val is not None
+            and buy_val >= 0 and sell_val >= 0
+            and buy_val > sell_val and (buy_count >= 2 or buy_val >= 100000)):
         add("insider_accumulation", "Insider Accumulation", [_clamp(45 + buy_count * 8 + min(30, buy_val / 100000)), conf, score], [f"{int(buy_count)} compras open-market", f"Compras líquidas ~{buy_val-sell_val:,.0f} USD", f"Score {score:.0f}/100"])
     turnaround_signal = (delta30 is not None and delta30 >= 3) or ((rev_accel or 0) >= 5 and (margin_delta or 0) >= 1)
     if turnaround_signal and safe_gate and conf >= 55 and score >= 45 and thesis != "down":
