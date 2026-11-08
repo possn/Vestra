@@ -11,7 +11,7 @@ class PreBreakoutContractTests(unittest.TestCase):
         # No initial render may run before the canonical feed owns the lens.
         self.assertIn("let prebreakoutFeedAuthoritative=true;", SCANNER)
         startup=SCANNER.split("  function start(){",1)[1].split(
-            "\\n  if(document.readyState",1)[0]
+            "  if(document.readyState",1)[0]
         assert "loadPrebreakoutFeed();" in startup
         assert "opportunities();" in startup
         self.assertLess(startup.index("loadPrebreakoutFeed();"),
