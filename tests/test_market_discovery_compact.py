@@ -8,7 +8,7 @@ class DiscoveryCompactContracts(unittest.TestCase):
  def test_mobile_card_has_native_disclosure_with_all_evidence(self):
   self.assertIn('class="ux453-evidence-toggle" type="button" aria-expanded="${isExpanded}"',JS)
   self.assertIn("expandedOpportunityTickers",JS)
-  self.assertIn('class="ux453-evidence-content" hidden',JS)
+  self.assertIn('class="ux453-evidence-content" ${isExpanded?\'\':\'hidden\'}',JS)
   self.assertIn('${whyNowHtml(s)}',JS)
   self.assertIn('${sleevePills}',JS)
   self.assertIn('Score Vestra ${Math.round(n(s?.score)||0)}',JS)
