@@ -220,6 +220,8 @@ def install(module=None, *, row_loader=None, environ=None, empty_cache_path=None
             xml = _extract_ownership_xml(response.text)
             if not xml:
                 return [], 0, f"ownership XML not found in {url}"
+            if not module._same_cik(module._xml_issuer_cik(xml), cik):
+                return [], 0, "form4_issuer_cik_missing_or_mismatched"
             parsed, raw_count = module._parse_ownership_xml(xml, ticker, filing["accession"])
             if raw_count > 0 or parsed:
                 module._store_cached_filing(cik, filing, parsed, raw_count)
