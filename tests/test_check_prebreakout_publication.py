@@ -70,6 +70,33 @@ class GateFunnelContract(unittest.TestCase):
   self.assertEqual(report["not_observed_rows"],2)
   now=datetime(2026,11,9,15,tzinfo=timezone.utc)
   self.assertEqual(mod.assess_freshness(feed,now)["status"],"healthy")
+ def test_modern_coverage_requires_explicit_current_universe_provenance(self):
+  now=datetime(2026,11,9,15,tzinfo=timezone.utc)
+  for field in ("current_eligible_verified_distinct","outside_current_universe_distinct",
+                "distinct_ohlcv_tickers"):
+   with self.subTest(field=field):
+    feed=self.feed()
+    del feed["coverage_audit_24h"][field]
+    report=mod.assess_freshness(feed,now)
+    self.assertEqual(report["reason"],"missing_modern_current_universe_coverage")
+  for bad in (None, "false", 0, 1):
+   with self.subTest(full_universe_verified=bad):
+    feed=self.feed()
+    feed["scan_quality_audit"]["full_universe_verified"]=bad
+    self.assertEqual(mod.assess_freshness(feed,now)["reason"],
+                     "missing_modern_current_universe_coverage")
+  feed=self.feed()
+  del feed["coverage_audit_24h"]["coverage_pct"]
+  self.assertEqual(mod.assess_freshness(feed,now)["status"],"invalid")
+  self.assertEqual(mod.assess_freshness(self.feed(),now)["status"],"healthy")
+ def test_legacy_feed_can_still_be_read_without_modern_numerator(self):
+  now=datetime(2026,11,7,15,tzinfo=timezone.utc)
+  feed=self.feed()
+  feed["generated_at"]=now.isoformat()
+  del feed["coverage_audit_24h"]["current_eligible_verified_distinct"]
+  del feed["coverage_audit_24h"]["outside_current_universe_distinct"]
+  del feed["coverage_audit_24h"]["distinct_ohlcv_tickers"]
+  self.assertEqual(mod.assess_freshness(feed,now)["status"],"healthy")
  def test_missing_funnel_in_modern_publication_is_unverifiable_not_valid(self):
   feed=self.feed();del feed["gate_funnel"]
   self.assertEqual(mod.assess_gate_funnel(feed,require=True)["reason"],"missing_modern_gate_funnel")
@@ -137,6 +164,14 @@ class Contract(unittest.TestCase):
    (d/"prebreakout-signals.json").write_text(json.dumps(feed))
    slot.write_text(json.dumps(feed))
    with self.assertRaisesRegex(ValueError,"invalid published scanner evidence"):
+    mod.verify(Path(folder))
+ def test_modern_publisher_blocks_missing_current_universe_evidence(self):
+  with tempfile.TemporaryDirectory() as folder:
+   d,feed,slot=self.setup_modern_publication(Path(folder))
+   del feed["coverage_audit_24h"]["current_eligible_verified_distinct"]
+   slot.write_text(json.dumps(feed))
+   (d/"prebreakout-signals.json").write_text(json.dumps(feed))
+   with self.assertRaisesRegex(ValueError,"missing_modern_current_universe_coverage"):
     mod.verify(Path(folder))
  def test_modern_publication_rejects_unreconciled_rolling_observations(self):
   with tempfile.TemporaryDirectory() as folder:
