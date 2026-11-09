@@ -531,6 +531,7 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         "eligible": 0,
         "legacy_missing_eligibility": 0,
         "invalid_return": 0,
+        "invalid_evaluation_window": 0,
         "unresolved_corporate_action": 0,
         "incomparable_quote_currency": 0,
         "explicitly_ineligible_other": 0,
@@ -582,6 +583,11 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
             category = "invalid_return"
         elif all(item.get("validation_eligible") is None for item in items):
             category = "legacy_missing_eligibility"
+        elif any(item.get("validation_eligible") is True
+                 and num(item.get("return_pct")) is not None
+                 and not outcome_has_verified_evaluation_window(item, horizon, today)
+                 for item in items):
+            category = "invalid_evaluation_window"
         elif any(item.get("corporate_action_unresolved") is True or
                  item.get("unresolved_distributions") for item in items):
             category = "unresolved_corporate_action"
