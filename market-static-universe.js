@@ -102,7 +102,7 @@
   }
 
   function ensureScannerCompanion() { loadCompanion('VestraMarketScannerData','script[data-vestra-scanner-data]','market-scanner-data.js?v=1.3','vestraScannerData'); }
-  function ensureAnalysisToolsRuntime() { loadCompanion('VestraMarketAnalysisToolsRuntime','script[data-vestra-analysis-tools-runtime]','market-analysis-tools-runtime.js?v=1.3','vestraAnalysisToolsRuntime'); }
+  function ensureAnalysisToolsRuntime() { loadCompanion('VestraMarketAnalysisToolsRuntime','script[data-vestra-analysis-tools-runtime]','market-analysis-tools-runtime.js?v=1.4','vestraAnalysisToolsRuntime'); }
   function ensureWeeklyEventsCompanion() { loadCompanion('VestraWeeklyEvents','script[data-vestra-weekly-events]','dashboard-weekly-events.js?v=3.7','vestraWeeklyEvents'); }
   function ensureWeeklyEventsNavigation() { loadCompanion('VestraWeeklyEventsNavigation','script[data-vestra-weekly-events-navigation]','dashboard-weekly-events-navigation.js?v=1.3','vestraWeeklyEventsNavigation'); }
   function ensureDashboardUiRefresh() { loadCompanion('VestraDashboardUiRefresh','script[data-vestra-dashboard-ui-refresh]','dashboard-ui-refresh.js?v=1.9','vestraDashboardUiRefresh'); }
@@ -171,9 +171,9 @@
       return Promise.resolve(window.VestraMarketOpportunityLenses);
     }
     if (opportunitySuitePromise) return opportunitySuitePromise;
-    opportunitySuitePromise = loadOrderedCompanion('VestraMarketOpportunities','script[data-vestra-market-opportunities]','market-opportunities.js?v=1.15','vestraMarketOpportunities').then(base => {
+    opportunitySuitePromise = loadOrderedCompanion('VestraMarketOpportunities','script[data-vestra-market-opportunities]','market-opportunities.js?v=1.16','vestraMarketOpportunities').then(base => {
       if (!base) return null;
-      return loadOrderedCompanion('VestraMarketOpportunityLenses','script[data-vestra-market-opportunity-lenses]','market-opportunity-lenses.js?v=3.2','vestraMarketOpportunityLenses');
+      return loadOrderedCompanion('VestraMarketOpportunityLenses','script[data-vestra-market-opportunity-lenses]','market-opportunity-lenses.js?v=3.3','vestraMarketOpportunityLenses');
     }).finally(() => { opportunitySuitePromise = null; });
     return opportunitySuitePromise;
   }
