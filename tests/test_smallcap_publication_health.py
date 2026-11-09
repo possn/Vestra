@@ -59,6 +59,18 @@ class SmallcapPublishedHealthTests(unittest.TestCase):
         self.assertEqual(health.assess_publication(report, self.now)["reason"],
                          "duplicate_or_missing_ticker")
 
+    def test_optional_published_rollups_must_reconcile(self):
+        valid = {**self.report, "observed_incomplete": 1, "universe_coverage_pct": 33.33}
+        self.assertEqual(health.assess_publication(valid, self.now)["status"], "healthy")
+        for field, value, reason in [
+            ("observed_incomplete", 0, "unreconciled_incomplete_count"),
+            ("observed_incomplete", True, "unreconciled_incomplete_count"),
+            ("universe_coverage_pct", 66.67, "unreconciled_coverage_percentage"),
+            ("universe_coverage_pct", True, "unreconciled_coverage_percentage"),
+        ]:
+            with self.subTest(field=field, value=value):
+                self.assertEqual(health.assess_publication({**valid, field: value}, self.now)["reason"], reason)
+
     def test_schema_is_not_assumed_current(self):
         report = {**self.report, "schema": "unknown"}
         self.assertEqual(health.assess_publication(report, self.now)["reason"], "invalid_schema")
