@@ -165,7 +165,10 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
         if eligible is not None and ticker not in eligible:
             excluded_outside_current_universe+=1
             continue
-        observations[ticker]=entry
+        # Legacy rows without per-ticker timestamps are anchored to the
+        # previous file generation ONCE; never refresh their evidence age merely
+        # because a later batch publishes another symbol.
+        observations[ticker]={**entry,"observation_checked_at":seen.astimezone(timezone.utc).isoformat()}
     for entry in current.get("observations",[]):
         if isinstance(entry,dict) and entry.get("ticker"):
             ticker=str(entry["ticker"]).strip().upper()
@@ -184,10 +187,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
         if row.get("status")!="evaluable_ohlcv" or not isinstance(setup,dict):
             continue
         raw_timestamp=(row.get("observation_checked_at") or
-                       row.get("ohlcv_observed_at") or
-                       (current.get("generated_at") if row.get("ticker") in
-                        {item.get("ticker") for item in current.get("observations",[])
-                         if isinstance(item,dict)} else None))
+                       row.get("ohlcv_observed_at"))
         try:
             verified=datetime.fromisoformat(str(raw_timestamp).replace("Z","+00:00"))
         except (TypeError,ValueError):
