@@ -484,6 +484,7 @@ def observation_capture(today, snapshots, outcomes, horizon):
         if isinstance(item, dict) and int(item.get("horizon_days") or 0) == horizon
         and item.get("validation_eligible") is True
         and num(item.get("return_pct")) is not None
+        and outcome_has_verified_evaluation_window(item, horizon, today)
         and outcome_key(item.get("cohort_date"), horizon, item.get("ticker")) in expected
     }
     count = len(expected)
@@ -566,6 +567,7 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
             item for item in items
             if item.get("validation_eligible") is True
             and num(item.get("return_pct")) is not None
+            and outcome_has_verified_evaluation_window(item, horizon, today)
         ]
         signatures = {
             (item.get("validation_eligible"), num(item.get("return_pct")))
@@ -638,7 +640,9 @@ def score_quintile_capture(today, snapshots, outcomes, horizon):
             continue
         key = outcome_key(result.get("cohort_date"), horizon, result.get("ticker"))
         recorded.add(key)
-        if result.get("validation_eligible") is True and num(result.get("return_pct")) is not None:
+        if (result.get("validation_eligible") is True
+                and num(result.get("return_pct")) is not None
+                and outcome_has_verified_evaluation_window(result, horizon, today)):
             validated.add(key)
 
     bins = [{"quintile": q, "expected": 0, "recorded": 0, "validated": 0}
