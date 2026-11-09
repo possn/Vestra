@@ -33,6 +33,8 @@ def _price_position(row: dict):
     for item in hist:
         try:
             v = item.get("close") if isinstance(item, dict) else item
+            if isinstance(v, bool):
+                return None  # bool is not a valid daily close, even though float(True)==1.
             v = float(v)
         except (TypeError, ValueError):
             return None
@@ -119,7 +121,7 @@ def assess(row: dict) -> dict:
         return _insufficient(pos, "Score fundamental suprimido por evidência insuficiente")
     if coverage is None or coverage < 55:
         return _insufficient(pos, "Cobertura fundamental inferior a 55%")
-    if critical is not None and critical < 45:
+    if critical is None or critical < 45:
         return _insufficient(pos, "Cobertura de métricas críticas insuficiente")
     if confidence is None or confidence < 50:
         return _insufficient(pos, "Confiança dos dados insuficiente")
