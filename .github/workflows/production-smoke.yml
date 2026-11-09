@@ -117,8 +117,13 @@ jobs:
           echo "Score validation report publicado falhou o contrato."
           exit 1
 
-      - name: Run published iPhone/WebKit smoke
-        run: npm run test:e2e:production
+      # Keep each remote-browser phase bounded below the 20-minute job
+      # timeout, so a stuck WebKit launch fails with diagnostics rather
+      # than being cancelled by the runner with no actionable result.
+      - name: Run published market iPhone/WebKit smoke
+        run: timeout --signal=TERM --kill-after=15s 7m npm run test:e2e:production -- tests/e2e/production-smoke.spec.js
+      - name: Run published PWA lifecycle iPhone/WebKit smoke
+        run: timeout --signal=TERM --kill-after=15s 7m npm run test:e2e:production -- tests/e2e/pwa-lifecycle.spec.js
       - name: Upload production smoke diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
