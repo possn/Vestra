@@ -524,10 +524,10 @@
   function brief(s){
     // Sector taxonomy alone is not a description of the business.
     const raw=t(s?.long_business_summary||s?.business_summary||s?.longBusinessSummary||s?.business_description||s?.description);
-    if(raw)return raw.length>215?raw.slice(0,212).replace(/\\s+\\S*$/,'')+'…':raw;
+    if(raw)return raw.length>215?raw.slice(0,212).trimEnd()+'…':raw;
     const industry=t(s?.industry);
     return industry?'Atividade por descrever · '+industry:'Atividade da empresa ainda não descrita nos dados disponíveis.';
-  }}
+  }
   function sleeveLabel(key){return key==='strength'?'Força':key==='asymmetry'?'Assimetria':key==='inflection'?'Inflection':'';}
   function opportunityType(s){
     const sleeves=sleeveScores(s),strength=sleeves.strength,inflection=sleeves.inflection;
