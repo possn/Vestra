@@ -39,5 +39,17 @@ class MarketResearchClarityTests(unittest.TestCase):
         self.assertIn("Atividade por descrever", ranked)
         self.assertIn("Atividade ainda não descrita nos dados disponíveis.", runtime)
 
+    def test_company_summaries_are_source_derived_and_bounded_for_iphone(self):
+        from scripts.build_market_shards import index_row
+        long = "Esta empresa desenvolve infraestruturas de energia renovável e redes de distribuição, com atividades operacionais em vários países europeus." * 3
+        row = {"ticker": "TEST", "quote_type": "EQUITY", "long_business_summary": long}
+        compact = index_row(row)
+        self.assertIn("business_summary", compact)
+        self.assertTrue(compact["business_summary"].startswith("Esta empresa"))
+        self.assertLessEqual(len(compact["business_summary"]), 105)
+        self.assertNotIn("long_business_summary", compact)
+        self.assertNotIn("business_summary", index_row({"ticker": "NONE", "quote_type": "EQUITY", "industry": "Utilities"}))
+        self.assertNotIn("business_summary", index_row({"ticker": "ETF", "quote_type": "ETF", "business_summary": long}))
+
 if __name__ == "__main__":
     unittest.main()
