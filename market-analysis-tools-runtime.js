@@ -222,7 +222,7 @@
     const link = document.createElement('link');
     link.id = 'vestraMarketAnalysisToolsRuntimeStyles';
     link.rel = 'stylesheet';
-    link.href = 'market-analysis-tools-runtime.css?v=1.0';
+    link.href = 'market-analysis-tools-runtime.css?v=1.1';
     document.head.appendChild(link);
   }
 
@@ -283,5 +283,5 @@
   }, true);
 
   installStyles();
-  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.3' });
+  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.4' });
 })();
