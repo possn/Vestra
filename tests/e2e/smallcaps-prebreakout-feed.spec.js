@@ -22,7 +22,7 @@ test('iPhone: verified independent small-cap setup appears in the existing oppor
   await page.goto('/index.html');
   await page.waitForFunction(()=>typeof window.setView==='function');
   await page.evaluate(()=>window.setView('market'));
-  const chip=page.locator('#viewMarket [data-smallcap-prebreakout-lens]');
+  const chip=page.locator('#viewMarket [data-vestra-lens="smallcap_breakout"]');
   await expect(chip).toBeVisible({timeout:20000});
   await chip.click();
   const rows=page.locator('#marketPrimary .market-row[data-market-ticker]');
