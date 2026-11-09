@@ -115,6 +115,12 @@ def assess(row: dict) -> dict:
     confidence = _n(row.get("confidence_score"))
     reliability = str(row.get("score_reliability") or "").lower()
 
+    # Percent coverage, confidence and the fundamental score are on a 0–100
+    # scale. Invalid values must not pass minimum-evidence gates or inflate rank.
+    if any(v is not None and not 0 <= v <= 100 for v in
+           (score, coverage, critical, confidence)):
+        return _insufficient(pos, "Métricas fundamentais fora da escala 0–100")
+
     # Hard evidence gate: a 52-week low is only a price fact. It cannot become
     # an investment opportunity label without enough fundamental evidence.
     if score is None:
