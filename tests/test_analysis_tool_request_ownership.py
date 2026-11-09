@@ -50,5 +50,5 @@ def test_scanner_retry_starts_a_new_generation():
 
 
 def test_loader_requests_owned_runtime_version():
-    assert "market-analysis-tools-runtime.js?v=1.3" in LOADER
-    assert "version:'1.3'" in RUNTIME
+    assert "market-analysis-tools-runtime.js?v=1.4" in LOADER
+    assert "version:'1.4'" in RUNTIME
