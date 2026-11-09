@@ -32,10 +32,13 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
     const fixture = document.createElement('section');
     fixture.id = 'lensFixture';
     fixture.className = 'market-section';
+    // The synthetic list must occupy a hittable top-level layer on iPhone;
+    // otherwise the fixed market shell can receive the click instead.
+    fixture.style.cssText = 'position:fixed;left:8px;right:8px;top:96px;z-index:2147483647;max-height:70vh;overflow:auto;background:#fff;';
     fixture.innerHTML = `
       <div class="market-section__head"><div><h3>Oportunidades agora</h3><p></p></div></div>
       <div class="market-list"></div>`;
-    document.body.prepend(fixture);
+    document.querySelector('#viewMarket').prepend(fixture);
     window.VestraMarketOpportunityLenses.select('all');
   }, [
     candidate('EARLY', { estimate_signal: 'improving', recovery_status: '', thesis_direction: 'up', opportunity_timing_score: 68 }),
@@ -87,7 +90,25 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
   expect(recovery).toContain('RECOV');
   const value = await select('value', 'VALUE');
   expect(value).toContain('VALUE');
+  const evidence = fixture.locator('[data-market-ticker="VALUE"] .ux453-evidence');
   const whyNow = fixture.locator('[data-market-ticker="VALUE"] .ux453-why');
+  const toggle = evidence.locator('.ux453-evidence-toggle');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(whyNow).toBeHidden();
+  const hit = await toggle.evaluate(el=>{
+    const bounds=el.getBoundingClientRect();
+    const center=document.elementFromPoint(bounds.left+bounds.width/2,bounds.top+bounds.height/2);
+    return {width:bounds.width,height:bounds.height,hit:center?.className||center?.tagName,
+      targetIsButton:el===center||el.contains(center)};
+  });
+  expect(hit.width).toBeGreaterThan(25);
+  expect(hit.height).toBeGreaterThan(20);
+  expect(hit.targetIsButton, JSON.stringify(hit)).toBe(true);
+  // WebKit on installed-iPhone can suppress click after pointerdown.
+  // Pointer activation must work; keyboard click remains a separate contract.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#viewMarket')).toBeVisible();
   await expect(whyNow).toBeVisible();
   await expect(whyNow).toContainText('Porque agora');
   await expect(whyNow).toContainText('Valuation');
