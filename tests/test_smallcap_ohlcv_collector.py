@@ -47,6 +47,25 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertTrue(result["not_breakout_candidates"])
         self.assertTrue(all(x["liquidity_5m_usd_verified"] for x in result["observations"]))
         self.assertEqual(len([c for c in p.calls if c[0]=="download"]),2)
+    def test_fresh_provider_attempt_outcomes_are_reported_separately_from_rolling_coverage(self):
+        class MixedProvider(Provider):
+            def Ticker(self, ticker):
+                if ticker == "B":
+                    raise TimeoutError("simulated transient provider outage")
+                if ticker == "C":
+                    return type("T", (), {"fast_info": {"currency": None}})()
+                return super().Ticker(ticker)
+        rows = [{"ticker": x, "market_cap": 150e6, "quote_type": "EQUITY"}
+                for x in ("A", "B", "C")]
+        report = mod.collect(rows, MixedProvider(), slot=0, budget=3,
+                             checked_at=datetime(2026, 7, 10, tzinfo=timezone.utc))
+        self.assertEqual(report["provider_tickers_attempted"], 3)
+        self.assertEqual(report["provider_attempt_status_counts"], {
+            "currency_not_verified_usd": 1, "evaluable_ohlcv": 1, "provider_error": 1})
+        self.assertEqual(report["provider_error_type_counts"], {"TimeoutError": 1})
+        self.assertEqual(sum(report["provider_attempt_status_counts"].values()), 3)
+        self.assertNotIn("simulated transient provider outage", str(report))
+
     def test_unobserved_current_cohort_names_are_prioritized(self):
         from datetime import timedelta
         now=datetime(2026,11,9,6,tzinfo=timezone.utc)
