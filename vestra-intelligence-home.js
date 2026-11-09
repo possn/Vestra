@@ -1035,14 +1035,12 @@
       assets.textContent = 'Património ainda a carregar';
     }
     if (income) {
-      // Mirror the already calculated dashboard KPI, never infer income from
-      // capital, yield or dividend forecasts when no verified KPI is available.
-      // Read only confirmed, already-rendered monthly income KPIs.
-      const ids = ['kpiPassiveMonthly', 'kpiPassiveMonthly2', 'portfolioMonthlyValue'];
-      const monthly = ids.map(id => (document.getElementById(id)?.textContent || '').trim())
-        .find(v => v.includes('€') && Array.from(v).some(c => c >= '0' && c <= '9')
-          && !/indisponível|calculando|ocult|a carregar/i.test(v));
-      income.textContent = monthly ? monthly.slice(0,48) : 'Por confirmar';
+      // The classic Dashboard may not be rendered after a quote refresh.
+      // Reading its DOM (or the old Carteira DOM) silently reuses stale income.
+      // The canonical projection is calculated by app.js from the same state
+      // and must match the portfolio's monthly and annual figures.
+      income.textContent = totals && Number.isFinite(totals.passiveMonthly)
+        ? money(totals.passiveMonthly) : 'Por confirmar';
     }
     if (changes) {
       const valid = nativeText && !/a carregar|calculando|indisponível/i.test(nativeText);
