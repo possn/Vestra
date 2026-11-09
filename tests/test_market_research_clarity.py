@@ -28,7 +28,7 @@ class MarketResearchClarityTests(unittest.TestCase):
     def test_scanner_does_not_display_unrelated_vestra_score_as_strategy_score(self):
         runtime = source("market-analysis-tools-runtime.js")
         self.assertIn("return stockRow(stock, meta, num(r?.score))", runtime)
-        self.assertIn("scannerScore == null ? num(stock?.score) : num(scannerScore)", runtime)
+        self.assertIn("scannerScore === undefined ? num(stock?.score) : num(scannerScore)", runtime)
         self.assertIn("Score Scanner", runtime)
 
     def test_company_activity_is_explicit_and_never_invented(self):
