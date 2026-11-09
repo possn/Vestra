@@ -150,7 +150,18 @@ def assess(row: dict) -> dict:
         return _insufficient(pos, "Risk Gate sem avaliação conclusiva")
     if capital_risk not in ("clear", "watch", "high", "severe", "moderate", "low"):
         return _insufficient(pos, "Risco da estrutura de capital não avaliado")
-    flags = set(row.get("risk_flags") or []) | set(row.get("capital_structure_flags") or [])
+    # An untyped string would otherwise become a set of characters, hiding
+    # severe_dilution. Reject malformed evidence instead of clearing risk.
+    flags = set()
+    for key in ("risk_flags", "capital_structure_flags"):
+        raw = row.get(key)
+        if raw is None:
+            continue
+        if not isinstance(raw, (list, tuple, set)) or any(
+            not isinstance(flag, str) or not flag.strip() for flag in raw
+        ):
+            return _insufficient(pos, "Indicadores de risco malformados")
+        flags.update(raw)
 
     resilience_parts = [x for x in (quality, balance, cashflow, execution, confidence) if x is not None]
     if len(resilience_parts) < 3:
