@@ -384,10 +384,28 @@ def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> d
     # Full prose stays in lazy dossier shards; do not generate sector templates
     # or copy multi-paragraph company profiles into the iPhone startup.
     if str(row.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND", "FUND", "CRYPTO"}:
+        def source_explains_business(candidate: str) -> bool:
+            candidate = " ".join(candidate.split())
+            name = str(row.get("name") or "").strip()
+            if len(candidate) < 22:
+                return False
+            if name:
+                # Provider sometimes repeats the corporate name in the
+                # "description" field. That is not business activity evidence.
+                normalized = lambda value: re.sub(r"[^a-z0-9]", "", value.lower())
+                description_key = normalized(candidate)
+                company_key = normalized(name)
+                if company_key and (description_key == company_key or (
+                    description_key.startswith(company_key)
+                    and len(description_key) - len(company_key) <= 15
+                )):
+                    return False
+            return True
+
         source = next((str(row.get(key)).strip() for key in (
             "long_business_summary", "business_summary", "longBusinessSummary",
             "business_description", "description"
-        ) if isinstance(row.get(key), str) and len(row[key].strip()) >= 22), "")
+        ) if isinstance(row.get(key), str) and source_explains_business(row[key])), "")
         if source:
             sentence = " ".join(source.split())
             if len(sentence) > 105:
