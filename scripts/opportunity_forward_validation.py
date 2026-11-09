@@ -484,6 +484,7 @@ def observation_capture(today, snapshots, outcomes, horizon):
         if isinstance(item, dict) and int(item.get("horizon_days") or 0) == horizon
         and item.get("validation_eligible") is True
         and num(item.get("return_pct")) is not None
+        and outcome_has_verified_evaluation_window(item, horizon, today)
         and outcome_key(item.get("cohort_date"), horizon, item.get("ticker")) in expected
     }
     count = len(expected)
@@ -530,6 +531,7 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
         "eligible": 0,
         "legacy_missing_eligibility": 0,
         "invalid_return": 0,
+        "invalid_evaluation_window": 0,
         "unresolved_corporate_action": 0,
         "incomparable_quote_currency": 0,
         "explicitly_ineligible_other": 0,
@@ -566,6 +568,7 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
             item for item in items
             if item.get("validation_eligible") is True
             and num(item.get("return_pct")) is not None
+            and outcome_has_verified_evaluation_window(item, horizon, today)
         ]
         signatures = {
             (item.get("validation_eligible"), num(item.get("return_pct")))
@@ -580,6 +583,11 @@ def outcome_exclusion_reasons(today, snapshots, outcomes, horizon):
             category = "invalid_return"
         elif all(item.get("validation_eligible") is None for item in items):
             category = "legacy_missing_eligibility"
+        elif any(item.get("validation_eligible") is True
+                 and num(item.get("return_pct")) is not None
+                 and not outcome_has_verified_evaluation_window(item, horizon, today)
+                 for item in items):
+            category = "invalid_evaluation_window"
         elif any(item.get("corporate_action_unresolved") is True or
                  item.get("unresolved_distributions") for item in items):
             category = "unresolved_corporate_action"
@@ -638,7 +646,9 @@ def score_quintile_capture(today, snapshots, outcomes, horizon):
             continue
         key = outcome_key(result.get("cohort_date"), horizon, result.get("ticker"))
         recorded.add(key)
-        if result.get("validation_eligible") is True and num(result.get("return_pct")) is not None:
+        if (result.get("validation_eligible") is True
+                and num(result.get("return_pct")) is not None
+                and outcome_has_verified_evaluation_window(result, horizon, today)):
             validated.add(key)
 
     bins = [{"quintile": q, "expected": 0, "recorded": 0, "validated": 0}

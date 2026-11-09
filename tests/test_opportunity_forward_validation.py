@@ -336,7 +336,8 @@ class OpportunityForwardValidationTests(unittest.TestCase):
             {"cohort_date": "2026-08-02", "horizon_days": 28,
              "ticker": "AAA", "return_pct": 4},
             {"cohort_date": "2026-08-02", "horizon_days": 28,
-             "ticker": "BBB", "return_pct": 6, "validation_eligible": True},
+             "ticker": "BBB", "return_pct": 6, "validation_eligible": True,
+             "evaluated_date": "2026-08-30", "actual_days": 28},
             {"cohort_date": "2026-08-02", "horizon_days": 28,
              "ticker": "CCC", "return_pct": 0, "validation_eligible": False},
         ]
@@ -472,6 +473,34 @@ class OpportunityForwardValidationTests(unittest.TestCase):
             today, snapshots, rows, 28)
         self.assertEqual([x["ticker"] for x in selected], ["VALID"])
         self.assertEqual(audit["invalid_or_unverified_evaluation_windows"], 2)
+
+    def test_invalid_windows_cannot_inflate_discovery_coverage_or_quintiles(self):
+        today = dt.date(2026, 9, 30)
+        snap = [{"date": "2026-08-01", "observations": {
+            ticker: {"opportunity_score": 50 + i}
+            for i, ticker in enumerate(("EARLY", "LATE", "VALID", "MISSING", "FUTURE"))
+        }}]
+        rows = [
+            {"cohort_date": "2026-08-01", "horizon_days": 28,
+             "ticker": ticker, "evaluated_date": date, "return_pct": 5,
+             "validation_eligible": True}
+            for ticker, date in (("EARLY", "2026-08-20"),
+                                 ("LATE", "2026-09-12"),
+                                 ("VALID", "2026-08-30"),
+                                 ("MISSING", "bad-date"),
+                                 ("FUTURE", "2026-10-01"))
+        ]
+        capture = MOD.observation_capture(today, snap, rows, 28)
+        self.assertEqual(capture["realised_matured_observations"], 5)
+        self.assertEqual(capture["validated_matured_observations"], 1)
+        self.assertEqual(capture["validated_capture_pct"], 20.0)
+        quintiles = MOD.score_quintile_capture(today, snap, rows, 28)
+        self.assertEqual(sum(q["validated"] for q in quintiles["quintiles"]), 1)
+        exclusions = MOD.outcome_exclusion_reasons(today, snap, rows, 28)
+        self.assertEqual(exclusions["exclusion_reasons"]["eligible"], 1)
+        self.assertEqual(exclusions["exclusion_reasons"]["invalid_evaluation_window"], 4)
+        self.assertEqual(exclusions["validated_capture_pct"] if "validated_capture_pct" in exclusions else
+                         exclusions["cohort_exclusion_breakdown"][0]["validated_capture_pct"], 20.0)
 
     def test_single_horizon_keeps_observe_only(self):
         result = MOD.evidence_policy({"28": {"cohort_count": 8}, "84": {}, "168": {}})

@@ -11,6 +11,7 @@ class QuintileCaptureTests(unittest.TestCase):
         outcomes = [
             {"cohort_date": "2026-08-01", "horizon_days": 28,
              "ticker": "T%02d" % i, "validation_eligible": True,
+             "evaluated_date": "2026-08-29", "actual_days": 28,
              "return_pct": i / 10} for i in range(6)
         ]
         result = score_quintile_capture(dt.date(2026, 9, 1),
@@ -27,9 +28,11 @@ class QuintileCaptureTests(unittest.TestCase):
         }}]
         outcomes = [
             {"cohort_date": "2026-08-01", "horizon_days": 28, "ticker": "A",
-             "validation_eligible": True, "return_pct": 1},
+             "validation_eligible": True, "evaluated_date": "2026-08-29",
+             "actual_days": 28, "return_pct": 1},
             {"cohort_date": "2026-08-01", "horizon_days": 28, "ticker": "A",
-             "validation_eligible": True, "return_pct": 1},
+             "validation_eligible": True, "evaluated_date": "2026-08-29",
+             "actual_days": 28, "return_pct": 1},
             {"cohort_date": "2026-08-01", "horizon_days": 28, "ticker": "B",
              "validation_eligible": False, "return_pct": 7},
         ]
