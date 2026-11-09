@@ -1,4 +1,4 @@
-/* Vestra Market analysis tools runtime v1.3 */
+/* Vestra Market analysis tools runtime v1.4 */
 (() => {
   'use strict';
 
@@ -71,9 +71,12 @@
     return `<div class="market-detail-head market-tool-runtime__head"><div><div class="market-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p>${esc(subtitle)}</p></div></div>`;
   }
 
-  function stockRow(stock, meta='') {
-    const score = num(stock?.score);
-    return `<button type="button" class="market-row market-tool-runtime__row" data-tool-open-ticker="${esc(stock?.ticker)}"><div><div class="market-row__title"><span class="market-row__ticker">${esc(stock?.ticker)}</span><span class="market-row__name">${esc(stock?.name)}</span></div><div class="market-row__meta">${esc(meta || [stock?.sector, stock?.industry].filter(Boolean).join(' · '))}</div></div><div class="market-score ${score == null ? 'market-score--soft' : score < 55 ? 'market-score--risk' : score < 70 ? 'market-score--soft' : ''}">${score == null ? '—' : Math.round(score)}</div></button>`;
+  function stockRow(stock, meta='', scannerScore=null) {
+    const score = scannerScore === undefined ? num(stock?.score) : num(scannerScore);
+    const activity = text(stock?.long_business_summary || stock?.business_summary || stock?.longBusinessSummary || stock?.business_description || stock?.description);
+    const business = activity ? (activity.length > 180 ? activity.slice(0,177).trimEnd() + '…' : activity)
+      : 'Atividade ainda não descrita nos dados disponíveis.';
+    return `<button type="button" class="market-row market-tool-runtime__row" data-tool-open-ticker="${esc(stock?.ticker)}"><div><div class="market-row__title"><span class="market-row__ticker">${esc(stock?.ticker)}</span><span class="market-row__name">${esc(stock?.name)}</span></div><div class="market-row__meta">${esc(meta || [stock?.sector, stock?.industry].filter(Boolean).join(' · '))}</div><div class="market-tool-runtime__business">${esc(business)}</div></div><div class="market-score ${score == null ? 'market-score--soft' : score < 55 ? 'market-score--risk' : score < 70 ? 'market-score--soft' : ''}" aria-label="${scannerScore === undefined ? 'Score Vestra' : 'Score Scanner'} ${score == null ? 'indisponível' : Math.round(score)}">${score == null ? '—' : Math.round(score)}</div></button>`;
   }
 
   function compareCandidates(query) {
@@ -134,8 +137,8 @@
     if (!result) return;
     result.innerHTML = rows.length ? rows.slice(0,50).map(stock => {
       const r = scannerResult(stock, scannerStrategy);
-      const meta = [text(r?.label), num(r?.score) == null ? '' : `Scanner ${Math.round(num(r.score))}/100`, text(stock?.sector)].filter(Boolean).join(' · ');
-      return stockRow(stock, meta);
+      const meta = [text(r?.label), text(stock?.sector), text(stock?.industry)].filter(Boolean).join(' · ');
+      return stockRow(stock, meta, num(r?.score));
     }).join('') : `<div class="market-empty"><strong>Sem resultados nesta estratégia.</strong><span>O universo foi carregado, mas esta estratégia não tem candidatos válidos agora.</span></div>`;
   }
 
@@ -219,7 +222,7 @@
     const link = document.createElement('link');
     link.id = 'vestraMarketAnalysisToolsRuntimeStyles';
     link.rel = 'stylesheet';
-    link.href = 'market-analysis-tools-runtime.css?v=1.0';
+    link.href = 'market-analysis-tools-runtime.css?v=1.1';
     document.head.appendChild(link);
   }
 
@@ -280,5 +283,5 @@
   }, true);
 
   installStyles();
-  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.3' });
+  window.VestraMarketAnalysisToolsRuntime = Object.freeze({ openTool, closeSheet, version:'1.4' });
 })();

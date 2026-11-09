@@ -380,6 +380,20 @@ def index_row(row: dict, fund_history: dict | None = None, as_of: str = "") -> d
     ticker = str(row.get("ticker") or "").upper()
     out["ticker"] = ticker
     out["dossier_shard"] = shard_for(ticker)
+    # One short, source-derived explanation of the company at list level.
+    # Full prose stays in lazy dossier shards; do not generate sector templates
+    # or copy multi-paragraph company profiles into the iPhone startup.
+    if str(row.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND", "FUND", "CRYPTO"}:
+        source = next((str(row.get(key)).strip() for key in (
+            "long_business_summary", "business_summary", "longBusinessSummary",
+            "business_description", "description"
+        ) if isinstance(row.get(key), str) and len(row[key].strip()) >= 22), "")
+        if source:
+            sentence = " ".join(source.split())
+            if len(sentence) > 105:
+                snippet = sentence[:102].rsplit(" ", 1)[0].strip()
+                sentence = (snippet or sentence[:102]).rstrip(" ,;:.") + "…"
+            out["business_summary"] = sentence
     if str(row.get("quote_type") or "").upper() not in {"ETF", "MUTUALFUND", "FUND", "CRYPTO"}:
         r5 = _finite_number(row.get("market_return_5d_pct"))
         r20 = _finite_number(row.get("market_return_20d_pct"))

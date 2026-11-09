@@ -12,7 +12,7 @@ class PreBreakoutContractTests(unittest.TestCase):
         self.assertIn('Pré-breakout',LENSES)
         self.assertIn("if(lens==='breakout')",SCANNER)
         self.assertIn("breakoutSetup",SCANNER)
-        self.assertIn("market-opportunity-lenses.js?v=3.2",LOADER)
+        self.assertIn("market-opportunity-lenses.js?v=3.3",LOADER)
 
     def test_requires_real_history_and_aligned_upward_moving_averages(self):
         self.assertIn('if(bars.length<220)return null',SCANNER)

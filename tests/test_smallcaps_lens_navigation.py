@@ -9,7 +9,9 @@ class SmallcapLensNavigation(unittest.TestCase):
         self.assertIn("Compressão|Small Caps|Value",code)
     def test_same_card_keeps_both_lenses(self):
         code=(ROOT/'market-opportunities.js').read_text()
-        self.assertIn("row.append(normal,smallcapChip)",code)
-        self.assertIn("selectLens('smallcap_breakout')",code)
-        self.assertIn("selectLens('breakout')",code)
+        self.assertNotIn("row.append(normal,smallcapChip)",code)
+        lenses=(ROOT/'market-opportunity-lenses.js').read_text()
+        self.assertIn('data-vestra-lens="smallcap_breakout"',lenses)
+        self.assertIn('data-vestra-lens="breakout"',lenses)
+        self.assertIn("section.querySelector('.vestra-technical-lenses')?.remove()",code)
 if __name__=='__main__':unittest.main()

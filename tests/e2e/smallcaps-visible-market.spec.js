@@ -2,7 +2,7 @@ const {test,expect}=require('@playwright/test');
 test('Small Caps is a compact pre-breakout lens with no inventory',async({page})=>{
  await page.goto('/index.html');await page.waitForFunction(()=>typeof window.setView==='function');
  await page.evaluate(()=>window.setView('market'));
- const chip=page.locator('#viewMarket [data-smallcap-prebreakout-lens]');
+ const chip=page.locator('#viewMarket [data-vestra-lens="smallcap_breakout"]');
  await expect(chip).toBeVisible({timeout:20000});
  await chip.click();
  await expect(chip).toHaveAttribute('aria-pressed','true');

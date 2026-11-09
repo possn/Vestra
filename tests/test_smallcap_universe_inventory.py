@@ -60,10 +60,10 @@ class SmallCapInventoryTests(unittest.TestCase):
         self.assertIn("cap<500_000_000",script)
         self.assertIn("usd_turnover<5_000_000",script)
         html=(ROOT/"index.html").read_text()
-        self.assertIn("<strong>Breakout Lab</strong>",html)
+        self.assertIn("<strong>Estratégias</strong>",html)
         self.assertIn("data-market-tool=\"scanner\"",html)
         self.assertIn("market-breakout-lab-tab",html)
-        self.assertIn("aria-label=\"Abrir Breakout Lab\"",html)
+        self.assertIn("aria-label=\"Abrir scanner de estratégias de investimento\"",html)
 
 if __name__=="__main__":
     unittest.main()
