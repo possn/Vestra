@@ -11,12 +11,24 @@
   let smallcapFeed=new Map();
   let smallcapFeedStatus='loading';
   let smallcapCoveragePct=null;
+  let smallcapFeedGeneratedAt=null;
+  function smallcapProvenanceLabel(){
+    if(smallcapFeedStatus==='loading')return 'OHLCV · a verificar';
+    if(smallcapFeedStatus==='unavailable')return 'OHLCV · fonte indisponível';
+    const ts=Date.parse(smallcapFeedGeneratedAt||'');
+    if(!Number.isFinite(ts))return 'OHLCV · data não verificável';
+    const date=new Date(ts).toLocaleDateString('pt-PT',{
+      day:'2-digit',month:'2-digit',timeZone:'Europe/Lisbon'
+    });
+    return 'OHLCV '+date+(smallcapFeedStatus==='outdated'?' · desatualizado':'');
+  }
   async function loadSmallcapFeed(){
     try{
       const response=await fetch('data/breakout-lab-smallcap-ohlcv-research.json',{cache:'no-store'});
       if(!response.ok)throw new Error(`smallcap feed HTTP ${response.status}`);
       const payload=await response.json();
       if(payload?.schema!=='vestra_breakout_lab_smallcap_ohlcv_research_v1'||!Array.isArray(payload.signals))throw new Error('smallcap feed invalid schema');
+      smallcapFeedGeneratedAt=payload.generated_at;
       const coverage=n(payload.universe_coverage_pct);
       smallcapCoveragePct=coverage!=null&&coverage>=0&&coverage<=100?coverage:null;
       const age=(Date.now()-Date.parse(payload.generated_at))/3600000;
@@ -41,6 +53,7 @@
       smallcapFeedStatus='ready';
       if(activeLens==='smallcap_breakout')opportunities();
     }catch(error){
+      smallcapFeedGeneratedAt=null;
       smallcapFeed=new Map();
       smallcapFeedStatus='unavailable';
       if(activeLens==='smallcap_breakout')opportunities();
@@ -716,6 +729,16 @@
       list.dataset.ux453=sig;
     }
     const [title,subtitle]=lensMeta(activeLens);const h=section.querySelector('.market-section__head h3');if(h)h.textContent=title;const p=section.querySelector('.market-section__head p');if(p)p.textContent=subtitle;
+    // The generic market index stamp is not the independent Small Caps OHLCV
+    // research timestamp. Restore it when the user leaves this strategy.
+    const age=section.querySelector('.market-section__head .market-data-age');
+    if(age){
+      if(!section.hasAttribute('data-smallcap-original-market-age'))
+        section.setAttribute('data-smallcap-original-market-age',age.textContent);
+      age.textContent=activeLens==='smallcap_breakout'
+        ? smallcapProvenanceLabel()
+        : section.getAttribute('data-smallcap-original-market-age');
+    }
     decorate(section);
     if(activeLens==='smallcap_breakout'&&!rows.length){
       const coverage=smallcapCoveragePct!=null?' Cobertura OHLCV observada: '+smallcapCoveragePct.toFixed(1)+'%.':'';
