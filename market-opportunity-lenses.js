@@ -24,10 +24,6 @@
     return bar;
   }
   function syncButtons(bar){
-    // The canonical opportunity renderer owns the lens, not this UI adapter.
-    // An asynchronous rerender must never leave the selected chip visually stale.
-    const canonical=window.VestraMarketOpportunities?.activeLens;
-    if(LENSES.has(canonical))activeLens=canonical;
     bar?.querySelectorAll('[data-vestra-lens]').forEach(button=>{
       const selected=button.dataset.vestraLens===activeLens;
       button.classList.toggle('is-active',selected);
