@@ -141,6 +141,26 @@ class Low52IntelligenceTests(unittest.TestCase):
         self.assertEqual(result["low52_status"], "insufficient")
         self.assertIsNone(result["low52_score"])
 
+    def test_malformed_risk_flags_cannot_clear_severe_dilution(self):
+        baseline = quality_row(current_price=100.0)
+        baseline["capital_structure_flags"] = ["severe_dilution"]
+        self.assertEqual(assess(baseline)["low52_status"], "structural_risk")
+        for field in ("risk_flags", "capital_structure_flags"):
+            for invalid in ("severe_dilution", {"severe_dilution": True},
+                            [None], [True], [["severe_dilution"]]):
+                with self.subTest(field=field, invalid=invalid):
+                    row = quality_row(current_price=100.0)
+                    row[field] = invalid
+                    result = assess(row)
+                    self.assertEqual(result["low52_status"], "insufficient")
+                    self.assertIsNone(result["low52_score"])
+                    self.assertIn("Indicadores de risco malformados", result["low52_reasons"])
+        # Explicit well-formed risk flags remain effective.
+        for field in ("risk_flags", "capital_structure_flags"):
+            row = quality_row(current_price=100.0)
+            row[field] = ["severe_dilution"]
+            self.assertEqual(assess(row)["low52_status"], "structural_risk")
+
     def test_severe_risk_gate_is_structural_risk_even_near_low(self):
         row = quality_row()
         row["risk_gate"] = "severe"
