@@ -174,6 +174,30 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(report["evaluable_ohlcv"],3)
         self.assertEqual(report["universe_coverage_pct"],100.0)
 
+    def test_legacy_observation_timestamp_is_not_renewed_by_republication(self):
+        from datetime import timedelta
+        now=datetime(2026,11,9,12,tzinfo=timezone.utc)
+        schema="vestra_breakout_lab_smallcap_ohlcv_research_v1"
+        older=(now-timedelta(hours=6)).isoformat()
+        previous={"schema":schema,"generated_at":older,
+                  "observations":[{"ticker":"OLD","status":"evaluable_ohlcv",
+                                   "verified_prebreakout_setup":{"ticker":"OLD","score":80}}]}
+        current={"schema":schema,"generated_at":now.isoformat(),
+                 "universe_100m_500m_count":2,
+                 "observations":[{"ticker":"NEW","status":"no_ohlcv"}]}
+        first=mod.merge_slots(current,previous,now,eligible_tickers={"OLD","NEW"})
+        observed_old=next(r for r in first["observations"] if r["ticker"]=="OLD")
+        self.assertEqual(observed_old["observation_checked_at"],older)
+        self.assertEqual([x["ticker"] for x in first["signals"]],["OLD"])
+        later=now+timedelta(hours=20)
+        next_current={"schema":schema,"generated_at":later.isoformat(),
+                      "universe_100m_500m_count":2,
+                      "observations":[{"ticker":"NEW","status":"no_ohlcv"}]}
+        second=mod.merge_slots(next_current,first,later,eligible_tickers={"OLD","NEW"})
+        self.assertEqual(second["signals"],[])
+        self.assertEqual({r["ticker"] for r in second["observations"]},{"OLD","NEW"})
+        self.assertEqual(second["historical_setups_excluded_as_stale"],1)
+
     def test_rejected_provider_recheck_cannot_retain_prior_signal(self):
         now=datetime(2026,11,9,12,tzinfo=timezone.utc)
         schema="vestra_breakout_lab_smallcap_ohlcv_research_v1"
