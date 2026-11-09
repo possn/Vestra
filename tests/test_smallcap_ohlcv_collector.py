@@ -65,6 +65,29 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(mod.pick_research_tickers(names,slot=1,budget=2,
                            previous=old,checked_at=now),["E","B"])
 
+    def test_failed_provider_observations_retry_after_unseen_before_valid_refresh(self):
+        from datetime import timedelta
+        now=datetime(2026,11,9,12,tzinfo=timezone.utc)
+        def record(ticker,status,age_hours):
+            return {"ticker":ticker,"status":status,
+                    "observation_checked_at":(now-timedelta(hours=age_hours)).isoformat()}
+        previous={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+                  "generated_at":now.isoformat(),
+                  "observations":[
+                      record("A","evaluable_ohlcv",10),
+                      record("B","provider_error",2),
+                      record("C","insufficient_ohlcv",3),
+                      record("D","evaluable_ohlcv",20)]}
+        names=["A","B","C","D","E","F"]
+        self.assertEqual(mod.pick_research_tickers(names,0,2,previous,now),["E","F"])
+        self.assertEqual(mod.pick_research_tickers(names,0,4,previous,now),["E","F","C","B"])
+        self.assertEqual(mod.pick_research_tickers(names,0,6,previous,now),
+                         ["E","F","C","B","D","A"])
+        # A legacy record without status retains the old observed priority.
+        previous["observations"].append({"ticker":"F",
+            "observation_checked_at":now.isoformat()})
+        self.assertEqual(mod.pick_research_tickers(names,0,2,previous,now),["E","C"])
+
     def test_stale_outside_cohort_and_future_dates_do_not_block_new_coverage(self):
         from datetime import timedelta
         now=datetime(2026,11,9,6,tzinfo=timezone.utc)
