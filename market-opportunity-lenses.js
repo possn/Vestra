@@ -10,7 +10,7 @@
     const sections=[...document.querySelectorAll('.market-section')];
     // Synthetic test sections (and new user-mounted sections) must win in DOM order.
     // Only fall back to the existing control bar if no recognizable opportunity title remains.
-    return sections.find(x=>/Oportunidades agora|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Small Caps|Value \\+ timing/.test(t(x.querySelector('h3')?.textContent)))
+    return sections.find(x=>/Oportunidades agora|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Small Caps|Value \+ timing/.test(t(x.querySelector('h3')?.textContent)))
       || sections.find(x=>x.querySelector('.vestra-opportunity-lenses'))
       || null;
   }
