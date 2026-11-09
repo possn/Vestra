@@ -51,5 +51,26 @@ class MarketResearchClarityTests(unittest.TestCase):
         self.assertNotIn("business_summary", index_row({"ticker": "NONE", "quote_type": "EQUITY", "industry": "Utilities"}))
         self.assertNotIn("business_summary", index_row({"ticker": "ETF", "quote_type": "ETF", "business_summary": long}))
 
+    def test_projected_company_activity_preserves_real_mobile_startup_budget(self):
+        import json
+        from scripts import build_market_shards as builder
+        source = json.loads((ROOT / "data/stocks.json").read_text(encoding="utf-8"))
+        index = json.loads((ROOT / "data/stocks-index.json").read_text(encoding="utf-8"))
+        descriptions = {}
+        for item in source.get("stocks", []):
+            if isinstance(item, dict) and item.get("ticker"):
+                brief = builder.index_row(item).get("business_summary")
+                if brief:
+                    descriptions[str(item["ticker"]).upper()] = brief
+        for item in index["stocks"]:
+            snippet = descriptions.get(str(item.get("ticker") or "").upper())
+            if snippet:
+                item["business_summary"] = snippet
+        packed = builder.pack_index_payload(index)
+        encoded = len(json.dumps(packed, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+        legacy = len(json.dumps(index, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+        self.assertLessEqual(encoded, builder.MAX_COLUMNAR_BYTES)
+        self.assertLessEqual(legacy, builder.MAX_INDEX_HARD_BYTES)
+
 if __name__ == "__main__":
     unittest.main()
