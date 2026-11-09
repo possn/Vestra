@@ -8,7 +8,7 @@ class SmallCapLens(unittest.TestCase):
   h=(ROOT/'index.html').read_text()
   self.assertNotIn('renderSmallCaps()',m)
   self.assertNotIn('data-market-mode="smallcaps"',h)
-  self.assertIn("selectLens('smallcap_breakout')",o)
+  self.assertIn('data-vestra-lens="smallcap_breakout"',(ROOT/"market-opportunity-lenses.js").read_text())
   self.assertIn("if(lens==='smallcap_breakout')return breakoutSetup(s,'smallcap_breakout')!=null",o)
   self.assertIn('smallcapFeed=new Map()',o)
   self.assertIn('loadSmallcapFeed()',o)
