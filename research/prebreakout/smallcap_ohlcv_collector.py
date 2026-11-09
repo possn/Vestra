@@ -113,6 +113,7 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96):
         return rotated[:min(budget,len(names))]
     cutoff=checked_at-timedelta(hours=ttl_hours)
     last_seen={}
+    last_status={}
     for row in previous.get("observations",[]):
         if not isinstance(row,dict):continue
         ticker=str(row.get("ticker") or "").strip().upper()
@@ -123,12 +124,18 @@ def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96):
         if stamp.tzinfo is None:continue
         stamp=stamp.astimezone(timezone.utc)
         if not cutoff<=stamp<=checked_at:continue
-        if stamp>last_seen.get(ticker,cutoff):
+        if stamp>=last_seen.get(ticker,cutoff):
             last_seen[ticker]=stamp
-    # Missing evidence sorts ahead of already observed names. For the latter,
-    # the oldest observation is rechecked before newer ones.
+            # Older reports omitted status, so preserve their original rotation
+            # priority rather than treating legacy evidence as a provider failure.
+            last_status[ticker]=row.get("status","evaluable_ohlcv")
+    # Never-observed names first. Once they are exhausted, retry recent
+    # non-evaluable requests before refreshing already usable OHLCV evidence.
+    # Provider errors do not count as verified bars, yet are not allowed to
+    # starve entirely unseen names on repeated collection slots.
     ordered=sorted(rotated,key=lambda ticker:(
-        1 if ticker in last_seen else 0,
+        0 if ticker not in last_seen else
+        (1 if last_status.get(ticker)!="evaluable_ohlcv" else 2),
         last_seen.get(ticker,cutoff)))
     return ordered[:min(budget,len(names))]
 
