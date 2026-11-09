@@ -72,11 +72,11 @@
   }
 
   function stockRow(stock, meta='', scannerScore=null) {
-    const score = scannerScore == null ? num(stock?.score) : num(scannerScore);
+    const score = scannerScore === undefined ? num(stock?.score) : num(scannerScore);
     const activity = text(stock?.long_business_summary || stock?.business_summary || stock?.longBusinessSummary || stock?.business_description || stock?.description);
     const business = activity ? (activity.length > 180 ? activity.slice(0,177).trimEnd() + '…' : activity)
       : 'Atividade ainda não descrita nos dados disponíveis.';
-    return `<button type="button" class="market-row market-tool-runtime__row" data-tool-open-ticker="${esc(stock?.ticker)}"><div><div class="market-row__title"><span class="market-row__ticker">${esc(stock?.ticker)}</span><span class="market-row__name">${esc(stock?.name)}</span></div><div class="market-row__meta">${esc(meta || [stock?.sector, stock?.industry].filter(Boolean).join(' · '))}</div><div class="market-tool-runtime__business">${esc(business)}</div></div><div class="market-score ${score == null ? 'market-score--soft' : score < 55 ? 'market-score--risk' : score < 70 ? 'market-score--soft' : ''}" aria-label="${scannerScore == null ? 'Score Vestra' : 'Score Scanner'} ${score == null ? 'indisponível' : Math.round(score)}">${score == null ? '—' : Math.round(score)}</div></button>`;
+    return `<button type="button" class="market-row market-tool-runtime__row" data-tool-open-ticker="${esc(stock?.ticker)}"><div><div class="market-row__title"><span class="market-row__ticker">${esc(stock?.ticker)}</span><span class="market-row__name">${esc(stock?.name)}</span></div><div class="market-row__meta">${esc(meta || [stock?.sector, stock?.industry].filter(Boolean).join(' · '))}</div><div class="market-tool-runtime__business">${esc(business)}</div></div><div class="market-score ${score == null ? 'market-score--soft' : score < 55 ? 'market-score--risk' : score < 70 ? 'market-score--soft' : ''}" aria-label="${scannerScore === undefined ? 'Score Vestra' : 'Score Scanner'} ${score == null ? 'indisponível' : Math.round(score)}">${score == null ? '—' : Math.round(score)}</div></button>`;
   }
 
   function compareCandidates(query) {
