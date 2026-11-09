@@ -116,6 +116,23 @@ class Low52IntelligenceTests(unittest.TestCase):
                     self.assertEqual(result["low52_status"], "insufficient")
                     self.assertIsNone(result["low52_score"])
 
+    def test_out_of_range_core_evidence_cannot_inflate_low52_opportunity(self):
+        for field in ("score", "data_coverage_pct",
+                      "critical_metric_coverage_pct", "confidence_score"):
+            for value in (-0.01, 100.01, 1000, "-1", "101"):
+                with self.subTest(field=field, value=value):
+                    row = quality_row(current_price=100.0)
+                    row[field] = value
+                    result = assess(row)
+                    self.assertEqual(result["low52_status"], "insufficient")
+                    self.assertIsNone(result["low52_score"])
+                    self.assertIn("Métricas fundamentais fora da escala 0–100",
+                                  result["low52_reasons"])
+        valid = quality_row(current_price=100.0)
+        valid.update({"score": 100, "data_coverage_pct": 100,
+                      "critical_metric_coverage_pct": 100, "confidence_score": 100})
+        self.assertNotEqual(assess(valid)["low52_status"], "insufficient")
+
     def test_infinite_resilience_metric_is_not_counted_as_quality(self):
         row = quality_row()
         row.update({"quality_pct": float("inf"), "balance_pct": float("inf"),
