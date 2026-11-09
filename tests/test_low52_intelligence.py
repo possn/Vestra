@@ -42,6 +42,21 @@ class Low52IntelligenceTests(unittest.TestCase):
                 self.assertEqual(result["low52_status"], "insufficient")
                 self.assertIsNone(result["low52_score"])
 
+    def test_boolean_daily_close_fails_closed_even_with_provider_extrema(self):
+        for bad in (True, False):
+            with self.subTest(close=bad):
+                row = quality_row()
+                row["price_history_1y"][17] = bad
+                row["fifty_two_week_low"] = 100.0
+                row["fifty_two_week_high"] = 150.0
+                result = assess(row)
+                self.assertEqual(result["low52_status"], "insufficient")
+                self.assertIsNone(result["low52_score"])
+
+        row = quality_row()
+        row["price_history_1y"][17] = {"close": True}
+        self.assertEqual(assess(row)["low52_status"], "insufficient")
+
     def test_observed_close_minimum_is_not_mislabeled_intraday_low(self):
         result = assess(quality_row())
         self.assertEqual(result["low52_price_basis"],
@@ -81,6 +96,15 @@ class Low52IntelligenceTests(unittest.TestCase):
         self.assertEqual(result["low52_status"], "insufficient")
         self.assertIsNone(result["low52_score"])
         self.assertIn("Cobertura fundamental inferior a 55%", result["low52_reasons"])
+
+    def test_missing_critical_metric_coverage_never_becomes_low52_opportunity(self):
+        for missing in (None, ""):
+            with self.subTest(coverage=missing):
+                row = quality_row()
+                row["critical_metric_coverage_pct"] = missing
+                result = assess(row)
+                self.assertEqual(result["low52_status"], "insufficient")
+                self.assertIsNone(result["low52_score"])
 
     def test_nonfinite_and_boolean_evidence_does_not_create_low52_opportunity(self):
         for bad in (float("inf"), float("-inf"), float("nan"), True, False):
