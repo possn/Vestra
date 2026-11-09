@@ -55,6 +55,8 @@ jobs:
               f"- Previous published at (UTC): `{prior.get('generated_at', 'unknown')}`",
               f"- Current universe: {report.get('universe_100m_500m_count')}",
               f"- Fresh provider attempts: {report.get('provider_tickers_attempted')}",
+              f"- Fresh provider attempt outcomes: {json.dumps(report.get('provider_attempt_status_counts', {}), sort_keys=True)}",
+              f"- Fresh provider error classes: {json.dumps(report.get('provider_error_type_counts', {}), sort_keys=True)}",
               f"- Rolling evaluable observations: {report.get('evaluable_ohlcv')}",
               f"- Not observed: {report.get('not_observed')}",
               f"- Observed status counts: {json.dumps(dict(sorted(counts.items())), sort_keys=True)}",

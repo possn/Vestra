@@ -7,6 +7,7 @@ Missing data and uncertain currencies are failures, not zeroes or signals.
 from __future__ import annotations
 import argparse
 import json
+from collections import Counter
 import math
 import sys
 from datetime import datetime, timezone
@@ -166,12 +167,17 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
             observed.append({"ticker":ticker,"status":"provider_error",
                              "error_type":type(exc).__name__})
     evaluable=sum(x["status"]=="evaluable_ohlcv" for x in observed)
+    attempt_status_counts=dict(sorted(Counter(x["status"] for x in observed).items()))
+    provider_error_type_counts=dict(sorted(Counter(x["error_type"] for x in observed
+        if x["status"]=="provider_error" and x.get("error_type")).items()))
     signals=[x["verified_prebreakout_setup"] for x in observed if x.get("verified_prebreakout_setup")]
     return {"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
             "status":"observed_research_only_not_breakout_signals",
             "generated_at":checked_at.isoformat(),"source":"yfinance",
             "universe_100m_500m_count":len(names),"slot":slot,"budget":budget,
             "provider_tickers_attempted":len(observed),
+            "provider_attempt_status_counts":attempt_status_counts,
+            "provider_error_type_counts":provider_error_type_counts,
             "evaluable_ohlcv":evaluable,"observed_incomplete":len(observed)-evaluable,
             "not_observed":len(names)-len(observed),
             "universe_coverage_pct":round(100*evaluable/len(names),2) if names else None,
