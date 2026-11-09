@@ -55,7 +55,7 @@ class FinancialHomeSyncContract(unittest.TestCase):
         self.assertIn('skippedQuotes', view)
 
     def test_iphone_gets_new_versioned_runtime_urls(self):
-        self.assertRegex(INDEX, r'app\.js\?v=[^"]+rev=20261109-financial-sync')
+        self.assertRegex(INDEX, r'app\.js\?v=[^"]+rev=20261109-quote-refresh-truth')
         self.assertRegex(INDEX, r'vestra-intelligence-home\.js\?v=[^"]+rev=20261109-financial-sync')
 
 
