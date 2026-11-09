@@ -79,16 +79,24 @@ def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
         pct=coverage.get("coverage_pct")
         if (pct is not None and (type(pct) not in (int,float) or not 0<=pct<=100)):
             return {"status":"invalid","reason":"impossible_coverage_pct"}
-        # In modern publications, the numerator is the intersection with the
-        # current eligible universe; older observations remain audit evidence.
+        # Every modern publication must explicitly reconcile the rolling
+        # observed universe with the CURRENT eligible names. Absence is not
+        # permission to silently fall back to the legacy numerator.
         current=coverage.get("current_eligible_verified_distinct")
+        observed=coverage.get("distinct_ohlcv_tickers")
+        outside=coverage.get("outside_current_universe_distinct")
+        eligible=feed["eligible_universe"]
+        modern=generated.astimezone(timezone.utc).date().isoformat()>="2026-11-08"
+        if modern and (any(type(v) is not int for v in (current,observed,outside,eligible)) or
+                       type(pct) not in (int,float) or
+                       audit.get("full_universe_verified") not in (True,False) or
+                       type(audit.get("full_universe_verified")) is not bool):
+            return {"status":"invalid","reason":"missing_modern_current_universe_coverage"}
         if current is not None:
-            observed=coverage.get("distinct_ohlcv_tickers")
-            outside=coverage.get("outside_current_universe_distinct")
-            eligible=feed["eligible_universe"]
             if (any(type(v) is not int for v in (current,observed,outside,eligible)) or
                 not 0<=current<=eligible or outside<0 or observed!=current+outside or
-                (eligible and abs(pct-round(100*current/eligible,2))>0.01) or
+                (eligible and (pct is None or abs(pct-round(100*current/eligible,2))>0.01)) or
+                (not eligible and pct is not None) or
                 audit.get("full_universe_verified")!=(eligible>0 and current==eligible)):
                 return {"status":"invalid","reason":"inconsistent_current_universe_coverage"}
     except (KeyError,TypeError,ValueError,AttributeError):
