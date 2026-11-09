@@ -39,12 +39,14 @@ jobs:
           python research/prebreakout/smallcap_ohlcv_collector.py --slot "$SLOT" --budget "$BUDGET"
           python -m unittest discover -s tests -p 'test_smallcap_ohlcv_collector.py'
           python -m unittest discover -s tests -p 'test_smallcap_publish_window.py'
+      # Six-hour collection slots: protect aligned code PRs briefly, but never
+      # defer publication for more than roughly two six-hour slots.
       - name: Check automated main publish window
         id: publish_window
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VESTRA_SMALLCAP_PREVIOUS: /tmp/vestra-smallcap-previous.json
-        run: python scripts/defer_main_publish_if_code_pr.py --smallcap-max-staleness-hours 24
+        run: python scripts/defer_main_publish_if_code_pr.py --smallcap-max-staleness-hours 8
       - name: Publish observed research, never synthetic signals
         if: steps.publish_window.outputs.defer != 'true'
         run: |

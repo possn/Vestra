@@ -20,12 +20,12 @@ class SmallcapPublishWindowTests(unittest.TestCase):
             self.now-datetime.timedelta(hours=delta_hours)).isoformat()}
 
     def test_recent_real_publication_preserves_code_pr_protection(self):
-        self.assertFalse(smallcap_publication_overdue(self.previous(2),self.now,24))
-        self.assertFalse(smallcap_publication_overdue(self.previous(24),self.now,24))
+        self.assertFalse(smallcap_publication_overdue(self.previous(2),self.now,8))
+        self.assertFalse(smallcap_publication_overdue(self.previous(8),self.now,8))
 
     def test_overdue_publication_can_proceed_without_pr_freeze(self):
-        self.assertTrue(smallcap_publication_overdue(self.previous(24.01),self.now,24))
-        self.assertTrue(smallcap_publication_overdue(self.previous(72),self.now,24))
+        self.assertTrue(smallcap_publication_overdue(self.previous(8.01),self.now,8))
+        self.assertTrue(smallcap_publication_overdue(self.previous(24),self.now,8))
 
     def test_missing_invalid_or_future_provenance_does_not_freeze(self):
         for prior in ({},{"schema":"not_smallcap","generated_at":self.now.isoformat()},
@@ -34,16 +34,16 @@ class SmallcapPublishWindowTests(unittest.TestCase):
                       {"schema":SCHEMA,"generated_at":(
                           self.now+datetime.timedelta(hours=1)).isoformat()}):
             with self.subTest(prior=prior):
-                self.assertTrue(smallcap_publication_overdue(prior,self.now,24))
+                self.assertTrue(smallcap_publication_overdue(prior,self.now,8))
 
     def test_utc_offsets_and_clock_boundary(self):
         other=self.now.astimezone(datetime.timezone(datetime.timedelta(hours=1)))
         self.assertFalse(smallcap_publication_overdue(
-            {"schema":SCHEMA,"generated_at":other.isoformat()},self.now,24))
+            {"schema":SCHEMA,"generated_at":other.isoformat()},self.now,8))
         with self.assertRaises(ValueError):
             smallcap_publication_overdue(self.previous(12),self.now,0)
         with self.assertRaises(ValueError):
-            smallcap_publication_overdue(self.previous(12),self.now.replace(tzinfo=None),24)
+            smallcap_publication_overdue(self.previous(12),self.now.replace(tzinfo=None),8)
 
     def test_scheduled_collection_budget_exceeds_four_day_capacity_floor(self):
         import re
@@ -64,7 +64,7 @@ class SmallcapPublishWindowTests(unittest.TestCase):
         self.assertLess(workflow.index("Snapshot previously published research"),
                         workflow.index("Collect independent 100m-500m"))
         self.assertIn("VESTRA_SMALLCAP_PREVIOUS: /tmp/vestra-smallcap-previous.json",workflow)
-        self.assertIn("--smallcap-max-staleness-hours 24",workflow)
+        self.assertIn("--smallcap-max-staleness-hours 8",workflow)
         self.assertIn("python -m unittest discover -s tests -p 'test_smallcap_ohlcv_collector.py'",workflow)
         self.assertIn("scripts/publish_with_retry.sh origin main",workflow)
 
