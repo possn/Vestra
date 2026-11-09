@@ -201,7 +201,7 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
             seen=datetime.fromisoformat(str(timestamp).replace("Z","+00:00"))
         except (TypeError,ValueError):
             continue
-        if not ticker or seen.tzinfo is None or not cutoff<=seen<=now+timedelta(hours=1):
+        if not ticker or seen.tzinfo is None or not cutoff<=seen<=now:
             continue
         if eligible is not None and ticker not in eligible:
             excluded_outside_current_universe+=1
