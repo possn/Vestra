@@ -47,6 +47,13 @@ def assess_publication(report: dict, now: datetime, max_age_hours: int = 8) -> d
         return {"status": "invalid", "reason": "unreconciled_evaluable_count"}
     if report.get("not_observed") != total - len(rows):
         return {"status": "invalid", "reason": "unreconciled_unobserved_count"}
+    incomplete = report.get("observed_incomplete")
+    if incomplete is not None and (type(incomplete) is not int or incomplete != len(rows) - evaluable):
+        return {"status": "invalid", "reason": "unreconciled_incomplete_count"}
+    coverage = report.get("universe_coverage_pct")
+    expected = round(100 * evaluable / total, 2) if total else None
+    if coverage is not None and (type(coverage) not in (int, float) or coverage != expected):
+        return {"status": "invalid", "reason": "unreconciled_coverage_percentage"}
     return {"status": "healthy", "reason": "verified_published_snapshot",
             "age_hours": round(age.total_seconds() / 3600, 2),
             "evaluable": evaluable, "universe": total}
