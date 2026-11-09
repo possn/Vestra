@@ -61,7 +61,8 @@ class GateFunnelContract(unittest.TestCase):
      "currency_or_usd_liquidity_rejections_after_structural_pass":1,
      "missing_downloads_not_negative_evidence":True,
      "probability_or_forward_performance":None},
-   "quality_filter_shadow":{"compared":298,"strict_eligible":2}
+   "quality_filter_shadow":{"compared":298,"strict_eligible":2},
+   "coverage_observations_24h":[{"ticker":f"TEST{i}","verified_at":"2026-11-09T14:17:00+00:00"} for i in range(300)]
   }
  def test_coherent_funnel_separates_observed_from_unobserved(self):
   feed=self.feed()
@@ -89,6 +90,27 @@ class GateFunnelContract(unittest.TestCase):
   del feed["coverage_audit_24h"]["coverage_pct"]
   self.assertEqual(mod.assess_freshness(feed,now)["status"],"invalid")
   self.assertEqual(mod.assess_freshness(self.feed(),now)["status"],"healthy")
+ def test_modern_rolling_evidence_must_reconcile_with_reported_coverage(self):
+  now=datetime(2026,11,9,15,tzinfo=timezone.utc)
+  self.assertEqual(mod.assess_freshness(self.feed(),now)["status"],"healthy")
+  scenarios=[
+    ("missing", lambda f:f.pop("coverage_observations_24h"),
+     "missing_or_mismatched_rolling_observations"),
+    ("undercounted",lambda f:f["coverage_observations_24h"].pop(),
+     "missing_or_mismatched_rolling_observations"),
+    ("duplicate",lambda f:f["coverage_observations_24h"].__setitem__(1,dict(f["coverage_observations_24h"][0])),
+     "duplicate_or_invalid_rolling_ticker"),
+    ("future",lambda f:f["coverage_observations_24h"][0].__setitem__("verified_at","2026-11-09T14:18:00+00:00"),
+     "out_of_window_rolling_observation"),
+    ("stale",lambda f:f["coverage_observations_24h"][0].__setitem__("verified_at","2026-11-08T14:16:59+00:00"),
+     "out_of_window_rolling_observation"),
+    ("naive",lambda f:f["coverage_observations_24h"][0].__setitem__("verified_at","2026-11-09T14:17:00"),
+     "out_of_window_rolling_observation"),
+  ]
+  for title,mutate,reason in scenarios:
+   with self.subTest(title=title):
+    feed=self.feed();mutate(feed)
+    self.assertEqual(mod.assess_freshness(feed,now)["reason"],reason)
  def test_legacy_feed_can_still_be_read_without_modern_numerator(self):
   now=datetime(2026,11,7,15,tzinfo=timezone.utc)
   feed=self.feed()
