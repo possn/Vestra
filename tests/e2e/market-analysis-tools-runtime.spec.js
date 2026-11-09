@@ -91,3 +91,28 @@ test('iPhone/WebKit: market tools expose one persistent close control and close 
   await close.click();
   await expect(sheet).toBeHidden();
 });
+
+
+test('iPhone/WebKit: strategy scanner opens by a truthful label and separates its score from the Vestra score', async ({ page }) => {
+  await openMarket(page);
+  const trigger = page.locator('#viewMarket [data-market-tool="scanner"]').first();
+  await expect(trigger).toContainText('Estratégias');
+  await trigger.click();
+  await expect(page.locator('#marketSheet')).toBeVisible();
+  const strategy = page.locator('[data-tool-scanner-strategy="quality_at_fair_price"]');
+  await expect(strategy).toBeVisible({ timeout: 15000 });
+  await strategy.click();
+  const first = page.locator('#marketScannerRuntimeRows .market-tool-runtime__row').first();
+  await expect(first).toBeVisible({ timeout: 10000 });
+  await expect(first.locator('.market-tool-runtime__business')).not.toBeEmpty();
+  const ticker = await first.getAttribute('data-tool-open-ticker');
+  const score = await first.locator('.market-score').innerText();
+  const expected = await page.evaluate(t => {
+    const stock = window.VestraMarketStaticUniverse.getStocks().find(s => s.ticker === t);
+    const value = Number(stock?.scanner_results?.quality_at_fair_price?.score);
+    return Number.isFinite(value) ? String(Math.round(value)) : '—';
+  }, ticker);
+  expect(score.trim()).toBe(expected);
+  await page.locator('#marketSheet [data-market-close]').click();
+  await expect(page.locator('#marketSheet')).toBeHidden();
+});
