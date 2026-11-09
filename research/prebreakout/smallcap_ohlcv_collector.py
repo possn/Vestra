@@ -173,15 +173,38 @@ def merge_slots(current, previous, now, ttl_hours=96, *, eligible_tickers=None):
                 raise ValueError("observed smallcap ticker outside current eligible universe")
             observations[ticker]={**entry,"observation_checked_at":now.isoformat()}
     all_rows=list(observations.values())
-    signals=[row["verified_prebreakout_setup"] for row in all_rows
-             if row.get("status")=="evaluable_ohlcv"
-             and isinstance(row.get("verified_prebreakout_setup"),dict)]
+    # Research coverage is a rolling 96h observation window, not proof that a
+    # setup is still actionable. A prior setup may only remain in the current
+    # signals list within its shorter 18h verification window.
+    signal_cutoff=now-timedelta(hours=18)
+    signals=[]
+    historical_setups_excluded=0
+    for row in all_rows:
+        setup=row.get("verified_prebreakout_setup")
+        if row.get("status")!="evaluable_ohlcv" or not isinstance(setup,dict):
+            continue
+        raw_timestamp=(row.get("observation_checked_at") or
+                       row.get("ohlcv_observed_at") or
+                       (current.get("generated_at") if row.get("ticker") in
+                        {item.get("ticker") for item in current.get("observations",[])
+                         if isinstance(item,dict)} else None))
+        try:
+            verified=datetime.fromisoformat(str(raw_timestamp).replace("Z","+00:00"))
+        except (TypeError,ValueError):
+            verified=None
+        if (verified is None or verified.tzinfo is None or
+            not signal_cutoff<=verified<=now):
+            historical_setups_excluded+=1
+            continue
+        signals.append(setup)
     evaluable=sum(row.get("status")=="evaluable_ohlcv" for row in all_rows)
     return {**current,"observations":all_rows,"signals":signals,
             "evaluable_ohlcv":evaluable,"observed_incomplete":len(all_rows)-evaluable,
             "not_observed":max(0,count-len(all_rows)),
             "universe_coverage_pct":round(100*evaluable/count,2) if count else None,
             "validated_prebreakout_setups":len(signals),
+            "setup_verification_window_hours":18,
+            "historical_setups_excluded_as_stale":historical_setups_excluded,
             "coverage_window_hours":ttl_hours,
             "distinct_tickers_observed":len(all_rows),
             "excluded_outside_current_universe":excluded_outside_current_universe}
