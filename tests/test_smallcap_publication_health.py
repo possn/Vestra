@@ -71,6 +71,29 @@ class SmallcapPublishedHealthTests(unittest.TestCase):
             with self.subTest(field=field, value=value):
                 self.assertEqual(health.assess_publication({**valid, field: value}, self.now)["reason"], reason)
 
+    def test_fresh_provider_diagnostics_reconcile_without_confusing_rolling_window(self):
+        valid = {**self.report,
+                 "provider_tickers_attempted": 1,
+                 "provider_attempt_status_counts": {"provider_error": 1},
+                 "provider_error_type_counts": {"TimeoutError": 1}}
+        # Fresh attempts can differ from rolling observed OHLCV.
+        self.assertEqual(health.assess_publication(valid, self.now)["status"], "healthy")
+        for changes, reason in [
+            ({"provider_tickers_attempted": 2}, "unreconciled_provider_attempt_counts"),
+            ({"provider_attempt_status_counts": {"provider_error": True}},
+             "unreconciled_provider_attempt_counts"),
+            ({"provider_attempt_status_counts": {"provider_error": -1}},
+             "unreconciled_provider_attempt_counts"),
+            ({"provider_attempt_status_counts": {"provider_error": 4},
+              "provider_tickers_attempted": 4}, "unreconciled_provider_attempt_counts"),
+            ({"provider_error_type_counts": {"TimeoutError": 2}},
+             "unreconciled_provider_error_types"),
+            ({"provider_error_type_counts": {"TimeoutError": True}},
+             "unreconciled_provider_error_types"),
+        ]:
+            with self.subTest(changes=changes):
+                self.assertEqual(health.assess_publication({**valid, **changes}, self.now)["reason"], reason)
+
     def test_schema_is_not_assumed_current(self):
         report = {**self.report, "schema": "unknown"}
         self.assertEqual(health.assess_publication(report, self.now)["reason"], "invalid_schema")

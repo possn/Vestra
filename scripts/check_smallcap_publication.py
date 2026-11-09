@@ -54,6 +54,24 @@ def assess_publication(report: dict, now: datetime, max_age_hours: int = 8) -> d
     expected = round(100 * evaluable / total, 2) if total else None
     if coverage is not None and (type(coverage) not in (int, float) or coverage != expected):
         return {"status": "invalid", "reason": "unreconciled_coverage_percentage"}
+    attempt_counts = report.get("provider_attempt_status_counts")
+    if attempt_counts is not None:
+        attempted = report.get("provider_tickers_attempted")
+        if (not isinstance(attempt_counts, dict)
+            or type(attempted) is not int or attempted < 0
+            or any(not isinstance(k, str) or not k.strip()
+                   or type(v) is not int or v < 0 for k, v in attempt_counts.items())
+            or sum(attempt_counts.values()) != attempted
+            or attempted > total):
+            return {"status": "invalid", "reason": "unreconciled_provider_attempt_counts"}
+        error_counts = report.get("provider_error_type_counts")
+        if error_counts is not None and (
+            not isinstance(error_counts, dict)
+            or any(not isinstance(k, str) or not k.strip()
+                   or type(v) is not int or v < 0 for k, v in error_counts.items())
+            or sum(error_counts.values()) > attempt_counts.get("provider_error", 0)
+        ):
+            return {"status": "invalid", "reason": "unreconciled_provider_error_types"}
     return {"status": "healthy", "reason": "verified_published_snapshot",
             "age_hours": round(age.total_seconds() / 3600, 2),
             "evaluable": evaluable, "universe": total}
