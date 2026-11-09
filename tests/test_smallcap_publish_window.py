@@ -58,6 +58,24 @@ class SmallcapPublishWindowTests(unittest.TestCase):
         self.assertIn("github.event.inputs.budget || '"+str(budget)+"'",workflow)
         # This is only a theoretical capacity bound, not real OHLCV coverage.
 
+    def test_workflow_reports_collection_and_attests_main_publication(self):
+        workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text()
+        self.assertIn("Record observed research evidence",workflow)
+        self.assertIn("Previous published at (UTC)",workflow)
+        self.assertIn("Fresh provider attempts:",workflow)
+        self.assertIn("Rolling evaluable observations:",workflow)
+        self.assertIn("These are observed OHLCV counts, not pre-breakout success rates.",workflow)
+        self.assertIn("git merge-base --is-ancestor HEAD origin/main",workflow)
+        self.assertIn("Smallcap publish not verified on origin/main",workflow)
+        self.assertIn("Smallcap publication: verified on main",workflow)
+        self.assertIn("Smallcap publication: no file changes",workflow)
+        self.assertIn("Smallcap publication: deferred due to aligned code PR",workflow)
+        self.assertIn("steps.publish_window.outputs.defer == 'true'",workflow)
+        self.assertLess(workflow.index("bash scripts/publish_with_retry.sh origin main"),
+                        workflow.index("git merge-base --is-ancestor HEAD origin/main"))
+        self.assertLess(workflow.index("Record observed research evidence"),
+                        workflow.index("Check automated main publish window"))
+
     def test_workflow_checks_previous_snapshot_not_fresh_result(self):
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text()
         self.assertIn("git show HEAD:data/breakout-lab-smallcap-ohlcv-research.json",workflow)
