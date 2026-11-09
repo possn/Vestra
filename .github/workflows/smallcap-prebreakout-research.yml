@@ -40,7 +40,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_smallcap_ohlcv_collector.py'
           python -m unittest discover -s tests -p 'test_smallcap_publish_window.py'
       # Six-hour collection slots: protect aligned code PRs briefly, but never
-      # postpone an actually collected research snapshot beyond the next slot.
+      # defer publication for more than roughly two six-hour slots.
       - name: Check automated main publish window
         id: publish_window
         env:
