@@ -99,12 +99,12 @@ def _normalize_one(x: dict) -> tuple[str, dict] | None:
     # fresh. A malformed or future-dated filing cannot become Smart Money proof.
     today = dt.datetime.now(dt.timezone.utc).date()
     try:
-        if len(transaction_date) != 10 or dt.date.fromisoformat(transaction_date) > today:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", transaction_date) or dt.date.fromisoformat(transaction_date) > today:
             return None
         disclosure = x.get("disclosure_date")
         if disclosure:
             disclosure = str(disclosure).strip()
-            if len(disclosure) != 10 or dt.date.fromisoformat(disclosure) > today:
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", disclosure) or dt.date.fromisoformat(disclosure) > today:
                 return None
     except (TypeError, ValueError):
         return None
