@@ -112,6 +112,28 @@ def macro_publication_overdue(previous: dict, now: datetime.datetime, hours: int
     return age>datetime.timedelta(hours=hours) or age<datetime.timedelta(minutes=-5)
 
 
+def smallcap_publication_overdue(previous: dict, now: datetime.datetime, hours: int) -> bool:
+    """Only an actual *previously published* research snapshot limits PR deferral.
+
+    This is an operational publication gate, not fresh OHLCV evidence or proof
+    that a scanner identified any setup. Missing/invalid provenance fails open
+    for publication, never for the per-ticker signal-quality checks.
+    """
+    if now.tzinfo is None or type(hours) is not int or hours < 1:
+        raise ValueError("invalid smallcap publication deadline")
+    try:
+        if previous.get("schema") != "vestra_breakout_lab_smallcap_ohlcv_research_v1":
+            return True
+        stamp = datetime.datetime.fromisoformat(
+            str(previous["generated_at"]).replace("Z", "+00:00"))
+        if stamp.tzinfo is None:
+            return True
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return True
+    age = now.astimezone(datetime.timezone.utc) - stamp.astimezone(datetime.timezone.utc)
+    return age > datetime.timedelta(hours=hours) or age < datetime.timedelta(minutes=-5)
+
+
 def forward_publication_overdue(previous: dict, now: datetime.datetime, hours: int) -> bool:
     """Bound the delay using the actual prior forward evaluation's price cutoff.
 
@@ -144,6 +166,8 @@ def main() -> int:
                         help="Scanner only: allow real publication after bounded PR grace")
     parser.add_argument("--forward-max-staleness-hours", type=int, default=None,
                         help="Prebreakout forward publisher: release independently evaluated results when prior publication is overdue")
+    parser.add_argument("--smallcap-max-staleness-hours", type=int, default=None,
+                        help="Smallcap research publisher: bound PR deferral by the previous published report timestamp")
     args = parser.parse_args()
     if args.market_grace_minutes is not None:
         if args.market_grace_minutes < 0:
@@ -177,6 +201,21 @@ def main() -> int:
         if forward_publication_overdue(prior,datetime.datetime.now(datetime.timezone.utc),args.forward_max_staleness_hours):
             print("Previous forward-evidence publication overdue or unverifiable; releasing independently evaluated evidence.")
             _write_output("defer","false")
+            return 0
+    if args.smallcap_max_staleness_hours is not None:
+        if args.smallcap_max_staleness_hours < 1:
+            parser.error("--smallcap-max-staleness-hours must be positive")
+        try:
+            with open(os.getenv("VESTRA_SMALLCAP_PREVIOUS", "/tmp/vestra-smallcap-previous.json"),
+                      encoding="utf-8") as fh:
+                prior=json.load(fh)
+        except (OSError, ValueError, TypeError):
+            prior={}
+        if smallcap_publication_overdue(
+                prior, datetime.datetime.now(datetime.timezone.utc),
+                args.smallcap_max_staleness_hours):
+            print("Previously published smallcap research overdue or unverifiable; releasing real collected evidence.")
+            _write_output("defer", "false")
             return 0
     if args.scanner_grace_minutes is not None and args.scanner_grace_minutes < 0:
         parser.error("--scanner-grace-minutes must be nonnegative")
