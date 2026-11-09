@@ -51,6 +51,23 @@ class MarketResearchClarityTests(unittest.TestCase):
         self.assertNotIn("business_summary", index_row({"ticker": "NONE", "quote_type": "EQUITY", "industry": "Utilities"}))
         self.assertNotIn("business_summary", index_row({"ticker": "ETF", "quote_type": "ETF", "business_summary": long}))
 
+    def test_provider_name_placeholder_is_not_a_business_description(self):
+        from scripts.build_market_shards import index_row
+        name = "Agilent Technologies, Inc."
+        row = {"ticker": "A", "name": name, "quote_type": "EQUITY",
+               "long_business_summary": "Agilent Technologies, Inc.",
+               "business_summary": "Agilent Technologies, Inc.",
+               "description": "Designs, develops and supplies laboratory instruments and analytical software worldwide."}
+        output = index_row(row)
+        self.assertIn("Designs, develops", output["business_summary"])
+        row.pop("description")
+        self.assertNotIn("business_summary", index_row(row))
+        row["long_business_summary"] = (
+            "Agilent Technologies, Inc. manufactures and sells analytical instruments "
+            "for clinical and industrial laboratories."
+        )
+        self.assertIn("manufactures and sells", index_row(row)["business_summary"])
+
     def test_projected_company_activity_preserves_real_mobile_startup_budget(self):
         import json
         from scripts import build_market_shards as builder
