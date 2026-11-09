@@ -1,0 +1,48 @@
+name: Smallcap published-data health
+on:
+  workflow_dispatch:
+  schedule:
+    # Independently verify the 00/06/12/18 UTC collection schedule on weekdays.
+    # ~3h after the latest expected slot; >8h means one or more missed publishes.
+    - cron: '40 9,15,21 * * 1-5'
+permissions:
+  contents: read
+jobs:
+  published-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify independently published small-cap OHLCV
+        run: |
+          set -euo pipefail
+          python scripts/check_smallcap_publication.py --max-age-hours 8
+      - name: Write provenance summary even on failure
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import os
+          p = Path("data/breakout-lab-smallcap-ohlcv-research.json")
+          try:
+              j=json.loads(p.read_text(encoding="utf-8"))
+          except (OSError, ValueError):
+              j={}
+          lines=[
+              "### Independent smallcap publication check",
+              f"- Published generated_at: `{j.get('generated_at', 'missing')}`",
+              f"- Current universe: {j.get('universe_100m_500m_count', 'missing')}",
+              f"- Evaluable rolling OHLCV: {j.get('evaluable_ohlcv', 'missing')}",
+              "- Checked the actual main-branch artifact; no provider values inferred.",
+              "- A red check means the snapshot is stale or inconsistent, not that no opportunities exist."
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as f:
+              f.write("\n".join(lines)+"\n")
+          PY
