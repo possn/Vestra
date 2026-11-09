@@ -92,6 +92,23 @@ def assess_freshness(feed:dict, now:datetime, max_age_hours:float=8)->dict:
                        audit.get("full_universe_verified") not in (True,False) or
                        type(audit.get("full_universe_verified")) is not bool):
             return {"status":"invalid","reason":"missing_modern_current_universe_coverage"}
+        if modern:
+            # The audit's rolling numerator must be supported by distinct,
+            # time-bounded observed ticker evidence, not counters alone.
+            evidence=feed.get("coverage_observations_24h")
+            if not isinstance(evidence,list) or len(evidence)!=observed:
+                return {"status":"invalid","reason":"missing_or_mismatched_rolling_observations"}
+            tickers=set()
+            for row in evidence:
+                if not isinstance(row,dict):
+                    return {"status":"invalid","reason":"invalid_rolling_observation"}
+                ticker=row.get("ticker")
+                if not isinstance(ticker,str) or not ticker.strip() or ticker in tickers:
+                    return {"status":"invalid","reason":"duplicate_or_invalid_rolling_ticker"}
+                tickers.add(ticker)
+                stamp=datetime.fromisoformat(str(row["verified_at"]).replace("Z","+00:00"))
+                if stamp.tzinfo is None or not 0<=(generated-stamp).total_seconds()<=24*3600:
+                    return {"status":"invalid","reason":"out_of_window_rolling_observation"}
         if current is not None:
             if (any(type(v) is not int for v in (current,observed,outside,eligible)) or
                 not 0<=current<=eligible or outside<0 or observed!=current+outside or
