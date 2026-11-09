@@ -286,6 +286,31 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(report["evaluable_ohlcv"],0)
         self.assertEqual(report["observations"][0]["status"],"provider_error")
 
+    def test_future_dated_ohlcv_never_inflates_rolling_coverage(self):
+        from datetime import timedelta
+        now=datetime(2026,11,9,18,tzinfo=timezone.utc)
+        schema="vestra_breakout_lab_smallcap_ohlcv_research_v1"
+        previous={"schema":schema,"generated_at":now.isoformat(),
+                  "observations":[
+                      {"ticker":"FUTURE","status":"evaluable_ohlcv",
+                       "observation_checked_at":(now+timedelta(minutes=30)).isoformat(),
+                       "verified_prebreakout_setup":{"ticker":"FUTURE","score":99}},
+                      {"ticker":"VALID","status":"evaluable_ohlcv",
+                       "observation_checked_at":(now-timedelta(hours=4)).isoformat(),
+                       "verified_prebreakout_setup":None}]}
+        current={"schema":schema,"generated_at":now.isoformat(),
+                 "universe_100m_500m_count":3,
+                 "observations":[{"ticker":"CURRENT","status":"no_ohlcv"}]}
+        report=mod.merge_slots(current,previous,now,
+                               eligible_tickers={"FUTURE","VALID","CURRENT"})
+        self.assertEqual({x["ticker"] for x in report["observations"]},
+                         {"VALID","CURRENT"})
+        self.assertEqual(report["evaluable_ohlcv"],1)
+        self.assertEqual(report["not_observed"],1)
+        self.assertEqual(report["distinct_tickers_observed"],2)
+        self.assertEqual(report["signals"],[])
+        self.assertEqual(report["universe_coverage_pct"],33.33)
+
     def test_merge_slots_does_not_revive_expired_observations(self):
         from datetime import timedelta
         now=datetime(2026,10,30,18,tzinfo=timezone.utc)
