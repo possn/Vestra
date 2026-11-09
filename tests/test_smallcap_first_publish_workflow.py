@@ -14,9 +14,9 @@ class SmallcapFirstPublishContract(unittest.TestCase):
         self.assertIn("git show HEAD:data/breakout-lab-smallcap-ohlcv-research.json",source)
         self.assertIn("printf '{}' > /tmp/vestra-smallcap-previous.json",source)
         self.assertIn("VESTRA_SMALLCAP_PREVIOUS: /tmp/vestra-smallcap-previous.json",source)
-        self.assertIn("--smallcap-max-staleness-hours 24",source)
+        self.assertIn("--smallcap-max-staleness-hours 8",source)
         self.assertTrue(smallcap_publication_overdue(
-            {},datetime(2026,11,9,tzinfo=timezone.utc),24))
+            {},datetime(2026,11,9,tzinfo=timezone.utc),8))
         self.assertIn("git add data/breakout-lab-smallcap-ohlcv-research.json",source)
         self.assertIn("python research/prebreakout/smallcap_ohlcv_collector.py",source)
 
