@@ -150,6 +150,44 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertEqual(merged["not_observed"],2)
         self.assertEqual(next(x for x in merged["observations"] if x["ticker"]=="C")["observation_checked_at"],now.isoformat())
 
+    def test_rolling_coverage_cannot_repromote_stale_setups(self):
+        from datetime import timedelta
+        now=datetime(2026,11,9,12,tzinfo=timezone.utc)
+        schema="vestra_breakout_lab_smallcap_ohlcv_research_v1"
+        prior={"schema":schema,"generated_at":(now-timedelta(hours=24)).isoformat(),
+               "observations":[
+                 {"ticker":"OLD","status":"evaluable_ohlcv",
+                  "observation_checked_at":(now-timedelta(hours=24)).isoformat(),
+                  "verified_prebreakout_setup":{"ticker":"OLD","score":99}},
+                 {"ticker":"FRESH","status":"evaluable_ohlcv",
+                  "observation_checked_at":(now-timedelta(hours=6)).isoformat(),
+                  "verified_prebreakout_setup":{"ticker":"FRESH","score":70}}]}
+        current={"schema":schema,"generated_at":now.isoformat(),
+                 "universe_100m_500m_count":3,
+                 "observations":[{"ticker":"NEW","status":"evaluable_ohlcv",
+                                  "verified_prebreakout_setup":None}]}
+        report=mod.merge_slots(current,prior,now,eligible_tickers={"OLD","FRESH","NEW"})
+        self.assertEqual({row["ticker"] for row in report["observations"]},{"OLD","FRESH","NEW"})
+        self.assertEqual([item["ticker"] for item in report["signals"]],["FRESH"])
+        self.assertEqual(report["historical_setups_excluded_as_stale"],1)
+        self.assertEqual(report["setup_verification_window_hours"],18)
+        self.assertEqual(report["evaluable_ohlcv"],3)
+        self.assertEqual(report["universe_coverage_pct"],100.0)
+
+    def test_rejected_provider_recheck_cannot_retain_prior_signal(self):
+        now=datetime(2026,11,9,12,tzinfo=timezone.utc)
+        schema="vestra_breakout_lab_smallcap_ohlcv_research_v1"
+        prior={"schema":schema,"generated_at":now.isoformat(),
+               "observations":[{"ticker":"A","status":"evaluable_ohlcv",
+                                "verified_prebreakout_setup":{"ticker":"A","score":85}}]}
+        current={"schema":schema,"generated_at":now.isoformat(),
+                 "universe_100m_500m_count":1,
+                 "observations":[{"ticker":"A","status":"provider_error"}]}
+        report=mod.merge_slots(current,prior,now,eligible_tickers={"A"})
+        self.assertEqual(report["signals"],[])
+        self.assertEqual(report["evaluable_ohlcv"],0)
+        self.assertEqual(report["observations"][0]["status"],"provider_error")
+
     def test_merge_slots_does_not_revive_expired_observations(self):
         from datetime import timedelta
         now=datetime(2026,10,30,18,tzinfo=timezone.utc)
