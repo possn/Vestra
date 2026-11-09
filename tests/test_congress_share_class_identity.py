@@ -29,5 +29,38 @@ class CongressShareClassTests(unittest.TestCase):
         self.assertEqual(result_b["BRK.B"][0]["member"], "B")
 
 
+    def test_future_and_malformed_trade_dates_never_enter_dossiers(self):
+        from datetime import datetime, timedelta, timezone
+        today = datetime.now(timezone.utc).date()
+        valid = (today - timedelta(days=2)).isoformat()
+        future = (today + timedelta(days=1)).isoformat()
+        trades = [
+            {"ticker": "MSFT", "member": "Valid", "transaction_date": valid,
+             "disclosure_date": valid, "type": "buy"},
+            {"ticker": "MSFT", "member": "Future trade", "transaction_date": future,
+             "disclosure_date": valid, "type": "buy"},
+            {"ticker": "MSFT", "member": "Future disclosure", "transaction_date": valid,
+             "disclosure_date": future, "type": "buy"},
+            {"ticker": "MSFT", "member": "Invalid trade", "transaction_date": "2026-02-30",
+             "type": "buy"},
+            {"ticker": "MSFT", "member": "Week-date not canonical",
+             "transaction_date": "2026-W45-1", "type": "buy"},
+            {"ticker": "MSFT", "member": "Invalid disclosure", "transaction_date": valid,
+             "disclosure_date": "not-a-date", "type": "buy"},
+        ]
+        with patch.object(congress, "_load_snapshot", return_value={"trades": trades}):
+            mapped = congress.fetch_congress_for_universe(["MSFT"])
+        self.assertEqual([trade["member"] for trade in mapped["MSFT"]], ["Valid"])
+
+    def test_explicit_data_not_current_prevents_dossier_evidence(self):
+        from datetime import date
+        today = date.today().isoformat()
+        payload = {"schema_version": 2, "data_current": False,
+                   "newest_disclosure": today, "trades": []}
+        self.assertFalse(congress._is_fresh(payload))
+        payload["data_current"] = True
+        self.assertTrue(congress._is_fresh(payload))
+
+
 if __name__ == "__main__":
     unittest.main()
