@@ -47,6 +47,57 @@ class ResearchCollectorTests(unittest.TestCase):
         self.assertTrue(result["not_breakout_candidates"])
         self.assertTrue(all(x["liquidity_5m_usd_verified"] for x in result["observations"]))
         self.assertEqual(len([c for c in p.calls if c[0]=="download"]),2)
+    def test_unobserved_current_cohort_names_are_prioritized(self):
+        from datetime import timedelta
+        now=datetime(2026,11,9,6,tzinfo=timezone.utc)
+        names=["A","B","C","D","E"]
+        old={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+             "generated_at":(now-timedelta(hours=2)).isoformat(),
+             "observations":[
+               {"ticker":"A","observation_checked_at":(now-timedelta(hours=2)).isoformat()},
+               {"ticker":"B","observation_checked_at":(now-timedelta(hours=3)).isoformat()},
+               {"ticker":"E","observation_checked_at":(now-timedelta(hours=6)).isoformat()}]}
+        selected=mod.pick_research_tickers(names,slot=0,budget=2,previous=old,checked_at=now)
+        self.assertEqual(selected,["C","D"])
+        # Second slot picks the remaining unobserved ticker, not blindly A/B.
+        old["observations"].extend({"ticker":t,"observation_checked_at":now.isoformat()}
+                                    for t in selected)
+        self.assertEqual(mod.pick_research_tickers(names,slot=1,budget=2,
+                           previous=old,checked_at=now),["E","B"])
+
+    def test_stale_outside_cohort_and_future_dates_do_not_block_new_coverage(self):
+        from datetime import timedelta
+        now=datetime(2026,11,9,6,tzinfo=timezone.utc)
+        old={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+             "generated_at":now.isoformat(),"observations":[
+                {"ticker":"A","observation_checked_at":(now-timedelta(hours=97)).isoformat()},
+                {"ticker":"B","observation_checked_at":(now+timedelta(hours=1)).isoformat()},
+                {"ticker":"Z","observation_checked_at":now.isoformat()}]}
+        self.assertEqual(mod.pick_research_tickers(["A","B","C"],0,3,old,now),
+                         ["A","B","C"])
+        self.assertEqual(mod.pick_research_tickers(["A","B","C"],0,2,old,now),
+                         ["A","B"])
+        old["observations"]=[{"ticker":"A","observation_checked_at":now.isoformat()},
+                             {"ticker":"B","observation_checked_at":
+                              (now-timedelta(hours=2)).isoformat()},
+                             {"ticker":"C","observation_checked_at":
+                              (now-timedelta(hours=1)).isoformat()}]
+        self.assertEqual(mod.pick_research_tickers(["A","B","C"],0,2,old,now),
+                         ["B","C"])
+
+    def test_collect_uses_previous_evidence_for_bounded_provider_budget(self):
+        now=datetime(2026,7,10,tzinfo=timezone.utc)
+        rows=[{"ticker":x,"market_cap":150e6,"quote_type":"EQUITY"}
+              for x in ("A","B","C","D")]
+        prior={"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
+               "generated_at":now.isoformat(),
+               "observations":[{"ticker":"A","observation_checked_at":now.isoformat()},
+                               {"ticker":"B","observation_checked_at":now.isoformat()}]}
+        provider=Provider()
+        result=mod.collect(rows,provider,slot=0,budget=2,checked_at=now,previous=prior)
+        self.assertEqual([r["ticker"] for r in result["observations"]],["C","D"])
+        self.assertEqual(len([c for c in provider.calls if c[0]=="download"]),2)
+
     def test_recent_zero_volume_is_incomplete_research_not_an_invalid_price(self):
         from datetime import timedelta
         class NoTradeFrame:

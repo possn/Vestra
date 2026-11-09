@@ -98,14 +98,48 @@ def inspect(ticker,frame,currency,checked_at):
             "currency":"USD","price_basis":"yfinance_auto_adjusted",
             "ohlcv_observed_at":checked_at.isoformat()}
 
-def collect(rows,provider,slot=0,budget=20,checked_at=None):
+def pick_research_tickers(names,slot,budget,previous,checked_at,ttl_hours=96):
+    """Prioritize CURRENT universe names absent from the recent observed window.
+
+    Keep the old cyclic slot order as a deterministic tiebreaker; once every
+    eligible name has been observed, revisit the oldest evidence first.
+    This changes WHICH names are queried, never the OHLCV eligibility gate.
+    """
+    from datetime import timedelta
+    if not names:return []
+    start=(slot*budget)%len(names)
+    rotated=names[start:]+names[:start]
+    if not isinstance(previous,dict) or previous.get("schema")!="vestra_breakout_lab_smallcap_ohlcv_research_v1":
+        return rotated[:min(budget,len(names))]
+    cutoff=checked_at-timedelta(hours=ttl_hours)
+    last_seen={}
+    for row in previous.get("observations",[]):
+        if not isinstance(row,dict):continue
+        ticker=str(row.get("ticker") or "").strip().upper()
+        if ticker not in names:continue
+        raw=row.get("observation_checked_at") or row.get("ohlcv_observed_at") or previous.get("generated_at")
+        try:stamp=datetime.fromisoformat(str(raw).replace("Z","+00:00"))
+        except (TypeError,ValueError):continue
+        if stamp.tzinfo is None:continue
+        stamp=stamp.astimezone(timezone.utc)
+        if not cutoff<=stamp<=checked_at:continue
+        if stamp>last_seen.get(ticker,cutoff):
+            last_seen[ticker]=stamp
+    # Missing evidence sorts ahead of already observed names. For the latter,
+    # the oldest observation is rechecked before newer ones.
+    ordered=sorted(rotated,key=lambda ticker:(
+        1 if ticker in last_seen else 0,
+        last_seen.get(ticker,cutoff)))
+    return ordered[:min(budget,len(names))]
+
+
+def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
     if type(slot)!=int or slot<0 or type(budget)!=int or not 1<=budget<=MAX_PER_RUN:
         raise ValueError("slot must be >=0 and budget between 1 and 30")
     checked_at=checked_at or datetime.now(timezone.utc)
     if checked_at.tzinfo is None:raise ValueError("checked_at must be timezone-aware")
     names=cohort(rows)
-    start=(slot*budget)%len(names) if names else 0
-    selected=(names[start:]+names[:start])[:min(budget,len(names))] if names else []
+    selected=pick_research_tickers(names,slot,budget,previous,checked_at)
     observed=[]
     cap_by_ticker={str(row.get("ticker") or "").strip().upper():row.get("market_cap")
                    for row in rows if isinstance(row,dict)}
@@ -217,12 +251,12 @@ def main():
     args=parser.parse_args()
     import yfinance as yf
     rows=json.loads((ROOT/"data/stocks-index.json").read_text()).get("stocks",[])
-    result=collect(rows,yf,args.slot,args.budget)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     try:
         previous=json.loads(args.output.read_text(encoding="utf-8"))
     except (FileNotFoundError,ValueError,OSError):
         previous={}
+    result=collect(rows,yf,args.slot,args.budget,previous=previous)
     result=merge_slots(result,previous,datetime.fromisoformat(result["generated_at"]),
                        eligible_tickers=cohort(rows))
     args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
