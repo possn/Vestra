@@ -38,6 +38,7 @@ jobs:
           SLOT=$(python -c 'import datetime; n=datetime.datetime.now(datetime.timezone.utc);print(n.toordinal()*4+n.hour//6)')
           python research/prebreakout/smallcap_ohlcv_collector.py --slot "$SLOT" --budget "$BUDGET"
           python -m unittest discover -s tests -p 'test_smallcap_ohlcv_collector.py'
+          python -m unittest discover -s tests -p 'test_smallcap_publish_window.py'
       - name: Check automated main publish window
         id: publish_window
         env:
