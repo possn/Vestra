@@ -7,8 +7,10 @@
   let activeLens='all';
 
   function section(){
-    return document.querySelector('#marketPrimary .market-section:has(.ux454-opportunity-guide)')
-      || [...document.querySelectorAll('.market-section')].find(x=>/Oportunidades agora|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Small Caps|Value \\+ timing/.test(t(x.querySelector('h3')?.textContent)))||null;
+    const sections=[...document.querySelectorAll('.market-section')];
+    return sections.find(x=>x.querySelector('.vestra-opportunity-lenses'))
+      || sections.find(x=>/Oportunidades agora|Melhores oportunidades|Mínimos 52 semanas|A começar|Recuperação|Compressão|Small Caps|Value \\+ timing/.test(t(x.querySelector('h3')?.textContent)))
+      || null;
   }
   function ensureBar(s){
     let bar=s?.querySelector('.vestra-opportunity-lenses');
