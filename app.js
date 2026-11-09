@@ -12614,9 +12614,19 @@ function renderQuoteSyncStatus() {
   const report = (state.settings && state.settings.lastQuoteRefresh) || null;
   const auto = !(state.settings && state.settings.autoRefreshQuotes === false);
   const ageMs = lastTs ? Date.now() - lastTs : Infinity;
-  card.classList.toggle("is-stale", ageMs > QUOTE_AUTO_REFRESH_STALE_MS);
-  card.classList.toggle("is-error", !!(report && report.failed > 0));
-  status.textContent = quoteRefreshInProgress ? "A atualizar…" : (workerUrl ? formatQuoteRefreshAge(lastTs) : "Worker por configurar");
+  const acceptedQuotes = report ? Math.max(0, Number(report.updated) || 0) : null;
+  const failedQuotes = report ? Math.max(0, Number(report.failed) || 0) : 0;
+  const skippedQuotes = report ? Math.max(0, Number(report.skipped) || 0) : 0;
+  const noAcceptedQuotes = !!(lastTs && report && acceptedQuotes === 0);
+  const partialRefresh = !!(lastTs && report && acceptedQuotes > 0 && failedQuotes > 0);
+  card.classList.toggle("is-stale", ageMs > QUOTE_AUTO_REFRESH_STALE_MS || noAcceptedQuotes);
+  card.classList.toggle("is-error", failedQuotes > 0 || noAcceptedQuotes);
+  // lastQuoteRefreshTs tracks an attempt to throttle automatic retries; it is
+  // not proof of updated prices. Never label zero accepted quotes as fresh.
+  status.textContent = quoteRefreshInProgress ? "A atualizar…" :
+    (!workerUrl ? "Worker por configurar" :
+      noAcceptedQuotes ? "Sem cotações atualizadas" :
+      partialRefresh ? "Atualização parcial" : formatQuoteRefreshAge(lastTs));
   if (quoteRefreshInProgress) meta.textContent = "A obter cotações mais recentes";
   else if (!workerUrl) meta.textContent = "Configura em Mais → Preferências";
   else if (report && report.failed > 0) {
@@ -12633,7 +12643,8 @@ function renderQuoteSyncStatus() {
     const fallback = Number(report?.performance?.fallbackAssets || 0);
     const fallbackLabel = fallback > 0 ? ` · ${fallback} com fallback` : "";
     meta.textContent = `${report.updated} atualizadas${skipped}${mode}${fallbackLabel}${secs} · automático`;
-  } else meta.textContent = auto ? "Automático · atualiza após 1 min" : "Automático desativado";
+  } else if (noAcceptedQuotes) meta.textContent = `0 atualizadas${skippedQuotes ? ` · ${skippedQuotes} ignoradas` : ""} · verificar identidades e cotações`;
+  else meta.textContent = auto ? "Automático · atualiza após 1 min" : "Automático desativado";
 
   const copy = card.querySelector('.quote-sync-card__copy');
   let errorBtn = copy && copy.querySelector('[data-quote-errors-open]');
