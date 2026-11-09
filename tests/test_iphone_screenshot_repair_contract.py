@@ -27,8 +27,8 @@ class IphoneScreenshotRepairs(unittest.TestCase):
         self.assertIn('.item__v',CSS)
         self.assertIn('min-height:52px!important',CSS)
     def test_smallcap_actual_dynamic_chip_has_contrast(self):
-        self.assertIn("smallcapChip.dataset.smallcapPrebreakoutLens='1'",MARKET)
-        self.assertIn('button[data-smallcap-prebreakout-lens]',CSS)
+        self.assertIn("section.querySelector('.vestra-technical-lenses')?.remove()",MARKET)
+        self.assertIn('button[data-vestra-lens="smallcap_breakout"]',CSS)
         self.assertIn('[aria-pressed="true"]',CSS)
         self.assertIn('-webkit-text-fill-color:#fff!important',CSS)
     def test_sentiment_score_and_reading_are_distinct_columns(self):
