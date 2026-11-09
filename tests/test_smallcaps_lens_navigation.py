@@ -9,7 +9,7 @@ class SmallcapLensNavigation(unittest.TestCase):
         self.assertIn("Compressão|Small Caps|Value",code)
     def test_same_card_keeps_both_lenses(self):
         code=(ROOT/'market-opportunities.js').read_text()
-        self.assertIn("row.append(normal,smallcapChip)",code)
+        self.assertNotIn("row.append(normal,smallcapChip)",code)
         self.assertIn("selectLens('smallcap_breakout')",code)
         self.assertIn("selectLens('breakout')",code)
 if __name__=='__main__':unittest.main()
