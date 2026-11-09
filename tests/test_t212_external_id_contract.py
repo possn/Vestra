@@ -52,7 +52,7 @@ class Trading212IdentityContract(unittest.TestCase):
     def test_changed_runtimes_are_cache_busted(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         loader = (ROOT / "app-broker-import-loader.js").read_text(encoding="utf-8")
-        self.assertIn("app.js?v=20260930v3&amp;rev=20261109-financial-sync", html)
+        self.assertIn("app.js?v=20260930v3&amp;rev=20261109-quote-refresh-truth", html)
         self.assertIn("app-broker-parsers.js?v=20261103-external-id", loader)
 
     def test_event_key_prioritizes_scoped_external_id(self):
