@@ -51,10 +51,10 @@ test('iPhone/WebKit: portfolio has direct chapter navigation without duplicated 
  });
  expect(contrast.title).toBe('rgb(244, 239, 230)');
  expect(contrast.heading).toBe('rgb(244, 239, 230)');
- expect(contrast.row).toBe('rgb(236, 238, 233)');
+ expect(contrast.row).toBe('rgb(20, 47, 43)');
  expect(contrast.image).toBe('none');
- expect(contrast.name).toBe('rgb(24, 52, 58)');
- expect(contrast.amount).toBe('rgb(24, 52, 58)');
+ expect(contrast.name).toBe('rgb(241, 243, 237)');
+ expect(contrast.amount).toBe('rgb(241, 243, 237)');
  const minHeight=await links.evaluateAll(nodes=>nodes.map(x=>x.getBoundingClientRect().height));
  for(const height of minHeight)expect(height).toBeGreaterThanOrEqual(44);
 });
