@@ -521,7 +521,13 @@
     for(const bucket of buckets)bucket.rows.forEach(addPool);
     return diversify(pool,limit,{recoveryCap:Math.min(5,limit)});
   }
-  function brief(s){return t(s?.business_summary||s?.longBusinessSummary||s?.description)||[t(s?.industry),t(s?.sector)].filter(Boolean).join(' · ')||'Empresa acompanhada pelo Vestra.';}
+  function brief(s){
+    // Sector taxonomy alone is not a description of the business.
+    const raw=t(s?.long_business_summary||s?.business_summary||s?.longBusinessSummary||s?.business_description||s?.description);
+    if(raw)return raw.length>215?raw.slice(0,212).replace(/\\s+\\S*$/,'')+'…':raw;
+    const industry=t(s?.industry);
+    return industry?'Atividade por descrever · '+industry:'Atividade da empresa ainda não descrita nos dados disponíveis.';
+  }}
   function sleeveLabel(key){return key==='strength'?'Força':key==='asymmetry'?'Assimetria':key==='inflection'?'Inflection':'';}
   function opportunityType(s){
     const sleeves=sleeveScores(s),strength=sleeves.strength,inflection=sleeves.inflection;
@@ -670,27 +676,9 @@
       description.style.setProperty('-webkit-text-fill-color','#c4d9d1','important');
       description.style.setProperty('opacity','1','important');
     }
-    let smallcapChip=section.querySelector('[data-smallcap-prebreakout-lens]');
-    if(!smallcapChip){
-      const pre=[...document.querySelectorAll('button')].find(b=>b.textContent?.trim()==='Pré-breakout');
-      smallcapChip=document.createElement('button');
-      smallcapChip.type='button';smallcapChip.className=pre?.className||'market-chip';
-      smallcapChip.textContent='Small Caps';smallcapChip.dataset.smallcapPrebreakoutLens='1';
-      smallcapChip.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();selectLens('smallcap_breakout');});
-      if(pre)pre.insertAdjacentElement('afterend',smallcapChip);
-      else {
-        // Always keep the two technical lenses in one compact strategy row.
-        // Never append Small Caps to the main Market navigation.
-        const row=document.createElement('div');row.className='vestra-technical-lenses';
-        const normal=document.createElement('button');normal.type='button';
-        normal.className='market-chip';normal.textContent='Pré-breakout';
-        normal.dataset.vestraPrebreakoutLens='1';
-        normal.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();selectLens('breakout');});
-        row.append(normal,smallcapChip);
-        section.querySelector('.market-sector-grid')?.insertAdjacentElement('beforebegin',row);
-      }
-    }
-    if(smallcapChip){smallcapChip.classList.toggle('is-active',activeLens==='smallcap_breakout');smallcapChip.setAttribute('aria-pressed',String(activeLens==='smallcap_breakout'));}
+    // One canonical strategy bar owns the technical lenses.
+    section.querySelector('.vestra-technical-lenses')?.remove();
+    section.querySelector('[data-smallcap-prebreakout-lens]')?.remove();
     const guide=section.querySelector('.ux454-opportunity-guide');
     if(guide)guide.innerHTML=activeLens==='breakout'
       ? '<span><b>SETUP TÉCNICO</b> compressão não garante subida</span><span><b>MÉDIAS</b> 50/150/200 ascendentes</span><span><b>BREAKOUT</b> só confirmado com volume</span>'
