@@ -725,7 +725,8 @@ function calcTotals() {
 window.VestraFinancialTotals = () => {
   if (window.__vestraAppHydrated !== true) return null;
   const t=calcTotals();
-  return { net:t.net, assetsTotal:t.assetsTotal, liabsTotal:t.liabsTotal };
+  return { net:t.net, assetsTotal:t.assetsTotal, liabsTotal:t.liabsTotal,
+    passiveAnnual:getDisplayedPassiveAnnual(t), passiveMonthly:getDisplayedPassiveAnnual(t)/12 };
 };
 
 /* ─── COMPOUND INTEREST ENGINE ────────────────────────────── */
@@ -1909,7 +1910,9 @@ function renderPortfolioGlance() {
   const byClass = {};
   src.forEach(x => { const k = x.class || "Outros"; byClass[k] = (byClass[k] || 0) + parseNum(x.value); });
   const topClass = Object.entries(byClass).sort((a,b) => b[1]-a[1])[0];
-  const annualIncome = showingLiabs ? 0 : src.reduce((sum, x) => sum + (getAssetPassiveRatePct(x) * parseNum(x.value) / 100), 0);
+  // Use the exact same projected passive-income calculation as the Dashboard
+  // and editorial Home, rather than an independently calculated KPI.
+  const annualIncome = showingLiabs ? 0 : getDisplayedPassiveAnnual(canonicalTotals);
   const setText = (id, value) => { const el=document.getElementById(id); if(el) el.textContent=value; };
   setText("portfolioTotalLabel", showingLiabs ? "Total em passivos" : "Total em ativos");
   setText("portfolioTotalValue", fmtEUR(total));
@@ -12344,6 +12347,11 @@ async function fetchQuoteWithFallback(ref) {
   // renderAll() já marca todas as views como dirty e agenda o render da view actual.
   // As chamadas individuais anteriores eram redundantes — cada tab era renderizada 2x.
   renderAll();
+  // Quote revaluation changes canonical asset values while the editorial Home
+  // may stay mounted and the native Dashboard stays lazy. Notify it explicitly.
+  window.dispatchEvent(new CustomEvent("vestra:portfolio-totals-updated", {
+    detail: { source: "quote-refresh", updated, failed, skipped }
+  }));
   // Disparar evento para outros listeners (P&L, price alerts)
   document.dispatchEvent(new CustomEvent("quotesUpdated"));
   updateQuoteButtonStaleness(); // v64t: nunca era chamada — o aviso de "cotações desactualizadas" existia no código mas nunca se acendia

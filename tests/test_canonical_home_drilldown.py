@@ -91,7 +91,8 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertLess(html.index('data-vi-wealth'), html.index('data-vi-income-monthly'))
         self.assertLess(html.index('data-vi-canonical-score'), html.index('data-vi-pulse-cnn'))
         self.assertLess(html.index('data-vi-pulse-cnn'), html.index('data-vi-canonical-news-list'))
-        self.assertIn("'kpiPassiveMonthly'", js)
+        self.assertIn("totals.passiveMonthly", js)
+        self.assertIn("window.VestraFinancialTotals?.()", js)
         self.assertIn("if (income) income.textContent = '••• €'", js)
 
     def test_published_weekly_events_never_reuse_past_dates(self):
@@ -114,8 +115,8 @@ class CanonicalHomeTest(unittest.TestCase):
         self.assertIn('data-vestra-market-status', html)
         self.assertIn('Explorar a seguir', html)
         js = (ROOT / 'vestra-intelligence-home.js').read_text(encoding='utf-8')
-        self.assertIn("'kpiPassiveMonthly2'", js)
-        self.assertIn("'portfolioMonthlyValue'", js)
+        self.assertIn("totals.passiveMonthly", js)
+        self.assertNotIn("const ids = ['kpiPassiveMonthly'", js)
 
     def test_unified_sidebar_and_cache_generation(self):
         nav = (ROOT / "vestra-navigation-v2.css").read_text(encoding="utf-8")
