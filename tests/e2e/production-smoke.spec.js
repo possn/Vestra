@@ -10,11 +10,32 @@ function urlFromBase(base, relative) {
   return new URL(relative, base).toString();
 }
 
-function unpackStartupRow(fields, values) {
+function unpackStartupRow(payload, values, rowIndex) {
+  if (!Array.isArray(values)) throw new Error(`Invalid startup row ${rowIndex}: not an array`);
+  const fields = payload.fields;
+  // The published columnar contract intentionally trims trailing null cells.
+  // Rows may be shorter than fields but must never contain surplus cells.
+  if (values.length > fields.length) {
+    throw new Error(`Invalid startup row ${rowIndex}: ${values.length} cells exceed ${fields.length} fields`);
+  }
+  const dictionaries = payload.layout === 'field_rows_v2' ? payload.string_dictionaries : {};
   const out = {};
-  if (!Array.isArray(values)) return out;
-  for (let i = 0; i < values.length && i < fields.length; i += 1) {
-    out[fields[i]] = values[i];
+  for (let i = 0; i < values.length; i += 1) {
+    let value = values[i];
+    const options = dictionaries?.[String(i)];
+    if (options !== undefined && value !== null) {
+      if (!Array.isArray(options)) {
+        throw new Error(`Invalid dictionary in startup field ${fields[i]}`);
+      }
+      if (!Number.isInteger(value) || value < 0 || value >= options.length) {
+        throw new Error(`Invalid categorical code in startup row ${rowIndex}, field ${fields[i]}`);
+      }
+      value = options[value];
+      if (typeof value !== 'string') {
+        throw new Error(`Invalid decoded category in startup row ${rowIndex}, field ${fields[i]}`);
+      }
+    }
+    out[fields[i]] = value;
   }
   return out;
 }
@@ -50,11 +71,12 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
   const manifestURL = urlFromBase(baseURL, 'data/dossiers-manifest.json');
   const marketURL = urlFromBase(baseURL, 'market.js');
 
+  console.log('[production-smoke] Fetching published index, startup, manifest and market bundle');
   const [indexResponse, startupResponse, manifestResponse, marketResponse] = await Promise.all([
-    request.get(indexURL, { failOnStatusCode: false }),
-    request.get(startupURL, { failOnStatusCode: false }),
-    request.get(manifestURL, { failOnStatusCode: false }),
-    request.get(marketURL, { failOnStatusCode: false })
+    request.get(indexURL, { failOnStatusCode: false, timeout: 15_000 }),
+    request.get(startupURL, { failOnStatusCode: false, timeout: 15_000 }),
+    request.get(manifestURL, { failOnStatusCode: false, timeout: 15_000 }),
+    request.get(marketURL, { failOnStatusCode: false, timeout: 15_000 })
   ]);
 
   expect(indexResponse.ok(), `index.html returned ${indexResponse.status()}`).toBeTruthy();
@@ -66,8 +88,12 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
   // Validate the payload the production loader prefers. This must fail closed:
   // a missing/malformed compact payload may still let the UI work via the legacy
   // index fallback, but that would silently lose the startup-performance rollout.
+  console.log('[production-smoke] Published payloads fetched; validating columnar data');
   const startup = await startupResponse.json();
-  expect(startup?.layout).toBe('field_rows_v1');
+  expect(['field_rows_v1', 'field_rows_v2']).toContain(startup?.layout);
+  if (startup.layout === 'field_rows_v2') {
+    expect(startup.string_dictionaries && typeof startup.string_dictionaries === 'object').toBeTruthy();
+  }
   expect(Array.isArray(startup?.fields)).toBeTruthy();
   expect(Array.isArray(startup?.rows)).toBeTruthy();
   expect(startup.fields.length).toBeGreaterThan(5);
@@ -76,6 +102,7 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
     expect(startup.fields, `stocks-startup missing required field ${field}`).toContain(field);
   }
 
+  console.log('[production-smoke] Startup parsed; validating manifest');
   const manifest = await manifestResponse.json();
   const tickers = manifest?.tickers || {};
   const manifestTickerCount = Object.keys(tickers).length;
@@ -85,15 +112,23 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
     expect(Number(manifest.ticker_count)).toBe(manifestTickerCount);
   }
 
-  const startupRows = startup.rows
-    .filter(Array.isArray)
-    .map(values => unpackStartupRow(startup.fields, values));
+  console.log('[production-smoke] Manifest validated; decoding ' + startup.rows.length + ' startup rows');
+  const startupRows = startup.rows.map((values, index) => unpackStartupRow(startup, values, index));
+  console.log('[production-smoke] Startup rows decoded');
   const startupTickers = new Set(
     startupRows
       .map(row => String(row.ticker || '').trim().toUpperCase())
       .filter(Boolean)
   );
   expect(startupTickers.size, 'stocks-startup contains missing/duplicate ticker identities').toBe(manifestTickerCount);
+
+  // New market index retains bounded, genuine company activities. Their presence
+  // is measured on the decoded data, not inferred from sector taxonomy.
+  const summaries = startupRows.filter(row =>
+    typeof row.business_summary === 'string' && row.business_summary.trim().length >= 22
+    && row.business_summary.length <= 105
+  );
+  expect(summaries.length, 'Published market startup is missing all company business summaries').toBeGreaterThan(0);
 
   const sentinels = PREFERRED_SENTINELS.filter(ticker => tickers[ticker]).slice(0, 5);
   expect(
@@ -128,17 +163,19 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
   // Verify the actual published dossier shard for every representative before
   // opening UI. This catches a manifest/index publication that points at a stale
   // or missing shard even when the initial market list itself still renders.
+  console.log('[production-smoke] Validating ' + journeyTickers.length + ' published dossier shards');
   for (const ticker of journeyTickers) {
     const shard = tickers[ticker];
     const shardResponse = await request.get(
       urlFromBase(baseURL, `data/dossiers/${encodeURIComponent(shard)}.json`),
-      { failOnStatusCode: false }
+      { failOnStatusCode: false, timeout: 15_000 }
     );
     expect(shardResponse.ok(), `${ticker} shard ${shard} returned ${shardResponse.status()}`).toBeTruthy();
     const payload = await shardResponse.json();
     expect(payload?.stocks?.[ticker], `${ticker} missing from published shard ${shard}`).toBeTruthy();
   }
 
+  console.log('[production-smoke] Shards validated; starting iPhone WebKit UI journey');
   await isolateExternalSearch(page);
   await page.goto('index.html', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => typeof window.setView === 'function');
@@ -153,6 +190,7 @@ test('GitHub Pages: compact startup data and representative market dossiers are 
   // their own Discover mode, but the global search suggestions include both
   // equities and ETFs and must open an exact ETF dossier from the same search box.
   for (const [index, ticker] of journeyTickers.entries()) {
+    console.log('[production-smoke] Opening dossier ' + ticker);
     await search.fill(ticker);
 
     if (ticker === etfTicker) {
