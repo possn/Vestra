@@ -53,6 +53,8 @@ def _slug(name: str) -> str:
 def _is_fresh(payload: dict) -> bool:
     if int(payload.get("schema_version") or 0) < 2:
         return False
+    if payload.get("data_current") is False:
+        return False
     newest = str(payload.get("newest_disclosure") or payload.get("source_last_updated") or "")[:10]
     try:
         age = (dt.date.today() - dt.date.fromisoformat(newest)).days
@@ -92,6 +94,19 @@ def _normalize_one(x: dict) -> tuple[str, dict] | None:
     transaction_date = str(x.get("transaction_date") or "").strip()
     member = str(x.get("member") or "Membro do Congresso").strip()
     if not ticker or not transaction_date:
+        return None
+    # Validate individual provenance even when the upstream aggregate appears
+    # fresh. A malformed or future-dated filing cannot become Smart Money proof.
+    today = dt.datetime.now(dt.timezone.utc).date()
+    try:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", transaction_date) or dt.date.fromisoformat(transaction_date) > today:
+            return None
+        disclosure = x.get("disclosure_date")
+        if disclosure:
+            disclosure = str(disclosure).strip()
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", disclosure) or dt.date.fromisoformat(disclosure) > today:
+                return None
+    except (TypeError, ValueError):
         return None
     raw_type = str(x.get("type") or "trade").lower()
     if "purchase" in raw_type or "buy" in raw_type:
