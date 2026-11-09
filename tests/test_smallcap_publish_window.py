@@ -45,6 +45,19 @@ class SmallcapPublishWindowTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             smallcap_publication_overdue(self.previous(12),self.now.replace(tzinfo=None),24)
 
+    def test_scheduled_collection_budget_exceeds_four_day_capacity_floor(self):
+        import re
+        workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text()
+        match=re.search(r"default: '(\d+)'",workflow)
+        self.assertIsNotNone(match)
+        budget=int(match.group(1))
+        # Four weekday runs per day; 371 current eligible names require
+        # at least 24 attempts per cycle over four full days.
+        self.assertGreaterEqual(budget*16,371)
+        self.assertLessEqual(budget,30)
+        self.assertIn("github.event.inputs.budget || '"+str(budget)+"'",workflow)
+        # This is only a theoretical capacity bound, not real OHLCV coverage.
+
     def test_workflow_checks_previous_snapshot_not_fresh_result(self):
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text()
         self.assertIn("git show HEAD:data/breakout-lab-smallcap-ohlcv-research.json",workflow)

@@ -5,7 +5,7 @@ on:
       budget:
         description: 'Maximum independent OHLCV requests'
         required: false
-        default: '20'
+        default: '25'
   schedule:
     - cron: '23 0,6,12,18 * * 1-5'
 permissions:
@@ -32,7 +32,7 @@ jobs:
           git show HEAD:data/breakout-lab-smallcap-ohlcv-research.json > /tmp/vestra-smallcap-previous.json || printf '{}' > /tmp/vestra-smallcap-previous.json
       - name: Collect independent 100m-500m USD pre-breakout evidence
         env:
-          BUDGET: ${{ github.event.inputs.budget || '20' }}
+          BUDGET: ${{ github.event.inputs.budget || '25' }}
         run: |
           set -euo pipefail
           SLOT=$(python -c 'import datetime; n=datetime.datetime.now(datetime.timezone.utc);print(n.toordinal()*4+n.hour//6)')
