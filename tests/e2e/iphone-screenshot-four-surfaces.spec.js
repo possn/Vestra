@@ -70,7 +70,7 @@ test('iPhone/WebKit: four screenshot surfaces keep financial content and readabl
  await expect(market).toBeVisible();
  const chip=await market.evaluate(root=>{
   const node=document.createElement('button');
-  node.dataset.smallcapPrebreakoutLens='1';
+  node.dataset.vestraLens='smallcap_breakout';
   node.textContent='Small Caps';
   root.append(node);
   const colors=()=>{
