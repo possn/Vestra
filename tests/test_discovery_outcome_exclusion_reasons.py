@@ -15,6 +15,11 @@ class OutcomeExclusionReasonTests(unittest.TestCase):
 
     @staticmethod
     def result(name, **fields):
+        # Explicitly valid historical fixtures need an actual evaluation date.
+        # Missing dates must NOT count as validated horizon evidence.
+        if fields.get("validation_eligible") is True:
+            fields.setdefault("evaluated_date", "2026-08-29")
+            fields.setdefault("actual_days", 28)
         return {"cohort_date": "2026-08-01", "horizon_days": 28,
                 "ticker": name, "return_pct": 3.0, **fields}
 
@@ -43,6 +48,7 @@ class OutcomeExclusionReasonTests(unittest.TestCase):
             "eligible": 1,
             "legacy_missing_eligibility": 1,
             "invalid_return": 1,
+            "invalid_evaluation_window": 0,
             "unresolved_corporate_action": 1,
             "incomparable_quote_currency": 0,
             "explicitly_ineligible_other": 1,
@@ -89,7 +95,8 @@ class OutcomeExclusionReasonTests(unittest.TestCase):
             self.result("OK", validation_eligible=True),
             {"cohort_date": "2026-08-08", "horizon_days": 28,
              "ticker": "NEW", "return_pct": 15,
-             "validation_eligible": True},
+             "validation_eligible": True, "evaluated_date": "2026-09-05",
+             "actual_days": 28},
         ]
         audit = outcome_exclusion_reasons(
             dt.date(2026, 9, 10), [old, fresh], outcomes, 28
