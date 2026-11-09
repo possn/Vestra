@@ -48,7 +48,7 @@ class SmallcapPublishWindowTests(unittest.TestCase):
     def test_scheduled_collection_budget_exceeds_four_day_capacity_floor(self):
         import re
         workflow=(ROOT/".github/workflows/smallcap-prebreakout-research.yml").read_text()
-        match=re.search(r"default: '(\\d+)'",workflow)
+        match=re.search(r"default: '(\d+)'",workflow)
         self.assertIsNotNone(match)
         budget=int(match.group(1))
         # Four weekday runs per day; 371 current eligible names require
