@@ -44,6 +44,16 @@ class FinancialHomeSyncContract(unittest.TestCase):
                         refresh.index('new CustomEvent("vestra:portfolio-totals-updated"'))
         self.assertIn("window.addEventListener('vestra:portfolio-totals-updated'", HOME)
 
+    def test_quote_refresh_does_not_claim_fresh_prices_without_success(self):
+        view = APP.split("function renderQuoteSyncStatus() {", 1)[1].split(
+            "\nfunction updateQuoteButtonStaleness()", 1)[0]
+        self.assertIn('const acceptedQuotes = report ?', view)
+        self.assertIn('acceptedQuotes === 0', view)
+        self.assertIn('noAcceptedQuotes ? "Sem cotações atualizadas"', view)
+        self.assertIn('partialRefresh ? "Atualização parcial"', view)
+        self.assertIn('failedQuotes > 0 || noAcceptedQuotes', view)
+        self.assertIn('skippedQuotes', view)
+
     def test_iphone_gets_new_versioned_runtime_urls(self):
         self.assertRegex(INDEX, r'app\.js\?v=[^"]+rev=20261109-financial-sync')
         self.assertRegex(INDEX, r'vestra-intelligence-home\.js\?v=[^"]+rev=20261109-financial-sync')
