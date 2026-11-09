@@ -1,4 +1,4 @@
-/* Vestra Market analysis tools runtime v1.3 */
+/* Vestra Market analysis tools runtime v1.4 */
 (() => {
   'use strict';
 
