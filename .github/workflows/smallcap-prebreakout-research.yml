@@ -61,7 +61,7 @@ jobs:
               "- These are observed OHLCV counts, not pre-breakout success rates.",
           ]
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
-              summary.write("\\n".join(lines) + "\\n")
+              summary.write("\n".join(lines) + "\n")
           PY
       # Six-hour collection slots: protect aligned code PRs briefly, but never
       # defer publication for more than roughly two six-hour slots.
