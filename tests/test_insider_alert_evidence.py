@@ -1,6 +1,7 @@
 """Fail-closed evidence contracts for background insider and near-low alerts."""
 import importlib.util
 import sys
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -10,7 +11,15 @@ sys.path.insert(0, str(ROOT / "scripts"))
 spec = importlib.util.spec_from_file_location(
     "insider_alerts", ROOT / "scripts" / "insider_alerts.py")
 alerts = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(alerts)
+# Architecture CI intentionally uses stdlib-only Python. Isolate transport and
+# SEC client imports: these tests exercise pure evidence logic, not networking.
+stub_insiders = types.ModuleType("insiders")
+for name in ("_fetch_structured_filing", "_load_ticker_cik_map",
+             "_recent_form4_rows"):
+    setattr(stub_insiders, name, lambda *args, **kwargs: None)
+with patch.dict(sys.modules, {
+        "requests": types.ModuleType("requests"), "insiders": stub_insiders}):
+    spec.loader.exec_module(alerts)
 
 
 class InsiderAlertEvidenceTests(unittest.TestCase):
