@@ -38,6 +38,44 @@ for (const v of [0, '0', -0.02, '12.5']) {
 """
         subprocess.run(["node", "-e", code], check=True, timeout=10, cwd=ROOT)
 
+    def test_crypto_provider_probe_status_is_classified_without_raw_exceptions(self):
+        worker = read("worker.js")
+        verifier = read("scripts/verify_crypto_production.py")
+        self.assertIn("provider_probe_status: providerStatus", worker)
+        self.assertIn('"provider_probe_status": intel.get("provider_probe_status")', verifier)
+        self.assertIn('cryptoGet("coingecko_global",', worker)
+        self.assertIn('cryptoGet("bybit_eth_funding_hist",', worker)
+        import subprocess
+        start = worker.index("async function fetchCryptoObserved(")
+        end = worker.index("async function fetchCryptoIntelligence(", start)
+        code = worker[start:end] + """
+const assert = require('node:assert/strict');
+(async () => {
+  const observed = {};
+  const original = global.fetch;
+  const run = (key) => fetchCryptoObserved(key, 'https://example.invalid', {}, 1000, observed);
+  try {
+    global.fetch = async () => ({ok:false,status:429});
+    assert.equal(await run('limit'), null);
+    assert.equal(observed.limit, 'http_429');
+    global.fetch = async () => ({ok:true,json:async()=>{throw Error('bad JSON')}});
+    assert.equal(await run('json'), null);
+    assert.equal(observed.json, 'invalid_json');
+    global.fetch = async () => {throw Object.assign(Error('timeout detail'),{name:'AbortError'})};
+    assert.equal(await run('abort'), null);
+    assert.equal(observed.abort, 'timeout');
+    global.fetch = async () => {throw Error('credential or address detail')};
+    assert.equal(await run('network'), null);
+    assert.equal(observed.network, 'network_error');
+    global.fetch = async () => ({ok:true,json:async()=>({data:5})});
+    assert.deepEqual(await run('success'), {data:5});
+    assert.equal(observed.success, 'ok');
+    assert(!JSON.stringify(observed).includes('detail'));
+  } finally {global.fetch = original;}
+})().catch(err=>{console.error(err);process.exit(1)});
+"""
+        subprocess.run(["node", "-e", code], check=True, timeout=10, cwd=ROOT)
+
     def test_market_payload_uses_null_safe_numeric_reads(self):
         worker = read("worker.js")
         self.assertIn("const marketCap = firstFinite(numberOrNull(price.marketCap)", worker)
