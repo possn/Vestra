@@ -88,6 +88,9 @@ function positiveNumber(...vals) {
 }
 
 function finiteNumber(v) {
+  // Preserve unavailable metrics as unavailable; Number(null) and Number('')
+  // incorrectly produce a genuine zero, especially for funding/market data.
+  if (v === null || v === undefined || v === '' || typeof v === 'boolean') return null;
   const x = Number(v);
   return Number.isFinite(x) ? x : null;
 }

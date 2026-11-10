@@ -17,6 +17,27 @@ class WorkerMissingNumericSemanticsTests(unittest.TestCase):
         self.assertNotIn("const v = Number(raw(node))", worker)
         self.assertNotIn("const n = Number(raw(v))", worker)
 
+    def test_crypto_numeric_helper_never_converts_missing_evidence_to_zero(self):
+        worker = read("worker.js")
+        start = worker.index("function finiteNumber(v)")
+        end = worker.index("async function fetchCryptoIntelligence", start)
+        helper = worker[start:end]
+        self.assertIn("v === null || v === undefined || v === ''", helper)
+        self.assertIn("typeof v === 'boolean'", helper)
+        self.assertIn("return Number.isFinite(x) ? x : null", helper)
+        # Execute the real helper in Node, not merely its source text.
+        import subprocess
+        code = worker[start:end] + """
+const assert = require('node:assert/strict');
+for (const v of [null, undefined, '', true, false, 'not a number', Infinity]) {
+  assert.equal(finiteNumber(v), null, String(v));
+}
+for (const v of [0, '0', -0.02, '12.5']) {
+  assert.equal(finiteNumber(v), Number(v), String(v));
+}
+"""
+        subprocess.run(["node", "-e", code], check=True, timeout=10, cwd=ROOT)
+
     def test_market_payload_uses_null_safe_numeric_reads(self):
         worker = read("worker.js")
         self.assertIn("const marketCap = firstFinite(numberOrNull(price.marketCap)", worker)
