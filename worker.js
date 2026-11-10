@@ -135,7 +135,7 @@ async function fetchCryptoIntelligence(ctx) {
   const providerStatus = {};
   const cryptoGet = (name, url, init, timeoutMs) => fetchCryptoObserved(name, url, init, timeoutMs, providerStatus);
 
-  const [globalData, globalFallback, globalThird, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist, btcFundingHist, ethFundingHist, btcBybit, ethBybit, btcBybitOi, ethBybitOi, btcBybitFunding, ethBybitFunding] = await Promise.all([
+  const [globalData, globalFallback, globalThird, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist, btcFundingHist, ethFundingHist, btcBybit, ethBybit, btcBybitOi, ethBybitOi, btcBybitFunding, ethBybitFunding, btcOkxFunding, ethOkxFunding, btcOkxOiHistory, ethOkxOiHistory] = await Promise.all([
     cryptoGet("coingecko_global", "https://api.coingecko.com/api/v3/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
     cryptoGet("coinpaprika_global", "https://api.coinpaprika.com/v1/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
     cryptoGet("coinlore_global", "https://api.coinlore.net/api/global/", { headers: { "Accept": "application/json" } }, 5000),
@@ -154,6 +154,10 @@ async function fetchCryptoIntelligence(ctx) {
     cryptoGet("bybit_eth_oi_hist", "https://api.bybit.com/v5/market/open-interest?category=linear&symbol=ETHUSDT&intervalTime=1d&limit=30", {}, 5000),
     cryptoGet("bybit_btc_funding_hist", "https://api.bybit.com/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=100", {}, 5000),
     cryptoGet("bybit_eth_funding_hist", "https://api.bybit.com/v5/market/funding/history?category=linear&symbol=ETHUSDT&limit=100", {}, 5000),
+    cryptoGet("okx_btc_funding", "https://www.okx.com/api/v5/public/funding-rate?instId=BTC-USDT-SWAP", {}, 5000),
+    cryptoGet("okx_eth_funding", "https://www.okx.com/api/v5/public/funding-rate?instId=ETH-USDT-SWAP", {}, 5000),
+    cryptoGet("okx_btc_oi_history_probe", "https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?ccy=BTC&period=1D", {}, 5000),
+    cryptoGet("okx_eth_oi_history_probe", "https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?ccy=ETH&period=1D", {}, 5000),
   ]);
 
   const g = globalData?.data || {};
@@ -163,6 +167,21 @@ async function fetchCryptoIntelligence(ctx) {
     && positiveNumber(finiteNumber(gl.total_volume)) !== null
     && finiteNumber(gl.btc_d) > 0 && finiteNumber(gl.btc_d) < 100;
   const bybitRow = (payload) => Array.isArray(payload?.result?.list) ? payload.result.list[0] : null;
+  // Require matching contract identity, success code and bounded numeric rate.
+  // A public quote for another market must not enter the BTC/ETH funding signal.
+  const okxFundingPct = (payload, contract) => {
+    if (String(payload?.code) !== '0' || !Array.isArray(payload?.data)) return null;
+    const row = payload.data.find(item => item?.instId === contract);
+    if (!row || row.fundingRate === null || row.fundingRate === undefined || row.fundingRate === '') return null;
+    const rate = finiteNumber(row.fundingRate);
+    return rate !== null && Math.abs(rate) <= 0.05 ? rate * 100 : null;
+  };
+  const btcOkxFundingPct = okxFundingPct(btcOkxFunding, 'BTC-USDT-SWAP');
+  const ethOkxFundingPct = okxFundingPct(ethOkxFunding, 'ETH-USDT-SWAP');
+  // The history endpoints are diagnostics only until exchange timestamps and
+  // USD/contract units are independently validated in a real Worker run.
+  void btcOkxOiHistory;
+  void ethOkxOiHistory;
   const bybitHist = (payload) => Array.isArray(payload?.result?.list) ? payload.result.list : [];
   const fngRows = Array.isArray(fearGreed?.data) ? fearGreed.data : [];
   const fngNow = fngRows[0] || null;
@@ -234,7 +253,7 @@ async function fetchCryptoIntelligence(ctx) {
     },
     derivatives: {
       btc: {
-        funding_rate_pct: finiteNumber(btcPremium?.lastFundingRate) != null ? finiteNumber(btcPremium?.lastFundingRate) * 100 : (finiteNumber(bybitRow(btcBybit)?.fundingRate) != null ? finiteNumber(bybitRow(btcBybit)?.fundingRate) * 100 : null),
+        funding_rate_pct: finiteNumber(btcPremium?.lastFundingRate) != null ? finiteNumber(btcPremium?.lastFundingRate) * 100 : (finiteNumber(bybitRow(btcBybit)?.fundingRate) != null ? finiteNumber(bybitRow(btcBybit)?.fundingRate) * 100 : btcOkxFundingPct),
         mark_price: finiteNumber(btcPremium?.markPrice) ?? finiteNumber(bybitRow(btcBybit)?.markPrice),
         open_interest: finiteNumber(btcOi?.openInterest) ?? finiteNumber(bybitRow(btcBybit)?.openInterest),
         open_interest_change_24h_pct: oiChangePctFlexible(btcOiHist,btcBybitOi,1),
@@ -244,7 +263,7 @@ async function fetchCryptoIntelligence(ctx) {
         funding_avg_30d_pct: fundingSummary(btcFundingHist,30) ?? fundingSummary(bybitHist(btcBybitFunding),30),
       },
       eth: {
-        funding_rate_pct: finiteNumber(ethPremium?.lastFundingRate) != null ? finiteNumber(ethPremium?.lastFundingRate) * 100 : (finiteNumber(bybitRow(ethBybit)?.fundingRate) != null ? finiteNumber(bybitRow(ethBybit)?.fundingRate) * 100 : null),
+        funding_rate_pct: finiteNumber(ethPremium?.lastFundingRate) != null ? finiteNumber(ethPremium?.lastFundingRate) * 100 : (finiteNumber(bybitRow(ethBybit)?.fundingRate) != null ? finiteNumber(bybitRow(ethBybit)?.fundingRate) * 100 : ethOkxFundingPct),
         mark_price: finiteNumber(ethPremium?.markPrice) ?? finiteNumber(bybitRow(ethBybit)?.markPrice),
         open_interest: finiteNumber(ethOi?.openInterest) ?? finiteNumber(bybitRow(ethBybit)?.openInterest),
         open_interest_change_24h_pct: oiChangePctFlexible(ethOiHist,ethBybitOi,1),
@@ -253,7 +272,7 @@ async function fetchCryptoIntelligence(ctx) {
         funding_avg_7d_pct: fundingSummary(ethFundingHist,7) ?? fundingSummary(bybitHist(ethBybitFunding),7),
         funding_avg_30d_pct: fundingSummary(ethFundingHist,30) ?? fundingSummary(bybitHist(ethBybitFunding),30),
       },
-      source: (btcPremium || ethPremium || btcOi || ethOi) ? "Binance Futures" : ((bybitRow(btcBybit) || bybitRow(ethBybit)) ? "Bybit" : null),
+      source: (btcPremium || ethPremium || btcOi || ethOi) ? "Binance Futures" : ((bybitRow(btcBybit) || bybitRow(ethBybit)) ? "Bybit" : ((btcOkxFundingPct !== null || ethOkxFundingPct !== null) ? "OKX" : null)),
     },
     updated: new Date().toISOString(),
     provider_probe_status: providerStatus,

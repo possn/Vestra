@@ -87,6 +87,36 @@ const assert = require('node:assert/strict');
         self.assertIn('Array.isArray(globalThird)', worker)
         self.assertIn('coinloreValid ?', worker)
 
+    def test_okx_funding_only_after_exact_contract_validation(self):
+        import subprocess
+        worker = read("worker.js")
+        self.assertIn('cryptoGet("okx_btc_funding",', worker)
+        self.assertIn('cryptoGet("okx_eth_funding",', worker)
+        self.assertIn('okx_btc_oi_history_probe', worker)
+        self.assertIn('okx_eth_oi_history_probe', worker)
+        self.assertIn("void btcOkxOiHistory", worker)
+        self.assertIn("btcOkxFundingPct", worker)
+        self.assertIn("ethOkxFundingPct", worker)
+        start = worker.index("  const okxFundingPct = (")
+        end = worker.index("  const btcOkxFundingPct =", start)
+        snippet = worker[start:end]
+        code = """
+const assert = require('node:assert/strict');
+const finiteNumber = (v) => v === null || v === undefined || v === '' ? null :
+    (Number.isFinite(Number(v)) ? Number(v) : null);
+""" + snippet + """
+assert.equal(okxFundingPct({code:'0',data:[{instId:'BTC-USDT-SWAP',fundingRate:'0.0001'}]}, 'BTC-USDT-SWAP'), 0.01);
+assert.equal(okxFundingPct({code:'0',data:[{instId:'BTC-USDT-SWAP',fundingRate:'0'}]}, 'BTC-USDT-SWAP'), 0);
+for(const payload of [
+  {code:'1', data:[{instId:'BTC-USDT-SWAP',fundingRate:'0.001'}]},
+  {code:'0', data:[{instId:'ETH-USDT-SWAP',fundingRate:'0.001'}]},
+  {code:'0', data:[{instId:'BTC-USDT-SWAP',fundingRate:null}]},
+  {code:'0', data:[{instId:'BTC-USDT-SWAP',fundingRate:'1.4'}]},
+  {code:'0', data:[{instId:'BTC-USDT-SWAP',fundingRate:'n/a'}]},
+]) assert.equal(okxFundingPct(payload, 'BTC-USDT-SWAP'), null);
+"""
+        subprocess.run(["node", "-e", code], check=True, timeout=10, cwd=ROOT)
+
     def test_market_payload_uses_null_safe_numeric_reads(self):
         worker = read("worker.js")
         self.assertIn("const marketCap = firstFinite(numberOrNull(price.marketCap)", worker)
