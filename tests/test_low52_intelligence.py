@@ -13,7 +13,7 @@ def quality_row(current_price=105.0):
         "data_coverage_pct": 80,
         "critical_metric_coverage_pct": 70,
         "confidence_score": 80,
-        "score_reliability": "high",
+        "score_reliability": "robust",
         "quality_pct": 75,
         "balance_pct": 70,
         "cashflow_pct": 70,
@@ -31,6 +31,23 @@ def quality_row(current_price=105.0):
 
 
 class Low52IntelligenceTests(unittest.TestCase):
+    def test_unrecognized_reliability_fails_closed(self):
+        for reliability in (None, "", "unknown", "high", "insufficient",
+                            "insufficient_data", "suppressed"):
+            with self.subTest(reliability=reliability):
+                row = quality_row(current_price=100.0)
+                row["score_reliability"] = reliability
+                result = assess(row)
+                self.assertEqual(result["low52_status"], "insufficient")
+                self.assertIsNone(result["low52_score"])
+
+    def test_canonical_reliability_levels_remain_allowed(self):
+        for reliability in ("robust", "moderate_evidence", "limited_evidence"):
+            with self.subTest(reliability=reliability):
+                row = quality_row(current_price=100.0)
+                row["score_reliability"] = reliability
+                self.assertNotEqual(assess(row)["low52_status"], "insufficient")
+
     def test_short_close_history_cannot_claim_a_52week_opportunity(self):
         for length in (1, 3, 30, 199):
             with self.subTest(length=length):
