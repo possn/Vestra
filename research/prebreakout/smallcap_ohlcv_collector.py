@@ -6,6 +6,7 @@ Missing data and uncertain currencies are failures, not zeroes or signals.
 """
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 from collections import Counter
 import math
@@ -147,6 +148,9 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
     checked_at=checked_at or datetime.now(timezone.utc)
     if checked_at.tzinfo is None:raise ValueError("checked_at must be timezone-aware")
     names=cohort(rows)
+    # Stable identity of the eligible ticker population; a change in the
+    # denominator alone must never be presented as coverage improvement.
+    cohort_sha256=hashlib.sha256("\n".join(names).encode("utf-8")).hexdigest()
     selected=pick_research_tickers(names,slot,budget,previous,checked_at)
     observed=[]
     cap_by_ticker={str(row.get("ticker") or "").strip().upper():row.get("market_cap")
@@ -174,7 +178,7 @@ def collect(rows,provider,slot=0,budget=20,checked_at=None,*,previous=None):
     return {"schema":"vestra_breakout_lab_smallcap_ohlcv_research_v1",
             "status":"observed_research_only_not_breakout_signals",
             "generated_at":checked_at.isoformat(),"source":"yfinance",
-            "universe_100m_500m_count":len(names),"slot":slot,"budget":budget,
+            "universe_100m_500m_count":len(names),"universe_tickers_sha256":cohort_sha256,"slot":slot,"budget":budget,
             "provider_tickers_attempted":len(observed),
             "provider_attempt_status_counts":attempt_status_counts,
             "provider_error_type_counts":provider_error_type_counts,
@@ -263,13 +267,16 @@ def main():
     parser.add_argument("--output",type=Path,default=DEFAULT_OUTPUT)
     args=parser.parse_args()
     import yfinance as yf
-    rows=json.loads((ROOT/"data/stocks-index.json").read_text()).get("stocks",[])
+    index_path=ROOT/"data/stocks-index.json"
+    index_bytes=index_path.read_bytes()
+    rows=json.loads(index_bytes).get("stocks",[])
     args.output.parent.mkdir(parents=True,exist_ok=True)
     try:
         previous=json.loads(args.output.read_text(encoding="utf-8"))
     except (FileNotFoundError,ValueError,OSError):
         previous={}
     result=collect(rows,yf,args.slot,args.budget,previous=previous)
+    result["universe_source_index_sha256"]=hashlib.sha256(index_bytes).hexdigest()
     result=merge_slots(result,previous,datetime.fromisoformat(result["generated_at"]),
                        eligible_tickers=cohort(rows))
     args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
