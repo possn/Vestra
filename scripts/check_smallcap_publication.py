@@ -47,6 +47,26 @@ def assess_publication(report: dict, now: datetime, max_age_hours: int = 8) -> d
         return {"status": "invalid", "reason": "unreconciled_evaluable_count"}
     if report.get("not_observed") != total - len(rows):
         return {"status": "invalid", "reason": "unreconciled_unobserved_count"}
+    # A recent publication timestamp alone does not make old per-ticker
+    # observations recent. Reconcile the collector's rolling 96-hour evidence
+    # window when the modern rolling-window declaration is present.
+    window_hours = report.get("coverage_window_hours")
+    if window_hours is not None:
+        if type(window_hours) not in (int, float) or not 0 < window_hours <= 168:
+            return {"status": "invalid", "reason": "invalid_rolling_window_hours"}
+        for row in rows:
+            raw = row.get("observation_checked_at") or row.get("ohlcv_observed_at")
+            if not raw:
+                return {"status": "invalid", "reason": "missing_rolling_observation_timestamp"}
+            try:
+                checked = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            except (ValueError, TypeError):
+                return {"status": "invalid", "reason": "invalid_rolling_observation_timestamp"}
+            if checked.tzinfo is None:
+                return {"status": "invalid", "reason": "invalid_rolling_observation_timestamp"}
+            observed_age = stamp.astimezone(timezone.utc) - checked.astimezone(timezone.utc)
+            if observed_age < timedelta(0) or observed_age > timedelta(hours=window_hours):
+                return {"status": "invalid", "reason": "out_of_window_rolling_observation"}
     incomplete = report.get("observed_incomplete")
     if incomplete is not None and (type(incomplete) is not int or incomplete != len(rows) - evaluable):
         return {"status": "invalid", "reason": "unreconciled_incomplete_count"}

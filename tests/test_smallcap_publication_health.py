@@ -59,6 +59,38 @@ class SmallcapPublishedHealthTests(unittest.TestCase):
         self.assertEqual(health.assess_publication(report, self.now)["reason"],
                          "duplicate_or_missing_ticker")
 
+    def test_modern_rolling_observations_must_be_individually_recent(self):
+        valid = {**self.report, "coverage_window_hours": 96,
+                 "observations": [
+                     {"ticker": "A", "status": "evaluable_ohlcv",
+                      "observation_checked_at": self.report["generated_at"]},
+                     {"ticker": "B", "status": "invalid_ohlcv",
+                      "observation_checked_at": self.report["generated_at"]},
+                 ]}
+        self.assertEqual(health.assess_publication(valid, self.now)["status"], "healthy")
+        checked = datetime.fromisoformat(valid["generated_at"])
+        for raw, reason in [
+            ((checked - timedelta(hours=96, seconds=1)).isoformat(),
+             "out_of_window_rolling_observation"),
+            ((checked + timedelta(seconds=1)).isoformat(),
+             "out_of_window_rolling_observation"),
+            ("bad", "invalid_rolling_observation_timestamp"),
+            ("2026-11-09T00:00:00", "invalid_rolling_observation_timestamp"),
+            (None, "missing_rolling_observation_timestamp"),
+        ]:
+            with self.subTest(raw=raw):
+                rows = [*valid["observations"]]
+                rows[0] = {**rows[0], "observation_checked_at": raw}
+                outcome = health.assess_publication({**valid, "observations": rows}, self.now)
+                self.assertEqual(outcome["reason"], reason)
+        for hours in (0, -1, 169, True, "96"):
+            with self.subTest(window=hours):
+                self.assertEqual(
+                    health.assess_publication({**valid, "coverage_window_hours": hours}, self.now)["reason"],
+                    "invalid_rolling_window_hours")
+        # Legacy artifacts without a declared rolling window retain their old contract.
+        self.assertEqual(health.assess_publication(self.report, self.now)["status"], "healthy")
+
     def test_optional_published_rollups_must_reconcile(self):
         valid = {**self.report, "observed_incomplete": 1, "universe_coverage_pct": 33.33}
         self.assertEqual(health.assess_publication(valid, self.now)["status"], "healthy")
