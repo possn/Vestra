@@ -112,6 +112,7 @@ def probe(base: str, origin: str, timeout: float) -> tuple[list[str], dict[str, 
     errors.extend(validate_intelligence(intel))
 
     summary = {
+        "provider_probe_status": intel.get("provider_probe_status") if isinstance(intel.get("provider_probe_status"), dict) else {},
         "quotes": {
             ticker: {
                 key: (quotes.get(ticker) or {}).get(key)
