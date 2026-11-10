@@ -36,6 +36,20 @@ class ResearchCollectorTests(unittest.TestCase):
               {"ticker":"C","market_cap":500e6,"quote_type":"EQUITY"},
               {"ticker":"ETF","market_cap":200e6,"quote_type":"ETF"}]
         self.assertEqual(mod.cohort(rows),["A","B"])
+    def test_universe_fingerprint_is_stable_and_changes_with_eligible_members(self):
+        import hashlib
+        def row(t, cap=150e6):
+            return {"ticker": t, "market_cap": cap, "quote_type": "EQUITY"}
+        now = datetime(2026, 7, 10, tzinfo=timezone.utc)
+        first = mod.collect([row("B"), row("A")], Provider(), slot=0, budget=1, checked_at=now)
+        reordered = mod.collect([row("A"), row("B")], Provider(), slot=0, budget=1, checked_at=now)
+        changed = mod.collect([row("A"), row("C")], Provider(), slot=0, budget=1, checked_at=now)
+        self.assertEqual(first["universe_tickers_sha256"],
+                         hashlib.sha256(bytes([65, 10, 66])).hexdigest())
+        self.assertEqual(first["universe_tickers_sha256"], reordered["universe_tickers_sha256"])
+        self.assertNotEqual(first["universe_tickers_sha256"], changed["universe_tickers_sha256"])
+        self.assertNotIn("universe_source_index_sha256", first)
+
     def test_bounded_rotation_real_ohlcv_not_signals(self):
         rows=[{"ticker":t,"market_cap":150e6,"quote_type":"EQUITY"} for t in ("A","B","C")]
         p=Provider()
