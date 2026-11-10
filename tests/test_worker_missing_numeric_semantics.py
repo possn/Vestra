@@ -76,6 +76,17 @@ const assert = require('node:assert/strict');
 """
         subprocess.run(["node", "-e", code], check=True, timeout=10, cwd=ROOT)
 
+    def test_coinlore_global_fallback_contract_and_upstream_mapping(self):
+        worker = read("worker.js")
+        self.assertIn('cryptoGet("coinlore_global", "https://api.coinlore.net/api/global/"', worker)
+        self.assertIn('source: globalData?.data ? "CoinGecko" :', worker)
+        self.assertIn('(coinloreValid ? "CoinLore" : null)', worker)
+        self.assertIn('finiteNumber(gl.total_mcap)', worker)
+        self.assertIn('finiteNumber(gl.total_volume)', worker)
+        self.assertIn('finiteNumber(gl.btc_d)', worker)
+        self.assertIn('Array.isArray(globalThird)', worker)
+        self.assertIn('coinloreValid ?', worker)
+
     def test_market_payload_uses_null_safe_numeric_reads(self):
         worker = read("worker.js")
         self.assertIn("const marketCap = firstFinite(numberOrNull(price.marketCap)", worker)
