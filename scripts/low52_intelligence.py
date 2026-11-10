@@ -145,6 +145,12 @@ def assess(row: dict) -> dict:
     margin_change = _n(row.get("net_margin_yoy_change_pp"))
     dilution = _n(row.get("diluted_shares_yoy"))
     est = _n(row.get("estimate_momentum_score"))
+    # These component scores are also defined on 0–100; otherwise an invalid
+    # quality or estimate score can boost resilience/opportunity after core
+    # evidence gates pass. Keep growth and margin-change rates unconstrained.
+    if any(v is not None and not 0 <= v <= 100 for v in
+           (quality, balance, cashflow, execution, value, est)):
+        return _insufficient(pos, "Dimensões de classificação fora da escala 0–100")
     est_signal = str(row.get("estimate_signal") or "").lower()
     thesis = str(row.get("thesis_direction") or "").lower()
     gate = str(row.get("risk_gate") or "unknown").lower()
