@@ -356,7 +356,7 @@ def eligible_universe_tickers(stocks: list[dict])->set[str]:
 def eligible_universe_size(stocks: list[dict])->int:
     return len(eligible_universe_tickers(stocks))
 
-def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|None=None):
+def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|None=None, *, recently_verified:set[str]|None=None):
     universe={}
     for s in stocks:
         ticker=str(s.get("ticker") or "").strip().upper()
@@ -378,8 +378,15 @@ def candidates(stocks: list[dict], when: date, slot: int = 0, watch: list[str]|N
             watchlist.append(ticker)
             if len(watchlist)>=25:break
     # Historical watch candidates are rechecked, never promoted from cache.
-    rotation=[t for t in rotated if t not in watchlist][:SCAN_BUDGET_PER_SLOT-len(watchlist)]
-    return watchlist+rotation
+    rotation=[t for t in rotated if t not in watchlist]
+    if recently_verified is not None:
+        # Daily OHLCV rarely changes between six-hour slots. When the
+        # universe/capitalisation order moves, prioritize names not yet
+        # verified in the last 24h; preserve the watchlist reservation.
+        unseen=[t for t in rotation if t not in recently_verified]
+        repeats=[t for t in rotation if t in recently_verified]
+        rotation=unseen+repeats
+    return watchlist+rotation[:SCAN_BUDGET_PER_SLOT-len(watchlist)]
 
 def rotation_plan_audit(stocks:list[dict], when:date, watch:list[str]|None=None)->dict:
     """Deterministic four-slot selection plan, not proof any prices were downloaded."""
@@ -612,7 +619,28 @@ def main():
     now=datetime.now(timezone.utc)
     stocks=json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[])
     watch=watched_tickers(now)
-    tickers=candidates(stocks,now.date(),now.hour//6,watch)
+    try:
+        previous=json.loads(OUTPUT.read_text(encoding="utf-8"))
+    except (OSError,ValueError):
+        previous={}
+    prior_verified=set()
+    if previous.get("schema")=="vestra_prebreakout_v1":
+        for record in previous.get("coverage_observations_24h",[]):
+            if not isinstance(record,dict) or not isinstance(record.get("ticker"),str):
+                continue
+            try:
+                verified=datetime.fromisoformat(str(record["verified_at"]).replace("Z","+00:00"))
+                if verified.tzinfo is not None and 0 <= (now-verified).total_seconds() <= 24*3600:
+                    prior_verified.add(record["ticker"])
+            except (KeyError,TypeError,ValueError,AttributeError):
+                continue
+    tickers=candidates(stocks,now.date(),now.hour//6,watch,
+                       recently_verified=prior_verified)
+    slot_selection_audit={"status":"planned_not_observed",
+        "previous_verified_24h":len(prior_verified),
+        "selected_not_verified_24h":sum(t not in prior_verified for t in tickers),
+        "selected_repeat_verified_24h":sum(t in prior_verified for t in tickers),
+        "not_successful_ohlcv_count":True}
     rotation_plan=rotation_plan_audit(stocks,now.date(),watch)
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(stocks)
@@ -680,10 +708,6 @@ def main():
                 failures.append(f"{ticker}:{type(exc).__name__}")
     # A failed OHLCV download is not an observed rejection. Invalidate only a\n    # ticker whose bars were actually read; per-row 18h expiry still applies.
     # A rechecked ticker which now fails must disappear; never promote stale cache.
-    try:
-        previous=json.loads(OUTPUT.read_text(encoding="utf-8"))
-    except (OSError,ValueError):
-        previous={}
     retained=recent_verified_signals(previous,successful,now)
     by={signal["ticker"]:signal for signal in retained}
     by.update({signal["ticker"]:signal for signal in found})
@@ -701,7 +725,7 @@ def main():
         "measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"}
     scan_quality=slot_quality_audit(slot_telemetry,audit)
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"gate_funnel":{"scope":"current_observed_slot_only","method":"first_failing_gate_in_order_not_independent_gate_intersections",
                  "observed_rows":sum(gate_exclusions.values()),"first_rejection_counts":dict(sorted(gate_exclusions.items())),
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
