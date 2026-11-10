@@ -97,14 +97,15 @@ def _dividend_growth(row):
         try:
             v = item.get("value", item.get("dividend", item.get("amount"))) if isinstance(item, dict) else item
             v = float(v)
-            if v >= 0:
+            if math.isfinite(v) and v >= 0:
                 vals.append(v)
         except Exception:
             pass
     if len(vals) < 2:
         return None
     comps = [newer / older - 1 for newer, older in zip(vals, vals[1:]) if older > 0]
-    return sum(comps) / len(comps) if comps else None
+    finite_comps = [value for value in comps if math.isfinite(value)]
+    return sum(finite_comps) / len(finite_comps) if finite_comps else None
 
 
 def _structural_overlays(row, base):

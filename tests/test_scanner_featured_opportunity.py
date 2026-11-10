@@ -13,6 +13,23 @@ import scanner  # noqa: E402
 
 # Contract: scanner_best must remain the highest scored scanner strategy.
 class ScannerFeaturedOpportunityTests(unittest.TestCase):
+    def test_nonfinite_dividend_history_cannot_create_growth_claim(self):
+        self.assertIsNone(scanner._dividend_growth({
+            "annual_dividend_history": [float("inf"), 1.0],
+        }))
+        self.assertIsNone(scanner._dividend_growth({
+            "annual_dividend_history": [float("nan"), 1.0],
+        }))
+        self.assertIsNone(scanner._dividend_growth({
+            "annual_dividend_history": [1e308, 1e-308],
+        }))
+        self.assertAlmostEqual(scanner._dividend_growth({
+            "annual_dividend_history": [1.2, 1.0],
+        }), 0.2)
+        self.assertAlmostEqual(scanner._dividend_growth({
+            "annual_dividend_history": [float("inf"), 1.2, 1.0],
+        }), 0.2)
+
     def test_missing_gate_never_authorizes_positive_revisions_strategy(self):
         row = self.base_row()
         row.pop("risk_gate", None)
