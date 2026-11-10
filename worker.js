@@ -95,6 +95,33 @@ function finiteNumber(v) {
   return Number.isFinite(x) ? x : null;
 }
 
+// Crypto-only upstream diagnostics. Keep the quote providers and their
+// fetchJsonMaybe helper untouched; publish status classes, never raw errors.
+async function fetchCryptoObserved(name, url, init, timeoutMs, statuses) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.max(1000, Number(timeoutMs) || 5000));
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    if (!response.ok) {
+      statuses[name] = `http_${response.status}`;
+      return null;
+    }
+    try {
+      const data = await response.json();
+      statuses[name] = 'ok';
+      return data;
+    } catch (_) {
+      statuses[name] = 'invalid_json';
+      return null;
+    }
+  } catch (error) {
+    statuses[name] = error?.name === 'AbortError' ? 'timeout' : 'network_error';
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchCryptoIntelligence(ctx) {
   const cache = caches.default;
   const cacheUrl = "https://cache.internal/crypto-intelligence-v2";
@@ -105,24 +132,27 @@ async function fetchCryptoIntelligence(ctx) {
     return data;
   }
 
+  const providerStatus = {};
+  const cryptoGet = (name, url, init, timeoutMs) => fetchCryptoObserved(name, url, init, timeoutMs, providerStatus);
+
   const [globalData, globalFallback, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist, btcFundingHist, ethFundingHist, btcBybit, ethBybit, btcBybitOi, ethBybitOi, btcBybitFunding, ethBybitFunding] = await Promise.all([
-    fetchJsonMaybe("https://api.coingecko.com/api/v3/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
-    fetchJsonMaybe("https://api.coinpaprika.com/v1/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
-    fetchJsonMaybe("https://api.alternative.me/fng/?limit=31&format=json", { headers: { "Accept": "application/json" } }, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=ETHUSDT", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/openInterest?symbol=ETHUSDT", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=30", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/futures/data/openInterestHist?symbol=ETHUSDT&period=1d&limit=30", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=100", {}, 5000),
-    fetchJsonMaybe("https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=100", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/tickers?category=linear&symbol=ETHUSDT", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/open-interest?category=linear&symbol=BTCUSDT&intervalTime=1d&limit=30", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/open-interest?category=linear&symbol=ETHUSDT&intervalTime=1d&limit=30", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=100", {}, 5000),
-    fetchJsonMaybe("https://api.bybit.com/v5/market/funding/history?category=linear&symbol=ETHUSDT&limit=100", {}, 5000),
+    cryptoGet("coingecko_global", "https://api.coingecko.com/api/v3/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
+    cryptoGet("coinpaprika_global", "https://api.coinpaprika.com/v1/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
+    cryptoGet("alternative_fear_greed", "https://api.alternative.me/fng/?limit=31&format=json", { headers: { "Accept": "application/json" } }, 5000),
+    cryptoGet("binance_btc_premium", "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT", {}, 5000),
+    cryptoGet("binance_eth_premium", "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=ETHUSDT", {}, 5000),
+    cryptoGet("binance_btc_oi", "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT", {}, 5000),
+    cryptoGet("binance_eth_oi", "https://fapi.binance.com/fapi/v1/openInterest?symbol=ETHUSDT", {}, 5000),
+    cryptoGet("binance_btc_oi_hist", "https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=30", {}, 5000),
+    cryptoGet("binance_eth_oi_hist", "https://fapi.binance.com/futures/data/openInterestHist?symbol=ETHUSDT&period=1d&limit=30", {}, 5000),
+    cryptoGet("binance_btc_funding_hist", "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=100", {}, 5000),
+    cryptoGet("binance_eth_funding_hist", "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=100", {}, 5000),
+    cryptoGet("bybit_btc_ticker", "https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT", {}, 5000),
+    cryptoGet("bybit_eth_ticker", "https://api.bybit.com/v5/market/tickers?category=linear&symbol=ETHUSDT", {}, 5000),
+    cryptoGet("bybit_btc_oi_hist", "https://api.bybit.com/v5/market/open-interest?category=linear&symbol=BTCUSDT&intervalTime=1d&limit=30", {}, 5000),
+    cryptoGet("bybit_eth_oi_hist", "https://api.bybit.com/v5/market/open-interest?category=linear&symbol=ETHUSDT&intervalTime=1d&limit=30", {}, 5000),
+    cryptoGet("bybit_btc_funding_hist", "https://api.bybit.com/v5/market/funding/history?category=linear&symbol=BTCUSDT&limit=100", {}, 5000),
+    cryptoGet("bybit_eth_funding_hist", "https://api.bybit.com/v5/market/funding/history?category=linear&symbol=ETHUSDT&limit=100", {}, 5000),
   ]);
 
   const g = globalData?.data || {};
@@ -221,6 +251,7 @@ async function fetchCryptoIntelligence(ctx) {
       source: (btcPremium || ethPremium || btcOi || ethOi) ? "Binance Futures" : ((bybitRow(btcBybit) || bybitRow(ethBybit)) ? "Bybit" : null),
     },
     updated: new Date().toISOString(),
+    provider_probe_status: providerStatus,
   };
 
   try {
