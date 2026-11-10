@@ -77,6 +77,38 @@ const api = context.window.VestraMarketCongressLive.create({
   assert.strictEqual(stock.congress_trades.length, 2, 'existing trade must not be duplicated');
   assert.strictEqual(stock.congress_trades[1].representative, 'B');
 
+  // Same member/date/asset/amount can belong to different official filings.
+  // Do not erase those disclosures when their provenance differs.
+  const classStock = {ticker:'BRK.B.US', congress_trades:[]};
+  const distinctApi = context.window.VestraMarketCongressLive.create({
+    state: {trades: [], loaded: false, loading: null, error: ''},
+    getStocksByTicker: () => new Map([['BRK.B',classStock]]),
+    getStocks: () => [classStock],
+    text: v => String(v ?? '').trim(),
+    now: () => now,
+    storage: {getItem:()=>null,setItem:()=>{}},
+    fetchImpl: async () => ({ok:true,json:async()=>({
+      schema_version:2,newest_disclosure:'2026-08-30',trades:[
+        {ticker:'BRK-B',member:'Member A',type:'buy',transaction_date:'2026-08-25',
+          disclosure_date:'2026-08-29',filing_url:'https://official.example/one',amount:'$1,001 - $15,000',asset:'Berkshire B'},
+        {ticker:'BRK.B',member:'Member A',type:'buy',transaction_date:'2026-08-25',
+          disclosure_date:'2026-08-30',filing_url:'https://official.example/two',amount:'$1,001 - $15,000',asset:'Berkshire B'},
+        {ticker:'BRK.B.US',member:'Member A',type:'buy',transaction_date:'2026-08-25',
+          disclosure_date:'2026-08-30',filing_url:'https://official.example/two',amount:'$1,001 - $15,000',asset:'Berkshire B'},
+        {ticker:'BRK.A',member:'Other class',type:'sell',transaction_date:'2026-08-25',
+          disclosure_date:'2026-08-30',amount:'$1,001 - $15,000',asset:'Berkshire A'},
+      ],
+    })}),
+  });
+  assert.strictEqual((await distinctApi.load('BRK.B.US')).length,2,
+    'same-class official filings remain distinct, suffix aliases deduplicate');
+  assert.strictEqual(classStock.congress_trades.length,2,
+    'US-suffixed stock receives both independently sourced filings');
+  assert.strictEqual((await distinctApi.load('BRK.A')).length,1,
+    'BRK.A must never be merged into BRK.B');
+  assert.strictEqual(classStock.congress_trades.length,2,
+    'loading share-class A must not attach to class B');
+
   const cachedState = { trades: [], loaded: false, loading: null, error: '' };
   let cachedFetches = 0;
   const cachedApi = context.window.VestraMarketCongressLive.create({

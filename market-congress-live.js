@@ -40,7 +40,10 @@
     }
 
     // Preserve share classes and exchange suffixes; BRK.A must never absorb BRK.B.
-    const tickerIdentity = value => text(value).toUpperCase().replace(/-/g, '.');
+    const tickerIdentity = value => {
+      const ticker = text(value).toUpperCase().replace(/-/g, '.');
+      return ticker.endsWith('.US') ? ticker.slice(0, -3) : ticker;
+    };
 
     function validTradeDate(value, required = true) {
       if (!value) return !required;
@@ -55,7 +58,8 @@
       const result = [];
       for (const trade of rows.map(normalize).filter(item => item.ticker && validTradeDate(item.transaction_date) && validTradeDate(item.disclosure_date, false))) {
         const id = [tickerIdentity(trade.ticker), trade.transaction_date,
-          trade.representative, trade.type, trade.amount, trade.asset].join('|');
+          trade.representative, trade.type, trade.amount, trade.asset,
+          trade.disclosure_date, trade.filing_url].join('|');
         if (seen.has(id)) continue;
         seen.add(id);
         result.push(trade);
@@ -77,7 +81,11 @@
         const stock = byTicker.get(ticker) || stocks.find(item => tickerIdentity(item.ticker) === ticker);
         if (!stock) continue;
         const current = Array.isArray(stock.congress_trades) ? stock.congress_trades : [];
-        const key = item => `${text(item.transaction_date || item.date)}|${text(item.representative || item.member || item.name)}|${text(item.type)}|${text(item.amount || item.amount_range)}|${text(item.asset)}`;
+        const key = item => [text(item.transaction_date || item.date),
+          text(item.representative || item.member || item.name), text(item.type),
+          text(item.amount || item.amount_range), text(item.asset),
+          text(item.disclosure_date || item.filed_date),
+          text(item.filing_url || item.filing_portal)].join('|');
         const seen = new Set(current.map(key));
         const additions = [];
         for (const item of rows) {
