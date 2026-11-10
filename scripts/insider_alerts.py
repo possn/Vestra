@@ -13,6 +13,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
+import math
 import os
 import sys
 from pathlib import Path
@@ -92,7 +93,7 @@ def _current_price_map() -> dict[str, float]:
     for r in rows or []:
         try:
             price = float(r.get("current_price"))
-            if price > 0:
+            if math.isfinite(price) and price > 0:
                 out[str(r.get("ticker") or "").upper()] = price
         except Exception:
             pass
@@ -118,20 +119,31 @@ def _near_low_candidates() -> dict[str, dict]:
             px = float(r.get("current_price"))
         except Exception:
             continue
-        if not (score >= 50) or not (px > 0):
+        if not (math.isfinite(score) and 50 <= score <= 100 and
+                math.isfinite(px) and px > 0):
             continue
         if r.get("zombie") == "yes" or r.get("thesis_direction") == "weakening":
             continue
         hist = r.get("price_history_1y") or []
-        vals = [v for v in (
-            (h.get("close") if isinstance(h, dict) else None) for h in hist
-        ) if isinstance(v, (int, float))]
-        if not vals:
+        # A handful of recent closes, corrupt bars, or Boolean prices do
+        # not establish a genuine 52-week low. Never silently drop bad bars.
+        if not isinstance(hist, list) or len(hist) < 200:
+            continue
+        vals = []
+        for bar in hist:
+            value = bar.get("close") if isinstance(bar, dict) else bar
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                break
+            value = float(value)
+            if not math.isfinite(value) or value <= 0:
+                break
+            vals.append(value)
+        if len(vals) != len(hist):
             continue
         lo = min(vals)
-        if lo <= 0:
-            continue
         dist_pct = (px / lo - 1) * 100
+        if not math.isfinite(dist_pct):
+            continue
         out[ticker] = {
             "in_zone": dist_pct <= 15,
             "dist_pct": round(dist_pct, 1),
@@ -395,14 +407,18 @@ def _group_transactions(transactions: Iterable[dict]) -> list[dict]:
             "known_value": False,
             "prices": [],
         })
-        if isinstance(tx.get("shares"), (int, float)):
-            g["shares"] += float(tx["shares"])
-            g["known_shares"] = True
-        if isinstance(tx.get("value"), (int, float)):
-            g["value"] += float(tx["value"])
-            g["known_value"] = True
-        if isinstance(tx.get("price"), (int, float)):
-            g["prices"].append(float(tx["price"]))
+        for field, target, known in (("shares", "shares", "known_shares"),
+                                     ("value", "value", "known_value")):
+            raw = tx.get(field)
+            if (not isinstance(raw, bool) and isinstance(raw, (int, float))
+                and math.isfinite(raw) and raw >= 0
+                and math.isfinite(g[target] + raw)):
+                g[target] += float(raw)
+                g[known] = True
+        price = tx.get("price")
+        if (not isinstance(price, bool) and isinstance(price, (int, float))
+            and math.isfinite(price) and price > 0):
+            g["prices"].append(float(price))
     return list(groups.values())
 
 
