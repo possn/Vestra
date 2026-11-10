@@ -131,7 +131,7 @@ def assess(row: dict) -> dict:
         return _insufficient(pos, "Cobertura de métricas críticas insuficiente")
     if confidence is None or confidence < 50:
         return _insufficient(pos, "Confiança dos dados insuficiente")
-    if reliability in ("insufficient", "suppressed"):
+    if reliability not in ("robust", "moderate_evidence", "limited_evidence"):
         return _insufficient(pos, "Fiabilidade insuficiente para classificar oportunidade")
 
     quality = _n(row.get("quality_pct"))
