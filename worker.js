@@ -156,8 +156,8 @@ async function fetchCryptoIntelligence(ctx) {
     cryptoGet("bybit_eth_funding_hist", "https://api.bybit.com/v5/market/funding/history?category=linear&symbol=ETHUSDT&limit=100", {}, 5000),
     cryptoGet("okx_btc_funding", "https://www.okx.com/api/v5/public/funding-rate?instId=BTC-USDT-SWAP", {}, 5000),
     cryptoGet("okx_eth_funding", "https://www.okx.com/api/v5/public/funding-rate?instId=ETH-USDT-SWAP", {}, 5000),
-    cryptoGet("okx_btc_oi_history_probe", "https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?ccy=BTC&period=1D", {}, 5000),
-    cryptoGet("okx_eth_oi_history_probe", "https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?ccy=ETH&period=1D", {}, 5000),
+    cryptoGet("okx_btc_oi_history_probe", "https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?instId=BTC-USDT-SWAP&period=1D", {}, 5000),
+    cryptoGet("okx_eth_oi_history_probe", "https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-history?instId=ETH-USDT-SWAP&period=1D", {}, 5000),
   ]);
 
   const g = globalData?.data || {};
