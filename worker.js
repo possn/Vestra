@@ -135,9 +135,10 @@ async function fetchCryptoIntelligence(ctx) {
   const providerStatus = {};
   const cryptoGet = (name, url, init, timeoutMs) => fetchCryptoObserved(name, url, init, timeoutMs, providerStatus);
 
-  const [globalData, globalFallback, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist, btcFundingHist, ethFundingHist, btcBybit, ethBybit, btcBybitOi, ethBybitOi, btcBybitFunding, ethBybitFunding] = await Promise.all([
+  const [globalData, globalFallback, globalThird, fearGreed, btcPremium, ethPremium, btcOi, ethOi, btcOiHist, ethOiHist, btcFundingHist, ethFundingHist, btcBybit, ethBybit, btcBybitOi, ethBybitOi, btcBybitFunding, ethBybitFunding] = await Promise.all([
     cryptoGet("coingecko_global", "https://api.coingecko.com/api/v3/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
     cryptoGet("coinpaprika_global", "https://api.coinpaprika.com/v1/global", { headers: { "Accept": "application/json", "User-Agent": "Vestra/1.0" } }, 5000),
+    cryptoGet("coinlore_global", "https://api.coinlore.net/api/global/", { headers: { "Accept": "application/json" } }, 5000),
     cryptoGet("alternative_fear_greed", "https://api.alternative.me/fng/?limit=31&format=json", { headers: { "Accept": "application/json" } }, 5000),
     cryptoGet("binance_btc_premium", "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT", {}, 5000),
     cryptoGet("binance_eth_premium", "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=ETHUSDT", {}, 5000),
@@ -157,6 +158,10 @@ async function fetchCryptoIntelligence(ctx) {
 
   const g = globalData?.data || {};
   const gp = globalFallback || {};
+  const gl = Array.isArray(globalThird) && globalThird[0] && typeof globalThird[0] === 'object' ? globalThird[0] : {};
+  const coinloreValid = positiveNumber(finiteNumber(gl.total_mcap)) !== null
+    && positiveNumber(finiteNumber(gl.total_volume)) !== null
+    && finiteNumber(gl.btc_d) > 0 && finiteNumber(gl.btc_d) < 100;
   const bybitRow = (payload) => Array.isArray(payload?.result?.list) ? payload.result.list[0] : null;
   const bybitHist = (payload) => Array.isArray(payload?.result?.list) ? payload.result.list : [];
   const fngRows = Array.isArray(fearGreed?.data) ? fearGreed.data : [];
@@ -206,14 +211,14 @@ async function fetchCryptoIntelligence(ctx) {
 
   const out = {
     global: {
-      total_market_cap_usd: finiteNumber(g?.total_market_cap?.usd) ?? finiteNumber(gp?.market_cap_usd),
-      total_volume_24h_usd: finiteNumber(g?.total_volume?.usd) ?? finiteNumber(gp?.volume_24h_usd),
-      market_cap_change_24h_pct: finiteNumber(g?.market_cap_change_percentage_24h_usd) ?? finiteNumber(gp?.market_cap_change_24h),
-      volume_change_24h_pct: finiteNumber(g?.volume_change_percentage_24h_usd) ?? finiteNumber(gp?.volume_24h_change_24h),
-      btc_dominance_pct: finiteNumber(g?.market_cap_percentage?.btc) ?? finiteNumber(gp?.bitcoin_dominance_percentage),
-      eth_dominance_pct: finiteNumber(g?.market_cap_percentage?.eth),
-      active_cryptocurrencies: finiteNumber(g?.active_cryptocurrencies) ?? finiteNumber(gp?.cryptocurrencies_number),
-      source: globalData?.data ? "CoinGecko" : (finiteNumber(gp?.market_cap_usd) ? "CoinPaprika" : null),
+      total_market_cap_usd: finiteNumber(g?.total_market_cap?.usd) ?? finiteNumber(gp?.market_cap_usd) ?? (coinloreValid ? finiteNumber(gl.total_mcap) : null),
+      total_volume_24h_usd: finiteNumber(g?.total_volume?.usd) ?? finiteNumber(gp?.volume_24h_usd) ?? (coinloreValid ? finiteNumber(gl.total_volume) : null),
+      market_cap_change_24h_pct: finiteNumber(g?.market_cap_change_percentage_24h_usd) ?? finiteNumber(gp?.market_cap_change_24h) ?? (coinloreValid ? finiteNumber(gl.mcap_change) : null),
+      volume_change_24h_pct: finiteNumber(g?.volume_change_percentage_24h_usd) ?? finiteNumber(gp?.volume_24h_change_24h) ?? (coinloreValid ? finiteNumber(gl.volume_change) : null),
+      btc_dominance_pct: finiteNumber(g?.market_cap_percentage?.btc) ?? finiteNumber(gp?.bitcoin_dominance_percentage) ?? (coinloreValid ? finiteNumber(gl.btc_d) : null),
+      eth_dominance_pct: finiteNumber(g?.market_cap_percentage?.eth) ?? (coinloreValid ? finiteNumber(gl.eth_d) : null),
+      active_cryptocurrencies: finiteNumber(g?.active_cryptocurrencies) ?? finiteNumber(gp?.cryptocurrencies_number) ?? (coinloreValid ? finiteNumber(gl.coins_count) : null),
+      source: globalData?.data ? "CoinGecko" : (finiteNumber(gp?.market_cap_usd) ? "CoinPaprika" : (coinloreValid ? "CoinLore" : null)),
     },
     fear_greed: {
       value: finiteNumber(fngNow?.value),
