@@ -115,6 +115,54 @@ const api = context.window.VestraMarketCongressLive.create({
   assert.strictEqual(futureCacheFetches, 1, 'future cache timestamp must not short-circuit network');
   assert.deepStrictEqual(Array.from(fromFutureCache), []);
 
+  // A fresh cache timestamp cannot bypass stale/invalid source provenance.
+  for (const metadata of [
+    {schema_version: 2, newest_disclosure: '2026-01-01', data_current: true},
+    {schema_version: 2, newest_disclosure: '2026-08-30', data_current: false},
+    null,
+  ]) {
+    let networkCalls = 0;
+    const isolated = context.window.VestraMarketCongressLive.create({
+      state: {trades: [], loaded: false, loading: null, error: ''},
+      getStocksByTicker: () => new Map(),
+      getStocks: () => [],
+      text: v => String(v ?? '').trim(),
+      storage: {getItem: () => JSON.stringify({ts: now, snapshot: metadata,
+        trades: [{ticker: 'FAKE', transaction_date: '2026-08-29'}]}), setItem: () => {}},
+      now: () => now,
+      fetchImpl: async () => {
+        networkCalls++;
+        return {ok: true, json: async () => ({
+          schema_version: 2, newest_disclosure: '2026-08-30', trades: [],
+        })};
+      },
+    });
+    assert.strictEqual((await isolated.load()).length, 0);
+    assert.strictEqual(networkCalls, 1, 'invalid cached provenance must revalidate via network');
+  }
+
+  // Valid snapshot metadata does not excuse future or malformed individual trades.
+  const filteredApi = context.window.VestraMarketCongressLive.create({
+    state: {trades: [], loaded: false, loading: null, error: ''},
+    getStocksByTicker: () => new Map(),
+    getStocks: () => [],
+    text: v => String(v ?? '').trim(),
+    storage: {getItem: () => null, setItem: () => {}},
+    now: () => now,
+    fetchImpl: async () => ({ok: true, json: async () => ({
+      schema_version: 2, newest_disclosure: '2026-08-30',
+      trades: [
+        {ticker:'AAPL',transaction_date:'2026-08-29',type:'buy'},
+        {ticker:'AAPL',transaction_date:'2026-09-01',type:'buy'},
+        {ticker:'AAPL',transaction_date:'2026-02-30',type:'buy'},
+        {ticker:'AAPL',transaction_date:'2026-08-29',disclosure_date:'2026-09-01',type:'buy'},
+        {ticker:'AAPL',transaction_date:'2026-08-29',disclosure_date:'bad',type:'buy'},
+      ],
+    })}),
+  });
+  const validTrades = await filteredApi.load();
+  assert.strictEqual(validTrades.length, 1, 'only canonical nonfuture trade dates qualify');
+
   const staleState = { trades: [], loaded: false, loading: null, error: '' };
   const staleApi = context.window.VestraMarketCongressLive.create({
     state: staleState,
