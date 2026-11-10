@@ -159,6 +159,44 @@ class RotationPlanAuditTests(unittest.TestCase):
         self.assertEqual(plan["planned_requests"],0)
 
 
+class UnseenFirstRotationTests(unittest.TestCase):
+    def stocks(self, count=420):
+        return [{"ticker":f"T{i:04d}","quote_type":"EQUITY",
+                 "market_cap":2_000_000_000-i} for i in range(count)]
+
+    def test_unseen_names_replace_recent_rechecks_without_more_requests(self):
+        stocks=self.stocks()
+        day=date(2026,11,10)
+        baseline=mod.candidates(stocks,day,slot=3)
+        unseen=set(mod.eligible_universe_tickers(stocks))-set(baseline)
+        self.assertTrue(unseen)
+        picked=mod.candidates(stocks,day,slot=3,
+                              recently_verified=set(baseline))
+        self.assertEqual(len(picked),300)
+        self.assertEqual(len(set(picked)),300)
+        self.assertTrue(unseen.issubset(set(picked)))
+        self.assertEqual(len(set(picked)&set(baseline)),300-len(unseen))
+
+    def test_reserved_watchlist_is_preserved_even_when_already_verified(self):
+        stocks=self.stocks()
+        watch=["T0001","T0002"]
+        baseline=mod.candidates(stocks,date(2026,11,10),slot=2,watch=watch)
+        selected=mod.candidates(stocks,date(2026,11,10),slot=2,watch=watch,
+                                recently_verified=set(baseline))
+        self.assertEqual(selected[:2],watch)
+        self.assertEqual(len(selected),300)
+        self.assertEqual(len(set(selected)),300)
+
+    def test_empty_history_keeps_existing_rotation_and_plan(self):
+        stocks=self.stocks()
+        day=date(2026,11,10)
+        for slot in range(4):
+            self.assertEqual(mod.candidates(stocks,day,slot),
+                             mod.candidates(stocks,day,slot,recently_verified=set()))
+        plan=mod.rotation_plan_audit(stocks,day)
+        self.assertEqual(plan["status"],"planned_not_observed")
+        self.assertTrue(plan["not_actual_ohlcv_coverage"])
+
 class DailyCoverageCapacityTests(unittest.TestCase):
     def test_capacity_is_an_upper_bound_not_observed_coverage(self):
         c=mod.daily_coverage_capacity(1173)
