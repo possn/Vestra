@@ -45,7 +45,7 @@ class ResearchCollectorTests(unittest.TestCase):
         reordered = mod.collect([row("A"), row("B")], Provider(), slot=0, budget=1, checked_at=now)
         changed = mod.collect([row("A"), row("C")], Provider(), slot=0, budget=1, checked_at=now)
         self.assertEqual(first["universe_tickers_sha256"],
-                         hashlib.sha256(b"A\\nB").hexdigest())
+                         hashlib.sha256(bytes([65, 10, 66])).hexdigest())
         self.assertEqual(first["universe_tickers_sha256"], reordered["universe_tickers_sha256"])
         self.assertNotEqual(first["universe_tickers_sha256"], changed["universe_tickers_sha256"])
         self.assertNotIn("universe_source_index_sha256", first)
