@@ -10,7 +10,7 @@
     const fetchImpl = typeof options.fetchImpl === 'function' ? options.fetchImpl : (...args) => fetch(...args);
     const storage = options.storage || window.localStorage;
     const now = typeof options.now === 'function' ? options.now : () => Date.now();
-    const cacheKey = options.cacheKey || 'vestra-congress-canonical-v3';
+    const cacheKey = options.cacheKey || 'vestra-congress-canonical-v4';
     const cacheMaxAge = Number(options.cacheMaxAge) > 0 ? Number(options.cacheMaxAge) : 6 * 60 * 60 * 1000;
     const maxSnapshotAge = Number(options.maxSnapshotAge) > 0 ? Number(options.maxSnapshotAge) : 60 * 86400000;
 
@@ -31,7 +31,7 @@
     }
 
     function snapshotFresh(data) {
-      if (!data || Number(data.schema_version || 0) < 2 || !Array.isArray(data.trades)) return false;
+      if (!data || data.data_current === false || Number(data.schema_version || 0) < 2 || !Array.isArray(data.trades)) return false;
       const newest = text(data.newest_disclosure || data.source_last_updated).slice(0, 10);
       const ms = newest ? new Date(`${newest}T00:00:00Z`).valueOf() : NaN;
       if (!Number.isFinite(ms)) return false;
@@ -42,10 +42,18 @@
     // Preserve share classes and exchange suffixes; BRK.A must never absorb BRK.B.
     const tickerIdentity = value => text(value).toUpperCase().replace(/-/g, '.');
 
+    function validTradeDate(value, required = true) {
+      if (!value) return !required;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const time = Date.parse(value + 'T00:00:00Z');
+      return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === value
+        && time <= now();
+    }
+
     function deduplicateTrades(rows) {
       const seen = new Set();
       const result = [];
-      for (const trade of rows.map(normalize).filter(item => item.ticker)) {
+      for (const trade of rows.map(normalize).filter(item => item.ticker && validTradeDate(item.transaction_date) && validTradeDate(item.disclosure_date, false))) {
         const id = [tickerIdentity(trade.ticker), trade.transaction_date,
           trade.representative, trade.type, trade.amount, trade.asset].join('|');
         if (seen.has(id)) continue;
@@ -98,7 +106,7 @@
             const cached = JSON.parse(storage.getItem(cacheKey) || 'null');
             const cachedAge = now() - Number(cached?.ts);
             if (cached && Array.isArray(cached.trades) && Number.isFinite(cachedAge)
-                && cachedAge >= 0 && cachedAge < cacheMaxAge) {
+                && cachedAge >= 0 && cachedAge < cacheMaxAge && snapshotFresh({ ...cached.snapshot, trades: cached.trades })) {
               state.trades = deduplicateTrades(cached.trades);
               state.loaded = true;
               state.error = '';
@@ -116,7 +124,12 @@
           state.loaded = true;
           state.error = '';
           attachToStocks(trades);
-          try { storage.setItem(cacheKey, JSON.stringify({ ts: now(), trades })); } catch (_) {}
+          try { storage.setItem(cacheKey, JSON.stringify({ ts: now(), trades, snapshot: {
+            schema_version: data.schema_version,
+            newest_disclosure: data.newest_disclosure,
+            source_last_updated: data.source_last_updated,
+            data_current: data.data_current,
+          } })); } catch (_) {}
           return trades;
         } catch (error) {
           state.trades = [];
