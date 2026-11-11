@@ -448,6 +448,8 @@ def evaluable_recheck(bars, today):
         return False
     previous=None
     for bar in bars:
+        if not isinstance(bar,dict) or any(isinstance(bar.get(k),bool) for k in ("close","high","low","volume")):
+            return False
         try:
             day=date.fromisoformat(str(bar["date"])[:10])
             close=float(bar["close"]); high=float(bar["high"]); low=float(bar["low"])
