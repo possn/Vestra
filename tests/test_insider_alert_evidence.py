@@ -72,6 +72,9 @@ class InsiderAlertEvidenceTests(unittest.TestCase):
     def test_wider_15pct_alert_band_requires_watch_grade_resilience(self):
         valid = self.quality_row(current=112)
         self.assertTrue(self.candidates(valid)["ABC"]["in_zone"])
+        # A fresh price below the lowest observed prior close is still in
+        # the near-low zone; negative distance is not corrupt evidence.
+        self.assertTrue(self.candidates(self.quality_row(current=98))["ABC"]["in_zone"])
         risk = self.quality_row(current=112)
         risk["risk_gate"] = "high"
         self.assertNotIn("ABC", self.candidates(risk))
