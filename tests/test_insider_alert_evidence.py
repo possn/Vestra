@@ -142,6 +142,39 @@ class InsiderAlertEvidenceTests(unittest.TestCase):
                                   return_value={"stocks": [row(history)]}):
                     self.assertNotIn("ABC", alerts._near_low_candidates())
 
+    def test_sec_filing_url_rejects_malformed_metadata_without_crashing(self):
+        valid = {"accession": "0001234567-26-000123",
+                 "primary_document": "xslF345X03/form4.xml"}
+        self.assertEqual(
+            alerts._filing_url("0000123456", valid),
+            "https://www.sec.gov/Archives/edgar/data/123456/000123456726000123/xslF345X03/form4.xml")
+        for cik in ("bad", "../123", "", None):
+            with self.subTest(cik=cik):
+                self.assertIsNone(alerts._filing_url(cik, valid))
+        for document in ("../form4.xml", "/form4.xml", "folder//file.xml",
+                         "file.xml?redirect=https://bad.example", "file.xml#fragment",
+                         "folder/../file.xml", "https://bad.example/file.xml"):
+            with self.subTest(document=document):
+                self.assertIsNone(alerts._filing_url("123456", {
+                    **valid, "primary_document": document}))
+        for accession in ("abc-123", "12/../../test", "", None):
+            with self.subTest(accession=accession):
+                self.assertIsNone(alerts._filing_url("123456", {
+                    **valid, "accession": accession}))
+
+    def test_boolean_quotes_do_not_support_insider_conviction(self):
+        def fake_numpy_boolean(name):
+            return type(name, (), {"__module__": "numpy",
+                    "__init__": lambda self, v: setattr(self, "value", v),
+                    "__float__": lambda self: float(self.value)})
+        rows = [{"ticker": "VALID", "current_price": 25},
+                {"ticker": "PYTRUE", "current_price": True},
+                {"ticker": "PYFALSE", "current_price": False},
+                {"ticker": "NUMPY1", "current_price": fake_numpy_boolean("bool_")(True)},
+                {"ticker": "NUMPY2", "current_price": fake_numpy_boolean("bool")(True)}]
+        with patch.object(alerts, "_load_json", return_value={"stocks": rows}):
+            self.assertEqual(alerts._current_price_map(), {"VALID": 25.0})
+
     def test_nonfinite_current_price_never_enters_price_alert_map(self):
         with patch.object(alerts, "_load_json", return_value={"stocks": [
             {"ticker": "GOOD", "current_price": 20},
