@@ -36,6 +36,46 @@ def observation(score=80, support="strong", label="Prioridade alta", price=100):
 
 
 class OpportunityForwardValidationTests(unittest.TestCase):
+    def test_boolean_price_and_score_cannot_enter_forward_cohorts(self):
+        # NumPy 1.x and 2.x scalar identities without a NumPy CI dependency.
+        def fake_numpy_bool(name):
+            return type(name, (), {
+                "__module__": "numpy",
+                "__init__": lambda self, v: setattr(self, "value", v),
+                "__float__": lambda self: float(self.value),
+            })
+        invalid = [True, False, fake_numpy_bool("bool_")(True),
+                   fake_numpy_bool("bool")(True)]
+        for bad in invalid:
+            with self.subTest(scalar=type(bad).__name__):
+                self.assertIsNone(MOD.num(bad))
+                payload = {"stocks": [
+                    {"ticker": "BAD_PRICE", "quote_type": "EQUITY",
+                     "current_price": bad, "opportunity_score": 80,
+                     "opportunity_eligible": True},
+                    {"ticker": "BAD_SCORE", "quote_type": "EQUITY",
+                     "current_price": 100, "opportunity_score": bad,
+                     "opportunity_eligible": True},
+                    {"ticker": "GOOD", "quote_type": "EQUITY",
+                     "current_price": 100, "opportunity_score": 80,
+                     "opportunity_eligible": True},
+                ]}
+                with mock.patch.object(MOD, "load_json", return_value=payload):
+                    self.assertEqual(set(MOD.current_rows()), {"GOOD"})
+                    self.assertEqual(set(MOD.outcome_price_rows()),
+                                     {"BAD_SCORE", "GOOD"})
+
+    def test_boolean_matured_price_does_not_become_forward_return(self):
+        today = dt.date(2026, 8, 30)
+        snapshots = [{"date": "2026-08-02",
+                      "observations": {"AAA": observation()}}]
+        for bad in (True, False):
+            with self.subTest(price=bad):
+                outcomes = []
+                self.assertEqual(MOD.materialise_outcomes(
+                    today, snapshots, {"AAA": {"current_price": bad}}, outcomes), 0)
+                self.assertEqual(outcomes, [])
+
     def test_materialised_outcome_is_persistent_and_not_duplicated(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{"date": "2026-08-02", "observations": {"AAA": observation()}}]
