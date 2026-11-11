@@ -50,7 +50,11 @@ def inspect(ticker,frame,currency,checked_at):
             # Exclude it conservatively instead of treating partial volume as final.
             if day == checked_at.date().isoformat():
                 continue
-            values=[float(row[k]) for k in ("Open","High","Low","Close","Volume")]
+            fields=("Open","High","Low","Close","Volume")
+            # Boolean values are not observed trade prices or share volume.
+            if any(isinstance(row[k], bool) for k in fields):
+                return {"ticker":ticker,"status":"invalid_ohlcv"}
+            values=[float(row[k]) for k in fields]
             o,h,l,c,v=values
             if not all(map(math.isfinite,values)) or not (0<l<=min(o,c)<=max(o,c)<=h and v>=0):
                 return {"ticker":ticker,"status":"invalid_ohlcv"}
