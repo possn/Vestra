@@ -76,6 +76,76 @@ class OpportunityForwardValidationTests(unittest.TestCase):
                     today, snapshots, {"AAA": {"current_price": bad}}, outcomes), 0)
                 self.assertEqual(outcomes, [])
 
+    def test_currency_capture_diagnostic_counts_disjoint_missing_evidence(self):
+        snapshots = [{"date": "2026-11-09", "observations": {
+            "A": {"currency": "USD"},
+            "B": {"currency": ""},
+            "C": {"currency": "EUR"},
+            "D": {"currency": "GBP"},
+            "E": {"currency": "USD"},
+            "F": {"currency": "EUR"},
+        }}]
+        current = {
+            "A": {"currency": "USD"},
+            "B": {"currency": "USD"},
+            "C": {"currency": ""},
+            "D": {"currency": "USD"},
+            "E": {"currency": "USD"},
+        }
+        result = MOD.quote_currency_capture_diagnostic(snapshots, current)
+        self.assertEqual(result["status"], "observed_diagnostic_only")
+        self.assertEqual(result["snapshot_date"], "2026-11-09")
+        self.assertEqual(result["counts"], {
+            "frozen_tickers": 6,
+            "missing_frozen_currency": 1,
+            "missing_terminal_quote": 1,
+            "missing_terminal_currency": 1,
+            "known_currency_mismatch": 1,
+            "known_currency_match": 2,
+        })
+        self.assertTrue(result["not_validated_outcomes"])
+        self.assertTrue(result["no_fx_imputation"])
+
+    def test_currency_capture_rejects_non_currency_markers_without_false_matches(self):
+        snapshots = [{"date": "2026-11-09", "observations": {
+            "A": {"currency": float("nan")},
+            "B": {"currency": True},
+            "C": {"currency": "USD"},
+            "D": {"currency": "EUR"},
+            "E": {"currency": "GBP"},
+            "F": {"currency": " usd "},
+        }}]
+        current = {
+            "A": {"currency": "USD"},
+            "B": {"currency": "USD"},
+            "C": {"currency": float("nan")},
+            "D": {"currency": False},
+            "E": {"currency": "unknown"},
+            "F": {"currency": "USD"},
+        }
+        counts = MOD.quote_currency_capture_diagnostic(snapshots, current)["counts"]
+        self.assertEqual(counts["frozen_tickers"], 6)
+        self.assertEqual(counts["missing_frozen_currency"], 2)
+        self.assertEqual(counts["missing_terminal_quote"], 0)
+        self.assertEqual(counts["missing_terminal_currency"], 3)
+        self.assertEqual(counts["known_currency_mismatch"], 0)
+        self.assertEqual(counts["known_currency_match"], 1)
+
+    def test_currency_capture_has_explicit_missing_snapshot_state(self):
+        self.assertEqual(
+            MOD.quote_currency_capture_diagnostic([], {})["status"],
+            "no_frozen_snapshot")
+        self.assertIsNone(
+            MOD.quote_currency_capture_diagnostic([], {})["counts"])
+
+    def test_currency_capture_diagnostic_does_not_modify_frozen_evidence(self):
+        snapshots = [{"date": "2026-11-09",
+                      "observations": {"A": {"currency": "USD"}}}]
+        current = {"A": {"currency": "EUR"}}
+        MOD.quote_currency_capture_diagnostic(snapshots, current)
+        self.assertEqual(snapshots[0]["observations"]["A"]["currency"], "USD")
+        self.assertEqual(current["A"]["currency"], "EUR")
+
     def test_materialised_outcome_is_persistent_and_not_duplicated(self):
         today = dt.date(2026, 8, 30)
         snapshots = [{"date": "2026-08-02", "observations": {"AAA": observation()}}]
