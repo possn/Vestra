@@ -84,7 +84,21 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     values=[b["close"] for b in clean]
     m50=sma(values,end,50);m150=sma(values,end,150);m200=sma(values,end,200)
     slopes=[m50-sma(values,end-10,50),m150-sma(values,end-10,150),m200-sma(values,end-10,200)]
-    if not ((values[-1]>m50>m150>m200 if strict_quality else values[-1]>m150 and m50>m200) and all(x>0 for x in slopes)):return reject('moving_average_structure')
+    ma_structure=(values[-1]>m50>m150>m200 if strict_quality else values[-1]>m150 and m50>m200)
+    if not (ma_structure and all(x>0 for x in slopes)):
+        # Research-only: report *overlapping* reasons for this first failing gate.
+        # Do not turn these diagnostics into relaxed eligibility or a prediction.
+        if audit is not None:
+            checks=({"price_above_ma50":values[-1]>m50,
+                     "ma50_above_ma150":m50>m150,
+                     "ma150_above_ma200":m150>m200} if strict_quality else
+                    {"price_above_ma150":values[-1]>m150,
+                     "ma50_above_ma200":m50>m200})
+            checks.update({"ma50_rising_10":slopes[0]>0,
+                           "ma150_rising_10":slopes[1]>0,
+                           "ma200_rising_10":slopes[2]>0})
+            audit["moving_average_failed_checks"]=sorted(k for k,ok in checks.items() if not ok)
+        return reject('moving_average_structure')
     def bounds(part):
         return max(b["high"] for b in part),min(b["low"] for b in part)
     def width(part):
@@ -650,7 +664,7 @@ def main():
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(stocks)
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
-    gate_exclusions={}
+    gate_exclusions={};ma_gate_failure_counts={}
     scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
@@ -680,6 +694,9 @@ def main():
                 signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0,audit=trace)
                 first=trace.get('first_rejection','unresolved')
                 gate_exclusions[first]=gate_exclusions.get(first,0)+1
+                if first=="moving_average_structure":
+                    for failed_check in trace.get("moving_average_failed_checks",[]):
+                        ma_gate_failure_counts[failed_check]=ma_gate_failure_counts.get(failed_check,0)+1
                 legacy=scan_bars(ticker,bars,now.date(),strict_quality=False)
                 shadow["compared"]+=1
                 shadow["legacy_eligible"]+=int(legacy is not None)
@@ -736,6 +753,11 @@ def main():
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
                  "currency_or_usd_liquidity_rejections_after_structural_pass":currency_rejected,
                  "missing_downloads_not_negative_evidence":True,"probability_or_forward_performance":None},
+              "moving_average_failure_audit":{"scope":"first_rejected_by_moving_average_in_current_slot",
+                  "method":"nonexclusive_failed_conditions_not_independent_gate_pass_rates",
+                  "first_rejected_rows":gate_exclusions.get("moving_average_structure",0),
+                  "failed_condition_counts":dict(sorted(ma_gate_failure_counts.items())),
+                  "not_signal_or_forward_performance":True},
              "quality_filter_shadow":{"method":"same_bars_current_slot_counterfactual_not_historical_backtest","not_probability":True,**shadow},
              "quality_shadow_cases":{"purpose":"prospective_same_slot_comparison_not_dashboard_candidates",
                   "outcomes_available":False,"records":sorted(shadow_cases,key=lambda x:(x["ticker"],x["date"]))},
