@@ -194,7 +194,7 @@ def _check_price_alerts(watchlist: list[str], state: dict) -> tuple[int, bool]:
                 f"Preço atual: {info['price']:.2f}.",
                 priority=3,
                 tags="chart_with_downwards_trend,mag",
-                click=f"https://possn.github.io/Finscanner/#ticker={ticker}",
+                # Open the canonical Vestra app. Its current router does not\n                # guarantee the legacy Finscanner #ticker deep link.\n                click="https://possn.github.io/Vestra/",
             )
             sent += 1
         if now_in_zone != was_in_zone:
