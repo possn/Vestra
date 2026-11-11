@@ -84,6 +84,18 @@ class InsiderAlertEvidenceTests(unittest.TestCase):
         distant = self.quality_row(current=116)
         self.assertNotIn("ABC", self.candidates(distant))
 
+    def test_low52_notification_opens_vestra_not_legacy_finscanner(self):
+        state = {"price_alerts": {}}
+        with patch.object(alerts, "_near_low_candidates", return_value={
+            "ABC": {"in_zone": True, "name": "ABC", "dist_pct": 2.0,
+                    "score": 75, "price": 90.0}
+        }), patch.object(alerts, "_post_ntfy") as notify:
+            sent, changed = alerts._check_price_alerts(["ABC"], state)
+        self.assertEqual((sent, changed), (1, True))
+        self.assertEqual(notify.call_args.kwargs["click"],
+                         "https://possn.github.io/Vestra/")
+        self.assertNotIn("Finscanner", notify.call_args.kwargs["click"])
+
     def test_group_ignores_nan_infinity_boolean_negative_and_overflow(self):
         transactions = [
             {"type": "buy", "owner": "Director", "date": "2026-11-10",
