@@ -190,8 +190,8 @@ def _check_price_alerts(watchlist: list[str], state: dict) -> tuple[int, bool]:
         if now_in_zone and not was_in_zone:
             _post_ntfy(
                 f"{ticker} perto do mínimo de 52 semanas",
-                f"{info['name']} está a {info['dist_pct']:.1f}% do mínimo anual, com score {info['score']:.0f}/100 e tese estável ou a reforçar. "
-                f"Preço atual: {info['price']:.2f}.",
+                f"{info['name']} está a {info['dist_pct']:.1f}% do mínimo dos fechos diários observados, com score {info['score']:.0f}/100. "
+                f"Preço atual: {info['price']:.2f}. Proximidade não é previsão de recuperação.",
                 priority=3,
                 tags="chart_with_downwards_trend,mag",
                 # Open the canonical Vestra app, not an unsupported legacy deep link.
