@@ -469,7 +469,7 @@ def evaluable_recheck(bars, today):
 
 def verified_usd_liquidity(local_turnover, currency, fx, today):
     """Normalize quoted cash turnover to USD; unresolved units/rates fail closed."""
-    if not isinstance(local_turnover,(int,float)) or not math.isfinite(local_turnover) or local_turnover<=0:
+    if isinstance(local_turnover,bool) or not isinstance(local_turnover,(int,float)) or not math.isfinite(local_turnover) or local_turnover<=0:
         return None
     if not isinstance(currency,str) or not currency.strip():
         return None
@@ -479,6 +479,9 @@ def verified_usd_liquidity(local_turnover, currency, fx, today):
     try:
         reference=date.fromisoformat(str(fx["ecb_reference_date"])[:10])
         rates=fx["rates_to_eur"]
+        # Boolean exchange rates are not observed FX evidence.
+        if any(isinstance(rates[code],bool) for code in (currency_code,"USD")):
+            return None
         local=float(rates[currency_code]);usd=float(rates["USD"])
     except (KeyError,ValueError,TypeError,OverflowError):
         return None
