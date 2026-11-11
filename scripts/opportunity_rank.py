@@ -20,7 +20,7 @@ FEATURED_OPPORTUNITY_MIN_SCORE = 54.0
 
 def _f(v):
     try:
-        if v is None or v == "":
+        if v is None or isinstance(v, bool) or v == "":
             return None
         x = float(v)
         return x if x == x and abs(x) != float("inf") else None
