@@ -59,6 +59,8 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     today=today or datetime.now(timezone.utc).date()
     clean=[]
     for bar in bars:
+        if not isinstance(bar, dict):
+            return reject("invalid_ohlcv_or_date")
         try:
             # Python bool is an int: True must never become price/volume 1.
             if any(isinstance(bar.get(field), bool) for field in ("close", "high", "low", "volume")):
