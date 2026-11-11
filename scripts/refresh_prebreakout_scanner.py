@@ -2,6 +2,7 @@
 """Bounded daily pre-breakout scan: verified Yahoo OHLCV, never an entry recommendation."""
 from __future__ import annotations
 import json
+import hashlib
 import math
 import time
 from datetime import datetime, timezone, date
@@ -372,6 +373,24 @@ def eligible_universe_tickers(stocks: list[dict])->set[str]:
             tickers.add(ticker)
     return tickers
 
+def universe_provenance_audit(stocks:list[dict], previous:dict, index_bytes:bytes)->dict:
+    """Fingerprint the actual eligibility denominator, not forecast coverage."""
+    names=sorted(eligible_universe_tickers(stocks))
+    current=hashlib.sha256("\n".join(names).encode("utf-8")).hexdigest()
+    prior_hash=previous.get("universe_provenance_audit",{}).get("eligible_tickers_sha256") if isinstance(previous.get("universe_provenance_audit"),dict) else None
+    prior_count=previous.get("eligible_universe")
+    prior_valid=isinstance(prior_hash,str) and len(prior_hash)==64 and all(ch in "0123456789abcdef" for ch in prior_hash)
+    count_valid=type(prior_count) is int and prior_count>=0
+    return {"source_index_sha256":hashlib.sha256(index_bytes).hexdigest(),
+            "eligible_tickers_sha256":current,
+            "eligible_count":len(names),
+            "previous_eligible_count":prior_count if count_valid else None,
+            "eligible_count_change":len(names)-prior_count if count_valid else None,
+            "membership_changed":current!=prior_hash if prior_valid else None,
+            "membership_comparison":"same_identity_fingerprint_or_changed" if prior_valid else "unknown_prior_fingerprint",
+            "source_snapshot_comparison":"fingerprint_only_not_member_level_diff",
+            "coverage_is_not_signal_performance":True}
+
 def eligible_universe_size(stocks: list[dict])->int:
     return len(eligible_universe_tickers(stocks))
 
@@ -645,7 +664,8 @@ def slot_quality_audit(telemetry:dict, coverage:dict)->dict:
 def main():
     import yfinance as yf
     now=datetime.now(timezone.utc)
-    stocks=json.loads(INDEX.read_text(encoding="utf-8")).get("stocks",[])
+    index_bytes=INDEX.read_bytes()
+    stocks=json.loads(index_bytes).get("stocks",[])
     watch=watched_tickers(now)
     try:
         previous=json.loads(OUTPUT.read_text(encoding="utf-8"))
@@ -670,6 +690,7 @@ def main():
         "selected_repeat_verified_24h":sum(t in prior_verified for t in tickers),
         "not_successful_ohlcv_count":True}
     rotation_plan=rotation_plan_audit(stocks,now.date(),watch)
+    universe_provenance=universe_provenance_audit(stocks,previous,index_bytes)
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(stocks)
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
@@ -756,7 +777,7 @@ def main():
         "measurement":"slot_observed_not_full_universe_or_provider_rate_limit_estimate"}
     scan_quality=slot_quality_audit(slot_telemetry,audit)
     payload={"schema":"vestra_prebreakout_v1","generated_at":now.isoformat(),
-             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
+             "attempted":len(tickers),"with_ohlcv":checked,"eligible_universe":eligible,"universe_provenance_audit":universe_provenance,"coverage_this_slot":round(checked/eligible,4) if eligible else None,"coverage_scope":"rotating_single_scan_slot_not_full_universe","daily_capacity_ceiling":daily_coverage_capacity(eligible),"rotation_plan_audit":rotation_plan,"slot_selection_audit":slot_selection_audit,"scan_unique_tickers":len(set(tickers)),"download_batches_planned":(len(tickers)+14)//15,"download_batch_size":15,"scan_slot_telemetry":slot_telemetry,"scan_quality_audit":scan_quality,"scan_anchor_duplicates":0,"new_signals":len(found),"retained_verified_signals":len(retained),"ranked_scope":"verified_recent_cross_slot_not_full_universe","coverage_audit_24h":{k:v for k,v in audit.items() if k!="observations"},"coverage_observations_24h":audit["observations"],"liquidity_currency_checked":currency_checked,"liquidity_currency_rejected":currency_rejected,"quality_model":"vcp_before_pivot_v3","scan_slot_utc":now.hour//6,
              "errors":failures[:8],"gate_funnel":{"scope":"current_observed_slot_only","method":"first_failing_gate_in_order_not_independent_gate_intersections",
                  "observed_rows":sum(gate_exclusions.values()),"first_rejection_counts":dict(sorted(gate_exclusions.items())),
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
