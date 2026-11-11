@@ -36,6 +36,32 @@ class ResearchCollectorTests(unittest.TestCase):
               {"ticker":"C","market_cap":500e6,"quote_type":"EQUITY"},
               {"ticker":"ETF","market_cap":200e6,"quote_type":"ETF"}]
         self.assertEqual(mod.cohort(rows),["A","B"])
+    def test_duplicate_symbol_is_excluded_regardless_of_row_order(self):
+        # A ticker alone is not issuer identity across multiple index rows.
+        eligible={"ticker":"DUPE", "market_cap":150e6, "quote_type":"EQUITY"}
+        outside={"ticker":"dupe", "market_cap":800e6, "quote_type":"EQUITY"}
+        other_type={"ticker":"dupe", "market_cap":200e6, "quote_type":"ETF"}
+        safe={"ticker":"SAFE", "market_cap":180e6, "quote_type":"EQUITY"}
+        for collision in (outside, other_type, eligible):
+            for items in ([eligible,collision,safe],
+                          [safe,collision,eligible]):
+                with self.subTest(collision=collision["quote_type"],
+                                  reversed=items[0] is safe):
+                    self.assertEqual(mod.cohort(items), ["SAFE"])
+                    provider=Provider()
+                    report=mod.collect(items, provider, slot=0, budget=3,
+                                       checked_at=datetime(2026,7,10,tzinfo=timezone.utc))
+                    self.assertEqual(report["universe_100m_500m_count"],1)
+                    self.assertEqual([x["ticker"] for x in report["observations"]],["SAFE"])
+                    self.assertNotIn("DUPE", [t for _,t in provider.calls])
+
+    def test_three_way_duplicate_symbol_remains_excluded(self):
+        rows=[{"ticker":"DUP3","market_cap":150e6,"quote_type":"EQUITY"}
+              for _ in range(3)]
+        rows.append({"ticker":"SAFE","market_cap":180e6,
+                     "quote_type":"EQUITY"})
+        self.assertEqual(mod.cohort(rows),["SAFE"])
+
     def test_universe_fingerprint_is_stable_and_changes_with_eligible_members(self):
         import hashlib
         def row(t, cap=150e6):
