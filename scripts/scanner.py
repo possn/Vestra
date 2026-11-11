@@ -49,6 +49,9 @@ def _evidence_ok(row):
     critical = _n(row.get("critical_metric_coverage_pct"))
     confidence = _n(row.get("confidence_score"))
     reliability = str(row.get("score_reliability") or "").lower()
+    if any(value is not None and not 0 <= value <= 100 for value in
+           (score, coverage, critical, confidence)):
+        return False, "Métricas fundamentais fora da escala 0–100"
     if score is None:
         return False, "Score Vestra suprimido por dados insuficientes"
     if coverage is None or coverage < 55:
