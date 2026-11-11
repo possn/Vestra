@@ -376,7 +376,7 @@ def eligible_universe_tickers(stocks: list[dict])->set[str]:
 def universe_provenance_audit(stocks:list[dict], previous:dict, index_bytes:bytes)->dict:
     """Fingerprint the actual eligibility denominator, not forecast coverage."""
     names=sorted(eligible_universe_tickers(stocks))
-    current=hashlib.sha256("\\n".join(names).encode("utf-8")).hexdigest()
+    current=hashlib.sha256("\n".join(names).encode("utf-8")).hexdigest()
     prior_hash=previous.get("universe_provenance_audit",{}).get("eligible_tickers_sha256") if isinstance(previous.get("universe_provenance_audit"),dict) else None
     prior_count=previous.get("eligible_universe")
     prior_valid=isinstance(prior_hash,str) and len(prior_hash)==64 and all(ch in "0123456789abcdef" for ch in prior_hash)
