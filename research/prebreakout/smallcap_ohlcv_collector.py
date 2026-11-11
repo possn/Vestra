@@ -52,7 +52,7 @@ def inspect(ticker,frame,currency,checked_at):
                 continue
             fields=("Open","High","Low","Close","Volume")
             # Boolean values are not observed trade prices or share volume.
-            if any(isinstance(row[k], bool) for k in fields):
+            if any(isinstance(row[k], bool) or (type(row[k]).__module__.startswith("numpy") and type(row[k]).__name__ in ("bool", "bool_")) for k in fields):
                 return {"ticker":ticker,"status":"invalid_ohlcv"}
             values=[float(row[k]) for k in fields]
             o,h,l,c,v=values

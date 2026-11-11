@@ -41,6 +41,24 @@ class DataframeBooleanOHLCVTests(unittest.TestCase):
                     if field != "Volume":
                         self.assertEqual(trace["first_rejection"], "invalid_ohlcv_or_date")
 
+    def test_numpy_boolean_scalar_versions_fail_closed(self):
+        # Model NumPy scalar identity without adding a CI dependency.
+        def scalar_type(name):
+            return type(name, (), {
+                "__module__": "numpy",
+                "__init__": lambda self, value: setattr(self, "value", value),
+                "__float__": lambda self: float(self.value),
+            })
+
+        for cls in (scalar_type("bool_"), scalar_type("bool")):
+            for field in ("Close", "High", "Low", "Volume"):
+                for value in (True, False):
+                    with self.subTest(type=cls.__name__, field=field, value=value):
+                        bars = scanner.dataframe_bars(self.FakeFrame(field, cls(value)))
+                        self.assertEqual(len(bars), 230)
+                        self.assertIsNone(bars[114][field.lower()])
+                        self.assertFalse(scanner.evaluable_recheck(bars, date(2026, 8, 20)))
+
     def test_valid_numeric_ohlcv_remains_evaluable(self):
         for field in ("Close", "High", "Low", "Volume"):
             bars = scanner.dataframe_bars(self.FakeFrame(field, 100.0 if field == "Close" else

@@ -433,7 +433,7 @@ def dataframe_bars(frame):
                 try:
                     raw=r[key]
                     # Python and NumPy Boolean data are not market prices or volume.
-                    if isinstance(raw,bool) or type(raw).__name__=="bool_":
+                    if isinstance(raw,bool) or (type(raw).__module__.startswith("numpy") and type(raw).__name__ in ("bool", "bool_")):
                         return None
                     n=float(raw)
                     return n if math.isfinite(n) else None

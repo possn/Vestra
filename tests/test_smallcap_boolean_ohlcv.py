@@ -36,6 +36,44 @@ class SmallcapBooleanMarketEvidenceTests(unittest.TestCase):
                         "TEST", Frame(field, value), "USD", checked_at)
                     self.assertEqual(result["status"], "invalid_ohlcv")
 
+    def test_numpy_style_boolean_scalar_cannot_be_coerced_into_ohlcv(self):
+        # NumPy is deliberately not a dependency of architecture CI.
+        # Its scalar bool_ type has a different identity from Python bool.
+        class bool_:
+            __module__ = "numpy"
+            def __init__(self, value):
+                self.value = value
+            def __float__(self):
+                return float(self.value)
+
+        numpy2_bool = type("bool", (), {
+            "__module__": "numpy",
+            "__init__": lambda self, value: setattr(self, "value", value),
+            "__float__": lambda self: float(self.value),
+        })
+
+        class Frame:
+            empty = False
+            def __init__(self, field, value):
+                self.field, self.value = field, value
+            def iterrows(self):
+                start = datetime(2025, 11, 1, tzinfo=timezone.utc)
+                for n in range(250):
+                    row = {"Open": 10.0, "High": 11.0, "Low": 9.0,
+                           "Close": 10.0, "Volume": 600000.0}
+                    if n == 80:
+                        row[self.field] = self.value
+                    yield start + timedelta(days=n), row
+
+        checked_at = datetime(2026, 7, 10, tzinfo=timezone.utc)
+        for scalar_type in (bool_, numpy2_bool):
+            for field in ("Open", "High", "Low", "Close", "Volume"):
+                for value in (True, False):
+                    with self.subTest(type=scalar_type.__name__, field=field, value=value):
+                        result = collector.inspect(
+                            "TEST", Frame(field, scalar_type(value)), "USD", checked_at)
+                        self.assertEqual(result["status"], "invalid_ohlcv")
+
     def test_valid_market_history_retains_research_contract(self):
         class Frame:
             empty = False
