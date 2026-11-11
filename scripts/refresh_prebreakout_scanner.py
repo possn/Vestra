@@ -427,14 +427,14 @@ def dataframe_bars(frame):
     for idx,r in frame.iterrows():
         try:
             dt=idx.date().isoformat() if hasattr(idx,"date") else str(idx)[:10]
-            close=float(r["Close"])
-            if not math.isfinite(close):continue
+            # Keep invalid closes as explicit gaps: dropping a daily row
+            # would silently compress 20/50/200-session evidence windows.
             def val(key):
                 try:
                     n=float(r[key])
                     return n if math.isfinite(n) else None
                 except (KeyError,TypeError,ValueError):return None
-            rows.append({"date":dt,"close":close,"high":val("High"),"low":val("Low"),"volume":val("Volume")})
+            rows.append({"date":dt,"close":val("Close"),"high":val("High"),"low":val("Low"),"volume":val("Volume")})
         except (KeyError,ValueError,TypeError):continue
     return rows
 
