@@ -302,6 +302,21 @@ class CurrencyLiquidityTests(unittest.TestCase):
         self.assertIsNone(mod.verified_usd_liquidity(9_000_000,"EUR",fx,date(2026,11,10)))
         self.assertIsNone(mod.verified_usd_liquidity(float("nan"),"USD",fx,d))
 
+    def test_boolean_fx_and_turnover_never_authorize_liquidity(self):
+        day=date(2026,10,25)
+        good={"ecb_reference_date":"2026-10-23",
+              "rates_to_eur":{"USD":0.9,"GBP":1.2,"EUR":1.0}}
+        for bad in (True,False):
+            with self.subTest(field="turnover",value=bad):
+                self.assertIsNone(mod.verified_usd_liquidity(bad,"USD",good,day))
+            for code in ("USD","GBP"):
+                with self.subTest(field=code,value=bad):
+                    fx={"ecb_reference_date":good["ecb_reference_date"],
+                        "rates_to_eur":dict(good["rates_to_eur"])}
+                    fx["rates_to_eur"][code]=bad
+                    self.assertIsNone(mod.verified_usd_liquidity(10_000_000,"GBP",fx,day))
+
+
 class EvaluableRecheckTests(unittest.TestCase):
     def test_only_complete_recent_ohlcv_can_invalidate(self):
         today=date(2026,10,25)
