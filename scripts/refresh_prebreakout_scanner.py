@@ -431,9 +431,13 @@ def dataframe_bars(frame):
             # would silently compress 20/50/200-session evidence windows.
             def val(key):
                 try:
-                    n=float(r[key])
+                    raw=r[key]
+                    # Python and NumPy Boolean data are not market prices or volume.
+                    if isinstance(raw,bool) or type(raw).__name__=="bool_":
+                        return None
+                    n=float(raw)
                     return n if math.isfinite(n) else None
-                except (KeyError,TypeError,ValueError):return None
+                except (KeyError,TypeError,ValueError,OverflowError):return None
             rows.append({"date":dt,"close":val("Close"),"high":val("High"),"low":val("Low"),"volume":val("Volume")})
         except (KeyError,ValueError,TypeError):continue
     return rows
