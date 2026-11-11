@@ -9,9 +9,17 @@ from __future__ import annotations
 import math
 
 
+def _is_boolean_scalar(value):
+    """Reject Python and NumPy scalar booleans before numeric coercion."""
+    kind = type(value)
+    return isinstance(value, bool) or (
+        kind.__module__.startswith("numpy") and kind.__name__ in ("bool", "bool_")
+    )
+
+
 def _n(v):
     try:
-        if v is None or isinstance(v, bool) or v == "":
+        if v is None or _is_boolean_scalar(v) or v == "":
             return None
         x = float(v)
         return x if math.isfinite(x) else None
@@ -33,10 +41,10 @@ def _price_position(row: dict):
     for item in hist:
         try:
             v = item.get("close") if isinstance(item, dict) else item
-            if isinstance(v, bool):
-                return None  # bool is not a valid daily close, even though float(True)==1.
+            if _is_boolean_scalar(v):
+                return None  # NumPy/Python bool must never become a price.
             v = float(v)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             return None
         # Dropping invalid daily bars would silently change the 52-week window.
         if not math.isfinite(v) or v <= 0:
