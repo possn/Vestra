@@ -59,6 +59,31 @@ class Low52IntelligenceTests(unittest.TestCase):
                 self.assertEqual(result["low52_status"], "insufficient")
                 self.assertIsNone(result["low52_score"])
 
+    def test_numpy_boolean_scalars_fail_closed_in_prices_and_scores(self):
+        # Simulate both NumPy boolean scalar identities in stdlib-only CI.
+        def scalar(name):
+            return type(name, (), {
+                "__module__": "numpy",
+                "__init__": lambda self, value: setattr(self, "value", value),
+                "__float__": lambda self: float(self.value),
+            })
+
+        for cls in (scalar("bool_"), scalar("bool")):
+            for bad in (True, False):
+                with self.subTest(dtype=cls.__name__, value=bad):
+                    for field in ("score", "confidence_score", "data_coverage_pct",
+                                  "critical_metric_coverage_pct", "current_price"):
+                        row = quality_row(current_price=100.0)
+                        row[field] = cls(bad)
+                        result = assess(row)
+                        self.assertEqual(result["low52_status"], "insufficient")
+                        self.assertIsNone(result["low52_score"])
+                    row = quality_row(current_price=100.0)
+                    row["price_history_1y"][19] = cls(bad)
+                    result = assess(row)
+                    self.assertEqual(result["low52_status"], "insufficient")
+                    self.assertIsNone(result["low52_score"])
+
     def test_boolean_daily_close_fails_closed_even_with_provider_extrema(self):
         for bad in (True, False):
             with self.subTest(close=bad):
