@@ -232,6 +232,63 @@ def make_snapshot(today, rows):
     }
 
 
+
+def diagnostic_currency_code(value):
+    """Normalize only unambiguous ISO-like currency codes for diagnostic counts."""
+    if not isinstance(value, str):
+        return ""
+    code = value.strip().upper()
+    return code if len(code) == 3 and code.isascii() and code.isalpha() and code not in {"NAN", "NUL"} else ""
+
+def quote_currency_capture_diagnostic(snapshots, outcome_prices):
+    """Current currency evidence; never mutate frozen cohorts or impute FX."""
+    snapshot = next(
+        (item for item in reversed(snapshots)
+         if isinstance(item, dict) and isinstance(item.get("observations"), dict)),
+        None,
+    )
+    if snapshot is None:
+        return {"status": "no_frozen_snapshot", "scope": "latest_frozen_snapshot",
+                "counts": None, "not_validated_outcomes": True}
+    observations = snapshot["observations"]
+    counts = {
+        "frozen_tickers": 0,
+        "missing_frozen_currency": 0,
+        "missing_terminal_quote": 0,
+        "missing_terminal_currency": 0,
+        "known_currency_mismatch": 0,
+        "known_currency_match": 0,
+    }
+    for ticker, old in observations.items():
+        if not isinstance(old, dict):
+            continue
+        counts["frozen_tickers"] += 1
+        initial = diagnostic_currency_code(old.get("currency"))
+        if not initial:
+            counts["missing_frozen_currency"] += 1
+            continue
+        now = outcome_prices.get(ticker)
+        if not isinstance(now, dict):
+            counts["missing_terminal_quote"] += 1
+            continue
+        terminal = diagnostic_currency_code(now.get("currency"))
+        if not terminal:
+            counts["missing_terminal_currency"] += 1
+        elif terminal != initial:
+            counts["known_currency_mismatch"] += 1
+        else:
+            counts["known_currency_match"] += 1
+    return {
+        "status": "observed_diagnostic_only",
+        "scope": "latest_frozen_snapshot",
+        "snapshot_date": snapshot.get("date"),
+        "counts": counts,
+        "counting": "disjoint_first_reason_missing_frozen_currency_then_missing_quote_then_missing_terminal_currency_then_mismatch_or_match",
+        "not_validated_outcomes": True,
+        "no_fx_imputation": True,
+    }
+
+
 def outcome_has_verified_evaluation_window(item, horizon, today):
     """A claimed prospective return must be observed within its frozen window.
 
@@ -1005,6 +1062,7 @@ def main():
         "snapshots_available": len(snapshots),
         "realised_outcomes": len(outcomes),
         "new_outcomes_this_run": added,
+        "latest_cohort_currency_capture": quote_currency_capture_diagnostic(snapshots, outcome_prices),
         "horizons": horizon_report,
         "evidence_policy": evidence_policy(horizon_report),
         "interpretation": {
