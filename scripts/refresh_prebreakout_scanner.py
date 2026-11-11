@@ -60,6 +60,9 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     clean=[]
     for bar in bars:
         try:
+            # Python bool is an int: True must never become price/volume 1.
+            if any(isinstance(bar.get(field), bool) for field in ("close", "high", "low", "volume")):
+                return reject("invalid_ohlcv_or_date")
             day=date.fromisoformat(str(bar["date"])[:10])
             close=float(bar["close"]);high=float(bar["high"]);low=float(bar["low"])
         except (KeyError,ValueError,TypeError,OverflowError):
