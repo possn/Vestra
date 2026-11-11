@@ -23,6 +23,67 @@ with patch.dict(sys.modules, {
 
 
 class InsiderAlertEvidenceTests(unittest.TestCase):
+    @staticmethod
+    def quality_row(hist=None, current=100):
+        return {
+            "ticker": "ABC", "quote_type": "EQUITY",
+            "score": 80, "current_price": current,
+            "price_history_1y": hist if hist is not None else
+                [{"close": 100} for _ in range(220)],
+            "thesis_direction": "stable",
+            "data_coverage_pct": 80,
+            "critical_metric_coverage_pct": 70,
+            "confidence_score": 80,
+            "score_reliability": "robust",
+            "quality_pct": 75,
+            "balance_pct": 70,
+            "cashflow_pct": 70,
+            "execution_pct": 70,
+            "value_pct": 70,
+            "margin_of_safety_pct": 15,
+            "estimate_momentum_score": 70,
+            "estimate_signal": "improving",
+            "risk_gate": "clear",
+            "valuation_signal": "undervalued",
+            "capital_structure_risk": "clear",
+            "risk_flags": [],
+            "capital_structure_flags": [],
+        }
+
+    def candidates(self, row):
+        with patch.object(alerts, "_load_json", return_value={"stocks": [row]}):
+            return alerts._near_low_candidates()
+
+    def test_low52_alert_refuses_missing_or_weak_evidence(self):
+        for field, invalid in (
+            ("data_coverage_pct", None),
+            ("critical_metric_coverage_pct", 30),
+            ("confidence_score", 10),
+            ("score_reliability", "unknown"),
+            ("risk_gate", "unknown"),
+            ("capital_structure_risk", "unknown"),
+            ("quality_pct", 105),
+        ):
+            with self.subTest(field=field):
+                row = self.quality_row()
+                row[field] = invalid
+                self.assertNotIn("ABC", self.candidates(row))
+
+    def test_wider_15pct_alert_band_requires_watch_grade_resilience(self):
+        valid = self.quality_row(current=112)
+        self.assertTrue(self.candidates(valid)["ABC"]["in_zone"])
+        # A fresh price below the lowest observed prior close is still in
+        # the near-low zone; negative distance is not corrupt evidence.
+        self.assertTrue(self.candidates(self.quality_row(current=98))["ABC"]["in_zone"])
+        risk = self.quality_row(current=112)
+        risk["risk_gate"] = "high"
+        self.assertNotIn("ABC", self.candidates(risk))
+        dilution = self.quality_row(current=112)
+        dilution["risk_flags"] = ["severe_dilution"]
+        self.assertNotIn("ABC", self.candidates(dilution))
+        distant = self.quality_row(current=116)
+        self.assertNotIn("ABC", self.candidates(distant))
+
     def test_group_ignores_nan_infinity_boolean_negative_and_overflow(self):
         transactions = [
             {"type": "buy", "owner": "Director", "date": "2026-11-10",
@@ -52,8 +113,7 @@ class InsiderAlertEvidenceTests(unittest.TestCase):
 
     def test_near_low_requires_200_finite_positive_closes(self):
         def row(hist):
-            return {"ticker": "ABC", "score": 80, "current_price": 100,
-                    "price_history_1y": hist, "thesis_direction": "stable"}
+            return self.quality_row(hist=hist)
         good = [dict(close=100) for _ in range(220)]
         with patch.object(alerts, "_load_json", return_value={"stocks": [row(good)]}):
             self.assertTrue(alerts._near_low_candidates()["ABC"]["in_zone"])
