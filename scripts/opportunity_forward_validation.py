@@ -112,6 +112,7 @@ def load_validation_history(path):
 def current_rows():
     payload = load_json(INDEX, {})
     out = {}
+    ambiguous = set()
     for row in payload.get("stocks") or []:
         if not isinstance(row, dict):
             continue
@@ -126,7 +127,14 @@ def current_rows():
             continue
         if str(row.get("pipeline_status") or "") in {"equity_catalog_only", "equity_carried_forward"}:
             continue
-        out[ticker] = row
+        if ticker in ambiguous:
+            continue
+        if ticker in out:
+            ambiguous.add(ticker)
+        else:
+            out[ticker] = row
+    for ticker in ambiguous:
+        out.pop(ticker, None)
     return out
 
 
@@ -139,6 +147,7 @@ def outcome_price_rows():
     """
     payload = load_json(INDEX, {})
     out = {}
+    ambiguous = set()
     for row in payload.get("stocks") or []:
         if not isinstance(row, dict):
             continue
@@ -154,7 +163,14 @@ def outcome_price_rows():
             "equity_catalog_only", "equity_carried_forward"
         }:
             continue
-        out[ticker] = row
+        if ticker in ambiguous:
+            continue
+        if ticker in out:
+            ambiguous.add(ticker)
+        else:
+            out[ticker] = row
+    for ticker in ambiguous:
+        out.pop(ticker, None)
     return out
 
 

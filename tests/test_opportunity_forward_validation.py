@@ -184,6 +184,58 @@ class OpportunityForwardValidationTests(unittest.TestCase):
         self.assertEqual(outcomes[0]["risk_gate"], "clear",
                          "Outcome must use frozen cohort evidence, not today's risk gate")
 
+    def test_duplicate_ticker_identity_is_not_silently_overwritten(self):
+        # A ticker alone is not sufficient identity when conflicting exchange
+        # listings survive the equity/price filters.
+        rows = [
+            {"ticker": "DUPE", "quote_type": "EQUITY",
+             "current_price": 100, "opportunity_score": 80,
+             "opportunity_eligible": True, "exchange": "NASDAQ"},
+            {"ticker": "dupe", "quote_type": "EQUITY",
+             "current_price": 20, "opportunity_score": 90,
+             "opportunity_eligible": True, "exchange": "NYSE"},
+            {"ticker": "SAFE", "quote_type": "EQUITY",
+             "current_price": 70, "opportunity_score": 70,
+             "opportunity_eligible": True},
+        ]
+        for order in (rows, list(reversed(rows))):
+            with self.subTest(first_exchange=order[0].get("exchange")):
+                with mock.patch.object(MOD, "load_json",
+                                       return_value={"stocks": order}):
+                    self.assertEqual(set(MOD.current_rows()), {"SAFE"})
+                    self.assertEqual(set(MOD.outcome_price_rows()), {"SAFE"})
+                    self.assertEqual(
+                        MOD.missing_terminal_quote_reason(
+                            "DUPE", {}, MOD.terminal_quote_catalog()),
+                        "ambiguous_multiple_index_rows")
+
+    def test_three_duplicate_ticker_rows_stay_ambiguous(self):
+        rows = [
+            {"ticker": "DUP3", "quote_type": "EQUITY", "current_price": n,
+             "opportunity_score": 65, "opportunity_eligible": True}
+            for n in (100, 10, 200)
+        ]
+        for order in (rows, list(reversed(rows))):
+            with mock.patch.object(MOD, "load_json",
+                                   return_value={"stocks": order}):
+                self.assertNotIn("DUP3", MOD.current_rows())
+                self.assertNotIn("DUP3", MOD.outcome_price_rows())
+
+    def test_duplicate_ticker_does_not_make_false_forward_return(self):
+        rows = [
+            {"ticker": "DUP", "quote_type": "EQUITY", "current_price": 105},
+            {"ticker": "DUP", "quote_type": "EQUITY", "current_price": 10},
+        ]
+        with mock.patch.object(MOD, "load_json",
+                               return_value={"stocks": rows}):
+            terminal = MOD.outcome_price_rows()
+        frozen = [{ "date": "2026-08-02", "observations": {
+            "DUP": observation(price=100)}}]
+        outcomes = []
+        self.assertEqual(MOD.materialise_outcomes(
+            dt.date(2026, 8, 30), frozen, terminal, outcomes), 0)
+        self.assertEqual(outcomes, [])
+
     def test_missing_risk_gate_remains_unknown_in_archived_snapshot(self):
         row = {"current_price": 100, "opportunity_score": 72}
         frozen = MOD.make_observation(row)
