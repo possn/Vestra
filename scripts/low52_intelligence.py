@@ -51,7 +51,12 @@ def _price_position(row: dict):
             return None
         closes.append(v)
 
-    current = _n(row.get("current_price"))
+    raw_current = row.get("current_price")
+    current = _n(raw_current)
+    # A missing quote may use the last observed close; a supplied malformed
+    # quote must not be silently replaced by an older observation.
+    if raw_current is not None and current is None:
+        return None
     if current is None and closes:
         current = closes[-1]
     if current is None or not math.isfinite(current) or current <= 0:
