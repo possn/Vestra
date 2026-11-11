@@ -108,7 +108,7 @@ def _dividend_growth(row):
         return None
     comps = [newer / older - 1 for newer, older in zip(vals, vals[1:]) if older > 0]
     finite_comps = [value for value in comps if math.isfinite(value)]
-    return sum(finite_comps) / len(finite_comps) if finite_comps else None
+    return math.fsum(value / len(finite_comps) for value in finite_comps) if finite_comps else None
 
 
 def _structural_overlays(row, base):
