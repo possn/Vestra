@@ -95,6 +95,10 @@ class InsiderAlertEvidenceTests(unittest.TestCase):
         self.assertEqual(notify.call_args.kwargs["click"],
                          "https://possn.github.io/Vestra/")
         self.assertNotIn("Finscanner", notify.call_args.kwargs["click"])
+        message = notify.call_args.args[1]
+        self.assertIn("mínimo dos fechos diários observados", message)
+        self.assertIn("Proximidade não é previsão de recuperação", message)
+        self.assertNotIn("tese estável ou a reforçar", message)
 
     def test_group_ignores_nan_infinity_boolean_negative_and_overflow(self):
         transactions = [
