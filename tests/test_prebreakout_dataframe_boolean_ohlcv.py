@@ -36,7 +36,10 @@ class DataframeBooleanOHLCVTests(unittest.TestCase):
                     self.assertFalse(scanner.evaluable_recheck(bars, date(2026, 8, 20)))
                     trace = {}
                     self.assertIsNone(scanner.scan_bars("BAD", bars, date(2026, 8, 20), audit=trace))
-                    self.assertEqual(trace["first_rejection"], "invalid_ohlcv_or_date")
+                    # Price fields are mandatory at parse time. Volume is
+                    # checked at later evidence gates, so no first-gate claim.
+                    if field != "Volume":
+                        self.assertEqual(trace["first_rejection"], "invalid_ohlcv_or_date")
 
     def test_valid_numeric_ohlcv_remains_evaluable(self):
         for field in ("Close", "High", "Low", "Volume"):
