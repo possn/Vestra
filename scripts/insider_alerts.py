@@ -15,6 +15,7 @@ import json
 import logging
 import math
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Iterable
@@ -92,11 +93,19 @@ def _current_price_map() -> dict[str, float]:
     rows = raw.get("stocks") if isinstance(raw, dict) else []
     out = {}
     for r in rows or []:
+        if not isinstance(r, dict):
+            continue
+        value = r.get("current_price")
+        kind = type(value)
+        if isinstance(value, bool) or (
+            kind.__module__.startswith("numpy") and kind.__name__ in ("bool", "bool_")
+        ):
+            continue
         try:
-            price = float(r.get("current_price"))
+            price = float(value)
             if math.isfinite(price) and price > 0:
                 out[str(r.get("ticker") or "").upper()] = price
-        except Exception:
+        except (TypeError, ValueError, OverflowError):
             pass
     return out
 
@@ -400,11 +409,24 @@ def _post_ntfy(title: str, message: str, *, priority: int = 3, tags: str = "char
 
 
 def _filing_url(cik: str, filing: dict) -> str | None:
+    """Build a SEC archive link only from well-formed, safe filing metadata."""
+    if not isinstance(filing, dict):
+        return None
+    cik_raw = str(cik or "").strip()
     acc = str(filing.get("accession") or "").replace("-", "")
     doc = str(filing.get("primary_document") or "").strip()
-    if not acc or not doc:
+    if not cik_raw.isascii() or not cik_raw.isdecimal() or not acc.isascii() or not acc.isdecimal():
         return None
-    return f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{acc}/{doc}"
+    # SEC primary document metadata can include a legitimate subfolder,
+    # but must not contain traversal, schemes, query or fragment segments.
+    parts = doc.split("/")
+    if not parts or any(
+        not part or part in (".", "..") or
+        not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", part)
+        for part in parts
+    ):
+        return None
+    return f"https://www.sec.gov/Archives/edgar/data/{int(cik_raw)}/{acc}/{doc}"
 
 
 def _group_transactions(transactions: Iterable[dict]) -> list[dict]:
