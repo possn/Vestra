@@ -28,6 +28,7 @@ from insiders import (
     _load_ticker_cik_map,
     _recent_form4_rows,
 )
+from low52_intelligence import assess as assess_low52
 
 ROOT = Path(__file__).resolve().parents[1]
 EXTRA_TICKERS = ROOT / "data" / "extra_tickers.json"
@@ -101,51 +102,68 @@ def _current_price_map() -> dict[str, float]:
 
 
 def _near_low_candidates() -> dict[str, dict]:
-    """Full rows (not just price) for the near-52-week-low check — same
-    quality gate as the Home 'Perto de mínimos, boa qualidade' lane and
-    the 'near-low' discovery preset (score>=50, within 15% of the 52-week
-    low, not a zombie, thesis not weakening) so an alert and the in-app
-    ranking never disagree about what counts as a real opportunity vs a
-    falling knife."""
+    """Proximity notification, not a predictive recommendation.
+
+    Reuse canonical Low52 evidence and structural assessments. The 15% alert
+    window is wider than the canonical 10% opportunity zone; for 10–15%,
+    require watch-grade resilience instead of mislabeling proximity as
+    a fundamental opportunity. Invalid/unknown evidence never alerts.
+    """
     raw = _load_json(STOCKS_PATH, {})
     rows = raw.get("stocks") if isinstance(raw, dict) else []
     out = {}
     for r in rows or []:
-        ticker = str(r.get("ticker") or "").upper()
+        if not isinstance(r, dict):
+            continue
+        ticker = str(r.get("ticker") or "").strip().upper()
         if not ticker:
             continue
         try:
             score = float(r.get("score"))
             px = float(r.get("current_price"))
-        except Exception:
+        except (TypeError, ValueError, OverflowError):
             continue
-        if not (math.isfinite(score) and 50 <= score <= 100 and
-                math.isfinite(px) and px > 0):
+        if (isinstance(r.get("score"), bool) or
+            isinstance(r.get("current_price"), bool) or
+            not (math.isfinite(score) and 50 <= score <= 100 and
+                 math.isfinite(px) and px > 0)):
             continue
         if r.get("zombie") == "yes" or r.get("thesis_direction") == "weakening":
             continue
-        hist = r.get("price_history_1y") or []
-        # A handful of recent closes, corrupt bars, or Boolean prices do
-        # not establish a genuine 52-week low. Never silently drop bad bars.
+        # Provider-only 52w extrema do not prove a 200-session close series.
+        hist = r.get("price_history_1y")
         if not isinstance(hist, list) or len(hist) < 200:
             continue
-        vals = []
-        for bar in hist:
-            value = bar.get("close") if isinstance(bar, dict) else bar
-            if isinstance(value, bool) or not isinstance(value, (int, float)):
-                break
-            value = float(value)
-            if not math.isfinite(value) or value <= 0:
-                break
-            vals.append(value)
-        if len(vals) != len(hist):
+        assessment = assess_low52(r)
+        status = assessment.get("low52_status")
+        if status in (None, "insufficient", "structural_risk",
+                      "value_trap_risk", "uncertain"):
             continue
-        lo = min(vals)
-        dist_pct = (px / lo - 1) * 100
-        if not math.isfinite(dist_pct):
+        if assessment.get("low52_price_basis") != "observed_daily_closes_minimum_200_sessions":
             continue
+        low = assessment.get("low52_price_low")
+        if not isinstance(low, (int, float)) or not math.isfinite(low) or low <= 0:
+            continue
+        dist_pct = (px / low - 1) * 100
+        if not math.isfinite(dist_pct) or not 0 <= dist_pct <= 15 + 1e-9:
+            continue
+        if status == "not_near_low":
+            # Canonical Low52 labels everything above 10% as not_near_low;
+            # structural risks must still be blocked in the wider alert band.
+            if (r.get("risk_gate") not in ("clear", "watch") or
+                r.get("capital_structure_risk") not in
+                    ("clear", "watch", "low", "moderate") or
+                (assessment.get("low52_deterioration_penalty") or 0) >= 18 or
+                (assessment.get("low52_resilience_score") or 0) < 62 or
+                float(r.get("confidence_score") or 0) < 55 or
+                float(r.get("data_coverage_pct") or 0) < 60):
+                continue
+            flags = r.get("risk_flags") or []
+            capital_flags = r.get("capital_structure_flags") or []
+            if "severe_dilution" in flags or "severe_dilution" in capital_flags:
+                continue
         out[ticker] = {
-            "in_zone": dist_pct <= 15,
+            "in_zone": True,
             "dist_pct": round(dist_pct, 1),
             "score": round(score, 1),
             "price": px,
