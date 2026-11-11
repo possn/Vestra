@@ -110,6 +110,9 @@ def _normalize_one(x: dict) -> tuple[str, dict] | None:
             disclosure = str(disclosure).strip()
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", disclosure) or dt.date.fromisoformat(disclosure) > today:
                 return None
+            # Disclosure cannot chronologically precede its transaction.
+            if dt.date.fromisoformat(disclosure) < dt.date.fromisoformat(transaction_date):
+                return None
     except (TypeError, ValueError):
         return None
     raw_type = str(x.get("type") or "trade").lower()

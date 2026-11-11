@@ -52,6 +52,20 @@ class CongressShareClassTests(unittest.TestCase):
             mapped = congress.fetch_congress_for_universe(["MSFT"])
         self.assertEqual([trade["member"] for trade in mapped["MSFT"]], ["Valid"])
 
+    def test_disclosure_preceding_transaction_is_not_smart_money_evidence(self):
+        from datetime import date, timedelta
+        tx=(date.today()-timedelta(days=3)).isoformat()
+        premature=(date.today()-timedelta(days=4)).isoformat()
+        trades=[
+            {"ticker":"DIS","member":"Invalid chronology","transaction_date":tx,
+             "disclosure_date":premature,"type":"Purchase"},
+            {"ticker":"DIS","member":"Valid chronology","transaction_date":tx,
+             "disclosure_date":tx,"type":"Purchase"},
+        ]
+        with patch.object(congress,"_load_snapshot",return_value={"trades":trades}):
+            result=congress.fetch_congress_for_universe(["DIS"])
+        self.assertEqual([x["member"] for x in result["DIS"]],["Valid chronology"])
+
     def test_explicit_data_not_current_prevents_dossier_evidence(self):
         from datetime import date
         today = date.today().isoformat()
