@@ -64,10 +64,16 @@ SLEEVE_FIELDS = ("strength", "asymmetry", "inflection")
 
 
 def num(v):
+    # Python and NumPy Boolean scalars are not observed prices or scores.
+    kind = type(v)
+    if isinstance(v, bool) or (
+        kind.__module__.startswith("numpy") and kind.__name__ in ("bool", "bool_")
+    ):
+        return None
     try:
         x = float(v)
         return x if math.isfinite(x) else None
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
 
 
