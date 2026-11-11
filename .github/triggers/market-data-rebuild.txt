@@ -28,3 +28,5 @@ rotation-coverage-market-returns 2026-09-28
 2026-11-08 — rebuild canonical market after PR #1812 fixes the measured 10,541-byte overrun in columnar startup wire; preserve hard 2.25 MB iPhone budget, coverage/risk guards and publish data/insider_identity_audit.json only after successful canonical rebuild.
 
 2026-11-08 — canonical rebuild after PR #1813 lossless field_rows_v2 categorical dictionary compression; verify hard 2.25 MB iPhone startup budget, coverage guard, and physical publication of SEC issuer identity audit. No changed scoring or numeric precision.
+
+2026-11-08 — canonical rebuild after PR #1815 verified-empty SEC Form 4 handling: issuer-CIK attested empty documents count as checked, HTTP/issuer-mismatch/unknown remain degraded, recalculate insider coverage with full publication and the existing coverage guard.

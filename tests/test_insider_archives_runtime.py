@@ -236,6 +236,23 @@ class InsiderArchivesRuntimeTests(unittest.TestCase):
             self.assertEqual(state2["empty_cache_hits"], 1)
             self.assertEqual(state2["empty_cache_stores"], 0)
 
+    def test_empty_cache_drops_cross_issuer_and_cross_accession_key_spoofing(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"empty.json"
+            payload={
+                "schema_version":insider_archives_runtime.EMPTY_CACHE_SCHEMA_VERSION,
+                "filings":{
+                    "1:proper":{"cik":"1","issuer_cik":"0000000001","accession":"proper","validated_empty":True},
+                    "2:wrong":{"cik":"1","issuer_cik":"0000000001","accession":"wrong","validated_empty":True},
+                    "1:other":{"cik":"1","issuer_cik":"0000000001","accession":"wrong","validated_empty":True},
+                    "1:legacy":{"cik":"1","accession":"legacy","validated_empty":True},
+                    "1:foreign":{"cik":"1","issuer_cik":"0000000002","accession":"foreign","validated_empty":True}
+                }}
+            path.write_text(json.dumps(payload),encoding="utf-8")
+            rows=insider_archives_runtime._load_empty_cache(path)
+            self.assertEqual(set(rows),{"1:proper"})
+
     def test_invalid_or_missing_ownership_xml_is_never_persisted_as_empty(self):
         accession = "0000000001-26-000100"
         with tempfile.TemporaryDirectory() as tmp:

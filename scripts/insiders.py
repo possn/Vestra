@@ -389,13 +389,19 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
 
     transactions = []
     raw_tx_seen = fetch_errors = 0
-    xml_documents = 0
+    xml_documents = validated_empty_documents = 0
     for filing in filings[:max_detail_filings]:
         parsed, raw_count, detail = _fetch_structured_filing(cik, filing, ticker)
         if raw_count > 0:
             raw_tx_seen += raw_count
             xml_documents += 1
             transactions.extend(parsed)
+        elif raw_count == 0 and not parsed and detail in {"validated_empty_cache", "validated_empty_ownership_xml"}:
+            # An issuer-verified ownership document with zero non-derivative
+            # transactions is complete negative evidence, not an SEC outage.
+            # This only applies to explicit, provenance-checked archive states.
+            xml_documents += 1
+            validated_empty_documents += 1
         else:
             fetch_errors += 1
             if detail:
@@ -465,6 +471,8 @@ def insider_activity(ticker: str, days: int = 365, max_detail_filings: int = 12)
         "net_value_365d": (buy365 - sell365) if status == "ok" else None,
         "transactions_365d": tx365[:40],
         "detail_filings_parsed": xml_documents,
+        "detail_filings_validated_empty": validated_empty_documents,
+        "detail_filings_unavailable": fetch_errors,
         "raw_nonderivative_transactions": raw_tx_seen,
         "fetch_errors": fetch_errors,
     }

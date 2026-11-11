@@ -99,7 +99,11 @@ def _load_empty_cache(path: Path = EMPTY_CACHE_PATH) -> dict[str, dict]:
             continue
         accession = str(row.get("accession") or "").strip()
         cik = str(row.get("cik") or "").strip()
-        if accession and cik and row.get("validated_empty") is True:
+        # Never trust persisted empty evidence from a different issuer or
+        # accession; empty-cache provenance must be as strict as buy-cache.
+        if (accession and cik and row.get("validated_empty") is True
+                and str(key) == _empty_cache_key(cik, accession)
+                and _empty_cache_key(row.get("issuer_cik"), accession) == str(key)):
             rows[str(key)] = row
     return rows
 
@@ -229,6 +233,7 @@ def install(module=None, *, row_loader=None, environ=None, empty_cache_path=None
             if _is_valid_ownership_xml(xml):
                 row = {
                     "cik": str(cik),
+                    "issuer_cik": str(int(str(cik))).zfill(10),
                     "accession": str(filing.get("accession") or "").strip(),
                     "filing_date": str(filing.get("filing_date") or "").strip(),
                     "validated_empty": True,
@@ -239,7 +244,7 @@ def install(module=None, *, row_loader=None, environ=None, empty_cache_path=None
                         state["empty_cache"][key] = row
                         state["empty_cache_dirty"] = True
                         state["empty_cache_stores"] += 1
-                return [], 0, f"valid ownership XML contained 0 non-derivative transactions ({url})"
+                return [], 0, "validated_empty_ownership_xml"
             return [], 0, f"invalid ownership XML in {url}"
         except Exception as exc:
             return [], 0, f"{type(exc).__name__}: {exc} (url={url})"
