@@ -40,10 +40,17 @@ class SmallcapBooleanMarketEvidenceTests(unittest.TestCase):
         # NumPy is deliberately not a dependency of architecture CI.
         # Its scalar bool_ type has a different identity from Python bool.
         class bool_:
+            __module__ = "numpy"
             def __init__(self, value):
                 self.value = value
             def __float__(self):
                 return float(self.value)
+
+        numpy2_bool = type("bool", (), {
+            "__module__": "numpy",
+            "__init__": lambda self, value: setattr(self, "value", value),
+            "__float__": lambda self: float(self.value),
+        })
 
         class Frame:
             empty = False
@@ -59,12 +66,13 @@ class SmallcapBooleanMarketEvidenceTests(unittest.TestCase):
                     yield start + timedelta(days=n), row
 
         checked_at = datetime(2026, 7, 10, tzinfo=timezone.utc)
-        for field in ("Open", "High", "Low", "Close", "Volume"):
-            for value in (True, False):
-                with self.subTest(field=field, value=value):
-                    result = collector.inspect(
-                        "TEST", Frame(field, bool_(value)), "USD", checked_at)
-                    self.assertEqual(result["status"], "invalid_ohlcv")
+        for scalar_type in (bool_, numpy2_bool):
+            for field in ("Open", "High", "Low", "Close", "Volume"):
+                for value in (True, False):
+                    with self.subTest(type=scalar_type.__name__, field=field, value=value):
+                        result = collector.inspect(
+                            "TEST", Frame(field, scalar_type(value)), "USD", checked_at)
+                        self.assertEqual(result["status"], "invalid_ohlcv")
 
     def test_valid_market_history_retains_research_contract(self):
         class Frame:
