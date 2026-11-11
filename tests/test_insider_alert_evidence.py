@@ -62,7 +62,7 @@ class InsiderAlertEvidenceTests(unittest.TestCase):
             ("score_reliability", "unknown"),
             ("risk_gate", "unknown"),
             ("capital_structure_risk", "unknown"),
-            ("quality_pct", float("nan")),
+            ("quality_pct", 105),
         ):
             with self.subTest(field=field):
                 row = self.quality_row()
