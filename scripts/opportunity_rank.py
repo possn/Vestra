@@ -78,6 +78,8 @@ def _closes(row):
     for item in history:
         try:
             value = item.get("close") if isinstance(item, dict) else item
+            if isinstance(value, bool):
+                return []
             close = float(value)
         except (TypeError, ValueError):
             return []
