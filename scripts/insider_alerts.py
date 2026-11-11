@@ -145,7 +145,7 @@ def _near_low_candidates() -> dict[str, dict]:
         if not isinstance(low, (int, float)) or not math.isfinite(low) or low <= 0:
             continue
         dist_pct = (px / low - 1) * 100
-        if not math.isfinite(dist_pct) or not 0 <= dist_pct <= 15 + 1e-9:
+        if not math.isfinite(dist_pct) or dist_pct > 15 + 1e-9:
             continue
         if status == "not_near_low":
             # Canonical Low52 labels everything above 10% as not_near_low;
