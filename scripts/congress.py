@@ -51,7 +51,11 @@ def _slug(name: str) -> str:
 
 
 def _is_fresh(payload: dict) -> bool:
-    if int(payload.get("schema_version") or 0) < 2:
+    try:
+        version = int(payload.get("schema_version") or 0)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    if version < 2:
         return False
     if payload.get("data_current") is False:
         return False
