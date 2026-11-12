@@ -109,6 +109,7 @@
       // A seven-day-old bar may be valid after holidays, but an old publisher
       // snapshot is never fresh technical evidence. Explicit empty published
       // scans remain authoritative; stale snapshots must not revive candidates.
+      prebreakoutFeedGeneratedAt=payload.generated_at;
       const generated=Date.parse(payload.generated_at);
       const ageHours=(Date.now()-generated)/3600000;
       if(!Number.isFinite(generated)||ageHours< -1||ageHours>36){
@@ -117,7 +118,6 @@
         if(activeLens==='breakout')opportunities();
         return;
       }
-      prebreakoutFeedGeneratedAt=payload.generated_at;
       const attempted=n(payload?.scan_slot_telemetry?.rows_attempted);
       const evaluable=n(payload?.scan_slot_telemetry?.rows_evaluable);
       if(Number.isInteger(attempted)&&attempted>0&&Number.isInteger(evaluable)&&evaluable>=0&&evaluable<=attempted)
