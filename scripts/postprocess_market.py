@@ -28,6 +28,16 @@ STALE_DERIVED_KEYS = {
     "opportunity_score",
     "opportunity_score_raw",
     "opportunity_label",
+    "opportunity_timing_score",
+    "opportunity_timing_label",
+    "opportunity_overextended",
+    "opportunity_return_5d_pct",
+    "opportunity_return_20d_pct",
+    "opportunity_return_60d_pct",
+    "opportunity_drawdown_from_high_pct",
+    "opportunity_sleeves",
+    "opportunity_sleeve_coverage_pct",
+    "opportunity_featured",
     "opportunity_reasons",
     "opportunity_cautions",
     "opportunity_components",
@@ -325,6 +335,14 @@ def _sanitize_carried(row: dict) -> None:
     row["opportunity_caps"] = []
     row["scanner_tags"] = []
     row["scanner_results"] = {}
+    # Recovery combines price and fundamentals; the fundamental snapshot of
+    # carried equities is not refreshed, so it cannot confirm a current recovery.
+    if str(row.get("recovery_status") or "").lower() in {"confirmed", "recovering", "stabilizing"}:
+        row["recovery_status"] = "insufficient"
+        row["recovery_label"] = "Dados fundamentais não atualizados"
+        row["recovery_score"] = None
+        row["recovery_price_score"] = None
+        row["recovery_fundamental_score"] = None
     # Preserve pure price-position information, but never an actionable low52
     # classification inherited from a stale row.
     if str(row.get("low52_status") or "").lower() in {"opportunity", "watch"}:
@@ -350,7 +368,9 @@ def main() -> None:
         if not isinstance(row, dict) or _is_fund(row):
             continue
         status = str(row.get("pipeline_status") or "")
-        if status in {"equity_catalog_only", "equity_carried_forward"}:
+        # run.py labels recycled equities "equity_carried_forward_rotating";
+        # missing this exact status left stale opportunity/Low52/scanner ranks live.
+        if status in {"equity_catalog_only", "equity_carried_forward", "equity_carried_forward_rotating"}:
             _sanitize_carried(row)
             sanitized += 1
             continue
