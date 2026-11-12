@@ -115,7 +115,7 @@ def _insufficient(pos, reason):
 
 
 def assess(row: dict) -> dict:
-    if str(row.get("quote_type") or "").upper() in ("ETF", "CRYPTO", "MUTUALFUND"):
+    if str(row.get("quote_type") or "").upper() in ("ETF", "CRYPTO", "CRYPTOCURRENCY", "FUND", "MUTUALFUND"):
         return {}
 
     pos = _price_position(row)
