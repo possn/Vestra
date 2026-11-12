@@ -21,17 +21,29 @@ MAX_PER_RUN=30
 MIN_BARS=220
 
 def cohort(rows):
+    """Fail closed on ticker collisions, including non-equity/other-cap rows.
+
+    A bare ticker cannot establish issuer/listing identity when the source
+    index contains multiple records under that name. Do not select a winner
+    based on source ordering or on the largest market cap.
+    """
     found={}
+    seen=set()
+    ambiguous=set()
     for row in rows:
         if not isinstance(row,dict):continue
         symbol=str(row.get("ticker") or "").strip().upper()
+        if not symbol:continue
+        if symbol in seen:
+            ambiguous.add(symbol)
+        seen.add(symbol)
         cap=row.get("market_cap")
         kind=str(row.get("quote_type") or "").upper()
-        if (not symbol or kind in {"ETF","FUND","MUTUALFUND","CRYPTO"}
+        if (kind in {"ETF","FUND","MUTUALFUND","CRYPTO"}
             or type(cap) not in (int,float) or not math.isfinite(cap)
             or not 100_000_000<=cap<500_000_000):continue
-        found[symbol]=max(float(cap),found.get(symbol,0))
-    return sorted(found)
+        found[symbol]=float(cap)
+    return sorted(set(found)-ambiguous)
 
 def inspect(ticker,frame,currency,checked_at):
     if currency!="USD":
