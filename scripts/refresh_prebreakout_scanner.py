@@ -82,8 +82,8 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
                 return reject("invalid_ohlcv_or_date")
             if not math.isfinite(value):
                 if audit is not None:
-                    audit["invalid_ohlcv_detail"] = "nonfinite_" + field
-                return reject("invalid_ohlcv_or_date")
+                    audit["nonfinite_ohlc_detail"] = field
+                return reject("nonfinite_ohlc")
             if field == "close": close=value
             elif field == "high": high=value
             else: low=value
