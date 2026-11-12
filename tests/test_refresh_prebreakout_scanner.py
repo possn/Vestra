@@ -37,8 +37,6 @@ class FirstFailingGateAuditTests(unittest.TestCase):
              "invalid_or_missing_low"),
             ({"date":"2026-11-06","close":True,"high":11,"low":9,"volume":20},
              "boolean_price_or_volume"),
-            ({"date":"2026-11-06","close":float("nan"),"high":11,"low":9,"volume":20},
-             "nonfinite_close"),
         ]
         for bar,reason in cases:
             with self.subTest(reason=reason):
@@ -47,6 +45,14 @@ class FirstFailingGateAuditTests(unittest.TestCase):
                 self.assertEqual(audit["first_rejection"],"invalid_ohlcv_or_date")
                 self.assertEqual(audit["invalid_ohlcv_detail"],reason)
                 self.assertIsNone(mod.scan_bars("BAD",[bar],date(2026,11,8)))
+
+    def test_nonfinite_ohlc_keeps_original_rejection_gate(self):
+        audit={}
+        bad={"date":"2026-11-06","close":float("nan"),"high":11,
+             "low":9,"volume":20}
+        self.assertIsNone(mod.scan_bars("BAD",[bad],date(2026,11,8),audit=audit))
+        self.assertEqual(audit["first_rejection"],"nonfinite_ohlc")
+        self.assertEqual(audit["nonfinite_ohlc_detail"],"close")
 
     def test_invalid_bar_diagnostic_is_first_bad_bar_only(self):
         good={"date":"2026-11-05","close":10,"high":11,"low":9,"volume":100}
