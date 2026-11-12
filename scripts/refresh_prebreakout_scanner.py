@@ -59,7 +59,7 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
         return None
     today=today or datetime.now(timezone.utc).date()
     clean=[]
-    for bar in bars:
+    for bar_index, bar in enumerate(bars):
         if not isinstance(bar, dict):
             if audit is not None: audit["invalid_ohlcv_detail"] = "non_mapping_bar"
             return reject("invalid_ohlcv_or_date")
@@ -79,6 +79,22 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
             except (KeyError,ValueError,TypeError,OverflowError):
                 if audit is not None:
                     audit["invalid_ohlcv_detail"] = "invalid_or_missing_" + field
+                    if field == "close":
+                        # Distinguish provider outer-join padding from a genuine
+                        # missing in-range close. Diagnostics only: no bars dropped.
+                        audit["missing_close_bar_location"] = (
+                            "leading" if bar_index == 0 else
+                            "trailing" if bar_index == len(bars) - 1 else "interior"
+                        )
+                        if bar.get("close") is None:
+                            if bar.get("high") is None and bar.get("low") is None:
+                                audit["missing_close_pattern"] = "all_ohlc_missing"
+                            elif bar.get("high") is not None and bar.get("low") is not None:
+                                audit["missing_close_pattern"] = "close_only_missing"
+                            else:
+                                audit["missing_close_pattern"] = "partial_ohlc_missing"
+                        else:
+                            audit["missing_close_pattern"] = "invalid_nonnull_close"
                 return reject("invalid_ohlcv_or_date")
             if not math.isfinite(value):
                 if audit is not None:
@@ -712,6 +728,7 @@ def main():
     eligible=eligible_universe_size(stocks)
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
     gate_exclusions={};ma_gate_failure_counts={};invalid_ohlcv_details={}
+    missing_close_locations={};missing_close_patterns={}
     scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
@@ -744,6 +761,11 @@ def main():
                 if first=="invalid_ohlcv_or_date":
                     detail=trace.get("invalid_ohlcv_detail","unclassified")
                     invalid_ohlcv_details[detail]=invalid_ohlcv_details.get(detail,0)+1
+                    if detail=="invalid_or_missing_close":
+                        position=trace.get("missing_close_bar_location","unclassified")
+                        pattern=trace.get("missing_close_pattern","unclassified")
+                        missing_close_locations[position]=missing_close_locations.get(position,0)+1
+                        missing_close_patterns[pattern]=missing_close_patterns.get(pattern,0)+1
                 if first=="moving_average_structure":
                     for failed_check in trace.get("moving_average_failed_checks",[]):
                         ma_gate_failure_counts[failed_check]=ma_gate_failure_counts.get(failed_check,0)+1
@@ -806,6 +828,8 @@ def main():
              "invalid_ohlcv_detail_audit":{"scope":"first_invalid_bar_in_current_slot",
                  "first_rejected_rows":gate_exclusions.get("invalid_ohlcv_or_date",0),
                  "reason_counts":dict(sorted(invalid_ohlcv_details.items())),
+                 "missing_close_bar_location_counts":dict(sorted(missing_close_locations.items())),
+                 "missing_close_row_pattern_counts":dict(sorted(missing_close_patterns.items())),
                  "diagnostic_only_no_bar_repair":True,
                  "not_strategy_performance":True},
               "moving_average_failure_audit":{"scope":"first_rejected_by_moving_average_in_current_slot",
