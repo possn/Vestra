@@ -157,7 +157,13 @@
   }
 
   function stats(s){
-    const c=(Array.isArray(s?.price_history_1y)?s.price_history_1y:[]).map(x=>n(x?.close)).filter(x=>x>0);
+    const history=Array.isArray(s?.price_history_1y)?s.price_history_1y:[];
+    // Do not compress missing/bool/nonfinite closes into fictitious 20/60d windows.
+    const values=history.map(x=>{
+      const raw=x&&typeof x==='object'?x.close:x;
+      return typeof raw==='boolean'?null:n(raw);
+    });
+    const c=values.every(x=>x!=null&&x>0)?values:[];
     const ret=d=>c.length>d?(c.at(-1)/c[c.length-d-1]-1)*100:null;
     const hi=c.length?Math.max(...c):null,cur=c.at(-1)||null;
     const r5=ret(5),r20=ret(20),r60=ret(60),room=hi&&cur?(1-cur/hi)*100:null;
@@ -240,6 +246,9 @@
   }
   function timing(s){
     const o=n(s?.opportunity_timing_score); if(o!=null)return o;
+    // A canonical Discovery snapshot with missing timing cannot receive
+    // a synthetic neutral 50 from the legacy browser heuristic.
+    if(typeof s?.opportunity_eligible==='boolean'||typeof s?.opportunity_featured==='boolean')return null;
     const p=stats(s);let x=50;
     if(p.r20!=null)x+=p.r20>=1&&p.r20<=9?21:p.r20>-4&&p.r20<1?7:p.r20>18?-16:p.r20<=-12?-15:0;
     if(p.r60!=null)x+=p.r60>=3&&p.r60<=22?13:p.r60>38?-13:p.r60<=-18?-11:0;
@@ -351,7 +360,7 @@
       return coreCandidate(s,{scoreMin:50,coverageMin:45,confidenceMin:45,criticalMin:25})&&above!=null&&above>=-0.5&&above<=5&&timing(s)>=35;
     }
     if(lens==='emerging')return coreCandidate(s)&&!overextended(s)&&timing(s)>=55&&timing(s)<=82&&confirmed(s)>=1&&!['confirmed','recovering'].includes(rec)&&(est==='improving'||dir==='up'||(p.accel!=null&&p.accel>0));
-    if(lens==='recovery')return coreCandidate(s)&&!overextended(s)&&timing(s)>=45&&(['confirmed','recovering'].includes(rec)||(est==='improving'&&confirmed(s)>=2));
+    if(lens==='recovery')return coreCandidate(s)&&!overextended(s)&&timing(s)>=45&&['confirmed','recovering'].includes(rec);
     if(lens==='value'){
       const fv=n(s?.fair_value_upside_pct),support=fallbackUpsideSupport(s);
       return coreCandidate(s)&&!overextended(s)&&timing(s)>=45&&fv!=null&&fv>=10&&['moderate','strong'].includes(support)&&val!=='overvalued';
@@ -540,7 +549,7 @@
     const p=stats(s),b=[],dom=credibleDominantSleeve(s),sl=sleeveScores(s);
     if(dom&&sl[dom]!=null)b.push(`${sleeveLabel(dom)} lidera ${Math.round(sl[dom])}`);
     if(t(s?.estimate_signal)==='improving')b.push('estimativas ↑');
-    if(['confirmed','recovering'].includes(t(s?.recovery_status)))b.push('recuperação confirmada');
+    if(['confirmed','recovering'].includes(t(s?.recovery_status)))b.push(t(s?.recovery_status)==='confirmed'?'recuperação confirmada':'recuperação em curso');
     if(p.accel!=null&&p.accel>2)b.push('aceleração recente');
     const fv=n(s?.fair_value_upside_pct);
     if(fv!=null&&fv>8)b.push(`upside +${fv.toFixed(0)}%`);
@@ -571,7 +580,7 @@
     }
 
     const regime=t(s?.opportunity_market_regime).toLowerCase(),rotation=t(s?.opportunity_rotation_signal).toLowerCase(),theme=t(s?.opportunity_rotation_theme);
-    const timingParts=[`timing ${Math.round(timing(s))}`];
+    const timingValue=timing(s),timingParts=[`timing ${timingValue==null?'indisponível':Math.round(timingValue)}`];
     if(regime==='supportive')timingParts.push('mercado favorável');
     else if(regime==='adverse')timingParts.push('mercado adverso');
     else if(regime==='severe_adverse')timingParts.push('mercado muito adverso');
@@ -611,7 +620,7 @@
     const isExpanded=expandedOpportunityTickers.has(t(s.ticker).toUpperCase());
     const sleevePills=[['Força',sl.strength,'strength'],['Assimetria',sl.asymmetry,'asymmetry'],['Inflection',sl.inflection,'inflection']]
       .filter(([,v])=>v!=null).map(([label,v,key])=>`<span class="${key===dom?'is-driver':''}">${label} ${Math.round(v)}${coverage[key]!=null&&coverage[key]<70?' · evidência limitada':''}</span>`).join('');
-    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-evidence"><button class="ux453-evidence-toggle" type="button" aria-expanded="${isExpanded}">Ver análise e indicadores</button><div class="ux453-evidence-content" ${isExpanded?'':'hidden'}><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></div></div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
+    return `<div class="market-row ux453-opp" data-market-ticker="${esc(s.ticker)}"><div class="ux453-opp-body"><div class="market-row__title"><span class="market-row__ticker">${esc(s.ticker)}</span><span class="market-row__name">${esc(s.name||'')}</span></div><div class="market-row__description">${esc(brief(s))}</div><div class="ux453-thesis">✦ ${esc(lensReason(s,lens))}</div><div class="ux453-evidence"><button class="ux453-evidence-toggle" type="button" aria-expanded="${isExpanded}">Ver análise e indicadores</button><div class="ux453-evidence-content" ${isExpanded?'':'hidden'}><div class="ux453-opportunity-type">${esc(opportunityType(s))}</div><div class="ux453-detail-grid"><div class="ux453-detail-copy">${whyNowHtml(s)}${capText?`<div class="ux453-cap-note">${esc(capText)}</div>`:''}</div><div class="ux453-card-metrics"><div class="ux453-pills ux453-sleeves">${sleevePills}</div><div class="ux453-pills ux453-core-metrics"><span>Score Vestra ${Math.round(n(s?.score)||0)}</span><span>Timing ${tm==null?'—':Math.round(tm)}</span>${p.r20!=null?`<span>20d ${p.r20>=0?'+':''}${p.r20.toFixed(1)}%</span>`:''}</div></div></div></div></div></div><div class="ux453-entry"><small>DISCOVERY</small><strong>${sc==null?'—':Math.round(sc)}</strong><em>${sc==null?'Score indisponível':`${confirmed(s)} sinais`}</em></div></div>`;
   }
 
   function decorate(section){
@@ -695,6 +704,24 @@
     return ['Oportunidades agora','Discovery elegível e classificado pelo motor como “Interessante” ou melhor. A shortlist pode ter menos de 12 quando não há nomes suficientes.'];
   }
 
+  function rowEvidenceSignature(s,lens){
+    // A stable ticker and unchanged rounded score do not imply unchanged
+    // evidence. Re-render the same company when its classification, risk,
+    // timing or rationale changes in a refreshed market snapshot.
+    const setup=(lens==='breakout'||lens==='smallcap_breakout')?breakoutSetup(s,lens):null;
+    return JSON.stringify([
+      t(s?.ticker),t(s?.name),s?.score,s?.opportunity_score,s?.opportunity_timing_score,
+      s?.recovery_status,s?.estimate_signal,s?.thesis_direction,s?.risk_gate,
+      s?.low52_status,s?.low52_above_low_pct,s?.current_price,
+      s?.fair_value_upside_pct,s?.margin_of_safety_pct,s?.valuation_signal,
+      s?.opportunity_upside_support,s?.opportunity_revision_evidence,
+      s?.opportunity_valuation_evidence,s?.opportunity_market_regime,
+      s?.opportunity_rotation_signal,s?.opportunity_event_risk,
+      s?.opportunity_caps,s?.opportunity_sleeves,
+      s?.data_coverage_pct,s?.confidence_score,
+      setup?.stage,setup?.score,setup?.date
+    ]);
+  }
   function opportunities(lens=activeLens,sectorOverride=''){
     activeLens=LENSES.has(t(lens))?t(lens):'all';
     const universe=stocks();
@@ -710,7 +737,7 @@
     }
     const active=section.querySelector('[data-market-sector].is-active');const sec=t(sectorOverride)||t(active?.dataset.marketSector)||t(section.querySelector('[data-market-sector-select]')?.value)||'all';
     const rows=rankLens(universe,activeLens,{limit:12,sector:sec});
-    const sig=(rows.map(s=>`${t(s.ticker)}:${['breakout','smallcap_breakout'].includes(activeLens)?(breakoutSetup(s,activeLens)?.score||0):(lensScore(s,activeLens)==null?'unknown':Math.round(lensScore(s,activeLens)))}:${['breakout','smallcap_breakout'].includes(activeLens)?(breakoutSetup(s,activeLens)?.date||''):''}`).join('|')||'empty')+`:${sec}:${activeLens}`;
+    const sig=(rows.map(s=>rowEvidenceSignature(s,activeLens)).join('|')||'empty')+`:${sec}:${activeLens}`;
     if(list.dataset.ux453!==sig){
       list.innerHTML=rows.map(s=>row(s,activeLens)).join('');
       rows.forEach(s=>{const el=list.querySelector(`[data-market-ticker="${CSS.escape(t(s.ticker))}"]`);if(el)el.__vestraStock=s;});
@@ -721,11 +748,14 @@
     // research timestamp. Restore it when the user leaves this strategy.
     const age=section.querySelector('.market-section__head .market-data-age');
     if(age){
-      if(!section.hasAttribute('data-smallcap-original-market-age'))
-        section.setAttribute('data-smallcap-original-market-age',age.textContent);
-      age.textContent=activeLens==='smallcap_breakout'
-        ? smallcapProvenanceLabel()
-        : section.getAttribute('data-smallcap-original-market-age');
+      if(activeLens==='smallcap_breakout'){
+        if(!section.hasAttribute('data-smallcap-original-market-age'))
+          section.setAttribute('data-smallcap-original-market-age',age.textContent);
+        age.textContent=smallcapProvenanceLabel();
+      }else if(section.hasAttribute('data-smallcap-original-market-age')){
+        age.textContent=section.getAttribute('data-smallcap-original-market-age');
+        section.removeAttribute('data-smallcap-original-market-age');
+      }
     }
     decorate(section);
     if(activeLens==='smallcap_breakout'&&!rows.length){

@@ -12,7 +12,8 @@ class DiscoveryCompactContracts(unittest.TestCase):
   self.assertIn('${whyNowHtml(s)}',JS)
   self.assertIn('${sleevePills}',JS)
   self.assertIn('Score Vestra ${Math.round(n(s?.score)||0)}',JS)
-  self.assertIn('Timing ${Math.round(tm)}',JS)
+  self.assertIn("Timing ${tm==null?'—':Math.round(tm)}",JS)
+  self.assertNotIn('Timing ${Math.round(tm)}',JS)
   self.assertIn('event.stopPropagation()',JS)
   self.assertIn("market-opportunities.css?v=20261108-compact-evidence",JS)
  def test_compact_mobile_css_retains_touch_target_and_full_detail(self):

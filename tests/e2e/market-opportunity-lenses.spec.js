@@ -43,7 +43,15 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
   }, [
     candidate('EARLY', { estimate_signal: 'improving', recovery_status: '', thesis_direction: 'up', opportunity_timing_score: 68 }),
     candidate('RECOV', { estimate_signal: 'improving', recovery_status: 'confirmed', opportunity_timing_score: 66 }),
+    candidate('ESTONLY', { estimate_signal: 'improving', thesis_direction: 'up', recovery_status: 'unconfirmed', opportunity_timing_score: 67 }),
+    candidate('FAILREC', { estimate_signal: 'improving', thesis_direction: 'up', recovery_status: 'failed', opportunity_timing_score: 67 }),
     candidate('LOW52', { low52_above_low_pct: 2.1, low52_status: 'watch', opportunity_timing_score: 55 }),
+    candidate('NOTIMING', {
+      opportunity_timing_score: null,
+      fair_value_upside_pct: 25,
+      opportunity_upside_support: 'moderate',
+      valuation_signal: 'undervalued',
+    }),
     candidate('VALUE', {
       fair_value_upside_pct: 34,
       margin_of_safety_pct: 12,
@@ -86,10 +94,22 @@ test('iPhone/WebKit: each opportunity lens ranks canonical Discovery independent
   expect(low52).toEqual(['LOW52']);
   const emerging = await select('emerging', 'EARLY');
   expect(emerging).toContain('EARLY');
+  // Same ticker and same Discovery score, but changed evidence: the old
+  // ticker:rounded-score signature left stale thesis text on screen.
+  await expect(fixture.locator('[data-market-ticker="EARLY"] .ux453-thesis')).toContainText('estimativas ↑');
+  await page.evaluate(() => {
+    const row = window.VestraMarketStaticUniverse.getStocks().find(s => s.ticker === 'EARLY');
+    row.estimate_signal = 'stable';
+    window.VestraMarketOpportunities.refresh('emerging');
+  });
+  await expect(fixture.locator('[data-market-ticker="EARLY"] .ux453-thesis')).not.toContainText('estimativas ↑');
   const recovery = await select('recovery', 'RECOV');
   expect(recovery).toContain('RECOV');
+  expect(recovery).not.toContain('ESTONLY');
+  expect(recovery).not.toContain('FAILREC');
   const value = await select('value', 'VALUE');
   expect(value).toContain('VALUE');
+  expect(value).not.toContain('NOTIMING');
   const evidence = fixture.locator('[data-market-ticker="VALUE"] .ux453-evidence');
   const whyNow = fixture.locator('[data-market-ticker="VALUE"] .ux453-why');
   const toggle = evidence.locator('.ux453-evidence-toggle');
