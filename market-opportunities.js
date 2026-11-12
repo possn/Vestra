@@ -187,7 +187,7 @@
     const sourceTime=Date.parse(lastDate+'T23:59:59Z');
     const ageDays=Number.isFinite(sourceTime)?(Date.now()-sourceTime)/86400000:Infinity;
     if(ageDays>7||ageDays< -1)return null; // Stale historical bases are not current setups.
-    if(['ETF','FUND','MUTUALFUND','CRYPTO'].includes(t(stock?.quote_type||stock?.quoteType).toUpperCase()))return null;
+    if(['ETF','FUND','MUTUALFUND','CRYPTO','CRYPTOCURRENCY'].includes(t(stock?.quote_type||stock?.quoteType).toUpperCase()))return null;
     const closes=bars.map(x=>x.close),last=closes.length-1;
     const ma=(length,end=last)=>end-length+1<0?null:closes.slice(end-length+1,end+1).reduce((a,b)=>a+b,0)/length;
     const sma50=ma(50),sma150=ma(150),sma200=ma(200);
@@ -261,7 +261,7 @@
   const LEGACY_FEATURED_OPPORTUNITY_MIN_SCORE=54;
   function discoveryEligible(s){
     const qt=t(s?.quote_type||s?.quoteType).toUpperCase();
-    if(['ETF','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
+    if(['ETF','FUND','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const publishedEligible=typeof s?.opportunity_eligible==='boolean'?s.opportunity_eligible:null;
     if(publishedEligible!==null)return publishedEligible;
 
@@ -334,7 +334,7 @@
     return current!=null&&current>0&&low!=null&&low>0?(current/low-1)*100:null;
   }
   function coreCandidate(s,{scoreMin=54,coverageMin=50,confidenceMin=45,criticalMin=30}={}){
-    const qt=t(s?.quote_type||s?.quoteType).toUpperCase();if(['ETF','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
+    const qt=t(s?.quote_type||s?.quoteType).toUpperCase();if(['ETF','FUND','CRYPTO','CRYPTOCURRENCY','MUTUALFUND'].includes(qt))return false;
     const sc=n(s?.score),cov=n(s?.data_coverage_pct),conf=n(s?.confidence_score),crit=n(s?.critical_metric_coverage_pct),rel=t(s?.score_reliability).toLowerCase(),risk=t(s?.risk_gate).toLowerCase();
     if(sc==null||sc<scoreMin||cov==null||cov<coverageMin||conf==null||conf<confidenceMin)return false;
     if(crit!=null&&crit<criticalMin)return false;
