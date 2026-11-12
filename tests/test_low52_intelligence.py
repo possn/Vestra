@@ -116,6 +116,14 @@ class Low52IntelligenceTests(unittest.TestCase):
         self.assertEqual(result["low52_observed_close_sessions"], 0)
         self.assertIn("fornecedor", result["low52_reasons"][0])
 
+    def test_other_non_equity_quote_types_are_excluded(self):
+        for quote_type in ("FUND", "CRYPTOCURRENCY", "MUTUALFUND",
+                           "CRYPTO", "fund", "cryptocurrency"):
+            with self.subTest(quote_type=quote_type):
+                row = quality_row()
+                row["quote_type"] = quote_type
+                self.assertEqual(assess(row), {})
+
     def test_etfs_are_excluded_from_low52_equity_intelligence(self):
         row = quality_row()
         row["quote_type"] = "ETF"
