@@ -61,15 +61,32 @@ def scan_bars(ticker: str, bars: list[dict], today: date|None=None, *, strict_qu
     clean=[]
     for bar in bars:
         if not isinstance(bar, dict):
+            if audit is not None: audit["invalid_ohlcv_detail"] = "non_mapping_bar"
+            return reject("invalid_ohlcv_or_date")
+        # Diagnose the first unusable bar only. Never repair missing prices,
+        # drop invalid sessions or promote a ticker that fails this check.
+        if any(isinstance(bar.get(field), bool) for field in ("close", "high", "low", "volume")):
+            if audit is not None: audit["invalid_ohlcv_detail"] = "boolean_price_or_volume"
             return reject("invalid_ohlcv_or_date")
         try:
-            # Python bool is an int: True must never become price/volume 1.
-            if any(isinstance(bar.get(field), bool) for field in ("close", "high", "low", "volume")):
-                return reject("invalid_ohlcv_or_date")
             day=date.fromisoformat(str(bar["date"])[:10])
-            close=float(bar["close"]);high=float(bar["high"]);low=float(bar["low"])
         except (KeyError,ValueError,TypeError,OverflowError):
-            return reject('invalid_ohlcv_or_date')  # Never infer missing OHLC.
+            if audit is not None: audit["invalid_ohlcv_detail"] = "invalid_or_missing_date"
+            return reject("invalid_ohlcv_or_date")
+        for field in ("close", "high", "low"):
+            try:
+                value=float(bar[field])
+            except (KeyError,ValueError,TypeError,OverflowError):
+                if audit is not None:
+                    audit["invalid_ohlcv_detail"] = "invalid_or_missing_" + field
+                return reject("invalid_ohlcv_or_date")
+            if not math.isfinite(value):
+                if audit is not None:
+                    audit["invalid_ohlcv_detail"] = "nonfinite_" + field
+                return reject("invalid_ohlcv_or_date")
+            if field == "close": close=value
+            elif field == "high": high=value
+            else: low=value
         if not all(math.isfinite(v) for v in (close,high,low)):
             return reject('nonfinite_ohlc')
         if not (0<low<=close<=high):
@@ -694,7 +711,7 @@ def main():
     # Coverage refers to this slot, not the entire eligible investment universe.
     eligible=eligible_universe_size(stocks)
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
-    gate_exclusions={};ma_gate_failure_counts={}
+    gate_exclusions={};ma_gate_failure_counts={};invalid_ohlcv_details={}
     scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
@@ -724,6 +741,9 @@ def main():
                 signal=scan_bars(ticker,bars,now.date(),liquidity_floor=0,audit=trace)
                 first=trace.get('first_rejection','unresolved')
                 gate_exclusions[first]=gate_exclusions.get(first,0)+1
+                if first=="invalid_ohlcv_or_date":
+                    detail=trace.get("invalid_ohlcv_detail","unclassified")
+                    invalid_ohlcv_details[detail]=invalid_ohlcv_details.get(detail,0)+1
                 if first=="moving_average_structure":
                     for failed_check in trace.get("moving_average_failed_checks",[]):
                         ma_gate_failure_counts[failed_check]=ma_gate_failure_counts.get(failed_check,0)+1
@@ -783,6 +803,11 @@ def main():
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
                  "currency_or_usd_liquidity_rejections_after_structural_pass":currency_rejected,
                  "missing_downloads_not_negative_evidence":True,"probability_or_forward_performance":None},
+             "invalid_ohlcv_detail_audit":{"scope":"first_invalid_bar_in_current_slot",
+                 "first_rejected_rows":gate_exclusions.get("invalid_ohlcv_or_date",0),
+                 "reason_counts":dict(sorted(invalid_ohlcv_details.items())),
+                 "diagnostic_only_no_bar_repair":True,
+                 "not_strategy_performance":True},
               "moving_average_failure_audit":{"scope":"first_rejected_by_moving_average_in_current_slot",
                   "method":"nonexclusive_failed_conditions_not_independent_gate_pass_rates",
                   "first_rejected_rows":gate_exclusions.get("moving_average_structure",0),
