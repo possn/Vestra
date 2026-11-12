@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from datetime import date, datetime, timezone
 
 def _n(v):
     try:
@@ -18,12 +19,29 @@ def _closes(row):
     if not isinstance(history, list):
         return []
     out = []
+    dated = []
     for item in history:
+        if isinstance(item, dict):
+            raw_date = item.get('date') or item.get('timestamp')
+            if raw_date is not None:
+                try:
+                    dated.append(date.fromisoformat(str(raw_date)[:10]))
+                except (TypeError, ValueError):
+                    return []
         value = item.get('close') if isinstance(item, dict) else item
         close = _n(value)
         if close is None or close <= 0:
             return []
         out.append(close)
+    # Do not treat carried-forward provider bars as a current recovery.
+    # Historical numeric-only fixtures remain supported, but partial dating,
+    # duplicated sessions, future dates and expired last observations fail closed.
+    if dated:
+        if len(dated) != len(out) or any(b <= a for a, b in zip(dated, dated[1:])):
+            return []
+        age = (datetime.now(timezone.utc).date() - dated[-1]).days
+        if not 0 <= age <= 7:
+            return []
     return out
 
 def _ret(c,d):
