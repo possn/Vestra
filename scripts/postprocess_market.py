@@ -116,10 +116,23 @@ def _period_return(row: dict, periods: int):
     return _n(row.get(key)) if key else None
 
 
+CARRIED_EQUITY_STATUSES = frozenset({
+    "equity_catalog_only", "equity_carried_forward",
+    "equity_carried_forward_rotating",
+})
+
+
+def _current_market_evidence(row: dict) -> bool:
+    # A carried quote is not a newly observed 5/20-session market return.
+    return str(row.get("pipeline_status") or "") not in (
+        CARRIED_EQUITY_STATUSES | {"catalog_only", "catalog_carried_forward"}
+    )
+
+
 def _market_regime_context(rows):
     by_ticker = {str(r.get("ticker") or "").upper(): r for r in rows if isinstance(r, dict)}
     benchmark_rows = [by_ticker.get(t) for t in MARKET_REGIME_BENCHMARKS]
-    benchmark_rows = [r for r in benchmark_rows if isinstance(r, dict)]
+    benchmark_rows = [r for r in benchmark_rows if isinstance(r, dict) and _current_market_evidence(r)]
 
     def pack(candidates, source, minimum):
         values = []
@@ -160,7 +173,7 @@ def _market_regime_context(rows):
         r for r in rows
         if isinstance(r, dict)
         and not _is_fund(r)
-        and str(r.get("pipeline_status") or "") not in {"equity_catalog_only", "equity_carried_forward"}
+        and _current_market_evidence(r)
     ]
     broad = pack(equities, "equity_breadth", 30)
     return broad or {
@@ -189,7 +202,7 @@ def _weekly_return(row: dict):
 
 
 def _rotation_context(rows, fund_history=None, as_of=""):
-    equities = [r for r in rows if isinstance(r, dict) and not _is_fund(r)]
+    equities = [r for r in rows if isinstance(r, dict) and not _is_fund(r) and _current_market_evidence(r)]
     by_ticker = {str(r.get("ticker") or "").upper(): r for r in rows if isinstance(r, dict)}
     contexts = {}
     for label, pattern, etfs in ROTATION_THEMES:
@@ -213,7 +226,7 @@ def _rotation_context(rows, fund_history=None, as_of=""):
             signal = "mixed"
 
         etf_rows = [by_ticker.get(t) for t in etfs]
-        etf_rows = [x for x in etf_rows if isinstance(x, dict)]
+        etf_rows = [x for x in etf_rows if isinstance(x, dict) and str(x.get("pipeline_status") or "") not in {"catalog_only", "catalog_carried_forward"}]
         if fund_history is not None and as_of:
             etf_metrics = [fund_flow_metrics(x, fund_history, as_of) for x in etf_rows]
         else:
@@ -370,7 +383,7 @@ def main() -> None:
         status = str(row.get("pipeline_status") or "")
         # run.py labels recycled equities "equity_carried_forward_rotating";
         # missing this exact status left stale opportunity/Low52/scanner ranks live.
-        if status in {"equity_catalog_only", "equity_carried_forward", "equity_carried_forward_rotating"}:
+        if status in CARRIED_EQUITY_STATUSES:
             _sanitize_carried(row)
             sanitized += 1
             continue
