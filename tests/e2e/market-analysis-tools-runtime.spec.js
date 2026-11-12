@@ -64,7 +64,7 @@ test('iPhone/WebKit: Scanner hydrates lazy payload, renders repaired strategy ta
     ).filter(stock => {
       const q=String(stock?.quote_type||'').toUpperCase();
       const name=String(stock?.name||'').toUpperCase();
-      const fund=q==='ETF'||q==='MUTUALFUND'||/\\bETF\\b|ISHARES|VANGUARD|XTRACKERS|SPDR|LYXOR|AMUNDI|WISDOMTREE|INVESCO/.test(name);
+      const fund=q==='ETF'||q==='MUTUALFUND'||/\bETF\b|ISHARES|VANGUARD|XTRACKERS|SPDR|LYXOR|AMUNDI|WISDOMTREE|INVESCO/.test(name);
       return !fund && !!stock?.scanner_results?.[strategy];
     }).length, key);
     if (eligibleCount) {
