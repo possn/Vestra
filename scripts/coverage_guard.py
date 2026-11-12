@@ -205,7 +205,9 @@ def main() -> int:
                 upside_support=opportunity_upside_support,
             )
 
-        if pipeline_status in {"equity_catalog_only", "equity_carried_forward"}:
+        # Use the actual producer status from run.py; otherwise the guard
+        # silently accepts stale carried rankings and scanner tags.
+        if pipeline_status in {"equity_catalog_only", "equity_carried_forward", "equity_carried_forward_rotating"}:
             if scanner_tags:
                 _add(
                     violations, counts, ticker, "catalog_row_ranked",
@@ -218,6 +220,13 @@ def main() -> int:
                     opportunity_score=opportunity_score,
                     opportunity_label=opportunity_label,
                 )
+            if low52_status in {"opportunity", "watch"}:
+                _add(violations, counts, ticker, "carried_row_has_active_low52",
+                     pipeline_status=pipeline_status, low52_status=low52_status)
+            recovery_status = str(row.get("recovery_status") or "").lower()
+            if recovery_status in {"confirmed", "recovering", "stabilizing"}:
+                _add(violations, counts, ticker, "carried_row_has_positive_recovery",
+                     pipeline_status=pipeline_status, recovery_status=recovery_status)
 
     report = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
