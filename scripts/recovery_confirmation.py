@@ -1,32 +1,44 @@
 from __future__ import annotations
 
+import math
+
 def _n(v):
     try:
-        if v is None or v == '': return None
-        x=float(v); return x if x==x else None
+        if v is None or isinstance(v, bool) or v == '': return None
+        x=float(v); return x if math.isfinite(x) else None
     except Exception: return None
 
 def _closes(row):
-    out=[]
-    for item in row.get('price_history_1y') or []:
-        try:
-            v=item.get('close') if isinstance(item,dict) else item
-            v=float(v)
-            if v>0: out.append(v)
-        except Exception: pass
+    """Preserve session spacing: one invalid bar invalidates returns.
+
+    Silently dropping a malformed close changes the nominal 20/60-session
+    windows and can fabricate a recovery inflection.
+    """
+    history = row.get('price_history_1y') or []
+    if not isinstance(history, list):
+        return []
+    out = []
+    for item in history:
+        value = item.get('close') if isinstance(item, dict) else item
+        close = _n(value)
+        if close is None or close <= 0:
+            return []
+        out.append(close)
     return out
 
 def _ret(c,d):
     return ((c[-1]/c[-d-1]-1)*100) if len(c)>d and c[-d-1]>0 else None
 
 def assess(row):
-    if str(row.get('quote_type') or '').upper() in ('ETF','CRYPTO','MUTUALFUND'): return {}
+    if str(row.get('quote_type') or '').upper() in ('ETF','CRYPTO','CRYPTOCURRENCY','FUND','MUTUALFUND'): return {}
     c=_closes(row)
-    if len(c)<22: return {'recovery_status':'insufficient','recovery_label':'Dados insuficientes','recovery_score':None}
+    if len(c)<61: return {'recovery_status':'insufficient','recovery_label':'Dados insuficientes','recovery_score':None}
     r20=_ret(c,20); r60=_ret(c,60)
     est=str(row.get('estimate_signal') or '').lower(); driver=str(row.get('drawdown_driver_trend') or 'stable').lower()
     rev=_n(row.get('revenue_yoy_acceleration_pp')); margin=_n(row.get('net_margin_yoy_change_pp')); rel=_n(row.get('sector_relative_return_1y_pct'))
-    thesis=str(row.get('thesis_direction') or '').lower(); gate=str(row.get('risk_gate') or 'clear').lower()
+    thesis=str(row.get('thesis_direction') or '').lower(); gate=str(row.get('risk_gate') or 'unknown').lower()
+    if gate not in ('clear', 'watch', 'high', 'severe'):
+        return {'recovery_status':'insufficient','recovery_label':'Risk Gate por validar','recovery_score':None}
     price=50+(max(-25,min(25,(r20 or 0)*2)))+(max(-15,min(15,(r60 or 0)*0.8)))
     fund=50; reasons=[]
     if est=='improving': fund+=16; reasons.append('expectativas a melhorar')
