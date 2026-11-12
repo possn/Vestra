@@ -63,10 +63,34 @@
   let prebreakoutFeed=new Map();
   let prebreakoutFeedAuthoritative=false;
   let prebreakoutFeedStatus='loading';
+  let prebreakoutFeedGeneratedAt=null;
+  let prebreakoutSlotEvidence=null;
+  function prebreakoutProvenanceLabel(){
+    if(prebreakoutFeedStatus==='loading')return 'Pré-breakout · a verificar';
+    if(prebreakoutFeedStatus==='unavailable')return 'Pré-breakout · fonte indisponível';
+    const ts=Date.parse(prebreakoutFeedGeneratedAt||'');
+    if(!Number.isFinite(ts))return 'Pré-breakout · data não verificável';
+    const date=new Date(ts).toLocaleDateString('pt-PT',{
+      day:'2-digit',month:'2-digit',timeZone:'Europe/Lisbon'
+    });
+    return 'Pré-breakout '+date+(prebreakoutFeedStatus==='outdated'?' · desatualizado':'');
+  }
+  function prebreakoutEmptyCopy(){
+    if(prebreakoutFeedStatus==='loading')return 'A verificar os sinais publicados de pré-breakout…';
+    if(prebreakoutFeedStatus==='outdated')return 'Pré-breakout indisponível: o último relatório publicado está desatualizado.';
+    if(prebreakoutFeedStatus==='unavailable')return 'Pré-breakout indisponível: não foi possível validar o relatório publicado.';
+    const sample=prebreakoutSlotEvidence;
+    if(sample&&sample.attempted>0&&sample.evaluable===0)
+      return 'Pré-breakout inconclusivo: nenhum dos '+sample.attempted+
+        ' ativos analisados tinha histórico OHLCV avaliável. Sem evidência suficiente para identificar setups atuais.';
+    return 'Sem sinais de pré-breakout elegíveis no último relatório verificado. Não significa ausência de setups em todo o mercado.';
+  }
   async function loadPrebreakoutFeed(){
     // During publication checks, never present locally inferred setups as current signals.
     prebreakoutFeedAuthoritative=true;
     prebreakoutFeedStatus='loading';
+    prebreakoutFeedGeneratedAt=null;
+    prebreakoutSlotEvidence=null;
     try{
       const response=await fetch('data/prebreakout-signals.json',{cache:'no-store'});
       if(!response.ok)throw new Error(`prebreakout feed HTTP ${response.status}`);
@@ -85,6 +109,7 @@
       // A seven-day-old bar may be valid after holidays, but an old publisher
       // snapshot is never fresh technical evidence. Explicit empty published
       // scans remain authoritative; stale snapshots must not revive candidates.
+      prebreakoutFeedGeneratedAt=payload.generated_at;
       const generated=Date.parse(payload.generated_at);
       const ageHours=(Date.now()-generated)/3600000;
       if(!Number.isFinite(generated)||ageHours< -1||ageHours>36){
@@ -93,6 +118,10 @@
         if(activeLens==='breakout')opportunities();
         return;
       }
+      const attempted=n(payload?.scan_slot_telemetry?.rows_attempted);
+      const evaluable=n(payload?.scan_slot_telemetry?.rows_evaluable);
+      if(Number.isInteger(attempted)&&attempted>0&&Number.isInteger(evaluable)&&evaluable>=0&&evaluable<=attempted)
+        prebreakoutSlotEvidence={attempted,evaluable};
       const rows=new Map();
       for(const item of payload.signals){
         if(item?.source!=='yahoo:daily_ohlcv'||!item.ticker||!item.date||!['compressão','pré-breakout'].includes(item.stage))continue;
@@ -748,10 +777,10 @@
     // research timestamp. Restore it when the user leaves this strategy.
     const age=section.querySelector('.market-section__head .market-data-age');
     if(age){
-      if(activeLens==='smallcap_breakout'){
+      if(activeLens==='smallcap_breakout'||activeLens==='breakout'){
         if(!section.hasAttribute('data-smallcap-original-market-age'))
           section.setAttribute('data-smallcap-original-market-age',age.textContent);
-        age.textContent=smallcapProvenanceLabel();
+        age.textContent=activeLens==='smallcap_breakout'?smallcapProvenanceLabel():prebreakoutProvenanceLabel();
       }else if(section.hasAttribute('data-smallcap-original-market-age')){
         age.textContent=section.getAttribute('data-smallcap-original-market-age');
         section.removeAttribute('data-smallcap-original-market-age');
@@ -767,10 +796,7 @@
       list.innerHTML='<div class="market-empty">'+esc(message)+'</div>';
     }
     else if(activeLens==='breakout'&&!rows.length){
-      const message=prebreakoutFeedStatus==='loading'?'A verificar os sinais publicados de pré-breakout…'
-        :prebreakoutFeedStatus==='outdated'?'Pré-breakout indisponível: o último relatório publicado está desatualizado.'
-        :prebreakoutFeedStatus==='unavailable'?'Pré-breakout indisponível: não foi possível validar o relatório publicado.'
-        :'Sem sinais de pré-breakout elegíveis no último relatório verificado. Não significa ausência de setups em todo o mercado.';
+      const message=prebreakoutEmptyCopy();
       list.innerHTML='<div class="market-empty">'+message+'</div>';
       renderPrebreakoutHistory(section);
     }else renderPrebreakoutHistory(section);
