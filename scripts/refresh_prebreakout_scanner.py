@@ -498,6 +498,29 @@ def completed_sessions(bars, utc_today):
     """Only completed UTC daily sessions are eligible for a verified stage."""
     return [bar for bar in bars if str(bar.get("date") or "")[:10] < utc_today.isoformat()]
 
+def trim_leading_provider_padding(bars):
+    """Remove only empty leading dates from a multi-ticker outer join.
+
+    Yahoo's shared batch date index can predate an individual listing. Empty
+    prefix rows are NOT observed trading sessions. Missing interior/trailing
+    prices and partly populated OHLCV rows stay untouched and fail closed.
+    """
+    first = 0
+    while first < len(bars):
+        bar = bars[first]
+        if not isinstance(bar, dict) or not isinstance(bar.get("date"), str):
+            break
+        try:
+            date.fromisoformat(bar["date"][:10])
+        except ValueError:
+            break
+        if not all(key in bar and bar[key] is None
+                   for key in ("close", "high", "low", "volume")):
+            break
+        first += 1
+    return bars[first:], first
+
+
 def evaluable_recheck(bars, today):
     """Only a complete, fresh, ordered OHLCV series can invalidate a prior setup."""
     if len(bars)<220:
@@ -729,6 +752,7 @@ def main():
     found=[];shadow_cases=[];checked=0;successful=[];failures=[]
     gate_exclusions={};ma_gate_failure_counts={};invalid_ohlcv_details={}
     missing_close_locations={};missing_close_patterns={}
+    padding_rows_trimmed=0;tickers_with_padding_trimmed=0
     scan_started=time.monotonic();batch_attempted=0;batch_failed=0;batch_completed=0;batch_retries=0;row_failed=0;row_missing_ohlcv=0
     try:
         fx=json.loads((ROOT/"data/fx.json").read_text(encoding="utf-8"))
@@ -751,7 +775,13 @@ def main():
         for ticker in group:
             try:
                 frame=data[ticker] if len(group)>1 else data
-                bars=completed_sessions(dataframe_bars(frame),now.date());checked+=bool(bars)
+                bars=completed_sessions(dataframe_bars(frame),now.date())
+                # Only batch-alignment padding before the first observed bar
+                # can be removed. Gaps inside actual trading history remain fatal.
+                bars,trimmed=trim_leading_provider_padding(bars)
+                padding_rows_trimmed+=trimmed
+                tickers_with_padding_trimmed+=int(trimmed>0)
+                checked+=bool(bars)
                 row_missing_ohlcv+=int(not bool(bars))
                 if evaluable_recheck(bars,now.date()):successful.append(ticker)
                 trace={}
@@ -825,6 +855,11 @@ def main():
                  "structurally_passed":gate_exclusions.get("passed_structural_gates",0),
                  "currency_or_usd_liquidity_rejections_after_structural_pass":currency_rejected,
                  "missing_downloads_not_negative_evidence":True,"probability_or_forward_performance":None},
+             "provider_padding_audit":{"scope":"leading_all_four_ohlcv_null_only",
+                 "tickers_with_trimmed_prefix":tickers_with_padding_trimmed,
+                 "null_prefix_rows_trimmed":padding_rows_trimmed,
+                 "interior_or_partial_rows_never_trimmed":True,
+                 "not_eligibility_or_performance":True},
              "invalid_ohlcv_detail_audit":{"scope":"first_invalid_bar_in_current_slot",
                  "first_rejected_rows":gate_exclusions.get("invalid_ohlcv_or_date",0),
                  "reason_counts":dict(sorted(invalid_ohlcv_details.items())),
