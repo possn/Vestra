@@ -66,6 +66,38 @@ class CongressShareClassTests(unittest.TestCase):
             result=congress.fetch_congress_for_universe(["DIS"])
         self.assertEqual([x["member"] for x in result["DIS"]],["Valid chronology"])
 
+    def test_only_official_disclosure_links_are_exposed(self):
+        official = "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035788.pdf"
+        cases = [
+            (official, official),
+            ("  " + official + "  ", official),
+            ("https://efdsearch.senate.gov/search/view/ptr/abc/", 
+             "https://efdsearch.senate.gov/search/view/ptr/abc/"),
+            ("http://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035788.pdf", ""),
+            ("https://disclosures-clerk.house.gov.evil.com/public_disc/ptr-pdfs/2026/20035788.pdf", ""),
+            ("https://evil.example/stock-act/filing.pdf", ""),
+            ("https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20035788.pdf?redirect=https://evil.example", ""),
+            ("https://disclosures-clerk.house.gov@evil.example/public_disc/ptr-pdfs/2026/20035788.pdf", ""),
+            ("javascript:alert(1)", ""),
+            (None, ""),
+        ]
+        for supplied,expected in cases:
+            with self.subTest(url=supplied):
+                self.assertEqual(congress._trusted_filing_url(supplied), expected)
+
+    def test_untrusted_document_link_is_hidden_without_fabricating_trade(self):
+        from datetime import date, timedelta
+        d = (date.today()-timedelta(days=2)).isoformat()
+        rows=[
+            {"ticker":"MSFT", "member":"Member", "transaction_date":d,
+             "disclosure_date":d, "type":"buy",
+             "filing_url":"https://evil.example/stock-act.pdf"},
+        ]
+        with patch.object(congress, "_load_snapshot", return_value={"trades":rows}):
+            mapped = congress.fetch_congress_for_universe(["MSFT"])
+        self.assertEqual(len(mapped["MSFT"]),1)
+        self.assertEqual(mapped["MSFT"][0]["filing_portal"], "")
+
     def test_explicit_data_not_current_prevents_dossier_evidence(self):
         from datetime import date
         today = date.today().isoformat()
