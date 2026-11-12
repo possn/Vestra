@@ -279,3 +279,28 @@ test('iPhone/WebKit: Pre-breakout excludes unverified local fixtures when publis
   await page.evaluate(()=>window.VestraMarketOpportunityLenses.select('all'));
   await expect(page.locator('#prebreakoutFixture h3')).toContainText('Oportunidades agora');
 });
+
+test('iPhone/WebKit: FUND and CRYPTOCURRENCY cannot enter equity opportunity lenses', async ({page}) => {
+  await waitForLaunch(page);
+  const observed = await page.evaluate(() => {
+    const api=window.VestraMarketOpportunities;
+    const base={
+      ticker:'EXCLUDED',quote_type:'FUND',score:95,opportunity_score:99,
+      opportunity_eligible:true,opportunity_featured:true,
+      data_coverage_pct:100,confidence_score:100,critical_metric_coverage_pct:100,
+      score_reliability:'robust',risk_gate:'clear',opportunity_timing_score:75,
+      low52_status:'opportunity',low52_above_low_pct:1,
+      recovery_status:'confirmed',estimate_signal:'improving',
+      thesis_direction:'up',fair_value_upside_pct:40,
+      opportunity_upside_support:'strong'
+    };
+    return Object.fromEntries(['FUND','CRYPTOCURRENCY'].map(type => [
+      type,
+      Object.fromEntries(['all','low52','emerging','recovery','value'].map(
+        lens => [lens,api.lensEligible({...base,quote_type:type},lens)]
+      ))
+    ]));
+  });
+  for(const cases of Object.values(observed))
+    for(const value of Object.values(cases))expect(value).toBe(false);
+});
