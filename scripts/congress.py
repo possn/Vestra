@@ -16,6 +16,7 @@ import json
 import logging
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 log = logging.getLogger("congress")
 
@@ -93,6 +94,33 @@ def _us_ticker_identity(value: str) -> str:
     return ticker[:-3] if ticker.endswith(".US") else ticker
 
 
+def _trusted_filing_url(value) -> str:
+    """Return only verifiable official disclosure portal links for display.
+
+    An unsupported or malformed link is withheld, without rewriting the
+    transaction or inventing a replacement filing.
+    """
+    if not isinstance(value, str):
+        return ""
+    raw = value.strip()
+    try:
+        parts = urlsplit(raw)
+        if (parts.scheme != "https" or parts.username is not None
+                or parts.password is not None or parts.port is not None
+                or parts.query or parts.fragment):
+            return ""
+        host = (parts.hostname or "").lower()
+    except ValueError:
+        return ""
+    if host == "disclosures-clerk.house.gov":
+        if re.fullmatch(r"/public_disc/ptr-pdfs/20\d{2}/\d+\.pdf", parts.path, re.I):
+            return raw
+    elif host == "efdsearch.senate.gov":
+        if parts.path.startswith("/search/view/") and len(parts.path) > len("/search/view/"):
+            return raw
+    return ""
+
+
 def _normalize_one(x: dict) -> tuple[str, dict] | None:
     ticker = _us_ticker_identity(x.get("ticker"))
     transaction_date = str(x.get("transaction_date") or "").strip()
@@ -135,7 +163,7 @@ def _normalize_one(x: dict) -> tuple[str, dict] | None:
         "disclosure_date": x.get("disclosure_date") or None,
         "value_mid": _amount_mid(str(amount_range)),
         "asset": x.get("asset") or "",
-        "filing_portal": x.get("filing_url") or "",
+        "filing_portal": _trusted_filing_url(x.get("filing_url")),
     }
     return ticker, trade
 
