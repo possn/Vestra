@@ -56,8 +56,24 @@ test('iPhone/WebKit: Scanner hydrates lazy payload, renders repaired strategy ta
     await chip.click();
     await expect(chip, `${label} should become active`).toHaveClass(/is-active/);
     const rows = page.locator('#marketScannerRuntimeRows .market-tool-runtime__row');
-    await expect.poll(() => rows.count(), { message: `${label} should render scanner candidates` }).toBeGreaterThan(0);
-    await expect(page.locator('#marketScannerRuntimeRows .market-empty'), `${label} must not fall back to an empty state`).toHaveCount(0);
+    // A calibrated scanner may legitimately have zero eligible companies.
+    // The test must validate the observed published strategy universe instead
+    // of demanding a fabricated candidate in each category.
+    const eligibleCount = await page.evaluate(strategy => (
+      window.VestraMarketStaticUniverse.getStocks() || []
+    ).filter(stock => {
+      const q=String(stock?.quote_type||'').toUpperCase();
+      const name=String(stock?.name||'').toUpperCase();
+      const fund=q==='ETF'||q==='MUTUALFUND'||/\bETF\b|ISHARES|VANGUARD|XTRACKERS|SPDR|LYXOR|AMUNDI|WISDOMTREE|INVESCO/.test(name);
+      return !fund && !!stock?.scanner_results?.[strategy];
+    }).length, key);
+    if (eligibleCount) {
+      await expect.poll(() => rows.count(), {message: `${label} should render verified candidates`}).toBeGreaterThan(0);
+      await expect(page.locator('#marketScannerRuntimeRows .market-empty')).toHaveCount(0);
+    } else {
+      await expect(rows).toHaveCount(0);
+      await expect(page.locator('#marketScannerRuntimeRows .market-empty')).toContainText('Sem resultados nesta estratégia.');
+    }
   }
 });
 
