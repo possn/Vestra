@@ -7,6 +7,7 @@ score until coverage and confidence cross minimum thresholds.
 from __future__ import annotations
 
 import math
+from datetime import date, datetime, timezone
 
 
 def _is_boolean_scalar(value):
@@ -38,7 +39,17 @@ def _price_position(row: dict):
     if not isinstance(hist, list):
         return None
     closes = []
+    dated_sessions = []
     for item in hist:
+        # Real provider bars include dates; do not classify an old, shuffled
+        # or partly undated history as a current 52-week observation.
+        if isinstance(item, dict):
+            raw_day = item.get("date") or item.get("timestamp")
+            if raw_day is not None:
+                try:
+                    dated_sessions.append(date.fromisoformat(str(raw_day)[:10]))
+                except (ValueError, TypeError):
+                    return None
         try:
             v = item.get("close") if isinstance(item, dict) else item
             if _is_boolean_scalar(v):
@@ -50,6 +61,14 @@ def _price_position(row: dict):
         if not math.isfinite(v) or v <= 0:
             return None
         closes.append(v)
+
+    if dated_sessions:
+        if (len(dated_sessions) != len(closes) or
+                any(b <= a for a, b in zip(dated_sessions, dated_sessions[1:]))):
+            return None
+        age = (datetime.now(timezone.utc).date() - dated_sessions[-1]).days
+        if not 0 <= age <= 7:
+            return None
 
     raw_current = row.get("current_price")
     current = _n(raw_current)
@@ -85,6 +104,7 @@ def _price_position(row: dict):
         "high": high,
         "price_basis": basis,
         "observed_close_sessions": len(closes),
+        "observed_last_session": dated_sessions[-1].isoformat() if dated_sessions else None,
         "current": current,
         "above_low_pct": (current / low - 1.0) * 100.0,
         "drawdown_from_high_pct": (current / high - 1.0) * 100.0,
@@ -110,6 +130,7 @@ def _insufficient(pos, reason):
             "low52_price_high": round(pos["high"], 6),
             "low52_price_basis": pos["price_basis"],
             "low52_observed_close_sessions": pos["observed_close_sessions"],
+            "low52_observed_last_session": pos["observed_last_session"],
         })
     return out
 
@@ -267,5 +288,6 @@ def assess(row: dict) -> dict:
         "low52_price_high": round(pos["high"], 6),
         "low52_price_basis": pos["price_basis"],
         "low52_observed_close_sessions": pos["observed_close_sessions"],
+        "low52_observed_last_session": pos["observed_last_session"],
         "low52_reasons": why[:6],
     }
